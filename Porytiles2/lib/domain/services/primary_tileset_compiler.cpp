@@ -116,7 +116,7 @@ class CompilerTask {
     std::vector<Metatile<Rgba32>> porymap_metatiles_{};
     std::vector<PixelTile<Rgba32>> porymap_pixel_rgba_{};
     std::vector<CanonicalPixelTile<Rgba32>> porymap_canonical_pixel_rgba_{};
-    std::vector<Palette<Rgba32, pal::max_size>> porymap_pals_{};
+    std::vector<Palette<Rgba32, pal::max_size>> new_porymap_pals_{};
 
     // Working data
     std::unique_ptr<PorymapTilesetComponent> new_porymap_component_{};
@@ -250,10 +250,10 @@ ChainableResult<void> CompilerTask::setup_working_data()
      */
 
     if (pals_edit_mode_ == ArtifactEditMode::locked) {
-        // Collect primary palettes from existing Porymap component
-        porymap_pals_.reserve(num_pals_in_primary_);
-        for (unsigned int i = 0; i < num_pals_in_primary_; i++) {
-            porymap_pals_.push_back(tileset_.porymap_component().pals()[i]);
+        // Collect all palettes from existing Porymap component
+        new_porymap_pals_.reserve(pal::num_pals);
+        for (unsigned int i = 0; i < pal::num_pals; i++) {
+            new_porymap_pals_.push_back(tileset_.porymap_component().pals()[i]);
         }
     }
     else if (pals_edit_mode_ == ArtifactEditMode::patch) {
@@ -314,7 +314,7 @@ ChainableResult<void> CompilerTask::setup_working_data()
             const auto &maybe_packed_pal = pal_packing.pals_.at(i);
             if (maybe_packed_pal.has_value()) {
                 // Copy over the packed palette
-                porymap_pals_.push_back(maybe_packed_pal.value());
+                new_porymap_pals_.push_back(maybe_packed_pal.value());
             }
             else if (tileset_.porytiles_component().pal_at(i).has_value()) {
                 /*
@@ -334,24 +334,13 @@ ChainableResult<void> CompilerTask::setup_working_data()
                  * overworld/shop UI. Here we just copy them over as-is. Again, if for some reason the user had edited
                  * them, let's not clobber anything unnecessarily.
                  */
-                porymap_pals_.push_back(tileset_.porymap_component().pal_at(i));
+                new_porymap_pals_.push_back(tileset_.porymap_component().pal_at(i));
             }
         }
     }
     else {
         panic("unexpected pals ArtifactEditMode");
     }
-
-    // Create new Porymap component for output
-    // TODO: The resulting PorymapTilesetComponent may be incomplete. E.g., the user may have specified PLA
-    // files; they will be present on disk. We don't want to clobber them when saving the newly compiled
-    // component. So we'll need to pull them from the original component and inject them into this one before
-    // returning. We should probably add PLA file handling to the Tileset repository aggregate root. That way. all
-    // this is handled automatically via the save/load abstraction mechanisms. PLA files are a first-class domain
-    // concept, so they should be handled like any other file type (e.g. pal files, override files, etc). If we do that,
-    // then here, instead of making a new PorymapComponent, we could invoke the copy ctor. And then we should add
-    // explicit "reset" functions for the tilemap entries, tiles.png, pals, etc to clear the old values?
-    new_porymap_component_ = std::make_unique<PorymapTilesetComponent>();
 
     // Create tiles workspace
     tiles_workspace_ = [](ArtifactEditMode tiles_edit_mode, const Tileset &tileset, std::size_t num_tiles_in_primary) {
@@ -371,6 +360,17 @@ ChainableResult<void> CompilerTask::setup_working_data()
         }
         panic("unexpected tiles_edit_mode");
     }(tiles_edit_mode_, tileset_, num_tiles_in_primary_.value());
+
+    /*
+     * TODO: The resulting PorymapTilesetComponent may be incomplete. E.g., the user may have specified PLA files; they
+     * will be present on disk. We don't want to clobber them when saving the newly compiled component. So we'll need to
+     * pull them from the original component and inject them into this one before returning. We should probably add PLA
+     * file handling to the Tileset repository aggregate root. That way, all this is handled automatically via the
+     * save/load abstraction mechanisms. PLA files are a first-class domain concept, so they should be handled like any
+     * other file type (e.g. pal files, override files, etc).
+     */
+    // Create new Porymap component for output
+    new_porymap_component_ = std::make_unique<PorymapTilesetComponent>();
 
     return {};
 }
@@ -495,12 +495,12 @@ ChainableResult<void> CompilerTask::match_tiles_pals_patch_or_locked()
             // TODO: top_n matches should be configurable
             // TODO: what if multiple pals match?
             std::vector<PaletteMatchResult<Rgba32>> matches =
-                match_or_best(porytiles_tile, porymap_pals_, extrinsic_transparency_.value(), 1);
+                match_or_best(porytiles_tile, new_porymap_pals_, extrinsic_transparency_.value(), 1);
 
             // CASE 3a: found covering pal
             if (matches.at(0).is_covered) {
                 const auto pal_index = matches.at(0).pal_index;
-                const auto &matched_pal = porymap_pals_.at(pal_index);
+                const auto &matched_pal = new_porymap_pals_.at(pal_index);
                 const auto index_tile =
                     index_tile_from_color_tile(porytiles_tile, matched_pal, extrinsic_transparency_.value());
                 CanonicalPixelTile canonical_index_tile{index_tile};
@@ -569,12 +569,12 @@ ChainableResult<void> CompilerTask::match_tiles_pals_optimized()
 
         // TODO: what if multiple pals match?
         std::vector<PaletteMatchResult<Rgba32>> matches =
-            match_or_best(porytiles_tile, porymap_pals_, extrinsic_transparency_.value(), 1);
+            match_or_best(porytiles_tile, new_porymap_pals_, extrinsic_transparency_.value(), 1);
 
         // CASE 1: found covering pal
         if (matches.at(0).is_covered) {
             const auto pal_index = matches.at(0).pal_index;
-            const auto &matched_pal = porymap_pals_.at(pal_index);
+            const auto &matched_pal = new_porymap_pals_.at(pal_index);
             const auto index_tile =
                 index_tile_from_color_tile(porytiles_tile, matched_pal, extrinsic_transparency_.value());
             CanonicalPixelTile canonical_index_tile{index_tile};
@@ -687,7 +687,7 @@ void CompilerTask::emit_no_matching_pal_error(
             FormatParam{pad_two_digits(match.pal_index) + std::string{".pal"}, Style::bold}));
         std::ranges::copy(
             pal_printer_.print_rgba_palette_covered_missing(
-                porymap_pals_.at(match.pal_index), match.covered_colors, match.missing_colors),
+                new_porymap_pals_.at(match.pal_index), match.covered_colors, match.missing_colors),
             std::back_inserter(closest_n_note));
         closest_n_note.emplace_back();
         closest_n_note.push_back(format_.format(
@@ -791,7 +791,7 @@ std::unique_ptr<Tileset> CompilerTask::assemble_output()
 
     // Copy palettes from our processed porymap_pals vector
     for (unsigned int i = 0; i < pal::num_pals; i++) {
-        new_porymap_component_->set_pal(i, porymap_pals_[i]);
+        new_porymap_component_->set_pal(i, new_porymap_pals_[i]);
     }
 
     // Create the full Tileset and return
@@ -866,14 +866,14 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile_todo_r
     // TODO: set up these components correctly, for now we just use some dummy values
     auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>(tileset.porytiles_component());
 
-    // TODO: The resulting PorymapTilesetComponent may be incomplete. E.g., the user may have specified PLA
-    // files; they will be present on disk. We don't want to clobber them when saving the newly compiled
-    // component. So we'll need to pull them from the original component and inject them into this one before
-    // returning. We should probably add PLA file handling to the Tileset repository aggregate root. That way. all
-    // this is handled automatically via the save/load abstraction mechanisms. PLA files are a first-class domain
-    // concept, so they should be handled like any other file type (e.g. pal files, override files, etc). If we do that,
-    // then here, instead of making a new PorymapComponent, we can invoke the copy ctor. And then we should add explicit
-    // "reset" functions for the tilemap entries, tiles.png, pals, etc to clear the old values.
+    /*
+     * TODO: The resulting PorymapTilesetComponent may be incomplete. E.g., the user may have specified PLA files; they
+     * will be present on disk. We don't want to clobber them when saving the newly compiled component. So we'll need to
+     * pull them from the original component and inject them into this one before returning. We should probably add PLA
+     * file handling to the Tileset repository aggregate root. That way, all this is handled automatically via the
+     * save/load abstraction mechanisms. PLA files are a first-class domain concept, so they should be handled like any
+     * other file type (e.g. pal files, override files, etc).
+     */
     auto new_porymap_component = std::make_unique<PorymapTilesetComponent>();
 
     Image<IndexPixel> tiles_png{128, 128};

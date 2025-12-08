@@ -32,7 +32,7 @@ void PorymapTilesetComponent::set_pal(std::size_t pal_index, Palette<Rgba32, pal
     if (pal_index >= pal::num_pals) {
         panic(fmt::format("invalid pal index {}: out of range", pal_index));
     }
-    pals_[pal_index] = std::move(pal);
+    pals_.at(pal_index) = std::move(pal);
 }
 
 const Palette<Rgba32, pal::max_size> &PorymapTilesetComponent::pal_at(std::size_t pal_index) const
@@ -40,7 +40,7 @@ const Palette<Rgba32, pal::max_size> &PorymapTilesetComponent::pal_at(std::size_
     if (pal_index >= pal::num_pals) {
         panic(fmt::format("invalid pal index {}: out of range", pal_index));
     }
-    return pals_[pal_index];
+    return pals_.at(pal_index);
 }
 
 bool PorymapTilesetComponent::is_empty() const

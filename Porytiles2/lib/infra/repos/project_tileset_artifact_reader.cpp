@@ -118,7 +118,8 @@ ChainableResult<void> import_emerald_metatile_attributes(Tileset &dest, const Ar
     return {};
 }
 
-ChainableResult<void> import_firered_metatile_attributes(Tileset &dest, const ArtifactKey &src_key)
+[[maybe_unused]] ChainableResult<void>
+import_firered_metatile_attributes([[maybe_unused]] Tileset &dest, const ArtifactKey &src_key)
 {
     std::ifstream metatile_attr_bin{src_key.key(), std::ios::binary};
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
@@ -140,7 +141,7 @@ ChainableResult<void> import_firered_metatile_attributes(Tileset &dest, const Ar
         // attributes.terrainType = terrainTypeFromInt((attribute >> 9) & 0x0000001F);
         // attributes.encounterType = encounterTypeFromInt((attribute >> 24) & 0x00000007);
         // attributes.layerType = layerTypeFromInt((attribute >> 29) & 0x00000003);
-        // TODO: init an attr here and insert into 'dest'
+        // TODO: finish impl: init an attr here and insert into 'dest'
     }
 
     return {};
