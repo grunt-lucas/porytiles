@@ -30,8 +30,6 @@ class PrimaryTilesetCompiler {
     {
     }
 
-    [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> compile_todo_remove(const Tileset &tileset) const;
-
     [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> compile(const Tileset &tileset) const;
 
   private:
