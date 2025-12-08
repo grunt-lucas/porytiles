@@ -26,7 +26,7 @@ std::string pal_filename(std::size_t pal_index)
     return pad_two_digits(pal_index) + ".pal";
 }
 
-ChainableResult<void> validate_single_override(
+ChainableResult<void> validate_single_porytiles_pal(
     const Palette<Rgba32, pal::max_size> &pal,
     std::size_t pal_index,
     const Rgba32 &extrinsic_transparency,
@@ -36,6 +36,7 @@ ChainableResult<void> validate_single_override(
 {
     bool hit_error = false;
     const std::string filename = pal_filename(pal_index);
+    std::vector<std::size_t> violating_slots;
 
     // Check 1: Slot 0 should match extrinsic transparency (warning only)
     if (!pal.is_wildcard(0)) {
@@ -61,6 +62,7 @@ ChainableResult<void> validate_single_override(
         const Rgba32 color = pal.at(slot);
         if (color.is_extrinsically_transparent(extrinsic_transparency)) {
             hit_error = true;
+            violating_slots.push_back(slot);
             std::vector<std::string> error_lines;
             error_lines.emplace_back(format->format(
                 "Porytiles palette '{}' slot '{}' contains extrinsic transparency color '{}'",
@@ -69,18 +71,20 @@ ChainableResult<void> validate_single_override(
                 FormatParam{color.to_jasc_str(), Style::bold}));
             error_lines.emplace_back("Extrinsic transparency is not allowed in non-slot-0 positions.");
             diag->err(pal_porytiles_transparency, error_lines);
-
-            // Print the palette for context
-            std::vector<std::string> note_lines;
-            note_lines.emplace_back(format->format("palette '{}' contents:", FormatParam{filename, Style::bold}));
-            std::ranges::copy(pal_printer->print_rgba_palette(pal), std::back_inserter(note_lines));
-            diag->note(pal_porytiles_transparency, note_lines);
         }
     }
 
     if (hit_error) {
+        // Print the palette with violating slots highlighted
+        std::vector<std::string> note_lines;
+        note_lines.emplace_back(format->format("palette '{}' contents:", FormatParam{filename, Style::bold}));
+        note_lines.emplace_back();
+        std::ranges::copy(
+            pal_printer->print_rgba_palette_with_highlights(pal, violating_slots), std::back_inserter(note_lines));
+        diag->note(pal_porytiles_transparency, note_lines);
+
         return FormattableError{
-            "{}: validation failed for palette override '{}'",
+            "{}: validation failed for Porytiles palette '{}'",
             FormatParam{pal_porytiles_transparency, Style::bold},
             FormatParam{filename, Style::bold}};
     }
@@ -88,7 +92,7 @@ ChainableResult<void> validate_single_override(
     return {};
 }
 
-ChainableResult<void> validate_single_porymap_palette(
+ChainableResult<void> validate_single_porymap_pal(
     const Palette<Rgba32, pal::max_size> &pal,
     std::size_t pal_index,
     const Rgba32 &extrinsic_transparency,
@@ -98,6 +102,7 @@ ChainableResult<void> validate_single_porymap_palette(
 {
     bool hit_error = false;
     const std::string filename = pal_filename(pal_index);
+    std::vector<std::size_t> violating_slots;
 
     // Check 1: Slot 0 should match extrinsic transparency (warning only)
     if (!pal.is_wildcard(0)) {
@@ -123,6 +128,7 @@ ChainableResult<void> validate_single_porymap_palette(
         const Rgba32 color = pal.at(slot);
         if (color.is_extrinsically_transparent(extrinsic_transparency)) {
             hit_error = true;
+            violating_slots.push_back(slot);
             std::vector<std::string> error_lines;
             error_lines.emplace_back(format->format(
                 "Porymap palette '{}' slot '{}' contains extrinsic transparency color '{}'",
@@ -131,16 +137,18 @@ ChainableResult<void> validate_single_porymap_palette(
                 FormatParam{color.to_jasc_str(), Style::bold}));
             error_lines.emplace_back("Extrinsic transparency is not allowed in non-slot-0 positions.");
             diag->err(pal_porymap_transparency, error_lines);
-
-            // Print the palette for context
-            std::vector<std::string> note_lines;
-            note_lines.emplace_back(format->format("palette '{}' contents:", FormatParam{filename, Style::bold}));
-            std::ranges::copy(pal_printer->print_rgba_palette(pal), std::back_inserter(note_lines));
-            diag->note(pal_porymap_transparency, note_lines);
         }
     }
 
     if (hit_error) {
+        // Print the palette with violating slots highlighted
+        std::vector<std::string> note_lines;
+        note_lines.emplace_back(format->format("palette '{}' contents:", FormatParam{filename, Style::bold}));
+        note_lines.emplace_back();
+        std::ranges::copy(
+            pal_printer->print_rgba_palette_with_highlights(pal, violating_slots), std::back_inserter(note_lines));
+        diag->note(pal_porymap_transparency, note_lines);
+
         return FormattableError{
             "{}: validation failed for Porymap palette '{}'",
             FormatParam{pal_porymap_transparency, Style::bold},
@@ -225,7 +233,7 @@ ChainableResult<void> validate_porymap_palettes(
     std::vector<std::string> error_messages;
 
     for (std::size_t pal_index = 0; pal_index < pals.size(); ++pal_index) {
-        const auto result = validate_single_porymap_palette(
+        const auto result = validate_single_porymap_pal(
             pals.at(pal_index), pal_index, extrinsic_transparency, format, diag, pal_printer);
         if (!result.has_value()) {
             error_messages.push_back(result.error().join(*format));
@@ -236,7 +244,7 @@ ChainableResult<void> validate_porymap_palettes(
         std::vector<std::string> combined_message{};
         combined_message.reserve(error_messages.size());
         for (const auto &msg : error_messages) {
-            combined_message.emplace_back(msg);
+        combined_message.emplace_back(msg);
         }
         return FormattableError{combined_message};
     }
@@ -244,8 +252,8 @@ ChainableResult<void> validate_porymap_palettes(
     return {};
 }
 
-ChainableResult<void> validate_overrides(
-    const std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> &overrides,
+ChainableResult<void> validate_porytiles_palettes(
+    const std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> &porytiles_pals,
     const Rgba32 &extrinsic_transparency,
     const TextFormatter *format,
     const UserDiagnostics *diag,
@@ -253,13 +261,13 @@ ChainableResult<void> validate_overrides(
 {
     std::vector<std::string> error_messages;
 
-    for (std::size_t pal_index = 0; pal_index < overrides.size(); ++pal_index) {
-        const auto &maybe_pal = overrides.at(pal_index);
+    for (std::size_t pal_index = 0; pal_index < porytiles_pals.size(); ++pal_index) {
+        const auto &maybe_pal = porytiles_pals.at(pal_index);
         if (!maybe_pal.has_value()) {
             continue;
         }
-        const auto result =
-            validate_single_override(maybe_pal.value(), pal_index, extrinsic_transparency, format, diag, pal_printer);
+        const auto result = validate_single_porytiles_pal(
+            maybe_pal.value(), pal_index, extrinsic_transparency, format, diag, pal_printer);
         if (!result.has_value()) {
             error_messages.push_back(result.error().join(*format));
         }
@@ -311,7 +319,7 @@ namespace porytiles2 {
 
 ChainableResult<void> PaletteValidator::validate_primary(
     const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &porymap_pals,
-    const std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> &overrides,
+    const std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> &porytiles_pals,
     const std::vector<PaletteHint> &hints) const
 {
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, extrinsic_transparency, tileset_scope_, void);
@@ -325,10 +333,11 @@ ChainableResult<void> PaletteValidator::validate_primary(
         error_messages.push_back(porymap_result.error().join(*format_));
     }
 
-    // Run Porytiles override palette validation
-    const auto overrides_result = validate_overrides(overrides, extrinsic_transparency, format_, diag_, pal_printer_);
-    if (!overrides_result.has_value()) {
-        error_messages.push_back(overrides_result.error().join(*format_));
+    // Run Porytiles palette validation
+    const auto porytiles_result =
+        validate_porytiles_palettes(porytiles_pals, extrinsic_transparency, format_, diag_, pal_printer_);
+    if (!porytiles_result.has_value()) {
+        error_messages.push_back(porytiles_result.error().join(*format_));
     }
 
     // Run palette hint validation

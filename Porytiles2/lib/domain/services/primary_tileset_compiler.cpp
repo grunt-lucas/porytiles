@@ -63,7 +63,7 @@ class CompilerTask {
         : tileset_{tileset}, format_{format}, diag_{diag}, tile_printer_{tile_printer}, pal_printer_{pal_printer},
           config_{config}, tiles_edit_mode_{tiles_edit_mode}, pals_edit_mode_{pals_edit_mode},
           extrinsic_transparency_{}, num_pals_in_primary_{}, num_pals_total_{}, num_metatiles_in_primary_{},
-          num_tiles_in_primary_{}, num_tiles_per_metatile_{}
+          num_tiles_in_primary_{}, num_tiles_per_metatile_{}, pal_hints_enabled_{}, pal_hints_{}
     {
     }
 
@@ -233,7 +233,7 @@ ChainableResult<void> CompilerTask::setup_working_data()
 {
     std::vector<PaletteHint> hints = pal_hints_enabled_.value() ? pal_hints_.value() : std::vector<PaletteHint>{};
 
-    // Validate palette overrides, original palettes, and hints
+    // Validate Porytiles palettes, Porymap palettes, and hints
     PaletteValidator pal_validator{&format_, &diag_, &pal_printer_, &config_, tileset_.name()};
 
     PT_TRY_CALL_CHAIN_ERR(
@@ -265,8 +265,8 @@ ChainableResult<void> CompilerTask::setup_working_data()
             void);
 
         /*
-         * TODO: we should have warnings get generated here if any colors in the hints/overrides did not appear in the
-         * layer PNGs.
+         * TODO: we should have warnings get generated here if any colors in the hints/Porytiles pals did not appear in
+         * the layer PNGs.
          */
 
         /*
@@ -311,9 +311,9 @@ ChainableResult<void> CompilerTask::setup_working_data()
             }
             else if (tileset_.porytiles_component().pal_at(i).has_value()) {
                 /*
-                 * TODO: out-of-band override: resolve all wildcards to some default and copy it over
+                 * TODO: out-of-band Porytiles pal: resolve all wildcards to some default and copy it over
                  */
-                panic("TODO: implement copy for out-of-band porytiles override pal");
+                panic("TODO: implement copy for out-of-band Porytiles pal");
             }
             else {
                 /*
@@ -360,7 +360,7 @@ ChainableResult<void> CompilerTask::setup_working_data()
      * pull them from the original component and inject them into this one before returning. We should probably add PLA
      * file handling to the Tileset repository aggregate root. That way, all this is handled automatically via the
      * save/load abstraction mechanisms. PLA files are a first-class domain concept, so they should be handled like any
-     * other file type (e.g. pal files, override files, etc).
+     * other file type (e.g. Porytiles pal files, Porytiles config, etc).
      */
     // Create new Porymap component for output
     new_porymap_component_ = std::make_unique<PorymapTilesetComponent>();
@@ -381,25 +381,25 @@ CompilerTask::build_color_index_map(const std::vector<PaletteHint> &hints, std::
         panic("color_index_map.size() > count_limit - this should have already been validated by MetatileValidator");
     }
 
-    // Add override palettes and validate after each
+    // Add Porytiles palettes and validate after each
     for (std::size_t pal_index = 0; pal_index < tileset_.porytiles_component().pals().size(); ++pal_index) {
-        const auto &maybe_override_pal = tileset_.porytiles_component().pals().at(pal_index);
-        if (!maybe_override_pal.has_value()) {
+        const auto &maybe_porytiles_pal = tileset_.porytiles_component().pals().at(pal_index);
+        if (!maybe_porytiles_pal.has_value()) {
             continue;
         }
-        color_index_map.add_pal(maybe_override_pal.value(), extrinsic_transparency_.value());
+        color_index_map.add_pal(maybe_porytiles_pal.value(), extrinsic_transparency_.value());
         if (color_index_map.size() > color_count_limit) {
             diag_.err(
                 tag,
                 format_.format(
-                    "found '{}' global unique colors after adding override palette '{}', limit is '{}'",
+                    "found '{}' global unique colors after adding Porytiles palette '{}', limit is '{}'",
                     FormatParam{color_index_map.size(), Style::bold},
                     FormatParam{pad_two_digits(pal_index) + ".pal", Style::bold},
                     FormatParam{color_count_limit, Style::bold}));
             diag_.note(tag, global_color_limit_definition(format_, color_count_limit, num_pals_in_primary_));
 
             return FormattableError{
-                "{}: found '{}' unique colors after adding override palette '{}', limit is '{}'",
+                "{}: found '{}' unique colors after adding Porytiles palette '{}', limit is '{}'",
                 FormatParam{tag, Style::bold},
                 FormatParam{color_index_map.size(), Style::bold},
                 FormatParam{pad_two_digits(pal_index) + ".pal", Style::bold},

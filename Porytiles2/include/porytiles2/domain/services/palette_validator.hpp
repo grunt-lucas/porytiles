@@ -23,13 +23,13 @@ namespace porytiles2 {
  * @brief A collection of palette validation functions for compilation operations.
  *
  * @details
- * PaletteValidator validates Porytiles palette overrides, original Porymap palettes,
- * and palette hints before they are used in tileset compilation. This ensures that
- * palettes meet the requirements of the GBA hardware and Porytiles compilation process.
+ * PaletteValidator validates Porytiles palettes, original Porymap palettes, and palette hints before they are used in
+ * tileset compilation. This ensures that palettes meet the requirements of the GBA hardware and Porytiles compilation
+ * process.
  *
  * Validations include:
- * - Override and Porymap palettes: non-slot-0 positions cannot contain extrinsic transparency
- * - Override and Porymap palettes: slot 0 should match extrinsic transparency (warning)
+ * - Porytiles and Porymap palettes: non-slot-0 positions cannot contain extrinsic transparency
+ * - Porytiles and Porymap palettes: slot 0 should match extrinsic transparency (warning-only)
  * - Palette hints cannot contain duplicate colors or extrinsic transparency
  */
 class PaletteValidator {
@@ -48,20 +48,14 @@ class PaletteValidator {
     /**
      * @brief Validates all palettes for a primary tileset compilation.
      *
-     * @details
-     * Runs all palette validations in sequence and collates any errors:
-     * - Porymap palette validation (extrinsic transparency checks)
-     * - Porytiles override palette validation (extrinsic transparency checks)
-     * - Palette hint validation (duplicate colors, extrinsic transparency)
-     *
-     * @param porymap_pals The array of original Porymap palettes
-     * @param overrides The array of optional palette overrides from PorytilesTilesetComponent
+     * @param porymap_pals The array of original Porymap palettes from PorymapTilesetComponent
+     * @param porytiles_pals The array of optional Porytiles palettes from PorytilesTilesetComponent
      * @param hints The vector of palette hints
      * @return ChainableResult<void> indicating success or validation failure with all errors
      */
     [[nodiscard]] ChainableResult<void> validate_primary(
         const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &porymap_pals,
-        const std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> &overrides,
+        const std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> &porytiles_pals,
         const std::vector<PaletteHint> &hints) const;
 
   private:

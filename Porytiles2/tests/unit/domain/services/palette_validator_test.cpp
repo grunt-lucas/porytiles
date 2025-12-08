@@ -52,8 +52,8 @@ class PaletteValidatorTest : public ::testing::Test {
         return pals;
     }
 
-    // Helper to create empty overrides array
-    static std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> create_empty_overrides()
+    // Helper to create empty porytiles palettes array
+    static std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> create_empty_porytiles_pals()
     {
         return {};
     }
@@ -76,24 +76,24 @@ class PaletteValidatorTest : public ::testing::Test {
 TEST_F(PaletteValidatorTest, ValidatePrimary_AllValid_ReturnsSuccess)
 {
     auto porymap_pals = create_valid_porymap_pals();
-    auto overrides = create_empty_overrides();
+    auto porytiles_pals = create_empty_porytiles_pals();
     auto hints = create_empty_hints();
 
-    auto result = validator_->validate_primary(porymap_pals, overrides, hints);
+    auto result = validator_->validate_primary(porymap_pals, porytiles_pals, hints);
 
     EXPECT_TRUE(result.has_value());
     EXPECT_TRUE(diag_->errors().empty());
     EXPECT_TRUE(diag_->warnings().empty());
 }
 
-TEST_F(PaletteValidatorTest, ValidatePrimary_WithValidOverride_ReturnsSuccess)
+TEST_F(PaletteValidatorTest, ValidatePrimary_WithValidPorytilesPal_ReturnsSuccess)
 {
     auto porymap_pals = create_valid_porymap_pals();
-    auto overrides = create_empty_overrides();
-    overrides[0] = create_valid_palette();
+    auto porytiles_pals = create_empty_porytiles_pals();
+    porytiles_pals[0] = create_valid_palette();
     auto hints = create_empty_hints();
 
-    auto result = validator_->validate_primary(porymap_pals, overrides, hints);
+    auto result = validator_->validate_primary(porymap_pals, porytiles_pals, hints);
 
     EXPECT_TRUE(result.has_value());
     EXPECT_TRUE(diag_->errors().empty());
@@ -102,7 +102,7 @@ TEST_F(PaletteValidatorTest, ValidatePrimary_WithValidOverride_ReturnsSuccess)
 TEST_F(PaletteValidatorTest, ValidatePrimary_WithValidHint_ReturnsSuccess)
 {
     auto porymap_pals = create_valid_porymap_pals();
-    auto overrides = create_empty_overrides();
+    auto porytiles_pals = create_empty_porytiles_pals();
 
     std::vector<PaletteHint> hints{};
     Palette<Rgba32> hint_pal{};
@@ -110,46 +110,46 @@ TEST_F(PaletteValidatorTest, ValidatePrimary_WithValidHint_ReturnsSuccess)
     hint_pal.add(Rgba32{50, 100, 50, Rgba32::alpha_opaque});
     hints.emplace_back("valid_hint", hint_pal);
 
-    auto result = validator_->validate_primary(porymap_pals, overrides, hints);
+    auto result = validator_->validate_primary(porymap_pals, porytiles_pals, hints);
 
     EXPECT_TRUE(result.has_value());
     EXPECT_TRUE(diag_->errors().empty());
 }
 
-// ==================== Override Validation Tests ====================
+// ==================== Porytiles Palette Validation Tests ====================
 
-TEST_F(PaletteValidatorTest, ValidatePrimary_OverrideWithWildcards_ReturnsSuccess)
+TEST_F(PaletteValidatorTest, ValidatePrimary_PorytilesPalWithWildcards_ReturnsSuccess)
 {
     auto porymap_pals = create_valid_porymap_pals();
-    auto overrides = create_empty_overrides();
+    auto porytiles_pals = create_empty_porytiles_pals();
     auto hints = create_empty_hints();
 
-    // Create override palette with wildcards (slots 10-15 remain wildcards)
+    // Create porytiles palette with wildcards (slots 10-15 remain wildcards)
     Palette<Rgba32, pal::max_size> pal{};
     pal.set(0, rgba_magenta);
     for (std::size_t i = 1; i < 10; ++i) {
         pal.set(i, Rgba32{static_cast<std::uint8_t>(i * 10), 100, 100, Rgba32::alpha_opaque});
     }
-    overrides[0] = pal;
+    porytiles_pals[0] = pal;
 
-    auto result = validator_->validate_primary(porymap_pals, overrides, hints);
+    auto result = validator_->validate_primary(porymap_pals, porytiles_pals, hints);
 
-    // Wildcards are allowed in override palettes
+    // Wildcards are allowed in porytiles palettes
     EXPECT_TRUE(result.has_value());
     EXPECT_TRUE(diag_->errors().empty());
 }
 
-TEST_F(PaletteValidatorTest, ValidatePrimary_OverrideTransparencyInNonSlot0_ReturnsError)
+TEST_F(PaletteValidatorTest, ValidatePrimary_PorytilesPalTransparencyInNonSlot0_ReturnsError)
 {
     auto porymap_pals = create_valid_porymap_pals();
-    auto overrides = create_empty_overrides();
+    auto porytiles_pals = create_empty_porytiles_pals();
     auto hints = create_empty_hints();
 
     auto pal = create_valid_palette();
     pal.set(5, rgba_magenta); // Transparency in non-slot-0
-    overrides[0] = pal;
+    porytiles_pals[0] = pal;
 
-    auto result = validator_->validate_primary(porymap_pals, overrides, hints);
+    auto result = validator_->validate_primary(porymap_pals, porytiles_pals, hints);
 
     EXPECT_FALSE(result.has_value());
     EXPECT_FALSE(diag_->errors().empty());
@@ -167,17 +167,17 @@ TEST_F(PaletteValidatorTest, ValidatePrimary_OverrideTransparencyInNonSlot0_Retu
     EXPECT_TRUE(found_slot_5);
 }
 
-TEST_F(PaletteValidatorTest, ValidatePrimary_OverrideSlot0Mismatch_EmitsWarning)
+TEST_F(PaletteValidatorTest, ValidatePrimary_PorytilesPalSlot0Mismatch_EmitsWarning)
 {
     auto porymap_pals = create_valid_porymap_pals();
-    auto overrides = create_empty_overrides();
+    auto porytiles_pals = create_empty_porytiles_pals();
     auto hints = create_empty_hints();
 
     auto pal = create_valid_palette();
     pal.set(0, Rgba32{100, 100, 100, Rgba32::alpha_opaque}); // Different from magenta
-    overrides[0] = pal;
+    porytiles_pals[0] = pal;
 
-    auto result = validator_->validate_primary(porymap_pals, overrides, hints);
+    auto result = validator_->validate_primary(porymap_pals, porytiles_pals, hints);
 
     // Should succeed but with a warning
     EXPECT_TRUE(result.has_value());
@@ -185,22 +185,22 @@ TEST_F(PaletteValidatorTest, ValidatePrimary_OverrideSlot0Mismatch_EmitsWarning)
     EXPECT_FALSE(diag_->warnings().empty());
 }
 
-TEST_F(PaletteValidatorTest, ValidatePrimary_MultipleInvalidOverrides_ReturnsAllErrors)
+TEST_F(PaletteValidatorTest, ValidatePrimary_MultipleInvalidPorytilesPals_ReturnsAllErrors)
 {
     auto porymap_pals = create_valid_porymap_pals();
-    auto overrides = create_empty_overrides();
+    auto porytiles_pals = create_empty_porytiles_pals();
     auto hints = create_empty_hints();
 
     // Create two invalid palettes with extrinsic transparency in non-slot-0 positions
     Palette<Rgba32, pal::max_size> pal1 = create_valid_palette();
     pal1.set(5, rgba_magenta);
-    overrides[0] = pal1;
+    porytiles_pals[0] = pal1;
 
     Palette<Rgba32, pal::max_size> pal2 = create_valid_palette();
     pal2.set(10, rgba_magenta);
-    overrides[3] = pal2;
+    porytiles_pals[3] = pal2;
 
-    auto result = validator_->validate_primary(porymap_pals, overrides, hints);
+    auto result = validator_->validate_primary(porymap_pals, porytiles_pals, hints);
 
     EXPECT_FALSE(result.has_value());
     // Both palettes should generate errors
@@ -213,10 +213,10 @@ TEST_F(PaletteValidatorTest, ValidatePrimary_PorymapTransparencyInNonSlot0_Retur
 {
     auto porymap_pals = create_valid_porymap_pals();
     porymap_pals[0].set(5, rgba_magenta); // Transparency in non-slot-0
-    auto overrides = create_empty_overrides();
+    auto porytiles_pals = create_empty_porytiles_pals();
     auto hints = create_empty_hints();
 
-    auto result = validator_->validate_primary(porymap_pals, overrides, hints);
+    auto result = validator_->validate_primary(porymap_pals, porytiles_pals, hints);
 
     EXPECT_FALSE(result.has_value());
     EXPECT_FALSE(diag_->errors().empty());
@@ -226,10 +226,10 @@ TEST_F(PaletteValidatorTest, ValidatePrimary_PorymapSlot0Mismatch_EmitsWarning)
 {
     auto porymap_pals = create_valid_porymap_pals();
     porymap_pals[0].set(0, Rgba32{100, 100, 100, Rgba32::alpha_opaque}); // Different from magenta
-    auto overrides = create_empty_overrides();
+    auto porytiles_pals = create_empty_porytiles_pals();
     auto hints = create_empty_hints();
 
-    auto result = validator_->validate_primary(porymap_pals, overrides, hints);
+    auto result = validator_->validate_primary(porymap_pals, porytiles_pals, hints);
 
     // Should succeed but with a warning
     EXPECT_TRUE(result.has_value());
@@ -242,10 +242,10 @@ TEST_F(PaletteValidatorTest, ValidatePrimary_MultiplePorymapErrors_ReturnsAllErr
     auto porymap_pals = create_valid_porymap_pals();
     porymap_pals[0].set(5, rgba_magenta);
     porymap_pals[3].set(10, rgba_magenta);
-    auto overrides = create_empty_overrides();
+    auto porytiles_pals = create_empty_porytiles_pals();
     auto hints = create_empty_hints();
 
-    auto result = validator_->validate_primary(porymap_pals, overrides, hints);
+    auto result = validator_->validate_primary(porymap_pals, porytiles_pals, hints);
 
     EXPECT_FALSE(result.has_value());
     // Both palettes should generate errors
@@ -257,7 +257,7 @@ TEST_F(PaletteValidatorTest, ValidatePrimary_MultiplePorymapErrors_ReturnsAllErr
 TEST_F(PaletteValidatorTest, ValidatePrimary_HintDuplicateColors_ReturnsError)
 {
     auto porymap_pals = create_valid_porymap_pals();
-    auto overrides = create_empty_overrides();
+    auto porytiles_pals = create_empty_porytiles_pals();
 
     std::vector<PaletteHint> hints{};
     Palette<Rgba32> pal{};
@@ -267,7 +267,7 @@ TEST_F(PaletteValidatorTest, ValidatePrimary_HintDuplicateColors_ReturnsError)
     pal.add(duplicate_color); // Duplicate!
     hints.emplace_back("test_hint", pal);
 
-    auto result = validator_->validate_primary(porymap_pals, overrides, hints);
+    auto result = validator_->validate_primary(porymap_pals, porytiles_pals, hints);
 
     EXPECT_FALSE(result.has_value());
     EXPECT_FALSE(diag_->errors().empty());
@@ -288,7 +288,7 @@ TEST_F(PaletteValidatorTest, ValidatePrimary_HintDuplicateColors_ReturnsError)
 TEST_F(PaletteValidatorTest, ValidatePrimary_HintTransparencyColor_ReturnsError)
 {
     auto porymap_pals = create_valid_porymap_pals();
-    auto overrides = create_empty_overrides();
+    auto porytiles_pals = create_empty_porytiles_pals();
 
     std::vector<PaletteHint> hints{};
     Palette<Rgba32> pal{};
@@ -297,7 +297,7 @@ TEST_F(PaletteValidatorTest, ValidatePrimary_HintTransparencyColor_ReturnsError)
     pal.add(Rgba32{50, 50, 100, Rgba32::alpha_opaque});
     hints.emplace_back("test_hint", pal);
 
-    auto result = validator_->validate_primary(porymap_pals, overrides, hints);
+    auto result = validator_->validate_primary(porymap_pals, porytiles_pals, hints);
 
     EXPECT_FALSE(result.has_value());
     EXPECT_FALSE(diag_->errors().empty());
@@ -318,7 +318,7 @@ TEST_F(PaletteValidatorTest, ValidatePrimary_HintTransparencyColor_ReturnsError)
 TEST_F(PaletteValidatorTest, ValidatePrimary_MultipleInvalidHints_ReturnsAllErrors)
 {
     auto porymap_pals = create_valid_porymap_pals();
-    auto overrides = create_empty_overrides();
+    auto porytiles_pals = create_empty_porytiles_pals();
 
     std::vector<PaletteHint> hints{};
 
@@ -334,7 +334,7 @@ TEST_F(PaletteValidatorTest, ValidatePrimary_MultipleInvalidHints_ReturnsAllErro
     pal2.add(rgba_magenta);
     hints.emplace_back("hint_with_transparency", pal2);
 
-    auto result = validator_->validate_primary(porymap_pals, overrides, hints);
+    auto result = validator_->validate_primary(porymap_pals, porytiles_pals, hints);
 
     EXPECT_FALSE(result.has_value());
     // Both hints should generate errors
@@ -348,17 +348,17 @@ TEST_F(PaletteValidatorTest, ValidatePrimary_ErrorsInAllCategories_ReturnsAllErr
     auto porymap_pals = create_valid_porymap_pals();
     porymap_pals[0].set(5, rgba_magenta); // Porymap error
 
-    auto overrides = create_empty_overrides();
-    auto override_pal = create_valid_palette();
-    override_pal.set(6, rgba_magenta); // Override error
-    overrides[1] = override_pal;
+    auto porytiles_pals = create_empty_porytiles_pals();
+    auto porytiles_pal = create_valid_palette();
+    porytiles_pal.set(6, rgba_magenta); // Porytiles palette error
+    porytiles_pals[1] = porytiles_pal;
 
     std::vector<PaletteHint> hints{};
     Palette<Rgba32> hint_pal{};
     hint_pal.add(rgba_magenta); // Hint error
     hints.emplace_back("bad_hint", hint_pal);
 
-    auto result = validator_->validate_primary(porymap_pals, overrides, hints);
+    auto result = validator_->validate_primary(porymap_pals, porytiles_pals, hints);
 
     EXPECT_FALSE(result.has_value());
     // Should have errors from all three categories
