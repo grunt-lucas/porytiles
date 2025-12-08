@@ -223,96 +223,6 @@ ChainableResult<void> validate_single_hint(
     return {};
 }
 
-ChainableResult<void> validate_porymap_palettes(
-    const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals,
-    const Rgba32 &extrinsic_transparency,
-    const TextFormatter *format,
-    const UserDiagnostics *diag,
-    const PalettePrinter *pal_printer)
-{
-    std::vector<std::string> error_messages;
-
-    for (std::size_t pal_index = 0; pal_index < pals.size(); ++pal_index) {
-        const auto result = validate_single_porymap_pal(
-            pals.at(pal_index), pal_index, extrinsic_transparency, format, diag, pal_printer);
-        if (!result.has_value()) {
-            error_messages.push_back(result.error().join(*format));
-        }
-    }
-
-    if (!error_messages.empty()) {
-        std::vector<std::string> combined_message{};
-        combined_message.reserve(error_messages.size());
-        for (const auto &msg : error_messages) {
-        combined_message.emplace_back(msg);
-        }
-        return FormattableError{combined_message};
-    }
-
-    return {};
-}
-
-ChainableResult<void> validate_porytiles_palettes(
-    const std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> &porytiles_pals,
-    const Rgba32 &extrinsic_transparency,
-    const TextFormatter *format,
-    const UserDiagnostics *diag,
-    const PalettePrinter *pal_printer)
-{
-    std::vector<std::string> error_messages;
-
-    for (std::size_t pal_index = 0; pal_index < porytiles_pals.size(); ++pal_index) {
-        const auto &maybe_pal = porytiles_pals.at(pal_index);
-        if (!maybe_pal.has_value()) {
-            continue;
-        }
-        const auto result = validate_single_porytiles_pal(
-            maybe_pal.value(), pal_index, extrinsic_transparency, format, diag, pal_printer);
-        if (!result.has_value()) {
-            error_messages.push_back(result.error().join(*format));
-        }
-    }
-
-    if (!error_messages.empty()) {
-        std::vector<std::string> combined_message{};
-        combined_message.reserve(error_messages.size());
-        for (const auto &msg : error_messages) {
-            combined_message.emplace_back(msg);
-        }
-        return FormattableError{combined_message};
-    }
-
-    return {};
-}
-
-ChainableResult<void> validate_hints(
-    const std::vector<PaletteHint> &hints,
-    const Rgba32 &extrinsic_transparency,
-    const TextFormatter *format,
-    const UserDiagnostics *diag,
-    const PalettePrinter *pal_printer)
-{
-    std::vector<std::string> error_messages;
-
-    for (const auto &hint : hints) {
-        const auto result = validate_single_hint(hint, extrinsic_transparency, format, diag, pal_printer);
-        if (!result.has_value()) {
-            error_messages.push_back(result.error().join(*format));
-        }
-    }
-
-    if (!error_messages.empty()) {
-        std::vector<std::string> combined_message{};
-        combined_message.reserve(error_messages.size());
-        for (const auto &msg : error_messages) {
-            combined_message.emplace_back(msg);
-        }
-        return FormattableError{combined_message};
-    }
-
-    return {};
-}
-
 } // namespace
 
 namespace porytiles2 {
@@ -326,24 +236,34 @@ ChainableResult<void> PaletteValidator::validate_primary(
 
     std::vector<std::string> error_messages;
 
-    // Run Porymap palette validation
-    const auto porymap_result =
-        validate_porymap_palettes(porymap_pals, extrinsic_transparency, format_, diag_, pal_printer_);
-    if (!porymap_result.has_value()) {
-        error_messages.push_back(porymap_result.error().join(*format_));
+    // Validate Porymap palettes
+    for (std::size_t pal_index = 0; pal_index < porymap_pals.size(); ++pal_index) {
+        const auto result = validate_single_porymap_pal(
+            porymap_pals.at(pal_index), pal_index, extrinsic_transparency, format_, diag_, pal_printer_);
+        if (!result.has_value()) {
+            error_messages.push_back(result.error().join(*format_));
+        }
     }
 
-    // Run Porytiles palette validation
-    const auto porytiles_result =
-        validate_porytiles_palettes(porytiles_pals, extrinsic_transparency, format_, diag_, pal_printer_);
-    if (!porytiles_result.has_value()) {
-        error_messages.push_back(porytiles_result.error().join(*format_));
+    // Validate Porytiles palettes
+    for (std::size_t pal_index = 0; pal_index < porytiles_pals.size(); ++pal_index) {
+        const auto &maybe_pal = porytiles_pals.at(pal_index);
+        if (!maybe_pal.has_value()) {
+            continue;
+        }
+        const auto result = validate_single_porytiles_pal(
+            maybe_pal.value(), pal_index, extrinsic_transparency, format_, diag_, pal_printer_);
+        if (!result.has_value()) {
+            error_messages.push_back(result.error().join(*format_));
+        }
     }
 
-    // Run palette hint validation
-    const auto hints_result = validate_hints(hints, extrinsic_transparency, format_, diag_, pal_printer_);
-    if (!hints_result.has_value()) {
-        error_messages.push_back(hints_result.error().join(*format_));
+    // Validate palette hints
+    for (const auto &hint : hints) {
+        const auto result = validate_single_hint(hint, extrinsic_transparency, format_, diag_, pal_printer_);
+        if (!result.has_value()) {
+            error_messages.push_back(result.error().join(*format_));
+        }
     }
 
     // If any validation failed, return all error messages
