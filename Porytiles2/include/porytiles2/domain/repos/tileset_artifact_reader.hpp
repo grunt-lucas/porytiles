@@ -34,10 +34,10 @@ class TilesetArtifactReader {
     [[nodiscard]] virtual ChainableResult<void> read_tiles_png(Tileset &dest, const ArtifactKey &src_key) const = 0;
 
     [[nodiscard]] virtual ChainableResult<void>
-    read_porymap_pal_n(Tileset &dest, const ArtifactKey &src_key, unsigned int index) const = 0;
+    read_porymap_pal_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const = 0;
 
     [[nodiscard]] virtual ChainableResult<void> read_porymap_anim_frame(
-        Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, int frame_index) const = 0;
+        Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, std::size_t frame_index) const = 0;
 
     /*
      * Porytiles artifacts
@@ -52,10 +52,10 @@ class TilesetArtifactReader {
     read_attributes_csv(Tileset &dest, const ArtifactKey &src_key) const = 0;
 
     [[nodiscard]] virtual ChainableResult<void>
-    read_porytiles_pal_n(Tileset &dest, const ArtifactKey &src_key, unsigned int index) const = 0;
+    read_porytiles_pal_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const = 0;
 
     [[nodiscard]] virtual ChainableResult<void> read_porytiles_anim_frame(
-        Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, int frame_index) const = 0;
+        Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, std::size_t frame_index) const = 0;
 };
 
 } // namespace porytiles2

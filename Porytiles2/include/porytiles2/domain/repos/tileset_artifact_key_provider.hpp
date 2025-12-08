@@ -49,10 +49,10 @@ class TilesetArtifactKeyProvider {
     [[nodiscard]] virtual ArtifactKey key_for_tiles_png(const std::string &tileset_name) const = 0;
 
     [[nodiscard]] virtual ArtifactKey
-    key_for_porymap_pal_n(const std::string &tileset_name, unsigned int index) const = 0;
+    key_for_porymap_pal_n(const std::string &tileset_name, std::size_t index) const = 0;
 
     [[nodiscard]] virtual ArtifactKey key_for_porymap_anim_frame(
-        const std::string &tileset_name, const std::string &anim_name, int frame_index) const = 0;
+        const std::string &tileset_name, const std::string &anim_name, std::size_t frame_index) const = 0;
 
     /*
      * Porytiles artifacts
@@ -66,10 +66,10 @@ class TilesetArtifactKeyProvider {
     [[nodiscard]] virtual ArtifactKey key_for_attributes_csv(const std::string &tileset_name) const = 0;
 
     [[nodiscard]] virtual ArtifactKey
-    key_for_porytiles_pal_n(const std::string &tileset_name, unsigned int index) const = 0;
+    key_for_porytiles_pal_n(const std::string &tileset_name, std::size_t index) const = 0;
 
     [[nodiscard]] virtual ArtifactKey key_for_porytiles_anim_frame(
-        const std::string &tileset_name, const std::string &anim_name, int frame_index) const = 0;
+        const std::string &tileset_name, const std::string &anim_name, std::size_t frame_index) const = 0;
 
     [[nodiscard]] virtual ArtifactKey key_for_config(const std::string &tileset_name) const = 0;
 
@@ -247,10 +247,8 @@ class TilesetArtifactKeyProvider {
             result.push_back(tiles_png_key);
         }
 
-        // TODO: don't hardcode this num_pals value
         // TODO: warn user if we found pals like 1.pal, these won't work they have to be 01.pal
-        constexpr int num_pals = 16;
-        for (unsigned int i = 0; i < num_pals; i++) {
+        for (std::size_t i = 0; i < pal::num_pals; i++) {
             const auto pal_key = key_for_porymap_pal_n(tileset_name, i);
             if (artifact_exists(pal_key)) {
                 result.push_back(pal_key);

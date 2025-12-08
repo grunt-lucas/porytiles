@@ -394,7 +394,7 @@ CompilerTask::build_color_index_map(const std::vector<PaletteHint> &hints, std::
                 format_.format(
                     "found '{}' global unique colors after adding Porytiles palette '{}', limit is '{}'",
                     FormatParam{color_index_map.size(), Style::bold},
-                    FormatParam{pad_two_digits(pal_index) + ".pal", Style::bold},
+                    FormatParam{pal_filename(pal_index), Style::bold},
                     FormatParam{color_count_limit, Style::bold}));
             diag_.note(tag, global_color_limit_definition(format_, color_count_limit, num_pals_in_primary_));
 
@@ -402,7 +402,7 @@ CompilerTask::build_color_index_map(const std::vector<PaletteHint> &hints, std::
                 "{}: found '{}' unique colors after adding Porytiles palette '{}', limit is '{}'",
                 FormatParam{tag, Style::bold},
                 FormatParam{color_index_map.size(), Style::bold},
-                FormatParam{pad_two_digits(pal_index) + ".pal", Style::bold},
+                FormatParam{pal_filename(pal_index), Style::bold},
                 FormatParam{color_count_limit, Style::bold}};
         }
     }
@@ -635,8 +635,7 @@ void CompilerTask::emit_no_matching_tile_error(
 
     // Print note showing the palette that matched
     std::vector<std::string> pal_note{};
-    pal_note.emplace_back(format_.format(
-        "matched palette '{}':", FormatParam{pad_two_digits(pal_index) + std::string{".pal"}, Style::bold}));
+    pal_note.emplace_back(format_.format("matched palette '{}':", FormatParam{pal_filename(pal_index), Style::bold}));
     std::ranges::copy(pal_printer_.print_rgba_palette(matched_pal), std::back_inserter(pal_note));
     diag_.note(tag, pal_note);
 
@@ -675,17 +674,15 @@ void CompilerTask::emit_no_matching_pal_error(
             // Add a blank line between subsequent matches
             closest_n_note.emplace_back();
         }
-        closest_n_note.push_back(format_.format(
-            "Palette match candidate: {}",
-            FormatParam{pad_two_digits(match.pal_index) + std::string{".pal"}, Style::bold}));
+        closest_n_note.push_back(
+            format_.format("Palette match candidate: {}", FormatParam{pal_filename(match.pal_index), Style::bold}));
         std::ranges::copy(
             pal_printer_.print_rgba_palette_covered_missing(
                 new_porymap_pals_.at(match.pal_index), match.covered_colors, match.missing_colors),
             std::back_inserter(closest_n_note));
         closest_n_note.emplace_back();
-        closest_n_note.push_back(format_.format(
-            "Uncovered pixels with {}:",
-            FormatParam{pad_two_digits(match.pal_index) + std::string{".pal"}, Style::bold}));
+        closest_n_note.push_back(
+            format_.format("Uncovered pixels with {}:", FormatParam{pal_filename(match.pal_index), Style::bold}));
         std::ranges::copy(
             tile_printer_.print_metatile_pixel_highlights(
                 porytiles_metatiles_.at(metatile_index),

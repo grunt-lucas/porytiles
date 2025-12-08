@@ -50,7 +50,7 @@ struct PaletteMatchResult {
     /**
      * @brief The palette index of the match, useful in batch operations.
      */
-    unsigned int pal_index = 0;
+    std::size_t pal_index = 0;
 };
 
 namespace details {

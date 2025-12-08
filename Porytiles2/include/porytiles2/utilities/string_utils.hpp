@@ -153,6 +153,21 @@ std::string pad_two_digits(T t)
 }
 
 /**
+ * @brief Constructs a palette filename from a palette index.
+ *
+ * @details
+ * This function formats a palette index as a two-digit padded number with the ".pal" extension. For example,
+ * `pal_filename(3)` returns `"03.pal"`, `pal_filename(12)` returns `"12.pal"`.
+ *
+ * @param pal_index The palette index to format
+ * @return A string in the format "XX.pal" where XX is the zero-padded index
+ */
+inline std::string pal_filename(std::size_t pal_index)
+{
+    return pad_two_digits(pal_index) + ".pal";
+}
+
+/**
  * @brief Converts a vector to a string representation with curly brace delimiters.
  *
  * @details

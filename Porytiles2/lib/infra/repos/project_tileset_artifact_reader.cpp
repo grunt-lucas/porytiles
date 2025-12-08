@@ -226,7 +226,7 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_tiles_png(Tileset &dest
 }
 
 ChainableResult<void>
-ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKey &src_key, unsigned int index) const
+ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const
 {
     const auto result = import_porymap_palette(dest, src_key, index, *pal_loader_);
     if (!result.has_value()) {
@@ -236,7 +236,7 @@ ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKe
 }
 
 ChainableResult<void> ProjectTilesetArtifactReader::read_porymap_anim_frame(
-    Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, int frame_index) const
+    Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, std::size_t frame_index) const
 {
     panic("TODO: implement read_porymap_anim_frame");
 }
@@ -286,7 +286,7 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_attributes_csv(Tileset 
 }
 
 ChainableResult<void>
-ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const ArtifactKey &src_key, unsigned int index) const
+ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const
 {
     const auto result = import_porytiles_palette(dest, src_key, index, *pal_loader_);
     if (!result.has_value()) {
@@ -296,7 +296,7 @@ ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const Artifact
 }
 
 ChainableResult<void> ProjectTilesetArtifactReader::read_porytiles_anim_frame(
-    Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, int frame_index) const
+    Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, std::size_t frame_index) const
 {
     panic("TODO: implement read_porytiles_anim_frame");
 }

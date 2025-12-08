@@ -21,11 +21,6 @@ constexpr auto pal_porymap_slot0 = "pal-porymap-slot0";
 constexpr auto pal_hint_duplicate_color = "pal-hint-duplicate-color";
 constexpr auto pal_hint_transparency = "pal-hint-transparency";
 
-std::string pal_filename(std::size_t pal_index)
-{
-    return pad_two_digits(pal_index) + ".pal";
-}
-
 ChainableResult<void> validate_single_porytiles_pal(
     const Palette<Rgba32, pal::max_size> &pal,
     std::size_t pal_index,

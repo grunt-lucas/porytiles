@@ -67,14 +67,14 @@ ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_tiles_png(const std::stri
 }
 
 ArtifactKey
-ProjectTilesetArtifactKeyProvider::key_for_porymap_pal_n(const std::string &tileset_name, unsigned int index) const
+ProjectTilesetArtifactKeyProvider::key_for_porymap_pal_n(const std::string &tileset_name, std::size_t index) const
 {
     const auto tileset_path = get_tileset_path(tileset_name, project_root_);
-    return ArtifactKey{tileset_path / porymap_pals / (pad_two_digits(index) + std::string{".pal"})};
+    return ArtifactKey{tileset_path / porymap_pals / (pal_filename(index))};
 }
 
 ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_frame(
-    const std::string &tileset_name, const std::string &anim_name, int frame_index) const
+    const std::string &tileset_name, const std::string &anim_name, std::size_t frame_index) const
 {
     const auto tileset_path = get_tileset_path(tileset_name, project_root_);
     return ArtifactKey{tileset_path / anim / anim_name / (std::to_string(frame_index) + std::string{".png"})};
@@ -108,15 +108,14 @@ ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_attributes_csv(const std:
 }
 
 ArtifactKey
-ProjectTilesetArtifactKeyProvider::key_for_porytiles_pal_n(const std::string &tileset_name, unsigned int index) const
+ProjectTilesetArtifactKeyProvider::key_for_porytiles_pal_n(const std::string &tileset_name, std::size_t index) const
 {
     const auto tileset_path = get_tileset_path(tileset_name, project_root_);
-    return ArtifactKey{
-        tileset_path / porytiles_directory / porytiles_pals / (pad_two_digits(index) + std::string{".pal"})};
+    return ArtifactKey{tileset_path / porytiles_directory / porytiles_pals / (pal_filename(index))};
 }
 
 ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_frame(
-    const std::string &tileset_name, const std::string &anim_name, int frame_index) const
+    const std::string &tileset_name, const std::string &anim_name, std::size_t frame_index) const
 {
     const auto tileset_path = get_tileset_path(tileset_name, project_root_);
     return ArtifactKey{

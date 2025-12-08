@@ -71,10 +71,10 @@ class TilesetArtifactWriter {
     [[nodiscard]] virtual ChainableResult<void> write_tiles_png(const ArtifactKey &dest_key, const Tileset &src) = 0;
 
     [[nodiscard]] virtual ChainableResult<void>
-    write_porymap_pal_n(const ArtifactKey &dest_key, const Tileset &src, unsigned int index) = 0;
+    write_porymap_pal_n(const ArtifactKey &dest_key, const Tileset &src, std::size_t index) = 0;
 
     [[nodiscard]] virtual ChainableResult<void> write_porymap_anim_frame(
-        const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, int frame_index) = 0;
+        const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, std::size_t frame_index) = 0;
 
     /*
      * Porytiles artifacts
@@ -89,10 +89,10 @@ class TilesetArtifactWriter {
     write_attributes_csv(const ArtifactKey &dest_key, const Tileset &src) = 0;
 
     [[nodiscard]] virtual ChainableResult<void>
-    write_porytiles_pal_n(const ArtifactKey &dest_key, const Tileset &src, unsigned int index) = 0;
+    write_porytiles_pal_n(const ArtifactKey &dest_key, const Tileset &src, std::size_t index) = 0;
 
     [[nodiscard]] virtual ChainableResult<void> write_porytiles_anim_frame(
-        const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, int frame_index) = 0;
+        const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, std::size_t frame_index) = 0;
 };
 
 } // namespace porytiles2

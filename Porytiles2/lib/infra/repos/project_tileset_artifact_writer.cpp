@@ -302,7 +302,7 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_tiles_png(const Artifa
 }
 
 ChainableResult<void>
-ProjectTilesetArtifactWriter::write_porymap_pal_n(const ArtifactKey &dest_key, const Tileset &src, unsigned int index)
+ProjectTilesetArtifactWriter::write_porymap_pal_n(const ArtifactKey &dest_key, const Tileset &src, std::size_t index)
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
@@ -313,7 +313,7 @@ ProjectTilesetArtifactWriter::write_porymap_pal_n(const ArtifactKey &dest_key, c
 }
 
 ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
-    const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, int frame_index)
+    const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, std::size_t frame_index)
 {
     // TODO: implement
     return {};
@@ -360,7 +360,7 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
 }
 
 ChainableResult<void>
-ProjectTilesetArtifactWriter::write_porytiles_pal_n(const ArtifactKey &dest_key, const Tileset &src, unsigned int index)
+ProjectTilesetArtifactWriter::write_porytiles_pal_n(const ArtifactKey &dest_key, const Tileset &src, std::size_t index)
 {
     if (src.porytiles_component().pal_at(index).has_value()) {
         PT_TRY_ASSIGN_CHAIN_ERR(
@@ -377,7 +377,7 @@ ProjectTilesetArtifactWriter::write_porytiles_pal_n(const ArtifactKey &dest_key,
 }
 
 ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_anim_frame(
-    const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, int frame_index)
+    const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, std::size_t frame_index)
 {
     // TODO: implement
     return {};
