@@ -202,6 +202,10 @@ ChainableResult<void> validate_single_hint(
 {
     PT_UNWRAP_TILESET_CONFIG_PTR(config, extrinsic_transparency, tileset_scope, void);
 
+    /*
+     * TODO: we need to validate that hints are size 15 or less, should we do this here or at the config loader level?
+     */
+
     bool hit_any_error = false;
     const Palette<Rgba32> &pal = hint.pal();
     const std::string &hint_name = hint.name();
