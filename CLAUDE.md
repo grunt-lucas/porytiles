@@ -13,23 +13,40 @@ The project is organized into two main versions:
 - **Porytiles2**: Active development with domain-driven design architecture inspired by clang
 
 Key directories in Porytiles2:
-- `Porytiles2/config_templates` - Code generation for config system
+- `Documentation/` - Documentation source folder
+- `Porytiles2/config_templates/` - Code generation for config system
 - `Porytiles2/include/porytiles2/domain/` - Pure business logic, no I/O dependencies
 - `Porytiles2/include/porytiles2/app/` - User-facing use cases and workflows
 - `Porytiles2/include/porytiles2/infra/` - I/O and external system/library integration
 - `Porytiles2/include/porytiles2/xcut/` - Cross-cutting concerns (errors, diagnostics, config, di, etc)
 - `Porytiles2/include/porytiles2/utilities/` - Generic helpers, zero dependencies
-- `Porytiles2/lib` - .cpp implementation files
+- `Porytiles2/lib/` - .cpp implementation files
+- `Porytiles2/Notes/` - WIP documentation, feature outlines, refactoring plans, etc
 - `Porytiles2/tests/` - GoogleTest test suites
+- `Porytiles2/scratch/` - My scratch directory, you can ignore this
+- `Porytiles2/tools/` - Tools that use the Porytiles library, currently just the main CLI tool
 - `Resources/` - Test assets and example files
+- `Scripts/` - Utility scripts for the repository (including config system generation)
 
 ## Specialized Agents
 
 This project has custom Claude Code agents in `.claude/agents/` for specialized tasks:
+
+**Development:**
 - **build-expert**: CMake builds, compilation errors, linker issues
 - **test-runner**: GoogleTest execution, test failures, adding tests
-- **code-reviewer**: Code quality, style compliance, security review
 - **debugger**: Runtime errors, crashes, logic bugs
+
+**Code Quality:**
+- **code-reviewer**: Code quality, style compliance, security review
+- **documenter**: Doxygen documentation, proper tag ordering
+- **refactorer**: Safe code refactoring, symbol renaming, code moves
+
+**Architecture:**
+- **architect**: DDD layer decisions, component placement, dependency rules
+- **di-expert**: Fruit dependency injection, wiring, DI debugging
+- **config-generator**: Config schema, Jinja2 templates, code generation
+- **migrator**: Porting code from Porytiles1 to Porytiles2
 
 Use these agents for complex tasks in their domains.
 
