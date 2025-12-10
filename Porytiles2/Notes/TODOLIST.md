@@ -15,6 +15,8 @@
 - Implement overload-and-remove
 - Implement classic dfs and bfs
 - Implement a "shotgun approach" strategy that tries different sub-strategies until success
+  - the paper has some ideas on which algorithm to use depending on problem set's "multiplicity"
+  - let's make the shotgun approach smart based on the character of the input
 
 ## Project Structure Refactor
 - domain layer is getting way too crowded

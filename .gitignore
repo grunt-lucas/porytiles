@@ -4,7 +4,7 @@
 !.vscode/launch.json
 .idea
 .DS_Store
-.claude
+.claude/settings.local.json
 
 # Build artifacts and executables
 build/**
@@ -12,6 +12,7 @@ vscode-build/**
 clion-build-*/**
 
 # Doxygen
+# Ignore the build artifacts. They change frequently.
 Documentation/html/**
 Documentation/latex/**
 
@@ -23,11 +24,6 @@ testcov.profdata
 foo/**
 bar/**
 tmp/**
-
-# Ignore documentation artifacts for now.
-# We'll be rapidly iterating, no need to clutter the git database with junk.
-./Documentation/html
-./Documentation/latex
 
 # Ignore Python venv
 venv/**
