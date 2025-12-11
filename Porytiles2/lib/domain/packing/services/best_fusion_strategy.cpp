@@ -84,7 +84,7 @@ ChainableResult<PackingOutput> BestFusionStrategy::pack(const PackingInput &inpu
     output.pals_ = initialize_packed_palettes(input.prefilled_pals_, pal_pool, input.pal_capacity_);
 
     // Create additional empty palettes from the rest of the available PalettePool slots
-    while (pal_pool.has_available_index()) {
+    while (pal_pool.has_available_pal()) {
         output.pals_.emplace_back(pal_pool.checkout(), input.pal_capacity_);
     }
 

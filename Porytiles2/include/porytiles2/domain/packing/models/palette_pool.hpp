@@ -33,11 +33,11 @@ class PalettePool {
     explicit PalettePool(std::bitset<pal::num_pals> available_indexes);
 
     /**
-     * @brief Checks if there is at least one available index that can be checked out.
+     * @brief Checks if there is at least one available pal that can be checked out.
      *
      * @return true if a subsequent check_out() call will succeed, false otherwise
      */
-    [[nodiscard]] bool has_available_index() const
+    [[nodiscard]] bool has_available_pal() const
     {
         return (available_indexes_ & ~checked_out_).any();
     }
@@ -45,18 +45,18 @@ class PalettePool {
     /**
      * @brief Checks if a specific index is available for checkout.
      *
-     * @param index The hardware palette index to check
+     * @param hardware_index The hardware palette index to check
      * @pre index must be less than pal::num_pals
      * @return true if the index is in the pool and not currently checked out
      */
-    [[nodiscard]] bool is_available(std::size_t index) const;
+    [[nodiscard]] bool is_available(std::size_t hardware_index) const;
 
     /**
      * @brief Checks out the next available hardware palette index.
      *
      * @details
-     * Finds the lowest available index that hasn't been checked out, marks it as checked out, and returns it. The index
-     * is pushed onto an internal stack to support LIFO checkin behavior.
+     * Finds the lowest available hardware palette index that hasn't been checked out, marks it as checked out, and
+     * returns it. The index is pushed onto an internal stack to support LIFO checkin behavior.
      *
      * @pre has_available_index() must be true
      * @return The checked-out hardware palette index
@@ -68,8 +68,8 @@ class PalettePool {
      * @brief Checks out a specific hardware palette index.
      *
      * @details
-     * Marks the specified index as checked out and pushes it onto the checkout stack. Use this when a specific palette
-     * index is required (e.g., prefilled palettes).
+     * Marks the specified hardware palette index as checked out and pushes it onto the checkout stack. Use this when a
+     * specific palette index is required (e.g., prefilled palettes).
      *
      * @param index The hardware palette index to check out
      * @pre index must be less than pal::num_pals
@@ -80,11 +80,11 @@ class PalettePool {
     void checkout(std::size_t index);
 
     /**
-     * @brief Returns the most recently checked-out index to the pool.
+     * @brief Returns the most recently checked-out hardware palette index index to the pool.
      *
      * @details
-     * Pops the most recent index from the internal checkout stack and marks it as no longer checked out. This enables
-     * LIFO (stack) semantics for index management.
+     * Pops the most recent hardware palette index from the internal checkout stack and marks it as no longer checked
+     * out. This enables LIFO (stack) semantics for index management.
      *
      * @pre At least one index must have been checked out (checkout_stack_ not empty)
      * @post The popped index is available for checkout again

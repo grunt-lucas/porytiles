@@ -43,11 +43,16 @@ void PackedPalette::add_tile(const PackableTile &tile)
 
 void PackedPalette::remove_tile(const PackableTile &tile)
 {
-    auto iter = std::ranges::find(assigned_tile_ids_, tile.id());
+    remove_tile(tile.id());
+}
+
+void PackedPalette::remove_tile(const PackableTile::Id &tile_id)
+{
+    auto iter = std::ranges::find(assigned_tile_ids_, tile_id);
     if (iter != assigned_tile_ids_.end()) {
         assigned_tile_ids_.erase(iter);
     }
-    tile_colors_.erase(tile.id());
+    tile_colors_.erase(tile_id);
 
     // Rebuild color_set_ from remaining tiles
     color_set_ = ColorSet{};

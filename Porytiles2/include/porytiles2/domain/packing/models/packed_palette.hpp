@@ -129,6 +129,17 @@ class PackedPalette {
      */
     void remove_tile(const PackableTile &tile);
 
+    /**
+     * @brief Removes a tile (by ID) from this palette and recalculates the color set.
+     *
+     * @details
+     * Removes the tile's ID from the assigned list and rebuilds the color set from the remaining tiles. Colors that
+     * were unique to the removed tile will no longer be in the palette's color set.
+     *
+     * @param tile_id The ID of the tile to remove
+     */
+    void remove_tile(const PackableTile::Id &tile_id);
+
   private:
     std::size_t hardware_index_;
     std::size_t capacity_;

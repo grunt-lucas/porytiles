@@ -13,6 +13,8 @@ PackableTile::PackableTile(PrefilledPaletteId id, ColorSet color_set) : id_{id},
 
 PackableTile::PackableTile(RegularId id, ColorSet color_set) : id_{id}, color_set_{std::move(color_set)} {}
 
+PackableTile::PackableTile(Id id, ColorSet color_set) : id_{std::move(id)}, color_set_{std::move(color_set)} {}
+
 const std::string &PackableTile::hint_name() const
 {
     return std::get<HintId>(id_).name;

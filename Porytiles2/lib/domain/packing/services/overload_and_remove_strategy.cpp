@@ -1,6 +1,7 @@
 #include "porytiles2/domain/packing/services/overload_and_remove_strategy.hpp"
 
 #include <deque>
+#include <iostream>
 #include <set>
 
 #include "porytiles2/domain/packing/algorithms/packing_initializer.hpp"
@@ -40,9 +41,7 @@ struct TileInfo {
             continue;
         }
 
-        double cost = compute_relative_size(info.tile.color_set(), multiplicity);
-
-        if (cost < best_cost) {
+        if (const double cost = compute_relative_size(info.tile.color_set(), multiplicity); cost < best_cost) {
             best_cost = cost;
             best_idx = i;
         }
@@ -77,23 +76,209 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::pack(const PackingInpu
     auto multiplicity = build_multiplicity_map(input.tiles_, input.hints_);
 
     // Build tile pool (hints first, then regular tiles)
-    std::deque<TileInfo> pool;
+    std::deque<TileInfo> tile_pool;
     for (const auto &hint : input.hints_) {
-        pool.emplace_back(hint);
+        tile_pool.emplace_back(hint);
     }
     for (const auto &tile : input.tiles_) {
-        pool.emplace_back(tile);
+        tile_pool.emplace_back(tile);
     }
 
-    if (pool.empty()) {
+    if (tile_pool.empty()) {
         return output;
     }
 
     // Pop first tile and assign to first available palette
-    TileInfo first_info = std::move(pool.front());
-    pool.pop_front();
+    TileInfo first_tile_info = std::move(tile_pool.front());
+    tile_pool.pop_front();
 
-    // TODO: impl the rest
+    /*
+     * Find or create a palette for the first tile. First, we try searching through the current state output pals. If we
+     * find one, use it! If we don't find one, then try checking a new one out from our PalettePool if one is available.
+     * If there is no pal available, fail.
+     */
+    bool first_assigned = false;
+    for (std::size_t i = 0; i < output.pals_.size(); ++i) {
+        if (output.pals_[i].can_fit(first_tile_info.tile.color_set())) {
+            output.pals_[i].add_tile(first_tile_info.tile);
+            output.tile_to_pal_[first_tile_info.tile.id()] = output.pals_[i].hardware_index();
+            first_assigned = true;
+            break;
+        }
+    }
+    if (!first_assigned) {
+        if (pal_pool.has_available_pal()) {
+            output.pals_.emplace_back(pal_pool.checkout(), input.pal_capacity_);
+            output.pals_.back().add_tile(first_tile_info.tile);
+            output.tile_to_pal_[first_tile_info.tile.id()] = output.pals_.back().hardware_index();
+        }
+        else {
+            return FormattableError{"Overload-And-Remove: first tile cannot fit in any palette"};
+        }
+    }
+
+    // Main loop: process tiles from pool
+    while (!tile_pool.empty()) {
+        TileInfo tile_info = std::move(tile_pool.front());
+        tile_pool.pop_front();
+
+        // Find best palette excluding forbidden ones
+        auto maybe_best_idx = find_best_palette_excluding_forbidden(tile_info, output.pals_, multiplicity);
+
+        if (!maybe_best_idx.has_value()) {
+            // Create new palette if possible
+            if (pal_pool.has_available_pal()) {
+                output.pals_.emplace_back(pal_pool.checkout(), input.pal_capacity_);
+                output.pals_.back().add_tile(tile_info.tile);
+                output.tile_to_pal_[tile_info.tile.id()] = output.pals_.back().hardware_index();
+            }
+            else {
+                // No room - try first-fit as fallback
+                bool assigned = false;
+                for (std::size_t i = 0; i < output.pals_.size(); ++i) {
+                    if (!tile_info.forbidden_palettes.contains(i) &&
+                        output.pals_[i].can_fit(tile_info.tile.color_set())) {
+                        output.pals_[i].add_tile(tile_info.tile);
+                        output.tile_to_pal_[tile_info.tile.id()] = output.pals_[i].hardware_index();
+                        assigned = true;
+                        break;
+                    }
+                }
+                if (!assigned) {
+                    return FormattableError{"Overload-and-Remove: cannot assign tile - no palette has room"};
+                    // TODO: std::to_string(tile_info.tile.id()) - we need to_string overloads for:
+                    // using Id = std::variant<HintId, PrefilledPaletteId, RegularId>;
+                }
+            }
+            continue;
+        }
+
+        auto best_idx = maybe_best_idx.value();
+
+        // Add tile to best palette (may cause overload)
+        auto &best_palette = output.pals_[best_idx];
+        best_palette.add_tile(tile_info.tile);
+        output.tile_to_pal_[tile_info.tile.id()] = best_palette.hardware_index();
+
+        // Handle overload by removing worst-fitting tiles
+        while (best_palette.color_count() > input.pal_capacity_) {
+            const auto &assigned_ids = best_palette.assigned_tile_ids();
+            if (assigned_ids.size() <= 1) {
+                /*
+                 * TODO: is this a panic state? How would this ever happen? we already validated that no tile has more
+                 * than pal_capacity_ unique colors
+                 */
+                break; // Can't remove the only tile
+            }
+
+            // Find tile with minimum efficiency
+            double min_efficiency = std::numeric_limits<double>::max();
+            double max_efficiency = std::numeric_limits<double>::lowest();
+
+            // We need to find the original tile data to compute efficiency
+            // Build a map of tile_id -> ColorSet from all tiles
+            std::map<PackableTile::Id, ColorSet> tile_colors_map;
+            for (const auto &hint : input.hints_) {
+                tile_colors_map[hint.id()] = hint.color_set();
+            }
+            for (const auto &tile : input.tiles_) {
+                tile_colors_map[tile.id()] = tile.color_set();
+            }
+
+            PackableTile::Id worst_tile_id = assigned_ids.front();
+            for (PackableTile::Id tid : assigned_ids) {
+                // Skip system tiles from fixed palettes -- these cannot be changed
+                if (std::holds_alternative<PackableTile::PrefilledPaletteId>(tid)) {
+                    continue;
+                }
+
+                const auto it = tile_colors_map.find(tid);
+                if (it == tile_colors_map.end()) {
+                    // TODO: is this a panic condition? this map should contain all tiles right?
+                    continue;
+                }
+
+                double eff = compute_efficiency(it->second, multiplicity);
+                if (eff < min_efficiency) {
+                    min_efficiency = eff;
+                    worst_tile_id = tid;
+                }
+                if (eff > max_efficiency) {
+                    max_efficiency = eff;
+                }
+            }
+
+            // If all tiles have same efficiency, we can't make progress
+            if (std::abs(min_efficiency - max_efficiency) < 1e-9) {
+                break;
+            }
+
+            // Remove worst tile and re-add to pool with forbidden marker
+            best_palette.remove_tile(worst_tile_id);
+            output.tile_to_pal_.erase(worst_tile_id);
+
+            if (const auto colors_it = tile_colors_map.find(worst_tile_id); colors_it != tile_colors_map.end()) {
+                TileInfo removed_info{PackableTile{worst_tile_id, colors_it->second}};
+                removed_info.forbidden_palettes.insert(best_idx);
+                tile_pool.push_back(std::move(removed_info));
+            }
+        }
+    }
+
+    // Final cleanup: remove tiles from any remaining overloaded palettes
+    std::vector<TileInfo> remaining_tile_pool{};
+    for (auto &pal : output.pals_) {
+        while (pal.color_count() > input.pal_capacity_ && !pal.assigned_tile_ids().empty()) {
+            PackableTile::Id tid = pal.assigned_tile_ids().back();
+            // Skip system tiles from fixed palettes -- these cannot be changed
+            if (std::holds_alternative<PackableTile::PrefilledPaletteId>(tid)) {
+                continue;
+            }
+
+            pal.remove_tile(tid);
+            output.tile_to_pal_.erase(tid);
+
+            // Find the tile's colors
+            for (const auto &hint : input.hints_) {
+                if (hint.id() == tid) {
+                    remaining_tile_pool.emplace_back(hint);
+                    break;
+                }
+            }
+            for (const auto &tile : input.tiles_) {
+                if (tile.id() == tid) {
+                    remaining_tile_pool.emplace_back(tile);
+                    break;
+                }
+            }
+        }
+    }
+
+    // First-Fit pass for remaining tiles
+    for (auto &tile_info : remaining_tile_pool) {
+        bool assigned = false;
+        for (std::size_t i = 0; i < output.pals_.size(); ++i) {
+            if (output.pals_[i].can_fit(tile_info.tile.color_set())) {
+                output.pals_[i].add_tile(tile_info.tile);
+                output.tile_to_pal_[tile_info.tile.id()] = output.pals_[i].hardware_index();
+                assigned = true;
+                break;
+            }
+        }
+        if (!assigned) {
+            if (pal_pool.has_available_pal()) {
+                // TODO: this is a bug, it's possible (and likely) we end up clobbering one of the prefilled pal indices
+                output.pals_.emplace_back(output.pals_.size(), input.pal_capacity_);
+                output.pals_.back().add_tile(tile_info.tile);
+                output.tile_to_pal_[tile_info.tile.id()] = output.pals_.back().hardware_index();
+            }
+            else {
+                return FormattableError{"Overload-and-Remove: cannot assign tile in final pass"};
+                // TODO: std::to_string(tile_info.tile.id()) - we need to_string overloads for:
+                // using Id = std::variant<HintId, PrefilledPaletteId, RegularId>;
+            }
+        }
+    }
 
     return output;
 }

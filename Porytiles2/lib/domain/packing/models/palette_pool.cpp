@@ -9,17 +9,17 @@ PalettePool::PalettePool(std::bitset<pal::num_pals> available_indexes)
 {
 }
 
-bool PalettePool::is_available(std::size_t index) const
+bool PalettePool::is_available(std::size_t hardware_index) const
 {
-    if (index >= pal::num_pals) {
+    if (hardware_index >= pal::num_pals) {
         panic("index out of bounds");
     }
-    return available_indexes_.test(index) && !checked_out_.test(index);
+    return available_indexes_.test(hardware_index) && !checked_out_.test(hardware_index);
 }
 
 std::size_t PalettePool::checkout()
 {
-    if (!has_available_index()) {
+    if (!has_available_pal()) {
         panic("called with no available indexes");
     }
 

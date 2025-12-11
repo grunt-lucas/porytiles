@@ -116,6 +116,18 @@ class PackableTile {
     PackableTile(RegularId id, ColorSet color_set);
 
     /**
+     * @brief Constructs a PackableTile from an Id variant.
+     *
+     * @details
+     * This constructor allows direct construction from a type-erased Id variant, useful when the specific ID type is
+     * not known at compile time (e.g., when reconstructing tiles from stored IDs).
+     *
+     * @param id The tile identifier variant
+     * @param color_set The set of colors present in this tile
+     */
+    PackableTile(Id id, ColorSet color_set);
+
+    /**
      * @brief Gets the tile's identifier variant.
      *
      * @return A const reference to the Id variant

@@ -21,6 +21,7 @@
 #include "porytiles2/domain/models/tiles_png_workspace.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/packing/services/best_fusion_strategy.hpp"
+#include "porytiles2/domain/packing/services/overload_and_remove_strategy.hpp"
 #include "porytiles2/domain/packing/services/palette_packer.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
@@ -282,7 +283,7 @@ ChainableResult<void> CompilerTask::setup_working_data()
         //         return CanonicalShapeTile{shape_tile_to_pixel_colors(tile, color_index_map)};
         //     });
 
-        BestFusionStrategy packing_strategy{&format_, &diag_};
+        OverloadAndRemoveStrategy packing_strategy{&format_, &diag_};
         PalettePacker pal_packer{&packing_strategy, &format_, &diag_};
         std::bitset<pal::num_pals> available_pals{0};
         for (std::size_t i = 0; i < num_pals_in_primary_; i++) {
