@@ -3,7 +3,7 @@
 namespace porytiles2 {
 
 std::map<std::size_t, std::size_t>
-build_multiplicity_map(const std::vector<PackableTile> &tiles, const std::vector<PackableTile> &hints)
+build_global_multiplicity_map(const std::vector<PackableTile> &tiles, const std::vector<PackableTile> &hints)
 {
     std::map<std::size_t, std::size_t> multiplicity;
 
@@ -19,28 +19,60 @@ build_multiplicity_map(const std::vector<PackableTile> &tiles, const std::vector
     return multiplicity;
 }
 
-double compute_relative_size(const ColorSet &tile_colors, const std::map<std::size_t, std::size_t> &multiplicity)
+std::map<std::size_t, std::size_t> build_palette_local_multiplicity(
+    const PackedPalette &palette, const std::map<PackableTile::Id, ColorSet> &tile_colors_map)
 {
-    double relative_size = 0.0;
+    std::map<std::size_t, std::size_t> local_mult;
 
-    for_each_color(tile_colors, [&relative_size, &multiplicity](std::size_t color_idx) {
-        auto it = multiplicity.find(color_idx);
-        std::size_t mult = (it != multiplicity.end()) ? it->second : 1;
-        relative_size += 1.0 / static_cast<double>(mult);
-    });
+    for (const auto &tile_id : palette.assigned_tile_ids()) {
+        if (auto it = tile_colors_map.find(tile_id); it != tile_colors_map.end()) {
+            for_each_color(it->second, [&local_mult](std::size_t color_idx) { local_mult[color_idx]++; });
+        }
+    }
 
-    return relative_size;
+    return local_mult;
 }
 
-double compute_efficiency(const ColorSet &tile_colors, const std::map<std::size_t, std::size_t> &multiplicity)
+double compute_weighted_cost_in_palette(
+    const ColorSet &tile_colors,
+    const PackedPalette &palette,
+    const std::map<PackableTile::Id, ColorSet> &tile_colors_map)
+{
+    auto local_mult = build_palette_local_multiplicity(palette, tile_colors_map);
+
+    double weighted_cost = 0.0;
+    for_each_color(tile_colors, [&weighted_cost, &local_mult](std::size_t color_idx) {
+        std::size_t count = 0;
+        if (auto it = local_mult.find(color_idx); it != local_mult.end()) {
+            count = it->second;
+        }
+        weighted_cost += 1.0 / static_cast<double>(1 + count);
+    });
+
+    return weighted_cost;
+}
+
+double
+compute_palette_local_efficiency(const ColorSet &tile_colors, const std::map<std::size_t, std::size_t> &local_mult)
 {
     std::size_t color_count = color_set_count(tile_colors);
     if (color_count == 0) {
         return 1.0;
     }
 
-    double relative_size = compute_relative_size(tile_colors, multiplicity);
-    return 1.0 - (relative_size / static_cast<double>(color_count));
+    // Compute weighted cost using palette-local multiplicity
+    // Note: Here we use count directly (not 1+count) because the tile IS in the palette,
+    // so its colors are already counted in local_mult
+    double weighted_cost = 0.0;
+    for_each_color(tile_colors, [&weighted_cost, &local_mult](std::size_t color_idx) {
+        std::size_t count = 1; // Default to 1 if color not found (this tile is the only one with it)
+        if (auto it = local_mult.find(color_idx); it != local_mult.end()) {
+            count = it->second;
+        }
+        weighted_cost += 1.0 / static_cast<double>(count);
+    });
+
+    return 1.0 - (weighted_cost / static_cast<double>(color_count));
 }
 
 } // namespace porytiles2

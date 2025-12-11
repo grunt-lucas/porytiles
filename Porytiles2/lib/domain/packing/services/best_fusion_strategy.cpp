@@ -3,68 +3,12 @@
 #include <map>
 
 #include "porytiles2/domain/packing/algorithms/packing_initializer.hpp"
+#include "porytiles2/domain/packing/algorithms/packing_metrics.hpp"
 #include "porytiles2/domain/packing/models/packable_tile.hpp"
 
 namespace {
 
 using namespace porytiles2;
-
-/**
- * @brief Builds a palette-local multiplicity map (count of tiles containing each color).
- *
- * @details
- * For each color, counts how many tiles currently in the palette contain that color.
- * This is used for the weighted cost computation.
- *
- * @param palette The palette to analyze
- * @param tile_colors_map Map from tile ID to ColorSet for all tiles
- * @return Map from color index to count of tiles containing that color
- */
-[[nodiscard]] std::map<std::size_t, std::size_t> build_palette_local_multiplicity(
-    const PackedPalette &palette, const std::map<PackableTile::Id, ColorSet> &tile_colors_map)
-{
-    std::map<std::size_t, std::size_t> local_mult;
-
-    for (const auto &tile_id : palette.assigned_tile_ids()) {
-        if (auto it = tile_colors_map.find(tile_id); it != tile_colors_map.end()) {
-            for_each_color(it->second, [&local_mult](std::size_t color_idx) { local_mult[color_idx]++; });
-        }
-    }
-
-    return local_mult;
-}
-
-/**
- * @brief Computes the weighted cost of placing a tile in a specific palette.
- *
- * @details
- * Uses palette-local multiplicity: for each color in the tile, compute
- * 1 / (1 + count_of_tiles_in_palette_with_this_color). Sum these values.
- * Lower values indicate better overlap with existing palette colors.
- *
- * @param tile_colors The colors of the tile to place
- * @param palette The candidate palette
- * @param tile_colors_map Map from tile ID to ColorSet for all tiles
- * @return The weighted cost (lower is better)
- */
-[[nodiscard]] double compute_weighted_cost_in_palette(
-    const ColorSet &tile_colors,
-    const PackedPalette &palette,
-    const std::map<PackableTile::Id, ColorSet> &tile_colors_map)
-{
-    auto local_mult = build_palette_local_multiplicity(palette, tile_colors_map);
-
-    double weighted_cost = 0.0;
-    for_each_color(tile_colors, [&weighted_cost, &local_mult](std::size_t color_idx) {
-        std::size_t count = 0;
-        if (auto it = local_mult.find(color_idx); it != local_mult.end()) {
-            count = it->second;
-        }
-        weighted_cost += 1.0 / static_cast<double>(1 + count);
-    });
-
-    return weighted_cost;
-}
 
 /**
  * @brief Finds the best palette for a tile based on palette-local weighted cost.

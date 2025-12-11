@@ -6,6 +6,7 @@
 #include <set>
 
 #include "porytiles2/domain/packing/algorithms/packing_initializer.hpp"
+#include "porytiles2/domain/packing/algorithms/packing_metrics.hpp"
 #include "porytiles2/domain/packing/models/packable_tile.hpp"
 
 namespace {
@@ -21,98 +22,6 @@ struct TileInfo {
 
     explicit TileInfo(PackableTile t) : tile{std::move(t)}, forbidden_palettes{} {}
 };
-
-/**
- * @brief Builds a palette-local multiplicity map (count of tiles containing each color).
- *
- * @details
- * For each color, counts how many tiles currently in the palette contain that color.
- * This is used for the weighted cost computation.
- *
- * @param palette The palette to analyze
- * @param tile_colors_map Map from tile ID to ColorSet for all tiles
- * @return Map from color index to count of tiles containing that color
- */
-[[nodiscard]] std::map<std::size_t, std::size_t> build_palette_local_multiplicity(
-    const PackedPalette &palette, const std::map<PackableTile::Id, ColorSet> &tile_colors_map)
-{
-    std::map<std::size_t, std::size_t> local_mult;
-
-    for (const auto &tile_id : palette.assigned_tile_ids()) {
-        if (auto it = tile_colors_map.find(tile_id); it != tile_colors_map.end()) {
-            for_each_color(it->second, [&local_mult](std::size_t color_idx) { local_mult[color_idx]++; });
-        }
-    }
-
-    return local_mult;
-}
-
-/**
- * @brief Computes the weighted cost of placing a tile in a specific palette.
- *
- * @details
- * Uses palette-local multiplicity: for each color in the tile, compute
- * 1 / (1 + count_of_tiles_in_palette_with_this_color). Sum these values.
- * Lower values indicate better overlap with existing palette colors.
- *
- * @param tile_colors The colors of the tile to place
- * @param palette The candidate palette
- * @param tile_colors_map Map from tile ID to ColorSet for all tiles
- * @return The weighted cost (lower is better)
- */
-[[nodiscard]] double compute_weighted_cost_in_palette(
-    const ColorSet &tile_colors,
-    const PackedPalette &palette,
-    const std::map<PackableTile::Id, ColorSet> &tile_colors_map)
-{
-    auto local_mult = build_palette_local_multiplicity(palette, tile_colors_map);
-
-    double weighted_cost = 0.0;
-    for_each_color(tile_colors, [&weighted_cost, &local_mult](std::size_t color_idx) {
-        std::size_t count = 0;
-        if (auto it = local_mult.find(color_idx); it != local_mult.end()) {
-            count = it->second;
-        }
-        weighted_cost += 1.0 / static_cast<double>(1 + count);
-    });
-
-    return weighted_cost;
-}
-
-/**
- * @brief Computes the palette-local efficiency of a tile within its palette.
- *
- * @details
- * Efficiency measures how well a tile's colors are shared with other tiles in the same palette.
- * - 0 = no sharing (all colors unique to this tile)
- * - 1 = perfect sharing (all colors shared with many other tiles)
- *
- * This is used to identify the "worst fitting" tile when a palette is overloaded.
- *
- * @param tile_colors The colors of the tile
- * @param local_mult The palette-local multiplicity map
- * @return Efficiency value in [0, 1]
- */
-[[nodiscard]] double
-compute_palette_local_efficiency(const ColorSet &tile_colors, const std::map<std::size_t, std::size_t> &local_mult)
-{
-    std::size_t color_count = color_set_count(tile_colors);
-    if (color_count == 0) {
-        return 1.0;
-    }
-
-    // Compute weighted cost using palette-local multiplicity
-    double weighted_cost = 0.0;
-    for_each_color(tile_colors, [&weighted_cost, &local_mult](std::size_t color_idx) {
-        std::size_t count = 1; // Default to 1 if color not found (this tile is the only one with it)
-        if (auto it = local_mult.find(color_idx); it != local_mult.end()) {
-            count = it->second;
-        }
-        weighted_cost += 1.0 / static_cast<double>(count);
-    });
-
-    return 1.0 - (weighted_cost / static_cast<double>(color_count));
-}
 
 /**
  * @brief Finds the best palette for a tile, excluding forbidden palettes.
