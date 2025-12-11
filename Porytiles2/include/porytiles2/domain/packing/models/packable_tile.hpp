@@ -242,6 +242,24 @@ class PackableTile {
     ColorSet color_set_;
 };
 
+inline std::string to_string(const PackableTile::Id &id)
+{
+    return std::visit(
+        []<typename IdVariant>(const IdVariant &value) -> std::string {
+            using T = std::decay_t<IdVariant>;
+            if constexpr (std::is_same_v<T, PackableTile::HintId>) {
+                return "Hint(" + value.name + ")";
+            }
+            else if constexpr (std::is_same_v<T, PackableTile::PrefilledPaletteId>) {
+                return "Prefilled(" + std::to_string(value.index()) + ")";
+            }
+            else if constexpr (std::is_same_v<T, PackableTile::RegularId>) {
+                return "Regular(" + std::to_string(value.index) + ")";
+            }
+        },
+        id);
+}
+
 } // namespace porytiles2
 
 // Hash specializations for Id types (enables std::hash<PackableTile::Id>)
