@@ -8,6 +8,8 @@
 #include "porytiles2/domain/packing/algorithms/packing_metrics.hpp"
 #include "porytiles2/domain/packing/models/packable_tile.hpp"
 
+#include <algorithm>
+
 namespace {
 
 using namespace porytiles2;
@@ -87,6 +89,10 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::pack(const PackingInpu
     if (tile_pool.empty()) {
         return output;
     }
+
+    // Presort the tile pool so tiles with larger color counts come first (First Fit Decreasing heuristic)
+    std::ranges::sort(
+        tile_pool, [](const TileInfo &a, const TileInfo &b) { return a.tile.color_count() > b.tile.color_count(); });
 
     // Pop first tile and assign to first available palette
     TileInfo first_tile_info = std::move(tile_pool.front());
