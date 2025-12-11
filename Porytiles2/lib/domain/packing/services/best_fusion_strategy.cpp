@@ -134,6 +134,12 @@ ChainableResult<PackingOutput> BestFusionStrategy::pack(const PackingInput &inpu
     for (const auto &tile : input.tiles_) {
         tile_colors_map[tile.id()] = tile.color_set();
     }
+    // Add prefilled palette system tiles to the color map
+    // This ensures palette-local cost computation accounts for prefilled colors
+    for (const auto &prefilled_pal : input.prefilled_pals_) {
+        PackableTile::Id system_id = PackableTile::PrefilledPaletteId{prefilled_pal.hardware_index()};
+        tile_colors_map[system_id] = prefilled_pal.fixed_colors();
+    }
 
     // Helper to assign a tile
     auto assign_tile = [&output, &tile_colors_map](const PackableTile &tile) -> bool {
