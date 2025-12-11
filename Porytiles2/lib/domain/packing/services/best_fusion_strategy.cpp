@@ -1,47 +1,85 @@
 #include "porytiles2/domain/packing/services/best_fusion_strategy.hpp"
 
+#include <map>
+
 #include "porytiles2/domain/packing/algorithms/packing_initializer.hpp"
-#include "porytiles2/domain/packing/algorithms/packing_metrics.hpp"
 #include "porytiles2/domain/packing/models/packable_tile.hpp"
-#include "porytiles2/utilities/panic/panic.hpp"
 
 namespace {
 
 using namespace porytiles2;
 
 /**
- * @brief Computes the weighted cost of placing a tile in a palette.
+ * @brief Builds a palette-local multiplicity map (count of tiles containing each color).
  *
  * @details
- * Weighted cost = sum(1 / multiplicity[color]) for each color in the tile that
- * would be NEW to the palette. Colors already in the palette have zero cost.
+ * For each color, counts how many tiles currently in the palette contain that color.
+ * This is used for the weighted cost computation.
+ *
+ * @param palette The palette to analyze
+ * @param tile_colors_map Map from tile ID to ColorSet for all tiles
+ * @return Map from color index to count of tiles containing that color
  */
-[[nodiscard]] double compute_weighted_cost(
-    const ColorSet &tile_colors, const ColorSet &palette_colors, const std::map<std::size_t, std::size_t> &multiplicity)
+[[nodiscard]] std::map<std::size_t, std::size_t> build_palette_local_multiplicity(
+    const PackedPalette &palette, const std::map<PackableTile::Id, ColorSet> &tile_colors_map)
 {
-    double cost = 0.0;
+    std::map<std::size_t, std::size_t> local_mult;
 
-    for_each_color(tile_colors, [&cost, &palette_colors, &multiplicity](const std::size_t color_idx) {
-        // Only count colors not already in the palette
-        if (!palette_colors.test(ColorIndex{static_cast<std::uint8_t>(color_idx)})) {
-            const auto it = multiplicity.find(color_idx);
-            const std::size_t mult = it != multiplicity.end() ? it->second : 1;
-            cost += 1.0 / static_cast<double>(mult);
+    for (const auto &tile_id : palette.assigned_tile_ids()) {
+        if (auto it = tile_colors_map.find(tile_id); it != tile_colors_map.end()) {
+            for_each_color(it->second, [&local_mult](std::size_t color_idx) { local_mult[color_idx]++; });
         }
-    });
+    }
 
-    return cost;
+    return local_mult;
 }
 
 /**
- * @brief Finds the best palette for a tile based on weighted cost.
+ * @brief Computes the weighted cost of placing a tile in a specific palette.
+ *
+ * @details
+ * Uses palette-local multiplicity: for each color in the tile, compute
+ * 1 / (1 + count_of_tiles_in_palette_with_this_color). Sum these values.
+ * Lower values indicate better overlap with existing palette colors.
+ *
+ * @param tile_colors The colors of the tile to place
+ * @param palette The candidate palette
+ * @param tile_colors_map Map from tile ID to ColorSet for all tiles
+ * @return The weighted cost (lower is better)
+ */
+[[nodiscard]] double compute_weighted_cost_in_palette(
+    const ColorSet &tile_colors,
+    const PackedPalette &palette,
+    const std::map<PackableTile::Id, ColorSet> &tile_colors_map)
+{
+    auto local_mult = build_palette_local_multiplicity(palette, tile_colors_map);
+
+    double weighted_cost = 0.0;
+    for_each_color(tile_colors, [&weighted_cost, &local_mult](std::size_t color_idx) {
+        std::size_t count = 0;
+        if (auto it = local_mult.find(color_idx); it != local_mult.end()) {
+            count = it->second;
+        }
+        weighted_cost += 1.0 / static_cast<double>(1 + count);
+    });
+
+    return weighted_cost;
+}
+
+/**
+ * @brief Finds the best palette for a tile based on palette-local weighted cost.
+ *
+ * @details
+ * Uses palette-local multiplicity to find the best-fitting palette. The weighted cost
+ * measures how well the tile's colors overlap with colors already in the palette.
+ * Lower cost means better overlap.
  *
  * @return Index of the best palette, or nullopt if a new palette should be created
  */
 [[nodiscard]] std::optional<std::size_t> find_best_palette(
     const PackableTile &tile,
     const std::vector<PackedPalette> &palettes,
-    const std::map<std::size_t, std::size_t> &multiplicity)
+    const std::map<PackableTile::Id, ColorSet> &tile_colors_map)
 {
     std::optional<std::size_t> best_idx;
     double best_cost = std::numeric_limits<double>::max();
@@ -54,7 +92,7 @@ using namespace porytiles2;
             continue;
         }
 
-        const double cost = compute_weighted_cost(tile.color_set(), pal.color_set(), multiplicity);
+        double cost = compute_weighted_cost_in_palette(tile.color_set(), pal, tile_colors_map);
 
         if (cost < best_cost) {
             best_cost = cost;
@@ -63,7 +101,7 @@ using namespace porytiles2;
     }
 
     // If best cost >= tile's color count, prefer creating a new palette
-    // (no significant overlap benefit)
+    // (no significant overlap benefit - each color contributes 1.0 when count is 0)
     if (best_idx.has_value() && best_cost >= static_cast<double>(tile.color_count())) {
         return std::nullopt;
     }
@@ -88,12 +126,18 @@ ChainableResult<PackingOutput> BestFusionStrategy::pack(const PackingInput &inpu
         output.pals_.emplace_back(pal_pool.checkout(), input.pal_capacity_);
     }
 
-    // Build multiplicity map
-    std::map<std::size_t, std::size_t> multiplicity = build_multiplicity_map(input.tiles_, input.hints_);
+    // Build tile colors map for palette-local cost computation
+    std::map<PackableTile::Id, ColorSet> tile_colors_map;
+    for (const auto &hint : input.hints_) {
+        tile_colors_map[hint.id()] = hint.color_set();
+    }
+    for (const auto &tile : input.tiles_) {
+        tile_colors_map[tile.id()] = tile.color_set();
+    }
 
     // Helper to assign a tile
-    auto assign_tile = [&output, &multiplicity](const PackableTile &tile) -> bool {
-        auto maybe_best_idx = find_best_palette(tile, output.pals_, multiplicity);
+    auto assign_tile = [&output, &tile_colors_map](const PackableTile &tile) -> bool {
+        auto maybe_best_idx = find_best_palette(tile, output.pals_, tile_colors_map);
 
         if (maybe_best_idx.has_value()) {
             // Add to existing palette

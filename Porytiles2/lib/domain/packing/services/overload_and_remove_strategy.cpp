@@ -2,7 +2,6 @@
 
 #include <algorithm>
 #include <deque>
-#include <iostream>
 #include <map>
 #include <set>
 
@@ -330,7 +329,6 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::pack(const PackingInpu
                 TileInfo removed_info{PackableTile{worst_tile_id, colors_it->second}};
                 // Restore ALL accumulated forbidden palettes for this tile
                 removed_info.forbidden_palettes = forbidden_map[worst_tile_id];
-                std::cerr << "Restoring - " << to_string(removed_info.tile.id()) << std::endl;
                 tile_pool.push_back(std::move(removed_info));
             }
         }
