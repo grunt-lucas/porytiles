@@ -1,7 +1,7 @@
 #include "porytiles2/domain/packing/services/best_fusion_strategy.hpp"
 
-#include "porytiles2/domain/packing/algorithms/multiplicity_map_builder.hpp"
 #include "porytiles2/domain/packing/algorithms/packing_initializer.hpp"
+#include "porytiles2/domain/packing/algorithms/packing_metrics.hpp"
 #include "porytiles2/domain/packing/models/packable_tile.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 
