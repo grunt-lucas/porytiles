@@ -1,5 +1,6 @@
 #include "porytiles2/domain/packing/services/best_fusion_strategy.hpp"
 
+#include "porytiles2/domain/packing/algorithms/multiplicity_map_builder.hpp"
 #include "porytiles2/domain/packing/algorithms/packing_initializer.hpp"
 #include "porytiles2/domain/packing/models/packable_tile.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
@@ -7,26 +8,6 @@
 namespace {
 
 using namespace porytiles2;
-
-/**
- * @brief Builds a map from color index to multiplicity (how many tiles use that color).
- */
-[[nodiscard]] std::map<std::size_t, std::size_t>
-build_multiplicity_map(const std::vector<PackableTile> &tiles, const std::vector<PackableTile> &hints)
-{
-    std::map<std::size_t, std::size_t> multiplicity;
-
-    auto count_colors = [&multiplicity](const std::vector<PackableTile> &tile_list) {
-        for (const auto &tile : tile_list) {
-            for_each_color(tile.color_set(), [&multiplicity](std::size_t color_idx) { multiplicity[color_idx]++; });
-        }
-    };
-
-    count_colors(tiles);
-    count_colors(hints);
-
-    return multiplicity;
-}
 
 /**
  * @brief Computes the weighted cost of placing a tile in a palette.
