@@ -13,11 +13,18 @@
  *
  * @section global_vs_local CRITICAL DISTINCTION: Global vs Palette-Local Multiplicity
  *
- * @subsection global_mult 1. GLOBAL MULTIPLICITY (build_global_multiplicity_map)
+ * @subsection global_mult 1. GLOBAL MULTIPLICITY (build_global_multiplicity_map, compute_average_multiplicity)
  * - Counts how many tiles across ALL INPUT TILES contain each color
  * - Computed ONCE at the start of packing
  * - DOES NOT vary per palette
- * - Use case: Prioritizing rare vs common colors across the entire input
+ * - Use cases:
+ *   - **Problem difficulty estimation**: Average multiplicity (Card(T)/|A|) correlates strongly (r=0.784) with
+ *     problem difficulty per Section 4.3 of Grange et al.
+ *   - **Algorithm selection**: Different algorithms perform better at different multiplicity ranges (Section 4.4.2):
+ *     - Low multiplicity (<15): Overload-and-Remove competitive with genetic algorithms
+ *     - Medium multiplicity (15-35): Overload-and-Remove decent, genetic algorithms better
+ *     - High multiplicity (35-40): Greedy algorithms become competitive
+ *     - Very high multiplicity (>40): Best Fusion optimal for speed/quality tradeoff
  *
  * @subsection local_mult 2. PALETTE-LOCAL MULTIPLICITY (build_palette_local_multiplicity)
  * - Counts how many tiles within a SPECIFIC PALETTE contain each color
@@ -43,6 +50,10 @@
 
 namespace porytiles2 {
 
+// ============================================================================
+// GLOBAL MULTIPLICITY FUNCTIONS
+// ============================================================================
+
 /**
  * @brief Builds a GLOBAL multiplicity map from all input tiles.
  *
@@ -52,17 +63,57 @@ namespace porytiles2 {
  *
  * Example: If color index 42 appears in 5 different input tiles, then map[42] = 5.
  *
- * @warning This function computes GLOBAL multiplicity across all tiles. For palette
- * placement decisions, use build_palette_local_multiplicity() instead.
+ * Primary use cases (see Section 4.3-4.4 of Grange et al.):
+ *   - Computing average multiplicity for problem difficulty estimation
+ *   - Algorithm selection based on instance characteristics
+ *
+ * @warning This function computes GLOBAL multiplicity across all tiles. For palette placement decisions, use
+ * build_palette_local_multiplicity() instead. Global multiplicity does NOT help distinguish between palettes.
  *
  * @param tiles The regular tiles to count colors from
  * @param hints The hint tiles to count colors from (processed same as regular tiles)
  * @return Map from color index to count of tiles containing that color
  *
- * @see build_palette_local_multiplicity For palette-specific multiplicity
+ * @see compute_average_multiplicity Convenience function that computes the scalar difficulty metric
+ * @see build_palette_local_multiplicity For palette-specific multiplicity used in placement decisions
  */
 [[nodiscard]] std::map<std::size_t, std::size_t>
 build_global_multiplicity_map(const std::vector<PackableTile> &tiles, const std::vector<PackableTile> &hints);
+
+/**
+ * @brief Computes the average multiplicity of the input tiles (problem difficulty metric).
+ *
+ * @details
+ * Computes Card(T) / |A|, where:
+ *   - Card(T) = sum of all tile sizes (total color references across all tiles)
+ *   - |A| = number of unique colors
+ *
+ * This metric is proposed in Section 4.3 of Grange et al. (2017) as a predictor of problem difficulty, with
+ * r=0.784 correlation to actual algorithm performance variance.
+ *
+ * Interpretation:
+ *   - Low values (~1-5): Problem approaches standard Bin Packing (little color sharing)
+ *   - Medium values (~5-20): Moderate color sharing, typical Pagination instances
+ *   - High values (>20): Dense color sharing, more challenging for heuristics
+ *
+ * Algorithm selection guidance (Section 4.4.2):
+ *   - avg_mult < 15: Overload-and-Remove competitive with genetic algorithms
+ *   - 15 <= avg_mult < 35: Genetic algorithms preferred, Overload-and-Remove acceptable
+ *   - 35 <= avg_mult < 40: Greedy algorithms become competitive
+ *   - avg_mult >= 40: Best Fusion optimal for speed/quality tradeoff
+ *
+ * @param tiles The regular tiles to analyze
+ * @param hints The hint tiles to analyze
+ * @return Average multiplicity (Card(T) / |A|), or 0.0 if no colors exist
+ *
+ * @see build_global_multiplicity_map Which this function uses internally
+ */
+[[nodiscard]] double
+compute_average_multiplicity(const std::vector<PackableTile> &tiles, const std::vector<PackableTile> &hints);
+
+// ============================================================================
+// PALETTE-LOCAL MULTIPLICITY FUNCTIONS
+// ============================================================================
 
 /**
  * @brief Builds a PALETTE-LOCAL multiplicity map for a specific palette.

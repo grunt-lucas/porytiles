@@ -12,7 +12,6 @@
   - Start working on a JSON impl that can read/write tilesets from a standardized JSON format 
 
 ## Palette Packing
-- Implement overload-and-remove
 - Implement classic dfs and bfs
 - Implement a "shotgun approach" strategy that tries different sub-strategies until success
   - the paper has some ideas on which algorithm to use depending on problem set's "multiplicity"

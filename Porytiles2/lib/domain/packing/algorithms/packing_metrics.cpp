@@ -1,6 +1,12 @@
 #include "porytiles2/domain/packing/algorithms/packing_metrics.hpp"
 
+#include <ranges>
+
 namespace porytiles2 {
+
+// ============================================================================
+// GLOBAL MULTIPLICITY FUNCTIONS
+// ============================================================================
 
 std::map<std::size_t, std::size_t>
 build_global_multiplicity_map(const std::vector<PackableTile> &tiles, const std::vector<PackableTile> &hints)
@@ -18,6 +24,31 @@ build_global_multiplicity_map(const std::vector<PackableTile> &tiles, const std:
 
     return multiplicity;
 }
+
+double compute_average_multiplicity(const std::vector<PackableTile> &tiles, const std::vector<PackableTile> &hints)
+{
+    auto global_mult = build_global_multiplicity_map(tiles, hints);
+
+    if (global_mult.empty()) {
+        return 0.0;
+    }
+
+    // Card(T) = sum of all multiplicities = sum of tile sizes
+    std::size_t cardinality = 0;
+    for (const auto &count : global_mult | std::views::values) {
+        cardinality += count;
+    }
+
+    // |A| = number of unique colors
+    const std::size_t num_colors = global_mult.size();
+
+    // Average multiplicity = Card(T) / |A|
+    return static_cast<double>(cardinality) / static_cast<double>(num_colors);
+}
+
+// ============================================================================
+// PALETTE-LOCAL MULTIPLICITY FUNCTIONS
+// ============================================================================
 
 std::map<std::size_t, std::size_t> build_palette_local_multiplicity(
     const PackedPalette &palette, const std::map<PackableTile::Id, ColorSet> &tile_colors_map)
@@ -43,7 +74,7 @@ double compute_weighted_cost_in_palette(
     double weighted_cost = 0.0;
     for_each_color(tile_colors, [&weighted_cost, &local_mult](std::size_t color_idx) {
         std::size_t count = 0;
-        if (auto it = local_mult.find(color_idx); it != local_mult.end()) {
+        if (const auto it = local_mult.find(color_idx); it != local_mult.end()) {
             count = it->second;
         }
         weighted_cost += 1.0 / static_cast<double>(1 + count);
@@ -55,7 +86,7 @@ double compute_weighted_cost_in_palette(
 double
 compute_palette_local_efficiency(const ColorSet &tile_colors, const std::map<std::size_t, std::size_t> &local_mult)
 {
-    std::size_t color_count = color_set_count(tile_colors);
+    const std::size_t color_count = color_set_count(tile_colors);
     if (color_count == 0) {
         return 1.0;
     }
@@ -66,7 +97,7 @@ compute_palette_local_efficiency(const ColorSet &tile_colors, const std::map<std
     double weighted_cost = 0.0;
     for_each_color(tile_colors, [&weighted_cost, &local_mult](std::size_t color_idx) {
         std::size_t count = 1; // Default to 1 if color not found (this tile is the only one with it)
-        if (auto it = local_mult.find(color_idx); it != local_mult.end()) {
+        if (const auto it = local_mult.find(color_idx); it != local_mult.end()) {
             count = it->second;
         }
         weighted_cost += 1.0 / static_cast<double>(count);
