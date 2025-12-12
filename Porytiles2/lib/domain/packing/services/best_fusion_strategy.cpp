@@ -118,12 +118,13 @@ ChainableResult<PackingOutput> BestFusionStrategy::pack(const PackingInput &inpu
     }
 
     /*
-     * TODO: right now, we mix together the hints and regular tiles before sorting. Do we want this? I think it's
-     * probably ok, since hints still guarantee that colors in the same hint will be in the same palette. And if the
-     * user supplied hints that are larger than any individual tile, they'll go first as expected. However, I think it
-     * makes sense to allow regular tiles that are large to go before smaller hints, since this probably helps to find
-     * an optimal result. Since that larger tile *has* to get put somewhere in order for a solution to be found. No
-     * sense running the hint first, only to block ourselves from finding a possible solution.
+     * Right now, we mix together the hints and regular tiles before sorting. Do we want this? I think it's probably ok,
+     * since hints still guarantee that colors in the same hint will be in the same palette. And if the user supplied
+     * hints that are larger than any individual tile, they'll go first as expected. However, I think it makes sense to
+     * allow regular tiles that are large to go before smaller hints, since this probably helps to find an optimal
+     * result -- that larger tile *has to* get put somewhere in order for a solution to be found. No sense placing the
+     * hint first, only to block ourselves from finding a possible solution down the line. In other words, the promised
+     * hint precondition is not violated, and we potentially get a better solution.
      */
 
     // Presort the tile pool so tiles with larger color counts come first (First Fit Decreasing heuristic)
