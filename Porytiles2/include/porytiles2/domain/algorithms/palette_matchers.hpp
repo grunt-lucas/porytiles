@@ -192,20 +192,20 @@ template <SupportsTransparency ColorType, std::size_t N = 0>
  * @brief Finds the best palette match(es) for a tile (extrinsic transparency).
  *
  * @details
- * This function matches a tile against a vector of palettes and returns the best match(es):
+ * This function matches a tile against a container of palettes and returns the best match(es):
  * - If any palettes completely cover the tile, returns ALL complete matches (ignoring top_n)
  * - If no palettes completely cover the tile, returns up to top_n best matches sorted by quality
  *
  * Quality is determined by the number of missing_colors (fewer is better). If multiple palettes have the same number of
- * missing colors, they maintain their original order in the palettes vector.
+ * missing colors, they maintain their original order in the palettes container.
  *
  * This overload supports both intrinsic (alpha=0) and extrinsic transparency checking. This overload is only available
  * for color types that support extrinsic transparency.
  *
  * @tparam ColorType The color type of the palette and tile, must support extrinsic transparency
- * @tparam N The palette size (0 for dynamic, non-zero for fixed-size)
+ * @tparam PaletteContainer A container type (e.g., std::vector, std::array) holding Palette objects
  * @param tile The PixelTile to match against the palettes
- * @param palettes The vector of Palettes to check for color coverage
+ * @param palettes The container of Palettes to check for color coverage
  * @param extrinsic The extrinsic transparency value to check pixels against
  * @param top_n Maximum number of results to return when no complete match exists (ignored if complete matches found)
  * @pre palettes is not empty
@@ -219,16 +219,13 @@ template <SupportsTransparency ColorType, std::size_t N = 0>
  * two mutually exclusive sets—complete matches (is_covered = true) or partial matches (is_covered = false)—never
  * returning a heterogeneous mixture.
  */
-template <SupportsTransparency ColorType, std::size_t N = 0>
+template <SupportsTransparency ColorType, typename PaletteContainer>
 [[nodiscard]] std::vector<PaletteMatchResult<ColorType>> match_or_best(
-    const PixelTile<ColorType> &tile,
-    const std::vector<Palette<ColorType, N>> &palettes,
-    const ColorType &extrinsic,
-    std::size_t top_n)
+    const PixelTile<ColorType> &tile, const PaletteContainer &palettes, const ColorType &extrinsic, std::size_t top_n)
     requires requires(const ColorType &c) { c.is_transparent(c); }
 {
     if (palettes.empty()) {
-        panic("palettes vector is empty");
+        panic("palettes container is empty");
     }
     if (top_n == 0) {
         panic("top_n must be greater than 0");

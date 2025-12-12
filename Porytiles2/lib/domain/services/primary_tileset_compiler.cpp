@@ -122,7 +122,7 @@ class CompilerTask {
     std::vector<Metatile<Rgba32>> porymap_metatiles_{};
     std::vector<PixelTile<Rgba32>> porymap_pixel_rgba_{};
     std::vector<CanonicalPixelTile<Rgba32>> porymap_canonical_pixel_rgba_{};
-    std::vector<Palette<Rgba32, pal::max_size>> new_porymap_pals_{};
+    std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> new_porymap_pals_{};
 
     // Working data
     std::unique_ptr<PorymapTilesetComponent> new_porymap_component_{};
@@ -250,9 +250,8 @@ ChainableResult<void> CompilerTask::pipeline_step3_setup_working_data()
 
     if (pals_edit_mode_ == ArtifactEditMode::locked) {
         // Collect all palettes from existing Porymap component
-        new_porymap_pals_.reserve(pal::num_pals);
         for (std::size_t i = 0; i < pal::num_pals; i++) {
-            new_porymap_pals_.push_back(tileset_.porymap_component().pals()[i]);
+            new_porymap_pals_[i] = tileset_.porymap_component().pals()[i];
         }
     }
     else if (pals_edit_mode_ == ArtifactEditMode::patch) {
@@ -602,7 +601,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing(const std::v
         const auto &maybe_packed_pal = pal_packing.pals_.at(i);
         if (maybe_packed_pal.has_value()) {
             // Copy over the packed palette
-            new_porymap_pals_.push_back(maybe_packed_pal.value());
+            new_porymap_pals_[i] = maybe_packed_pal.value();
         }
         else if (tileset_.porytiles_component().pal_at(i).has_value()) {
             /*
@@ -622,7 +621,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing(const std::v
              * overworld/shop UI. Here we just copy them over as-is. Again, if for some reason the user had edited
              * them, let's not clobber anything unnecessarily.
              */
-            new_porymap_pals_.push_back(tileset_.porymap_component().pal_at(i));
+            new_porymap_pals_[i] = tileset_.porymap_component().pal_at(i);
         }
     }
 

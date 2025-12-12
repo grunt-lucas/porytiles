@@ -547,7 +547,7 @@ TEST(MatchOrBestTest, EmptyPalettes_Panics)
     std::vector<Palette<Rgba32>> palettes; // Empty
 
     // Act & Assert: Should panic
-    EXPECT_DEATH({ std::ignore = match_or_best(tile, palettes, rgba_magenta, 1); }, "palettes vector is empty");
+    EXPECT_DEATH({ std::ignore = match_or_best(tile, palettes, rgba_magenta, 1); }, "palettes container is empty");
 }
 
 TEST(MatchOrBestTest, TopNZero_Panics)
