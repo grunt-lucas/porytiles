@@ -1,6 +1,9 @@
 #include "porytiles2/domain/packing/services/best_fusion_strategy.hpp"
 
+#include <algorithm>
+#include <deque>
 #include <map>
+#include <set>
 
 #include "porytiles2/domain/packing/algorithms/packing_initializer.hpp"
 #include "porytiles2/domain/packing/algorithms/packing_metrics.hpp"
@@ -87,7 +90,7 @@ ChainableResult<PackingOutput> BestFusionStrategy::pack(const PackingInput &inpu
 
     // Helper to assign a tile
     auto assign_tile = [&output, &tile_colors_map](const PackableTile &tile) -> bool {
-        auto maybe_best_idx = find_best_palette(tile, output.pals_, tile_colors_map);
+        const auto maybe_best_idx = find_best_palette(tile, output.pals_, tile_colors_map);
 
         if (maybe_best_idx.has_value()) {
             // Add to existing palette
@@ -118,23 +121,35 @@ ChainableResult<PackingOutput> BestFusionStrategy::pack(const PackingInput &inpu
         return false;
     };
 
-    /*
-     * TODO: do we want to create a sorted tile pool here like overload-and-remove?
-     */
-
-    // Process hints first
+    // Create pool of tiles to be assigned
+    std::vector<PackableTile> tile_pool{};
     for (const auto &hint : input.hints_) {
-        if (!assign_tile(hint)) {
-            // TODO: better error message
-            return FormattableError{"Best Fusion: cannot assign hint tile  - no palette has room"};
-        }
+        tile_pool.emplace_back(hint);
+    }
+    for (const auto &tile : input.tiles_) {
+        tile_pool.emplace_back(tile);
     }
 
-    // Process regular tiles
-    for (const auto &tile : input.tiles_) {
+    if (tile_pool.empty()) {
+        return output;
+    }
+
+    /*
+     * TODO: right now, we mix together the hints and regular tiles before sorting. Do we want this? I think it's
+     * probably ok, since hints still guarantee that colors in the same hint will be in the same palette. And if the
+     * user supplied hints that are larger than any individual tile, they'll go first as expected. However, I think it
+     * makes sense to allow regular tiles that are large to go before smaller hints, since this probably helps to find
+     * an optimal result. Since that larger tile *has* to get put somewhere in order for a solution to be found. No
+     * sense running the hint first, only to block ourselves from finding a possible solution.
+     */
+
+    // Presort the tile pool so tiles with larger color counts come first (First Fit Decreasing heuristic)
+    std::ranges::sort(
+        tile_pool, [](const PackableTile &a, const PackableTile &b) { return a.color_count() > b.color_count(); });
+
+    for (const auto &tile : tile_pool) {
         if (!assign_tile(tile)) {
-            // TODO: better error message
-            return FormattableError{"Best Fusion: cannot assign regular tile  - no palette has room"};
+            return FormattableError{"Best Fusion: cannot assign tile  - no palette has room"};
         }
     }
 
