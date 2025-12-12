@@ -40,6 +40,26 @@ namespace {
 using namespace porytiles2;
 
 /**
+ * @brief Result type for tile assignment operations during compilation.
+ *
+ * @details
+ * Encapsulates the outcome of attempting to assign a tile via palette matching. Contains all information needed for
+ * error reporting in failure cases.
+ */
+struct TileAssignmentResult {
+    enum class Status { success, no_covering_pal, tile_not_found, tile_limit_reached };
+
+    Status status{Status::success};
+    std::optional<TilemapEntry> entry{};
+
+    // Error reporting data (populated on failure)
+    std::vector<PaletteMatchResult<Rgba32>> match_results{};
+    PixelTile<IndexPixel> index_tile{};
+    std::size_t pal_index{0};
+    Palette<Rgba32, pal::max_size> matched_pal{};
+};
+
+/**
  * @brief Task encapsulating the compilation operation for primary tilesets.
  *
  * @details
@@ -75,14 +95,20 @@ class CompilerTask {
     [[nodiscard]] ChainableResult<void> pipeline_step1_process_porytiles_input();
     [[nodiscard]] ChainableResult<void> pipeline_step2_process_porymap_input();
     [[nodiscard]] ChainableResult<void> pipeline_step3_setup_working_data();
-    [[nodiscard]] ChainableResult<void> pipeline_step4b_match_tiles_pals_patch_or_locked();
-    [[nodiscard]] ChainableResult<void> pipeline_step4a_match_tiles_pals_optimized();
+    [[nodiscard]] ChainableResult<void> pipeline_step4_match_tiles_pals();
     [[nodiscard]] std::unique_ptr<Tileset> pipeline_step5_assemble_output();
 
-    // Pipeline helpers
+    // Pipeline helpers - tile matching
+    [[nodiscard]] std::optional<TilemapEntry> pipeline_helper_try_reuse_porymap_tile(std::size_t tile_index);
+    [[nodiscard]] TileAssignmentResult
+    pipeline_helper_assign_tile_via_pal_match(std::size_t tile_index, const PixelTile<Rgba32> &porytiles_tile);
+
+    // Pipeline helpers - palette packing
     [[nodiscard]] ChainableResult<void> pipeline_helper_run_pal_packing(const std::vector<PaletteHint> &hints);
     [[nodiscard]] ChainableResult<ColorIndexMap<Rgba32>>
     pipeline_helper_build_color_index_map(const std::vector<PaletteHint> &hints, std::size_t color_count_limit) const;
+
+    // Pipeline helpers - error emission
     void pipeline_helper_emit_no_matching_tile_error(
         std::size_t tile_index,
         const PixelTile<IndexPixel> &index_tile,
@@ -157,15 +183,7 @@ ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
 
     PT_TRY_CALL_PASS_ERR(pipeline_step3_setup_working_data(), std::unique_ptr<Tileset>);
 
-    if (tiles_edit_mode_ == ArtifactEditMode::optimize && pals_edit_mode_ == ArtifactEditMode::optimize) {
-        PT_TRY_CALL_PASS_ERR(pipeline_step4a_match_tiles_pals_optimized(), std::unique_ptr<Tileset>);
-    }
-    else if (tiles_edit_mode_ != ArtifactEditMode::optimize && pals_edit_mode_ != ArtifactEditMode::optimize) {
-        PT_TRY_CALL_PASS_ERR(pipeline_step4b_match_tiles_pals_patch_or_locked(), std::unique_ptr<Tileset>);
-    }
-    else {
-        panic("TODO: impl this case");
-    }
+    PT_TRY_CALL_PASS_ERR(pipeline_step4_match_tiles_pals(), std::unique_ptr<Tileset>);
 
     return pipeline_step5_assemble_output();
 }
@@ -297,177 +315,60 @@ ChainableResult<void> CompilerTask::pipeline_step3_setup_working_data()
     return {};
 }
 
-ChainableResult<void> CompilerTask::pipeline_step4a_match_tiles_pals_optimized()
+ChainableResult<void> CompilerTask::pipeline_step4_match_tiles_pals()
 {
-    // Preconditions
-    assert_or_panic(
-        tiles_edit_mode_ == ArtifactEditMode::optimize, "tiles.png edit mode must be 'optimize' in this method");
-    assert_or_panic(pals_edit_mode_ == ArtifactEditMode::optimize, "pals edit mode must be 'optimize' in this method");
+    // Temporary: pals:patch is not yet supported by underlying service code
+    if (pals_edit_mode_ == ArtifactEditMode::patch) {
+        panic("TODO: implement handling for pals ArtifactEditMode::patch");
+    }
 
     bool matched_all_tiles = true;
     for (std::size_t i = 0; i < porytiles_pixel_rgba_.size(); i++) {
         const auto &porytiles_tile = porytiles_pixel_rgba_[i];
 
-        // TODO: what if multiple pals match?
-        std::vector<PaletteMatchResult<Rgba32>> matches =
-            match_or_best(porytiles_tile, new_porymap_pals_, extrinsic_transparency_.value(), 1);
-
-        // CASE 1: found covering pal
-        if (matches.at(0).is_covered) {
-            const auto pal_index = matches.at(0).pal_index;
-            const auto &matched_pal = new_porymap_pals_.at(pal_index);
-            const auto index_tile =
-                index_tile_from_color_tile(porytiles_tile, matched_pal, extrinsic_transparency_.value());
-            CanonicalPixelTile canonical_index_tile{index_tile};
-            const auto maybe_tile_index = tiles_workspace_->first_occurrence_of(canonical_index_tile);
-
-            // CASE 1a: tile already present
-            if (maybe_tile_index.has_value()) {
-                const auto tile_index = maybe_tile_index.value();
-                const auto workspace_tile = tiles_workspace_->tile_at(tile_index);
-                const bool pt_to_pm_hflip = canonical_index_tile.h_flip() ^ workspace_tile.h_flip();
-                const bool pt_to_pm_vflip = canonical_index_tile.v_flip() ^ workspace_tile.v_flip();
-                const TilemapEntry new_entry{tile_index, pal_index, pt_to_pm_hflip, pt_to_pm_vflip};
-                new_porymap_component_->push_back_tilemap_entry(new_entry);
-            }
-            // CASE 1b: tile not found
-            else {
-                if (tiles_workspace_->at_capacity()) {
-                    matched_all_tiles = false;
-                    pipeline_helper_emit_tile_limit_error(i, tiles_workspace_->capacity());
-                    break;
-                }
-                const std::size_t inserted_index = tiles_workspace_->insert_tile(canonical_index_tile);
-                const auto workspace_tile = tiles_workspace_->tile_at(inserted_index);
-                const TilemapEntry new_entry{
-                    inserted_index,
-                    pal_index,
-                    static_cast<bool>(canonical_index_tile.h_flip() ^ workspace_tile.h_flip()),
-                    static_cast<bool>(canonical_index_tile.v_flip() ^ workspace_tile.v_flip())};
-                new_porymap_component_->push_back_tilemap_entry(new_entry);
+        // In non-optimize mode, first try to reuse existing porymap tile
+        if (tiles_edit_mode_ != ArtifactEditMode::optimize) {
+            auto maybe_tilemap_entry = pipeline_helper_try_reuse_porymap_tile(i);
+            if (maybe_tilemap_entry.has_value()) {
+                new_porymap_component_->push_back_tilemap_entry(maybe_tilemap_entry.value());
+                continue;
             }
         }
 
-        // CASE 2: no covering pal
-        else {
-            panic("this should have failed earlier after packing step");
-        }
-    }
+        // Assign via palette matching (shared logic for all modes)
+        auto tile_assignment_result = pipeline_helper_assign_tile_via_pal_match(i, porytiles_tile);
 
-    if (!matched_all_tiles) {
-        return ChainableResult<void>{FormattableError{"failed to match all Porytiles tiles"}};
-    }
+        switch (tile_assignment_result.status) {
+        case TileAssignmentResult::Status::success:
+            new_porymap_component_->push_back_tilemap_entry(tile_assignment_result.entry.value());
+            break;
 
-    return {};
-}
-
-ChainableResult<void> CompilerTask::pipeline_step4b_match_tiles_pals_patch_or_locked()
-{
-    // Preconditions
-    assert_or_panic(
-        tiles_edit_mode_ != ArtifactEditMode::optimize, "tiles.png edit mode cannot be 'optimize' in this method");
-    assert_or_panic(
-        pals_edit_mode_ != ArtifactEditMode::optimize, "pals edit mode cannot be 'optimize' in this method");
-    /*
-     * TODO: this is wrong. E.g. user could be asking for a tiles:locked build but have added new metatiles. We need to
-     * account for adding or removing metatiles, since that is still allowed during a tiles/pals locked build.
-     */
-    assert_or_panic(
-        porytiles_pixel_rgba_.size() == porymap_pixel_rgba_.size(),
-        "porytiles_pixel_rgba_.size() != porymap_pixel_rgba_.size()");
-    assert_or_panic(
-        porytiles_pixel_rgba_.size() == porytiles_canonical_pixel_rgba_.size(),
-        "porytiles_pixel_rgba_.size() != porytiles_canonical_pixel_rgba_.size()");
-    assert_or_panic(
-        porymap_pixel_rgba_.size() == porymap_canonical_pixel_rgba_.size(),
-        "porymap_pixel_rgba_.size() != porymap_canonical_pixel_rgba_.size()");
-    assert_or_panic(
-        porymap_tilemap_entries_.size() == porymap_pixel_rgba_.size(),
-        "porymap_tilemap_entries_.size() != porymap_pixel_rgba_.size()");
-
-    bool matched_all_tiles = true;
-    for (std::size_t i = 0; i < porytiles_pixel_rgba_.size(); i++) {
-        const auto &porytiles_tile = porytiles_pixel_rgba_[i];
-        const auto &porymap_tile = porymap_pixel_rgba_[i];
-        const auto &canonical_porytiles_tile = porytiles_canonical_pixel_rgba_[i];
-        const auto &canonical_porymap_tile = porymap_canonical_pixel_rgba_[i];
-        const auto &porymap_tilemap_entry = porymap_tilemap_entries_[i];
-
-        // CASE 1: Porytiles component tile exactly matches Porymap component
-        if (porytiles_tile.equals_ignoring_transparency(porymap_tile, extrinsic_transparency_)) {
-            new_porymap_component_->push_back_tilemap_entry(porymap_tilemap_entry);
-        }
-
-        // CASE 2: Porytiles component tile matches Porymap component under flip transformation
-        else if (canonical_porytiles_tile.equals_ignoring_transparency(
-                     canonical_porymap_tile, extrinsic_transparency_)) {
-            // XOR flip bits to compute transformation from Porytiles orientation to Porymap orientation
-            const bool pt_to_pm_hflip = canonical_porytiles_tile.h_flip() ^ canonical_porymap_tile.h_flip();
-            const bool pt_to_pm_vflip = canonical_porytiles_tile.v_flip() ^ canonical_porymap_tile.v_flip();
-            TilemapEntry new_entry{
-                porymap_tilemap_entry.tile_index(),
-                porymap_tilemap_entry.pal_index(),
-                static_cast<bool>(porymap_tilemap_entry.h_flip() ^ pt_to_pm_hflip),
-                static_cast<bool>(porymap_tilemap_entry.v_flip() ^ pt_to_pm_vflip)};
-            new_porymap_component_->push_back_tilemap_entry(new_entry);
-        }
-
-        // CASE 3: New tile, compute which pal to use, compute (or create) tile to use
-        else {
-            // TODO: top_n matches should be configurable
-            // TODO: what if multiple pals match?
-            std::vector<PaletteMatchResult<Rgba32>> matches =
-                match_or_best(porytiles_tile, new_porymap_pals_, extrinsic_transparency_.value(), 1);
-
-            // CASE 3a: found covering pal
-            if (matches.at(0).is_covered) {
-                const auto pal_index = matches.at(0).pal_index;
-                const auto &matched_pal = new_porymap_pals_.at(pal_index);
-                const auto index_tile =
-                    index_tile_from_color_tile(porytiles_tile, matched_pal, extrinsic_transparency_.value());
-                CanonicalPixelTile canonical_index_tile{index_tile};
-                const auto maybe_tile_index = tiles_workspace_->first_occurrence_of(canonical_index_tile);
-
-                // CASE 3a-i: tile already present
-                if (maybe_tile_index.has_value()) {
-                    const auto tile_index = maybe_tile_index.value();
-                    const auto workspace_tile = tiles_workspace_->tile_at(tile_index);
-                    const bool pt_to_pm_hflip = canonical_index_tile.h_flip() ^ workspace_tile.h_flip();
-                    const bool pt_to_pm_vflip = canonical_index_tile.v_flip() ^ workspace_tile.v_flip();
-                    const TilemapEntry new_entry{tile_index, pal_index, pt_to_pm_hflip, pt_to_pm_vflip};
-                    new_porymap_component_->push_back_tilemap_entry(new_entry);
-                }
-
-                // CASE 3a-ii: tile not found and tiles.png is locked
-                else if (!maybe_tile_index.has_value() && tiles_edit_mode_ == ArtifactEditMode::locked) {
-                    matched_all_tiles = false;
-                    // TODO: pass index_tile or canonical_index_tile depending on user setting for the tiles.png output
-                    pipeline_helper_emit_no_matching_tile_error(i, index_tile, pal_index, matched_pal);
-                }
-
-                // CASE 3a-iii: tile not found and tiles.png is not locked (i.e. it's patch)
-                else {
-                    if (tiles_workspace_->at_capacity()) {
-                        matched_all_tiles = false;
-                        pipeline_helper_emit_tile_limit_error(i, tiles_workspace_->capacity());
-                        break;
-                    }
-                    const std::size_t inserted_index = tiles_workspace_->insert_tile(canonical_index_tile);
-                    const auto workspace_tile = tiles_workspace_->tile_at(inserted_index);
-                    const TilemapEntry new_entry{
-                        inserted_index,
-                        pal_index,
-                        static_cast<bool>(canonical_index_tile.h_flip() ^ workspace_tile.h_flip()),
-                        static_cast<bool>(canonical_index_tile.v_flip() ^ workspace_tile.v_flip())};
-                    new_porymap_component_->push_back_tilemap_entry(new_entry);
-                }
+        case TileAssignmentResult::Status::no_covering_pal:
+            if (pals_edit_mode_ == ArtifactEditMode::optimize) {
+                panic("ArtifactEditMode::optimize but no covering pal found - this should have failed at packing step");
             }
+            matched_all_tiles = false;
+            pipeline_helper_emit_no_matching_pal_error(i, tile_assignment_result.match_results);
+            break;
 
-            // CASE 3b: no covering pal
-            else {
-                matched_all_tiles = false;
-                pipeline_helper_emit_no_matching_pal_error(i, matches);
-            }
+        case TileAssignmentResult::Status::tile_not_found:
+            matched_all_tiles = false;
+            pipeline_helper_emit_no_matching_tile_error(
+                i,
+                tile_assignment_result.index_tile,
+                tile_assignment_result.pal_index,
+                tile_assignment_result.matched_pal);
+            break;
+
+        case TileAssignmentResult::Status::tile_limit_reached:
+            matched_all_tiles = false;
+            pipeline_helper_emit_tile_limit_error(i, tiles_workspace_->capacity());
+            break;
+        }
+
+        // Early exit on tile limit, no point printing a bazillion "limit hit" errors after first one
+        if (tile_assignment_result.status == TileAssignmentResult::Status::tile_limit_reached) {
+            break;
         }
     }
 
@@ -516,7 +417,7 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step5_assemble_output()
         else {
             layer_type = LayerType::normal;
         }
-        MetatileAttribute new_attr{layer_type, 0};
+        const MetatileAttribute new_attr{layer_type, 0};
         new_porymap_component_->push_back_attribute(new_attr);
     }
 
@@ -543,6 +444,111 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step5_assemble_output()
     // Create the full Tileset and return
     return std::make_unique<Tileset>(
         tileset_.name(), std::move(new_porytiles_component), std::move(new_porymap_component_));
+}
+
+std::optional<TilemapEntry> CompilerTask::pipeline_helper_try_reuse_porymap_tile(std::size_t tile_index)
+{
+    /*
+     * TODO: this is wrong. E.g. user could be asking for a tiles:locked build but have added new metatiles. We need to
+     * account for adding or removing metatiles, since that is still allowed during a tiles/pals locked build.
+     */
+    // Preconditions for non-optimize mode
+    assert_or_panic(tile_index < porytiles_pixel_rgba_.size(), "tile_index out of bounds for porytiles_pixel_rgba_");
+    assert_or_panic(tile_index < porymap_pixel_rgba_.size(), "tile_index out of bounds for porymap_pixel_rgba_");
+    assert_or_panic(
+        tile_index < porytiles_canonical_pixel_rgba_.size(),
+        "tile_index out of bounds for porytiles_canonical_pixel_rgba_");
+    assert_or_panic(
+        tile_index < porymap_canonical_pixel_rgba_.size(),
+        "tile_index out of bounds for porymap_canonical_pixel_rgba_");
+    assert_or_panic(
+        tile_index < porymap_tilemap_entries_.size(), "tile_index out of bounds for porymap_tilemap_entries_");
+
+    const auto &porytiles_tile = porytiles_pixel_rgba_[tile_index];
+    const auto &porymap_tile = porymap_pixel_rgba_[tile_index];
+    const auto &canonical_porytiles_tile = porytiles_canonical_pixel_rgba_[tile_index];
+    const auto &canonical_porymap_tile = porymap_canonical_pixel_rgba_[tile_index];
+    const auto &porymap_tilemap_entry = porymap_tilemap_entries_[tile_index];
+
+    // CASE: Exact match - Porytiles tile exactly matches Porymap tile
+    if (porytiles_tile.equals_ignoring_transparency(porymap_tile, extrinsic_transparency_)) {
+        return porymap_tilemap_entry;
+    }
+
+    // CASE: Canonical match - tiles match under flip transformation
+    if (canonical_porytiles_tile.equals_ignoring_transparency(canonical_porymap_tile, extrinsic_transparency_)) {
+        // XOR flip bits to compute transformation from Porytiles orientation to Porymap orientation
+        const bool pt_to_pm_hflip = canonical_porytiles_tile.h_flip() ^ canonical_porymap_tile.h_flip();
+        const bool pt_to_pm_vflip = canonical_porytiles_tile.v_flip() ^ canonical_porymap_tile.v_flip();
+        return TilemapEntry{
+            porymap_tilemap_entry.tile_index(),
+            porymap_tilemap_entry.pal_index(),
+            static_cast<bool>(porymap_tilemap_entry.h_flip() ^ pt_to_pm_hflip),
+            static_cast<bool>(porymap_tilemap_entry.v_flip() ^ pt_to_pm_vflip)};
+    }
+
+    // No match found
+    return std::nullopt;
+}
+
+TileAssignmentResult
+CompilerTask::pipeline_helper_assign_tile_via_pal_match(std::size_t tile_index, const PixelTile<Rgba32> &porytiles_tile)
+{
+    TileAssignmentResult result{};
+
+    // TODO: top_n matches should be configurable
+    // TODO: what if multiple pals match?
+    std::vector<PaletteMatchResult<Rgba32>> matches =
+        match_or_best(porytiles_tile, new_porymap_pals_, extrinsic_transparency_.value(), 1);
+
+    // No covering palette found
+    if (!matches.at(0).is_covered) {
+        result.status = TileAssignmentResult::Status::no_covering_pal;
+        result.match_results = std::move(matches);
+        return result;
+    }
+
+    const auto pal_index = matches.at(0).pal_index;
+    const auto &matched_pal = new_porymap_pals_.at(pal_index);
+    const auto index_tile = index_tile_from_color_tile(porytiles_tile, matched_pal, extrinsic_transparency_.value());
+    const CanonicalPixelTile canonical_index_tile{index_tile};
+
+    // Tile found in workspace
+    if (const auto maybe_tile_index = tiles_workspace_->first_occurrence_of(canonical_index_tile);
+        maybe_tile_index.has_value()) {
+        const auto workspace_tile_index = maybe_tile_index.value();
+        const auto workspace_tile = tiles_workspace_->tile_at(workspace_tile_index);
+        const bool pt_to_pm_hflip = canonical_index_tile.h_flip() ^ workspace_tile.h_flip();
+        const bool pt_to_pm_vflip = canonical_index_tile.v_flip() ^ workspace_tile.v_flip();
+        result.status = TileAssignmentResult::Status::success;
+        result.entry = TilemapEntry{workspace_tile_index, pal_index, pt_to_pm_hflip, pt_to_pm_vflip};
+        return result;
+    }
+
+    // Tile not found - locked mode cannot insert new tiles
+    if (tiles_edit_mode_ == ArtifactEditMode::locked) {
+        result.status = TileAssignmentResult::Status::tile_not_found;
+        // TODO: pass index_tile or canonical_index_tile depending on user setting for the tiles.png output
+        result.index_tile = index_tile;
+        result.pal_index = pal_index;
+        result.matched_pal = matched_pal;
+        return result;
+    }
+
+    // Tile not found - check capacity before inserting
+    if (tiles_workspace_->at_capacity()) {
+        result.status = TileAssignmentResult::Status::tile_limit_reached;
+        return result;
+    }
+
+    // Insert the new tile
+    const std::size_t inserted_index = tiles_workspace_->insert_tile(canonical_index_tile);
+    const auto workspace_tile = tiles_workspace_->tile_at(inserted_index);
+    result.status = TileAssignmentResult::Status::success;
+    const bool pt_to_pm_hflip = canonical_index_tile.h_flip() ^ workspace_tile.h_flip();
+    const bool pt_to_pm_vflip = canonical_index_tile.v_flip() ^ workspace_tile.v_flip();
+    result.entry = TilemapEntry{inserted_index, pal_index, pt_to_pm_hflip, pt_to_pm_vflip};
+    return result;
 }
 
 ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing(const std::vector<PaletteHint> &hints)
