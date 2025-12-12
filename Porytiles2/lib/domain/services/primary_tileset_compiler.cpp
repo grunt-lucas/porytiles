@@ -625,6 +625,20 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing(const std::v
         }
     }
 
+    // Emit diagnostic notes for packed palettes
+    for (std::size_t i = 0; i < pal::num_pals; i++) {
+        const auto &maybe_packed_pal = pal_packing.pals_.at(i);
+        if (maybe_packed_pal.has_value()) {
+            constexpr auto tag = "palette-packing-result";
+            std::vector<std::string> note_lines;
+            note_lines.emplace_back(format_.format("packed '{}' contents:", FormatParam{pal_filename(i), Style::bold}));
+            note_lines.emplace_back();
+            std::ranges::copy(
+                pal_printer_.print_rgba_palette(maybe_packed_pal.value()), std::back_inserter(note_lines));
+            diag_.note(tag, note_lines);
+        }
+    }
+
     return {};
 }
 
