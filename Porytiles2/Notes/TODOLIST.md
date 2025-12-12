@@ -7,6 +7,9 @@
   - See various TODOs about stale artifacts and "possibly incomplete" components
   - Switch to the original "atomic move" idea
   - Or figure out how to "delete" irrelevant assets, maybe we can move them to a .bak directory or something
+    - It should be easy, the only assets we need to actually delete are anims
+    - we can figure out which ones should exist by looking at the "target component" of the operation and also the ArtifactEditMode
+    - (will need to think through how anim handling will work in locked, patch, optimize)
 - Project Impl
   - Finish handling for unfinished types (attr.csv, anim frames, etc)
 - JSON Impl

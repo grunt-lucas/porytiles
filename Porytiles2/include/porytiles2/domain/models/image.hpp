@@ -130,6 +130,27 @@ class Image {
         return pixels_.size();
     }
 
+    /**
+     * @brief Gets the number of 8x8 tile regions in this image.
+     *
+     * @details
+     * GBA tiles are 8x8 pixels. This method calculates how many such tile regions fit in the image.
+     *
+     * @pre Image width must be divisible by 8.
+     * @pre Image height must be divisible by 8.
+     * @return The number of 8x8 tile regions in this image.
+     */
+    [[nodiscard]] std::size_t size_in_tiles() const
+    {
+        if (width_ % 8 != 0) {
+            panic(fmt::format("image width {} is not divisible by 8", width_));
+        }
+        if (height_ % 8 != 0) {
+            panic(fmt::format("image height {} is not divisible by 8", height_));
+        }
+        return (width_ / 8) * (height_ / 8);
+    }
+
     [[nodiscard]] const std::optional<std::vector<Rgba32>> &palette() const
     {
         return palette_;

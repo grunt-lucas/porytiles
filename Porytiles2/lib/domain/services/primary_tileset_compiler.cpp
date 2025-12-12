@@ -101,7 +101,7 @@ class CompilerTask {
     // Pipeline helpers - tile matching
     [[nodiscard]] std::optional<TilemapEntry> pipeline_helper_try_reuse_porymap_tile(std::size_t tile_index);
     [[nodiscard]] TileAssignmentResult
-    pipeline_helper_assign_tile_via_pal_match(std::size_t tile_index, const PixelTile<Rgba32> &porytiles_tile);
+    pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> &porytiles_tile);
 
     // Pipeline helpers - palette packing
     [[nodiscard]] ChainableResult<void> pipeline_helper_run_pal_packing(const std::vector<PaletteHint> &hints);
@@ -254,18 +254,17 @@ ChainableResult<void> CompilerTask::pipeline_step2_process_porymap_input()
 
 ChainableResult<void> CompilerTask::pipeline_step3_setup_working_data()
 {
-    const std::vector<PaletteHint> hints = pal_hints_enabled_.value() ? pal_hints_.value() : std::vector<PaletteHint>{};
-
     // Validate Porytiles palettes, Porymap palettes, and hints
+    const std::vector<PaletteHint> hints = pal_hints_enabled_.value() ? pal_hints_.value() : std::vector<PaletteHint>{};
     const PaletteValidator pal_validator{
         &format_, &diag_, &pal_printer_, &config_, tileset_.name(), pals_edit_mode_ != ArtifactEditMode::optimize};
-
     PT_TRY_CALL_CHAIN_ERR(
         pal_validator.validate_primary(
             tileset_.porymap_component().pals(), tileset_.porytiles_component().pals(), hints),
         "palette validation failed",
         void);
 
+    // Create palettes
     if (pals_edit_mode_ == ArtifactEditMode::locked) {
         // Collect all palettes from existing Porymap component
         for (std::size_t i = 0; i < pal::num_pals; i++) {
@@ -286,11 +285,12 @@ ChainableResult<void> CompilerTask::pipeline_step3_setup_working_data()
     tiles_workspace_ = [](ArtifactEditMode tiles_edit_mode, const Tileset &tileset, std::size_t num_tiles_in_primary) {
         if (tiles_edit_mode == ArtifactEditMode::locked) {
             /*
-             * TODO: in tiles locked mode, since we're not adding tiles, the capacity should just be the size of
-             * the original tiles.png. Later on, when we export, we'll set "include_trailing_transparent" so if user
-             * originally had transparency at the end (for whatever reason), we won't clobber it.
+             * When tiles are locked, compute the exact size of tiles.png so we keep it completely unchanged. When we
+             * output, we'll also set ExportTrimMode::include_trailing_transparent so that if there was transparency at
+             * the end, we don't remove it.
              */
-            return std::make_unique<TilesPngWorkspace>(tileset.porymap_component().tiles_png(), num_tiles_in_primary);
+            const auto size_in_tiles = tileset.porymap_component().tiles_png().size_in_tiles();
+            return std::make_unique<TilesPngWorkspace>(tileset.porymap_component().tiles_png(), size_in_tiles);
         }
         if (tiles_edit_mode == ArtifactEditMode::patch) {
             return std::make_unique<TilesPngWorkspace>(tileset.porymap_component().tiles_png(), num_tiles_in_primary);
@@ -301,14 +301,6 @@ ChainableResult<void> CompilerTask::pipeline_step3_setup_working_data()
         panic("unexpected tiles_edit_mode");
     }(tiles_edit_mode_, tileset_, num_tiles_in_primary_.value());
 
-    /*
-     * TODO: The resulting PorymapTilesetComponent may be incomplete. E.g., the user may have specified PLA files; they
-     * will be present on disk. We don't want to clobber them when saving the newly compiled component. So we'll need to
-     * pull them from the original component and inject them into this one before returning. We should probably add PLA
-     * file handling to the Tileset repository aggregate root. That way, all this is handled automatically via the
-     * save/load abstraction mechanisms. PLA files are a first-class domain concept, so they should be handled like any
-     * other file type (e.g. Porytiles pal files, Porytiles config, etc).
-     */
     // Create new Porymap component for output
     new_porymap_component_ = std::make_unique<PorymapTilesetComponent>();
 
@@ -328,7 +320,7 @@ ChainableResult<void> CompilerTask::pipeline_step4_match_tiles_pals()
 
         // In non-optimize mode, first try to reuse existing porymap tile
         if (tiles_edit_mode_ != ArtifactEditMode::optimize) {
-            auto maybe_tilemap_entry = pipeline_helper_try_reuse_porymap_tile(i);
+            const auto maybe_tilemap_entry = pipeline_helper_try_reuse_porymap_tile(i);
             if (maybe_tilemap_entry.has_value()) {
                 new_porymap_component_->push_back_tilemap_entry(maybe_tilemap_entry.value());
                 continue;
@@ -336,7 +328,7 @@ ChainableResult<void> CompilerTask::pipeline_step4_match_tiles_pals()
         }
 
         // Assign via palette matching (shared logic for all modes)
-        auto tile_assignment_result = pipeline_helper_assign_tile_via_pal_match(i, porytiles_tile);
+        auto tile_assignment_result = pipeline_helper_assign_tile_via_pal_match(porytiles_tile);
 
         switch (tile_assignment_result.status) {
         case TileAssignmentResult::Status::success:
@@ -388,7 +380,11 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step5_assemble_output()
      * could also have a compilation option "force_remove" that forcibly removes unused stuff. This is obviously less
      * safe, since for vanilla primary tilesets, seemingly unused assets may be in use from the secondaries. We can
      * solve this by eventually having code that reads all tileset pairings from layouts.json and computes which primary
-     * assets are truly unused.
+     * assets are truly unused. In fact, we'll need something like this in order to truly implement pals:patch mode,
+     * since palettes have no "unused" sentinel value. And in fact, many of the vanilla '0 0 0' colors are actually used
+     * by secondaries *facepalm* (e.g. see cave tileset). Which means we can't even assume '0 0 0' is unused. Until we
+     * implement this, users can still simulate pals:patch by bringing in all Porymap pals as Porytiles override pals,
+     * wildcarding slots they are OK overwriting, and setting pals:optimize.
      */
 
     // No changes here, this is a compilation operation - no writebacks into input assets
@@ -420,6 +416,8 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step5_assemble_output()
         const MetatileAttribute new_attr{layer_type, 0};
         new_porymap_component_->push_back_attribute(new_attr);
     }
+
+    // TODO: Copy over PLA files
 
     // Export tiles in original form
     if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
@@ -491,8 +489,7 @@ std::optional<TilemapEntry> CompilerTask::pipeline_helper_try_reuse_porymap_tile
     return std::nullopt;
 }
 
-TileAssignmentResult
-CompilerTask::pipeline_helper_assign_tile_via_pal_match(std::size_t tile_index, const PixelTile<Rgba32> &porytiles_tile)
+TileAssignmentResult CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> &porytiles_tile)
 {
     TileAssignmentResult result{};
 

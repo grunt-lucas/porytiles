@@ -45,6 +45,12 @@ export_image_helper(const TilesPngWorkspace &workspace, ExportFlipMode flip_mode
     const std::size_t image_width = tiles_per_row * tile::side_length_pix;
     const std::size_t image_height = tiles_per_col * tile::side_length_pix;
 
+    /*
+     * TODO: this will currently cause a diff in most vanilla tiles.png even if no changes, since by default the
+     * Image<IndexPixel> here passed to PngIndexedImageSaver::save_to_file gets saved using an 8-bit palette. Vanilla
+     * tiles.png typically use a 4-bit palette. The contents will be identical, but a 'pngcheck -v' will reveal the
+     * diff. Once we support IndexPixel4 and IndexPixel8, we should modify this.
+     */
     // Create output image
     Image<IndexPixel> img{image_width, image_height};
 
