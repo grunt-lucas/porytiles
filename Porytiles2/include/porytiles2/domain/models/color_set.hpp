@@ -2,6 +2,7 @@
 
 #include <bitset>
 #include <cstddef>
+#include <cstdint>
 #include <functional>
 #include <string>
 
@@ -168,6 +169,9 @@ class ColorSet {
  * Calls the provided function for each color index that is set in the ColorSet. The function is called with a
  * std::size_t representing the color index.
  *
+ * This implementation uses efficient bit scanning to skip over zero bits, reducing iteration from O(256) to O(k)
+ * where k is the number of set bits (typically 5-15 for tiles).
+ *
  * @tparam Func A callable type accepting std::size_t
  * @param set The ColorSet to iterate over
  * @param func The function to call for each set color index
@@ -175,10 +179,35 @@ class ColorSet {
 template <typename Func>
 void for_each_color(const ColorSet &set, Func &&func)
 {
+    static_assert(num_colors % 64 == 0, "num_colors must be a multiple of 64 for efficient word-aligned bit scanning");
+
     const auto &bits = set.colors();
-    for (std::size_t i = 0; i < num_colors; ++i) {
-        if (bits.test(i)) {
-            func(i);
+
+    /*
+     * Process 64 bits at a time using efficient bit scanning:
+     *
+     *     num_colors = 256, so we have 4 64-bit words
+     *
+     * Note: The +63 ceiling division is a defensive pattern; not strictly necessary due to the static_assert above.
+     */
+    constexpr std::size_t words = (num_colors + 63) / 64;
+
+    for (std::size_t word = 0; word < words; ++word) {
+        // Extract 64-bit chunk from bitset
+        std::uint64_t chunk = 0;
+        const std::size_t base = word * 64;
+        for (std::size_t b = 0; b < 64 && (base + b) < num_colors; ++b) {
+            if (bits.test(base + b)) {
+                chunk |= (1ULL << b);
+            }
+        }
+
+        // Process only set bits - skip zeros efficiently using Brian Kernighan's technique
+        while (chunk != 0) {
+            // GCC/Clang builtin to find lowest set bit position (count trailing zeros)
+            const int bit = __builtin_ctzll(chunk);
+            func(base + static_cast<std::size_t>(bit));
+            chunk &= chunk - 1; // Clear lowest set bit
         }
     }
 }

@@ -198,4 +198,42 @@ compute_average_multiplicity(const std::vector<PackableTile> &tiles, const std::
 [[nodiscard]] double
 compute_palette_local_efficiency(const ColorSet &tile_colors, const std::map<std::size_t, std::size_t> &local_mult);
 
+// ============================================================================
+// FAST METRIC FUNCTIONS (using PackedPalette's cached color counts)
+// ============================================================================
+
+/**
+ * @brief Computes the weighted cost of placing a tile in a palette using cached counts.
+ *
+ * @details
+ * This is an optimized version of compute_weighted_cost_in_palette() that uses the PackedPalette's cached color counts
+ * array instead of rebuilding the multiplicity map. This provides O(colors) complexity instead of O(tiles × colors).
+ *
+ * The formula is the same: weightedCost = sum(1 / (1 + μ_p(α))) for each color α in the tile.
+ *
+ * @param tile_colors The ColorSet of the tile to be placed
+ * @param palette The candidate palette (must have up-to-date color_counts)
+ * @return Weighted cost (lower is better)
+ *
+ * @see compute_weighted_cost_in_palette The non-cached version
+ */
+[[nodiscard]] double compute_weighted_cost_in_palette_fast(const ColorSet &tile_colors, const PackedPalette &palette);
+
+/**
+ * @brief Computes the palette-local efficiency of a tile using cached counts.
+ *
+ * @details
+ * This is an optimized version of compute_palette_local_efficiency() that uses the PackedPalette's cached color counts
+ * array instead of a separately-built multiplicity map.
+ *
+ * The formula is the same: efficiency = 1 - (weightedCost / tile_size).
+ *
+ * @param tile_colors The ColorSet of the tile to evaluate
+ * @param palette The palette containing the tile (must have up-to-date color_counts)
+ * @return Efficiency in [0, 1] (higher means better sharing)
+ *
+ * @see compute_palette_local_efficiency The non-cached version
+ */
+[[nodiscard]] double compute_palette_local_efficiency_fast(const ColorSet &tile_colors, const PackedPalette &palette);
+
 } // namespace porytiles2

@@ -106,4 +106,37 @@ compute_palette_local_efficiency(const ColorSet &tile_colors, const std::map<std
     return 1.0 - (weighted_cost / static_cast<double>(color_count));
 }
 
+// ============================================================================
+// FAST METRIC FUNCTIONS (using PackedPalette's cached color counts)
+// ============================================================================
+
+double compute_weighted_cost_in_palette_fast(const ColorSet &tile_colors, const PackedPalette &palette)
+{
+    double weighted_cost = 0.0;
+    for_each_color(tile_colors, [&weighted_cost, &palette](std::size_t color_idx) {
+        const std::size_t count = palette.color_multiplicity(color_idx);
+        weighted_cost += 1.0 / static_cast<double>(1 + count);
+    });
+    return weighted_cost;
+}
+
+double compute_palette_local_efficiency_fast(const ColorSet &tile_colors, const PackedPalette &palette)
+{
+    const std::size_t color_count = color_set_count(tile_colors);
+    if (color_count == 0) {
+        return 1.0;
+    }
+
+    // Compute weighted cost using palette's cached color counts
+    // Note: Here we use count directly (not 1+count) because the tile IS in the palette,
+    // so its colors are already counted in the palette's color_counts
+    double weighted_cost = 0.0;
+    for_each_color(tile_colors, [&weighted_cost, &palette](std::size_t color_idx) {
+        const std::size_t count = std::max(palette.color_multiplicity(color_idx), std::size_t{1});
+        weighted_cost += 1.0 / static_cast<double>(count);
+    });
+
+    return 1.0 - (weighted_cost / static_cast<double>(color_count));
+}
+
 } // namespace porytiles2

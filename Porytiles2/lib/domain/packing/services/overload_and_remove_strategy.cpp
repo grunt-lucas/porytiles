@@ -27,16 +27,14 @@ struct TileInfo {
  * @brief Finds the best palette for a tile, excluding forbidden palettes.
  *
  * @details
- * Uses palette-local weighted cost to find the best-fitting palette. The weighted cost
+ * Uses cached palette color counts to compute weighted cost efficiently. The weighted cost
  * measures how well the tile's colors overlap with colors already in the palette.
  * Lower cost means better overlap.
  *
  * @return Index of the best palette, or nullopt if none available or no palette offers overlap benefit
  */
-[[nodiscard]] std::optional<std::size_t> find_best_palette_excluding_forbidden(
-    const TileInfo &info,
-    const std::vector<PackedPalette> &palettes,
-    const std::map<PackableTile::Id, ColorSet> &tile_colors_map)
+[[nodiscard]] std::optional<std::size_t>
+find_best_palette_excluding_forbidden(const TileInfo &info, const std::vector<PackedPalette> &palettes)
 {
     std::optional<std::size_t> best_idx;
     double best_cost = std::numeric_limits<double>::max();
@@ -47,7 +45,8 @@ struct TileInfo {
             continue;
         }
 
-        double cost = compute_weighted_cost_in_palette(info.tile.color_set(), palettes[i], tile_colors_map);
+        // Use fast metric function with cached color counts - O(colors) instead of O(tiles × colors)
+        double cost = compute_weighted_cost_in_palette_fast(info.tile.color_set(), palettes[i]);
         if (cost < best_cost) {
             best_cost = cost;
             best_idx = i;
@@ -138,20 +137,15 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::pack(const PackingInpu
         }
     }
 
-    // We need to find the original tile data to compute efficiency
-    // Build a map of tile_id -> ColorSet from all tiles
+    // Build a map of tile_id -> ColorSet from all input tiles.
+    // Note: This is only needed for recreating TileInfo when tiles are removed from palettes.
+    // Palette-local cost computation now uses cached color counts in PackedPalette.
     std::map<PackableTile::Id, ColorSet> tile_colors_map;
     for (const auto &hint : input.hints_) {
         tile_colors_map[hint.id()] = hint.color_set();
     }
     for (const auto &tile : input.tiles_) {
         tile_colors_map[tile.id()] = tile.color_set();
-    }
-    // Add prefilled palette system tiles to the color map
-    // This ensures palette-local cost computation accounts for prefilled colors
-    for (const auto &prefilled_pal : input.prefilled_pals_) {
-        PackableTile::Id system_id = PackableTile::PrefilledPaletteId{prefilled_pal.hardware_index()};
-        tile_colors_map[system_id] = prefilled_pal.fixed_colors();
     }
 
     // Track forbidden palettes for each tile across removal cycles
@@ -163,8 +157,8 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::pack(const PackingInpu
         TileInfo tile_info = std::move(tile_pool.front());
         tile_pool.pop_front();
 
-        // Find best palette excluding forbidden ones (using palette-local weighted cost)
-        auto maybe_best_idx = find_best_palette_excluding_forbidden(tile_info, output.pals_, tile_colors_map);
+        // Find best palette excluding forbidden ones (using cached palette color counts)
+        auto maybe_best_idx = find_best_palette_excluding_forbidden(tile_info, output.pals_);
 
         if (!maybe_best_idx.has_value()) {
             // Create new palette if possible
@@ -208,10 +202,8 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::pack(const PackingInpu
                 break; // Can't remove the only tile
             }
 
-            // Build palette-local multiplicity for efficiency computation
-            auto local_mult = build_palette_local_multiplicity(best_palette, tile_colors_map);
-
-            // Find tile with minimum efficiency (using palette-local weights)
+            // Find tile with minimum efficiency using fast O(colors) computation
+            // Uses cached color counts in PackedPalette instead of rebuilding multiplicity map
             double min_efficiency = std::numeric_limits<double>::max();
             double max_efficiency = std::numeric_limits<double>::lowest();
 
@@ -227,7 +219,8 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::pack(const PackingInpu
                     continue;
                 }
 
-                double eff = compute_palette_local_efficiency(it->second, local_mult);
+                // Use fast efficiency function with cached color counts
+                double eff = compute_palette_local_efficiency_fast(it->second, best_palette);
                 if (eff < min_efficiency) {
                     min_efficiency = eff;
                     worst_tile_id = tid;

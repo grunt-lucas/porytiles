@@ -6,6 +6,7 @@
 - `TilesetRepo::write` should do a clean wipe of the current tileset folder before writing new artifacts?
   - See various TODOs about stale artifacts and "possibly incomplete" components
   - Switch to the original "atomic move" idea
+  - Or figure out how to "delete" irrelevant assets, maybe we can move them to a .bak directory or something
 - Project Impl
   - Finish handling for unfinished types (attr.csv, anim frames, etc)
 - JSON Impl
@@ -13,6 +14,8 @@
 
 ## Palette Packing
 - Implement classic dfs and bfs
+- Implement multiplicity-based dfs and bfs
+  - it will basically be BestFusion but with backtracking
 - Implement a "shotgun approach" strategy that tries different sub-strategies until success
   - the paper has some ideas on which algorithm to use depending on problem set's "multiplicity"
   - let's make the shotgun approach smart based on the character of the input

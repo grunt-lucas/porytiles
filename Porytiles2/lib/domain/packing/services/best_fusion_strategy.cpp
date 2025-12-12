@@ -1,9 +1,6 @@
 #include "porytiles2/domain/packing/services/best_fusion_strategy.hpp"
 
 #include <algorithm>
-#include <deque>
-#include <map>
-#include <set>
 
 #include "porytiles2/domain/packing/algorithms/packing_initializer.hpp"
 #include "porytiles2/domain/packing/algorithms/packing_metrics.hpp"
@@ -17,16 +14,14 @@ using namespace porytiles2;
  * @brief Finds the best palette for a tile based on palette-local weighted cost.
  *
  * @details
- * Uses palette-local multiplicity to find the best-fitting palette. The weighted cost
+ * Uses cached palette color counts to compute weighted cost efficiently. The weighted cost
  * measures how well the tile's colors overlap with colors already in the palette.
  * Lower cost means better overlap.
  *
  * @return Index of the best palette, or nullopt if a new palette should be created
  */
-[[nodiscard]] std::optional<std::size_t> find_best_palette(
-    const PackableTile &tile,
-    const std::vector<PackedPalette> &palettes,
-    const std::map<PackableTile::Id, ColorSet> &tile_colors_map)
+[[nodiscard]] std::optional<std::size_t>
+find_best_palette(const PackableTile &tile, const std::vector<PackedPalette> &palettes)
 {
     std::optional<std::size_t> best_idx;
     double best_cost = std::numeric_limits<double>::max();
@@ -39,7 +34,8 @@ using namespace porytiles2;
             continue;
         }
 
-        double cost = compute_weighted_cost_in_palette(tile.color_set(), pal, tile_colors_map);
+        // Use fast metric function with cached color counts - O(colors) instead of O(tiles × colors)
+        double cost = compute_weighted_cost_in_palette_fast(tile.color_set(), pal);
 
         if (cost < best_cost) {
             best_cost = cost;
@@ -73,24 +69,11 @@ ChainableResult<PackingOutput> BestFusionStrategy::pack(const PackingInput &inpu
         output.pals_.emplace_back(pal_pool.checkout(), input.pal_capacity_);
     }
 
-    // Build tile colors map for palette-local cost computation
-    std::map<PackableTile::Id, ColorSet> tile_colors_map;
-    for (const auto &hint : input.hints_) {
-        tile_colors_map[hint.id()] = hint.color_set();
-    }
-    for (const auto &tile : input.tiles_) {
-        tile_colors_map[tile.id()] = tile.color_set();
-    }
-    // Add prefilled palette system tiles to the color map
-    // This ensures palette-local cost computation accounts for prefilled colors
-    for (const auto &prefilled_pal : input.prefilled_pals_) {
-        PackableTile::Id system_id = PackableTile::PrefilledPaletteId{prefilled_pal.hardware_index()};
-        tile_colors_map[system_id] = prefilled_pal.fixed_colors();
-    }
-
     // Helper to assign a tile
-    auto assign_tile = [&output, &tile_colors_map](const PackableTile &tile) -> bool {
-        const auto maybe_best_idx = find_best_palette(tile, output.pals_, tile_colors_map);
+    // Note: palette-local cost computation now uses cached color counts in PackedPalette,
+    // eliminating the need for a separate tile_colors_map
+    auto assign_tile = [&output](const PackableTile &tile) -> bool {
+        const auto maybe_best_idx = find_best_palette(tile, output.pals_);
 
         if (maybe_best_idx.has_value()) {
             // Add to existing palette

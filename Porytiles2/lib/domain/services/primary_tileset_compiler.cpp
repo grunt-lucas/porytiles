@@ -284,7 +284,7 @@ ChainableResult<void> CompilerTask::setup_working_data()
         //         return CanonicalShapeTile{shape_tile_to_pixel_colors(tile, color_index_map)};
         //     });
 
-        BestFusionStrategy packing_strategy{&format_, &diag_};
+        OverloadAndRemoveStrategy packing_strategy{&format_, &diag_};
         PalettePacker pal_packer{&packing_strategy, &format_, &diag_};
         std::bitset<pal::num_pals> available_pals{0};
         for (std::size_t i = 0; i < num_pals_in_primary_; i++) {

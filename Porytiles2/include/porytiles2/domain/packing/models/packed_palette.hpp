@@ -1,5 +1,6 @@
 #pragma once
 
+#include <array>
 #include <cstddef>
 #include <unordered_map>
 #include <vector>
@@ -78,6 +79,35 @@ class PackedPalette {
     [[nodiscard]] std::size_t color_count() const;
 
     /**
+     * @brief Gets the multiplicity count for a specific color in this palette.
+     *
+     * @details
+     * Returns the number of tiles in this palette that contain the given color. This is an O(1) operation using the
+     * cached color counts array.
+     *
+     * @param color_idx The color index to query (0-255)
+     * @return The number of tiles containing this color
+     */
+    [[nodiscard]] std::size_t color_multiplicity(std::size_t color_idx) const
+    {
+        return cached_per_color_multiplicity_[color_idx];
+    }
+
+    /**
+     * @brief Gets the cached color counts array.
+     *
+     * @details
+     * Returns a reference to the internal array tracking how many tiles contain each color. Useful for computing
+     * weighted metrics efficiently without rebuilding the multiplicity map.
+     *
+     * @return A const reference to the color counts array
+     */
+    [[nodiscard]] const std::array<std::size_t, num_colors> &color_counts() const
+    {
+        return cached_per_color_multiplicity_;
+    }
+
+    /**
      * @brief Gets the number of remaining color slots.
      *
      * @return The remaining capacity
@@ -146,6 +176,7 @@ class PackedPalette {
     ColorSet color_set_;
     std::vector<PackableTile::Id> assigned_tile_ids_;
     std::unordered_map<PackableTile::Id, ColorSet> tile_colors_;
+    std::array<std::size_t, num_colors> cached_per_color_multiplicity_;
 };
 
 } // namespace porytiles2
