@@ -235,7 +235,8 @@ ChainableResult<void> CompilerTask::setup_working_data()
     std::vector<PaletteHint> hints = pal_hints_enabled_.value() ? pal_hints_.value() : std::vector<PaletteHint>{};
 
     // Validate Porytiles palettes, Porymap palettes, and hints
-    PaletteValidator pal_validator{&format_, &diag_, &pal_printer_, &config_, tileset_.name()};
+    PaletteValidator pal_validator{
+        &format_, &diag_, &pal_printer_, &config_, tileset_.name(), pals_edit_mode_ != ArtifactEditMode::optimize};
 
     PT_TRY_CALL_CHAIN_ERR(
         pal_validator.validate_primary(

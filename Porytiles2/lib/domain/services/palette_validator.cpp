@@ -285,15 +285,14 @@ ChainableResult<void> PaletteValidator::validate_primary(
 
     std::vector<std::string> error_messages;
 
-    /*
-     * TODO: skip Porymap validation if this is a pals:optimize build
-     */
-    // Validate Porymap palettes
-    for (std::size_t pal_index = 0; pal_index < porymap_pals.size(); ++pal_index) {
-        const auto result = validate_single_porymap_pal(
-            porymap_pals.at(pal_index), pal_index, config_, tileset_scope_, format_, diag_, pal_printer_);
-        if (!result.has_value()) {
-            error_messages.push_back(result.error().join(*format_));
+    if (run_porymap_validations_) {
+        // Validate Porymap palettes
+        for (std::size_t pal_index = 0; pal_index < porymap_pals.size(); ++pal_index) {
+            const auto result = validate_single_porymap_pal(
+                porymap_pals.at(pal_index), pal_index, config_, tileset_scope_, format_, diag_, pal_printer_);
+            if (!result.has_value()) {
+                error_messages.push_back(result.error().join(*format_));
+            }
         }
     }
 

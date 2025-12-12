@@ -28,7 +28,7 @@ class PaletteValidatorTest : public ::testing::Test {
         providers.push_back(std::make_unique<DefaultProvider>());
         config_ = std::make_unique<LazyLayeredConfig>(formatter_.get(), std::move(providers));
         validator_ = std::make_unique<PaletteValidator>(
-            formatter_.get(), diag_.get(), pal_printer_.get(), config_.get(), "test_tileset");
+            formatter_.get(), diag_.get(), pal_printer_.get(), config_.get(), "test_tileset", true);
     }
 
     // Helper to create a valid 16-color palette with slot 0 = magenta (extrinsic transparency)

@@ -31,6 +31,10 @@ namespace porytiles2 {
  * - Porytiles and Porymap palettes: non-slot-0 positions cannot contain extrinsic transparency
  * - Porytiles and Porymap palettes: slot 0 should match extrinsic transparency (warning-only)
  * - Palette hints cannot contain duplicate colors or extrinsic transparency
+ *
+ * Porymap palette validations can be optionally enabled or disabled. For builds where the palette editing mode is set
+ * to ArtifactEditMode::optimize, it may be useful to disable Porymap palette validation, since the relevant palettes
+ * will be wiped by the build.
  */
 class PaletteValidator {
   public:
@@ -39,9 +43,10 @@ class PaletteValidator {
         gsl::not_null<const UserDiagnostics *> diag,
         gsl::not_null<const PalettePrinter *> pal_printer,
         gsl::not_null<const DomainConfig *> config,
-        std::string tileset_scope)
+        std::string tileset_scope,
+        bool run_porymap_validations)
         : format_{format}, diag_{diag}, pal_printer_{pal_printer}, config_{config},
-          tileset_scope_{std::move(tileset_scope)}
+          tileset_scope_{std::move(tileset_scope)}, run_porymap_validations_{run_porymap_validations}
     {
     }
 
@@ -64,6 +69,7 @@ class PaletteValidator {
     const PalettePrinter *pal_printer_;
     const DomainConfig *config_;
     std::string tileset_scope_;
+    bool run_porymap_validations_;
 };
 
 } // namespace porytiles2

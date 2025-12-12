@@ -118,6 +118,10 @@ ChainableResult<PackingOutput> BestFusionStrategy::pack(const PackingInput &inpu
         return false;
     };
 
+    /*
+     * TODO: do we want to create a sorted tile pool here like overload-and-remove?
+     */
+
     // Process hints first
     for (const auto &hint : input.hints_) {
         if (!assign_tile(hint)) {
