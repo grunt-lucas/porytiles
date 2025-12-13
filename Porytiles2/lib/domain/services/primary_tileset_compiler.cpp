@@ -320,15 +320,15 @@ ChainableResult<void> CompilerTask::pipeline_step4_match_tiles_pals()
 
         // In non-optimize mode, first try to reuse existing porymap tile
         if (tiles_edit_mode_ != ArtifactEditMode::optimize) {
-            const auto maybe_tilemap_entry = pipeline_helper_try_reuse_porymap_tile(i);
-            if (maybe_tilemap_entry.has_value()) {
+            if (const auto maybe_tilemap_entry = pipeline_helper_try_reuse_porymap_tile(i);
+                maybe_tilemap_entry.has_value()) {
                 new_porymap_component_->push_back_tilemap_entry(maybe_tilemap_entry.value());
                 continue;
             }
         }
 
         // Assign via palette matching (shared logic for all modes)
-        auto tile_assignment_result = pipeline_helper_assign_tile_via_pal_match(porytiles_tile);
+        const auto tile_assignment_result = pipeline_helper_assign_tile_via_pal_match(porytiles_tile);
 
         switch (tile_assignment_result.status) {
         case TileAssignmentResult::Status::success:
@@ -404,7 +404,6 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step5_assemble_output()
     }
 
     // Copy metatile attributes from original
-    // TODO: need to copy over metatile behavior (and other firered attrs if relevant)
     for (const auto &metatile : porytiles_metatiles_) {
         LayerType layer_type;
         if (configured_layer_mode == LayerMode::dual) {
@@ -413,18 +412,20 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step5_assemble_output()
         else {
             layer_type = LayerType::normal;
         }
+        // TODO: need to copy over metatile behavior (and other firered attrs if relevant)
         const MetatileAttribute new_attr{layer_type, 0};
         new_porymap_component_->push_back_attribute(new_attr);
     }
 
-    // TODO: Copy over PLA files
+    // TODO: Copy over PLA files once we implement handling
 
     // Export tiles in original form
     if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
         /*
          * TODO: why is using ExportFlipMode::canonical here bugged? I think it has to do with how we computed the flip
-         * bits in 'match_tiles_pals_optimized'. If we're going to make this configurable, we'll need to check the
-         * config value in the matcher function so we can compute the flip bits correctly.
+         * bits in 'pipeline_helper_try_reuse_porymap_tile' and 'pipeline_helper_assign_tile_via_pal_match'. If we're
+         * going to make this configurable, we'll need to check the config value in the matcher functions so we can
+         * compute the flip bits correctly.
          */
         new_porymap_component_->tiles_png(
             tiles_workspace_->export_image(ExportFlipMode::original, ExportTrimMode::trim_trailing_transparent));
