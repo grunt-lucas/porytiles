@@ -22,6 +22,7 @@
 #include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
 #include "porytiles2/infra/services/ascii_tile_printer.hpp"
 #include "porytiles2/infra/services/color_palette_printer.hpp"
+#include "porytiles2/infra/services/header_behavior_map_provider.hpp"
 #include "porytiles2/infra/services/jasc_pal_loader.hpp"
 #include "porytiles2/infra/services/jasc_pal_saver.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
@@ -83,8 +84,12 @@ class CompileTilesetCommand final : public Command {
         // Setup primary compiler
         PrimaryTilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
 
+        // Setup behavior map provider for attribute CSV parsing
+        HeaderBehaviorMapProvider behavior_map_provider{"./include/constants/metatile_behaviors.h"};
+
         // Setup the tileset repository
-        ProjectTilesetArtifactReader artifact_reader{&png_rgba_loader, &png_indexed_loader, &jasc_loader};
+        ProjectTilesetArtifactReader artifact_reader{
+            &png_rgba_loader, &png_indexed_loader, &jasc_loader, &behavior_map_provider};
         ProjectTilesetArtifactWriter artifact_writer{&config, ".", &png_rgba_saver, &png_indexed_saver, &jasc_saver};
         // We already set this up earlier for the Yaml config provider
         // ProjectTilesetArtifactKeyProvider key_provider{"."};

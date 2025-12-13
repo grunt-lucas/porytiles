@@ -1,9 +1,11 @@
 #include "porytiles2/infra/repos/project_tileset_artifact_reader.hpp"
 
 #include <expected>
+#include <filesystem>
 #include <fstream>
 #include <functional>
 #include <iterator>
+#include <unordered_set>
 
 #include "fmt/format.h"
 
@@ -12,7 +14,10 @@
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
+#include "porytiles2/domain/services/behavior_map_provider.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
+#include "porytiles2/utilities/parse_int.hpp"
+#include "porytiles2/utilities/string_utils.hpp"
 
 namespace {
 
@@ -189,6 +194,127 @@ import_porytiles_palette(Tileset &dest, const ArtifactKey &src_key, std::size_t 
     return {};
 }
 
+struct AttributesCsvRow {
+    std::size_t metatile_id;
+    std::string behavior;
+};
+
+ChainableResult<AttributesCsvRow>
+parse_attributes_csv_row(const std::string &line, std::size_t line_number, const std::filesystem::path &file_path)
+{
+    auto columns = split(line, ",");
+
+    if (columns.size() < 2) {
+        return FormattableError{
+            "{}:{}: expected at least 2 columns (id,behavior), found {}",
+            FormatParam{file_path.string()},
+            FormatParam{line_number},
+            FormatParam{columns.size()}};
+    }
+
+    trim(columns[0]);
+    trim(columns[1]);
+
+    auto id_result = parse_int<int>(columns[0], 0);
+    if (!id_result.has_value()) {
+        return FormattableError{
+            "{}:{}: invalid metatile id '{}': {}",
+            FormatParam{file_path.string()},
+            FormatParam{line_number},
+            FormatParam{columns[0]},
+            FormatParam{id_result.error()}};
+    }
+
+    if (id_result.value() < 0) {
+        return FormattableError{
+            "{}:{}: metatile id '{}' cannot be negative",
+            FormatParam{file_path.string()},
+            FormatParam{line_number},
+            FormatParam{columns[0]}};
+    }
+
+    return AttributesCsvRow{static_cast<std::size_t>(id_result.value()), columns[1]};
+}
+
+ChainableResult<void>
+import_attributes_csv(Tileset &dest, const std::filesystem::path &csv_path, const BehaviorMapProvider &behavior_map)
+{
+    if (!std::filesystem::exists(csv_path)) {
+        return FormattableError{"attributes CSV file not found: {}", FormatParam{csv_path.string()}};
+    }
+
+    std::ifstream stream{csv_path};
+    if (!stream.is_open()) {
+        return FormattableError{"failed to open attributes CSV: {}", FormatParam{csv_path.string()}};
+    }
+
+    std::string line;
+    std::size_t line_number = 0;
+    std::unordered_set<std::size_t> seen_ids;
+
+    if (!std::getline(stream, line)) {
+        return FormattableError{"{}:1: file is empty, expected header 'id,behavior'", FormatParam{csv_path.string()}};
+    }
+    line_number = 1;
+    trim_line_ending(line);
+
+    auto header_columns = split(line, ",");
+    if (header_columns.size() < 2) {
+        return FormattableError{
+            "{}:1: invalid header, expected 'id,behavior' but found '{}'",
+            FormatParam{csv_path.string()},
+            FormatParam{line}};
+    }
+    trim(header_columns[0]);
+    trim(header_columns[1]);
+    if (header_columns[0] != "id" || header_columns[1] != "behavior") {
+        return FormattableError{
+            "{}:1: invalid header, expected 'id,behavior' but found '{},{}'",
+            FormatParam{csv_path.string()},
+            FormatParam{header_columns[0]},
+            FormatParam{header_columns[1]}};
+    }
+
+    while (std::getline(stream, line)) {
+        line_number++;
+        trim_line_ending(line);
+
+        if (line.empty()) {
+            continue;
+        }
+
+        auto row_result = parse_attributes_csv_row(line, line_number, csv_path);
+        if (!row_result.has_value()) {
+            return ChainableResult<void>{FormattableError{"failed to parse row"}, row_result};
+        }
+
+        const auto &row = row_result.value();
+
+        if (seen_ids.contains(row.metatile_id)) {
+            return FormattableError{
+                "{}:{}: duplicate metatile id '{}' (previously defined)",
+                FormatParam{csv_path.string()},
+                FormatParam{line_number},
+                FormatParam{row.metatile_id}};
+        }
+        seen_ids.insert(row.metatile_id);
+
+        auto behavior_value = behavior_map.lookup(row.behavior);
+        if (!behavior_value.has_value()) {
+            return FormattableError{
+                "{}:{}: unknown metatile behavior '{}'",
+                FormatParam{csv_path.string()},
+                FormatParam{line_number},
+                FormatParam{row.behavior}};
+        }
+
+        MetatileAttribute attribute{LayerType::normal, behavior_value.value()};
+        dest.porytiles_component().insert_attribute(row.metatile_id, attribute);
+    }
+
+    return {};
+}
+
 } // namespace
 
 namespace porytiles2 {
@@ -282,7 +408,11 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_top_png(Tileset &dest, 
 
 ChainableResult<void> ProjectTilesetArtifactReader::read_attributes_csv(Tileset &dest, const ArtifactKey &src_key) const
 {
-    panic("TODO: implement read_attributes_csv");
+    const auto result = import_attributes_csv(dest, src_key.key(), *behavior_map_provider_);
+    if (!result.has_value()) {
+        return ChainableResult<void>{FormattableError{fmt::format("could not import attributes.csv")}, result};
+    }
+    return {};
 }
 
 ChainableResult<void>

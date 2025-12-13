@@ -1,0 +1,3 @@
+#define MB_NORMAL 0x00
+#define MB_SECRET_BASE_WALL 0x01
+#define MB_TALL_GRASS 0x02
