@@ -15,6 +15,7 @@ If you want to familiarize yourself with the code base, you are just in the righ
       - [`domain/models/` - Core Data Types](#domainmodels---core-data-types)
       - [`domain/repos/` - Persistence Abstractions](#domainrepos---persistence-abstractions)
       - [`domain/services/` - Orchestrated Operations](#domainservices---orchestrated-operations)
+      - [`domain/packing/` - Palette Packing System](#domainpacking---palette-packing-system)
     - [`app/` - Use Cases](#app---use-cases)
       - [`app/config/` - Application Configuration](#appconfig---application-configuration)
       - [`app/use_cases/` - Workflows](#appuse_cases---workflows)
@@ -168,10 +169,14 @@ Unlike pure algorithms, services are classes injected via constructors following
 Examples include:
 
 - `PrimaryTilesetCompiler`: Orchestrates the complete compilation pipeline from Porytiles format to Porymap format
+- `PrimaryTilesetImporter`: Imports Porymap tilesets into Porytiles format (reverse of compilation)
 - `ImageTileizer`: Converts layer images into tile data structures
 - `LayerImageMetatileizer`: Transforms layer images into metatile assemblies
 - `MetatileDecompiler`: Decompiles Porymap metatile data back into RGBA layer images
 - `LayerModeConverter`: Converts `metatiles.bin` entry vectors between [dual and triple layer formats](https://github.com/pret/pokeemerald/wiki/Triple-layer-metatiles)
+- `PaletteValidator`: Validates palettes for compilation, checking for transparency violations and slot mismatches
+- `MetatileValidator`: Validates metatiles for compilation, checking alpha channels, color counts, and layer modes
+- `BehaviorMapProvider`: Abstract interface for loading behavior constant name-to-value mappings from game headers
 
 Services usually return `ChainableResult<T, E>` to propagate rich error chains through the domain.
 Some services define virtual interfaces to enable polymorphic behavior and dependency injection.
@@ -180,6 +185,38 @@ When should logic be a service vs. a free function? Services require I/O, state,
 Pure transformations stay as free functions in `domain/algorithms/`.
 
 See `Porytiles2/Notes/service_vs_free_function_architecture.md` for the complete decision framework.
+
+#### `domain/packing/` - Palette Packing System
+
+The packing subsystem solves the **"Pagination Problem"** - a variant of bin packing with overlapping items.
+Given a set of tiles (each requiring specific colors) and a limited number of hardware palettes (each with limited slots),
+find an optimal assignment of tiles to palettes that minimizes wasted space.
+
+This is a key optimization problem for GBA tileset compilation where hardware constraints are strict.
+
+##### `packing/algorithms/` - Packing Metrics and Initialization
+
+- `packing_metrics.hpp`: Computes global and local multiplicity metrics for color usage across tiles.
+  Includes cost functions and efficiency calculations based on academic research (Grange et al. 2017).
+- `packing_initializer.hpp`: Initialization helpers for setting up packing data structures.
+
+##### `packing/models/` - Packing Data Types
+
+- `PackableTile`: Wraps a `ColorSet` with a tile ID. Supports three ID variants: `HintId`, `PrefilledPaletteId`, `RegularId`.
+- `PaletteHint`: Priority tiles that guide the packing algorithm toward better solutions.
+- `PrefilledPalette`: Pre-assigned palette constraints that must be respected during packing.
+- `PalettePool`: Represents the available hardware palette slots for assignment.
+- `PackedPalette`: Result type representing a fully assigned palette.
+
+##### `packing/services/` - Packing Operations
+
+- `PalettePacker`: High-level orchestration service that coordinates the packing process.
+  Takes `PackingParams` (tiles, color map, hints, constraints) and produces `PalettePacking` (final assignments).
+- `PackingStrategy`: Abstract interface for pluggable packing algorithms.
+- `BestFusionStrategy`: Greedy fusion algorithm that iteratively merges compatible tiles into palettes.
+- `OverloadAndRemoveStrategy`: Alternative algorithm that starts with overloaded palettes and removes conflicts.
+
+The Strategy pattern enables experimentation with different packing algorithms without modifying the orchestration layer.
 
 ### `app/` - Use Cases
 
@@ -204,7 +241,6 @@ Some example use cases include:
 - `CreatePrimaryTileset`: Scaffolds a new tileset with default structure and assets.
 - `ImportPrimaryTileset`: Imports Porymap tilesets into Porytiles format (first time only).
 - `CompilePrimaryTileset`: Orchestrates compilation of a primary tileset from Porytiles RGBA assets to Porymap binary format.
-- `DecompilePrimaryTileset`: Orchestrates decompilation of a primary tileset from Porymap binary format to RGBA assets.
 - `VerifyPrimaryTileset`: Validates tileset integrity and configuration correctness.
 
 Use cases receive dependencies via constructor injection and return `ChainableResult<T, E>` to propagate errors.
@@ -232,6 +268,7 @@ The system tracks **provenance** - remembering which provider supplied each valu
 Concrete providers include:
 - `DefaultProvider`: Hard-coded fallback values, auto-generated from `config_schema.yaml`
 - `YamlFileProvider`: Loads configuration from YAML files using a YAML parsing library
+- `HeaderDefineProvider`: Parses C/C++ header files for `#define` constants, enabling configuration from game source headers
 
 The `LayerValue<T>` wrapper indicates whether a provider supplied a value (similar to `std::optional`).
 
@@ -278,6 +315,10 @@ These services specialize in specific file formats:
 
 **Output Services**:
 - `AsciiTilePrinter`: Renders tiles as ASCII art for debugging
+- `ColorPalettePrinter`: Renders palettes as colored output for debugging and visualization
+
+**Behavior Mapping**:
+- `HeaderBehaviorMapProvider`: Implements `BehaviorMapProvider` by parsing C header files for metatile behavior constants
 
 These services interact directly with libpng, file streams, and other external libraries.
 They return `ChainableResult<T, E>` with infrastructure-specific error types like `ImageLoadError`.
@@ -467,11 +508,17 @@ This enables rich, user-friendly diagnostic output while maintaining plain text 
 
 #### Other Utilities
 
-- `parse_int.hpp`: string-to-int parsing
-- `reverse_bits.hpp`: Bit manipulation
-- `stream_digest.hpp`: Hash over stream data
-- `source_locations.hpp`: Source location tracking
-- `string_utils.hpp`: String manipulation
+- `count_map_to_list.hpp`: Converts `std::map<T, size_t>` count maps to sorted vectors of pairs, ordered by count descending. Useful for frequency analysis in packing algorithms.
+
+- `parse_int.hpp`: Type-safe integer parsing from strings with `std::expected` error handling. Supports arbitrary integer types and numeric bases.
+
+- `reverse_bits.hpp`: Constexpr bit reversal for bytes. Used in tile data transformations for GBA hardware compatibility where bit ordering differs.
+
+- `source_locations.hpp`: Extracts clean function names from `std::source_location`, stripping qualifiers and return types for readable panic diagnostics.
+
+- `stream_digest.hpp`: Computes MD5 checksums over input streams via the `StreamDigest` class. Powers the artifact checksum system for incremental compilation.
+
+- `string_utils.hpp`: String manipulation utilities including regex full-match checking (`check_full_string_match`) and in-place whitespace trimming (`trim`).
 
 ## Cross-Cutting Concerns
 
@@ -494,7 +541,20 @@ All interfaces and providers are **auto-generated** from a single source of trut
 
 ### Dependency Injection
 
-TODO: fill in section
+The system uses the **Fruit DI framework** for compile-time dependency injection with runtime binding decisions.
+
+**Current DI Components** (in `xcut/di/components.hpp`):
+- `get_formatter_component(bool no_color)`: Conditionally binds `TextFormatter` to either `AnsiStyledTextFormatter` or `PlainTextFormatter` based on TTY detection and user preferences.
+
+**DI Migration Status**:
+Most services are currently manually instantiated in command handlers (see TODOs in `tools/driver/command_*.hpp`).
+Full DI migration is planned to move service construction to the composition root.
+
+**Why Fruit?**
+- Compile-time dependency checking catches wiring errors early
+- No reflection or runtime type information needed
+- Clean integration with C++ RAII and move semantics
+- Supports conditional binding for runtime configuration
 
 ### Diagnostics Integration
 
@@ -568,12 +628,31 @@ Integration tests may make use of the external network or filesystem.
 
 ### Driver Program (`tools/driver/`)
 
-The `porytiles2` executable:
-1. Parses command-line arguments
-2. Initializes configuration (DefaultProvider → YamlFileProvider → defaults)
-3. Creates DI container (Fruit)
-4. Dispatches to appropriate use case (create, compile, import, verify)
-5. Displays results through UserDiagnostics
+The `porytiles2` executable uses the **CLI11** library for argument parsing with a custom command/option abstraction layer.
+
+**Execution Flow**:
+1. Parses command-line arguments via CLI11
+2. Initializes configuration (DefaultProvider → YamlFileProvider → HeaderDefineProvider → defaults)
+3. Creates DI container (Fruit) for cross-cutting services
+4. Dispatches to appropriate command handler
+5. Command handler constructs domain services and invokes use case
+6. Displays results through UserDiagnostics
+
+**Command Pattern**:
+The driver uses a `Command` base class that each subcommand inherits from:
+- `CreateTilesetCommand`: Scaffolds new tileset projects
+- `CompileTilesetCommand`: Compiles Porytiles assets to Porymap format
+- `ImportTilesetCommand`: Imports existing Porymap tilesets
+- `VerifyTilesetCommand`: Validates tileset integrity
+
+Each command registers itself with CLI11 and implements a `Run()` method that orchestrates the corresponding use case.
+
+**Option Groups**:
+Related options are grouped via `OptGroup` abstractions:
+- `OptGroupFieldmap`: Base game presets, tile/metatile/palette count overrides
+- `OptGroupDiagnostics`: Warning levels, color output, verbosity settings
+
+This organization keeps related configuration together and enables reuse across commands.
 
 ### Extension Points
 
