@@ -13,6 +13,7 @@
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/infra/config/config_provider.hpp"
 #include "porytiles2/infra/config/valid_yaml_paths.hpp"
+#include "porytiles2/infra/services/file_highlight_printer.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/config/config_scope_type.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
@@ -87,71 +88,27 @@ std::string make_source_string(const TextFormatter *format, const std::string &f
  *
  * @param file_path The path to the YAML file
  * @param mark The YAML mark containing line number information
- * @param window_size The total number of lines to show in the contextual view (default: 5)
  * @return Vector of formatted strings showing the contextual view
  */
-std::vector<std::string> make_source_details(
-    const TextFormatter *format, const std::string &file_path, const YAML::Mark &mark, std::size_t window_size = 7)
+std::vector<std::string>
+make_source_details(const TextFormatter *format, const std::string &file_path, const YAML::Mark &mark)
 {
-    std::vector<std::string> details;
-
     const std::filesystem::path path{file_path};
     const auto it = file_lines_cache.find(path);
     if (it == file_lines_cache.end()) {
-        return details;
+        return {};
     }
 
     const auto &lines = it->second;
     const std::size_t line_num = mark.line; // 0-indexed
 
     if (lines.empty() || line_num >= lines.size()) {
-        return details;
+        return {};
     }
 
-    // Calculate window boundaries
-    const std::size_t half_window = (window_size - 1) / 2;
-    const std::size_t start = (line_num >= half_window) ? line_num - half_window : 0;
-    const std::size_t end = std::min(line_num + half_window + 1, lines.size());
-
-    // Build contextual view
-    for (std::size_t i = start; i < end; ++i) {
-        std::string prefix;
-        // Value here is minus-1 because we're zero-indexing line number, but then adding one to display
-        if (i < 9) {
-            const auto formatted_arrow =
-                format->format("{}", FormatParam{"➞     ", Style::bold | Style::italic | Style::yellow});
-            prefix = (i == line_num) ? formatted_arrow : "      ";
-        }
-        else if (i < 99) {
-            const auto formatted_arrow =
-                format->format("{}", FormatParam{"➞    ", Style::bold | Style::italic | Style::yellow});
-            prefix = (i == line_num) ? formatted_arrow : "     ";
-        }
-        else if (i < 999) {
-            const auto formatted_arrow =
-                format->format("{}", FormatParam{"➞   ", Style::bold | Style::italic | Style::yellow});
-            prefix = (i == line_num) ? formatted_arrow : "    ";
-        }
-        else if (i < 9999) {
-            const auto formatted_arrow =
-                format->format("{}", FormatParam{"➞  ", Style::bold | Style::italic | Style::yellow});
-            prefix = (i == line_num) ? formatted_arrow : "   ";
-        }
-        else {
-            panic("10000+ line yaml files not supported, file a bug report");
-        }
-
-        if (i == line_num) {
-            const auto highlight_line =
-                format->format("{}", FormatParam{lines[i], Style::bold | Style::italic | Style::yellow});
-            details.push_back(prefix + std::to_string(i + 1) + ":   " + highlight_line);
-        }
-        else {
-            details.push_back(prefix + std::to_string(i + 1) + ":   " + lines[i]);
-        }
-    }
-
-    return details;
+    // Use FileHighlightPrinter, converting from 0-indexed mark.line to 1-indexed
+    const FileHighlightPrinter printer{gsl::not_null{format}};
+    return printer.print(lines, 7, {line_num + 1});
 }
 
 /**
