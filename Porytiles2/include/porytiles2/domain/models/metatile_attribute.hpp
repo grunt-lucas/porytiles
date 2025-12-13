@@ -61,6 +61,11 @@ class MetatileAttribute {
         return layer_type_;
     }
 
+    void layer_type(LayerType layer_type)
+    {
+        layer_type_ = layer_type;
+    }
+
     [[nodiscard]] std::uint16_t behavior() const
     {
         return behavior_;

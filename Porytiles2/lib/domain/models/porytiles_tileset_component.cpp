@@ -4,11 +4,28 @@
 
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/metatile.hpp"
+#include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
+
+void PorytilesTilesetComponent::insert_attribute(std::size_t metatile_id, MetatileAttribute attribute)
+{
+    if (metatile_attributes_.contains(metatile_id)) {
+        panic("id " + std::to_string(metatile_id) + " already exists in attr map");
+    }
+    metatile_attributes_.insert({metatile_id, std::move(attribute)});
+}
+
+std::optional<MetatileAttribute> PorytilesTilesetComponent::get_attribute(std::size_t metatile_id) const
+{
+    if (metatile_attributes_.contains(metatile_id)) {
+        return metatile_attributes_.at(metatile_id);
+    }
+    return std::nullopt;
+}
 
 void PorytilesTilesetComponent::set_pal(std::size_t pal_index, Palette<Rgba32, pal::max_size> pal)
 {

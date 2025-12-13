@@ -404,7 +404,8 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step5_assemble_output()
     }
 
     // Copy metatile attributes from original
-    for (const auto &metatile : porytiles_metatiles_) {
+    for (std::size_t i = 0; i < porytiles_metatiles_.size(); i++) {
+        const auto &metatile = porytiles_metatiles_[i];
         LayerType layer_type;
         if (configured_layer_mode == LayerMode::dual) {
             layer_type = metatile.infer_layer_type(extrinsic_transparency_.value());
@@ -412,9 +413,18 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step5_assemble_output()
         else {
             layer_type = LayerType::normal;
         }
-        // TODO: need to copy over metatile behavior (and other firered attrs if relevant)
-        const MetatileAttribute new_attr{layer_type, 0};
-        new_porymap_component_->push_back_attribute(new_attr);
+        const auto maybe_porytiles_attr = tileset_.porytiles_component().get_attribute(i);
+        if (maybe_porytiles_attr.has_value()) {
+            // Copy over attribute from Porytiles component, use inferred layer type.
+            MetatileAttribute new_attr{maybe_porytiles_attr.value()};
+            new_attr.layer_type(layer_type);
+            new_porymap_component_->push_back_attribute(new_attr);
+        }
+        else {
+            // No Porytiles attribute present. Create a new attribute with inferred layer type and default values.
+            const MetatileAttribute new_attr{layer_type, 0};
+            new_porymap_component_->push_back_attribute(new_attr);
+        }
     }
 
     // TODO: Copy over PLA files once we implement handling

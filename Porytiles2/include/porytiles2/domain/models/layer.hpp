@@ -93,7 +93,7 @@ inline std::ostream &operator<<(std::ostream &os, const LayerMode mode)
  * - covered: Uses bottom and middle layers
  * - split: Uses bottom and top layers
  */
-enum class LayerType : std::uint8_t { normal = 0, covered = 1, split = 2 };
+enum class LayerType : unsigned int { normal = 0, covered = 1, split = 2 };
 
 /**
  * @brief Converts LayerType to string representation.
@@ -121,9 +121,9 @@ enum class LayerType : std::uint8_t { normal = 0, covered = 1, split = 2 };
  * @param i The integer value (must be 0, 1, or 2)
  * @return ChainableResult containing the LayerType or an error
  */
-[[nodiscard]] inline ChainableResult<LayerType> layer_type_from_int(std::uint8_t i)
+[[nodiscard]] inline ChainableResult<LayerType> layer_type_from_int(unsigned int i)
 {
-    if (i > static_cast<std::uint8_t>(LayerType::split)) {
+    if (i > static_cast<unsigned int>(LayerType::split)) {
         return FormattableError{
             "invalid layer type integer value '{}': must be 0, 1, or 2", FormatParam{i, Style::bold}};
     }
