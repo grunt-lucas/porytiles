@@ -62,11 +62,18 @@ class CompileTilesetCommand final : public Command {
         // Manually create other services (not yet using DI for these)
         std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter);
 
+        /*
+         * TODO: below we're passing hardcoded "." for project root and "include/*" for structural project files. At
+         * some point we'll want the CLI tool to provide a way for users to change these values, in case:
+         * - they are not running the CLI tool from the project root directory
+         * - they moved fieldmap.h, metatile_behaviors.h, etc to a different location
+         */
+
         // Setup layered configuration
         ProjectTilesetArtifactKeyProvider key_provider{".", text_formatter, diag.get()};
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
         providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, diag.get(), ".", key_provider));
-        providers.push_back(std::make_unique<HeaderDefineProvider>(text_formatter, ".", "include/fieldmap.h"));
+        providers.push_back(std::make_unique<HeaderDefineProvider>(".", "include/fieldmap.h", text_formatter));
         providers.push_back(std::make_unique<DefaultProvider>());
         LazyLayeredConfig config{text_formatter, std::move(providers)};
 
@@ -85,7 +92,7 @@ class CompileTilesetCommand final : public Command {
         PrimaryTilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
 
         // Setup behavior map provider for attribute CSV parsing
-        HeaderBehaviorMapProvider behavior_map_provider{"./include/constants/metatile_behaviors.h"};
+        HeaderBehaviorMapProvider behavior_map_provider{".", "include/constants/metatile_behaviors.h"};
 
         // Setup the tileset repository
         ProjectTilesetArtifactReader artifact_reader{

@@ -14,16 +14,21 @@ using namespace porytiles2;
 
 template <std::size_t N>
 std::vector<std::string> print_palette_with_highlights_impl(
-    const Palette<Rgba32, N> &pal, const std::vector<std::size_t> &slots, const TextFormatter *format)
+    const Palette<Rgba32, N> &pal, const std::vector<std::size_t> &highlight_slots, const TextFormatter *format)
 {
     std::vector<std::string> lines{};
 
+    // JASC pal front matter
+    lines.push_back("  JASC-PAL");
+    lines.push_back("  0100");
+    lines.push_back(format->format("  {}", FormatParam{pal.size()}));
+
     for (std::size_t i = 0; i < pal.size(); ++i) {
-        const bool is_highlighted = std::ranges::find(slots, i) != slots.end();
+        const bool is_highlighted = std::ranges::find(highlight_slots, i) != highlight_slots.end();
 
         std::string prefix;
         if (is_highlighted) {
-            prefix = format->format("{}", FormatParam{"➞ ", Style::bold | Style::italic | Style::yellow});
+            prefix = format->format("{}", FormatParam{"➞ ", Style::bold | Style::yellow});
         }
         else {
             prefix = "  ";
@@ -31,7 +36,7 @@ std::vector<std::string> print_palette_with_highlights_impl(
 
         std::string slot_str;
         if (pal.is_wildcard(i)) {
-            slot_str = format->format("{}[{}]: {}", FormatParam{prefix}, FormatParam{i}, FormatParam{"<wildcard>"});
+            slot_str = format->format("{}{}", FormatParam{prefix}, FormatParam{"*"});
         }
         else {
             const Rgba32 color = pal.at(i);
@@ -40,11 +45,11 @@ std::vector<std::string> print_palette_with_highlights_impl(
             if (is_highlighted) {
                 const std::string color_text =
                     format->style(color.to_jasc_str(), Style::bold | Style::italic | Style::yellow | color_style);
-                slot_str = format->format("{}[{}]: {}", FormatParam{prefix}, FormatParam{i}, FormatParam{color_text});
+                slot_str = format->format("{}{}", FormatParam{prefix}, FormatParam{color_text});
             }
             else {
                 const std::string color_text = format->style(color.to_jasc_str(), color_style);
-                slot_str = format->format("{}[{}]: {}", FormatParam{prefix}, FormatParam{i}, FormatParam{color_text});
+                slot_str = format->format("{}{}", FormatParam{prefix}, FormatParam{color_text});
             }
         }
 
@@ -60,62 +65,43 @@ namespace porytiles2 {
 
 std::vector<std::string> ColorPalettePrinter::print_rgba_palette(const Palette<Rgba32, pal::max_size> &pal) const
 {
-    std::vector<std::string> lines{};
+    return print_palette_with_highlights_impl(pal, {}, format_);
+}
 
-    if (pal.size() >= 1) {
-        // First, print slot 0 color
-        const Rgba32 &slot_zero = pal.slot_zero_color();
-        const Style slot_zero_style = rgb_fg_style(slot_zero.red(), slot_zero.green(), slot_zero.blue());
-        const std::string slot_zero_text = format_->style(slot_zero.to_jasc_str(), slot_zero_style);
-        lines.push_back(format_->format("{}", FormatParam{slot_zero_text}));
+std::vector<std::string> ColorPalettePrinter::print_rgba_palette_with_highlights(
+    const Palette<Rgba32> &pal, const std::vector<std::size_t> &slots) const
+{
+    return print_palette_with_highlights_impl(pal, slots, format_);
+}
 
-        // Then iterate over remaining colors (indices 1 through size-1) in order
-        const auto index_to_color = pal.index_to_color_map();
-        for (const auto &color : index_to_color | std::views::values) {
-            const Style color_style = rgb_fg_style(color.red(), color.green(), color.blue());
-            const std::string color_text = format_->style(color.to_jasc_str(), color_style);
-            lines.push_back(format_->format("{}", FormatParam{color_text}));
-        }
-    }
-
-    return lines;
+std::vector<std::string> ColorPalettePrinter::print_rgba_palette_with_highlights(
+    const Palette<Rgba32, pal::max_size> &pal, const std::vector<std::size_t> &slots) const
+{
+    return print_palette_with_highlights_impl(pal, slots, format_);
 }
 
 [[nodiscard]] std::vector<std::string> ColorPalettePrinter::print_rgba_palette_covered_missing(
     const Palette<Rgba32, pal::max_size> &pal, std::set<Rgba32> covered_colors, std::set<Rgba32> missing_colors) const
 {
-    std::vector<std::string> lines{};
-
-    if (pal.size() >= 1) {
-        // First, print slot 0 color
-        const Rgba32 &slot_zero = pal.slot_zero_color();
-        const Style slot_zero_style = rgb_fg_style(slot_zero.red(), slot_zero.green(), slot_zero.blue());
-        const std::string slot_zero_text = format_->style(slot_zero.to_jasc_str(), slot_zero_style);
-        lines.push_back(format_->format("{}", FormatParam{slot_zero_text}));
-
-        // Then iterate over remaining colors (indices 1 through size-1) in order
-        const auto index_to_color = pal.index_to_color_map();
-        for (const auto &color : index_to_color | std::views::values) {
-            if (covered_colors.contains(color)) {
-                const Style color_style = rgb_fg_style(color.red(), color.green(), color.blue());
-                const std::string color_text =
-                    format_->style(color.to_jasc_str(), Style::bold | Style::italic | color_style);
-                lines.push_back(format_->format(
-                    "{} {}", FormatParam{color_text}, FormatParam{"← covered", Style::bold | Style::yellow}));
-            }
-            else {
-                const Style color_style = rgb_fg_style(color.red(), color.green(), color.blue());
-                const std::string color_text = format_->style(color.to_jasc_str(), color_style);
-                lines.push_back(format_->format("{}", FormatParam{color_text}));
-            }
+    // Build highlight_slots from covered_colors
+    std::vector<std::size_t> highlight_slots;
+    const auto index_to_color = pal.index_to_color_map();
+    for (const auto &[index, color] : index_to_color) {
+        if (covered_colors.contains(color)) {
+            highlight_slots.push_back(index);
         }
-        if (!missing_colors.empty()) {
-            lines.push_back(format_->format("{}", FormatParam{"------ Palette Would Need ------", Style::bold}));
-            for (const auto &color : missing_colors) {
-                const Style color_style = rgb_fg_style(color.red(), color.green(), color.blue());
-                const std::string color_text = format_->style(color.to_jasc_str(), color_style);
-                lines.push_back(format_->format("{}", FormatParam{color_text}));
-            }
+    }
+
+    // Use the common implementation for palette printing with highlights
+    std::vector<std::string> lines = print_palette_with_highlights_impl(pal, highlight_slots, format_);
+
+    // Append missing colors section if needed
+    if (!missing_colors.empty()) {
+        lines.push_back(format_->format("{}", FormatParam{"------ Palette Still Missing ------", Style::bold}));
+        for (const auto &color : missing_colors) {
+            const Style color_style = rgb_fg_style(color.red(), color.green(), color.blue());
+            const std::string color_text = format_->style(color.to_jasc_str(), color_style);
+            lines.push_back(format_->format("{}", FormatParam{color_text}));
         }
     }
 
@@ -132,18 +118,6 @@ ColorPalettePrinter::print_rgba_counts(const std::vector<std::pair<Rgba32, unsig
         lines.push_back(format_->format("{} ➞ {} pixel(s)", FormatParam{color_text}, FormatParam{count}));
     }
     return lines;
-}
-
-std::vector<std::string> ColorPalettePrinter::print_rgba_palette_with_highlights(
-    const Palette<Rgba32> &pal, const std::vector<std::size_t> &slots) const
-{
-    return print_palette_with_highlights_impl(pal, slots, format_);
-}
-
-std::vector<std::string> ColorPalettePrinter::print_rgba_palette_with_highlights(
-    const Palette<Rgba32, pal::max_size> &pal, const std::vector<std::size_t> &slots) const
-{
-    return print_palette_with_highlights_impl(pal, slots, format_);
 }
 
 } // namespace porytiles2

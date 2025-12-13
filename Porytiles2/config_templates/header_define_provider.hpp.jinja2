@@ -42,14 +42,14 @@ class HeaderDefineProvider final : public ConfigProvider {
      * This constructor sets up the provider to read configuration values from #define directives in the specified
      * header file. The header file is loaded lazily when first accessed and cached for subsequent lookups.
      *
+     * @param header_relative_path The path to the header file relative to project_root
      * @param format A pointer to the TextFormatter to use
      * @param project_root The root directory of the project
-     * @param header_relative_path The path to the header file relative to project_root
      */
     explicit HeaderDefineProvider(
-        gsl::not_null<const TextFormatter *> format,
         const std::filesystem::path &project_root,
-        const std::filesystem::path &header_relative_path);
+        const std::filesystem::path &header_relative_path,
+        gsl::not_null<const TextFormatter *> format);
 
     /**
      * @brief Constructs a HeaderDefineProvider with a default PlainTextFormatter.

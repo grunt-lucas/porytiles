@@ -22,9 +22,9 @@ namespace porytiles2 {
  */
 
 HeaderDefineProvider::HeaderDefineProvider(
-    gsl::not_null<const TextFormatter *> format,
     const std::filesystem::path &project_root,
-    const std::filesystem::path &header_relative_path)
+    const std::filesystem::path &header_relative_path,
+    gsl::not_null<const TextFormatter *> format)
     : format_{format}, project_root_{project_root}, header_relative_path_{header_relative_path}
 {
     // Header file is loaded lazily when first accessed via the anonymous namespace functions

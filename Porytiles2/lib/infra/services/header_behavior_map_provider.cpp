@@ -114,8 +114,9 @@ bool try_parse_enum_format(
 
 } // namespace
 
-HeaderBehaviorMapProvider::HeaderBehaviorMapProvider(std::filesystem::path header_path)
-    : header_path_{std::move(header_path)}
+HeaderBehaviorMapProvider::HeaderBehaviorMapProvider(
+    const std::filesystem::path &project_root, const std::filesystem::path &header_relative_path)
+    : project_root_{project_root}, header_relative_path_{header_relative_path}
 {
 }
 
@@ -149,11 +150,12 @@ void HeaderBehaviorMapProvider::ensure_loaded() const
 
     loaded_ = true;
 
-    if (!std::filesystem::exists(header_path_)) {
+    const auto header_path = project_root_ / header_relative_path_;
+    if (!std::filesystem::exists(header_path)) {
         return;
     }
 
-    std::ifstream file{header_path_};
+    std::ifstream file{header_path};
     if (!file.is_open()) {
         return;
     }

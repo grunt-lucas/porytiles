@@ -42,9 +42,11 @@ class HeaderBehaviorMapProvider final : public BehaviorMapProvider {
      * either the define format or the enum format. The header file is loaded lazily when first accessed via lookup()
      * and cached for subsequent lookups.
      *
-     * @param header_path Path to the metatile_behaviors.h file
+     * @param project_root The root directory of the project
+     * @param header_relative_path The path to the metatile_behaviors.h file relative to project_root
      */
-    explicit HeaderBehaviorMapProvider(std::filesystem::path header_path);
+    explicit HeaderBehaviorMapProvider(
+        const std::filesystem::path &project_root, const std::filesystem::path &header_relative_path);
 
     [[nodiscard]] std::optional<std::uint16_t> lookup(const std::string &behavior_name) const override;
 
@@ -53,7 +55,8 @@ class HeaderBehaviorMapProvider final : public BehaviorMapProvider {
   private:
     void ensure_loaded() const;
 
-    std::filesystem::path header_path_;
+    std::filesystem::path project_root_;
+    std::filesystem::path header_relative_path_;
     mutable bool loaded_{false};
     mutable std::unordered_map<std::string, std::uint16_t> name_to_value_;
     mutable std::unordered_map<std::uint16_t, std::string> value_to_name_;

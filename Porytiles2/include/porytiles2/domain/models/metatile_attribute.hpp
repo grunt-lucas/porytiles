@@ -71,6 +71,11 @@ class MetatileAttribute {
         return behavior_;
     }
 
+    void behavior(std::uint16_t behavior)
+    {
+        behavior_ = behavior;
+    }
+
   private:
     LayerType layer_type_;
     std::uint16_t behavior_;

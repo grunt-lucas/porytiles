@@ -65,7 +65,7 @@ class ImportTilesetCommand final : public Command {
         ProjectTilesetArtifactKeyProvider key_provider{".", text_formatter, diag.get()};
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
         providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, diag.get(), ".", key_provider));
-        providers.push_back(std::make_unique<HeaderDefineProvider>(text_formatter, ".", "include/fieldmap.h"));
+        providers.push_back(std::make_unique<HeaderDefineProvider>(".", "include/fieldmap.h", text_formatter));
         providers.push_back(std::make_unique<DefaultProvider>());
         LazyLayeredConfig config{text_formatter, std::move(providers)};
 
@@ -85,7 +85,7 @@ class ImportTilesetCommand final : public Command {
         PrimaryTilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
 
         // Setup behavior map provider for attribute CSV parsing
-        HeaderBehaviorMapProvider behavior_map_provider{"./include/constants/metatile_behaviors.h"};
+        HeaderBehaviorMapProvider behavior_map_provider{".", "include/constants/metatile_behaviors.h"};
 
         // Setup the tileset repository
         ProjectTilesetArtifactReader artifact_reader{

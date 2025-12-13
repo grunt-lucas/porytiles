@@ -414,17 +414,15 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step5_assemble_output()
             layer_type = LayerType::normal;
         }
         const auto maybe_porytiles_attr = tileset_.porytiles_component().get_attribute(i);
+        MetatileAttribute new_attr{};
+        new_attr.layer_type(layer_type);
+
+        // TODO: handle firered/custom stuff here properly
         if (maybe_porytiles_attr.has_value()) {
             // Copy over attribute from Porytiles component, use inferred layer type.
-            MetatileAttribute new_attr{maybe_porytiles_attr.value()};
-            new_attr.layer_type(layer_type);
-            new_porymap_component_->push_back_attribute(new_attr);
+            new_attr.behavior(maybe_porytiles_attr.value().behavior());
         }
-        else {
-            // No Porytiles attribute present. Create a new attribute with inferred layer type and default values.
-            const MetatileAttribute new_attr{layer_type, 0};
-            new_porymap_component_->push_back_attribute(new_attr);
-        }
+        new_porymap_component_->push_back_attribute(new_attr);
     }
 
     // TODO: Copy over PLA files once we implement handling
@@ -795,7 +793,7 @@ void CompilerTask::pipeline_helper_emit_no_matching_pal_error(
     // Emit a long note showing the top N closest matches
     std::vector<std::string> closest_n_note{};
     // TODO: substitute configurable top_n for N
-    closest_n_note.emplace_back("closest N match(es):");
+    closest_n_note.emplace_back("closest N match(es) with covered colors highlighted:");
     int match_index = 0;
     for (const auto &match : matches) {
         if (match_index != 0) {
