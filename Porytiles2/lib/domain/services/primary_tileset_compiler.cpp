@@ -564,6 +564,9 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing(const std::v
     /*
      * TODO: we should have warnings get generated here if any colors in the hints/Porytiles pals did not appear in
      * the layer PNGs.
+     *
+     * - tileset_.porytiles_component().pals()
+     * - hints
      */
 
     /*
@@ -583,7 +586,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing(const std::v
     PalettePacker pal_packer{&packing_strategy, &format_, &diag_};
     std::bitset<pal::num_pals> available_pals{0};
     for (std::size_t i = 0; i < num_pals_in_primary_; i++) {
-        // TODO: support out-of-band primary palettes
+        // TODO: support out-of-band primary palettes - see "Primary Palette Fixing" in topic_staging_area.md
         available_pals.set(i, true);
     }
     PackingParams packing_params{};
@@ -601,16 +604,34 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing(const std::v
         void);
 
     for (std::size_t i = 0; i < pal::num_pals; i++) {
-        const auto &maybe_packed_pal = pal_packing.pals_.at(i);
-        if (maybe_packed_pal.has_value()) {
+        if (const auto &maybe_packed_pal = pal_packing.pals_.at(i); maybe_packed_pal.has_value()) {
             // Copy over the packed palette
             new_porymap_pals_[i] = maybe_packed_pal.value();
         }
         else if (tileset_.porytiles_component().pal_at(i).has_value()) {
             /*
-             * TODO: out-of-band Porytiles pal: resolve all wildcards to some default and copy it over
+             * Out-of-band Porytiles palette: exists but wasn't used in packing (e.g., palette 11.pal in a primary
+             * tileset). Resolve all wildcards to black and copy it over.
              */
-            panic("TODO: implement copy for out-of-band Porytiles pal");
+            const auto &porytiles_pal = tileset_.porytiles_component().pal_at(i).value();
+            Palette<Rgba32, pal::max_size> resolved_pal{Rgba32{0, 0, 0, Rgba32::alpha_opaque}};
+
+            // Handle slot 0: preserve if not wildcard, otherwise use extrinsic transparency
+            if (!porytiles_pal.is_wildcard(0)) {
+                resolved_pal.set(0, porytiles_pal.at(0));
+            }
+            else {
+                resolved_pal.set(0, extrinsic_transparency_.value());
+            }
+
+            // Copy non-wildcard slots (wildcards remain as the default black)
+            for (std::size_t j = 1; j < pal::max_size; ++j) {
+                if (!porytiles_pal.is_wildcard(j)) {
+                    resolved_pal.set(j, porytiles_pal.at(j));
+                }
+            }
+
+            new_porymap_pals_[i] = resolved_pal;
         }
         else {
             /*
