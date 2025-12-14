@@ -1,16 +1,21 @@
 #include "porytiles2/infra/services/header_behavior_map_provider.hpp"
 
+#include <algorithm>
 #include <fstream>
-#include <regex>
 #include <sstream>
 #include <string>
 #include <vector>
 
 #include "porytiles2/utilities/parse_int.hpp"
-
-namespace porytiles2 {
+#include "porytiles2/utilities/string_utils.hpp"
 
 namespace {
+
+using namespace porytiles2;
+
+/*
+ * TODO: this whole class should provide more robust error printouts when it hits unexpected input
+ */
 
 std::vector<std::string> tokenize_line(const std::string &line)
 {
@@ -114,57 +119,95 @@ bool try_parse_enum_format(
 
 } // namespace
 
+namespace porytiles2 {
+
 HeaderBehaviorMapProvider::HeaderBehaviorMapProvider(
-    const std::filesystem::path &project_root, const std::filesystem::path &header_relative_path)
-    : project_root_{project_root}, header_relative_path_{header_relative_path}
+    const std::filesystem::path &project_root,
+    const std::filesystem::path &header_relative_path,
+    gsl::not_null<const TextFormatter *> format,
+    gsl::not_null<const UserDiagnostics *> diag)
+    : project_root_{project_root}, header_relative_path_{header_relative_path}, format_{format}, diag_{diag},
+      file_printer_{std::make_unique<FileHighlightPrinter>(format)}
 {
 }
 
-std::optional<std::uint16_t> HeaderBehaviorMapProvider::lookup(const std::string &behavior_name) const
+ChainableResult<std::uint16_t> HeaderBehaviorMapProvider::lookup(const std::string &behavior_name) const
 {
-    ensure_loaded();
+    auto load_result = ensure_loaded();
+    if (!load_result.has_value()) {
+        return ChainableResult<std::uint16_t>{FormattableError{"behavior lookup failed"}, load_result};
+    }
 
     const auto it = name_to_value_.find(behavior_name);
     if (it == name_to_value_.end()) {
-        return std::nullopt;
+        return FormattableError{
+            "unknown behavior '{}' not found in '{}'",
+            FormatParam{behavior_name, Style::bold},
+            FormatParam{header_relative_path_.string(), Style::bold}};
     }
     return it->second;
 }
 
-std::optional<std::string> HeaderBehaviorMapProvider::lookup(std::uint16_t behavior_value) const
+ChainableResult<std::string> HeaderBehaviorMapProvider::lookup(std::uint16_t behavior_value) const
 {
-    ensure_loaded();
+    auto load_result = ensure_loaded();
+    if (!load_result.has_value()) {
+        return ChainableResult<std::string>{FormattableError{"behavior lookup failed"}, load_result};
+    }
 
     const auto it = value_to_name_.find(behavior_value);
     if (it == value_to_name_.end()) {
-        return std::nullopt;
+        return FormattableError{
+            "unknown behavior value '{}' not found in '{}'",
+            FormatParam{behavior_value, Style::bold},
+            FormatParam{header_relative_path_.string(), Style::bold}};
     }
     return it->second;
 }
 
-void HeaderBehaviorMapProvider::ensure_loaded() const
+ChainableResult<void> HeaderBehaviorMapProvider::ensure_loaded() const
 {
     if (loaded_) {
-        return;
+        if (load_failed_) {
+            return FormattableError{"behavior header file previously failed to load"};
+        }
+        return {};
     }
 
     loaded_ = true;
 
     const auto header_path = project_root_ / header_relative_path_;
+
     if (!std::filesystem::exists(header_path)) {
-        return;
+        load_failed_ = true;
+        std::vector<std::string> err_lines{};
+        err_lines.push_back(
+            format_->format("{}: behavior header file does not exist", FormatParam{header_path.string(), Style::bold}));
+        diag_->err("behavior-header-load-failure", err_lines);
+        return FormattableError{"behavior header file not found"};
     }
 
     std::ifstream file{header_path};
     if (!file.is_open()) {
-        return;
+        load_failed_ = true;
+        std::vector<std::string> err_lines{};
+        err_lines.push_back(
+            format_->format("{}: failed to open behavior header file", FormatParam{header_path.string(), Style::bold}));
+        diag_->err("behavior-header-load-failure", err_lines);
+        return FormattableError{"failed to open behavior header file"};
+    }
+
+    // Slurp the file for FileHighlightPrinter support
+    std::string line;
+    while (std::getline(file, line)) {
+        trim_line_ending(line);
+        cached_lines_.push_back(line);
     }
 
     std::uint16_t enum_counter = 0;
-    std::string line;
 
-    while (std::getline(file, line)) {
-        auto tokens = tokenize_line(line);
+    for (const auto &cached_line : cached_lines_) {
+        auto tokens = tokenize_line(cached_line);
         if (tokens.empty()) {
             continue;
         }
@@ -177,6 +220,18 @@ void HeaderBehaviorMapProvider::ensure_loaded() const
         // Try enum format (implicit counter-based values)
         try_parse_enum_format(tokens, name_to_value_, value_to_name_, enum_counter);
     }
+
+    if (name_to_value_.empty()) {
+        load_failed_ = true;
+        std::vector<std::string> err_lines{};
+        err_lines.push_back(format_->format(
+            "{}: no behavior definitions found (expected MB_* defines or enum entries)",
+            FormatParam{header_path.string(), Style::bold}));
+        diag_->err("behavior-header-load-failure", err_lines);
+        return FormattableError{"no behavior definitions found in header file"};
+    }
+
+    return {};
 }
 
 } // namespace porytiles2

@@ -2,11 +2,18 @@
 
 #include <cstdint>
 #include <filesystem>
-#include <optional>
+#include <memory>
 #include <string>
 #include <unordered_map>
+#include <vector>
+
+#include "gsl/pointers"
 
 #include "porytiles2/domain/services/behavior_map_provider.hpp"
+#include "porytiles2/infra/services/file_highlight_printer.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
+#include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles2 {
 
@@ -44,20 +51,30 @@ class HeaderBehaviorMapProvider final : public BehaviorMapProvider {
      *
      * @param project_root The root directory of the project
      * @param header_relative_path The path to the metatile_behaviors.h file relative to project_root
+     * @param format The text formatter for styled output
+     * @param diag The user diagnostics for error reporting
      */
-    explicit HeaderBehaviorMapProvider(
-        const std::filesystem::path &project_root, const std::filesystem::path &header_relative_path);
+    HeaderBehaviorMapProvider(
+        const std::filesystem::path &project_root,
+        const std::filesystem::path &header_relative_path,
+        gsl::not_null<const TextFormatter *> format,
+        gsl::not_null<const UserDiagnostics *> diag);
 
-    [[nodiscard]] std::optional<std::uint16_t> lookup(const std::string &behavior_name) const override;
+    [[nodiscard]] ChainableResult<std::uint16_t> lookup(const std::string &behavior_name) const override;
 
-    [[nodiscard]] std::optional<std::string> lookup(std::uint16_t behavior_value) const override;
+    [[nodiscard]] ChainableResult<std::string> lookup(std::uint16_t behavior_value) const override;
 
   private:
-    void ensure_loaded() const;
+    ChainableResult<void> ensure_loaded() const;
 
     std::filesystem::path project_root_;
     std::filesystem::path header_relative_path_;
+    const TextFormatter *format_;
+    const UserDiagnostics *diag_;
+    std::unique_ptr<FileHighlightPrinter> file_printer_;
     mutable bool loaded_{false};
+    mutable bool load_failed_{false};
+    mutable std::vector<std::string> cached_lines_;
     mutable std::unordered_map<std::string, std::uint16_t> name_to_value_;
     mutable std::unordered_map<std::uint16_t, std::string> value_to_name_;
 };

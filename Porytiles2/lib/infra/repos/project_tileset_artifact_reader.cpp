@@ -171,7 +171,7 @@ import_porymap_palette(Tileset &dest, const ArtifactKey &src_key, std::size_t in
 
     const auto pal_result = loader.load(src_key.key());
     if (!pal_result.has_value()) {
-        return ChainableResult<void>{FormattableError{"failed to load palette"}, pal_result};
+        return ChainableResult<void>{FormattableError{"failed to load palette file"}, pal_result};
     }
     dest.porymap_component().set_pal(index, pal_result.value());
 
@@ -187,7 +187,7 @@ import_porytiles_palette(Tileset &dest, const ArtifactKey &src_key, std::size_t 
 
     const auto pal_result = loader.load_with_wildcards(src_key.key());
     if (!pal_result.has_value()) {
-        return ChainableResult<void>{FormattableError{"failed to load palette"}, pal_result};
+        return ChainableResult<void>{FormattableError{"failed to load palette file"}, pal_result};
     }
     dest.porytiles_component().set_pal(index, pal_result.value());
 
@@ -300,18 +300,37 @@ import_attributes_csv(Tileset &dest, const std::filesystem::path &csv_path, cons
         seen_ids.insert(row.metatile_id);
 
         auto behavior_value = behavior_map.lookup(row.behavior);
+
+        // TODO: use FileHighlightPrinter to display CSV lines that failed
+
         if (!behavior_value.has_value()) {
-            return FormattableError{
-                "{}:{}: unknown metatile behavior '{}'",
-                FormatParam{csv_path.string()},
-                FormatParam{line_number},
-                FormatParam{row.behavior}};
+            return ChainableResult<void>{
+                FormattableError{
+                    "{}:{}: unknown metatile behavior '{}'",
+                    FormatParam{csv_path.string()},
+                    FormatParam{line_number},
+                    FormatParam{row.behavior, Style::bold}},
+                behavior_value};
         }
 
         MetatileAttribute attribute{LayerType::normal, behavior_value.value()};
         dest.porytiles_component().insert_attribute(row.metatile_id, attribute);
     }
 
+    return {};
+}
+
+ChainableResult<void> import_porymap_anim_frame(
+    Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, std::size_t frame_index)
+{
+    // TODO: implement
+    return {};
+}
+
+ChainableResult<void> import_porytiles_anim_frame(
+    Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, std::size_t frame_index)
+{
+    // TODO: implement
     return {};
 }
 
@@ -324,10 +343,7 @@ namespace porytiles2 {
  */
 ChainableResult<void> ProjectTilesetArtifactReader::read_metatiles_bin(Tileset &dest, const ArtifactKey &src_key) const
 {
-    const auto result = import_metatiles_bin(dest, src_key);
-    if (!result.has_value()) {
-        return ChainableResult<void>{FormattableError{fmt::format("could not import metatiles.bin")}, result};
-    }
+    PT_TRY_CALL_PASS_ERR(import_metatiles_bin(dest, src_key), void);
     return {};
 }
 
@@ -335,36 +351,28 @@ ChainableResult<void>
 ProjectTilesetArtifactReader::read_metatile_attributes_bin(Tileset &dest, const ArtifactKey &src_key) const
 {
     // TODO: branch here based on target base game?
-    const auto result = import_emerald_metatile_attributes(dest, src_key);
-    if (!result.has_value()) {
-        return ChainableResult<void>{FormattableError{fmt::format("could not import metatile_attributes.bin")}, result};
-    }
+    PT_TRY_CALL_PASS_ERR(import_emerald_metatile_attributes(dest, src_key), void)
     return {};
 }
 
 ChainableResult<void> ProjectTilesetArtifactReader::read_tiles_png(Tileset &dest, const ArtifactKey &src_key) const
 {
-    const auto result = import_tiles_png(dest, src_key, *png_indexed_loader_);
-    if (!result.has_value()) {
-        return ChainableResult<void>{FormattableError{fmt::format("could not import tiles.png")}, result};
-    }
+    PT_TRY_CALL_PASS_ERR(import_tiles_png(dest, src_key, *png_indexed_loader_), void)
     return {};
 }
 
 ChainableResult<void>
 ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const
 {
-    const auto result = import_porymap_palette(dest, src_key, index, *pal_loader_);
-    if (!result.has_value()) {
-        return ChainableResult<void>{FormattableError{fmt::format("could not import pal {}", index)}, result};
-    }
+    PT_TRY_CALL_PASS_ERR(import_porymap_palette(dest, src_key, index, *pal_loader_), void)
     return {};
 }
 
 ChainableResult<void> ProjectTilesetArtifactReader::read_porymap_anim_frame(
     Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, std::size_t frame_index) const
 {
-    panic("TODO: implement read_porymap_anim_frame");
+    PT_TRY_CALL_PASS_ERR(import_porymap_anim_frame(dest, src_key, anim_name, frame_index), void);
+    return {};
 }
 
 /*
@@ -372,63 +380,58 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_porymap_anim_frame(
  */
 ChainableResult<void> ProjectTilesetArtifactReader::read_bottom_png(Tileset &dest, const ArtifactKey &src_key) const
 {
-    const auto result = import_layer_png(
-        dest, src_key, *png_rgba_loader_, [](PorytilesTilesetComponent &comp, const Image<Rgba32> &img) {
-            comp.bottom(img);
-        });
-    if (!result.has_value()) {
-        return ChainableResult<void>{FormattableError{fmt::format("failed to read bottom.png")}, result};
-    }
+    PT_TRY_CALL_PASS_ERR(
+        import_layer_png(
+            dest,
+            src_key,
+            *png_rgba_loader_,
+            [](PorytilesTilesetComponent &comp, const Image<Rgba32> &img) { comp.bottom(img); }),
+        void);
     return {};
 }
 
 ChainableResult<void> ProjectTilesetArtifactReader::read_middle_png(Tileset &dest, const ArtifactKey &src_key) const
 {
-    const auto result = import_layer_png(
-        dest, src_key, *png_rgba_loader_, [](PorytilesTilesetComponent &comp, const Image<Rgba32> &img) {
-            comp.middle(img);
-        });
-    if (!result.has_value()) {
-        return ChainableResult<void>{FormattableError{fmt::format("failed to read middle.png")}, result};
-    }
+    PT_TRY_CALL_PASS_ERR(
+        import_layer_png(
+            dest,
+            src_key,
+            *png_rgba_loader_,
+            [](PorytilesTilesetComponent &comp, const Image<Rgba32> &img) { comp.middle(img); }),
+        void);
     return {};
 }
 
 ChainableResult<void> ProjectTilesetArtifactReader::read_top_png(Tileset &dest, const ArtifactKey &src_key) const
 {
-    const auto result = import_layer_png(
-        dest, src_key, *png_rgba_loader_, [](PorytilesTilesetComponent &comp, const Image<Rgba32> &img) {
-            comp.top(img);
-        });
-    if (!result.has_value()) {
-        return ChainableResult<void>{FormattableError{fmt::format("failed to read top.png")}, result};
-    }
+    PT_TRY_CALL_PASS_ERR(
+        import_layer_png(
+            dest,
+            src_key,
+            *png_rgba_loader_,
+            [](PorytilesTilesetComponent &comp, const Image<Rgba32> &img) { comp.top(img); }),
+        void);
     return {};
 }
 
 ChainableResult<void> ProjectTilesetArtifactReader::read_attributes_csv(Tileset &dest, const ArtifactKey &src_key) const
 {
-    const auto result = import_attributes_csv(dest, src_key.key(), *behavior_map_provider_);
-    if (!result.has_value()) {
-        return ChainableResult<void>{FormattableError{fmt::format("could not import attributes.csv")}, result};
-    }
+    PT_TRY_CALL_PASS_ERR(import_attributes_csv(dest, src_key.key(), *behavior_map_provider_), void);
     return {};
 }
 
 ChainableResult<void>
 ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const
 {
-    const auto result = import_porytiles_palette(dest, src_key, index, *pal_loader_);
-    if (!result.has_value()) {
-        return ChainableResult<void>{FormattableError{fmt::format("could not import pal {}", index)}, result};
-    }
+    PT_TRY_CALL_PASS_ERR(import_porytiles_palette(dest, src_key, index, *pal_loader_), void);
     return {};
 }
 
 ChainableResult<void> ProjectTilesetArtifactReader::read_porytiles_anim_frame(
     Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, std::size_t frame_index) const
 {
-    panic("TODO: implement read_porytiles_anim_frame");
+    PT_TRY_CALL_PASS_ERR(import_porytiles_anim_frame(dest, src_key, anim_name, frame_index), void);
+    return {};
 }
 
 } // namespace porytiles2

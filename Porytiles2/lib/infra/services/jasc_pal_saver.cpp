@@ -2,8 +2,6 @@
 
 #include <fstream>
 
-#include "fmt/format.h"
-
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
@@ -14,7 +12,7 @@ JascPalSaver::save(const Palette<Rgba32, pal::max_size> &pal, const std::filesys
     // Open in binary so "\r\n" are explicitly written as CRLF on all platforms
     std::ofstream stream{path, std::ios::binary};
     if (!stream.is_open()) {
-        return FormattableError{fmt::format("{}: failed to open for writing", path.string())};
+        return FormattableError{"{}: failed to open for writing", FormatParam{path.string(), Style::bold}};
     }
 
     // TODO: \r\n or \n should be configurable
@@ -33,7 +31,7 @@ JascPalSaver::save(const Palette<Rgba32, pal::max_size> &pal, const std::filesys
     }
 
     if (stream.fail()) {
-        return FormattableError{fmt::format("{}: failed to write", path.string())};
+        return FormattableError{"{}: failed to write", FormatParam{path.string(), Style::bold}};
     }
 
     return {};

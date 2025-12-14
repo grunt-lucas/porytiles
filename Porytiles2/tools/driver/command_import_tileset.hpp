@@ -77,15 +77,16 @@ class ImportTilesetCommand final : public Command {
         PngIndexedImageLoader png_indexed_loader{};
         PngRgbaImageSaver png_rgba_saver{};
         PngIndexedImageSaver png_indexed_saver{};
-        JascPalLoader jasc_loader{};
-        JascPalSaver jasc_saver{};
+        JascPalLoader jasc_loader{diag.get(), text_formatter};
+        JascPalSaver jasc_saver{text_formatter};
 
         // Setup primary importer and compiler
         PrimaryTilesetImporter importer{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
         PrimaryTilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
 
         // Setup behavior map provider for attribute CSV parsing
-        HeaderBehaviorMapProvider behavior_map_provider{".", "include/constants/metatile_behaviors.h"};
+        HeaderBehaviorMapProvider behavior_map_provider{
+            ".", "include/constants/metatile_behaviors.h", text_formatter, diag.get()};
 
         // Setup the tileset repository
         ProjectTilesetArtifactReader artifact_reader{

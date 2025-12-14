@@ -45,17 +45,19 @@ class FileHighlightPrinter {
      * lines are styled with bold/italic/yellow formatting.
      *
      * When multiple lines are highlighted, the window expands to show all highlighted lines plus context around them.
+     * Line numbers are displayed as 1-indexed in the output (matching user expectations), but the input indices are
+     * 0-indexed (matching vector indices).
      *
      * @param lines The file contents as a vector of strings (one per line)
      * @param window_size Total number of context lines to show around highlighted lines
-     * @param line_nums_to_highlight 1-indexed line numbers to highlight (line 1 is the first line)
-     * @pre All line numbers in line_nums_to_highlight must be >= 1 and <= lines.size()
+     * @param line_indices_to_highlight 0-indexed line indices to highlight (index 0 is the first line)
+     * @pre All indices in line_indices_to_highlight must be < lines.size()
      * @return Formatted output lines ready for display
      */
     [[nodiscard]] std::vector<std::string> print(
         const std::vector<std::string> &lines,
         std::size_t window_size,
-        const std::vector<std::size_t> &line_nums_to_highlight) const;
+        const std::vector<std::size_t> &line_indices_to_highlight) const;
 
   private:
     const TextFormatter *format_;

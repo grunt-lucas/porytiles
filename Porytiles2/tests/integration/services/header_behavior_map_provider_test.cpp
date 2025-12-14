@@ -3,6 +3,8 @@
 #include <filesystem>
 
 #include "porytiles2/infra/services/header_behavior_map_provider.hpp"
+#include "porytiles2/utilities/text/plain_text_formatter.hpp"
+#include "porytiles2/xcut/diagnostics/buffered_user_diagnostics.hpp"
 
 using namespace porytiles2;
 
@@ -10,15 +12,21 @@ namespace {
 
 const std::filesystem::path kTestResourcesDir = "Resources/Tests/integration/services";
 
+class HeaderBehaviorMapProviderTest : public ::testing::Test {
+  protected:
+    PlainTextFormatter formatter_{};
+    BufferedUserDiagnostics diag_{};
+};
+
 } // namespace
 
 // =============================================================================
 // Define Format Tests
 // =============================================================================
 
-TEST(HeaderBehaviorMapProviderTest, DefineFormatParsesHexValues)
+TEST_F(HeaderBehaviorMapProviderTest, DefineFormatParsesHexValues)
 {
-    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_define.h"};
+    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_define.h", &formatter_, &diag_};
 
     // Test various hex values from the define format file
     auto normal = provider.lookup("MB_NORMAL");
@@ -42,17 +50,17 @@ TEST(HeaderBehaviorMapProviderTest, DefineFormatParsesHexValues)
     EXPECT_EQ(sky_pillar.value(), 0xEA);
 }
 
-TEST(HeaderBehaviorMapProviderTest, DefineFormatSkipsMbInvalid)
+TEST_F(HeaderBehaviorMapProviderTest, DefineFormatSkipsMbInvalid)
 {
-    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_define.h"};
+    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_define.h", &formatter_, &diag_};
 
     auto invalid = provider.lookup("MB_INVALID");
     EXPECT_FALSE(invalid.has_value());
 }
 
-TEST(HeaderBehaviorMapProviderTest, DefineFormatHandlesAbridgedFile)
+TEST_F(HeaderBehaviorMapProviderTest, DefineFormatHandlesAbridgedFile)
 {
-    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_abridged.h"};
+    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_abridged.h", &formatter_, &diag_};
 
     auto normal = provider.lookup("MB_NORMAL");
     ASSERT_TRUE(normal.has_value());
@@ -71,9 +79,9 @@ TEST(HeaderBehaviorMapProviderTest, DefineFormatHandlesAbridgedFile)
 // Enum Format Tests
 // =============================================================================
 
-TEST(HeaderBehaviorMapProviderTest, EnumFormatParsesCounterBasedValues)
+TEST_F(HeaderBehaviorMapProviderTest, EnumFormatParsesCounterBasedValues)
 {
-    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_enum.h"};
+    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_enum.h", &formatter_, &diag_};
 
     // Enum values are counter-based starting at 0
     auto normal = provider.lookup("MB_NORMAL");
@@ -94,9 +102,9 @@ TEST(HeaderBehaviorMapProviderTest, EnumFormatParsesCounterBasedValues)
     EXPECT_EQ(deep_water.value(), 18);
 }
 
-TEST(HeaderBehaviorMapProviderTest, EnumFormatHandlesCommentsAfterComma)
+TEST_F(HeaderBehaviorMapProviderTest, EnumFormatHandlesCommentsAfterComma)
 {
-    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_enum.h"};
+    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_enum.h", &formatter_, &diag_};
 
     // MB_INTERIOR_DEEP_WATER has a trailing comment in the enum file
     // "MB_INTERIOR_DEEP_WATER, // Used by interior maps; functionally the same as MB_DEEP_WATER"
@@ -105,9 +113,9 @@ TEST(HeaderBehaviorMapProviderTest, EnumFormatHandlesCommentsAfterComma)
     EXPECT_EQ(interior_deep_water.value(), 17);
 }
 
-TEST(HeaderBehaviorMapProviderTest, EnumFormatSkipsMbInvalid)
+TEST_F(HeaderBehaviorMapProviderTest, EnumFormatSkipsMbInvalid)
 {
-    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_enum.h"};
+    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_enum.h", &formatter_, &diag_};
 
     // MB_INVALID is defined as UCHAR_MAX in the enum file via #define, not in the enum
     // It should not be in the map
@@ -115,9 +123,9 @@ TEST(HeaderBehaviorMapProviderTest, EnumFormatSkipsMbInvalid)
     EXPECT_FALSE(invalid.has_value());
 }
 
-TEST(HeaderBehaviorMapProviderTest, EnumFormatParsesHigherIndexValues)
+TEST_F(HeaderBehaviorMapProviderTest, EnumFormatParsesHigherIndexValues)
 {
-    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_enum.h"};
+    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_enum.h", &formatter_, &diag_};
 
     // Test some higher-index values to verify counter is working correctly
     auto muddy_slope = provider.lookup("MB_MUDDY_SLOPE");
@@ -129,17 +137,18 @@ TEST(HeaderBehaviorMapProviderTest, EnumFormatParsesHigherIndexValues)
 // Edge Cases
 // =============================================================================
 
-TEST(HeaderBehaviorMapProviderTest, NonExistentFileReturnsNulloptOnLookup)
+TEST_F(HeaderBehaviorMapProviderTest, NonExistentFileReturnsErrorOnLookup)
 {
-    HeaderBehaviorMapProvider provider{kTestResourcesDir, "does_not_exist.h"};
+    HeaderBehaviorMapProvider provider{kTestResourcesDir, "does_not_exist.h", &formatter_, &diag_};
 
     auto result = provider.lookup("MB_NORMAL");
     EXPECT_FALSE(result.has_value());
+    EXPECT_EQ(diag_.error_tag_counts().at("behavior-header-load-failure"), 1);
 }
 
-TEST(HeaderBehaviorMapProviderTest, UnknownBehaviorReturnsNullopt)
+TEST_F(HeaderBehaviorMapProviderTest, UnknownBehaviorReturnsError)
 {
-    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_define.h"};
+    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_define.h", &formatter_, &diag_};
 
     auto result = provider.lookup("MB_DOES_NOT_EXIST");
     EXPECT_FALSE(result.has_value());
@@ -151,21 +160,22 @@ TEST(HeaderBehaviorMapProviderTest, UnknownBehaviorReturnsNullopt)
     EXPECT_FALSE(result3.has_value());
 }
 
-TEST(HeaderBehaviorMapProviderTest, EmptyFileReturnsNulloptOnLookup)
+TEST_F(HeaderBehaviorMapProviderTest, EmptyFileReturnsErrorOnLookup)
 {
-    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_empty.h"};
+    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_empty.h", &formatter_, &diag_};
 
     auto result = provider.lookup("MB_NORMAL");
     EXPECT_FALSE(result.has_value());
+    EXPECT_EQ(diag_.error_tag_counts().at("behavior-header-load-failure"), 1);
 }
 
 // =============================================================================
 // Reverse Lookup Tests (value -> name)
 // =============================================================================
 
-TEST(HeaderBehaviorMapProviderTest, ReverseLookupDefineFormat)
+TEST_F(HeaderBehaviorMapProviderTest, ReverseLookupDefineFormat)
 {
-    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_define.h"};
+    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_define.h", &formatter_, &diag_};
 
     // Reverse lookup: value -> name
     auto normal = provider.lookup(static_cast<std::uint16_t>(0x00));
@@ -185,9 +195,9 @@ TEST(HeaderBehaviorMapProviderTest, ReverseLookupDefineFormat)
     EXPECT_EQ(counter.value(), "MB_COUNTER");
 }
 
-TEST(HeaderBehaviorMapProviderTest, ReverseLookupEnumFormat)
+TEST_F(HeaderBehaviorMapProviderTest, ReverseLookupEnumFormat)
 {
-    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_enum.h"};
+    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_enum.h", &formatter_, &diag_};
 
     // Reverse lookup: value -> name
     auto normal = provider.lookup(static_cast<std::uint16_t>(0));
@@ -203,9 +213,9 @@ TEST(HeaderBehaviorMapProviderTest, ReverseLookupEnumFormat)
     EXPECT_EQ(deep_water.value(), "MB_DEEP_WATER");
 }
 
-TEST(HeaderBehaviorMapProviderTest, ReverseLookupUnknownValueReturnsNullopt)
+TEST_F(HeaderBehaviorMapProviderTest, ReverseLookupUnknownValueReturnsError)
 {
-    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_abridged.h"};
+    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_abridged.h", &formatter_, &diag_};
 
     // Abridged file only has 3 behaviors (0x00, 0x01, 0x02)
     auto result = provider.lookup(static_cast<std::uint16_t>(0xFF));
@@ -215,25 +225,27 @@ TEST(HeaderBehaviorMapProviderTest, ReverseLookupUnknownValueReturnsNullopt)
     EXPECT_FALSE(result2.has_value());
 }
 
-TEST(HeaderBehaviorMapProviderTest, ReverseLookupNonExistentFileReturnsNullopt)
+TEST_F(HeaderBehaviorMapProviderTest, ReverseLookupNonExistentFileReturnsError)
 {
-    HeaderBehaviorMapProvider provider{kTestResourcesDir, "does_not_exist.h"};
+    HeaderBehaviorMapProvider provider{kTestResourcesDir, "does_not_exist.h", &formatter_, &diag_};
 
     auto result = provider.lookup(static_cast<std::uint16_t>(0x00));
     EXPECT_FALSE(result.has_value());
+    EXPECT_EQ(diag_.error_tag_counts().at("behavior-header-load-failure"), 1);
 }
 
-TEST(HeaderBehaviorMapProviderTest, ReverseLookupEmptyFileReturnsNullopt)
+TEST_F(HeaderBehaviorMapProviderTest, ReverseLookupEmptyFileReturnsError)
 {
-    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_empty.h"};
+    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_empty.h", &formatter_, &diag_};
 
     auto result = provider.lookup(static_cast<std::uint16_t>(0x00));
     EXPECT_FALSE(result.has_value());
+    EXPECT_EQ(diag_.error_tag_counts().at("behavior-header-load-failure"), 1);
 }
 
-TEST(HeaderBehaviorMapProviderTest, BidirectionalLookupIsConsistent)
+TEST_F(HeaderBehaviorMapProviderTest, BidirectionalLookupIsConsistent)
 {
-    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_define.h"};
+    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_define.h", &formatter_, &diag_};
 
     // Forward lookup: name -> value
     auto value = provider.lookup("MB_TALL_GRASS");

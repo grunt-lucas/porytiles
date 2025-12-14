@@ -18,7 +18,7 @@ FileHighlightPrinter::FileHighlightPrinter(gsl::not_null<const TextFormatter *> 
 std::vector<std::string> FileHighlightPrinter::print(
     const std::vector<std::string> &lines,
     std::size_t window_size,
-    const std::vector<std::size_t> &line_nums_to_highlight) const
+    const std::vector<std::size_t> &line_indices_to_highlight) const
 {
     std::vector<std::string> result;
 
@@ -26,20 +26,19 @@ std::vector<std::string> FileHighlightPrinter::print(
         return result;
     }
 
-    // Convert 1-indexed input to 0-indexed and build a set for O(1) lookup
+    // Build a set for O(1) lookup (input is already 0-indexed)
     std::set<std::size_t> highlight_set;
     std::size_t min_line = std::numeric_limits<std::size_t>::max();
     std::size_t max_line = 0;
 
-    for (const auto line_num : line_nums_to_highlight) {
-        if (line_num < 1 || line_num > lines.size()) {
-            // Panic on invalid line numbers
-            panic("invalid line number " + std::to_string(line_num));
+    for (const auto line_index : line_indices_to_highlight) {
+        if (line_index >= lines.size()) {
+            // Panic on invalid line indices
+            panic("invalid line index " + std::to_string(line_index) + ": index out of bounds");
         }
-        const std::size_t zero_indexed = line_num - 1;
-        highlight_set.insert(zero_indexed);
-        min_line = std::min(min_line, zero_indexed);
-        max_line = std::max(max_line, zero_indexed);
+        highlight_set.insert(line_index);
+        min_line = std::min(min_line, line_index);
+        max_line = std::max(max_line, line_index);
     }
 
     if (highlight_set.empty()) {

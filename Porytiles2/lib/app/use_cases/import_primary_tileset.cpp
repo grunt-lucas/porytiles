@@ -12,25 +12,34 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
 {
     // 1. Check if the primary tileset exists. If not, abort with error.
     if (!tileset_repo_->exists(tileset_name)) {
-        return FormattableError{fmt::format("tileset {} does not exist", tileset_name)};
+        return FormattableError{"tileset '{}' does not exist", FormatParam{tileset_name, Style::bold}};
     }
 
     // 2. Load the tileset into a `Tileset` aggregate.
     auto maybe_tileset = tileset_repo_->load(tileset_name);
     if (!maybe_tileset.has_value()) {
-        // TODO: hook up ChainableError here
-        return FormattableError{"failed to load tileset"};
+        return ChainableResult<void>{
+            FormattableError{format_->format("failed to load tileset '{}'", FormatParam{tileset_name, Style::bold})},
+            maybe_tileset};
     }
     const auto tileset = std::move(maybe_tileset.value());
 
     // 3. If `PorymapTilesetComponent` is empty, bail with error.
     if (tileset->porymap_component().is_empty()) {
-        return FormattableError{"PorymapTilesetComponent was empty"};
+        /*
+         * TODO: check artifact existence via repo class instead of looking at domain types. In fact, TilesetRepo should
+         * fail to load a tileset that is missing "essential" artifacts, e.g. metatiles.bin, metatile_attributes.bin,
+         * and the 16 palettes. The Porytiles workflow commands prevent users from ever getting into a situation where
+         * these artifacts are missing. This domain-layer check here should simply confirm that there are actually
+         * metatile tilemap entries on which to operate. If not, then the import will basically wipe everything, We
+         * should think about this more.
+         */
+        return FormattableError{"metatiles.bin is empty, nothing to import"};
     }
 
     /*
      * TODO: if Porytiles component is empty and no porytiles config files exist, create a porytiles.yaml that sets
-     * tileset.compile.patch.enabled:true
+     * tileset.compile.[tiles,pals].edit_mode:locked
      */
 
     if (!tileset_repo_->checksum_provider().cached_checksums_exist(tileset_name)) {
@@ -49,7 +58,7 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
             const auto mismatched_keys =
                 tileset_repo_->checksum_provider().find_unsynced_tileset_artifacts(tileset_name, porytiles_keys);
             if (!mismatched_keys.empty()) {
-                // TODO: better message here?
+                // TODO: better message here
                 std::vector<std::string> err_msg{};
                 err_msg.reserve(mismatched_keys.size());
                 err_msg.emplace_back("uncompiled changes present in Porytiles assets:");
@@ -79,22 +88,7 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
     }
     const auto imported_tileset = std::move(maybe_imported_tileset.value());
 
-    // 7. Perform a patch build.
-    /*
-     * TODO: bring this back? We moved patch compilation logic to domain layer, so would need some way to temporarily
-     * override user config settings.
-     */
-    // auto maybe_recompiled_tileset =
-    //     compiler_->compile_patch(*imported_tileset, PatchTilesMode::fixed, PatchPalMode::fixed);
-    // if (!maybe_recompiled_tileset.has_value()) {
-    //     // return ChainableResult<void>{
-    //     //     FormattableError{"patch compilation job failed for '{}'", FormatParam{tileset_name, Style::bold}},
-    //     //     maybe_new_tileset};
-    //     panic("patch re-compilation after import failed: this should never happen right?");
-    // }
-    // const auto new_tileset = std::move(maybe_recompiled_tileset.value());
-
-    // 8. Persist the `Tileset` (which also caches the checksums).
+    // 7. Persist the `Tileset` (which also caches the checksums).
     if (const auto save_result = tileset_repo_->save(*imported_tileset); !save_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{"tileset save job failed for '{}'", FormatParam{tileset_name, Style::bold}}, save_result};

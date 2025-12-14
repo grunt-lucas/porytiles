@@ -27,8 +27,15 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
 
     // 3. If `PorytilesTilesetComponent` is empty, bail with error.
     if (tileset->porytiles_component().is_empty()) {
-        // TODO: better user-facing message
-        return ChainableResult<void>{FormattableError{"PorytilesTilesetComponent was empty"}};
+        /*
+         * TODO: check artifact existence via repo class instead of looking at domain types. In fact, TilesetRepo should
+         * fail to load a tileset that is missing "essential" artifacts, e.g. metatiles.bin, metatile_attributes.bin,
+         * and the 16 palettes. The Porytiles workflow commands prevent users from ever getting into a situation where
+         * these artifacts are missing. This domain-layer check here should simply confirm that there are actually
+         * layer images with content on which to operate. If not, then the compile will basically wipe everything, We
+         * should think about this more.
+         */
+        return ChainableResult<void>{FormattableError{"no Porytiles assets found, try importing the tileset first"}};
     }
 
     if (!tileset_repo_->checksum_provider().cached_checksums_exist(tileset_name)) {

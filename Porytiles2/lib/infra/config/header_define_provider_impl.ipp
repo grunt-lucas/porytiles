@@ -108,9 +108,9 @@ std::vector<std::string> make_source_details(
         return {};
     }
 
-    // Use FileHighlightPrinter, converting from 0-indexed line_num to 1-indexed
+    // Use FileHighlightPrinter (line_num is already 0-indexed)
     const FileHighlightPrinter printer{format};
-    return printer.print(lines, window_size, {line_num + 1});
+    return printer.print(lines, window_size, {line_num});
 }
 
 /**

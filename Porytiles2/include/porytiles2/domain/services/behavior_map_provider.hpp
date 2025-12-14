@@ -1,8 +1,9 @@
 #pragma once
 
 #include <cstdint>
-#include <optional>
 #include <string>
+
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -26,9 +27,9 @@ class BehaviorMapProvider {
      * corresponding numeric value if found.
      *
      * @param behavior_name The behavior constant name (e.g., "MB_NORMAL")
-     * @return The numeric value if found, std::nullopt otherwise
+     * @return The numeric value if found, or an error describing why the lookup failed
      */
-    [[nodiscard]] virtual std::optional<std::uint16_t> lookup(const std::string &behavior_name) const = 0;
+    [[nodiscard]] virtual ChainableResult<std::uint16_t> lookup(const std::string &behavior_name) const = 0;
 
     /**
      * @brief Looks up the behavior constant name for a numeric value.
@@ -38,9 +39,9 @@ class BehaviorMapProvider {
      * numeric value.
      *
      * @param behavior_value The numeric behavior value
-     * @return The behavior constant name if found, std::nullopt otherwise
+     * @return The behavior constant name if found, or an error describing why the lookup failed
      */
-    [[nodiscard]] virtual std::optional<std::string> lookup(std::uint16_t behavior_value) const = 0;
+    [[nodiscard]] virtual ChainableResult<std::string> lookup(std::uint16_t behavior_value) const = 0;
 };
 
 } // namespace porytiles2
