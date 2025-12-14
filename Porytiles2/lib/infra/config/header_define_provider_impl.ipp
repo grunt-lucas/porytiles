@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "porytiles2/infra/config/config_provider.hpp"
+#include "porytiles2/infra/services/file_highlight_printer.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 
 // The anonymous namespace ensures internal linkage per translation unit
@@ -74,21 +75,17 @@ std::string make_source_string(const TextFormatter *format, const std::string &f
  * @brief Constructs source details showing contextual lines around the target line.
  *
  * @details
- * Creates a vector of strings showing a contextual view of the header file around the target line. The view includes a
- * configurable number of lines before and after the target line, with the target line marked with a "> " prefix. Each
- * line is formatted with its line number.
+ * Creates a vector of strings showing a contextual view of the header file around the target line. Uses
+ * FileHighlightPrinter for consistent formatting with arrow prefix and styling for highlighted lines.
  *
  * For example, with window_size=5 and target line 10:
  * ```
- *   8: #define SOME_OTHER 100
- *   9: #define ANOTHER 200
- * > 10: #define TARGET_VALUE 512abc
- *   11: #define YET_ANOTHER 300
- *   12: // comment
+ *       8:   #define SOME_OTHER 100
+ *       9:   #define ANOTHER 200
+ * >    10:   #define TARGET_VALUE 512abc
+ *      11:   #define YET_ANOTHER 300
+ *      12:   // comment
  * ```
- *
- * If the target line is near the start or end of the file, the window adjusts to show the available lines while
- * maintaining the requested window size where possible.
  *
  * @param format The text formatter to use
  * @param file_path The path to the header file
@@ -99,64 +96,21 @@ std::string make_source_string(const TextFormatter *format, const std::string &f
 std::vector<std::string> make_source_details(
     const TextFormatter *format, const std::string &file_path, std::size_t line_num, std::size_t window_size = 7)
 {
-    std::vector<std::string> details;
-
     const std::filesystem::path path{file_path};
     const auto it = header_file_lines_cache.find(path);
     if (it == header_file_lines_cache.end()) {
-        return details;
+        return {};
     }
 
     const auto &lines = it->second;
 
     if (lines.empty() || line_num >= lines.size()) {
-        return details;
+        return {};
     }
 
-    // Calculate window boundaries
-    const std::size_t half_window = (window_size - 1) / 2;
-    const std::size_t start = (line_num >= half_window) ? line_num - half_window : 0;
-    const std::size_t end = std::min(line_num + half_window + 1, lines.size());
-
-    // Build contextual view
-    for (std::size_t i = start; i < end; ++i) {
-        std::string prefix;
-        // Value here is minus-1 because we're zero-indexing line number, but then adding one to display
-        if (i < 9) {
-            const auto formatted_arrow =
-                format->format("{}", FormatParam{"➞     ", Style::bold | Style::italic | Style::yellow});
-            prefix = (i == line_num) ? formatted_arrow : "      ";
-        }
-        else if (i < 99) {
-            const auto formatted_arrow =
-                format->format("{}", FormatParam{"➞    ", Style::bold | Style::italic | Style::yellow});
-            prefix = (i == line_num) ? formatted_arrow : "     ";
-        }
-        else if (i < 999) {
-            const auto formatted_arrow =
-                format->format("{}", FormatParam{"➞   ", Style::bold | Style::italic | Style::yellow});
-            prefix = (i == line_num) ? formatted_arrow : "    ";
-        }
-        else if (i < 9999) {
-            const auto formatted_arrow =
-                format->format("{}", FormatParam{"➞  ", Style::bold | Style::italic | Style::yellow});
-            prefix = (i == line_num) ? formatted_arrow : "   ";
-        }
-        else {
-            panic("10000+ line header files not supported, file a bug report");
-        }
-
-        if (i == line_num) {
-            const auto highlight_line =
-                format->format("{}", FormatParam{lines[i], Style::bold | Style::italic | Style::yellow});
-            details.push_back(prefix + std::to_string(i + 1) + ":   " + highlight_line);
-        }
-        else {
-            details.push_back(prefix + std::to_string(i + 1) + ":   " + lines[i]);
-        }
-    }
-
-    return details;
+    // Use FileHighlightPrinter, converting from 0-indexed line_num to 1-indexed
+    const FileHighlightPrinter printer{format};
+    return printer.print(lines, window_size, {line_num + 1});
 }
 
 /**

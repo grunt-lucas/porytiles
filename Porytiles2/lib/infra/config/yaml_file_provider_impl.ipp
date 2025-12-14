@@ -107,7 +107,7 @@ make_source_details(const TextFormatter *format, const std::string &file_path, c
     }
 
     // Use FileHighlightPrinter, converting from 0-indexed mark.line to 1-indexed
-    const FileHighlightPrinter printer{gsl::not_null{format}};
+    const FileHighlightPrinter printer{format};
     return printer.print(lines, 7, {line_num + 1});
 }
 
