@@ -24,9 +24,10 @@
   - let's make the shotgun approach smart based on the character of the input
 
 ## Project Structure Refactor
-- domain layer is getting way too crowded
-- break it up into `config`, `core`, `tileset`, `layout`, `packing`
-- each of these folders can have subfolders `algorithms`, `models`, `repos`, `services`
+- Domain layer is getting way too crowded
+  - break it up into `config`, `core`, `tileset`, `layout`, `packing`
+  - each of these folders can have subfolders `algorithms`, `models`, `repos`, `services`
+- Make each layer a completely isolated library so that the compiler enforces dependency rules
 
 ## Start building animation system
 - See initial attempt in 2/anim1
@@ -52,14 +53,18 @@
 ## Start designing layout import/compile
 
 ## Identify unit/integration testing gaps and fill them in
-- Palette packing code is currently untested
 
 ## Figure out how to remove fmtlib from random places all over the codebase
 - Ideally it should be isolated so we could easily swap to a different string formatting library
 
 ## Miscellaneous Cleanup
 - Palette hints should be validated entirely within the config system, remove validation from the PaletteValidator
+- FileHighlightPrinter
+  - move it to `utilities`
+  - use it in the C parser for nicer fatal message strings
 - HeaderBehaviorMapProvider needs to do error handling better - if behaviors don't match an expected format we should provide a nice message
 - Can I use std::span in more places?
+- Fix up `Scripts` directory
+  - we should split it up by `Porytiles1` and `Porytiles2` for better usability
 
 ## Clean up TODOs in codebase: `rg -e TODO Porytiles2/`
