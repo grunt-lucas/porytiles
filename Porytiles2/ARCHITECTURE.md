@@ -238,10 +238,8 @@ Each use case is a focused class following the Single Responsibility Principle.
 
 Some example use cases include:
 
-- `CreatePrimaryTileset`: Scaffolds a new tileset with default structure and assets.
 - `ImportPrimaryTileset`: Imports Porymap tilesets into Porytiles format (first time only).
 - `CompilePrimaryTileset`: Orchestrates compilation of a primary tileset from Porytiles RGBA assets to Porymap binary format.
-- `VerifyPrimaryTileset`: Validates tileset integrity and configuration correctness.
 
 Use cases receive dependencies via constructor injection and return `ChainableResult<T, E>` to propagate errors.
 They focus purely on use case orchestration - the actual business logic lives in the various domain services.
@@ -640,10 +638,8 @@ The `porytiles2` executable uses the **CLI11** library for argument parsing with
 
 **Command Pattern**:
 The driver uses a `Command` base class that each subcommand inherits from:
-- `CreateTilesetCommand`: Scaffolds new tileset projects
 - `CompileTilesetCommand`: Compiles Porytiles assets to Porymap format
 - `ImportTilesetCommand`: Imports existing Porymap tilesets
-- `VerifyTilesetCommand`: Validates tileset integrity
 
 Each command registers itself with CLI11 and implements a `Run()` method that orchestrates the corresponding use case.
 

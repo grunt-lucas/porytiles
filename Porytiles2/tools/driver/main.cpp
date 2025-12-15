@@ -3,11 +3,8 @@
 
 #include "porytiles2/build_version.h"
 
-#include "command.hpp"
 #include "command_compile_tileset.hpp"
-#include "command_create_tileset.hpp"
 #include "command_import_tileset.hpp"
-#include "command_verify_tileset.hpp"
 
 int main(const int argc, char **argv)
 {
@@ -50,10 +47,8 @@ https://github.com/huderlem/porymap)");
         "Print version info and exit.");
     porytiles_app.get_option("--help")->description("Print this help message and exit.");
 
-    CreateTilesetCommand create_tileset{porytiles_app};
     ImportTilesetCommand import_tileset{porytiles_app};
     CompileTilesetCommand compile_tileset{porytiles_app};
-    VerifyTilesetCommand verify_tileset{porytiles_app};
 
     porytiles_app.require_subcommand();
 

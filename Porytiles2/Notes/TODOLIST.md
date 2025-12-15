@@ -49,7 +49,7 @@
 
 ## Implement `dump-tileset` command
 
-## Start designing layout create/import/compile
+## Start designing layout import/compile
 
 ## Identify unit/integration testing gaps and fill them in
 - Palette packing code is currently untested
@@ -59,6 +59,7 @@
 
 ## Miscellaneous Cleanup
 - Palette hints should be validated entirely within the config system, remove validation from the PaletteValidator
+- HeaderBehaviorMapProvider needs to do error handling better - if behaviors don't match an expected format we should provide a nice message
 - Can I use std::span in more places?
 
 ## Clean up TODOs in codebase: `rg -e TODO Porytiles2/`
