@@ -1,123 +1,13 @@
 #include "porytiles2/infra/services/header_behavior_map_provider.hpp"
 
-#include <algorithm>
 #include <fstream>
+#include <limits>
 #include <sstream>
 #include <string>
-#include <vector>
 
-#include "porytiles2/utilities/parse_int.hpp"
+#include "porytiles2/utilities/c_parser/lexer.hpp"
+#include "porytiles2/utilities/c_parser/parser.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
-
-namespace {
-
-using namespace porytiles2;
-
-/*
- * TODO: this whole class should provide more robust error printouts when it hits unexpected input
- */
-
-std::vector<std::string> tokenize_line(const std::string &line)
-{
-    std::vector<std::string> tokens;
-    std::istringstream stream{line};
-    std::string token;
-    while (stream >> token) {
-        tokens.push_back(token);
-    }
-    return tokens;
-}
-
-bool try_parse_define_format(
-    const std::vector<std::string> &tokens,
-    std::unordered_map<std::string, std::uint16_t> &name_to_value,
-    std::unordered_map<std::uint16_t, std::string> &value_to_name)
-{
-    // Define format: #define MB_XXX value
-    // tokens[0] = "#define", tokens[1] = "MB_XXX", tokens[2] = "value"
-    if (tokens.size() < 3) {
-        return false;
-    }
-
-    // Check for #define (may be split as "#" and "define" or combined as "#define")
-    std::size_t name_index = 0;
-    if (tokens[0] == "#define" || (tokens[0] == "#" && tokens.size() >= 2 && tokens[1] == "define")) {
-        name_index = (tokens[0] == "#define") ? 1 : 2;
-    }
-    else {
-        return false;
-    }
-
-    if (name_index + 1 >= tokens.size()) {
-        return false;
-    }
-
-    const std::string &behavior_name = tokens[name_index];
-    const std::string &value_string = tokens[name_index + 1];
-
-    // Must start with MB_ and not be MB_INVALID
-    if (!behavior_name.starts_with("MB_") || behavior_name == "MB_INVALID") {
-        return false;
-    }
-
-    // Parse value with base 0 (auto-detects hex 0x prefix or decimal)
-    auto parse_result = parse_int<int>(value_string, 0);
-    if (!parse_result.has_value()) {
-        return false;
-    }
-
-    const auto value = parse_result.value();
-    if (value < 0 || value > std::numeric_limits<std::uint16_t>::max()) {
-        return false;
-    }
-
-    const auto uint_value = static_cast<std::uint16_t>(value);
-    name_to_value[behavior_name] = uint_value;
-    // Only add to reverse map if not already present (first definition wins)
-    if (!value_to_name.contains(uint_value)) {
-        value_to_name[uint_value] = behavior_name;
-    }
-    return true;
-}
-
-bool try_parse_enum_format(
-    const std::vector<std::string> &tokens,
-    std::unordered_map<std::string, std::uint16_t> &name_to_value,
-    std::unordered_map<std::uint16_t, std::string> &value_to_name,
-    std::uint16_t &enum_counter)
-{
-    // Enum format: MB_XXX, (with optional trailing comment)
-    // tokens[0] = "MB_XXX,"
-    if (tokens.empty()) {
-        return false;
-    }
-
-    std::string first_token = tokens[0];
-
-    // Must start with MB_ and end with comma
-    if (!first_token.starts_with("MB_") || first_token.back() != ',') {
-        return false;
-    }
-
-    // Remove trailing comma to get behavior name
-    first_token.pop_back();
-
-    // Skip MB_INVALID
-    if (first_token == "MB_INVALID") {
-        enum_counter++;
-        return true;
-    }
-
-    name_to_value[first_token] = enum_counter;
-    // Only add to reverse map if not already present (first definition wins)
-    if (!value_to_name.contains(enum_counter)) {
-        value_to_name[enum_counter] = first_token;
-    }
-    enum_counter++;
-    return true;
-}
-
-} // namespace
 
 namespace porytiles2 {
 
@@ -197,28 +87,85 @@ ChainableResult<void> HeaderBehaviorMapProvider::ensure_loaded() const
         return FormattableError{"failed to open behavior header file"};
     }
 
-    // Slurp the file for FileHighlightPrinter support
+    // Read entire file content for parser, and cache lines for FileHighlightPrinter
+    std::ostringstream content_stream;
     std::string line;
     while (std::getline(file, line)) {
         trim_line_ending(line);
         cached_lines_.push_back(line);
+        content_stream << line << '\n';
+    }
+    std::string content = content_stream.str();
+
+    // Tokenize and parse
+    Lexer lexer{content};
+    auto tokens_result = lexer.lex();
+    if (!tokens_result.has_value()) {
+        load_failed_ = true;
+        std::vector<std::string> err_lines{};
+        err_lines.push_back(format_->format(
+            "{}: failed to tokenize behavior header file", FormatParam{header_path.string(), Style::bold}));
+        diag_->err("behavior-header-load-failure", err_lines);
+        return ChainableResult<void>{FormattableError{"failed to tokenize behavior header file"}, tokens_result};
     }
 
-    std::uint16_t enum_counter = 0;
+    Parser parser{std::move(tokens_result).value()};
 
-    for (const auto &cached_line : cached_lines_) {
-        auto tokens = tokenize_line(cached_line);
-        if (tokens.empty()) {
-            continue;
+    // Parse #define statements
+    auto defines_result = parser.parse_defines();
+    if (defines_result.has_value()) {
+        for (const auto &def : defines_result.value()) {
+            if (!def.has_int_value()) {
+                continue;
+            }
+            const auto &name = def.name();
+
+            // Filter: must start with MB_ and not be MB_INVALID
+            if (!name.starts_with("MB_") || name == "MB_INVALID") {
+                continue;
+            }
+
+            auto value = def.int_value();
+            if (value < 0 || value > std::numeric_limits<std::uint16_t>::max()) {
+                continue;
+            }
+
+            auto uint_value = static_cast<std::uint16_t>(value);
+            name_to_value_[name] = uint_value;
+            if (!value_to_name_.contains(uint_value)) {
+                value_to_name_[uint_value] = name;
+            }
         }
+    }
 
-        // Try define format first (explicit values take precedence)
-        if (try_parse_define_format(tokens, name_to_value_, value_to_name_)) {
-            continue;
+    // Parse enum declarations
+    auto enums_result = parser.parse_enums();
+    if (enums_result.has_value()) {
+        for (const auto &enum_decl : enums_result.value()) {
+            for (const auto &member : enum_decl.members()) {
+                const auto &name = member.name();
+
+                // Filter: must start with MB_ and not be MB_INVALID
+                if (!name.starts_with("MB_") || name == "MB_INVALID") {
+                    continue;
+                }
+
+                auto value = member.value();
+                if (value < 0 || value > std::numeric_limits<std::uint16_t>::max()) {
+                    continue;
+                }
+
+                auto uint_value = static_cast<std::uint16_t>(value);
+
+                // Don't overwrite existing entries (defines take precedence)
+                if (!name_to_value_.contains(name)) {
+                    name_to_value_[name] = uint_value;
+                }
+                if (!value_to_name_.contains(uint_value)) {
+                    value_to_name_[uint_value] = name;
+                }
+            }
         }
-
-        // Try enum format (implicit counter-based values)
-        try_parse_enum_format(tokens, name_to_value_, value_to_name_, enum_counter);
     }
 
     if (name_to_value_.empty()) {
