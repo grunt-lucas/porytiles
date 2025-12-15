@@ -22,6 +22,17 @@ class ParserTests : public ::testing::Test {
         Parser parser{std::move(tokens_result).value()};
         return parser.parse_defines();
     }
+
+    [[nodiscard]] ChainableResult<std::vector<EnumDeclaration>> parse_enums(const std::string &source)
+    {
+        Lexer lexer{source};
+        auto tokens_result = lexer.lex();
+        if (!tokens_result.has_value()) {
+            return ChainableResult<std::vector<EnumDeclaration>>{tokens_result};
+        }
+        Parser parser{std::move(tokens_result).value()};
+        return parser.parse_enums();
+    }
 };
 
 TEST_F(ParserTests, ParseEmptyString)
@@ -371,6 +382,167 @@ TEST_F(ParserTests, ParseRealWorldExample)
 
     EXPECT_EQ(defines[4].name(), "PALETTE_MASK");
     EXPECT_EQ(defines[4].int_value(), 0x0F);
+}
+
+// ============================================================================
+// Enum Parsing Tests
+// ============================================================================
+
+TEST_F(ParserTests, ParseEmptyEnumReturnsEmptyMembers)
+{
+    auto result = parse_enums("enum { };");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_TRUE(result.value()[0].members().empty());
+    EXPECT_FALSE(result.value()[0].has_name());
+}
+
+TEST_F(ParserTests, ParseAnonymousEnumWithSimpleMembers)
+{
+    auto result = parse_enums("enum { FOO, BAR, BAZ };");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+
+    const auto &members = result.value()[0].members();
+    ASSERT_EQ(members.size(), 3);
+    EXPECT_EQ(members[0].name(), "FOO");
+    EXPECT_EQ(members[0].value(), 0);
+    EXPECT_FALSE(members[0].has_explicit_value());
+    EXPECT_EQ(members[1].name(), "BAR");
+    EXPECT_EQ(members[1].value(), 1);
+    EXPECT_EQ(members[2].name(), "BAZ");
+    EXPECT_EQ(members[2].value(), 2);
+}
+
+TEST_F(ParserTests, ParseNamedEnum)
+{
+    auto result = parse_enums("enum MyEnum { A, B };");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_TRUE(result.value()[0].has_name());
+    EXPECT_EQ(result.value()[0].name().value(), "MyEnum");
+}
+
+TEST_F(ParserTests, ParseEnumWithExplicitValues)
+{
+    auto result = parse_enums("enum { A = 10, B, C = 20, D };");
+    ASSERT_TRUE(result.has_value());
+
+    const auto &members = result.value()[0].members();
+    ASSERT_EQ(members.size(), 4);
+    EXPECT_EQ(members[0].name(), "A");
+    EXPECT_EQ(members[0].value(), 10);
+    EXPECT_TRUE(members[0].has_explicit_value());
+    EXPECT_EQ(members[1].name(), "B");
+    EXPECT_EQ(members[1].value(), 11); // A + 1
+    EXPECT_FALSE(members[1].has_explicit_value());
+    EXPECT_EQ(members[2].name(), "C");
+    EXPECT_EQ(members[2].value(), 20);
+    EXPECT_TRUE(members[2].has_explicit_value());
+    EXPECT_EQ(members[3].name(), "D");
+    EXPECT_EQ(members[3].value(), 21); // C + 1
+}
+
+TEST_F(ParserTests, ParseEnumWithHexValues)
+{
+    auto result = parse_enums("enum { A = 0x00, B = 0xFF };");
+    ASSERT_TRUE(result.has_value());
+
+    const auto &members = result.value()[0].members();
+    EXPECT_EQ(members[0].value(), 0);
+    EXPECT_EQ(members[1].value(), 255);
+}
+
+TEST_F(ParserTests, ParseEnumWithExpressionValues)
+{
+    auto result = parse_enums("enum { A = 1 << 4, B = (0xFF & 0x0F) };");
+    ASSERT_TRUE(result.has_value());
+
+    const auto &members = result.value()[0].members();
+    EXPECT_EQ(members[0].value(), 16); // 1 << 4
+    EXPECT_EQ(members[1].value(), 15); // 0xFF & 0x0F
+}
+
+TEST_F(ParserTests, ParseEnumWithNewlinesAndComments)
+{
+    auto result = parse_enums(R"(
+enum {
+    MB_NORMAL,
+    MB_TALL_GRASS, // this is a comment
+    MB_DEEP_WATER,
+};
+)");
+    ASSERT_TRUE(result.has_value());
+
+    const auto &members = result.value()[0].members();
+    ASSERT_EQ(members.size(), 3);
+    EXPECT_EQ(members[0].name(), "MB_NORMAL");
+    EXPECT_EQ(members[1].name(), "MB_TALL_GRASS");
+    EXPECT_EQ(members[2].name(), "MB_DEEP_WATER");
+}
+
+TEST_F(ParserTests, ParseMultipleEnums)
+{
+    auto result = parse_enums("enum A { X }; enum B { Y };");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 2);
+    EXPECT_EQ(result.value()[0].name().value(), "A");
+    EXPECT_EQ(result.value()[1].name().value(), "B");
+}
+
+TEST_F(ParserTests, ParseEnumMemberWithoutTrailingComma)
+{
+    auto result = parse_enums("enum { A, B, C };"); // No trailing comma after C
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value()[0].members().size(), 3);
+}
+
+TEST_F(ParserTests, ParseEnumWithTrailingComma)
+{
+    auto result = parse_enums("enum { A, B, C, };"); // Trailing comma after C
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value()[0].members().size(), 3);
+}
+
+TEST_F(ParserTests, ParseRealWorldBehaviorEnum)
+{
+    auto result = parse_enums(R"(
+enum {
+    MB_NORMAL,
+    MB_SECRET_BASE_WALL,
+    MB_TALL_GRASS,
+    MB_INVALID = 0xFF,
+};
+)");
+    ASSERT_TRUE(result.has_value());
+
+    const auto &members = result.value()[0].members();
+    ASSERT_EQ(members.size(), 4);
+    EXPECT_EQ(members[0].value(), 0);
+    EXPECT_EQ(members[1].value(), 1);
+    EXPECT_EQ(members[2].value(), 2);
+    EXPECT_EQ(members[3].name(), "MB_INVALID");
+    EXPECT_EQ(members[3].value(), 255);
+    EXPECT_TRUE(members[3].has_explicit_value());
+}
+
+TEST_F(ParserTests, ParseNoEnumsReturnsEmpty)
+{
+    auto result = parse_enums("#define FOO 123\nint x;");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(result.value().empty());
+}
+
+TEST_F(ParserTests, EnumMissingOpeningBraceReturnsError)
+{
+    auto result = parse_enums("enum FOO;");
+    EXPECT_FALSE(result.has_value());
+}
+
+TEST_F(ParserTests, EnumMissingClosingBraceReturnsError)
+{
+    auto result = parse_enums("enum { A, B");
+    EXPECT_FALSE(result.has_value());
 }
 
 } // namespace

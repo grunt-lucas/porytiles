@@ -39,6 +39,163 @@ ChainableResult<std::vector<DefineStatement>> Parser::parse_defines()
     return defines;
 }
 
+ChainableResult<std::vector<EnumDeclaration>> Parser::parse_enums()
+{
+    std::vector<EnumDeclaration> enums;
+
+    // Reset position to beginning (allows calling both parse_defines and parse_enums)
+    current_ = 0;
+
+    while (!is_at_end()) {
+        if (check(TokenType::kw_enum)) {
+            auto result = parse_enum();
+            if (!result.has_value()) {
+                return ChainableResult<std::vector<EnumDeclaration>>{result};
+            }
+            enums.push_back(std::move(result).value());
+        }
+        else {
+            advance();
+        }
+    }
+
+    return enums;
+}
+
+ChainableResult<EnumDeclaration> Parser::parse_enum()
+{
+    SourcePosition enum_pos = peek().position();
+    advance(); // consume 'enum'
+
+    // Check for optional enum name
+    std::optional<std::string> enum_name;
+    if (check(TokenType::identifier)) {
+        enum_name = peek().text();
+        advance();
+    }
+
+    // Expect opening brace
+    if (!check(TokenType::left_brace)) {
+        return FormattableError{
+            "line {}, column {}: expected '{{' after 'enum'",
+            FormatParam{peek().position().line},
+            FormatParam{peek().position().column}};
+    }
+    advance(); // consume '{'
+
+    // Parse members
+    std::vector<EnumMember> members;
+    std::int64_t counter = 0;
+
+    while (!is_at_end() && !check(TokenType::right_brace)) {
+        // Skip newlines
+        while (check(TokenType::newline)) {
+            advance();
+        }
+
+        if (check(TokenType::right_brace)) {
+            break;
+        }
+
+        auto member_result = parse_enum_member(counter);
+        if (!member_result.has_value()) {
+            return ChainableResult<EnumDeclaration>{member_result};
+        }
+        members.push_back(std::move(member_result).value());
+
+        // Skip trailing comma (optional for last member)
+        if (check(TokenType::comma)) {
+            advance();
+        }
+
+        // Skip newlines after comma
+        while (check(TokenType::newline)) {
+            advance();
+        }
+    }
+
+    // Expect closing brace
+    if (!check(TokenType::right_brace)) {
+        return FormattableError{
+            "line {}, column {}: expected '}}' to close enum",
+            FormatParam{peek().position().line},
+            FormatParam{peek().position().column}};
+    }
+    advance(); // consume '}'
+
+    // Skip optional semicolon
+    if (check(TokenType::semicolon)) {
+        advance();
+    }
+
+    if (enum_name.has_value()) {
+        return EnumDeclaration{std::move(enum_name).value(), std::move(members), enum_pos};
+    }
+    return EnumDeclaration{std::move(members), enum_pos};
+}
+
+ChainableResult<EnumMember> Parser::parse_enum_member(std::int64_t &counter)
+{
+    // Expect identifier
+    if (!check(TokenType::identifier)) {
+        return FormattableError{
+            "line {}, column {}: expected identifier for enum member",
+            FormatParam{peek().position().line},
+            FormatParam{peek().position().column}};
+    }
+
+    std::string name = peek().text();
+    SourcePosition member_pos = peek().position();
+    advance(); // consume identifier
+
+    // Check for explicit value assignment
+    bool has_explicit = false;
+    if (check(TokenType::equal)) {
+        advance(); // consume '='
+        has_explicit = true;
+
+        // Collect expression tokens until comma, right_brace, or newline
+        std::vector<Token> expr_tokens = collect_enum_value_tokens();
+
+        if (expr_tokens.empty()) {
+            return FormattableError{
+                "line {}, column {}: expected expression after '=' for enum member '{}'",
+                FormatParam{member_pos.line},
+                FormatParam{member_pos.column},
+                FormatParam{name}};
+        }
+
+        auto eval_result = evaluate_expression(expr_tokens);
+        if (!eval_result.has_value()) {
+            return ChainableResult<EnumMember>{
+                FormattableError{
+                    "line {}, column {}: failed to evaluate expression for enum member '{}'",
+                    FormatParam{member_pos.line},
+                    FormatParam{member_pos.column},
+                    FormatParam{name}},
+                eval_result};
+        }
+
+        counter = eval_result.value();
+    }
+
+    EnumMember member{std::move(name), counter, has_explicit, member_pos};
+    counter++; // Increment for next member
+    return member;
+}
+
+std::vector<Token> Parser::collect_enum_value_tokens()
+{
+    std::vector<Token> expr_tokens;
+
+    while (!is_at_end() && !check(TokenType::comma) && !check(TokenType::right_brace) && !check(TokenType::newline)) {
+        expr_tokens.push_back(peek());
+        advance();
+    }
+
+    return expr_tokens;
+}
+
 const Token &Parser::peek() const
 {
     if (is_at_end()) {

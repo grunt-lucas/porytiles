@@ -33,6 +33,7 @@ enum class TokenType : std::uint8_t {
     kw_endif,   // endif (reserved for future)
     kw_defined, // defined (reserved for future)
     kw_pragma,  // pragma (reserved for future)
+    kw_enum,    // enum (for enum declarations)
 
     // === Literals ===
     identifier,      // variable/macro names

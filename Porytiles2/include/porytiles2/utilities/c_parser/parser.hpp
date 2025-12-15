@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "porytiles2/utilities/c_parser/define_statement.hpp"
+#include "porytiles2/utilities/c_parser/enum_declaration.hpp"
 #include "porytiles2/utilities/c_parser/token.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
@@ -38,7 +39,6 @@ namespace porytiles2 {
  *
  * Future extensions will add methods like:
  * - parse_functions() for function declarations/definitions
- * - parse_enums() for enum definitions
  * - parse_structs() for struct definitions
  */
 class Parser {
@@ -70,6 +70,25 @@ class Parser {
      */
     [[nodiscard]] ChainableResult<std::vector<DefineStatement>> parse_defines();
 
+    /**
+     * @brief Parses all enum declarations from the token stream.
+     *
+     * @details
+     * Scans through the token stream looking for enum declarations. For each one found, parses the optional enum name
+     * and all members with their values. Supports both implicit counter-based values and explicit value assignments.
+     *
+     * Supports:
+     * - Anonymous enums: enum { ... }
+     * - Named enums: enum Name { ... }
+     * - Simple members: FOO,
+     * - Explicit values: FOO = 10,
+     * - Expression values: FOO = (1 << 4),
+     * - References to previously defined macros: FOO = SOME_DEFINE,
+     *
+     * @return A vector of EnumDeclaration on success, or an error on failure
+     */
+    [[nodiscard]] ChainableResult<std::vector<EnumDeclaration>> parse_enums();
+
   private:
     [[nodiscard]] const Token &peek() const;
     [[nodiscard]] const Token &peek_next() const;
@@ -81,7 +100,10 @@ class Parser {
     void skip_to_next_line();
     [[nodiscard]] bool is_at_line_end() const;
     [[nodiscard]] ChainableResult<DefineStatement> parse_define();
+    [[nodiscard]] ChainableResult<EnumDeclaration> parse_enum();
+    [[nodiscard]] ChainableResult<EnumMember> parse_enum_member(std::int64_t &counter);
     [[nodiscard]] std::vector<Token> collect_expression_tokens();
+    [[nodiscard]] std::vector<Token> collect_enum_value_tokens();
     [[nodiscard]] ChainableResult<std::int64_t> evaluate_expression(const std::vector<Token> &expr_tokens);
 
     // Shunting Yard algorithm helpers

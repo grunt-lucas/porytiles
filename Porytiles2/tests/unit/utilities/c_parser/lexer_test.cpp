@@ -228,6 +228,14 @@ TEST_F(LexerTests, LexKeywords)
     EXPECT_TRUE(tokens[4].is(TokenType::kw_include));
 }
 
+TEST_F(LexerTests, LexEnumKeyword)
+{
+    Lexer lexer{"enum"};
+    auto result = lexer.lex();
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(result.value()[0].is(TokenType::kw_enum));
+}
+
 TEST_F(LexerTests, LexSourcePosition)
 {
     Lexer lexer{"foo\nbar"};

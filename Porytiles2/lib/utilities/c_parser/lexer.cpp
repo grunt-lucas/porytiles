@@ -22,6 +22,7 @@ const std::unordered_map<std::string, TokenType> keywords = {
     {"endif", TokenType::kw_endif},
     {"defined", TokenType::kw_defined},
     {"pragma", TokenType::kw_pragma},
+    {"enum", TokenType::kw_enum},
 };
 
 [[nodiscard]] bool is_identifier_start(char c)
@@ -85,6 +86,8 @@ std::string token_type_name(TokenType type)
         return "defined";
     case TokenType::kw_pragma:
         return "pragma";
+    case TokenType::kw_enum:
+        return "enum";
     case TokenType::identifier:
         return "identifier";
     case TokenType::integer_literal:
