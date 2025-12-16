@@ -10,7 +10,7 @@
 #include <vector>
 
 #include "porytiles2/infra/config/config_provider.hpp"
-#include "porytiles2/infra/services/file_highlight_printer.hpp"
+#include "porytiles2/utilities/text/file_highlight_printer.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 
 // The anonymous namespace ensures internal linkage per translation unit

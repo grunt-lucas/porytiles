@@ -1,4 +1,4 @@
-#include "porytiles2/infra/services/file_highlight_printer.hpp"
+#include "porytiles2/utilities/text/file_highlight_printer.hpp"
 
 #include <algorithm>
 #include <cstddef>

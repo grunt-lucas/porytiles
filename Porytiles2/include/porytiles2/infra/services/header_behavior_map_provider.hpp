@@ -10,8 +10,8 @@
 #include "gsl/pointers"
 
 #include "porytiles2/domain/services/behavior_map_provider.hpp"
-#include "porytiles2/infra/services/file_highlight_printer.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/utilities/text/file_highlight_printer.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
