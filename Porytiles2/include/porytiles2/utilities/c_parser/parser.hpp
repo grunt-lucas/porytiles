@@ -5,6 +5,7 @@
 #include <unordered_map>
 #include <vector>
 
+#include "porytiles2/utilities/c_parser/c_parser_error.hpp"
 #include "porytiles2/utilities/c_parser/define_statement.hpp"
 #include "porytiles2/utilities/c_parser/enum_declaration.hpp"
 #include "porytiles2/utilities/c_parser/token.hpp"
@@ -68,7 +69,7 @@ class Parser {
      *
      * @return A vector of DefineStatement on success, or an error on failure
      */
-    [[nodiscard]] ChainableResult<std::vector<DefineStatement>> parse_defines();
+    [[nodiscard]] ChainableResult<std::vector<DefineStatement>, CParserError> parse_defines();
 
     /**
      * @brief Parses all enum declarations from the token stream.
@@ -87,7 +88,7 @@ class Parser {
      *
      * @return A vector of EnumDeclaration on success, or an error on failure
      */
-    [[nodiscard]] ChainableResult<std::vector<EnumDeclaration>> parse_enums();
+    [[nodiscard]] ChainableResult<std::vector<EnumDeclaration>, CParserError> parse_enums();
 
   private:
     [[nodiscard]] const Token &peek() const;
@@ -99,16 +100,17 @@ class Parser {
 
     void skip_to_next_line();
     [[nodiscard]] bool is_at_line_end() const;
-    [[nodiscard]] ChainableResult<DefineStatement> parse_define();
-    [[nodiscard]] ChainableResult<EnumDeclaration> parse_enum();
-    [[nodiscard]] ChainableResult<EnumMember> parse_enum_member(std::int64_t &counter);
+    [[nodiscard]] ChainableResult<DefineStatement, CParserError> parse_define();
+    [[nodiscard]] ChainableResult<EnumDeclaration, CParserError> parse_enum();
+    [[nodiscard]] ChainableResult<EnumMember, CParserError> parse_enum_member(std::int64_t &counter);
     [[nodiscard]] std::vector<Token> collect_expression_tokens();
     [[nodiscard]] std::vector<Token> collect_enum_value_tokens();
-    [[nodiscard]] ChainableResult<std::int64_t> evaluate_expression(const std::vector<Token> &expr_tokens);
+    [[nodiscard]] ChainableResult<std::int64_t, CParserError>
+    evaluate_expression(const std::vector<Token> &expr_tokens);
 
     // Shunting Yard algorithm helpers
     [[nodiscard]] std::vector<Token> to_postfix(const std::vector<Token> &expr_tokens);
-    [[nodiscard]] ChainableResult<std::int64_t> evaluate_postfix(const std::vector<Token> &postfix);
+    [[nodiscard]] ChainableResult<std::int64_t, CParserError> evaluate_postfix(const std::vector<Token> &postfix);
     [[nodiscard]] int operator_precedence(TokenType type) const;
     [[nodiscard]] bool is_left_associative(TokenType type) const;
     [[nodiscard]] bool is_operator(TokenType type) const;

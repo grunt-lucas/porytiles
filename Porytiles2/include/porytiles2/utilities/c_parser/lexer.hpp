@@ -3,6 +3,7 @@
 #include <string>
 #include <vector>
 
+#include "porytiles2/utilities/c_parser/c_parser_error.hpp"
 #include "porytiles2/utilities/c_parser/source_position.hpp"
 #include "porytiles2/utilities/c_parser/token.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -55,7 +56,7 @@ class Lexer {
      *
      * @return A vector of tokens on success, or an error on failure
      */
-    [[nodiscard]] ChainableResult<std::vector<Token>> lex();
+    [[nodiscard]] ChainableResult<std::vector<Token>, CParserError> lex();
 
   private:
     [[nodiscard]] char peek() const;
@@ -64,11 +65,11 @@ class Lexer {
     [[nodiscard]] bool is_at_end() const;
     void skip_whitespace_except_newline();
     void skip_line_comment();
-    [[nodiscard]] ChainableResult<void> skip_block_comment();
+    [[nodiscard]] ChainableResult<void, CParserError> skip_block_comment();
 
     [[nodiscard]] Token consume_identifier_or_keyword();
-    [[nodiscard]] ChainableResult<Token> consume_number();
-    [[nodiscard]] ChainableResult<Token> consume_string();
+    [[nodiscard]] ChainableResult<Token, CParserError> consume_number();
+    [[nodiscard]] ChainableResult<Token, CParserError> consume_string();
     [[nodiscard]] Token consume_operator();
 
     [[nodiscard]] SourcePosition current_position() const;

@@ -256,11 +256,88 @@ TEST_F(LexerTests, UnterminatedStringReturnsError)
     EXPECT_FALSE(result.has_value());
 }
 
+TEST_F(LexerTests, UnterminatedStringErrorPosition)
+{
+    Lexer lexer{"\"unterminated"};
+    auto result = lexer.lex();
+    ASSERT_FALSE(result.has_value());
+    // Chain[0] is the empty wrapper, chain[1] is the actual error from passthrough
+    ASSERT_GE(result.chain().size(), 2);
+    const auto *err = dynamic_cast<const CParserError *>(result.chain()[1].get());
+    ASSERT_NE(err, nullptr);
+    EXPECT_EQ(err->position().line, 1);
+    EXPECT_EQ(err->position().column, 1);
+    EXPECT_EQ(err->message(), "unterminated string literal");
+}
+
+TEST_F(LexerTests, UnterminatedStringErrorPositionOnLine3)
+{
+    Lexer lexer{"foo\nbar\n\"unterminated"};
+    auto result = lexer.lex();
+    ASSERT_FALSE(result.has_value());
+    ASSERT_GE(result.chain().size(), 2);
+    const auto *err = dynamic_cast<const CParserError *>(result.chain()[1].get());
+    ASSERT_NE(err, nullptr);
+    EXPECT_EQ(err->position().line, 3);
+    EXPECT_EQ(err->position().column, 1);
+}
+
 TEST_F(LexerTests, UnterminatedBlockCommentReturnsError)
 {
     Lexer lexer{"/* unterminated"};
     auto result = lexer.lex();
     EXPECT_FALSE(result.has_value());
+}
+
+TEST_F(LexerTests, UnterminatedBlockCommentErrorPosition)
+{
+    Lexer lexer{"/* unterminated"};
+    auto result = lexer.lex();
+    ASSERT_FALSE(result.has_value());
+    ASSERT_GE(result.chain().size(), 2);
+    const auto *err = dynamic_cast<const CParserError *>(result.chain()[1].get());
+    ASSERT_NE(err, nullptr);
+    EXPECT_EQ(err->position().line, 1);
+    EXPECT_EQ(err->position().column, 1);
+    EXPECT_EQ(err->message(), "unterminated block comment");
+}
+
+TEST_F(LexerTests, UnterminatedBlockCommentErrorPositionOnLine2)
+{
+    Lexer lexer{"foo\n/* unterminated"};
+    auto result = lexer.lex();
+    ASSERT_FALSE(result.has_value());
+    ASSERT_GE(result.chain().size(), 2);
+    const auto *err = dynamic_cast<const CParserError *>(result.chain()[1].get());
+    ASSERT_NE(err, nullptr);
+    EXPECT_EQ(err->position().line, 2);
+    EXPECT_EQ(err->position().column, 1);
+}
+
+TEST_F(LexerTests, InvalidHexLiteralErrorPosition)
+{
+    Lexer lexer{"0x"};
+    auto result = lexer.lex();
+    ASSERT_FALSE(result.has_value());
+    ASSERT_GE(result.chain().size(), 2);
+    const auto *err = dynamic_cast<const CParserError *>(result.chain()[1].get());
+    ASSERT_NE(err, nullptr);
+    EXPECT_EQ(err->position().line, 1);
+    EXPECT_EQ(err->position().column, 1);
+    EXPECT_EQ(err->message(), "invalid hexadecimal literal '0x'");
+}
+
+TEST_F(LexerTests, InvalidBinaryLiteralErrorPosition)
+{
+    Lexer lexer{"0b"};
+    auto result = lexer.lex();
+    ASSERT_FALSE(result.has_value());
+    ASSERT_GE(result.chain().size(), 2);
+    const auto *err = dynamic_cast<const CParserError *>(result.chain()[1].get());
+    ASSERT_NE(err, nullptr);
+    EXPECT_EQ(err->position().line, 1);
+    EXPECT_EQ(err->position().column, 1);
+    EXPECT_EQ(err->message(), "invalid binary literal '0b'");
 }
 
 TEST_F(LexerTests, LexCompleteDefineExpression)
