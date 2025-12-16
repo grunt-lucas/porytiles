@@ -59,10 +59,10 @@
 
 ## Miscellaneous Cleanup
 - Palette hints should be validated entirely within the config system, remove validation from the PaletteValidator
-- FileHighlightPrinter
-  - move it to `utilities`
-  - use it in the C parser for nicer fatal message strings
+- HeaderDefineProvider config provider should use C parser and FileHighlightPrinter?
 - HeaderBehaviorMapProvider needs to do error handling better - if behaviors don't match an expected format we should provide a nice message
+- JascPalLoader should use FileHighlightPrinter to format fatal messages nicely
+- Extract ProjectTilesetArtifactReader::import_attributes_csv to a service that uses FileHighlightPrinter for nice fatal message reporting 
 - Can I use std::span in more places?
 - Fix up `Scripts` directory
   - we should split it up by `Porytiles1` and `Porytiles2` for better usability

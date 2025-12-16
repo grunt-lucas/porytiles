@@ -10,6 +10,20 @@ namespace {
 class LexerTests : public ::testing::Test {
   protected:
     PlainTextFormatter formatter_;
+
+    // Helper to get all error text from a ChainableResult error chain
+    template <typename T>
+    std::string get_all_error_text(const ChainableResult<T> &result)
+    {
+        std::string error_text;
+        for (const auto &err : result.chain()) {
+            auto details = err->details(formatter_);
+            for (const auto &line : details) {
+                error_text += line + "\n";
+            }
+        }
+        return error_text;
+    }
 };
 
 TEST_F(LexerTests, LexEmptyString)
@@ -261,13 +275,11 @@ TEST_F(LexerTests, UnterminatedStringErrorPosition)
     Lexer lexer{"\"unterminated"};
     auto result = lexer.lex();
     ASSERT_FALSE(result.has_value());
-    // Chain[0] is the empty wrapper, chain[1] is the actual error from passthrough
-    ASSERT_GE(result.chain().size(), 2);
-    const auto *err = dynamic_cast<const CParserError *>(result.chain()[1].get());
-    ASSERT_NE(err, nullptr);
-    EXPECT_EQ(err->position().line, 1);
-    EXPECT_EQ(err->position().column, 1);
-    EXPECT_EQ(err->message(), "unterminated string literal");
+    ASSERT_FALSE(result.chain().empty());
+
+    std::string error_text = get_all_error_text(result);
+    EXPECT_NE(error_text.find("1:1:"), std::string::npos);
+    EXPECT_NE(error_text.find("unterminated string literal"), std::string::npos);
 }
 
 TEST_F(LexerTests, UnterminatedStringErrorPositionOnLine3)
@@ -275,11 +287,10 @@ TEST_F(LexerTests, UnterminatedStringErrorPositionOnLine3)
     Lexer lexer{"foo\nbar\n\"unterminated"};
     auto result = lexer.lex();
     ASSERT_FALSE(result.has_value());
-    ASSERT_GE(result.chain().size(), 2);
-    const auto *err = dynamic_cast<const CParserError *>(result.chain()[1].get());
-    ASSERT_NE(err, nullptr);
-    EXPECT_EQ(err->position().line, 3);
-    EXPECT_EQ(err->position().column, 1);
+    ASSERT_FALSE(result.chain().empty());
+
+    std::string error_text = get_all_error_text(result);
+    EXPECT_NE(error_text.find("3:1:"), std::string::npos);
 }
 
 TEST_F(LexerTests, UnterminatedBlockCommentReturnsError)
@@ -294,12 +305,11 @@ TEST_F(LexerTests, UnterminatedBlockCommentErrorPosition)
     Lexer lexer{"/* unterminated"};
     auto result = lexer.lex();
     ASSERT_FALSE(result.has_value());
-    ASSERT_GE(result.chain().size(), 2);
-    const auto *err = dynamic_cast<const CParserError *>(result.chain()[1].get());
-    ASSERT_NE(err, nullptr);
-    EXPECT_EQ(err->position().line, 1);
-    EXPECT_EQ(err->position().column, 1);
-    EXPECT_EQ(err->message(), "unterminated block comment");
+    ASSERT_FALSE(result.chain().empty());
+
+    std::string error_text = get_all_error_text(result);
+    EXPECT_NE(error_text.find("1:1:"), std::string::npos);
+    EXPECT_NE(error_text.find("unterminated block comment"), std::string::npos);
 }
 
 TEST_F(LexerTests, UnterminatedBlockCommentErrorPositionOnLine2)
@@ -307,11 +317,10 @@ TEST_F(LexerTests, UnterminatedBlockCommentErrorPositionOnLine2)
     Lexer lexer{"foo\n/* unterminated"};
     auto result = lexer.lex();
     ASSERT_FALSE(result.has_value());
-    ASSERT_GE(result.chain().size(), 2);
-    const auto *err = dynamic_cast<const CParserError *>(result.chain()[1].get());
-    ASSERT_NE(err, nullptr);
-    EXPECT_EQ(err->position().line, 2);
-    EXPECT_EQ(err->position().column, 1);
+    ASSERT_FALSE(result.chain().empty());
+
+    std::string error_text = get_all_error_text(result);
+    EXPECT_NE(error_text.find("2:1:"), std::string::npos);
 }
 
 TEST_F(LexerTests, InvalidHexLiteralErrorPosition)
@@ -319,12 +328,11 @@ TEST_F(LexerTests, InvalidHexLiteralErrorPosition)
     Lexer lexer{"0x"};
     auto result = lexer.lex();
     ASSERT_FALSE(result.has_value());
-    ASSERT_GE(result.chain().size(), 2);
-    const auto *err = dynamic_cast<const CParserError *>(result.chain()[1].get());
-    ASSERT_NE(err, nullptr);
-    EXPECT_EQ(err->position().line, 1);
-    EXPECT_EQ(err->position().column, 1);
-    EXPECT_EQ(err->message(), "invalid hexadecimal literal '0x'");
+    ASSERT_FALSE(result.chain().empty());
+
+    std::string error_text = get_all_error_text(result);
+    EXPECT_NE(error_text.find("1:1:"), std::string::npos);
+    EXPECT_NE(error_text.find("invalid hexadecimal literal '0x'"), std::string::npos);
 }
 
 TEST_F(LexerTests, InvalidBinaryLiteralErrorPosition)
@@ -332,12 +340,11 @@ TEST_F(LexerTests, InvalidBinaryLiteralErrorPosition)
     Lexer lexer{"0b"};
     auto result = lexer.lex();
     ASSERT_FALSE(result.has_value());
-    ASSERT_GE(result.chain().size(), 2);
-    const auto *err = dynamic_cast<const CParserError *>(result.chain()[1].get());
-    ASSERT_NE(err, nullptr);
-    EXPECT_EQ(err->position().line, 1);
-    EXPECT_EQ(err->position().column, 1);
-    EXPECT_EQ(err->message(), "invalid binary literal '0b'");
+    ASSERT_FALSE(result.chain().empty());
+
+    std::string error_text = get_all_error_text(result);
+    EXPECT_NE(error_text.find("1:1:"), std::string::npos);
+    EXPECT_NE(error_text.find("invalid binary literal '0b'"), std::string::npos);
 }
 
 TEST_F(LexerTests, UnterminatedStringErrorPositionMidLine)
@@ -345,10 +352,10 @@ TEST_F(LexerTests, UnterminatedStringErrorPositionMidLine)
     Lexer lexer{"foo \"unterminated"};
     auto result = lexer.lex();
     ASSERT_FALSE(result.has_value());
-    const auto *err = dynamic_cast<const CParserError *>(result.chain()[1].get());
-    EXPECT_EQ(err->position().line, 1);
-    EXPECT_EQ(err->position().column, 5); // "foo " is 4 chars, quote starts at column 5
-    EXPECT_EQ(err->message(), "unterminated string literal");
+
+    std::string error_text = get_all_error_text(result);
+    EXPECT_NE(error_text.find("1:5:"), std::string::npos); // "foo " is 4 chars, quote starts at column 5
+    EXPECT_NE(error_text.find("unterminated string literal"), std::string::npos);
 }
 
 TEST_F(LexerTests, UnterminatedBlockCommentErrorPositionMidLine)
@@ -356,10 +363,10 @@ TEST_F(LexerTests, UnterminatedBlockCommentErrorPositionMidLine)
     Lexer lexer{"baz /* unterminated"};
     auto result = lexer.lex();
     ASSERT_FALSE(result.has_value());
-    const auto *err = dynamic_cast<const CParserError *>(result.chain()[1].get());
-    EXPECT_EQ(err->position().line, 1);
-    EXPECT_EQ(err->position().column, 5); // "baz " is 4 chars, /* starts at column 5
-    EXPECT_EQ(err->message(), "unterminated block comment");
+
+    std::string error_text = get_all_error_text(result);
+    EXPECT_NE(error_text.find("1:5:"), std::string::npos); // "baz " is 4 chars, /* starts at column 5
+    EXPECT_NE(error_text.find("unterminated block comment"), std::string::npos);
 }
 
 TEST_F(LexerTests, InvalidHexLiteralErrorPositionMidLine)
@@ -367,10 +374,10 @@ TEST_F(LexerTests, InvalidHexLiteralErrorPositionMidLine)
     Lexer lexer{"foo 0x"};
     auto result = lexer.lex();
     ASSERT_FALSE(result.has_value());
-    const auto *err = dynamic_cast<const CParserError *>(result.chain()[1].get());
-    EXPECT_EQ(err->position().line, 1);
-    EXPECT_EQ(err->position().column, 5); // "foo " is 4 chars, 0x starts at column 5
-    EXPECT_EQ(err->message(), "invalid hexadecimal literal '0x'");
+
+    std::string error_text = get_all_error_text(result);
+    EXPECT_NE(error_text.find("1:5:"), std::string::npos); // "foo " is 4 chars, 0x starts at column 5
+    EXPECT_NE(error_text.find("invalid hexadecimal literal '0x'"), std::string::npos);
 }
 
 TEST_F(LexerTests, InvalidBinaryLiteralErrorPositionMidLine)
@@ -378,10 +385,10 @@ TEST_F(LexerTests, InvalidBinaryLiteralErrorPositionMidLine)
     Lexer lexer{"bar 0b"};
     auto result = lexer.lex();
     ASSERT_FALSE(result.has_value());
-    const auto *err = dynamic_cast<const CParserError *>(result.chain()[1].get());
-    EXPECT_EQ(err->position().line, 1);
-    EXPECT_EQ(err->position().column, 5); // "bar " is 4 chars, 0b starts at column 5
-    EXPECT_EQ(err->message(), "invalid binary literal '0b'");
+
+    std::string error_text = get_all_error_text(result);
+    EXPECT_NE(error_text.find("1:5:"), std::string::npos); // "bar " is 4 chars, 0b starts at column 5
+    EXPECT_NE(error_text.find("invalid binary literal '0b'"), std::string::npos);
 }
 
 TEST_F(LexerTests, LexCompleteDefineExpression)

@@ -1,13 +1,8 @@
 #include "porytiles2/infra/services/header_behavior_map_provider.hpp"
 
-#include <fstream>
 #include <limits>
-#include <sstream>
-#include <string>
 
-#include "porytiles2/utilities/c_parser/lexer.hpp"
-#include "porytiles2/utilities/c_parser/parser.hpp"
-#include "porytiles2/utilities/string_utils.hpp"
+#include "porytiles2/utilities/c_parser/c_parser_driver.hpp"
 
 namespace porytiles2 {
 
@@ -16,8 +11,7 @@ HeaderBehaviorMapProvider::HeaderBehaviorMapProvider(
     const std::filesystem::path &header_relative_path,
     gsl::not_null<const TextFormatter *> format,
     gsl::not_null<const UserDiagnostics *> diag)
-    : project_root_{project_root}, header_relative_path_{header_relative_path}, format_{format}, diag_{diag},
-      file_printer_{std::make_unique<FileHighlightPrinter>(format)}
+    : project_root_{project_root}, header_relative_path_{header_relative_path}, format_{format}, diag_{diag}
 {
 }
 
@@ -68,51 +62,11 @@ ChainableResult<void> HeaderBehaviorMapProvider::ensure_loaded() const
 
     const auto header_path = project_root_ / header_relative_path_;
 
-    if (!std::filesystem::exists(header_path)) {
-        load_failed_ = true;
-        std::vector<std::string> err_lines{};
-        err_lines.push_back(
-            format_->format("{}: behavior header file does not exist", FormatParam{header_path.string(), Style::bold}));
-        diag_->err("behavior-header-load-failure", err_lines);
-        return FormattableError{"behavior header file not found"};
-    }
+    // Use CParserDriver for rich error formatting with source context
+    CParserDriver driver{header_path, format_};
 
-    std::ifstream file{header_path};
-    if (!file.is_open()) {
-        load_failed_ = true;
-        std::vector<std::string> err_lines{};
-        err_lines.push_back(
-            format_->format("{}: failed to open behavior header file", FormatParam{header_path.string(), Style::bold}));
-        diag_->err("behavior-header-load-failure", err_lines);
-        return FormattableError{"failed to open behavior header file"};
-    }
-
-    // Read entire file content for parser, and cache lines for FileHighlightPrinter
-    std::ostringstream content_stream;
-    std::string line;
-    while (std::getline(file, line)) {
-        trim_line_ending(line);
-        cached_lines_.push_back(line);
-        content_stream << line << '\n';
-    }
-    std::string content = content_stream.str();
-
-    // Tokenize and parse
-    Lexer lexer{content};
-    auto tokens_result = lexer.lex();
-    if (!tokens_result.has_value()) {
-        load_failed_ = true;
-        std::vector<std::string> err_lines{};
-        err_lines.push_back(format_->format(
-            "{}: failed to tokenize behavior header file", FormatParam{header_path.string(), Style::bold}));
-        diag_->err("behavior-header-load-failure", err_lines);
-        return ChainableResult<void>{FormattableError{"failed to tokenize behavior header file"}, tokens_result};
-    }
-
-    Parser parser{std::move(tokens_result).value()};
-
-    // Parse #define statements
-    auto defines_result = parser.parse_defines();
+    // Parse #define statements (best effort - continue even if this fails)
+    auto defines_result = driver.parse_defines();
     if (defines_result.has_value()) {
         for (const auto &def : defines_result.value()) {
             if (!def.has_int_value()) {
@@ -138,8 +92,8 @@ ChainableResult<void> HeaderBehaviorMapProvider::ensure_loaded() const
         }
     }
 
-    // Parse enum declarations
-    auto enums_result = parser.parse_enums();
+    // Parse enum declarations (best effort - continue even if this fails)
+    auto enums_result = driver.parse_enums();
     if (enums_result.has_value()) {
         for (const auto &enum_decl : enums_result.value()) {
             for (const auto &member : enum_decl.members()) {

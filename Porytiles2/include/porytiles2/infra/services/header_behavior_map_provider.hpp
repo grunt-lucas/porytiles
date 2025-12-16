@@ -5,13 +5,11 @@
 #include <memory>
 #include <string>
 #include <unordered_map>
-#include <vector>
 
 #include "gsl/pointers"
 
 #include "porytiles2/domain/services/behavior_map_provider.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
-#include "porytiles2/utilities/text/file_highlight_printer.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
@@ -71,10 +69,8 @@ class HeaderBehaviorMapProvider final : public BehaviorMapProvider {
     std::filesystem::path header_relative_path_;
     const TextFormatter *format_;
     const UserDiagnostics *diag_;
-    std::unique_ptr<FileHighlightPrinter> file_printer_;
     mutable bool loaded_{false};
     mutable bool load_failed_{false};
-    mutable std::vector<std::string> cached_lines_;
     mutable std::unordered_map<std::string, std::uint16_t> name_to_value_;
     mutable std::unordered_map<std::uint16_t, std::string> value_to_name_;
 };

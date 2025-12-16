@@ -12,26 +12,39 @@ class ParserTests : public ::testing::Test {
   protected:
     PlainTextFormatter formatter_;
 
-    [[nodiscard]] ChainableResult<std::vector<DefineStatement>, CParserError> parse(const std::string &source)
+    [[nodiscard]] ChainableResult<std::vector<DefineStatement>> parse(const std::string &source)
     {
         Lexer lexer{source};
         auto tokens_result = lexer.lex();
         if (!tokens_result.has_value()) {
-            return ChainableResult<std::vector<DefineStatement>, CParserError>{tokens_result};
+            return ChainableResult<std::vector<DefineStatement>>{tokens_result};
         }
         Parser parser{std::move(tokens_result).value()};
         return parser.parse_defines();
     }
 
-    [[nodiscard]] ChainableResult<std::vector<EnumDeclaration>, CParserError> parse_enums(const std::string &source)
+    [[nodiscard]] ChainableResult<std::vector<EnumDeclaration>> parse_enums(const std::string &source)
     {
         Lexer lexer{source};
         auto tokens_result = lexer.lex();
         if (!tokens_result.has_value()) {
-            return ChainableResult<std::vector<EnumDeclaration>, CParserError>{tokens_result};
+            return ChainableResult<std::vector<EnumDeclaration>>{tokens_result};
         }
         Parser parser{std::move(tokens_result).value()};
         return parser.parse_enums();
+    }
+
+    template <typename T>
+    [[nodiscard]] std::string get_all_error_text(const ChainableResult<T> &result)
+    {
+        std::string error_text;
+        for (const auto &err : result.chain()) {
+            auto details = err->details(formatter_);
+            for (const auto &line : details) {
+                error_text += line + "\n";
+            }
+        }
+        return error_text;
     }
 };
 
@@ -368,16 +381,11 @@ TEST_F(ParserTests, UnknownIdentifierErrorPosition)
 {
     auto result = parse("#define FOO UNKNOWN_MACRO");
     ASSERT_FALSE(result.has_value());
-    // Chain structure:
-    // chain[0] = empty wrapper from parse_defines() passthrough
-    // chain[1] = "failed to evaluate expression for '#define FOO'" from parse_define()
-    // chain[2] = "unknown identifier 'UNKNOWN_MACRO'" from evaluate_postfix()
-    ASSERT_GE(result.chain().size(), 3);
-    const auto *inner_err = dynamic_cast<const CParserError *>(result.chain()[2].get());
-    ASSERT_NE(inner_err, nullptr);
-    EXPECT_EQ(inner_err->position().line, 1);
-    EXPECT_EQ(inner_err->position().column, 13); // "UNKNOWN_MACRO" starts at column 13
-    EXPECT_EQ(inner_err->message(), "unknown identifier 'UNKNOWN_MACRO'");
+    std::string error_text = get_all_error_text(result);
+    // Should contain the error message and position info
+    EXPECT_NE(error_text.find("unknown identifier 'UNKNOWN_MACRO'"), std::string::npos);
+    // Position should be line 1, column 13 (where "UNKNOWN_MACRO" starts)
+    EXPECT_NE(error_text.find("1:13:"), std::string::npos);
 }
 
 TEST_F(ParserTests, ParseRealWorldExample)
@@ -569,16 +577,11 @@ TEST_F(ParserTests, EnumMissingOpeningBraceErrorPosition)
 {
     auto result = parse_enums("enum FOO;");
     ASSERT_FALSE(result.has_value());
-    // Chain structure:
-    // chain[0] = empty wrapper from parse_enums() passthrough
-    // chain[1] = "expected '{' after 'enum'" from parse_enum()
-    ASSERT_GE(result.chain().size(), 2);
-    const auto *err = dynamic_cast<const CParserError *>(result.chain()[1].get());
-    ASSERT_NE(err, nullptr);
-    // Error should point to the semicolon position
-    EXPECT_EQ(err->position().line, 1);
-    EXPECT_EQ(err->position().column, 9);
-    EXPECT_EQ(err->message(), "expected '{' after 'enum'");
+    std::string error_text = get_all_error_text(result);
+    // Should contain the error message
+    EXPECT_NE(error_text.find("expected '{' after 'enum'"), std::string::npos);
+    // Error should point to the semicolon position (line 1, column 9)
+    EXPECT_NE(error_text.find("1:9:"), std::string::npos);
 }
 
 TEST_F(ParserTests, EnumMissingClosingBraceReturnsError)
@@ -591,15 +594,11 @@ TEST_F(ParserTests, EnumMissingClosingBraceErrorPosition)
 {
     auto result = parse_enums("enum { A, B");
     ASSERT_FALSE(result.has_value());
-    // Chain structure:
-    // chain[0] = empty wrapper from parse_enums() passthrough
-    // chain[1] = "expected '}' to close enum" from parse_enum()
-    ASSERT_GE(result.chain().size(), 2);
-    const auto *err = dynamic_cast<const CParserError *>(result.chain()[1].get());
-    ASSERT_NE(err, nullptr);
-    // Error should point to EOF
-    EXPECT_EQ(err->position().line, 1);
-    EXPECT_EQ(err->message(), "expected '}' to close enum");
+    std::string error_text = get_all_error_text(result);
+    // Should contain the error message
+    EXPECT_NE(error_text.find("expected '}' to close enum"), std::string::npos);
+    // Error should point to EOF on line 1
+    EXPECT_NE(error_text.find("1:"), std::string::npos);
 }
 
 } // namespace

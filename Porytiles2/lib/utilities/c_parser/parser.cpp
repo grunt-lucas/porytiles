@@ -4,11 +4,25 @@
 
 #include "fmt/format.h"
 
+#include "porytiles2/utilities/c_parser/c_parser_context.hpp"
+
 namespace porytiles2 {
 
 Parser::Parser(std::vector<Token> tokens) : tokens_{std::move(tokens)} {}
 
-ChainableResult<std::vector<DefineStatement>, CParserError> Parser::parse_defines()
+Parser::Parser(std::vector<Token> tokens, const CParserContext *context) : tokens_{std::move(tokens)}, context_{context}
+{
+}
+
+FormattableError Parser::make_error(SourcePosition pos, std::string message) const
+{
+    if (context_ != nullptr) {
+        return context_->make_error(pos, std::move(message));
+    }
+    return FormattableError{fmt::format("{}:{}: {}", pos.line, pos.column, message)};
+}
+
+ChainableResult<std::vector<DefineStatement>> Parser::parse_defines()
 {
     std::vector<DefineStatement> defines;
 
@@ -21,7 +35,7 @@ ChainableResult<std::vector<DefineStatement>, CParserError> Parser::parse_define
             if (check(TokenType::kw_define)) {
                 auto result = parse_define();
                 if (!result.has_value()) {
-                    return ChainableResult<std::vector<DefineStatement>, CParserError>{result};
+                    return ChainableResult<std::vector<DefineStatement>>{result};
                 }
                 defines.push_back(std::move(result).value());
             }
@@ -39,7 +53,7 @@ ChainableResult<std::vector<DefineStatement>, CParserError> Parser::parse_define
     return defines;
 }
 
-ChainableResult<std::vector<EnumDeclaration>, CParserError> Parser::parse_enums()
+ChainableResult<std::vector<EnumDeclaration>> Parser::parse_enums()
 {
     std::vector<EnumDeclaration> enums;
 
@@ -50,7 +64,7 @@ ChainableResult<std::vector<EnumDeclaration>, CParserError> Parser::parse_enums(
         if (check(TokenType::kw_enum)) {
             auto result = parse_enum();
             if (!result.has_value()) {
-                return ChainableResult<std::vector<EnumDeclaration>, CParserError>{result};
+                return ChainableResult<std::vector<EnumDeclaration>>{result};
             }
             enums.push_back(std::move(result).value());
         }
@@ -62,7 +76,7 @@ ChainableResult<std::vector<EnumDeclaration>, CParserError> Parser::parse_enums(
     return enums;
 }
 
-ChainableResult<EnumDeclaration, CParserError> Parser::parse_enum()
+ChainableResult<EnumDeclaration> Parser::parse_enum()
 {
     SourcePosition enum_pos = peek().position();
     advance(); // consume 'enum'
@@ -76,7 +90,7 @@ ChainableResult<EnumDeclaration, CParserError> Parser::parse_enum()
 
     // Expect opening brace
     if (!check(TokenType::left_brace)) {
-        return CParserError{peek().position(), "expected '{' after 'enum'"};
+        return make_error(peek().position(), "expected '{' after 'enum'");
     }
     advance(); // consume '{'
 
@@ -96,7 +110,7 @@ ChainableResult<EnumDeclaration, CParserError> Parser::parse_enum()
 
         auto member_result = parse_enum_member(counter);
         if (!member_result.has_value()) {
-            return ChainableResult<EnumDeclaration, CParserError>{member_result};
+            return ChainableResult<EnumDeclaration>{member_result};
         }
         members.push_back(std::move(member_result).value());
 
@@ -113,7 +127,7 @@ ChainableResult<EnumDeclaration, CParserError> Parser::parse_enum()
 
     // Expect closing brace
     if (!check(TokenType::right_brace)) {
-        return CParserError{peek().position(), "expected '}' to close enum"};
+        return make_error(peek().position(), "expected '}' to close enum");
     }
     advance(); // consume '}'
 
@@ -128,11 +142,11 @@ ChainableResult<EnumDeclaration, CParserError> Parser::parse_enum()
     return EnumDeclaration{std::move(members), enum_pos};
 }
 
-ChainableResult<EnumMember, CParserError> Parser::parse_enum_member(std::int64_t &counter)
+ChainableResult<EnumMember> Parser::parse_enum_member(std::int64_t &counter)
 {
     // Expect identifier
     if (!check(TokenType::identifier)) {
-        return CParserError{peek().position(), "expected identifier for enum member"};
+        return make_error(peek().position(), "expected identifier for enum member");
     }
 
     std::string name = peek().text();
@@ -149,13 +163,13 @@ ChainableResult<EnumMember, CParserError> Parser::parse_enum_member(std::int64_t
         std::vector<Token> expr_tokens = collect_enum_value_tokens();
 
         if (expr_tokens.empty()) {
-            return CParserError{member_pos, fmt::format("expected expression after '=' for enum member '{}'", name)};
+            return make_error(member_pos, fmt::format("expected expression after '=' for enum member '{}'", name));
         }
 
         auto eval_result = evaluate_expression(expr_tokens);
         if (!eval_result.has_value()) {
-            return ChainableResult<EnumMember, CParserError>{
-                CParserError{member_pos, fmt::format("failed to evaluate expression for enum member '{}'", name)},
+            return ChainableResult<EnumMember>{
+                make_error(member_pos, fmt::format("failed to evaluate expression for enum member '{}'", name)),
                 eval_result};
         }
 
@@ -240,7 +254,7 @@ bool Parser::is_at_line_end() const
     return is_at_end() || check(TokenType::newline);
 }
 
-ChainableResult<DefineStatement, CParserError> Parser::parse_define()
+ChainableResult<DefineStatement> Parser::parse_define()
 {
     SourcePosition define_pos = peek().position();
     advance(); // consume 'define'
@@ -249,7 +263,7 @@ ChainableResult<DefineStatement, CParserError> Parser::parse_define()
 
     // Expect identifier for macro name
     if (!check(TokenType::identifier)) {
-        return CParserError{peek().position(), "expected identifier after '#define'"};
+        return make_error(peek().position(), "expected identifier after '#define'");
     }
 
     std::string name = peek().text();
@@ -297,8 +311,8 @@ ChainableResult<DefineStatement, CParserError> Parser::parse_define()
 
     auto result = evaluate_expression(expr_tokens);
     if (!result.has_value()) {
-        return ChainableResult<DefineStatement, CParserError>{
-            CParserError{define_pos, fmt::format("failed to evaluate expression for '#define {}'", name)}, result};
+        return ChainableResult<DefineStatement>{
+            make_error(define_pos, fmt::format("failed to evaluate expression for '#define {}'", name)), result};
     }
 
     std::int64_t value = result.value();
@@ -326,10 +340,10 @@ std::vector<Token> Parser::collect_expression_tokens()
     return expr_tokens;
 }
 
-ChainableResult<std::int64_t, CParserError> Parser::evaluate_expression(const std::vector<Token> &expr_tokens)
+ChainableResult<std::int64_t> Parser::evaluate_expression(const std::vector<Token> &expr_tokens)
 {
     if (expr_tokens.empty()) {
-        return CParserError{SourcePosition{}, "empty expression"};
+        return make_error(SourcePosition{}, "empty expression");
     }
 
     // Convert to postfix notation using Shunting Yard
@@ -408,7 +422,7 @@ std::vector<Token> Parser::to_postfix(const std::vector<Token> &expr_tokens)
     return output;
 }
 
-ChainableResult<std::int64_t, CParserError> Parser::evaluate_postfix(const std::vector<Token> &postfix)
+ChainableResult<std::int64_t> Parser::evaluate_postfix(const std::vector<Token> &postfix)
 {
     std::stack<std::int64_t> values;
 
@@ -424,15 +438,15 @@ ChainableResult<std::int64_t, CParserError> Parser::evaluate_postfix(const std::
             }
             else {
                 // Unknown identifier - could be an error or treat as 0
-                return CParserError{token.position(), fmt::format("unknown identifier '{}'", token.text())};
+                return make_error(token.position(), fmt::format("unknown identifier '{}'", token.text()));
             }
         }
         else if (is_operator(token.type())) {
             // Check if it's a unary operator (text starts with 'u')
             if (token.text().size() > 1 && token.text()[0] == 'u') {
                 if (values.empty()) {
-                    return CParserError{
-                        token.position(), fmt::format("unary operator '{}' missing operand", token.text().substr(1))};
+                    return make_error(
+                        token.position(), fmt::format("unary operator '{}' missing operand", token.text().substr(1)));
                 }
                 std::int64_t operand = values.top();
                 values.pop();
@@ -449,15 +463,15 @@ ChainableResult<std::int64_t, CParserError> Parser::evaluate_postfix(const std::
                     result = operand == 0 ? 1 : 0;
                     break;
                 default:
-                    return CParserError{token.position(), fmt::format("unknown unary operator '{}'", token.text())};
+                    return make_error(token.position(), fmt::format("unknown unary operator '{}'", token.text()));
                 }
                 values.push(result);
             }
             else {
                 // Binary operator
                 if (values.size() < 2) {
-                    return CParserError{
-                        token.position(), fmt::format("binary operator '{}' missing operands", token.text())};
+                    return make_error(
+                        token.position(), fmt::format("binary operator '{}' missing operands", token.text()));
                 }
                 std::int64_t right = values.top();
                 values.pop();
@@ -477,13 +491,13 @@ ChainableResult<std::int64_t, CParserError> Parser::evaluate_postfix(const std::
                     break;
                 case TokenType::slash:
                     if (right == 0) {
-                        return CParserError{token.position(), "division by zero"};
+                        return make_error(token.position(), "division by zero");
                     }
                     result = left / right;
                     break;
                 case TokenType::percent:
                     if (right == 0) {
-                        return CParserError{token.position(), "modulo by zero"};
+                        return make_error(token.position(), "modulo by zero");
                     }
                     result = left % right;
                     break;
@@ -503,7 +517,7 @@ ChainableResult<std::int64_t, CParserError> Parser::evaluate_postfix(const std::
                     result = left >> right;
                     break;
                 default:
-                    return CParserError{token.position(), fmt::format("unknown binary operator '{}'", token.text())};
+                    return make_error(token.position(), fmt::format("unknown binary operator '{}'", token.text()));
                 }
                 values.push(result);
             }
@@ -511,7 +525,7 @@ ChainableResult<std::int64_t, CParserError> Parser::evaluate_postfix(const std::
     }
 
     if (values.empty()) {
-        return CParserError{SourcePosition{}, "expression evaluated to no value"};
+        return make_error(SourcePosition{}, "expression evaluated to no value");
     }
 
     return values.top();

@@ -1,0 +1,113 @@
+#include "porytiles2/utilities/c_parser/c_parser_driver.hpp"
+
+#include <fstream>
+#include <sstream>
+
+#include "fmt/format.h"
+
+#include "porytiles2/utilities/c_parser/c_parser_context.hpp"
+#include "porytiles2/utilities/c_parser/lexer.hpp"
+#include "porytiles2/utilities/c_parser/parser.hpp"
+
+namespace porytiles2 {
+
+CParserDriver::CParserDriver(std::filesystem::path file_path, gsl::not_null<const TextFormatter *> format)
+    : file_path_{std::move(file_path)}, format_{format}
+{
+}
+
+CParserDriver::~CParserDriver() = default;
+
+ChainableResult<void> CParserDriver::ensure_loaded()
+{
+    if (loaded_) {
+        return {};
+    }
+
+    if (load_failed_) {
+        return load_error_;
+    }
+
+    // Attempt to load the file
+    std::ifstream file{file_path_};
+    if (!file.is_open()) {
+        load_failed_ = true;
+        load_error_ = FormattableError{fmt::format("failed to open file '{}'", file_path_.string())};
+        return load_error_;
+    }
+
+    // Read entire file content
+    std::ostringstream buffer;
+    buffer << file.rdbuf();
+    content_ = buffer.str();
+
+    // Split content into lines for FileHighlightPrinter
+    file_lines_.clear();
+    std::istringstream line_stream{content_};
+    std::string line;
+    while (std::getline(line_stream, line)) {
+        file_lines_.push_back(line);
+    }
+
+    // Create context for rich error formatting
+    context_ = std::make_unique<CParserContext>(&file_lines_, format_, file_path_.string());
+
+    loaded_ = true;
+    return {};
+}
+
+ChainableResult<std::vector<DefineStatement>> CParserDriver::parse_defines()
+{
+    auto load_result = ensure_loaded();
+    if (!load_result.has_value()) {
+        return ChainableResult<std::vector<DefineStatement>>{
+            FormattableError{fmt::format("failed to parse defines from '{}'", file_path_.string())}, load_result};
+    }
+
+    // Lex the content
+    Lexer lexer{content_, context_.get()};
+    auto lex_result = lexer.lex();
+    if (!lex_result.has_value()) {
+        return ChainableResult<std::vector<DefineStatement>>{
+            FormattableError{fmt::format("failed to parse defines from '{}'", file_path_.string())}, lex_result};
+    }
+
+    // Parse the tokens
+    Parser parser{std::move(lex_result).value(), context_.get()};
+    auto parse_result = parser.parse_defines();
+    if (!parse_result.has_value()) {
+        return ChainableResult<std::vector<DefineStatement>>{
+            FormattableError{fmt::format("failed to parse defines from '{}'", file_path_.string())}, parse_result};
+    }
+
+    return std::move(parse_result).value();
+}
+
+ChainableResult<std::vector<EnumDeclaration>> CParserDriver::parse_enums()
+{
+    auto load_result = ensure_loaded();
+    if (!load_result.has_value()) {
+        return ChainableResult<std::vector<EnumDeclaration>>{
+            FormattableError{fmt::format("failed to parse enums from '{}'", file_path_.string())}, load_result};
+    }
+
+    // Lex the content
+    Lexer lexer{content_, context_.get()};
+    auto lex_result = lexer.lex();
+    if (!lex_result.has_value()) {
+        return ChainableResult<std::vector<EnumDeclaration>>{
+            FormattableError{fmt::format("failed to parse enums from '{}'", file_path_.string())}, lex_result};
+    }
+
+    // Parse the tokens
+    Parser parser{std::move(lex_result).value(), context_.get()};
+    auto parse_result = parser.parse_enums();
+    if (!parse_result.has_value()) {
+        return ChainableResult<std::vector<EnumDeclaration>>{
+            FormattableError{fmt::format("failed to parse enums from '{}'", file_path_.string())}, parse_result};
+    }
+
+    return std::move(parse_result).value();
+}
+
+} // namespace porytiles2

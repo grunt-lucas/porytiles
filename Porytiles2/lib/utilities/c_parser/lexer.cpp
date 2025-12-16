@@ -6,6 +6,8 @@
 
 #include "fmt/format.h"
 
+#include "porytiles2/utilities/c_parser/c_parser_context.hpp"
+
 namespace porytiles2 {
 
 namespace {
@@ -168,7 +170,17 @@ std::string token_type_name(TokenType type)
 
 Lexer::Lexer(std::string content) : content_{std::move(content)} {}
 
-ChainableResult<std::vector<Token>, CParserError> Lexer::lex()
+Lexer::Lexer(std::string content, const CParserContext *context) : content_{std::move(content)}, context_{context} {}
+
+FormattableError Lexer::make_error(SourcePosition pos, std::string message) const
+{
+    if (context_ != nullptr) {
+        return context_->make_error(pos, std::move(message));
+    }
+    return FormattableError{fmt::format("{}:{}: {}", pos.line, pos.column, message)};
+}
+
+ChainableResult<std::vector<Token>> Lexer::lex()
 {
     std::vector<Token> tokens;
 
@@ -197,7 +209,7 @@ ChainableResult<std::vector<Token>, CParserError> Lexer::lex()
             if (peek_next() == '*') {
                 auto result = skip_block_comment();
                 if (!result.has_value()) {
-                    return ChainableResult<std::vector<Token>, CParserError>{result};
+                    return ChainableResult<std::vector<Token>>{result};
                 }
                 continue;
             }
@@ -220,7 +232,7 @@ ChainableResult<std::vector<Token>, CParserError> Lexer::lex()
         if (is_digit(c)) {
             auto result = consume_number();
             if (!result.has_value()) {
-                return ChainableResult<std::vector<Token>, CParserError>{result};
+                return ChainableResult<std::vector<Token>>{result};
             }
             tokens.push_back(std::move(result).value());
             continue;
@@ -230,7 +242,7 @@ ChainableResult<std::vector<Token>, CParserError> Lexer::lex()
         if (c == '"') {
             auto result = consume_string();
             if (!result.has_value()) {
-                return ChainableResult<std::vector<Token>, CParserError>{result};
+                return ChainableResult<std::vector<Token>>{result};
             }
             tokens.push_back(std::move(result).value());
             continue;
@@ -307,7 +319,7 @@ void Lexer::skip_line_comment()
     // Don't consume the newline - it's significant for preprocessor
 }
 
-ChainableResult<void, CParserError> Lexer::skip_block_comment()
+ChainableResult<void> Lexer::skip_block_comment()
 {
     SourcePosition start_pos = current_position();
 
@@ -324,7 +336,7 @@ ChainableResult<void, CParserError> Lexer::skip_block_comment()
         advance();
     }
 
-    return CParserError{start_pos, "unterminated block comment"};
+    return make_error(start_pos, "unterminated block comment");
 }
 
 Token Lexer::consume_identifier_or_keyword()
@@ -344,7 +356,7 @@ Token Lexer::consume_identifier_or_keyword()
     return Token{TokenType::identifier, std::move(text), start_pos};
 }
 
-ChainableResult<Token, CParserError> Lexer::consume_number()
+ChainableResult<Token> Lexer::consume_number()
 {
     SourcePosition start_pos = current_position();
     std::string text;
@@ -358,7 +370,7 @@ ChainableResult<Token, CParserError> Lexer::consume_number()
         if (next == 'x' || next == 'X') {
             text += advance();
             if (!is_hex_digit(peek())) {
-                return CParserError{start_pos, fmt::format("invalid hexadecimal literal '{}'", text)};
+                return make_error(start_pos, fmt::format("invalid hexadecimal literal '{}'", text));
             }
             while (!is_at_end() && is_hex_digit(peek())) {
                 text += advance();
@@ -370,7 +382,7 @@ ChainableResult<Token, CParserError> Lexer::consume_number()
             std::int64_t value = 0;
             auto [ptr, ec] = std::from_chars(text.data() + 2, text.data() + text.size(), value, 16);
             if (ec != std::errc{}) {
-                return CParserError{start_pos, fmt::format("invalid hexadecimal literal '{}'", text)};
+                return make_error(start_pos, fmt::format("invalid hexadecimal literal '{}'", text));
             }
             return Token{std::move(text), value, start_pos};
         }
@@ -379,7 +391,7 @@ ChainableResult<Token, CParserError> Lexer::consume_number()
         if (next == 'b' || next == 'B') {
             text += advance();
             if (!is_binary_digit(peek())) {
-                return CParserError{start_pos, fmt::format("invalid binary literal '{}'", text)};
+                return make_error(start_pos, fmt::format("invalid binary literal '{}'", text));
             }
             while (!is_at_end() && is_binary_digit(peek())) {
                 text += advance();
@@ -391,7 +403,7 @@ ChainableResult<Token, CParserError> Lexer::consume_number()
             std::int64_t value = 0;
             auto [ptr, ec] = std::from_chars(text.data() + 2, text.data() + text.size(), value, 2);
             if (ec != std::errc{}) {
-                return CParserError{start_pos, fmt::format("invalid binary literal '{}'", text)};
+                return make_error(start_pos, fmt::format("invalid binary literal '{}'", text));
             }
             return Token{std::move(text), value, start_pos};
         }
@@ -408,7 +420,7 @@ ChainableResult<Token, CParserError> Lexer::consume_number()
             std::int64_t value = 0;
             auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value, 8);
             if (ec != std::errc{}) {
-                return CParserError{start_pos, fmt::format("invalid octal literal '{}'", text)};
+                return make_error(start_pos, fmt::format("invalid octal literal '{}'", text));
             }
             return Token{std::move(text), value, start_pos};
         }
@@ -429,12 +441,12 @@ ChainableResult<Token, CParserError> Lexer::consume_number()
     std::int64_t value = 0;
     auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value, 10);
     if (ec != std::errc{}) {
-        return CParserError{start_pos, fmt::format("invalid decimal literal '{}'", text)};
+        return make_error(start_pos, fmt::format("invalid decimal literal '{}'", text));
     }
     return Token{std::move(text), value, start_pos};
 }
 
-ChainableResult<Token, CParserError> Lexer::consume_string()
+ChainableResult<Token> Lexer::consume_string()
 {
     SourcePosition start_pos = current_position();
     std::string text;
@@ -447,7 +459,7 @@ ChainableResult<Token, CParserError> Lexer::consume_string()
 
         // Check for unterminated string (newline without escape)
         if (c == '\n') {
-            return CParserError{start_pos, "unterminated string literal"};
+            return make_error(start_pos, "unterminated string literal");
         }
 
         // Handle escape sequences
@@ -489,7 +501,7 @@ ChainableResult<Token, CParserError> Lexer::consume_string()
     }
 
     if (is_at_end()) {
-        return CParserError{start_pos, "unterminated string literal"};
+        return make_error(start_pos, "unterminated string literal");
     }
 
     text += advance(); // Closing quote
