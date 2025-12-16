@@ -29,6 +29,7 @@ ChainableResult<void> CParserDriver::ensure_loaded()
     }
 
     // Attempt to load the file
+    // TODO: explicit error for 'file not found', then another error for more general "load failed'
     std::ifstream file{file_path_};
     if (!file.is_open()) {
         load_failed_ = true;
@@ -46,6 +47,7 @@ ChainableResult<void> CParserDriver::ensure_loaded()
     std::istringstream line_stream{content_};
     std::string line;
     while (std::getline(line_stream, line)) {
+        // TODO: trim_line_ending
         file_lines_.push_back(line);
     }
 
