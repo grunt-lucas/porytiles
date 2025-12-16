@@ -20,6 +20,10 @@ bool is_wildcard_marker(std::string_view line)
     return line == "*" || line == "-";
 }
 
+/*
+ * TODO: use multi-line FormattableErrors instead of diagnostic errors followed by an immediate return
+ */
+
 ChainableResult<std::optional<Rgba32>> parse_jasc_line(std::string_view line, const TextFormatter &format)
 {
     if (is_wildcard_marker(line)) {

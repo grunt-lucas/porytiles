@@ -662,6 +662,8 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing(const std::v
     for (std::size_t i = 0; i < pal::num_pals; i++) {
         const auto &maybe_packed_pal = pal_packing.pals_.at(i);
         if (maybe_packed_pal.has_value()) {
+            // TODO: introduce a remark level and make this message a remark
+            // unlike other diag types, remarks are disabled by default
             constexpr auto tag = "palette-packing-result";
             std::vector<std::string> note_lines;
             note_lines.emplace_back(format_.format("packed '{}' contents:", FormatParam{pal_filename(i), Style::bold}));
