@@ -340,6 +340,50 @@ TEST_F(LexerTests, InvalidBinaryLiteralErrorPosition)
     EXPECT_EQ(err->message(), "invalid binary literal '0b'");
 }
 
+TEST_F(LexerTests, UnterminatedStringErrorPositionMidLine)
+{
+    Lexer lexer{"foo \"unterminated"};
+    auto result = lexer.lex();
+    ASSERT_FALSE(result.has_value());
+    const auto *err = dynamic_cast<const CParserError *>(result.chain()[1].get());
+    EXPECT_EQ(err->position().line, 1);
+    EXPECT_EQ(err->position().column, 5); // "foo " is 4 chars, quote starts at column 5
+    EXPECT_EQ(err->message(), "unterminated string literal");
+}
+
+TEST_F(LexerTests, UnterminatedBlockCommentErrorPositionMidLine)
+{
+    Lexer lexer{"baz /* unterminated"};
+    auto result = lexer.lex();
+    ASSERT_FALSE(result.has_value());
+    const auto *err = dynamic_cast<const CParserError *>(result.chain()[1].get());
+    EXPECT_EQ(err->position().line, 1);
+    EXPECT_EQ(err->position().column, 5); // "baz " is 4 chars, /* starts at column 5
+    EXPECT_EQ(err->message(), "unterminated block comment");
+}
+
+TEST_F(LexerTests, InvalidHexLiteralErrorPositionMidLine)
+{
+    Lexer lexer{"foo 0x"};
+    auto result = lexer.lex();
+    ASSERT_FALSE(result.has_value());
+    const auto *err = dynamic_cast<const CParserError *>(result.chain()[1].get());
+    EXPECT_EQ(err->position().line, 1);
+    EXPECT_EQ(err->position().column, 5); // "foo " is 4 chars, 0x starts at column 5
+    EXPECT_EQ(err->message(), "invalid hexadecimal literal '0x'");
+}
+
+TEST_F(LexerTests, InvalidBinaryLiteralErrorPositionMidLine)
+{
+    Lexer lexer{"bar 0b"};
+    auto result = lexer.lex();
+    ASSERT_FALSE(result.has_value());
+    const auto *err = dynamic_cast<const CParserError *>(result.chain()[1].get());
+    EXPECT_EQ(err->position().line, 1);
+    EXPECT_EQ(err->position().column, 5); // "bar " is 4 chars, 0b starts at column 5
+    EXPECT_EQ(err->message(), "invalid binary literal '0b'");
+}
+
 TEST_F(LexerTests, LexCompleteDefineExpression)
 {
     Lexer lexer{"#define BAZ (1 << 4)"};
