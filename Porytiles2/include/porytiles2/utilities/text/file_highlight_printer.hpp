@@ -59,6 +59,28 @@ class FileHighlightPrinter {
         std::size_t window_size,
         const std::vector<std::size_t> &line_indices_to_highlight) const;
 
+    /**
+     * @brief Prints lines with a specific line and column highlighted.
+     *
+     * @details
+     * Creates a formatted view showing a window of context around the highlighted line. The specified column is
+     * highlighted with underline styling, and a caret indicator line is added below the highlighted line pointing to
+     * the column position.
+     *
+     * @param lines The file contents as a vector of strings (one per line)
+     * @param window_size Total number of context lines to show around highlighted line
+     * @param line_index_to_highlight 0-indexed line index to highlight
+     * @param col_to_highlight 0-indexed column position to highlight within the line
+     * @pre line_index_to_highlight must be < lines.size()
+     * @pre col_to_highlight must be < lines[line_index_to_highlight].size()
+     * @return Formatted output lines ready for display
+     */
+    [[nodiscard]] std::vector<std::string> print(
+        const std::vector<std::string> &lines,
+        std::size_t window_size,
+        std::size_t line_index_to_highlight,
+        std::size_t col_to_highlight) const;
+
   private:
     const TextFormatter *format_;
 };
