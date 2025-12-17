@@ -15,8 +15,6 @@ CParserDriver::CParserDriver(std::filesystem::path file_path, gsl::not_null<cons
 {
 }
 
-CParserDriver::~CParserDriver() = default;
-
 ChainableResult<void> CParserDriver::ensure_loaded()
 {
     if (loaded_) {
@@ -69,28 +67,28 @@ ChainableResult<std::vector<DefineStatement>> CParserDriver::parse_defines()
     auto load_result = ensure_loaded();
     if (!load_result.has_value()) {
         return ChainableResult<std::vector<DefineStatement>>{
-            FormattableError{
-                format_->format("{}: failed to parse defines", FormatParam{file_path_.string(), Style::bold})},
+            FormattableError{format_->format(
+                "{}: failed to parse #define statements", FormatParam{file_path_.string(), Style::bold})},
             load_result};
     }
 
     // Lex the content
-    Lexer lexer{content_, context_.get()};
+    Lexer lexer{format_, content_, context_.get()};
     auto lex_result = lexer.lex();
     if (!lex_result.has_value()) {
         return ChainableResult<std::vector<DefineStatement>>{
-            FormattableError{
-                format_->format("{}: failed to parse defines", FormatParam{file_path_.string(), Style::bold})},
+            FormattableError{format_->format(
+                "{}: failed to parse #define statements", FormatParam{file_path_.string(), Style::bold})},
             lex_result};
     }
 
     // Parse the tokens
-    Parser parser{std::move(lex_result).value(), context_.get()};
+    Parser parser{format_, std::move(lex_result).value(), context_.get()};
     auto parse_result = parser.parse_defines();
     if (!parse_result.has_value()) {
         return ChainableResult<std::vector<DefineStatement>>{
-            FormattableError{
-                format_->format("{}: failed to parse defines", FormatParam{file_path_.string(), Style::bold})},
+            FormattableError{format_->format(
+                "{}: failed to parse #define statements", FormatParam{file_path_.string(), Style::bold})},
             parse_result};
     }
 
@@ -108,7 +106,7 @@ ChainableResult<std::vector<EnumDeclaration>> CParserDriver::parse_enums()
     }
 
     // Lex the content
-    Lexer lexer{content_, context_.get()};
+    Lexer lexer{format_, content_, context_.get()};
     auto lex_result = lexer.lex();
     if (!lex_result.has_value()) {
         return ChainableResult<std::vector<EnumDeclaration>>{
@@ -118,7 +116,7 @@ ChainableResult<std::vector<EnumDeclaration>> CParserDriver::parse_enums()
     }
 
     // Parse the tokens
-    Parser parser{std::move(lex_result).value(), context_.get()};
+    Parser parser{format_, std::move(lex_result).value(), context_.get()};
     auto parse_result = parser.parse_enums();
     if (!parse_result.has_value()) {
         return ChainableResult<std::vector<EnumDeclaration>>{
@@ -128,6 +126,11 @@ ChainableResult<std::vector<EnumDeclaration>> CParserDriver::parse_enums()
     }
 
     return std::move(parse_result).value();
+}
+
+const std::vector<std::string> &CParserDriver::file_lines() const
+{
+    return file_lines_;
 }
 
 } // namespace porytiles2

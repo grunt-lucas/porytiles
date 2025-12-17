@@ -28,7 +28,7 @@ class LexerTests : public ::testing::Test {
 
 TEST_F(LexerTests, LexEmptyString)
 {
-    Lexer lexer{""};
+    Lexer lexer{&formatter_, ""};
     auto result = lexer.lex();
     ASSERT_TRUE(result.has_value());
     ASSERT_EQ(result.value().size(), 1);
@@ -37,7 +37,7 @@ TEST_F(LexerTests, LexEmptyString)
 
 TEST_F(LexerTests, LexSimpleDefine)
 {
-    Lexer lexer{"#define FOO 123"};
+    Lexer lexer{&formatter_, "#define FOO 123"};
     auto result = lexer.lex();
     ASSERT_TRUE(result.has_value());
 
@@ -55,7 +55,7 @@ TEST_F(LexerTests, LexSimpleDefine)
 
 TEST_F(LexerTests, LexHexNumber)
 {
-    Lexer lexer{"0xFF"};
+    Lexer lexer{&formatter_, "0xFF"};
     auto result = lexer.lex();
     ASSERT_TRUE(result.has_value());
 
@@ -69,7 +69,7 @@ TEST_F(LexerTests, LexHexNumber)
 
 TEST_F(LexerTests, LexBinaryNumber)
 {
-    Lexer lexer{"0b1010"};
+    Lexer lexer{&formatter_, "0b1010"};
     auto result = lexer.lex();
     ASSERT_TRUE(result.has_value());
 
@@ -82,7 +82,7 @@ TEST_F(LexerTests, LexBinaryNumber)
 
 TEST_F(LexerTests, LexOctalNumber)
 {
-    Lexer lexer{"0755"};
+    Lexer lexer{&formatter_, "0755"};
     auto result = lexer.lex();
     ASSERT_TRUE(result.has_value());
 
@@ -95,7 +95,7 @@ TEST_F(LexerTests, LexOctalNumber)
 
 TEST_F(LexerTests, LexStringLiteral)
 {
-    Lexer lexer{"\"hello world\""};
+    Lexer lexer{&formatter_, "\"hello world\""};
     auto result = lexer.lex();
     ASSERT_TRUE(result.has_value());
 
@@ -108,7 +108,7 @@ TEST_F(LexerTests, LexStringLiteral)
 
 TEST_F(LexerTests, LexStringWithEscapes)
 {
-    Lexer lexer{"\"line1\\nline2\""};
+    Lexer lexer{&formatter_, "\"line1\\nline2\""};
     auto result = lexer.lex();
     ASSERT_TRUE(result.has_value());
 
@@ -121,7 +121,7 @@ TEST_F(LexerTests, LexStringWithEscapes)
 
 TEST_F(LexerTests, LexOperators)
 {
-    Lexer lexer{"+ - * / % & | ^ ~ ! < > ="};
+    Lexer lexer{&formatter_, "+ - * / % & | ^ ~ ! < > ="};
     auto result = lexer.lex();
     ASSERT_TRUE(result.has_value());
 
@@ -143,7 +143,7 @@ TEST_F(LexerTests, LexOperators)
 
 TEST_F(LexerTests, LexCompoundOperators)
 {
-    Lexer lexer{"<< >> && || == != <= >="};
+    Lexer lexer{&formatter_, "<< >> && || == != <= >="};
     auto result = lexer.lex();
     ASSERT_TRUE(result.has_value());
 
@@ -160,7 +160,7 @@ TEST_F(LexerTests, LexCompoundOperators)
 
 TEST_F(LexerTests, LexDelimiters)
 {
-    Lexer lexer{"( ) { } [ ] , ;"};
+    Lexer lexer{&formatter_, "( ) { } [ ] , ;"};
     auto result = lexer.lex();
     ASSERT_TRUE(result.has_value());
 
@@ -177,7 +177,7 @@ TEST_F(LexerTests, LexDelimiters)
 
 TEST_F(LexerTests, LexNewlines)
 {
-    Lexer lexer{"a\nb\nc"};
+    Lexer lexer{&formatter_, "a\nb\nc"};
     auto result = lexer.lex();
     ASSERT_TRUE(result.has_value());
 
@@ -191,7 +191,7 @@ TEST_F(LexerTests, LexNewlines)
 
 TEST_F(LexerTests, LexLineComment)
 {
-    Lexer lexer{"foo // this is a comment\nbar"};
+    Lexer lexer{&formatter_, "foo // this is a comment\nbar"};
     auto result = lexer.lex();
     ASSERT_TRUE(result.has_value());
 
@@ -205,7 +205,7 @@ TEST_F(LexerTests, LexLineComment)
 
 TEST_F(LexerTests, LexBlockComment)
 {
-    Lexer lexer{"foo /* comment */ bar"};
+    Lexer lexer{&formatter_, "foo /* comment */ bar"};
     auto result = lexer.lex();
     ASSERT_TRUE(result.has_value());
 
@@ -218,7 +218,7 @@ TEST_F(LexerTests, LexBlockComment)
 
 TEST_F(LexerTests, LexMultilineBlockComment)
 {
-    Lexer lexer{"foo /* line1\nline2 */ bar"};
+    Lexer lexer{&formatter_, "foo /* line1\nline2 */ bar"};
     auto result = lexer.lex();
     ASSERT_TRUE(result.has_value());
 
@@ -230,7 +230,7 @@ TEST_F(LexerTests, LexMultilineBlockComment)
 
 TEST_F(LexerTests, LexKeywords)
 {
-    Lexer lexer{"define ifdef ifndef endif include"};
+    Lexer lexer{&formatter_, "define ifdef ifndef endif include"};
     auto result = lexer.lex();
     ASSERT_TRUE(result.has_value());
 
@@ -244,7 +244,7 @@ TEST_F(LexerTests, LexKeywords)
 
 TEST_F(LexerTests, LexEnumKeyword)
 {
-    Lexer lexer{"enum"};
+    Lexer lexer{&formatter_, "enum"};
     auto result = lexer.lex();
     ASSERT_TRUE(result.has_value());
     EXPECT_TRUE(result.value()[0].is(TokenType::kw_enum));
@@ -252,7 +252,7 @@ TEST_F(LexerTests, LexEnumKeyword)
 
 TEST_F(LexerTests, LexSourcePosition)
 {
-    Lexer lexer{"foo\nbar"};
+    Lexer lexer{&formatter_, "foo\nbar"};
     auto result = lexer.lex();
     ASSERT_TRUE(result.has_value());
 
@@ -265,14 +265,14 @@ TEST_F(LexerTests, LexSourcePosition)
 
 TEST_F(LexerTests, UnterminatedStringReturnsError)
 {
-    Lexer lexer{"\"unterminated"};
+    Lexer lexer{&formatter_, "\"unterminated"};
     auto result = lexer.lex();
     EXPECT_FALSE(result.has_value());
 }
 
 TEST_F(LexerTests, UnterminatedStringErrorPosition)
 {
-    Lexer lexer{"\"unterminated"};
+    Lexer lexer{&formatter_, "\"unterminated"};
     auto result = lexer.lex();
     ASSERT_FALSE(result.has_value());
     ASSERT_FALSE(result.chain().empty());
@@ -284,7 +284,7 @@ TEST_F(LexerTests, UnterminatedStringErrorPosition)
 
 TEST_F(LexerTests, UnterminatedStringErrorPositionOnLine3)
 {
-    Lexer lexer{"foo\nbar\n\"unterminated"};
+    Lexer lexer{&formatter_, "foo\nbar\n\"unterminated"};
     auto result = lexer.lex();
     ASSERT_FALSE(result.has_value());
     ASSERT_FALSE(result.chain().empty());
@@ -295,14 +295,14 @@ TEST_F(LexerTests, UnterminatedStringErrorPositionOnLine3)
 
 TEST_F(LexerTests, UnterminatedBlockCommentReturnsError)
 {
-    Lexer lexer{"/* unterminated"};
+    Lexer lexer{&formatter_, "/* unterminated"};
     auto result = lexer.lex();
     EXPECT_FALSE(result.has_value());
 }
 
 TEST_F(LexerTests, UnterminatedBlockCommentErrorPosition)
 {
-    Lexer lexer{"/* unterminated"};
+    Lexer lexer{&formatter_, "/* unterminated"};
     auto result = lexer.lex();
     ASSERT_FALSE(result.has_value());
     ASSERT_FALSE(result.chain().empty());
@@ -314,7 +314,7 @@ TEST_F(LexerTests, UnterminatedBlockCommentErrorPosition)
 
 TEST_F(LexerTests, UnterminatedBlockCommentErrorPositionOnLine2)
 {
-    Lexer lexer{"foo\n/* unterminated"};
+    Lexer lexer{&formatter_, "foo\n/* unterminated"};
     auto result = lexer.lex();
     ASSERT_FALSE(result.has_value());
     ASSERT_FALSE(result.chain().empty());
@@ -325,7 +325,7 @@ TEST_F(LexerTests, UnterminatedBlockCommentErrorPositionOnLine2)
 
 TEST_F(LexerTests, InvalidHexLiteralErrorPosition)
 {
-    Lexer lexer{"0x"};
+    Lexer lexer{&formatter_, "0x"};
     auto result = lexer.lex();
     ASSERT_FALSE(result.has_value());
     ASSERT_FALSE(result.chain().empty());
@@ -337,7 +337,7 @@ TEST_F(LexerTests, InvalidHexLiteralErrorPosition)
 
 TEST_F(LexerTests, InvalidBinaryLiteralErrorPosition)
 {
-    Lexer lexer{"0b"};
+    Lexer lexer{&formatter_, "0b"};
     auto result = lexer.lex();
     ASSERT_FALSE(result.has_value());
     ASSERT_FALSE(result.chain().empty());
@@ -349,7 +349,7 @@ TEST_F(LexerTests, InvalidBinaryLiteralErrorPosition)
 
 TEST_F(LexerTests, UnterminatedStringErrorPositionMidLine)
 {
-    Lexer lexer{"foo \"unterminated"};
+    Lexer lexer{&formatter_, "foo \"unterminated"};
     auto result = lexer.lex();
     ASSERT_FALSE(result.has_value());
 
@@ -360,7 +360,7 @@ TEST_F(LexerTests, UnterminatedStringErrorPositionMidLine)
 
 TEST_F(LexerTests, UnterminatedBlockCommentErrorPositionMidLine)
 {
-    Lexer lexer{"baz /* unterminated"};
+    Lexer lexer{&formatter_, "baz /* unterminated"};
     auto result = lexer.lex();
     ASSERT_FALSE(result.has_value());
 
@@ -371,7 +371,7 @@ TEST_F(LexerTests, UnterminatedBlockCommentErrorPositionMidLine)
 
 TEST_F(LexerTests, InvalidHexLiteralErrorPositionMidLine)
 {
-    Lexer lexer{"foo 0x"};
+    Lexer lexer{&formatter_, "foo 0x"};
     auto result = lexer.lex();
     ASSERT_FALSE(result.has_value());
 
@@ -382,7 +382,7 @@ TEST_F(LexerTests, InvalidHexLiteralErrorPositionMidLine)
 
 TEST_F(LexerTests, InvalidBinaryLiteralErrorPositionMidLine)
 {
-    Lexer lexer{"bar 0b"};
+    Lexer lexer{&formatter_, "bar 0b"};
     auto result = lexer.lex();
     ASSERT_FALSE(result.has_value());
 
@@ -393,7 +393,7 @@ TEST_F(LexerTests, InvalidBinaryLiteralErrorPositionMidLine)
 
 TEST_F(LexerTests, LexCompleteDefineExpression)
 {
-    Lexer lexer{"#define BAZ (1 << 4)"};
+    Lexer lexer{&formatter_, "#define BAZ (1 << 4)"};
     auto result = lexer.lex();
     ASSERT_TRUE(result.has_value());
 
@@ -413,7 +413,7 @@ TEST_F(LexerTests, LexCompleteDefineExpression)
 
 TEST_F(LexerTests, LexNumberWithSuffix)
 {
-    Lexer lexer{"123U 456L 789ULL"};
+    Lexer lexer{&formatter_, "123U 456L 789ULL"};
     auto result = lexer.lex();
     ASSERT_TRUE(result.has_value());
 

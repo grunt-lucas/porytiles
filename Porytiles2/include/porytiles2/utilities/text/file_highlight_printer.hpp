@@ -49,15 +49,15 @@ class FileHighlightPrinter {
      * 0-indexed (matching vector indices).
      *
      * @param lines The file contents as a vector of strings (one per line)
-     * @param window_size Total number of context lines to show around highlighted lines
      * @param line_indices_to_highlight 0-indexed line indices to highlight (index 0 is the first line)
+     * @param window_size Total number of context lines to show around highlighted line, defaults to 9
      * @pre All indices in line_indices_to_highlight must be < lines.size()
      * @return Formatted output lines ready for display
      */
     [[nodiscard]] std::vector<std::string> print(
         const std::vector<std::string> &lines,
-        std::size_t window_size,
-        const std::vector<std::size_t> &line_indices_to_highlight) const;
+        const std::vector<std::size_t> &line_indices_to_highlight,
+        std::size_t window_size = 9) const;
 
     /**
      * @brief Prints lines with a specific line and column highlighted.
@@ -68,18 +68,18 @@ class FileHighlightPrinter {
      * the column position.
      *
      * @param lines The file contents as a vector of strings (one per line)
-     * @param window_size Total number of context lines to show around highlighted line
      * @param line_index_to_highlight 0-indexed line index to highlight
      * @param col_to_highlight 0-indexed column position to highlight within the line
+     * @param window_size Total number of context lines to show around highlighted line, defaults to 9
      * @pre line_index_to_highlight must be < lines.size()
      * @pre col_to_highlight must be < lines[line_index_to_highlight].size()
      * @return Formatted output lines ready for display
      */
     [[nodiscard]] std::vector<std::string> print(
         const std::vector<std::string> &lines,
-        std::size_t window_size,
         std::size_t line_index_to_highlight,
-        std::size_t col_to_highlight) const;
+        std::size_t col_to_highlight,
+        std::size_t window_size = 9) const;
 
   private:
     const TextFormatter *format_;

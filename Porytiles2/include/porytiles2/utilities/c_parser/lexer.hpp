@@ -3,6 +3,8 @@
 #include <string>
 #include <vector>
 
+#include "gsl/pointers"
+
 #include "porytiles2/utilities/c_parser/source_position.hpp"
 #include "porytiles2/utilities/c_parser/token.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -10,6 +12,7 @@
 namespace porytiles2 {
 
 class CParserContext;
+class TextFormatter;
 
 /**
  * @brief Lexical analyzer for C/C++ source code.
@@ -47,9 +50,10 @@ class Lexer {
      * This constructor creates a lexer without a CParserContext. Errors will be formatted as simple "line:col: message"
      * strings without source context highlighting.
      *
+     * @param format The text formatter for styled output
      * @param content The C/C++ source code to tokenize
      */
-    explicit Lexer(std::string content);
+    Lexer(gsl::not_null<const TextFormatter *> format, std::string content);
 
     /**
      * @brief Constructs a lexer with a context for rich error formatting.
@@ -58,10 +62,11 @@ class Lexer {
      * This constructor creates a lexer with a CParserContext that enables rich error formatting with source context
      * highlighting via FileHighlightPrinter. The context must outlive the lexer.
      *
+     * @param format The text formatter for styled output
      * @param content The C/C++ source code to tokenize
      * @param context The parser context for rich error formatting (non-owning)
      */
-    Lexer(std::string content, const CParserContext *context);
+    Lexer(gsl::not_null<const TextFormatter *> format, std::string content, const CParserContext *context);
 
     /**
      * @brief Tokenizes the entire source content.
@@ -95,6 +100,7 @@ class Lexer {
     [[nodiscard]] SourcePosition current_position() const;
     [[nodiscard]] FormattableError make_error(SourcePosition pos, std::string message) const;
 
+    const TextFormatter *format_;
     std::string content_;
     std::size_t current_{0};
     std::size_t line_{1};

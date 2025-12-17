@@ -3,8 +3,6 @@
 #include <cstddef>
 #include <string>
 
-#include "fmt/format.h"
-
 namespace porytiles2 {
 
 /**
@@ -26,7 +24,7 @@ struct SourcePosition {
      */
     [[nodiscard]] std::string to_string() const
     {
-        return fmt::format("{}:{}", line, column);
+        return std::to_string(line) + ":" + std::to_string(column);
     }
 
     /**

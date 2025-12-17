@@ -147,11 +147,11 @@ TEST_F(CParserDriverTests, ParseEnumsFromTempFile)
     const auto &members = enums[0].members();
     ASSERT_EQ(members.size(), 3);
     EXPECT_EQ(members[0].name(), "A");
-    EXPECT_EQ(members[0].value(), 0);
+    EXPECT_EQ(members[0].int_value(), 0);
     EXPECT_EQ(members[1].name(), "B");
-    EXPECT_EQ(members[1].value(), 10);
+    EXPECT_EQ(members[1].int_value(), 10);
     EXPECT_EQ(members[2].name(), "C");
-    EXPECT_EQ(members[2].value(), 11);
+    EXPECT_EQ(members[2].int_value(), 11);
 }
 
 // ============================================================================

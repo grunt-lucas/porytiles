@@ -67,8 +67,8 @@ FileHighlightPrinter::FileHighlightPrinter(gsl::not_null<const TextFormatter *> 
 
 std::vector<std::string> FileHighlightPrinter::print(
     const std::vector<std::string> &lines,
-    std::size_t window_size,
-    const std::vector<std::size_t> &line_indices_to_highlight) const
+    const std::vector<std::size_t> &line_indices_to_highlight,
+    std::size_t window_size) const
 {
     std::vector<std::string> result;
 
@@ -115,9 +115,9 @@ std::vector<std::string> FileHighlightPrinter::print(
 
 std::vector<std::string> FileHighlightPrinter::print(
     const std::vector<std::string> &lines,
-    std::size_t window_size,
     std::size_t line_index_to_highlight,
-    std::size_t col_to_highlight) const
+    std::size_t col_to_highlight,
+    std::size_t window_size) const
 {
     std::vector<std::string> result;
 

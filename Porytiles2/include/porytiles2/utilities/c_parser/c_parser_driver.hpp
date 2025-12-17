@@ -7,14 +7,13 @@
 
 #include "gsl/pointers"
 
+#include "porytiles2/utilities/c_parser/c_parser_context.hpp"
 #include "porytiles2/utilities/c_parser/define_statement.hpp"
 #include "porytiles2/utilities/c_parser/enum_declaration.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
 
 namespace porytiles2 {
-
-class CParserContext;
-class TextFormatter;
 
 /**
  * @brief High-level driver for parsing C/C++ source files.
@@ -60,9 +59,6 @@ class CParserDriver {
      */
     CParserDriver(std::filesystem::path file_path, gsl::not_null<const TextFormatter *> format);
 
-    // Destructor must be declared here and defined in .cpp because of unique_ptr<CParserContext>
-    ~CParserDriver();
-
     /**
      * @brief Parses all #define statements from the file.
      *
@@ -90,6 +86,17 @@ class CParserDriver {
      * @return A vector of EnumDeclaration on success, or an error chain on failure
      */
     [[nodiscard]] ChainableResult<std::vector<EnumDeclaration>> parse_enums();
+
+    /**
+     * @brief Returns the cached file lines.
+     *
+     * @details
+     * Returns a const reference to the file lines loaded during parsing. If the file has not been loaded yet (no parse
+     * method called), returns an empty vector.
+     *
+     * @return Const reference to the file lines vector
+     */
+    [[nodiscard]] const std::vector<std::string> &file_lines() const;
 
   private:
     [[nodiscard]] ChainableResult<void> ensure_loaded();

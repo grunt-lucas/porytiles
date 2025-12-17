@@ -50,12 +50,13 @@ TEST_F(HeaderBehaviorMapProviderTest, DefineFormatParsesHexValues)
     EXPECT_EQ(sky_pillar.value(), 0xEA);
 }
 
-TEST_F(HeaderBehaviorMapProviderTest, DefineFormatSkipsMbInvalid)
+TEST_F(HeaderBehaviorMapProviderTest, DefineFormatAllowsMbInvalid)
 {
     HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_define.h", &formatter_, &diag_};
 
     auto invalid = provider.lookup("MB_INVALID");
-    EXPECT_FALSE(invalid.has_value());
+    ASSERT_TRUE(invalid.has_value());
+    EXPECT_EQ(invalid.value(), 255);
 }
 
 TEST_F(HeaderBehaviorMapProviderTest, DefineFormatHandlesAbridgedFile)
@@ -113,14 +114,15 @@ TEST_F(HeaderBehaviorMapProviderTest, EnumFormatHandlesCommentsAfterComma)
     EXPECT_EQ(interior_deep_water.value(), 17);
 }
 
-TEST_F(HeaderBehaviorMapProviderTest, EnumFormatSkipsMbInvalid)
+TEST_F(HeaderBehaviorMapProviderTest, EnumFormatAllowsMbInvalid)
 {
     HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_enum.h", &formatter_, &diag_};
 
     // MB_INVALID is defined as UCHAR_MAX in the enum file via #define, not in the enum
     // It should not be in the map
     auto invalid = provider.lookup("MB_INVALID");
-    EXPECT_FALSE(invalid.has_value());
+    ASSERT_TRUE(invalid.has_value());
+    EXPECT_EQ(invalid.value(), 255);
 }
 
 TEST_F(HeaderBehaviorMapProviderTest, EnumFormatParsesHigherIndexValues)
@@ -143,7 +145,7 @@ TEST_F(HeaderBehaviorMapProviderTest, NonExistentFileReturnsErrorOnLookup)
 
     auto result = provider.lookup("MB_NORMAL");
     EXPECT_FALSE(result.has_value());
-    EXPECT_EQ(diag_.error_tag_counts().at("behavior-header-load-failure"), 1);
+    // No "behavior-header-load-failure" diagnostic - parse_defines() fails first with a file error
 }
 
 TEST_F(HeaderBehaviorMapProviderTest, UnknownBehaviorReturnsError)
@@ -166,7 +168,6 @@ TEST_F(HeaderBehaviorMapProviderTest, EmptyFileReturnsErrorOnLookup)
 
     auto result = provider.lookup("MB_NORMAL");
     EXPECT_FALSE(result.has_value());
-    EXPECT_EQ(diag_.error_tag_counts().at("behavior-header-load-failure"), 1);
 }
 
 // =============================================================================
@@ -231,7 +232,7 @@ TEST_F(HeaderBehaviorMapProviderTest, ReverseLookupNonExistentFileReturnsError)
 
     auto result = provider.lookup(static_cast<std::uint16_t>(0x00));
     EXPECT_FALSE(result.has_value());
-    EXPECT_EQ(diag_.error_tag_counts().at("behavior-header-load-failure"), 1);
+    // No "behavior-header-load-failure" diagnostic - parse_defines() fails first with a file error
 }
 
 TEST_F(HeaderBehaviorMapProviderTest, ReverseLookupEmptyFileReturnsError)
@@ -240,7 +241,6 @@ TEST_F(HeaderBehaviorMapProviderTest, ReverseLookupEmptyFileReturnsError)
 
     auto result = provider.lookup(static_cast<std::uint16_t>(0x00));
     EXPECT_FALSE(result.has_value());
-    EXPECT_EQ(diag_.error_tag_counts().at("behavior-header-load-failure"), 1);
 }
 
 TEST_F(HeaderBehaviorMapProviderTest, BidirectionalLookupIsConsistent)
@@ -255,4 +255,60 @@ TEST_F(HeaderBehaviorMapProviderTest, BidirectionalLookupIsConsistent)
     auto name = provider.lookup(value.value());
     ASSERT_TRUE(name.has_value());
     EXPECT_EQ(name.value(), "MB_TALL_GRASS");
+}
+
+// =============================================================================
+// Duplicate Detection Tests with Rich Error Messages
+// =============================================================================
+
+TEST_F(HeaderBehaviorMapProviderTest, DuplicateNameReturnsErrorWithSourceLocations)
+{
+    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_duplicate_name.h", &formatter_, &diag_};
+
+    // Any lookup should fail because the file has a duplicate name
+    auto result = provider.lookup("MB_NORMAL");
+    EXPECT_FALSE(result.has_value());
+
+    // Verify error chain contains location information
+    ASSERT_FALSE(result.chain().empty());
+    std::string error_text = result.chain().back()->join(formatter_);
+
+    // Should mention "duplicate behavior name"
+    EXPECT_TRUE(error_text.find("duplicate behavior name") != std::string::npos)
+        << "Error should mention 'duplicate behavior name'. Got: " << error_text;
+
+    // Should mention the duplicate name
+    EXPECT_TRUE(error_text.find("MB_TALL_GRASS") != std::string::npos)
+        << "Error should mention the duplicate name 'MB_TALL_GRASS'. Got: " << error_text;
+
+    // Should contain "note:" for original location
+    EXPECT_TRUE(error_text.find("note:") != std::string::npos)
+        << "Error should contain 'note:' for original location. Got: " << error_text;
+}
+
+TEST_F(HeaderBehaviorMapProviderTest, DuplicateValueReturnsErrorWithSourceLocations)
+{
+    HeaderBehaviorMapProvider provider{kTestResourcesDir, "metatile_behaviors_duplicate_value.h", &formatter_, &diag_};
+
+    // Any lookup should fail because the file has a duplicate value
+    auto result = provider.lookup("MB_NORMAL");
+    EXPECT_FALSE(result.has_value());
+
+    // Verify error chain contains location information
+    ASSERT_FALSE(result.chain().empty());
+    std::string error_text = result.chain().back()->join(formatter_);
+
+    // Should mention "duplicate behavior value"
+    EXPECT_TRUE(error_text.find("duplicate behavior value") != std::string::npos)
+        << "Error should mention 'duplicate behavior value'. Got: " << error_text;
+
+    // Should mention both names that share the same value
+    EXPECT_TRUE(error_text.find("MB_TALL_GRASS") != std::string::npos)
+        << "Error should mention 'MB_TALL_GRASS'. Got: " << error_text;
+    EXPECT_TRUE(error_text.find("MB_GRASS_TALL") != std::string::npos)
+        << "Error should mention 'MB_GRASS_TALL'. Got: " << error_text;
+
+    // Should contain "note:" for original location
+    EXPECT_TRUE(error_text.find("note:") != std::string::npos)
+        << "Error should contain 'note:' for original location. Got: " << error_text;
 }

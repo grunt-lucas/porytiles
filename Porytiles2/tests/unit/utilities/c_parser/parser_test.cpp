@@ -14,23 +14,23 @@ class ParserTests : public ::testing::Test {
 
     [[nodiscard]] ChainableResult<std::vector<DefineStatement>> parse(const std::string &source)
     {
-        Lexer lexer{source};
+        Lexer lexer{&formatter_, source};
         auto tokens_result = lexer.lex();
         if (!tokens_result.has_value()) {
             return ChainableResult<std::vector<DefineStatement>>{tokens_result};
         }
-        Parser parser{std::move(tokens_result).value()};
+        Parser parser{&formatter_, std::move(tokens_result).value()};
         return parser.parse_defines();
     }
 
     [[nodiscard]] ChainableResult<std::vector<EnumDeclaration>> parse_enums(const std::string &source)
     {
-        Lexer lexer{source};
+        Lexer lexer{&formatter_, source};
         auto tokens_result = lexer.lex();
         if (!tokens_result.has_value()) {
             return ChainableResult<std::vector<EnumDeclaration>>{tokens_result};
         }
-        Parser parser{std::move(tokens_result).value()};
+        Parser parser{&formatter_, std::move(tokens_result).value()};
         return parser.parse_enums();
     }
 
@@ -440,12 +440,12 @@ TEST_F(ParserTests, ParseAnonymousEnumWithSimpleMembers)
     const auto &members = result.value()[0].members();
     ASSERT_EQ(members.size(), 3);
     EXPECT_EQ(members[0].name(), "FOO");
-    EXPECT_EQ(members[0].value(), 0);
+    EXPECT_EQ(members[0].int_value(), 0);
     EXPECT_FALSE(members[0].has_explicit_value());
     EXPECT_EQ(members[1].name(), "BAR");
-    EXPECT_EQ(members[1].value(), 1);
+    EXPECT_EQ(members[1].int_value(), 1);
     EXPECT_EQ(members[2].name(), "BAZ");
-    EXPECT_EQ(members[2].value(), 2);
+    EXPECT_EQ(members[2].int_value(), 2);
 }
 
 TEST_F(ParserTests, ParseNamedEnum)
@@ -465,16 +465,16 @@ TEST_F(ParserTests, ParseEnumWithExplicitValues)
     const auto &members = result.value()[0].members();
     ASSERT_EQ(members.size(), 4);
     EXPECT_EQ(members[0].name(), "A");
-    EXPECT_EQ(members[0].value(), 10);
+    EXPECT_EQ(members[0].int_value(), 10);
     EXPECT_TRUE(members[0].has_explicit_value());
     EXPECT_EQ(members[1].name(), "B");
-    EXPECT_EQ(members[1].value(), 11); // A + 1
+    EXPECT_EQ(members[1].int_value(), 11); // A + 1
     EXPECT_FALSE(members[1].has_explicit_value());
     EXPECT_EQ(members[2].name(), "C");
-    EXPECT_EQ(members[2].value(), 20);
+    EXPECT_EQ(members[2].int_value(), 20);
     EXPECT_TRUE(members[2].has_explicit_value());
     EXPECT_EQ(members[3].name(), "D");
-    EXPECT_EQ(members[3].value(), 21); // C + 1
+    EXPECT_EQ(members[3].int_value(), 21); // C + 1
 }
 
 TEST_F(ParserTests, ParseEnumWithHexValues)
@@ -483,8 +483,8 @@ TEST_F(ParserTests, ParseEnumWithHexValues)
     ASSERT_TRUE(result.has_value());
 
     const auto &members = result.value()[0].members();
-    EXPECT_EQ(members[0].value(), 0);
-    EXPECT_EQ(members[1].value(), 255);
+    EXPECT_EQ(members[0].int_value(), 0);
+    EXPECT_EQ(members[1].int_value(), 255);
 }
 
 TEST_F(ParserTests, ParseEnumWithExpressionValues)
@@ -493,8 +493,8 @@ TEST_F(ParserTests, ParseEnumWithExpressionValues)
     ASSERT_TRUE(result.has_value());
 
     const auto &members = result.value()[0].members();
-    EXPECT_EQ(members[0].value(), 16); // 1 << 4
-    EXPECT_EQ(members[1].value(), 15); // 0xFF & 0x0F
+    EXPECT_EQ(members[0].int_value(), 16); // 1 << 4
+    EXPECT_EQ(members[1].int_value(), 15); // 0xFF & 0x0F
 }
 
 TEST_F(ParserTests, ParseEnumWithNewlinesAndComments)
@@ -552,11 +552,11 @@ enum {
 
     const auto &members = result.value()[0].members();
     ASSERT_EQ(members.size(), 4);
-    EXPECT_EQ(members[0].value(), 0);
-    EXPECT_EQ(members[1].value(), 1);
-    EXPECT_EQ(members[2].value(), 2);
+    EXPECT_EQ(members[0].int_value(), 0);
+    EXPECT_EQ(members[1].int_value(), 1);
+    EXPECT_EQ(members[2].int_value(), 2);
     EXPECT_EQ(members[3].name(), "MB_INVALID");
-    EXPECT_EQ(members[3].value(), 255);
+    EXPECT_EQ(members[3].int_value(), 255);
     EXPECT_TRUE(members[3].has_explicit_value());
 }
 

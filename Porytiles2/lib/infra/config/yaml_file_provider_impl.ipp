@@ -108,7 +108,7 @@ make_source_details(const TextFormatter *format, const std::string &file_path, c
 
     // Use FileHighlightPrinter (line_num is already 0-indexed)
     const FileHighlightPrinter printer{format};
-    return printer.print(lines, 7, {line_num});
+    return printer.print(lines, std::vector<std::size_t>{line_num});
 }
 
 /**

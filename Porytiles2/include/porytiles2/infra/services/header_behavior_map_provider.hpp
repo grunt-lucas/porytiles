@@ -9,6 +9,8 @@
 #include "gsl/pointers"
 
 #include "porytiles2/domain/services/behavior_map_provider.hpp"
+#include "porytiles2/utilities/c_parser/c_parser_driver.hpp"
+#include "porytiles2/utilities/c_parser/source_position.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
@@ -53,10 +55,14 @@ class HeaderBehaviorMapProvider final : public BehaviorMapProvider {
      * @param diag The user diagnostics for error reporting
      */
     HeaderBehaviorMapProvider(
-        const std::filesystem::path &project_root,
-        const std::filesystem::path &header_relative_path,
+        std::filesystem::path project_root,
+        std::filesystem::path header_relative_path,
         gsl::not_null<const TextFormatter *> format,
-        gsl::not_null<const UserDiagnostics *> diag);
+        gsl::not_null<const UserDiagnostics *> diag)
+        : project_root_{std::move(project_root)}, header_relative_path_{std::move(header_relative_path)},
+          format_{format}, diag_{diag}
+    {
+    }
 
     [[nodiscard]] ChainableResult<std::uint16_t> lookup(const std::string &behavior_name) const override;
 
@@ -65,14 +71,37 @@ class HeaderBehaviorMapProvider final : public BehaviorMapProvider {
   private:
     ChainableResult<void> ensure_loaded() const;
 
+    /**
+     * @brief Attempts to add a behavior entry with duplicate detection and rich error reporting.
+     *
+     * @details
+     * Uses duck typing to accept any entry type with name(), int_value(), and position() methods. Filters out entries
+     * that don't match MB_* pattern or are MB_INVALID, validates value range, checks for duplicates, and inserts into
+     * the maps if valid. On duplicate detection, produces rich error messages with source context showing both
+     * locations.
+     *
+     * This template is defined in the .cpp file since it's only used internally with DefineStatement and EnumMember
+     * types.
+     *
+     * @tparam Entry Type with name(), int_value(), and position() methods (e.g., DefineStatement, EnumMember)
+     * @param entry The entry to add
+     * @return Empty result on success (including filtered-out entries), error on duplicate
+     * @note Despite being const, this method mutates mutable cache members (maps and load_failed_ flag)
+     */
+    template <typename Entry>
+    ChainableResult<void> try_add_behavior_entry(const Entry &entry) const;
+
     std::filesystem::path project_root_;
     std::filesystem::path header_relative_path_;
     const TextFormatter *format_;
     const UserDiagnostics *diag_;
     mutable bool loaded_{false};
     mutable bool load_failed_{false};
+    mutable std::unique_ptr<CParserDriver> driver_;
     mutable std::unordered_map<std::string, std::uint16_t> name_to_value_;
     mutable std::unordered_map<std::uint16_t, std::string> value_to_name_;
+    mutable std::unordered_map<std::string, SourcePosition> name_to_position_;
+    mutable std::unordered_map<std::uint16_t, SourcePosition> value_to_position_;
 };
 
 } // namespace porytiles2

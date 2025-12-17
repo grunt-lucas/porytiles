@@ -9,8 +9,6 @@ namespace porytiles2 {
 
 namespace {
 
-constexpr std::size_t default_window_size = 5;
-
 std::string format_header(const std::string &file_path, SourcePosition pos, const std::string &message)
 {
     if (!file_path.empty()) {
@@ -48,21 +46,21 @@ FormattableError CParserContext::make_error(SourcePosition pos, std::string mess
         if (pos.column > 0 && pos.column <= target_line.size()) {
             // Valid column position - show column highlight with caret
             const std::size_t col_idx = pos.column - 1;
-            auto highlight_lines = printer.print(*file_lines_, default_window_size, line_idx, col_idx);
+            auto highlight_lines = printer.print(*file_lines_, line_idx, col_idx);
             for (auto &hl : highlight_lines) {
                 lines.push_back(std::move(hl));
             }
         }
         else if (!target_line.empty()) {
             // Column out of bounds but line is valid - highlight the line without column caret
-            auto highlight_lines = printer.print(*file_lines_, default_window_size, std::vector<std::size_t>{line_idx});
+            auto highlight_lines = printer.print(*file_lines_, std::vector<std::size_t>{line_idx});
             for (auto &hl : highlight_lines) {
                 lines.push_back(std::move(hl));
             }
         }
         else {
             // Empty line - just highlight the line
-            auto highlight_lines = printer.print(*file_lines_, default_window_size, std::vector<std::size_t>{line_idx});
+            auto highlight_lines = printer.print(*file_lines_, std::vector<std::size_t>{line_idx});
             for (auto &hl : highlight_lines) {
                 lines.push_back(std::move(hl));
             }

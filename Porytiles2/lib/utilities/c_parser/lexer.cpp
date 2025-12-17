@@ -4,9 +4,8 @@
 #include <charconv>
 #include <unordered_map>
 
-#include "fmt/format.h"
-
 #include "porytiles2/utilities/c_parser/c_parser_context.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
 
 namespace porytiles2 {
 
@@ -168,16 +167,22 @@ std::string token_type_name(TokenType type)
     return "unknown";
 }
 
-Lexer::Lexer(std::string content) : content_{std::move(content)} {}
+Lexer::Lexer(gsl::not_null<const TextFormatter *> format, std::string content)
+    : format_{format}, content_{std::move(content)}
+{
+}
 
-Lexer::Lexer(std::string content, const CParserContext *context) : content_{std::move(content)}, context_{context} {}
+Lexer::Lexer(gsl::not_null<const TextFormatter *> format, std::string content, const CParserContext *context)
+    : format_{format}, content_{std::move(content)}, context_{context}
+{
+}
 
 FormattableError Lexer::make_error(SourcePosition pos, std::string message) const
 {
     if (context_ != nullptr) {
         return context_->make_error(pos, std::move(message));
     }
-    return FormattableError{fmt::format("{}:{}: {}", pos.line, pos.column, message)};
+    return FormattableError{format_->format("{}:{}: {}", pos.line, pos.column, message)};
 }
 
 ChainableResult<std::vector<Token>> Lexer::lex()
@@ -370,7 +375,7 @@ ChainableResult<Token> Lexer::consume_number()
         if (next == 'x' || next == 'X') {
             text += advance();
             if (!is_hex_digit(peek())) {
-                return make_error(start_pos, fmt::format("invalid hexadecimal literal '{}'", text));
+                return make_error(start_pos, format_->format("invalid hexadecimal literal '{}'", text));
             }
             while (!is_at_end() && is_hex_digit(peek())) {
                 text += advance();
@@ -382,7 +387,7 @@ ChainableResult<Token> Lexer::consume_number()
             std::int64_t value = 0;
             auto [ptr, ec] = std::from_chars(text.data() + 2, text.data() + text.size(), value, 16);
             if (ec != std::errc{}) {
-                return make_error(start_pos, fmt::format("invalid hexadecimal literal '{}'", text));
+                return make_error(start_pos, format_->format("invalid hexadecimal literal '{}'", text));
             }
             return Token{std::move(text), value, start_pos};
         }
@@ -391,7 +396,7 @@ ChainableResult<Token> Lexer::consume_number()
         if (next == 'b' || next == 'B') {
             text += advance();
             if (!is_binary_digit(peek())) {
-                return make_error(start_pos, fmt::format("invalid binary literal '{}'", text));
+                return make_error(start_pos, format_->format("invalid binary literal '{}'", text));
             }
             while (!is_at_end() && is_binary_digit(peek())) {
                 text += advance();
@@ -403,7 +408,7 @@ ChainableResult<Token> Lexer::consume_number()
             std::int64_t value = 0;
             auto [ptr, ec] = std::from_chars(text.data() + 2, text.data() + text.size(), value, 2);
             if (ec != std::errc{}) {
-                return make_error(start_pos, fmt::format("invalid binary literal '{}'", text));
+                return make_error(start_pos, format_->format("invalid binary literal '{}'", text));
             }
             return Token{std::move(text), value, start_pos};
         }
@@ -420,7 +425,7 @@ ChainableResult<Token> Lexer::consume_number()
             std::int64_t value = 0;
             auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value, 8);
             if (ec != std::errc{}) {
-                return make_error(start_pos, fmt::format("invalid octal literal '{}'", text));
+                return make_error(start_pos, format_->format("invalid octal literal '{}'", text));
             }
             return Token{std::move(text), value, start_pos};
         }
@@ -441,7 +446,7 @@ ChainableResult<Token> Lexer::consume_number()
     std::int64_t value = 0;
     auto [ptr, ec] = std::from_chars(text.data(), text.data() + text.size(), value, 10);
     if (ec != std::errc{}) {
-        return make_error(start_pos, fmt::format("invalid decimal literal '{}'", text));
+        return make_error(start_pos, format_->format("invalid decimal literal '{}'", text));
     }
     return Token{std::move(text), value, start_pos};
 }

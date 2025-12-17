@@ -90,11 +90,10 @@ std::string make_source_string(const TextFormatter *format, const std::string &f
  * @param format The text formatter to use
  * @param file_path The path to the header file
  * @param line_num The 0-indexed target line number
- * @param window_size The total number of lines to show in the contextual view (default: 7)
  * @return Vector of formatted strings showing the contextual view
  */
-std::vector<std::string> make_source_details(
-    const TextFormatter *format, const std::string &file_path, std::size_t line_num, std::size_t window_size = 7)
+std::vector<std::string>
+make_source_details(const TextFormatter *format, const std::string &file_path, std::size_t line_num)
 {
     const std::filesystem::path path{file_path};
     const auto it = header_file_lines_cache.find(path);
@@ -110,7 +109,7 @@ std::vector<std::string> make_source_details(
 
     // Use FileHighlightPrinter (line_num is already 0-indexed)
     const FileHighlightPrinter printer{format};
-    return printer.print(lines, window_size, {line_num});
+    return printer.print(lines, std::vector<std::size_t>{line_num});
 }
 
 /**

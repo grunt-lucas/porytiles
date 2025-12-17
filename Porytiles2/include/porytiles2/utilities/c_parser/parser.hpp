@@ -5,6 +5,8 @@
 #include <unordered_map>
 #include <vector>
 
+#include "gsl/pointers"
+
 #include "porytiles2/utilities/c_parser/define_statement.hpp"
 #include "porytiles2/utilities/c_parser/enum_declaration.hpp"
 #include "porytiles2/utilities/c_parser/source_position.hpp"
@@ -53,9 +55,13 @@ class Parser {
      * This constructor creates a parser without a CParserContext. Errors will be formatted as simple "line:col:
      * message" strings without source context highlighting.
      *
+     * @param format The text formatter for styled output
      * @param tokens The tokens to parse (typically from Lexer::lex())
      */
-    explicit Parser(std::vector<Token> tokens);
+    Parser(gsl::not_null<const TextFormatter *> format, std::vector<Token> tokens)
+        : format_{format}, tokens_{std::move(tokens)}
+    {
+    }
 
     /**
      * @brief Constructs a parser with a context for rich error formatting.
@@ -64,10 +70,14 @@ class Parser {
      * This constructor creates a parser with a CParserContext that enables rich error formatting with source context
      * highlighting via FileHighlightPrinter. The context must outlive the parser.
      *
+     * @param format The text formatter for styled output
      * @param tokens The tokens to parse (typically from Lexer::lex())
      * @param context The parser context for rich error formatting (non-owning)
      */
-    Parser(std::vector<Token> tokens, const CParserContext *context);
+    Parser(gsl::not_null<const TextFormatter *> format, std::vector<Token> tokens, const CParserContext *context)
+        : format_{format}, tokens_{std::move(tokens)}, context_{context}
+    {
+    }
 
     /**
      * @brief Parses all #define statements from the token stream.
@@ -141,9 +151,10 @@ class Parser {
 
     [[nodiscard]] FormattableError make_error(SourcePosition pos, std::string message) const;
 
+    const TextFormatter *format_;
     std::vector<Token> tokens_;
     std::size_t current_{0};
-    std::unordered_map<std::string, std::int64_t> defined_values_; // Symbol table for macro values
+    std::unordered_map<std::string, std::int64_t> defined_values_{{"UCHAR_MAX", 255}}; // Symbol table for macro values
     const CParserContext *context_{nullptr};
 };
 

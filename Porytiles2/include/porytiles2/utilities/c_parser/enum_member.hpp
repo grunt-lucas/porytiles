@@ -66,7 +66,7 @@ class EnumMember {
      *
      * @return The enum member value
      */
-    [[nodiscard]] std::int64_t value() const
+    [[nodiscard]] std::int64_t int_value() const
     {
         return value_;
     }
