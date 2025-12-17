@@ -5,7 +5,7 @@
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_reader.hpp"
-#include "porytiles2/domain/services/behavior_map_provider.hpp"
+#include "porytiles2/infra/services/attributes_csv_loader.hpp"
 #include "porytiles2/infra/services/file_pal_loader.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
@@ -26,9 +26,9 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
         gsl::not_null<const PngRgbaImageLoader *> png_rgba_loader,
         gsl::not_null<const PngIndexedImageLoader *> png_indexed_loader,
         gsl::not_null<const FilePalLoader *> pal_loader,
-        gsl::not_null<const BehaviorMapProvider *> behavior_map_provider)
+        gsl::not_null<const AttributesCsvLoader *> attributes_csv_loader)
         : png_rgba_loader_{png_rgba_loader}, png_indexed_loader_{png_indexed_loader}, pal_loader_{pal_loader},
-          behavior_map_provider_{behavior_map_provider}
+          attributes_csv_loader_{attributes_csv_loader}
     {
     }
 
@@ -75,7 +75,7 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
     const PngRgbaImageLoader *png_rgba_loader_;
     const PngIndexedImageLoader *png_indexed_loader_;
     const FilePalLoader *pal_loader_;
-    const BehaviorMapProvider *behavior_map_provider_;
+    const AttributesCsvLoader *attributes_csv_loader_;
 };
 
 } // namespace porytiles2

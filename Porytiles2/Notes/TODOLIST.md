@@ -60,7 +60,6 @@
 ## Miscellaneous Cleanup
 - Palette hints should be validated entirely within the config system, remove validation from the PaletteValidator
 - HeaderDefineProvider config provider should use C parser and FileHighlightPrinter?
-- Extract ProjectTilesetArtifactReader::import_attributes_csv to a service that uses FileHighlightPrinter for nice fatal message reporting
 - Can I use std::span in more places?
 - Introduce "remark" category of diagnostics
 - Fix up `Scripts` directory
