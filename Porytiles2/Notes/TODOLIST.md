@@ -66,5 +66,7 @@
 - Can I use std::span in more places?
 - Fix up `Scripts` directory
   - we should split it up by `Porytiles1` and `Porytiles2` for better usability
+- Provide a configuration that allows users to request ascii-only output
+  - e.g. in the file highlighting, the → would become ->
 
 ## Clean up TODOs in codebase: `rg -e TODO Porytiles2/`
