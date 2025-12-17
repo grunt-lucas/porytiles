@@ -8,7 +8,6 @@
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/file_highlight_printer.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
-#include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles2 {
 
@@ -17,8 +16,8 @@ namespace porytiles2 {
  */
 class JascPalLoader final : public FilePalLoader {
   public:
-    explicit JascPalLoader(gsl::not_null<const UserDiagnostics *> diag, gsl::not_null<const TextFormatter *> format)
-        : diag_{diag}, format_{format}, file_printer_{std::make_unique<FileHighlightPrinter>(format)}
+    explicit JascPalLoader(gsl::not_null<const TextFormatter *> format)
+        : format_{format}, file_printer_{std::make_unique<FileHighlightPrinter>(format)}
     {
     }
 
@@ -29,7 +28,6 @@ class JascPalLoader final : public FilePalLoader {
     load_with_wildcards(const std::filesystem::path &path) const override;
 
   private:
-    const UserDiagnostics *diag_;
     const TextFormatter *format_;
     const std::unique_ptr<FileHighlightPrinter> file_printer_;
 };

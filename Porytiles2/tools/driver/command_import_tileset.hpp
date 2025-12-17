@@ -77,7 +77,7 @@ class ImportTilesetCommand final : public Command {
         PngIndexedImageLoader png_indexed_loader{};
         PngRgbaImageSaver png_rgba_saver{};
         PngIndexedImageSaver png_indexed_saver{};
-        JascPalLoader jasc_loader{diag.get(), text_formatter};
+        JascPalLoader jasc_loader{text_formatter};
         JascPalSaver jasc_saver{text_formatter};
 
         // Setup primary importer and compiler

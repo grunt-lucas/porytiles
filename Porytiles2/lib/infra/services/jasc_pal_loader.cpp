@@ -20,10 +20,6 @@ bool is_wildcard_marker(std::string_view line)
     return line == "*" || line == "-";
 }
 
-/*
- * TODO: use multi-line FormattableErrors instead of diagnostic errors followed by an immediate return
- */
-
 ChainableResult<std::optional<Rgba32>> parse_jasc_line(std::string_view line, const TextFormatter &format)
 {
     if (is_wildcard_marker(line)) {
@@ -42,13 +38,18 @@ ChainableResult<std::optional<Rgba32>> parse_jasc_line(std::string_view line, co
     auto blue_result = parse_int<int>(color_components[2]);
 
     if (!red_result.has_value()) {
-        return FormattableError{format.format("invalid rgb red component: {}", red_result.error())};
+        return FormattableError{format.format(
+            "invalid rgb red component '{}': {}", FormatParam{color_components[0], Style::bold}, red_result.error())};
     }
     if (!green_result.has_value()) {
-        return FormattableError{format.format("invalid rgb green component: {}", green_result.error())};
+        return FormattableError{format.format(
+            "invalid rgb green component '{}': {}",
+            FormatParam{color_components[1], Style::bold},
+            green_result.error())};
     }
     if (!blue_result.has_value()) {
-        return FormattableError{format.format("invalid rgb blue component: {}", blue_result.error())};
+        return FormattableError{format.format(
+            "invalid rgb blue component '{}': {}", FormatParam{color_components[2], Style::bold}, blue_result.error())};
     }
 
     const auto red = red_result.value();
@@ -81,7 +82,6 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
     const std::filesystem::path &path,
     bool allow_wildcards,
     const TextFormatter &format,
-    const UserDiagnostics &diag,
     const FileHighlightPrinter &file_printer)
 {
     if (!exists(path)) {
@@ -99,18 +99,15 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
         }
     }
 
-    constexpr auto tag = "jasc-parsing-failure";
-
-    if (lines.size() == 0) {
+    if (lines.empty()) {
         std::vector<std::string> err_lines{};
         err_lines.push_back(format.format(
-            "{}: file was empty, expected at least 3 header lines:", FormatParam{path.string(), Style::bold}));
+            "{}: file is empty, expected at least 3 header lines:", FormatParam{path.string(), Style::bold}));
         err_lines.emplace_back();
         err_lines.push_back(format.format("{}", FormatParam{"JASC-PAL", Style::italic}));
         err_lines.push_back(format.format("{}", FormatParam{"0100", Style::italic}));
         err_lines.push_back(format.format("{}", FormatParam{"<PAL-SIZE>", Style::italic}));
-        diag.err(tag, err_lines);
-        return FormattableError{"JASC-PAL file is empty"};
+        return FormattableError{std::move(err_lines)};
     }
 
     // Need at least 3 header lines
@@ -120,8 +117,7 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
             "{}: file too short, expected at least 3 header lines", FormatParam{path.string(), Style::bold}));
         err_lines.emplace_back();
         std::ranges::copy(file_printer.print(lines, std::vector<std::size_t>{0}), std::back_inserter(err_lines));
-        diag.err(tag, err_lines);
-        return FormattableError{"JASC-PAL file has invalid header"};
+        return FormattableError{std::move(err_lines)};
     }
 
     Palette<Rgba32, pal::max_size> pal{};
@@ -130,22 +126,26 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
     if (lines[0] != "JASC-PAL") {
         std::vector<std::string> err_lines{};
         err_lines.push_back(format.format(
-            "{}:{}: expected 'JASC-PAL'", FormatParam{path.string(), Style::bold}, FormatParam{"1", Style::bold}));
+            "{}:{}: expected '{}' as first line of file",
+            FormatParam{path.string(), Style::bold},
+            FormatParam{"1", Style::bold},
+            FormatParam{"JASC-PAL", Style::bold}));
         err_lines.emplace_back();
         std::ranges::copy(file_printer.print(lines, std::vector<std::size_t>{0}), std::back_inserter(err_lines));
-        diag.err(tag, err_lines);
-        return FormattableError{"JASC-PAL file has invalid header"};
+        return FormattableError{std::move(err_lines)};
     }
 
     // Next line of file *must* be "0100"
     if (lines[1] != "0100") {
         std::vector<std::string> err_lines{};
         err_lines.push_back(format.format(
-            "{}:{}: expected '0100'", FormatParam{path.string(), Style::bold}, FormatParam{"2", Style::bold}));
+            "{}:{}: expected '{}' as second line of file",
+            FormatParam{path.string(), Style::bold},
+            FormatParam{"2", Style::bold},
+            FormatParam{"0100", Style::bold}));
         err_lines.emplace_back();
         std::ranges::copy(file_printer.print(lines, std::vector<std::size_t>{1}), std::back_inserter(err_lines));
-        diag.err(tag, err_lines);
-        return FormattableError{"JASC-PAL file has invalid header"};
+        return FormattableError{std::move(err_lines)};
     }
 
     // Next line of file *must* be the declared size of the palette
@@ -153,11 +153,12 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
     if (!declared_size_result.has_value()) {
         std::vector<std::string> err_lines{};
         err_lines.push_back(format.format(
-            "{}:{}: expected integral value", FormatParam{path.string(), Style::bold}, FormatParam{"3", Style::bold}));
+            "{}:{}: expected integral value for declared size",
+            FormatParam{path.string(), Style::bold},
+            FormatParam{"3", Style::bold}));
         err_lines.emplace_back();
         std::ranges::copy(file_printer.print(lines, std::vector<std::size_t>{2}), std::back_inserter(err_lines));
-        diag.err(tag, err_lines);
-        return FormattableError{"JASC-PAL file has invalid header"};
+        return FormattableError{std::move(err_lines)};
     }
     const auto declared_size = declared_size_result.value();
     if (declared_size != pal::max_size) {
@@ -170,8 +171,7 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
             FormatParam{declared_size, Style::bold}));
         err_lines.emplace_back();
         std::ranges::copy(file_printer.print(lines, std::vector<std::size_t>{2}), std::back_inserter(err_lines));
-        diag.err(tag, err_lines);
-        return FormattableError{"JASC-PAL file has incorrect declared size"};
+        return FormattableError{std::move(err_lines)};
     }
 
     // Rest of file lines are the colors (starting at index 3)
@@ -186,12 +186,10 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
                 "{}:{}: error parsing color",
                 FormatParam{path.string(), Style::bold},
                 FormatParam{line_index + 1, Style::bold}));
-            std::ranges::copy(color_result.error().details(format), std::back_inserter(err_lines));
             err_lines.emplace_back();
-            std::ranges::copy(
-                file_printer.print(lines, std::vector<std::size_t>{line_index}), std::back_inserter(err_lines));
-            diag.err(tag, err_lines);
-            return ChainableResult<Palette<Rgba32, pal::max_size>>{FormattableError{}, color_result};
+            std::ranges::copy(file_printer.print(lines, std::vector{line_index}), std::back_inserter(err_lines));
+            return ChainableResult<Palette<Rgba32, pal::max_size>>{
+                FormattableError{std::move(err_lines)}, color_result};
         }
 
         if (const auto &maybe_color = color_result.value(); maybe_color.has_value()) {
@@ -206,10 +204,8 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
                     FormatParam{path.string(), Style::bold},
                     FormatParam{line_index + 1, Style::bold}));
                 err_lines.emplace_back();
-                std::ranges::copy(
-                    file_printer.print(lines, std::vector<std::size_t>{line_index}), std::back_inserter(err_lines));
-                diag.err(tag, err_lines);
-                return FormattableError{"JASC-PAL file contains disallowed wildcards"};
+                std::ranges::copy(file_printer.print(lines, std::vector{line_index}), std::back_inserter(err_lines));
+                return FormattableError{std::move(err_lines)};
             }
             pal.set_wildcard(color_index);
         }
@@ -218,14 +214,13 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
     if (const std::size_t actual_color_count = lines.size() - 3; actual_color_count != declared_size) {
         std::vector<std::string> err_lines{};
         err_lines.push_back(format.format(
-            "{}: declared size was '{}' but only saw {} defined colors",
+            "{}: declared size is '{}' but only saw {} defined colors",
             FormatParam{path.string(), Style::bold},
             FormatParam{declared_size, Style::bold},
             FormatParam{actual_color_count}));
         err_lines.emplace_back();
         std::ranges::copy(file_printer.print(lines, std::vector<std::size_t>{2}), std::back_inserter(err_lines));
-        diag.err(tag, err_lines);
-        return FormattableError{"JASC-PAL file declared color count does not match defined color count"};
+        return FormattableError{std::move(err_lines)};
     }
 
     return pal;
@@ -238,12 +233,12 @@ namespace porytiles2 {
 ChainableResult<Palette<Rgba32, pal::max_size>>
 JascPalLoader::load_with_wildcards(const std::filesystem::path &path) const
 {
-    return parse_jasc_file(path, true, *format_, *diag_, *file_printer_.get());
+    return parse_jasc_file(path, true, *format_, *file_printer_);
 }
 
 ChainableResult<Palette<Rgba32, pal::max_size>> JascPalLoader::load(const std::filesystem::path &path) const
 {
-    return parse_jasc_file(path, false, *format_, *diag_, *file_printer_.get());
+    return parse_jasc_file(path, false, *format_, *file_printer_);
 }
 
 } // namespace porytiles2

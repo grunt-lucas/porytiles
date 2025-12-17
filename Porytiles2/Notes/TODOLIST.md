@@ -60,9 +60,9 @@
 ## Miscellaneous Cleanup
 - Palette hints should be validated entirely within the config system, remove validation from the PaletteValidator
 - HeaderDefineProvider config provider should use C parser and FileHighlightPrinter?
-- JascPalLoader should use FileHighlightPrinter to format fatal messages nicely
-- Extract ProjectTilesetArtifactReader::import_attributes_csv to a service that uses FileHighlightPrinter for nice fatal message reporting 
+- Extract ProjectTilesetArtifactReader::import_attributes_csv to a service that uses FileHighlightPrinter for nice fatal message reporting
 - Can I use std::span in more places?
+- Introduce "remark" category of diagnostics
 - Fix up `Scripts` directory
   - we should split it up by `Porytiles1` and `Porytiles2` for better usability
 - Provide a configuration that allows users to request ascii-only output
