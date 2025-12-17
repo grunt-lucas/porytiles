@@ -3,11 +3,10 @@
 #include <fstream>
 #include <sstream>
 
-#include "fmt/format.h"
-
 #include "porytiles2/utilities/c_parser/c_parser_context.hpp"
 #include "porytiles2/utilities/c_parser/lexer.hpp"
 #include "porytiles2/utilities/c_parser/parser.hpp"
+#include "porytiles2/utilities/string_utils.hpp"
 
 namespace porytiles2 {
 
@@ -29,11 +28,18 @@ ChainableResult<void> CParserDriver::ensure_loaded()
     }
 
     // Attempt to load the file
-    // TODO: explicit error for 'file not found', then another error for more general "load failed'
+    if (!std::filesystem::exists(file_path_)) {
+        load_failed_ = true;
+        load_error_ =
+            FormattableError{format_->format("{}: file not found", FormatParam{file_path_.string(), Style::bold})};
+        return load_error_;
+    }
+
     std::ifstream file{file_path_};
     if (!file.is_open()) {
         load_failed_ = true;
-        load_error_ = FormattableError{fmt::format("failed to open file '{}'", file_path_.string())};
+        load_error_ =
+            FormattableError{format_->format("{}: failed to open file", FormatParam{file_path_.string(), Style::bold})};
         return load_error_;
     }
 
@@ -47,7 +53,7 @@ ChainableResult<void> CParserDriver::ensure_loaded()
     std::istringstream line_stream{content_};
     std::string line;
     while (std::getline(line_stream, line)) {
-        // TODO: trim_line_ending
+        line = trim_line_ending(line);
         file_lines_.push_back(line);
     }
 
@@ -63,7 +69,9 @@ ChainableResult<std::vector<DefineStatement>> CParserDriver::parse_defines()
     auto load_result = ensure_loaded();
     if (!load_result.has_value()) {
         return ChainableResult<std::vector<DefineStatement>>{
-            FormattableError{fmt::format("failed to parse defines from '{}'", file_path_.string())}, load_result};
+            FormattableError{
+                format_->format("{}: failed to parse defines", FormatParam{file_path_.string(), Style::bold})},
+            load_result};
     }
 
     // Lex the content
@@ -71,7 +79,9 @@ ChainableResult<std::vector<DefineStatement>> CParserDriver::parse_defines()
     auto lex_result = lexer.lex();
     if (!lex_result.has_value()) {
         return ChainableResult<std::vector<DefineStatement>>{
-            FormattableError{fmt::format("failed to parse defines from '{}'", file_path_.string())}, lex_result};
+            FormattableError{
+                format_->format("{}: failed to parse defines", FormatParam{file_path_.string(), Style::bold})},
+            lex_result};
     }
 
     // Parse the tokens
@@ -79,7 +89,9 @@ ChainableResult<std::vector<DefineStatement>> CParserDriver::parse_defines()
     auto parse_result = parser.parse_defines();
     if (!parse_result.has_value()) {
         return ChainableResult<std::vector<DefineStatement>>{
-            FormattableError{fmt::format("failed to parse defines from '{}'", file_path_.string())}, parse_result};
+            FormattableError{
+                format_->format("{}: failed to parse defines", FormatParam{file_path_.string(), Style::bold})},
+            parse_result};
     }
 
     return std::move(parse_result).value();
@@ -90,7 +102,9 @@ ChainableResult<std::vector<EnumDeclaration>> CParserDriver::parse_enums()
     auto load_result = ensure_loaded();
     if (!load_result.has_value()) {
         return ChainableResult<std::vector<EnumDeclaration>>{
-            FormattableError{fmt::format("failed to parse enums from '{}'", file_path_.string())}, load_result};
+            FormattableError{
+                format_->format("{}: failed to parse enums", FormatParam{file_path_.string(), Style::bold})},
+            load_result};
     }
 
     // Lex the content
@@ -98,7 +112,9 @@ ChainableResult<std::vector<EnumDeclaration>> CParserDriver::parse_enums()
     auto lex_result = lexer.lex();
     if (!lex_result.has_value()) {
         return ChainableResult<std::vector<EnumDeclaration>>{
-            FormattableError{fmt::format("failed to parse enums from '{}'", file_path_.string())}, lex_result};
+            FormattableError{
+                format_->format("{}: failed to parse enums", FormatParam{file_path_.string(), Style::bold})},
+            lex_result};
     }
 
     // Parse the tokens
@@ -106,7 +122,9 @@ ChainableResult<std::vector<EnumDeclaration>> CParserDriver::parse_enums()
     auto parse_result = parser.parse_enums();
     if (!parse_result.has_value()) {
         return ChainableResult<std::vector<EnumDeclaration>>{
-            FormattableError{fmt::format("failed to parse enums from '{}'", file_path_.string())}, parse_result};
+            FormattableError{
+                format_->format("{}: failed to parse enums", FormatParam{file_path_.string(), Style::bold})},
+            parse_result};
     }
 
     return std::move(parse_result).value();

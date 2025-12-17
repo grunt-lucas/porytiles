@@ -26,7 +26,7 @@ namespace porytiles2 {
  * Example usage:
  * @code
  * std::vector<std::string> file_lines = {"#define FOO 1", "#define BAR UNDEFINED"};
- * TextFormatter formatter{/*is_tty=*true};
+ * PlainTextFormatter formatter{};
  * CParserContext context{&file_lines, &formatter, "header.h"};
  *
  * // Create error at line 2, column 13 (UNDEFINED token)

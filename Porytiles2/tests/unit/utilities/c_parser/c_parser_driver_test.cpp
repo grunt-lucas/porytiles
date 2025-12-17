@@ -158,7 +158,7 @@ TEST_F(CParserDriverTests, ParseEnumsFromTempFile)
 // Error Handling Tests
 // ============================================================================
 
-TEST_F(CParserDriverTests, NonExistentFileReturnsError)
+TEST_F(CParserDriverTests, NonExistentFileReturnsFileNotFoundError)
 {
     CParserDriver driver{"/nonexistent/path/to/file.h", &formatter_};
 
@@ -166,8 +166,23 @@ TEST_F(CParserDriverTests, NonExistentFileReturnsError)
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = get_all_error_text(result);
-    EXPECT_NE(error_text.find("failed to open file"), std::string::npos);
+    EXPECT_NE(error_text.find("file not found"), std::string::npos);
 }
+
+TEST_F(CParserDriverTests, NonExistentFileReturnsFileNotFoundErrorForEnums)
+{
+    CParserDriver driver{"/nonexistent/path/to/file.h", &formatter_};
+
+    auto result = driver.parse_enums();
+    EXPECT_FALSE(result.has_value());
+
+    std::string error_text = get_all_error_text(result);
+    EXPECT_NE(error_text.find("file not found"), std::string::npos);
+}
+
+// NOTE: Testing the "failed to load file" error (for files that exist but can't be opened)
+// would require creating a file with no read permissions, which is platform-specific
+// and fragile for unit tests. The code path is simple and covered by manual testing.
 
 TEST_F(CParserDriverTests, LexerErrorIncludesFileContext)
 {
