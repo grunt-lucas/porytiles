@@ -4,6 +4,8 @@
 
 #include "porytiles2/domain/repos/tileset_artifact_writer.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
+#include "porytiles2/infra/services/anim_code_generator.hpp"
+#include "porytiles2/infra/services/anim_yaml_parser.hpp"
 #include "porytiles2/infra/services/file_pal_saver.hpp"
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
@@ -25,9 +27,12 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
         std::filesystem::path project_root,
         gsl::not_null<PngRgbaImageSaver *> png_rgba_saver,
         gsl::not_null<PngIndexedImageSaver *> png_indexed_saver,
-        gsl::not_null<FilePalSaver *> pal_saver)
+        gsl::not_null<FilePalSaver *> pal_saver,
+        gsl::not_null<const AnimYamlParser *> anim_yaml_parser,
+        gsl::not_null<const AnimCodeGenerator *> anim_code_generator)
         : config_{config}, project_root_{std::move(project_root)}, png_rgba_saver_{png_rgba_saver},
-          png_indexed_saver_{png_indexed_saver}, pal_saver_{pal_saver}
+          png_indexed_saver_{png_indexed_saver}, pal_saver_{pal_saver}, anim_yaml_parser_{anim_yaml_parser},
+          anim_code_generator_{anim_code_generator}
     {
     }
 
@@ -94,6 +99,8 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
     PngRgbaImageSaver *png_rgba_saver_;
     PngIndexedImageSaver *png_indexed_saver_;
     FilePalSaver *pal_saver_;
+    const AnimYamlParser *anim_yaml_parser_;
+    const AnimCodeGenerator *anim_code_generator_;
 };
 
 } // namespace porytiles2

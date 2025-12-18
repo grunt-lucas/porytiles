@@ -88,6 +88,9 @@ class CompileTilesetCommand final : public Command {
         PngIndexedImageSaver png_indexed_saver{};
         JascPalLoader jasc_loader{text_formatter};
         JascPalSaver jasc_saver{text_formatter};
+        AnimYamlParser anim_yaml_parser{};
+        AnimCodeParser anim_code_parser{};
+        AnimCodeGenerator anim_code_generator{};
 
         // Setup primary compiler
         PrimaryTilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
@@ -99,8 +102,14 @@ class CompileTilesetCommand final : public Command {
 
         // Setup the tileset repository
         ProjectTilesetArtifactReader artifact_reader{
-            &png_rgba_loader, &png_indexed_loader, &jasc_loader, &attributes_csv_loader};
-        ProjectTilesetArtifactWriter artifact_writer{&config, ".", &png_rgba_saver, &png_indexed_saver, &jasc_saver};
+            &png_rgba_loader,
+            &png_indexed_loader,
+            &jasc_loader,
+            &attributes_csv_loader,
+            &anim_yaml_parser,
+            &anim_code_parser};
+        ProjectTilesetArtifactWriter artifact_writer{
+            &config, ".", &png_rgba_saver, &png_indexed_saver, &jasc_saver, &anim_yaml_parser, &anim_code_generator};
         // We already set this up earlier for the Yaml config provider
         // ProjectTilesetArtifactKeyProvider key_provider{"."};
         ProjectArtifactChecksumProvider checksum_provider{&key_provider};
