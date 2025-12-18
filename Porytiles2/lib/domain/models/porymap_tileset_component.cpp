@@ -79,4 +79,13 @@ ChainableResult<LayerMode> PorymapTilesetComponent::detect_layer_mode() const
              metatile::entries_per_metatile_triple}}};
 }
 
+void PorymapTilesetComponent::add_animation(Animation<IndexPixel> anim)
+{
+    const std::string &name = anim.name();
+    if (anims_.contains(name)) {
+        panic("animation '" + name + "' already exists in PorymapTilesetComponent");
+    }
+    anims_.insert({name, std::move(anim)});
+}
+
 } // namespace porytiles2

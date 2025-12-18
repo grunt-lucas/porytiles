@@ -1,8 +1,11 @@
 #pragma once
 
 #include <array>
+#include <map>
+#include <string>
 #include <vector>
 
+#include "porytiles2/domain/models/animation.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/metatile.hpp"
@@ -75,11 +78,34 @@ class PorymapTilesetComponent {
         return pals_;
     }
 
+    [[nodiscard]] const std::map<std::string, Animation<IndexPixel>> &anims() const
+    {
+        return anims_;
+    }
+
+    [[nodiscard]] std::map<std::string, Animation<IndexPixel>> &anims()
+    {
+        return anims_;
+    }
+
+    void add_animation(Animation<IndexPixel> anim);
+
+    [[nodiscard]] bool has_animation(const std::string &name) const
+    {
+        return anims_.contains(name);
+    }
+
+    [[nodiscard]] const Animation<IndexPixel> &animation(const std::string &name) const
+    {
+        return anims_.at(name);
+    }
+
   private:
     std::vector<TilemapEntry> metatiles_bin_;
     std::vector<MetatileAttribute> metatile_attributes_;
     Image<IndexPixel> tiles_png_;
     std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> pals_;
+    std::map<std::string, Animation<IndexPixel>> anims_;
 };
 
 } // namespace porytiles2

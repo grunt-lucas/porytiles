@@ -1,8 +1,11 @@
 #pragma once
 
 #include <array>
-#include <optional>
+#include <map>
+#include <string>
+#include <vector>
 
+#include "porytiles2/domain/models/animation.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/metatile_attribute.hpp"
@@ -28,7 +31,7 @@ class PorytilesTilesetComponent {
      */
     void insert_attribute(std::size_t metatile_id, MetatileAttribute attribute);
 
-    std::optional<MetatileAttribute> get_attribute(std::size_t metatile_id) const;
+    [[nodiscard]] std::optional<MetatileAttribute> get_attribute(std::size_t metatile_id) const;
 
     void set_pal(std::size_t pal_index, Palette<Rgba32, pal::max_size> pal);
 
@@ -78,12 +81,35 @@ class PorytilesTilesetComponent {
         return pals_;
     }
 
+    [[nodiscard]] const std::map<std::string, Animation<Rgba32>> &animations() const
+    {
+        return animations_;
+    }
+
+    [[nodiscard]] std::map<std::string, Animation<Rgba32>> &animations()
+    {
+        return animations_;
+    }
+
+    void add_animation(Animation<Rgba32> anim);
+
+    [[nodiscard]] bool has_animation(const std::string &name) const
+    {
+        return animations_.contains(name);
+    }
+
+    [[nodiscard]] const Animation<Rgba32> &animation(const std::string &name) const
+    {
+        return animations_.at(name);
+    }
+
   private:
     Image<Rgba32> bottom_;
     Image<Rgba32> middle_;
     Image<Rgba32> top_;
     std::map<std::size_t, MetatileAttribute> metatile_attributes_;
     std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> pals_;
+    std::map<std::string, Animation<Rgba32>> animations_;
 };
 
 } // namespace porytiles2
