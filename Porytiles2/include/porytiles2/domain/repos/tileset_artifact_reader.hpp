@@ -39,6 +39,24 @@ class TilesetArtifactReader {
     [[nodiscard]] virtual ChainableResult<void> read_porymap_anim_frame(
         Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, std::size_t frame_index) const = 0;
 
+    [[nodiscard]] virtual ChainableResult<void>
+    read_porymap_anim_key_frame(Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name) const = 0;
+
+    /**
+     * @brief Reads animation parameters from a generated_anim_code.h file into the Porymap component.
+     *
+     * @details
+     * Parses the generated_anim_code.h file to extract animation parameters (tile offsets, tile counts, frame
+     * sequences, timing, etc.) and updates the AnimationParams for each animation in the Porymap component. This only
+     * sets parameters; animation frame PNGs are loaded separately.
+     *
+     * @param dest The Tileset object to populate with animation parameters
+     * @param src_key Key identifying the generated_anim_code.h artifact to read
+     * @return Empty ChainableResult on success, otherwise an error chain
+     */
+    [[nodiscard]] virtual ChainableResult<void>
+    read_generated_anim_code(Tileset &dest, const ArtifactKey &src_key) const = 0;
+
     /*
      * Porytiles artifacts
      */
@@ -56,6 +74,23 @@ class TilesetArtifactReader {
 
     [[nodiscard]] virtual ChainableResult<void> read_porytiles_anim_frame(
         Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, std::size_t frame_index) const = 0;
+
+    [[nodiscard]] virtual ChainableResult<void>
+    read_porytiles_anim_key_frame(Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name) const = 0;
+
+    /**
+     * @brief Reads animation parameters from an anim.yaml file into the Porytiles component.
+     *
+     * @details
+     * Parses the anim.yaml file to extract animation parameters (frame sequences, timing, etc.) and updates the
+     * AnimationParams for each animation in the Porytiles component. This only sets parameters; animation frame PNGs
+     * are loaded separately.
+     *
+     * @param dest The Tileset object to populate with animation parameters
+     * @param src_key Key identifying the anim.yaml artifact to read
+     * @return Empty ChainableResult on success, otherwise an error chain
+     */
+    [[nodiscard]] virtual ChainableResult<void> read_anim_yaml(Tileset &dest, const ArtifactKey &src_key) const = 0;
 };
 
 } // namespace porytiles2

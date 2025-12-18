@@ -245,6 +245,18 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_porymap_anim_frame(
     return {};
 }
 
+[[nodiscard]] ChainableResult<void> ProjectTilesetArtifactReader::read_porymap_anim_key_frame(
+    Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name) const
+{
+    panic("TODO: implement");
+}
+
+[[nodiscard]] ChainableResult<void>
+ProjectTilesetArtifactReader::read_generated_anim_code(Tileset &dest, const ArtifactKey &src_key) const
+{
+    panic("TODO: implement");
+}
+
 /*
  * Porytiles artifacts
  */
@@ -305,6 +317,18 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_porytiles_anim_frame(
 {
     PT_TRY_CALL_PASS_ERR(import_porytiles_anim_frame(dest, src_key, anim_name, frame_index), void);
     return {};
+}
+
+[[nodiscard]] ChainableResult<void> ProjectTilesetArtifactReader::read_porytiles_anim_key_frame(
+    Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name) const
+{
+    panic("TODO: implement");
+}
+
+[[nodiscard]] ChainableResult<void>
+ProjectTilesetArtifactReader::read_anim_yaml(Tileset &dest, const ArtifactKey &src_key) const
+{
+    panic("TODO: implement");
 }
 
 } // namespace porytiles2

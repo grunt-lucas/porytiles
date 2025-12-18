@@ -56,6 +56,12 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
         const std::string &anim_name,
         std::size_t frame_index) override;
 
+    [[nodiscard]] ChainableResult<void> write_porymap_anim_key_frame(
+        const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name) override;
+
+    [[nodiscard]] ChainableResult<void>
+    write_generated_anim_code(const ArtifactKey &dest_key, const Tileset &src) override;
+
     /*
      * Porytiles artifacts
      */
@@ -75,6 +81,11 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
         const Tileset &src,
         const std::string &anim_name,
         std::size_t frame_index) override;
+
+    [[nodiscard]] ChainableResult<void> write_porytiles_anim_key_frame(
+        const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name) override;
+
+    [[nodiscard]] ChainableResult<void> write_anim_yaml(const ArtifactKey &dest_key, const Tileset &src) override;
 
   private:
     InfraConfig *config_;

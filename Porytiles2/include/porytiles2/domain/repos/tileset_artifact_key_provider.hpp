@@ -54,6 +54,21 @@ class TilesetArtifactKeyProvider {
     [[nodiscard]] virtual ArtifactKey key_for_porymap_anim_frame(
         const std::string &tileset_name, const std::string &anim_name, std::size_t frame_index) const = 0;
 
+    [[nodiscard]] virtual ArtifactKey
+    key_for_porymap_anim_key_frame(const std::string &tileset_name, const std::string &anim_name) const = 0;
+
+    /**
+     * @brief Returns the key for the generated_anim_code.h file (Porymap animation C code).
+     *
+     * @details
+     * The generated_anim_code.h file contains the generated C code for animations, including INCBIN statements, frame
+     * arrays, QueueAnimTiles functions, and the InitTilesetAnim function. This file is included by tileset_anims.c.
+     *
+     * @param tileset_name The name of the tileset
+     * @return Key for the generated_anim_code.h file
+     */
+    [[nodiscard]] virtual ArtifactKey key_for_generated_anim_code(const std::string &tileset_name) const = 0;
+
     /*
      * Porytiles artifacts
      */
@@ -71,9 +86,28 @@ class TilesetArtifactKeyProvider {
     [[nodiscard]] virtual ArtifactKey key_for_porytiles_anim_frame(
         const std::string &tileset_name, const std::string &anim_name, std::size_t frame_index) const = 0;
 
+    [[nodiscard]] virtual ArtifactKey
+    key_for_porytiles_anim_key_frame(const std::string &tileset_name, const std::string &anim_name) const = 0;
+
+    /**
+     * @brief Returns the key for the anim.yaml file (Porytiles animation configuration).
+     *
+     * @details
+     * The anim.yaml file stores animation parameters for the Porytiles component. It defines frame sequences, timing
+     * parameters, and other configuration for each animation in the tileset.
+     *
+     * @param tileset_name The name of the tileset
+     * @return Key for the anim.yaml file
+     */
+    [[nodiscard]] virtual ArtifactKey key_for_anim_yaml(const std::string &tileset_name) const = 0;
+
     [[nodiscard]] virtual ArtifactKey key_for_config(const std::string &tileset_name) const = 0;
 
     [[nodiscard]] virtual ArtifactKey key_for_local_config(const std::string &tileset_name) const = 0;
+
+    /*
+     * Utilities
+     */
 
     /**
      * @brief Checks whether an artifact exists in the backing store for the given key.

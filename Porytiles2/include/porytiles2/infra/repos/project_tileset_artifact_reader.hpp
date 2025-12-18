@@ -51,6 +51,12 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
         const std::string &anim_name,
         std::size_t frame_index) const override;
 
+    [[nodiscard]] ChainableResult<void>
+    read_porymap_anim_key_frame(Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name) const override;
+
+    [[nodiscard]] ChainableResult<void>
+    read_generated_anim_code(Tileset &dest, const ArtifactKey &src_key) const override;
+
     /*
      * Porytiles artifacts
      */
@@ -70,6 +76,11 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
         const ArtifactKey &src_key,
         const std::string &anim_name,
         std::size_t frame_index) const override;
+
+    [[nodiscard]] ChainableResult<void> read_porytiles_anim_key_frame(
+        Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name) const override;
+
+    [[nodiscard]] ChainableResult<void> read_anim_yaml(Tileset &dest, const ArtifactKey &src_key) const override;
 
   private:
     const PngRgbaImageLoader *png_rgba_loader_;

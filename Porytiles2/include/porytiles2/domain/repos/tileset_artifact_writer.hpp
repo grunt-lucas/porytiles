@@ -76,6 +76,23 @@ class TilesetArtifactWriter {
     [[nodiscard]] virtual ChainableResult<void> write_porymap_anim_frame(
         const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, std::size_t frame_index) = 0;
 
+    [[nodiscard]] virtual ChainableResult<void>
+    write_porymap_anim_key_frame(const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name) = 0;
+
+    /**
+     * @brief Writes animation C code to a generated_anim_code.h file from the Porymap component.
+     *
+     * @details
+     * Generates and writes the generated_anim_code.h file containing animation C code (INCBIN statements, frame arrays,
+     * QueueAnimTiles functions, InitTilesetAnim function, etc.) for all animations in the Porymap component.
+     *
+     * @param dest_key Key identifying where to write the generated_anim_code.h artifact
+     * @param src The Tileset object to extract animation data from
+     * @return Empty ChainableResult on success, otherwise an error chain
+     */
+    [[nodiscard]] virtual ChainableResult<void>
+    write_generated_anim_code(const ArtifactKey &dest_key, const Tileset &src) = 0;
+
     /*
      * Porytiles artifacts
      */
@@ -93,6 +110,22 @@ class TilesetArtifactWriter {
 
     [[nodiscard]] virtual ChainableResult<void> write_porytiles_anim_frame(
         const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, std::size_t frame_index) = 0;
+
+    [[nodiscard]] virtual ChainableResult<void>
+    write_porytiles_anim_key_frame(const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name) = 0;
+
+    /**
+     * @brief Writes animation parameters to an anim.yaml file from the Porytiles component.
+     *
+     * @details
+     * Generates and writes the anim.yaml file containing animation parameters (frame sequences, timing, etc.) for all
+     * animations in the Porytiles component.
+     *
+     * @param dest_key Key identifying where to write the anim.yaml artifact
+     * @param src The Tileset object to extract animation parameters from
+     * @return Empty ChainableResult on success, otherwise an error chain
+     */
+    [[nodiscard]] virtual ChainableResult<void> write_anim_yaml(const ArtifactKey &dest_key, const Tileset &src) = 0;
 };
 
 } // namespace porytiles2

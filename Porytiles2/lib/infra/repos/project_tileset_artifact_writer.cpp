@@ -112,6 +112,23 @@ save_palette(const Palette<Rgba32, pal::max_size> &pal, const std::filesystem::p
     return {};
 }
 
+ChainableResult<std::filesystem::path> compute_transaction_dest_path(
+    const std::filesystem::path &transaction_root,
+    const std::filesystem::path &project_root,
+    const ArtifactKey &dest_key)
+{
+    if (transaction_root.empty()) {
+        return FormattableError{"no transaction in progress"};
+    }
+
+    const auto relative_path = std::filesystem::path{dest_key.key()}.lexically_relative(project_root);
+    const auto transaction_dest_path = transaction_root / relative_path;
+
+    std::filesystem::create_directories(transaction_dest_path.parent_path());
+
+    return transaction_dest_path;
+}
+
 } // namespace
 
 namespace porytiles2 {
@@ -240,27 +257,6 @@ ChainableResult<void> ProjectTilesetArtifactWriter::rollback()
     }
 }
 
-namespace {
-
-ChainableResult<std::filesystem::path> compute_transaction_dest_path(
-    const std::filesystem::path &transaction_root,
-    const std::filesystem::path &project_root,
-    const ArtifactKey &dest_key)
-{
-    if (transaction_root.empty()) {
-        return FormattableError{"no transaction in progress"};
-    }
-
-    const auto relative_path = std::filesystem::path{dest_key.key()}.lexically_relative(project_root);
-    const auto transaction_dest_path = transaction_root / relative_path;
-
-    std::filesystem::create_directories(transaction_dest_path.parent_path());
-
-    return transaction_dest_path;
-}
-
-} // namespace
-
 /*
  * Porymap artifacts
  */
@@ -317,6 +313,18 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
 {
     // TODO: implement
     return {};
+}
+
+[[nodiscard]] ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_key_frame(
+    const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name)
+{
+    panic("TODO: implement");
+}
+
+[[nodiscard]] ChainableResult<void>
+ProjectTilesetArtifactWriter::write_generated_anim_code(const ArtifactKey &dest_key, const Tileset &src)
+{
+    panic("TODO: implement");
 }
 
 /*
@@ -381,6 +389,18 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_anim_frame(
 {
     // TODO: implement
     return {};
+}
+
+[[nodiscard]] ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_anim_key_frame(
+    const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name)
+{
+    panic("TODO: implement");
+}
+
+[[nodiscard]] ChainableResult<void>
+ProjectTilesetArtifactWriter::write_anim_yaml(const ArtifactKey &dest_key, const Tileset &src)
+{
+    panic("TODO: implement");
 }
 
 } // namespace porytiles2

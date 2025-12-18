@@ -80,6 +80,18 @@ ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_frame(
     return ArtifactKey{tileset_path / anim / anim_name / (std::to_string(frame_index) + std::string{".png"})};
 }
 
+[[nodiscard]] ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_key_frame(
+    const std::string &tileset_name, const std::string &anim_name) const
+{
+    panic("TODO: implement");
+}
+
+[[nodiscard]] ArtifactKey
+ProjectTilesetArtifactKeyProvider::key_for_generated_anim_code(const std::string &tileset_name) const
+{
+    panic("TODO: implement");
+}
+
 /*
  * Porytiles artifacts
  */
@@ -120,6 +132,17 @@ ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_frame(
     const auto tileset_path = get_tileset_path(tileset_name, project_root_);
     return ArtifactKey{
         tileset_path / porytiles_directory / anim / anim_name / (pad_two_digits(frame_index) + std::string{".png"})};
+}
+
+[[nodiscard]] ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_key_frame(
+    const std::string &tileset_name, const std::string &anim_name) const
+{
+    panic("TODO: implement");
+}
+
+[[nodiscard]] ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_anim_yaml(const std::string &tileset_name) const
+{
+    panic("TODO: implement");
 }
 
 ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_config(const std::string &tileset_name) const

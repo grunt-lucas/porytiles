@@ -35,6 +35,9 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
     {
     }
 
+    /*
+     * Porymap artifacts
+     */
     [[nodiscard]] ArtifactKey key_for_metatiles_bin(const std::string &tileset_name) const override;
 
     [[nodiscard]] ArtifactKey key_for_metatile_attributes_bin(const std::string &tileset_name) const override;
@@ -46,6 +49,14 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
     [[nodiscard]] ArtifactKey key_for_porymap_anim_frame(
         const std::string &tileset_name, const std::string &anim_name, std::size_t frame_index) const override;
 
+    [[nodiscard]] ArtifactKey
+    key_for_porymap_anim_key_frame(const std::string &tileset_name, const std::string &anim_name) const override;
+
+    [[nodiscard]] ArtifactKey key_for_generated_anim_code(const std::string &tileset_name) const override;
+
+    /*
+     * Porytiles artifacts
+     */
     [[nodiscard]] ArtifactKey key_for_bottom_png(const std::string &tileset_name) const override;
 
     [[nodiscard]] ArtifactKey key_for_middle_png(const std::string &tileset_name) const override;
@@ -60,10 +71,18 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
     [[nodiscard]] ArtifactKey key_for_porytiles_anim_frame(
         const std::string &tileset_name, const std::string &anim_name, std::size_t frame_index) const override;
 
+    [[nodiscard]] ArtifactKey
+    key_for_porytiles_anim_key_frame(const std::string &tileset_name, const std::string &anim_name) const override;
+
+    [[nodiscard]] ArtifactKey key_for_anim_yaml(const std::string &tileset_name) const override;
+
     [[nodiscard]] ArtifactKey key_for_config(const std::string &tileset_name) const override;
 
     [[nodiscard]] ArtifactKey key_for_local_config(const std::string &tileset_name) const override;
 
+    /*
+     * Utilities
+     */
     [[nodiscard]] bool artifact_exists(const ArtifactKey &key) const override;
 
     [[nodiscard]] bool tileset_exists(const std::string &tileset_name) const override;
