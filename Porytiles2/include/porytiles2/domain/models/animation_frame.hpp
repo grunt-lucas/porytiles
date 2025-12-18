@@ -20,8 +20,9 @@ namespace porytiles2 {
  * format) or indexed pixels (for Porymap component, compiled format).
  *
  * Key concepts:
- * - Frame index 0 is the "keyframe" that appears in tiles.png
- * - Other frames (1, 2, ...) are stored as separate .4bpp files and swapped at runtime
+ * - A special "key frame" that appears in tiles.png, but isn't part of the animation loop
+ *   - Users tell Porytiles which metatile subtiles should be animated by using key frame tiles on the layer PNGs
+ * - Other frames (0, 1, 2, ...) are stored as separate .4bpp files and swapped at runtime
  * - All frames of an animation must have the same tile count
  *
  * @tparam PixelType The pixel type for tiles; must satisfy SupportsTransparency concept

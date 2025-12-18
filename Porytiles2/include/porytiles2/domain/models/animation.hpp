@@ -19,8 +19,9 @@ namespace porytiles2 {
  * - Configuration parameters (AnimationParams) controlling timing and VRAM placement
  * - Frame data (vector of AnimationFrame) containing the actual tile pixels
  *
- * Frame 0 is special - it's the "keyframe" that appears in tiles.png. The GBA game engine uses the other frames
- * (stored as separate .4bpp files) to animate by swapping tile data in VRAM at runtime.
+ * In addition to the standard 0.png, 1.png, etc. frames, there is a special the "key frame" that appears in tiles.png.
+ * The GBA game engine uses the other frames (stored as separate .4bpp files) to animate by swapping tile data in VRAM
+ * at runtime.
  *
  * The template parameter determines the pixel format:
  * - Animation<Rgba32>: Used in PorytilesTilesetComponent (source format, RGBA pixels)
@@ -42,49 +43,39 @@ class Animation {
         return name_;
     }
 
-    void name(std::string n)
-    {
-        name_ = std::move(n);
-    }
-
     [[nodiscard]] const AnimationParams &params() const
     {
         return params_;
     }
 
-    [[nodiscard]] AnimationParams &params()
+    /**
+     * @brief Returns the key frame of this animation.
+     *
+     * @details
+     * The key frame is a special frame of the animation and is the frame whose tiles are stored in tiles.png. All other
+     * frames are stored as separate .4bpp files and loaded dynamically by the game engine.
+     *
+     * @pre Animation must have at least one frame
+     * @return Reference to the keyframe
+     */
+    [[nodiscard]] const AnimationFrame<PixelType> &key_frame() const
     {
-        return params_;
+        return key_frame_;
     }
 
-    void params(AnimationParams p)
+    void key_frame(AnimationFrame<PixelType> key_frame)
     {
-        params_ = std::move(p);
-    }
-
-    [[nodiscard]] const std::vector<AnimationFrame<PixelType>> &frames() const
-    {
-        return frames_;
-    }
-
-    [[nodiscard]] std::vector<AnimationFrame<PixelType>> &frames()
-    {
-        return frames_;
-    }
-
-    void frames(std::vector<AnimationFrame<PixelType>> f)
-    {
-        frames_ = std::move(f);
+        key_frame_ = std::move(key_frame);
     }
 
     /**
-     * @brief Adds a frame to the end of this animation's frame list.
+     * @brief Checks if this animation has any frames.
      *
-     * @param frame The frame to add
+     * @return True if the animation has at least one frame, false otherwise
      */
-    void add_frame(AnimationFrame<PixelType> frame)
+    [[nodiscard]] bool has_frames() const
     {
-        frames_.push_back(std::move(frame));
+        return !frames_.empty();
     }
 
     /**
@@ -106,54 +97,26 @@ class Animation {
      */
     [[nodiscard]] const AnimationFrame<PixelType> &frame_at(std::size_t index) const
     {
-        return frames_.at(index);
-    }
-
-    /**
-     * @brief Returns the keyframe (frame 0) of this animation.
-     *
-     * @details
-     * The keyframe is the first frame of the animation and is the frame whose tiles are stored in tiles.png. All other
-     * frames are stored as separate .4bpp files and loaded dynamically by the game engine.
-     *
-     * @pre Animation must have at least one frame
-     * @return Reference to the keyframe
-     */
-    [[nodiscard]] const AnimationFrame<PixelType> &keyframe() const
-    {
-        if (frames_.empty()) {
-            panic("animation '" + name_ + "' has no frames");
+        if (index >= frame_count()) {
+            panic("index " + std::to_string(index) + " is out of range");
         }
-        return frames_.at(keyframe_index());
+        return frames_[index];
     }
 
     /**
-     * @brief Returns the index of the keyframe (always 0).
+     * @brief Adds a frame to the end of this animation's frame list.
      *
-     * @details
-     * By convention, frame 0 is always the keyframe. This static method makes this convention explicit and allows code
-     * to reference the keyframe index without magic numbers.
-     *
-     * @return 0 (the keyframe index)
+     * @param frame The frame to add
      */
-    [[nodiscard]] static constexpr std::size_t keyframe_index()
+    void add_frame(AnimationFrame<PixelType> frame)
     {
-        return 0;
-    }
-
-    /**
-     * @brief Checks if this animation has any frames.
-     *
-     * @return True if the animation has at least one frame, false otherwise
-     */
-    [[nodiscard]] bool has_frames() const
-    {
-        return !frames_.empty();
+        frames_.push_back(std::move(frame));
     }
 
   private:
     std::string name_;
     AnimationParams params_;
+    AnimationFrame<PixelType> key_frame_;
     std::vector<AnimationFrame<PixelType>> frames_;
 };
 
