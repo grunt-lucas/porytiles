@@ -56,7 +56,13 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
         if (layer_value.state == ValidationState::invalid) {
             const auto source_info = format_->format("{}", layer_value.source_info);
             std::vector<std::string> error_lines;
-            error_lines.push_back(format_->format("{}: invalid: {}", source_info, layer_value.error_message));
+            error_lines.push_back(format_->format(
+                "invalid value for '{}' from config source '{}':",
+                FormatParam{cache_key, Style::bold},
+                FormatParam{source_info, Style::bold}));
+            error_lines.emplace_back();
+            error_lines.push_back("Details:");
+            error_lines.push_back(format_->format("{}", layer_value.error_message));
 
             if (!layer_value.source_details.empty()) {
                 error_lines.emplace_back(""); // Blank line separator
@@ -80,6 +86,11 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
         }
 
         // Otherwise, state is not_provided - continue to next provider
+        if (layer_value.state == ValidationState::not_provided) {
+            continue;
+        }
+
+        panic("hit unexpected ValidationState");
     }
 
     // No value found in any layer - this is a programmer error

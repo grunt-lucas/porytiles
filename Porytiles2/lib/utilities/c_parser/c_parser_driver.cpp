@@ -128,6 +128,33 @@ ChainableResult<std::vector<EnumDeclaration>> CParserDriver::parse_enums()
     return std::move(parse_result).value();
 }
 
+ChainableResult<std::optional<DefineStatement>> CParserDriver::find_define(const std::string &define_name)
+{
+    // Ensure defines are cached
+    if (!cached_defines_.has_value()) {
+        auto result = parse_defines();
+        if (!result.has_value()) {
+            return ChainableResult<std::optional<DefineStatement>>{
+                FormattableError{format_->format(
+                    "{}: failed to find #define '{}'",
+                    FormatParam{file_path_.string(), Style::bold},
+                    FormatParam{define_name, Style::bold})},
+                result};
+        }
+        cached_defines_ = std::move(result.value());
+    }
+
+    // Search for the define
+    for (const auto &define : cached_defines_.value()) {
+        if (define.name() == define_name) {
+            return std::optional{define};
+        }
+    }
+
+    // Not found - this is not an error, just return nullopt
+    return std::optional<DefineStatement>{std::nullopt};
+}
+
 const std::vector<std::string> &CParserDriver::file_lines() const
 {
     return file_lines_;

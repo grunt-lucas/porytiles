@@ -2,11 +2,14 @@
 
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <string>
 
 #include "gsl/pointers"
 
 #include "porytiles2/infra/config/config_provider.hpp"
+#include "porytiles2/utilities/c_parser/c_parser_driver.hpp"
+#include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 
 namespace porytiles2 {
@@ -24,8 +27,11 @@ namespace porytiles2 {
  * HeaderDefineProvider parses a C/C++ header file looking for #define directives that correspond to configuration
  * values. This is useful for reading configuration from decompilation project headers like include/fieldmap.h.
  *
- * The provider only supports simple integer literals (e.g., `#define NUM_TILES 512`). Parenthesized values or
- * expressions are not supported.
+ * The provider uses a full C parser that supports:
+ * - Simple integer literals: `#define NUM_TILES 512`
+ * - Hexadecimal, octal, and binary literals: `#define FLAGS 0xFF`
+ * - Arithmetic expressions: `#define SIZE (1 << 10)`
+ * - Macro references: `#define TOTAL (PRIMARY + SECONDARY)`
  *
  * The header file is loaded lazily and cached for performance. If the file doesn't exist or a define is not found,
  * methods return LayerValue::not_provided(), allowing graceful fallback to other providers.
@@ -44,9 +50,14 @@ class HeaderDefineProvider final : public ConfigProvider {
      * @param project_root The root directory of the project
      */
     explicit HeaderDefineProvider(
-        const std::filesystem::path &project_root,
-        const std::filesystem::path &header_relative_path,
-        gsl::not_null<const TextFormatter *> format);
+        std::filesystem::path project_root,
+        std::filesystem::path header_relative_path,
+        gsl::not_null<const TextFormatter *> format)
+        : format_{format}, project_root_{std::move(project_root)},
+          header_relative_path_{std::move(header_relative_path)}
+    {
+        // CParserDriver is lazily initialized on first define lookup
+    }
 
     /**
      * @brief Constructs a HeaderDefineProvider with a default PlainTextFormatter.
@@ -59,8 +70,12 @@ class HeaderDefineProvider final : public ConfigProvider {
      * @param project_root The root directory of the project
      * @param header_relative_path The path to the header file relative to project_root
      */
-    explicit HeaderDefineProvider(
-        const std::filesystem::path &project_root, const std::filesystem::path &header_relative_path);
+    explicit HeaderDefineProvider(std::filesystem::path project_root, std::filesystem::path header_relative_path)
+        : owned_format_{std::make_unique<PlainTextFormatter>()}, format_{owned_format_.get()},
+          project_root_{std::move(project_root)}, header_relative_path_{std::move(header_relative_path)}
+    {
+        // CParserDriver is lazily initialized on first define lookup
+    }
 
     /**
      * @brief Gets the name of this config layer.
@@ -116,6 +131,7 @@ class HeaderDefineProvider final : public ConfigProvider {
     const TextFormatter *format_;                 // Non-owning pointer to formatter
     std::filesystem::path project_root_;
     std::filesystem::path header_relative_path_;
+    mutable std::optional<CParserDriver> parser_driver_; // Lazy-initialized C parser
 };
 
 } // namespace porytiles2

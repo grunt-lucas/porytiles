@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <memory>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -88,6 +89,18 @@ class CParserDriver {
     [[nodiscard]] ChainableResult<std::vector<EnumDeclaration>> parse_enums();
 
     /**
+     * @brief Finds a specific #define statement by name.
+     *
+     * @details
+     * Searches for a #define directive with the specified name. On first call, parses all defines and caches them
+     * for efficient subsequent lookups. Returns std::nullopt if the define is not found (which is not an error).
+     *
+     * @param define_name The name of the #define macro to find
+     * @return The DefineStatement if found, std::nullopt if not found, or an error on parse failure
+     */
+    [[nodiscard]] ChainableResult<std::optional<DefineStatement>> find_define(const std::string &define_name);
+
+    /**
      * @brief Returns the cached file lines.
      *
      * @details
@@ -109,6 +122,7 @@ class CParserDriver {
     bool loaded_{false};
     bool load_failed_{false};
     FormattableError load_error_;
+    std::optional<std::vector<DefineStatement>> cached_defines_;
 };
 
 } // namespace porytiles2

@@ -8,39 +8,15 @@
 {% import '_macros.jinja2' as macros %}
 #include "porytiles2/infra/config/header_define_provider.hpp"
 
-#include <cstdint>
 #include <filesystem>
-#include <fstream>
-#include <map>
-#include <optional>
-#include <regex>
 #include <string>
 #include <vector>
-
-#include "porytiles2/utilities/text/plain_text_formatter.hpp"
 
 #include "./header_define_provider_impl.ipp"
 
 namespace porytiles2 {
 
 {{ macros.autogen_warning() }}
-
-HeaderDefineProvider::HeaderDefineProvider(
-    const std::filesystem::path &project_root,
-    const std::filesystem::path &header_relative_path,
-    gsl::not_null<const TextFormatter *> format)
-    : format_{format}, project_root_{project_root}, header_relative_path_{header_relative_path}
-{
-    // Header file is loaded lazily when first accessed via the anonymous namespace functions
-}
-
-HeaderDefineProvider::HeaderDefineProvider(
-    const std::filesystem::path &project_root, const std::filesystem::path &header_relative_path)
-    : owned_format_{std::make_unique<PlainTextFormatter>()}, format_{owned_format_.get()}, project_root_{project_root},
-      header_relative_path_{header_relative_path}
-{
-    // Header file is loaded lazily when first accessed via the anonymous namespace functions
-}
 
 std::string HeaderDefineProvider::name() const
 {
@@ -53,6 +29,7 @@ LayerValue<{{ value.type }}> HeaderDefineProvider::{{ value.name }}(ConfigScopeT
 {% if value.header_define is defined and value.header_define %}
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<{{ value.type }}>(
+        parser_driver_,
         format_,
         header_path,
         "{{ value.header_define }}",

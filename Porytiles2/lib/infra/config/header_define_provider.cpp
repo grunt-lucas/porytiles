@@ -1,15 +1,8 @@
 #include "porytiles2/infra/config/header_define_provider.hpp"
 
-#include <cstdint>
 #include <filesystem>
-#include <fstream>
-#include <map>
-#include <optional>
-#include <regex>
 #include <string>
 #include <vector>
-
-#include "porytiles2/utilities/text/plain_text_formatter.hpp"
 
 #include "./header_define_provider_impl.ipp"
 
@@ -21,23 +14,6 @@ namespace porytiles2 {
  * Scripts/generate_config.py.
  */
 
-HeaderDefineProvider::HeaderDefineProvider(
-    const std::filesystem::path &project_root,
-    const std::filesystem::path &header_relative_path,
-    gsl::not_null<const TextFormatter *> format)
-    : format_{format}, project_root_{project_root}, header_relative_path_{header_relative_path}
-{
-    // Header file is loaded lazily when first accessed via the anonymous namespace functions
-}
-
-HeaderDefineProvider::HeaderDefineProvider(
-    const std::filesystem::path &project_root, const std::filesystem::path &header_relative_path)
-    : owned_format_{std::make_unique<PlainTextFormatter>()}, format_{owned_format_.get()}, project_root_{project_root},
-      header_relative_path_{header_relative_path}
-{
-    // Header file is loaded lazily when first accessed via the anonymous namespace functions
-}
-
 std::string HeaderDefineProvider::name() const
 {
     return "HeaderDefineProvider";
@@ -48,14 +24,15 @@ HeaderDefineProvider::num_tiles_in_primary(ConfigScopeType /*type*/, const std::
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
-        format_, header_path, "NUM_TILES_IN_PRIMARY", parse_size_t, "num_tiles_in_primary");
+        parser_driver_, format_, header_path, "NUM_TILES_IN_PRIMARY", parse_size_t, "num_tiles_in_primary");
 }
 
 LayerValue<std::size_t>
 HeaderDefineProvider::num_tiles_total(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {
     const auto header_path = project_root_ / header_relative_path_;
-    return search_header_define<std::size_t>(format_, header_path, "NUM_TILES_TOTAL", parse_size_t, "num_tiles_total");
+    return search_header_define<std::size_t>(
+        parser_driver_, format_, header_path, "NUM_TILES_TOTAL", parse_size_t, "num_tiles_total");
 }
 
 LayerValue<std::size_t>
@@ -63,7 +40,7 @@ HeaderDefineProvider::num_metatiles_in_primary(ConfigScopeType /*type*/, const s
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
-        format_, header_path, "NUM_METATILES_IN_PRIMARY", parse_size_t, "num_metatiles_in_primary");
+        parser_driver_, format_, header_path, "NUM_METATILES_IN_PRIMARY", parse_size_t, "num_metatiles_in_primary");
 }
 
 LayerValue<std::size_t>
@@ -71,7 +48,7 @@ HeaderDefineProvider::num_metatiles_total(ConfigScopeType /*type*/, const std::s
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
-        format_, header_path, "NUM_METATILES_TOTAL", parse_size_t, "num_metatiles_total");
+        parser_driver_, format_, header_path, "NUM_METATILES_TOTAL", parse_size_t, "num_metatiles_total");
 }
 
 LayerValue<std::size_t>
@@ -79,14 +56,15 @@ HeaderDefineProvider::num_pals_in_primary(ConfigScopeType /*type*/, const std::s
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
-        format_, header_path, "NUM_PALS_IN_PRIMARY", parse_size_t, "num_pals_in_primary");
+        parser_driver_, format_, header_path, "NUM_PALS_IN_PRIMARY", parse_size_t, "num_pals_in_primary");
 }
 
 LayerValue<std::size_t>
 HeaderDefineProvider::num_pals_total(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {
     const auto header_path = project_root_ / header_relative_path_;
-    return search_header_define<std::size_t>(format_, header_path, "NUM_PALS_TOTAL", parse_size_t, "num_pals_total");
+    return search_header_define<std::size_t>(
+        parser_driver_, format_, header_path, "NUM_PALS_TOTAL", parse_size_t, "num_pals_total");
 }
 
 LayerValue<std::size_t>
@@ -94,7 +72,7 @@ HeaderDefineProvider::max_map_data_size(ConfigScopeType /*type*/, const std::str
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
-        format_, header_path, "MAX_MAP_DATA_SIZE", parse_size_t, "max_map_data_size");
+        parser_driver_, format_, header_path, "MAX_MAP_DATA_SIZE", parse_size_t, "max_map_data_size");
 }
 
 LayerValue<std::size_t>
@@ -102,7 +80,7 @@ HeaderDefineProvider::num_tiles_per_metatile(ConfigScopeType /*type*/, const std
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
-        format_, header_path, "NUM_TILES_PER_METATILE", parse_size_t, "num_tiles_per_metatile");
+        parser_driver_, format_, header_path, "NUM_TILES_PER_METATILE", parse_size_t, "num_tiles_per_metatile");
 }
 
 LayerValue<Rgba32>

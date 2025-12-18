@@ -59,7 +59,6 @@
 
 ## Miscellaneous Cleanup
 - Palette hints should be validated entirely within the config system, remove validation from the PaletteValidator
-- HeaderDefineProvider config provider should use C parser and FileHighlightPrinter?
 - Can I use std::span in more places?
 - Introduce "remark" category of diagnostics
 - Fix up `Scripts` directory
