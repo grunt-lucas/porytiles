@@ -16,6 +16,8 @@
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
+#include "porytiles2/infra/services/anim_code_generator.hpp"
+#include "porytiles2/infra/services/anim_yaml_parser.hpp"
 #include "porytiles2/infra/services/file_pal_saver.hpp"
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
@@ -33,7 +35,7 @@ class MockInfraConfig : public InfraConfig {
     [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>>
     tiles_pal_mode_raw(ConfigScopeType type, const std::string &scope) const override
     {
-        return ConfigValue<TilesPalMode>{TilesPalMode::true_color, "tiles_pal_mode", "mock", {}};
+        return ConfigValue{TilesPalMode::true_color, "tiles_pal_mode", "mock", {}};
     }
 
   public:
@@ -132,13 +134,21 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
         png_rgba_saver_ = std::make_unique<MockPngRgbaImageSaver>();
         png_indexed_saver_ = std::make_unique<MockPngIndexedImageSaver>();
         pal_saver_ = std::make_unique<MockFilePalSaver>();
+        anim_yaml_parser_ = std::make_unique<AnimYamlParser>();
+        anim_code_generator_ = std::make_unique<AnimCodeGenerator>();
 
         test_root_ = std::filesystem::temp_directory_path() / "porytiles_artifact_writer_tests";
         std::filesystem::create_directories(test_root_);
         config_->test_root(test_root_);
 
         writer_ = std::make_unique<ProjectTilesetArtifactWriter>(
-            config_.get(), test_root_, png_rgba_saver_.get(), png_indexed_saver_.get(), pal_saver_.get());
+            config_.get(),
+            test_root_,
+            png_rgba_saver_.get(),
+            png_indexed_saver_.get(),
+            pal_saver_.get(),
+            anim_yaml_parser_.get(),
+            anim_code_generator_.get());
     }
 
     void TearDown() override
@@ -181,6 +191,8 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
     std::unique_ptr<MockPngRgbaImageSaver> png_rgba_saver_;
     std::unique_ptr<MockPngIndexedImageSaver> png_indexed_saver_;
     std::unique_ptr<MockFilePalSaver> pal_saver_;
+    std::unique_ptr<AnimYamlParser> anim_yaml_parser_;
+    std::unique_ptr<AnimCodeGenerator> anim_code_generator_;
     std::unique_ptr<ProjectTilesetArtifactWriter> writer_;
 };
 

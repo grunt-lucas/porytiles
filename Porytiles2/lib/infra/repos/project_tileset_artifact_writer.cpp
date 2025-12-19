@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iostream>
+#include <memory>
 #include <random>
 #include <ranges>
 #include <sstream>
@@ -117,6 +118,7 @@ ChainableResult<std::filesystem::path> compute_transaction_dest_path(
     const std::filesystem::path &project_root,
     const ArtifactKey &dest_key)
 {
+    // TODO: just panic here
     if (transaction_root.empty()) {
         return FormattableError{"no transaction in progress"};
     }
@@ -127,6 +129,51 @@ ChainableResult<std::filesystem::path> compute_transaction_dest_path(
     std::filesystem::create_directories(transaction_dest_path.parent_path());
 
     return transaction_dest_path;
+}
+
+/**
+ * @brief Converts a vector of tiles into an image.
+ *
+ * @details
+ * Creates an image with tiles arranged horizontally in a single row. This is the standard format for animation frame
+ * PNGs in tileset animations.
+ *
+ * @tparam PixelType The pixel type (Rgba32 or IndexPixel)
+ * @param tiles The tiles to convert to an image
+ * @return An image containing the tiles arranged in a single row
+ */
+template <typename PixelType>
+Image<PixelType> tiles_to_image(const std::vector<PixelTile<PixelType>> &tiles)
+{
+    /*
+     * TODO: this method should also receive a target rows,cols count so that we can preserve desired image dimensions
+     * instead of writing the image as a single row of tiles.
+     */
+
+    if (tiles.empty()) {
+        return Image<PixelType>{};
+    }
+
+    // Animation frames are typically arranged horizontally in a single row
+    const std::size_t tiles_per_row = tiles.size();
+    const std::size_t image_width = tiles_per_row * tile::side_length_pix;
+    const std::size_t image_height = tile::side_length_pix;
+
+    Image<PixelType> img{image_width, image_height};
+
+    for (std::size_t tile_idx = 0; tile_idx < tiles.size(); ++tile_idx) {
+        const auto &tile = tiles[tile_idx];
+        const std::size_t pixel_col_offset = tile_idx * tile::side_length_pix;
+
+        for (std::size_t pixel_row = 0; pixel_row < tile::side_length_pix; ++pixel_row) {
+            for (std::size_t pixel_col = 0; pixel_col < tile::side_length_pix; ++pixel_col) {
+                const std::size_t dest_col = pixel_col_offset + pixel_col;
+                img.set(pixel_row, dest_col, tile.at(pixel_row, pixel_col));
+            }
+        }
+    }
+
+    return img;
 }
 
 } // namespace
@@ -311,14 +358,82 @@ ProjectTilesetArtifactWriter::write_porymap_pal_n(const ArtifactKey &dest_key, c
 ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
     const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, std::size_t frame_index)
 {
-    // TODO: implement
-    return {};
+    if (!src.porymap_component().has_anim(anim_name)) {
+        return FormattableError{"animation '{}' not found in Porymap component", FormatParam{anim_name, Style::bold}};
+    }
+
+    const auto &anim = src.porymap_component().anim(anim_name);
+    if (frame_index >= anim.frame_count()) {
+        return FormattableError{
+            "frame index {} out of range for animation '{}' (has {} frames)",
+            FormatParam{frame_index},
+            FormatParam{anim_name, Style::bold},
+            FormatParam{anim.frame_count()}};
+    }
+
+    const auto &frame = anim.frame_at(frame_index);
+    const auto img = tiles_to_image(frame.tiles());
+
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        transaction_dest_path,
+        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        "failed to compute transaction dest path",
+        void);
+
+    /*
+     * TODO: figure out how to use true-color here
+     */
+    // Save as indexed PNG (Porymap format) using greyscale palette
+    return save_tiles_png(*png_indexed_saver_, img, transaction_dest_path, TilesPalMode::greyscale);
 }
 
 [[nodiscard]] ChainableResult<void>
 ProjectTilesetArtifactWriter::write_generated_anim_code(const ArtifactKey &dest_key, const Tileset &src)
 {
-    panic("TODO: implement");
+    const auto &porymap_anims = src.porymap_component().anims();
+    if (porymap_anims.empty()) {
+        // No animations to write
+        return {};
+    }
+
+    // Extract params from animations
+    std::map<std::string, AnimationParams> anim_params;
+    for (const auto &[anim_name, anim] : porymap_anims) {
+        anim_params[anim_name] = anim.params();
+    }
+
+    // Compute the tileset path relative to project root
+    // The dest_key contains the full path to generated_anim_code.h
+    // We need the parent directory (tileset directory path)
+    const std::filesystem::path dest_path{dest_key.key()};
+    const auto tileset_path = dest_path.parent_path().lexically_relative(project_root_);
+
+    // TODO: determine if primary or secondary tileset from config
+    const bool is_primary = true;
+
+    auto code_result = anim_code_generator_->generate(src.name(), tileset_path, anim_params, is_primary);
+    if (!code_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{"failed to generate animation code for '{}'", FormatParam{src.name(), Style::bold}},
+            code_result};
+    }
+
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        transaction_dest_path,
+        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        "failed to compute transaction dest path",
+        void);
+
+    // Write the generated code to file
+    std::ofstream out{transaction_dest_path};
+    if (!out.is_open()) {
+        return FormattableError{
+            "failed to open file for writing: {}", FormatParam{transaction_dest_path.string(), Style::bold}};
+    }
+    out << code_result.value();
+    out.flush();
+
+    return {};
 }
 
 /*
@@ -381,8 +496,30 @@ ProjectTilesetArtifactWriter::write_porytiles_pal_n(const ArtifactKey &dest_key,
 ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_anim_frame(
     const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, std::size_t frame_index)
 {
-    // TODO: implement
-    return {};
+    if (!src.porytiles_component().has_anim(anim_name)) {
+        return FormattableError{"animation '{}' not found in Porytiles component", FormatParam{anim_name, Style::bold}};
+    }
+
+    const auto &anim = src.porytiles_component().anim(anim_name);
+    if (frame_index >= anim.frame_count()) {
+        return FormattableError{
+            "frame index {} out of range for animation '{}' (has {} frames)",
+            FormatParam{frame_index},
+            FormatParam{anim_name, Style::bold},
+            FormatParam{anim.frame_count()}};
+    }
+
+    const auto &frame = anim.frame_at(frame_index);
+    const auto img = tiles_to_image(frame.tiles());
+
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        transaction_dest_path,
+        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        "failed to compute transaction dest path",
+        void);
+
+    // Save as RGBA PNG (Porytiles format)
+    return save_layer_png(*png_rgba_saver_, img, transaction_dest_path);
 }
 
 [[nodiscard]] ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_anim_key_frame(
@@ -394,7 +531,25 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_anim_frame(
 [[nodiscard]] ChainableResult<void>
 ProjectTilesetArtifactWriter::write_anim_yaml(const ArtifactKey &dest_key, const Tileset &src)
 {
-    panic("TODO: implement");
+    const auto &porytiles_anims = src.porytiles_component().anims();
+    if (porytiles_anims.empty()) {
+        // No animations to write
+        return {};
+    }
+
+    // Extract params from animations
+    std::map<std::string, AnimationParams> anim_params;
+    for (const auto &[anim_name, anim] : porytiles_anims) {
+        anim_params[anim_name] = anim.params();
+    }
+
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        transaction_dest_path,
+        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        "failed to compute transaction dest path",
+        void);
+
+    return anim_yaml_parser_->write(transaction_dest_path, anim_params);
 }
 
 } // namespace porytiles2
