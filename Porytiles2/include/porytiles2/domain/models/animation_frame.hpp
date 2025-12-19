@@ -92,6 +92,9 @@ class AnimationFrame {
     }
 
   private:
+    /*
+     * TODO: add a way to store width/height so we can preserve the original input dimensions the user provided
+     */
     std::string frame_name_;
     std::vector<PixelTile<PixelType>> tiles_;
 };

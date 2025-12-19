@@ -88,14 +88,14 @@ class PorymapTilesetComponent {
         return anims_;
     }
 
-    void add_animation(Animation<IndexPixel> anim);
+    void add_anim(Animation<IndexPixel> anim);
 
-    [[nodiscard]] bool has_animation(const std::string &name) const
+    [[nodiscard]] bool has_anim(const std::string &name) const
     {
         return anims_.contains(name);
     }
 
-    [[nodiscard]] const Animation<IndexPixel> &animation(const std::string &name) const
+    [[nodiscard]] const Animation<IndexPixel> &anim(const std::string &name) const
     {
         return anims_.at(name);
     }

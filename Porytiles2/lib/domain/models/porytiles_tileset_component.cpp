@@ -100,13 +100,13 @@ ChainableResult<LayerMode> PorytilesTilesetComponent::detect_layer_mode(const Rg
     return LayerMode::dual;
 }
 
-void PorytilesTilesetComponent::add_animation(Animation<Rgba32> anim)
+void PorytilesTilesetComponent::add_anim(Animation<Rgba32> anim)
 {
     const std::string &name = anim.name();
-    if (animations_.contains(name)) {
+    if (anims_.contains(name)) {
         panic("animation '" + name + "' already exists in PorytilesTilesetComponent");
     }
-    animations_.insert({name, std::move(anim)});
+    anims_.insert({name, std::move(anim)});
 }
 
 } // namespace porytiles2

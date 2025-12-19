@@ -48,6 +48,11 @@ class Animation {
         return params_;
     }
 
+    void params(AnimationParams params)
+    {
+        params_ = std::move(params);
+    }
+
     /**
      * @brief Returns the key frame of this animation.
      *
@@ -66,6 +71,11 @@ class Animation {
     void key_frame(AnimationFrame<PixelType> key_frame)
     {
         key_frame_ = std::move(key_frame);
+    }
+
+    [[nodiscard]] std::vector<AnimationFrame<PixelType>> frames()
+    {
+        return frames_;
     }
 
     /**

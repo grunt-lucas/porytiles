@@ -84,7 +84,7 @@ ChainableResult<std::map<std::string, AnimationParams>>
 AnimYamlParser::parse(const std::filesystem::path &yaml_path) const
 {
     /*
-     * TODO: improve error message formatting
+     * TODO: improve error message formatting, should use FileLineHighlighter
      */
 
     if (!std::filesystem::exists(yaml_path)) {
@@ -132,7 +132,7 @@ ChainableResult<void> AnimYamlParser::write(
     const std::filesystem::path &yaml_path, const std::map<std::string, AnimationParams> &params) const
 {
     /*
-     * TODO: improve error message formatting
+     * TODO: improve error message formatting, should use FileLineHighlighter
      */
 
     try {

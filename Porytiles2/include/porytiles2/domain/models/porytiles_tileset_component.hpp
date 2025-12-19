@@ -81,26 +81,26 @@ class PorytilesTilesetComponent {
         return pals_;
     }
 
-    [[nodiscard]] const std::map<std::string, Animation<Rgba32>> &animations() const
+    [[nodiscard]] const std::map<std::string, Animation<Rgba32>> &anims() const
     {
-        return animations_;
+        return anims_;
     }
 
-    [[nodiscard]] std::map<std::string, Animation<Rgba32>> &animations()
+    [[nodiscard]] std::map<std::string, Animation<Rgba32>> &anims()
     {
-        return animations_;
+        return anims_;
     }
 
-    void add_animation(Animation<Rgba32> anim);
+    void add_anim(Animation<Rgba32> anim);
 
-    [[nodiscard]] bool has_animation(const std::string &name) const
+    [[nodiscard]] bool has_anim(const std::string &name) const
     {
-        return animations_.contains(name);
+        return anims_.contains(name);
     }
 
-    [[nodiscard]] const Animation<Rgba32> &animation(const std::string &name) const
+    [[nodiscard]] const Animation<Rgba32> &anim(const std::string &name) const
     {
-        return animations_.at(name);
+        return anims_.at(name);
     }
 
   private:
@@ -109,7 +109,7 @@ class PorytilesTilesetComponent {
     Image<Rgba32> top_;
     std::map<std::size_t, MetatileAttribute> metatile_attributes_;
     std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> pals_;
-    std::map<std::string, Animation<Rgba32>> animations_;
+    std::map<std::string, Animation<Rgba32>> anims_;
 };
 
 } // namespace porytiles2
