@@ -39,9 +39,6 @@ class TilesetArtifactReader {
     [[nodiscard]] virtual ChainableResult<void> read_porymap_anim_frame(
         Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, std::size_t frame_index) const = 0;
 
-    [[nodiscard]] virtual ChainableResult<void>
-    read_porymap_anim_key_frame(Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name) const = 0;
-
     /**
      * @brief Reads animation parameters from a generated_anim_code.h file into the Porymap component.
      *

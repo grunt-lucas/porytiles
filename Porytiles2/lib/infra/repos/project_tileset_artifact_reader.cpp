@@ -239,40 +239,9 @@ import_porytiles_palette(Tileset &dest, const ArtifactKey &src_key, std::size_t 
 }
 
 /*
- * TODO: the import_x_anim_{key}_frame functions are almost identical. All four cases can be moved to a template method
+ * TODO: the import_x_anim_{key}_frame functions are almost identical. All three cases can be moved to a template method
  * using duck typing, and then we can simply call the correct template from the main loading implementation function.
  */
-ChainableResult<void> import_porymap_anim_key_frame(
-    Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, const PngIndexedImageLoader &loader)
-{
-    auto image_result = loader.load_from_file(src_key.key());
-    if (!image_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{"{}: failed to load Porymap animation key frame", FormatParam{src_key.key(), Style::bold}},
-            image_result};
-    }
-
-    auto tiles = extract_tiles_from_image(*image_result.value());
-    constexpr auto frame_name = "key.png";
-
-    AnimationFrame frame{frame_name, std::move(tiles)};
-
-    // Get or create the animation in the Porymap component
-    auto &porymap_comp = dest.porymap_component();
-    if (!porymap_comp.has_anim(anim_name)) {
-        Animation<IndexPixel> anim{anim_name};
-        porymap_comp.add_anim(std::move(anim));
-    }
-
-    // Add the frame to the animation
-    // Note: frames may be loaded out of order, so we use a simple approach:
-    // ensure the frames vector is large enough and set the frame at the correct index
-    auto &anim = porymap_comp.anims().at(anim_name);
-    anim.key_frame(frame);
-
-    return {};
-}
-
 ChainableResult<void> import_porytiles_anim_key_frame(
     Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, const PngRgbaImageLoader &loader)
 {
@@ -358,7 +327,7 @@ ChainableResult<void> import_porytiles_anim_frame(
     }
 
     auto tiles = extract_tiles_from_image(*image_result.value());
-    const std::string frame_name = pad_two_digits(frame_index);
+    const std::string frame_name = std::to_string(frame_index);
 
     AnimationFrame frame{frame_name, std::move(tiles)};
 
@@ -418,13 +387,6 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_porymap_anim_frame(
     Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, std::size_t frame_index) const
 {
     PT_TRY_CALL_PASS_ERR(import_porymap_anim_frame(dest, src_key, anim_name, frame_index, *png_indexed_loader_), void);
-    return {};
-}
-
-[[nodiscard]] ChainableResult<void> ProjectTilesetArtifactReader::read_porymap_anim_key_frame(
-    Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name) const
-{
-    PT_TRY_CALL_PASS_ERR(import_porymap_anim_key_frame(dest, src_key, anim_name, *png_indexed_loader_), void);
     return {};
 }
 

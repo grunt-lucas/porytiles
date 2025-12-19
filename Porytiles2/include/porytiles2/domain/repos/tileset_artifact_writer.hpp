@@ -76,9 +76,6 @@ class TilesetArtifactWriter {
     [[nodiscard]] virtual ChainableResult<void> write_porymap_anim_frame(
         const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, std::size_t frame_index) = 0;
 
-    [[nodiscard]] virtual ChainableResult<void>
-    write_porymap_anim_key_frame(const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name) = 0;
-
     /**
      * @brief Writes animation C code to a generated_anim_code.h file from the Porymap component.
      *

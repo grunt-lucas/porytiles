@@ -315,12 +315,6 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
     return {};
 }
 
-[[nodiscard]] ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_key_frame(
-    const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name)
-{
-    panic("TODO: implement");
-}
-
 [[nodiscard]] ChainableResult<void>
 ProjectTilesetArtifactWriter::write_generated_anim_code(const ArtifactKey &dest_key, const Tileset &src)
 {
