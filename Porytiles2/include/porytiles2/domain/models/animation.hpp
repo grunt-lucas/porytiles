@@ -73,7 +73,12 @@ class Animation {
         key_frame_ = std::move(key_frame);
     }
 
-    [[nodiscard]] std::vector<AnimationFrame<PixelType>> frames()
+    [[nodiscard]] const std::vector<AnimationFrame<PixelType>> &frames() const
+    {
+        return frames_;
+    }
+
+    [[nodiscard]] std::vector<AnimationFrame<PixelType>> &frames()
     {
         return frames_;
     }
