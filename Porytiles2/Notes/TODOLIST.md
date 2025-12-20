@@ -31,6 +31,9 @@
 
 ## Start building animation system
 - See initial attempt in 2/anim1
+- change to `anim.json` instead of `anim.yaml`
+  - even though it's technical a user config file, since Porytiles overwrites it every time, it's unintuitive for users
+  - JSON is better since comments are disallowed by default and syntax is simpler, users won't be confused when their idiosyncracies get clobbered
 
 ## Start working on secondary tileset compilation
 

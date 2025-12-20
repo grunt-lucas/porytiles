@@ -525,7 +525,25 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_anim_frame(
 [[nodiscard]] ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_anim_key_frame(
     const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name)
 {
-    panic("TODO: implement");
+    // TODO: this duplicates most of the code from write_porytiles_anim_frame
+
+    if (!src.porytiles_component().has_anim(anim_name)) {
+        return FormattableError{"animation '{}' not found in Porytiles component", FormatParam{anim_name, Style::bold}};
+    }
+
+    const auto &anim = src.porytiles_component().anim(anim_name);
+
+    const auto &frame = anim.key_frame();
+    const auto img = tiles_to_image(frame.tiles());
+
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        transaction_dest_path,
+        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        "failed to compute transaction dest path",
+        void);
+
+    // Save as RGBA PNG (Porytiles format)
+    return save_layer_png(*png_rgba_saver_, img, transaction_dest_path);
 }
 
 [[nodiscard]] ChainableResult<void>

@@ -192,4 +192,38 @@ std::string to_string(const std::vector<T> &vec)
     return result;
 }
 
+/**
+ * @brief Convert an input string to PascalCase.
+ *
+ * @param s The string to pascal-ize
+ * @return The pascal-ized string
+ */
+inline std::string to_pascal_case(const std::string &s)
+{
+    if (s.empty()) {
+        return s;
+    }
+
+    std::string result;
+    result.reserve(s.size());
+
+    bool capitalize_next = true;
+    for (const char c : s) {
+        if (c == '_' || c == '-' || c == ' ') {
+            capitalize_next = true;
+        }
+        else {
+            if (capitalize_next) {
+                result += static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
+                capitalize_next = false;
+            }
+            else {
+                result += c;
+            }
+        }
+    }
+
+    return result;
+}
+
 } // namespace porytiles2

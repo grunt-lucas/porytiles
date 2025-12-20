@@ -2,11 +2,12 @@
 
 #include <algorithm>
 #include <cctype>
+#include <ranges>
 #include <sstream>
 
 #include "fmt/format.h"
 
-#include <ranges>
+#include "porytiles2/utilities/string_utils.hpp"
 
 namespace porytiles2 {
 
@@ -22,8 +23,10 @@ ChainableResult<std::string> AnimCodeGenerator::generate(
 
     std::ostringstream out;
 
+    const std::string pascal_tileset_name = to_pascal_case(tileset_name);
+
     // Generate header guard
-    const std::string guard_name = fmt::format("GUARD_GENERATED_ANIM_CODE_{}_H", tileset_name);
+    const std::string guard_name = fmt::format("GUARD_GENERATED_ANIM_CODE_{}_H", pascal_tileset_name);
     out << fmt::format("#ifndef {}\n", guard_name);
     out << fmt::format("#define {}\n\n", guard_name);
 
@@ -39,7 +42,7 @@ ChainableResult<std::string> AnimCodeGenerator::generate(
     out << "// ============================================\n\n";
 
     for (const auto &[anim_name, params] : animations) {
-        out << generate_incbin_statements(tileset_name, tileset_path_from_project_root, anim_name, params);
+        out << generate_incbin_statements(pascal_tileset_name, tileset_path_from_project_root, anim_name, params);
         out << "\n";
     }
 
@@ -49,7 +52,7 @@ ChainableResult<std::string> AnimCodeGenerator::generate(
     out << "// ============================================\n\n";
 
     for (const auto &[anim_name, params] : animations) {
-        out << generate_frame_array(tileset_name, anim_name, params);
+        out << generate_frame_array(pascal_tileset_name, anim_name, params);
         out << "\n";
     }
 
@@ -59,7 +62,7 @@ ChainableResult<std::string> AnimCodeGenerator::generate(
     out << "// ============================================\n\n";
 
     for (const auto &[anim_name, params] : animations) {
-        out << generate_queue_function(tileset_name, anim_name, params);
+        out << generate_queue_function(pascal_tileset_name, anim_name, params);
         out << "\n";
     }
 
@@ -68,7 +71,7 @@ ChainableResult<std::string> AnimCodeGenerator::generate(
     out << "// Driver Function\n";
     out << "// ============================================\n\n";
 
-    out << generate_driver_function(tileset_name, animations);
+    out << generate_driver_function(pascal_tileset_name, animations);
     out << "\n";
 
     // Generate init function
@@ -76,7 +79,7 @@ ChainableResult<std::string> AnimCodeGenerator::generate(
     out << "// Init Function\n";
     out << "// ============================================\n\n";
 
-    out << generate_init_function(tileset_name, animations, is_primary);
+    out << generate_init_function(pascal_tileset_name, animations, is_primary);
 
     // Close header guard
     out << fmt::format("\n#endif // {}\n", guard_name);
@@ -100,13 +103,14 @@ std::string AnimCodeGenerator::generate_incbin_statements(
         const std::string frame_file =
             (tileset_path_from_project_root / "anim" / anim_name / fmt::format("{}.4bpp", frame_idx)).string();
 
-        out << fmt::format(
-            "const u16 gTilesetAnims_PorytilesManaged_{}_{}_{}_Frame{}[] = INCBIN_U16(\"{}\");\n",
+        const auto statement = fmt::format(
+            "const u16 gTilesetAnims_PorytilesManaged_{}_{}_Frame{}[] = INCBIN_U16(\"{}\");\n",
             tileset_name,
             pascal_anim_name,
-            anim_name,
             frame_idx,
             frame_file);
+
+        out << statement;
     }
 
     return out.str();
@@ -125,11 +129,7 @@ std::string AnimCodeGenerator::generate_frame_array(
     for (std::size_t i = 0; i < params.frames().size(); ++i) {
         const std::size_t frame_idx = params.frames()[i];
         out << fmt::format(
-            "    gTilesetAnims_PorytilesManaged_{}_{}_{}_Frame{}",
-            tileset_name,
-            pascal_anim_name,
-            anim_name,
-            frame_idx);
+            "    gTilesetAnims_PorytilesManaged_{}_{}_Frame{}", tileset_name, pascal_anim_name, frame_idx);
         if (i < params.frames().size() - 1) {
             out << ",";
         }
@@ -235,34 +235,6 @@ std::string AnimCodeGenerator::generate_init_function(
     out << "}\n";
 
     return out.str();
-}
-
-std::string AnimCodeGenerator::to_pascal_case(const std::string &name) const
-{
-    if (name.empty()) {
-        return name;
-    }
-
-    std::string result;
-    result.reserve(name.size());
-
-    bool capitalize_next = true;
-    for (char c : name) {
-        if (c == '_' || c == '-' || c == ' ') {
-            capitalize_next = true;
-        }
-        else {
-            if (capitalize_next) {
-                result += static_cast<char>(std::toupper(static_cast<unsigned char>(c)));
-                capitalize_next = false;
-            }
-            else {
-                result += c;
-            }
-        }
-    }
-
-    return result;
 }
 
 std::size_t AnimCodeGenerator::find_max_frame_index(const std::vector<std::size_t> &frames) const

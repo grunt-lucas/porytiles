@@ -49,9 +49,6 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
     [[nodiscard]] ArtifactKey key_for_porymap_anim_frame(
         const std::string &tileset_name, const std::string &anim_name, std::size_t frame_index) const override;
 
-    [[nodiscard]] ArtifactKey
-    key_for_porymap_anim_key_frame(const std::string &tileset_name, const std::string &anim_name) const override;
-
     [[nodiscard]] ArtifactKey key_for_generated_anim_code(const std::string &tileset_name) const override;
 
     /*

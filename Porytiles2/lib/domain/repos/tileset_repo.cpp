@@ -32,7 +32,6 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     /*
      * Porymap artifacts
      */
-    // TODO: fill in the anim artifacts
     auto metatiles_key = key_provider_->key_for_metatiles_bin(tileset.name());
     if (auto result = writer_->write_metatiles_bin(metatiles_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
@@ -63,10 +62,28 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
         }
     }
 
+    for (const auto &anim : tileset.porymap_component().anims() | std::views::values) {
+        for (std::size_t i = 0; i < anim.frame_count(); i++) {
+            const auto frame_key = key_provider_->key_for_porymap_anim_frame(tileset.name(), anim.name(), i);
+            if (auto result = writer_->write_porymap_anim_frame(frame_key, tileset, anim.name(), i);
+                !result.has_value()) {
+                std::ignore = writer_->rollback();
+                auto failed = FormattableError{"{}: save failed", FormatParam{frame_key.key(), Style::bold}};
+                return ChainableResult<void>{failed, result};
+            }
+        }
+    }
+
+    auto generated_anim_code_key = key_provider_->key_for_generated_anim_code(tileset.name());
+    if (auto result = writer_->write_generated_anim_code(generated_anim_code_key, tileset); !result.has_value()) {
+        std::ignore = writer_->rollback();
+        auto failed = FormattableError{"{}: save failed", FormatParam{generated_anim_code_key.key(), Style::bold}};
+        return ChainableResult<void>{failed, result};
+    }
+
     /*
      * Porytiles artifacts
      */
-    // TODO: fill in the override and anim artifacts
     auto bottom_png_key = key_provider_->key_for_bottom_png(tileset.name());
     if (auto result = writer_->write_bottom_png(bottom_png_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
@@ -102,6 +119,33 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
             auto failed = FormattableError{"{}: save failed", FormatParam{pal_key.key(), Style::bold}};
             return ChainableResult<void>{failed, result};
         }
+    }
+
+    for (const auto &anim : tileset.porytiles_component().anims() | std::views::values) {
+        const auto key_frame_key = key_provider_->key_for_porytiles_anim_key_frame(tileset.name(), anim.name());
+        if (auto result = writer_->write_porytiles_anim_key_frame(key_frame_key, tileset, anim.name());
+            !result.has_value()) {
+            std::ignore = writer_->rollback();
+            auto failed = FormattableError{"{}: save failed", FormatParam{key_frame_key.key(), Style::bold}};
+            return ChainableResult<void>{failed, result};
+        }
+
+        for (std::size_t i = 0; i < anim.frame_count(); i++) {
+            const auto frame_key = key_provider_->key_for_porytiles_anim_frame(tileset.name(), anim.name(), i);
+            if (auto result = writer_->write_porytiles_anim_frame(frame_key, tileset, anim.name(), i);
+                !result.has_value()) {
+                std::ignore = writer_->rollback();
+                auto failed = FormattableError{"{}: save failed", FormatParam{frame_key.key(), Style::bold}};
+                return ChainableResult<void>{failed, result};
+            }
+        }
+    }
+
+    auto anim_yaml_key = key_provider_->key_for_anim_yaml(tileset.name());
+    if (auto result = writer_->write_anim_yaml(anim_yaml_key, tileset); !result.has_value()) {
+        std::ignore = writer_->rollback();
+        auto failed = FormattableError{"{}: save failed", FormatParam{anim_yaml_key.key(), Style::bold}};
+        return ChainableResult<void>{failed, result};
     }
 
     // Commit all writes atomically
@@ -242,6 +286,28 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         }
     }
 
+    const auto generated_anim_code_key = key_provider_->key_for_generated_anim_code(tileset->name());
+    if (key_provider_->artifact_exists(generated_anim_code_key)) {
+        const auto result = reader_->read_generated_anim_code(*tileset, generated_anim_code_key);
+        if (!result.has_value()) {
+            return ChainableResult<std::unique_ptr<Tileset>>{
+                FormattableError{
+                    "failed to read artifact '{}'", FormatParam{generated_anim_code_key.key(), Style::bold}},
+                result};
+        }
+    }
+    else {
+        // TODO: this needs to be relative to project root, add handling to the key provider
+        ArtifactKey vanilla_anim_code_key{"src/tileset_anims.c"};
+        const auto result = reader_->read_vanilla_anim_code(*tileset, vanilla_anim_code_key);
+        if (!result.has_value()) {
+            return ChainableResult<std::unique_ptr<Tileset>>{
+                FormattableError{
+                    "{}: failed to read vanilla anim code", FormatParam{vanilla_anim_code_key.key(), Style::bold}},
+                result};
+        }
+    }
+
     /*
      * Porytiles artifacts
      */
@@ -303,7 +369,23 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
 
     const std::set<std::string> porytiles_anims = key_provider_->discover_porytiles_anims(tileset->name());
     for (const auto &anim : porytiles_anims) {
-        // Read frame 00.png
+        // Read key.png
+        auto key_frame_key = key_provider_->key_for_porytiles_anim_key_frame(tileset->name(), anim);
+        if (!key_provider_->artifact_exists(key_frame_key)) {
+            diag_->err(
+                missing_required_artifact_tag,
+                format_->format(missing_required_artifact_msg, FormatParam{key_frame_key.key(), Style::bold}));
+            fail_at_exit = true;
+            continue;
+        }
+        const auto key_frame_result = reader_->read_porytiles_anim_key_frame(*tileset, key_frame_key, anim);
+        if (!key_frame_result.has_value()) {
+            return ChainableResult<std::unique_ptr<Tileset>>{
+                FormattableError{"failed to read artifact '{}'", FormatParam{key_frame_key.key(), Style::bold}},
+                key_frame_result};
+        }
+
+        // Read frame 0.png
         auto frame_0_key = key_provider_->key_for_porytiles_anim_frame(tileset->name(), anim, 0);
         if (!key_provider_->artifact_exists(frame_0_key)) {
             diag_->err(
@@ -341,6 +423,16 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
                     frame_n_result};
             }
             expected_frame++;
+        }
+    }
+
+    const auto anim_yaml_key = key_provider_->key_for_anim_yaml(tileset->name());
+    if (key_provider_->artifact_exists(anim_yaml_key)) {
+        const auto result = reader_->read_anim_yaml(*tileset, anim_yaml_key);
+        if (!result.has_value()) {
+            return ChainableResult<std::unique_ptr<Tileset>>{
+                FormattableError{"failed to read artifact '{}'", FormatParam{anim_yaml_key.key(), Style::bold}},
+                result};
         }
     }
 

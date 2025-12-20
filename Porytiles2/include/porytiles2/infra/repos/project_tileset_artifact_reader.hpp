@@ -59,6 +59,9 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
     [[nodiscard]] ChainableResult<void>
     read_generated_anim_code(Tileset &dest, const ArtifactKey &src_key) const override;
 
+    [[nodiscard]] ChainableResult<void>
+    read_vanilla_anim_code(Tileset &dest, const ArtifactKey &src_key) const override;
+
     /*
      * Porytiles artifacts
      */

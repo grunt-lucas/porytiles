@@ -415,6 +415,31 @@ ProjectTilesetArtifactReader::read_generated_anim_code(Tileset &dest, const Arti
     return {};
 }
 
+[[nodiscard]] ChainableResult<void>
+ProjectTilesetArtifactReader::read_vanilla_anim_code(Tileset &dest, const ArtifactKey &src_key) const
+{
+    auto params_result = anim_code_parser_->parse_vanilla_anims(src_key.key(), dest.name());
+    if (!params_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{"{}: failed to parse vanilla anim code", FormatParam{src_key.key(), Style::bold}},
+            params_result};
+    }
+
+    // Update animation params in the Porymap component
+    for (const auto &[anim_name, params] : params_result.value()) {
+        if (dest.porymap_component().has_anim(anim_name)) {
+            dest.porymap_component().anims().at(anim_name).params(params);
+        }
+        else {
+            // Create a new animation with just the params (frames will be loaded separately)
+            Animation<IndexPixel> anim{anim_name, params};
+            dest.porymap_component().add_anim(std::move(anim));
+        }
+    }
+
+    return {};
+}
+
 /*
  * Porytiles artifacts
  */

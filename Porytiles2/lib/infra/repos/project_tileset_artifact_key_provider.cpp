@@ -31,6 +31,8 @@ const std::filesystem::path metatile_attributes_bin{"metatile_attributes.bin"};
 const std::filesystem::path tiles_png{"tiles.png"};
 const std::filesystem::path porymap_pals{"palettes"};
 const std::filesystem::path anim{"anim"};
+const std::filesystem::path include{"include"};
+const std::filesystem::path generated_anim_code_header{"generated_anim_code.h"};
 
 const std::filesystem::path porytiles_directory{"porytiles"};
 const std::filesystem::path bottom_png{"bottom.png"};
@@ -38,6 +40,8 @@ const std::filesystem::path middle_png{"middle.png"};
 const std::filesystem::path top_png{"top.png"};
 const std::filesystem::path attributes_csv{"attributes.csv"};
 const std::filesystem::path porytiles_pals{"palettes"};
+const std::filesystem::path anim_yaml{"anim.yaml"};
+const std::filesystem::path key_frame{"key.png"};
 const std::filesystem::path config{"porytiles.yaml"};
 const std::filesystem::path local_config{"porytiles.local.yaml"};
 
@@ -80,16 +84,11 @@ ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_frame(
     return ArtifactKey{tileset_path / anim / anim_name / (std::to_string(frame_index) + std::string{".png"})};
 }
 
-[[nodiscard]] ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_key_frame(
-    const std::string &tileset_name, const std::string &anim_name) const
-{
-    panic("TODO: implement");
-}
-
 [[nodiscard]] ArtifactKey
 ProjectTilesetArtifactKeyProvider::key_for_generated_anim_code(const std::string &tileset_name) const
 {
-    panic("TODO: implement");
+    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    return ArtifactKey{tileset_path / include / generated_anim_code_header};
 }
 
 /*
@@ -123,7 +122,7 @@ ArtifactKey
 ProjectTilesetArtifactKeyProvider::key_for_porytiles_pal_n(const std::string &tileset_name, std::size_t index) const
 {
     const auto tileset_path = get_tileset_path(tileset_name, project_root_);
-    return ArtifactKey{tileset_path / porytiles_directory / porytiles_pals / (pal_filename(index))};
+    return ArtifactKey{tileset_path / porytiles_directory / porytiles_pals / pal_filename(index)};
 }
 
 ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_frame(
@@ -131,18 +130,20 @@ ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_frame(
 {
     const auto tileset_path = get_tileset_path(tileset_name, project_root_);
     return ArtifactKey{
-        tileset_path / porytiles_directory / anim / anim_name / (pad_two_digits(frame_index) + std::string{".png"})};
+        tileset_path / porytiles_directory / anim / anim_name / (std::to_string(frame_index) + std::string{".png"})};
 }
 
 [[nodiscard]] ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_key_frame(
     const std::string &tileset_name, const std::string &anim_name) const
 {
-    panic("TODO: implement");
+    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    return ArtifactKey{tileset_path / porytiles_directory / anim / anim_name / key_frame};
 }
 
 [[nodiscard]] ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_anim_yaml(const std::string &tileset_name) const
 {
-    panic("TODO: implement");
+    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    return ArtifactKey{tileset_path / porytiles_directory / anim / anim_yaml};
 }
 
 ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_config(const std::string &tileset_name) const
@@ -191,10 +192,17 @@ std::set<std::string> ProjectTilesetArtifactKeyProvider::discover_porytiles_anim
             continue;
         }
 
-        // Check if 00.png exists (required for Porytiles animations)
-        const auto frame_00_path = entry.path() / "00.png";
-        if (!std::filesystem::exists(frame_00_path)) {
-            // TODO: this is an error condition, an anim folder with no 00.png is invalid
+        // Check if key frame exists (required for Porytiles animations)
+        const auto key_frame_path = entry.path() / key_frame;
+        if (!std::filesystem::exists(key_frame_path)) {
+            // TODO: this is an error condition, an anim folder with no key.png is invalid
+            continue;
+        }
+
+        // Check if 0.png exists (required for Porytiles animations)
+        const auto frame_0_path = entry.path() / "0.png";
+        if (!std::filesystem::exists(frame_0_path)) {
+            // TODO: this is an error condition, an anim folder with no 0.png is invalid
             continue;
         }
 
@@ -225,19 +233,19 @@ std::set<int> ProjectTilesetArtifactKeyProvider::discover_porytiles_anim_frames(
 
         const auto filename = entry.path().filename().string();
 
-        if (filename.length() != 6 || !filename.ends_with(".png")) {
+        if (!filename.ends_with(".png")) {
             // TODO: warn user about stray file in porytiles/anim/anim_name folder
             continue;
         }
 
         // Skip 00.png (frame 0 is required, not discovered), handled in the main discover_anims method
-        if (filename == "00.png") {
+        if (filename == "0.png") {
             continue;
         }
 
-        // Check if it's a valid two-digit number
-        const auto frame_str = filename.substr(0, 2);
-        if (!std::isdigit(frame_str[0]) || !std::isdigit(frame_str[1])) {
+        // Check if it's a valid number
+        const auto frame_str = filename.substr(0, filename.size() - 4); // strip ".png"
+        if (!std::ranges::all_of(frame_str, ::isdigit)) {
             // TODO: warn user about stray file in porytiles/anim/anim_name folder
             continue;
         }

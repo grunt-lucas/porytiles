@@ -144,11 +144,12 @@ Spend some time analyzing the VDests stuff to figure out the best way to handle 
 ## Key Frames
 We'll retain the "key frame" concept.
 However, it will be significantly more intuitive.
-Users will be able to truly just use 0.png tiles to indicate which metatiles should have animated components.
-Our compilation algo is significantly upgraded and can easily accommodate this now without causing a recurrence of:
+Users will still have to provide a "key.png" in the Porytiles component,
+but they should be able to just use a copy of 0.png as the key frame without hitting
 https://github.com/grunt-lucas/porytiles/issues/60
+Our compilation algo is significantly upgraded and can easily accommodate this now without causing a recurrence of this issue.
 
-Compilation algorithm, when in the assign step, can easily detect if it's trying to assign a 0.png tile.
+Compilation algorithm, when in the assign step, can easily detect if it's trying to assign a key frame tile.
 It can then branch into different logic, wherein it figures out which pal will accommodate the full animation, to compute the pal index.
 It will also be able to check where in `TilesPngWorkspace` this anim starts, so it can compute the tile index and offset.
 Finally, it can compare the orientation of the tile it encountered with the original 0.png to compute flip bits.
@@ -186,10 +187,11 @@ data
             │   └── # more palettes ...
             ├── porytiles
             │   ├── anim
+            │   │   ├── anim.yaml
             │   │   └── flower
+            │   │       ├── key.png
             │   │       ├── 0.png
             │   │       └── 1.png
-            │   ├── anim.yaml
             │   ├── bottom.png
             │   ├── middle.png
             │   └── top.png
@@ -333,4 +335,31 @@ static void BlendAnimPalette_BattleDome_FloorLightsNoBlend(u16 timer)
 
 // Porytiles manual user includes:
 #include "data/tilesets/primary/porytiles_anim_example/include/generated_anim_code.h"
+``` 
+
+## Special Case - Vanilla Tilesets With Duplicate Key Frames
+Some vanilla animations, notable Primary General `water`, contain key-frame duplication.
+That is, `tiles.png` contains two completely identical tiles in two different spots within an animated region,
+and the rest of the frame subtiles corresponding to those key frame tiles are distinct.
+
+This means we have a fundamental ambiguity if we simply imported/recompiled according to the above procedure.
+Luckily, we can detect this ambiguity during the import step and mitigate.
+Here is the plan:
+
+The `AnimationDecompiler` should track all key frame tiles globally.
+If it EVER hits a duplicate, we have to enter special handling mode,
+wherein we add custom override blocks to `anim.yaml`. They can look like this:
+
+```yaml
+water:
+  sPrimaryTilesetAnimCounter: 0
+  frame_factor: 16
+  frame_offset: 1
+  frames: [0, 1, 0, 2]
+  overrides:
+    - metatile:
+        id: 22
+        layer: bottom
+        subtile: northwest
+        key_frame_subtile: 2
 ```

@@ -54,6 +54,9 @@ class TilesetArtifactReader {
     [[nodiscard]] virtual ChainableResult<void>
     read_generated_anim_code(Tileset &dest, const ArtifactKey &src_key) const = 0;
 
+    [[nodiscard]] virtual ChainableResult<void>
+    read_vanilla_anim_code(Tileset &dest, const ArtifactKey &src_key) const = 0;
+
     /*
      * Porytiles artifacts
      */

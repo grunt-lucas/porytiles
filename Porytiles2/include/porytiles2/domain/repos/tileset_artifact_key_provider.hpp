@@ -54,9 +54,6 @@ class TilesetArtifactKeyProvider {
     [[nodiscard]] virtual ArtifactKey key_for_porymap_anim_frame(
         const std::string &tileset_name, const std::string &anim_name, std::size_t frame_index) const = 0;
 
-    [[nodiscard]] virtual ArtifactKey
-    key_for_porymap_anim_key_frame(const std::string &tileset_name, const std::string &anim_name) const = 0;
-
     /**
      * @brief Returns the key for the generated_anim_code.h file (Porymap animation C code).
      *

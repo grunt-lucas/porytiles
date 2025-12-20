@@ -92,11 +92,6 @@ class AnimCodeGenerator {
         bool is_primary) const;
 
     /**
-     * @brief Converts an animation name to PascalCase for use in C identifiers.
-     */
-    [[nodiscard]] std::string to_pascal_case(const std::string &name) const;
-
-    /**
      * @brief Finds the maximum frame index referenced in the frames array.
      */
     [[nodiscard]] std::size_t find_max_frame_index(const std::vector<std::size_t> &frames) const;

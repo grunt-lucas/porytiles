@@ -19,13 +19,13 @@ AnimCodeParser::parse_generated_header(const std::filesystem::path &header_path)
 {
     if (!std::filesystem::exists(header_path)) {
         return FormattableError{
-            "generated animation header not found: {}", FormatParam{header_path.string(), Style::bold}};
+            "{}: generated animation header not found", FormatParam{header_path.string(), Style::bold}};
     }
 
     std::ifstream file{header_path};
     if (!file) {
         return FormattableError{
-            "failed to open generated animation header: {}", FormatParam{header_path.string(), Style::bold}};
+            "{}: failed to open generated animation header", FormatParam{header_path.string(), Style::bold}};
     }
 
     std::ostringstream buffer;
@@ -94,7 +94,7 @@ AnimCodeParser::parse_vanilla_anims(const std::filesystem::path &anims_c_path, c
     // Look for QueueAnimTiles functions matching this tileset
     // Pattern: QueueAnimTiles_TilesetName_AnimName
     std::regex queue_func_regex(
-        fmt::format(R"(QueueAnimTiles_{}_([\w]+)\s*\()", tileset_name), std::regex_constants::ECMAScript);
+        fmt::format(R"(static void QueueAnimTiles_{}_([\w]+)\s*\()", tileset_name), std::regex_constants::ECMAScript);
 
     std::set<std::string> found_anims;
     std::sregex_iterator iter(content.begin(), content.end(), queue_func_regex);

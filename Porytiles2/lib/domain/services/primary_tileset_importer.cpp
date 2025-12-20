@@ -10,6 +10,7 @@
 #include "porytiles2/domain/algorithms/palette_matchers.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
+#include "porytiles2/domain/services/animation_decompiler.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
 #include "porytiles2/domain/services/metatile_decompiler.hpp"
@@ -49,12 +50,30 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetImporter::import(const T
         "failed to decompile Porymap component for tileset " + tileset.name(),
         std::unique_ptr<Tileset>);
 
-    /*
-     * TODO: The resulting PorytilesTilesetComponent may be incomplete. E.g., the user may have specified porytiles
-     * pals; they will be present on disk. We don't want to clobber them when saving the decompiled component. So we'll
-     * need to pull them from the original component and inject them into this one before persisting.
-     */
     auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>();
+    std::size_t i = 0;
+    for (const auto &pal : tileset.porytiles_component().pals()) {
+        // Copy over Porytiles pals
+        if (pal.has_value()) {
+            new_porytiles_component->set_pal(i, pal.value());
+        }
+        i++;
+    }
+
+    // Decompile animations from Porymap component to Porytiles component
+    if (const auto &porymap_animations = tileset.porymap_component().anims(); !porymap_animations.empty()) {
+        const auto &metatiles_bin = tileset.porymap_component().metatiles_bin();
+
+        for (const auto &index_pixel_anim : porymap_animations | std::views::values) {
+            AnimationDecompiler anim_decompiler{};
+            // Decompile the IndexPixel animation to Rgba32 format
+            // Palette index is recovered from metatile data by scanning for animation tile references
+            Animation<Rgba32> rgba_anim = anim_decompiler.decompile_animation(
+                index_pixel_anim, tileset.porymap_component().pals(), metatiles_bin, extrinsic_transparency);
+
+            new_porytiles_component->add_anim(std::move(rgba_anim));
+        }
+    }
 
     // Convert metatiles into three layer images
     LayerImageMetatileizer<Rgba32> metatileizer{};
