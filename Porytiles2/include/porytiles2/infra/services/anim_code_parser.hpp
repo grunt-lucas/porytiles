@@ -47,18 +47,6 @@ class AnimCodeParser {
     parse_generated_header(const std::filesystem::path &header_path) const;
 
     /**
-     * @brief Parses a Porytiles-generated animation header from a string.
-     *
-     * @details
-     * Same as parse_generated_header but takes the file content as a string. Useful for testing.
-     *
-     * @param content The header file content
-     * @return Map of animation names to their parsed parameters, or error
-     */
-    [[nodiscard]] ChainableResult<std::map<std::string, AnimationParams>>
-    parse_generated_header_content(const std::string &content) const;
-
-    /**
      * @brief Parses vanilla pokeemerald tileset animation code.
      *
      * @details
@@ -74,36 +62,6 @@ class AnimCodeParser {
      */
     [[nodiscard]] ChainableResult<std::map<std::string, AnimationParams>>
     parse_vanilla_anims(const std::filesystem::path &anims_c_path, const std::string &tileset_name) const;
-
-  private:
-    /**
-     * @brief Extracts animation names from INCBIN statements in the content.
-     */
-    [[nodiscard]] std::vector<std::string> extract_animation_names(const std::string &content) const;
-
-    /**
-     * @brief Parses tile_offset from a QueueAnimTiles function.
-     */
-    [[nodiscard]] std::optional<std::size_t>
-    parse_tile_offset(const std::string &content, const std::string &anim_name) const;
-
-    /**
-     * @brief Parses tile_count from a QueueAnimTiles function.
-     */
-    [[nodiscard]] std::optional<std::size_t>
-    parse_tile_count(const std::string &content, const std::string &anim_name) const;
-
-    /**
-     * @brief Parses frame_factor and frame_offset from driver function.
-     */
-    [[nodiscard]] std::pair<std::size_t, std::size_t>
-    parse_frame_timing(const std::string &content, const std::string &anim_name) const;
-
-    /**
-     * @brief Parses the frames array from a frame pointer array definition.
-     */
-    [[nodiscard]] std::vector<std::size_t>
-    parse_frames_array(const std::string &content, const std::string &anim_name) const;
 };
 
 } // namespace porytiles2
