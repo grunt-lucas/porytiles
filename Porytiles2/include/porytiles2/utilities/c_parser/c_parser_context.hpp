@@ -70,7 +70,7 @@ class CParserContext {
      * @param message Error message describing the problem
      * @return FormattableError with rich source context
      */
-    [[nodiscard]] FormattableError make_error(SourcePosition pos, std::string message) const;
+    [[nodiscard]] FormattableError make_error(SourcePosition pos, const std::string &message) const;
 
     /**
      * @brief Returns the file lines held by this context.

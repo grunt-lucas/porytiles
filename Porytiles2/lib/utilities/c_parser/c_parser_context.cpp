@@ -27,7 +27,7 @@ CParserContext::CParserContext(
 {
 }
 
-FormattableError CParserContext::make_error(SourcePosition pos, std::string message) const
+FormattableError CParserContext::make_error(SourcePosition pos, const std::string &message) const
 {
     std::vector<std::string> lines;
 
@@ -40,7 +40,7 @@ FormattableError CParserContext::make_error(SourcePosition pos, std::string mess
         const std::size_t line_idx = pos.line - 1;
         const std::string &target_line = (*file_lines_)[line_idx];
 
-        FileHighlightPrinter printer{format_};
+        const FileHighlightPrinter printer{format_};
 
         // Determine column index for highlighting
         if (pos.column > 0 && pos.column <= target_line.size()) {
@@ -53,14 +53,14 @@ FormattableError CParserContext::make_error(SourcePosition pos, std::string mess
         }
         else if (!target_line.empty()) {
             // Column out of bounds but line is valid - highlight the line without column caret
-            auto highlight_lines = printer.print(*file_lines_, std::vector<std::size_t>{line_idx});
+            auto highlight_lines = printer.print(*file_lines_, std::vector{line_idx});
             for (auto &hl : highlight_lines) {
                 lines.push_back(std::move(hl));
             }
         }
         else {
             // Empty line - just highlight the line
-            auto highlight_lines = printer.print(*file_lines_, std::vector<std::size_t>{line_idx});
+            auto highlight_lines = printer.print(*file_lines_, std::vector{line_idx});
             for (auto &hl : highlight_lines) {
                 lines.push_back(std::move(hl));
             }

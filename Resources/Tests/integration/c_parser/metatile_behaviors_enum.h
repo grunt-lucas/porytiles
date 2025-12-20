@@ -1,11 +1,6 @@
 #ifndef GUARD_METATILE_BEHAVIORS_H
 #define GUARD_METATILE_BEHAVIORS_H
 
-#define MB_FOO 1024
-#define MB_BAR 1025
-#define MB_BAZ 1025 + 1
-#define MB_BAT 1024 * 2
-
 enum {
     MB_NORMAL,
     MB_SECRET_BASE_WALL,
