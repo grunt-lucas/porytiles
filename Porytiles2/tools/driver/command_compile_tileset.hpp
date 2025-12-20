@@ -89,7 +89,7 @@ class CompileTilesetCommand final : public Command {
         JascPalLoader jasc_loader{text_formatter};
         JascPalSaver jasc_saver{text_formatter};
         AnimYamlParser anim_yaml_parser{};
-        AnimCodeParser anim_code_parser{};
+        AnimCodeParser anim_code_parser{text_formatter};
         AnimCodeGenerator anim_code_generator{};
 
         // Setup primary compiler

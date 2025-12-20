@@ -8,9 +8,11 @@
 
 #include "gsl/pointers"
 
+#include "porytiles2/utilities/c_parser/array_declaration.hpp"
 #include "porytiles2/utilities/c_parser/c_parser_context.hpp"
 #include "porytiles2/utilities/c_parser/define_statement.hpp"
 #include "porytiles2/utilities/c_parser/enum_declaration.hpp"
+#include "porytiles2/utilities/c_parser/function_definition.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 
@@ -87,6 +89,52 @@ class CParserDriver {
      * @return A vector of EnumDeclaration on success, or an error chain on failure
      */
     [[nodiscard]] ChainableResult<std::vector<EnumDeclaration>> parse_enums();
+
+    /**
+     * @brief Parses all pointer array declarations from the file.
+     *
+     * @details
+     * Loads the file (if not already loaded), tokenizes it, and extracts all pointer array declarations. Returns a
+     * vector of ArrayDeclaration objects containing the array names and their initializer elements.
+     *
+     * This is used by AnimCodeParser to extract animation frame arrays like:
+     * @code
+     * const u16 *const gTilesetAnims_General_Flower[] = {
+     *     gTilesetAnims_General_Flower_Frame0,
+     *     gTilesetAnims_General_Flower_Frame1
+     * };
+     * @endcode
+     *
+     * On error (file not found, lexer error, parser error), returns a ChainableResult containing a FormattableError
+     * with multi-line source context highlighting.
+     *
+     * @return A vector of ArrayDeclaration on success, or an error chain on failure
+     */
+    [[nodiscard]] ChainableResult<std::vector<ArrayDeclaration>> parse_pointer_arrays();
+
+    /**
+     * @brief Parses function definitions from the file.
+     *
+     * @details
+     * Loads the file (if not already loaded), tokenizes it, and extracts function definitions. Returns a vector of
+     * FunctionDefinition objects containing the function names and body tokens.
+     *
+     * This is used by AnimCodeParser to extract queue and driver functions like:
+     * @code
+     * static void QueueAnimTiles_General_Flower(u16 timer) {
+     *     AppendTilesetAnimToBuffer(..., TILE_OFFSET_4BPP(12), 4 * TILE_SIZE_4BPP);
+     * }
+     * @endcode
+     *
+     * On error (file not found, lexer error, parser error), returns a ChainableResult containing a FormattableError
+     * with multi-line source context highlighting.
+     *
+     * @param name_prefix Optional prefix to filter function names. If provided, only functions whose names start with
+     *        this prefix are returned. For example, "QueueAnimTiles_" would match only queue functions.
+     * @return A vector of FunctionDefinition on success, or an error chain on failure
+     */
+    [[nodiscard]] ChainableResult<std::vector<FunctionDefinition>>
+    parse_functions(const std::optional<std::string> &name_prefix = std::nullopt);
 
     /**
      * @brief Finds a specific #define statement by name.

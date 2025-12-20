@@ -128,6 +128,73 @@ ChainableResult<std::vector<EnumDeclaration>> CParserDriver::parse_enums()
     return std::move(parse_result).value();
 }
 
+ChainableResult<std::vector<ArrayDeclaration>> CParserDriver::parse_pointer_arrays()
+{
+    auto load_result = ensure_loaded();
+    if (!load_result.has_value()) {
+        return ChainableResult<std::vector<ArrayDeclaration>>{
+            FormattableError{
+                format_->format("{}: failed to parse pointer arrays", FormatParam{file_path_.string(), Style::bold})},
+            load_result};
+    }
+
+    // Lex the content
+    Lexer lexer{format_, content_, context_.get()};
+    auto lex_result = lexer.lex();
+    if (!lex_result.has_value()) {
+        return ChainableResult<std::vector<ArrayDeclaration>>{
+            FormattableError{
+                format_->format("{}: failed to parse pointer arrays", FormatParam{file_path_.string(), Style::bold})},
+            lex_result};
+    }
+
+    // Parse the tokens
+    Parser parser{format_, std::move(lex_result).value(), context_.get()};
+    auto parse_result = parser.parse_pointer_arrays();
+    if (!parse_result.has_value()) {
+        return ChainableResult<std::vector<ArrayDeclaration>>{
+            FormattableError{
+                format_->format("{}: failed to parse pointer arrays", FormatParam{file_path_.string(), Style::bold})},
+            parse_result};
+    }
+
+    return std::move(parse_result).value();
+}
+
+ChainableResult<std::vector<FunctionDefinition>>
+CParserDriver::parse_functions(const std::optional<std::string> &name_prefix)
+{
+    auto load_result = ensure_loaded();
+    if (!load_result.has_value()) {
+        return ChainableResult<std::vector<FunctionDefinition>>{
+            FormattableError{
+                format_->format("{}: failed to parse functions", FormatParam{file_path_.string(), Style::bold})},
+            load_result};
+    }
+
+    // Lex the content
+    Lexer lexer{format_, content_, context_.get()};
+    auto lex_result = lexer.lex();
+    if (!lex_result.has_value()) {
+        return ChainableResult<std::vector<FunctionDefinition>>{
+            FormattableError{
+                format_->format("{}: failed to parse functions", FormatParam{file_path_.string(), Style::bold})},
+            lex_result};
+    }
+
+    // Parse the tokens
+    Parser parser{format_, std::move(lex_result).value(), context_.get()};
+    auto parse_result = parser.parse_functions(name_prefix);
+    if (!parse_result.has_value()) {
+        return ChainableResult<std::vector<FunctionDefinition>>{
+            FormattableError{
+                format_->format("{}: failed to parse functions", FormatParam{file_path_.string(), Style::bold})},
+            parse_result};
+    }
+
+    return std::move(parse_result).value();
+}
+
 ChainableResult<std::optional<DefineStatement>> CParserDriver::find_define(const std::string &define_name)
 {
     // Ensure defines are cached

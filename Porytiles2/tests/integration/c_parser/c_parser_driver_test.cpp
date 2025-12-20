@@ -378,5 +378,175 @@ enum { C, D };
     EXPECT_EQ(enums_result.value().size(), 2);
 }
 
+// ============================================================================
+// Pointer Array Parsing Tests
+// ============================================================================
+
+TEST_F(CParserDriverTests, ParsePointerArraysFromGeneratedHeader)
+{
+    auto file_path = test_resource_path("Tests/integration/c_parser/generated_anim_code.h");
+    CParserDriver driver{file_path, &formatter_};
+
+    auto result = driver.parse_pointer_arrays();
+    ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
+
+    const auto &arrays = result.value();
+    // Should have 2 frame pointer arrays: Flower and Water
+    EXPECT_EQ(arrays.size(), 2);
+
+    // Find Flower array
+    auto flower_it = std::find_if(arrays.begin(), arrays.end(), [](const ArrayDeclaration &arr) {
+        return arr.name() == "gTilesetAnims_PorytilesManaged_General_Flower";
+    });
+    ASSERT_NE(flower_it, arrays.end());
+    EXPECT_EQ(flower_it->elements().size(), 4); // Frame0, Frame1, Frame0, Frame2
+
+    // Find Water array
+    auto water_it = std::find_if(arrays.begin(), arrays.end(), [](const ArrayDeclaration &arr) {
+        return arr.name() == "gTilesetAnims_PorytilesManaged_General_Water";
+    });
+    ASSERT_NE(water_it, arrays.end());
+    EXPECT_EQ(water_it->elements().size(), 5); // Frame0, Frame1, Frame2, Frame3, Frame4
+}
+
+TEST_F(CParserDriverTests, ParsePointerArraysFromTempFile)
+{
+    auto temp_path = create_temp_file(R"(
+const u16 *const myArray[] = {
+    myArray_Frame0,
+    myArray_Frame1,
+    myArray_Frame2
+};
+)");
+    CParserDriver driver{temp_path, &formatter_};
+
+    auto result = driver.parse_pointer_arrays();
+    ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
+
+    const auto &arrays = result.value();
+    ASSERT_EQ(arrays.size(), 1);
+    EXPECT_EQ(arrays[0].name(), "myArray");
+    EXPECT_EQ(arrays[0].elements().size(), 3);
+    EXPECT_EQ(arrays[0].elements()[0], "myArray_Frame0");
+    EXPECT_EQ(arrays[0].elements()[1], "myArray_Frame1");
+    EXPECT_EQ(arrays[0].elements()[2], "myArray_Frame2");
+}
+
+TEST_F(CParserDriverTests, ParsePointerArraysNonExistentFileReturnsError)
+{
+    CParserDriver driver{"/nonexistent/path/to/file.h", &formatter_};
+
+    auto result = driver.parse_pointer_arrays();
+    EXPECT_FALSE(result.has_value());
+
+    std::string error_text = get_all_error_text(result);
+    EXPECT_NE(error_text.find("file not found"), std::string::npos);
+}
+
+// ============================================================================
+// Function Parsing Tests
+// ============================================================================
+
+TEST_F(CParserDriverTests, ParseFunctionsFromGeneratedHeader)
+{
+    auto file_path = test_resource_path("Tests/integration/c_parser/generated_anim_code.h");
+    CParserDriver driver{file_path, &formatter_};
+
+    auto result = driver.parse_functions();
+    ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
+
+    const auto &functions = result.value();
+    // Should have at least 5 functions: 2 QueueAnimTiles, 1 driver, 1 Init, possibly more
+    EXPECT_GE(functions.size(), 4);
+
+    // Find QueueAnimTiles_PorytilesManaged_General_Flower
+    auto flower_it = std::find_if(functions.begin(), functions.end(), [](const FunctionDefinition &func) {
+        return func.name() == "QueueAnimTiles_PorytilesManaged_General_Flower";
+    });
+    ASSERT_NE(flower_it, functions.end());
+    EXPECT_FALSE(flower_it->body_tokens().empty());
+}
+
+TEST_F(CParserDriverTests, ParseFunctionsWithPrefixFilter)
+{
+    auto file_path = test_resource_path("Tests/integration/c_parser/generated_anim_code.h");
+    CParserDriver driver{file_path, &formatter_};
+
+    auto result = driver.parse_functions("QueueAnimTiles_");
+    ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
+
+    const auto &functions = result.value();
+    // Should have exactly 2 QueueAnimTiles functions
+    EXPECT_EQ(functions.size(), 2);
+
+    // All should have QueueAnimTiles_ prefix
+    for (const auto &func : functions) {
+        EXPECT_TRUE(func.name().starts_with("QueueAnimTiles_"));
+    }
+}
+
+TEST_F(CParserDriverTests, ParseFunctionsFromTempFile)
+{
+    auto temp_path = create_temp_file(R"(
+static void funcA(int x) {
+    int y = x + 1;
+}
+
+void funcB(void) {
+    funcA(5);
+}
+)");
+    CParserDriver driver{temp_path, &formatter_};
+
+    auto result = driver.parse_functions();
+    ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
+
+    const auto &functions = result.value();
+    ASSERT_EQ(functions.size(), 2);
+    EXPECT_EQ(functions[0].name(), "funcA");
+    EXPECT_EQ(functions[1].name(), "funcB");
+}
+
+TEST_F(CParserDriverTests, ParseFunctionsNonExistentFileReturnsError)
+{
+    CParserDriver driver{"/nonexistent/path/to/file.h", &formatter_};
+
+    auto result = driver.parse_functions();
+    EXPECT_FALSE(result.has_value());
+
+    std::string error_text = get_all_error_text(result);
+    EXPECT_NE(error_text.find("file not found"), std::string::npos);
+}
+
+TEST_F(CParserDriverTests, ParseFunctionBodyContainsExpectedTokens)
+{
+    auto file_path = test_resource_path("Tests/integration/c_parser/generated_anim_code.h");
+    CParserDriver driver{file_path, &formatter_};
+
+    auto result = driver.parse_functions("QueueAnimTiles_PorytilesManaged_General_Flower");
+    ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
+
+    const auto &functions = result.value();
+    ASSERT_EQ(functions.size(), 1);
+
+    const auto &body = functions[0].body_tokens();
+
+    // Should contain TILE_OFFSET_4BPP identifier
+    bool found_tile_offset = false;
+    bool found_12 = false;
+    for (std::size_t i = 0; i < body.size(); ++i) {
+        if (body[i].is(TokenType::identifier) && body[i].text() == "TILE_OFFSET_4BPP") {
+            found_tile_offset = true;
+            // Next token after ( should be 12
+            if (i + 2 < body.size() && body[i + 1].is(TokenType::left_paren) &&
+                body[i + 2].is(TokenType::integer_literal) && body[i + 2].int_value() == 12) {
+                found_12 = true;
+            }
+        }
+    }
+    EXPECT_TRUE(found_tile_offset) << "Expected to find TILE_OFFSET_4BPP in function body";
+    EXPECT_TRUE(found_12) << "Expected to find TILE_OFFSET_4BPP(12) in function body";
+}
+
 } // namespace
 } // namespace porytiles2

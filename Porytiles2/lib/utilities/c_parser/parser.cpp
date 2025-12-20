@@ -7,6 +7,123 @@
 
 namespace porytiles2 {
 
+namespace {
+
+/**
+ * @brief Skips tokens until finding a matching closing brace, handling nested braces.
+ *
+ * @param tokens The token vector
+ * @param start Position of the opening brace
+ * @return Position after the closing brace, or tokens.size() if not found
+ */
+[[nodiscard]] std::size_t skip_balanced_braces(const std::vector<Token> &tokens, std::size_t start)
+{
+    if (start >= tokens.size() || !tokens[start].is(TokenType::left_brace)) {
+        return start;
+    }
+
+    std::size_t pos = start + 1;
+    int depth = 1;
+
+    while (pos < tokens.size() && depth > 0) {
+        if (tokens[pos].is(TokenType::left_brace)) {
+            ++depth;
+        }
+        else if (tokens[pos].is(TokenType::right_brace)) {
+            --depth;
+        }
+        ++pos;
+    }
+
+    return pos;
+}
+
+/**
+ * @brief Collects all tokens between braces, handling nested braces.
+ *
+ * @param tokens The token vector
+ * @param start Position of the opening brace
+ * @return Vector of tokens between the braces (exclusive of braces themselves)
+ */
+[[nodiscard]] std::vector<Token> collect_brace_contents(const std::vector<Token> &tokens, std::size_t start)
+{
+    std::vector<Token> contents;
+
+    if (start >= tokens.size() || !tokens[start].is(TokenType::left_brace)) {
+        return contents;
+    }
+
+    std::size_t pos = start + 1;
+    int depth = 1;
+
+    while (pos < tokens.size() && depth > 0) {
+        if (tokens[pos].is(TokenType::left_brace)) {
+            ++depth;
+        }
+        else if (tokens[pos].is(TokenType::right_brace)) {
+            --depth;
+            if (depth == 0) {
+                break;
+            }
+        }
+        contents.push_back(tokens[pos]);
+        ++pos;
+    }
+
+    return contents;
+}
+
+/**
+ * @brief Extracts identifier names from a comma-separated list in brace contents.
+ *
+ * @param brace_contents Tokens from inside the braces
+ * @return Vector of identifier names in order
+ */
+[[nodiscard]] std::vector<std::string> extract_identifier_elements(const std::vector<Token> &brace_contents)
+{
+    std::vector<std::string> elements;
+
+    for (const auto &token : brace_contents) {
+        if (token.is(TokenType::identifier)) {
+            elements.push_back(token.text());
+        }
+        // Skip commas, newlines, and other tokens
+    }
+
+    return elements;
+}
+
+/**
+ * @brief Skips tokens until finding a matching closing parenthesis.
+ *
+ * @param tokens The token vector
+ * @param start Position of the opening parenthesis
+ * @return Position after the closing parenthesis, or tokens.size() if not found
+ */
+[[nodiscard]] std::size_t skip_balanced_parens(const std::vector<Token> &tokens, std::size_t start)
+{
+    if (start >= tokens.size() || !tokens[start].is(TokenType::left_paren)) {
+        return start;
+    }
+
+    std::size_t pos = start + 1;
+    int depth = 1;
+
+    while (pos < tokens.size() && depth > 0) {
+        if (tokens[pos].is(TokenType::left_paren)) {
+            ++depth;
+        }
+        else if (tokens[pos].is(TokenType::right_paren)) {
+            --depth;
+        }
+        ++pos;
+    }
+
+    return pos;
+}
+
+} // namespace
+
 FormattableError Parser::make_error(SourcePosition pos, std::string message) const
 {
     if (context_ != nullptr) {
@@ -626,6 +743,194 @@ bool Parser::is_unary_operator(TokenType type) const
     default:
         return false;
     }
+}
+
+ChainableResult<std::vector<ArrayDeclaration>> Parser::parse_pointer_arrays()
+{
+    std::vector<ArrayDeclaration> arrays;
+
+    // Reset position to beginning
+    current_ = 0;
+
+    while (!is_at_end()) {
+        // Skip newlines
+        while (check(TokenType::newline)) {
+            advance();
+        }
+
+        if (is_at_end()) {
+            break;
+        }
+
+        // Look for pattern: [const] TYPE * [const] IDENTIFIER [] = { ... }
+        // We need to find an identifier followed by [] = {
+        // Start by looking for an identifier that could be an array name
+
+        std::size_t scan_start = current_;
+
+        // Skip 'const' if present
+        if (check(TokenType::identifier) && peek().text() == "const") {
+            advance();
+        }
+
+        // Skip type identifier (e.g., u16, int, etc.)
+        if (check(TokenType::identifier)) {
+            advance();
+        }
+        else {
+            // Not a declaration, skip this token
+            if (current_ == scan_start) {
+                advance();
+            }
+            continue;
+        }
+
+        // Look for * (pointer)
+        if (!check(TokenType::star)) {
+            continue;
+        }
+        advance(); // consume *
+
+        // Skip 'const' if present after *
+        if (check(TokenType::identifier) && peek().text() == "const") {
+            advance();
+        }
+
+        // Now we should have the array name identifier
+        if (!check(TokenType::identifier)) {
+            continue;
+        }
+
+        std::string array_name = peek().text();
+        SourcePosition name_pos = peek().position();
+        advance(); // consume identifier
+
+        // Look for []
+        if (!check(TokenType::left_bracket)) {
+            continue;
+        }
+        advance(); // consume [
+
+        if (!check(TokenType::right_bracket)) {
+            continue;
+        }
+        advance(); // consume ]
+
+        // Look for =
+        if (!check(TokenType::equal)) {
+            continue;
+        }
+        advance(); // consume =
+
+        // Skip any newlines before {
+        while (check(TokenType::newline)) {
+            advance();
+        }
+
+        // Look for {
+        if (!check(TokenType::left_brace)) {
+            continue;
+        }
+
+        // Found a pointer array declaration - extract elements
+        std::vector<Token> brace_contents = collect_brace_contents(tokens_, current_);
+        std::vector<std::string> elements = extract_identifier_elements(brace_contents);
+
+        // Skip past the closing brace
+        current_ = skip_balanced_braces(tokens_, current_);
+
+        // Skip optional semicolon
+        if (check(TokenType::semicolon)) {
+            advance();
+        }
+
+        arrays.emplace_back(std::move(array_name), std::move(elements), name_pos);
+    }
+
+    return arrays;
+}
+
+ChainableResult<std::vector<FunctionDefinition>> Parser::parse_functions(const std::optional<std::string> &name_prefix)
+{
+    std::vector<FunctionDefinition> functions;
+
+    // Reset position to beginning
+    current_ = 0;
+
+    while (!is_at_end()) {
+        // Skip newlines
+        while (check(TokenType::newline)) {
+            advance();
+        }
+
+        if (is_at_end()) {
+            break;
+        }
+
+        // Look for pattern: [static] TYPE IDENTIFIER ( params ) { body }
+        std::size_t scan_start = current_;
+
+        // Skip 'static' if present
+        if (check(TokenType::identifier) && peek().text() == "static") {
+            advance();
+        }
+
+        // Skip return type identifier (e.g., void, int, etc.)
+        if (check(TokenType::identifier)) {
+            advance();
+        }
+        else {
+            // Not a function, skip this token
+            if (current_ == scan_start) {
+                advance();
+            }
+            continue;
+        }
+
+        // Now we should have the function name identifier
+        if (!check(TokenType::identifier)) {
+            continue;
+        }
+
+        std::string func_name = peek().text();
+        SourcePosition name_pos = peek().position();
+        advance(); // consume identifier
+
+        // Look for (
+        if (!check(TokenType::left_paren)) {
+            continue;
+        }
+
+        // Skip past the parameter list
+        current_ = skip_balanced_parens(tokens_, current_);
+
+        // Skip any newlines before {
+        while (check(TokenType::newline)) {
+            advance();
+        }
+
+        // Look for {
+        if (!check(TokenType::left_brace)) {
+            continue;
+        }
+
+        // Found a function definition - extract body tokens
+        std::vector<Token> body_tokens = collect_brace_contents(tokens_, current_);
+
+        // Skip past the closing brace
+        current_ = skip_balanced_braces(tokens_, current_);
+
+        // Apply name prefix filter if provided
+        if (name_prefix.has_value()) {
+            if (!func_name.starts_with(name_prefix.value())) {
+                continue;
+            }
+        }
+
+        functions.emplace_back(std::move(func_name), std::move(body_tokens), name_pos);
+    }
+
+    return functions;
 }
 
 } // namespace porytiles2

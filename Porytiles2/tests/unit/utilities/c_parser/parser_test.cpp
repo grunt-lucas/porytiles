@@ -34,6 +34,29 @@ class ParserTests : public ::testing::Test {
         return parser.parse_enums();
     }
 
+    [[nodiscard]] ChainableResult<std::vector<ArrayDeclaration>> parse_pointer_arrays(const std::string &source)
+    {
+        Lexer lexer{&formatter_, source};
+        auto tokens_result = lexer.lex();
+        if (!tokens_result.has_value()) {
+            return ChainableResult<std::vector<ArrayDeclaration>>{tokens_result};
+        }
+        Parser parser{&formatter_, std::move(tokens_result).value()};
+        return parser.parse_pointer_arrays();
+    }
+
+    [[nodiscard]] ChainableResult<std::vector<FunctionDefinition>>
+    parse_functions(const std::string &source, const std::optional<std::string> &prefix = std::nullopt)
+    {
+        Lexer lexer{&formatter_, source};
+        auto tokens_result = lexer.lex();
+        if (!tokens_result.has_value()) {
+            return ChainableResult<std::vector<FunctionDefinition>>{tokens_result};
+        }
+        Parser parser{&formatter_, std::move(tokens_result).value()};
+        return parser.parse_functions(prefix);
+    }
+
     template <typename T>
     [[nodiscard]] std::string get_all_error_text(const ChainableResult<T> &result)
     {
@@ -599,6 +622,240 @@ TEST_F(ParserTests, EnumMissingClosingBraceErrorPosition)
     EXPECT_NE(error_text.find("expected '}' to close enum"), std::string::npos);
     // Error should point to EOF on line 1
     EXPECT_NE(error_text.find("1:"), std::string::npos);
+}
+
+// ============================================================================
+// Pointer Array Parsing Tests
+// ============================================================================
+
+TEST_F(ParserTests, ParsePointerArraysEmptyInput)
+{
+    auto result = parse_pointer_arrays("");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(result.value().empty());
+}
+
+TEST_F(ParserTests, ParseSimplePointerArray)
+{
+    auto result = parse_pointer_arrays("const u16 *const myArray[] = { elem1, elem2, elem3 };");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+
+    const auto &arr = result.value()[0];
+    EXPECT_EQ(arr.name(), "myArray");
+    ASSERT_EQ(arr.elements().size(), 3);
+    EXPECT_EQ(arr.elements()[0], "elem1");
+    EXPECT_EQ(arr.elements()[1], "elem2");
+    EXPECT_EQ(arr.elements()[2], "elem3");
+}
+
+TEST_F(ParserTests, ParsePointerArrayWithoutFirstConst)
+{
+    auto result = parse_pointer_arrays("u16 *const myArray[] = { elem1 };");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].name(), "myArray");
+}
+
+TEST_F(ParserTests, ParsePointerArrayWithoutSecondConst)
+{
+    auto result = parse_pointer_arrays("const u16 *myArray[] = { elem1 };");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].name(), "myArray");
+}
+
+TEST_F(ParserTests, ParsePointerArrayWithNewlines)
+{
+    auto result = parse_pointer_arrays(R"(
+const u16 *const gTilesetAnims_General_Flower[] = {
+    gTilesetAnims_General_Flower_Frame0,
+    gTilesetAnims_General_Flower_Frame1,
+    gTilesetAnims_General_Flower_Frame2
+};
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+
+    const auto &arr = result.value()[0];
+    EXPECT_EQ(arr.name(), "gTilesetAnims_General_Flower");
+    ASSERT_EQ(arr.elements().size(), 3);
+    EXPECT_EQ(arr.elements()[0], "gTilesetAnims_General_Flower_Frame0");
+    EXPECT_EQ(arr.elements()[1], "gTilesetAnims_General_Flower_Frame1");
+    EXPECT_EQ(arr.elements()[2], "gTilesetAnims_General_Flower_Frame2");
+}
+
+TEST_F(ParserTests, ParseMultiplePointerArrays)
+{
+    auto result = parse_pointer_arrays(R"(
+const u16 *const arrayA[] = { a1, a2 };
+const u16 *const arrayB[] = { b1, b2, b3 };
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 2);
+
+    EXPECT_EQ(result.value()[0].name(), "arrayA");
+    EXPECT_EQ(result.value()[0].elements().size(), 2);
+    EXPECT_EQ(result.value()[1].name(), "arrayB");
+    EXPECT_EQ(result.value()[1].elements().size(), 3);
+}
+
+TEST_F(ParserTests, ParsePointerArrayIgnoresOtherDeclarations)
+{
+    auto result = parse_pointer_arrays(R"(
+int regularVar = 5;
+const u16 *const myArray[] = { elem1 };
+void someFunction() { }
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].name(), "myArray");
+}
+
+TEST_F(ParserTests, ParsePointerArrayWithTrailingComma)
+{
+    auto result = parse_pointer_arrays("const u16 *const arr[] = { elem1, elem2, };");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].elements().size(), 2);
+}
+
+// ============================================================================
+// Function Definition Parsing Tests
+// ============================================================================
+
+TEST_F(ParserTests, ParseFunctionsEmptyInput)
+{
+    auto result = parse_functions("");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(result.value().empty());
+}
+
+TEST_F(ParserTests, ParseSimpleFunction)
+{
+    auto result = parse_functions("void myFunc(int x) { int y = x + 1; }");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+
+    const auto &func = result.value()[0];
+    EXPECT_EQ(func.name(), "myFunc");
+    EXPECT_FALSE(func.body_tokens().empty());
+}
+
+TEST_F(ParserTests, ParseStaticFunction)
+{
+    auto result = parse_functions("static void helper(void) { return; }");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].name(), "helper");
+}
+
+TEST_F(ParserTests, ParseFunctionWithNestedBraces)
+{
+    auto result = parse_functions(R"(
+void complexFunc(int x) {
+    if (x > 0) {
+        for (int i = 0; i < x; i++) {
+            doSomething();
+        }
+    }
+}
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].name(), "complexFunc");
+    // Body tokens should contain all the nested content
+    EXPECT_GT(result.value()[0].body_tokens().size(), 10);
+}
+
+TEST_F(ParserTests, ParseMultipleFunctions)
+{
+    auto result = parse_functions(R"(
+void funcA(void) { }
+int funcB(int x) { return x; }
+static void funcC(void) { }
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 3);
+    EXPECT_EQ(result.value()[0].name(), "funcA");
+    EXPECT_EQ(result.value()[1].name(), "funcB");
+    EXPECT_EQ(result.value()[2].name(), "funcC");
+}
+
+TEST_F(ParserTests, ParseFunctionsWithNamePrefixFilter)
+{
+    auto result = parse_functions(
+        R"(
+void QueueAnimTiles_Flower(u16 timer) { }
+void TilesetAnim_General(u16 timer) { }
+void QueueAnimTiles_Water(u16 timer) { }
+)",
+        "QueueAnimTiles_");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 2);
+    EXPECT_EQ(result.value()[0].name(), "QueueAnimTiles_Flower");
+    EXPECT_EQ(result.value()[1].name(), "QueueAnimTiles_Water");
+}
+
+TEST_F(ParserTests, ParseFunctionsNoMatchForPrefix)
+{
+    auto result = parse_functions("void foo(void) { }", "NonExistent_");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(result.value().empty());
+}
+
+TEST_F(ParserTests, ParseFunctionBodyContainsMacroCall)
+{
+    auto result = parse_functions(R"(
+static void QueueAnimTiles_Flower(u16 timer) {
+    AppendTilesetAnimToBuffer(ptr, (u16 *)(BG_VRAM + TILE_OFFSET_4BPP(12)), 4 * TILE_SIZE_4BPP);
+}
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+
+    const auto &body = result.value()[0].body_tokens();
+    // Should contain TILE_OFFSET_4BPP identifier
+    bool found_tile_offset = false;
+    for (const auto &token : body) {
+        if (token.is(TokenType::identifier) && token.text() == "TILE_OFFSET_4BPP") {
+            found_tile_offset = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(found_tile_offset);
+}
+
+TEST_F(ParserTests, ParseFunctionsIgnoresDeclarationsWithoutBody)
+{
+    auto result = parse_functions(R"(
+void forwardDecl(int x);
+void actualFunc(int x) { return; }
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].name(), "actualFunc");
+}
+
+TEST_F(ParserTests, ParseFunctionsWithAnimCodePattern)
+{
+    auto result = parse_functions(R"(
+static void QueueAnimTiles_PorytilesManaged_General_Flower(u16 timer) {
+    u16 i = timer % ARRAY_COUNT(gTilesetAnims_PorytilesManaged_General_Flower);
+    AppendTilesetAnimToBuffer(gTilesetAnims_PorytilesManaged_General_Flower[i],
+        (u16 *)(BG_VRAM + TILE_OFFSET_4BPP(12)), 4 * TILE_SIZE_4BPP);
+}
+
+static void TilesetAnim_PorytilesManaged_General(u16 timer) {
+    if (timer % 16 == 0) {
+        QueueAnimTiles_PorytilesManaged_General_Flower(timer / 16);
+    }
+}
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 2);
+    EXPECT_EQ(result.value()[0].name(), "QueueAnimTiles_PorytilesManaged_General_Flower");
+    EXPECT_EQ(result.value()[1].name(), "TilesetAnim_PorytilesManaged_General");
 }
 
 } // namespace
