@@ -1,7 +1,9 @@
 #include "porytiles2/domain/services/animation_decompiler.hpp"
 
 #include <algorithm>
-#include <map>
+#include <iostream>
+#include <set>
+#include <string>
 
 #include "porytiles2/domain/models/animation_frame.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
@@ -12,38 +14,72 @@ namespace {
 using namespace porytiles2;
 
 /**
- * @brief Finds the palette index for an animation tile by scanning metatile entries.
+ * @brief Finds the palette index for animation tiles by scanning metatile entries.
  *
  * @details
- * Scans all metatile entries to find which palette index is used when referencing the specified tile index.
- * If the tile is not found in any metatile, returns std::nullopt.
- * If multiple different palette indices reference the same tile, returns the most common one.
+ * Scans all metatile entries to find which palette indices are used when referencing tiles in the animation's
+ * tile range (from tile_offset to tile_offset + tile_count - 1). All animation tiles must use the same palette.
  *
- * @param tile_index The tile index to search for
+ * @param anim_name The name of the anim
+ * @param tile_offset Starting tile index for the animation
+ * @param tile_count Number of tiles in the animation
  * @param metatiles_bin The metatile entries to scan
- * @return The palette index if found, or std::nullopt if tile not referenced by any metatile
+ * @pre tile_count must be greater than 0
+ * @return The palette index used by all animation tiles
  */
-std::optional<std::size_t> find_palette_for_tile(std::size_t tile_index, std::span<const TilemapEntry> metatiles_bin)
+std::size_t find_palette_for_animation_tiles(
+    const std::string &anim_name,
+    std::size_t tile_offset,
+    std::size_t tile_count,
+    std::span<const TilemapEntry> metatiles_bin)
 {
-    // Count how many times each palette index is used for this tile
-    std::map<std::size_t, std::size_t> pal_index_counts{};
+    std::set<std::size_t> found_pal_indices{};
 
-    for (const auto &entry : metatiles_bin) {
-        if (entry.tile_index() == tile_index) {
-            pal_index_counts[entry.pal_index()]++;
+    // Scan all tiles in the animation range
+    for (std::size_t i = 0; i < tile_count; ++i) {
+        const std::size_t tile_index = tile_offset + i;
+        for (const auto &entry : metatiles_bin) {
+            if (entry.tile_index() == tile_index) {
+                found_pal_indices.insert(entry.pal_index());
+            }
         }
     }
 
-    if (pal_index_counts.empty()) {
-        // Tile not found in any metatile entry
-        return std::nullopt;
+    if (found_pal_indices.empty()) {
+        /*
+         * TODO: some tilesets will hit this case. E.g. land_water_edge in vanilla primary general is not used within
+         * general itself. But the tiles within the anim range are referenced in lilycove tileset, using primary pal 3.
+         * So maybe here we should warn the user. And perhaps we need to provide some way to allow the user to select
+         * which pal to use when importing an animation, if no pal is found? Alternatively, we could scan all the other
+         * tilesets in the game and look for context? To do this, we'd need to parse the layouts file to figure out
+         * candidates. At a certain point, it becomes ridiculous to try to automate stuff like this. Users will be
+         * expected to have some understanding of how the game works in order to use the tool properly.
+         */
+        std::cerr << "no palette index found for animation '" << anim_name
+                  << "' tiles in range [" + std::to_string(tile_offset) + ", " +
+                         std::to_string(tile_offset + tile_count - 1) + "]"
+                  << std::endl;
+        std::cerr << "falling back to pal 0" << std::endl;
+        return 0;
+        // panic(
+        //     "no palette index found for animation tiles in range [" + std::to_string(tile_offset) + ", " +
+        //     std::to_string(tile_offset + tile_count - 1) + "]");
     }
 
-    // Find the most common palette index
-    const auto max_it =
-        std::ranges::max_element(pal_index_counts, [](const auto &a, const auto &b) { return a.second < b.second; });
+    if (found_pal_indices.size() > 1) {
+        std::string pal_list;
+        for (const auto &pal_idx : found_pal_indices) {
+            if (!pal_list.empty()) {
+                pal_list += ", ";
+            }
+            pal_list += std::to_string(pal_idx);
+        }
+        panic(
+            "animation tiles in range [" + std::to_string(tile_offset) + ", " +
+            std::to_string(tile_offset + tile_count - 1) + "] use multiple palette indices: " + pal_list);
+    }
 
-    return max_it->first;
+    return *found_pal_indices.begin();
 }
 
 /**
@@ -145,11 +181,11 @@ Animation<Rgba32> AnimationDecompiler::decompile_animation(
 
     // Get the tile offset from animation params to determine which tile index to look for in metatiles
     const std::size_t tile_offset = anim.params().tile_offset();
+    const std::size_t tile_count = anim.params().tile_count();
 
-    // Recover the palette index by scanning metatiles for the first animation tile
-    // All tiles in an animation should use the same palette
-    const auto recovered_pal_index = find_palette_for_tile(tile_offset, metatiles_bin);
-    const std::size_t pal_index = recovered_pal_index.value_or(0); // Fall back to palette 0 if not found
+    // Recover the palette index by scanning metatiles for all animation tiles
+    // All tiles in an animation must use the same palette
+    const std::size_t pal_index = find_palette_for_animation_tiles(anim.name(), tile_offset, tile_count, metatiles_bin);
 
     const auto &pal = pals.at(pal_index);
 

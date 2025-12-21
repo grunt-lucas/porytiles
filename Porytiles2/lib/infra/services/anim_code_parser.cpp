@@ -452,6 +452,10 @@ AnimCodeParser::parse_vanilla_anims(const std::filesystem::path &anims_c_path, c
         for (const auto &arr : arrays) {
             std::string arr_anim_name = extract_anim_name(arr.name(), pascal_case_tileset_name);
             if (arr_anim_name == anim_name && arr.name().find("_Frame") == std::string::npos) {
+                /*
+                 * TODO: This is failing for building::tv_turned_on because the animation queue function calls it
+                 * "TVTurnedOn" but the frame array is called "TvTurnedOn" *facepalm*
+                 */
                 auto frames = extract_frame_indices(arr.elements());
                 if (!frames.empty()) {
                     params.frames(std::move(frames));
