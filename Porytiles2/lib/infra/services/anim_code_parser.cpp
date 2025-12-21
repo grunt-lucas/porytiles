@@ -229,6 +229,7 @@ extract_timer_conditions(const std::vector<Token> &body_tokens, const std::strin
     // Build error details
     std::vector<std::string> details;
     details.push_back(fmt::format("{}:{}:{}: {}", file_path, position.line, position.column, message));
+    details.emplace_back();
 
     // Add source context if position is valid
     if (position.line > 0 && position.line <= file_lines.size()) {
@@ -242,12 +243,6 @@ extract_timer_conditions(const std::vector<Token> &body_tokens, const std::strin
 } // namespace
 
 AnimCodeParser::AnimCodeParser(gsl::not_null<const TextFormatter *> format) : format_{format} {}
-
-/*
- * TODO: these parse functions should give some kind of warning if either tile_offset or tile_count params are parsed as
- * 0. Neither of these can ever actually be 0 in the wild, and this probably indicates some kind of parsing error. We
- * should alert the user so they can investigate.
- */
 
 ChainableResult<std::map<std::string, AnimationParams>>
 AnimCodeParser::parse_generated_header(const std::filesystem::path &header_path) const
@@ -342,12 +337,19 @@ AnimCodeParser::parse_generated_header(const std::filesystem::path &header_path)
                     params.tile_offset(tile_offset.value());
                 }
                 else {
+                    /*
+                     * TODO: this error and the other three like it should give more context so the user can understand
+                     * what's happening. Also, change it to a regular diagnostic so that more can be emitted before
+                     * failing.
+                     */
                     return make_highlighted_error(
                         driver.file_lines(),
                         func.position(),
                         format_,
                         header_path.string(),
-                        fmt::format("QueueAnimTiles function '{}' missing TILE_OFFSET_4BPP call", func.name()));
+                        format_->format(
+                            "QueueAnimTiles function '{}' missing TILE_OFFSET_4BPP call",
+                            FormatParam{func.name(), Style::bold}));
                 }
 
                 auto tile_count = extract_tile_count(func.body_tokens());
@@ -360,7 +362,9 @@ AnimCodeParser::parse_generated_header(const std::filesystem::path &header_path)
                         func.position(),
                         format_,
                         header_path.string(),
-                        fmt::format("QueueAnimTiles function '{}' missing TILE_SIZE_4BPP expression", func.name()));
+                        format_->format(
+                            "QueueAnimTiles function '{}' missing TILE_SIZE_4BPP expression",
+                            FormatParam{func.name(), Style::bold}));
                 }
                 break;
             }
@@ -472,10 +476,30 @@ AnimCodeParser::parse_vanilla_anims(const std::filesystem::path &anims_c_path, c
                 if (tile_offset.has_value()) {
                     params.tile_offset(tile_offset.value());
                 }
+                else {
+                    return make_highlighted_error(
+                        driver.file_lines(),
+                        func.position(),
+                        format_,
+                        anims_c_path.string(),
+                        format_->format(
+                            "QueueAnimTiles function '{}' missing TILE_OFFSET_4BPP call",
+                            FormatParam{func.name(), Style::bold}));
+                }
 
                 auto tile_count = extract_tile_count(func.body_tokens());
                 if (tile_count.has_value()) {
                     params.tile_count(tile_count.value());
+                }
+                else {
+                    return make_highlighted_error(
+                        driver.file_lines(),
+                        func.position(),
+                        format_,
+                        anims_c_path.string(),
+                        format_->format(
+                            "QueueAnimTiles function '{}' missing TILE_SIZE_4BPP expression",
+                            FormatParam{func.name(), Style::bold}));
                 }
                 break;
             }

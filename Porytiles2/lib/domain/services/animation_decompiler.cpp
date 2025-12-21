@@ -117,6 +117,9 @@ PixelTile<Rgba32> decompile_tile(
     return result;
 }
 
+/*
+ * TODO: this function should be used somewhere?
+ */
 /**
  * @brief Extracts animation tiles from a tiles.png image.
  *
