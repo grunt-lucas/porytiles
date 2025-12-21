@@ -54,47 +54,6 @@ class AnimCodeGenerator {
         const std::filesystem::path &tileset_path_from_project_root,
         const std::map<std::string, AnimationParams> &animations,
         bool is_primary) const;
-
-  private:
-    /**
-     * @brief Generates INCBIN statements for all frames of an animation.
-     */
-    [[nodiscard]] std::string generate_incbin_statements(
-        const std::string &tileset_name,
-        const std::filesystem::path &tileset_path_from_project_root,
-        const std::string &anim_name,
-        const AnimationParams &params) const;
-
-    /**
-     * @brief Generates the frame pointer array for an animation.
-     */
-    [[nodiscard]] std::string generate_frame_array(
-        const std::string &tileset_name, const std::string &anim_name, const AnimationParams &params) const;
-
-    /**
-     * @brief Generates the QueueAnimTiles function for an animation.
-     */
-    [[nodiscard]] std::string generate_queue_function(
-        const std::string &tileset_name, const std::string &anim_name, const AnimationParams &params) const;
-
-    /**
-     * @brief Generates the main TilesetAnim driver function.
-     */
-    [[nodiscard]] std::string generate_driver_function(
-        const std::string &tileset_name, const std::map<std::string, AnimationParams> &animations) const;
-
-    /**
-     * @brief Generates the InitTilesetAnim function.
-     */
-    [[nodiscard]] std::string generate_init_function(
-        const std::string &tileset_name,
-        const std::map<std::string, AnimationParams> &animations,
-        bool is_primary) const;
-
-    /**
-     * @brief Finds the maximum frame index referenced in the frames array.
-     */
-    [[nodiscard]] std::size_t find_max_frame_index(const std::vector<std::size_t> &frames) const;
 };
 
 } // namespace porytiles2

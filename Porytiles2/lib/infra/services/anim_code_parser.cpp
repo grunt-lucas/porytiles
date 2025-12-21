@@ -291,6 +291,11 @@ AnimCodeParser::parse_generated_header(const std::filesystem::path &header_path)
             format_->format("{}: could not determine tileset name", FormatParam{header_path.string(), Style::bold})};
     }
 
+    /*
+     * TODO: instead of "discovering" the anim names like this, we should instead require that a list of anim names be
+     * passed in as a "source of truth" (we already have them from the frame earlier loading step). This is better,
+     * because it allows us to throw a helpful error message if an anim is missing.
+     */
     // Find animation names from pointer arrays (those without _Frame suffix are the main arrays)
     std::set<std::string> anim_names;
     for (const auto &arr : arrays) {
@@ -319,6 +324,11 @@ AnimCodeParser::parse_generated_header(const std::filesystem::path &header_path)
         // Find the frame sequence from the pointer array
         for (const auto &arr : arrays) {
             std::string arr_anim_name = extract_anim_name(arr.name(), tileset_name);
+            /*
+             * We want the main pointer array (e.g., gTilesetAnims_General_Flower), not the
+             * individual frame data arrays (e.g., gTilesetAnims_General_Flower_Frame0).
+             * Both extract to the same anim_name, so we filter by checking for _Frame.
+             */
             if (arr_anim_name == anim_name && arr.name().find("_Frame") == std::string::npos) {
                 auto frames = extract_frame_indices(arr.elements());
                 if (!frames.empty()) {
@@ -419,6 +429,11 @@ AnimCodeParser::parse_vanilla_anims(const std::filesystem::path &anims_c_path, c
 
     std::map<std::string, AnimationParams> result;
 
+    /*
+     * TODO: instead of "discovering" the anim names like this, we should instead require that a list of anim names be
+     * passed in as a "source of truth" (we already have them from the frame earlier loading step). This is better,
+     * because it allows us to throw a helpful error message if an anim is missing.
+     */
     // Find animation names from QueueAnimTiles functions
     std::set<std::string> anim_names;
     for (const auto &func : funcs) {
@@ -455,14 +470,28 @@ AnimCodeParser::parse_vanilla_anims(const std::filesystem::path &anims_c_path, c
         // Find the frame sequence from the pointer array
         for (const auto &arr : arrays) {
             std::string arr_anim_name = extract_anim_name(arr.name(), pascal_case_tileset_name);
+            /*
+             * TODO: This is failing for building::tv_turned_on because the animation queue function calls it
+             * "TVTurnedOn" but the frame array is called "TvTurnedOn" *facepalm*
+             */
+            /*
+             * We want the main pointer array (e.g., gTilesetAnims_General_Flower), not the
+             * individual frame data arrays (e.g., gTilesetAnims_General_Flower_Frame0).
+             * Both extract to the same anim_name, so we filter by checking for _Frame.
+             */
             if (arr_anim_name == anim_name && arr.name().find("_Frame") == std::string::npos) {
-                /*
-                 * TODO: This is failing for building::tv_turned_on because the animation queue function calls it
-                 * "TVTurnedOn" but the frame array is called "TvTurnedOn" *facepalm*
-                 */
                 auto frames = extract_frame_indices(arr.elements());
                 if (!frames.empty()) {
                     params.frames(std::move(frames));
+                }
+                else {
+                    return make_highlighted_error(
+                        driver.file_lines(),
+                        arr.position(),
+                        format_,
+                        anims_c_path.string(),
+                        format_->format(
+                            "Failed to parse frame configuration from '{}'", FormatParam{arr.name(), Style::bold}));
                 }
                 break;
             }
