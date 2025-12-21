@@ -6,6 +6,8 @@
 
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
+#include <iostream>
+
 namespace {
 
 using namespace porytiles2;
@@ -61,6 +63,7 @@ YAML::Node serialize_animation_params(const AnimationParams &params)
 
     // Always write frames array since it's the core animation definition
     YAML::Node frames_node;
+    frames_node.SetStyle(YAML::EmitterStyle::Flow);
     for (const auto frame : params.frames()) {
         frames_node.push_back(frame);
     }

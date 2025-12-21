@@ -193,10 +193,20 @@ std::string to_string(const std::vector<T> &vec)
 }
 
 /**
- * @brief Convert an input string to PascalCase.
+ * @brief Converts a string to PascalCase format.
  *
- * @param s The string to pascal-ize
- * @return The pascal-ized string
+ * @details
+ * This function converts an input string to PascalCase by capitalizing the first letter of each word and removing
+ * separators. Words are identified by underscore ('_'), hyphen ('-'), or space (' ') delimiters. Characters following
+ * a delimiter are capitalized, and the delimiters themselves are removed from the output.
+ *
+ * @param s The string to convert
+ * @return A new string in PascalCase format
+ *
+ * @par Examples
+ * - `"hello_world"` → `"HelloWorld"`
+ * - `"foo-bar"` → `"FooBar"`
+ * - `"already PascalCase"` → `"AlreadyPascalCase"`
  */
 inline std::string to_pascal_case(const std::string &s)
 {
@@ -221,6 +231,73 @@ inline std::string to_pascal_case(const std::string &s)
                 result += c;
             }
         }
+    }
+
+    return result;
+}
+
+/**
+ * @brief Converts a string to snake_case format.
+ *
+ * @details
+ * This function converts an input string to snake_case by inserting underscores before uppercase letters and
+ * converting all characters to lowercase. Existing separators (underscore, hyphen, space) are converted to
+ * underscores. Consecutive uppercase letters are treated as an acronym, with an underscore inserted before the last
+ * letter of the acronym when followed by lowercase letters (e.g., "XMLParser" becomes "xml_parser").
+ *
+ * @param s The string to convert
+ * @return A new string in snake_case format
+ *
+ * @par Examples
+ * - `"HelloWorld"` → `"hello_world"`
+ * - `"camelCase"` → `"camel_case"`
+ * - `"XMLParser"` → `"xml_parser"`
+ * - `"already_snake"` → `"already_snake"`
+ */
+inline std::string to_snake_case(const std::string &s)
+{
+    if (s.empty()) {
+        return s;
+    }
+
+    std::string result;
+    result.reserve(s.size() + s.size() / 4); // Reserve extra for underscores
+
+    for (std::size_t i = 0; i < s.size(); ++i) {
+        const char c = s[i];
+
+        // Handle separators: convert to underscore
+        if (c == '_' || c == '-' || c == ' ') {
+            // Avoid leading underscore or consecutive underscores
+            if (!result.empty() && result.back() != '_') {
+                result += '_';
+            }
+            continue;
+        }
+
+        // Handle uppercase letters
+        if (std::isupper(static_cast<unsigned char>(c))) {
+            // Insert underscore before uppercase if:
+            // 1. Not at the start
+            // 2. Previous char wasn't an underscore
+            // 3. Either previous char was lowercase, OR next char is lowercase (for acronyms like XMLParser)
+            if (!result.empty() && result.back() != '_') {
+                const bool prev_is_lower = i > 0 && std::islower(static_cast<unsigned char>(s[i - 1]));
+                const bool next_is_lower = i + 1 < s.size() && std::islower(static_cast<unsigned char>(s[i + 1]));
+                if (prev_is_lower || next_is_lower) {
+                    result += '_';
+                }
+            }
+            result += static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        }
+        else {
+            result += static_cast<char>(std::tolower(static_cast<unsigned char>(c)));
+        }
+    }
+
+    // Remove trailing underscore if present
+    if (!result.empty() && result.back() == '_') {
+        result.pop_back();
     }
 
     return result;

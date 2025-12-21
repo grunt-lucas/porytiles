@@ -115,8 +115,8 @@ TEST_F(AnimCodeParserTest, ParseVanillaAnimsExtractsFlowerAnimationParams)
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
 
-    ASSERT_TRUE(anims.contains("Flower")) << "Should contain 'Flower' animation";
-    const auto &flower = anims.at("Flower");
+    ASSERT_TRUE(anims.contains("flower")) << "Should contain 'flower' animation";
+    const auto &flower = anims.at("flower");
 
     // Verify tile_offset from TILE_OFFSET_4BPP(508)
     EXPECT_EQ(flower.tile_offset(), 508u);
@@ -144,8 +144,8 @@ TEST_F(AnimCodeParserTest, ParseVanillaAnimsExtractsWaterAnimationParams)
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
 
-    ASSERT_TRUE(anims.contains("Water")) << "Should contain 'Water' animation";
-    const auto &water = anims.at("Water");
+    ASSERT_TRUE(anims.contains("water")) << "Should contain 'water' animation";
+    const auto &water = anims.at("water");
 
     // Verify tile_offset from TILE_OFFSET_4BPP(432)
     EXPECT_EQ(water.tile_offset(), 432u);
@@ -157,10 +157,38 @@ TEST_F(AnimCodeParserTest, ParseVanillaAnimsExtractsWaterAnimationParams)
     EXPECT_EQ(water.frame_factor(), 16u);
     EXPECT_EQ(water.frame_offset(), 1u);
 
-    // Verify frames from pointer array (8 frames for vanilla Water)
+    // Verify frames from pointer array (8 frames for vanilla water)
     const auto &frames = water.frames();
     ASSERT_EQ(frames.size(), 8u);
     for (std::size_t i = 0; i < 8; ++i) {
+        EXPECT_EQ(frames[i], i);
+    }
+}
+
+TEST_F(AnimCodeParserTest, ParseVanillaAnimsExtractsLandWaterEdgeAnimationParams)
+{
+    auto result = parser_.parse_vanilla_anims("Resources/Tests/integration/c_parser/tileset_anims.c", "general");
+
+    ASSERT_TRUE(result.has_value());
+    const auto &anims = result.value();
+
+    ASSERT_TRUE(anims.contains("land_water_edge")) << "Should contain 'water' animation";
+    const auto &water = anims.at("land_water_edge");
+
+    // Verify tile_offset from TILE_OFFSET_4BPP(480)
+    EXPECT_EQ(water.tile_offset(), 480u);
+
+    // Verify tile_count from 10 * TILE_SIZE_4BPP
+    EXPECT_EQ(water.tile_count(), 10u);
+
+    // Verify frame_factor and frame_offset from timer % 16 == 4
+    EXPECT_EQ(water.frame_factor(), 16u);
+    EXPECT_EQ(water.frame_offset(), 4u);
+
+    // Verify frames from pointer array (4 frames for vanilla land_water_edge)
+    const auto &frames = water.frames();
+    ASSERT_EQ(frames.size(), 4u);
+    for (std::size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(frames[i], i);
     }
 }

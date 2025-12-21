@@ -15,6 +15,8 @@
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 
+#include <iostream>
+
 namespace {
 
 using namespace porytiles2;

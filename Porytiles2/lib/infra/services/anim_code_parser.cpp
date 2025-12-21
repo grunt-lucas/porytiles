@@ -134,7 +134,7 @@ namespace {
         if (body_tokens[i].is(TokenType::identifier) && body_tokens[i].text() == "TILE_OFFSET_4BPP" &&
             body_tokens[i + 1].is(TokenType::left_paren) && body_tokens[i + 2].is(TokenType::integer_literal) &&
             body_tokens[i + 3].is(TokenType::right_paren)) {
-            return static_cast<std::size_t>(body_tokens[i + 2].int_value());
+            return body_tokens[i + 2].int_value();
         }
     }
     return std::nullopt;
@@ -154,7 +154,7 @@ namespace {
     for (std::size_t i = 0; i + 2 < body_tokens.size(); ++i) {
         if (body_tokens[i].is(TokenType::integer_literal) && body_tokens[i + 1].is(TokenType::star) &&
             body_tokens[i + 2].is(TokenType::identifier) && body_tokens[i + 2].text() == "TILE_SIZE_4BPP") {
-            return static_cast<std::size_t>(body_tokens[i].int_value());
+            return body_tokens[i].int_value();
         }
     }
     return std::nullopt;
@@ -183,8 +183,8 @@ extract_timer_conditions(const std::vector<Token> &body_tokens, const std::strin
             body_tokens[i + 1].is(TokenType::percent) && body_tokens[i + 2].is(TokenType::integer_literal) &&
             body_tokens[i + 3].is(TokenType::equal_equal) && body_tokens[i + 4].is(TokenType::integer_literal)) {
 
-            std::size_t frame_factor = static_cast<std::size_t>(body_tokens[i + 2].int_value());
-            std::size_t frame_offset = static_cast<std::size_t>(body_tokens[i + 4].int_value());
+            std::size_t frame_factor = body_tokens[i + 2].int_value();
+            std::size_t frame_offset = body_tokens[i + 4].int_value();
 
             // Search ahead for QueueAnimTiles call
             for (std::size_t j = i + 5; j < body_tokens.size() && j < i + 50; ++j) {
@@ -242,6 +242,12 @@ extract_timer_conditions(const std::vector<Token> &body_tokens, const std::strin
 } // namespace
 
 AnimCodeParser::AnimCodeParser(gsl::not_null<const TextFormatter *> format) : format_{format} {}
+
+/*
+ * TODO: these parse functions should give some kind of warning if either tile_offset or tile_count params are parsed as
+ * 0. Neither of these can ever actually be 0 in the wild, and this probably indicates some kind of parsing error. We
+ * should alert the user so they can investigate.
+ */
 
 ChainableResult<std::map<std::string, AnimationParams>>
 AnimCodeParser::parse_generated_header(const std::filesystem::path &header_path) const
@@ -313,13 +319,7 @@ AnimCodeParser::parse_generated_header(const std::filesystem::path &header_path)
         AnimationParams params;
 
         // Convert PascalCase anim name to snake_case for the result key
-        std::string result_key;
-        for (std::size_t i = 0; i < anim_name.size(); ++i) {
-            if (i > 0 && std::isupper(static_cast<unsigned char>(anim_name[i]))) {
-                result_key += '_';
-            }
-            result_key += static_cast<char>(std::tolower(static_cast<unsigned char>(anim_name[i])));
-        }
+        std::string result_key = to_snake_case(anim_name);
 
         // Find the frame sequence from the pointer array
         for (const auto &arr : arrays) {
@@ -489,7 +489,8 @@ AnimCodeParser::parse_vanilla_anims(const std::filesystem::path &anims_c_path, c
             params.frame_offset(anim::default_frame_offset);
         }
 
-        result[anim_name] = std::move(params);
+        const std::string snake_case_anim_name = to_snake_case(anim_name);
+        result[snake_case_anim_name] = std::move(params);
     }
 
     return result;
