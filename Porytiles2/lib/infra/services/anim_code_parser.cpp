@@ -240,6 +240,24 @@ extract_timer_conditions(const std::vector<Token> &body_tokens, const std::strin
     return FormattableError{details};
 }
 
+ChainableResult<std::map<std::string, AnimationParams>> parse_animation_params_from_c_file(
+    const std::filesystem::path &c_file, const std::string &tileset_name, const TextFormatter &format)
+{
+    CParserDriver driver{c_file, &format};
+
+    // Parse pointer arrays to get animation frame sequences
+    auto arrays_result = driver.parse_pointer_arrays();
+    if (!arrays_result.has_value()) {
+        return ChainableResult<std::map<std::string, AnimationParams>>{
+            FormattableError{
+                format.format("{}: failed to parse animation frame arrays", FormatParam{c_file.string(), Style::bold})},
+            arrays_result};
+    }
+    const auto &arrays = arrays_result.value();
+
+    return FormattableError{"TODO: impl"};
+}
+
 } // namespace
 
 AnimCodeParser::AnimCodeParser(gsl::not_null<const TextFormatter *> format) : format_{format} {}
