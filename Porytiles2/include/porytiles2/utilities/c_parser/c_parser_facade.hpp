@@ -19,13 +19,13 @@
 namespace porytiles2 {
 
 /**
- * @brief High-level driver for parsing C/C++ source files.
+ * @brief High-level facade for parsing C/C++ source files.
  *
  * @details
- * CParserDriver orchestrates the complete parsing pipeline: file loading, lexing, and parsing. It owns the file
+ * CParserFacade orchestrates the complete parsing pipeline: file loading, lexing, and parsing. It owns the file
  * content and provides rich error formatting through FileHighlightPrinter integration.
  *
- * The driver provides a simple interface for extracting specific constructs from C/C++ source files:
+ * The facade provides a simple interface for extracting specific constructs from C/C++ source files:
  * - parse_defines() extracts all #define preprocessor directives
  * - parse_enums() extracts all enum declarations
  *
@@ -35,7 +35,7 @@ namespace porytiles2 {
  * Example usage:
  * @code
  * PlainTextFormatter formatter;
- * CParserDriver driver{"include/constants.h", &formatter};
+ * CParserFacade driver{"include/constants.h", &formatter};
  *
  * auto defines_result = driver.parse_defines();
  * if (!defines_result.has_value()) {
@@ -48,19 +48,19 @@ namespace porytiles2 {
  * }
  * @endcode
  */
-class CParserDriver {
+class CParserFacade {
   public:
     /**
-     * @brief Constructs a driver for parsing the specified file.
+     * @brief Constructs a facade for parsing the specified file.
      *
      * @details
-     * The file is not loaded until a parse method is called. This allows for efficient construction when the driver
-     * may not be used, or when multiple drivers are created but only some are actually needed.
+     * The file is not loaded until a parse method is called. This allows for efficient construction when the facade
+     * may not be used, or when multiple facades are created but only some are actually needed.
      *
      * @param file_path Path to the C/C++ source file to parse
-     * @param format Formatter for error message styling (non-owning, must outlive driver)
+     * @param format Formatter for error message styling (non-owning, must outlive facade)
      */
-    CParserDriver(std::filesystem::path file_path, gsl::not_null<const TextFormatter *> format);
+    CParserFacade(std::filesystem::path file_path, gsl::not_null<const TextFormatter *> format);
 
     /**
      * @brief Parses all #define statements from the file.

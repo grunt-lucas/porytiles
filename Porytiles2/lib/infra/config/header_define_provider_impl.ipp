@@ -7,7 +7,7 @@
 #include <vector>
 
 #include "porytiles2/infra/config/config_provider.hpp"
-#include "porytiles2/utilities/c_parser/c_parser_driver.hpp"
+#include "porytiles2/utilities/c_parser/c_parser_facade.hpp"
 #include "porytiles2/utilities/c_parser/define_statement.hpp"
 #include "porytiles2/utilities/text/file_highlight_printer.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
@@ -44,7 +44,7 @@ std::string make_source_string(const TextFormatter *format, const std::string &f
  * FileHighlightPrinter for consistent formatting with arrow prefix and styling for highlighted lines.
  *
  * @param format The text formatter to use
- * @param file_lines The cached file lines from CParserDriver
+ * @param file_lines The cached file lines from CParserFacade
  * @param define The DefineStatement containing position information
  * @return Vector of formatted strings showing the contextual view
  */
@@ -66,7 +66,7 @@ std::vector<std::string> make_source_details(
 }
 
 /**
- * @brief Gets or creates the CParserDriver for the header file.
+ * @brief Gets or creates the CParserFacade for the header file.
  *
  * @details
  * Lazily initializes the parser driver if it doesn't exist yet. Uses std::optional::emplace
@@ -77,8 +77,8 @@ std::vector<std::string> make_source_details(
  * @param format The text formatter to use
  * @return Reference to the parser driver
  */
-CParserDriver &get_parser_driver(
-    std::optional<CParserDriver> &driver, const std::filesystem::path &header_path, const TextFormatter *format)
+CParserFacade &get_parser_driver(
+    std::optional<CParserFacade> &driver, const std::filesystem::path &header_path, const TextFormatter *format)
 {
     if (!driver.has_value()) {
         driver.emplace(header_path, format);
@@ -129,11 +129,11 @@ LayerValue<std::size_t> parse_size_t(
 }
 
 /**
- * @brief Searches a header file for a #define and parses its value using CParserDriver.
+ * @brief Searches a header file for a #define and parses its value using CParserFacade.
  *
  * @details
  * This is the main entry point for searching header defines. It:
- * 1. Gets or creates the CParserDriver for the header file
+ * 1. Gets or creates the CParserFacade for the header file
  * 2. Searches for the specified #define using find_define()
  * 3. Parses the value using the provided parser
  *
@@ -147,7 +147,7 @@ LayerValue<std::size_t> parse_size_t(
  *
  * @tparam T The type to parse the value as
  * @tparam ParseFunc Function type for parsing (format, define, path, lines, key -> LayerValue<T>)
- * @param driver Mutable reference to the optional CParserDriver
+ * @param driver Mutable reference to the optional CParserFacade
  * @param format The text formatter to use
  * @param header_path The path to the header file
  * @param define_name The name of the #define to search for
@@ -157,7 +157,7 @@ LayerValue<std::size_t> parse_size_t(
  */
 template <typename T, typename ParseFunc>
 LayerValue<T> search_header_define(
-    std::optional<CParserDriver> &driver,
+    std::optional<CParserFacade> &driver,
     const TextFormatter *format,
     const std::filesystem::path &header_path,
     const std::string &define_name,

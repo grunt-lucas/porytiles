@@ -9,7 +9,7 @@
 #include "gsl/pointers"
 
 #include "porytiles2/domain/services/behavior_map_provider.hpp"
-#include "porytiles2/utilities/c_parser/c_parser_driver.hpp"
+#include "porytiles2/utilities/c_parser/c_parser_facade.hpp"
 #include "porytiles2/utilities/c_parser/source_position.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
@@ -97,7 +97,7 @@ class HeaderBehaviorMapProvider final : public BehaviorMapProvider {
     const UserDiagnostics *diag_;
     mutable bool loaded_{false};
     mutable bool load_failed_{false};
-    mutable std::unique_ptr<CParserDriver> driver_;
+    mutable std::unique_ptr<CParserFacade> driver_;
     mutable std::unordered_map<std::string, std::uint16_t> name_to_value_;
     mutable std::unordered_map<std::uint16_t, std::string> value_to_name_;
     mutable std::unordered_map<std::string, SourcePosition> name_to_position_;

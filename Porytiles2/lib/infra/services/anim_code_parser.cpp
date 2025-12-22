@@ -5,7 +5,7 @@
 
 #include "fmt/format.h"
 
-#include "porytiles2/utilities/c_parser/c_parser_driver.hpp"
+#include "porytiles2/utilities/c_parser/c_parser_facade.hpp"
 #include "porytiles2/utilities/c_parser/token.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
 #include "porytiles2/utilities/text/file_highlight_printer.hpp"
@@ -243,7 +243,7 @@ extract_timer_conditions(const std::vector<Token> &body_tokens, const std::strin
 ChainableResult<std::map<std::string, AnimationParams>> parse_animation_params_from_c_file(
     const std::filesystem::path &c_file, const std::string &tileset_name, const TextFormatter &format)
 {
-    CParserDriver driver{c_file, &format};
+    CParserFacade driver{c_file, &format};
 
     // Parse pointer arrays to get animation frame sequences
     auto arrays_result = driver.parse_pointer_arrays();
@@ -265,7 +265,7 @@ AnimCodeParser::AnimCodeParser(gsl::not_null<const TextFormatter *> format) : fo
 ChainableResult<std::map<std::string, AnimationParams>>
 AnimCodeParser::parse_generated_header(const std::filesystem::path &header_path) const
 {
-    CParserDriver driver{header_path, format_};
+    CParserFacade driver{header_path, format_};
 
     // Parse pointer arrays to get animation frame sequences
     auto arrays_result = driver.parse_pointer_arrays();
@@ -419,7 +419,7 @@ AnimCodeParser::parse_generated_header(const std::filesystem::path &header_path)
 ChainableResult<std::map<std::string, AnimationParams>>
 AnimCodeParser::parse_vanilla_anims(const std::filesystem::path &anims_c_path, const std::string &tileset_name) const
 {
-    CParserDriver driver{anims_c_path, format_};
+    CParserFacade driver{anims_c_path, format_};
 
     const std::string pascal_case_tileset_name = to_pascal_case(tileset_name);
 

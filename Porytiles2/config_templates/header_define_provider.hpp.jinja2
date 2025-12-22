@@ -15,7 +15,7 @@
 #include "gsl/pointers"
 
 #include "porytiles2/infra/config/config_provider.hpp"
-#include "porytiles2/utilities/c_parser/c_parser_driver.hpp"
+#include "porytiles2/utilities/c_parser/c_parser_facade.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 
@@ -59,7 +59,7 @@ class HeaderDefineProvider final : public ConfigProvider {
         : format_{format}, project_root_{std::move(project_root)},
           header_relative_path_{std::move(header_relative_path)}
     {
-        // CParserDriver is lazily initialized on first define lookup
+        // CParserFacade is lazily initialized on first define lookup
     }
 
     /**
@@ -77,7 +77,7 @@ class HeaderDefineProvider final : public ConfigProvider {
         : owned_format_{std::make_unique<PlainTextFormatter>()}, format_{owned_format_.get()},
           project_root_{std::move(project_root)}, header_relative_path_{std::move(header_relative_path)}
     {
-        // CParserDriver is lazily initialized on first define lookup
+        // CParserFacade is lazily initialized on first define lookup
     }
 
     /**
@@ -96,7 +96,7 @@ class HeaderDefineProvider final : public ConfigProvider {
     const TextFormatter *format_;                   // Non-owning pointer to formatter
     std::filesystem::path project_root_;
     std::filesystem::path header_relative_path_;
-    mutable std::optional<CParserDriver> parser_driver_; // Lazy-initialized C parser
+    mutable std::optional<CParserFacade> parser_driver_; // Lazy-initialized C parser
 };
 
 } // namespace porytiles2

@@ -1,4 +1,4 @@
-#include "porytiles2/utilities/c_parser/c_parser_driver.hpp"
+#include "porytiles2/utilities/c_parser/c_parser_facade.hpp"
 
 #include <algorithm>
 #include <fstream>
@@ -11,12 +11,12 @@
 
 namespace porytiles2 {
 
-CParserDriver::CParserDriver(std::filesystem::path file_path, gsl::not_null<const TextFormatter *> format)
+CParserFacade::CParserFacade(std::filesystem::path file_path, gsl::not_null<const TextFormatter *> format)
     : file_path_{std::move(file_path)}, format_{format}
 {
 }
 
-ChainableResult<void> CParserDriver::ensure_loaded()
+ChainableResult<void> CParserFacade::ensure_loaded()
 {
     if (loaded_) {
         return {};
@@ -63,7 +63,7 @@ ChainableResult<void> CParserDriver::ensure_loaded()
     return {};
 }
 
-ChainableResult<std::vector<DefineStatement>> CParserDriver::parse_defines()
+ChainableResult<std::vector<DefineStatement>> CParserFacade::parse_defines()
 {
     auto load_result = ensure_loaded();
     if (!load_result.has_value()) {
@@ -96,7 +96,7 @@ ChainableResult<std::vector<DefineStatement>> CParserDriver::parse_defines()
     return std::move(parse_result).value();
 }
 
-ChainableResult<std::vector<EnumDeclaration>> CParserDriver::parse_enums()
+ChainableResult<std::vector<EnumDeclaration>> CParserFacade::parse_enums()
 {
     auto load_result = ensure_loaded();
     if (!load_result.has_value()) {
@@ -130,7 +130,7 @@ ChainableResult<std::vector<EnumDeclaration>> CParserDriver::parse_enums()
 }
 
 ChainableResult<std::vector<ArrayDeclaration>>
-CParserDriver::parse_pointer_arrays(const std::optional<std::string> &name_prefix)
+CParserFacade::parse_pointer_arrays(const std::optional<std::string> &name_prefix)
 {
     auto load_result = ensure_loaded();
     if (!load_result.has_value()) {
@@ -171,7 +171,7 @@ CParserDriver::parse_pointer_arrays(const std::optional<std::string> &name_prefi
 }
 
 ChainableResult<std::vector<FunctionDefinition>>
-CParserDriver::parse_functions(const std::optional<std::string> &name_prefix)
+CParserFacade::parse_functions(const std::optional<std::string> &name_prefix)
 {
     auto load_result = ensure_loaded();
     if (!load_result.has_value()) {
@@ -211,7 +211,7 @@ CParserDriver::parse_functions(const std::optional<std::string> &name_prefix)
     return functions;
 }
 
-ChainableResult<std::optional<DefineStatement>> CParserDriver::find_define(const std::string &define_name)
+ChainableResult<std::optional<DefineStatement>> CParserFacade::find_define(const std::string &define_name)
 {
     // Ensure defines are cached
     if (!cached_defines_.has_value()) {
@@ -238,7 +238,7 @@ ChainableResult<std::optional<DefineStatement>> CParserDriver::find_define(const
     return std::optional<DefineStatement>{std::nullopt};
 }
 
-const std::vector<std::string> &CParserDriver::file_lines() const
+const std::vector<std::string> &CParserFacade::file_lines() const
 {
     return file_lines_;
 }

@@ -16,7 +16,7 @@ namespace porytiles2 {
  * @brief Parses C code to extract tileset animation parameters.
  *
  * @details
- * AnimCodeParser extracts AnimationParams from C source files using proper C token-based parsing via CParserDriver. It
+ * AnimCodeParser extracts AnimationParams from C source files using proper C token-based parsing via CParserFacade. It
  * supports two parsing modes:
  *
  * 1. **Generated header parsing**: Parses our own `generated_anim_code.h` format produced by AnimCodeGenerator. This is

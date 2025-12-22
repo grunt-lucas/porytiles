@@ -21,7 +21,7 @@ namespace porytiles2 {
  * snippet with highlighted error location via FileHighlightPrinter.
  *
  * The context does not own the file_lines - callers must ensure the file_lines outlive the context. This design allows
- * CParserDriver to own the file content while passing non-owning access to Lexer and Parser.
+ * CParserFacade to own the file content while passing non-owning access to Lexer and Parser.
  *
  * Example usage:
  * @code

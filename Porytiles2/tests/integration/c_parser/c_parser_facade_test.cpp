@@ -1,4 +1,4 @@
-#include "porytiles2/utilities/c_parser/c_parser_driver.hpp"
+#include "porytiles2/utilities/c_parser/c_parser_facade.hpp"
 
 #include <cstdio>
 #include <filesystem>
@@ -11,7 +11,7 @@
 namespace porytiles2 {
 namespace {
 
-class CParserDriverTests : public ::testing::Test {
+class CParserFacadeTests : public ::testing::Test {
   protected:
     PlainTextFormatter formatter_;
 
@@ -65,10 +65,10 @@ class CParserDriverTests : public ::testing::Test {
 // Basic Functionality Tests
 // ============================================================================
 
-TEST_F(CParserDriverTests, ParseDefinesFromRealFile)
+TEST_F(CParserFacadeTests, ParseDefinesFromRealFile)
 {
     auto file_path = test_resource_path("Tests/integration/c_parser/metatile_behaviors_define.h");
-    CParserDriver driver{file_path, &formatter_};
+    CParserFacade driver{file_path, &formatter_};
 
     auto result = driver.parse_defines();
     ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
@@ -100,10 +100,10 @@ TEST_F(CParserDriverTests, ParseDefinesFromRealFile)
     EXPECT_EQ(it->int_value(), 0xFF);
 }
 
-TEST_F(CParserDriverTests, ParseEnumsFromRealFile)
+TEST_F(CParserFacadeTests, ParseEnumsFromRealFile)
 {
     auto file_path = test_resource_path("Tests/integration/c_parser/metatile_behaviors_enum.h");
-    CParserDriver driver{file_path, &formatter_};
+    CParserFacade driver{file_path, &formatter_};
 
     auto enums_result = driver.parse_enums();
     ASSERT_TRUE(enums_result.has_value()) << get_all_error_text(enums_result);
@@ -124,10 +124,10 @@ TEST_F(CParserDriverTests, ParseEnumsFromRealFile)
     EXPECT_EQ(enums[0].members().at(143).int_value(), 143);
 }
 
-TEST_F(CParserDriverTests, ParseDefinesAndEnumsFromRealFile)
+TEST_F(CParserFacadeTests, ParseDefinesAndEnumsFromRealFile)
 {
     auto file_path = test_resource_path("Tests/integration/c_parser/metatile_behaviors_mixed.h");
-    CParserDriver driver{file_path, &formatter_};
+    CParserFacade driver{file_path, &formatter_};
 
     auto defines_result = driver.parse_defines();
     ASSERT_TRUE(defines_result.has_value()) << get_all_error_text(defines_result);
@@ -182,10 +182,10 @@ TEST_F(CParserDriverTests, ParseDefinesAndEnumsFromRealFile)
     EXPECT_EQ(enums[0].members().at(143).int_value(), 143);
 }
 
-TEST_F(CParserDriverTests, ParseDefinesFromTempFile)
+TEST_F(CParserFacadeTests, ParseDefinesFromTempFile)
 {
     auto temp_path = create_temp_file("#define FOO 123\n#define BAR 0xFF\n#define BAZ (1 << 4)");
-    CParserDriver driver{temp_path, &formatter_};
+    CParserFacade driver{temp_path, &formatter_};
 
     auto result = driver.parse_defines();
     ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
@@ -200,10 +200,10 @@ TEST_F(CParserDriverTests, ParseDefinesFromTempFile)
     EXPECT_EQ(defines[2].int_value(), 16);
 }
 
-TEST_F(CParserDriverTests, ParseEnumsFromTempFile)
+TEST_F(CParserFacadeTests, ParseEnumsFromTempFile)
 {
     auto temp_path = create_temp_file("enum { A, B = 10, C };");
-    CParserDriver driver{temp_path, &formatter_};
+    CParserFacade driver{temp_path, &formatter_};
 
     auto result = driver.parse_enums();
     ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
@@ -225,9 +225,9 @@ TEST_F(CParserDriverTests, ParseEnumsFromTempFile)
 // Error Handling Tests
 // ============================================================================
 
-TEST_F(CParserDriverTests, NonExistentFileReturnsFileNotFoundError)
+TEST_F(CParserFacadeTests, NonExistentFileReturnsFileNotFoundError)
 {
-    CParserDriver driver{"/nonexistent/path/to/file.h", &formatter_};
+    CParserFacade driver{"/nonexistent/path/to/file.h", &formatter_};
 
     auto result = driver.parse_defines();
     EXPECT_FALSE(result.has_value());
@@ -236,9 +236,9 @@ TEST_F(CParserDriverTests, NonExistentFileReturnsFileNotFoundError)
     EXPECT_NE(error_text.find("file not found"), std::string::npos);
 }
 
-TEST_F(CParserDriverTests, NonExistentFileReturnsFileNotFoundErrorForEnums)
+TEST_F(CParserFacadeTests, NonExistentFileReturnsFileNotFoundErrorForEnums)
 {
-    CParserDriver driver{"/nonexistent/path/to/file.h", &formatter_};
+    CParserFacade driver{"/nonexistent/path/to/file.h", &formatter_};
 
     auto result = driver.parse_enums();
     EXPECT_FALSE(result.has_value());
@@ -251,10 +251,10 @@ TEST_F(CParserDriverTests, NonExistentFileReturnsFileNotFoundErrorForEnums)
 // would require creating a file with no read permissions, which is platform-specific
 // and fragile for unit tests. The code path is simple and covered by manual testing.
 
-TEST_F(CParserDriverTests, LexerErrorIncludesFileContext)
+TEST_F(CParserFacadeTests, LexerErrorIncludesFileContext)
 {
     auto temp_path = create_temp_file("#define FOO \"unterminated string");
-    CParserDriver driver{temp_path, &formatter_};
+    CParserFacade driver{temp_path, &formatter_};
 
     auto result = driver.parse_defines();
     EXPECT_FALSE(result.has_value());
@@ -266,10 +266,10 @@ TEST_F(CParserDriverTests, LexerErrorIncludesFileContext)
     EXPECT_NE(error_text.find("unterminated string"), std::string::npos);
 }
 
-TEST_F(CParserDriverTests, ParserErrorIncludesFileContext)
+TEST_F(CParserFacadeTests, ParserErrorIncludesFileContext)
 {
     auto temp_path = create_temp_file("#define FOO UNKNOWN_IDENTIFIER");
-    CParserDriver driver{temp_path, &formatter_};
+    CParserFacade driver{temp_path, &formatter_};
 
     auto result = driver.parse_defines();
     EXPECT_FALSE(result.has_value());
@@ -281,10 +281,10 @@ TEST_F(CParserDriverTests, ParserErrorIncludesFileContext)
     EXPECT_NE(error_text.find("unknown identifier"), std::string::npos);
 }
 
-TEST_F(CParserDriverTests, EnumParseErrorIncludesFileContext)
+TEST_F(CParserFacadeTests, EnumParseErrorIncludesFileContext)
 {
     auto temp_path = create_temp_file("enum FOO;"); // Missing opening brace
-    CParserDriver driver{temp_path, &formatter_};
+    CParserFacade driver{temp_path, &formatter_};
 
     auto result = driver.parse_enums();
     EXPECT_FALSE(result.has_value());
@@ -300,10 +300,10 @@ TEST_F(CParserDriverTests, EnumParseErrorIncludesFileContext)
 // Caching/Reuse Tests
 // ============================================================================
 
-TEST_F(CParserDriverTests, MultipleParseCallsReuseLoadedFile)
+TEST_F(CParserFacadeTests, MultipleParseCallsReuseLoadedFile)
 {
     auto temp_path = create_temp_file("#define A 1\n#define B 2\nenum { X, Y };");
-    CParserDriver driver{temp_path, &formatter_};
+    CParserFacade driver{temp_path, &formatter_};
 
     // First call loads file
     auto defines_result = driver.parse_defines();
@@ -316,11 +316,11 @@ TEST_F(CParserDriverTests, MultipleParseCallsReuseLoadedFile)
     EXPECT_EQ(enums_result.value().size(), 1);
 }
 
-TEST_F(CParserDriverTests, ParseDefinesDoesNotResetParserState)
+TEST_F(CParserFacadeTests, ParseDefinesDoesNotResetParserState)
 {
     // Calling parse_defines twice should give the same result
     auto temp_path = create_temp_file("#define FOO 123\n#define BAR 456");
-    CParserDriver driver{temp_path, &formatter_};
+    CParserFacade driver{temp_path, &formatter_};
 
     auto result1 = driver.parse_defines();
     ASSERT_TRUE(result1.has_value());
@@ -335,10 +335,10 @@ TEST_F(CParserDriverTests, ParseDefinesDoesNotResetParserState)
 // Edge Cases
 // ============================================================================
 
-TEST_F(CParserDriverTests, EmptyFileReturnsEmptyResults)
+TEST_F(CParserFacadeTests, EmptyFileReturnsEmptyResults)
 {
     auto temp_path = create_temp_file("");
-    CParserDriver driver{temp_path, &formatter_};
+    CParserFacade driver{temp_path, &formatter_};
 
     auto defines_result = driver.parse_defines();
     ASSERT_TRUE(defines_result.has_value());
@@ -349,17 +349,17 @@ TEST_F(CParserDriverTests, EmptyFileReturnsEmptyResults)
     EXPECT_TRUE(enums_result.value().empty());
 }
 
-TEST_F(CParserDriverTests, FileWithOnlyCommentsReturnsEmptyResults)
+TEST_F(CParserFacadeTests, FileWithOnlyCommentsReturnsEmptyResults)
 {
     auto temp_path = create_temp_file("// This is a comment\n/* Block comment */\n");
-    CParserDriver driver{temp_path, &formatter_};
+    CParserFacade driver{temp_path, &formatter_};
 
     auto result = driver.parse_defines();
     ASSERT_TRUE(result.has_value());
     EXPECT_TRUE(result.value().empty());
 }
 
-TEST_F(CParserDriverTests, MixedDefinesAndEnums)
+TEST_F(CParserFacadeTests, MixedDefinesAndEnums)
 {
     auto temp_path = create_temp_file(R"(
 #define FOO 1
@@ -367,7 +367,7 @@ enum { A, B };
 #define BAR 2
 enum { C, D };
 )");
-    CParserDriver driver{temp_path, &formatter_};
+    CParserFacade driver{temp_path, &formatter_};
 
     auto defines_result = driver.parse_defines();
     ASSERT_TRUE(defines_result.has_value());
@@ -382,10 +382,10 @@ enum { C, D };
 // Pointer Array Parsing Tests
 // ============================================================================
 
-TEST_F(CParserDriverTests, ParsePointerArraysFromGeneratedHeader)
+TEST_F(CParserFacadeTests, ParsePointerArraysFromGeneratedHeader)
 {
     auto file_path = test_resource_path("Tests/integration/c_parser/generated_anim_code.h");
-    CParserDriver driver{file_path, &formatter_};
+    CParserFacade driver{file_path, &formatter_};
 
     auto result = driver.parse_pointer_arrays();
     ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
@@ -409,7 +409,7 @@ TEST_F(CParserDriverTests, ParsePointerArraysFromGeneratedHeader)
     EXPECT_EQ(water_it->elements().size(), 5); // Frame0, Frame1, Frame2, Frame3, Frame4
 }
 
-TEST_F(CParserDriverTests, ParsePointerArraysFromTempFile)
+TEST_F(CParserFacadeTests, ParsePointerArraysFromTempFile)
 {
     auto temp_path = create_temp_file(R"(
 const u16 *const myArray[] = {
@@ -418,7 +418,7 @@ const u16 *const myArray[] = {
     myArray_Frame2
 };
 )");
-    CParserDriver driver{temp_path, &formatter_};
+    CParserFacade driver{temp_path, &formatter_};
 
     auto result = driver.parse_pointer_arrays();
     ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
@@ -432,9 +432,9 @@ const u16 *const myArray[] = {
     EXPECT_EQ(arrays[0].elements()[2], "myArray_Frame2");
 }
 
-TEST_F(CParserDriverTests, ParsePointerArraysNonExistentFileReturnsError)
+TEST_F(CParserFacadeTests, ParsePointerArraysNonExistentFileReturnsError)
 {
-    CParserDriver driver{"/nonexistent/path/to/file.h", &formatter_};
+    CParserFacade driver{"/nonexistent/path/to/file.h", &formatter_};
 
     auto result = driver.parse_pointer_arrays();
     EXPECT_FALSE(result.has_value());
@@ -447,10 +447,10 @@ TEST_F(CParserDriverTests, ParsePointerArraysNonExistentFileReturnsError)
 // Function Parsing Tests
 // ============================================================================
 
-TEST_F(CParserDriverTests, ParseFunctionsFromGeneratedHeader)
+TEST_F(CParserFacadeTests, ParseFunctionsFromGeneratedHeader)
 {
     auto file_path = test_resource_path("Tests/integration/c_parser/generated_anim_code.h");
-    CParserDriver driver{file_path, &formatter_};
+    CParserFacade driver{file_path, &formatter_};
 
     auto result = driver.parse_functions();
     ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
@@ -467,10 +467,10 @@ TEST_F(CParserDriverTests, ParseFunctionsFromGeneratedHeader)
     EXPECT_FALSE(flower_it->body_tokens().empty());
 }
 
-TEST_F(CParserDriverTests, ParseFunctionsWithPrefixFilter)
+TEST_F(CParserFacadeTests, ParseFunctionsWithPrefixFilter)
 {
     auto file_path = test_resource_path("Tests/integration/c_parser/generated_anim_code.h");
-    CParserDriver driver{file_path, &formatter_};
+    CParserFacade driver{file_path, &formatter_};
 
     auto result = driver.parse_functions("QueueAnimTiles_");
     ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
@@ -485,7 +485,7 @@ TEST_F(CParserDriverTests, ParseFunctionsWithPrefixFilter)
     }
 }
 
-TEST_F(CParserDriverTests, ParseFunctionsFromTempFile)
+TEST_F(CParserFacadeTests, ParseFunctionsFromTempFile)
 {
     auto temp_path = create_temp_file(R"(
 static void funcA(int x) {
@@ -496,7 +496,7 @@ void funcB(void) {
     funcA(5);
 }
 )");
-    CParserDriver driver{temp_path, &formatter_};
+    CParserFacade driver{temp_path, &formatter_};
 
     auto result = driver.parse_functions();
     ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
@@ -507,9 +507,9 @@ void funcB(void) {
     EXPECT_EQ(functions[1].name(), "funcB");
 }
 
-TEST_F(CParserDriverTests, ParseFunctionsNonExistentFileReturnsError)
+TEST_F(CParserFacadeTests, ParseFunctionsNonExistentFileReturnsError)
 {
-    CParserDriver driver{"/nonexistent/path/to/file.h", &formatter_};
+    CParserFacade driver{"/nonexistent/path/to/file.h", &formatter_};
 
     auto result = driver.parse_functions();
     EXPECT_FALSE(result.has_value());
@@ -518,10 +518,10 @@ TEST_F(CParserDriverTests, ParseFunctionsNonExistentFileReturnsError)
     EXPECT_NE(error_text.find("file not found"), std::string::npos);
 }
 
-TEST_F(CParserDriverTests, ParseFunctionBodyContainsExpectedTokens)
+TEST_F(CParserFacadeTests, ParseFunctionBodyContainsExpectedTokens)
 {
     auto file_path = test_resource_path("Tests/integration/c_parser/generated_anim_code.h");
-    CParserDriver driver{file_path, &formatter_};
+    CParserFacade driver{file_path, &formatter_};
 
     auto result = driver.parse_functions("QueueAnimTiles_PorytilesManaged_General_Flower");
     ASSERT_TRUE(result.has_value()) << get_all_error_text(result);

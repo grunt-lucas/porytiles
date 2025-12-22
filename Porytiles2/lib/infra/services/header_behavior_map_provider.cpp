@@ -185,8 +185,8 @@ ChainableResult<void> HeaderBehaviorMapProvider::ensure_loaded() const
 
     const auto header_path = project_root_ / header_relative_path_;
 
-    // Create and store CParserDriver for rich error formatting with source context
-    driver_ = std::make_unique<CParserDriver>(header_path, format_);
+    // Create and store CParserFacade for rich error formatting with source context
+    driver_ = std::make_unique<CParserFacade>(header_path, format_);
 
     // Parse #define statements
     auto defines_result = driver_->parse_defines();
