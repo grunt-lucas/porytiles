@@ -1,7 +1,6 @@
 #pragma once
 
 #include <cstdint>
-#include <optional>
 #include <string>
 #include <unordered_map>
 #include <vector>
@@ -168,12 +167,9 @@ class Parser {
      *
      * The parser captures the function name and all tokens within the body braces for later pattern matching.
      *
-     * @param name_prefix Optional prefix to filter function names. If provided, only functions whose names start with
-     *        this prefix are returned. For example, "QueueAnimTiles_" would match only queue functions.
      * @return A vector of FunctionDefinition on success, or an error on failure
      */
-    [[nodiscard]] ChainableResult<std::vector<FunctionDefinition>>
-    parse_functions(const std::optional<std::string> &name_prefix = std::nullopt);
+    [[nodiscard]] ChainableResult<std::vector<FunctionDefinition>> parse_functions();
 
   private:
     [[nodiscard]] const Token &peek() const;

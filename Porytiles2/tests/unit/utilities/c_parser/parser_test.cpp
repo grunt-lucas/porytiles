@@ -45,8 +45,7 @@ class ParserTests : public ::testing::Test {
         return parser.parse_pointer_arrays();
     }
 
-    [[nodiscard]] ChainableResult<std::vector<FunctionDefinition>>
-    parse_functions(const std::string &source, const std::optional<std::string> &prefix = std::nullopt)
+    [[nodiscard]] ChainableResult<std::vector<FunctionDefinition>> parse_functions(const std::string &source)
     {
         Lexer lexer{&formatter_, source};
         auto tokens_result = lexer.lex();
@@ -54,7 +53,7 @@ class ParserTests : public ::testing::Test {
             return ChainableResult<std::vector<FunctionDefinition>>{tokens_result};
         }
         Parser parser{&formatter_, std::move(tokens_result).value()};
-        return parser.parse_functions(prefix);
+        return parser.parse_functions();
     }
 
     template <typename T>
@@ -782,26 +781,19 @@ static void funcC(void) { }
     EXPECT_EQ(result.value()[2].name(), "funcC");
 }
 
-TEST_F(ParserTests, ParseFunctionsWithNamePrefixFilter)
+TEST_F(ParserTests, ParseFunctionsReturnsAllFunctions)
 {
     auto result = parse_functions(
         R"(
 void QueueAnimTiles_Flower(u16 timer) { }
 void TilesetAnim_General(u16 timer) { }
 void QueueAnimTiles_Water(u16 timer) { }
-)",
-        "QueueAnimTiles_");
+)");
     ASSERT_TRUE(result.has_value());
-    ASSERT_EQ(result.value().size(), 2);
+    ASSERT_EQ(result.value().size(), 3);
     EXPECT_EQ(result.value()[0].name(), "QueueAnimTiles_Flower");
-    EXPECT_EQ(result.value()[1].name(), "QueueAnimTiles_Water");
-}
-
-TEST_F(ParserTests, ParseFunctionsNoMatchForPrefix)
-{
-    auto result = parse_functions("void foo(void) { }", "NonExistent_");
-    ASSERT_TRUE(result.has_value());
-    EXPECT_TRUE(result.value().empty());
+    EXPECT_EQ(result.value()[1].name(), "TilesetAnim_General");
+    EXPECT_EQ(result.value()[2].name(), "QueueAnimTiles_Water");
 }
 
 TEST_F(ParserTests, ParseFunctionBodyContainsMacroCall)

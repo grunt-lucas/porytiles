@@ -108,9 +108,12 @@ class CParserDriver {
      * On error (file not found, lexer error, parser error), returns a ChainableResult containing a FormattableError
      * with multi-line source context highlighting.
      *
+     * @param name_prefix Optional prefix to filter array names. If provided, only arrays whose names start with this
+     *        prefix are returned. For example, "gTilesetAnims_General_" would match only General tileset arrays.
      * @return A vector of ArrayDeclaration on success, or an error chain on failure
      */
-    [[nodiscard]] ChainableResult<std::vector<ArrayDeclaration>> parse_pointer_arrays();
+    [[nodiscard]] ChainableResult<std::vector<ArrayDeclaration>>
+    parse_pointer_arrays(const std::optional<std::string> &name_prefix = std::nullopt);
 
     /**
      * @brief Parses function definitions from the file.

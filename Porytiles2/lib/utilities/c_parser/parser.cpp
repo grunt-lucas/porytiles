@@ -850,7 +850,7 @@ ChainableResult<std::vector<ArrayDeclaration>> Parser::parse_pointer_arrays()
     return arrays;
 }
 
-ChainableResult<std::vector<FunctionDefinition>> Parser::parse_functions(const std::optional<std::string> &name_prefix)
+ChainableResult<std::vector<FunctionDefinition>> Parser::parse_functions()
 {
     std::vector<FunctionDefinition> functions;
 
@@ -919,13 +919,6 @@ ChainableResult<std::vector<FunctionDefinition>> Parser::parse_functions(const s
 
         // Skip past the closing brace
         current_ = skip_balanced_braces(tokens_, current_);
-
-        // Apply name prefix filter if provided
-        if (name_prefix.has_value()) {
-            if (!func_name.starts_with(name_prefix.value())) {
-                continue;
-            }
-        }
 
         functions.emplace_back(std::move(func_name), std::move(body_tokens), name_pos);
     }

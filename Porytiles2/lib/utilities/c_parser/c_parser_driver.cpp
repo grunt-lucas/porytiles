@@ -1,5 +1,6 @@
 #include "porytiles2/utilities/c_parser/c_parser_driver.hpp"
 
+#include <algorithm>
 #include <fstream>
 #include <sstream>
 
@@ -128,7 +129,8 @@ ChainableResult<std::vector<EnumDeclaration>> CParserDriver::parse_enums()
     return std::move(parse_result).value();
 }
 
-ChainableResult<std::vector<ArrayDeclaration>> CParserDriver::parse_pointer_arrays()
+ChainableResult<std::vector<ArrayDeclaration>>
+CParserDriver::parse_pointer_arrays(const std::optional<std::string> &name_prefix)
 {
     auto load_result = ensure_loaded();
     if (!load_result.has_value()) {
@@ -158,7 +160,14 @@ ChainableResult<std::vector<ArrayDeclaration>> CParserDriver::parse_pointer_arra
             parse_result};
     }
 
-    return std::move(parse_result).value();
+    // Apply name prefix filter if provided
+    auto arrays = std::move(parse_result).value();
+    if (name_prefix.has_value()) {
+        std::erase_if(
+            arrays, [&](const ArrayDeclaration &arr) { return !arr.name().starts_with(name_prefix.value()); });
+    }
+
+    return arrays;
 }
 
 ChainableResult<std::vector<FunctionDefinition>>
@@ -184,7 +193,7 @@ CParserDriver::parse_functions(const std::optional<std::string> &name_prefix)
 
     // Parse the tokens
     Parser parser{format_, std::move(lex_result).value(), context_.get()};
-    auto parse_result = parser.parse_functions(name_prefix);
+    auto parse_result = parser.parse_functions();
     if (!parse_result.has_value()) {
         return ChainableResult<std::vector<FunctionDefinition>>{
             FormattableError{
@@ -192,7 +201,14 @@ CParserDriver::parse_functions(const std::optional<std::string> &name_prefix)
             parse_result};
     }
 
-    return std::move(parse_result).value();
+    // Apply name prefix filter if provided
+    auto functions = std::move(parse_result).value();
+    if (name_prefix.has_value()) {
+        std::erase_if(
+            functions, [&](const FunctionDefinition &func) { return !func.name().starts_with(name_prefix.value()); });
+    }
+
+    return functions;
 }
 
 ChainableResult<std::optional<DefineStatement>> CParserDriver::find_define(const std::string &define_name)
