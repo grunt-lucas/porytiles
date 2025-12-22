@@ -173,20 +173,20 @@ TEST_F(AnimCodeParserTest, ParseVanillaAnimsExtractsLandWaterEdgeAnimationParams
     const auto &anims = result.value();
 
     ASSERT_TRUE(anims.contains("land_water_edge")) << "Should contain 'water' animation";
-    const auto &water = anims.at("land_water_edge");
+    const auto &land_water_edge = anims.at("land_water_edge");
 
     // Verify tile_offset from TILE_OFFSET_4BPP(480)
-    EXPECT_EQ(water.tile_offset(), 480u);
+    EXPECT_EQ(land_water_edge.tile_offset(), 480u);
 
     // Verify tile_count from 10 * TILE_SIZE_4BPP
-    EXPECT_EQ(water.tile_count(), 10u);
+    EXPECT_EQ(land_water_edge.tile_count(), 10u);
 
     // Verify frame_factor and frame_offset from timer % 16 == 4
-    EXPECT_EQ(water.frame_factor(), 16u);
-    EXPECT_EQ(water.frame_offset(), 4u);
+    EXPECT_EQ(land_water_edge.frame_factor(), 16u);
+    EXPECT_EQ(land_water_edge.frame_offset(), 4u);
 
     // Verify frames from pointer array (4 frames for vanilla land_water_edge)
-    const auto &frames = water.frames();
+    const auto &frames = land_water_edge.frames();
     ASSERT_EQ(frames.size(), 4u);
     for (std::size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(frames[i], i);
