@@ -18,16 +18,17 @@ class AnimCodeParserTest : public ::testing::Test {
 
 TEST_F(AnimCodeParserTest, ParseGeneratedHeaderReturnsCorrectAnimationCount)
 {
-    auto result = parser_.parse_generated_header("Resources/Tests/integration/c_parser/generated_anim_code.h");
+    auto result = parser_.parse_generated_header("Resources/Tests/integration/anim/generated_anim_code.h", "general");
 
     ASSERT_TRUE(result.has_value()) << "Parsing should succeed";
     const auto &anims = result.value();
-    EXPECT_EQ(anims.size(), 2u) << "Should find 2 animations (flower, water)";
+    EXPECT_EQ(anims.size(), 5u)
+        << "Should find 5 animations (flower, land_water_edge, sand_water_edge, water, waterfall)";
 }
 
 TEST_F(AnimCodeParserTest, ParseGeneratedHeaderExtractsFlowerAnimationParams)
 {
-    auto result = parser_.parse_generated_header("Resources/Tests/integration/c_parser/generated_anim_code.h");
+    auto result = parser_.parse_generated_header("Resources/Tests/integration/anim/generated_anim_code.h", "general");
 
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
@@ -36,8 +37,8 @@ TEST_F(AnimCodeParserTest, ParseGeneratedHeaderExtractsFlowerAnimationParams)
     ASSERT_TRUE(anims.contains("flower")) << "Should contain 'flower' animation";
     const auto &flower = anims.at("flower");
 
-    // Verify tile_offset from TILE_OFFSET_4BPP(12)
-    EXPECT_EQ(flower.tile_offset(), 12u);
+    // Verify tile_offset from TILE_OFFSET_4BPP(508)
+    EXPECT_EQ(flower.tile_offset(), 508u);
 
     // Verify tile_count from 4 * TILE_SIZE_4BPP
     EXPECT_EQ(flower.tile_count(), 4u);
@@ -55,9 +56,37 @@ TEST_F(AnimCodeParserTest, ParseGeneratedHeaderExtractsFlowerAnimationParams)
     EXPECT_EQ(frames[3], 2u);
 }
 
+TEST_F(AnimCodeParserTest, ParseGeneratedHeaderExtractsLandWaterEdgeAnimationParams)
+{
+    auto result = parser_.parse_generated_header("Resources/Tests/integration/anim/generated_anim_code.h", "general");
+
+    ASSERT_TRUE(result.has_value());
+    const auto &anims = result.value();
+
+    ASSERT_TRUE(anims.contains("land_water_edge")) << "Should contain 'land_water_edge' animation";
+    const auto &land_water_edge = anims.at("land_water_edge");
+
+    // Verify tile_offset from TILE_OFFSET_4BPP(480)
+    EXPECT_EQ(land_water_edge.tile_offset(), 480u);
+
+    // Verify tile_count from 10 * TILE_SIZE_4BPP
+    EXPECT_EQ(land_water_edge.tile_count(), 10u);
+
+    // Verify frame_factor and frame_offset from timer % 16 == 4
+    EXPECT_EQ(land_water_edge.frame_factor(), 16u);
+    EXPECT_EQ(land_water_edge.frame_offset(), 4u);
+
+    // Verify frames from pointer array (4 frames for vanilla land_water_edge)
+    const auto &frames = land_water_edge.frames();
+    ASSERT_EQ(frames.size(), 4u);
+    for (std::size_t i = 0; i < 4; ++i) {
+        EXPECT_EQ(frames[i], i);
+    }
+}
+
 TEST_F(AnimCodeParserTest, ParseGeneratedHeaderExtractsWaterAnimationParams)
 {
-    auto result = parser_.parse_generated_header("Resources/Tests/integration/c_parser/generated_anim_code.h");
+    auto result = parser_.parse_generated_header("Resources/Tests/integration/anim/generated_anim_code.h", "general");
 
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
@@ -76,19 +105,22 @@ TEST_F(AnimCodeParserTest, ParseGeneratedHeaderExtractsWaterAnimationParams)
     EXPECT_EQ(water.frame_factor(), 16u);
     EXPECT_EQ(water.frame_offset(), 1u);
 
-    // Verify frames from pointer array [Frame0, Frame1, Frame2, Frame3, Frame4]
+    // Verify frames from pointer array
     const auto &frames = water.frames();
-    ASSERT_EQ(frames.size(), 5u);
+    ASSERT_EQ(frames.size(), 8u);
     EXPECT_EQ(frames[0], 0u);
     EXPECT_EQ(frames[1], 1u);
     EXPECT_EQ(frames[2], 2u);
     EXPECT_EQ(frames[3], 3u);
     EXPECT_EQ(frames[4], 4u);
+    EXPECT_EQ(frames[5], 5u);
+    EXPECT_EQ(frames[6], 6u);
+    EXPECT_EQ(frames[7], 7u);
 }
 
 TEST_F(AnimCodeParserTest, ParseGeneratedHeaderReturnsErrorForNonExistentFile)
 {
-    auto result = parser_.parse_generated_header("nonexistent_file.h");
+    auto result = parser_.parse_generated_header("nonexistent_file.h", "general");
 
     EXPECT_FALSE(result.has_value()) << "Should return error for non-existent file";
 }
@@ -99,7 +131,7 @@ TEST_F(AnimCodeParserTest, ParseGeneratedHeaderReturnsErrorForNonExistentFile)
 
 TEST_F(AnimCodeParserTest, ParseVanillaAnimsReturnsCorrectAnimationCount)
 {
-    auto result = parser_.parse_vanilla_anims("Resources/Tests/integration/c_parser/tileset_anims.c", "general");
+    auto result = parser_.parse_vanilla_anims("Resources/Tests/integration/anim/tileset_anims.c", "general");
 
     ASSERT_TRUE(result.has_value()) << "Parsing should succeed";
     const auto &anims = result.value();
@@ -110,7 +142,7 @@ TEST_F(AnimCodeParserTest, ParseVanillaAnimsReturnsCorrectAnimationCount)
 
 TEST_F(AnimCodeParserTest, ParseVanillaAnimsExtractsFlowerAnimationParams)
 {
-    auto result = parser_.parse_vanilla_anims("Resources/Tests/integration/c_parser/tileset_anims.c", "general");
+    auto result = parser_.parse_vanilla_anims("Resources/Tests/integration/anim/tileset_anims.c", "general");
 
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
@@ -137,9 +169,37 @@ TEST_F(AnimCodeParserTest, ParseVanillaAnimsExtractsFlowerAnimationParams)
     EXPECT_EQ(frames[3], 2u);
 }
 
+TEST_F(AnimCodeParserTest, ParseVanillaAnimsExtractsLandWaterEdgeAnimationParams)
+{
+    auto result = parser_.parse_vanilla_anims("Resources/Tests/integration/anim/tileset_anims.c", "general");
+
+    ASSERT_TRUE(result.has_value());
+    const auto &anims = result.value();
+
+    ASSERT_TRUE(anims.contains("land_water_edge")) << "Should contain 'land_water_edge' animation";
+    const auto &land_water_edge = anims.at("land_water_edge");
+
+    // Verify tile_offset from TILE_OFFSET_4BPP(480)
+    EXPECT_EQ(land_water_edge.tile_offset(), 480u);
+
+    // Verify tile_count from 10 * TILE_SIZE_4BPP
+    EXPECT_EQ(land_water_edge.tile_count(), 10u);
+
+    // Verify frame_factor and frame_offset from timer % 16 == 4
+    EXPECT_EQ(land_water_edge.frame_factor(), 16u);
+    EXPECT_EQ(land_water_edge.frame_offset(), 4u);
+
+    // Verify frames from pointer array (4 frames for vanilla land_water_edge)
+    const auto &frames = land_water_edge.frames();
+    ASSERT_EQ(frames.size(), 4u);
+    for (std::size_t i = 0; i < 4; ++i) {
+        EXPECT_EQ(frames[i], i);
+    }
+}
+
 TEST_F(AnimCodeParserTest, ParseVanillaAnimsExtractsWaterAnimationParams)
 {
-    auto result = parser_.parse_vanilla_anims("Resources/Tests/integration/c_parser/tileset_anims.c", "general");
+    auto result = parser_.parse_vanilla_anims("Resources/Tests/integration/anim/tileset_anims.c", "general");
 
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
@@ -165,34 +225,6 @@ TEST_F(AnimCodeParserTest, ParseVanillaAnimsExtractsWaterAnimationParams)
     }
 }
 
-TEST_F(AnimCodeParserTest, ParseVanillaAnimsExtractsLandWaterEdgeAnimationParams)
-{
-    auto result = parser_.parse_vanilla_anims("Resources/Tests/integration/c_parser/tileset_anims.c", "general");
-
-    ASSERT_TRUE(result.has_value());
-    const auto &anims = result.value();
-
-    ASSERT_TRUE(anims.contains("land_water_edge")) << "Should contain 'water' animation";
-    const auto &land_water_edge = anims.at("land_water_edge");
-
-    // Verify tile_offset from TILE_OFFSET_4BPP(480)
-    EXPECT_EQ(land_water_edge.tile_offset(), 480u);
-
-    // Verify tile_count from 10 * TILE_SIZE_4BPP
-    EXPECT_EQ(land_water_edge.tile_count(), 10u);
-
-    // Verify frame_factor and frame_offset from timer % 16 == 4
-    EXPECT_EQ(land_water_edge.frame_factor(), 16u);
-    EXPECT_EQ(land_water_edge.frame_offset(), 4u);
-
-    // Verify frames from pointer array (4 frames for vanilla land_water_edge)
-    const auto &frames = land_water_edge.frames();
-    ASSERT_EQ(frames.size(), 4u);
-    for (std::size_t i = 0; i < 4; ++i) {
-        EXPECT_EQ(frames[i], i);
-    }
-}
-
 TEST_F(AnimCodeParserTest, ParseVanillaAnimsReturnsErrorForNonExistentFile)
 {
     auto result = parser_.parse_vanilla_anims("nonexistent_file.c", "general");
@@ -202,7 +234,7 @@ TEST_F(AnimCodeParserTest, ParseVanillaAnimsReturnsErrorForNonExistentFile)
 
 TEST_F(AnimCodeParserTest, ParseVanillaAnimsReturnsEmptyForUnknownTileset)
 {
-    auto result = parser_.parse_vanilla_anims("Resources/Tests/integration/c_parser/tileset_anims.c", "non_existent");
+    auto result = parser_.parse_vanilla_anims("Resources/Tests/integration/anim/tileset_anims.c", "non_existent");
 
     ASSERT_TRUE(result.has_value()) << "Parsing should succeed even with no matches";
     EXPECT_TRUE(result.value().empty()) << "Should return empty map for unknown tileset";

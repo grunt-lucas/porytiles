@@ -395,7 +395,7 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_porymap_anim_frame(
 [[nodiscard]] ChainableResult<void>
 ProjectTilesetArtifactReader::read_generated_anim_code(Tileset &dest, const ArtifactKey &src_key) const
 {
-    auto params_result = anim_code_parser_->parse_generated_header(src_key.key());
+    auto params_result = anim_code_parser_->parse_generated_header(src_key.key(), dest.name());
     if (!params_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{"{}: failed to parse generated anim code", FormatParam{src_key.key(), Style::bold}},

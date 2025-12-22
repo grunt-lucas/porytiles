@@ -391,8 +391,8 @@ TEST_F(CParserFacadeTests, ParsePointerArraysFromGeneratedHeader)
     ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
 
     const auto &arrays = result.value();
-    // Should have 2 frame pointer arrays: Flower and Water
-    EXPECT_EQ(arrays.size(), 2);
+    // Should have 5 frame pointer arrays: Flower, LandWaterEdge, SandWaterEdge, Water, Waterfall
+    EXPECT_EQ(arrays.size(), 5);
 
     // Find Flower array
     auto flower_it = std::find_if(arrays.begin(), arrays.end(), [](const ArrayDeclaration &arr) {
@@ -406,7 +406,7 @@ TEST_F(CParserFacadeTests, ParsePointerArraysFromGeneratedHeader)
         return arr.name() == "gTilesetAnims_PorytilesManaged_General_Water";
     });
     ASSERT_NE(water_it, arrays.end());
-    EXPECT_EQ(water_it->elements().size(), 5); // Frame0, Frame1, Frame2, Frame3, Frame4
+    EXPECT_EQ(water_it->elements().size(), 8);
 }
 
 TEST_F(CParserFacadeTests, ParsePointerArraysFromTempFile)
@@ -476,8 +476,8 @@ TEST_F(CParserFacadeTests, ParseFunctionsWithPrefixFilter)
     ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
 
     const auto &functions = result.value();
-    // Should have exactly 2 QueueAnimTiles functions
-    EXPECT_EQ(functions.size(), 2);
+    // Should have exactly 5 QueueAnimTiles functions
+    EXPECT_EQ(functions.size(), 5);
 
     // All should have QueueAnimTiles_ prefix
     for (const auto &func : functions) {
@@ -533,19 +533,19 @@ TEST_F(CParserFacadeTests, ParseFunctionBodyContainsExpectedTokens)
 
     // Should contain TILE_OFFSET_4BPP identifier
     bool found_tile_offset = false;
-    bool found_12 = false;
+    bool found_508 = false;
     for (std::size_t i = 0; i < body.size(); ++i) {
         if (body[i].is(TokenType::identifier) && body[i].text() == "TILE_OFFSET_4BPP") {
             found_tile_offset = true;
             // Next token after ( should be 12
             if (i + 2 < body.size() && body[i + 1].is(TokenType::left_paren) &&
-                body[i + 2].is(TokenType::integer_literal) && body[i + 2].int_value() == 12) {
-                found_12 = true;
+                body[i + 2].is(TokenType::integer_literal) && body[i + 2].int_value() == 508) {
+                found_508 = true;
             }
         }
     }
     EXPECT_TRUE(found_tile_offset) << "Expected to find TILE_OFFSET_4BPP in function body";
-    EXPECT_TRUE(found_12) << "Expected to find TILE_OFFSET_4BPP(12) in function body";
+    EXPECT_TRUE(found_508) << "Expected to find TILE_OFFSET_4BPP(508) in function body";
 }
 
 } // namespace

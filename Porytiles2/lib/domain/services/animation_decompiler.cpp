@@ -55,6 +55,10 @@ std::size_t find_palette_for_animation_tiles(
          * candidates. At a certain point, it becomes ridiculous to try to automate stuff like this. Users will be
          * expected to have some understanding of how the game works in order to use the tool properly.
          */
+        std::cerr << std::endl;
+        std::cerr << "---------------------------------" << std::endl;
+        std::cerr << "|            TODO               |" << std::endl;
+        std::cerr << "---------------------------------" << std::endl;
         std::cerr << "no palette index found for animation '" << anim_name
                   << "' tiles in range [" + std::to_string(tile_offset) + ", " +
                          std::to_string(tile_offset + tile_count - 1) + "]"

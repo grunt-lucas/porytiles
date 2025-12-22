@@ -53,10 +53,14 @@ class AnimCodeParser {
      * tile_offset and tile_count which are embedded in the QueueAnimTiles functions.
      *
      * @param header_path Path to the generated_anim_code.h file
+     * @param tileset_name The name of the tileset to extract animations for
      * @return Map of animation names to their parsed parameters, or error
      */
     [[nodiscard]] ChainableResult<std::map<std::string, AnimationParams>>
-    parse_generated_header(const std::filesystem::path &header_path) const;
+    parse_generated_header(const std::filesystem::path &header_path, const std::string &tileset_name) const;
+
+    [[nodiscard]] ChainableResult<std::map<std::string, AnimationParams>>
+    parse_generated_header2(const std::filesystem::path &header_path, const std::string &tileset_name) const;
 
     /**
      * @brief Parses vanilla pokeemerald tileset animation code.
@@ -74,6 +78,9 @@ class AnimCodeParser {
      */
     [[nodiscard]] ChainableResult<std::map<std::string, AnimationParams>>
     parse_vanilla_anims(const std::filesystem::path &anims_c_path, const std::string &tileset_name) const;
+
+    [[nodiscard]] ChainableResult<std::map<std::string, AnimationParams>>
+    parse_vanilla_anims2(const std::filesystem::path &anims_c_path, const std::string &tileset_name) const;
 
   private:
     const TextFormatter *format_;

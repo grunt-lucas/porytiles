@@ -1,18 +1,23 @@
 #include "porytiles2/infra/services/anim_code_parser.hpp"
 
+#include <map>
 #include <optional>
 #include <set>
+#include <string>
 
 #include "fmt/format.h"
 
+#include "porytiles2/domain/models/animation_params.hpp"
 #include "porytiles2/utilities/c_parser/c_parser_facade.hpp"
 #include "porytiles2/utilities/c_parser/token.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
 #include "porytiles2/utilities/text/file_highlight_printer.hpp"
 
-namespace porytiles2 {
-
 namespace {
+
+using namespace porytiles2;
+
+constexpr std::string porytiles_managed_prefix = "PorytilesManaged";
 
 /**
  * @brief Extracts the PascalCase animation name from an identifier.
@@ -28,7 +33,7 @@ namespace {
 [[nodiscard]] std::string extract_anim_name(const std::string &identifier, const std::string &tileset_name)
 {
     // Try Porytiles-managed format: gTilesetAnims_PorytilesManaged_TilesetName_AnimName
-    std::string porytiles_prefix = "gTilesetAnims_PorytilesManaged_" + tileset_name + "_";
+    std::string porytiles_prefix = "gTilesetAnims_" + porytiles_managed_prefix + "_" + tileset_name + "_";
     if (identifier.starts_with(porytiles_prefix)) {
         std::string remainder = identifier.substr(porytiles_prefix.size());
         // Remove _Frame suffix if present
@@ -73,7 +78,7 @@ namespace {
 [[nodiscard]] std::string extract_anim_name_from_function(const std::string &func_name, const std::string &tileset_name)
 {
     // Try Porytiles-managed format: QueueAnimTiles_PorytilesManaged_TilesetName_AnimName
-    std::string porytiles_prefix = "QueueAnimTiles_PorytilesManaged_" + tileset_name + "_";
+    std::string porytiles_prefix = "QueueAnimTiles_" + porytiles_managed_prefix + "_" + tileset_name + "_";
     if (func_name.starts_with(porytiles_prefix)) {
         return func_name.substr(porytiles_prefix.size());
     }
@@ -241,29 +246,91 @@ extract_timer_conditions(const std::vector<Token> &body_tokens, const std::strin
 }
 
 ChainableResult<std::map<std::string, AnimationParams>> parse_animation_params_from_c_file(
-    const std::filesystem::path &c_file, const std::string &tileset_name, const TextFormatter &format)
+    const std::filesystem::path &c_file,
+    const std::string &tileset_name,
+    bool porytiles_managed,
+    const TextFormatter &format)
 {
-    CParserFacade driver{c_file, &format};
+    std::map<std::string, AnimationParams> result;
+    CParserFacade c_parser{c_file, &format};
+    const std::string pascal_case_tileset_name = to_pascal_case(tileset_name);
 
     // Parse pointer arrays to get animation frame sequences
-    auto arrays_result = driver.parse_pointer_arrays();
-    if (!arrays_result.has_value()) {
+    const auto frame_array_prefix =
+        "gTilesetAnims_" + (porytiles_managed ? porytiles_managed_prefix : std::string{}) + pascal_case_tileset_name;
+    auto anim_frame_arrays_result = c_parser.parse_pointer_arrays(frame_array_prefix);
+    if (!anim_frame_arrays_result.has_value()) {
         return ChainableResult<std::map<std::string, AnimationParams>>{
             FormattableError{
                 format.format("{}: failed to parse animation frame arrays", FormatParam{c_file.string(), Style::bold})},
-            arrays_result};
+            anim_frame_arrays_result};
     }
-    const auto &arrays = arrays_result.value();
+    const auto &anim_frame_arrays = anim_frame_arrays_result.value();
 
-    return FormattableError{"TODO: impl"};
+    // Parse functions to get driver function
+    const auto driver_prefix =
+        "TilesetAnim_" + (porytiles_managed ? porytiles_managed_prefix : std::string{}) + pascal_case_tileset_name;
+    auto driver_funcs_result = c_parser.parse_functions(driver_prefix);
+    if (!driver_funcs_result.has_value()) {
+        return ChainableResult<std::map<std::string, AnimationParams>>{
+            FormattableError{format.format(
+                "{}: failed to parse animation driver functions", FormatParam{c_file.string(), Style::bold})},
+            driver_funcs_result};
+    }
+    const auto &driver_func_vector = driver_funcs_result.value();
+    if (driver_func_vector.size() > 1) {
+        // TODO: better error message here, display all driver functions
+        return FormattableError{
+            "found multiple definitions of driver function pattern '{}'", FormatParam{driver_prefix, Style::bold}};
+    }
+    const auto driver_func = driver_func_vector[0];
+
+    // Parse functions to get QueueAnimTiles functions
+    const auto queue_prefix =
+        "QueueAnimTiles_" + (porytiles_managed ? porytiles_managed_prefix : std::string{}) + pascal_case_tileset_name;
+    auto queue_anim_funcs_result = c_parser.parse_functions(queue_prefix);
+    if (!queue_anim_funcs_result.has_value()) {
+        return ChainableResult<std::map<std::string, AnimationParams>>{
+            FormattableError{format.format(
+                "{}: failed to parse animation QueueAnimTiles functions", FormatParam{c_file.string(), Style::bold})},
+            queue_anim_funcs_result};
+    }
+    const auto &queue_anim_funcs = queue_anim_funcs_result.value();
+
+    /*
+     * TODO: instead of "discovering" the anim names like this, we should instead require that a list of anim names be
+     * passed in as a "source of truth" (we already have them from the frame earlier loading step). This is better,
+     * because it allows us to throw a helpful error message if an anim is missing.
+     */
+    // Find animation names from pointer arrays (those without _Frame suffix are the main arrays)
+    std::set<std::string> anim_names;
+    for (const auto &arr : anim_frame_arrays) {
+        const std::string anim_name = extract_anim_name(arr.name(), tileset_name);
+        if (!anim_name.empty() && arr.name().find("_Frame") == std::string::npos) {
+            anim_names.insert(anim_name);
+        }
+    }
+
+    // Parse the driver function to get timer conditions
+    std::map<std::string, std::pair<std::size_t, std::size_t>> timer_conditions =
+        extract_timer_conditions(driver_func.body_tokens(), pascal_case_tileset_name);
+
+    // Build AnimationParams for each animation
+    for (const auto &anim_name : anim_names) {
+        AnimationParams params;
+    }
+
+    return result;
 }
 
 } // namespace
 
+namespace porytiles2 {
+
 AnimCodeParser::AnimCodeParser(gsl::not_null<const TextFormatter *> format) : format_{format} {}
 
 ChainableResult<std::map<std::string, AnimationParams>>
-AnimCodeParser::parse_generated_header(const std::filesystem::path &header_path) const
+AnimCodeParser::parse_generated_header(const std::filesystem::path &header_path, const std::string &tileset_name) const
 {
     CParserFacade driver{header_path, format_};
 
@@ -291,20 +358,20 @@ AnimCodeParser::parse_generated_header(const std::filesystem::path &header_path)
     std::map<std::string, AnimationParams> result;
 
     // Extract tileset name from file path or arrays
-    std::string tileset_name;
+    std::string parsed_tileset_name;
     for (const auto &arr : arrays) {
         if (arr.name().starts_with("gTilesetAnims_PorytilesManaged_")) {
             // Extract tileset name: gTilesetAnims_PorytilesManaged_<TilesetName>_<AnimName>
             std::string remainder = arr.name().substr(31); // Skip "gTilesetAnims_PorytilesManaged_"
             auto underscore_pos = remainder.find('_');
             if (underscore_pos != std::string::npos) {
-                tileset_name = remainder.substr(0, underscore_pos);
+                parsed_tileset_name = remainder.substr(0, underscore_pos);
                 break;
             }
         }
     }
 
-    if (tileset_name.empty()) {
+    if (parsed_tileset_name.empty()) {
         return FormattableError{
             format_->format("{}: could not determine tileset name", FormatParam{header_path.string(), Style::bold})};
     }
@@ -317,7 +384,7 @@ AnimCodeParser::parse_generated_header(const std::filesystem::path &header_path)
     // Find animation names from pointer arrays (those without _Frame suffix are the main arrays)
     std::set<std::string> anim_names;
     for (const auto &arr : arrays) {
-        std::string anim_name = extract_anim_name(arr.name(), tileset_name);
+        std::string anim_name = extract_anim_name(arr.name(), parsed_tileset_name);
         if (!anim_name.empty() && arr.name().find("_Frame") == std::string::npos) {
             anim_names.insert(anim_name);
         }
@@ -327,7 +394,7 @@ AnimCodeParser::parse_generated_header(const std::filesystem::path &header_path)
     std::map<std::string, std::pair<std::size_t, std::size_t>> timer_conditions;
     for (const auto &func : funcs) {
         if (func.name().starts_with("TilesetAnim_PorytilesManaged_")) {
-            timer_conditions = extract_timer_conditions(func.body_tokens(), tileset_name);
+            timer_conditions = extract_timer_conditions(func.body_tokens(), parsed_tileset_name);
             break;
         }
     }
@@ -341,7 +408,7 @@ AnimCodeParser::parse_generated_header(const std::filesystem::path &header_path)
 
         // Find the frame sequence from the pointer array
         for (const auto &arr : arrays) {
-            std::string arr_anim_name = extract_anim_name(arr.name(), tileset_name);
+            std::string arr_anim_name = extract_anim_name(arr.name(), parsed_tileset_name);
             /*
              * We want the main pointer array (e.g., gTilesetAnims_General_Flower), not the
              * individual frame data arrays (e.g., gTilesetAnims_General_Flower_Frame0).
@@ -358,7 +425,7 @@ AnimCodeParser::parse_generated_header(const std::filesystem::path &header_path)
 
         // Find tile_offset and tile_count from the QueueAnimTiles function
         for (const auto &func : funcs) {
-            std::string func_anim_name = extract_anim_name_from_function(func.name(), tileset_name);
+            std::string func_anim_name = extract_anim_name_from_function(func.name(), parsed_tileset_name);
             if (func_anim_name == anim_name) {
                 auto tile_offset = extract_tile_offset(func.body_tokens());
                 if (tile_offset.has_value()) {
@@ -413,6 +480,16 @@ AnimCodeParser::parse_generated_header(const std::filesystem::path &header_path)
         result[result_key] = std::move(params);
     }
 
+    return result;
+}
+
+ChainableResult<std::map<std::string, AnimationParams>>
+AnimCodeParser::parse_generated_header2(const std::filesystem::path &header_path, const std::string &tileset_name) const
+{
+    // Type alias hides the comma from the preprocessor (it sees "std::map<std::string, AnimationParams>" as 2 args)
+    using ResultType = std::map<std::string, AnimationParams>;
+    PT_TRY_ASSIGN_PASS_ERR(result, parse_animation_params_from_c_file(header_path, tileset_name, true, *format_),
+                           ResultType);
     return result;
 }
 
@@ -568,6 +645,16 @@ AnimCodeParser::parse_vanilla_anims(const std::filesystem::path &anims_c_path, c
         result[snake_case_anim_name] = std::move(params);
     }
 
+    return result;
+}
+
+ChainableResult<std::map<std::string, AnimationParams>>
+AnimCodeParser::parse_vanilla_anims2(const std::filesystem::path &anims_c_path, const std::string &tileset_name) const
+{
+    // Type alias hides the comma from the preprocessor (it sees "std::map<std::string, AnimationParams>" as 2 args)
+    using ResultType = std::map<std::string, AnimationParams>;
+    PT_TRY_ASSIGN_PASS_ERR(result, parse_animation_params_from_c_file(anims_c_path, tileset_name, false, *format_),
+                           ResultType);
     return result;
 }
 
