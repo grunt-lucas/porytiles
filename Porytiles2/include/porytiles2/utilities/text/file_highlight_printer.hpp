@@ -81,6 +81,37 @@ class FileHighlightPrinter {
         std::size_t col_to_highlight,
         std::size_t window_size = 9) const;
 
+    /**
+     * @brief Filesystem path-based overload.
+     *
+     * @param file The path to the file for printing
+     * @param line_indices_to_highlight 0-indexed line indices to highlight (index 0 is the first line)
+     * @param window_size Total number of context lines to show around highlighted line, defaults to 9
+     * @pre All indices in line_indices_to_highlight must be < lines.size()
+     * @return Formatted output lines ready for display
+     */
+    [[nodiscard]] std::vector<std::string> print(
+        const std::filesystem::path &file,
+        const std::vector<std::size_t> &line_indices_to_highlight,
+        std::size_t window_size = 9) const;
+
+    /**
+     * @brief Filesystem path-based overload.
+     *
+     * @param file The path to the file for printing
+     * @param line_index_to_highlight 0-indexed line index to highlight
+     * @param col_to_highlight 0-indexed column position to highlight within the line
+     * @param window_size Total number of context lines to show around highlighted line, defaults to 9
+     * @pre line_index_to_highlight must be < lines.size()
+     * @pre col_to_highlight must be < lines[line_index_to_highlight].size()
+     * @return Formatted output lines ready for display
+     */
+    [[nodiscard]] std::vector<std::string> print(
+        const std::filesystem::path &file,
+        std::size_t line_index_to_highlight,
+        std::size_t col_to_highlight,
+        std::size_t window_size = 9) const;
+
   private:
     const TextFormatter *format_;
 };

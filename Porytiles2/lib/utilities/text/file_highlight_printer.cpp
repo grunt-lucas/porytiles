@@ -2,6 +2,8 @@
 
 #include <algorithm>
 #include <cstddef>
+#include <filesystem>
+#include <fstream>
 #include <set>
 #include <string>
 #include <vector>
@@ -9,6 +11,7 @@
 #include "gsl/pointers"
 
 #include "porytiles2/utilities/panic/panic.hpp"
+#include "porytiles2/utilities/string_utils.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 
 namespace porytiles2 {
@@ -59,6 +62,22 @@ std::string format_highlighted_line(
 {
     const auto styled_content = format->format("{}", FormatParam{content, highlight_style});
     return prefix + std::to_string(line_num) + ":   " + styled_content;
+}
+
+std::vector<std::string> read_file_lines(const std::filesystem::path &file)
+{
+    if (!exists(file)) {
+        panic("file does not exist: " + file.string());
+    }
+
+    std::vector<std::string> lines{};
+    std::ifstream stream{file};
+    std::string line_buf{};
+    while (std::getline(stream, line_buf)) {
+        trim_line_ending(line_buf);
+        lines.push_back(line_buf);
+    }
+    return lines;
 }
 
 } // namespace
@@ -173,6 +192,25 @@ std::vector<std::string> FileHighlightPrinter::print(
     }
 
     return result;
+}
+
+std::vector<std::string> FileHighlightPrinter::print(
+    const std::filesystem::path &file,
+    const std::vector<std::size_t> &line_indices_to_highlight,
+    std::size_t window_size) const
+{
+    const auto lines = read_file_lines(file);
+    return print(lines, line_indices_to_highlight, window_size);
+}
+
+std::vector<std::string> FileHighlightPrinter::print(
+    const std::filesystem::path &file,
+    std::size_t line_index_to_highlight,
+    std::size_t col_to_highlight,
+    std::size_t window_size) const
+{
+    const auto lines = read_file_lines(file);
+    return print(lines, line_index_to_highlight, col_to_highlight, window_size);
 }
 
 } // namespace porytiles2

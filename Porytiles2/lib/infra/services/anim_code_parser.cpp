@@ -217,7 +217,6 @@ extract_timer_conditions(const std::vector<Token> &body_tokens, const std::strin
 /**
  * @brief Creates an error with source file context.
  *
- * @param file_lines The source file lines
  * @param position The source position of the error
  * @param format The text formatter
  * @param file_path The file path for the error message
@@ -225,22 +224,21 @@ extract_timer_conditions(const std::vector<Token> &body_tokens, const std::strin
  * @return FormattableError with source context
  */
 [[nodiscard]] FormattableError make_highlighted_error(
-    const std::vector<std::string> &file_lines,
     const SourcePosition &position,
     const TextFormatter &format,
-    const std::string &file_path,
+    const std::filesystem::path &file_path,
     const std::string &message)
 {
     const FileHighlightPrinter printer{&format};
 
     // Build error details
     std::vector<std::string> details;
-    details.push_back(fmt::format("{}:{}:{}: {}", file_path, position.line, position.column, message));
+    details.push_back(fmt::format("{}:{}:{}: {}", file_path.string(), position.line, position.column, message));
     details.emplace_back();
 
     // Add source context if position is valid
-    if (position.line > 0 && position.line <= file_lines.size()) {
-        auto context = printer.print(file_lines, position.line - 1, position.column - 1);
+    if (position.line > 0) {
+        auto context = printer.print(file_path, position.line - 1, position.column - 1);
         details.insert(details.end(), context.begin(), context.end());
     }
 
@@ -336,10 +334,9 @@ ChainableResult<std::map<std::string, AnimationParams>> parse_animation_params_f
                 }
                 else {
                     return make_highlighted_error(
-                        c_parser.file_lines(),
                         anim_frame_array.position(),
                         format,
-                        c_file.string(),
+                        c_file,
                         format.format(
                             "Failed to parse frame configuration from '{}'",
                             FormatParam{anim_frame_array.name(), Style::bold}));
@@ -362,10 +359,9 @@ ChainableResult<std::map<std::string, AnimationParams>> parse_animation_params_f
                 }
                 else {
                     return make_highlighted_error(
-                        c_parser.file_lines(),
                         queue_anim_func.position(),
                         format,
-                        c_file.string(),
+                        c_file,
                         format.format(
                             "QueueAnimTiles function '{}' missing TILE_OFFSET_4BPP call",
                             FormatParam{queue_anim_func.name(), Style::bold}));
@@ -377,10 +373,9 @@ ChainableResult<std::map<std::string, AnimationParams>> parse_animation_params_f
                 }
                 else {
                     return make_highlighted_error(
-                        c_parser.file_lines(),
                         queue_anim_func.position(),
                         format,
-                        c_file.string(),
+                        c_file,
                         format.format(
                             "QueueAnimTiles function '{}' missing TILE_SIZE_4BPP expression",
                             FormatParam{queue_anim_func.name(), Style::bold}));
