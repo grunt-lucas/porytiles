@@ -1,7 +1,6 @@
 # Tasks
 
 ## Refactor and finish TilesetRepo and project impl
-- Make Porytiles yaml config a first class type (vector<string> file lines is fine)
 - Make PLA files a first class type in Porymap component (need a domain type for PLA)
 - `TilesetRepo::write` should do a clean wipe of the current tileset folder before writing new artifacts?
   - See various TODOs about stale artifacts and "possibly incomplete" components
@@ -11,7 +10,9 @@
     - we can figure out which ones should exist by looking at the "target component" of the operation and also the ArtifactEditMode
     - (will need to think through how anim handling will work in locked, patch, optimize)
 - Project Impl
-  - Finish handling for unfinished types (attr.csv, anim frames, etc)
+  - Finish handling for attributes.csv
+    - attribute importing
+    - firered format attributes
 - JSON Impl
   - Start working on a JSON impl that can read/write tilesets from a standardized JSON format 
 

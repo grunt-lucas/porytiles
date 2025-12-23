@@ -41,6 +41,18 @@ class PorytilesTilesetComponent {
 
     [[nodiscard]] ChainableResult<LayerMode> detect_layer_mode(const Rgba32 &extrinsic) const;
 
+    void add_anim(Animation<Rgba32> anim);
+
+    [[nodiscard]] bool has_anim(const std::string &name) const
+    {
+        return anims_.contains(name);
+    }
+
+    [[nodiscard]] const Animation<Rgba32> &anim_for_name(const std::string &name) const
+    {
+        return anims_.at(name);
+    }
+
     [[nodiscard]] const Image<Rgba32> &bottom() const
     {
         return bottom_;
@@ -91,16 +103,24 @@ class PorytilesTilesetComponent {
         return anims_;
     }
 
-    void add_anim(Animation<Rgba32> anim);
-
-    [[nodiscard]] bool has_anim(const std::string &name) const
+    [[nodiscard]] const std::vector<std::string> &config() const
     {
-        return anims_.contains(name);
+        return config_;
     }
 
-    [[nodiscard]] const Animation<Rgba32> &anim(const std::string &name) const
+    void config(const std::vector<std::string> &config)
     {
-        return anims_.at(name);
+        config_ = config;
+    }
+
+    [[nodiscard]] const std::vector<std::string> &local_config() const
+    {
+        return local_config_;
+    }
+
+    void local_config(const std::vector<std::string> &local_config)
+    {
+        local_config_ = local_config;
     }
 
   private:
@@ -110,6 +130,8 @@ class PorytilesTilesetComponent {
     std::map<std::size_t, MetatileAttribute> metatile_attributes_;
     std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> pals_;
     std::map<std::string, Animation<Rgba32>> anims_;
+    std::vector<std::string> config_;
+    std::vector<std::string> local_config_;
 };
 
 } // namespace porytiles2

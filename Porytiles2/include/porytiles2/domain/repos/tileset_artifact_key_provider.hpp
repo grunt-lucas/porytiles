@@ -230,11 +230,6 @@ class TilesetArtifactKeyProvider {
             }
         }
 
-        const auto anim_yaml_key = key_for_anim_yaml(tileset_name);
-        if (artifact_exists(anim_yaml_key)) {
-            result.push_back(anim_yaml_key);
-        }
-
         const auto porytiles_anims = discover_porytiles_anims(tileset_name);
         for (const auto &anim : porytiles_anims) {
             const auto key_frame_key = key_for_porytiles_anim_key_frame(tileset_name, anim);
@@ -255,6 +250,21 @@ class TilesetArtifactKeyProvider {
                     result.push_back(frame_n_key);
                 }
             }
+        }
+
+        const auto anim_yaml_key = key_for_anim_yaml(tileset_name);
+        if (artifact_exists(anim_yaml_key)) {
+            result.push_back(anim_yaml_key);
+        }
+
+        const auto config_key = key_for_config(tileset_name);
+        if (artifact_exists(config_key)) {
+            result.push_back(config_key);
+        }
+
+        const auto local_config_key = key_for_local_config(tileset_name);
+        if (artifact_exists(local_config_key)) {
+            result.push_back(local_config_key);
         }
 
         return result;
@@ -297,11 +307,6 @@ class TilesetArtifactKeyProvider {
             }
         }
 
-        const auto generated_anim_code_key = key_for_generated_anim_code(tileset_name);
-        if (artifact_exists(generated_anim_code_key)) {
-            result.push_back(generated_anim_code_key);
-        }
-
         const auto porymap_anims = discover_porymap_anims(tileset_name);
         for (const auto &anim : porymap_anims) {
             // TODO: warn user if we found Porymap anim frames like 01.png, these won't work they have to be 1.png
@@ -317,6 +322,11 @@ class TilesetArtifactKeyProvider {
                     result.push_back(frame_n_key);
                 }
             }
+        }
+
+        const auto generated_anim_code_key = key_for_generated_anim_code(tileset_name);
+        if (artifact_exists(generated_anim_code_key)) {
+            result.push_back(generated_anim_code_key);
         }
 
         return result;

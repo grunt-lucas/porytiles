@@ -500,7 +500,7 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_anim_frame(
         return FormattableError{"animation '{}' not found in Porytiles component", FormatParam{anim_name, Style::bold}};
     }
 
-    const auto &anim = src.porytiles_component().anim(anim_name);
+    const auto &anim = src.porytiles_component().anim_for_name(anim_name);
     if (frame_index >= anim.frame_count()) {
         return FormattableError{
             "frame index {} out of range for animation '{}' (has {} frames)",
@@ -531,7 +531,7 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_anim_frame(
         return FormattableError{"animation '{}' not found in Porytiles component", FormatParam{anim_name, Style::bold}};
     }
 
-    const auto &anim = src.porytiles_component().anim(anim_name);
+    const auto &anim = src.porytiles_component().anim_for_name(anim_name);
 
     const auto &frame = anim.key_frame();
     const auto img = tiles_to_image(frame.tiles());

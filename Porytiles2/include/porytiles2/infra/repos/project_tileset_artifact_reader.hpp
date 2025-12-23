@@ -87,6 +87,10 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
 
     [[nodiscard]] ChainableResult<void> read_anim_yaml(Tileset &dest, const ArtifactKey &src_key) const override;
 
+    [[nodiscard]] ChainableResult<void> read_config(Tileset &dest, const ArtifactKey &src_key) const override;
+
+    [[nodiscard]] ChainableResult<void> read_local_config(Tileset &dest, const ArtifactKey &src_key) const override;
+
   private:
     const PngRgbaImageLoader *png_rgba_loader_;
     const PngIndexedImageLoader *png_indexed_loader_;

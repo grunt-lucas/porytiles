@@ -92,6 +92,10 @@ class TilesetArtifactReader {
      * @return Empty ChainableResult on success, otherwise an error chain
      */
     [[nodiscard]] virtual ChainableResult<void> read_anim_yaml(Tileset &dest, const ArtifactKey &src_key) const = 0;
+
+    [[nodiscard]] virtual ChainableResult<void> read_config(Tileset &dest, const ArtifactKey &src_key) const = 0;
+
+    [[nodiscard]] virtual ChainableResult<void> read_local_config(Tileset &dest, const ArtifactKey &src_key) const = 0;
 };
 
 } // namespace porytiles2

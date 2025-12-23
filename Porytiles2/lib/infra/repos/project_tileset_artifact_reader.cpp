@@ -535,4 +535,42 @@ ProjectTilesetArtifactReader::read_anim_yaml(Tileset &dest, const ArtifactKey &s
     return {};
 }
 
+[[nodiscard]] ChainableResult<void>
+ProjectTilesetArtifactReader::read_config(Tileset &dest, const ArtifactKey &src_key) const
+{
+    std::ifstream config_file{src_key.key()};
+    if (!config_file.is_open()) {
+        // Config file is optional - if not found, just leave config empty
+        return {};
+    }
+
+    std::vector<std::string> lines;
+    std::string line;
+    while (std::getline(config_file, line)) {
+        lines.push_back(std::move(line));
+    }
+
+    dest.porytiles_component().config(lines);
+    return {};
+}
+
+[[nodiscard]] ChainableResult<void>
+ProjectTilesetArtifactReader::read_local_config(Tileset &dest, const ArtifactKey &src_key) const
+{
+    std::ifstream config_file{src_key.key()};
+    if (!config_file.is_open()) {
+        // Local config file is optional - if not found, just leave local_config empty
+        return {};
+    }
+
+    std::vector<std::string> lines;
+    std::string line;
+    while (std::getline(config_file, line)) {
+        lines.push_back(std::move(line));
+    }
+
+    dest.porytiles_component().local_config(lines);
+    return {};
+}
+
 } // namespace porytiles2
