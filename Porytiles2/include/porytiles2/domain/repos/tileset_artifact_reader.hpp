@@ -49,13 +49,14 @@ class TilesetArtifactReader {
      *
      * @param dest The Tileset object to populate with animation parameters
      * @param src_key Key identifying the generated_anim_code.h artifact to read
+     * @param anim_names The anim names from this tileset to read from the generated code
      * @return Empty ChainableResult on success, otherwise an error chain
      */
-    [[nodiscard]] virtual ChainableResult<void>
-    read_generated_anim_code(Tileset &dest, const ArtifactKey &src_key) const = 0;
+    [[nodiscard]] virtual ChainableResult<void> read_generated_anim_code(
+        Tileset &dest, const ArtifactKey &src_key, const std::set<std::string> &anim_names) const = 0;
 
-    [[nodiscard]] virtual ChainableResult<void>
-    read_vanilla_anim_code(Tileset &dest, const ArtifactKey &src_key) const = 0;
+    [[nodiscard]] virtual ChainableResult<void> read_vanilla_anim_code(
+        Tileset &dest, const ArtifactKey &src_key, const std::set<std::string> &anim_names) const = 0;
 
     /*
      * Porytiles artifacts

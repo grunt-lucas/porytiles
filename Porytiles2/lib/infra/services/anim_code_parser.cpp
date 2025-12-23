@@ -10,6 +10,7 @@
 #include "porytiles2/domain/models/animation_params.hpp"
 #include "porytiles2/utilities/c_parser/c_parser_facade.hpp"
 #include "porytiles2/utilities/c_parser/token.hpp"
+#include "porytiles2/utilities/functional/transform.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
 #include "porytiles2/utilities/text/file_highlight_printer.hpp"
 
@@ -18,6 +19,8 @@ namespace {
 using namespace porytiles2;
 
 constexpr std::string porytiles_managed_prefix = "PorytilesManaged_";
+
+constexpr auto anim_parsing_error = "animation-parsing-error";
 
 /**
  * @brief Extracts the PascalCase animation name from an identifier.
@@ -214,16 +217,7 @@ extract_timer_conditions(const std::vector<Token> &body_tokens, const std::strin
     return result;
 }
 
-/**
- * @brief Creates an error with source file context.
- *
- * @param position The source position of the error
- * @param format The text formatter
- * @param file_path The file path for the error message
- * @param message The error message
- * @return FormattableError with source context
- */
-[[nodiscard]] FormattableError make_highlighted_error(
+[[nodiscard]] std::vector<std::string> make_highlighted_details(
     const SourcePosition &position,
     const TextFormatter &format,
     const std::filesystem::path &file_path,
@@ -242,18 +236,25 @@ extract_timer_conditions(const std::vector<Token> &body_tokens, const std::strin
         details.insert(details.end(), context.begin(), context.end());
     }
 
-    return FormattableError{details};
+    return details;
 }
 
 ChainableResult<std::map<std::string, AnimationParams>> parse_animation_params_from_c_file(
     const std::filesystem::path &c_file,
     const std::string &tileset_name,
+    const std::set<std::string> &expected_anim_names,
     bool porytiles_managed,
-    const TextFormatter &format)
+    const TextFormatter &format,
+    const UserDiagnostics &diag)
 {
     std::map<std::string, AnimationParams> result;
     CParserFacade c_parser{c_file, &format};
     const std::string pascal_case_tileset_name = to_pascal_case(tileset_name);
+
+    /*
+     * First step: try to parse the animation frame arrays, driver function, and QueueAnimTiles functions for this
+     * tileset.
+     */
 
     // Parse pointer arrays to get animation frame sequences
     const auto frame_array_prefix =
@@ -277,13 +278,22 @@ ChainableResult<std::map<std::string, AnimationParams>> parse_animation_params_f
                 "{}: failed to parse animation driver functions", FormatParam{c_file.string(), Style::bold})},
             driver_funcs_result};
     }
-    const auto &driver_func_vector = driver_funcs_result.value();
-    if (driver_func_vector.size() > 1) {
-        // TODO: better error message here, display all driver functions, there should be one definition per tileset
+    const auto &driver_funcs = driver_funcs_result.value();
+    if (driver_funcs.size() > 1) {
+        diag.err(
+            "multiple-anim-driver-functions",
+            format.format(
+                "found multiple animation driver function candidates for '{}'",
+                FormatParam{tileset_name, Style::bold}));
+        for (const auto &driver_func : driver_funcs) {
+            diag.note(
+                "multiple-anim-driver-functions",
+                make_highlighted_details(driver_func.position(), format, c_file, "found driver function candidate:"));
+        }
         return FormattableError{
-            "found multiple definitions of driver function pattern '{}'", FormatParam{driver_prefix, Style::bold}};
+            "found multiple animation driver function candidates (prefix '{}')",
+            FormatParam{driver_prefix, Style::bold}};
     }
-    const auto driver_func = driver_func_vector[0];
 
     // Parse functions to get QueueAnimTiles functions
     const auto queue_prefix =
@@ -298,48 +308,118 @@ ChainableResult<std::map<std::string, AnimationParams>> parse_animation_params_f
     const auto &queue_anim_funcs = queue_anim_funcs_result.value();
 
     /*
-     * TODO: instead of "discovering" the anim names like this, we should instead require that a list of anim names be
-     * passed in as a "source of truth" (we already have them from the frame earlier loading step). This is better,
-     * because it allows us to throw a helpful error message if an anim is missing.
+     * If all the following are empty:
+     *
+     * - anim_frame_arrays
+     * - driver_funcs
+     * - queue_anim_funcs
+     *
+     * then we can assume this tileset has no animations, and return an empty map.
+     *
+     * HOWEVER, if one of these arrays has values, but another doesn't, we throw an error that says "incomplete tileset
+     * animation parameters, no animations will be parsed"
      */
-    // Find animation names from pointer arrays (those without _Frame suffix are the main arrays)
-    std::set<std::string> anim_names;
-    for (const auto &arr : anim_frame_arrays) {
-        const std::string anim_name = extract_anim_name(arr.name(), pascal_case_tileset_name);
-        if (!anim_name.empty() && arr.name().find("_Frame") == std::string::npos) {
-            anim_names.insert(anim_name);
+    if (anim_frame_arrays.empty() && driver_funcs.empty() && queue_anim_funcs.empty()) {
+        return std::map<std::string, AnimationParams>{};
+    }
+    if (anim_frame_arrays.empty() || driver_funcs.empty() || queue_anim_funcs.empty()) {
+        constexpr auto incomplete_anim_params_tag = "incomplete-tileset-animation-parameters";
+        if (anim_frame_arrays.empty()) {
+            diag.err(
+                incomplete_anim_params_tag,
+                format.format(
+                    "no animation frame pointer arrays exist for '{}'", FormatParam{tileset_name, Style::bold}));
+            for (const auto &driver_func : driver_funcs) {
+                diag.note(
+                    incomplete_anim_params_tag,
+                    make_highlighted_details(
+                        driver_func.position(), format, c_file, "found driver function candidate:"));
+            }
+            for (const auto &queue_func : queue_anim_funcs) {
+                diag.note(
+                    incomplete_anim_params_tag,
+                    make_highlighted_details(
+                        queue_func.position(), format, c_file, "found QueueAnimTiles function candidate:"));
+            }
         }
+        if (driver_funcs.empty()) {
+            diag.err(
+                incomplete_anim_params_tag,
+                format.format("no driver function exists for '{}'", FormatParam{tileset_name, Style::bold}));
+            for (const auto &anim_frame_array : anim_frame_arrays) {
+                diag.note(
+                    incomplete_anim_params_tag,
+                    make_highlighted_details(
+                        anim_frame_array.position(), format, c_file, "found animation frame array candidate:"));
+            }
+            for (const auto &queue_func : queue_anim_funcs) {
+                diag.note(
+                    incomplete_anim_params_tag,
+                    make_highlighted_details(
+                        queue_func.position(), format, c_file, "found QueueAnimTiles function candidate:"));
+            }
+        }
+        if (queue_anim_funcs.empty()) {
+            diag.err(
+                incomplete_anim_params_tag,
+                format.format("no QueueAnimTiles functions exist for '{}'", FormatParam{tileset_name, Style::bold}));
+            for (const auto &anim_frame_array : anim_frame_arrays) {
+                diag.note(
+                    incomplete_anim_params_tag,
+                    make_highlighted_details(
+                        anim_frame_array.position(), format, c_file, "found animation frame array candidate:"));
+            }
+            for (const auto &driver_func : driver_funcs) {
+                diag.note(
+                    incomplete_anim_params_tag,
+                    make_highlighted_details(
+                        driver_func.position(), format, c_file, "found driver function candidate:"));
+            }
+        }
+        diag.err(
+            incomplete_anim_params_tag,
+            format.format("no animations were parsed for '{}'", FormatParam{tileset_name, Style::bold}));
+        return FormattableError{
+            "tileset '{}' specified animations with incomplete parameters", FormatParam{tileset_name, Style::bold}};
     }
 
-    // Parse the driver function to get timer conditions
+    /*
+     * Next, we parse the driver function to get timer conditions. We already validated that there is exactly one driver
+     * function for this tileset.
+     */
+    const auto driver_func = driver_funcs.at(0);
     std::map<std::string, std::pair<std::size_t, std::size_t>> timer_conditions =
         extract_timer_conditions(driver_func.body_tokens(), pascal_case_tileset_name);
 
-    // Build AnimationParams for each animation
-    for (const auto &pascal_case_anim_name : anim_names) {
+    /*
+     * Finally, we can build AnimationParams for each animation.
+     */
+    for (const std::set<std::string> pascal_case_anim_names = transform(expected_anim_names, to_pascal_case);
+         const auto &pascal_case_anim_name : pascal_case_anim_names) {
         AnimationParams params;
+
+        // TODO: fail if one of the pascal_case_anim_names is missing from the file we're parsing
 
         // Find the frame sequence from the pointer array
         for (const auto &anim_frame_array : anim_frame_arrays) {
-            const std::string arr_anim_name = extract_anim_name(anim_frame_array.name(), pascal_case_tileset_name);
             /*
              * We want the main pointer array (e.g., gTilesetAnims_General_Flower), not the
              * individual frame data arrays (e.g., gTilesetAnims_General_Flower_Frame0).
              * Both extract to the same anim_name, so we filter by checking for _Frame.
              */
-            if (arr_anim_name == pascal_case_anim_name && anim_frame_array.name().find("_Frame") == std::string::npos) {
-                auto frames = extract_frame_indices(anim_frame_array.elements());
-                if (!frames.empty()) {
+            if (const std::string arr_anim_name = extract_anim_name(anim_frame_array.name(), pascal_case_tileset_name);
+                arr_anim_name == pascal_case_anim_name && anim_frame_array.name().find("_Frame") == std::string::npos) {
+                if (auto frames = extract_frame_indices(anim_frame_array.elements()); !frames.empty()) {
                     params.frames(std::move(frames));
                 }
                 else {
-                    return make_highlighted_error(
+                    return FormattableError{make_highlighted_details(
                         anim_frame_array.position(),
                         format,
                         c_file,
                         format.format(
                             "Failed to parse frame configuration from '{}'",
-                            FormatParam{anim_frame_array.name(), Style::bold}));
+                            FormatParam{anim_frame_array.name(), Style::bold}))};
                 }
                 break;
             }
@@ -351,60 +431,58 @@ ChainableResult<std::map<std::string, AnimationParams>> parse_animation_params_f
             std::string func_anim_name =
                 extract_anim_name_from_function(queue_anim_func.name(), pascal_case_tileset_name);
 
-            if (func_anim_name == pascal_case_anim_name) {
+            /*
+             * The to_lower_str comparison is needed here for building::tv_turned_on because the animation queue
+             * function calls it "TVTurnedOn" but the frame array is called "TvTurnedOn" *facepalm*. There may be other
+             * cases where users have followed different PascalCase conventions, so let's just try to accommodate all of
+             * them. Note: Porytiles will need to enforce that animation "canonical" names, i.e. the names of the anim
+             * folders, are snake_lower_case. This is a small ask for users who want to onboard to Porytiles.
+             */
+            if (to_lower_str(func_anim_name) == to_lower_str(pascal_case_anim_name)) {
                 found_queue_anim_func = true;
-                const auto tile_offset = extract_tile_offset(queue_anim_func.body_tokens());
-                if (tile_offset.has_value()) {
+                if (const auto tile_offset = extract_tile_offset(queue_anim_func.body_tokens());
+                    tile_offset.has_value()) {
                     params.tile_offset(tile_offset.value());
                 }
                 else {
-                    return make_highlighted_error(
+                    return FormattableError{make_highlighted_details(
                         queue_anim_func.position(),
                         format,
                         c_file,
                         format.format(
                             "QueueAnimTiles function '{}' missing TILE_OFFSET_4BPP call",
-                            FormatParam{queue_anim_func.name(), Style::bold}));
+                            FormatParam{queue_anim_func.name(), Style::bold}))};
                 }
 
-                const auto tile_count = extract_tile_count(queue_anim_func.body_tokens());
-                if (tile_count.has_value()) {
+                if (const auto tile_count = extract_tile_count(queue_anim_func.body_tokens()); tile_count.has_value()) {
                     params.tile_count(tile_count.value());
                 }
                 else {
-                    return make_highlighted_error(
+                    return FormattableError{make_highlighted_details(
                         queue_anim_func.position(),
                         format,
                         c_file,
                         format.format(
                             "QueueAnimTiles function '{}' missing TILE_SIZE_4BPP expression",
-                            FormatParam{queue_anim_func.name(), Style::bold}));
+                            FormatParam{queue_anim_func.name(), Style::bold}))};
                 }
                 break;
             }
         }
 
         if (!found_queue_anim_func) {
-            /*
-             * TODO: This is triggering for building::tv_turned_on because the animation queue function calls it
-             * "TVTurnedOn" but the frame array is called "TvTurnedOn" *facepalm*
-             *
-             * The trouble here is that the error message is quite unintuitive. Users won't be able to tell right away
-             * why it failed to find the function, namely because it was expecting TvTurnedOn and not TVTurnedOn.
-             */
             return FormattableError{format.format(
                 "failed to find QueueAnimTiles function for animation '{}'",
                 FormatParam{to_snake_case(pascal_case_anim_name), Style::bold})};
         }
 
         // Get timer conditions from the driver function
-        const auto it = timer_conditions.find(pascal_case_anim_name);
-        if (it != timer_conditions.end()) {
+        if (const auto it = timer_conditions.find(pascal_case_anim_name); it != timer_conditions.end()) {
             params.frame_factor(it->second.first);
             params.frame_offset(it->second.second);
         }
         else {
-            // TODO: do we actually want defaults here? we should probably throw an error earlier in the stack
+            // TODO: do we actually want defaults here? we should probably throw an error earlier in the process
             // Use defaults
             params.frame_factor(anim::default_frame_factor);
             params.frame_offset(anim::default_frame_offset);
@@ -422,25 +500,31 @@ ChainableResult<std::map<std::string, AnimationParams>> parse_animation_params_f
 
 namespace porytiles2 {
 
-AnimCodeParser::AnimCodeParser(gsl::not_null<const TextFormatter *> format) : format_{format} {}
-
-ChainableResult<std::map<std::string, AnimationParams>>
-AnimCodeParser::parse_generated_header(const std::filesystem::path &header_path, const std::string &tileset_name) const
+ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_generated_header(
+    const std::filesystem::path &header_path,
+    const std::string &tileset_name,
+    const std::set<std::string> &expected_anim_names) const
 {
     // Type alias hides the comma from the preprocessor (it sees "std::map<std::string, AnimationParams>" as 2 args)
     using ResultType = std::map<std::string, AnimationParams>;
     PT_TRY_ASSIGN_PASS_ERR(
-        result, parse_animation_params_from_c_file(header_path, tileset_name, true, *format_), ResultType);
+        result,
+        parse_animation_params_from_c_file(header_path, tileset_name, expected_anim_names, true, *format_, *diag_),
+        ResultType);
     return result;
 }
 
-ChainableResult<std::map<std::string, AnimationParams>>
-AnimCodeParser::parse_vanilla_anims(const std::filesystem::path &anims_c_path, const std::string &tileset_name) const
+ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_vanilla_anims(
+    const std::filesystem::path &anims_c_path,
+    const std::string &tileset_name,
+    const std::set<std::string> &expected_anim_names) const
 {
     // Type alias hides the comma from the preprocessor (it sees "std::map<std::string, AnimationParams>" as 2 args)
     using ResultType = std::map<std::string, AnimationParams>;
     PT_TRY_ASSIGN_PASS_ERR(
-        result, parse_animation_params_from_c_file(anims_c_path, tileset_name, false, *format_), ResultType);
+        result,
+        parse_animation_params_from_c_file(anims_c_path, tileset_name, expected_anim_names, false, *format_, *diag_),
+        ResultType);
     return result;
 }
 

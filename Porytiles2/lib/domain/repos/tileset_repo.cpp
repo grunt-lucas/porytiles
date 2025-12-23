@@ -243,8 +243,8 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         }
     }
 
-    for (const std::set<std::string> porymap_anims = key_provider_->discover_porymap_anims(tileset->name());
-         const auto &anim : porymap_anims) {
+    const std::set<std::string> porymap_anims = key_provider_->discover_porymap_anims(tileset->name());
+    for (const auto &anim : porymap_anims) {
         // Read frame 0.png
         auto frame_0_key = key_provider_->key_for_porymap_anim_frame(tileset->name(), anim, 0);
         if (!key_provider_->artifact_exists(frame_0_key)) {
@@ -288,7 +288,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
 
     const auto generated_anim_code_key = key_provider_->key_for_generated_anim_code(tileset->name());
     if (key_provider_->artifact_exists(generated_anim_code_key)) {
-        const auto result = reader_->read_generated_anim_code(*tileset, generated_anim_code_key);
+        const auto result = reader_->read_generated_anim_code(*tileset, generated_anim_code_key, porymap_anims);
         if (!result.has_value()) {
             return ChainableResult<std::unique_ptr<Tileset>>{
                 FormattableError{
@@ -299,7 +299,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     else {
         // TODO: this needs to be relative to project root, add handling to the key provider
         ArtifactKey vanilla_anim_code_key{"src/tileset_anims.c"};
-        const auto result = reader_->read_vanilla_anim_code(*tileset, vanilla_anim_code_key);
+        const auto result = reader_->read_vanilla_anim_code(*tileset, vanilla_anim_code_key, porymap_anims);
         if (!result.has_value()) {
             return ChainableResult<std::unique_ptr<Tileset>>{
                 FormattableError{

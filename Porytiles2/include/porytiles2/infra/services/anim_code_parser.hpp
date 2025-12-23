@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <map>
+#include <set>
 #include <string>
 
 #include "gsl/pointers"
@@ -9,6 +10,7 @@
 #include "porytiles2/domain/models/animation_params.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
+#include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles2 {
 
@@ -43,8 +45,13 @@ class AnimCodeParser {
      * @brief Constructs an AnimCodeParser with a text formatter for error messages.
      *
      * @param format Formatter for error message styling (non-owning, must outlive parser)
+     * @param diag UserDiagnostics for user diagnostics
      */
-    explicit AnimCodeParser(gsl::not_null<const TextFormatter *> format);
+    explicit AnimCodeParser(gsl::not_null<const TextFormatter *> format, gsl::not_null<const UserDiagnostics *> diag)
+        : format_{format}, diag_{diag}
+    {
+    }
+
     /**
      * @brief Parses a Porytiles-generated animation header file.
      *
@@ -54,10 +61,13 @@ class AnimCodeParser {
      *
      * @param header_path Path to the generated_anim_code.h file
      * @param tileset_name The name of the tileset to extract animations for
+     * @param expected_anim_names A set of animation names we're expecting to find
      * @return Map of animation names to their parsed parameters, or error
      */
-    [[nodiscard]] ChainableResult<std::map<std::string, AnimationParams>>
-    parse_generated_header(const std::filesystem::path &header_path, const std::string &tileset_name) const;
+    [[nodiscard]] ChainableResult<std::map<std::string, AnimationParams>> parse_generated_header(
+        const std::filesystem::path &header_path,
+        const std::string &tileset_name,
+        const std::set<std::string> &expected_anim_names) const;
 
     /**
      * @brief Parses vanilla pokeemerald tileset animation code.
@@ -71,13 +81,17 @@ class AnimCodeParser {
      *
      * @param anims_c_path Path to the tileset_anims.c file
      * @param tileset_name The name of the tileset to extract animations for
+     * @param expected_anim_names A set of animation names we're expecting to find
      * @return Map of animation names to their parsed parameters, or error
      */
-    [[nodiscard]] ChainableResult<std::map<std::string, AnimationParams>>
-    parse_vanilla_anims(const std::filesystem::path &anims_c_path, const std::string &tileset_name) const;
+    [[nodiscard]] ChainableResult<std::map<std::string, AnimationParams>> parse_vanilla_anims(
+        const std::filesystem::path &anims_c_path,
+        const std::string &tileset_name,
+        const std::set<std::string> &expected_anim_names) const;
 
   private:
     const TextFormatter *format_;
+    const UserDiagnostics *diag_;
 };
 
 } // namespace porytiles2

@@ -1,5 +1,22 @@
 #pragma once
 
+/**
+ * @file string_utils.hpp
+ *
+ * @brief Utility functions for string manipulation and formatting.
+ *
+ * @details
+ * This header provides a collection of common string operations used throughout the Porytiles codebase, including:
+ * - Whitespace trimming and line ending normalization
+ * - String splitting and tokenization
+ * - Case conversion (PascalCase, snake_case, lowercase)
+ * - Numeric formatting (hexadecimal, zero-padded digits)
+ * - Regular expression matching utilities
+ *
+ * All functions are inline to avoid ODR violations when included in multiple translation units.
+ */
+
+#include <cctype>
 #include <ranges>
 #include <regex>
 #include <string>
@@ -301,6 +318,32 @@ inline std::string to_snake_case(const std::string &s)
     }
 
     return result;
+}
+
+/**
+ * @brief Converts all characters in a string to lowercase.
+ *
+ * @details
+ * This function creates a new string where each character from the input is converted to its lowercase equivalent using
+ * std::tolower. Characters that are already lowercase or non-alphabetic remain unchanged. The function uses unsigned
+ * char casting internally to avoid undefined behavior with negative char values on platforms where char is signed.
+ *
+ * @param input The string to convert to lowercase
+ * @return A new string with all alphabetic characters converted to lowercase
+ *
+ * @par Examples
+ * - `"Hello World"` → `"hello world"`
+ * - `"UPPERCASE"` → `"uppercase"`
+ * - `"MixedCase123"` → `"mixedcase123"`
+ */
+inline std::string to_lower_str(const std::string &input)
+{
+    std::string output;
+    std::ranges::transform(input, std::back_inserter(output), [](const unsigned char c) {
+        // Use unsigned char to avoid issues with negative char values
+        return std::tolower(c);
+    });
+    return output;
 }
 
 } // namespace porytiles2

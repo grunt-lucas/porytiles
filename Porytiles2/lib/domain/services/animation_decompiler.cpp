@@ -61,7 +61,7 @@ std::size_t find_palette_for_animation_tiles(
         std::cerr << "---------------------------------" << std::endl;
         std::cerr << "no palette index found for animation '" << anim_name
                   << "' tiles in range [" + std::to_string(tile_offset) + ", " +
-                         std::to_string(tile_offset + tile_count - 1) + "]"
+                         std::to_string(tile_offset + (tile_count - 1)) + "]"
                   << std::endl;
         std::cerr << "falling back to pal 0" << std::endl;
         return 0;
@@ -80,7 +80,7 @@ std::size_t find_palette_for_animation_tiles(
         }
         panic(
             "animation tiles in range [" + std::to_string(tile_offset) + ", " +
-            std::to_string(tile_offset + tile_count - 1) + "] use multiple palette indices: " + pal_list);
+            std::to_string(tile_offset + (tile_count - 1)) + "] use multiple palette indices: " + pal_list);
     }
 
     return *found_pal_indices.begin();
