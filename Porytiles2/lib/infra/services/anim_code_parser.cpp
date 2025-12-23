@@ -325,14 +325,6 @@ ChainableResult<std::map<std::string, AnimationParams>> parse_animation_params_f
         for (const auto &anim_frame_array : anim_frame_arrays) {
             const std::string arr_anim_name = extract_anim_name(anim_frame_array.name(), pascal_case_tileset_name);
             /*
-             * TODO: This is failing for building::tv_turned_on because the animation queue function calls it
-             * "TVTurnedOn" but the frame array is called "TvTurnedOn" *facepalm*
-             *
-             * Wait: I think with this new way we handle anim names, this will fail when we match the queue function
-             * below. That's because the pascal_case_anim_name from our pascal case function will be the correct
-             * "TvTurnedOn", but the queue function is called "TVTurnedOn".
-             */
-            /*
              * We want the main pointer array (e.g., gTilesetAnims_General_Flower), not the
              * individual frame data arrays (e.g., gTilesetAnims_General_Flower_Frame0).
              * Both extract to the same anim_name, so we filter by checking for _Frame.
@@ -357,11 +349,13 @@ ChainableResult<std::map<std::string, AnimationParams>> parse_animation_params_f
         }
 
         // Find tile_offset and tile_count from the QueueAnimTiles function
+        bool found_queue_anim_func = false;
         for (const auto &queue_anim_func : queue_anim_funcs) {
             std::string func_anim_name =
                 extract_anim_name_from_function(queue_anim_func.name(), pascal_case_tileset_name);
 
             if (func_anim_name == pascal_case_anim_name) {
+                found_queue_anim_func = true;
                 const auto tile_offset = extract_tile_offset(queue_anim_func.body_tokens());
                 if (tile_offset.has_value()) {
                     params.tile_offset(tile_offset.value());
@@ -393,6 +387,19 @@ ChainableResult<std::map<std::string, AnimationParams>> parse_animation_params_f
                 }
                 break;
             }
+        }
+
+        if (!found_queue_anim_func) {
+            /*
+             * TODO: This is triggering for building::tv_turned_on because the animation queue function calls it
+             * "TVTurnedOn" but the frame array is called "TvTurnedOn" *facepalm*
+             *
+             * The trouble here is that the error message is quite unintuitive. Users won't be able to tell right away
+             * why it failed to find the function, namely because it was expecting TvTurnedOn and not TVTurnedOn.
+             */
+            return FormattableError{format.format(
+                "failed to find QueueAnimTiles function for animation '{}'",
+                FormatParam{to_snake_case(pascal_case_anim_name), Style::bold})};
         }
 
         // Get timer conditions from the driver function
