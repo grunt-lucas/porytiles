@@ -69,7 +69,11 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetImporter::import(const T
             // Decompile the IndexPixel animation to Rgba32 format
             // Palette index is recovered from metatile data by scanning for animation tile references
             Animation<Rgba32> rgba_anim = anim_decompiler.decompile_animation(
-                index_pixel_anim, tileset.porymap_component().pals(), metatiles_bin, extrinsic_transparency);
+                index_pixel_anim,
+                tileset.porymap_component().pals(),
+                metatiles_bin,
+                tileset.porymap_component().tiles_png(),
+                extrinsic_transparency);
 
             new_porytiles_component->add_anim(std::move(rgba_anim));
         }

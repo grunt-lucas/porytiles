@@ -121,9 +121,6 @@ PixelTile<Rgba32> decompile_tile(
     return result;
 }
 
-/*
- * TODO: this function should be used somewhere?
- */
 /**
  * @brief Extracts animation tiles from a tiles.png image.
  *
@@ -181,6 +178,7 @@ Animation<Rgba32> AnimationDecompiler::decompile_animation(
     const Animation<IndexPixel> &anim,
     const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals,
     std::span<const TilemapEntry> metatiles_bin,
+    const Image<IndexPixel> &tiles_png,
     const Rgba32 &extrinsic_transparency) const
 {
     Animation<Rgba32> result{anim.name()};
@@ -195,6 +193,36 @@ Animation<Rgba32> AnimationDecompiler::decompile_animation(
     const std::size_t pal_index = find_palette_for_animation_tiles(anim.name(), tile_offset, tile_count, metatiles_bin);
 
     const auto &pal = pals.at(pal_index);
+
+    // Extract key frame tiles from tiles.png
+    std::vector<PixelTile<IndexPixel>> key_frame_index_tiles =
+        extract_animation_tiles(tiles_png, tile_offset, tile_count);
+
+    // Check for duplicate tiles within the key frame
+    for (std::size_t i = 0; i < key_frame_index_tiles.size(); ++i) {
+        for (std::size_t j = i + 1; j < key_frame_index_tiles.size(); ++j) {
+            if (key_frame_index_tiles[i] == key_frame_index_tiles[j]) {
+                std::cerr << std::endl;
+                std::cerr << "---------------------------------" << std::endl;
+                std::cerr << "|            TODO               |" << std::endl;
+                std::cerr << "---------------------------------" << std::endl;
+                std::cerr << "Animation '" << anim.name() << "' has duplicate key frame tiles at indices:" << std::endl;
+                std::cerr << " - " << std::to_string(i) << std::endl;
+                std::cerr << " - " << std::to_string(j) << std::endl;
+            }
+        }
+    }
+
+    // Decompile key frame tiles to Rgba32
+    std::vector<PixelTile<Rgba32>> key_frame_rgba_tiles;
+    key_frame_rgba_tiles.reserve(key_frame_index_tiles.size());
+    for (const auto &index_tile : key_frame_index_tiles) {
+        key_frame_rgba_tiles.push_back(decompile_tile(index_tile, pal, extrinsic_transparency));
+    }
+
+    // Set the key frame on the result
+    AnimationFrame<Rgba32> key_frame{"key.png", std::move(key_frame_rgba_tiles)};
+    result.key_frame(std::move(key_frame));
 
     for (const auto &frame : anim.frames()) {
         std::vector<PixelTile<Rgba32>> rgba_tiles;

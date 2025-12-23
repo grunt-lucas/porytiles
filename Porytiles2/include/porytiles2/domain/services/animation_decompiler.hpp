@@ -49,6 +49,9 @@ class AnimationDecompiler {
      * correct palette for each animation tile is recovered by scanning metatile entries to find which palette index
      * references the animation tiles.
      *
+     * Key frame tiles are extracted from tiles_png at the animation's tile_offset position, decompiled to RGBA using
+     * the same palette as the animation frames, and set on the result animation.
+     *
      * For transparent pixels (index 0), the extrinsic transparency color is used.
      *
      * If an animation tile is not found in any metatile entry, falls back to palette 0. If multiple palettes reference
@@ -57,13 +60,16 @@ class AnimationDecompiler {
      * @param anim The indexed animation to decompile
      * @param pals Array of palettes to use for color lookup
      * @param metatiles_bin The metatile entries containing tile and palette references
+     * @param tiles_png The indexed tiles.png image containing key frame tiles
      * @param extrinsic_transparency The RGBA color representing transparency
-     * @return The decompiled RGBA animation
+     * @pre All key frame tiles must be unique (no duplicates)
+     * @return The decompiled RGBA animation with key frame and frames populated
      */
     [[nodiscard]] Animation<Rgba32> decompile_animation(
         const Animation<IndexPixel> &anim,
         const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals,
         std::span<const TilemapEntry> metatiles_bin,
+        const Image<IndexPixel> &tiles_png,
         const Rgba32 &extrinsic_transparency) const;
 };
 
