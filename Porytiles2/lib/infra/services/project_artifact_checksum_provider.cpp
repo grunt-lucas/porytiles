@@ -20,7 +20,7 @@ ProjectArtifactChecksumProvider::compute_tileset_artifact_checksums(const std::s
     std::unordered_map<ArtifactKey, std::string> checksums{};
 
     for (const auto &all_keys = key_provider_->get_all_artifact_keys(tileset_name); const auto &key : all_keys) {
-        const StreamDigest digest{};
+        constexpr StreamDigest digest{};
         if (!key_provider_->artifact_exists(key)) {
             panic(fmt::format("expected artifact '{}' does not exist", key.key()));
         }

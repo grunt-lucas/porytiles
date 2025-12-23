@@ -36,7 +36,7 @@ class TilesetArtifactKeyProvider {
      *
      * Anim frames have a single digit format, e.g.
      *
-     * 0.png, 8.png, 12.png
+     * 0.png, 9.png, 12.png
      */
 
     /*
@@ -230,15 +230,26 @@ class TilesetArtifactKeyProvider {
             }
         }
 
+        const auto anim_yaml_key = key_for_anim_yaml(tileset_name);
+        if (artifact_exists(anim_yaml_key)) {
+            result.push_back(anim_yaml_key);
+        }
+
         const auto porytiles_anims = discover_porytiles_anims(tileset_name);
         for (const auto &anim : porytiles_anims) {
-            const auto frame_00_key = key_for_porytiles_anim_frame(tileset_name, anim, 0);
-            if (artifact_exists(frame_00_key)) {
-                result.push_back(frame_00_key);
+            const auto key_frame_key = key_for_porytiles_anim_key_frame(tileset_name, anim);
+            if (artifact_exists(key_frame_key)) {
+                result.push_back(key_frame_key);
+            }
+
+            // TODO: warn user if we found Porytiles anim frames like 01.png, these won't work they have to be 1.png
+            // This is the opposite of the pal file format
+            const auto frame_0_key = key_for_porytiles_anim_frame(tileset_name, anim, 0);
+            if (artifact_exists(frame_0_key)) {
+                result.push_back(frame_0_key);
             }
             const auto frames = discover_porytiles_anim_frames(tileset_name, anim);
             for (const auto &frame : frames) {
-                // BUG FIX: was previously using porymap_anim_frame here
                 const auto frame_n_key = key_for_porytiles_anim_frame(tileset_name, anim, frame);
                 if (artifact_exists(frame_n_key)) {
                     result.push_back(frame_n_key);
@@ -286,11 +297,18 @@ class TilesetArtifactKeyProvider {
             }
         }
 
+        const auto generated_anim_code_key = key_for_generated_anim_code(tileset_name);
+        if (artifact_exists(generated_anim_code_key)) {
+            result.push_back(generated_anim_code_key);
+        }
+
         const auto porymap_anims = discover_porymap_anims(tileset_name);
         for (const auto &anim : porymap_anims) {
-            const auto frame_00_key = key_for_porymap_anim_frame(tileset_name, anim, 0);
-            if (artifact_exists(frame_00_key)) {
-                result.push_back(frame_00_key);
+            // TODO: warn user if we found Porymap anim frames like 01.png, these won't work they have to be 1.png
+            // This is the opposite of the pal file format
+            const auto frame_0_key = key_for_porymap_anim_frame(tileset_name, anim, 0);
+            if (artifact_exists(frame_0_key)) {
+                result.push_back(frame_0_key);
             }
             const auto frames = discover_porymap_anim_frames(tileset_name, anim);
             for (const auto &frame : frames) {
