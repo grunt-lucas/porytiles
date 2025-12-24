@@ -255,12 +255,17 @@ ChainableResult<void> import_porytiles_anim_key_frame(
             image_result};
     }
 
-    auto tiles = extract_tiles_from_image(*image_result.value());
+    // Capture dimensions before extracting tiles
+    const auto &img = *image_result.value();
+    const std::size_t width_tiles = img.width() / tile::side_length_pix;
+    const std::size_t height_tiles = img.height() / tile::side_length_pix;
+
+    auto tiles = extract_tiles_from_image(img);
     constexpr auto frame_name = "key.png";
 
     AnimationFrame frame{frame_name, std::move(tiles)};
 
-    // Get or create the animation in the Porymap component
+    // Get or create the animation in the Porytiles component
     auto &porytiles_comp = dest.porytiles_component();
     if (!porytiles_comp.has_anim(anim_name)) {
         Animation<Rgba32> anim{anim_name};
@@ -268,10 +273,16 @@ ChainableResult<void> import_porytiles_anim_key_frame(
     }
 
     // Add the frame to the animation
-    // Note: frames may be loaded out of order, so we use a simple approach:
-    // ensure the frames vector is large enough and set the frame at the correct index
     auto &anim = porytiles_comp.anims().at(anim_name);
     anim.key_frame(frame);
+
+    // Update dimensions in params if not already set (don't override YAML values)
+    auto params = anim.params();
+    if (params.width_tiles() == 0 && params.height_tiles() == 0) {
+        params.width_tiles(width_tiles);
+        params.height_tiles(height_tiles);
+        anim.params(std::move(params));
+    }
 
     return {};
 }
@@ -290,7 +301,12 @@ ChainableResult<void> import_porymap_anim_frame(
             image_result};
     }
 
-    auto tiles = extract_tiles_from_image(*image_result.value());
+    // Capture dimensions before extracting tiles
+    const auto &img = *image_result.value();
+    const std::size_t width_tiles = img.width() / tile::side_length_pix;
+    const std::size_t height_tiles = img.height() / tile::side_length_pix;
+
+    auto tiles = extract_tiles_from_image(img);
     const std::string frame_name = std::to_string(frame_index);
 
     AnimationFrame frame{frame_name, std::move(tiles)};
@@ -311,6 +327,14 @@ ChainableResult<void> import_porymap_anim_frame(
     }
     anim.frames()[frame_index] = std::move(frame);
 
+    // Update dimensions in params if not already set (don't override YAML values)
+    auto params = anim.params();
+    if (params.width_tiles() == 0 && params.height_tiles() == 0) {
+        params.width_tiles(width_tiles);
+        params.height_tiles(height_tiles);
+        anim.params(std::move(params));
+    }
+
     return {};
 }
 
@@ -328,7 +352,12 @@ ChainableResult<void> import_porytiles_anim_frame(
             image_result};
     }
 
-    auto tiles = extract_tiles_from_image(*image_result.value());
+    // Capture dimensions before extracting tiles
+    const auto &img = *image_result.value();
+    const std::size_t width_tiles = img.width() / tile::side_length_pix;
+    const std::size_t height_tiles = img.height() / tile::side_length_pix;
+
+    auto tiles = extract_tiles_from_image(img);
     const std::string frame_name = std::to_string(frame_index);
 
     AnimationFrame frame{frame_name, std::move(tiles)};
@@ -347,6 +376,14 @@ ChainableResult<void> import_porytiles_anim_frame(
         anim.add_frame(AnimationFrame<Rgba32>{});
     }
     anim.frames()[frame_index] = std::move(frame);
+
+    // Update dimensions in params if not already set (don't override YAML values)
+    auto params = anim.params();
+    if (params.width_tiles() == 0 && params.height_tiles() == 0) {
+        params.width_tiles(width_tiles);
+        params.height_tiles(height_tiles);
+        anim.params(std::move(params));
+    }
 
     return {};
 }
@@ -405,7 +442,15 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_porymap_anim_frame(
     // Update animation params in the Porymap component
     for (const auto &[anim_name, params] : params_result.value()) {
         if (dest.porymap_component().has_anim(anim_name)) {
-            dest.porymap_component().anims().at(anim_name).params(params);
+            auto &existing_anim = dest.porymap_component().anims().at(anim_name);
+            auto existing_params = existing_anim.params();
+
+            // Preserve dimensions from frame import (C code doesn't have this info)
+            auto new_params = params;
+            new_params.width_tiles(existing_params.width_tiles());
+            new_params.height_tiles(existing_params.height_tiles());
+
+            existing_anim.params(std::move(new_params));
         }
         else {
             // Create a new animation with just the params (frames will be loaded separately)
@@ -430,7 +475,15 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_porymap_anim_frame(
     // Update animation params in the Porymap component
     for (const auto &[anim_name, params] : params_result.value()) {
         if (dest.porymap_component().has_anim(anim_name)) {
-            dest.porymap_component().anims().at(anim_name).params(params);
+            auto &existing_anim = dest.porymap_component().anims().at(anim_name);
+            auto existing_params = existing_anim.params();
+
+            // Preserve dimensions from frame import (C code doesn't have this info)
+            auto new_params = params;
+            new_params.width_tiles(existing_params.width_tiles());
+            new_params.height_tiles(existing_params.height_tiles());
+
+            existing_anim.params(std::move(new_params));
         }
         else {
             // Create a new animation with just the params (frames will be loaded separately)

@@ -135,40 +135,64 @@ ChainableResult<std::filesystem::path> compute_transaction_dest_path(
  * @brief Converts a vector of tiles into an image.
  *
  * @details
- * Creates an image with tiles arranged horizontally in a single row. This is the standard format for animation frame
- * PNGs in tileset animations.
+ * Creates an image with tiles arranged in a grid. If width_tiles and height_tiles are both non-zero, uses those
+ * dimensions. Otherwise, falls back to a single-row layout for backward compatibility.
  *
  * @tparam PixelType The pixel type (Rgba32 or IndexPixel)
  * @param tiles The tiles to convert to an image
- * @return An image containing the tiles arranged in a single row
+ * @param width_tiles Target width in tiles (0 = use single row)
+ * @param height_tiles Target height in tiles (0 = use single row)
+ * @pre If width_tiles and height_tiles are non-zero, width_tiles * height_tiles must equal tiles.size()
+ * @return An image containing the tiles arranged in the specified grid
  */
 template <typename PixelType>
-Image<PixelType> tiles_to_image(const std::vector<PixelTile<PixelType>> &tiles)
+Image<PixelType> tiles_to_image(
+    const std::vector<PixelTile<PixelType>> &tiles, std::size_t width_tiles = 0, std::size_t height_tiles = 0)
 {
-    /*
-     * TODO: this method should also receive a target rows,cols count so that we can preserve desired image dimensions
-     * instead of writing the image as a single row of tiles.
-     */
-
     if (tiles.empty()) {
         return Image<PixelType>{};
     }
 
-    // Animation frames are typically arranged horizontally in a single row
-    const std::size_t tiles_per_row = tiles.size();
+    // Determine grid dimensions
+    std::size_t tiles_per_row;
+    std::size_t tiles_per_col;
+
+    if (width_tiles > 0 && height_tiles > 0) {
+        // Use specified dimensions
+        if (width_tiles * height_tiles != tiles.size()) {
+            panic(
+                fmt::format(
+                    "tiles_to_image: width_tiles ({}) * height_tiles ({}) != tiles.size() ({})",
+                    width_tiles,
+                    height_tiles,
+                    tiles.size()));
+        }
+        tiles_per_row = width_tiles;
+        tiles_per_col = height_tiles;
+    }
+    else {
+        // Fall back to single row
+        tiles_per_row = tiles.size();
+        tiles_per_col = 1;
+    }
+
     const std::size_t image_width = tiles_per_row * tile::side_length_pix;
-    const std::size_t image_height = tile::side_length_pix;
+    const std::size_t image_height = tiles_per_col * tile::side_length_pix;
 
     Image<PixelType> img{image_width, image_height};
 
     for (std::size_t tile_idx = 0; tile_idx < tiles.size(); ++tile_idx) {
         const auto &tile = tiles[tile_idx];
-        const std::size_t pixel_col_offset = tile_idx * tile::side_length_pix;
+        const std::size_t tile_row = tile_idx / tiles_per_row;
+        const std::size_t tile_col = tile_idx % tiles_per_row;
+        const std::size_t pixel_row_offset = tile_row * tile::side_length_pix;
+        const std::size_t pixel_col_offset = tile_col * tile::side_length_pix;
 
         for (std::size_t pixel_row = 0; pixel_row < tile::side_length_pix; ++pixel_row) {
             for (std::size_t pixel_col = 0; pixel_col < tile::side_length_pix; ++pixel_col) {
+                const std::size_t dest_row = pixel_row_offset + pixel_row;
                 const std::size_t dest_col = pixel_col_offset + pixel_col;
-                img.set(pixel_row, dest_col, tile.at(pixel_row, pixel_col));
+                img.set(dest_row, dest_col, tile.at(pixel_row, pixel_col));
             }
         }
     }
@@ -372,7 +396,8 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
     }
 
     const auto &frame = anim.frame_at(frame_index);
-    const auto img = tiles_to_image(frame.tiles());
+    const auto &params = anim.params();
+    const auto img = tiles_to_image(frame.tiles(), params.width_tiles(), params.height_tiles());
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
@@ -510,7 +535,8 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_anim_frame(
     }
 
     const auto &frame = anim.frame_at(frame_index);
-    const auto img = tiles_to_image(frame.tiles());
+    const auto &params = anim.params();
+    const auto img = tiles_to_image(frame.tiles(), params.width_tiles(), params.height_tiles());
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
@@ -534,7 +560,8 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_anim_frame(
     const auto &anim = src.porytiles_component().anim_for_name(anim_name);
 
     const auto &frame = anim.key_frame();
-    const auto img = tiles_to_image(frame.tiles());
+    const auto &params = anim.params();
+    const auto img = tiles_to_image(frame.tiles(), params.width_tiles(), params.height_tiles());
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,

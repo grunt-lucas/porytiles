@@ -129,6 +129,46 @@ class AnimationParams {
     }
 
     /**
+     * @brief Returns the width of animation frames in tiles.
+     *
+     * @details
+     * When non-zero, this specifies the number of 8x8 tiles per row in animation frame PNGs. This value is used when
+     * writing animation frames back to disk to preserve the original grid layout. A value of 0 means dimensions were
+     * not specified and the default single-row layout is used.
+     *
+     * @return The frame width in tiles, or 0 if unspecified
+     */
+    [[nodiscard]] std::size_t width_tiles() const
+    {
+        return width_tiles_;
+    }
+
+    void width_tiles(std::size_t value)
+    {
+        width_tiles_ = value;
+    }
+
+    /**
+     * @brief Returns the height of animation frames in tiles.
+     *
+     * @details
+     * When non-zero, this specifies the number of 8x8 tile rows in animation frame PNGs. This value is used when
+     * writing animation frames back to disk to preserve the original grid layout. A value of 0 means dimensions were
+     * not specified and the default single-row layout is used.
+     *
+     * @return The frame height in tiles, or 0 if unspecified
+     */
+    [[nodiscard]] std::size_t height_tiles() const
+    {
+        return height_tiles_;
+    }
+
+    void height_tiles(std::size_t value)
+    {
+        height_tiles_ = value;
+    }
+
+    /**
      * @brief Returns the animation counter maximum value.
      *
      * @details
@@ -153,6 +193,8 @@ class AnimationParams {
     std::vector<std::size_t> frames_{0};
     std::size_t tile_offset_{0};
     std::size_t tile_count_{0};
+    std::size_t width_tiles_{0};
+    std::size_t height_tiles_{0};
     std::size_t counter_max_{anim::default_counter_max};
 };
 
