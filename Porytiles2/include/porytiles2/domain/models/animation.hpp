@@ -1,5 +1,6 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -54,18 +55,31 @@ class Animation {
     }
 
     /**
+     * @brief Checks if this animation has a key frame set.
+     *
+     * @return True if the key frame has been set, false otherwise
+     */
+    [[nodiscard]] bool has_key_frame() const
+    {
+        return key_frame_.has_value();
+    }
+
+    /**
      * @brief Returns the key frame of this animation.
      *
      * @details
      * The key frame is a special frame of the animation and is the frame whose tiles are stored in tiles.png. All other
      * frames are stored as separate .4bpp files and loaded dynamically by the game engine.
      *
-     * @pre Animation must have at least one frame
+     * @pre has_key_frame() must return true
      * @return Reference to the keyframe
      */
     [[nodiscard]] const AnimationFrame<PixelType> &key_frame() const
     {
-        return key_frame_;
+        if (!key_frame_.has_value()) {
+            panic("key_frame() called on Animation with no key frame set");
+        }
+        return *key_frame_;
     }
 
     void key_frame(AnimationFrame<PixelType> key_frame)
@@ -131,7 +145,7 @@ class Animation {
   private:
     std::string name_;
     AnimationParams params_;
-    AnimationFrame<PixelType> key_frame_;
+    std::optional<AnimationFrame<PixelType>> key_frame_;
     std::vector<AnimationFrame<PixelType>> frames_;
 };
 
