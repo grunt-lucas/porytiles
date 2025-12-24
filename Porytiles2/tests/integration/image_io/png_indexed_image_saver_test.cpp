@@ -159,6 +159,18 @@ TEST_F(PngIndexedImageSaverTests, ShouldSaveAndLoadRoundTripTrueColor)
     EXPECT_EQ(loaded_image.width(), original_image.width());
     EXPECT_EQ(loaded_image.height(), original_image.height());
 
+    // Verify palette was loaded
+    ASSERT_TRUE(loaded_image.palette().has_value()) << "Loaded image should have a palette";
+    const auto &original_palette = original_image.palette().value();
+    const auto &loaded_palette = loaded_image.palette().value();
+    ASSERT_EQ(loaded_palette.size(), original_palette.size()) << "Palette size mismatch";
+
+    // Compare palette colors (RGB only, alpha may differ due to tRNS handling)
+    for (std::size_t i = 0; i < original_palette.size(); ++i) {
+        EXPECT_TRUE(loaded_palette[i].equals_ignoring_alpha(original_palette[i]))
+            << "Palette color mismatch at index " << i;
+    }
+
     // Compare pixel indices
     for (std::size_t row = 0; row < original_image.height(); ++row) {
         for (std::size_t col = 0; col < original_image.width(); ++col) {
@@ -190,6 +202,10 @@ TEST_F(PngIndexedImageSaverTests, ShouldSaveAndLoadRoundTripGreyscale)
     // Compare dimensions
     EXPECT_EQ(loaded_image.width(), original_image.width());
     EXPECT_EQ(loaded_image.height(), original_image.height());
+
+    // Verify palette was loaded
+    ASSERT_TRUE(loaded_image.palette().has_value()) << "Loaded image should have a palette";
+    // Note: greyscale mode uses standard_greyscale_pal(), not the original palette
 
     // Compare pixel indices
     for (std::size_t row = 0; row < original_image.height(); ++row) {
@@ -364,6 +380,16 @@ TEST_F(PngIndexedImageSaverTests, ShouldHandleMaxPaletteSize)
     ASSERT_NE(load_result.value(), nullptr);
 
     const auto &loaded_image = *load_result.value();
+
+    // Verify palette was loaded with all 256 colors
+    ASSERT_TRUE(loaded_image.palette().has_value()) << "Loaded image should have a palette";
+    const auto &loaded_palette = loaded_image.palette().value();
+    ASSERT_EQ(loaded_palette.size(), palette.size()) << "Palette size mismatch";
+
+    // Verify palette colors (RGB only)
+    for (std::size_t i = 0; i < palette.size(); ++i) {
+        EXPECT_TRUE(loaded_palette[i].equals_ignoring_alpha(palette[i])) << "Palette color mismatch at index " << i;
+    }
 
     for (std::size_t row = 0; row < 16; ++row) {
         for (std::size_t col = 0; col < 16; ++col) {
