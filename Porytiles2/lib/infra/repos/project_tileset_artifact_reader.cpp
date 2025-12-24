@@ -5,6 +5,7 @@
 #include <fstream>
 #include <functional>
 #include <iterator>
+#include <optional>
 
 #include "fmt/format.h"
 
@@ -240,18 +241,43 @@ import_porytiles_palette(Tileset &dest, const ArtifactKey &src_key, std::size_t 
     return {};
 }
 
-/*
- * TODO: the import_x_anim_{key}_frame functions are almost identical. All three cases can be moved to a template method
- * using duck typing, and then we can simply call the correct template from the main loading implementation function.
+/**
+ * @brief Template helper for importing animation frames from PNG files.
+ *
+ * @details
+ * This function unifies the logic for importing animation frames from both Porymap
+ * (IndexPixel) and Porytiles (Rgba32) components. It handles both key frames and
+ * regular numbered frames through the frame_index parameter.
+ *
+ * @tparam PixelType The pixel type (Rgba32 or IndexPixel)
+ * @tparam LoaderType The PNG loader type (must have load_from_file method)
+ * @tparam ComponentGetter Callable returning a reference to the tileset component
+ * @param dest The destination tileset
+ * @param src_key The artifact key for the source PNG file
+ * @param anim_name The name of the animation
+ * @param frame_index If nullopt, imports as key frame; otherwise imports as frame[index]
+ * @param loader The PNG image loader
+ * @param component_getter Lambda to get the appropriate component from tileset
+ * @param error_context Description for error messages (e.g., "Porymap animation frame")
+ * @return ChainableResult<void> indicating success or failure
  */
-ChainableResult<void> import_porytiles_anim_key_frame(
-    Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, const PngRgbaImageLoader &loader)
+template <SupportsTransparency PixelType, typename LoaderType, typename ComponentGetter>
+ChainableResult<void> import_anim_frame_impl(
+    Tileset &dest,
+    const ArtifactKey &src_key,
+    const std::string &anim_name,
+    std::optional<std::size_t> frame_index,
+    const LoaderType &loader,
+    ComponentGetter component_getter,
+    std::string_view error_context)
 {
     auto image_result = loader.load_from_file(src_key.key());
     if (!image_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{
-                "{}: failed to load Porytiles animation key frame", FormatParam{src_key.key(), Style::bold}},
+                "{}: failed to load {}",
+                FormatParam{src_key.key(), Style::bold},
+                FormatParam{std::string{error_context}}},
             image_result};
     }
 
@@ -261,20 +287,32 @@ ChainableResult<void> import_porytiles_anim_key_frame(
     const std::size_t height_tiles = img.height() / tile::side_length_pix;
 
     auto tiles = extract_tiles_from_image(img);
-    constexpr auto frame_name = "key.png";
 
-    AnimationFrame frame{frame_name, std::move(tiles)};
+    // Frame name: "key.png" for key frames, otherwise the index as string
+    const std::string frame_name = frame_index.has_value() ? std::to_string(*frame_index) : "key.png";
+    AnimationFrame<PixelType> frame{frame_name, std::move(tiles)};
 
-    // Get or create the animation in the Porytiles component
-    auto &porytiles_comp = dest.porytiles_component();
-    if (!porytiles_comp.has_anim(anim_name)) {
-        Animation<Rgba32> anim{anim_name};
-        porytiles_comp.add_anim(std::move(anim));
+    // Get or create the animation in the component
+    auto &component = component_getter(dest);
+    if (!component.has_anim(anim_name)) {
+        Animation<PixelType> anim{anim_name};
+        component.add_anim(std::move(anim));
     }
 
-    // Add the frame to the animation
-    auto &anim = porytiles_comp.anims().at(anim_name);
-    anim.key_frame(frame);
+    auto &anim = component.anims().at(anim_name);
+
+    if (frame_index.has_value()) {
+        // Regular frame: ensure vector is large enough and set at index
+        // Note: frames may be loaded out of order
+        while (anim.frame_count() <= *frame_index) {
+            anim.add_frame(AnimationFrame<PixelType>{});
+        }
+        anim.frames()[*frame_index] = std::move(frame);
+    }
+    else {
+        // Key frame
+        anim.key_frame(frame);
+    }
 
     // Update dimensions in params if not already set (don't override YAML values)
     auto params = anim.params();
@@ -287,104 +325,34 @@ ChainableResult<void> import_porytiles_anim_key_frame(
     return {};
 }
 
-ChainableResult<void> import_porymap_anim_frame(
-    Tileset &dest,
-    const ArtifactKey &src_key,
-    const std::string &anim_name,
-    std::size_t frame_index,
-    const PngIndexedImageLoader &loader)
+/**
+ * @brief Template helper for reading config files.
+ *
+ * @details
+ * This function unifies the logic for reading config and local_config files.
+ *
+ * @tparam ConfigSetter Callable that sets the config on the tileset
+ * @param dest The destination tileset
+ * @param src_key The artifact key for the config file
+ * @param config_setter Lambda to set the config lines on the component
+ * @return ChainableResult<void> indicating success or failure
+ */
+template <typename ConfigSetter>
+ChainableResult<void> read_config_impl(Tileset &dest, const ArtifactKey &src_key, ConfigSetter config_setter)
 {
-    auto image_result = loader.load_from_file(src_key.key());
-    if (!image_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{"{}: failed to load Porymap animation frame", FormatParam{src_key.key(), Style::bold}},
-            image_result};
+    std::ifstream config_file{src_key.key()};
+    if (!config_file.is_open()) {
+        // Config file is optional - if not found, just leave config empty
+        return {};
     }
 
-    // Capture dimensions before extracting tiles
-    const auto &img = *image_result.value();
-    const std::size_t width_tiles = img.width() / tile::side_length_pix;
-    const std::size_t height_tiles = img.height() / tile::side_length_pix;
-
-    auto tiles = extract_tiles_from_image(img);
-    const std::string frame_name = std::to_string(frame_index);
-
-    AnimationFrame frame{frame_name, std::move(tiles)};
-
-    // Get or create the animation in the Porymap component
-    auto &porymap_comp = dest.porymap_component();
-    if (!porymap_comp.has_anim(anim_name)) {
-        Animation<IndexPixel> anim{anim_name};
-        porymap_comp.add_anim(std::move(anim));
+    std::vector<std::string> lines;
+    std::string line;
+    while (std::getline(config_file, line)) {
+        lines.push_back(std::move(line));
     }
 
-    // Add the frame to the animation
-    // Note: frames may be loaded out of order, so we use a simple approach:
-    // ensure the frames vector is large enough and set the frame at the correct index
-    auto &anim = porymap_comp.anims().at(anim_name);
-    while (anim.frame_count() <= frame_index) {
-        anim.add_frame(AnimationFrame<IndexPixel>{});
-    }
-    anim.frames()[frame_index] = std::move(frame);
-
-    // Update dimensions in params if not already set (don't override YAML values)
-    auto params = anim.params();
-    if (params.width_tiles() == 0 && params.height_tiles() == 0) {
-        params.width_tiles(width_tiles);
-        params.height_tiles(height_tiles);
-        anim.params(std::move(params));
-    }
-
-    return {};
-}
-
-ChainableResult<void> import_porytiles_anim_frame(
-    Tileset &dest,
-    const ArtifactKey &src_key,
-    const std::string &anim_name,
-    std::size_t frame_index,
-    const PngRgbaImageLoader &loader)
-{
-    auto image_result = loader.load_from_file(src_key.key());
-    if (!image_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{"failed to load Porytiles animation frame: {}", FormatParam{src_key.key(), Style::bold}},
-            image_result};
-    }
-
-    // Capture dimensions before extracting tiles
-    const auto &img = *image_result.value();
-    const std::size_t width_tiles = img.width() / tile::side_length_pix;
-    const std::size_t height_tiles = img.height() / tile::side_length_pix;
-
-    auto tiles = extract_tiles_from_image(img);
-    const std::string frame_name = std::to_string(frame_index);
-
-    AnimationFrame frame{frame_name, std::move(tiles)};
-
-    // Get or create the animation in the Porytiles component
-    auto &porytiles_comp = dest.porytiles_component();
-    if (!porytiles_comp.has_anim(anim_name)) {
-        Animation<Rgba32> anim{anim_name};
-        porytiles_comp.add_anim(std::move(anim));
-    }
-
-    // Add the frame to the animation
-    // Note: frames may be loaded out of order, so we ensure the vector is large enough
-    auto &anim = porytiles_comp.anims().at(anim_name);
-    while (anim.frame_count() <= frame_index) {
-        anim.add_frame(AnimationFrame<Rgba32>{});
-    }
-    anim.frames()[frame_index] = std::move(frame);
-
-    // Update dimensions in params if not already set (don't override YAML values)
-    auto params = anim.params();
-    if (params.width_tiles() == 0 && params.height_tiles() == 0) {
-        params.width_tiles(width_tiles);
-        params.height_tiles(height_tiles);
-        anim.params(std::move(params));
-    }
-
+    config_setter(dest, lines);
     return {};
 }
 
@@ -425,7 +393,16 @@ ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKe
 ChainableResult<void> ProjectTilesetArtifactReader::read_porymap_anim_frame(
     Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, std::size_t frame_index) const
 {
-    PT_TRY_CALL_PASS_ERR(import_porymap_anim_frame(dest, src_key, anim_name, frame_index, *png_indexed_loader_), void);
+    PT_TRY_CALL_PASS_ERR(
+        (import_anim_frame_impl<IndexPixel>(
+            dest,
+            src_key,
+            anim_name,
+            frame_index,
+            *png_indexed_loader_,
+            [](Tileset &t) -> auto & { return t.porymap_component(); },
+            "Porymap animation frame")),
+        void);
     return {};
 }
 
@@ -553,14 +530,32 @@ ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const Artifact
 ChainableResult<void> ProjectTilesetArtifactReader::read_porytiles_anim_frame(
     Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, std::size_t frame_index) const
 {
-    PT_TRY_CALL_PASS_ERR(import_porytiles_anim_frame(dest, src_key, anim_name, frame_index, *png_rgba_loader_), void);
+    PT_TRY_CALL_PASS_ERR(
+        (import_anim_frame_impl<Rgba32>(
+            dest,
+            src_key,
+            anim_name,
+            frame_index,
+            *png_rgba_loader_,
+            [](Tileset &t) -> auto & { return t.porytiles_component(); },
+            "Porytiles animation frame")),
+        void);
     return {};
 }
 
 [[nodiscard]] ChainableResult<void> ProjectTilesetArtifactReader::read_porytiles_anim_key_frame(
     Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name) const
 {
-    PT_TRY_CALL_PASS_ERR(import_porytiles_anim_key_frame(dest, src_key, anim_name, *png_rgba_loader_), void);
+    PT_TRY_CALL_PASS_ERR(
+        (import_anim_frame_impl<Rgba32>(
+            dest,
+            src_key,
+            anim_name,
+            std::nullopt,
+            *png_rgba_loader_,
+            [](Tileset &t) -> auto & { return t.porytiles_component(); },
+            "Porytiles animation key frame")),
+        void);
     return {};
 }
 
@@ -591,39 +586,17 @@ ProjectTilesetArtifactReader::read_anim_yaml(Tileset &dest, const ArtifactKey &s
 [[nodiscard]] ChainableResult<void>
 ProjectTilesetArtifactReader::read_config(Tileset &dest, const ArtifactKey &src_key) const
 {
-    std::ifstream config_file{src_key.key()};
-    if (!config_file.is_open()) {
-        // Config file is optional - if not found, just leave config empty
-        return {};
-    }
-
-    std::vector<std::string> lines;
-    std::string line;
-    while (std::getline(config_file, line)) {
-        lines.push_back(std::move(line));
-    }
-
-    dest.porytiles_component().config(lines);
-    return {};
+    return read_config_impl(dest, src_key, [](Tileset &t, const std::vector<std::string> &lines) {
+        t.porytiles_component().config(lines);
+    });
 }
 
 [[nodiscard]] ChainableResult<void>
 ProjectTilesetArtifactReader::read_local_config(Tileset &dest, const ArtifactKey &src_key) const
 {
-    std::ifstream config_file{src_key.key()};
-    if (!config_file.is_open()) {
-        // Local config file is optional - if not found, just leave local_config empty
-        return {};
-    }
-
-    std::vector<std::string> lines;
-    std::string line;
-    while (std::getline(config_file, line)) {
-        lines.push_back(std::move(line));
-    }
-
-    dest.porytiles_component().local_config(lines);
-    return {};
+    return read_config_impl(dest, src_key, [](Tileset &t, const std::vector<std::string> &lines) {
+        t.porytiles_component().local_config(lines);
+    });
 }
 
 } // namespace porytiles2

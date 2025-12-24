@@ -5,6 +5,7 @@
 #include <fstream>
 #include <iostream>
 #include <memory>
+#include <optional>
 #include <random>
 #include <ranges>
 #include <sstream>
@@ -200,6 +201,131 @@ Image<PixelType> tiles_to_image(
     return img;
 }
 
+/**
+ * @brief Template helper for writing animation frames to PNG files.
+ *
+ * @details
+ * This function unifies the logic for writing animation frames from both Porymap
+ * (IndexPixel) and Porytiles (Rgba32) components. It handles both key frames and
+ * regular numbered frames through the frame_index parameter.
+ *
+ * @tparam PixelType The pixel type (Rgba32 or IndexPixel)
+ * @tparam ComponentGetter Callable returning a const reference to the tileset component
+ * @tparam SaveFunc Callable that saves the image to a file
+ * @param dest_key The artifact key for the destination PNG file
+ * @param src The source tileset
+ * @param anim_name The name of the animation
+ * @param frame_index If nullopt, writes key frame; otherwise writes frame[index]
+ * @param transaction_root The transaction root directory
+ * @param project_root The project root directory
+ * @param component_getter Lambda to get the appropriate component from tileset
+ * @param save_func Lambda to save the image (handles indexed vs RGBA saving)
+ * @param component_name Name of the component for error messages
+ * @return ChainableResult<void> indicating success or failure
+ */
+template <SupportsTransparency PixelType, typename ComponentGetter, typename SaveFunc>
+ChainableResult<void> write_anim_frame_impl(
+    const ArtifactKey &dest_key,
+    const Tileset &src,
+    const std::string &anim_name,
+    std::optional<std::size_t> frame_index,
+    const std::filesystem::path &transaction_root,
+    const std::filesystem::path &project_root,
+    ComponentGetter component_getter,
+    SaveFunc save_func,
+    std::string_view component_name)
+{
+    const auto &component = component_getter(src);
+
+    if (!component.has_anim(anim_name)) {
+        return FormattableError{
+            "animation '{}' not found in {} component",
+            FormatParam{anim_name, Style::bold},
+            FormatParam{std::string{component_name}}};
+    }
+
+    const auto &anim = component.anim_for_name(anim_name);
+
+    // Get the appropriate frame
+    const AnimationFrame<PixelType> *frame_ptr = nullptr;
+    if (frame_index.has_value()) {
+        if (*frame_index >= anim.frame_count()) {
+            return FormattableError{
+                "frame index {} out of range for animation '{}' (has {} frames)",
+                FormatParam{*frame_index},
+                FormatParam{anim_name, Style::bold},
+                FormatParam{anim.frame_count()}};
+        }
+        frame_ptr = &anim.frame_at(*frame_index);
+    }
+    else {
+        frame_ptr = &anim.key_frame();
+    }
+
+    // Convert tiles to image
+    const auto &params = anim.params();
+    const auto img = tiles_to_image(frame_ptr->tiles(), params.width_tiles(), params.height_tiles());
+
+    // Compute transaction path
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        transaction_dest_path,
+        compute_transaction_dest_path(transaction_root, project_root, dest_key),
+        "failed to compute transaction dest path",
+        void);
+
+    // Save using provided save function
+    return save_func(img, transaction_dest_path);
+}
+
+/**
+ * @brief Template helper for writing config files.
+ *
+ * @details
+ * This function unifies the logic for writing config and local_config files.
+ *
+ * @tparam ConfigGetter Callable that gets the config from the tileset
+ * @param dest_key The artifact key for the destination config file
+ * @param src The source tileset
+ * @param transaction_root The transaction root directory
+ * @param project_root The project root directory
+ * @param config_getter Lambda to get the config lines from the component
+ * @return ChainableResult<void> indicating success or failure
+ */
+template <typename ConfigGetter>
+ChainableResult<void> write_config_impl(
+    const ArtifactKey &dest_key,
+    const Tileset &src,
+    const std::filesystem::path &transaction_root,
+    const std::filesystem::path &project_root,
+    ConfigGetter config_getter)
+{
+    const auto &config = config_getter(src);
+
+    if (config.empty()) {
+        // No config to write
+        return {};
+    }
+
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        transaction_dest_path,
+        compute_transaction_dest_path(transaction_root, project_root, dest_key),
+        "failed to compute transaction dest path",
+        void);
+
+    std::ofstream out{transaction_dest_path};
+    if (!out.is_open()) {
+        return FormattableError{
+            "{}: failed to open file for writing", FormatParam{transaction_dest_path.string(), Style::bold}};
+    }
+
+    for (const auto &line : config) {
+        out << line << '\n';
+    }
+    out.flush();
+
+    return {};
+}
+
 } // namespace
 
 namespace porytiles2 {
@@ -382,34 +508,19 @@ ProjectTilesetArtifactWriter::write_porymap_pal_n(const ArtifactKey &dest_key, c
 ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
     const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, std::size_t frame_index)
 {
-    if (!src.porymap_component().has_anim(anim_name)) {
-        return FormattableError{"animation '{}' not found in Porymap component", FormatParam{anim_name, Style::bold}};
-    }
-
-    const auto &anim = src.porymap_component().anim_for_name(anim_name);
-    if (frame_index >= anim.frame_count()) {
-        return FormattableError{
-            "frame index {} out of range for animation '{}' (has {} frames)",
-            FormatParam{frame_index},
-            FormatParam{anim_name, Style::bold},
-            FormatParam{anim.frame_count()}};
-    }
-
-    const auto &frame = anim.frame_at(frame_index);
-    const auto &params = anim.params();
-    const auto img = tiles_to_image(frame.tiles(), params.width_tiles(), params.height_tiles());
-
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
-        "failed to compute transaction dest path",
-        void);
-
-    /*
-     * TODO: figure out how to use true-color here
-     */
-    // Save as indexed PNG (Porymap format) using greyscale palette
-    return save_tiles_png(*png_indexed_saver_, img, transaction_dest_path, TilesPalMode::greyscale);
+    // TODO: figure out how to use true-color here
+    return write_anim_frame_impl<IndexPixel>(
+        dest_key,
+        src,
+        anim_name,
+        frame_index,
+        transaction_root_,
+        project_root_,
+        [](const Tileset &t) -> const auto & { return t.porymap_component(); },
+        [this](const Image<IndexPixel> &img, const std::filesystem::path &path) {
+            return save_tiles_png(*png_indexed_saver_, img, path, TilesPalMode::greyscale);
+        },
+        "Porymap");
 }
 
 [[nodiscard]] ChainableResult<void>
@@ -521,56 +632,35 @@ ProjectTilesetArtifactWriter::write_porytiles_pal_n(const ArtifactKey &dest_key,
 ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_anim_frame(
     const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, std::size_t frame_index)
 {
-    if (!src.porytiles_component().has_anim(anim_name)) {
-        return FormattableError{"animation '{}' not found in Porytiles component", FormatParam{anim_name, Style::bold}};
-    }
-
-    const auto &anim = src.porytiles_component().anim_for_name(anim_name);
-    if (frame_index >= anim.frame_count()) {
-        return FormattableError{
-            "frame index {} out of range for animation '{}' (has {} frames)",
-            FormatParam{frame_index},
-            FormatParam{anim_name, Style::bold},
-            FormatParam{anim.frame_count()}};
-    }
-
-    const auto &frame = anim.frame_at(frame_index);
-    const auto &params = anim.params();
-    const auto img = tiles_to_image(frame.tiles(), params.width_tiles(), params.height_tiles());
-
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
-        "failed to compute transaction dest path",
-        void);
-
-    // Save as RGBA PNG (Porytiles format)
-    return save_layer_png(*png_rgba_saver_, img, transaction_dest_path);
+    return write_anim_frame_impl<Rgba32>(
+        dest_key,
+        src,
+        anim_name,
+        frame_index,
+        transaction_root_,
+        project_root_,
+        [](const Tileset &t) -> const auto & { return t.porytiles_component(); },
+        [this](const Image<Rgba32> &img, const std::filesystem::path &path) {
+            return save_layer_png(*png_rgba_saver_, img, path);
+        },
+        "Porytiles");
 }
 
 [[nodiscard]] ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_anim_key_frame(
     const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name)
 {
-    // TODO: this duplicates most of the code from write_porytiles_anim_frame
-
-    if (!src.porytiles_component().has_anim(anim_name)) {
-        return FormattableError{"animation '{}' not found in Porytiles component", FormatParam{anim_name, Style::bold}};
-    }
-
-    const auto &anim = src.porytiles_component().anim_for_name(anim_name);
-
-    const auto &frame = anim.key_frame();
-    const auto &params = anim.params();
-    const auto img = tiles_to_image(frame.tiles(), params.width_tiles(), params.height_tiles());
-
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
-        "failed to compute transaction dest path",
-        void);
-
-    // Save as RGBA PNG (Porytiles format)
-    return save_layer_png(*png_rgba_saver_, img, transaction_dest_path);
+    return write_anim_frame_impl<Rgba32>(
+        dest_key,
+        src,
+        anim_name,
+        std::nullopt,
+        transaction_root_,
+        project_root_,
+        [](const Tileset &t) -> const auto & { return t.porytiles_component(); },
+        [this](const Image<Rgba32> &img, const std::filesystem::path &path) {
+            return save_layer_png(*png_rgba_saver_, img, path);
+        },
+        "Porytiles");
 }
 
 [[nodiscard]] ChainableResult<void>
@@ -600,61 +690,17 @@ ProjectTilesetArtifactWriter::write_anim_yaml(const ArtifactKey &dest_key, const
 [[nodiscard]] ChainableResult<void>
 ProjectTilesetArtifactWriter::write_config(const ArtifactKey &dest_key, const Tileset &src)
 {
-    const auto &config = src.porytiles_component().config();
-
-    if (config.empty()) {
-        // No config to write
-        return {};
-    }
-
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
-        "failed to compute transaction dest path",
-        void);
-
-    std::ofstream out{transaction_dest_path};
-    if (!out.is_open()) {
-        return FormattableError{
-            "{}: failed to open file for writing", FormatParam{transaction_dest_path.string(), Style::bold}};
-    }
-
-    for (const auto &line : config) {
-        out << line << '\n';
-    }
-    out.flush();
-
-    return {};
+    return write_config_impl(dest_key, src, transaction_root_, project_root_, [](const Tileset &t) -> const auto & {
+        return t.porytiles_component().config();
+    });
 }
 
 [[nodiscard]] ChainableResult<void>
 ProjectTilesetArtifactWriter::write_local_config(const ArtifactKey &dest_key, const Tileset &src)
 {
-    const auto &local_config = src.porytiles_component().local_config();
-
-    if (local_config.empty()) {
-        // No local config to write
-        return {};
-    }
-
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
-        "failed to compute transaction dest path",
-        void);
-
-    std::ofstream out{transaction_dest_path};
-    if (!out.is_open()) {
-        return FormattableError{
-            "{}: failed to open file for writing", FormatParam{transaction_dest_path.string(), Style::bold}};
-    }
-
-    for (const auto &line : local_config) {
-        out << line << '\n';
-    }
-    out.flush();
-
-    return {};
+    return write_config_impl(dest_key, src, transaction_root_, project_root_, [](const Tileset &t) -> const auto & {
+        return t.porytiles_component().local_config();
+    });
 }
 
 } // namespace porytiles2
