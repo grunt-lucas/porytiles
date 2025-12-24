@@ -406,6 +406,14 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_porymap_anim_frame(
     return {};
 }
 
+/*
+ * TODO: the two read functions here have almost identical implementations.
+ *
+ * TODO: Also, instead of passing in anim_names, should we just grab them from the 'Tileset dest' parameter? If so, we'd
+ * need to ensure the anim frames got read before we call this function. It could be a simple precondition. It should be
+ * fine since TilesetRepo already works this way.
+ */
+
 [[nodiscard]] ChainableResult<void> ProjectTilesetArtifactReader::read_generated_anim_code(
     Tileset &dest, const ArtifactKey &src_key, const std::set<std::string> &anim_names) const
 {

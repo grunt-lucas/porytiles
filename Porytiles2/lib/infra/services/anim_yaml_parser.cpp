@@ -42,14 +42,6 @@ AnimationParams parse_animation_params(const YAML::Node &node)
         params.counter_max(node["counter_max"].as<std::size_t>());
     }
 
-    if (node["width_tiles"]) {
-        params.width_tiles(node["width_tiles"].as<std::size_t>());
-    }
-
-    if (node["height_tiles"]) {
-        params.height_tiles(node["height_tiles"].as<std::size_t>());
-    }
-
     // Note: tile_offset and tile_count are NOT read from anim.yaml
     // They are computed during compilation and stored in generated_anim_code.h
 
@@ -79,15 +71,6 @@ YAML::Node serialize_animation_params(const AnimationParams &params)
 
     if (params.counter_max() != anim::default_counter_max) {
         node["counter_max"] = params.counter_max();
-    }
-
-    // Only write dimensions if explicitly set (non-zero)
-    if (params.width_tiles() != 0) {
-        node["width_tiles"] = params.width_tiles();
-    }
-
-    if (params.height_tiles() != 0) {
-        node["height_tiles"] = params.height_tiles();
     }
 
     // Note: tile_offset and tile_count are NOT written to anim.yaml
