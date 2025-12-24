@@ -386,7 +386,7 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
         return FormattableError{"animation '{}' not found in Porymap component", FormatParam{anim_name, Style::bold}};
     }
 
-    const auto &anim = src.porymap_component().anim(anim_name);
+    const auto &anim = src.porymap_component().anim_for_name(anim_name);
     if (frame_index >= anim.frame_count()) {
         return FormattableError{
             "frame index {} out of range for animation '{}' (has {} frames)",

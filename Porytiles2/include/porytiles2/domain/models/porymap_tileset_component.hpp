@@ -48,6 +48,18 @@ class PorymapTilesetComponent {
 
     [[nodiscard]] ChainableResult<LayerMode> detect_layer_mode() const;
 
+    void add_anim(Animation<IndexPixel> anim);
+
+    [[nodiscard]] bool has_anim(const std::string &name) const
+    {
+        return anims_.contains(name);
+    }
+
+    [[nodiscard]] const Animation<IndexPixel> &anim_for_name(const std::string &name) const
+    {
+        return anims_.at(name);
+    }
+
     [[nodiscard]] const std::vector<TilemapEntry> &metatiles_bin() const
     {
         return metatiles_bin_;
@@ -86,18 +98,6 @@ class PorymapTilesetComponent {
     [[nodiscard]] std::map<std::string, Animation<IndexPixel>> &anims()
     {
         return anims_;
-    }
-
-    void add_anim(Animation<IndexPixel> anim);
-
-    [[nodiscard]] bool has_anim(const std::string &name) const
-    {
-        return anims_.contains(name);
-    }
-
-    [[nodiscard]] const Animation<IndexPixel> &anim(const std::string &name) const
-    {
-        return anims_.at(name);
     }
 
   private:
