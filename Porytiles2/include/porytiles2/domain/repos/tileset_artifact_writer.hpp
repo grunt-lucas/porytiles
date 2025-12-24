@@ -119,10 +119,14 @@ class TilesetArtifactWriter {
      * animations in the Porytiles component.
      *
      * @param dest_key Key identifying where to write the anim.yaml artifact
-     * @param src The Tileset object to extract animation parameters from
+     * @param src The Tileset object from which to extract animation parameters
      * @return Empty ChainableResult on success, otherwise an error chain
      */
     [[nodiscard]] virtual ChainableResult<void> write_anim_yaml(const ArtifactKey &dest_key, const Tileset &src) = 0;
+
+    [[nodiscard]] virtual ChainableResult<void> write_config(const ArtifactKey &dest_key, const Tileset &src) = 0;
+
+    [[nodiscard]] virtual ChainableResult<void> write_local_config(const ArtifactKey &dest_key, const Tileset &src) = 0;
 };
 
 } // namespace porytiles2

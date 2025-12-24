@@ -570,4 +570,64 @@ ProjectTilesetArtifactWriter::write_anim_yaml(const ArtifactKey &dest_key, const
     return anim_yaml_parser_->write(transaction_dest_path, anim_params);
 }
 
+[[nodiscard]] ChainableResult<void>
+ProjectTilesetArtifactWriter::write_config(const ArtifactKey &dest_key, const Tileset &src)
+{
+    const auto &config = src.porytiles_component().config();
+
+    if (config.empty()) {
+        // No config to write
+        return {};
+    }
+
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        transaction_dest_path,
+        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        "failed to compute transaction dest path",
+        void);
+
+    std::ofstream out{transaction_dest_path};
+    if (!out.is_open()) {
+        return FormattableError{
+            "{}: failed to open file for writing", FormatParam{transaction_dest_path.string(), Style::bold}};
+    }
+
+    for (const auto &line : config) {
+        out << line << '\n';
+    }
+    out.flush();
+
+    return {};
+}
+
+[[nodiscard]] ChainableResult<void>
+ProjectTilesetArtifactWriter::write_local_config(const ArtifactKey &dest_key, const Tileset &src)
+{
+    const auto &local_config = src.porytiles_component().local_config();
+
+    if (local_config.empty()) {
+        // No local config to write
+        return {};
+    }
+
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        transaction_dest_path,
+        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        "failed to compute transaction dest path",
+        void);
+
+    std::ofstream out{transaction_dest_path};
+    if (!out.is_open()) {
+        return FormattableError{
+            "{}: failed to open file for writing", FormatParam{transaction_dest_path.string(), Style::bold}};
+    }
+
+    for (const auto &line : local_config) {
+        out << line << '\n';
+    }
+    out.flush();
+
+    return {};
+}
+
 } // namespace porytiles2
