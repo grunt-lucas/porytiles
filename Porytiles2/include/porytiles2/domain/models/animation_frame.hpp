@@ -1,9 +1,12 @@
 #pragma once
 
+#include <optional>
 #include <string>
 #include <vector>
 
+#include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/supports_transparency.hpp"
 
 namespace porytiles2 {
@@ -91,11 +94,27 @@ class AnimationFrame {
         return tiles_.at(index);
     }
 
+    [[nodiscard]] bool has_palette() const
+    {
+        return palette_.has_value();
+    }
+
+    [[nodiscard]] const Palette<Rgba32> &palette() const
+    {
+        return palette_.value();
+    }
+
+    void palette(Palette<Rgba32> pal)
+    {
+        palette_ = std::move(pal);
+    }
+
   private:
     // Note: Frame dimensions (width/height in tiles) are stored in AnimationParams,
     // since all frames in an animation share the same dimensions.
     std::string frame_name_;
     std::vector<PixelTile<PixelType>> tiles_;
+    std::optional<Palette<Rgba32>> palette_;
 };
 
 } // namespace porytiles2

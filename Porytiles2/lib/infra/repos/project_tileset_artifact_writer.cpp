@@ -264,7 +264,18 @@ ChainableResult<void> write_anim_frame_impl(
 
     // Convert tiles to image
     const auto &params = anim.params();
-    const auto img = tiles_to_image(frame_ptr->tiles(), params.width_tiles(), params.height_tiles());
+    auto img = tiles_to_image(frame_ptr->tiles(), params.width_tiles(), params.height_tiles());
+
+    // Transfer palette from frame to image if present
+    if (frame_ptr->has_palette()) {
+        const auto &pal = frame_ptr->palette();
+        std::vector<Rgba32> pal_vec;
+        pal_vec.reserve(pal.size());
+        for (std::size_t i = 0; i < pal.size(); ++i) {
+            pal_vec.push_back(pal.at(i));
+        }
+        img.palette(std::move(pal_vec));
+    }
 
     // Compute transaction path
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -508,7 +519,6 @@ ProjectTilesetArtifactWriter::write_porymap_pal_n(const ArtifactKey &dest_key, c
 ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
     const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, std::size_t frame_index)
 {
-    // TODO: figure out how to use true-color here
     return write_anim_frame_impl<IndexPixel>(
         dest_key,
         src,
@@ -518,7 +528,7 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
         project_root_,
         [](const Tileset &t) -> const auto & { return t.porymap_component(); },
         [this](const Image<IndexPixel> &img, const std::filesystem::path &path) {
-            return save_tiles_png(*png_indexed_saver_, img, path, TilesPalMode::greyscale);
+            return save_tiles_png(*png_indexed_saver_, img, path, TilesPalMode::true_color);
         },
         "Porymap");
 }

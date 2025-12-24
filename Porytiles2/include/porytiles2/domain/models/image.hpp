@@ -156,6 +156,11 @@ class Image {
         return palette_;
     }
 
+    void palette(std::vector<Rgba32> pal)
+    {
+        palette_ = std::move(pal);
+    }
+
   private:
     std::vector<PixelType> pixels_;
     // TODO: is there a better way to handle this?

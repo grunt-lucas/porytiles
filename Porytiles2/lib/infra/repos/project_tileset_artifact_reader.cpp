@@ -291,6 +291,9 @@ ChainableResult<void> import_anim_frame_impl(
     // Frame name: "key.png" for key frames, otherwise the index as string
     const std::string frame_name = frame_index.has_value() ? std::to_string(*frame_index) : "key.png";
     AnimationFrame<PixelType> frame{frame_name, std::move(tiles)};
+    if (img.palette().has_value()) {
+        frame.palette(Palette<Rgba32>{img.palette().value()});
+    }
 
     // Get or create the animation in the component
     auto &component = component_getter(dest);
