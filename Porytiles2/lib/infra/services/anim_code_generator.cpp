@@ -2,10 +2,9 @@
 
 #include <algorithm>
 #include <cctype>
+#include <format>
 #include <ranges>
 #include <sstream>
-
-#include "fmt/format.h"
 
 #include "porytiles2/utilities/string_utils.hpp"
 
@@ -33,9 +32,9 @@ namespace {
     // Generate INCBIN for each unique frame referenced
     for (std::size_t frame_idx = 0; frame_idx <= max_frame_idx; ++frame_idx) {
         const std::string frame_file =
-            (tileset_path_from_project_root / "anim" / anim_name / fmt::format("{}.4bpp", frame_idx)).string();
+            (tileset_path_from_project_root / "anim" / anim_name / std::format("{}.4bpp", frame_idx)).string();
 
-        const auto statement = fmt::format(
+        const auto statement = std::format(
             "const u16 gTilesetAnims_PorytilesManaged_{}_{}_Frame{}[] = INCBIN_U16(\"{}\");\n",
             tileset_name,
             pascal_anim_name,
@@ -54,13 +53,13 @@ namespace {
     std::ostringstream out;
 
     const std::string pascal_anim_name = porytiles2::to_pascal_case(anim_name);
-    const std::string array_name = fmt::format("gTilesetAnims_PorytilesManaged_{}_{}", tileset_name, pascal_anim_name);
+    const std::string array_name = std::format("gTilesetAnims_PorytilesManaged_{}_{}", tileset_name, pascal_anim_name);
 
-    out << fmt::format("const u16 *const {}[] = {{\n", array_name);
+    out << std::format("const u16 *const {}[] = {{\n", array_name);
 
     for (std::size_t i = 0; i < params.frames().size(); ++i) {
         const std::size_t frame_idx = params.frames()[i];
-        out << fmt::format(
+        out << std::format(
             "    gTilesetAnims_PorytilesManaged_{}_{}_Frame{}", tileset_name, pascal_anim_name, frame_idx);
         if (i < params.frames().size() - 1) {
             out << ",";
@@ -79,13 +78,13 @@ namespace {
     std::ostringstream out;
 
     const std::string pascal_anim_name = porytiles2::to_pascal_case(anim_name);
-    const std::string array_name = fmt::format("gTilesetAnims_PorytilesManaged_{}_{}", tileset_name, pascal_anim_name);
-    const std::string func_name = fmt::format("QueueAnimTiles_PorytilesManaged_{}_{}", tileset_name, pascal_anim_name);
+    const std::string array_name = std::format("gTilesetAnims_PorytilesManaged_{}_{}", tileset_name, pascal_anim_name);
+    const std::string func_name = std::format("QueueAnimTiles_PorytilesManaged_{}_{}", tileset_name, pascal_anim_name);
 
-    out << fmt::format("static void {}(u16 timer)\n", func_name);
+    out << std::format("static void {}(u16 timer)\n", func_name);
     out << "{\n";
-    out << fmt::format("    u16 i = timer % ARRAY_COUNT({});\n", array_name);
-    out << fmt::format(
+    out << std::format("    u16 i = timer % ARRAY_COUNT({});\n", array_name);
+    out << std::format(
         "    AppendTilesetAnimToBuffer({}[i], (u16 *)(BG_VRAM + TILE_OFFSET_4BPP({})), {} * TILE_SIZE_4BPP);\n",
         array_name,
         params.tile_offset(),
@@ -100,9 +99,9 @@ namespace {
 {
     std::ostringstream out;
 
-    const std::string func_name = fmt::format("TilesetAnim_PorytilesManaged_{}", tileset_name);
+    const std::string func_name = std::format("TilesetAnim_PorytilesManaged_{}", tileset_name);
 
-    out << fmt::format("static void {}(u16 timer)\n", func_name);
+    out << std::format("static void {}(u16 timer)\n", func_name);
     out << "{\n";
 
     // Group animations by their frame_factor
@@ -119,12 +118,12 @@ namespace {
         }
 
         for (const auto &[frame_offset, offset_anims] : by_offset) {
-            out << fmt::format("    if (timer % {} == {})\n", frame_factor, frame_offset);
+            out << std::format("    if (timer % {} == {})\n", frame_factor, frame_offset);
             out << "    {\n";
 
             for (const auto &anim_name : offset_anims | std::views::keys) {
                 const std::string pascal_anim_name = porytiles2::to_pascal_case(anim_name);
-                out << fmt::format(
+                out << std::format(
                     "        QueueAnimTiles_PorytilesManaged_{}_{}(timer / {});\n",
                     tileset_name,
                     pascal_anim_name,
@@ -147,8 +146,8 @@ namespace {
 {
     std::ostringstream out;
 
-    const std::string init_func_name = fmt::format("InitTilesetAnim_PorytilesManaged_{}", tileset_name);
-    const std::string driver_func_name = fmt::format("TilesetAnim_PorytilesManaged_{}", tileset_name);
+    const std::string init_func_name = std::format("InitTilesetAnim_PorytilesManaged_{}", tileset_name);
+    const std::string driver_func_name = std::format("TilesetAnim_PorytilesManaged_{}", tileset_name);
 
     // Find the maximum counter_max value across all animations
     std::size_t max_counter_max = porytiles2::anim::default_counter_max;
@@ -161,11 +160,11 @@ namespace {
         is_primary ? "sPrimaryTilesetAnimCounterMax" : "sSecondaryTilesetAnimCounterMax";
     const std::string callback_var = is_primary ? "sPrimaryTilesetAnimCallback" : "sSecondaryTilesetAnimCallback";
 
-    out << fmt::format("void {}(void)\n", init_func_name);
+    out << std::format("void {}(void)\n", init_func_name);
     out << "{\n";
-    out << fmt::format("    {} = 0;\n", counter_var);
-    out << fmt::format("    {} = {};\n", counter_max_var, max_counter_max);
-    out << fmt::format("    {} = {};\n", callback_var, driver_func_name);
+    out << std::format("    {} = 0;\n", counter_var);
+    out << std::format("    {} = {};\n", counter_max_var, max_counter_max);
+    out << std::format("    {} = {};\n", callback_var, driver_func_name);
     out << "}\n";
 
     return out.str();
@@ -190,9 +189,9 @@ ChainableResult<std::string> AnimCodeGenerator::generate(
     const std::string pascal_tileset_name = to_pascal_case(tileset_name);
 
     // Generate header guard
-    const std::string guard_name = fmt::format("GUARD_GENERATED_ANIM_CODE_{}_H", pascal_tileset_name);
-    out << fmt::format("#ifndef {}\n", guard_name);
-    out << fmt::format("#define {}\n\n", guard_name);
+    const std::string guard_name = std::format("GUARD_GENERATED_ANIM_CODE_{}_H", pascal_tileset_name);
+    out << std::format("#ifndef {}\n", guard_name);
+    out << std::format("#define {}\n\n", guard_name);
 
     // Generate INCBIN macro if not defined
     out << "// Ensure INCBIN_U16 is available\n";
@@ -251,7 +250,7 @@ ChainableResult<std::string> AnimCodeGenerator::generate(
     out << generate_init_function(pascal_tileset_name, animations, is_primary);
 
     // Close header guard
-    out << fmt::format("\n#endif // {}\n", guard_name);
+    out << std::format("\n#endif // {}\n", guard_name);
 
     return out.str();
 }

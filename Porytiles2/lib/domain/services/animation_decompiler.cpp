@@ -5,6 +5,7 @@
 #include <set>
 #include <string>
 
+#include "porytiles2/domain/algorithms/tile_converters.hpp"
 #include "porytiles2/domain/models/animation_frame.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
@@ -54,6 +55,14 @@ std::size_t find_palette_for_animation_tiles(
          * tilesets in the game and look for context? To do this, we'd need to parse the layouts file to figure out
          * candidates. At a certain point, it becomes ridiculous to try to automate stuff like this. Users will be
          * expected to have some understanding of how the game works in order to use the tool properly.
+         *
+         * As a fallback, after performing a full tileset scan, if still no usages were found, we could just check the
+         * Porymap pals and see if our key-frame subtile (when interpreted as an Rgba PixelTile via the internal
+         * palette) matches any of those pals. If it does, just use that pal here, but still note to the user that this
+         * is what happened.
+         *
+         * Finally, if even that doesn't yield a match, output the tile using greyscale. And warn the user that is
+         * what's happening.
          */
         std::cerr << std::endl;
         std::cerr << "---------------------------------" << std::endl;
@@ -71,6 +80,9 @@ std::size_t find_palette_for_animation_tiles(
     }
 
     if (found_pal_indices.size() > 1) {
+        /*
+         * TODO: handle this without panicking
+         */
         std::string pal_list;
         for (const auto &pal_idx : found_pal_indices) {
             if (!pal_list.empty()) {
@@ -84,41 +96,6 @@ std::size_t find_palette_for_animation_tiles(
     }
 
     return *found_pal_indices.begin();
-}
-
-/**
- * @brief Decompiles a single IndexPixel tile to Rgba32 format.
- *
- * @details
- * Converts a single tile from IndexPixel to Rgba32 using the specified palette.
- *
- * @param tile The indexed tile to decompile
- * @param pal The palette to use for color lookup
- * @param extrinsic_transparency The RGBA color representing transparency
- * @return The decompiled RGBA tile
- */
-PixelTile<Rgba32> decompile_tile(
-    const PixelTile<IndexPixel> &tile, const Palette<Rgba32, pal::max_size> &pal, const Rgba32 &extrinsic_transparency)
-{
-    PixelTile<Rgba32> result;
-
-    for (std::size_t i = 0; i < tile::size_pix; ++i) {
-        const IndexPixel &index_pixel = tile.at(i);
-
-        if (index_pixel.is_transparent()) {
-            // TODO: this should be configurable and set by the tileset.import.transparency config
-            result.set(i, extrinsic_transparency);
-        }
-        else {
-            const std::size_t pal_index = index_pixel.index();
-            if (pal_index >= pal::max_size) {
-                panic("palette index out of bounds: " + std::to_string(pal_index));
-            }
-            result.set(i, pal.at(pal_index));
-        }
-    }
-
-    return result;
 }
 
 /**
@@ -188,6 +165,11 @@ Animation<Rgba32> AnimationDecompiler::decompile_animation(
     const std::size_t tile_offset = anim.params().tile_offset();
     const std::size_t tile_count = anim.params().tile_count();
 
+    /*
+     * TODO: adapt this code so that it computes a separate pal index for each subtile of the key frame. Technically,
+     * advanced users could make animations where different subtiles use different palettes. None of the vanilla game
+     * animations work this way, but it's possible and thus a use-case I want to support.
+     */
     // Recover the palette index by scanning metatiles for all animation tiles
     // All tiles in an animation must use the same palette
     const std::size_t pal_index = find_palette_for_animation_tiles(anim.name(), tile_offset, tile_count, metatiles_bin);
@@ -217,11 +199,11 @@ Animation<Rgba32> AnimationDecompiler::decompile_animation(
     std::vector<PixelTile<Rgba32>> key_frame_rgba_tiles;
     key_frame_rgba_tiles.reserve(key_frame_index_tiles.size());
     for (const auto &index_tile : key_frame_index_tiles) {
-        key_frame_rgba_tiles.push_back(decompile_tile(index_tile, pal, extrinsic_transparency));
+        key_frame_rgba_tiles.push_back(color_tile_from_index_tile(index_tile, pal, extrinsic_transparency));
     }
 
     // Set the key frame on the result
-    AnimationFrame<Rgba32> key_frame{"key.png", std::move(key_frame_rgba_tiles)};
+    AnimationFrame key_frame{"key.png", std::move(key_frame_rgba_tiles)};
     result.key_frame(std::move(key_frame));
 
     for (const auto &frame : anim.frames()) {
@@ -229,7 +211,7 @@ Animation<Rgba32> AnimationDecompiler::decompile_animation(
         rgba_tiles.reserve(frame.tiles().size());
 
         for (const auto &index_tile : frame.tiles()) {
-            rgba_tiles.push_back(decompile_tile(index_tile, pal, extrinsic_transparency));
+            rgba_tiles.push_back(color_tile_from_index_tile(index_tile, pal, extrinsic_transparency));
         }
 
         AnimationFrame rgba_frame{frame.frame_name(), std::move(rgba_tiles)};
