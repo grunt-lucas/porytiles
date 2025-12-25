@@ -2,6 +2,7 @@
 
 // ReSharper disable once CppUnusedIncludeDirective
 #include <cstdint>
+#include <format>
 #include <ostream>
 #include <set>
 #include <string>
@@ -118,17 +119,6 @@ inline std::ostream &operator<<(std::ostream &os, const Rgba32 &rgba)
     return os;
 }
 
-/**
- * @brief Provides a simple way for fmtlib to format an Rgba32.
- *
- * @details
- * https://fmt.dev/11.1/api/#formatting-user-defined-types
- */
-inline auto format_as(const Rgba32 &rgba)
-{
-    return rgba.to_jasc_str();
-}
-
 inline std::string to_string(const Rgba32 &rgba)
 {
     return rgba.to_jasc_str();
@@ -198,5 +188,18 @@ struct std::hash<porytiles2::Rgba32> {
         const std::size_t h3 = std::hash<std::uint8_t>{}(rgba.blue());
         const std::size_t h4 = std::hash<std::uint8_t>{}(rgba.alpha());
         return h1 ^ (h2 << 8) ^ (h3 << 16) ^ (h4 << 24);
+    }
+};
+
+template <>
+struct std::formatter<porytiles2::Rgba32> {
+    constexpr auto parse(std::format_parse_context &ctx)
+    {
+        return ctx.begin();
+    }
+
+    auto format(const porytiles2::Rgba32 &rgba, std::format_context &ctx) const
+    {
+        return std::format_to(ctx.out(), "{}", rgba.to_jasc_str());
     }
 };

@@ -48,8 +48,6 @@
 #include <string>
 #include <vector>
 
-#include "fmt/format.h"
-
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/config/config_scope_type.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"

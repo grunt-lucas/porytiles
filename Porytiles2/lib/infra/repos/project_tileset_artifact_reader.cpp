@@ -2,12 +2,11 @@
 
 #include <expected>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <functional>
 #include <iterator>
 #include <optional>
-
-#include "fmt/format.h"
 
 #include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/domain/models/porytiles_tileset_component.hpp"
@@ -35,7 +34,7 @@ std::vector<PixelTile<PixelType>> extract_tiles_from_image(const Image<PixelType
 {
     if (img.width() % tile::side_length_pix != 0 || img.height() % tile::side_length_pix != 0) {
         panic(
-            fmt::format(
+            std::format(
                 "Animation frame dimensions must be multiples of {}, got {}x{}",
                 tile::side_length_pix,
                 img.width(),
@@ -87,7 +86,7 @@ ChainableResult<void> import_layer_png(
             return {};
         case ImageLoadError::Type::unsupported_channel_count:
         case ImageLoadError::Type::other_load_error: {
-            const auto error_msg = fmt::format("failed to load layer image: {}", src_key.key());
+            const auto error_msg = std::format("failed to load layer image: {}", src_key.key());
             return ChainableResult<void>{FormattableError{error_msg}, image_result};
         }
         default:
@@ -146,7 +145,7 @@ ChainableResult<void> import_emerald_metatile_attributes(Tileset &dest, const Ar
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
 
     if (data_buf.size() % attr::bytes_per_attr_emerald != 0) {
-        return FormattableError{fmt::format(
+        return FormattableError{std::format(
             "metatile_attributes.bin size is not a multiple of {} bytes, probably corrupted",
             attr::bytes_per_attr_emerald)};
     }
@@ -177,7 +176,7 @@ import_firered_metatile_attributes([[maybe_unused]] Tileset &dest, const Artifac
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
 
     if (data_buf.size() % attr::bytes_per_attr_firered != 0) {
-        return FormattableError{fmt::format(
+        return FormattableError{std::format(
             "metatile_attributes.bin size is not a multiple of {} bytes, probably corrupted",
             attr::bytes_per_attr_firered)};
     }
@@ -213,7 +212,7 @@ ChainableResult<void>
 import_porymap_palette(Tileset &dest, const ArtifactKey &src_key, std::size_t index, const FilePalLoader &loader)
 {
     if (index >= pal::num_pals) {
-        panic(fmt::format("invalid pal index {}: out of range", index));
+        panic(std::format("invalid pal index {}: out of range", index));
     }
 
     const auto pal_result = loader.load(src_key.key());
@@ -229,7 +228,7 @@ ChainableResult<void>
 import_porytiles_palette(Tileset &dest, const ArtifactKey &src_key, std::size_t index, const FilePalLoader &loader)
 {
     if (index >= pal::num_pals) {
-        panic(fmt::format("invalid pal index {}: out of range", index));
+        panic(std::format("invalid pal index {}: out of range", index));
     }
 
     const auto pal_result = loader.load_with_wildcards(src_key.key());

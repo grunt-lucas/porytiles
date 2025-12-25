@@ -1,6 +1,6 @@
 #include "gtest/gtest.h"
 
-#include "fmt/format.h"
+#include <format>
 
 #include "porytiles2/domain/models/rgba32.hpp"
 
@@ -23,10 +23,10 @@ TEST(Rgba32Tests, EqualsIgnoringAlphaShouldWork)
     EXPECT_FALSE(rgba3.equals_ignoring_alpha(rgba4));
 }
 
-TEST(Rgba32Tests, FmtlibFormattingShouldUseJasc)
+TEST(Rgba32Tests, StdFormatFormattingShouldUseJasc)
 {
     constexpr Rgba32 rgba1{127, 12, 222};
-    const auto formatted = fmt::format("{}", rgba1);
+    const auto formatted = std::format("{}", rgba1);
     EXPECT_EQ(formatted, "127 12 222");
 }
 

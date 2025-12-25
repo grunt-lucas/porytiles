@@ -1,10 +1,9 @@
 #pragma once
 
 #include <cstddef>
+#include <format>
 #include <tuple>
 #include <vector>
-
-#include "fmt/format.h"
 
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/metatile.hpp"
@@ -54,7 +53,7 @@ class LayerImageMetatileizer {
         // Validate that all images have the same dimensions
         if (bottom.width() != middle.width() || bottom.height() != middle.height() || bottom.width() != top.width() ||
             bottom.height() != top.height()) {
-            return FormattableError{fmt::format(
+            return FormattableError{std::format(
                 "layer images have mismatched dimensions: bottom={}x{}, middle={}x{}, top={}x{}",
                 bottom.width(),
                 bottom.height(),
@@ -93,7 +92,7 @@ class LayerImageMetatileizer {
          * dimensions are a multiple of 16 to confirm that it can be correctly metatileized.
          */
         if (bottom.width() % metatile::side_length_pix != 0 || bottom.height() % metatile::side_length_pix != 0) {
-            return FormattableError{fmt::format(
+            return FormattableError{std::format(
                 "image dimensions must be multiples of {}, got {}x{}",
                 metatile::side_length_pix,
                 bottom.width(),

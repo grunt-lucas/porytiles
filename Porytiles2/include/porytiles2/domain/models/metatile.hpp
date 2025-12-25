@@ -335,7 +335,7 @@ class Metatile {
     [[nodiscard]] const PixelTile<PixelType> &bottom(std::size_t i) const
     {
         if (i > 3) {
-            panic(fmt::format("index {} out of bounds: must be [0,3]", i));
+            panic(std::format("index {} out of bounds: must be [0,3]", i));
         }
         return bottom_[i];
     }
@@ -365,7 +365,7 @@ class Metatile {
     void set_bottom(std::size_t i, PixelTile<PixelType> tile)
     {
         if (i > 3) {
-            panic(fmt::format("index {} out of bounds: must be [0,3]", i));
+            panic(std::format("index {} out of bounds: must be [0,3]", i));
         }
         bottom_[i] = std::move(tile);
     }
@@ -382,7 +382,7 @@ class Metatile {
     [[nodiscard]] const PixelTile<PixelType> &middle(std::size_t i) const
     {
         if (i > 3) {
-            panic(fmt::format("index {} out of bounds: must be [0,3]", i));
+            panic(std::format("index {} out of bounds: must be [0,3]", i));
         }
         return middle_[i];
     }
@@ -412,7 +412,7 @@ class Metatile {
     void set_middle(std::size_t i, PixelTile<PixelType> tile)
     {
         if (i > 3) {
-            panic(fmt::format("index {} out of bounds: must be [0,3]", i));
+            panic(std::format("index {} out of bounds: must be [0,3]", i));
         }
         middle_[i] = std::move(tile);
     }
@@ -429,7 +429,7 @@ class Metatile {
     [[nodiscard]] const PixelTile<PixelType> &top(std::size_t i) const
     {
         if (i > 3) {
-            panic(fmt::format("index {} out of bounds: must be [0,3]", i));
+            panic(std::format("index {} out of bounds: must be [0,3]", i));
         }
         return top_[i];
     }
@@ -459,7 +459,7 @@ class Metatile {
     void set_top(std::size_t i, PixelTile<PixelType> tile)
     {
         if (i > 3) {
-            panic(fmt::format("index {} out of bounds: must be [0,3]", i));
+            panic(std::format("index {} out of bounds: must be [0,3]", i));
         }
         top_[i] = std::move(tile);
     }

@@ -1,6 +1,6 @@
 #include "porytiles2/domain/models/porytiles_tileset_component.hpp"
 
-#include "fmt/format.h"
+#include <format>
 
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/metatile.hpp"
@@ -30,7 +30,7 @@ std::optional<MetatileAttribute> PorytilesTilesetComponent::get_attribute(std::s
 void PorytilesTilesetComponent::set_pal(std::size_t pal_index, Palette<Rgba32, pal::max_size> pal)
 {
     if (pal_index >= pal::num_pals) {
-        panic(fmt::format("invalid pal index {}: out of range", pal_index));
+        panic(std::format("invalid pal index {}: out of range", pal_index));
     }
     pals_[pal_index] = std::move(pal);
 }
@@ -38,7 +38,7 @@ void PorytilesTilesetComponent::set_pal(std::size_t pal_index, Palette<Rgba32, p
 const std::optional<Palette<Rgba32, pal::max_size>> &PorytilesTilesetComponent::pal_at(std::size_t pal_index) const
 {
     if (pal_index >= pal::num_pals) {
-        panic(fmt::format("invalid pal index {}: out of range", pal_index));
+        panic(std::format("invalid pal index {}: out of range", pal_index));
     }
     return pals_[pal_index];
 }
@@ -54,7 +54,7 @@ ChainableResult<LayerMode> PorytilesTilesetComponent::detect_layer_mode(const Rg
     if (bottom_.width() != middle_.width() || bottom_.width() != top_.width() || bottom_.height() != middle_.height() ||
         bottom_.height() != top_.height()) {
         panic(
-            fmt::format(
+            std::format(
                 "layer images have mismatched dimensions: bottom={}x{}, middle={}x{}, top={}x{}",
                 bottom_.width(),
                 bottom_.height(),

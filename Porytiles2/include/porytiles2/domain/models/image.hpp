@@ -1,9 +1,8 @@
 #pragma once
 
+#include <format>
 #include <optional>
 #include <vector>
-
-#include "fmt/format.h"
 
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
@@ -45,7 +44,7 @@ class Image {
     [[nodiscard]] PixelType at(std::size_t i) const
     {
         if (const auto s = size(); i >= s) {
-            panic(fmt::format("index {} out of bounds for image size {}", i, s));
+            panic(std::format("index {} out of bounds for image size {}", i, s));
         }
         return pixels_[i];
     }
@@ -60,10 +59,10 @@ class Image {
     [[nodiscard]] PixelType at(std::size_t row, std::size_t col) const
     {
         if (col >= width_) {
-            panic(fmt::format("col {} out of bounds for image width {}", col, width_));
+            panic(std::format("col {} out of bounds for image width {}", col, width_));
         }
         if (row >= height_) {
-            panic(fmt::format("row {} out of bounds for image height {}", row, height_));
+            panic(std::format("row {} out of bounds for image height {}", row, height_));
         }
         return pixels_[row * width_ + col];
     }
@@ -77,7 +76,7 @@ class Image {
     void set(std::size_t i, PixelType pixel)
     {
         if (const auto s = size(); i >= s) {
-            panic(fmt::format("index {} out of bounds for image size {}", i, s));
+            panic(std::format("index {} out of bounds for image size {}", i, s));
         }
         pixels_[i] = pixel;
     }
@@ -92,10 +91,10 @@ class Image {
     void set(std::size_t row, std::size_t col, PixelType pixel)
     {
         if (col >= width_) {
-            panic(fmt::format("col {} out of bounds for image width {}", col, width_));
+            panic(std::format("col {} out of bounds for image width {}", col, width_));
         }
         if (row >= height_) {
-            panic(fmt::format("row {} out of bounds for image height {}", row, height_));
+            panic(std::format("row {} out of bounds for image height {}", row, height_));
         }
         pixels_[row * width_ + col] = pixel;
     }
@@ -143,10 +142,10 @@ class Image {
     [[nodiscard]] std::size_t size_in_tiles() const
     {
         if (width_ % 8 != 0) {
-            panic(fmt::format("image width {} is not divisible by 8", width_));
+            panic(std::format("image width {} is not divisible by 8", width_));
         }
         if (height_ % 8 != 0) {
-            panic(fmt::format("image height {} is not divisible by 8", height_));
+            panic(std::format("image height {} is not divisible by 8", height_));
         }
         return (width_ / 8) * (height_ / 8);
     }

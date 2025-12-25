@@ -1,5 +1,6 @@
+#include <format>
+
 #include "CLI/CLI.hpp"
-#include "fmt/format.h"
 
 #include "porytiles2/build_version.h"
 
@@ -11,7 +12,7 @@ int main(const int argc, char **argv)
     CLI::App porytiles_app{"Porytiles"};
 
     porytiles_app.description(
-        fmt::format(
+        std::format(
             R"(porytiles {} {}
 grunt-lucas <grunt.lucas@yahoo.com>
 

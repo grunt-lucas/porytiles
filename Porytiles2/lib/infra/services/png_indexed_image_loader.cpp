@@ -1,8 +1,8 @@
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
 
+#include <format>
 #include <vector>
 
-#include "fmt/format.h"
 #include "png++/png.hpp"
 
 #include "porytiles2/domain/models/index_pixel.hpp"
@@ -15,7 +15,7 @@ ChainableResult<std::unique_ptr<Image<IndexPixel>>>
 PngIndexedImageLoader::load_from_file(const std::filesystem::path &path) const
 {
     if (!exists(path)) {
-        return FormattableError{fmt::format("file does not exist: {}", path.string())};
+        return FormattableError{std::format("file does not exist: {}", path.string())};
     }
 
     try {

@@ -3,10 +3,9 @@
 #include <concepts>
 #include <cstdlib>
 #include <filesystem>
+#include <format>
 #include <source_location>
 #include <string_view>
-
-#include "fmt/format.h"
 
 namespace porytiles2 {
 
@@ -57,7 +56,7 @@ struct StringViewSourceLoc {
 {
     const std::filesystem::path path{s.loc_.file_name()};
     const auto msg =
-        fmt::format("{}:{} {} - panic: {}\n", path.filename().string(), s.loc_.line(), s.loc_.function_name(), s.msg_);
+        std::format("{}:{} {} - panic: {}\n", path.filename().string(), s.loc_.line(), s.loc_.function_name(), s.msg_);
     std::fputs(msg.c_str(), stderr);
     std::abort();
 }
@@ -76,7 +75,7 @@ inline void assert_or_panic(const bool condition, const StringViewSourceLoc &s)
 {
     if (!condition) {
         const std::filesystem::path path{s.loc_.file_name()};
-        const auto msg = fmt::format(
+        const auto msg = std::format(
             "{}:{} {} - panic: {}\n", path.filename().string(), s.loc_.line(), s.loc_.function_name(), s.msg_);
         std::fputs(msg.c_str(), stderr);
         std::abort();

@@ -17,13 +17,10 @@
  */
 
 #include <cctype>
+#include <format>
 #include <ranges>
 #include <regex>
 #include <string>
-
-#include "fmt/format.h"
-#include "fmt/ostream.h"
-#include "fmt/xchar.h"
 
 #include "porytiles2/utilities/panic/panic.hpp"
 
@@ -149,7 +146,7 @@ inline std::string trim_line_ending(const std::string &line)
 template <typename T>
 std::string int_to_hex_str(T t)
 {
-    return fmt::format("0x{:x}", t);
+    return std::format("0x{:x}", t);
 }
 
 /**
@@ -166,7 +163,7 @@ std::string int_to_hex_str(T t)
 template <typename T>
 std::string pad_two_digits(T t)
 {
-    return fmt::format("{:02}", t);
+    return std::format("{:02}", t);
 }
 
 /**

@@ -1,10 +1,10 @@
 #include "porytiles2/infra/services/project_artifact_checksum_provider.hpp"
 
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <map>
 
-#include "fmt/format.h"
 #include "nlohmann/json.hpp"
 
 #include "porytiles2/domain/repos/artifact_key.hpp"
@@ -22,7 +22,7 @@ ProjectArtifactChecksumProvider::compute_tileset_artifact_checksums(const std::s
     for (const auto &all_keys = key_provider_->get_all_artifact_keys(tileset_name); const auto &key : all_keys) {
         constexpr StreamDigest digest{};
         if (!key_provider_->artifact_exists(key)) {
-            panic(fmt::format("expected artifact '{}' does not exist", key.key()));
+            panic(std::format("expected artifact '{}' does not exist", key.key()));
         }
         std::ifstream stream{key.key()};
         const auto key_digest = digest.digest(stream);

@@ -1,9 +1,8 @@
 #include "porytiles2/utilities/c_parser/c_parser_context.hpp"
 
+#include <format>
 #include <string>
 #include <vector>
-
-#include "fmt/format.h"
 
 namespace porytiles2 {
 
@@ -12,9 +11,9 @@ namespace {
 std::string format_header(const std::string &file_path, SourcePosition pos, const std::string &message)
 {
     if (!file_path.empty()) {
-        return fmt::format("{}:{}:{}: {}", file_path, pos.line, pos.column, message);
+        return std::format("{}:{}:{}: {}", file_path, pos.line, pos.column, message);
     }
-    return fmt::format("{}:{}: {}", pos.line, pos.column, message);
+    return std::format("{}:{}: {}", pos.line, pos.column, message);
 }
 
 } // namespace

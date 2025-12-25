@@ -1,8 +1,8 @@
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 
 #include <filesystem>
+#include <format>
 
-#include "fmt/format.h"
 #include "png++/png.hpp"
 
 #include "porytiles2/domain/models/index_pixel.hpp"
@@ -26,7 +26,7 @@ ChainableResult<void> PngIndexedImageSaver::save_to_file(
 
     // Bail if given path exists already and isn't a file (i.e. it's a directory)
     if (exists(path) && !is_regular_file(path)) {
-        return FormattableError{fmt::format("{}: exists but is not a file", path.filename().c_str())};
+        return FormattableError{std::format("{}: exists but is not a file", path.filename().c_str())};
     }
 
     // Determine which palette to use
@@ -68,7 +68,7 @@ ChainableResult<void> PngIndexedImageSaver::save_to_file(
         }
     }
     catch (const std::exception &e) {
-        return FormattableError{fmt::format("{}: save failed: {}", path.filename().c_str(), e.what())};
+        return FormattableError{std::format("{}: save failed: {}", path.filename().c_str(), e.what())};
     }
 
     return {};

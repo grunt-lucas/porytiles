@@ -141,17 +141,20 @@ endif ()
 #### Link dependencies ####
 ###########################
 
-# Link the static libpng and zlib we searched for earlier
+### Link the static libpng and zlib we searched for earlier ###
 target_link_libraries(Porytiles2Lib PRIVATE ${PNG_STATIC})
 target_link_libraries(Porytiles2Lib PRIVATE ${ZLIB_STATIC})
 
-# Public link API exposed libs
-target_link_libraries(Porytiles2Lib PUBLIC fmt::fmt)
+### Public link API exposed libs ###
 target_link_libraries(Porytiles2Lib PUBLIC Microsoft.GSL::GSL)
 target_link_libraries(Porytiles2Lib PUBLIC fruit)
 
-# Private link internal libs
+### Private link internal libs ###
 target_link_libraries(Porytiles2Lib PRIVATE yaml-cpp::yaml-cpp)
+# NOTE: fmt is still required for TextFormatter which uses fmt::dynamic_format_arg_store.
+# C++23 std::format does not support runtime-variable argument counts.
+# All other fmt::format usages have been migrated to std::format.
+target_link_libraries(Porytiles2Lib PRIVATE fmt::fmt)
 
 
 ##################################

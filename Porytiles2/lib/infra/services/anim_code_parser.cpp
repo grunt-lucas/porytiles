@@ -1,11 +1,10 @@
 #include "porytiles2/infra/services/anim_code_parser.hpp"
 
+#include <format>
 #include <map>
 #include <optional>
 #include <set>
 #include <string>
-
-#include "fmt/format.h"
 
 #include "porytiles2/domain/models/animation_params.hpp"
 #include "porytiles2/utilities/c_parser/c_parser_facade.hpp"
@@ -227,7 +226,7 @@ extract_timer_conditions(const std::vector<Token> &body_tokens, const std::strin
 
     // Build error details
     std::vector<std::string> details;
-    details.push_back(fmt::format("{}:{}:{}: {}", file_path.string(), position.line, position.column, message));
+    details.push_back(std::format("{}:{}:{}: {}", file_path.string(), position.line, position.column, message));
     details.emplace_back();
 
     // Add source context if position is valid

@@ -36,6 +36,16 @@ const Style Style::bg_magenta{Style::BgColorTag::predefined, PredefinedColor::ma
 const Style Style::bg_cyan{Style::BgColorTag::predefined, PredefinedColor::cyan};
 const Style Style::bg_white{Style::BgColorTag::predefined, PredefinedColor::white};
 
+// NOTE: This function uses fmt::dynamic_format_arg_store and fmt::vformat because
+// C++23 std::format does not support runtime-variable argument counts.
+// std::make_format_args requires compile-time known argument counts.
+//
+// Future alternatives:
+// 1. C++26 may add better runtime format argument support
+// 2. Custom placeholder replacement (limited to simple {} placeholders only)
+// 3. Refactor callers to use compile-time known argument counts
+//
+// For now, fmt remains the only dependency that cannot be fully migrated to std::format.
 std::string TextFormatter::format(const std::string &format_str, const std::vector<FormatParam> &params) const
 {
     fmt::dynamic_format_arg_store<fmt::format_context> store;

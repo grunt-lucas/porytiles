@@ -1,8 +1,7 @@
 #include "porytiles2/domain/models/porymap_tileset_component.hpp"
 
+#include <format>
 #include <utility>
-
-#include "fmt/format.h"
 
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/metatile_attribute.hpp"
@@ -30,7 +29,7 @@ void PorymapTilesetComponent::push_back_attribute(MetatileAttribute attribute)
 void PorymapTilesetComponent::set_pal(std::size_t pal_index, Palette<Rgba32, pal::max_size> pal)
 {
     if (pal_index >= pal::num_pals) {
-        panic(fmt::format("invalid pal index {}: out of range", pal_index));
+        panic(std::format("invalid pal index {}: out of range", pal_index));
     }
     pals_.at(pal_index) = std::move(pal);
 }
@@ -38,7 +37,7 @@ void PorymapTilesetComponent::set_pal(std::size_t pal_index, Palette<Rgba32, pal
 const Palette<Rgba32, pal::max_size> &PorymapTilesetComponent::pal_at(std::size_t pal_index) const
 {
     if (pal_index >= pal::num_pals) {
-        panic(fmt::format("invalid pal index {}: out of range", pal_index));
+        panic(std::format("invalid pal index {}: out of range", pal_index));
     }
     return pals_.at(pal_index);
 }

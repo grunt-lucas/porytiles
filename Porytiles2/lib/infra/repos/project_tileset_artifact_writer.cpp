@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <filesystem>
+#include <format>
 #include <fstream>
 #include <iostream>
 #include <memory>
@@ -10,8 +11,6 @@
 #include <ranges>
 #include <sstream>
 #include <string>
-
-#include "fmt/format.h"
 
 #include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
@@ -86,7 +85,7 @@ save_palette(const Palette<Rgba32, pal::max_size> &pal, const std::filesystem::p
 {
     const auto save_result = saver.save(pal, path);
     if (!save_result.has_value()) {
-        return ChainableResult<void>{FormattableError{fmt::format("{}: failed to save", path.c_str())}, save_result};
+        return ChainableResult<void>{FormattableError{std::format("{}: failed to save", path.c_str())}, save_result};
     }
     return {};
 }
@@ -139,7 +138,7 @@ Image<PixelType> tiles_to_image(
         // Use specified dimensions
         if (width_tiles * height_tiles != tiles.size()) {
             panic(
-                fmt::format(
+                std::format(
                     "tiles_to_image: width_tiles ({}) * height_tiles ({}) != tiles.size() ({})",
                     width_tiles,
                     height_tiles,

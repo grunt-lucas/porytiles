@@ -3,8 +3,6 @@
 #include <set>
 #include <string>
 
-#include "fmt/format.h"
-
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tileset.hpp"

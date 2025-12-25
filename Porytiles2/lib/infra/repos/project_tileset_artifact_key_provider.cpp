@@ -1,9 +1,9 @@
 #include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
 
+#include <algorithm>
 #include <filesystem>
+#include <format>
 #include <string>
-
-#include "fmt/format.h"
 
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
@@ -23,7 +23,7 @@ std::filesystem::path get_tileset_path(const std::string &tileset_name, const st
     if (std::filesystem::exists(project_root / secondary_tileset_rel_path / tileset_name)) {
         return project_root / secondary_tileset_rel_path / tileset_name;
     }
-    panic(fmt::format("tileset '{}' does not exist", tileset_name));
+    panic(std::format("tileset '{}' does not exist", tileset_name));
 }
 
 const std::filesystem::path metatiles_bin{"metatiles.bin"};

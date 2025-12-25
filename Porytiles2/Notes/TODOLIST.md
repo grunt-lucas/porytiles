@@ -58,9 +58,6 @@
 
 ## Identify unit/integration testing gaps and fill them in
 
-## Figure out how to remove fmtlib from random places all over the codebase
-- Ideally it should be isolated so we could easily swap to a different string formatting library
-
 ## Miscellaneous Cleanup
 - Palette hints should be validated entirely within the config system, remove validation from the PaletteValidator
 - Can I use std::span in more places?
