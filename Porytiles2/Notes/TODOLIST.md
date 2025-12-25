@@ -2,7 +2,6 @@
 
 ## Refactor and finish TilesetRepo and project impl
 - Make PLA files a first class type in Porymap component (need a domain type for PLA)
-- `TilesetRepo::write` should skip writing if the file it's about to write is unchanged?
 - `TilesetRepo::write` should do a clean wipe of the current tileset folder before writing new artifacts?
   - See various TODOs about stale artifacts and "possibly incomplete" components
   - Switch to the original "atomic move" idea
