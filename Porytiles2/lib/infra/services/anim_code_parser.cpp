@@ -280,7 +280,7 @@ ChainableResult<std::map<std::string, AnimationParams>> parse_animation_params_f
     }
     const auto &driver_funcs = driver_funcs_result.value();
     if (driver_funcs.size() > 1) {
-        diag.err(
+        diag.error(
             "multiple-anim-driver-functions",
             format.format(
                 "found multiple animation driver function candidates for '{}'",
@@ -325,7 +325,7 @@ ChainableResult<std::map<std::string, AnimationParams>> parse_animation_params_f
     if (anim_frame_arrays.empty() || driver_funcs.empty() || queue_anim_funcs.empty()) {
         constexpr auto incomplete_anim_params_tag = "incomplete-tileset-animation-parameters";
         if (anim_frame_arrays.empty()) {
-            diag.err(
+            diag.error(
                 incomplete_anim_params_tag,
                 format.format(
                     "no animation frame pointer arrays exist for '{}'", FormatParam{tileset_name, Style::bold}));
@@ -343,7 +343,7 @@ ChainableResult<std::map<std::string, AnimationParams>> parse_animation_params_f
             }
         }
         if (driver_funcs.empty()) {
-            diag.err(
+            diag.error(
                 incomplete_anim_params_tag,
                 format.format("no driver function exists for '{}'", FormatParam{tileset_name, Style::bold}));
             for (const auto &anim_frame_array : anim_frame_arrays) {
@@ -360,7 +360,7 @@ ChainableResult<std::map<std::string, AnimationParams>> parse_animation_params_f
             }
         }
         if (queue_anim_funcs.empty()) {
-            diag.err(
+            diag.error(
                 incomplete_anim_params_tag,
                 format.format("no QueueAnimTiles functions exist for '{}'", FormatParam{tileset_name, Style::bold}));
             for (const auto &anim_frame_array : anim_frame_arrays) {
@@ -376,7 +376,7 @@ ChainableResult<std::map<std::string, AnimationParams>> parse_animation_params_f
                         driver_func.position(), format, c_file, "found driver function candidate:"));
             }
         }
-        diag.err(
+        diag.error(
             incomplete_anim_params_tag,
             format.format("no animations were parsed for '{}'", FormatParam{tileset_name, Style::bold}));
         return FormattableError{

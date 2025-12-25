@@ -181,7 +181,7 @@ void validate_yaml_paths(
                 warning_lines.push_back(std::move(detail));
             }
 
-            diagnostics->warn("unknown-config-key", warning_lines);
+            diagnostics->warning("unknown-config-key", warning_lines);
 
             // TODO: add a "did you mean" message that uses levenshtein distance to find closest match
         }

@@ -45,6 +45,18 @@ class StderrStyledUserDiagnostics final : public UserDiagnostics {
     explicit StderrStyledUserDiagnostics(const gsl::not_null<TextFormatter *> format) : format_{format} {}
 
     /**
+     * @brief Display a multi-line tagged informational remark to stderr.
+     *
+     * @details
+     * Outputs informational messages with blue "remark:" prefix and tag suffix on the first line, formatted as "remark:
+     * <message> [<tag>]" with appropriate indentation for subsequent lines.
+     *
+     * @param tag Categorization tag for the remark
+     * @param lines Vector of strings representing each line of the remark
+     */
+    void remark(const std::string &tag, const std::vector<std::string> &lines) const override;
+
+    /**
      * @brief Display a multi-line tagged informational note to stderr.
      *
      * @details
@@ -66,7 +78,7 @@ class StderrStyledUserDiagnostics final : public UserDiagnostics {
      * @param tag Categorization tag for the warning
      * @param lines Vector of strings representing each line of the warning
      */
-    void warn(const std::string &tag, const std::vector<std::string> &lines) const override;
+    void warning(const std::string &tag, const std::vector<std::string> &lines) const override;
 
     /**
      * @brief Display a multi-line tagged error message to stderr.
@@ -78,7 +90,7 @@ class StderrStyledUserDiagnostics final : public UserDiagnostics {
      * @param tag Categorization tag for the error
      * @param lines Vector of strings representing each line of the error
      */
-    void err(const std::string &tag, const std::vector<std::string> &lines) const override;
+    void error(const std::string &tag, const std::vector<std::string> &lines) const override;
 
     /**
      * @brief Emit the proximate (immediate) error in a fatal error chain to stderr.

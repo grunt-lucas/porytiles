@@ -230,7 +230,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     for (std::size_t i = 0; i < pal::num_pals; i++) {
         const auto pal_key = key_provider_->key_for_porymap_pal_n(tileset->name(), i);
         if (!key_provider_->artifact_exists(pal_key)) {
-            diag_->err(
+            diag_->error(
                 missing_required_artifact_tag,
                 format_->format(missing_required_artifact_msg, FormatParam{pal_key.key(), Style::bold}));
             fail_at_exit = true;
@@ -248,7 +248,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         // Read frame 0.png
         auto frame_0_key = key_provider_->key_for_porymap_anim_frame(tileset->name(), anim, 0);
         if (!key_provider_->artifact_exists(frame_0_key)) {
-            diag_->err(
+            diag_->error(
                 missing_required_artifact_tag,
                 format_->format(missing_required_artifact_msg, FormatParam{frame_0_key.key(), Style::bold}));
             fail_at_exit = true;
@@ -266,7 +266,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         int expected_frame = 1;
         for (const auto frame : frames) {
             if (frame != expected_frame) {
-                diag_->err(
+                diag_->error(
                     "out-of-order-frame-index",
                     format_->format(
                         "found frame '{}' but expected '{}'",
@@ -349,7 +349,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         }
     }
     else {
-        diag_->warn(
+        diag_->warning(
             missing_optional_artifact_tag,
             format_->format(missing_optional_artifact_msg, FormatParam{attr_csv_key.key(), Style::bold}));
         diag_->note(missing_optional_artifact_tag, "all attributes will receive default or inferred values");
@@ -372,7 +372,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         // Read key.png
         auto key_frame_key = key_provider_->key_for_porytiles_anim_key_frame(tileset->name(), anim);
         if (!key_provider_->artifact_exists(key_frame_key)) {
-            diag_->err(
+            diag_->error(
                 missing_required_artifact_tag,
                 format_->format(missing_required_artifact_msg, FormatParam{key_frame_key.key(), Style::bold}));
             fail_at_exit = true;
@@ -388,7 +388,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         // Read frame 0.png
         auto frame_0_key = key_provider_->key_for_porytiles_anim_frame(tileset->name(), anim, 0);
         if (!key_provider_->artifact_exists(frame_0_key)) {
-            diag_->err(
+            diag_->error(
                 missing_required_artifact_tag,
                 format_->format(missing_required_artifact_msg, FormatParam{frame_0_key.key(), Style::bold}));
             fail_at_exit = true;
@@ -406,7 +406,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         int expected_frame = 1;
         for (const auto frame : frames) {
             if (frame != expected_frame) {
-                diag_->err(
+                diag_->error(
                     "out-of-order-frame-index",
                     format_->format(
                         "found frame '{}' but expected '{}'",

@@ -30,17 +30,33 @@ namespace porytiles2 {
  */
 class BufferedUserDiagnostics final : public UserDiagnostics {
   public:
+    void remark(const std::string &tag, const std::vector<std::string> &lines) const override;
+
     void note(const std::string &tag, const std::vector<std::string> &lines) const override;
 
-    void warn(const std::string &tag, const std::vector<std::string> &lines) const override;
+    void warning(const std::string &tag, const std::vector<std::string> &lines) const override;
 
-    void err(const std::string &tag, const std::vector<std::string> &lines) const override;
+    void error(const std::string &tag, const std::vector<std::string> &lines) const override;
 
     void emit_fatal_proximate(const Error &err) const override;
 
     void emit_fatal_step(const Error &err) const override;
 
     void emit_fatal_root(const Error &err) const override;
+
+    /**
+     * @brief Get the buffered remark messages.
+     *
+     * @details
+     * Returns a reference to the vector containing all remark messages that were passed to remark(). Each element
+     * represents one call to remark(), stored as a vector of lines.
+     *
+     * @return Reference to the remark buffer
+     */
+    [[nodiscard]] const std::vector<std::vector<std::string>> &remarks() const
+    {
+        return remarks_;
+    }
 
     /**
      * @brief Get the buffered note messages.
@@ -54,20 +70,6 @@ class BufferedUserDiagnostics final : public UserDiagnostics {
     [[nodiscard]] const std::vector<std::vector<std::string>> &notes() const
     {
         return notes_;
-    }
-
-    /**
-     * @brief Get the buffered warning note messages.
-     *
-     * @details
-     * Returns a reference to the vector containing all warning note messages that were passed to warn_note(). Each
-     * element represents one call to warn_note(), stored as a vector of lines.
-     *
-     * @return Reference to the warning note buffer
-     */
-    [[nodiscard]] const std::vector<std::vector<std::string>> &warn_notes() const
-    {
-        return warn_notes_;
     }
 
     /**
@@ -142,6 +144,20 @@ class BufferedUserDiagnostics final : public UserDiagnostics {
     }
 
     /**
+     * @brief Get the count of remark messages by tag.
+     *
+     * @details
+     * Returns a reference to a map that tracks how many times each tag was used in calls to remark().
+     * The keys are tag strings and the values are the number of times each tag appeared.
+     *
+     * @return Reference to the note tag count map
+     */
+    [[nodiscard]] const std::map<std::string, size_t> &remark_tag_counts() const
+    {
+        return remark_tag_counts_;
+    }
+
+    /**
      * @brief Get the count of note messages by tag.
      *
      * @details
@@ -153,6 +169,20 @@ class BufferedUserDiagnostics final : public UserDiagnostics {
     [[nodiscard]] const std::map<std::string, size_t> &note_tag_counts() const
     {
         return note_tag_counts_;
+    }
+
+    /**
+     * @brief Get the count of warn messages by tag.
+     *
+     * @details
+     * Returns a reference to a map that tracks how many times each tag was used in calls to warn().
+     * The keys are tag strings and the values are the number of times each tag appeared.
+     *
+     * @return Reference to the note tag count map
+     */
+    [[nodiscard]] const std::map<std::string, size_t> &warning_tag_counts() const
+    {
+        return warning_tag_counts_;
     }
 
     /**
@@ -170,13 +200,14 @@ class BufferedUserDiagnostics final : public UserDiagnostics {
     }
 
   private:
+    mutable std::vector<std::vector<std::string>> remarks_;
     mutable std::vector<std::vector<std::string>> notes_;
-    mutable std::vector<std::vector<std::string>> warn_notes_;
     mutable std::vector<std::vector<std::string>> warnings_;
     mutable std::vector<std::vector<std::string>> errors_;
     mutable std::vector<std::vector<std::string>> fatal_proximates_;
     mutable std::vector<std::vector<std::string>> fatal_steps_;
     mutable std::vector<std::vector<std::string>> fatal_roots_;
+    mutable std::map<std::string, size_t> remark_tag_counts_;
     mutable std::map<std::string, size_t> note_tag_counts_;
     mutable std::map<std::string, size_t> warning_tag_counts_;
     mutable std::map<std::string, size_t> error_tag_counts_;

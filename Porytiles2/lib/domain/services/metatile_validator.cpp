@@ -44,7 +44,7 @@ void report_validation_error(
     std::vector highlight =
         tile_printer->print_metatile_pixel_highlight(metatile, layer, subtile, row, col, extrinsic_transparency);
     std::ranges::copy(highlight, std::back_inserter(errors));
-    diag->err(diagnostic_code, errors);
+    diag->error(diagnostic_code, errors);
 }
 
 void report_color_counts(
@@ -187,7 +187,7 @@ ChainableResult<void> MetatileValidator::validate_global_color_count(
         }
     }
     if (color_counts.size() > count_limit) {
-        diag_->err(
+        diag_->error(
             global_color_count_violation,
             format_->format(
                 "global color count violation: found '{}' unique colors, limit is '{}'",
@@ -263,7 +263,7 @@ MetatileValidator::validate_layer_mode(const std::vector<Metatile<Rgba32>> &meta
                 std::ranges::copy(bottom_highlight, std::back_inserter(errors));
                 std::ranges::copy(middle_highlight, std::back_inserter(errors));
                 std::ranges::copy(top_highlight, std::back_inserter(errors));
-                diag_->err(layer_mode_violation, errors);
+                diag_->error(layer_mode_violation, errors);
             }
         }
 
@@ -289,7 +289,7 @@ ChainableResult<void> MetatileValidator::validate_primary(const std::vector<Meta
 
     // Run metatile count validation
     if (metatiles.size() > num_metatiles_in_primary) {
-        diag_->err(
+        diag_->error(
             metatile_limit_exceeded,
             format_->format(
                 "too many metatiles ({}) in Porytiles component for tileset '{}'",

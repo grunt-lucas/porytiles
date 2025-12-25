@@ -81,7 +81,7 @@ ChainableResult<void> validate_single_porytiles_pal(
                 FormatParam{extrinsic_transparency.value().to_jasc_str(), Style::bold}));
             warning_text.emplace_back("Slot 0 is typically reserved for the transparency color.");
             warning_text.emplace_back("If you are using slot 0 for a .pla blend color, you can ignore this warning.");
-            diag->warn(pal_porytiles_slot0, warning_text);
+            diag->warning(pal_porytiles_slot0, warning_text);
 
             // Print the palette and config notes.
             print_palette_with_highlights_note(
@@ -106,7 +106,7 @@ ChainableResult<void> validate_single_porytiles_pal(
                 FormatParam{slot, Style::bold},
                 FormatParam{color.to_jasc_str(), Style::bold}));
             error_lines.emplace_back("Extrinsic transparency is not allowed in non-slot-0 positions.");
-            diag->err(pal_porytiles_transparency, error_lines);
+            diag->error(pal_porytiles_transparency, error_lines);
         }
     }
 
@@ -152,7 +152,7 @@ ChainableResult<void> validate_single_porymap_pal(
             FormatParam{extrinsic_transparency.value().to_jasc_str(), Style::bold}));
         warning_lines.emplace_back("Slot 0 is typically reserved for the transparency color.");
         warning_lines.emplace_back("If you are using slot 0 for a .pla blend color, you can ignore this warning.");
-        diag->warn(pal_porymap_slot0, warning_lines);
+        diag->warning(pal_porymap_slot0, warning_lines);
 
         // Print the palette and config notes.
         print_palette_with_highlights_note(
@@ -176,7 +176,7 @@ ChainableResult<void> validate_single_porymap_pal(
                 FormatParam{slot, Style::bold},
                 FormatParam{color.to_jasc_str(), Style::bold}));
             error_lines.emplace_back("Extrinsic transparency is not allowed in non-slot-0 positions.");
-            diag->err(pal_porymap_transparency, error_lines);
+            diag->error(pal_porymap_transparency, error_lines);
         }
     }
 
@@ -230,7 +230,7 @@ ChainableResult<void> validate_single_hint(
                 FormatParam{slot, Style::bold},
                 FormatParam{color.to_jasc_str(), Style::bold}));
             error_lines.emplace_back("Extrinsic transparency is not allowed in palette hints.");
-            diag->err(pal_hint_transparency, error_lines);
+            diag->error(pal_hint_transparency, error_lines);
         }
     }
     if (!violating_slots.empty()) {
@@ -257,7 +257,7 @@ ChainableResult<void> validate_single_hint(
                 FormatParam{color.to_jasc_str(), Style::bold},
                 FormatParam{slot, Style::bold}));
             error_lines.emplace_back("Duplicate colors are not allowed in palette hints.");
-            diag->err(pal_hint_duplicate_color, error_lines);
+            diag->error(pal_hint_duplicate_color, error_lines);
         }
         seen_colors.insert(color);
     }

@@ -43,7 +43,7 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
      */
 
     if (!tileset_repo_->checksum_provider().cached_checksums_exist(tileset_name)) {
-        diag_->warn(
+        diag_->warning(
             "missing-checksums",
             format_->format("no cached checksums found for tileset '{}'", FormatParam{tileset_name, Style::bold}));
     }
@@ -74,7 +74,7 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
         const auto porymap_keys = tileset_repo_->key_provider().get_porymap_artifact_keys(tileset_name);
         if (tileset_repo_->checksum_provider().all_checksums_tileset_match(tileset_name, porymap_keys)) {
             // TODO: better message here
-            diag_->warn("nothing-to-do", "Skipping import, no changes found, TODO: give better message here");
+            diag_->warning("nothing-to-do", "Skipping import, no changes found, TODO: give better message here");
             return {};
         }
     }

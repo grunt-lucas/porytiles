@@ -10,6 +10,24 @@
 
 namespace porytiles2 {
 
+void StderrStyledUserDiagnostics::remark(const std::string &tag, const std::vector<std::string> &lines) const
+{
+    assert_or_panic(!lines.empty(), "lines vector is empty");
+    assert_or_panic(!tag.empty(), "tag is empty");
+
+    // print blank line if the diagnostic tag is changing
+    if (!last_seen_tag_.empty() && last_seen_tag_ != tag) {
+        std::cerr << std::endl;
+    }
+    last_seen_tag_ = tag;
+    std::cerr << format_->style("remark:", Style::bold | Style::blue) << " ";
+    std::cerr << lines.at(0);
+    std::cerr << " [" << format_->style(tag, Style::bold | Style::blue) << "]" << std::endl;
+    for (const auto &note_line : std::ranges::views::drop(lines, 1)) {
+        std::cerr << format_->style("│", Style::bold | Style::blue) << " " << note_line << std::endl;
+    }
+}
+
 void StderrStyledUserDiagnostics::note(const std::string &tag, const std::vector<std::string> &lines) const
 {
     assert_or_panic(!lines.empty(), "lines vector is empty");
@@ -28,7 +46,7 @@ void StderrStyledUserDiagnostics::note(const std::string &tag, const std::vector
     }
 }
 
-void StderrStyledUserDiagnostics::warn(const std::string &tag, const std::vector<std::string> &lines) const
+void StderrStyledUserDiagnostics::warning(const std::string &tag, const std::vector<std::string> &lines) const
 {
     assert_or_panic(!lines.empty(), "lines vector is empty");
     assert_or_panic(!tag.empty(), "tag is empty");
@@ -46,7 +64,7 @@ void StderrStyledUserDiagnostics::warn(const std::string &tag, const std::vector
     }
 }
 
-void StderrStyledUserDiagnostics::err(const std::string &tag, const std::vector<std::string> &lines) const
+void StderrStyledUserDiagnostics::error(const std::string &tag, const std::vector<std::string> &lines) const
 {
     assert_or_panic(!lines.empty(), "lines vector is empty");
     assert_or_panic(!tag.empty(), "tag is empty");

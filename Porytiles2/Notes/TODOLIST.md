@@ -64,7 +64,6 @@
 ## Miscellaneous Cleanup
 - Palette hints should be validated entirely within the config system, remove validation from the PaletteValidator
 - Can I use std::span in more places?
-- Introduce "remark" category of diagnostics
 - Fix up `Scripts` directory
   - we should split it up by `Porytiles1` and `Porytiles2` for better usability
 - Provide a configuration that allows users to request ascii-only output

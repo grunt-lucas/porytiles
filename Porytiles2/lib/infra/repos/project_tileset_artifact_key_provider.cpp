@@ -278,7 +278,7 @@ std::set<std::string> ProjectTilesetArtifactKeyProvider::discover_porymap_anims(
         // Check if 00.png exists (required for Porymap animations)
         const auto frame_0_path = entry.path() / "0.png";
         if (!std::filesystem::exists(frame_0_path)) {
-            diag_->warn(
+            diag_->warning(
                 "missing-required-artifact",
                 format_->format("missing required artifact: '{}'", FormatParam{frame_0_path.string(), Style::bold}));
             diag_->note(

@@ -157,6 +157,16 @@ class CompilerTask {
 
 ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
 {
+    /*
+     * TODO: we have a bug. If pals_edit_mode::optimize and tiles_edit_mode::locked, on the first compile pass after
+     * making no changes, it will optimize the pals, but emit identical metatile entries (since the Porytiles and
+     * Porymap metatiles will match). Then it will emit the optimized pals but identical tilemap entries. The tileset
+     * becomes corrupted and subsequent compilations crash out with a bazillion errors.
+     *
+     * Need to think about the right way to fix. Is there a scenario where setting pals::optimize tiles::locked even
+     * makes sense? Instead of adding more tortured logic to the compiler, we could just ban this combo.
+     */
+
     // Unwrap config values
     PT_UNWRAP_TILESET_CONFIG_REF(config_, extrinsic_transparency, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, num_pals_in_primary, tileset_.name(), std::unique_ptr<Tileset>);
@@ -658,19 +668,18 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing(const std::v
         }
     }
 
-    // Emit diagnostic notes for packed palettes
+    // Emit diagnostic remarks for packed palettes
     for (std::size_t i = 0; i < pal::num_pals; i++) {
         const auto &maybe_packed_pal = pal_packing.pals_.at(i);
         if (maybe_packed_pal.has_value()) {
-            // TODO: introduce a remark level and make this message a remark
-            // unlike other diag types, remarks are disabled by default
             constexpr auto tag = "palette-packing-result";
-            std::vector<std::string> note_lines;
-            note_lines.emplace_back(format_.format("packed '{}' contents:", FormatParam{pal_filename(i), Style::bold}));
-            note_lines.emplace_back();
+            std::vector<std::string> remark_lines;
+            remark_lines.emplace_back(
+                format_.format("packed '{}' contents:", FormatParam{pal_filename(i), Style::bold}));
+            remark_lines.emplace_back();
             std::ranges::copy(
-                pal_printer_.print_rgba_palette(maybe_packed_pal.value()), std::back_inserter(note_lines));
-            diag_.note(tag, note_lines);
+                pal_printer_.print_rgba_palette(maybe_packed_pal.value()), std::back_inserter(remark_lines));
+            diag_.remark(tag, remark_lines);
         }
     }
 
@@ -698,7 +707,7 @@ ChainableResult<ColorIndexMap<Rgba32>> CompilerTask::pipeline_helper_build_color
         }
         color_index_map.add_pal(maybe_porytiles_pal.value(), extrinsic_transparency_.value());
         if (color_index_map.size() > color_count_limit) {
-            diag_.err(
+            diag_.error(
                 tag,
                 format_.format(
                     "found '{}' global unique colors after adding Porytiles palette '{}', limit is '{}'",
@@ -720,7 +729,7 @@ ChainableResult<ColorIndexMap<Rgba32>> CompilerTask::pipeline_helper_build_color
     for (const auto &hint : hints) {
         color_index_map.add_pal(hint.pal(), extrinsic_transparency_.value());
         if (color_index_map.size() > color_count_limit) {
-            diag_.err(
+            diag_.error(
                 tag,
                 format_.format(
                     "found '{}' global unique colors after adding palette hint '{}', limit is '{}'",
@@ -759,7 +768,7 @@ void CompilerTask::pipeline_helper_emit_no_matching_tile_error(
         tile_printer_.print_metatile_tile_highlight(
             porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_),
         std::back_inserter(no_match_err));
-    diag_.err(tag, no_match_err);
+    diag_.error(tag, no_match_err);
 
     // Print note showing the palette that matched
     std::vector<std::string> pal_note{};
@@ -790,7 +799,7 @@ void CompilerTask::pipeline_helper_emit_no_matching_pal_error(
         tile_printer_.print_metatile_tile_highlight(
             porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_),
         std::back_inserter(no_match_err));
-    diag_.err(tag, no_match_err);
+    diag_.error(tag, no_match_err);
 
     // Emit a long note showing the top N closest matches
     std::vector<std::string> closest_n_note{};
@@ -839,7 +848,7 @@ void CompilerTask::pipeline_helper_emit_tile_limit_error(std::size_t tile_index,
         tile_printer_.print_metatile_tile_highlight(
             porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_),
         std::back_inserter(tile_limit_error));
-    diag_.err(tag, tile_limit_error);
+    diag_.error(tag, tile_limit_error);
 
     // Construct note text
     std::vector<std::string> note_text;

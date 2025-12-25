@@ -39,7 +39,7 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
     }
 
     if (!tileset_repo_->checksum_provider().cached_checksums_exist(tileset_name)) {
-        diag_->warn(
+        diag_->warning(
             "missing-checksums",
             format_->format("no cached checksums found for tileset '{}'", FormatParam{tileset_name, Style::bold}));
     }
@@ -70,7 +70,7 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
         const auto porytiles_keys = tileset_repo_->key_provider().get_porytiles_artifact_keys(tileset_name);
         if (tileset_repo_->checksum_provider().all_checksums_tileset_match(tileset_name, porytiles_keys)) {
             // TODO: better message here
-            diag_->warn("nothing-to-do", "Skipping compilation, no changes found, TODO: give better message here");
+            diag_->warning("nothing-to-do", "Skipping compilation, no changes found, TODO: give better message here");
             return {};
         }
     }

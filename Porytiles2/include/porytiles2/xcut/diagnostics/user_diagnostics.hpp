@@ -18,10 +18,10 @@ namespace porytiles2 {
  * to provide hierarchical error chain visualization.
  *
  * The diagnostic system categorizes output into:
- * - Notes: Informational messages for user awareness
- * - Warning Notes: Notes that are emitted in concert with a particular warning
- * - Warnings: Non-fatal issues with categorization tags
- * - Errors: Serious issues requiring attention
+ * - Remark: Compiler messages explaining internal compiler mechanisms / decisions of possible interest to the user
+ * - Notes: Informational messages for user awareness, associated with a warning or error
+ * - Warnings: Non-fatal issues that indicate possible user input mistakes
+ * - Errors: Serious issues requiring attention, operation will die but may continue in order to generate more errors
  * - Fatal Errors: Complete failure scenarios with full error context
  *
  * All methods support both single-line messages (std::string) and multi-line messages (std::vector<std::string>) for
@@ -32,15 +32,47 @@ class UserDiagnostics {
     virtual ~UserDiagnostics() = default;
 
     /**
-     * @brief Display a tagged informational note message.
+     * @brief Display a tagged remark message.
      *
      * @details
-     * Notes are the lowest severity diagnostic level, used for informational messages that help users understand what's
-     * happening without indicating any problems. They include a categorization tag to help users understand and/or
-     * filter the type of note being reported.
+     * Remarks are the lowest severity diagnostic level, used for communicating internal compiler mechanisms or
+     * decisions that may be of interest to users. Unlike notes (which clarify warnings/errors), remarks are standalone
+     * informational messages about compiler behavior such as optimization decisions, tile assignment choices, or
+     * palette allocation strategies.
+     *
+     * Implementations typically format the first line with a "remark:" prefix and the tag, with subsequent lines
+     * appropriately indented.
+     *
+     * @param tag Categorization tag for the remark
+     * @param lines Vector of strings representing each line of the message
+     */
+    virtual void remark(const std::string &tag, const std::vector<std::string> &lines) const = 0;
+
+    /**
+     * @brief Convenience overload for single line messages.
+     */
+    void remark(const std::string &tag, const std::string &msg) const
+    {
+        remark(tag, std::vector{msg});
+    }
+
+    /**
+     * @brief Display a tagged note message.
+     *
+     * @details
+     * Notes are the second-lowest severity diagnostic level, used for informational messages that further clarify
+     * warning or error conditions.
+     *
+     * Implementations typically format the first line with a "note:" prefix and subsequent lines with appropriate
+     * indentation.
      *
      * @param tag Categorization tag for the note
-     * @param msg The informational message to display
+     * @param lines Vector of strings representing each line of the message
+     */
+    virtual void note(const std::string &tag, const std::vector<std::string> &lines) const = 0;
+
+    /**
+     * @brief Convenience overload for single line messages.
      */
     void note(const std::string &tag, const std::string &msg) const
     {
@@ -48,43 +80,27 @@ class UserDiagnostics {
     }
 
     /**
-     * @brief Display a multi-line tagged informational note message.
-     *
-     * @details
-     * Virtual method for displaying multi-line informational messages. Implementations typically format the first line
-     * with a "note:" prefix and subsequent lines with appropriate indentation.
-     *
-     * @param tag Categorization tag for the note
-     * @param lines Vector of strings representing each line of the note
-     */
-    virtual void note(const std::string &tag, const std::vector<std::string> &lines) const = 0;
-
-    /**
      * @brief Display a tagged warning message.
      *
      * @details
-     * Warnings indicate non-fatal issues that users should be aware of. They include a categorization tag to help users
-     * understand and/or filter the type of warning being reported.
+     * Warnings indicate non-fatal issues that users should be aware of. They include a categorization tag to help
+     * users understand and/or filter the type of warning being reported.
      *
-     * @param tag Categorization tag for the warning
-     * @param msg The warning message to display
-     */
-    void warn(const std::string &tag, const std::string &msg) const
-    {
-        warn(tag, std::vector{msg});
-    }
-
-    /**
-     * @brief Display a multi-line tagged warning message.
-     *
-     * @details
-     * Virtual method for displaying multi-line warnings with categorization. Implementations typically format the first
-     * line with a "warning:" prefix and the tag, with subsequent lines appropriately indented.
+     * Implementations typically format the first line with a "warning:" prefix and the tag, with subsequent lines
+     * appropriately indented.
      *
      * @param tag Categorization tag for the warning
      * @param lines Vector of strings representing each line of the warning
      */
-    virtual void warn(const std::string &tag, const std::vector<std::string> &lines) const = 0;
+    virtual void warning(const std::string &tag, const std::vector<std::string> &lines) const = 0;
+
+    /**
+     * @brief Convenience overload for single line messages.
+     */
+    void warning(const std::string &tag, const std::string &msg) const
+    {
+        warning(tag, std::vector{msg});
+    }
 
     // /**
     //  * @brief Display a tagged warning message using a formatter-aware builder function.
@@ -112,25 +128,21 @@ class UserDiagnostics {
      * current operation. They include a categorization tag to help users understand and/or filter the type of error
      * being reported.
      *
-     * @param tag Categorization tag for the error
-     * @param msg The error message to display
-     */
-    void err(const std::string &tag, const std::string &msg) const
-    {
-        err(tag, std::vector{msg});
-    }
-
-    /**
-     * @brief Display a multi-line tagged error message.
-     *
-     * @details
-     * Virtual method for displaying multi-line error messages. Implementations typically format the first line with
-     * an "error:" prefix and subsequent lines with appropriate indentation.
+     * Implementations typically format the first line with an "error:" prefix and subsequent lines with appropriate
+     * indentation.
      *
      * @param tag Categorization tag for the error
      * @param lines Vector of strings representing each line of the error
      */
-    virtual void err(const std::string &tag, const std::vector<std::string> &lines) const = 0;
+    virtual void error(const std::string &tag, const std::vector<std::string> &lines) const = 0;
+
+    /**
+     * @brief Convenience overload for single line messages.
+     */
+    void error(const std::string &tag, const std::string &msg) const
+    {
+        error(tag, std::vector{msg});
+    }
 
     /**
      * @brief Emit the proximate (immediate) error in a fatal error chain.
@@ -208,7 +220,7 @@ class UserDiagnostics {
             filtered_chain.push_back(err.get());
         }
 
-        // If all errors were blank FormattableErrors (defensive, shouldn't happen), return early
+        // If all errors were blank FormattableErrors (defensive, shouldn't happen), panic
         if (filtered_chain.empty()) {
             panic("filtered error chain was empty, there should always be at least one FormattableError with details");
         }
