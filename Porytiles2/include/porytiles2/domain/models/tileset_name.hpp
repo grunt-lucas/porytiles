@@ -74,6 +74,29 @@ class TilesetName {
         return name_;
     }
 
+    /**
+     * @brief Compares two TilesetName objects for ordering.
+     *
+     * @details
+     * Comparison is based on the full canonical name string. This enables use in ordered containers like std::set and
+     * std::map.
+     *
+     * @param other The TilesetName to compare against
+     * @return true if this name is lexicographically less than other
+     */
+    [[nodiscard]] bool operator<(const TilesetName &other) const
+    {
+        return name_ < other.name_;
+    }
+
+    /**
+     * @brief Compares two TilesetName objects for equality.
+     *
+     * @param other The TilesetName to compare against
+     * @return true if both names are identical
+     */
+    [[nodiscard]] bool operator==(const TilesetName &other) const = default;
+
   private:
     explicit TilesetName(const std::string &name) : name_{name} {}
 

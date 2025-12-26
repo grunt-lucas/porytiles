@@ -13,6 +13,7 @@
 #include "porytiles2/utilities/c_parser/define_statement.hpp"
 #include "porytiles2/utilities/c_parser/enum_declaration.hpp"
 #include "porytiles2/utilities/c_parser/function_definition.hpp"
+#include "porytiles2/utilities/c_parser/struct_variable_declaration.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 
@@ -138,6 +139,32 @@ class CParserFacade {
      */
     [[nodiscard]] ChainableResult<std::vector<FunctionDefinition>>
     parse_functions(const std::optional<std::string> &name_prefix = std::nullopt);
+
+    /**
+     * @brief Parses struct variable declarations from the file.
+     *
+     * @details
+     * Loads the file (if not already loaded), tokenizes it, and extracts struct variable declarations. Returns a vector
+     * of StructVariableDeclaration objects containing the struct type and variable names.
+     *
+     * This is used by ProjectTilesetNameProvider to extract tileset names from headers.h files like:
+     * @code
+     * const struct Tileset gTileset_General = {
+     *     .isCompressed = TRUE,
+     *     .isSecondary = FALSE,
+     *     ...
+     * };
+     * @endcode
+     *
+     * On error (file not found, lexer error, parser error), returns a ChainableResult containing a FormattableError
+     * with multi-line source context highlighting.
+     *
+     * @param name_prefix Optional prefix to filter variable names. If provided, only struct variables whose names start
+     *        with this prefix are returned. For example, "gTileset_" would match only tileset declarations.
+     * @return A vector of StructVariableDeclaration on success, or an error chain on failure
+     */
+    [[nodiscard]] ChainableResult<std::vector<StructVariableDeclaration>>
+    parse_struct_variables(const std::optional<std::string> &name_prefix = std::nullopt);
 
     /**
      * @brief Finds a specific #define statement by name.

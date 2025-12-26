@@ -56,6 +56,18 @@ class ParserTests : public ::testing::Test {
         return parser.parse_functions();
     }
 
+    [[nodiscard]] ChainableResult<std::vector<StructVariableDeclaration>>
+    parse_struct_variables(const std::string &source)
+    {
+        Lexer lexer{&formatter_, source};
+        auto tokens_result = lexer.lex();
+        if (!tokens_result.has_value()) {
+            return ChainableResult<std::vector<StructVariableDeclaration>>{tokens_result};
+        }
+        Parser parser{&formatter_, std::move(tokens_result).value()};
+        return parser.parse_struct_variables();
+    }
+
     template <typename T>
     [[nodiscard]] std::string get_all_error_text(const ChainableResult<T> &result)
     {
@@ -848,6 +860,155 @@ static void TilesetAnim_PorytilesManaged_General(u16 timer) {
     ASSERT_EQ(result.value().size(), 2);
     EXPECT_EQ(result.value()[0].name(), "QueueAnimTiles_PorytilesManaged_General_Flower");
     EXPECT_EQ(result.value()[1].name(), "TilesetAnim_PorytilesManaged_General");
+}
+
+// ============================================================================
+// Struct Variable Declaration Parsing Tests
+// ============================================================================
+
+TEST_F(ParserTests, ParseStructVariablesEmptyInput)
+{
+    auto result = parse_struct_variables("");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(result.value().empty());
+}
+
+TEST_F(ParserTests, ParseSimpleStructVariable)
+{
+    auto result = parse_struct_variables("const struct Tileset gTileset_General = { };");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+
+    const auto &s = result.value()[0];
+    EXPECT_EQ(s.struct_type(), "Tileset");
+    EXPECT_EQ(s.variable_name(), "gTileset_General");
+}
+
+TEST_F(ParserTests, ParseStructVariableWithoutConst)
+{
+    auto result = parse_struct_variables("struct Tileset gTileset_Test = { };");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].struct_type(), "Tileset");
+    EXPECT_EQ(result.value()[0].variable_name(), "gTileset_Test");
+}
+
+TEST_F(ParserTests, ParseStructVariableWithBody)
+{
+    auto result = parse_struct_variables(R"(
+const struct Tileset gTileset_General = {
+    .isCompressed = TRUE,
+    .isSecondary = FALSE,
+    .tiles = gTilesetTiles_General,
+    .palettes = gTilesetPalettes_General,
+};
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].struct_type(), "Tileset");
+    EXPECT_EQ(result.value()[0].variable_name(), "gTileset_General");
+}
+
+TEST_F(ParserTests, ParseMultipleStructVariables)
+{
+    auto result = parse_struct_variables(R"(
+const struct Tileset gTileset_General = { };
+const struct Tileset gTileset_Petalburg = { };
+const struct Tileset gTileset_Building = { };
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 3);
+    EXPECT_EQ(result.value()[0].variable_name(), "gTileset_General");
+    EXPECT_EQ(result.value()[1].variable_name(), "gTileset_Petalburg");
+    EXPECT_EQ(result.value()[2].variable_name(), "gTileset_Building");
+}
+
+TEST_F(ParserTests, ParseStructVariablesIgnoresOtherDeclarations)
+{
+    auto result = parse_struct_variables(R"(
+int regularVar = 5;
+const struct Tileset gTileset_General = { };
+void someFunction() { }
+enum { A, B };
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].variable_name(), "gTileset_General");
+}
+
+TEST_F(ParserTests, ParseStructVariableWithNestedBraces)
+{
+    auto result = parse_struct_variables(R"(
+const struct Tileset gTileset_General = {
+    .metatiles = { 0, 1, 2 },
+    .palettes = { pal1, pal2 },
+};
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].variable_name(), "gTileset_General");
+}
+
+TEST_F(ParserTests, ParseStructVariableNoSemicolon)
+{
+    // Some code styles omit the trailing semicolon (rare but valid before another declaration)
+    auto result = parse_struct_variables("const struct Tileset gTileset_Test = { }");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].variable_name(), "gTileset_Test");
+}
+
+TEST_F(ParserTests, ParseStructVariablesReturnsEmptyForNonStructCode)
+{
+    auto result = parse_struct_variables("#define FOO 123\nint x;");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(result.value().empty());
+}
+
+TEST_F(ParserTests, ParseStructVariableDifferentStructType)
+{
+    auto result = parse_struct_variables("const struct MyOtherStruct someVar = { };");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].struct_type(), "MyOtherStruct");
+    EXPECT_EQ(result.value()[0].variable_name(), "someVar");
+}
+
+TEST_F(ParserTests, ParseRealWorldTilesetHeaders)
+{
+    auto result = parse_struct_variables(R"(
+#include "fieldmap.h"
+
+const struct Tileset gTileset_General =
+{
+    .isCompressed = TRUE,
+    .isSecondary = FALSE,
+    .tiles = gTilesetTiles_General,
+    .palettes = gTilesetPalettes_General,
+    .metatiles = gMetatiles_General,
+    .metatileAttributes = gMetatileAttributes_General,
+    .callback = InitTilesetAnim_General,
+};
+
+const struct Tileset gTileset_Petalburg =
+{
+    .isCompressed = TRUE,
+    .isSecondary = TRUE,
+    .tiles = gTilesetTiles_Petalburg,
+    .palettes = gTilesetPalettes_Petalburg,
+    .metatiles = gMetatiles_Petalburg,
+    .metatileAttributes = gMetatileAttributes_Petalburg,
+    .callback = InitTilesetAnim_Petalburg,
+};
+
+const struct Tileset *const gTilesetPointer_SecretBase = &gTileset_SecretBase;
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 2);
+    EXPECT_EQ(result.value()[0].struct_type(), "Tileset");
+    EXPECT_EQ(result.value()[0].variable_name(), "gTileset_General");
+    EXPECT_EQ(result.value()[1].struct_type(), "Tileset");
+    EXPECT_EQ(result.value()[1].variable_name(), "gTileset_Petalburg");
 }
 
 } // namespace

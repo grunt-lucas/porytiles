@@ -211,6 +211,48 @@ CParserFacade::parse_functions(const std::optional<std::string> &name_prefix)
     return functions;
 }
 
+ChainableResult<std::vector<StructVariableDeclaration>>
+CParserFacade::parse_struct_variables(const std::optional<std::string> &name_prefix)
+{
+    auto load_result = ensure_loaded();
+    if (!load_result.has_value()) {
+        return ChainableResult<std::vector<StructVariableDeclaration>>{
+            FormattableError{
+                format_->format("{}: failed to parse struct variables", FormatParam{file_path_.string(), Style::bold})},
+            load_result};
+    }
+
+    // Lex the content
+    Lexer lexer{format_, content_, context_.get()};
+    auto lex_result = lexer.lex();
+    if (!lex_result.has_value()) {
+        return ChainableResult<std::vector<StructVariableDeclaration>>{
+            FormattableError{
+                format_->format("{}: failed to parse struct variables", FormatParam{file_path_.string(), Style::bold})},
+            lex_result};
+    }
+
+    // Parse the tokens
+    Parser parser{format_, std::move(lex_result).value(), context_.get()};
+    auto parse_result = parser.parse_struct_variables();
+    if (!parse_result.has_value()) {
+        return ChainableResult<std::vector<StructVariableDeclaration>>{
+            FormattableError{
+                format_->format("{}: failed to parse struct variables", FormatParam{file_path_.string(), Style::bold})},
+            parse_result};
+    }
+
+    // Apply name prefix filter if provided
+    auto structs = std::move(parse_result).value();
+    if (name_prefix.has_value()) {
+        std::erase_if(structs, [&](const StructVariableDeclaration &s) {
+            return !s.variable_name().starts_with(name_prefix.value());
+        });
+    }
+
+    return structs;
+}
+
 ChainableResult<std::optional<DefineStatement>> CParserFacade::find_define(const std::string &define_name)
 {
     // Ensure defines are cached

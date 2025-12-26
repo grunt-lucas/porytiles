@@ -926,4 +926,84 @@ ChainableResult<std::vector<FunctionDefinition>> Parser::parse_functions()
     return functions;
 }
 
+ChainableResult<std::vector<StructVariableDeclaration>> Parser::parse_struct_variables()
+{
+    std::vector<StructVariableDeclaration> structs;
+
+    // Reset position to beginning
+    current_ = 0;
+
+    while (!is_at_end()) {
+        // Skip newlines
+        while (check(TokenType::newline)) {
+            advance();
+        }
+
+        if (is_at_end()) {
+            break;
+        }
+
+        // Look for pattern: [const] struct TYPE IDENTIFIER = { ... } [;]
+        std::size_t scan_start = current_;
+
+        // Skip 'const' if present
+        if (check(TokenType::identifier) && peek().text() == "const") {
+            advance();
+        }
+
+        // Look for 'struct' keyword (lexer treats it as an identifier)
+        if (!check(TokenType::identifier) || peek().text() != "struct") {
+            // Not a struct declaration, skip this token
+            if (current_ == scan_start) {
+                advance();
+            }
+            continue;
+        }
+        advance(); // consume 'struct'
+
+        // Get struct type name
+        if (!check(TokenType::identifier)) {
+            continue;
+        }
+        std::string struct_type = peek().text();
+        advance(); // consume type name
+
+        // Get variable name
+        if (!check(TokenType::identifier)) {
+            continue;
+        }
+        std::string variable_name = peek().text();
+        SourcePosition name_pos = peek().position();
+        advance(); // consume variable name
+
+        // Look for '='
+        if (!check(TokenType::equal)) {
+            continue;
+        }
+        advance(); // consume '='
+
+        // Skip any newlines before '{'
+        while (check(TokenType::newline)) {
+            advance();
+        }
+
+        // Look for '{'
+        if (!check(TokenType::left_brace)) {
+            continue;
+        }
+
+        // Skip balanced braces (we don't need the body contents)
+        current_ = skip_balanced_braces(tokens_, current_);
+
+        // Skip optional semicolon
+        if (check(TokenType::semicolon)) {
+            advance();
+        }
+
+        structs.emplace_back(std::move(struct_type), std::move(variable_name), name_pos);
+    }
+
+    return structs;
+}
+
 } // namespace porytiles2

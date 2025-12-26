@@ -12,6 +12,7 @@
 #include "porytiles2/utilities/c_parser/enum_declaration.hpp"
 #include "porytiles2/utilities/c_parser/function_definition.hpp"
 #include "porytiles2/utilities/c_parser/source_position.hpp"
+#include "porytiles2/utilities/c_parser/struct_variable_declaration.hpp"
 #include "porytiles2/utilities/c_parser/token.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
@@ -170,6 +171,30 @@ class Parser {
      * @return A vector of FunctionDefinition on success, or an error on failure
      */
     [[nodiscard]] ChainableResult<std::vector<FunctionDefinition>> parse_functions();
+
+    /**
+     * @brief Parses struct variable declarations from the token stream.
+     *
+     * @details
+     * Scans through the token stream looking for struct variable declarations matching the pattern:
+     * @code
+     * [const] struct TYPE IDENTIFIER = { ... } [;]
+     * @endcode
+     *
+     * This is used by ProjectTilesetNameProvider to extract tileset names from headers.h files like:
+     * @code
+     * const struct Tileset gTileset_General = {
+     *     .isCompressed = TRUE,
+     *     .isSecondary = FALSE,
+     *     ...
+     * };
+     * @endcode
+     *
+     * The parser captures the struct type and variable name; the initializer body is skipped.
+     *
+     * @return A vector of StructVariableDeclaration on success, or an error on failure
+     */
+    [[nodiscard]] ChainableResult<std::vector<StructVariableDeclaration>> parse_struct_variables();
 
   private:
     [[nodiscard]] const Token &peek() const;
