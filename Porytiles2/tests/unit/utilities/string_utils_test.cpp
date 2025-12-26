@@ -148,3 +148,57 @@ TEST_F(StringUtilsTest, ToSnakeCase_MixedCaseWithSeparators)
     EXPECT_EQ(to_snake_case("Hello_World"), "hello_world");
     EXPECT_EQ(to_snake_case("helloWorld_Test"), "hello_world_test");
 }
+
+// =====================================================
+// trim_prefix tests
+// =====================================================
+
+TEST_F(StringUtilsTest, TrimPrefix_EmptyStringAndEmptyPrefix)
+{
+    EXPECT_EQ(trim_prefix("", ""), "");
+}
+
+TEST_F(StringUtilsTest, TrimPrefix_EmptyPrefix)
+{
+    EXPECT_EQ(trim_prefix("hello", ""), "hello");
+}
+
+TEST_F(StringUtilsTest, TrimPrefix_EmptyString)
+{
+    EXPECT_EQ(trim_prefix("", "hello"), "");
+}
+
+TEST_F(StringUtilsTest, TrimPrefix_PrefixPresent)
+{
+    EXPECT_EQ(trim_prefix("hello_world", "hello_"), "world");
+    EXPECT_EQ(trim_prefix("prefix_suffix", "prefix_"), "suffix");
+}
+
+TEST_F(StringUtilsTest, TrimPrefix_PrefixNotPresent)
+{
+    EXPECT_EQ(trim_prefix("hello_world", "foo"), "hello_world");
+    EXPECT_EQ(trim_prefix("hello_world", "world"), "hello_world");
+}
+
+TEST_F(StringUtilsTest, TrimPrefix_ExactMatch)
+{
+    EXPECT_EQ(trim_prefix("hello", "hello"), "");
+}
+
+TEST_F(StringUtilsTest, TrimPrefix_PrefixLongerThanString)
+{
+    EXPECT_EQ(trim_prefix("hello", "hello_world"), "hello");
+}
+
+TEST_F(StringUtilsTest, TrimPrefix_PartialMatch)
+{
+    // "hel" is a prefix, but "help" is not
+    EXPECT_EQ(trim_prefix("hello", "hel"), "lo");
+    EXPECT_EQ(trim_prefix("hello", "help"), "hello");
+}
+
+TEST_F(StringUtilsTest, TrimPrefix_CaseSensitive)
+{
+    EXPECT_EQ(trim_prefix("Hello_World", "hello_"), "Hello_World");
+    EXPECT_EQ(trim_prefix("Hello_World", "Hello_"), "World");
+}

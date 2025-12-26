@@ -50,6 +50,31 @@ inline bool check_full_string_match(const std::string &str, const std::string &p
 }
 
 /**
+ * @brief Removes a prefix from a string if present.
+ *
+ * @details
+ * This function checks if the input string starts with the specified prefix. If it does, the function returns a new
+ * string with the prefix removed. If the prefix is not present, the original string is returned unchanged.
+ *
+ * @param str The string to potentially trim
+ * @param prefix The prefix to remove if present
+ * @return A new string with the prefix removed, or the original string if prefix was not present
+ *
+ * @par Examples
+ * - `trim_prefix("hello_world", "hello_")` → `"world"`
+ * - `trim_prefix("hello_world", "foo")` → `"hello_world"`
+ * - `trim_prefix("hello", "hello")` → `""`
+ * - `trim_prefix("hello", "hello_world")` → `"hello"`
+ */
+inline std::string trim_prefix(const std::string &str, const std::string &prefix)
+{
+    if (str.starts_with(prefix)) {
+        return str.substr(prefix.size());
+    }
+    return str;
+}
+
+/**
  * @brief Removes leading and trailing whitespace from a string in-place.
  *
  * @details
