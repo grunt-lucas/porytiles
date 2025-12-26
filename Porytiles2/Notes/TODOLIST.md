@@ -36,6 +36,74 @@
   - even though it's technical a user config file, since Porytiles overwrites it every time, it's unintuitive for users
   - JSON is better since comments are disallowed by default and syntax is simpler, users won't be confused when their idiosyncracies get clobbered
 
+## Complete tileset name and artifact path refactor
+We need to refactor `ProjectTilesetArtifactKeyProvider` to not hardcode the artifact paths.
+
+`ProjectTilesetArtifactKeyProvider` to use `CParserFacade` to parse `src/data/tilesets/headers.h` as the source of truth:
+```c++
+const struct Tileset gTileset_SecretBase =
+{
+    .isCompressed = FALSE,
+    .isSecondary = FALSE,
+    .tiles = gTilesetTiles_SecretBase,
+    .palettes = gTilesetPalettes_SecretBase,
+    .metatiles = gMetatiles_SecretBasePrimary,
+    .metatileAttributes = gMetatileAttributes_SecretBasePrimary,
+    .callback = NULL,
+};
+```
+The tileset's "canonical" name is `gTileset_SecretBase`, or `SecretBase` for short.
+`ProjectTilesetArtifactKeyProvider::tileset_exists` implementation should check this file for the requested tileset.
+Introduce a `TilesetName` concrete type so that like `ArtifactKey`, we don't have raw strings floating around.
+```c++
+class TilesetName {
+  public:
+    TilesetName(const std::string &name) {
+        // validate name begins with gTileset_
+    }
+    
+    static TilesetName from_shorthand(const std::string &shorthand) {
+        return TilesetName{"gTileset_" + shorthand};
+    }
+    
+    std::string name() const {
+        return name_;
+    }
+    
+    std::string shorthand() const {
+        return trim_prefix("gTileset_", name_);
+    }
+    
+  private:
+    std::string name_;
+};
+```
+
+As you can see, we get an `isSecondary` check for free, which makes things easy.
+
+The paths to all Porymap assets can be fetched from the variables, e.g.
+```c++
+const u32 gTilesetTiles_SecretBase[] = INCBIN_U32("data/tilesets/primary/secret_base/tiles.4bpp");
+```
+
+We also need to check `tileset_anims.c` to find the animation paths, the `.callback` field is our "in":
+```c++
+const u16 gTilesetAnims_General_Flower_Frame1[] = INCBIN_U16("data/tilesets/primary/general/anim/flower/1.4bpp");
+```
+
+The Porytiles assets can still have the same default hardcoded path for now, e.g.
+`data/tilesets/primary/secret_base/porytiles/...`, we could support optional configuration.
+
+The `include/generated_anim_code.h` file can also go in the hardcoded location for now.
+
+### Step 2: `LayoutDataProvider`
+Once we complete the `ProjectTilesetArtifactKeyProvider` refactor, create a `LayoutDataProvider` which parses `layouts.json`.
+We can then create a `TilesetPairProvider` that reads the layout data and provides mappings between primary/secondary.
+```c++
+std::set<std::string> paired_tilesets = pair_provider.get_paired_tilesets("gTileset_General");
+// paired_tilesets: std::set{"gTileset_Petalburg", "gTileset_Slateport", ...}
+```
+
 ## Start working on secondary tileset compilation
 
 ## Design and Implement `verify-tileset` command
