@@ -15,9 +15,9 @@ namespace porytiles2 {
  * pattern `gTileset_<Name>` (e.g., `gTileset_General`, `gTileset_Petalburg`). This class enforces that naming
  * convention by validating and encapsulating tileset names.
  *
- * The class provides two factory methods for construction:
- * - `from()` validates a full name (must start with `gTileset_`)
- * - `from_shorthand()` constructs from just the name portion (e.g., "General" → "gTileset_General")
+ * The class provides the `from()` factory method for construction, which accepts either a full canonical name
+ * (e.g., "gTileset_General") or just the shorthand portion (e.g., "General"). In both cases, the result is a valid
+ * TilesetName with the canonical prefix.
  *
  * This type ensures raw strings don't proliferate through the codebase, providing type safety and a single point of
  * validation for tileset name handling.
@@ -34,28 +34,18 @@ class TilesetName {
     static constexpr auto prefix = "gTileset_";
 
     /**
-     * @brief Creates a TilesetName from a full canonical name.
+     * @brief Creates a TilesetName from either a full canonical name or a shorthand name.
      *
      * @details
-     * Validates that the provided name begins with the required `gTileset_` prefix. Use this when parsing names from
-     * source files like `headers.h`.
+     * This factory method accepts flexible input: if the provided name already includes the `gTileset_` prefix, it is
+     * used as-is. Otherwise, the prefix is automatically prepended. This allows callers to pass either "General" or
+     * "gTileset_General" and receive a valid TilesetName in both cases.
      *
-     * @param name The full tileset name (e.g., "gTileset_General")
-     * @return A valid TilesetName on success, or an error if the name lacks the required prefix
+     * @param name Either a full canonical name (e.g., "gTileset_General") or shorthand (e.g., "General")
+     * @return A TilesetName with the canonical `gTileset_` prefix
+     * @post The returned TilesetName's `name()` method will return a string starting with `gTileset_`
      */
-    static ChainableResult<TilesetName> from(const std::string &name);
-
-    /**
-     * @brief Creates a TilesetName from a shorthand name by prepending the prefix.
-     *
-     * @details
-     * Constructs a TilesetName by prepending `gTileset_` to the provided shorthand. Use this when accepting user input
-     * or working with abbreviated names.
-     *
-     * @param shorthand The short name without prefix (e.g., "General")
-     * @return A valid TilesetName (e.g., "gTileset_General")
-     */
-    static ChainableResult<TilesetName> from_shorthand(const std::string &shorthand);
+    static TilesetName from(const std::string &name);
 
     /**
      * @brief Extracts the shorthand name by removing the prefix.

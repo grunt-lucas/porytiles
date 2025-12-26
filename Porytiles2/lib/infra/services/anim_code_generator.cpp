@@ -6,9 +6,12 @@
 #include <ranges>
 #include <sstream>
 
+#include "porytiles2/domain/models/animation.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
 
 namespace {
+
+using namespace porytiles2;
 
 [[nodiscard]] std::size_t find_max_frame_index(const std::vector<std::size_t> &frames)
 {
@@ -35,7 +38,8 @@ namespace {
             (tileset_path_from_project_root / "anim" / anim_name / std::format("{}.4bpp", frame_idx)).string();
 
         const auto statement = std::format(
-            "const u16 gTilesetAnims_PorytilesManaged_{}_{}_Frame{}[] = INCBIN_U16(\"{}\");\n",
+            "const u16 gTilesetAnims_{}{}_{}_Frame{}[] = INCBIN_U16(\"{}\");\n",
+            anim::porytiles_managed_prefix,
             tileset_name,
             pascal_anim_name,
             frame_idx,
@@ -53,14 +57,15 @@ namespace {
     std::ostringstream out;
 
     const std::string pascal_anim_name = porytiles2::to_pascal_case(anim_name);
-    const std::string array_name = std::format("gTilesetAnims_PorytilesManaged_{}_{}", tileset_name, pascal_anim_name);
+    const std::string array_name =
+        std::format("gTilesetAnims_{}{}_{}", anim::porytiles_managed_prefix, tileset_name, pascal_anim_name);
 
     out << std::format("const u16 *const {}[] = {{\n", array_name);
 
     for (std::size_t i = 0; i < params.frames().size(); ++i) {
         const std::size_t frame_idx = params.frames()[i];
         out << std::format(
-            "    gTilesetAnims_PorytilesManaged_{}_{}_Frame{}", tileset_name, pascal_anim_name, frame_idx);
+            "    gTilesetAnims_{}{}_{}_{}", anim::porytiles_managed_prefix, tileset_name, pascal_anim_name, frame_idx);
         if (i < params.frames().size() - 1) {
             out << ",";
         }
@@ -78,8 +83,10 @@ namespace {
     std::ostringstream out;
 
     const std::string pascal_anim_name = porytiles2::to_pascal_case(anim_name);
-    const std::string array_name = std::format("gTilesetAnims_PorytilesManaged_{}_{}", tileset_name, pascal_anim_name);
-    const std::string func_name = std::format("QueueAnimTiles_PorytilesManaged_{}_{}", tileset_name, pascal_anim_name);
+    const std::string array_name =
+        std::format("gTilesetAnims_{}{}_{}", anim::porytiles_managed_prefix, tileset_name, pascal_anim_name);
+    const std::string func_name =
+        std::format("QueueAnimTiles_{}{}_{}", anim::porytiles_managed_prefix, tileset_name, pascal_anim_name);
 
     out << std::format("static void {}(u16 timer)\n", func_name);
     out << "{\n";
@@ -99,7 +106,7 @@ namespace {
 {
     std::ostringstream out;
 
-    const std::string func_name = std::format("TilesetAnim_PorytilesManaged_{}", tileset_name);
+    const std::string func_name = std::format("TilesetAnim_{}{}", anim::porytiles_managed_prefix, tileset_name);
 
     out << std::format("static void {}(u16 timer)\n", func_name);
     out << "{\n";
@@ -124,7 +131,8 @@ namespace {
             for (const auto &anim_name : offset_anims | std::views::keys) {
                 const std::string pascal_anim_name = porytiles2::to_pascal_case(anim_name);
                 out << std::format(
-                    "        QueueAnimTiles_PorytilesManaged_{}_{}(timer / {});\n",
+                    "        QueueAnimTiles_{}{}_{}(timer / {});\n",
+                    anim::porytiles_managed_prefix,
                     tileset_name,
                     pascal_anim_name,
                     frame_factor);
@@ -146,8 +154,9 @@ namespace {
 {
     std::ostringstream out;
 
-    const std::string init_func_name = std::format("InitTilesetAnim_PorytilesManaged_{}", tileset_name);
-    const std::string driver_func_name = std::format("TilesetAnim_PorytilesManaged_{}", tileset_name);
+    const std::string init_func_name =
+        std::format("InitTilesetAnim_{}{}", anim::porytiles_managed_prefix, tileset_name);
+    const std::string driver_func_name = std::format("TilesetAnim_{}{}", anim::porytiles_managed_prefix, tileset_name);
 
     // Find the maximum counter_max value across all animations
     std::size_t max_counter_max = porytiles2::anim::default_counter_max;

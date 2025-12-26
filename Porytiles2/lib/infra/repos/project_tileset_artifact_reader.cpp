@@ -419,7 +419,7 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_porymap_anim_frame(
 [[nodiscard]] ChainableResult<void> ProjectTilesetArtifactReader::read_generated_anim_code(
     Tileset &dest, const ArtifactKey &src_key, const std::set<std::string> &anim_names) const
 {
-    auto params_result = anim_code_parser_->parse_generated_header(src_key.key(), dest.name(), anim_names);
+    auto params_result = anim_code_parser_->parse_generated_header(src_key.key(), dest.name().shorthand(), anim_names);
     if (!params_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{"{}: failed to parse generated anim code", FormatParam{src_key.key(), Style::bold}},
@@ -452,7 +452,7 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_porymap_anim_frame(
 [[nodiscard]] ChainableResult<void> ProjectTilesetArtifactReader::read_vanilla_anim_code(
     Tileset &dest, const ArtifactKey &src_key, const std::set<std::string> &anim_names) const
 {
-    auto params_result = anim_code_parser_->parse_vanilla_anims(src_key.key(), dest.name(), anim_names);
+    auto params_result = anim_code_parser_->parse_vanilla_anims(src_key.key(), dest.name().shorthand(), anim_names);
     if (!params_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{"{}: failed to parse vanilla anim code", FormatParam{src_key.key(), Style::bold}},

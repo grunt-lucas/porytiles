@@ -20,6 +20,7 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tiles_png_workspace.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
+#include "porytiles2/domain/models/tileset_artifact_paths.hpp"
 #include "porytiles2/domain/packing/services/best_fusion_strategy.hpp"
 #include "porytiles2/domain/packing/services/overload_and_remove_strategy.hpp"
 #include "porytiles2/domain/packing/services/palette_packer.hpp"
@@ -168,14 +169,17 @@ ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
      */
 
     // Unwrap config values
-    PT_UNWRAP_TILESET_CONFIG_REF(config_, extrinsic_transparency, tileset_.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_REF(config_, num_pals_in_primary, tileset_.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_REF(config_, num_pals_total, tileset_.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_REF(config_, num_metatiles_in_primary, tileset_.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_REF(config_, num_tiles_in_primary, tileset_.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_REF(config_, num_tiles_per_metatile, tileset_.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_REF(config_, pal_hints_enabled, tileset_.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_REF(config_, pal_hints, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(
+        config_, extrinsic_transparency, tileset_.name().shorthand(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, num_pals_in_primary, tileset_.name().shorthand(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, num_pals_total, tileset_.name().shorthand(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(
+        config_, num_metatiles_in_primary, tileset_.name().shorthand(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, num_tiles_in_primary, tileset_.name().shorthand(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(
+        config_, num_tiles_per_metatile, tileset_.name().shorthand(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, pal_hints_enabled, tileset_.name().shorthand(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, pal_hints, tileset_.name().shorthand(), std::unique_ptr<Tileset>);
 
     extrinsic_transparency_ = extrinsic_transparency;
     num_pals_in_primary_ = num_pals_in_primary;
@@ -201,7 +205,7 @@ ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
 ChainableResult<void> CompilerTask::pipeline_step1_process_porytiles_input()
 {
     LayerImageMetatileizer<Rgba32> metatileizer{};
-    MetatileValidator validator{&format_, &diag_, &tile_printer_, &pal_printer_, &config_, tileset_.name()};
+    MetatileValidator validator{&format_, &diag_, &tile_printer_, &pal_printer_, &config_, tileset_.name().shorthand()};
 
     // Read Porytiles layer images into metatile vector
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -210,7 +214,7 @@ ChainableResult<void> CompilerTask::pipeline_step1_process_porytiles_input()
             tileset_.porytiles_component().bottom(),
             tileset_.porytiles_component().middle(),
             tileset_.porytiles_component().top()),
-        "failed to metatileize input layer images for " + tileset_.name(),
+        "failed to metatileize input layer images for " + tileset_.name().shorthand(),
         void);
     porytiles_metatiles_ = std::move(metatiles);
 
@@ -236,7 +240,7 @@ ChainableResult<void> CompilerTask::pipeline_step2_process_porymap_input()
     PT_TRY_ASSIGN_CHAIN_ERR(
         tilemap_entries,
         layer_mode_converter.triple_layerize(tileset_.porymap_component()),
-        "failed to triple-layerize Porymap component for tileset " + tileset_.name(),
+        "failed to triple-layerize Porymap component for tileset " + tileset_.name().shorthand(),
         void);
     porymap_tilemap_entries_ = std::move(tilemap_entries);
 
@@ -244,7 +248,7 @@ ChainableResult<void> CompilerTask::pipeline_step2_process_porymap_input()
         metatiles,
         metatile_decompiler.decompile_metatiles(
             porymap_tilemap_entries_, tileset_.porymap_component().tiles_png(), tileset_.porymap_component().pals()),
-        "failed to decompile Porymap component for tileset " + tileset_.name(),
+        "failed to decompile Porymap component for tileset " + tileset_.name().shorthand(),
         void);
     porymap_metatiles_ = std::move(metatiles);
 
@@ -267,7 +271,12 @@ ChainableResult<void> CompilerTask::pipeline_step3_setup_working_data()
     // Validate Porytiles palettes, Porymap palettes, and hints
     const std::vector<PaletteHint> hints = pal_hints_enabled_.value() ? pal_hints_.value() : std::vector<PaletteHint>{};
     const PaletteValidator pal_validator{
-        &format_, &diag_, &pal_printer_, &config_, tileset_.name(), pals_edit_mode_ != ArtifactEditMode::optimize};
+        &format_,
+        &diag_,
+        &pal_printer_,
+        &config_,
+        tileset_.name().shorthand(),
+        pals_edit_mode_ != ArtifactEditMode::optimize};
     PT_TRY_CALL_CHAIN_ERR(
         pal_validator.validate_primary(
             tileset_.porymap_component().pals(), tileset_.porytiles_component().pals(), hints),
@@ -577,7 +586,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing(const std::v
     PT_TRY_ASSIGN_CHAIN_ERR(
         color_index_map,
         pipeline_helper_build_color_index_map(hints, color_count_limit),
-        "failed to build color index map for tileset " + tileset_.name(),
+        "failed to build color index map for tileset " + tileset_.name().shorthand(),
         void);
 
     /*
@@ -619,7 +628,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing(const std::v
     PT_TRY_ASSIGN_CHAIN_ERR(
         pal_packing,
         pal_packer.pack_tiles(packing_params),
-        "failed to pack palettes for tileset " + tileset_.name(),
+        "failed to pack palettes for tileset " + tileset_.name().shorthand(),
         void);
 
     for (std::size_t i = 0; i < pal::num_pals; i++) {
@@ -675,7 +684,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing(const std::v
             constexpr auto tag = "palette-packing-result";
             std::vector<std::string> remark_lines;
             remark_lines.emplace_back(
-                format_.format("packed '{}' contents:", FormatParam{pal_filename(i), Style::bold}));
+                format_.format("packed '{}' contents:", FormatParam{tileset::pal_filename(i), Style::bold}));
             remark_lines.emplace_back();
             std::ranges::copy(
                 pal_printer_.print_rgba_palette(maybe_packed_pal.value()), std::back_inserter(remark_lines));
@@ -712,7 +721,7 @@ ChainableResult<ColorIndexMap<Rgba32>> CompilerTask::pipeline_helper_build_color
                 format_.format(
                     "found '{}' global unique colors after adding Porytiles palette '{}', limit is '{}'",
                     FormatParam{color_index_map.size(), Style::bold},
-                    FormatParam{pal_filename(pal_index), Style::bold},
+                    FormatParam{tileset::pal_filename(pal_index), Style::bold},
                     FormatParam{color_count_limit, Style::bold}));
             diag_.note(tag, global_color_limit_definition(format_, color_count_limit, num_pals_in_primary_));
 
@@ -720,7 +729,7 @@ ChainableResult<ColorIndexMap<Rgba32>> CompilerTask::pipeline_helper_build_color
                 "{}: found '{}' unique colors after adding Porytiles palette '{}', limit is '{}'",
                 FormatParam{tag, Style::bold},
                 FormatParam{color_index_map.size(), Style::bold},
-                FormatParam{pal_filename(pal_index), Style::bold},
+                FormatParam{tileset::pal_filename(pal_index), Style::bold},
                 FormatParam{color_count_limit, Style::bold}};
         }
     }
@@ -772,7 +781,8 @@ void CompilerTask::pipeline_helper_emit_no_matching_tile_error(
 
     // Print note showing the palette that matched
     std::vector<std::string> pal_note{};
-    pal_note.emplace_back(format_.format("matched palette '{}':", FormatParam{pal_filename(pal_index), Style::bold}));
+    pal_note.emplace_back(
+        format_.format("matched palette '{}':", FormatParam{tileset::pal_filename(pal_index), Style::bold}));
     std::ranges::copy(pal_printer_.print_rgba_palette(matched_pal), std::back_inserter(pal_note));
     diag_.note(tag, pal_note);
 
@@ -811,15 +821,15 @@ void CompilerTask::pipeline_helper_emit_no_matching_pal_error(
             // Add a blank line between subsequent matches
             closest_n_note.emplace_back();
         }
-        closest_n_note.push_back(
-            format_.format("Palette match candidate: {}", FormatParam{pal_filename(match.pal_index), Style::bold}));
+        closest_n_note.push_back(format_.format(
+            "Palette match candidate: {}", FormatParam{tileset::pal_filename(match.pal_index), Style::bold}));
         std::ranges::copy(
             pal_printer_.print_rgba_palette_covered_missing(
                 new_porymap_pals_.at(match.pal_index), match.covered_colors, match.missing_colors),
             std::back_inserter(closest_n_note));
         closest_n_note.emplace_back();
-        closest_n_note.push_back(
-            format_.format("Uncovered pixels with {}:", FormatParam{pal_filename(match.pal_index), Style::bold}));
+        closest_n_note.push_back(format_.format(
+            "Uncovered pixels with {}:", FormatParam{tileset::pal_filename(match.pal_index), Style::bold}));
         std::ranges::copy(
             tile_printer_.print_metatile_pixel_highlights(
                 porytiles_metatiles_.at(metatile_index),
@@ -865,8 +875,8 @@ namespace porytiles2 {
 
 ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const Tileset &tileset) const
 {
-    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tiles_edit_mode, tileset.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_PTR(config_, pals_edit_mode, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tiles_edit_mode, tileset.name().shorthand(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, pals_edit_mode, tileset.name().shorthand(), std::unique_ptr<Tileset>);
     CompilerTask task{
         tileset,
         *format_,

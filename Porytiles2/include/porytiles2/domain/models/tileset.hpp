@@ -5,6 +5,7 @@
 
 #include "porytiles2/domain/models/porymap_tileset_component.hpp"
 #include "porytiles2/domain/models/porytiles_tileset_component.hpp"
+#include "porytiles2/domain/models/tileset_name.hpp"
 
 namespace porytiles2 {
 
@@ -14,7 +15,7 @@ namespace porytiles2 {
 class Tileset {
   public:
     Tileset(
-        std::string name,
+        TilesetName name,
         std::unique_ptr<PorytilesTilesetComponent> porytiles_component,
         std::unique_ptr<PorymapTilesetComponent> porymap_component)
         : name_{std::move(name)}, porytiles_component_{std::move(porytiles_component)},
@@ -29,7 +30,7 @@ class Tileset {
         }
     }
 
-    [[nodiscard]] const std::string &name() const
+    [[nodiscard]] const TilesetName &name() const
     {
         return name_;
     }
@@ -71,7 +72,7 @@ class Tileset {
     }
 
   private:
-    std::string name_;
+    TilesetName name_;
     std::unique_ptr<PorytilesTilesetComponent> porytiles_component_;
     std::unique_ptr<PorymapTilesetComponent> porymap_component_;
 };

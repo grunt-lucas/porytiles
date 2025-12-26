@@ -14,6 +14,7 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
+#include "porytiles2/domain/models/tileset_name.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
 #include "porytiles2/infra/services/anim_code_generator.hpp"
@@ -121,7 +122,7 @@ Tileset create_test_tileset(const std::string &name)
         porymap_component->push_back_attribute(MetatileAttribute{});
     }
 
-    return Tileset{name, std::move(porytiles_component), std::move(porymap_component)};
+    return Tileset{TilesetName::from(name), std::move(porytiles_component), std::move(porymap_component)};
 }
 
 } // namespace

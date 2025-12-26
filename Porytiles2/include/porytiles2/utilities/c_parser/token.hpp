@@ -77,6 +77,7 @@ enum class TokenType : std::uint8_t {
     right_bracket, // ] (reserved for future)
     comma,         // ,
     semicolon,     // ; (reserved for future)
+    period,        // . (for designated initializers)
 
     // === Special ===
     newline, // Significant for preprocessor directives

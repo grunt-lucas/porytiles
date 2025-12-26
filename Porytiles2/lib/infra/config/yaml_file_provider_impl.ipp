@@ -9,10 +9,12 @@
 #include "yaml-cpp/yaml.h"
 
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
+#include "porytiles2/domain/models/tileset_name.hpp"
 #include "porytiles2/domain/packing/models/palette_hint.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/infra/config/config_provider.hpp"
 #include "porytiles2/infra/config/valid_yaml_paths.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/file_highlight_printer.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/config/config_scope_type.hpp"
@@ -567,9 +569,9 @@ std::optional<YAML::Node> load_yaml_file(
  * @param project_root The project root directory
  * @param key_provider Provider for generating tileset artifact keys and paths
  * @param tileset The name of the tileset
- * @return Vector of config file paths in priority order
+ * @return ChainableResult containing vector of config file paths in priority order, or error
  */
-std::vector<std::filesystem::path> get_tileset_config_path_chain(
+porytiles2::ChainableResult<std::vector<std::filesystem::path>> get_tileset_config_path_chain(
     const std::filesystem::path &project_root,
     const TilesetArtifactKeyProvider *key_provider,
     const std::string &tileset)
@@ -582,8 +584,17 @@ std::vector<std::filesystem::path> get_tileset_config_path_chain(
     std::vector<std::filesystem::path> paths;
 
     // Get tileset-specific config paths using the key provider
-    const auto tileset_local_config_key = key_provider->key_for_local_config(tileset);
-    const auto tileset_config_key = key_provider->key_for_config(tileset);
+    const auto name = TilesetName::from(tileset);
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tileset_local_config_key,
+        key_provider->key_for_local_config(name),
+        "failed to get config path chain for tileset '" + tileset + "'",
+        std::vector<std::filesystem::path>);
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tileset_config_key,
+        key_provider->key_for_config(name),
+        "failed to get config path chain for tileset '" + tileset + "'",
+        std::vector<std::filesystem::path>);
 
     // Priority order (highest to lowest):
     // 1. tileset_folder/porytiles.local.yaml
@@ -612,9 +623,9 @@ std::vector<std::filesystem::path> get_tileset_config_path_chain(
  * @param key_provider Provider for generating tileset artifact keys and paths
  * @param type The configuration scope type (tileset or layout)
  * @param scope The scope name (tileset name or layout name)
- * @return Vector of config file paths in priority order
+ * @return ChainableResult containing vector of config file paths in priority order, or error
  */
-std::vector<std::filesystem::path> get_config_path_chain(
+porytiles2::ChainableResult<std::vector<std::filesystem::path>> get_config_path_chain(
     const std::filesystem::path &project_root,
     const TilesetArtifactKeyProvider *key_provider,
     ConfigScopeType type,

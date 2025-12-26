@@ -6,6 +6,7 @@
 #include "gsl/pointers"
 
 #include "porytiles2/domain/models/tileset.hpp"
+#include "porytiles2/domain/models/tileset_name.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_reader.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_writer.hpp"
@@ -70,7 +71,7 @@ class TilesetRepo final {
      * @param name The name of the Tileset to load.
      * @return A Tileset Result on success, otherwise an error description.
      */
-    [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> load(const std::string &name) const;
+    [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> load(const TilesetName &name) const;
 
     /**
      * @brief Checks if the given Tileset exists in the backing store.
@@ -78,7 +79,7 @@ class TilesetRepo final {
      * @param name The name of the Tileset to check.
      * @return True if the named tileset exists, false otherwise.
      */
-    [[nodiscard]] bool exists(const std::string &name) const;
+    [[nodiscard]] bool exists(const TilesetName &name) const;
 
     /**
      * @brief Gets a reference to the ArtifactChecksumProvider for this repo.

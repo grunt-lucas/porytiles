@@ -9,19 +9,19 @@
 namespace porytiles2 {
 
 std::unordered_map<ArtifactKey, std::string>
-NoopArtifactChecksumProvider::compute_tileset_artifact_checksums(const std::string &tileset_name) const
+NoopArtifactChecksumProvider::compute_tileset_artifact_checksums(const TilesetName & /*name*/) const
 {
     return {};
 }
 
 std::unordered_map<ArtifactKey, std::string>
-NoopArtifactChecksumProvider::load_cached_tileset_checksums(const std::string &tileset_name) const
+NoopArtifactChecksumProvider::load_cached_tileset_checksums(const TilesetName & /*name*/) const
 {
     return {};
 }
 
 ChainableResult<void> NoopArtifactChecksumProvider::cache_tileset_checksums(
-    const std::string &tileset_name, const std::unordered_map<ArtifactKey, std::string> &checksums) const
+    const TilesetName & /*name*/, const std::unordered_map<ArtifactKey, std::string> & /*checksums*/) const
 {
     return {};
 }

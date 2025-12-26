@@ -8,6 +8,7 @@
 #include "fruit/fruit.h"
 
 #include "porytiles2/app/use_cases/import_primary_tileset.hpp"
+#include "porytiles2/domain/models/tileset_name.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/palette_printer.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
@@ -31,6 +32,7 @@
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/infra/services/project_artifact_checksum_provider.hpp"
+#include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/di/components.hpp"
 #include "porytiles2/xcut/diagnostics/stderr_styled_user_diagnostics.hpp"
@@ -63,7 +65,8 @@ class ImportTilesetCommand final : public Command {
         std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter);
 
         // Setup layered configuration
-        ProjectTilesetArtifactKeyProvider key_provider{".", text_formatter, diag.get()};
+        ProjectTilesetMetadataProvider metadata_provider{".", text_formatter, diag.get()};
+        ProjectTilesetArtifactKeyProvider key_provider{".", &metadata_provider, text_formatter, diag.get()};
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
         providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, diag.get(), ".", key_provider));
         providers.push_back(std::make_unique<HeaderDefineProvider>(".", "include/fieldmap.h", text_formatter));
@@ -112,10 +115,11 @@ class ImportTilesetCommand final : public Command {
         ImportPrimaryTileset import_use_case{&repo, &importer, &compiler, &config, &config, text_formatter, diag.get()};
 
         // Run the use case
-        auto import_result = import_use_case.import(tileset_name_);
+        const auto name = TilesetName::from(tileset_name_);
+        auto import_result = import_use_case.import(name);
         if (!import_result.has_value()) {
             const auto fail_result = ChainableResult<std::unique_ptr<Tileset>>{
-                FormattableError{"failed to import tileset '{}'", FormatParam{tileset_name_, Style::bold}},
+                FormattableError{"failed to import tileset '{}'", FormatParam{name.shorthand(), Style::bold}},
                 import_result};
             diag->fatal(fail_result);
         }

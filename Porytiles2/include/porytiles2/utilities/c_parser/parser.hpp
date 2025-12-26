@@ -11,7 +11,9 @@
 #include "porytiles2/utilities/c_parser/define_statement.hpp"
 #include "porytiles2/utilities/c_parser/enum_declaration.hpp"
 #include "porytiles2/utilities/c_parser/function_definition.hpp"
+#include "porytiles2/utilities/c_parser/incbin_declaration.hpp"
 #include "porytiles2/utilities/c_parser/source_position.hpp"
+#include "porytiles2/utilities/c_parser/struct_initializer_declaration.hpp"
 #include "porytiles2/utilities/c_parser/struct_variable_declaration.hpp"
 #include "porytiles2/utilities/c_parser/token.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -195,6 +197,65 @@ class Parser {
      * @return A vector of StructVariableDeclaration on success, or an error on failure
      */
     [[nodiscard]] ChainableResult<std::vector<StructVariableDeclaration>> parse_struct_variables();
+
+    /**
+     * @brief Parses struct variable declarations with their designated initializer fields.
+     *
+     * @details
+     * Scans through the token stream looking for struct variable declarations matching the pattern:
+     * @code
+     * [const] struct TYPE IDENTIFIER = { .field1 = value1, .field2 = value2, ... } [;]
+     * @endcode
+     *
+     * This is used by ProjectTilesetMetadataProvider to extract tileset metadata from headers.h files:
+     * @code
+     * const struct Tileset gTileset_General = {
+     *     .isCompressed = TRUE,
+     *     .isSecondary = FALSE,
+     *     .tiles = gTilesetTiles_General,
+     *     .palettes = gTilesetPalettes_General,
+     *     .metatiles = gMetatiles_General,
+     *     .metatileAttributes = gMetatileAttributes_General,
+     *     .callback = InitTilesetAnim_General,
+     * };
+     * @endcode
+     *
+     * Unlike parse_struct_variables(), this method also parses the designated initializer fields,
+     * enabling extraction of field values like isSecondary and variable references.
+     *
+     * @return A vector of StructInitializerDeclaration on success, or an error on failure
+     */
+    [[nodiscard]] ChainableResult<std::vector<StructInitializerDeclaration>> parse_struct_initializers();
+
+    /**
+     * @brief Parses INCBIN array declarations from the token stream.
+     *
+     * @details
+     * Scans through the token stream looking for array declarations using INCBIN macros:
+     * @code
+     * // Single path arrays:
+     * [const] TYPE IDENTIFIER [] = INCBIN_MACRO("path");
+     *
+     * // Multi-path arrays (palettes):
+     * [const] TYPE IDENTIFIER [][SIZE] = { INCBIN_MACRO("path1"), INCBIN_MACRO("path2"), ... };
+     * @endcode
+     *
+     * Examples from pokeemerald:
+     * @code
+     * const u32 gTilesetTiles_General[] = INCBIN_U32("data/tilesets/primary/general/tiles.4bpp");
+     *
+     * const u16 gTilesetPalettes_General[][16] = {
+     *     INCBIN_U16("data/tilesets/primary/general/palettes/00.gbapal"),
+     *     INCBIN_U16("data/tilesets/primary/general/palettes/01.gbapal"),
+     *     ...
+     * };
+     * @endcode
+     *
+     * The parser extracts the variable name, INCBIN macro name, and path(s) from each declaration.
+     *
+     * @return A vector of IncbinDeclaration on success, or an error on failure
+     */
+    [[nodiscard]] ChainableResult<std::vector<IncbinDeclaration>> parse_incbin_arrays();
 
   private:
     [[nodiscard]] const Token &peek() const;

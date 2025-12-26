@@ -1,0 +1,230 @@
+#pragma once
+
+#include <filesystem>
+#include <map>
+#include <string>
+#include <vector>
+
+#include "porytiles2/utilities/string_utils.hpp"
+
+namespace porytiles2 {
+
+/**
+ * @brief Maps animation names to their ordered frame file paths.
+ *
+ * @details
+ * AnimationFramePaths stores the resolved filesystem paths for animation frame files
+ * discovered from INCBIN declarations in tileset_anims.c or generated_anim_code.h.
+ *
+ * Key: Animation name in snake_case (e.g., "flower", "water", "sand_water_edge")
+ * Value: Ordered vector of frame paths where index corresponds to frame number
+ *
+ * Example structure:
+ * @code
+ * {
+ *   "flower": ["data/tilesets/.../anim/flower/0.4bpp", "data/tilesets/.../anim/flower/1.4bpp"],
+ *   "water": ["data/tilesets/.../anim/water/0.4bpp", ..., "data/tilesets/.../anim/water/7.4bpp"]
+ * }
+ * @endcode
+ */
+using AnimationFramePaths = std::map<std::string, std::vector<std::filesystem::path>>;
+
+namespace tileset {
+
+/**
+ * @brief Constructs a palette filename from a palette index.
+ *
+ * @details
+ * This function formats a palette index as a two-digit padded number with the ".pal" extension. For example,
+ * `pal_filename(3)` returns `"03.pal"`, `pal_filename(12)` returns `"12.pal"`.
+ *
+ * @param pal_index The palette index to format
+ * @return A string in the format "XX.pal" where XX is the zero-padded index
+ */
+[[nodiscard]] inline std::string pal_filename(std::size_t pal_index)
+{
+    return pad_two_digits(pal_index) + ".pal";
+}
+
+} // namespace tileset
+
+/*
+ * TODO: this is a domain class but it relies on infrastructure layer concepts, e.g. the project folder structure. We
+ * should refactor this a bit.
+ *
+ * Basically, this class is only used in domain layer once: the TilesetMetadataProvider::artifact_paths_for return type.
+ * But this function itself is never called in the domain layer. It is only used in the Project implementation of
+ * TilesetArtifactKeyProvider. This means tht we can probably make it a special implementation-specific method in
+ * ProjectTilesetMetadataProvider. This makes sense, because a theoretical alternative ecosystem not backed by a
+ * pokeemerald project probably wouldn't read tileset artifact paths the same way at all. These paths are very specific
+ * to the Project ecosystem of models and services.
+ */
+
+/**
+ * @brief Represents resolved filesystem paths for tileset artifacts from INCBIN declarations.
+ *
+ * @details
+ * TilesetArtifactPaths holds the actual file paths extracted from INCBIN macro declarations in pokeemerald's graphics.h
+ * and metatiles.h files (and a few other assorted files):
+ * @code
+ * // From graphics.h:
+ * const u32 gTilesetTiles_General[] = INCBIN_U32("data/tilesets/primary/general/tiles.4bpp");
+ * const u16 gTilesetPalettes_General[][16] = {
+ *     INCBIN_U16("data/tilesets/primary/general/palettes/00.gbapal"),
+ *     ...
+ * };
+ *
+ * // From metatiles.h:
+ * const u16 gMetatiles_General[] = INCBIN_U16("data/tilesets/primary/general/metatiles.bin");
+ * const u16 gMetatileAttributes_General[] = INCBIN_U16("data/tilesets/primary/general/metatile_attributes.bin");
+ * @endcode
+ *
+ * This domain model provides:
+ * - Direct access to individual artifact paths
+ * - Derived paths like tileset_root() for calculating related paths
+ *
+ * @invariant tiles_path_ is never empty
+ * @invariant palette_paths_ contains at least one path
+ * @invariant metatiles_path_ is never empty
+ * @invariant metatile_attributes_path_ is never empty
+ */
+class TilesetArtifactPaths {
+  public:
+    /**
+     * @brief Constructs TilesetArtifactPaths from resolved INCBIN paths.
+     *
+     * @param tiles_path Path to tiles file (e.g., "data/tilesets/primary/general/tiles.4bpp")
+     * @param palette_paths Paths to palette files (e.g., [.../palettes/00.gbapal, ...])
+     * @param metatiles_path Path to metatiles file (e.g., "data/tilesets/primary/general/metatiles.bin")
+     * @param metatile_attributes_path Path to attributes file (e.g., ".../metatile_attributes.bin")
+     * @param animation_frame_paths Animation frame paths grouped by animation name (optional, may be empty)
+     */
+    TilesetArtifactPaths(
+        std::filesystem::path tiles_path,
+        std::vector<std::filesystem::path> palette_paths,
+        std::filesystem::path metatiles_path,
+        std::filesystem::path metatile_attributes_path,
+        AnimationFramePaths animation_frame_paths = {})
+        : tiles_path_{std::move(tiles_path)}, palette_paths_{std::move(palette_paths)},
+          metatiles_path_{std::move(metatiles_path)}, metatile_attributes_path_{std::move(metatile_attributes_path)},
+          animation_frame_paths_{std::move(animation_frame_paths)}
+    {
+    }
+
+    /**
+     * @brief Returns the path to the tiles file.
+     *
+     * @return The tiles path (e.g., "data/tilesets/primary/general/tiles.4bpp")
+     */
+    [[nodiscard]] const std::filesystem::path &tiles_path() const
+    {
+        return tiles_path_;
+    }
+
+    /**
+     * @brief Returns all palette file paths.
+     *
+     * @return Vector of palette paths (typically 16 entries)
+     */
+    [[nodiscard]] const std::vector<std::filesystem::path> &palette_paths() const
+    {
+        return palette_paths_;
+    }
+
+    /**
+     * @brief Returns the path to the metatiles file.
+     *
+     * @return The metatiles path (e.g., "data/tilesets/primary/general/metatiles.bin")
+     */
+    [[nodiscard]] const std::filesystem::path &metatiles_path() const
+    {
+        return metatiles_path_;
+    }
+
+    /**
+     * @brief Returns the path to the metatile attributes file.
+     *
+     * @return The attributes path (e.g., "data/tilesets/primary/general/metatile_attributes.bin")
+     */
+    [[nodiscard]] const std::filesystem::path &metatile_attributes_path() const
+    {
+        return metatile_attributes_path_;
+    }
+
+    /**
+     * @brief Extracts the tileset root directory from the tiles path.
+     *
+     * @details
+     * Derives the tileset base directory by taking the parent of the tiles file. For
+     * "data/tilesets/primary/general/tiles.4bpp", returns "data/tilesets/primary/general".
+     *
+     * @return The tileset root directory path
+     */
+    [[nodiscard]] std::filesystem::path tileset_root() const
+    {
+        /*
+         * TODO: it's entirely possible (though unlikely) that the user has spread tileset assets around in multiple
+         * places. In that case, tiles_path_.parent_path() may not be the real "root", as there could be multiple
+         * "roots" depending on what the user did. How would we want to handle this? Perhaps a prerequisite to using
+         * Porytiles is that you have your assets in single root per tileset.
+         */
+        return tiles_path_.parent_path();
+    }
+
+    /**
+     * @brief Returns animation frame paths grouped by animation name.
+     *
+     * @details
+     * Returns the discovered animation frame paths from INCBIN declarations. May be empty if the tileset has no
+     * animations or if animation discovery was not performed.
+     *
+     * @return Map of animation names to ordered frame paths
+     */
+    [[nodiscard]] const AnimationFramePaths &animation_frame_paths() const
+    {
+        return animation_frame_paths_;
+    }
+
+    /**
+     * @brief Checks if animation frame paths have been discovered.
+     *
+     * @return true if animation_frame_paths_ is not empty
+     */
+    [[nodiscard]] bool has_animation_frame_paths() const
+    {
+        return !animation_frame_paths_.empty();
+    }
+
+    /**
+     * @brief Extracts the palettes directory from the first palette path.
+     *
+     * @details
+     * Derives the palettes directory by taking the parent of the first palette file. For ".../palettes/00.gbapal",
+     * returns ".../palettes".
+     *
+     * @pre palette_paths_ is not empty
+     * @return The palettes directory path
+     */
+    [[nodiscard]] std::filesystem::path palettes_dir() const
+    {
+        /*
+         * TODO: it's entirely possible (though unlikely) that the user has spread palette assets around in multiple
+         * places. In that case, palette_paths_.front().parent_path() may not be the real "root", as there could be
+         * multiple "roots" depending on what the user did. How would we want to handle this? Perhaps a prerequisite to
+         * using Porytiles is that you have your palettes in a single palette directory.
+         */
+        if (palette_paths_.empty()) {
+            return {};
+        }
+        return palette_paths_.front().parent_path();
+    }
+
+  private:
+    std::filesystem::path tiles_path_;
+    std::vector<std::filesystem::path> palette_paths_;
+    std::filesystem::path metatiles_path_;
+    std::filesystem::path metatile_attributes_path_;
+    AnimationFramePaths animation_frame_paths_;
+};
+
+} // namespace porytiles2

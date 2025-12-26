@@ -7,10 +7,10 @@
 namespace porytiles2 {
 
 std::vector<ArtifactKey> ArtifactChecksumProvider::find_unsynced_tileset_artifacts(
-    const std::string &tileset_name, const std::vector<ArtifactKey> &artifact_keys) const
+    const TilesetName &name, const std::vector<ArtifactKey> &artifact_keys) const
 {
-    const auto checksums = compute_tileset_artifact_checksums(tileset_name);
-    const auto cached_checksums = load_cached_tileset_checksums(tileset_name);
+    const auto checksums = compute_tileset_artifact_checksums(name);
+    const auto cached_checksums = load_cached_tileset_checksums(name);
 
     if (cached_checksums.empty()) {
         return {};
@@ -27,15 +27,15 @@ std::vector<ArtifactKey> ArtifactChecksumProvider::find_unsynced_tileset_artifac
     return mismatched_keys;
 }
 
-bool ArtifactChecksumProvider::cached_checksums_exist(const std::string &tileset_name) const
+bool ArtifactChecksumProvider::cached_checksums_exist(const TilesetName &name) const
 {
-    return !load_cached_tileset_checksums(tileset_name).empty();
+    return !load_cached_tileset_checksums(name).empty();
 }
 
 bool ArtifactChecksumProvider::all_checksums_tileset_match(
-    const std::string &tileset_name, const std::vector<ArtifactKey> &artifact_keys) const
+    const TilesetName &name, const std::vector<ArtifactKey> &artifact_keys) const
 {
-    return find_unsynced_tileset_artifacts(tileset_name, artifact_keys).empty();
+    return find_unsynced_tileset_artifacts(name, artifact_keys).empty();
 }
 
 } // namespace porytiles2

@@ -11,6 +11,12 @@
 
 namespace porytiles2 {
 
+namespace anim {
+
+constexpr std::string porytiles_managed_prefix = "PorytilesManaged_";
+
+}
+
 /**
  * @brief A complete tileset animation with name, configuration, and frame data.
  *

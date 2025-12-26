@@ -13,6 +13,8 @@
 #include "porytiles2/utilities/c_parser/define_statement.hpp"
 #include "porytiles2/utilities/c_parser/enum_declaration.hpp"
 #include "porytiles2/utilities/c_parser/function_definition.hpp"
+#include "porytiles2/utilities/c_parser/incbin_declaration.hpp"
+#include "porytiles2/utilities/c_parser/struct_initializer_declaration.hpp"
 #include "porytiles2/utilities/c_parser/struct_variable_declaration.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
@@ -165,6 +167,69 @@ class CParserFacade {
      */
     [[nodiscard]] ChainableResult<std::vector<StructVariableDeclaration>>
     parse_struct_variables(const std::optional<std::string> &name_prefix = std::nullopt);
+
+    /**
+     * @brief Parses struct variable declarations with their designated initializer fields.
+     *
+     * @details
+     * Loads the file (if not already loaded), tokenizes it, and extracts struct variable declarations including
+     * their designated initializer fields. Returns a vector of StructInitializerDeclaration objects containing
+     * the struct type, variable name, and all .field = value pairs.
+     *
+     * This is used by ProjectTilesetMetadataProvider to extract tileset metadata from headers.h files:
+     * @code
+     * const struct Tileset gTileset_General = {
+     *     .isCompressed = TRUE,
+     *     .isSecondary = FALSE,
+     *     .tiles = gTilesetTiles_General,
+     *     .palettes = gTilesetPalettes_General,
+     *     .metatiles = gMetatiles_General,
+     *     .metatileAttributes = gMetatileAttributes_General,
+     *     .callback = InitTilesetAnim_General,
+     * };
+     * @endcode
+     *
+     * Unlike parse_struct_variables(), this method parses the initializer body to extract field values.
+     *
+     * On error (file not found, lexer error, parser error), returns a ChainableResult containing a FormattableError
+     * with multi-line source context highlighting.
+     *
+     * @param name_prefix Optional prefix to filter variable names. If provided, only struct variables whose names start
+     *        with this prefix are returned. For example, "gTileset_" would match only tileset declarations.
+     * @return A vector of StructInitializerDeclaration on success, or an error chain on failure
+     */
+    [[nodiscard]] ChainableResult<std::vector<StructInitializerDeclaration>>
+    parse_struct_initializers(const std::optional<std::string> &name_prefix = std::nullopt);
+
+    /**
+     * @brief Parses INCBIN array declarations from the file.
+     *
+     * @details
+     * Loads the file (if not already loaded), tokenizes it, and extracts array declarations that use INCBIN macros.
+     * Returns a vector of IncbinDeclaration objects containing the variable name, macro name, and path(s).
+     *
+     * Supports both single-path arrays and multi-path palette-style arrays:
+     * @code
+     * // Single path:
+     * const u32 gTilesetTiles_General[] = INCBIN_U32("data/tilesets/primary/general/tiles.4bpp");
+     *
+     * // Multiple paths (palettes):
+     * const u16 gTilesetPalettes_General[][16] = {
+     *     INCBIN_U16("data/tilesets/primary/general/palettes/00.gbapal"),
+     *     INCBIN_U16("data/tilesets/primary/general/palettes/01.gbapal"),
+     *     ...
+     * };
+     * @endcode
+     *
+     * On error (file not found, lexer error, parser error), returns a ChainableResult containing a FormattableError
+     * with multi-line source context highlighting.
+     *
+     * @param name_prefix Optional prefix to filter variable names. If provided, only INCBIN arrays whose names start
+     *        with this prefix are returned. For example, "gTilesetTiles_" would match only tiles declarations.
+     * @return A vector of IncbinDeclaration on success, or an error chain on failure
+     */
+    [[nodiscard]] ChainableResult<std::vector<IncbinDeclaration>>
+    parse_incbin_arrays(const std::optional<std::string> &name_prefix = std::nullopt);
 
     /**
      * @brief Finds a specific #define statement by name.

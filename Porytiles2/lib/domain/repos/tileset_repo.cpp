@@ -30,21 +30,24 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     /*
      * Porymap artifacts
      */
-    auto metatiles_key = key_provider_->key_for_metatiles_bin(tileset.name());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        metatiles_key, key_provider_->key_for_metatiles_bin(tileset.name()), "tileset save failed", void);
     if (auto result = writer_->write_metatiles_bin(metatiles_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
         auto failed = FormattableError{"{}: save failed", FormatParam{metatiles_key.key(), Style::bold}};
         return ChainableResult<void>{failed, result};
     }
 
-    auto attr_key = key_provider_->key_for_metatile_attributes_bin(tileset.name());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        attr_key, key_provider_->key_for_metatile_attributes_bin(tileset.name()), "tileset save failed", void);
     if (auto result = writer_->write_metatile_attributes_bin(attr_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
         auto failed = FormattableError{"{}: save failed", FormatParam{attr_key.key(), Style::bold}};
         return ChainableResult<void>{failed, result};
     }
 
-    auto tiles_png_key = key_provider_->key_for_tiles_png(tileset.name());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tiles_png_key, key_provider_->key_for_tiles_png(tileset.name()), "tileset save failed", void);
     if (auto result = writer_->write_tiles_png(tiles_png_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
         auto failed = FormattableError{"{}: save failed", FormatParam{tiles_png_key.key(), Style::bold}};
@@ -52,7 +55,8 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     }
 
     for (std::size_t i = 0; i < pal::num_pals; i++) {
-        const auto pal_key = key_provider_->key_for_porymap_pal_n(tileset.name(), i);
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            pal_key, key_provider_->key_for_porymap_pal_n(tileset.name(), i), "tileset save failed", void);
         if (auto result = writer_->write_porymap_pal_n(pal_key, tileset, i); !result.has_value()) {
             std::ignore = writer_->rollback();
             auto failed = FormattableError{"{}: save failed", FormatParam{pal_key.key(), Style::bold}};
@@ -60,10 +64,14 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
         }
     }
 
-    for (const auto &anim : tileset.porymap_component().anims() | std::views::values) {
-        for (std::size_t i = 0; i < anim.frame_count(); i++) {
-            const auto frame_key = key_provider_->key_for_porymap_anim_frame(tileset.name(), anim.name(), i);
-            if (auto result = writer_->write_porymap_anim_frame(frame_key, tileset, anim.name(), i);
+    for (const auto &porymap_anim : tileset.porymap_component().anims() | std::views::values) {
+        for (std::size_t i = 0; i < porymap_anim.frame_count(); i++) {
+            PT_TRY_ASSIGN_CHAIN_ERR(
+                frame_key,
+                key_provider_->key_for_porymap_anim_frame(tileset.name(), porymap_anim.name(), i),
+                "tileset save failed",
+                void);
+            if (auto result = writer_->write_porymap_anim_frame(frame_key, tileset, porymap_anim.name(), i);
                 !result.has_value()) {
                 std::ignore = writer_->rollback();
                 auto failed = FormattableError{"{}: save failed", FormatParam{frame_key.key(), Style::bold}};
@@ -72,7 +80,11 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
         }
     }
 
-    auto generated_anim_code_key = key_provider_->key_for_generated_anim_code(tileset.name());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        generated_anim_code_key,
+        key_provider_->key_for_generated_anim_code(tileset.name()),
+        "tileset save failed",
+        void);
     if (auto result = writer_->write_generated_anim_code(generated_anim_code_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
         auto failed = FormattableError{"{}: save failed", FormatParam{generated_anim_code_key.key(), Style::bold}};
@@ -82,28 +94,31 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     /*
      * Porytiles artifacts
      */
-    auto bottom_png_key = key_provider_->key_for_bottom_png(tileset.name());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        bottom_png_key, key_provider_->key_for_bottom_png(tileset.name()), "tileset save failed", void);
     if (auto result = writer_->write_bottom_png(bottom_png_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
         auto failed = FormattableError{"{}: save failed", FormatParam{bottom_png_key.key(), Style::bold}};
         return ChainableResult<void>{failed, result};
     }
 
-    auto middle_png_key = key_provider_->key_for_middle_png(tileset.name());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        middle_png_key, key_provider_->key_for_middle_png(tileset.name()), "tileset save failed", void);
     if (auto result = writer_->write_middle_png(middle_png_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
         auto failed = FormattableError{"{}: save failed", FormatParam{middle_png_key.key(), Style::bold}};
         return ChainableResult<void>{failed, result};
     }
 
-    auto top_png_key = key_provider_->key_for_top_png(tileset.name());
+    PT_TRY_ASSIGN_CHAIN_ERR(top_png_key, key_provider_->key_for_top_png(tileset.name()), "tileset save failed", void);
     if (auto result = writer_->write_top_png(top_png_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
         auto failed = FormattableError{"{}: save failed", FormatParam{top_png_key.key(), Style::bold}};
         return ChainableResult<void>{failed, result};
     }
 
-    auto attr_csv_key = key_provider_->key_for_attributes_csv(tileset.name());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        attr_csv_key, key_provider_->key_for_attributes_csv(tileset.name()), "tileset save failed", void);
     if (auto result = writer_->write_attributes_csv(attr_csv_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
         auto failed = FormattableError{"{}: save failed", FormatParam{attr_csv_key.key(), Style::bold}};
@@ -111,26 +126,35 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     }
 
     for (std::size_t i = 0; i < pal::num_pals; i++) {
-        const auto pal_key = key_provider_->key_for_porytiles_pal_n(tileset.name(), i);
-        if (auto result = writer_->write_porytiles_pal_n(pal_key, tileset, i); !result.has_value()) {
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            porytiles_pal_key, key_provider_->key_for_porytiles_pal_n(tileset.name(), i), "tileset save failed", void);
+        if (auto result = writer_->write_porytiles_pal_n(porytiles_pal_key, tileset, i); !result.has_value()) {
             std::ignore = writer_->rollback();
-            auto failed = FormattableError{"{}: save failed", FormatParam{pal_key.key(), Style::bold}};
+            auto failed = FormattableError{"{}: save failed", FormatParam{porytiles_pal_key.key(), Style::bold}};
             return ChainableResult<void>{failed, result};
         }
     }
 
-    for (const auto &anim : tileset.porytiles_component().anims() | std::views::values) {
-        const auto key_frame_key = key_provider_->key_for_porytiles_anim_key_frame(tileset.name(), anim.name());
-        if (auto result = writer_->write_porytiles_anim_key_frame(key_frame_key, tileset, anim.name());
+    for (const auto &porytiles_anim : tileset.porytiles_component().anims() | std::views::values) {
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            key_frame_key,
+            key_provider_->key_for_porytiles_anim_key_frame(tileset.name(), porytiles_anim.name()),
+            "tileset save failed",
+            void);
+        if (auto result = writer_->write_porytiles_anim_key_frame(key_frame_key, tileset, porytiles_anim.name());
             !result.has_value()) {
             std::ignore = writer_->rollback();
             auto failed = FormattableError{"{}: save failed", FormatParam{key_frame_key.key(), Style::bold}};
             return ChainableResult<void>{failed, result};
         }
 
-        for (std::size_t i = 0; i < anim.frame_count(); i++) {
-            const auto frame_key = key_provider_->key_for_porytiles_anim_frame(tileset.name(), anim.name(), i);
-            if (auto result = writer_->write_porytiles_anim_frame(frame_key, tileset, anim.name(), i);
+        for (std::size_t i = 0; i < porytiles_anim.frame_count(); i++) {
+            PT_TRY_ASSIGN_CHAIN_ERR(
+                frame_key,
+                key_provider_->key_for_porytiles_anim_frame(tileset.name(), porytiles_anim.name(), i),
+                "tileset save failed",
+                void);
+            if (auto result = writer_->write_porytiles_anim_frame(frame_key, tileset, porytiles_anim.name(), i);
                 !result.has_value()) {
                 std::ignore = writer_->rollback();
                 auto failed = FormattableError{"{}: save failed", FormatParam{frame_key.key(), Style::bold}};
@@ -139,7 +163,8 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
         }
     }
 
-    auto anim_yaml_key = key_provider_->key_for_anim_yaml(tileset.name());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        anim_yaml_key, key_provider_->key_for_anim_yaml(tileset.name()), "tileset save failed", void);
     if (auto result = writer_->write_anim_yaml(anim_yaml_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
         auto failed = FormattableError{"{}: save failed", FormatParam{anim_yaml_key.key(), Style::bold}};
@@ -171,7 +196,7 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     return {};
 }
 
-ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) const
+ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const TilesetName &name) const
 {
     constexpr auto missing_required_artifact_tag = "missing-required-artifact";
     constexpr auto missing_required_artifact_msg = "missing required artifact: '{}'";
@@ -183,7 +208,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
 
     // Confirm tileset exists.
     if (!exists(name)) {
-        return FormattableError{"tileset '{}' does not exist", FormatParam{name, Style::bold}};
+        return FormattableError{"tileset '{}' does not exist", FormatParam{name.shorthand(), Style::bold}};
     }
 
     auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
@@ -193,7 +218,11 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     /*
      * Porymap artifacts
      */
-    const auto metatiles_key = key_provider_->key_for_metatiles_bin(tileset->name());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        metatiles_key,
+        key_provider_->key_for_metatiles_bin(tileset->name()),
+        "tileset load failed",
+        std::unique_ptr<Tileset>);
     if (!key_provider_->artifact_exists(metatiles_key)) {
         return FormattableError{missing_required_artifact_msg, FormatParam{metatiles_key.key(), Style::bold}};
     }
@@ -204,7 +233,11 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
             metatiles_result};
     }
 
-    const auto attr_key = key_provider_->key_for_metatile_attributes_bin(tileset->name());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        attr_key,
+        key_provider_->key_for_metatile_attributes_bin(tileset->name()),
+        "tileset load failed",
+        std::unique_ptr<Tileset>);
     if (!key_provider_->artifact_exists(attr_key)) {
         return FormattableError{missing_required_artifact_msg, FormatParam{attr_key.key(), Style::bold}};
     }
@@ -214,7 +247,11 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
             FormattableError{"failed to read artifact '{}'", FormatParam{attr_key.key(), Style::bold}}, attr_result};
     }
 
-    const auto tiles_png_key = key_provider_->key_for_tiles_png(tileset->name());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tiles_png_key,
+        key_provider_->key_for_tiles_png(tileset->name()),
+        "tileset load failed",
+        std::unique_ptr<Tileset>);
     if (!key_provider_->artifact_exists(tiles_png_key)) {
         return FormattableError{missing_required_artifact_msg, FormatParam{tiles_png_key.key(), Style::bold}};
     }
@@ -226,7 +263,11 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     }
 
     for (std::size_t i = 0; i < pal::num_pals; i++) {
-        const auto pal_key = key_provider_->key_for_porymap_pal_n(tileset->name(), i);
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            pal_key,
+            key_provider_->key_for_porymap_pal_n(tileset->name(), i),
+            "tileset load failed",
+            std::unique_ptr<Tileset>);
         if (!key_provider_->artifact_exists(pal_key)) {
             diag_->error(
                 missing_required_artifact_tag,
@@ -241,10 +282,18 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         }
     }
 
-    const std::set<std::string> porymap_anims = key_provider_->discover_porymap_anims(tileset->name());
-    for (const auto &anim : porymap_anims) {
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        porymap_anims,
+        key_provider_->discover_porymap_anims(tileset->name()),
+        "tileset load failed",
+        std::unique_ptr<Tileset>);
+    for (const auto &porymap_anim : porymap_anims) {
         // Read frame 0.png
-        auto frame_0_key = key_provider_->key_for_porymap_anim_frame(tileset->name(), anim, 0);
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            frame_0_key,
+            key_provider_->key_for_porymap_anim_frame(tileset->name(), porymap_anim, 0),
+            "tileset load failed",
+            std::unique_ptr<Tileset>);
         if (!key_provider_->artifact_exists(frame_0_key)) {
             diag_->error(
                 missing_required_artifact_tag,
@@ -252,7 +301,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
             fail_at_exit = true;
             continue;
         }
-        const auto frame_0_result = reader_->read_porymap_anim_frame(*tileset, frame_0_key, anim, 0);
+        const auto frame_0_result = reader_->read_porymap_anim_frame(*tileset, frame_0_key, porymap_anim, 0);
         if (!frame_0_result.has_value()) {
             return ChainableResult<std::unique_ptr<Tileset>>{
                 FormattableError{"failed to read artifact '{}'", FormatParam{frame_0_key.key(), Style::bold}},
@@ -260,7 +309,11 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         }
 
         // Read the rest of the (optional) frames
-        std::set<int> frames = key_provider_->discover_porymap_anim_frames(tileset->name(), anim);
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            frames,
+            key_provider_->discover_porymap_anim_frames(tileset->name(), porymap_anim),
+            "tileset load failed",
+            std::unique_ptr<Tileset>);
         int expected_frame = 1;
         for (const auto frame : frames) {
             if (frame != expected_frame) {
@@ -273,8 +326,12 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
                 // TODO: add a note here to explain this more
                 fail_at_exit = true;
             }
-            auto frame_n_key = key_provider_->key_for_porymap_anim_frame(tileset->name(), anim, frame);
-            const auto frame_n_result = reader_->read_porymap_anim_frame(*tileset, frame_n_key, anim, frame);
+            PT_TRY_ASSIGN_CHAIN_ERR(
+                frame_n_key,
+                key_provider_->key_for_porymap_anim_frame(tileset->name(), porymap_anim, frame),
+                "tileset load failed",
+                std::unique_ptr<Tileset>);
+            const auto frame_n_result = reader_->read_porymap_anim_frame(*tileset, frame_n_key, porymap_anim, frame);
             if (!frame_n_result.has_value()) {
                 return ChainableResult<std::unique_ptr<Tileset>>{
                     FormattableError{"failed to read artifact '{}'", FormatParam{frame_n_key.key(), Style::bold}},
@@ -284,7 +341,11 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         }
     }
 
-    const auto generated_anim_code_key = key_provider_->key_for_generated_anim_code(tileset->name());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        generated_anim_code_key,
+        key_provider_->key_for_generated_anim_code(tileset->name()),
+        "tileset load failed",
+        std::unique_ptr<Tileset>);
     if (key_provider_->artifact_exists(generated_anim_code_key)) {
         const auto result = reader_->read_generated_anim_code(*tileset, generated_anim_code_key, porymap_anims);
         if (!result.has_value()) {
@@ -309,7 +370,11 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     /*
      * Porytiles artifacts
      */
-    const auto bottom_png_key = key_provider_->key_for_bottom_png(tileset->name());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        bottom_png_key,
+        key_provider_->key_for_bottom_png(tileset->name()),
+        "tileset load failed",
+        std::unique_ptr<Tileset>);
     if (key_provider_->artifact_exists(bottom_png_key)) {
         const auto result = reader_->read_bottom_png(*tileset, bottom_png_key);
         if (!result.has_value()) {
@@ -319,7 +384,11 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         }
     }
 
-    const auto middle_png_key = key_provider_->key_for_middle_png(tileset->name());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        middle_png_key,
+        key_provider_->key_for_middle_png(tileset->name()),
+        "tileset load failed",
+        std::unique_ptr<Tileset>);
     if (key_provider_->artifact_exists(middle_png_key)) {
         const auto result = reader_->read_middle_png(*tileset, middle_png_key);
         if (!result.has_value()) {
@@ -329,7 +398,8 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         }
     }
 
-    const auto top_png_key = key_provider_->key_for_top_png(tileset->name());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        top_png_key, key_provider_->key_for_top_png(tileset->name()), "tileset load failed", std::unique_ptr<Tileset>);
     if (key_provider_->artifact_exists(top_png_key)) {
         const auto result = reader_->read_top_png(*tileset, top_png_key);
         if (!result.has_value()) {
@@ -338,7 +408,11 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         }
     }
 
-    const auto attr_csv_key = key_provider_->key_for_attributes_csv(tileset->name());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        attr_csv_key,
+        key_provider_->key_for_attributes_csv(tileset->name()),
+        "tileset load failed",
+        std::unique_ptr<Tileset>);
     if (key_provider_->artifact_exists(attr_csv_key)) {
         const auto result = reader_->read_attributes_csv(*tileset, attr_csv_key);
         if (!result.has_value()) {
@@ -354,7 +428,11 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     }
 
     for (std::size_t i = 0; i < pal::num_pals; i++) {
-        const auto override_key = key_provider_->key_for_porytiles_pal_n(tileset->name(), i);
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            override_key,
+            key_provider_->key_for_porytiles_pal_n(tileset->name(), i),
+            "tileset load failed",
+            std::unique_ptr<Tileset>);
         if (key_provider_->artifact_exists(override_key)) {
             const auto result = reader_->read_porytiles_pal_n(*tileset, override_key, i);
             if (!result.has_value()) {
@@ -365,10 +443,18 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         }
     }
 
-    const std::set<std::string> porytiles_anims = key_provider_->discover_porytiles_anims(tileset->name());
-    for (const auto &anim : porytiles_anims) {
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        porytiles_anims,
+        key_provider_->discover_porytiles_anims(tileset->name()),
+        "tileset load failed",
+        std::unique_ptr<Tileset>);
+    for (const auto &porytiles_anim : porytiles_anims) {
         // Read key.png
-        auto key_frame_key = key_provider_->key_for_porytiles_anim_key_frame(tileset->name(), anim);
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            key_frame_key,
+            key_provider_->key_for_porytiles_anim_key_frame(tileset->name(), porytiles_anim),
+            "tileset load failed",
+            std::unique_ptr<Tileset>);
         if (!key_provider_->artifact_exists(key_frame_key)) {
             diag_->error(
                 missing_required_artifact_tag,
@@ -376,7 +462,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
             fail_at_exit = true;
             continue;
         }
-        const auto key_frame_result = reader_->read_porytiles_anim_key_frame(*tileset, key_frame_key, anim);
+        const auto key_frame_result = reader_->read_porytiles_anim_key_frame(*tileset, key_frame_key, porytiles_anim);
         if (!key_frame_result.has_value()) {
             return ChainableResult<std::unique_ptr<Tileset>>{
                 FormattableError{"failed to read artifact '{}'", FormatParam{key_frame_key.key(), Style::bold}},
@@ -384,7 +470,11 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         }
 
         // Read frame 0.png
-        auto frame_0_key = key_provider_->key_for_porytiles_anim_frame(tileset->name(), anim, 0);
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            frame_0_key,
+            key_provider_->key_for_porytiles_anim_frame(tileset->name(), porytiles_anim, 0),
+            "tileset load failed",
+            std::unique_ptr<Tileset>);
         if (!key_provider_->artifact_exists(frame_0_key)) {
             diag_->error(
                 missing_required_artifact_tag,
@@ -392,7 +482,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
             fail_at_exit = true;
             continue;
         }
-        const auto frame_0_result = reader_->read_porytiles_anim_frame(*tileset, frame_0_key, anim, 0);
+        const auto frame_0_result = reader_->read_porytiles_anim_frame(*tileset, frame_0_key, porytiles_anim, 0);
         if (!frame_0_result.has_value()) {
             return ChainableResult<std::unique_ptr<Tileset>>{
                 FormattableError{"failed to read artifact '{}'", FormatParam{frame_0_key.key(), Style::bold}},
@@ -400,7 +490,11 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         }
 
         // Read the rest of the (optional) frames
-        std::set<int> frames = key_provider_->discover_porytiles_anim_frames(tileset->name(), anim);
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            frames,
+            key_provider_->discover_porytiles_anim_frames(tileset->name(), porytiles_anim),
+            "tileset load failed",
+            std::unique_ptr<Tileset>);
         int expected_frame = 1;
         for (const auto frame : frames) {
             if (frame != expected_frame) {
@@ -413,8 +507,13 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
                 // TODO: add a note here to explain this more
                 fail_at_exit = true;
             }
-            auto frame_n_key = key_provider_->key_for_porytiles_anim_frame(tileset->name(), anim, frame);
-            const auto frame_n_result = reader_->read_porytiles_anim_frame(*tileset, frame_n_key, anim, frame);
+            PT_TRY_ASSIGN_CHAIN_ERR(
+                frame_n_key,
+                key_provider_->key_for_porytiles_anim_frame(tileset->name(), porytiles_anim, frame),
+                "tileset load failed",
+                std::unique_ptr<Tileset>);
+            const auto frame_n_result =
+                reader_->read_porytiles_anim_frame(*tileset, frame_n_key, porytiles_anim, frame);
             if (!frame_n_result.has_value()) {
                 return ChainableResult<std::unique_ptr<Tileset>>{
                     FormattableError{"failed to read artifact '{}'", FormatParam{frame_n_key.key(), Style::bold}},
@@ -424,7 +523,11 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         }
     }
 
-    const auto anim_yaml_key = key_provider_->key_for_anim_yaml(tileset->name());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        anim_yaml_key,
+        key_provider_->key_for_anim_yaml(tileset->name()),
+        "tileset load failed",
+        std::unique_ptr<Tileset>);
     if (key_provider_->artifact_exists(anim_yaml_key)) {
         const auto result = reader_->read_anim_yaml(*tileset, anim_yaml_key);
         if (!result.has_value()) {
@@ -441,7 +544,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     return tileset;
 }
 
-bool TilesetRepo::exists(const std::string &name) const
+bool TilesetRepo::exists(const TilesetName &name) const
 {
     return key_provider_->tileset_exists(name);
 }

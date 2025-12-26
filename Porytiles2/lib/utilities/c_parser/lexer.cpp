@@ -159,6 +159,8 @@ std::string token_type_name(TokenType type)
         return ",";
     case TokenType::semicolon:
         return ";";
+    case TokenType::period:
+        return ".";
     case TokenType::newline:
         return "newline";
     case TokenType::unknown:
@@ -556,6 +558,8 @@ Token Lexer::consume_operator()
         return Token{TokenType::comma, ",", start_pos};
     case ';':
         return Token{TokenType::semicolon, ";", start_pos};
+    case '.':
+        return Token{TokenType::period, ".", start_pos};
 
     case '<':
         if (peek() == '<') {

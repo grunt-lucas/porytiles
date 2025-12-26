@@ -1006,4 +1006,363 @@ ChainableResult<std::vector<StructVariableDeclaration>> Parser::parse_struct_var
     return structs;
 }
 
+ChainableResult<std::vector<StructInitializerDeclaration>> Parser::parse_struct_initializers()
+{
+    std::vector<StructInitializerDeclaration> structs;
+
+    // Reset position to beginning
+    current_ = 0;
+
+    while (!is_at_end()) {
+        // Skip newlines
+        while (check(TokenType::newline)) {
+            advance();
+        }
+
+        if (is_at_end()) {
+            break;
+        }
+
+        // Look for pattern: [const] struct TYPE IDENTIFIER = { .field = value, ... } [;]
+        std::size_t scan_start = current_;
+
+        // Skip 'const' if present
+        if (check(TokenType::identifier) && peek().text() == "const") {
+            advance();
+        }
+
+        // Look for 'struct' keyword (lexer treats it as an identifier)
+        if (!check(TokenType::identifier) || peek().text() != "struct") {
+            // Not a struct declaration, skip this token
+            if (current_ == scan_start) {
+                advance();
+            }
+            continue;
+        }
+        advance(); // consume 'struct'
+
+        // Get struct type name
+        if (!check(TokenType::identifier)) {
+            continue;
+        }
+        std::string struct_type = peek().text();
+        advance(); // consume type name
+
+        // Get variable name
+        if (!check(TokenType::identifier)) {
+            continue;
+        }
+        std::string variable_name = peek().text();
+        SourcePosition name_pos = peek().position();
+        advance(); // consume variable name
+
+        // Look for '='
+        if (!check(TokenType::equal)) {
+            continue;
+        }
+        advance(); // consume '='
+
+        // Skip any newlines before '{'
+        while (check(TokenType::newline)) {
+            advance();
+        }
+
+        // Look for '{'
+        if (!check(TokenType::left_brace)) {
+            continue;
+        }
+
+        // Parse the designated initializer fields
+        std::vector<DesignatedInitializerField> fields;
+        std::vector<Token> brace_contents = collect_brace_contents(tokens_, current_);
+
+        // Parse each .field = value pair from the brace contents
+        std::size_t brace_pos = 0;
+        while (brace_pos < brace_contents.size()) {
+            // Skip newlines and commas
+            while (brace_pos < brace_contents.size() && (brace_contents[brace_pos].is(TokenType::newline) ||
+                                                         brace_contents[brace_pos].is(TokenType::comma))) {
+                ++brace_pos;
+            }
+
+            if (brace_pos >= brace_contents.size()) {
+                break;
+            }
+
+            // Look for '.'
+            if (!brace_contents[brace_pos].is(TokenType::period)) {
+                // Skip until next comma or end
+                while (brace_pos < brace_contents.size() && !brace_contents[brace_pos].is(TokenType::comma)) {
+                    ++brace_pos;
+                }
+                continue;
+            }
+            ++brace_pos; // consume '.'
+
+            // Get field name
+            if (brace_pos >= brace_contents.size() || !brace_contents[brace_pos].is(TokenType::identifier)) {
+                continue;
+            }
+            std::string field_name = brace_contents[brace_pos].text();
+            SourcePosition field_pos = brace_contents[brace_pos].position();
+            ++brace_pos; // consume field name
+
+            // Look for '='
+            if (brace_pos >= brace_contents.size() || !brace_contents[brace_pos].is(TokenType::equal)) {
+                continue;
+            }
+            ++brace_pos; // consume '='
+
+            // Skip newlines after '='
+            while (brace_pos < brace_contents.size() && brace_contents[brace_pos].is(TokenType::newline)) {
+                ++brace_pos;
+            }
+
+            // Get the value (identifier, or skip complex expressions)
+            if (brace_pos >= brace_contents.size()) {
+                continue;
+            }
+
+            std::string value;
+            if (brace_contents[brace_pos].is(TokenType::identifier)) {
+                value = brace_contents[brace_pos].text();
+                ++brace_pos;
+            }
+            else if (brace_contents[brace_pos].is(TokenType::integer_literal)) {
+                value = brace_contents[brace_pos].text();
+                ++brace_pos;
+            }
+            else {
+                // Skip complex expressions (nested braces, etc.) until comma or end
+                while (brace_pos < brace_contents.size() && !brace_contents[brace_pos].is(TokenType::comma) &&
+                       !brace_contents[brace_pos].is(TokenType::newline)) {
+                    ++brace_pos;
+                }
+                continue;
+            }
+
+            fields.emplace_back(std::move(field_name), std::move(value), field_pos);
+        }
+
+        // Skip past the closing brace
+        current_ = skip_balanced_braces(tokens_, current_);
+
+        // Skip optional semicolon
+        if (check(TokenType::semicolon)) {
+            advance();
+        }
+
+        structs.emplace_back(std::move(struct_type), std::move(variable_name), std::move(fields), name_pos);
+    }
+
+    return structs;
+}
+
+ChainableResult<std::vector<IncbinDeclaration>> Parser::parse_incbin_arrays()
+{
+    std::vector<IncbinDeclaration> incbins;
+
+    // Reset position to beginning
+    current_ = 0;
+
+    while (!is_at_end()) {
+        // Skip newlines
+        while (check(TokenType::newline)) {
+            advance();
+        }
+
+        if (is_at_end()) {
+            break;
+        }
+
+        // Look for pattern: [const] TYPE IDENTIFIER [] = INCBIN_MACRO("path");
+        // or: [const] TYPE IDENTIFIER [][SIZE] = { INCBIN_MACRO("p1"), ... };
+        std::size_t scan_start = current_;
+
+        // Skip 'const' if present
+        if (check(TokenType::identifier) && peek().text() == "const") {
+            advance();
+        }
+
+        // Get type (e.g., u32, u16)
+        if (!check(TokenType::identifier)) {
+            if (current_ == scan_start) {
+                advance();
+            }
+            continue;
+        }
+        advance(); // consume type
+
+        // Skip ALIGNED(N) directive if present (e.g., "const u16 ALIGNED(4) gTilesetPalettes_General")
+        if (check(TokenType::identifier) && peek().text() == "ALIGNED") {
+            advance(); // consume ALIGNED
+            if (check(TokenType::left_paren)) {
+                advance(); // consume '('
+                // Skip until ')'
+                while (!is_at_end() && !check(TokenType::right_paren)) {
+                    advance();
+                }
+                if (check(TokenType::right_paren)) {
+                    advance(); // consume ')'
+                }
+            }
+        }
+
+        // Get variable name
+        if (!check(TokenType::identifier)) {
+            continue;
+        }
+        std::string variable_name = peek().text();
+        SourcePosition name_pos = peek().position();
+        advance(); // consume variable name
+
+        // Look for '['
+        if (!check(TokenType::left_bracket)) {
+            continue;
+        }
+        advance(); // consume '['
+
+        // Look for ']'
+        if (!check(TokenType::right_bracket)) {
+            // Skip to end of line
+            while (!is_at_end() && !check(TokenType::newline) && !check(TokenType::semicolon)) {
+                advance();
+            }
+            continue;
+        }
+        advance(); // consume ']'
+
+        // Check for optional second dimension [][SIZE]
+        bool is_multi_dimensional = false;
+        if (check(TokenType::left_bracket)) {
+            is_multi_dimensional = true;
+            advance(); // consume '['
+            // Skip until ']'
+            while (!is_at_end() && !check(TokenType::right_bracket)) {
+                advance();
+            }
+            if (check(TokenType::right_bracket)) {
+                advance(); // consume ']'
+            }
+        }
+
+        // Look for '='
+        if (!check(TokenType::equal)) {
+            continue;
+        }
+        advance(); // consume '='
+
+        // Skip any newlines after '='
+        while (check(TokenType::newline)) {
+            advance();
+        }
+
+        if (is_multi_dimensional) {
+            // Multi-path: expect { INCBIN_MACRO("p1"), INCBIN_MACRO("p2"), ... }
+            if (!check(TokenType::left_brace)) {
+                continue;
+            }
+
+            std::vector<Token> brace_contents = collect_brace_contents(tokens_, current_);
+            current_ = skip_balanced_braces(tokens_, current_);
+
+            std::vector<std::string> paths;
+            std::string macro_name;
+            std::size_t brace_pos = 0;
+
+            while (brace_pos < brace_contents.size()) {
+                // Skip newlines and commas
+                while (brace_pos < brace_contents.size() && (brace_contents[brace_pos].is(TokenType::newline) ||
+                                                             brace_contents[brace_pos].is(TokenType::comma))) {
+                    ++brace_pos;
+                }
+
+                if (brace_pos >= brace_contents.size()) {
+                    break;
+                }
+
+                // Look for INCBIN_* identifier
+                if (!brace_contents[brace_pos].is(TokenType::identifier)) {
+                    ++brace_pos;
+                    continue;
+                }
+
+                std::string token_text = brace_contents[brace_pos].text();
+                if (token_text.find("INCBIN_") != 0) {
+                    ++brace_pos;
+                    continue;
+                }
+
+                if (macro_name.empty()) {
+                    macro_name = token_text;
+                }
+                ++brace_pos; // consume INCBIN_*
+
+                // Look for '('
+                if (brace_pos >= brace_contents.size() || !brace_contents[brace_pos].is(TokenType::left_paren)) {
+                    continue;
+                }
+                ++brace_pos; // consume '('
+
+                // Look for string literal
+                if (brace_pos >= brace_contents.size() || !brace_contents[brace_pos].is(TokenType::string_literal)) {
+                    continue;
+                }
+                paths.push_back(brace_contents[brace_pos].text());
+                ++brace_pos; // consume string literal
+
+                // Skip until ')' (may have other stuff)
+                while (brace_pos < brace_contents.size() && !brace_contents[brace_pos].is(TokenType::right_paren)) {
+                    ++brace_pos;
+                }
+                if (brace_pos < brace_contents.size()) {
+                    ++brace_pos; // consume ')'
+                }
+            }
+
+            if (!paths.empty()) {
+                incbins.emplace_back(std::move(variable_name), std::move(macro_name), std::move(paths), name_pos);
+            }
+        }
+        else {
+            // Single path: expect INCBIN_MACRO("path")
+            if (!check(TokenType::identifier)) {
+                continue;
+            }
+
+            std::string token_text = peek().text();
+            if (token_text.find("INCBIN_") != 0) {
+                continue;
+            }
+            std::string macro_name = token_text;
+            advance(); // consume INCBIN_*
+
+            // Look for '('
+            if (!check(TokenType::left_paren)) {
+                continue;
+            }
+            advance(); // consume '('
+
+            // Look for string literal
+            if (!check(TokenType::string_literal)) {
+                continue;
+            }
+            std::string path = peek().text();
+            advance(); // consume string literal
+
+            // Skip until ')' and ';'
+            while (!is_at_end() && !check(TokenType::semicolon) && !check(TokenType::newline)) {
+                advance();
+            }
+            if (check(TokenType::semicolon)) {
+                advance();
+            }
+
+            incbins.emplace_back(std::move(variable_name), std::move(macro_name), std::move(path), name_pos);
+        }
+    }
+
+    return incbins;
+}
+
 } // namespace porytiles2

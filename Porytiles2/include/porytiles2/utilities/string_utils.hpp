@@ -38,7 +38,7 @@ namespace porytiles2 {
  * @pre pattern must be a valid regular expression
  * @return True if the entire string matches the pattern, false otherwise
  */
-inline bool check_full_string_match(const std::string &str, const std::string &pattern)
+[[nodiscard]] inline bool check_full_string_match(const std::string &str, const std::string &pattern)
 {
     try {
         const std::regex re{pattern};
@@ -66,7 +66,7 @@ inline bool check_full_string_match(const std::string &str, const std::string &p
  * - `trim_prefix("hello", "hello")` → `""`
  * - `trim_prefix("hello", "hello_world")` → `"hello"`
  */
-inline std::string trim_prefix(const std::string &str, const std::string &prefix)
+[[nodiscard]] inline std::string trim_prefix(const std::string &str, const std::string &prefix)
 {
     if (str.starts_with(prefix)) {
         return str.substr(prefix.size());
@@ -107,7 +107,7 @@ inline void trim(std::string &string)
  * @param delimiter The delimiter string to split on
  * @return A vector containing the split tokens
  */
-inline std::vector<std::string> split(std::string input, const std::string &delimiter)
+[[nodiscard]] inline std::vector<std::string> split(std::string input, const std::string &delimiter)
 {
     std::vector<std::string> result;
     size_t pos;
@@ -130,7 +130,7 @@ inline std::vector<std::string> split(std::string input, const std::string &deli
  * @param line The string to trim (modified in-place)
  * @return Reference to the modified string
  */
-inline std::string &trim_line_ending(std::string &line)
+[[nodiscard]] inline std::string &trim_line_ending(std::string &line)
 {
     while (!line.empty() && (line.back() == '\r' || line.back() == '\n')) {
         line.pop_back();
@@ -148,7 +148,7 @@ inline std::string &trim_line_ending(std::string &line)
  * @param line The string to trim
  * @return A new string with line endings removed
  */
-inline std::string trim_line_ending(const std::string &line)
+[[nodiscard]] inline std::string trim_line_ending(const std::string &line)
 {
     std::string result = line;
     while (!result.empty() && (result.back() == '\r' || result.back() == '\n')) {
@@ -169,7 +169,7 @@ inline std::string trim_line_ending(const std::string &line)
  * @return A string containing the hexadecimal representation with "0x" prefix
  */
 template <typename T>
-std::string int_to_hex_str(T t)
+[[nodiscard]] std::string int_to_hex_str(T t)
 {
     return std::format("0x{:x}", t);
 }
@@ -186,24 +186,9 @@ std::string int_to_hex_str(T t)
  * @return A string containing the padded representation
  */
 template <typename T>
-std::string pad_two_digits(T t)
+[[nodiscard]] std::string pad_two_digits(T t)
 {
     return std::format("{:02}", t);
-}
-
-/**
- * @brief Constructs a palette filename from a palette index.
- *
- * @details
- * This function formats a palette index as a two-digit padded number with the ".pal" extension. For example,
- * `pal_filename(3)` returns `"03.pal"`, `pal_filename(12)` returns `"12.pal"`.
- *
- * @param pal_index The palette index to format
- * @return A string in the format "XX.pal" where XX is the zero-padded index
- */
-inline std::string pal_filename(std::size_t pal_index)
-{
-    return pad_two_digits(pal_index) + ".pal";
 }
 
 /**
@@ -218,7 +203,7 @@ inline std::string pal_filename(std::size_t pal_index)
  * @return A string representation of the vector in the format "{elem1, elem2, ...}"
  */
 template <typename T>
-std::string to_string(const std::vector<T> &vec)
+[[nodiscard]] std::string to_string(const std::vector<T> &vec)
 {
     std::string result = "{";
     for (std::size_t i = 0; i < vec.size(); ++i) {
@@ -247,7 +232,7 @@ std::string to_string(const std::vector<T> &vec)
  * - `"foo-bar"` → `"FooBar"`
  * - `"already PascalCase"` → `"AlreadyPascalCase"`
  */
-inline std::string to_pascal_case(const std::string &s)
+[[nodiscard]] inline std::string to_pascal_case(const std::string &s)
 {
     if (s.empty()) {
         return s;
@@ -293,7 +278,7 @@ inline std::string to_pascal_case(const std::string &s)
  * - `"XMLParser"` → `"xml_parser"`
  * - `"already_snake"` → `"already_snake"`
  */
-inline std::string to_snake_case(const std::string &s)
+[[nodiscard]] inline std::string to_snake_case(const std::string &s)
 {
     if (s.empty()) {
         return s;
@@ -358,7 +343,7 @@ inline std::string to_snake_case(const std::string &s)
  * - `"UPPERCASE"` → `"uppercase"`
  * - `"MixedCase123"` → `"mixedcase123"`
  */
-inline std::string to_lower_str(const std::string &input)
+[[nodiscard]] inline std::string to_lower_str(const std::string &input)
 {
     std::string output;
     std::ranges::transform(input, std::back_inserter(output), [](const unsigned char c) {

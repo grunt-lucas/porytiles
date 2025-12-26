@@ -6,6 +6,7 @@
 
 #include "porytiles2/app/config/app_config.hpp"
 #include "porytiles2/domain/config/domain_config.hpp"
+#include "porytiles2/domain/models/tileset_name.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -49,10 +50,10 @@ class CompilePrimaryTileset {
      * case's configured repos to load and save the tileset assets. Uses the given TilesetCompilationService to perform
      * the compilation operation.
      *
-     * @param tileset_name The name of the primary Tileset to compile.
+     * @param name The name of the primary Tileset to compile.
      * @return An empty Result on success, otherwise an error description.
      */
-    [[nodiscard]] ChainableResult<void> compile(const std::string &tileset_name) const;
+    [[nodiscard]] ChainableResult<void> compile(const TilesetName &name) const;
 
   private:
     const TilesetRepo *tileset_repo_;

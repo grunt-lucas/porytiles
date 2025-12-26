@@ -6,6 +6,7 @@
 #include <set>
 #include <string>
 
+#include "porytiles2/domain/models/animation.hpp"
 #include "porytiles2/domain/models/animation_params.hpp"
 #include "porytiles2/utilities/c_parser/c_parser_facade.hpp"
 #include "porytiles2/utilities/c_parser/token.hpp"
@@ -16,8 +17,6 @@
 namespace {
 
 using namespace porytiles2;
-
-constexpr std::string porytiles_managed_prefix = "PorytilesManaged_";
 
 constexpr auto anim_parsing_error = "animation-parsing-error";
 
@@ -35,7 +34,7 @@ constexpr auto anim_parsing_error = "animation-parsing-error";
 [[nodiscard]] std::string extract_anim_name(const std::string &identifier, const std::string &pascal_case_tileset_name)
 {
     // Try Porytiles-managed format: gTilesetAnims_PorytilesManaged_TilesetName_AnimName
-    std::string porytiles_prefix = "gTilesetAnims_" + porytiles_managed_prefix + pascal_case_tileset_name + "_";
+    std::string porytiles_prefix = "gTilesetAnims_" + anim::porytiles_managed_prefix + pascal_case_tileset_name + "_";
     if (identifier.starts_with(porytiles_prefix)) {
         std::string remainder = identifier.substr(porytiles_prefix.size());
         // Remove _Frame suffix if present
@@ -81,7 +80,7 @@ constexpr auto anim_parsing_error = "animation-parsing-error";
 extract_anim_name_from_function(const std::string &func_name, const std::string &pascal_case_tileset_name)
 {
     // Try Porytiles-managed format: QueueAnimTiles_PorytilesManaged_TilesetName_AnimName
-    std::string porytiles_prefix = "QueueAnimTiles_" + porytiles_managed_prefix + pascal_case_tileset_name + "_";
+    std::string porytiles_prefix = "QueueAnimTiles_" + anim::porytiles_managed_prefix + pascal_case_tileset_name + "_";
     if (func_name.starts_with(porytiles_prefix)) {
         return func_name.substr(porytiles_prefix.size());
     }
@@ -256,8 +255,9 @@ ChainableResult<std::map<std::string, AnimationParams>> parse_animation_params_f
      */
 
     // Parse pointer arrays to get animation frame sequences
-    const auto frame_array_prefix =
-        "gTilesetAnims_" + (porytiles_managed ? porytiles_managed_prefix : std::string{}) + pascal_case_tileset_name;
+    const auto frame_array_prefix = "gTilesetAnims_" +
+                                    (porytiles_managed ? anim::porytiles_managed_prefix : std::string{}) +
+                                    pascal_case_tileset_name;
     auto anim_frame_arrays_result = c_parser.parse_pointer_arrays(frame_array_prefix);
     if (!anim_frame_arrays_result.has_value()) {
         return ChainableResult<std::map<std::string, AnimationParams>>{
@@ -268,8 +268,8 @@ ChainableResult<std::map<std::string, AnimationParams>> parse_animation_params_f
     const auto &anim_frame_arrays = anim_frame_arrays_result.value();
 
     // Parse functions to get driver function
-    const auto driver_prefix =
-        "TilesetAnim_" + (porytiles_managed ? porytiles_managed_prefix : std::string{}) + pascal_case_tileset_name;
+    const auto driver_prefix = "TilesetAnim_" + (porytiles_managed ? anim::porytiles_managed_prefix : std::string{}) +
+                               pascal_case_tileset_name;
     auto driver_funcs_result = c_parser.parse_functions(driver_prefix);
     if (!driver_funcs_result.has_value()) {
         return ChainableResult<std::map<std::string, AnimationParams>>{
@@ -295,8 +295,8 @@ ChainableResult<std::map<std::string, AnimationParams>> parse_animation_params_f
     }
 
     // Parse functions to get QueueAnimTiles functions
-    const auto queue_prefix =
-        "QueueAnimTiles_" + (porytiles_managed ? porytiles_managed_prefix : std::string{}) + pascal_case_tileset_name;
+    const auto queue_prefix = "QueueAnimTiles_" + (porytiles_managed ? anim::porytiles_managed_prefix : std::string{}) +
+                              pascal_case_tileset_name;
     auto queue_anim_funcs_result = c_parser.parse_functions(queue_prefix);
     if (!queue_anim_funcs_result.has_value()) {
         return ChainableResult<std::map<std::string, AnimationParams>>{

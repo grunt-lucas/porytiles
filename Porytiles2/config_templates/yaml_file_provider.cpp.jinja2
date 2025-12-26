@@ -53,10 +53,13 @@ std::string YamlFileProvider::name() const
 
 LayerValue<{{ value.type }}> YamlFileProvider::{{ value.name }}(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
+    auto paths_result = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<{{ value.type }}>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
     return search_config_files<{{ value.type }}>(
         format_,
-        paths,
+        paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc{{ macros.yaml_path(value.yaml.path) }}; },
         {{ value.parser }},

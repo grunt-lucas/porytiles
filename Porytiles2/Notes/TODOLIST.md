@@ -54,30 +54,10 @@ const struct Tileset gTileset_SecretBase =
 ```
 The tileset's "canonical" name is `gTileset_SecretBase`, or `SecretBase` for short.
 `ProjectTilesetArtifactKeyProvider::tileset_exists` implementation should check this file for the requested tileset.
-Introduce a `TilesetName` concrete type so that like `ArtifactKey`, we don't have raw strings floating around.
-```c++
-class TilesetName {
-  public:
-    TilesetName(const std::string &name) {
-        // validate name begins with gTileset_
-    }
-    
-    static TilesetName from_shorthand(const std::string &shorthand) {
-        return TilesetName{"gTileset_" + shorthand};
-    }
-    
-    std::string name() const {
-        return name_;
-    }
-    
-    std::string shorthand() const {
-        return trim_prefix("gTileset_", name_);
-    }
-    
-  private:
-    std::string name_;
-};
-```
+
+Use the `TilesetName` concrete type so that like `ArtifactKey`, we don't have raw strings floating around.
+We already have `TilesetNameProvider` which provides a simple interface for fetching tileset names.
+We might be able to extend this interface's functionality?
 
 As you can see, we get an `isSecondary` check for free, which makes things easy.
 
@@ -90,6 +70,8 @@ We also need to check `tileset_anims.c` to find the animation paths, the `.callb
 ```c++
 const u16 gTilesetAnims_General_Flower_Frame1[] = INCBIN_U16("data/tilesets/primary/general/anim/flower/1.4bpp");
 ```
+
+Look in "../pokeemerald-expansion/src/data/tilesets" and "../pokeemerald-expansion/src/tileset_anims.c" to see the format of these files.
 
 The Porytiles assets can still have the same default hardcoded path for now, e.g.
 `data/tilesets/primary/secret_base/porytiles/...`, we could support optional configuration.

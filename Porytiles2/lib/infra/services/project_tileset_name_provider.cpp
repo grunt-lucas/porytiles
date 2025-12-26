@@ -35,17 +35,7 @@ ChainableResult<std::set<TilesetName>> ProjectTilesetNameProvider::all_tileset_n
     // Convert struct variable names to TilesetName objects
     std::set<TilesetName> tileset_names;
     for (const auto &struct_var : parse_result.value()) {
-        auto tileset_name_result = TilesetName::from(struct_var.variable_name());
-        if (!tileset_name_result.has_value()) {
-            // This should not happen since we filtered by prefix, but handle gracefully
-            return ChainableResult<std::set<TilesetName>>{
-                FormattableError{
-                    "{}: invalid tileset name '{}'",
-                    FormatParam{tileset_header_full_path, Style::bold},
-                    FormatParam{struct_var.variable_name(), Style::bold}},
-                tileset_name_result};
-        }
-        tileset_names.insert(std::move(tileset_name_result).value());
+        tileset_names.insert(TilesetName::from(struct_var.variable_name()));
     }
 
     return tileset_names;

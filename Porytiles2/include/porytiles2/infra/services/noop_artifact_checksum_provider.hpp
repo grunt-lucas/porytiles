@@ -1,5 +1,6 @@
 #pragma once
 
+#include "porytiles2/domain/models/tileset_name.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/services/artifact_checksum_provider.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -18,13 +19,13 @@ class NoopArtifactChecksumProvider final : public ArtifactChecksumProvider {
     NoopArtifactChecksumProvider() = default;
 
     [[nodiscard]] std::unordered_map<ArtifactKey, std::string>
-    compute_tileset_artifact_checksums(const std::string &tileset_name) const override;
+    compute_tileset_artifact_checksums(const TilesetName &name) const override;
 
     [[nodiscard]] std::unordered_map<ArtifactKey, std::string>
-    load_cached_tileset_checksums(const std::string &tileset_name) const override;
+    load_cached_tileset_checksums(const TilesetName &name) const override;
 
     [[nodiscard]] ChainableResult<void> cache_tileset_checksums(
-        const std::string &tileset_name, const std::unordered_map<ArtifactKey, std::string> &checksums) const override;
+        const TilesetName &name, const std::unordered_map<ArtifactKey, std::string> &checksums) const override;
 };
 
 } // namespace porytiles2

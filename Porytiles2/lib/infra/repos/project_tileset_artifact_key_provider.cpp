@@ -5,31 +5,15 @@
 #include <format>
 #include <string>
 
+#include "porytiles2/domain/models/tileset_artifact_paths.hpp"
+#include "porytiles2/domain/models/tileset_name.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
-#include "porytiles2/utilities/string_utils.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace {
 
 using namespace porytiles2;
 
-const std::filesystem::path primary_tileset_rel_path = std::filesystem::path{"data"} / "tilesets" / "primary";
-const std::filesystem::path secondary_tileset_rel_path = std::filesystem::path{"data"} / "tilesets" / "secondary";
-
-std::filesystem::path get_tileset_path(const std::string &tileset_name, const std::filesystem::path &project_root)
-{
-    if (std::filesystem::exists(project_root / primary_tileset_rel_path / tileset_name)) {
-        return project_root / primary_tileset_rel_path / tileset_name;
-    }
-    if (std::filesystem::exists(project_root / secondary_tileset_rel_path / tileset_name)) {
-        return project_root / secondary_tileset_rel_path / tileset_name;
-    }
-    panic(std::format("tileset '{}' does not exist", tileset_name));
-}
-
-const std::filesystem::path metatiles_bin{"metatiles.bin"};
-const std::filesystem::path metatile_attributes_bin{"metatile_attributes.bin"};
-const std::filesystem::path tiles_png{"tiles.png"};
-const std::filesystem::path porymap_pals{"palettes"};
 const std::filesystem::path anim{"anim"};
 const std::filesystem::path include{"include"};
 const std::filesystem::path generated_anim_code_header{"generated_anim_code.h"};
@@ -52,109 +36,185 @@ namespace porytiles2 {
 /*
  * Porymap artifacts
  */
-ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_metatiles_bin(const std::string &tileset_name) const
+ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_metatiles_bin(const TilesetName &name) const
 {
-    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
-    return ArtifactKey{tileset_path / metatiles_bin};
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        paths,
+        artifact_paths(name),
+        format_->format("failed to get metatiles.bin key for tileset '{}'", FormatParam{name.shorthand(), Style::bold}),
+        ArtifactKey);
+    return ArtifactKey{project_root_ / paths.metatiles_path()};
 }
 
-ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_metatile_attributes_bin(const std::string &tileset_name) const
+ChainableResult<ArtifactKey>
+ProjectTilesetArtifactKeyProvider::key_for_metatile_attributes_bin(const TilesetName &name) const
 {
-    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
-    return ArtifactKey{tileset_path / metatile_attributes_bin};
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        paths,
+        artifact_paths(name),
+        format_->format(
+            "failed to get metatile_attributes.bin key for tileset '{}'", FormatParam{name.shorthand(), Style::bold}),
+        ArtifactKey);
+    return ArtifactKey{project_root_ / paths.metatile_attributes_path()};
 }
 
-ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_tiles_png(const std::string &tileset_name) const
+ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_tiles_png(const TilesetName &name) const
 {
-    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
-    return ArtifactKey{tileset_path / tiles_png};
+    /*
+     * TODO: instead of harcoding "tiles.png" here, we should extract the filename from the INCBIN and replace .4bpp
+     * extension with .png. This would be a cleaner way to handle things, and could handle a case where the user changed
+     * the name of the tiles file.
+     */
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        paths,
+        artifact_paths(name),
+        format_->format("failed to get tiles.png key for tileset '{}'", FormatParam{name.shorthand(), Style::bold}),
+        ArtifactKey);
+    return ArtifactKey{project_root_ / paths.tiles_path().parent_path() / "tiles.png"};
 }
 
-ArtifactKey
-ProjectTilesetArtifactKeyProvider::key_for_porymap_pal_n(const std::string &tileset_name, std::size_t index) const
+ChainableResult<ArtifactKey>
+ProjectTilesetArtifactKeyProvider::key_for_porymap_pal_n(const TilesetName &name, std::size_t index) const
 {
-    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
-    return ArtifactKey{tileset_path / porymap_pals / (pal_filename(index))};
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        paths,
+        artifact_paths(name),
+        format_->format("failed to get Porymap pal key for tileset '{}'", FormatParam{name.shorthand(), Style::bold}),
+        ArtifactKey);
+    return ArtifactKey{project_root_ / paths.palettes_dir() / tileset::pal_filename(index)};
 }
 
-ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_frame(
-    const std::string &tileset_name, const std::string &anim_name, std::size_t frame_index) const
+ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_frame(
+    const TilesetName &name, const std::string &anim_name, std::size_t frame_index) const
 {
-    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tileset_path,
+        tileset_root(name),
+        format_->format(
+            "failed to get Porymap anim frame key for tileset '{}'", FormatParam{name.shorthand(), Style::bold}),
+        ArtifactKey);
     return ArtifactKey{tileset_path / anim / anim_name / (std::to_string(frame_index) + std::string{".png"})};
 }
 
-[[nodiscard]] ArtifactKey
-ProjectTilesetArtifactKeyProvider::key_for_generated_anim_code(const std::string &tileset_name) const
+ChainableResult<ArtifactKey>
+ProjectTilesetArtifactKeyProvider::key_for_generated_anim_code(const TilesetName &name) const
 {
-    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tileset_path,
+        tileset_root(name),
+        format_->format(
+            "failed to get generated anim code key for tileset '{}'", FormatParam{name.shorthand(), Style::bold}),
+        ArtifactKey);
     return ArtifactKey{tileset_path / include / generated_anim_code_header};
 }
 
 /*
  * Porytiles artifacts
  */
-ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_bottom_png(const std::string &tileset_name) const
+ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_bottom_png(const TilesetName &name) const
 {
-    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tileset_path,
+        tileset_root(name),
+        format_->format("failed to get bottom.png key for tileset '{}'", FormatParam{name.shorthand(), Style::bold}),
+        ArtifactKey);
     return ArtifactKey{tileset_path / porytiles_directory / bottom_png};
 }
 
-ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_middle_png(const std::string &tileset_name) const
+ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_middle_png(const TilesetName &name) const
 {
-    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tileset_path,
+        tileset_root(name),
+        format_->format("failed to get middle.png key for tileset '{}'", FormatParam{name.shorthand(), Style::bold}),
+        ArtifactKey);
     return ArtifactKey{tileset_path / porytiles_directory / middle_png};
 }
 
-ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_top_png(const std::string &tileset_name) const
+ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_top_png(const TilesetName &name) const
 {
-    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tileset_path,
+        tileset_root(name),
+        format_->format("failed to get top.png key for tileset '{}'", FormatParam{name.shorthand(), Style::bold}),
+        ArtifactKey);
     return ArtifactKey{tileset_path / porytiles_directory / top_png};
 }
 
-ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_attributes_csv(const std::string &tileset_name) const
+ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_attributes_csv(const TilesetName &name) const
 {
-    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tileset_path,
+        tileset_root(name),
+        format_->format(
+            "failed to get attributes.csv key for tileset '{}'", FormatParam{name.shorthand(), Style::bold}),
+        ArtifactKey);
     return ArtifactKey{tileset_path / porytiles_directory / attributes_csv};
 }
 
-ArtifactKey
-ProjectTilesetArtifactKeyProvider::key_for_porytiles_pal_n(const std::string &tileset_name, std::size_t index) const
+ChainableResult<ArtifactKey>
+ProjectTilesetArtifactKeyProvider::key_for_porytiles_pal_n(const TilesetName &name, std::size_t index) const
 {
-    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
-    return ArtifactKey{tileset_path / porytiles_directory / porytiles_pals / pal_filename(index)};
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tileset_path,
+        tileset_root(name),
+        format_->format("failed to get Porytiles pal key for tileset '{}'", FormatParam{name.shorthand(), Style::bold}),
+        ArtifactKey);
+    return ArtifactKey{tileset_path / porytiles_directory / porytiles_pals / tileset::pal_filename(index)};
 }
 
-ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_frame(
-    const std::string &tileset_name, const std::string &anim_name, std::size_t frame_index) const
+ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_frame(
+    const TilesetName &name, const std::string &anim_name, std::size_t frame_index) const
 {
-    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tileset_path,
+        tileset_root(name),
+        format_->format(
+            "failed to get Porytiles anim frame key for tileset '{}'", FormatParam{name.shorthand(), Style::bold}),
+        ArtifactKey);
     return ArtifactKey{
         tileset_path / porytiles_directory / anim / anim_name / (std::to_string(frame_index) + std::string{".png"})};
 }
 
-[[nodiscard]] ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_key_frame(
-    const std::string &tileset_name, const std::string &anim_name) const
+ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_key_frame(
+    const TilesetName &name, const std::string &anim_name) const
 {
-    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tileset_path,
+        tileset_root(name),
+        format_->format(
+            "failed to get Porytiles anim key frame key for tileset '{}'", FormatParam{name.shorthand(), Style::bold}),
+        ArtifactKey);
     return ArtifactKey{tileset_path / porytiles_directory / anim / anim_name / key_frame};
 }
 
-[[nodiscard]] ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_anim_yaml(const std::string &tileset_name) const
+ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_anim_yaml(const TilesetName &name) const
 {
-    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tileset_path,
+        tileset_root(name),
+        format_->format("failed to get anim.yaml key for tileset '{}'", FormatParam{name.shorthand(), Style::bold}),
+        ArtifactKey);
     return ArtifactKey{tileset_path / porytiles_directory / anim / anim_yaml};
 }
 
-ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_config(const std::string &tileset_name) const
+ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_config(const TilesetName &name) const
 {
-    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tileset_path,
+        tileset_root(name),
+        format_->format("failed to get config key for tileset '{}'", FormatParam{name.shorthand(), Style::bold}),
+        ArtifactKey);
     return ArtifactKey{tileset_path / porytiles_directory / config};
 }
 
-ArtifactKey ProjectTilesetArtifactKeyProvider::key_for_local_config(const std::string &tileset_name) const
+ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_local_config(const TilesetName &name) const
 {
-    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tileset_path,
+        tileset_root(name),
+        format_->format("failed to get local config key for tileset '{}'", FormatParam{name.shorthand(), Style::bold}),
+        ArtifactKey);
     return ArtifactKey{tileset_path / porytiles_directory / local_config};
 }
 
@@ -164,20 +224,21 @@ bool ProjectTilesetArtifactKeyProvider::artifact_exists(const ArtifactKey &key) 
     return std::filesystem::exists(artifact);
 }
 
-bool ProjectTilesetArtifactKeyProvider::tileset_exists(const std::string &tileset_name) const
+bool ProjectTilesetArtifactKeyProvider::tileset_exists(const TilesetName &name) const
 {
-    if (std::filesystem::exists(project_root_ / primary_tileset_rel_path / tileset_name)) {
-        return true;
-    }
-    if (std::filesystem::exists(project_root_ / secondary_tileset_rel_path / tileset_name)) {
-        return true;
-    }
-    return false;
+    const auto exists_result = metadata_provider_->tileset_exists(name);
+    return exists_result.has_value() && exists_result.value();
 }
 
-std::set<std::string> ProjectTilesetArtifactKeyProvider::discover_porytiles_anims(const std::string &tileset_name) const
+ChainableResult<std::set<std::string>>
+ProjectTilesetArtifactKeyProvider::discover_porytiles_anims(const TilesetName &name) const
 {
-    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tileset_path,
+        tileset_root(name),
+        format_->format(
+            "failed to discover Porytiles anims for tileset '{}'", FormatParam{name.shorthand(), Style::bold}),
+        std::set<std::string>);
     const auto anims_dir = tileset_path / porytiles_directory / anim;
 
     std::set<std::string> anim_names;
@@ -213,10 +274,15 @@ std::set<std::string> ProjectTilesetArtifactKeyProvider::discover_porytiles_anim
     return anim_names;
 }
 
-std::set<int> ProjectTilesetArtifactKeyProvider::discover_porytiles_anim_frames(
-    const std::string &tileset_name, const std::string &anim_name) const
+ChainableResult<std::set<int>> ProjectTilesetArtifactKeyProvider::discover_porytiles_anim_frames(
+    const TilesetName &name, const std::string &anim_name) const
 {
-    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tileset_path,
+        tileset_root(name),
+        format_->format(
+            "failed to discover Porytiles anim frames for tileset '{}'", FormatParam{name.shorthand(), Style::bold}),
+        std::set<int>);
     const auto anim_dir = tileset_path / porytiles_directory / anim / anim_name;
 
     std::set<int> frame_indices;
@@ -256,90 +322,78 @@ std::set<int> ProjectTilesetArtifactKeyProvider::discover_porytiles_anim_frames(
     return frame_indices;
 }
 
-std::set<std::string> ProjectTilesetArtifactKeyProvider::discover_porymap_anims(const std::string &tileset_name) const
+ChainableResult<std::set<std::string>>
+ProjectTilesetArtifactKeyProvider::discover_porymap_anims(const TilesetName &name) const
 {
-    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
-    const auto anims_dir = tileset_path / anim;
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        frame_paths,
+        metadata_provider_->animation_frame_paths_for(name),
+        format_->format(
+            "failed to discover Porymap anims for tileset '{}'", FormatParam{name.shorthand(), Style::bold}),
+        std::set<std::string>);
 
     std::set<std::string> anim_names;
-
-    if (!std::filesystem::exists(anims_dir) || !std::filesystem::is_directory(anims_dir)) {
-        return anim_names;
-    }
-
-    for (const auto &entry : std::filesystem::directory_iterator(anims_dir)) {
-        if (!entry.is_directory()) {
-            // TODO: warn user about stray file in anim folder?
-            continue;
-        }
-
-        const auto anim_name = entry.path().filename().string();
-
-        // Check if 00.png exists (required for Porymap animations)
-        const auto frame_0_path = entry.path() / "0.png";
-        if (!std::filesystem::exists(frame_0_path)) {
-            diag_->warning(
-                "missing-required-artifact",
-                format_->format("missing required artifact: '{}'", FormatParam{frame_0_path.string(), Style::bold}));
-            diag_->note(
-                "missing-required-artifact",
-                format_->format("skipping registry of Porymap anim '{}'", FormatParam{anim_name, Style::bold}));
-            continue;
-        }
-
+    for (const auto &anim_name : frame_paths | std::views::keys) {
         anim_names.insert(anim_name);
     }
-
     return anim_names;
 }
 
-std::set<int> ProjectTilesetArtifactKeyProvider::discover_porymap_anim_frames(
-    const std::string &tileset_name, const std::string &anim_name) const
+ChainableResult<std::set<int>> ProjectTilesetArtifactKeyProvider::discover_porymap_anim_frames(
+    const TilesetName &name, const std::string &anim_name) const
 {
-    const auto tileset_path = get_tileset_path(tileset_name, project_root_);
-    const auto anim_dir = tileset_path / anim / anim_name;
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        frame_paths,
+        metadata_provider_->animation_frame_paths_for(name),
+        format_->format(
+            "failed to discover Porymap anim frames for tileset '{}'", FormatParam{name.shorthand(), Style::bold}),
+        std::set<int>);
 
     std::set<int> frame_indices;
 
-    if (!std::filesystem::exists(anim_dir) || !std::filesystem::is_directory(anim_dir)) {
+    const auto it = frame_paths.find(anim_name);
+    if (it == frame_paths.end()) {
         return frame_indices;
     }
 
-    for (const auto &entry : std::filesystem::directory_iterator(anim_dir)) {
-        if (!entry.is_regular_file()) {
-            // TODO: warn user about stray folder in anim/anim_name folder
-            continue;
-        }
-
-        const auto filename = entry.path().filename().string();
-
-        if (filename.length() != 5 || !filename.ends_with(".png")) {
-            // TODO: warn user about stray file in porytiles/anim/anim_name folder
-            continue;
-        }
-
-        // Skip 0.png (frame 0 is required, not discovered), handled in the main discover_anims method
-        if (filename == "0.png") {
-            continue;
-        }
-
-        // Check if it's a valid one-digit number
-        const auto frame_str = filename.substr(0, 1);
-        if (!std::isdigit(frame_str[0])) {
-            // TODO: warn user about stray file in anim/anim_name folder
-            continue;
-        }
-        const int frame_index = std::stoi(frame_str);
-        frame_indices.insert(frame_index);
+    const auto &frames = it->second;
+    // Skip frame 0 (required, not discovered) - preserves existing semantics
+    for (std::size_t i = 1; i < frames.size(); ++i) {
+        frame_indices.insert(static_cast<int>(i));
     }
 
     return frame_indices;
 }
 
-[[nodiscard]] std::filesystem::path
-ProjectTilesetArtifactKeyProvider::tileset_root(const std::string &tileset_name) const
+ChainableResult<TilesetArtifactPaths> ProjectTilesetArtifactKeyProvider::artifact_paths(const TilesetName &name) const
 {
-    return get_tileset_path(tileset_name, project_root_);
+    auto paths_result = metadata_provider_->artifact_paths_for(name);
+    if (!paths_result.has_value()) {
+        /*
+         * NOTE: std::move required here because ChainableResult's passthrough constructor is templated. When source and
+         * destination types match, C++ prefers the deleted copy constructor over the template. Using std::move invokes
+         * the (defaulted) move constructor instead.
+         *
+         * NOTE: since this calls the defaulted move ctor instead of the passthrough templated ctor, technically we
+         * don't get an additional error chain link added here. That's probably fine, since it would just be a blank
+         * FormattableError{}, which will be skipped by the UserDiagnostic fatal chain printer regardless. However, if
+         * we ever added code that counted error chain links, we should note that this workaround could cause the link
+         * count to differ from expectations.
+         */
+        return ChainableResult{std::move(paths_result)};
+    }
+    return paths_result.value();
+}
+
+[[nodiscard]] ChainableResult<std::filesystem::path>
+ProjectTilesetArtifactKeyProvider::tileset_root(const TilesetName &name) const
+{
+    const auto paths_result = artifact_paths(name);
+    if (!paths_result.has_value()) {
+        return ChainableResult<std::filesystem::path>{paths_result};
+    }
+
+    return project_root_ / paths_result.value().tileset_root();
 }
 
 } // namespace porytiles2
