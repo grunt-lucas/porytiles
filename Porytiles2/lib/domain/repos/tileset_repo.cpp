@@ -341,28 +341,58 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const TilesetName &n
         }
     }
 
+    /*
+     * TODO: ANIM: Refactor to keep AnimationCallbackInfo entirely in infra layer.
+     *
+     * CURRENT ISSUE:
+     * AnimationCallbackInfo is an infra concept (C file paths, function names, project layout details), but it leaks
+     * into the domain layer here. We fetch it via key_provider_ and pass it to reader_->read_anim_code().
+     *
+     * NAIVE FIX (won't work as-is):
+     * Simply checking `!tileset->porymap_component().anims().empty()` instead of `callback_info_opt.has_value()`
+     * doesn't solve the problem because AnimationCallbackInfo carries essential parsing context:
+     *   - c_file_path(): WHERE to find the C code (generated_anim_code.h or tileset_anims.c)
+     *   - callback_func_name(): WHAT function starts the callback chain
+     *   - tileset_shorthand(): Used for function name matching during parsing
+     *   - porytiles_managed(): Affects file path and function prefix expectations
+     *
+     * MISMATCH DETECTION (future enhancement):
+     * There are two independent signals for "tileset has animations":
+     *   1. Metadata-based: `.callback != NULL` in the tileset struct (headers.h)
+     *   2. Frame-based: Animation directories exist with frame PNGs (0.png, 1.png, etc.)
+     * These usually align, but mismatches indicate incomplete tilesets:
+     *   - Callback exists but no frames: User defined anim code but hasn't created frame assets
+     *   - Frames exist but no callback: User created frame assets but hasn't wired up anim code
+     * We should warn the user about such mismatches rather than silently proceeding.
+     *
+     * RECOMMENDED REFACTORING APPROACH:
+     * Move the callback info lookup INTO the reader (or a service the reader uses):
+     *   1. Change read_anim_code() signature to not require AnimationCallbackInfo parameter
+     *   2. Reader internally fetches callback info from metadata provider
+     *   3. TilesetRepo either:
+     *      a. Calls reader unconditionally (reader returns early if no anims), OR
+     *      b. Checks discovered anims as optimization before calling
+     *   4. Add mismatch detection: compare callback_info.has_value() vs !anims().empty()
+     *      and emit warnings for inconsistencies
+     *
+     * RELATED TODOs:
+     *   - animation_callback_info.hpp: "TODO: ANIM: this seems like a better fit for infra layer"
+     *   - tileset_metadata_provider.hpp: "TODO: ANIM: all of this should be infra code"
+     *   - tileset_metadata.hpp: "TODO: ANIM: a lot of this stuff belongs in the infra layer"
+     *   - tileset_artifact_paths.hpp: "TODO: ANIM: this is a domain class but relies on infra concepts"
+     */
     PT_TRY_ASSIGN_CHAIN_ERR(
-        generated_anim_code_key,
-        key_provider_->key_for_generated_anim_code(tileset->name()),
+        callback_info_opt,
+        key_provider_->animation_callback_info_for(tileset->name()),
         "tileset load failed",
         std::unique_ptr<Tileset>);
-    if (key_provider_->artifact_exists(generated_anim_code_key)) {
-        const auto result = reader_->read_generated_anim_code(*tileset, generated_anim_code_key, porymap_anims);
+    if (callback_info_opt.has_value()) {
+        const auto result = reader_->read_anim_code(*tileset, callback_info_opt.value());
         if (!result.has_value()) {
             return ChainableResult<std::unique_ptr<Tileset>>{
                 FormattableError{
-                    "failed to read artifact '{}'", FormatParam{generated_anim_code_key.key(), Style::bold}},
-                result};
-        }
-    }
-    else {
-        // TODO: this needs to be relative to project root, add handling to the key provider
-        ArtifactKey vanilla_anim_code_key{"src/tileset_anims.c"};
-        const auto result = reader_->read_vanilla_anim_code(*tileset, vanilla_anim_code_key, porymap_anims);
-        if (!result.has_value()) {
-            return ChainableResult<std::unique_ptr<Tileset>>{
-                FormattableError{
-                    "{}: failed to read vanilla anim code", FormatParam{vanilla_anim_code_key.key(), Style::bold}},
+                    "{}: failed to read animation code",
+                    FormatParam{callback_info_opt.value().c_file_path().string(), Style::bold}},
                 result};
         }
     }

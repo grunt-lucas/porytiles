@@ -36,49 +36,7 @@
   - even though it's technical a user config file, since Porytiles overwrites it every time, it's unintuitive for users
   - JSON is better since comments are disallowed by default and syntax is simpler, users won't be confused when their idiosyncracies get clobbered
 
-## Complete tileset name and artifact path refactor
-We need to refactor `ProjectTilesetArtifactKeyProvider` to not hardcode the artifact paths.
-
-`ProjectTilesetArtifactKeyProvider` to use `CParserFacade` to parse `src/data/tilesets/headers.h` as the source of truth:
-```c++
-const struct Tileset gTileset_SecretBase =
-{
-    .isCompressed = FALSE,
-    .isSecondary = FALSE,
-    .tiles = gTilesetTiles_SecretBase,
-    .palettes = gTilesetPalettes_SecretBase,
-    .metatiles = gMetatiles_SecretBasePrimary,
-    .metatileAttributes = gMetatileAttributes_SecretBasePrimary,
-    .callback = NULL,
-};
-```
-The tileset's "canonical" name is `gTileset_SecretBase`, or `SecretBase` for short.
-`ProjectTilesetArtifactKeyProvider::tileset_exists` implementation should check this file for the requested tileset.
-
-Use the `TilesetName` concrete type so that like `ArtifactKey`, we don't have raw strings floating around.
-We already have `TilesetNameProvider` which provides a simple interface for fetching tileset names.
-We might be able to extend this interface's functionality?
-
-As you can see, we get an `isSecondary` check for free, which makes things easy.
-
-The paths to all Porymap assets can be fetched from the variables, e.g.
-```c++
-const u32 gTilesetTiles_SecretBase[] = INCBIN_U32("data/tilesets/primary/secret_base/tiles.4bpp");
-```
-
-We also need to check `tileset_anims.c` to find the animation paths, the `.callback` field is our "in":
-```c++
-const u16 gTilesetAnims_General_Flower_Frame1[] = INCBIN_U16("data/tilesets/primary/general/anim/flower/1.4bpp");
-```
-
-Look in "../pokeemerald-expansion/src/data/tilesets" and "../pokeemerald-expansion/src/tileset_anims.c" to see the format of these files.
-
-The Porytiles assets can still have the same default hardcoded path for now, e.g.
-`data/tilesets/primary/secret_base/porytiles/...`, we could support optional configuration.
-
-The `include/generated_anim_code.h` file can also go in the hardcoded location for now.
-
-### Step 2: `LayoutDataProvider`
+## Implement `LayoutDataProvider`
 Once we complete the `ProjectTilesetArtifactKeyProvider` refactor, create a `LayoutDataProvider` which parses `layouts.json`.
 We can then create a `TilesetPairProvider` that reads the layout data and provides mappings between primary/secondary.
 ```c++

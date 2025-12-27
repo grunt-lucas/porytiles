@@ -8,12 +8,14 @@
 #include <iterator>
 #include <optional>
 
+#include "porytiles2/domain/models/animation.hpp"
 #include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/domain/models/porytiles_tileset_component.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
+#include "porytiles2/utilities/string_utils.hpp"
 
 #include <iostream>
 
@@ -408,54 +410,20 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_porymap_anim_frame(
     return {};
 }
 
-/*
- * TODO: the two read functions here have almost identical implementations.
- *
- * TODO: Also, instead of passing in anim_names, should we just grab them from the 'Tileset dest' parameter? If so, we'd
- * need to ensure the anim frames got read before we call this function. It could be a simple precondition. It should be
- * fine since TilesetRepo already works this way.
- */
-
-[[nodiscard]] ChainableResult<void> ProjectTilesetArtifactReader::read_generated_anim_code(
-    Tileset &dest, const ArtifactKey &src_key, const std::set<std::string> &anim_names) const
+[[nodiscard]] ChainableResult<void>
+ProjectTilesetArtifactReader::read_anim_code(Tileset &dest, const AnimationCallbackInfo &callback_info) const
 {
-    auto params_result = anim_code_parser_->parse_generated_header(src_key.key(), dest.name().shorthand(), anim_names);
+    // Use the actual callback function name from tileset metadata
+    auto params_result = anim_code_parser_->parse_from_callback(
+        callback_info.c_file_path(),
+        callback_info.callback_func_name(),
+        callback_info.tileset_shorthand(),
+        callback_info.porytiles_managed());
+
     if (!params_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"{}: failed to parse generated anim code", FormatParam{src_key.key(), Style::bold}},
-            params_result};
-    }
-
-    // Update animation params in the Porymap component
-    for (const auto &[anim_name, params] : params_result.value()) {
-        if (dest.porymap_component().has_anim(anim_name)) {
-            auto &existing_anim = dest.porymap_component().anims().at(anim_name);
-            auto existing_params = existing_anim.params();
-
-            // Preserve dimensions from frame import (C code doesn't have this info)
-            auto new_params = params;
-            new_params.width_tiles(existing_params.width_tiles());
-            new_params.height_tiles(existing_params.height_tiles());
-
-            existing_anim.params(std::move(new_params));
-        }
-        else {
-            // Create a new animation with just the params (frames will be loaded separately)
-            Animation<IndexPixel> anim{anim_name, params};
-            dest.porymap_component().add_anim(std::move(anim));
-        }
-    }
-
-    return {};
-}
-
-[[nodiscard]] ChainableResult<void> ProjectTilesetArtifactReader::read_vanilla_anim_code(
-    Tileset &dest, const ArtifactKey &src_key, const std::set<std::string> &anim_names) const
-{
-    auto params_result = anim_code_parser_->parse_vanilla_anims(src_key.key(), dest.name().shorthand(), anim_names);
-    if (!params_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{"{}: failed to parse vanilla anim code", FormatParam{src_key.key(), Style::bold}},
+            FormattableError{
+                "{}: failed to parse animation code", FormatParam{callback_info.c_file_path().string(), Style::bold}},
             params_result};
     }
 

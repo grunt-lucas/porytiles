@@ -49,8 +49,8 @@ namespace tileset {
 } // namespace tileset
 
 /*
- * TODO: this is a domain class but it relies on infrastructure layer concepts, e.g. the project folder structure. We
- * should refactor this a bit.
+ * TODO: ANIM: this is a domain class but it relies on infrastructure layer concepts, e.g. the project folder structure.
+ * We should refactor this a bit.
  *
  * Basically, this class is only used in domain layer once: the TilesetMetadataProvider::artifact_paths_for return type.
  * But this function itself is never called in the domain layer. It is only used in the Project implementation of

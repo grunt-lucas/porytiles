@@ -2,6 +2,7 @@
 
 #include <any>
 
+#include "porytiles2/domain/models/animation_callback_info.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
@@ -40,23 +41,23 @@ class TilesetArtifactReader {
         Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, std::size_t frame_index) const = 0;
 
     /**
-     * @brief Reads animation parameters from a generated_anim_code.h file into the Porymap component.
+     * @brief Reads animation parameters from C source code into the Porymap component.
      *
      * @details
-     * Parses the generated_anim_code.h file to extract animation parameters (tile offsets, tile counts, frame
-     * sequences, timing, etc.) and updates the AnimationParams for each animation in the Porymap component. This only
-     * sets parameters; animation frame PNGs are loaded separately.
+     * Parses animation C code (either generated_anim_code.h or tileset_anims.c) to extract animation
+     * parameters (tile offsets, tile counts, frame sequences, timing, etc.) and updates the AnimationParams
+     * for each animation in the Porymap component. This only sets parameters; animation frame PNGs are
+     * loaded separately.
+     *
+     * The callback_info parameter provides the actual callback function name from the tileset metadata,
+     * ensuring we parse the correct animations rather than guessing based on naming conventions.
      *
      * @param dest The Tileset object to populate with animation parameters
-     * @param src_key Key identifying the generated_anim_code.h artifact to read
-     * @param anim_names The anim names from this tileset to read from the generated code
+     * @param callback_info Information about the animation callback from tileset metadata
      * @return Empty ChainableResult on success, otherwise an error chain
      */
-    [[nodiscard]] virtual ChainableResult<void> read_generated_anim_code(
-        Tileset &dest, const ArtifactKey &src_key, const std::set<std::string> &anim_names) const = 0;
-
-    [[nodiscard]] virtual ChainableResult<void> read_vanilla_anim_code(
-        Tileset &dest, const ArtifactKey &src_key, const std::set<std::string> &anim_names) const = 0;
+    [[nodiscard]] virtual ChainableResult<void>
+    read_anim_code(Tileset &dest, const AnimationCallbackInfo &callback_info) const = 0;
 
     /*
      * Porytiles artifacts

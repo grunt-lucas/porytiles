@@ -2,6 +2,7 @@
 
 #include <gtest/gtest.h>
 
+#include "porytiles2/domain/models/animation.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/buffered_user_diagnostics.hpp"
 
@@ -15,28 +16,37 @@ class AnimCodeParserTest : public ::testing::Test {
 };
 
 // =============================================================================
-// Generated Header Format Tests
+// Generated Header Format Tests (Porytiles-managed)
 // =============================================================================
 
-TEST_F(AnimCodeParserTest, ParseGeneratedHeaderReturnsCorrectAnimationCount)
+TEST_F(AnimCodeParserTest, ParseFromCallbackDiscoversAllAnimationsInGeneratedHeader)
 {
-    auto result = parser_.parse_generated_header(
-        "Resources/Tests/integration/anim/generated_anim_code.h",
-        "general",
-        std::set<std::string>{"flower", "land_water_edge", "sand_water_edge", "water", "waterfall"});
+    // The callback for Porytiles-managed tilesets: InitTilesetAnim_PorytilesManaged_General
+    const std::string callback_func = "InitTilesetAnim_" + anim::porytiles_managed_prefix + "General";
+
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/anim/generated_anim_code.h", callback_func, "General", true);
 
     ASSERT_TRUE(result.has_value()) << "Parsing should succeed";
     const auto &anims = result.value();
+
+    // Should discover all 5 animations without needing to provide expected_anim_names
     EXPECT_EQ(anims.size(), 5u)
-        << "Should find 5 animations (flower, land_water_edge, sand_water_edge, water, waterfall)";
+        << "Should discover 5 animations (flower, land_water_edge, sand_water_edge, water, waterfall)";
+
+    EXPECT_TRUE(anims.contains("flower"));
+    EXPECT_TRUE(anims.contains("land_water_edge"));
+    EXPECT_TRUE(anims.contains("sand_water_edge"));
+    EXPECT_TRUE(anims.contains("water"));
+    EXPECT_TRUE(anims.contains("waterfall"));
 }
 
-TEST_F(AnimCodeParserTest, ParseGeneratedHeaderExtractsFlowerAnimationParams)
+TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsFlowerAnimationParamsFromGeneratedHeader)
 {
-    auto result = parser_.parse_generated_header(
-        "Resources/Tests/integration/anim/generated_anim_code.h",
-        "general",
-        std::set<std::string>{"flower", "land_water_edge", "sand_water_edge", "water", "waterfall"});
+    const std::string callback_func = "InitTilesetAnim_" + anim::porytiles_managed_prefix + "General";
+
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/anim/generated_anim_code.h", callback_func, "General", true);
 
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
@@ -64,12 +74,12 @@ TEST_F(AnimCodeParserTest, ParseGeneratedHeaderExtractsFlowerAnimationParams)
     EXPECT_EQ(frames[3], 2u);
 }
 
-TEST_F(AnimCodeParserTest, ParseGeneratedHeaderExtractsLandWaterEdgeAnimationParams)
+TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsLandWaterEdgeAnimationParamsFromGeneratedHeader)
 {
-    auto result = parser_.parse_generated_header(
-        "Resources/Tests/integration/anim/generated_anim_code.h",
-        "general",
-        std::set<std::string>{"flower", "land_water_edge", "sand_water_edge", "water", "waterfall"});
+    const std::string callback_func = "InitTilesetAnim_" + anim::porytiles_managed_prefix + "General";
+
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/anim/generated_anim_code.h", callback_func, "General", true);
 
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
@@ -95,12 +105,12 @@ TEST_F(AnimCodeParserTest, ParseGeneratedHeaderExtractsLandWaterEdgeAnimationPar
     }
 }
 
-TEST_F(AnimCodeParserTest, ParseGeneratedHeaderExtractsWaterAnimationParams)
+TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsWaterAnimationParamsFromGeneratedHeader)
 {
-    auto result = parser_.parse_generated_header(
-        "Resources/Tests/integration/anim/generated_anim_code.h",
-        "general",
-        std::set<std::string>{"flower", "land_water_edge", "sand_water_edge", "water", "waterfall"});
+    const std::string callback_func = "InitTilesetAnim_" + anim::porytiles_managed_prefix + "General";
+
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/anim/generated_anim_code.h", callback_func, "General", true);
 
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
@@ -132,12 +142,9 @@ TEST_F(AnimCodeParserTest, ParseGeneratedHeaderExtractsWaterAnimationParams)
     EXPECT_EQ(frames[7], 7u);
 }
 
-TEST_F(AnimCodeParserTest, ParseGeneratedHeaderReturnsErrorForNonExistentFile)
+TEST_F(AnimCodeParserTest, ParseFromCallbackReturnsErrorForNonExistentFile)
 {
-    auto result = parser_.parse_generated_header(
-        "nonexistent_file.h",
-        "general",
-        std::set<std::string>{"flower", "land_water_edge", "sand_water_edge", "water", "waterfall"});
+    auto result = parser_.parse_from_callback("nonexistent_file.h", "InitTilesetAnim_General", "General", false);
 
     EXPECT_FALSE(result.has_value()) << "Should return error for non-existent file";
 }
@@ -146,26 +153,25 @@ TEST_F(AnimCodeParserTest, ParseGeneratedHeaderReturnsErrorForNonExistentFile)
 // Vanilla Format Tests
 // =============================================================================
 
-TEST_F(AnimCodeParserTest, ParseVanillaAnimsReturnsCorrectAnimationCount)
+TEST_F(AnimCodeParserTest, ParseFromCallbackDiscoversAnimationsInVanillaFile)
 {
-    auto result = parser_.parse_vanilla_anims(
-        "Resources/Tests/integration/anim/tileset_anims.c",
-        "general",
-        std::set<std::string>{"flower", "land_water_edge", "sand_water_edge", "water", "waterfall"});
+    // The callback for vanilla tilesets: InitTilesetAnim_General
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/anim/tileset_anims.c", "InitTilesetAnim_General", "General", false);
 
     ASSERT_TRUE(result.has_value()) << "Parsing should succeed";
     const auto &anims = result.value();
 
-    // Should find at least Flower and Water for General tileset
+    // Should discover at least Flower and Water for General tileset
     EXPECT_GE(anims.size(), 2u);
+    EXPECT_TRUE(anims.contains("flower"));
+    EXPECT_TRUE(anims.contains("water"));
 }
 
-TEST_F(AnimCodeParserTest, ParseVanillaAnimsExtractsFlowerAnimationParams)
+TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsFlowerAnimationParamsFromVanilla)
 {
-    auto result = parser_.parse_vanilla_anims(
-        "Resources/Tests/integration/anim/tileset_anims.c",
-        "general",
-        std::set<std::string>{"flower", "land_water_edge", "sand_water_edge", "water", "waterfall"});
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/anim/tileset_anims.c", "InitTilesetAnim_General", "General", false);
 
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
@@ -192,12 +198,10 @@ TEST_F(AnimCodeParserTest, ParseVanillaAnimsExtractsFlowerAnimationParams)
     EXPECT_EQ(frames[3], 2u);
 }
 
-TEST_F(AnimCodeParserTest, ParseVanillaAnimsExtractsLandWaterEdgeAnimationParams)
+TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsLandWaterEdgeAnimationParamsFromVanilla)
 {
-    auto result = parser_.parse_vanilla_anims(
-        "Resources/Tests/integration/anim/tileset_anims.c",
-        "general",
-        std::set<std::string>{"flower", "land_water_edge", "sand_water_edge", "water", "waterfall"});
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/anim/tileset_anims.c", "InitTilesetAnim_General", "General", false);
 
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
@@ -223,12 +227,10 @@ TEST_F(AnimCodeParserTest, ParseVanillaAnimsExtractsLandWaterEdgeAnimationParams
     }
 }
 
-TEST_F(AnimCodeParserTest, ParseVanillaAnimsExtractsWaterAnimationParams)
+TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsWaterAnimationParamsFromVanilla)
 {
-    auto result = parser_.parse_vanilla_anims(
-        "Resources/Tests/integration/anim/tileset_anims.c",
-        "general",
-        std::set<std::string>{"flower", "land_water_edge", "sand_water_edge", "water", "waterfall"});
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/anim/tileset_anims.c", "InitTilesetAnim_General", "General", false);
 
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
@@ -254,25 +256,13 @@ TEST_F(AnimCodeParserTest, ParseVanillaAnimsExtractsWaterAnimationParams)
     }
 }
 
-TEST_F(AnimCodeParserTest, ParseVanillaAnimsReturnsErrorForNonExistentFile)
+TEST_F(AnimCodeParserTest, ParseFromCallbackReturnsEmptyForNonExistentCallback)
 {
-    auto result = parser_.parse_vanilla_anims(
-        "nonexistent_file.c",
-        "general",
-        std::set<std::string>{"flower", "land_water_edge", "sand_water_edge", "water", "waterfall"});
-
-    EXPECT_FALSE(result.has_value()) << "Should return error for non-existent file";
-}
-
-TEST_F(AnimCodeParserTest, ParseVanillaAnimsReturnsEmptyForUnknownTileset)
-{
-    auto result = parser_.parse_vanilla_anims(
-        "Resources/Tests/integration/anim/tileset_anims.c",
-        "non_existent",
-        std::set<std::string>{"flower", "land_water_edge", "sand_water_edge", "water", "waterfall"});
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/anim/tileset_anims.c", "InitTilesetAnim_NonExistent", "NonExistent", false);
 
     ASSERT_TRUE(result.has_value()) << "Parsing should succeed even with no matches";
-    EXPECT_TRUE(result.value().empty()) << "Should return empty map for unknown tileset";
+    EXPECT_TRUE(result.value().empty()) << "Should return empty map for unknown tileset callback";
 }
 
 } // namespace porytiles2

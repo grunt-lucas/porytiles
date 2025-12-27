@@ -1,11 +1,19 @@
 #pragma once
 
+#include <optional>
+
+#include "porytiles2/domain/models/animation_callback_info.hpp"
 #include "porytiles2/domain/models/tileset_artifact_paths.hpp"
 #include "porytiles2/domain/models/tileset_metadata.hpp"
 #include "porytiles2/domain/models/tileset_name.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
+
+/*
+ * TODO: ANIM: all of this should be infra code. animation_callback_info_for is called within TilesetRepo, but we should
+ * refactor the repo class a bit to work around this.
+ */
 
 /**
  * @brief Abstract interface for retrieving tileset metadata and artifact paths.
@@ -97,6 +105,27 @@ class TilesetMetadataProvider {
      */
     [[nodiscard]] virtual ChainableResult<AnimationFramePaths>
     animation_frame_paths_for(const TilesetName &tileset_name) const = 0;
+
+    /**
+     * @brief Retrieves animation callback information for a specific tileset.
+     *
+     * @details
+     * Parses the tileset's callback function name from TilesetMetadata to extract:
+     * - The callback function name (e.g., "InitTilesetAnim_General")
+     * - The tileset shorthand name (e.g., "General")
+     * - Whether it's Porytiles-managed
+     * - The path to the C file containing animation code
+     *
+     * Returns nullopt if the tileset has no animations (callback is NULL or missing).
+     *
+     * This information can be passed to AnimCodeParser::parse_from_callback() to extract animation parameters.
+     *
+     * @param tileset_name The tileset to look up
+     * @return AnimationCallbackInfo if the tileset has animations, nullopt if not,
+     *         or an error if parsing fails
+     */
+    [[nodiscard]] virtual ChainableResult<std::optional<AnimationCallbackInfo>>
+    animation_callback_info_for(const TilesetName &tileset_name) const = 0;
 };
 
 } // namespace porytiles2

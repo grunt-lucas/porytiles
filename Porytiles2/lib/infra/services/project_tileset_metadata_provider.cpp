@@ -492,4 +492,73 @@ ProjectTilesetMetadataProvider::animation_frame_paths_for(const TilesetName &til
     return parse_anim_incbins_from_file(anims_c, tileset_shorthand, porytiles_managed);
 }
 
+ChainableResult<std::optional<AnimationCallbackInfo>>
+ProjectTilesetMetadataProvider::animation_callback_info_for(const TilesetName &tileset_name) const
+{
+    // Get metadata to check for animations
+    auto metadata_result = metadata_for(tileset_name);
+    if (!metadata_result.has_value()) {
+        return ChainableResult<std::optional<AnimationCallbackInfo>>{
+            FormattableError{format_->format(
+                "failed to get animation callback info for tileset '{}'",
+                FormatParam{tileset_name.name(), Style::bold})},
+            metadata_result};
+    }
+
+    const auto &metadata = metadata_result.value();
+
+    // If no animations, return nullopt
+    if (!metadata.has_animations()) {
+        return std::optional<AnimationCallbackInfo>{std::nullopt};
+    }
+
+    const std::string &callback_func_name = metadata.callback_func().value();
+
+    // Extract tileset shorthand and porytiles_managed flag from callback function
+    /*
+     * TODO: this is still not quite right, we shouldn't need to get the tileset_shorthand here
+     */
+    auto [tileset_shorthand, porytiles_managed] = extract_tileset_from_callback(callback_func_name);
+
+    if (tileset_shorthand.empty()) {
+        diag_->warning(
+            "animation-discovery",
+            format_->format(
+                "could not parse tileset name from callback '{}'", FormatParam{callback_func_name, Style::bold}));
+        return std::optional<AnimationCallbackInfo>{std::nullopt};
+    }
+
+    // Determine which C file contains the animation code
+    // Priority: generated_anim_code.h > tileset_anims.c
+    auto artifact_paths_result = artifact_paths_for(tileset_name);
+    if (!artifact_paths_result.has_value()) {
+        return ChainableResult<std::optional<AnimationCallbackInfo>>{
+            FormattableError{"failed to determine tileset root for animation callback discovery"},
+            artifact_paths_result};
+    }
+
+    const auto tileset_root = project_root_ / artifact_paths_result.value().tileset_root();
+    const auto generated_header = tileset_root / "include" / "generated_anim_code.h";
+
+    std::filesystem::path c_file_path;
+    if (std::filesystem::exists(generated_header)) {
+        // Use Porytiles-managed generated header
+        c_file_path = generated_header;
+        porytiles_managed = true; // Override - generated header is always Porytiles-managed
+    }
+    else {
+        // Fall back to vanilla tileset_anims.c
+        c_file_path = project_root_ / tileset_anims_c_rel_path;
+        if (!std::filesystem::exists(c_file_path)) {
+            diag_->warning(
+                "animation-discovery",
+                format_->format("tileset_anims.c not found at '{}'", FormatParam{c_file_path.string(), Style::bold}));
+            return std::optional<AnimationCallbackInfo>{std::nullopt};
+        }
+    }
+
+    return std::optional<AnimationCallbackInfo>{
+        AnimationCallbackInfo{callback_func_name, tileset_shorthand, porytiles_managed, c_file_path}};
+}
+
 } // namespace porytiles2

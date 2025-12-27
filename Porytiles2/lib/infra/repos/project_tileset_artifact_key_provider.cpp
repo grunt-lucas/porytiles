@@ -396,4 +396,11 @@ ProjectTilesetArtifactKeyProvider::tileset_root(const TilesetName &name) const
     return project_root_ / paths_result.value().tileset_root();
 }
 
+ChainableResult<std::optional<AnimationCallbackInfo>>
+ProjectTilesetArtifactKeyProvider::animation_callback_info_for(const TilesetName &name) const
+{
+    // Delegate to metadata provider
+    return metadata_provider_->animation_callback_info_for(name);
+}
+
 } // namespace porytiles2

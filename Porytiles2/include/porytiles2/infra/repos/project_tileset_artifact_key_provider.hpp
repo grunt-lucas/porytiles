@@ -113,6 +113,9 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
     [[nodiscard]] ChainableResult<std::set<int>>
     discover_porymap_anim_frames(const TilesetName &name, const std::string &anim_name) const override;
 
+    [[nodiscard]] ChainableResult<std::optional<AnimationCallbackInfo>>
+    animation_callback_info_for(const TilesetName &name) const override;
+
     /**
      * @brief Returns the filesystem path to the root directory of a tileset.
      *

@@ -56,11 +56,8 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
         const std::string &anim_name,
         std::size_t frame_index) const override;
 
-    [[nodiscard]] ChainableResult<void> read_generated_anim_code(
-        Tileset &dest, const ArtifactKey &src_key, const std::set<std::string> &anim_names) const override;
-
-    [[nodiscard]] ChainableResult<void> read_vanilla_anim_code(
-        Tileset &dest, const ArtifactKey &src_key, const std::set<std::string> &anim_names) const override;
+    [[nodiscard]] ChainableResult<void>
+    read_anim_code(Tileset &dest, const AnimationCallbackInfo &callback_info) const override;
 
     /*
      * Porytiles artifacts

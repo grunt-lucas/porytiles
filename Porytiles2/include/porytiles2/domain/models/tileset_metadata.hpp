@@ -7,6 +7,10 @@
 
 namespace porytiles2 {
 
+/*
+ * TODO: ANIM: a lot of this stuff belongs in the infra layer.
+ */
+
 /**
  * @brief Represents parsed metadata from a tileset struct in headers.h.
  *

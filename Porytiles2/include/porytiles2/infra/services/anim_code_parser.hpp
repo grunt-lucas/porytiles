@@ -2,7 +2,6 @@
 
 #include <filesystem>
 #include <map>
-#include <set>
 #include <string>
 
 #include "gsl/pointers"
@@ -15,20 +14,21 @@
 namespace porytiles2 {
 
 /**
- * @brief Parses C code to extract tileset animation parameters.
+ * @brief Parses C code to extract tileset animation parameters using callback chain discovery.
  *
  * @details
- * AnimCodeParser extracts AnimationParams from C source files using proper C token-based parsing via CParserFacade. It
- * supports two parsing modes:
+ * AnimCodeParser extracts AnimationParams from C source files by following the callback chain rather than relying on
+ * hardcoded function prefixes. The discovery process works as follows:
  *
- * 1. **Generated header parsing**: Parses our own `generated_anim_code.h` format produced by AnimCodeGenerator. This is
- *    used for subsequent imports and compiles after the tileset has been onboarded to Porytiles management.
+ * 1. **Callback function** (e.g., `InitTilesetAnim_General`): Contains assignment to the driver callback pointer
+ * 2. **Driver function** (e.g., `TilesetAnim_General`): Contains timer conditions and queue function calls
+ * 3. **Queue functions**: Contain `AppendTilesetAnimToBuffer` calls with animation parameters
  *
- * 2. **Vanilla parsing**: Parses the original `tileset_anims.c` patterns used in pokeemerald. This is used for
- *    first-time imports when the tileset hasn't yet been onboarded to Porytiles.
+ * The only required invariant is that animation frame arrays follow the naming convention:
+ * `gTilesetAnims_{TilesetName}_{AnimName}{_OptionalSuffix}`
  *
  * The parser extracts:
- * - tile_offset from TILE_OFFSET_4BPP(X) in QueueAnimTiles functions
+ * - tile_offset from TILE_OFFSET_4BPP(X) in AppendTilesetAnimToBuffer calls
  * - tile_count from X * TILE_SIZE_4BPP
  * - frame_factor from timer % X in driver functions
  * - frame_offset from timer % X == Y conditions
@@ -53,41 +53,34 @@ class AnimCodeParser {
     }
 
     /**
-     * @brief Parses a Porytiles-generated animation header file.
+     * @brief Parses animation parameters by following the callback chain.
      *
      * @details
-     * Parses `generated_anim_code.h` files created by AnimCodeGenerator. Extracts all animation parameters including
-     * tile_offset and tile_count which are embedded in the QueueAnimTiles functions.
+     * This is the primary parsing method that discovers animations automatically without requiring the caller to
+     * provide expected animation names. It follows the callback chain:
      *
-     * @param header_path Path to the generated_anim_code.h file
-     * @param tileset_name The name of the tileset to extract animations for
-     * @param expected_anim_names A set of animation names we're expecting to find
-     * @return Map of animation names to their parsed parameters, or error
+     * 1. Parses the callback function (e.g., `InitTilesetAnim_General`) to find the driver function assignment
+     * 2. Parses the driver function to find timer conditions and queue function calls
+     * 3. For each queue function, finds `AppendTilesetAnimToBuffer` calls and extracts:
+     *    - Animation name from the first argument (e.g., `gTilesetAnims_General_Flower[i]` → "flower")
+     *    - tile_offset from the second argument
+     *    - tile_count from the third argument
+     * 4. Parses frame pointer arrays to get frame sequences
+     *
+     * This approach removes the brittleness of requiring hardcoded function prefixes like `TilesetAnim_` or
+     * `QueueAnimTiles_`. Driver and queue functions can have any name as long as they follow the calling pattern.
+     *
+     * @param c_file_path Path to the C file containing animation code (tileset_anims.c or generated_anim_code.h)
+     * @param callback_func_name The callback function name from the tileset struct (e.g., "InitTilesetAnim_General")
+     * @param tileset_shorthand The tileset name without prefix (e.g., "General" from "gTileset_General")
+     * @param porytiles_managed True if this is a Porytiles-managed tileset (uses "PorytilesManaged_" prefix)
+     * @return Map of animation names (snake_case) to their parsed parameters, or error
      */
-    [[nodiscard]] ChainableResult<std::map<std::string, AnimationParams>> parse_generated_header(
-        const std::filesystem::path &header_path,
-        const std::string &tileset_name,
-        const std::set<std::string> &expected_anim_names) const;
-
-    /**
-     * @brief Parses vanilla pokeemerald tileset animation code.
-     *
-     * @details
-     * Parses the original tileset_anims.c patterns used in pokeemerald for first-time imports. This handles the
-     * various animation patterns found in vanilla code including simple animations and VDests patterns.
-     *
-     * Note: VDests patterns are currently detected but not fully supported; they will be parsed with default
-     * parameters and a warning may be logged.
-     *
-     * @param anims_c_path Path to the tileset_anims.c file
-     * @param tileset_name The name of the tileset to extract animations for
-     * @param expected_anim_names A set of animation names we're expecting to find
-     * @return Map of animation names to their parsed parameters, or error
-     */
-    [[nodiscard]] ChainableResult<std::map<std::string, AnimationParams>> parse_vanilla_anims(
-        const std::filesystem::path &anims_c_path,
-        const std::string &tileset_name,
-        const std::set<std::string> &expected_anim_names) const;
+    [[nodiscard]] ChainableResult<std::map<std::string, AnimationParams>> parse_from_callback(
+        const std::filesystem::path &c_file_path,
+        const std::string &callback_func_name,
+        const std::string &tileset_shorthand,
+        bool porytiles_managed) const;
 
   private:
     const TextFormatter *format_;

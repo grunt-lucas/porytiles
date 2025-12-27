@@ -2,9 +2,11 @@
 
 #include <filesystem>
 #include <map>
+#include <optional>
 
 #include "gsl/pointers"
 
+#include "porytiles2/domain/models/animation_callback_info.hpp"
 #include "porytiles2/domain/services/tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/c_parser/incbin_declaration.hpp"
 #include "porytiles2/utilities/c_parser/struct_initializer_declaration.hpp"
@@ -17,15 +19,15 @@ namespace porytiles2 {
  * @brief Filesystem-based implementation of TilesetMetadataProvider.
  *
  * @details
- * ProjectTilesetMetadataProvider parses C source files from a pokeemerald-style project to discover
- * tileset metadata and artifact paths. It parses:
+ * ProjectTilesetMetadataProvider parses C source files from a pokeemerald-style project to discover tileset metadata
+ * and artifact paths. It parses:
  *
  * - `src/data/tilesets/headers.h` - For tileset struct definitions (isSecondary, variable references)
  * - `src/data/tilesets/graphics.h` - For INCBIN declarations (tiles, palettes)
  * - `src/data/tilesets/metatiles.h` - For INCBIN declarations (metatiles, attributes)
  *
- * The provider uses lazy loading with caching - files are parsed on first access and results
- * are cached for subsequent queries.
+ * The provider uses lazy loading with caching - files are parsed on first access and results are cached for subsequent
+ * queries.
  *
  * Example:
  * @code
@@ -71,8 +73,8 @@ class ProjectTilesetMetadataProvider final : public TilesetMetadataProvider {
      * @brief Retrieves resolved artifact paths for a specific tileset.
      *
      * @details
-     * Parses graphics.h and metatiles.h on first call and caches results. Uses the variable
-     * names from metadata to look up INCBIN paths.
+     * Parses graphics.h and metatiles.h on first call and caches results. Uses the variable names from metadata to look
+     * up INCBIN paths.
      *
      * @param tileset_name The tileset to look up
      * @return TilesetArtifactPaths on success, or an error if paths cannot be resolved
@@ -104,6 +106,19 @@ class ProjectTilesetMetadataProvider final : public TilesetMetadataProvider {
      */
     [[nodiscard]] ChainableResult<AnimationFramePaths>
     animation_frame_paths_for(const TilesetName &tileset_name) const override;
+
+    /**
+     * @brief Retrieves animation callback information for a specific tileset.
+     *
+     * @details
+     * Parses the tileset's callback function name from TilesetMetadata to extract the information needed to invoke
+     * AnimCodeParser::parse_from_callback().
+     *
+     * @param tileset_name The tileset to look up
+     * @return AnimationCallbackInfo if the tileset has animations, nullopt if not
+     */
+    [[nodiscard]] ChainableResult<std::optional<AnimationCallbackInfo>>
+    animation_callback_info_for(const TilesetName &tileset_name) const override;
 
   private:
     [[nodiscard]] ChainableResult<void> ensure_headers_parsed() const;

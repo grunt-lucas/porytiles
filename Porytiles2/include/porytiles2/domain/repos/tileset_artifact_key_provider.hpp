@@ -1,8 +1,10 @@
 #pragma once
 
+#include <optional>
 #include <set>
 #include <string>
 
+#include "porytiles2/domain/models/animation_callback_info.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/tileset_name.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
@@ -184,6 +186,20 @@ class TilesetArtifactKeyProvider {
      */
     [[nodiscard]] virtual ChainableResult<std::set<int>>
     discover_porymap_anim_frames(const TilesetName &name, const std::string &anim_name) const = 0;
+
+    /**
+     * @brief Gets animation callback information for a tileset.
+     *
+     * @details
+     * Retrieves the callback function name, tileset shorthand, whether it's Porytiles-managed,
+     * and the path to the C file containing animation code. Returns nullopt if the tileset
+     * has no animations (i.e., .callback = NULL).
+     *
+     * @param name The name of the tileset
+     * @return AnimationCallbackInfo if tileset has animations, nullopt if no animations
+     */
+    [[nodiscard]] virtual ChainableResult<std::optional<AnimationCallbackInfo>>
+    animation_callback_info_for(const TilesetName &name) const = 0;
 
     /**
      * @brief Gets the keys for all Porytiles artifacts present in the given Tileset.

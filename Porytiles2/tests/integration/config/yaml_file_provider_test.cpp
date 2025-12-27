@@ -61,6 +61,12 @@ class StubTilesetMetadataProvider final : public TilesetMetadataProvider {
     {
         return AnimationFramePaths{}; // No animations for testing
     }
+
+    [[nodiscard]] ChainableResult<std::optional<AnimationCallbackInfo>>
+    animation_callback_info_for(const TilesetName & /*tileset_name*/) const override
+    {
+        return std::optional<AnimationCallbackInfo>{}; // No animations for testing
+    }
 };
 
 class YamlFileProviderTest : public ::testing::Test {
