@@ -4,7 +4,6 @@
 #include <filesystem>
 #include <fstream>
 
-#include "porytiles2/domain/services/tileset_metadata_provider.hpp"
 #include "porytiles2/infra/config/yaml_file_provider.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"

@@ -5,10 +5,11 @@
 #include <format>
 #include <string>
 
-#include "porytiles2/domain/models/tileset_artifact_paths.hpp"
 #include "porytiles2/domain/models/tileset_name.hpp"
+#include "porytiles2/infra/repos/tileset_artifact_paths.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/utilities/string_utils.hpp"
 
 namespace {
 
@@ -81,7 +82,7 @@ ProjectTilesetArtifactKeyProvider::key_for_porymap_pal_n(const TilesetName &name
         artifact_paths(name),
         format_->format("failed to get Porymap pal key for tileset '{}'", FormatParam{name.shorthand(), Style::bold}),
         ArtifactKey);
-    return ArtifactKey{project_root_ / paths.palettes_dir() / tileset::pal_filename(index)};
+    return ArtifactKey{project_root_ / paths.palettes_dir() / pal_filename(index)};
 }
 
 ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_frame(
@@ -160,7 +161,7 @@ ProjectTilesetArtifactKeyProvider::key_for_porytiles_pal_n(const TilesetName &na
         tileset_root(name),
         format_->format("failed to get Porytiles pal key for tileset '{}'", FormatParam{name.shorthand(), Style::bold}),
         ArtifactKey);
-    return ArtifactKey{tileset_path / porytiles_directory / porytiles_pals / tileset::pal_filename(index)};
+    return ArtifactKey{tileset_path / porytiles_directory / porytiles_pals / pal_filename(index)};
 }
 
 ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_frame(

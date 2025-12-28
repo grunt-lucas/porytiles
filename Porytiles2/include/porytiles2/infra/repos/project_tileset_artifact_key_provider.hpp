@@ -7,10 +7,10 @@
 
 #include "gsl/pointers"
 
-#include "porytiles2/domain/models/tileset_artifact_paths.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
-#include "porytiles2/domain/services/tileset_metadata_provider.hpp"
+#include "porytiles2/infra/repos/project_tileset_metadata_provider.hpp"
+#include "porytiles2/infra/repos/tileset_artifact_paths.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
@@ -45,7 +45,7 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
      */
     explicit ProjectTilesetArtifactKeyProvider(
         std::filesystem::path project_root,
-        gsl::not_null<const TilesetMetadataProvider *> metadata_provider,
+        gsl::not_null<const ProjectTilesetMetadataProvider *> metadata_provider,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag)
         : project_root_{std::move(project_root)}, metadata_provider_{metadata_provider}, format_{format}, diag_{diag}
@@ -133,7 +133,7 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
     [[nodiscard]] ChainableResult<TilesetArtifactPaths> artifact_paths(const TilesetName &name) const;
 
     std::filesystem::path project_root_;
-    const TilesetMetadataProvider *metadata_provider_;
+    const ProjectTilesetMetadataProvider *metadata_provider_;
 
     // TODO: implement configurable override paths for users who have changed the pokeemerald project structure
     // std::optional<std::filesystem::path> behaviors_header_override_path_;

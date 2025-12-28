@@ -6,8 +6,8 @@
 
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/models/tileset_artifact_paths.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/utilities/string_utils.hpp"
 #include "porytiles2/xcut/config/unwrap_config.hpp"
 
 namespace {
@@ -65,7 +65,7 @@ ChainableResult<void> validate_single_porytiles_pal(
     PT_UNWRAP_TILESET_CONFIG_PTR(config, extrinsic_transparency, tileset_scope, void);
 
     bool hit_error = false;
-    const std::string filename = tileset::pal_filename(pal_index);
+    const std::string filename = pal_filename(pal_index);
     std::vector<std::size_t> violating_slots;
 
     // Check 1: Slot 0 should match extrinsic transparency (warning only)
@@ -134,7 +134,7 @@ ChainableResult<void> validate_single_porymap_pal(
     PT_UNWRAP_TILESET_CONFIG_PTR(config, extrinsic_transparency, tileset_scope, void);
 
     bool hit_error = false;
-    const std::string filename = tileset::pal_filename(pal_index);
+    const std::string filename = pal_filename(pal_index);
     std::vector<std::size_t> violating_slots;
 
     if (pal.is_wildcard(0)) {

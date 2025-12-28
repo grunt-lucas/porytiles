@@ -1,6 +1,4 @@
-#include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
-
-#include "porytiles2/domain/models/animation.hpp"
+#include "porytiles2/infra/repos/project_tileset_metadata_provider.hpp"
 
 #include <algorithm>
 #include <format>

@@ -20,7 +20,6 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tiles_png_workspace.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
-#include "porytiles2/domain/models/tileset_artifact_paths.hpp"
 #include "porytiles2/domain/packing/services/best_fusion_strategy.hpp"
 #include "porytiles2/domain/packing/services/overload_and_remove_strategy.hpp"
 #include "porytiles2/domain/packing/services/palette_packer.hpp"
@@ -32,6 +31,7 @@
 #include "porytiles2/utilities/functional/transform.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/utilities/string_utils.hpp"
 #include "porytiles2/xcut/config/config_validators.hpp"
 #include "porytiles2/xcut/config/unwrap_config.hpp"
 #include "porytiles2/xcut/di/components.hpp"
@@ -684,7 +684,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing(const std::v
             constexpr auto tag = "palette-packing-result";
             std::vector<std::string> remark_lines;
             remark_lines.emplace_back(
-                format_.format("packed '{}' contents:", FormatParam{tileset::pal_filename(i), Style::bold}));
+                format_.format("packed '{}' contents:", FormatParam{pal_filename(i), Style::bold}));
             remark_lines.emplace_back();
             std::ranges::copy(
                 pal_printer_.print_rgba_palette(maybe_packed_pal.value()), std::back_inserter(remark_lines));
@@ -721,7 +721,7 @@ ChainableResult<ColorIndexMap<Rgba32>> CompilerTask::pipeline_helper_build_color
                 format_.format(
                     "found '{}' global unique colors after adding Porytiles palette '{}', limit is '{}'",
                     FormatParam{color_index_map.size(), Style::bold},
-                    FormatParam{tileset::pal_filename(pal_index), Style::bold},
+                    FormatParam{pal_filename(pal_index), Style::bold},
                     FormatParam{color_count_limit, Style::bold}));
             diag_.note(tag, global_color_limit_definition(format_, color_count_limit, num_pals_in_primary_));
 
@@ -729,7 +729,7 @@ ChainableResult<ColorIndexMap<Rgba32>> CompilerTask::pipeline_helper_build_color
                 "{}: found '{}' unique colors after adding Porytiles palette '{}', limit is '{}'",
                 FormatParam{tag, Style::bold},
                 FormatParam{color_index_map.size(), Style::bold},
-                FormatParam{tileset::pal_filename(pal_index), Style::bold},
+                FormatParam{pal_filename(pal_index), Style::bold},
                 FormatParam{color_count_limit, Style::bold}};
         }
     }
@@ -781,8 +781,7 @@ void CompilerTask::pipeline_helper_emit_no_matching_tile_error(
 
     // Print note showing the palette that matched
     std::vector<std::string> pal_note{};
-    pal_note.emplace_back(
-        format_.format("matched palette '{}':", FormatParam{tileset::pal_filename(pal_index), Style::bold}));
+    pal_note.emplace_back(format_.format("matched palette '{}':", FormatParam{pal_filename(pal_index), Style::bold}));
     std::ranges::copy(pal_printer_.print_rgba_palette(matched_pal), std::back_inserter(pal_note));
     diag_.note(tag, pal_note);
 
@@ -821,15 +820,15 @@ void CompilerTask::pipeline_helper_emit_no_matching_pal_error(
             // Add a blank line between subsequent matches
             closest_n_note.emplace_back();
         }
-        closest_n_note.push_back(format_.format(
-            "Palette match candidate: {}", FormatParam{tileset::pal_filename(match.pal_index), Style::bold}));
+        closest_n_note.push_back(
+            format_.format("Palette match candidate: {}", FormatParam{pal_filename(match.pal_index), Style::bold}));
         std::ranges::copy(
             pal_printer_.print_rgba_palette_covered_missing(
                 new_porymap_pals_.at(match.pal_index), match.covered_colors, match.missing_colors),
             std::back_inserter(closest_n_note));
         closest_n_note.emplace_back();
-        closest_n_note.push_back(format_.format(
-            "Uncovered pixels with {}:", FormatParam{tileset::pal_filename(match.pal_index), Style::bold}));
+        closest_n_note.push_back(
+            format_.format("Uncovered pixels with {}:", FormatParam{pal_filename(match.pal_index), Style::bold}));
         std::ranges::copy(
             tile_printer_.print_metatile_pixel_highlights(
                 porytiles_metatiles_.at(metatile_index),
