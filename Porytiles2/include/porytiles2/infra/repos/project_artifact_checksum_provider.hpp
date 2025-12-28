@@ -1,10 +1,11 @@
 #pragma once
 
+#include <string>
+
 #include "gsl/pointers"
 
-#include "porytiles2/domain/models/tileset_name.hpp"
+#include "porytiles2/domain/repos/artifact_checksum_provider.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
-#include "porytiles2/domain/services/artifact_checksum_provider.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
@@ -23,13 +24,13 @@ class ProjectArtifactChecksumProvider final : public ArtifactChecksumProvider {
     }
 
     [[nodiscard]] std::unordered_map<ArtifactKey, std::string>
-    compute_tileset_artifact_checksums(const TilesetName &name) const override;
+    compute_tileset_artifact_checksums(const std::string &name) const override;
 
     [[nodiscard]] std::unordered_map<ArtifactKey, std::string>
-    load_cached_tileset_checksums(const TilesetName &name) const override;
+    load_cached_tileset_checksums(const std::string &name) const override;
 
     [[nodiscard]] ChainableResult<void> cache_tileset_checksums(
-        const TilesetName &name, const std::unordered_map<ArtifactKey, std::string> &checksums) const override;
+        const std::string &name, const std::unordered_map<ArtifactKey, std::string> &checksums) const override;
 
   private:
     const ProjectTilesetArtifactKeyProvider *key_provider_;

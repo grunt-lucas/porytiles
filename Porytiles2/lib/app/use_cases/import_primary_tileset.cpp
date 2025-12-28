@@ -8,19 +8,18 @@
 
 namespace porytiles2 {
 
-ChainableResult<void> ImportPrimaryTileset::import(const TilesetName &name) const
+ChainableResult<void> ImportPrimaryTileset::import(const std::string &name) const
 {
     // 1. Check if the primary tileset exists. If not, abort with error.
     if (!tileset_repo_->exists(name)) {
-        return FormattableError{"tileset '{}' does not exist", FormatParam{name.shorthand(), Style::bold}};
+        return FormattableError{"tileset '{}' does not exist", FormatParam{name, Style::bold}};
     }
 
     // 2. Load the tileset into a `Tileset` aggregate.
     auto maybe_tileset = tileset_repo_->load(name);
     if (!maybe_tileset.has_value()) {
         return ChainableResult<void>{
-            FormattableError{
-                format_->format("failed to load tileset '{}'", FormatParam{name.shorthand(), Style::bold})},
+            FormattableError{format_->format("failed to load tileset '{}'", FormatParam{name, Style::bold})},
             maybe_tileset};
     }
     const auto tileset = std::move(maybe_tileset.value());
@@ -46,11 +45,11 @@ ChainableResult<void> ImportPrimaryTileset::import(const TilesetName &name) cons
     if (!tileset_repo_->checksum_provider().cached_checksums_exist(name)) {
         diag_->warning(
             "missing-checksums",
-            format_->format("no cached checksums found for tileset '{}'", FormatParam{name.shorthand(), Style::bold}));
+            format_->format("no cached checksums found for tileset '{}'", FormatParam{name, Style::bold}));
     }
 
     // Only perform the checksum checks if: 1) cached checksums exist and 2) the user is requesting checksum validation
-    PT_UNWRAP_TILESET_CONFIG_PTR(app_config_, verify_checksums, name.shorthand(), void);
+    PT_UNWRAP_TILESET_CONFIG_PTR(app_config_, verify_checksums, name, void);
     if (tileset_repo_->checksum_provider().cached_checksums_exist(name) && verify_checksums.value()) {
         // 4. If `PorytilesTilesetComponent` is not empty, compare with cached checksums in `artifact_checksums.json`.
         // If any differ, bail with the message "uncompiled changes present in Porytiles asset X."
@@ -92,16 +91,14 @@ ChainableResult<void> ImportPrimaryTileset::import(const TilesetName &name) cons
     auto maybe_imported_tileset = importer_->import(*tileset);
     if (!maybe_imported_tileset.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"import job failed for '{}'", FormatParam{name.shorthand(), Style::bold}},
-            maybe_imported_tileset};
+            FormattableError{"import job failed for '{}'", FormatParam{name, Style::bold}}, maybe_imported_tileset};
     }
     const auto imported_tileset = std::move(maybe_imported_tileset.value());
 
     // 7. Persist the `Tileset` (which also caches the checksums).
     if (const auto save_result = tileset_repo_->save(*imported_tileset); !save_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"tileset save job failed for '{}'", FormatParam{name.shorthand(), Style::bold}},
-            save_result};
+            FormattableError{"tileset save job failed for '{}'", FormatParam{name, Style::bold}}, save_result};
     }
 
     return {};

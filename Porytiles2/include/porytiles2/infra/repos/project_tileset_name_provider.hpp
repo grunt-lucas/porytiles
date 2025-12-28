@@ -5,8 +5,7 @@
 
 #include "gsl/pointers"
 
-#include "porytiles2/domain/models/tileset_name.hpp"
-#include "porytiles2/domain/services/tileset_name_provider.hpp"
+#include "porytiles2/domain/repos/tileset_name_provider.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
@@ -25,7 +24,7 @@ class ProjectTilesetNameProvider : TilesetNameProvider {
     {
     }
 
-    [[nodiscard]] ChainableResult<std::set<TilesetName>> all_tileset_names() const override;
+    [[nodiscard]] ChainableResult<std::set<std::string>> all_tileset_names() const override;
 
   private:
     std::filesystem::path project_root_;

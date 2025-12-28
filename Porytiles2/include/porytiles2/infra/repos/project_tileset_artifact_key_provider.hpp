@@ -55,66 +55,66 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
     /*
      * Porymap artifacts
      */
-    [[nodiscard]] ChainableResult<ArtifactKey> key_for_metatiles_bin(const TilesetName &name) const override;
+    [[nodiscard]] ChainableResult<ArtifactKey> key_for_metatiles_bin(const std::string &name) const override;
 
-    [[nodiscard]] ChainableResult<ArtifactKey> key_for_metatile_attributes_bin(const TilesetName &name) const override;
+    [[nodiscard]] ChainableResult<ArtifactKey> key_for_metatile_attributes_bin(const std::string &name) const override;
 
-    [[nodiscard]] ChainableResult<ArtifactKey> key_for_tiles_png(const TilesetName &name) const override;
+    [[nodiscard]] ChainableResult<ArtifactKey> key_for_tiles_png(const std::string &name) const override;
 
     [[nodiscard]] ChainableResult<ArtifactKey>
-    key_for_porymap_pal_n(const TilesetName &name, std::size_t index) const override;
+    key_for_porymap_pal_n(const std::string &name, std::size_t index) const override;
 
     [[nodiscard]] ChainableResult<ArtifactKey> key_for_porymap_anim_frame(
-        const TilesetName &name, const std::string &anim_name, std::size_t frame_index) const override;
+        const std::string &name, const std::string &anim_name, std::size_t frame_index) const override;
 
-    [[nodiscard]] ChainableResult<ArtifactKey> key_for_generated_anim_code(const TilesetName &name) const override;
+    [[nodiscard]] ChainableResult<ArtifactKey> key_for_generated_anim_code(const std::string &name) const override;
 
     /*
      * Porytiles artifacts
      */
-    [[nodiscard]] ChainableResult<ArtifactKey> key_for_bottom_png(const TilesetName &name) const override;
+    [[nodiscard]] ChainableResult<ArtifactKey> key_for_bottom_png(const std::string &name) const override;
 
-    [[nodiscard]] ChainableResult<ArtifactKey> key_for_middle_png(const TilesetName &name) const override;
+    [[nodiscard]] ChainableResult<ArtifactKey> key_for_middle_png(const std::string &name) const override;
 
-    [[nodiscard]] ChainableResult<ArtifactKey> key_for_top_png(const TilesetName &name) const override;
+    [[nodiscard]] ChainableResult<ArtifactKey> key_for_top_png(const std::string &name) const override;
 
-    [[nodiscard]] ChainableResult<ArtifactKey> key_for_attributes_csv(const TilesetName &name) const override;
+    [[nodiscard]] ChainableResult<ArtifactKey> key_for_attributes_csv(const std::string &name) const override;
 
     [[nodiscard]] ChainableResult<ArtifactKey>
-    key_for_porytiles_pal_n(const TilesetName &name, std::size_t index) const override;
+    key_for_porytiles_pal_n(const std::string &name, std::size_t index) const override;
 
     [[nodiscard]] ChainableResult<ArtifactKey> key_for_porytiles_anim_frame(
-        const TilesetName &name, const std::string &anim_name, std::size_t frame_index) const override;
+        const std::string &name, const std::string &anim_name, std::size_t frame_index) const override;
 
     [[nodiscard]] ChainableResult<ArtifactKey>
-    key_for_porytiles_anim_key_frame(const TilesetName &name, const std::string &anim_name) const override;
+    key_for_porytiles_anim_key_frame(const std::string &name, const std::string &anim_name) const override;
 
-    [[nodiscard]] ChainableResult<ArtifactKey> key_for_anim_yaml(const TilesetName &name) const override;
+    [[nodiscard]] ChainableResult<ArtifactKey> key_for_anim_yaml(const std::string &name) const override;
 
-    [[nodiscard]] ChainableResult<ArtifactKey> key_for_config(const TilesetName &name) const override;
+    [[nodiscard]] ChainableResult<ArtifactKey> key_for_config(const std::string &name) const override;
 
-    [[nodiscard]] ChainableResult<ArtifactKey> key_for_local_config(const TilesetName &name) const override;
+    [[nodiscard]] ChainableResult<ArtifactKey> key_for_local_config(const std::string &name) const override;
 
     /*
      * Utilities
      */
     [[nodiscard]] bool artifact_exists(const ArtifactKey &key) const override;
 
-    [[nodiscard]] bool tileset_exists(const TilesetName &name) const override;
+    [[nodiscard]] bool tileset_exists(const std::string &name) const override;
 
     [[nodiscard]] ChainableResult<std::set<std::string>>
-    discover_porytiles_anims(const TilesetName &name) const override;
+    discover_porytiles_anims(const std::string &name) const override;
 
     [[nodiscard]] ChainableResult<std::set<int>>
-    discover_porytiles_anim_frames(const TilesetName &name, const std::string &anim_name) const override;
+    discover_porytiles_anim_frames(const std::string &name, const std::string &anim_name) const override;
 
-    [[nodiscard]] ChainableResult<std::set<std::string>> discover_porymap_anims(const TilesetName &name) const override;
+    [[nodiscard]] ChainableResult<std::set<std::string>> discover_porymap_anims(const std::string &name) const override;
 
     [[nodiscard]] ChainableResult<std::set<int>>
-    discover_porymap_anim_frames(const TilesetName &name, const std::string &anim_name) const override;
+    discover_porymap_anim_frames(const std::string &name, const std::string &anim_name) const override;
 
     [[nodiscard]] ChainableResult<std::optional<AnimationCallbackInfo>>
-    animation_callback_info_for(const TilesetName &name) const override;
+    animation_callback_info_for(const std::string &name) const override;
 
     /**
      * @brief Returns the filesystem path to the root directory of a tileset.
@@ -127,10 +127,10 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
      * @param name The name of the tileset
      * @return The filesystem path to the tileset's root directory
      */
-    [[nodiscard]] ChainableResult<std::filesystem::path> tileset_root(const TilesetName &name) const;
+    [[nodiscard]] ChainableResult<std::filesystem::path> tileset_root(const std::string &name) const;
 
   private:
-    [[nodiscard]] ChainableResult<TilesetArtifactPaths> artifact_paths(const TilesetName &name) const;
+    [[nodiscard]] ChainableResult<TilesetArtifactPaths> artifact_paths(const std::string &name) const;
 
     std::filesystem::path project_root_;
     const ProjectTilesetMetadataProvider *metadata_provider_;

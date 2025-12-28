@@ -3,8 +3,6 @@
 #include <optional>
 #include <string>
 
-#include "porytiles2/domain/models/tileset_name.hpp"
-
 namespace porytiles2 {
 
 /*
@@ -52,7 +50,7 @@ class TilesetMetadata {
      * @param callback_func The callback function name if animations exist, "NULL" or empty if none
      */
     TilesetMetadata(
-        TilesetName name,
+        std::string name,
         bool is_secondary,
         std::string tiles_var,
         std::string palettes_var,
@@ -70,7 +68,7 @@ class TilesetMetadata {
      *
      * @return A const reference to the TilesetName
      */
-    [[nodiscard]] const TilesetName &name() const
+    [[nodiscard]] const std::string &name() const
     {
         return name_;
     }
@@ -149,7 +147,7 @@ class TilesetMetadata {
     }
 
   private:
-    TilesetName name_;
+    std::string name_;
     bool is_secondary_;
     std::string tiles_var_;
     std::string palettes_var_;

@@ -3,12 +3,12 @@
 #include <filesystem>
 #include <map>
 #include <optional>
+#include <string>
 
 #include "gsl/pointers"
 
-#include "porytiles2/domain/models/animation_callback_info.hpp"
+#include "animation_callback_info.hpp"
 #include "porytiles2/domain/models/tileset_metadata.hpp"
-#include "porytiles2/domain/models/tileset_name.hpp"
 #include "porytiles2/infra/repos//tileset_artifact_paths.hpp"
 #include "porytiles2/utilities/c_parser/incbin_declaration.hpp"
 #include "porytiles2/utilities/c_parser/struct_initializer_declaration.hpp"
@@ -16,6 +16,13 @@
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles2 {
+
+/*
+ * TODO: ANIM: move this class's functionality entirely into ProjectTilesetArtifactKeyProvider. It doesn't need to be
+ * its own class. It doesn't even have a parent interface. This functionality is all related to artifact key discovery
+ * via pokeemerald project tilesets/headers.h and related files, which is already the unique responsibility of
+ * ProjectTilesetArtifactKeyProvider.
+ */
 
 /**
  * @brief Provides tileset metadata and artifact paths by parsing project source files.
@@ -79,7 +86,7 @@ class ProjectTilesetMetadataProvider final {
      * @param tileset_name The tileset to look up
      * @return TilesetMetadata on success, or an error if the tileset is not found or parsing fails
      */
-    [[nodiscard]] ChainableResult<TilesetMetadata> metadata_for(const TilesetName &tileset_name) const;
+    [[nodiscard]] ChainableResult<TilesetMetadata> metadata_for(const std::string &tileset_name) const;
 
     /**
      * @brief Retrieves resolved artifact paths for a specific tileset.
@@ -92,7 +99,7 @@ class ProjectTilesetMetadataProvider final {
      * @param tileset_name The tileset to look up
      * @return TilesetArtifactPaths on success, or an error if paths cannot be resolved
      */
-    [[nodiscard]] ChainableResult<TilesetArtifactPaths> artifact_paths_for(const TilesetName &tileset_name) const;
+    [[nodiscard]] ChainableResult<TilesetArtifactPaths> artifact_paths_for(const std::string &tileset_name) const;
 
     /**
      * @brief Checks if a tileset exists in the project.
@@ -104,7 +111,7 @@ class ProjectTilesetMetadataProvider final {
      * @param tileset_name The tileset to check
      * @return true if the tileset exists, false otherwise, or an error on parse failure
      */
-    [[nodiscard]] ChainableResult<bool> tileset_exists(const TilesetName &tileset_name) const;
+    [[nodiscard]] ChainableResult<bool> tileset_exists(const std::string &tileset_name) const;
 
     /**
      * @brief Retrieves animation frame paths for a specific tileset.
@@ -120,7 +127,7 @@ class ProjectTilesetMetadataProvider final {
      * @param tileset_name The tileset to look up
      * @return AnimationFramePaths on success (may be empty if no animations), or an error if parsing fails
      */
-    [[nodiscard]] ChainableResult<AnimationFramePaths> animation_frame_paths_for(const TilesetName &tileset_name) const;
+    [[nodiscard]] ChainableResult<AnimationFramePaths> animation_frame_paths_for(const std::string &tileset_name) const;
 
     /**
      * @brief Retrieves animation callback information for a specific tileset.
@@ -140,16 +147,13 @@ class ProjectTilesetMetadataProvider final {
      * @return AnimationCallbackInfo if the tileset has animations, nullopt if not, or an error if parsing fails
      */
     [[nodiscard]] ChainableResult<std::optional<AnimationCallbackInfo>>
-    animation_callback_info_for(const TilesetName &tileset_name) const;
+    animation_callback_info_for(const std::string &tileset_name) const;
 
   private:
     [[nodiscard]] ChainableResult<void> ensure_headers_parsed() const;
     [[nodiscard]] ChainableResult<void> ensure_incbins_parsed() const;
 
     [[nodiscard]] ChainableResult<std::string> lookup_incbin_path(const std::string &variable_name) const;
-
-    [[nodiscard]] ChainableResult<AnimationFramePaths> parse_anim_incbins_from_file(
-        const std::filesystem::path &c_file, const std::string &tileset_shorthand, bool porytiles_managed) const;
     [[nodiscard]] ChainableResult<std::vector<std::string>> lookup_incbin_paths(const std::string &variable_name) const;
 
     std::filesystem::path project_root_;

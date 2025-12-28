@@ -4,7 +4,6 @@
 #include <unordered_map>
 
 #include "porytiles2/domain/models/tileset.hpp"
-#include "porytiles2/domain/models/tileset_name.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
@@ -31,7 +30,7 @@ class ArtifactChecksumProvider {
      * @return A mapping of artifact keys to their computed checksum
      */
     [[nodiscard]] virtual std::unordered_map<ArtifactKey, std::string>
-    compute_tileset_artifact_checksums(const TilesetName &name) const = 0;
+    compute_tileset_artifact_checksums(const std::string &name) const = 0;
 
     /**
      * @brief Loads the cached checksums for the given Tileset.
@@ -40,7 +39,7 @@ class ArtifactChecksumProvider {
      * @return A mapping of artifact keys to their cached checksums
      */
     [[nodiscard]] virtual std::unordered_map<ArtifactKey, std::string>
-    load_cached_tileset_checksums(const TilesetName &name) const = 0;
+    load_cached_tileset_checksums(const std::string &name) const = 0;
 
     /**
      * @brief Caches checksums for the given Tileset to persistent storage.
@@ -50,7 +49,7 @@ class ArtifactChecksumProvider {
      * @return ChainableResult indicating success or failure of the cache operation
      */
     [[nodiscard]] virtual ChainableResult<void> cache_tileset_checksums(
-        const TilesetName &name, const std::unordered_map<ArtifactKey, std::string> &checksums) const = 0;
+        const std::string &name, const std::unordered_map<ArtifactKey, std::string> &checksums) const = 0;
 
     /**
      * @brief Finds all artifacts for the given Tileset with unsynced changes compared to cached checksums.
@@ -64,7 +63,25 @@ class ArtifactChecksumProvider {
      * @return Vector of artifact keys that have mismatched checksums
      */
     [[nodiscard]] std::vector<ArtifactKey>
-    find_unsynced_tileset_artifacts(const TilesetName &name, const std::vector<ArtifactKey> &artifact_keys) const;
+    find_unsynced_tileset_artifacts(const std::string &name, const std::vector<ArtifactKey> &artifact_keys) const
+    {
+        const auto checksums = compute_tileset_artifact_checksums(name);
+        const auto cached_checksums = load_cached_tileset_checksums(name);
+
+        if (cached_checksums.empty()) {
+            return {};
+        }
+
+        std::vector<ArtifactKey> mismatched_keys;
+        for (const auto &key : artifact_keys) {
+            const auto checksum_for_key = checksums.contains(key) ? checksums.at(key) : "";
+            const auto cached_checksum_for_key = cached_checksums.contains(key) ? cached_checksums.at(key) : "";
+            if (checksum_for_key != cached_checksum_for_key) {
+                mismatched_keys.push_back(key);
+            }
+        }
+        return mismatched_keys;
+    }
 
     /**
      * @brief Check if any cached checksums exist for the given tileset.
@@ -72,7 +89,10 @@ class ArtifactChecksumProvider {
      * @param name The name of the tileset to check
      * @return If any cached checksums exist for the given tileset
      */
-    [[nodiscard]] bool cached_checksums_exist(const TilesetName &name) const;
+    [[nodiscard]] bool cached_checksums_exist(const std::string &name) const
+    {
+        return !load_cached_tileset_checksums(name).empty();
+    }
 
     /**
      * @brief Checks if all artifact checksums for the given Tileset match their cached values.
@@ -87,7 +107,10 @@ class ArtifactChecksumProvider {
      * @return True if all checksums match, false if any differ
      */
     [[nodiscard]] bool
-    all_checksums_tileset_match(const TilesetName &name, const std::vector<ArtifactKey> &artifact_keys) const;
+    all_checksums_tileset_match(const std::string &name, const std::vector<ArtifactKey> &artifact_keys) const
+    {
+        return find_unsynced_tileset_artifacts(name, artifact_keys).empty();
+    }
 };
 
 } // namespace porytiles2

@@ -5,11 +5,11 @@
 #include <fstream>
 #include <map>
 #include <sstream>
+#include <string>
 
 #include "yaml-cpp/yaml.h"
 
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
-#include "porytiles2/domain/models/tileset_name.hpp"
 #include "porytiles2/domain/packing/models/palette_hint.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/infra/config/config_provider.hpp"
@@ -584,15 +584,14 @@ porytiles2::ChainableResult<std::vector<std::filesystem::path>> get_tileset_conf
     std::vector<std::filesystem::path> paths;
 
     // Get tileset-specific config paths using the key provider
-    const auto name = TilesetName::from(tileset);
     PT_TRY_ASSIGN_CHAIN_ERR(
         tileset_local_config_key,
-        key_provider->key_for_local_config(name),
+        key_provider->key_for_local_config(tileset),
         "failed to get config path chain for tileset '" + tileset + "'",
         std::vector<std::filesystem::path>);
     PT_TRY_ASSIGN_CHAIN_ERR(
         tileset_config_key,
-        key_provider->key_for_config(name),
+        key_provider->key_for_config(tileset),
         "failed to get config path chain for tileset '" + tileset + "'",
         std::vector<std::filesystem::path>);
 

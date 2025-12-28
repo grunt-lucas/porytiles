@@ -4,10 +4,9 @@
 #include <set>
 #include <string>
 
-#include "porytiles2/domain/models/animation_callback_info.hpp"
 #include "porytiles2/domain/models/palette.hpp"
-#include "porytiles2/domain/models/tileset_name.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
+#include "porytiles2/infra/repos/animation_callback_info.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
@@ -46,18 +45,18 @@ class TilesetArtifactKeyProvider {
     /*
      * Porymap artifacts
      */
-    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_metatiles_bin(const TilesetName &name) const = 0;
+    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_metatiles_bin(const std::string &name) const = 0;
 
     [[nodiscard]] virtual ChainableResult<ArtifactKey>
-    key_for_metatile_attributes_bin(const TilesetName &name) const = 0;
+    key_for_metatile_attributes_bin(const std::string &name) const = 0;
 
-    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_tiles_png(const TilesetName &name) const = 0;
+    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_tiles_png(const std::string &name) const = 0;
 
     [[nodiscard]] virtual ChainableResult<ArtifactKey>
-    key_for_porymap_pal_n(const TilesetName &name, std::size_t index) const = 0;
+    key_for_porymap_pal_n(const std::string &name, std::size_t index) const = 0;
 
     [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_porymap_anim_frame(
-        const TilesetName &name, const std::string &anim_name, std::size_t frame_index) const = 0;
+        const std::string &name, const std::string &anim_name, std::size_t frame_index) const = 0;
 
     /**
      * @brief Returns the key for the generated_anim_code.h file (Porymap animation C code).
@@ -69,27 +68,27 @@ class TilesetArtifactKeyProvider {
      * @param name The name of the tileset
      * @return Key for the generated_anim_code.h file
      */
-    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_generated_anim_code(const TilesetName &name) const = 0;
+    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_generated_anim_code(const std::string &name) const = 0;
 
     /*
      * Porytiles artifacts
      */
-    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_bottom_png(const TilesetName &name) const = 0;
+    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_bottom_png(const std::string &name) const = 0;
 
-    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_middle_png(const TilesetName &name) const = 0;
+    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_middle_png(const std::string &name) const = 0;
 
-    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_top_png(const TilesetName &name) const = 0;
+    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_top_png(const std::string &name) const = 0;
 
-    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_attributes_csv(const TilesetName &name) const = 0;
+    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_attributes_csv(const std::string &name) const = 0;
 
     [[nodiscard]] virtual ChainableResult<ArtifactKey>
-    key_for_porytiles_pal_n(const TilesetName &name, std::size_t index) const = 0;
+    key_for_porytiles_pal_n(const std::string &name, std::size_t index) const = 0;
 
     [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_porytiles_anim_frame(
-        const TilesetName &name, const std::string &anim_name, std::size_t frame_index) const = 0;
+        const std::string &name, const std::string &anim_name, std::size_t frame_index) const = 0;
 
     [[nodiscard]] virtual ChainableResult<ArtifactKey>
-    key_for_porytiles_anim_key_frame(const TilesetName &name, const std::string &anim_name) const = 0;
+    key_for_porytiles_anim_key_frame(const std::string &name, const std::string &anim_name) const = 0;
 
     /**
      * @brief Returns the key for the anim.yaml file (Porytiles animation configuration).
@@ -101,11 +100,11 @@ class TilesetArtifactKeyProvider {
      * @param name The name of the tileset
      * @return Key for the anim.yaml file
      */
-    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_anim_yaml(const TilesetName &name) const = 0;
+    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_anim_yaml(const std::string &name) const = 0;
 
-    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_config(const TilesetName &name) const = 0;
+    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_config(const std::string &name) const = 0;
 
-    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_local_config(const TilesetName &name) const = 0;
+    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_local_config(const std::string &name) const = 0;
 
     /*
      * Utilities
@@ -129,7 +128,7 @@ class TilesetArtifactKeyProvider {
      * @param name The name of the tileset to check
      * @return True if the tileset exists in the backing store, false otherwise
      */
-    [[nodiscard]] virtual bool tileset_exists(const TilesetName &name) const = 0;
+    [[nodiscard]] virtual bool tileset_exists(const std::string &name) const = 0;
 
     /**
      * @brief Discovers the names of all Porytiles animations available for a tileset.
@@ -142,7 +141,7 @@ class TilesetArtifactKeyProvider {
      * @return Set of animation names found in the backing store
      */
     [[nodiscard]] virtual ChainableResult<std::set<std::string>>
-    discover_porytiles_anims(const TilesetName &name) const = 0;
+    discover_porytiles_anims(const std::string &name) const = 0;
 
     /**
      * @brief Discovers the frame indices for a specific Porytiles animation.
@@ -157,7 +156,7 @@ class TilesetArtifactKeyProvider {
      * @return Set of frame indices found in the backing store (typically starting from 1)
      */
     [[nodiscard]] virtual ChainableResult<std::set<int>>
-    discover_porytiles_anim_frames(const TilesetName &name, const std::string &anim_name) const = 0;
+    discover_porytiles_anim_frames(const std::string &name, const std::string &anim_name) const = 0;
 
     /**
      * @brief Discovers the names of all Porymap animations available for a tileset.
@@ -170,7 +169,7 @@ class TilesetArtifactKeyProvider {
      * @return Set of animation names found in the backing store
      */
     [[nodiscard]] virtual ChainableResult<std::set<std::string>>
-    discover_porymap_anims(const TilesetName &name) const = 0;
+    discover_porymap_anims(const std::string &name) const = 0;
 
     /**
      * @brief Discovers the frame indices for a specific Porymap animation.
@@ -185,7 +184,7 @@ class TilesetArtifactKeyProvider {
      * @return Set of frame indices found in the backing store
      */
     [[nodiscard]] virtual ChainableResult<std::set<int>>
-    discover_porymap_anim_frames(const TilesetName &name, const std::string &anim_name) const = 0;
+    discover_porymap_anim_frames(const std::string &name, const std::string &anim_name) const = 0;
 
     /**
      * @brief Gets animation callback information for a tileset.
@@ -199,7 +198,7 @@ class TilesetArtifactKeyProvider {
      * @return AnimationCallbackInfo if tileset has animations, nullopt if no animations
      */
     [[nodiscard]] virtual ChainableResult<std::optional<AnimationCallbackInfo>>
-    animation_callback_info_for(const TilesetName &name) const = 0;
+    animation_callback_info_for(const std::string &name) const = 0;
 
     /**
      * @brief Gets the keys for all Porytiles artifacts present in the given Tileset.
@@ -212,7 +211,7 @@ class TilesetArtifactKeyProvider {
      * @return A vector of Porytiles artifact keys for the given Tileset
      */
     [[nodiscard]] virtual ChainableResult<std::vector<ArtifactKey>>
-    get_porytiles_artifact_keys(const TilesetName &name) const
+    get_porytiles_artifact_keys(const std::string &name) const
     {
         /*
          * TODO: it feels like the discovery logic here and in tileset_repo.cpp is duplicated. Is there some way to
@@ -346,7 +345,7 @@ class TilesetArtifactKeyProvider {
      * @return A vector of Porymap artifact keys for the given Tileset
      */
     [[nodiscard]] virtual ChainableResult<std::vector<ArtifactKey>>
-    get_porymap_artifact_keys(const TilesetName &name) const
+    get_porymap_artifact_keys(const std::string &name) const
     {
         std::vector<ArtifactKey> result;
 
@@ -442,7 +441,7 @@ class TilesetArtifactKeyProvider {
      * @param name The name of the Tileset for which to get all artifact keys
      * @return A vector containing all Porytiles and Porymap artifact keys for the given Tileset
      */
-    [[nodiscard]] virtual ChainableResult<std::vector<ArtifactKey>> get_all_artifact_keys(const TilesetName &name) const
+    [[nodiscard]] virtual ChainableResult<std::vector<ArtifactKey>> get_all_artifact_keys(const std::string &name) const
     {
         PT_TRY_ASSIGN_CHAIN_ERR(
             porytiles_keys,

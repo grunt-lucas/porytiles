@@ -1,6 +1,7 @@
 #include "porytiles2/app/use_cases/compile_primary_tileset.hpp"
 
 #include <memory>
+#include <string>
 
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -8,20 +9,18 @@
 
 namespace porytiles2 {
 
-ChainableResult<void> CompilePrimaryTileset::compile(const TilesetName &name) const
+ChainableResult<void> CompilePrimaryTileset::compile(const std::string &name) const
 {
     // 1. Check if the primary tileset exists. If not, abort with error.
     if (!tileset_repo_->exists(name)) {
-        return ChainableResult<void>{
-            FormattableError{"tileset '{}' does not exist", FormatParam{name.shorthand(), Style::bold}}};
+        return ChainableResult<void>{FormattableError{"tileset '{}' does not exist", FormatParam{name, Style::bold}}};
     }
 
     // 2. Load the tileset into a `Tileset` aggregate.
     auto maybe_tileset = tileset_repo_->load(name);
     if (!maybe_tileset.has_value()) {
         return ChainableResult<void>{
-            FormattableError{
-                format_->format("failed to load tileset '{}'", FormatParam{name.shorthand(), Style::bold})},
+            FormattableError{format_->format("failed to load tileset '{}'", FormatParam{name, Style::bold})},
             maybe_tileset};
     }
     const auto tileset = std::move(maybe_tileset.value());
@@ -42,11 +41,11 @@ ChainableResult<void> CompilePrimaryTileset::compile(const TilesetName &name) co
     if (!tileset_repo_->checksum_provider().cached_checksums_exist(name)) {
         diag_->warning(
             "missing-checksums",
-            format_->format("no cached checksums found for tileset '{}'", FormatParam{name.shorthand(), Style::bold}));
+            format_->format("no cached checksums found for tileset '{}'", FormatParam{name, Style::bold}));
     }
 
     // Only perform the checksum checks if: 1) cached checksums exist and 2) the user is requesting checksum validation
-    PT_UNWRAP_TILESET_CONFIG_PTR(app_config_, verify_checksums, name.shorthand(), void);
+    PT_UNWRAP_TILESET_CONFIG_PTR(app_config_, verify_checksums, name, void);
     if (tileset_repo_->checksum_provider().cached_checksums_exist(name) && verify_checksums.value()) {
         // 4. If `PorymapTilesetComponent` is not empty, compare with cached checksums in `artifact_checksums.json`. If
         // any differ, bail with the message "unimported changes present in Porymap asset X."
@@ -88,7 +87,7 @@ ChainableResult<void> CompilePrimaryTileset::compile(const TilesetName &name) co
     auto maybe_compiled_tileset = compiler_->compile(*tileset);
     if (!maybe_compiled_tileset.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"compilation job failed for '{}'", FormatParam{name.shorthand(), Style::bold}},
+            FormattableError{"compilation job failed for '{}'", FormatParam{name, Style::bold}},
             maybe_compiled_tileset};
     }
     const auto new_tileset = std::move(maybe_compiled_tileset.value());
@@ -96,8 +95,7 @@ ChainableResult<void> CompilePrimaryTileset::compile(const TilesetName &name) co
     // 7. Persist the `Tileset` (which also caches the checksums).
     if (const auto save_result = tileset_repo_->save(*new_tileset); !save_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"tileset save job failed for '{}'", FormatParam{name.shorthand(), Style::bold}},
-            save_result};
+            FormattableError{"tileset save job failed for '{}'", FormatParam{name, Style::bold}}, save_result};
     }
 
     return {};

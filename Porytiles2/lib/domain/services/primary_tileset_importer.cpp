@@ -26,13 +26,12 @@ namespace porytiles2 {
 ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetImporter::import(const Tileset &tileset) const
 {
     // Unwrap config values
-    PT_UNWRAP_TILESET_CONFIG_PTR(config_, extrinsic_transparency, tileset.name().shorthand(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_pals_in_primary, tileset.name().shorthand(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_pals_total, tileset.name().shorthand(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_PTR(
-        config_, num_metatiles_in_primary, tileset.name().shorthand(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_tiles_in_primary, tileset.name().shorthand(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_tiles_per_metatile, tileset.name().shorthand(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, extrinsic_transparency, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_pals_in_primary, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_pals_total, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_metatiles_in_primary, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_tiles_in_primary, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_tiles_per_metatile, tileset.name(), std::unique_ptr<Tileset>);
 
     LayerModeConverter layer_mode_converter{format_, diag_, tile_printer_, extrinsic_transparency};
     MetatileDecompiler metatile_decompiler{format_, diag_, tile_printer_, extrinsic_transparency};
@@ -41,14 +40,14 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetImporter::import(const T
     PT_TRY_ASSIGN_CHAIN_ERR(
         tilemap_entries,
         layer_mode_converter.triple_layerize(tileset.porymap_component()),
-        "failed to triple-layerize Porymap component for tileset " + tileset.name().shorthand(),
+        "failed to triple-layerize Porymap component for tileset " + tileset.name(),
         std::unique_ptr<Tileset>);
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         metatiles,
         metatile_decompiler.decompile_metatiles(
             tilemap_entries, tileset.porymap_component().tiles_png(), tileset.porymap_component().pals()),
-        "failed to decompile Porymap component for tileset " + tileset.name().shorthand(),
+        "failed to decompile Porymap component for tileset " + tileset.name(),
         std::unique_ptr<Tileset>);
 
     auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>();
@@ -87,7 +86,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetImporter::import(const T
     PT_TRY_ASSIGN_CHAIN_ERR(
         layer_images,
         metatileizer.demetatileize(metatiles, metatiles_per_row),
-        "failed to demetatileize metatiles for tileset " + tileset.name().shorthand(),
+        "failed to demetatileize metatiles for tileset " + tileset.name(),
         std::unique_ptr<Tileset>);
 
     auto &[bottom_image, middle_image, top_image] = layer_images;

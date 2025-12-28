@@ -1,4 +1,4 @@
-#include "porytiles2/infra/services/project_artifact_checksum_provider.hpp"
+#include "porytiles2/infra/repos/project_artifact_checksum_provider.hpp"
 
 #include <filesystem>
 #include <format>
@@ -7,7 +7,6 @@
 
 #include "nlohmann/json.hpp"
 
-#include "porytiles2/domain/models/tileset_name.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -16,14 +15,14 @@
 namespace porytiles2 {
 
 std::unordered_map<ArtifactKey, std::string>
-ProjectArtifactChecksumProvider::compute_tileset_artifact_checksums(const TilesetName &name) const
+ProjectArtifactChecksumProvider::compute_tileset_artifact_checksums(const std::string &name) const
 {
     std::unordered_map<ArtifactKey, std::string> checksums{};
 
     auto all_keys_result = key_provider_->get_all_artifact_keys(name);
     if (!all_keys_result.has_value()) {
         // This is called after a successful save, so artifact keys should be valid
-        panic(std::format("failed to get artifact keys for tileset '{}'", name.shorthand()));
+        panic(std::format("failed to get artifact keys for tileset '{}'", name));
     }
     for (const auto &key : all_keys_result.value()) {
         constexpr StreamDigest digest{};
@@ -39,7 +38,7 @@ ProjectArtifactChecksumProvider::compute_tileset_artifact_checksums(const Tilese
 }
 
 std::unordered_map<ArtifactKey, std::string>
-ProjectArtifactChecksumProvider::load_cached_tileset_checksums(const TilesetName &name) const
+ProjectArtifactChecksumProvider::load_cached_tileset_checksums(const std::string &name) const
 {
     // TODO: tileset checksum file location should be configurable?
     auto tileset_root_result = key_provider_->tileset_root(name);
@@ -69,7 +68,7 @@ ProjectArtifactChecksumProvider::load_cached_tileset_checksums(const TilesetName
 }
 
 ChainableResult<void> ProjectArtifactChecksumProvider::cache_tileset_checksums(
-    const TilesetName &name, const std::unordered_map<ArtifactKey, std::string> &checksums) const
+    const std::string &name, const std::unordered_map<ArtifactKey, std::string> &checksums) const
 {
     // TODO: tileset checksum file location should be configurable?
     PT_TRY_ASSIGN_CHAIN_ERR(tileset_root, key_provider_->tileset_root(name), "failed to cache tileset checksums", void);

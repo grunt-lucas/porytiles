@@ -86,4 +86,4 @@ fi
 echo "Spawning Claude Code to fix relative include paths..."
 echo ""
 
-claude -p "$PROMPT"
+claude -p "$PROMPT" --dangerously-skip-permissions

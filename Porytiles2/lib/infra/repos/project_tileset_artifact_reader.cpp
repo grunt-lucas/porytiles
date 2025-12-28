@@ -410,20 +410,28 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_porymap_anim_frame(
     return {};
 }
 
-[[nodiscard]] ChainableResult<void>
-ProjectTilesetArtifactReader::read_anim_code(Tileset &dest, const AnimationCallbackInfo &callback_info) const
+[[nodiscard]] ChainableResult<void> ProjectTilesetArtifactReader::read_anim_code(Tileset &dest) const
 {
+    // TODO: ANIM: we need to call this from here, but we don't have a key_provider in the reader. We need some kind of
+    // bridge type or interface.
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        callback_info_opt,
+        key_provider_->animation_callback_info_for(dest.name()),
+        "tileset load failed",
+        std::unique_ptr<Tileset>);
+
     // Use the actual callback function name from tileset metadata
     auto params_result = anim_code_parser_->parse_from_callback(
-        callback_info.c_file_path(),
-        callback_info.callback_func_name(),
-        callback_info.tileset_shorthand(),
-        callback_info.porytiles_managed());
+        callback_info_opt.value().c_file_path(),
+        callback_info_opt.value().callback_func_name(),
+        callback_info_opt.value().tileset_shorthand(),
+        callback_info_opt.value().porytiles_managed());
 
     if (!params_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{
-                "{}: failed to parse animation code", FormatParam{callback_info.c_file_path().string(), Style::bold}},
+                "{}: failed to parse animation code",
+                FormatParam{callback_info_opt.value().c_file_path().string(), Style::bold}},
             params_result};
     }
 

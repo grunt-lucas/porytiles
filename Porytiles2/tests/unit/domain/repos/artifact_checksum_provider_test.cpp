@@ -1,13 +1,11 @@
 #include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
-#include <chrono>
 #include <string>
 #include <unordered_map>
 
-#include "porytiles2/domain/models/tileset_name.hpp"
+#include "porytiles2/domain/repos/artifact_checksum_provider.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
-#include "porytiles2/domain/services/artifact_checksum_provider.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
 using namespace porytiles2;
@@ -18,24 +16,24 @@ class MockArtifactChecksumProvider : public ArtifactChecksumProvider {
     MOCK_METHOD(
         (std::unordered_map<ArtifactKey, std::string>),
         compute_tileset_artifact_checksums,
-        (const TilesetName &name),
+        (const std::string &name),
         (const, override));
     MOCK_METHOD(
         (std::unordered_map<ArtifactKey, std::string>),
         load_cached_tileset_checksums,
-        (const TilesetName &name),
+        (const std::string &name),
         (const, override));
     MOCK_METHOD(
         (ChainableResult<void>),
         cache_tileset_checksums,
-        ((const TilesetName &name), (const std::unordered_map<ArtifactKey, std::string> &checksums)),
+        ((const std::string &name), (const std::unordered_map<ArtifactKey, std::string> &checksums)),
         (const, override));
 };
 
 class ArtifactChecksumProviderTest : public ::testing::Test {
   protected:
     MockArtifactChecksumProvider provider_;
-    TilesetName test_tileset_name_ = TilesetName::from("test_tileset");
+    std::string test_tileset_name_ = "test_tileset";
 };
 
 // Tests for find_unsynced_artifacts method

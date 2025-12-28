@@ -1,71 +1,93 @@
+#include "gmock/gmock.h"
 #include "gtest/gtest.h"
 
 #include <chrono>
 #include <filesystem>
 #include <fstream>
 
+#include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/infra/config/yaml_file_provider.hpp"
-#include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/config/config_scope_type.hpp"
 #include "porytiles2/xcut/diagnostics/buffered_user_diagnostics.hpp"
 
 using namespace porytiles2;
+using ::testing::_;
+using ::testing::Invoke;
+using ::testing::NiceMock;
 
 /**
- * @brief Stub TilesetMetadataProvider for testing.
+ * @brief GMock mock for TilesetArtifactKeyProvider.
  *
  * @details
- * This stub always returns that tilesets exist and provides paths pointing to a synthetic
- * test directory structure. Used when testing components that depend on TilesetArtifactKeyProvider
- * but don't need actual headers.h/graphics.h parsing.
+ * This mock only implements the methods that YamlFileProvider actually uses:
+ * - key_for_config: Returns the path to the tileset's porytiles.yaml
+ * - key_for_local_config: Returns the path to the tileset's porytiles.local.yaml
  */
-class StubTilesetMetadataProvider final : public TilesetMetadataProvider {
+class MockTilesetArtifactKeyProvider : public TilesetArtifactKeyProvider {
   public:
-    StubTilesetMetadataProvider() = default;
+    // Methods actually used by YamlFileProvider
+    MOCK_METHOD(ChainableResult<ArtifactKey>, key_for_config, (const std::string &name), (const, override));
+    MOCK_METHOD(ChainableResult<ArtifactKey>, key_for_local_config, (const std::string &name), (const, override));
 
-    [[nodiscard]] ChainableResult<TilesetMetadata> metadata_for(const TilesetName &tileset_name) const override
-    {
-        return TilesetMetadata{
-            tileset_name,
-            false, // is_secondary
-            "gTilesetTiles_" + tileset_name.shorthand(),
-            "gTilesetPalettes_" + tileset_name.shorthand(),
-            "gMetatiles_" + tileset_name.shorthand(),
-            "gMetatileAttributes_" + tileset_name.shorthand(),
-            std::nullopt // callback
-        };
-    }
-
-    [[nodiscard]] ChainableResult<TilesetArtifactPaths>
-    artifact_paths_for(const TilesetName &tileset_name) const override
-    {
-        // Return RELATIVE paths (like real INCBIN strings), not absolute paths
-        // The ProjectTilesetArtifactKeyProvider prepends project_root_ to get absolute paths
-        auto tileset_relative = std::filesystem::path{"data"} / "tilesets" / "primary" / tileset_name.shorthand();
-        return TilesetArtifactPaths{
-            tileset_relative / "tiles.png",
-            {tileset_relative / "palettes" / "00.pal"},
-            tileset_relative / "metatiles.bin",
-            tileset_relative / "metatile_attributes.bin"};
-    }
-
-    [[nodiscard]] ChainableResult<bool> tileset_exists(const TilesetName & /*tileset_name*/) const override
-    {
-        return true; // Always exists for testing
-    }
-
-    [[nodiscard]] ChainableResult<AnimationFramePaths>
-    animation_frame_paths_for(const TilesetName & /*tileset_name*/) const override
-    {
-        return AnimationFramePaths{}; // No animations for testing
-    }
-
-    [[nodiscard]] ChainableResult<std::optional<AnimationCallbackInfo>>
-    animation_callback_info_for(const TilesetName & /*tileset_name*/) const override
-    {
-        return std::optional<AnimationCallbackInfo>{}; // No animations for testing
-    }
+    // Required pure virtual methods - not used by YamlFileProvider but needed to make class concrete
+    MOCK_METHOD(ChainableResult<ArtifactKey>, key_for_metatiles_bin, (const std::string &name), (const, override));
+    MOCK_METHOD(
+        ChainableResult<ArtifactKey>, key_for_metatile_attributes_bin, (const std::string &name), (const, override));
+    MOCK_METHOD(ChainableResult<ArtifactKey>, key_for_tiles_png, (const std::string &name), (const, override));
+    MOCK_METHOD(
+        ChainableResult<ArtifactKey>,
+        key_for_porymap_pal_n,
+        (const std::string &name, std::size_t index),
+        (const, override));
+    MOCK_METHOD(
+        ChainableResult<ArtifactKey>,
+        key_for_porymap_anim_frame,
+        (const std::string &name, const std::string &anim_name, std::size_t frame_index),
+        (const, override));
+    MOCK_METHOD(
+        ChainableResult<ArtifactKey>, key_for_generated_anim_code, (const std::string &name), (const, override));
+    MOCK_METHOD(ChainableResult<ArtifactKey>, key_for_bottom_png, (const std::string &name), (const, override));
+    MOCK_METHOD(ChainableResult<ArtifactKey>, key_for_middle_png, (const std::string &name), (const, override));
+    MOCK_METHOD(ChainableResult<ArtifactKey>, key_for_top_png, (const std::string &name), (const, override));
+    MOCK_METHOD(ChainableResult<ArtifactKey>, key_for_attributes_csv, (const std::string &name), (const, override));
+    MOCK_METHOD(
+        ChainableResult<ArtifactKey>,
+        key_for_porytiles_pal_n,
+        (const std::string &name, std::size_t index),
+        (const, override));
+    MOCK_METHOD(
+        ChainableResult<ArtifactKey>,
+        key_for_porytiles_anim_frame,
+        (const std::string &name, const std::string &anim_name, std::size_t frame_index),
+        (const, override));
+    MOCK_METHOD(
+        ChainableResult<ArtifactKey>,
+        key_for_porytiles_anim_key_frame,
+        (const std::string &name, const std::string &anim_name),
+        (const, override));
+    MOCK_METHOD(ChainableResult<ArtifactKey>, key_for_anim_yaml, (const std::string &name), (const, override));
+    MOCK_METHOD(bool, artifact_exists, (const ArtifactKey &key), (const, override));
+    MOCK_METHOD(bool, tileset_exists, (const std::string &name), (const, override));
+    MOCK_METHOD(
+        ChainableResult<std::set<std::string>>, discover_porytiles_anims, (const std::string &name), (const, override));
+    MOCK_METHOD(
+        ChainableResult<std::set<int>>,
+        discover_porytiles_anim_frames,
+        (const std::string &name, const std::string &anim_name),
+        (const, override));
+    MOCK_METHOD(
+        ChainableResult<std::set<std::string>>, discover_porymap_anims, (const std::string &name), (const, override));
+    MOCK_METHOD(
+        ChainableResult<std::set<int>>,
+        discover_porymap_anim_frames,
+        (const std::string &name, const std::string &anim_name),
+        (const, override));
+    MOCK_METHOD(
+        ChainableResult<std::optional<AnimationCallbackInfo>>,
+        animation_callback_info_for,
+        (const std::string &name),
+        (const, override));
 };
 
 class YamlFileProviderTest : public ::testing::Test {
@@ -98,23 +120,34 @@ class YamlFileProviderTest : public ::testing::Test {
         file << content;
     }
 
+    void setup_mock_key_provider()
+    {
+        // Configure mock to return appropriate paths for test_tileset
+        // Using Invoke with lambdas because gmock's Return doesn't work well with ChainableResult
+        const auto config_path = (tileset_dir_ / "porytiles" / "porytiles.yaml").string();
+        const auto local_config_path = (tileset_dir_ / "porytiles" / "porytiles.local.yaml").string();
+
+        ON_CALL(mock_key_provider_, key_for_config(_))
+            .WillByDefault(Invoke([config_path](const std::string & /*name*/) {
+                return ChainableResult<ArtifactKey>{ArtifactKey{config_path}};
+            }));
+        ON_CALL(mock_key_provider_, key_for_local_config(_))
+            .WillByDefault(Invoke([local_config_path](const std::string & /*name*/) {
+                return ChainableResult<ArtifactKey>{ArtifactKey{local_config_path}};
+            }));
+    }
+
     std::filesystem::path test_root_;
     std::filesystem::path tileset_dir_;
     PlainTextFormatter formatter_{};
     BufferedUserDiagnostics diag_{};
-
-    // Create metadata provider (stub doesn't need test_root_ since it returns relative paths)
-    [[nodiscard]] std::unique_ptr<StubTilesetMetadataProvider> create_metadata_provider() const
-    {
-        return std::make_unique<StubTilesetMetadataProvider>();
-    }
+    NiceMock<MockTilesetArtifactKeyProvider> mock_key_provider_;
 };
 
 TEST_F(YamlFileProviderTest, NameReturnsCorrectProviderName)
 {
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     EXPECT_EQ(provider.name(), "YamlFileProvider");
 }
@@ -127,9 +160,8 @@ fieldmap:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
@@ -147,9 +179,8 @@ fieldmap:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.num_tiles_total(ConfigScopeType::tileset, "test_tileset");
 
@@ -166,9 +197,8 @@ fieldmap:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.num_metatiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
@@ -184,9 +214,8 @@ fieldmap:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.num_metatiles_total(ConfigScopeType::tileset, "test_tileset");
 
@@ -202,9 +231,8 @@ fieldmap:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.num_pals_in_primary(ConfigScopeType::tileset, "test_tileset");
 
@@ -220,9 +248,8 @@ fieldmap:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.num_pals_total(ConfigScopeType::tileset, "test_tileset");
 
@@ -238,9 +265,8 @@ fieldmap:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.max_map_data_size(ConfigScopeType::tileset, "test_tileset");
 
@@ -256,9 +282,8 @@ fieldmap:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.num_tiles_per_metatile(ConfigScopeType::tileset, "test_tileset");
 
@@ -274,9 +299,8 @@ tileset:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.extrinsic_transparency(ConfigScopeType::tileset, "test_tileset");
 
@@ -295,9 +319,8 @@ tileset:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.extrinsic_transparency(ConfigScopeType::tileset, "test_tileset");
 
@@ -316,9 +339,8 @@ tileset:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.extrinsic_transparency(ConfigScopeType::tileset, "test_tileset");
 
@@ -334,9 +356,8 @@ tileset:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.extrinsic_transparency(ConfigScopeType::tileset, "test_tileset");
 
@@ -353,9 +374,8 @@ tileset:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.tiles_pal_mode(ConfigScopeType::tileset, "test_tileset");
 
@@ -372,9 +392,8 @@ tileset:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.tiles_pal_mode(ConfigScopeType::tileset, "test_tileset");
 
@@ -391,9 +410,8 @@ tileset:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.tiles_pal_mode(ConfigScopeType::tileset, "test_tileset");
 
@@ -404,9 +422,8 @@ tileset:
 
 TEST_F(YamlFileProviderTest, ReturnsNotProvidedWhenFileDoesNotExist)
 {
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
@@ -421,9 +438,8 @@ some_other_config:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
@@ -444,9 +460,8 @@ fieldmap:
     create_yaml_file(test_root_ / "porytiles.yaml", normal_config);
     create_yaml_file(test_root_ / "porytiles.local.yaml", local_config);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
@@ -469,9 +484,8 @@ fieldmap:
     create_yaml_file(test_root_ / "porytiles.yaml", project_config);
     create_yaml_file(tileset_dir_ / "porytiles" / "porytiles.yaml", tileset_config);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
@@ -504,9 +518,8 @@ fieldmap:
     create_yaml_file(tileset_dir_ / "porytiles" / "porytiles.yaml", tileset_config);
     create_yaml_file(tileset_dir_ / "porytiles" / "porytiles.local.yaml", tileset_local_config);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
@@ -523,9 +536,8 @@ fieldmap:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
 
@@ -544,9 +556,8 @@ fieldmap:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto primary_result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "test_tileset");
     auto total_result = provider.num_tiles_total(ConfigScopeType::tileset, "test_tileset");
@@ -572,9 +583,8 @@ tileset:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.pal_hints_enabled(ConfigScopeType::tileset, "test_tileset");
 
@@ -594,9 +604,8 @@ tileset:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.pal_hints_enabled(ConfigScopeType::tileset, "test_tileset");
 
@@ -620,9 +629,8 @@ tileset:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.pal_hints(ConfigScopeType::tileset, "test_tileset");
 
@@ -661,9 +669,8 @@ tileset:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.pal_hints(ConfigScopeType::tileset, "test_tileset");
 
@@ -693,9 +700,8 @@ tileset:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.pal_hints(ConfigScopeType::tileset, "test_tileset");
 
@@ -715,9 +721,8 @@ tileset:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.pal_hints(ConfigScopeType::tileset, "test_tileset");
 
@@ -738,9 +743,8 @@ tileset:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.pal_hints(ConfigScopeType::tileset, "test_tileset");
 
@@ -762,9 +766,8 @@ tileset:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.pal_hints(ConfigScopeType::tileset, "test_tileset");
 
@@ -785,9 +788,8 @@ tileset:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.pal_hints(ConfigScopeType::tileset, "test_tileset");
 
@@ -809,9 +811,8 @@ TEST_F(YamlFileProviderTest, PalHintsRejectsColorsNotSequence)
 {
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.pal_hints(ConfigScopeType::tileset, "test_tileset");
 
@@ -834,9 +835,8 @@ tileset:
 )";
     create_yaml_file(test_root_ / "porytiles.yaml", yaml_content);
 
-    auto metadata_provider = create_metadata_provider();
-    ProjectTilesetArtifactKeyProvider key_provider{test_root_, metadata_provider.get(), &formatter_, &diag_};
-    YamlFileProvider provider{&diag_, test_root_, key_provider};
+    setup_mock_key_provider();
+    YamlFileProvider provider{&diag_, test_root_, mock_key_provider_};
 
     auto result = provider.pal_hints(ConfigScopeType::tileset, "test_tileset");
 

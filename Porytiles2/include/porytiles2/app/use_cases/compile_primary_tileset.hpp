@@ -6,7 +6,6 @@
 
 #include "porytiles2/app/config/app_config.hpp"
 #include "porytiles2/domain/config/domain_config.hpp"
-#include "porytiles2/domain/models/tileset_name.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -53,7 +52,7 @@ class CompilePrimaryTileset {
      * @param name The name of the primary Tileset to compile.
      * @return An empty Result on success, otherwise an error description.
      */
-    [[nodiscard]] ChainableResult<void> compile(const TilesetName &name) const;
+    [[nodiscard]] ChainableResult<void> compile(const std::string &name) const;
 
   private:
     const TilesetRepo *tileset_repo_;

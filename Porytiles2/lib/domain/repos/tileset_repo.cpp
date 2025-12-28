@@ -4,12 +4,11 @@
 #include <string>
 
 #include "porytiles2/domain/models/palette.hpp"
-#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
+#include "porytiles2/domain/repos/artifact_checksum_provider.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_reader.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_writer.hpp"
-#include "porytiles2/domain/services/artifact_checksum_provider.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
@@ -196,7 +195,7 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     return {};
 }
 
-ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const TilesetName &name) const
+ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &name) const
 {
     constexpr auto missing_required_artifact_tag = "missing-required-artifact";
     constexpr auto missing_required_artifact_msg = "missing required artifact: '{}'";
@@ -208,7 +207,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const TilesetName &n
 
     // Confirm tileset exists.
     if (!exists(name)) {
-        return FormattableError{"tileset '{}' does not exist", FormatParam{name.shorthand(), Style::bold}};
+        return FormattableError{"tileset '{}' does not exist", FormatParam{name, Style::bold}};
     }
 
     auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
@@ -574,7 +573,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const TilesetName &n
     return tileset;
 }
 
-bool TilesetRepo::exists(const TilesetName &name) const
+bool TilesetRepo::exists(const std::string &name) const
 {
     return key_provider_->tileset_exists(name);
 }

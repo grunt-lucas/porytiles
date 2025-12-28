@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <format>
+#include <string>
 
 #include "porytiles2/domain/models/animation.hpp"
 #include "porytiles2/utilities/c_parser/c_parser_facade.hpp"
@@ -99,6 +100,78 @@ parse_anim_frame_var(const std::string &var_name, const std::string &tileset_sho
     }
 }
 
+/**
+ * @brief Parses animation frame INCBINs from a C source file.
+ *
+ * @details
+ * Parses INCBIN declarations from the specified file and groups them by animation name. Frame variables are expected to
+ * follow the naming pattern: "gTilesetAnims_[PorytilesManaged_]<Tileset>_<AnimName>_Frame<N>"
+ *
+ * @param c_file Path to the C file to parse
+ * @param tileset_shorthand The tileset shorthand (e.g., "General")
+ * @param porytiles_managed Whether this is a Porytiles-managed tileset
+ * @param format Text formatter for styled error messages
+ * @return Map of animation name -> ordered frame paths, or error on parse failure
+ */
+[[nodiscard]] ChainableResult<AnimationFramePaths> parse_anim_incbins_from_file(
+    const std::filesystem::path &c_file,
+    const std::string &tileset_shorthand,
+    bool porytiles_managed,
+    const TextFormatter *format)
+{
+    CParserFacade parser{c_file, format};
+
+    // Build prefix for filtering: "gTilesetAnims_[PorytilesManaged_]<Tileset>_"
+    std::string prefix = "gTilesetAnims_";
+    if (porytiles_managed) {
+        prefix += anim::porytiles_managed_prefix;
+    }
+    prefix += tileset_shorthand + "_";
+
+    auto incbins_result = parser.parse_incbin_arrays(prefix);
+    if (!incbins_result.has_value()) {
+        return ChainableResult<AnimationFramePaths>{
+            FormattableError{
+                format->format("{}: failed to parse animation INCBINs", FormatParam{c_file.string(), Style::bold})},
+            incbins_result};
+    }
+
+    // Group by animation name, collecting (frame_index, path) pairs
+    std::map<std::string, std::vector<std::pair<std::size_t, std::filesystem::path>>> grouped;
+
+    for (const auto &incbin : incbins_result.value()) {
+        auto parsed = parse_anim_frame_var(incbin.variable_name(), tileset_shorthand, porytiles_managed);
+        if (!parsed.has_value()) {
+            continue; // Not a frame variable (might be a pointer array)
+        }
+
+        auto [anim_name, frame_index] = parsed.value();
+        std::string snake_anim_name = to_snake_case(anim_name);
+
+        if (!incbin.paths().empty()) {
+            grouped[snake_anim_name].emplace_back(frame_index, std::filesystem::path{incbin.paths().front()});
+        }
+    }
+
+    // Convert to AnimationFramePaths with ordered vectors
+    AnimationFramePaths result;
+    for (auto &[anim_name, frames] : grouped) {
+        // Sort by frame index
+        std::ranges::sort(frames, [](const auto &a, const auto &b) { return a.first < b.first; });
+
+        // Extract paths in order
+        std::vector<std::filesystem::path> ordered_paths;
+        ordered_paths.reserve(frames.size());
+        for (const auto &path : frames | std::views::values) {
+            ordered_paths.push_back(path);
+        }
+
+        result[anim_name] = std::move(ordered_paths);
+    }
+
+    return result;
+}
+
 } // namespace
 
 namespace porytiles2 {
@@ -120,7 +193,8 @@ ChainableResult<void> ProjectTilesetMetadataProvider::ensure_headers_parsed() co
     const auto headers_path = project_root_ / headers_rel_path;
     CParserFacade parser{headers_path, format_};
 
-    auto parse_result = parser.parse_struct_initializers(TilesetName::prefix);
+    // TODO: don't hardcode gTileset_ here
+    auto parse_result = parser.parse_struct_initializers("gTileset_");
     if (!parse_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{format_->format(
@@ -237,19 +311,19 @@ ProjectTilesetMetadataProvider::lookup_incbin_paths(const std::string &variable_
     return it->second.paths();
 }
 
-ChainableResult<TilesetMetadata> ProjectTilesetMetadataProvider::metadata_for(const TilesetName &tileset_name) const
+ChainableResult<TilesetMetadata> ProjectTilesetMetadataProvider::metadata_for(const std::string &tileset_name) const
 {
     if (const auto ensure_result = ensure_headers_parsed(); !ensure_result.has_value()) {
         return ChainableResult<TilesetMetadata>{
-            FormattableError{format_->format(
-                "failed to get metadata for tileset '{}'", FormatParam{tileset_name.name(), Style::bold})},
+            FormattableError{
+                format_->format("failed to get metadata for tileset '{}'", FormatParam{tileset_name, Style::bold})},
             ensure_result};
     }
 
-    auto it = tileset_structs_.find(tileset_name.name());
+    auto it = tileset_structs_.find(tileset_name);
     if (it == tileset_structs_.end()) {
         return FormattableError{
-            format_->format("tileset '{}' not found in headers.h", FormatParam{tileset_name.name(), Style::bold})};
+            format_->format("tileset '{}' not found in headers.h", FormatParam{tileset_name, Style::bold})};
     }
 
     const auto &struct_decl = it->second;
@@ -267,19 +341,19 @@ ChainableResult<TilesetMetadata> ProjectTilesetMetadataProvider::metadata_for(co
 
     if (!tiles_var.has_value()) {
         return FormattableError{
-            format_->format("tileset '{}' missing 'tiles' field", FormatParam{tileset_name.name(), Style::bold})};
+            format_->format("tileset '{}' missing 'tiles' field", FormatParam{tileset_name, Style::bold})};
     }
     if (!palettes_var.has_value()) {
         return FormattableError{
-            format_->format("tileset '{}' missing 'palettes' field", FormatParam{tileset_name.name(), Style::bold})};
+            format_->format("tileset '{}' missing 'palettes' field", FormatParam{tileset_name, Style::bold})};
     }
     if (!metatiles_var.has_value()) {
         return FormattableError{
-            format_->format("tileset '{}' missing 'metatiles' field", FormatParam{tileset_name.name(), Style::bold})};
+            format_->format("tileset '{}' missing 'metatiles' field", FormatParam{tileset_name, Style::bold})};
     }
     if (!metatile_attributes_var.has_value()) {
-        return FormattableError{format_->format(
-            "tileset '{}' missing 'metatileAttributes' field", FormatParam{tileset_name.name(), Style::bold})};
+        return FormattableError{
+            format_->format("tileset '{}' missing 'metatileAttributes' field", FormatParam{tileset_name, Style::bold})};
     }
 
     std::optional<std::string> callback_func = std::nullopt;
@@ -298,14 +372,14 @@ ChainableResult<TilesetMetadata> ProjectTilesetMetadataProvider::metadata_for(co
 }
 
 ChainableResult<TilesetArtifactPaths>
-ProjectTilesetMetadataProvider::artifact_paths_for(const TilesetName &tileset_name) const
+ProjectTilesetMetadataProvider::artifact_paths_for(const std::string &tileset_name) const
 {
     // First get metadata to get variable names
     auto metadata_result = metadata_for(tileset_name);
     if (!metadata_result.has_value()) {
         return ChainableResult<TilesetArtifactPaths>{
             FormattableError{format_->format(
-                "failed to get artifact paths for tileset '{}'", FormatParam{tileset_name.name(), Style::bold})},
+                "failed to get artifact paths for tileset '{}'", FormatParam{tileset_name, Style::bold})},
             metadata_result};
     }
 
@@ -316,7 +390,7 @@ ProjectTilesetMetadataProvider::artifact_paths_for(const TilesetName &tileset_na
     if (!tiles_path_result.has_value()) {
         return ChainableResult<TilesetArtifactPaths>{
             FormattableError{format_->format(
-                "failed to resolve tiles path for tileset '{}'", FormatParam{tileset_name.name(), Style::bold})},
+                "failed to resolve tiles path for tileset '{}'", FormatParam{tileset_name, Style::bold})},
             tiles_path_result};
     }
 
@@ -325,7 +399,7 @@ ProjectTilesetMetadataProvider::artifact_paths_for(const TilesetName &tileset_na
     if (!palette_paths_result.has_value()) {
         return ChainableResult<TilesetArtifactPaths>{
             FormattableError{format_->format(
-                "failed to resolve palette paths for tileset '{}'", FormatParam{tileset_name.name(), Style::bold})},
+                "failed to resolve palette paths for tileset '{}'", FormatParam{tileset_name, Style::bold})},
             palette_paths_result};
     }
 
@@ -334,7 +408,7 @@ ProjectTilesetMetadataProvider::artifact_paths_for(const TilesetName &tileset_na
     if (!metatiles_path_result.has_value()) {
         return ChainableResult<TilesetArtifactPaths>{
             FormattableError{format_->format(
-                "failed to resolve metatiles path for tileset '{}'", FormatParam{tileset_name.name(), Style::bold})},
+                "failed to resolve metatiles path for tileset '{}'", FormatParam{tileset_name, Style::bold})},
             metatiles_path_result};
     }
 
@@ -343,8 +417,7 @@ ProjectTilesetMetadataProvider::artifact_paths_for(const TilesetName &tileset_na
     if (!metatile_attributes_path_result.has_value()) {
         return ChainableResult<TilesetArtifactPaths>{
             FormattableError{format_->format(
-                "failed to resolve metatile attributes path for tileset '{}'",
-                FormatParam{tileset_name.name(), Style::bold})},
+                "failed to resolve metatile attributes path for tileset '{}'", FormatParam{tileset_name, Style::bold})},
             metatile_attributes_path_result};
     }
 
@@ -362,84 +435,28 @@ ProjectTilesetMetadataProvider::artifact_paths_for(const TilesetName &tileset_na
         std::filesystem::path{metatile_attributes_path_result.value()}};
 }
 
-ChainableResult<bool> ProjectTilesetMetadataProvider::tileset_exists(const TilesetName &tileset_name) const
+ChainableResult<bool> ProjectTilesetMetadataProvider::tileset_exists(const std::string &tileset_name) const
 {
     auto ensure_result = ensure_headers_parsed();
     if (!ensure_result.has_value()) {
         return ChainableResult<bool>{
-            FormattableError{format_->format(
-                "failed to check if tileset '{}' exists", FormatParam{tileset_name.name(), Style::bold})},
+            FormattableError{
+                format_->format("failed to check if tileset '{}' exists", FormatParam{tileset_name, Style::bold})},
             ensure_result};
     }
 
-    return tileset_structs_.contains(tileset_name.name());
-}
-
-ChainableResult<AnimationFramePaths> ProjectTilesetMetadataProvider::parse_anim_incbins_from_file(
-    const std::filesystem::path &c_file, const std::string &tileset_shorthand, bool porytiles_managed) const
-{
-    CParserFacade parser{c_file, format_};
-
-    // Build prefix for filtering: "gTilesetAnims_[PorytilesManaged_]<Tileset>_"
-    std::string prefix = "gTilesetAnims_";
-    if (porytiles_managed) {
-        prefix += anim::porytiles_managed_prefix;
-    }
-    prefix += tileset_shorthand + "_";
-
-    auto incbins_result = parser.parse_incbin_arrays(prefix);
-    if (!incbins_result.has_value()) {
-        return ChainableResult<AnimationFramePaths>{
-            FormattableError{
-                format_->format("{}: failed to parse animation INCBINs", FormatParam{c_file.string(), Style::bold})},
-            incbins_result};
-    }
-
-    // Group by animation name, collecting (frame_index, path) pairs
-    std::map<std::string, std::vector<std::pair<std::size_t, std::filesystem::path>>> grouped;
-
-    for (const auto &incbin : incbins_result.value()) {
-        auto parsed = parse_anim_frame_var(incbin.variable_name(), tileset_shorthand, porytiles_managed);
-        if (!parsed.has_value()) {
-            continue; // Not a frame variable (might be a pointer array)
-        }
-
-        auto [anim_name, frame_index] = parsed.value();
-        std::string snake_anim_name = to_snake_case(anim_name);
-
-        if (!incbin.paths().empty()) {
-            grouped[snake_anim_name].emplace_back(frame_index, std::filesystem::path{incbin.paths().front()});
-        }
-    }
-
-    // Convert to AnimationFramePaths with ordered vectors
-    AnimationFramePaths result;
-    for (auto &[anim_name, frames] : grouped) {
-        // Sort by frame index
-        std::ranges::sort(frames, [](const auto &a, const auto &b) { return a.first < b.first; });
-
-        // Extract paths in order
-        std::vector<std::filesystem::path> ordered_paths;
-        ordered_paths.reserve(frames.size());
-        for (const auto &[idx, path] : frames) {
-            ordered_paths.push_back(path);
-        }
-
-        result[anim_name] = std::move(ordered_paths);
-    }
-
-    return result;
+    return tileset_structs_.contains(tileset_name);
 }
 
 ChainableResult<AnimationFramePaths>
-ProjectTilesetMetadataProvider::animation_frame_paths_for(const TilesetName &tileset_name) const
+ProjectTilesetMetadataProvider::animation_frame_paths_for(const std::string &tileset_name) const
 {
     // Get metadata to check for animations
     auto metadata_result = metadata_for(tileset_name);
     if (!metadata_result.has_value()) {
         return ChainableResult<AnimationFramePaths>{
             FormattableError{format_->format(
-                "failed to get animation paths for tileset '{}'", FormatParam{tileset_name.name(), Style::bold})},
+                "failed to get animation paths for tileset '{}'", FormatParam{tileset_name, Style::bold})},
             metadata_result};
     }
 
@@ -475,7 +492,7 @@ ProjectTilesetMetadataProvider::animation_frame_paths_for(const TilesetName &til
 
     if (std::filesystem::exists(generated_header)) {
         // Parse Porytiles-managed animations from generated header
-        return parse_anim_incbins_from_file(generated_header, tileset_shorthand, true);
+        return parse_anim_incbins_from_file(generated_header, tileset_shorthand, true, format_);
     }
 
     // Fall back to vanilla tileset_anims.c
@@ -487,19 +504,18 @@ ProjectTilesetMetadataProvider::animation_frame_paths_for(const TilesetName &til
         return AnimationFramePaths{};
     }
 
-    return parse_anim_incbins_from_file(anims_c, tileset_shorthand, porytiles_managed);
+    return parse_anim_incbins_from_file(anims_c, tileset_shorthand, porytiles_managed, format_);
 }
 
 ChainableResult<std::optional<AnimationCallbackInfo>>
-ProjectTilesetMetadataProvider::animation_callback_info_for(const TilesetName &tileset_name) const
+ProjectTilesetMetadataProvider::animation_callback_info_for(const std::string &tileset_name) const
 {
     // Get metadata to check for animations
     auto metadata_result = metadata_for(tileset_name);
     if (!metadata_result.has_value()) {
         return ChainableResult<std::optional<AnimationCallbackInfo>>{
             FormattableError{format_->format(
-                "failed to get animation callback info for tileset '{}'",
-                FormatParam{tileset_name.name(), Style::bold})},
+                "failed to get animation callback info for tileset '{}'", FormatParam{tileset_name, Style::bold})},
             metadata_result};
     }
 

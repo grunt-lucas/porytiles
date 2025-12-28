@@ -478,7 +478,7 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_tiles_png(const Artifa
         void);
     PT_TRY_ASSIGN_CHAIN_ERR(
         tiles_pal_mode_config,
-        config_->tiles_pal_mode(ConfigScopeType::tileset, src.name().shorthand()),
+        config_->tiles_pal_mode(ConfigScopeType::tileset, src.name()),
         "failed to get tiles_pal_mode config",
         void);
     return save_tiles_png(
@@ -537,11 +537,10 @@ ProjectTilesetArtifactWriter::write_generated_anim_code(const ArtifactKey &dest_
     // TODO: determine if primary or secondary tileset from config
     const bool is_primary = true;
 
-    auto code_result = anim_code_generator_->generate(src.name().shorthand(), tileset_path, anim_params, is_primary);
+    auto code_result = anim_code_generator_->generate(src.name(), tileset_path, anim_params, is_primary);
     if (!code_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{
-                "failed to generate animation code for '{}'", FormatParam{src.name().shorthand(), Style::bold}},
+            FormattableError{"failed to generate animation code for '{}'", FormatParam{src.name(), Style::bold}},
             code_result};
     }
 

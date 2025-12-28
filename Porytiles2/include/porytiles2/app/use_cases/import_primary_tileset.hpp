@@ -6,7 +6,6 @@
 
 #include "porytiles2/app/config/app_config.hpp"
 #include "porytiles2/domain/config/domain_config.hpp"
-#include "porytiles2/domain/models/tileset_name.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/domain/services/primary_tileset_importer.hpp"
@@ -50,7 +49,7 @@ class ImportPrimaryTileset {
      * @param name The name of the primary Tileset to import
      * @return An empty ChainableResult on success, otherwise an error chain
      */
-    [[nodiscard]] ChainableResult<void> import(const TilesetName &name) const;
+    [[nodiscard]] ChainableResult<void> import(const std::string &name) const;
 
   private:
     const TilesetRepo *tileset_repo_;

@@ -2,7 +2,6 @@
 
 #include <any>
 
-#include "porytiles2/domain/models/animation_callback_info.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
@@ -44,20 +43,14 @@ class TilesetArtifactReader {
      * @brief Reads animation parameters from C source code into the Porymap component.
      *
      * @details
-     * Parses animation C code (either generated_anim_code.h or tileset_anims.c) to extract animation
-     * parameters (tile offsets, tile counts, frame sequences, timing, etc.) and updates the AnimationParams
-     * for each animation in the Porymap component. This only sets parameters; animation frame PNGs are
-     * loaded separately.
-     *
-     * The callback_info parameter provides the actual callback function name from the tileset metadata,
-     * ensuring we parse the correct animations rather than guessing based on naming conventions.
+     * Parses animation C code (either generated_anim_code.h or tileset_anims.c) to extract animation parameters (tile
+     * offsets, tile counts, frame sequences, timing, etc.) and updates the AnimationParams for each animation in the
+     * Porymap component. This only sets parameters; animation frame PNGs are loaded separately.
      *
      * @param dest The Tileset object to populate with animation parameters
-     * @param callback_info Information about the animation callback from tileset metadata
      * @return Empty ChainableResult on success, otherwise an error chain
      */
-    [[nodiscard]] virtual ChainableResult<void>
-    read_anim_code(Tileset &dest, const AnimationCallbackInfo &callback_info) const = 0;
+    [[nodiscard]] virtual ChainableResult<void> read_anim_code(Tileset &dest) const = 0;
 
     /*
      * Porytiles artifacts
