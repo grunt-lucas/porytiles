@@ -1,3 +1,21 @@
+- [Animation Loading Refactoring Plan (Revision 2)](#animation-loading-refactoring-plan-revision-2)
+  - [Goal](#goal)
+  - [Problems Being Solved](#problems-being-solved)
+  - [Animation Components](#animation-components)
+    - [Porytiles Animation Component](#porytiles-animation-component)
+      - [Artifact: Animation Frames](#artifact-animation-frames)
+        - [Project Key Provider](#project-key-provider)
+      - [Artifact: Animation Parameters](#artifact-animation-parameters)
+        - [Project Key Provider](#project-key-provider-1)
+      - [Project Reader](#project-reader)
+    - [Porymap Animation Component](#porymap-animation-component)
+      - [Artifact: Animation Frames](#artifact-animation-frames-1)
+        - [Project Key Provider](#project-key-provider-2)
+      - [Artifact: Animation Parameters](#artifact-animation-parameters-1)
+  - [Precondition / Invariant Summaries](#precondition--invariant-summaries)
+    - [Porytiles Animations Must Follow `porytiles/anim/{anim_name}` Structure](#porytiles-animations-must-follow-porytilesanimanim_name-structure)
+    - [Animation Frame Pointer Array Must Follow Name Convention: `gTilesetAnims_{tileset}_{anim}{_optional_suffix}`](#animation-frame-pointer-array-must-follow-name-convention-gtilesetanims_tileset_anim_optional_suffix)
+
 # Animation Loading Refactoring Plan (Revision 2)
 
 ## Goal
@@ -74,13 +92,17 @@ water:
 }
 ```
 
+#### Project Reader
+TODO
+
 ### Porymap Animation Component
 The entire `Animation` object for the Porymap component can be constructed from `include/generated_anim_code.h` file.
 If this file doesn't exist yet (first-time import case), then we have a special code-path to figure out everything from `tileset_anims.c`.
 
-Invariant: `generated_anim_code.h` will always use `gTilesetAnims_{tileset}_{anim}{_optional_suffix}`
+**Invariant:** `generated_anim_code.h` will always use `gTilesetAnims_{tileset}_{anim}{_optional_suffix}`
 as the name format for a tileset animation frame array.
-Users who want to import a tileset into Porytiles will need to update `tileset_anims.c` to follow this invariant.
+
+Users who want to import a tileset into Porytiles will need to update `tileset_anims.c` to follow this invariant as well.
 
 #### Artifact: Animation Frames
 
