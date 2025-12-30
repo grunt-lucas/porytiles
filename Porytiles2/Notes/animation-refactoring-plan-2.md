@@ -230,6 +230,10 @@ we should force users to follow the convention that the main frame array for an 
 ```
 gTilesetAnims_{TilesetName}_{AnimName}{_optional_suffix}
 ```
+**NOTE:** it's very important that {TilesetName} and {AnimName} are camelCase or PascalCase, since `_` is reserved to delimit the subfields within the variable name.
+Porytiles will automatically snake-ify TilesetName and AnimName when when importing into Porytiles format,
+and pascal-ify tileset_name and anim_name when compiling from Porytiles format back to Porymap format.
+
 This is only relevant for first time imports.
 After a first time import, you will actually have two animations:
 - the original animation defined in `tileset_anims.c`
