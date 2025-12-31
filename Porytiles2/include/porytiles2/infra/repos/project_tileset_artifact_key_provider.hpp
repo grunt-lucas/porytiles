@@ -1,6 +1,7 @@
 #pragma once
 
 #include <filesystem>
+#include <map>
 #include <optional>
 #include <string>
 #include <utility>
@@ -9,8 +10,9 @@
 
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
-#include "porytiles2/infra/repos/project_tileset_metadata_provider.hpp"
 #include "porytiles2/infra/repos/tileset_artifact_paths.hpp"
+#include "porytiles2/utilities/c_parser/incbin_declaration.hpp"
+#include "porytiles2/utilities/c_parser/struct_initializer_declaration.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
@@ -24,8 +26,8 @@ namespace porytiles2 {
  * tileset artifacts. It operates within the context of a Pokémon Gen III decompilation project, discovering and
  * managing paths for animations, tiles, and other tileset components based on the project's directory structure.
  *
- * The provider uses TilesetMetadataProvider to dynamically discover tileset artifact paths by parsing C source
- * files (headers.h, graphics.h, metatiles.h) rather than relying on hardcoded filesystem path conventions.
+ * Tileset metadata and artifact paths are discovered dynamically by parsing C source files (headers.h, graphics.h,
+ * metatiles.h) rather than relying on hardcoded filesystem path conventions.
  *
  * For Porymap artifacts (tiles, palettes, metatiles), paths are resolved from INCBIN declarations.
  * For Porytiles artifacts (bottom.png, middle.png, etc.), paths use a hardcoded relative location within each tileset.
@@ -39,16 +41,14 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
      * @brief Constructs a ProjectTilesetArtifactKeyProvider.
      *
      * @param project_root The root directory of the pokeemerald-style project
-     * @param metadata_provider Provider for tileset metadata and artifact paths (non-owning, must outlive this)
      * @param format Text formatter for styled output (non-owning, must outlive this)
      * @param diag Diagnostics handler for warnings (non-owning, must outlive this)
      */
     explicit ProjectTilesetArtifactKeyProvider(
         std::filesystem::path project_root,
-        gsl::not_null<const ProjectTilesetMetadataProvider *> metadata_provider,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag)
-        : project_root_{std::move(project_root)}, metadata_provider_{metadata_provider}, format_{format}, diag_{diag}
+        : project_root_{std::move(project_root)}, format_{format}, diag_{diag}
     {
     }
 
@@ -133,14 +133,14 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
     [[nodiscard]] ChainableResult<TilesetArtifactPaths> artifact_paths(const std::string &name) const;
 
     std::filesystem::path project_root_;
-    const ProjectTilesetMetadataProvider *metadata_provider_;
-
-    // TODO: implement configurable override paths for users who have changed the pokeemerald project structure
-    // std::optional<std::filesystem::path> behaviors_header_override_path_;
-    // std::optional<std::string> behaviors_header_override_file_;
-
     const TextFormatter *format_;
     const UserDiagnostics *diag_;
+
+    // Lazy-loaded caches (mutable for const methods)
+    mutable bool headers_parsed_{false};
+    mutable bool incbins_parsed_{false};
+    mutable std::map<std::string, StructInitializerDeclaration> tileset_structs_; // variable_name -> struct
+    mutable std::map<std::string, IncbinDeclaration> incbin_vars_;                // variable_name -> incbin
 };
 
 } // namespace porytiles2

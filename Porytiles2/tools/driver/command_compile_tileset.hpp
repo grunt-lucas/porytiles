@@ -21,7 +21,6 @@
 #include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_reader.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
-#include "porytiles2/infra/repos/project_tileset_metadata_provider.hpp"
 #include "porytiles2/infra/services/ascii_tile_printer.hpp"
 #include "porytiles2/infra/services/attributes_csv_loader.hpp"
 #include "porytiles2/infra/services/color_palette_printer.hpp"
@@ -72,8 +71,7 @@ class CompileTilesetCommand final : public Command {
          */
 
         // Setup layered configuration
-        ProjectTilesetMetadataProvider metadata_provider{".", text_formatter, diag.get()};
-        ProjectTilesetArtifactKeyProvider key_provider{".", &metadata_provider, text_formatter, diag.get()};
+        ProjectTilesetArtifactKeyProvider key_provider{".", text_formatter, diag.get()};
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
         providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, diag.get(), ".", key_provider));
         providers.push_back(std::make_unique<HeaderDefineProvider>(".", "include/fieldmap.h", text_formatter));

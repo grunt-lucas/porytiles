@@ -6,7 +6,6 @@
 
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
-#include "porytiles2/infra/repos/project_tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/buffered_user_diagnostics.hpp"
 
@@ -38,17 +37,13 @@ class ProjectTilesetArtifactKeyProviderTestBase : public ::testing::Test {
         formatter_ = std::make_unique<PlainTextFormatter>();
         diag_ = std::make_unique<BufferedUserDiagnostics>();
 
-        metadata_provider_ =
-            std::make_unique<ProjectTilesetMetadataProvider>(project_root_, formatter_.get(), diag_.get());
-
-        key_provider_ = std::make_unique<ProjectTilesetArtifactKeyProvider>(
-            project_root_, metadata_provider_.get(), formatter_.get(), diag_.get());
+        key_provider_ =
+            std::make_unique<ProjectTilesetArtifactKeyProvider>(project_root_, formatter_.get(), diag_.get());
     }
 
     std::filesystem::path project_root_;
     std::unique_ptr<PlainTextFormatter> formatter_;
     std::unique_ptr<BufferedUserDiagnostics> diag_;
-    std::unique_ptr<ProjectTilesetMetadataProvider> metadata_provider_;
     std::unique_ptr<ProjectTilesetArtifactKeyProvider> key_provider_;
 };
 
