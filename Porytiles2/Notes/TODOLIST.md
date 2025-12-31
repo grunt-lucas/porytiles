@@ -73,5 +73,7 @@ std::set<std::string> paired_tilesets = pair_provider.get_paired_tilesets("gTile
   - we should split it up by `Porytiles1` and `Porytiles2` for better usability
 - Provide a configuration that allows users to request ascii-only output
   - e.g. in the file highlighting, the → would become ->
+- Consider storing a global `artifact_checksums.json` instead of per-tileset
+  - all paths are relative to project root anyway
 
 ## Clean up TODOs in codebase: `rg -e TODO Porytiles2/`

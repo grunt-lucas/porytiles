@@ -15,6 +15,7 @@
         - [Project Key Provider](#project-key-provider-3)
       - [Project Reader](#project-reader-1)
   - [Precondition / Invariant Summaries](#precondition--invariant-summaries)
+    - [Porytiles/Porymap Animation Name Conversions](#porytilesporymap-animation-name-conversions)
     - [Porytiles Animations Must Follow `porytiles/anim/{anim_name}` Structure](#porytiles-animations-must-follow-porytilesanimanim_name-structure)
     - [Animation Frame Pointer Array Must Follow Name Convention: `gTilesetAnims_{TilesetName}_{AnimName}{_optional_suffix}`](#animation-frame-pointer-array-must-follow-name-convention-gtilesetanims_tilesetname_animname_optional_suffix)
 
@@ -50,7 +51,7 @@ ChainableResult<std::set<std::string>>
 ProjectTilesetArtifactKeyProvider::discover_porytiles_anims(const std::string &tileset_name) {
     const auto asset_path = // see below
     // read isSecondary for 'tileset_name' from headers.h to figure out {primary,secondary}
-    // for Porytiles assets, location is hardcoded to data/tilesets/{primary,secondary}/{tileset_name}/porytiles/anim
+    // for Porytiles assets, anim.yaml location is hardcoded to data/tilesets/{primary,secondary}/{tileset_name}/porytiles/anim
     // read anim.yaml from this location and return all top level keys
     return top_level_yaml_keys(asset_path).to_set();
 }
@@ -59,10 +60,10 @@ ChainableResult<std::set<std::string>>
 ProjectTilesetArtifactKeyProvider::discover_porytiles_anim_frames(const std::string &tileset_name, const std::string &anim_name) {
     const auto asset_path = // see below
     // read isSecondary for 'tileset_name' from headers.h to figure out {primary,secondary}
-    // for Porytiles assets, location is hardcoded to data/tilesets/{primary,secondary}/{tileset_name}/porytiles/anim/{anim_name}
+    // for Porytiles assets, anim.yaml location is hardcoded to data/tilesets/{primary,secondary}/{tileset_name}/porytiles/anim/{anim_name}
     // extract values from anim.yaml "frames" array under the relevant key
     auto frames = extract_yaml_array(anim_name + ".frames").to_set();
-    frames.insert("key"); // insert key frame
+    frames.insert("key"); // insert key frame, it probably won't be mentioned in the frame array, but Porytiles anims MUST have one 
     return frames;
 }
 
@@ -70,7 +71,7 @@ ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_frame(const std::string &tileset_name, const std::string &anim_name, const std::string &frame_name) {
     const auto asset_path = // see below
     // read isSecondary for 'tileset_name' from headers.h to figure out {primary,secondary}
-    // for Porytiles assets, location is hardcoded to data/tilesets/{primary,secondary}/{tileset_name}/porytiles/anim/{anim_name}/{frame_name}
+    // for Porytiles assets, location is hardcoded to data/tilesets/{primary,secondary}/{tileset_name}/porytiles/anim/{anim_name}/{frame_name}.png
     // at some point, we can support a config override for the 'data/tilesets/{primary,secondary}' path prefix
     return asset_path;
 }
@@ -201,6 +202,15 @@ ProjectTilesetArtifactReader::read_porymap_anim(
 ## Precondition / Invariant Summaries
 Porytiles should minimize the number of preconditions / invariants users must follow
 while maximizing the effectiveness of the preconditions / invariants it chooses.
+
+### Porytiles/Porymap Animation Name Conversions
+Animation names will have three "forms":
+- canonical name: user selected, this name appears in anim.yaml
+- PascalCase-ified: generated via `to_pascal_case(canonical)`, this name is used for the `{AnimName}` component in the `gTilesetAnims` variable in `include/generated_anim_code.h`
+- snake_case-ified: generated via `to_snake_case(canonical)`, this name is used for frame directories (we can't use PascalCase due to case-insensitive filesystems)
+
+These conventions give us a way to compile/import animations back and forth in a loss-less way.
+The `canonical <=> snake_case` and `canonical <=> PascalCase` transformations must be ***involutions***.
 
 ### Porytiles Animations Must Follow `porytiles/anim/{anim_name}` Structure
 Once users have onboarded a tileset to Porytiles, they must store anim frames for a given anim under `porytiles/anim/{anim_name}`.
