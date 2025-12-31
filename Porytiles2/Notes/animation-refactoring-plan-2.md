@@ -42,7 +42,8 @@ Error if there is no frame called `key.png`.
 Frames can have any name the user wants.
 
 ##### Project Key Provider
-Invariant: For Project impl, Porytiles anim frames must be stored in `porytiles/anim/{anim_name}/{frame_name}`
+Invariant: For Project impl, Porytiles anim frames must be stored in `porytiles/anim/{anim_name}/{frame_name}`.
+`{anim_name}` and `{frame_name}` will be inferred from the user-supplied `anim.yaml` file.
 
 ```c++
 ChainableResult<std::set<std::string>>

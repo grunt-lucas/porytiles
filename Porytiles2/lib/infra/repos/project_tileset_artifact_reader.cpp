@@ -414,46 +414,48 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_porymap_anim_frame(
 {
     // TODO: ANIM: we need to call this from here, but we don't have a key_provider in the reader. We need some kind of
     // bridge type or interface.
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        callback_info_opt,
-        key_provider_->animation_callback_info_for(dest.name()),
-        "tileset load failed",
-        std::unique_ptr<Tileset>);
+    // PT_TRY_ASSIGN_CHAIN_ERR(
+    //     callback_info_opt,
+    //     key_provider_->animation_callback_info_for(dest.name()),
+    //     "tileset load failed",
+    //     std::unique_ptr<Tileset>);
+    //
+    // // Use the actual callback function name from tileset metadata
+    // auto params_result = anim_code_parser_->parse_from_callback(
+    //     callback_info_opt.value().c_file_path(),
+    //     callback_info_opt.value().callback_func_name(),
+    //     callback_info_opt.value().tileset_shorthand(),
+    //     callback_info_opt.value().porytiles_managed());
+    //
+    // if (!params_result.has_value()) {
+    //     return ChainableResult<void>{
+    //         FormattableError{
+    //             "{}: failed to parse animation code",
+    //             FormatParam{callback_info_opt.value().c_file_path().string(), Style::bold}},
+    //         params_result};
+    // }
+    //
+    // // Update animation params in the Porymap component
+    // for (const auto &[anim_name, params] : params_result.value()) {
+    //     if (dest.porymap_component().has_anim(anim_name)) {
+    //         auto &existing_anim = dest.porymap_component().anims().at(anim_name);
+    //         auto existing_params = existing_anim.params();
+    //
+    //         // Preserve dimensions from frame import (C code doesn't have this info)
+    //         auto new_params = params;
+    //         new_params.width_tiles(existing_params.width_tiles());
+    //         new_params.height_tiles(existing_params.height_tiles());
+    //
+    //         existing_anim.params(std::move(new_params));
+    //     }
+    //     else {
+    //         // Create a new animation with just the params (frames will be loaded separately)
+    //         Animation<IndexPixel> anim{anim_name, params};
+    //         dest.porymap_component().add_anim(std::move(anim));
+    //     }
+    // }
 
-    // Use the actual callback function name from tileset metadata
-    auto params_result = anim_code_parser_->parse_from_callback(
-        callback_info_opt.value().c_file_path(),
-        callback_info_opt.value().callback_func_name(),
-        callback_info_opt.value().tileset_shorthand(),
-        callback_info_opt.value().porytiles_managed());
-
-    if (!params_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{
-                "{}: failed to parse animation code",
-                FormatParam{callback_info_opt.value().c_file_path().string(), Style::bold}},
-            params_result};
-    }
-
-    // Update animation params in the Porymap component
-    for (const auto &[anim_name, params] : params_result.value()) {
-        if (dest.porymap_component().has_anim(anim_name)) {
-            auto &existing_anim = dest.porymap_component().anims().at(anim_name);
-            auto existing_params = existing_anim.params();
-
-            // Preserve dimensions from frame import (C code doesn't have this info)
-            auto new_params = params;
-            new_params.width_tiles(existing_params.width_tiles());
-            new_params.height_tiles(existing_params.height_tiles());
-
-            existing_anim.params(std::move(new_params));
-        }
-        else {
-            // Create a new animation with just the params (frames will be loaded separately)
-            Animation<IndexPixel> anim{anim_name, params};
-            dest.porymap_component().add_anim(std::move(anim));
-        }
-    }
+    panic("TODO: impl");
 
     return {};
 }

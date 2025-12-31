@@ -386,7 +386,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         "tileset load failed",
         std::unique_ptr<Tileset>);
     if (callback_info_opt.has_value()) {
-        const auto result = reader_->read_anim_code(*tileset, callback_info_opt.value());
+        const auto result = reader_->read_anim_code(*tileset);
         if (!result.has_value()) {
             return ChainableResult<std::unique_ptr<Tileset>>{
                 FormattableError{
