@@ -287,56 +287,25 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         "tileset load failed",
         std::unique_ptr<Tileset>);
     for (const auto &porymap_anim : porymap_anims) {
-        // Read frame 0.png
-        PT_TRY_ASSIGN_CHAIN_ERR(
-            frame_0_key,
-            key_provider_->key_for_porymap_anim_frame(tileset->name(), porymap_anim, 0),
-            "tileset load failed",
-            std::unique_ptr<Tileset>);
-        if (!key_provider_->artifact_exists(frame_0_key)) {
-            diag_->error(
-                missing_required_artifact_tag,
-                format_->format(missing_required_artifact_msg, FormatParam{frame_0_key.key(), Style::bold}));
-            fail_at_exit = true;
-            continue;
-        }
-        const auto frame_0_result = reader_->read_porymap_anim_frame(*tileset, frame_0_key, porymap_anim, 0);
-        if (!frame_0_result.has_value()) {
-            return ChainableResult<std::unique_ptr<Tileset>>{
-                FormattableError{"failed to read artifact '{}'", FormatParam{frame_0_key.key(), Style::bold}},
-                frame_0_result};
-        }
-
-        // Read the rest of the (optional) frames
+        // Read the frames
         PT_TRY_ASSIGN_CHAIN_ERR(
             frames,
             key_provider_->discover_porymap_anim_frames(tileset->name(), porymap_anim),
             "tileset load failed",
             std::unique_ptr<Tileset>);
-        int expected_frame = 1;
-        for (const auto frame : frames) {
-            if (frame != expected_frame) {
-                diag_->error(
-                    "out-of-order-frame-index",
-                    format_->format(
-                        "found frame '{}' but expected '{}'",
-                        FormatParam{frame, Style::bold},
-                        FormatParam{expected_frame, Style::bold}));
-                // TODO: add a note here to explain this more
-                fail_at_exit = true;
-            }
+        for (const auto &frame : frames) {
             PT_TRY_ASSIGN_CHAIN_ERR(
                 frame_n_key,
                 key_provider_->key_for_porymap_anim_frame(tileset->name(), porymap_anim, frame),
                 "tileset load failed",
                 std::unique_ptr<Tileset>);
-            const auto frame_n_result = reader_->read_porymap_anim_frame(*tileset, frame_n_key, porymap_anim, frame);
+            const auto frame_n_result =
+                reader_->read_porymap_anim_frame(*tileset, frame_n_key, porymap_anim, std::to_string(frame));
             if (!frame_n_result.has_value()) {
                 return ChainableResult<std::unique_ptr<Tileset>>{
                     FormattableError{"failed to read artifact '{}'", FormatParam{frame_n_key.key(), Style::bold}},
                     frame_n_result};
             }
-            expected_frame++;
         }
     }
 
