@@ -51,8 +51,9 @@ ChainableResult<std::set<std::string>>
 ProjectTilesetArtifactKeyProvider::discover_porytiles_anims(const std::string &tileset_name) {
     const auto asset_path = // see below
     // read isSecondary for 'tileset_name' from headers.h to figure out {primary,secondary}
-    // for Porytiles assets, anim.yaml location is hardcoded to data/tilesets/{primary,secondary}/{tileset_name}/porytiles/anim
+    // for Porytiles assets, anim.yaml location is hardcoded to data/tilesets/{primary,secondary}/{tileset_name}/porytiles/anim/anim.yaml
     // read anim.yaml from this location and return all top level keys
+    // if any top level key doesn't satisfy `to_snake_case(key) == key`, return an "invalid key" error pointing to that key
     return top_level_yaml_keys(asset_path).to_set();
 }
 
@@ -60,8 +61,8 @@ ChainableResult<std::set<std::string>>
 ProjectTilesetArtifactKeyProvider::discover_porytiles_anim_frames(const std::string &tileset_name, const std::string &anim_name) {
     const auto asset_path = // see below
     // read isSecondary for 'tileset_name' from headers.h to figure out {primary,secondary}
-    // for Porytiles assets, anim.yaml location is hardcoded to data/tilesets/{primary,secondary}/{tileset_name}/porytiles/anim/{anim_name}
-    // extract values from anim.yaml "frames" array under the relevant key
+    // for Porytiles assets, anim.yaml location is hardcoded to data/tilesets/{primary,secondary}/{tileset_name}/porytiles/anim/anim.yaml
+    // extract values from anim.yaml "frames" array under the relevant key (anim_name)
     auto frames = extract_yaml_array(anim_name + ".frames").to_set();
     frames.insert("key"); // insert key frame, it probably won't be mentioned in the frame array, but Porytiles anims MUST have one 
     return frames;
@@ -93,6 +94,12 @@ flower:
 water:
   frame_offset: 1
   frames: ["0", "1", "2", "3"]
+
+# This anim name will cause the key provider to error out
+# to_snake_case(MyAnim) != MyAnim so it's an invalid name for anim.yaml
+MyAnim:
+  frame_offset: 2
+  frames: ["0", "1", "2", "3"]
 ```
 
 ##### Project Key Provider
@@ -112,6 +119,50 @@ TilesetRepo works the same as before, it discovers anims and anim frames via the
 then passes discovered anims/frames into the read_porytiles_anim function.
 
 ```c++
+// TilesetRepo::load snippet
+
+// Only read animations if a params artifact file existed, the params artifact is the source of truth
+if (key_provider_->artifact_exists(porytiles_params_key)) {
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        porytiles_anims,
+        key_provider_->discover_porytiles_anims(tileset->name()),
+        "tileset load failed",
+        std::unique_ptr<Tileset>);
+    for (const auto &porytiles_anim_name : porytiles_anims) {
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            frames,
+            key_provider_->discover_porytiles_anim_frames(tileset->name(), porytiles_anim_name),
+            "tileset load failed",
+            std::unique_ptr<Tileset>);
+
+        if (!frames.contains("key")) {
+            /*
+             * Should this be a required postcondition for discover_porytiles_anim_frames?
+             * Or should we just bake this logic directly into TilesetRepo?
+             */
+            panic("TilesetArtifactKeyProvider::discover_porytiles_anim_frames implementation did not return a 'key' frame");
+        }
+
+        std::vector<ArtifactKey> frames_keys{};
+        for (const auto &frame : frames) {
+            PT_TRY_ASSIGN_CHAIN_ERR(
+                frame_key,
+                key_provider_->key_for_porytiles_anim_frame(tileset->name(), porytiles_anim_name, frame),
+                "tileset load failed",
+                std::unique_ptr<Tileset>);
+        
+            if (!key_provider_->artifact_exists(frame_key)) {
+                return FormattableError{missing_required_artifact_msg, FormatParam{frame_key.key(), Style::bold}};
+            }
+            frames_keys.push_back(frame_key);
+        }
+        // Assume we already have porytiles_params_key from earlier code
+        const auto anim_result = reader_->read_porytiles_anim(*tileset, porytiles_anim_name, porytiles_params_key, frames_keys);
+    }
+}
+```
+
+```c++
 ChainableResult<void>
 ProjectTilesetArtifactReader::read_porytiles_anim(
     Tileset &dest,
@@ -120,8 +171,8 @@ ProjectTilesetArtifactReader::read_porytiles_anim(
     const std::vector<ArtifactKey> &frames_keys) {
     // Read params and frames in one shot
     // We have the artifact keys that were constructed from anim.yaml values
-    // Return FormattableError if expected anim directory doesn't exist
-    // Return FormattableError if expected frame from frames_keys doesn't exist (this vector will include key.png)
+    // Panic if the params_key doesn't exist
+    // Panic if expected frame from frames_keys doesn't exist (this vector will include key.png)
 }
 ```
 
@@ -145,25 +196,50 @@ ProjectTilesetArtifactKeyProvider::discover_porymap_anims(const std::string &til
     // read isSecondary for 'tileset_name' from headers.h to figure out {primary,secondary}
     // for Porymap assets, try hardcoded location data/tilesets/{primary,secondary}/{tileset_name}/include/generated_anim_code.h
     // if this file exists, pull anim names from all gTilesetAnims_{TilesetName}_{AnimName}{_optional_suffix} variables
+    // in this case, the anim names will be to_snake_case({AnimName}), where {AnimName} is the anim part of the gTilesetAnims variable
     if (exists(asset_path)) {
-        return read_all_g_tileset_anims_vars(asset_path).to_set();
+        return read_g_tileset_anims_vars(asset_path, tileset_name).to_set().map(name -> to_snake_case(name));
     }
     // otherwise, we need to parse vanilla tileset_anims.c to find anim names
     // invariant: in tileset_anims.c users are REQUIRED to name their frame arrays following gTilesetAnims_{TilesetName}_{AnimName}{_optional_suffix} format
-    // in this case, the anim names will be to_snake_case({anim}), where {anim} is the anim part of the gTilesetAnims variable
-    return read_vanilla_tileset_anims().to_set();
+    // in this case, the anim names will be to_snake_case({AnimName}), where {AnimName} is the anim part of the gTilesetAnims variable
+    return read_vanilla_g_tileset_anims_vars(tileset_name).to_set().map(name -> to_snake_case(name));
 }
 
 ChainableResult<std::set<std::string>>
 ProjectTilesetArtifactKeyProvider::discover_porymap_anim_frames(const std::string &tileset_name, const std::string &anim_name) {
     const auto asset_path = // see below
-    
+    // read isSecondary for 'tileset_name' from headers.h to figure out {primary,secondary}
+    // for Porymap assets, try hardcoded location data/tilesets/{primary,secondary}/{tileset_name}/include/generated_anim_code.h
+    if (exists(asset_path)) {
+        // This function should find any gTilesetAnims_{TilesetName}_{AnimName}{_optional_suffix} variables associated
+        // with tileset_name and anim_name. For each unique array element, find the associated var declaration.
+        // Find the path inside the INCBIN_U16 call, take the basename of the path and remove file extensions.
+        // That's the frame name.
+        return read_g_tileset_anims_var_frame_names(asset_path, tileset_name, anim_name).to_set();
+    }
+    // otherwise, we need to parse vanilla tileset_anims.c to find anim frame names
+    // invariant: in tileset_anims.c users are REQUIRED to name their frame arrays following gTilesetAnims_{TilesetName}_{AnimName}{_optional_suffix} format
+    // this function can work similarly to read_g_tileset_anims_var_contents, except it's looking in tileset_anims.c instead
+    return read_vanilla_g_tileset_anims_var_frame_names(tileset_name, anim_name).to_set();
 }
 
 ChainableResult<ArtifactKey> 
 ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_frame(const std::string &tileset_name, const std::string &anim_name, const std::string &frame_name) {
     const auto asset_path = // see below
-    
+    // read isSecondary for 'tileset_name' from headers.h to figure out {primary,secondary}
+    // for Porymap assets, try hardcoded location data/tilesets/{primary,secondary}/{tileset_name}/include/generated_anim_code.h
+    if (exists(asset_path)) {
+        // This function should find any gTilesetAnims_{TilesetName}_{AnimName}{_optional_suffix} variables associated
+        // with tileset_name and anim_name. For each unique array element, find the associated var declaration.
+        // Find the path inside the INCBIN_U16 call, take the basename of the path and remove file extensions.
+        // If it matches given frame_name, return the full path from the INCBIN as the key
+        return read_g_tileset_anims_var_frame_paths(asset_path, tileset_name, anim_name, frame_name);
+    }
+    // otherwise, we need to parse vanilla tileset_anims.c to find anim frame names
+    // invariant: in tileset_anims.c users are REQUIRED to name their frame arrays following gTilesetAnims_{TilesetName}_{AnimName}{_optional_suffix} format
+    // this function can work similarly to read_g_tileset_anims_var_frame_paths, except it's looking in tileset_anims.c instead
+    return read_vanilla_g_tileset_anims_var_frame_paths(tileset_name, anim_name, frame_name);
 }
 ```
 
@@ -187,6 +263,41 @@ TilesetRepo works the same as before, it discovers anims and anim frames via the
 then passes discovered anims/frames into the read_porymap_anim function.
 
 ```c++
+// TilesetRepo::load snippet
+
+// Unlike the Porytiles case, we can't treat the params key as source of truth,
+// since this might be a first-time import with params scattered about tileset_anims.c
+PT_TRY_ASSIGN_CHAIN_ERR(
+    porymap_anims,
+    key_provider_->discover_porymap_anims(tileset->name()),
+    "tileset load failed",
+    std::unique_ptr<Tileset>);
+for (const auto &porymap_anim_name : porymap_anims) {
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        frames,
+        key_provider_->discover_porymap_anim_frames(tileset->name(), porymap_anim_name),
+        "tileset load failed",
+        std::unique_ptr<Tileset>);
+
+    std::vector<ArtifactKey> frames_keys{};
+    for (const auto &frame : frames) {
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            frame_key,
+            key_provider_->key_for_porymap_anim_frame(tileset->name(), porymap_anim_name, frame),
+            "tileset load failed",
+            std::unique_ptr<Tileset>);
+    
+        if (!key_provider_->artifact_exists(frame_key)) {
+            return FormattableError{missing_required_artifact_msg, FormatParam{frame_key.key(), Style::bold}};
+        }
+        frames_keys.push_back(frame_key);
+    }
+    // Assume we already have params_key from earlier code
+    const auto anim_result = reader_->read_porymap_anim(*tileset, porymap_anim_name, porymap_params_key, frames_keys);
+}
+```
+
+```c++
 ChainableResult<void>
 ProjectTilesetArtifactReader::read_porymap_anim(
     Tileset &dest,
@@ -194,7 +305,8 @@ ProjectTilesetArtifactReader::read_porymap_anim(
     const ArtifactKey &params_key,
     const std::vector<ArtifactKey> &frames_keys) {
     // Read params and frames in one shot
-    // We have the artifact keys that were constructed from generated_anim_code.h
+    // We have the artifact keys that were constructed from generated_anim_code.h or vanilla code
+    // if params_key does not exist on disk, we have to try reading params from vanilla code
     // Return FormattableError if expected frame from frames_keys doesn't exist (this vector will include key.png)
 }
 ```
@@ -204,10 +316,16 @@ Porytiles should minimize the number of preconditions / invariants users must fo
 while maximizing the effectiveness of the preconditions / invariants it chooses.
 
 ### Porytiles/Porymap Animation Name Conversions
+Key Fact: if a variable name is already in valid PascalCase or snake_case, the `PascalCase <=> snake_case` transformation is an involution.
+E.g. you can do `tosnakecase(topascalcase("my_snake_case")) == "my_snake_case"` and `topascalcase(tosnakecase("MyPascalCase")) == "MyPascalCase"`.
+
 Animation names will have three "forms":
 - canonical name: user selected, this name appears in anim.yaml
-- PascalCase-ified: generated via `to_pascal_case(canonical)`, this name is used for the `{AnimName}` component in the `gTilesetAnims` variable in `include/generated_anim_code.h`
-- snake_case-ified: generated via `to_snake_case(canonical)`, this name is used for frame directories (we can't use PascalCase due to case-insensitive filesystems)
+  - NOTE: this name **MUST*** already be in snake_case, `to_snake_case(canonical) == canonical`
+  - used for diagnostic messages, it's the key in the tileset component Animation maps and the Animation `name_` field
+- PascalCase-ified: generated via `to_pascal_case(canonical)`
+  - this name is used for the `{AnimName}` component in the `gTilesetAnims` variable in `include/generated_anim_code.h`
+  - `to_snake_case(to_pascal_case(canonical)) == canonical` MUST hold
 
 These conventions give us a way to compile/import animations back and forth in a loss-less way.
 The `canonical <=> snake_case` and `canonical <=> PascalCase` transformations must be ***involutions***.
