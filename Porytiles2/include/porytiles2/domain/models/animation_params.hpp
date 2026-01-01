@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <string>
 #include <vector>
 
 namespace porytiles2 {
@@ -74,18 +75,18 @@ class AnimationParams {
      * @brief Returns the frame sequence array.
      *
      * @details
-     * Defines the order in which animation frames are played. For example, [0, 1, 0, 2] means the animation cycles
-     * through frame 0, frame 1, frame 0, frame 2. Frame indices refer to the PNG files in the animation directory
-     * (0.png, 1.png, 2.png, etc.).
+     * Defines the order in which animation frames are played. For example, ["0", "1", "0", "2"] means the animation
+     * cycles through frame 0, frame 1, frame 0, frame 2. Frame names refer to the PNG files in the animation directory
+     * (0.png, 1.png, etc.) or can be arbitrary names like "center", "left", "right" for Porytiles animations.
      *
      * @return Reference to the frame sequence vector
      */
-    [[nodiscard]] const std::vector<std::size_t> &frames() const
+    [[nodiscard]] const std::vector<std::string> &frames() const
     {
         return frames_;
     }
 
-    void frames(std::vector<std::size_t> value)
+    void frames(std::vector<std::string> value)
     {
         frames_ = std::move(value);
     }
@@ -190,7 +191,7 @@ class AnimationParams {
   private:
     std::size_t frame_factor_{anim::default_frame_factor};
     std::size_t frame_offset_{anim::default_frame_offset};
-    std::vector<std::size_t> frames_{0};
+    std::vector<std::string> frames_{"0"};
     std::size_t tile_offset_{0};
     std::size_t tile_count_{0};
     std::size_t width_tiles_{0};

@@ -1,0 +1,8 @@
+verify_checksums: true
+tileset:
+  extrinsic_transparency: [248, 0, 248]
+  compile:
+    pals:
+      edit_mode: locked
+    tiles:
+      edit_mode: locked

@@ -110,8 +110,10 @@ class AnimationFrame {
     }
 
   private:
-    // Note: Frame dimensions (width/height in tiles) are stored in AnimationParams,
-    // since all frames in an animation share the same dimensions.
+    /*
+     * Note: Frame dimensions (width/height in tiles) are stored in AnimationParams since all frames in an animation
+     * must share the same dimensions.
+     */
     std::string frame_name_;
     std::vector<PixelTile<PixelType>> tiles_;
     std::optional<Palette<Rgba32>> palette_;

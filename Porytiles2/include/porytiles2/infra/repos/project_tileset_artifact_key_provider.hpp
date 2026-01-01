@@ -11,8 +11,8 @@
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/infra/repos/tileset_artifact_paths.hpp"
+#include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/c_parser/incbin_declaration.hpp"
-#include "porytiles2/utilities/c_parser/struct_initializer_declaration.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
@@ -48,7 +48,8 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
         std::filesystem::path project_root,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag)
-        : project_root_{std::move(project_root)}, format_{format}, diag_{diag}
+        : project_root_{std::move(project_root)}, format_{format}, diag_{diag},
+          metadata_provider_{project_root_, format, diag}
     {
     }
 
@@ -68,8 +69,20 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
     [[nodiscard]] ChainableResult<ArtifactKey> key_for_porymap_anim_frame(
         const std::string &tileset_name, const std::string &anim_name, const std::string &frame_name) const override;
 
+    /**
+     * @brief Returns the key for Porymap animation parameters.
+     *
+     * @details
+     * For Porymap animations, generated_anim_code.h is the source of truth for animation
+     * parameters. For first-time imports where this file doesn't exist, the reader will
+     * fall back to tileset_anims.c. This method is an alias for key_for_generated_anim_code()
+     * but with a more explicit name for the animation loading context.
+     *
+     * @param tileset_name The name of the tileset
+     * @return Key for the generated_anim_code.h file
+     */
     [[nodiscard]] ChainableResult<ArtifactKey>
-    key_for_generated_anim_code(const std::string &tileset_name) const override;
+    key_for_porymap_anim_params(const std::string &tileset_name) const override;
 
     /*
      * Porytiles artifacts
@@ -88,10 +101,19 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
     [[nodiscard]] ChainableResult<ArtifactKey> key_for_porytiles_anim_frame(
         const std::string &tileset_name, const std::string &anim_name, const std::string &frame_name) const override;
 
+    /**
+     * @brief Returns the key for the anim.yaml file (Porytiles animation configuration).
+     *
+     * @details
+     * The anim.yaml file stores animation parameters for the Porytiles component. It defines frame sequences, timing
+     * parameters, and other configuration for each animation in the tileset. For Porytiles animations, the anim
+     * parameters store is the source of truth for animation names, frame sequences, timing, and other parameters.
+     *
+     * @param tileset_name The name of the tileset
+     * @return Key for the anim.yaml file
+     */
     [[nodiscard]] ChainableResult<ArtifactKey>
-    key_for_porytiles_anim_key_frame(const std::string &tileset_name, const std::string &anim_name) const override;
-
-    [[nodiscard]] ChainableResult<ArtifactKey> key_for_anim_yaml(const std::string &tileset_name) const override;
+    key_for_porytiles_anim_params(const std::string &tileset_name) const override;
 
     [[nodiscard]] ChainableResult<ArtifactKey> key_for_config(const std::string &tileset_name) const override;
 
@@ -102,7 +124,11 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
      */
     [[nodiscard]] bool artifact_exists(const ArtifactKey &key) const override;
 
-    [[nodiscard]] bool tileset_exists(const std::string &tileset_name) const override;
+    [[nodiscard]] ChainableResult<std::set<std::string>>
+    discover_porymap_anims(const std::string &tileset_name) const override;
+
+    [[nodiscard]] ChainableResult<std::set<std::string>>
+    discover_porymap_anim_frames(const std::string &tileset_name, const std::string &anim_name) const override;
 
     [[nodiscard]] ChainableResult<std::set<std::string>>
     discover_porytiles_anims(const std::string &tileset_name) const override;
@@ -110,40 +136,63 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
     [[nodiscard]] ChainableResult<std::set<std::string>>
     discover_porytiles_anim_frames(const std::string &tileset_name, const std::string &anim_name) const override;
 
-    [[nodiscard]] ChainableResult<std::set<std::string>>
-    discover_porymap_anims(const std::string &tileset_name) const override;
-
-    [[nodiscard]] ChainableResult<std::set<std::string>>
-    discover_porymap_anim_frames(const std::string &tileset_name, const std::string &anim_name) const override;
-
-    [[nodiscard]] ChainableResult<std::optional<AnimationCallbackInfo>>
-    animation_callback_info_for(const std::string &tileset_name) const override;
+    /*
+     * Project Implementation-Specific Methods
+     */
 
     /**
      * @brief Returns the filesystem path to the root directory of a tileset.
      *
      * @details
      * This method provides the base directory path where all artifacts for a specific tileset are stored within the
-     * project's filesystem structure. This is specific to the filesystem-based implementation, as other backing stores
-     * may not have a concept of a single root directory for tileset artifacts.
+     * project's filesystem structure. Delegates to ProjectTilesetMetadataProvider for the actual path resolution.
      *
      * @param tileset_name The name of the tileset
      * @return The filesystem path to the tileset's root directory
      */
     [[nodiscard]] ChainableResult<std::filesystem::path> tileset_root(const std::string &tileset_name) const;
 
-  private:
-    [[nodiscard]] ChainableResult<TilesetArtifactPaths> artifact_paths(const std::string &tileset_name) const;
+    /**
+     * @brief Returns resolved filesystem paths for all Porymap artifacts of a tileset.
+     *
+     * @details
+     * Delegates to ProjectTilesetMetadataProvider::artifact_paths_for() for the actual path resolution.
+     *
+     * @param tileset_name The name of the tileset (e.g., "gTileset_General")
+     * @pre tileset_name must refer to an existing tileset on disk
+     * @return TilesetArtifactPaths containing resolved paths for all Porymap artifacts
+     */
+    [[nodiscard]] ChainableResult<TilesetArtifactPaths> artifact_paths_for(const std::string &tileset_name) const;
 
+    /**
+     * @brief Returns Porymap animation frame paths discovered from INCBIN declarations.
+     *
+     * @details
+     * Discovers Porymap animation frames by parsing INCBIN declarations from the appropriate C source file:
+     * - For Porytiles-managed tilesets: parses `<tileset_root>/include/generated_anim_code.h`
+     * - For vanilla tilesets: parses `src/tileset_anims.c`
+     *
+     * The Porytiles-managed status is determined from tileset metadata. If the callback includes "PorytilesManaged_"
+     * in its prefix, the tileset is considered Porytiles-managed.
+     *
+     * @param tileset_name The name of the tileset (e.g., "gTileset_General")
+     * @pre tileset_name must refer to an existing tileset on disk
+     * @return AnimationFramePaths mapping animation names to ordered frame paths, or empty map if no animations
+     */
+    [[nodiscard]] ChainableResult<AnimationFramePaths>
+    porymap_animation_frame_paths_for(const std::string &tileset_name) const;
+
+  private:
     std::filesystem::path project_root_;
     const TextFormatter *format_;
     const UserDiagnostics *diag_;
 
-    // Lazy-loaded caches (mutable for const methods)
-    mutable bool headers_parsed_{false};
+    // Metadata provider for tileset struct parsing
+    ProjectTilesetMetadataProvider metadata_provider_;
+
+    // Lazy-loaded INCBIN cache (mutable for const methods)
     mutable bool incbins_parsed_{false};
-    mutable std::map<std::string, StructInitializerDeclaration> tileset_structs_; // variable_name -> struct
-    mutable std::map<std::string, IncbinDeclaration> incbin_vars_;                // variable_name -> incbin
+    mutable std::map<std::string, IncbinDeclaration> incbin_vars_;
 };
 
 } // namespace porytiles2

@@ -21,6 +21,10 @@ ProjectArtifactChecksumProvider::compute_tileset_artifact_checksums(const std::s
 
     auto all_keys_result = key_provider_->get_all_artifact_keys(name);
     if (!all_keys_result.has_value()) {
+        /*
+         * TODO: see note in ProjectTilesetArtifactKeyProvider::animation_frame_paths_for_impl. We probably shouldn't
+         * panic here?
+         */
         // This is called after a successful save, so artifact keys should be valid
         panic(std::format("failed to get artifact keys for tileset '{}'", name));
     }

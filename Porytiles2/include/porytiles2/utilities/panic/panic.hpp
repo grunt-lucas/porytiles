@@ -4,6 +4,7 @@
 #include <cstdlib>
 #include <filesystem>
 #include <format>
+#include <iostream>
 #include <source_location>
 #include <string_view>
 
@@ -55,9 +56,12 @@ struct StringViewSourceLoc {
 [[noreturn]] inline void panic(const StringViewSourceLoc &s)
 {
     const std::filesystem::path path{s.loc_.file_name()};
-    const auto msg =
-        std::format("{}:{} {} - panic: {}\n", path.filename().string(), s.loc_.line(), s.loc_.function_name(), s.msg_);
-    std::fputs(msg.c_str(), stderr);
+    std::cerr << "---------------------------------" << std::endl;
+    std::cerr << "|             PANIC             |" << std::endl;
+    std::cerr << "---------------------------------" << std::endl;
+    std::cerr << std::format("{}:{}", path.filename().string(), s.loc_.line()) << std::endl;
+    std::cerr << std::format("-> {}", s.loc_.function_name()) << std::endl;
+    std::cerr << s.msg_ << std::endl;
     std::abort();
 }
 

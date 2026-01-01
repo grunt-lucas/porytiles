@@ -36,7 +36,7 @@ constexpr auto anim_parsing_error = "animation-parsing-error";
     const std::string &identifier, const std::string &tileset_shorthand, bool porytiles_managed)
 {
     // Build expected prefix: gTilesetAnims_[PorytilesManaged_]TilesetName_
-    std::string prefix = "gTilesetAnims_";
+    std::string prefix = anim::g_tileset_anims_prefix;
     if (porytiles_managed) {
         prefix += anim::porytiles_managed_prefix;
     }
@@ -62,27 +62,29 @@ constexpr auto anim_parsing_error = "animation-parsing-error";
 }
 
 /**
- * @brief Extracts frame indices from array element names.
+ * @brief Extracts frame names from array element names.
  *
  * @details
  * Given element names like ["..._Frame0", "..._Frame1", "..._Frame0", "..._Frame2"],
- * returns the frame indices [0, 1, 0, 2].
+ * returns the frame names as strings ["0", "1", "0", "2"].
  *
  * @param elements Vector of element identifier names
- * @return Vector of frame indices in order
+ * @return Vector of frame names in order (as strings)
  */
-[[nodiscard]] std::vector<std::size_t> extract_frame_indices(const std::vector<std::string> &elements)
+[[nodiscard]] std::vector<std::string> extract_frame_names(const std::vector<std::string> &elements)
 {
-    std::vector<std::size_t> frames;
+    std::vector<std::string> frames;
     frames.reserve(elements.size());
 
     for (const auto &elem : elements) {
-        // Find "_Frame" suffix and extract the digit
+        // Find "_Frame" suffix and extract the frame name
         auto frame_pos = elem.find("_Frame");
         if (frame_pos != std::string::npos) {
             std::string frame_str = elem.substr(frame_pos + 6); // Skip "_Frame"
+            // Validate it's a valid frame name (should be numeric for now)
             try {
-                frames.push_back(std::stoull(frame_str));
+                std::stoull(frame_str); // Validate it's a number
+                frames.push_back(frame_str);
             }
             catch (...) {
                 // Skip elements that don't match the pattern
@@ -288,12 +290,16 @@ namespace porytiles2 {
 ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_from_callback(
     const std::filesystem::path &c_file_path,
     const std::string &callback_func_name,
-    const std::string &tileset_shorthand,
+    const std::string &pascal_case_tileset,
     bool porytiles_managed) const
 {
     std::map<std::string, AnimationParams> result;
     CParserFacade c_parser{c_file_path, format_};
-    const std::string pascal_case_tileset = to_pascal_case(tileset_shorthand);
+
+    // TODO: do we need this here?
+    if (to_pascal_case(pascal_case_tileset) != pascal_case_tileset) {
+        panic("param pascal_case_tileset = '" + pascal_case_tileset + "', must be pascal case");
+    }
 
     // Step 1: Parse the callback function to find the driver function
     auto callback_funcs_result = c_parser.parse_functions(callback_func_name);
@@ -464,8 +470,9 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
     }
 
     // Step 5: Parse frame pointer arrays to get frame sequences
-    const auto frame_array_prefix =
-        "gTilesetAnims_" + (porytiles_managed ? anim::porytiles_managed_prefix : std::string{}) + pascal_case_tileset;
+    const auto frame_array_prefix = anim::g_tileset_anims_prefix +
+                                    (porytiles_managed ? anim::porytiles_managed_prefix : std::string{}) +
+                                    pascal_case_tileset;
 
     auto anim_frame_arrays_result = c_parser.parse_pointer_arrays(frame_array_prefix);
     if (!anim_frame_arrays_result.has_value()) {
@@ -496,7 +503,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
 
             // Case-insensitive comparison to handle inconsistencies like TVTurnedOn vs TvTurnedOn
             if (to_lower_str(arr_anim_name) == to_lower_str(pascal_name)) {
-                auto frames = extract_frame_indices(arr.elements());
+                auto frames = extract_frame_names(arr.elements());
                 if (!frames.empty()) {
                     params.frames(std::move(frames));
                     found_frames = true;

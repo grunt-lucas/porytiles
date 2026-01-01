@@ -25,6 +25,7 @@
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/config/config_scope_type.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
+#include "porytiles2/xcut/diagnostics/buffered_user_diagnostics.hpp"
 
 using namespace porytiles2;
 
@@ -130,11 +131,13 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
   protected:
     void SetUp() override
     {
+        formatter_ = std::make_unique<PlainTextFormatter>();
+        diag_ = std::make_unique<BufferedUserDiagnostics>();
         config_ = std::make_unique<MockInfraConfig>();
         png_rgba_saver_ = std::make_unique<MockPngRgbaImageSaver>();
         png_indexed_saver_ = std::make_unique<MockPngIndexedImageSaver>();
         pal_saver_ = std::make_unique<MockFilePalSaver>();
-        anim_yaml_parser_ = std::make_unique<AnimYamlParser>();
+        anim_yaml_parser_ = std::make_unique<AnimYamlParser>(formatter_.get());
         anim_code_generator_ = std::make_unique<AnimCodeGenerator>();
 
         test_root_ = std::filesystem::temp_directory_path() / "porytiles_artifact_writer_tests";
@@ -144,6 +147,8 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
         writer_ = std::make_unique<ProjectTilesetArtifactWriter>(
             config_.get(),
             test_root_,
+            formatter_.get(),
+            diag_.get(),
             png_rgba_saver_.get(),
             png_indexed_saver_.get(),
             pal_saver_.get(),
@@ -187,6 +192,8 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
     }
 
     std::filesystem::path test_root_;
+    std::unique_ptr<TextFormatter> formatter_;
+    std::unique_ptr<UserDiagnostics> diag_;
     std::unique_ptr<MockInfraConfig> config_;
     std::unique_ptr<MockPngRgbaImageSaver> png_rgba_saver_;
     std::unique_ptr<MockPngIndexedImageSaver> png_indexed_saver_;

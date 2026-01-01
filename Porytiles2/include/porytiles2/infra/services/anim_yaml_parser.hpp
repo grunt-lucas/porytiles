@@ -4,8 +4,11 @@
 #include <map>
 #include <string>
 
+#include "gsl/pointers"
+
 #include "porytiles2/domain/models/animation_params.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
 
 namespace porytiles2 {
 
@@ -39,7 +42,7 @@ namespace porytiles2 {
  */
 class AnimYamlParser {
   public:
-    AnimYamlParser() = default;
+    explicit AnimYamlParser(gsl::not_null<const TextFormatter *> format);
 
     /**
      * @brief Parses an anim.yaml file into a map of animation parameters.
@@ -67,6 +70,9 @@ class AnimYamlParser {
      */
     [[nodiscard]] ChainableResult<void>
     write(const std::filesystem::path &yaml_path, const std::map<std::string, AnimationParams> &params) const;
+
+  private:
+    const TextFormatter *format_;
 };
 
 } // namespace porytiles2

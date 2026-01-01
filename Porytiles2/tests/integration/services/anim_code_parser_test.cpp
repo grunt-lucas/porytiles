@@ -68,10 +68,10 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsFlowerAnimationParamsFromGen
     // Verify frames from pointer array [Frame0, Frame1, Frame0, Frame2]
     const auto &frames = flower.frames();
     ASSERT_EQ(frames.size(), 4u);
-    EXPECT_EQ(frames[0], 0u);
-    EXPECT_EQ(frames[1], 1u);
-    EXPECT_EQ(frames[2], 0u);
-    EXPECT_EQ(frames[3], 2u);
+    EXPECT_EQ(frames[0], "0");
+    EXPECT_EQ(frames[1], "1");
+    EXPECT_EQ(frames[2], "0");
+    EXPECT_EQ(frames[3], "2");
 }
 
 TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsLandWaterEdgeAnimationParamsFromGeneratedHeader)
@@ -101,7 +101,7 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsLandWaterEdgeAnimationParams
     const auto &frames = land_water_edge.frames();
     ASSERT_EQ(frames.size(), 4u);
     for (std::size_t i = 0; i < 4; ++i) {
-        EXPECT_EQ(frames[i], i);
+        EXPECT_EQ(frames[i], std::to_string(i));
     }
 }
 
@@ -132,14 +132,14 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsWaterAnimationParamsFromGene
     // Verify frames from pointer array
     const auto &frames = water.frames();
     ASSERT_EQ(frames.size(), 8u);
-    EXPECT_EQ(frames[0], 0u);
-    EXPECT_EQ(frames[1], 1u);
-    EXPECT_EQ(frames[2], 2u);
-    EXPECT_EQ(frames[3], 3u);
-    EXPECT_EQ(frames[4], 4u);
-    EXPECT_EQ(frames[5], 5u);
-    EXPECT_EQ(frames[6], 6u);
-    EXPECT_EQ(frames[7], 7u);
+    EXPECT_EQ(frames[0], "0");
+    EXPECT_EQ(frames[1], "1");
+    EXPECT_EQ(frames[2], "2");
+    EXPECT_EQ(frames[3], "3");
+    EXPECT_EQ(frames[4], "4");
+    EXPECT_EQ(frames[5], "5");
+    EXPECT_EQ(frames[6], "6");
+    EXPECT_EQ(frames[7], "7");
 }
 
 TEST_F(AnimCodeParserTest, ParseFromCallbackReturnsErrorForNonExistentFile)
@@ -192,10 +192,10 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsFlowerAnimationParamsFromVan
     // Verify frames from pointer array
     const auto &frames = flower.frames();
     ASSERT_EQ(frames.size(), 4u);
-    EXPECT_EQ(frames[0], 0u);
-    EXPECT_EQ(frames[1], 1u);
-    EXPECT_EQ(frames[2], 0u);
-    EXPECT_EQ(frames[3], 2u);
+    EXPECT_EQ(frames[0], "0");
+    EXPECT_EQ(frames[1], "1");
+    EXPECT_EQ(frames[2], "0");
+    EXPECT_EQ(frames[3], "2");
 }
 
 TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsLandWaterEdgeAnimationParamsFromVanilla)
@@ -223,7 +223,7 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsLandWaterEdgeAnimationParams
     const auto &frames = land_water_edge.frames();
     ASSERT_EQ(frames.size(), 4u);
     for (std::size_t i = 0; i < 4; ++i) {
-        EXPECT_EQ(frames[i], i);
+        EXPECT_EQ(frames[i], std::to_string(i));
     }
 }
 
@@ -252,7 +252,7 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsWaterAnimationParamsFromVani
     const auto &frames = water.frames();
     ASSERT_EQ(frames.size(), 8u);
     for (std::size_t i = 0; i < 8; ++i) {
-        EXPECT_EQ(frames[i], i);
+        EXPECT_EQ(frames[i], std::to_string(i));
     }
 }
 

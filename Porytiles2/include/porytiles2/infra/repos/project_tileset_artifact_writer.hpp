@@ -9,7 +9,11 @@
 #include "porytiles2/infra/services/file_pal_saver.hpp"
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
+#include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
+#include "porytiles2/infra/services/project_tileset_metadata_writer.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
+#include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles2 {
 
@@ -25,14 +29,17 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
     ProjectTilesetArtifactWriter(
         gsl::not_null<InfraConfig *> config,
         std::filesystem::path project_root,
+        gsl::not_null<const TextFormatter *> format,
+        gsl::not_null<const UserDiagnostics *> diag,
         gsl::not_null<PngRgbaImageSaver *> png_rgba_saver,
         gsl::not_null<PngIndexedImageSaver *> png_indexed_saver,
         gsl::not_null<FilePalSaver *> pal_saver,
         gsl::not_null<const AnimYamlParser *> anim_yaml_parser,
         gsl::not_null<const AnimCodeGenerator *> anim_code_generator)
-        : config_{config}, project_root_{std::move(project_root)}, png_rgba_saver_{png_rgba_saver},
-          png_indexed_saver_{png_indexed_saver}, pal_saver_{pal_saver}, anim_yaml_parser_{anim_yaml_parser},
-          anim_code_generator_{anim_code_generator}
+        : config_{config}, project_root_{std::move(project_root)}, format_{format}, diag_{diag},
+          png_rgba_saver_{png_rgba_saver}, png_indexed_saver_{png_indexed_saver}, pal_saver_{pal_saver},
+          anim_yaml_parser_{anim_yaml_parser}, anim_code_generator_{anim_code_generator},
+          metadata_provider_{project_root, format, diag}, metadata_writer_{project_root, format}
     {
     }
 
@@ -59,10 +66,10 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
         const ArtifactKey &dest_key,
         const Tileset &src,
         const std::string &anim_name,
-        std::size_t frame_index) override;
+        const std::string &frame_name) override;
 
     [[nodiscard]] ChainableResult<void>
-    write_generated_anim_code(const ArtifactKey &dest_key, const Tileset &src) override;
+    write_porymap_anim_params(const ArtifactKey &dest_key, const Tileset &src) override;
 
     /*
      * Porytiles artifacts
@@ -82,12 +89,10 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
         const ArtifactKey &dest_key,
         const Tileset &src,
         const std::string &anim_name,
-        std::size_t frame_index) override;
+        const std::string &frame_name) override;
 
-    [[nodiscard]] ChainableResult<void> write_porytiles_anim_key_frame(
-        const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name) override;
-
-    [[nodiscard]] ChainableResult<void> write_anim_yaml(const ArtifactKey &dest_key, const Tileset &src) override;
+    [[nodiscard]] ChainableResult<void>
+    write_porytiles_anim_params(const ArtifactKey &dest_key, const Tileset &src) override;
 
     [[nodiscard]] ChainableResult<void> write_config(const ArtifactKey &dest_key, const Tileset &src) override;
 
@@ -97,11 +102,15 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
     InfraConfig *config_;
     std::filesystem::path project_root_;
     std::filesystem::path transaction_root_;
+    const TextFormatter *format_;
+    const UserDiagnostics *diag_;
     PngRgbaImageSaver *png_rgba_saver_;
     PngIndexedImageSaver *png_indexed_saver_;
     FilePalSaver *pal_saver_;
     const AnimYamlParser *anim_yaml_parser_;
     const AnimCodeGenerator *anim_code_generator_;
+    ProjectTilesetMetadataProvider metadata_provider_;
+    ProjectTilesetMetadataWriter metadata_writer_;
 };
 
 } // namespace porytiles2

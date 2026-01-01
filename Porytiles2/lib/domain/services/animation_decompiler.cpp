@@ -70,13 +70,10 @@ std::size_t find_palette_for_animation_tiles(
         std::cerr << "---------------------------------" << std::endl;
         std::cerr << "no palette index found for animation '" << anim_name
                   << "' tiles in range [" + std::to_string(tile_offset) + ", " +
-                         std::to_string(tile_offset + (tile_count - 1)) + "]"
+                         std::to_string(tile_offset + tile_count) + ")"
                   << std::endl;
         std::cerr << "falling back to pal 0" << std::endl;
         return 0;
-        // panic(
-        //     "no palette index found for animation tiles in range [" + std::to_string(tile_offset) + ", " +
-        //     std::to_string(tile_offset + tile_count - 1) + "]");
     }
 
     if (found_pal_indices.size() > 1) {
@@ -176,6 +173,11 @@ Animation<Rgba32> AnimationDecompiler::decompile_animation(
 
     const auto &pal = pals.at(pal_index);
 
+    /*
+     * TODO: this is broken until we implement the anim param reading. Currently, when importing a tileset, tile_offset
+     * and tile_count come back as default zero values, since there is no param parsing. So this vector is empty and
+     * thus the saved key frame will be an empty file.
+     */
     // Extract key frame tiles from tiles.png
     std::vector<PixelTile<IndexPixel>> key_frame_index_tiles =
         extract_animation_tiles(tiles_png, tile_offset, tile_count);
@@ -203,10 +205,10 @@ Animation<Rgba32> AnimationDecompiler::decompile_animation(
     }
 
     // Set the key frame on the result
-    AnimationFrame key_frame{"key.png", std::move(key_frame_rgba_tiles)};
+    AnimationFrame key_frame{"key", std::move(key_frame_rgba_tiles)};
     result.key_frame(std::move(key_frame));
 
-    for (const auto &frame : anim.frames()) {
+    for (const auto &frame : anim.frames_values()) {
         std::vector<PixelTile<Rgba32>> rgba_tiles;
         rgba_tiles.reserve(frame.tiles().size());
 
@@ -215,7 +217,7 @@ Animation<Rgba32> AnimationDecompiler::decompile_animation(
         }
 
         AnimationFrame rgba_frame{frame.frame_name(), std::move(rgba_tiles)};
-        result.add_frame(std::move(rgba_frame));
+        result.put_frame(frame.frame_name(), std::move(rgba_frame));
     }
 
     return result;

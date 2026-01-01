@@ -17,6 +17,7 @@
 #include "porytiles2/infra/services/jasc_pal_loader.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
+#include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/result/error.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
@@ -108,17 +109,21 @@ class ProjectTilesetArtifactReaderTestBase : public ::testing::Test {
         pal_loader_ = std::make_unique<JascPalLoader>(formatter_.get());
         behavior_map_ = std::make_unique<StubBehaviorMapProvider>();
         attributes_csv_loader_ = std::make_unique<AttributesCsvLoader>(formatter_.get(), behavior_map_.get());
-        anim_yaml_parser_ = std::make_unique<AnimYamlParser>();
+        anim_yaml_parser_ = std::make_unique<AnimYamlParser>(formatter_.get());
         anim_code_parser_ = std::make_unique<AnimCodeParser>(formatter_.get(), diag_.get());
+        metadata_provider_ =
+            std::make_unique<ProjectTilesetMetadataProvider>(project_root_, formatter_.get(), diag_.get());
 
         // Create reader under test
         reader_ = std::make_unique<ProjectTilesetArtifactReader>(
+            project_root_,
             png_rgba_loader_.get(),
             png_indexed_loader_.get(),
             pal_loader_.get(),
             attributes_csv_loader_.get(),
             anim_yaml_parser_.get(),
-            anim_code_parser_.get());
+            anim_code_parser_.get(),
+            metadata_provider_.get());
     }
 
     std::filesystem::path project_root_;
@@ -131,17 +136,15 @@ class ProjectTilesetArtifactReaderTestBase : public ::testing::Test {
     std::unique_ptr<AttributesCsvLoader> attributes_csv_loader_;
     std::unique_ptr<AnimYamlParser> anim_yaml_parser_;
     std::unique_ptr<AnimCodeParser> anim_code_parser_;
+    std::unique_ptr<ProjectTilesetMetadataProvider> metadata_provider_;
     std::unique_ptr<ProjectTilesetArtifactReader> reader_;
 };
 
-/**
- * @brief Tests using the pokeemerald_general_firsttimeimport_success mock project.
- */
 class ProjectTilesetArtifactReaderTest_Fixture1 : public ProjectTilesetArtifactReaderTestBase {
   protected:
     [[nodiscard]] std::filesystem::path project_root_path() const override
     {
-        return "Resources/Tests/integration/repos/pokeemerald_general_firsttimeimport_success";
+        return "Resources/Tests/integration/repos/pokeemerald_vanilla_stock";
     }
 };
 

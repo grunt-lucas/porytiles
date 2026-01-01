@@ -191,7 +191,7 @@ Image<PixelType> tiles_to_image(
  * @param dest_key The artifact key for the destination PNG file
  * @param src The source tileset
  * @param anim_name The name of the animation
- * @param frame_index If nullopt, writes key frame; otherwise writes frame[index]
+ * @param frame_name The name of the frame
  * @param transaction_root The transaction root directory
  * @param project_root The project root directory
  * @param component_getter Lambda to get the appropriate component from tileset
@@ -204,7 +204,7 @@ ChainableResult<void> write_anim_frame_impl(
     const ArtifactKey &dest_key,
     const Tileset &src,
     const std::string &anim_name,
-    std::optional<std::size_t> frame_index,
+    const std::string &frame_name,
     const std::filesystem::path &transaction_root,
     const std::filesystem::path &project_root,
     ComponentGetter component_getter,
@@ -224,15 +224,9 @@ ChainableResult<void> write_anim_frame_impl(
 
     // Get the appropriate frame
     const AnimationFrame<PixelType> *frame_ptr = nullptr;
-    if (frame_index.has_value()) {
-        if (*frame_index >= anim.frame_count()) {
-            return FormattableError{
-                "frame index {} out of range for animation '{}' (has {} frames)",
-                FormatParam{*frame_index},
-                FormatParam{anim_name, Style::bold},
-                FormatParam{anim.frame_count()}};
-        }
-        frame_ptr = &anim.frame_at(*frame_index);
+    // TODO: don't hardcode "key" here, this whole pattern is bad tbh
+    if (frame_name != "key") {
+        frame_ptr = &anim.frame_for_name(frame_name);
     }
     else {
         frame_ptr = &anim.key_frame();
@@ -497,13 +491,13 @@ ProjectTilesetArtifactWriter::write_porymap_pal_n(const ArtifactKey &dest_key, c
 }
 
 ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
-    const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, std::size_t frame_index)
+    const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, const std::string &frame_name)
 {
     return write_anim_frame_impl<IndexPixel>(
         dest_key,
         src,
         anim_name,
-        frame_index,
+        frame_name,
         transaction_root_,
         project_root_,
         [](const Tileset &t) -> const auto & { return t.porymap_component(); },
@@ -514,7 +508,7 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
 }
 
 [[nodiscard]] ChainableResult<void>
-ProjectTilesetArtifactWriter::write_generated_anim_code(const ArtifactKey &dest_key, const Tileset &src)
+ProjectTilesetArtifactWriter::write_porymap_anim_params(const ArtifactKey &dest_key, const Tileset &src)
 {
     const auto &porymap_anims = src.porymap_component().anims();
     if (porymap_anims.empty()) {
@@ -528,16 +522,22 @@ ProjectTilesetArtifactWriter::write_generated_anim_code(const ArtifactKey &dest_
         anim_params[anim_name] = anim.params();
     }
 
-    // Compute the tileset path relative to project root
-    // The dest_key contains the full path to generated_anim_code.h
-    // We need the parent directory (tileset directory path)
-    const std::filesystem::path dest_path{dest_key.key()};
-    const auto tileset_path = dest_path.parent_path().lexically_relative(project_root_);
+    /*
+     * TODO: this is a hack. Technically, we should be passing in the frame paths here, so that the generator can write
+     * the paths correctly. For now, we're just assuming that dest_key is pointing at the
+     * "include/generated_anim_code.h" file, so two parent paths up is the tileset root folder.
+     *
+     * To fix this here, we need to figure out a way to pass the writer the frame paths. The best way to do this is to
+     * refactor the artifact writer so that it writes animations in one shot. This refactor will be similar to the
+     * refactor we did for the artifact reader, which allowed it to read animations in one shot.
+     */
+    const auto tileset_root_path =
+        std::filesystem::path{dest_key.key()}.parent_path().parent_path().lexically_relative(project_root_);
 
     // TODO: determine if primary or secondary tileset from config
     const bool is_primary = true;
 
-    auto code_result = anim_code_generator_->generate(src.name(), tileset_path, anim_params, is_primary);
+    auto code_result = anim_code_generator_->generate(src.name(), tileset_root_path, anim_params, is_primary);
     if (!code_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{"failed to generate animation code for '{}'", FormatParam{src.name(), Style::bold}},
@@ -620,30 +620,13 @@ ProjectTilesetArtifactWriter::write_porytiles_pal_n(const ArtifactKey &dest_key,
 }
 
 ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_anim_frame(
-    const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, std::size_t frame_index)
+    const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, const std::string &frame_name)
 {
     return write_anim_frame_impl<Rgba32>(
         dest_key,
         src,
         anim_name,
-        frame_index,
-        transaction_root_,
-        project_root_,
-        [](const Tileset &t) -> const auto & { return t.porytiles_component(); },
-        [this](const Image<Rgba32> &img, const std::filesystem::path &path) {
-            return save_layer_png(*png_rgba_saver_, img, path);
-        },
-        "Porytiles");
-}
-
-[[nodiscard]] ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_anim_key_frame(
-    const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name)
-{
-    return write_anim_frame_impl<Rgba32>(
-        dest_key,
-        src,
-        anim_name,
-        std::nullopt,
+        frame_name,
         transaction_root_,
         project_root_,
         [](const Tileset &t) -> const auto & { return t.porytiles_component(); },
@@ -654,7 +637,7 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_anim_frame(
 }
 
 [[nodiscard]] ChainableResult<void>
-ProjectTilesetArtifactWriter::write_anim_yaml(const ArtifactKey &dest_key, const Tileset &src)
+ProjectTilesetArtifactWriter::write_porytiles_anim_params(const ArtifactKey &dest_key, const Tileset &src)
 {
     const auto &porytiles_anims = src.porytiles_component().anims();
     if (porytiles_anims.empty()) {

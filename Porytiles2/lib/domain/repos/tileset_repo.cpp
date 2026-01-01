@@ -65,12 +65,13 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
 
     for (const auto &porymap_anim : tileset.porymap_component().anims() | std::views::values) {
         for (std::size_t i = 0; i < porymap_anim.frame_count(); i++) {
+            const auto frame_name = std::to_string(i);
             PT_TRY_ASSIGN_CHAIN_ERR(
                 frame_key,
-                key_provider_->key_for_porymap_anim_frame(tileset.name(), porymap_anim.name(), i),
+                key_provider_->key_for_porymap_anim_frame(tileset.name(), porymap_anim.name(), frame_name),
                 "tileset save failed",
                 void);
-            if (auto result = writer_->write_porymap_anim_frame(frame_key, tileset, porymap_anim.name(), i);
+            if (auto result = writer_->write_porymap_anim_frame(frame_key, tileset, porymap_anim.name(), frame_name);
                 !result.has_value()) {
                 std::ignore = writer_->rollback();
                 auto failed = FormattableError{"{}: save failed", FormatParam{frame_key.key(), Style::bold}};
@@ -81,10 +82,10 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         generated_anim_code_key,
-        key_provider_->key_for_generated_anim_code(tileset.name()),
+        key_provider_->key_for_porymap_anim_params(tileset.name()),
         "tileset save failed",
         void);
-    if (auto result = writer_->write_generated_anim_code(generated_anim_code_key, tileset); !result.has_value()) {
+    if (auto result = writer_->write_porymap_anim_params(generated_anim_code_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
         auto failed = FormattableError{"{}: save failed", FormatParam{generated_anim_code_key.key(), Style::bold}};
         return ChainableResult<void>{failed, result};
@@ -135,25 +136,30 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     }
 
     for (const auto &porytiles_anim : tileset.porytiles_component().anims() | std::views::values) {
+        // Save key frame
         PT_TRY_ASSIGN_CHAIN_ERR(
             key_frame_key,
-            key_provider_->key_for_porytiles_anim_key_frame(tileset.name(), porytiles_anim.name()),
+            key_provider_->key_for_porytiles_anim_frame(
+                tileset.name(), porytiles_anim.name(), porytiles_anim.key_frame().frame_name()),
             "tileset save failed",
             void);
-        if (auto result = writer_->write_porytiles_anim_key_frame(key_frame_key, tileset, porytiles_anim.name());
+        if (auto result = writer_->write_porytiles_anim_frame(
+                key_frame_key, tileset, porytiles_anim.name(), porytiles_anim.key_frame().frame_name());
             !result.has_value()) {
             std::ignore = writer_->rollback();
             auto failed = FormattableError{"{}: save failed", FormatParam{key_frame_key.key(), Style::bold}};
             return ChainableResult<void>{failed, result};
         }
 
-        for (std::size_t i = 0; i < porytiles_anim.frame_count(); i++) {
+        // Save regular frames
+        for (const auto &frame : porytiles_anim.frames_values()) {
             PT_TRY_ASSIGN_CHAIN_ERR(
                 frame_key,
-                key_provider_->key_for_porytiles_anim_frame(tileset.name(), porytiles_anim.name(), i),
+                key_provider_->key_for_porytiles_anim_frame(tileset.name(), porytiles_anim.name(), frame.frame_name()),
                 "tileset save failed",
                 void);
-            if (auto result = writer_->write_porytiles_anim_frame(frame_key, tileset, porytiles_anim.name(), i);
+            if (auto result =
+                    writer_->write_porytiles_anim_frame(frame_key, tileset, porytiles_anim.name(), frame.frame_name());
                 !result.has_value()) {
                 std::ignore = writer_->rollback();
                 auto failed = FormattableError{"{}: save failed", FormatParam{frame_key.key(), Style::bold}};
@@ -163,8 +169,8 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     }
 
     PT_TRY_ASSIGN_CHAIN_ERR(
-        anim_yaml_key, key_provider_->key_for_anim_yaml(tileset.name()), "tileset save failed", void);
-    if (auto result = writer_->write_anim_yaml(anim_yaml_key, tileset); !result.has_value()) {
+        anim_yaml_key, key_provider_->key_for_porytiles_anim_params(tileset.name()), "tileset save failed", void);
+    if (auto result = writer_->write_porytiles_anim_params(anim_yaml_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
         auto failed = FormattableError{"{}: save failed", FormatParam{anim_yaml_key.key(), Style::bold}};
         return ChainableResult<void>{failed, result};
@@ -282,86 +288,44 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     }
 
     PT_TRY_ASSIGN_CHAIN_ERR(
+        porymap_anim_params_key,
+        key_provider_->key_for_porymap_anim_params(tileset->name()),
+        "tileset load failed",
+        std::unique_ptr<Tileset>);
+
+    PT_TRY_ASSIGN_CHAIN_ERR(
         porymap_anims,
         key_provider_->discover_porymap_anims(tileset->name()),
         "tileset load failed",
         std::unique_ptr<Tileset>);
-    for (const auto &porymap_anim : porymap_anims) {
-        // Read the frames
+
+    for (const auto &porymap_anim_name : porymap_anims) {
         PT_TRY_ASSIGN_CHAIN_ERR(
             frames,
-            key_provider_->discover_porymap_anim_frames(tileset->name(), porymap_anim),
+            key_provider_->discover_porymap_anim_frames(tileset->name(), porymap_anim_name),
             "tileset load failed",
             std::unique_ptr<Tileset>);
-        for (const auto &frame : frames) {
+
+        std::vector<std::pair<std::string, ArtifactKey>> frames_keys{};
+        for (const auto &frame_name : frames) {
             PT_TRY_ASSIGN_CHAIN_ERR(
-                frame_n_key,
-                key_provider_->key_for_porymap_anim_frame(tileset->name(), porymap_anim, frame),
+                frame_key,
+                key_provider_->key_for_porymap_anim_frame(tileset->name(), porymap_anim_name, frame_name),
                 "tileset load failed",
                 std::unique_ptr<Tileset>);
-            const auto frame_n_result =
-                reader_->read_porymap_anim_frame(*tileset, frame_n_key, porymap_anim, std::to_string(frame));
-            if (!frame_n_result.has_value()) {
-                return ChainableResult<std::unique_ptr<Tileset>>{
-                    FormattableError{"failed to read artifact '{}'", FormatParam{frame_n_key.key(), Style::bold}},
-                    frame_n_result};
-            }
-        }
-    }
 
-    /*
-     * TODO: ANIM: Refactor to keep AnimationCallbackInfo entirely in infra layer.
-     *
-     * CURRENT ISSUE:
-     * AnimationCallbackInfo is an infra concept (C file paths, function names, project layout details), but it leaks
-     * into the domain layer here. We fetch it via key_provider_ and pass it to reader_->read_anim_code().
-     *
-     * NAIVE FIX (won't work as-is):
-     * Simply checking `!tileset->porymap_component().anims().empty()` instead of `callback_info_opt.has_value()`
-     * doesn't solve the problem because AnimationCallbackInfo carries essential parsing context:
-     *   - c_file_path(): WHERE to find the C code (generated_anim_code.h or tileset_anims.c)
-     *   - callback_func_name(): WHAT function starts the callback chain
-     *   - tileset_shorthand(): Used for function name matching during parsing
-     *   - porytiles_managed(): Affects file path and function prefix expectations
-     *
-     * MISMATCH DETECTION (future enhancement):
-     * There are two independent signals for "tileset has animations":
-     *   1. Metadata-based: `.callback != NULL` in the tileset struct (headers.h)
-     *   2. Frame-based: Animation directories exist with frame PNGs (0.png, 1.png, etc.)
-     * These usually align, but mismatches indicate incomplete tilesets:
-     *   - Callback exists but no frames: User defined anim code but hasn't created frame assets
-     *   - Frames exist but no callback: User created frame assets but hasn't wired up anim code
-     * We should warn the user about such mismatches rather than silently proceeding.
-     *
-     * RECOMMENDED REFACTORING APPROACH:
-     * Move the callback info lookup INTO the reader (or a service the reader uses):
-     *   1. Change read_anim_code() signature to not require AnimationCallbackInfo parameter
-     *   2. Reader internally fetches callback info from metadata provider
-     *   3. TilesetRepo either:
-     *      a. Calls reader unconditionally (reader returns early if no anims), OR
-     *      b. Checks discovered anims as optimization before calling
-     *   4. Add mismatch detection: compare callback_info.has_value() vs !anims().empty()
-     *      and emit warnings for inconsistencies
-     *
-     * RELATED TODOs:
-     *   - animation_callback_info.hpp: "TODO: ANIM: this seems like a better fit for infra layer"
-     *   - tileset_metadata_provider.hpp: "TODO: ANIM: all of this should be infra code"
-     *   - tileset_metadata.hpp: "TODO: ANIM: a lot of this stuff belongs in the infra layer"
-     *   - tileset_artifact_paths.hpp: "TODO: ANIM: this is a domain class but relies on infra concepts"
-     */
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        callback_info_opt,
-        key_provider_->animation_callback_info_for(tileset->name()),
-        "tileset load failed",
-        std::unique_ptr<Tileset>);
-    if (callback_info_opt.has_value()) {
-        const auto result = reader_->read_anim_code(*tileset);
-        if (!result.has_value()) {
+            if (!key_provider_->artifact_exists(frame_key)) {
+                return FormattableError{missing_required_artifact_msg, FormatParam{frame_key.key(), Style::bold}};
+            }
+            frames_keys.emplace_back(frame_name, frame_key);
+        }
+
+        const auto anim_result =
+            reader_->read_porymap_anim(*tileset, porymap_anim_name, porymap_anim_params_key, frames_keys);
+        if (!anim_result.has_value()) {
             return ChainableResult<std::unique_ptr<Tileset>>{
-                FormattableError{
-                    "{}: failed to read animation code",
-                    FormatParam{callback_info_opt.value().c_file_path().string(), Style::bold}},
-                result};
+                FormattableError{"failed to read animation '{}'", FormatParam{porymap_anim_name, Style::bold}},
+                anim_result};
         }
     }
 
@@ -441,97 +405,72 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         }
     }
 
+    // Load Porytiles animations using unified read method
     PT_TRY_ASSIGN_CHAIN_ERR(
-        porytiles_anims,
-        key_provider_->discover_porytiles_anims(tileset->name()),
+        porytiles_params_key,
+        key_provider_->key_for_porytiles_anim_params(tileset->name()),
         "tileset load failed",
         std::unique_ptr<Tileset>);
-    for (const auto &porytiles_anim : porytiles_anims) {
-        // Read key.png
-        PT_TRY_ASSIGN_CHAIN_ERR(
-            key_frame_key,
-            key_provider_->key_for_porytiles_anim_key_frame(tileset->name(), porytiles_anim),
-            "tileset load failed",
-            std::unique_ptr<Tileset>);
-        if (!key_provider_->artifact_exists(key_frame_key)) {
-            diag_->error(
-                missing_required_artifact_tag,
-                format_->format(missing_required_artifact_msg, FormatParam{key_frame_key.key(), Style::bold}));
-            fail_at_exit = true;
-            continue;
-        }
-        const auto key_frame_result = reader_->read_porytiles_anim_key_frame(*tileset, key_frame_key, porytiles_anim);
-        if (!key_frame_result.has_value()) {
-            return ChainableResult<std::unique_ptr<Tileset>>{
-                FormattableError{"failed to read artifact '{}'", FormatParam{key_frame_key.key(), Style::bold}},
-                key_frame_result};
-        }
 
-        // Read frame 0.png
+    if (key_provider_->artifact_exists(porytiles_params_key)) {
         PT_TRY_ASSIGN_CHAIN_ERR(
-            frame_0_key,
-            key_provider_->key_for_porytiles_anim_frame(tileset->name(), porytiles_anim, 0),
+            porytiles_anims,
+            key_provider_->discover_porytiles_anims(tileset->name()),
             "tileset load failed",
             std::unique_ptr<Tileset>);
-        if (!key_provider_->artifact_exists(frame_0_key)) {
-            diag_->error(
-                missing_required_artifact_tag,
-                format_->format(missing_required_artifact_msg, FormatParam{frame_0_key.key(), Style::bold}));
-            fail_at_exit = true;
-            continue;
-        }
-        const auto frame_0_result = reader_->read_porytiles_anim_frame(*tileset, frame_0_key, porytiles_anim, 0);
-        if (!frame_0_result.has_value()) {
-            return ChainableResult<std::unique_ptr<Tileset>>{
-                FormattableError{"failed to read artifact '{}'", FormatParam{frame_0_key.key(), Style::bold}},
-                frame_0_result};
-        }
 
-        // Read the rest of the (optional) frames
-        PT_TRY_ASSIGN_CHAIN_ERR(
-            frames,
-            key_provider_->discover_porytiles_anim_frames(tileset->name(), porytiles_anim),
-            "tileset load failed",
-            std::unique_ptr<Tileset>);
-        int expected_frame = 1;
-        for (const auto frame : frames) {
-            if (frame != expected_frame) {
-                diag_->error(
-                    "out-of-order-frame-index",
-                    format_->format(
-                        "found frame '{}' but expected '{}'",
-                        FormatParam{frame, Style::bold},
-                        FormatParam{expected_frame, Style::bold}));
-                // TODO: add a note here to explain this more
-                fail_at_exit = true;
-            }
+        for (const auto &anim_name : porytiles_anims) {
+            // TODO: don't hardcode key here
             PT_TRY_ASSIGN_CHAIN_ERR(
-                frame_n_key,
-                key_provider_->key_for_porytiles_anim_frame(tileset->name(), porytiles_anim, frame),
+                key_frame_key,
+                key_provider_->key_for_porytiles_anim_frame(tileset->name(), anim_name, "key"),
                 "tileset load failed",
                 std::unique_ptr<Tileset>);
-            const auto frame_n_result =
-                reader_->read_porytiles_anim_frame(*tileset, frame_n_key, porytiles_anim, frame);
-            if (!frame_n_result.has_value()) {
-                return ChainableResult<std::unique_ptr<Tileset>>{
-                    FormattableError{"failed to read artifact '{}'", FormatParam{frame_n_key.key(), Style::bold}},
-                    frame_n_result};
-            }
-            expected_frame++;
-        }
-    }
 
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        anim_yaml_key,
-        key_provider_->key_for_anim_yaml(tileset->name()),
-        "tileset load failed",
-        std::unique_ptr<Tileset>);
-    if (key_provider_->artifact_exists(anim_yaml_key)) {
-        const auto result = reader_->read_anim_yaml(*tileset, anim_yaml_key);
-        if (!result.has_value()) {
-            return ChainableResult<std::unique_ptr<Tileset>>{
-                FormattableError{"failed to read artifact '{}'", FormatParam{anim_yaml_key.key(), Style::bold}},
-                result};
+            if (!key_provider_->artifact_exists(key_frame_key)) {
+                // TODO: throw error here and continue, like below
+                return FormattableError{missing_required_artifact_msg, FormatParam{key_frame_key.key(), Style::bold}};
+            }
+
+            PT_TRY_ASSIGN_CHAIN_ERR(
+                frame_names,
+                key_provider_->discover_porytiles_anim_frames(tileset->name(), anim_name),
+                "tileset load failed",
+                std::unique_ptr<Tileset>);
+
+            // Build frame_keys vector for unified read
+            std::vector<std::pair<std::string, ArtifactKey>> frame_keys{};
+            bool anim_has_missing_frames = false;
+            for (const auto &frame_name : frame_names) {
+                PT_TRY_ASSIGN_CHAIN_ERR(
+                    frame_key,
+                    key_provider_->key_for_porytiles_anim_frame(tileset->name(), anim_name, frame_name),
+                    "tileset load failed",
+                    std::unique_ptr<Tileset>);
+
+                if (!key_provider_->artifact_exists(frame_key)) {
+                    diag_->error(
+                        missing_required_artifact_tag,
+                        format_->format(missing_required_artifact_msg, FormatParam{frame_key.key(), Style::bold}));
+                    fail_at_exit = true;
+                    anim_has_missing_frames = true;
+                    continue;
+                }
+                frame_keys.emplace_back(frame_name, frame_key);
+            }
+
+            if (anim_has_missing_frames) {
+                continue; // Skip this animation if it has missing frames
+            }
+
+            // Load complete animation with unified method
+            const auto result =
+                reader_->read_porytiles_anim(*tileset, anim_name, porytiles_params_key, key_frame_key, frame_keys);
+            if (!result.has_value()) {
+                return ChainableResult<std::unique_ptr<Tileset>>{
+                    FormattableError{"failed to load Porytiles animation '{}'", FormatParam{anim_name, Style::bold}},
+                    result};
+            }
         }
     }
 
@@ -542,9 +481,9 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     return tileset;
 }
 
-bool TilesetRepo::exists(const std::string &name) const
+bool TilesetRepo::exists(const std::string &tileset_name) const
 {
-    return key_provider_->tileset_exists(name);
+    return metadata_provider_->tileset_exists(tileset_name);
 }
 
 } // namespace porytiles2

@@ -23,6 +23,9 @@ namespace {
 
 using namespace porytiles2;
 
+// TODO: don't hardcode, this is duplicated in ProjectTilesetArtifactKeyProvider
+const std::filesystem::path tileset_anims_c_rel_path = std::filesystem::path{"src"} / "tileset_anims.c";
+
 /**
  * @brief Helper template function to extract 8x8 tiles from an image in row-major order.
  *
@@ -248,7 +251,7 @@ import_porytiles_palette(Tileset &dest, const ArtifactKey &src_key, std::size_t 
  * @details
  * This function unifies the logic for importing animation frames from both Porymap
  * (IndexPixel) and Porytiles (Rgba32) components. It handles both key frames and
- * regular numbered frames through the frame_index parameter.
+ * regular frames through the frame_name parameter.
  *
  * @tparam PixelType The pixel type (Rgba32 or IndexPixel)
  * @tparam LoaderType The PNG loader type (must have load_from_file method)
@@ -256,7 +259,7 @@ import_porytiles_palette(Tileset &dest, const ArtifactKey &src_key, std::size_t 
  * @param dest The destination tileset
  * @param src_key The artifact key for the source PNG file
  * @param anim_name The name of the animation
- * @param frame_index If nullopt, imports as key frame; otherwise imports as frame[index]
+ * @param frame_name The frame name ("key" for key frames, otherwise arbitrary string like "0", "1", "left", etc.)
  * @param loader The PNG image loader
  * @param component_getter Lambda to get the appropriate component from tileset
  * @param error_context Description for error messages (e.g., "Porymap animation frame")
@@ -267,7 +270,7 @@ ChainableResult<void> import_anim_frame_impl(
     Tileset &dest,
     const ArtifactKey &src_key,
     const std::string &anim_name,
-    std::optional<std::size_t> frame_index,
+    const std::string &frame_name,
     const LoaderType &loader,
     ComponentGetter component_getter,
     std::string_view error_context)
@@ -289,8 +292,6 @@ ChainableResult<void> import_anim_frame_impl(
 
     auto tiles = extract_tiles_from_image(img);
 
-    // Frame name: "key.png" for key frames, otherwise the index as string
-    const std::string frame_name = frame_index.has_value() ? std::to_string(*frame_index) : "key.png";
     AnimationFrame<PixelType> frame{frame_name, std::move(tiles)};
     if (img.palette().has_value()) {
         frame.palette(Palette<Rgba32>{img.palette().value()});
@@ -305,20 +306,16 @@ ChainableResult<void> import_anim_frame_impl(
 
     auto &anim = component.anims().at(anim_name);
 
-    if (frame_index.has_value()) {
-        // Regular frame: ensure vector is large enough and set at index
-        // Note: frames may be loaded out of order
-        while (anim.frame_count() <= *frame_index) {
-            anim.add_frame(AnimationFrame<PixelType>{});
-        }
-        anim.frames()[*frame_index] = std::move(frame);
+    if (frame_name == "key") {
+        // Key frame
+        anim.key_frame(std::move(frame));
     }
     else {
-        // Key frame
-        anim.key_frame(frame);
+        // Regular frame - use string-based map storage
+        anim.put_frame(frame_name, std::move(frame));
     }
 
-    // Update dimensions in params if not already set (don't override YAML values)
+    // Update dimensions in params if not already set
     auto params = anim.params();
     if (params.width_tiles() == 0 && params.height_tiles() == 0) {
         params.width_tiles(width_tiles);
@@ -360,6 +357,25 @@ ChainableResult<void> read_config_impl(Tileset &dest, const ArtifactKey &src_key
     return {};
 }
 
+/**
+ * @brief Extracts the PascalCase tileset name from an animation callback function name.
+ *
+ * @param callback_func The callback function name (e.g., "InitTilesetAnim_General" or
+ * "InitTilesetAnim_PorytilesManaged_General")
+ * @param porytiles_managed Whether this is a Porytiles-managed callback
+ * @return The tileset name in PascalCase (e.g., "General")
+ */
+std::string extract_tileset_from_callback(const std::string &callback_func, bool porytiles_managed)
+{
+    constexpr std::string_view prefix = "InitTilesetAnim_";
+    constexpr std::string_view managed_prefix = "InitTilesetAnim_PorytilesManaged_";
+
+    if (porytiles_managed) {
+        return callback_func.substr(managed_prefix.size());
+    }
+    return callback_func.substr(prefix.size());
+}
+
 } // namespace
 
 namespace porytiles2 {
@@ -394,68 +410,77 @@ ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKe
     return {};
 }
 
-ChainableResult<void> ProjectTilesetArtifactReader::read_porymap_anim_frame(
-    Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, std::size_t frame_index) const
+[[nodiscard]] ChainableResult<void> ProjectTilesetArtifactReader::read_porymap_anim(
+    Tileset &dest,
+    const std::string &anim_name,
+    const ArtifactKey &params_key,
+    const std::vector<std::pair<std::string, ArtifactKey>> &frame_keys) const
 {
-    PT_TRY_CALL_PASS_ERR(
-        (import_anim_frame_impl<IndexPixel>(
-            dest,
-            src_key,
-            anim_name,
-            frame_index,
-            *png_indexed_loader_,
-            [](Tileset &t) -> auto & { return t.porymap_component(); },
-            "Porymap animation frame")),
-        void);
-    return {};
-}
+    // Load each frame using the unified template helper
+    // The first call creates the animation in the component, subsequent calls add frames to it
+    for (const auto &[frame_name, frame_key] : frame_keys) {
+        PT_TRY_CALL_PASS_ERR(
+            (import_anim_frame_impl<IndexPixel>(
+                dest,
+                frame_key,
+                anim_name,
+                frame_name,
+                *png_indexed_loader_,
+                [](Tileset &t) -> PorymapTilesetComponent & { return t.porymap_component(); },
+                "Porymap animation frame")),
+            void);
+    }
 
-[[nodiscard]] ChainableResult<void> ProjectTilesetArtifactReader::read_anim_code(Tileset &dest) const
-{
-    // TODO: ANIM: we need to call this from here, but we don't have a key_provider in the reader. We need some kind of
-    // bridge type or interface.
-    // PT_TRY_ASSIGN_CHAIN_ERR(
-    //     callback_info_opt,
-    //     key_provider_->animation_callback_info_for(dest.name()),
-    //     "tileset load failed",
-    //     std::unique_ptr<Tileset>);
-    //
-    // // Use the actual callback function name from tileset metadata
-    // auto params_result = anim_code_parser_->parse_from_callback(
-    //     callback_info_opt.value().c_file_path(),
-    //     callback_info_opt.value().callback_func_name(),
-    //     callback_info_opt.value().tileset_shorthand(),
-    //     callback_info_opt.value().porytiles_managed());
-    //
-    // if (!params_result.has_value()) {
-    //     return ChainableResult<void>{
-    //         FormattableError{
-    //             "{}: failed to parse animation code",
-    //             FormatParam{callback_info_opt.value().c_file_path().string(), Style::bold}},
-    //         params_result};
-    // }
-    //
-    // // Update animation params in the Porymap component
-    // for (const auto &[anim_name, params] : params_result.value()) {
-    //     if (dest.porymap_component().has_anim(anim_name)) {
-    //         auto &existing_anim = dest.porymap_component().anims().at(anim_name);
-    //         auto existing_params = existing_anim.params();
-    //
-    //         // Preserve dimensions from frame import (C code doesn't have this info)
-    //         auto new_params = params;
-    //         new_params.width_tiles(existing_params.width_tiles());
-    //         new_params.height_tiles(existing_params.height_tiles());
-    //
-    //         existing_anim.params(std::move(new_params));
-    //     }
-    //     else {
-    //         // Create a new animation with just the params (frames will be loaded separately)
-    //         Animation<IndexPixel> anim{anim_name, params};
-    //         dest.porymap_component().add_anim(std::move(anim));
-    //     }
-    // }
+    // Get metadata for this tileset to extract callback info
+    auto metadata_result = metadata_provider_->metadata_for(dest.name());
+    if (!metadata_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{"failed to get metadata for tileset '{}'", FormatParam{dest.name(), Style::bold}},
+            metadata_result};
+    }
 
-    panic("TODO: impl");
+    const auto &metadata = metadata_result.value();
+
+    // Skip param loading if no animations configured in tileset metadata
+    if (!metadata.has_animations()) {
+        return {};
+    }
+
+    // Extract callback info from metadata
+    const auto &callback_func = metadata.callback_func().value();
+    bool porytiles_managed = callback_func.starts_with("InitTilesetAnim_PorytilesManaged_");
+    std::string tileset_shorthand = dest.name().substr(std::size("gTileset_") - 1);
+
+    std::filesystem::path c_path;
+    if (porytiles_managed) {
+        c_path = params_key.key();
+    }
+    else {
+        c_path = project_root_ / tileset_anims_c_rel_path;
+    }
+
+    // Parse C code for animation params
+    auto params_result =
+        anim_code_parser_->parse_from_callback(c_path, callback_func, tileset_shorthand, porytiles_managed);
+
+    if (!params_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{"{}: failed to parse animation code", FormatParam{params_key.key(), Style::bold}},
+            params_result};
+    }
+
+    // Apply params to the specific animation if found
+    if (params_result.value().contains(anim_name)) {
+        auto &anim = dest.porymap_component().anims().at(anim_name);
+        auto existing_params = anim.params();
+        auto new_params = params_result.value().at(anim_name);
+
+        // Preserve dimensions from frame import (C code doesn't have this info)
+        new_params.width_tiles(existing_params.width_tiles());
+        new_params.height_tiles(existing_params.height_tiles());
+
+        anim.params(std::move(new_params));
+    }
 
     return {};
 }
@@ -515,57 +540,61 @@ ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const Artifact
     return {};
 }
 
-ChainableResult<void> ProjectTilesetArtifactReader::read_porytiles_anim_frame(
-    Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name, std::size_t frame_index) const
+[[nodiscard]] ChainableResult<void> ProjectTilesetArtifactReader::read_porytiles_anim(
+    Tileset &dest,
+    const std::string &anim_name,
+    const ArtifactKey &params_key,
+    const ArtifactKey &key_frame_key,
+    const std::vector<std::pair<std::string, ArtifactKey>> &frame_keys) const
 {
-    PT_TRY_CALL_PASS_ERR(
-        (import_anim_frame_impl<Rgba32>(
-            dest,
-            src_key,
-            anim_name,
-            frame_index,
-            *png_rgba_loader_,
-            [](Tileset &t) -> auto & { return t.porytiles_component(); },
-            "Porytiles animation frame")),
-        void);
-    return {};
-}
-
-[[nodiscard]] ChainableResult<void> ProjectTilesetArtifactReader::read_porytiles_anim_key_frame(
-    Tileset &dest, const ArtifactKey &src_key, const std::string &anim_name) const
-{
-    PT_TRY_CALL_PASS_ERR(
-        (import_anim_frame_impl<Rgba32>(
-            dest,
-            src_key,
-            anim_name,
-            std::nullopt,
-            *png_rgba_loader_,
-            [](Tileset &t) -> auto & { return t.porytiles_component(); },
-            "Porytiles animation key frame")),
-        void);
-    return {};
-}
-
-[[nodiscard]] ChainableResult<void>
-ProjectTilesetArtifactReader::read_anim_yaml(Tileset &dest, const ArtifactKey &src_key) const
-{
-    auto params_result = anim_yaml_parser_->parse(src_key.key());
+    // Parse anim.yaml to get params for this animation
+    auto params_result = anim_yaml_parser_->parse(params_key.key());
     if (!params_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"{}: failed to parse anim.yaml", FormatParam{src_key.key(), Style::bold}}, params_result};
+            FormattableError{"{}: failed to parse anim.yaml", FormatParam{params_key.key(), Style::bold}},
+            params_result};
     }
 
-    // Update animation params in the Porytiles component
-    for (const auto &[anim_name, params] : params_result.value()) {
-        if (dest.porytiles_component().has_anim(anim_name)) {
-            dest.porytiles_component().anims().at(anim_name).params(params);
-        }
-        else {
-            // Create a new animation with just the params (frames will be loaded separately)
-            Animation<Rgba32> anim{anim_name, params};
-            dest.porytiles_component().add_anim(std::move(anim));
-        }
+    // Find params for this specific animation
+    auto it = params_result.value().find(anim_name);
+    if (it == params_result.value().end()) {
+        return ChainableResult<void>{FormattableError{
+            "{}: animation '{}' not found in anim.yaml",
+            FormatParam{params_key.key(), Style::bold},
+            FormatParam{anim_name, Style::bold}}};
+    }
+
+    const auto &params = it->second;
+
+    // Create the animation with params FIRST, before loading frames
+    // This ensures YAML-specified width_tiles/height_tiles take precedence over auto-detected dimensions
+    Animation<Rgba32> anim{anim_name, params};
+    dest.porytiles_component().add_anim(std::move(anim));
+
+    // Load key frame using the unified template helper
+    PT_TRY_CALL_PASS_ERR(
+        (import_anim_frame_impl<Rgba32>(
+            dest,
+            key_frame_key,
+            anim_name,
+            "key",
+            *png_rgba_loader_,
+            [](Tileset &t) -> PorytilesTilesetComponent & { return t.porytiles_component(); },
+            "Porytiles animation frame")),
+        void);
+
+    // Load remaining frames using the unified template helper
+    for (const auto &[frame_name, frame_key] : frame_keys) {
+        PT_TRY_CALL_PASS_ERR(
+            (import_anim_frame_impl<Rgba32>(
+                dest,
+                frame_key,
+                anim_name,
+                frame_name,
+                *png_rgba_loader_,
+                [](Tileset &t) -> PorytilesTilesetComponent & { return t.porytiles_component(); },
+                "Porytiles animation frame")),
+            void);
     }
 
     return {};

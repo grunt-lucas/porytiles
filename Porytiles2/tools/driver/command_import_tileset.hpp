@@ -80,7 +80,7 @@ class ImportTilesetCommand final : public Command {
         PngIndexedImageSaver png_indexed_saver{};
         JascPalLoader jasc_loader{text_formatter};
         JascPalSaver jasc_saver{text_formatter};
-        AnimYamlParser anim_yaml_parser{};
+        AnimYamlParser anim_yaml_parser{text_formatter};
         AnimCodeParser anim_code_parser{text_formatter, diag.get()};
         AnimCodeGenerator anim_code_generator{};
 
@@ -93,21 +93,40 @@ class ImportTilesetCommand final : public Command {
             ".", "include/constants/metatile_behaviors.h", text_formatter, diag.get()};
         AttributesCsvLoader attributes_csv_loader{text_formatter, &behavior_map_provider};
 
+        // Setup metadata provider (needed by artifact reader for animation param loading)
+        ProjectTilesetMetadataProvider metadata_provider{".", text_formatter, diag.get()};
+
         // Setup the tileset repository
         ProjectTilesetArtifactReader artifact_reader{
+            ".",
             &png_rgba_loader,
             &png_indexed_loader,
             &jasc_loader,
             &attributes_csv_loader,
             &anim_yaml_parser,
-            &anim_code_parser};
+            &anim_code_parser,
+            &metadata_provider};
         ProjectTilesetArtifactWriter artifact_writer{
-            &config, ".", &png_rgba_saver, &png_indexed_saver, &jasc_saver, &anim_yaml_parser, &anim_code_generator};
+            &config,
+            ".",
+            text_formatter,
+            diag.get(),
+            &png_rgba_saver,
+            &png_indexed_saver,
+            &jasc_saver,
+            &anim_yaml_parser,
+            &anim_code_generator};
         // We already set this up earlier for the Yaml config provider
         // ProjectTilesetArtifactKeyProvider key_provider{"."};
         ProjectArtifactChecksumProvider checksum_provider{&key_provider};
         TilesetRepo repo{
-            &checksum_provider, &key_provider, &artifact_reader, &artifact_writer, text_formatter, diag.get()};
+            &checksum_provider,
+            &metadata_provider,
+            &key_provider,
+            &artifact_reader,
+            &artifact_writer,
+            text_formatter,
+            diag.get()};
 
         ImportPrimaryTileset import_use_case{&repo, &importer, &compiler, &config, &config, text_formatter, diag.get()};
 

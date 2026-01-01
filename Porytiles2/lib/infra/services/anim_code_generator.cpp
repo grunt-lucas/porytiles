@@ -7,29 +7,57 @@
 #include <sstream>
 
 #include "porytiles2/domain/models/animation.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
 
 namespace {
 
 using namespace porytiles2;
 
-[[nodiscard]] std::size_t find_max_frame_index(const std::vector<std::size_t> &frames)
+/**
+ * @brief Converts a string frame name to a numeric index for code generation.
+ *
+ * @details
+ * For INCBIN generation, frame names must be numeric (e.g., "0", "1", "2").
+ * Named frames like "center" or "left" will cause a panic - the code generator
+ * requires numeric frame names.
+ *
+ * @param frame_name The string frame name to convert
+ * @return The numeric frame index
+ * @pre frame_name must be a valid non-negative integer string
+ */
+[[nodiscard]] std::size_t frame_name_to_index(const std::string &frame_name)
+{
+    // TODO: this is a temporary solution only, we really should support arbitrary frame names
+    try {
+        return std::stoull(frame_name);
+    }
+    catch (...) {
+        panic("frame_name_to_index: frame name '" + frame_name + "' is not a valid numeric index");
+    }
+}
+
+[[nodiscard]] std::size_t find_max_frame_index(const std::vector<std::string> &frames)
 {
     if (frames.empty()) {
         return 0;
     }
-    return *std::ranges::max_element(frames);
+    std::size_t max_idx = 0;
+    for (const auto &frame : frames) {
+        max_idx = std::max(max_idx, frame_name_to_index(frame));
+    }
+    return max_idx;
 }
 
 [[nodiscard]] std::string generate_incbin_statements(
     const std::string &tileset_name,
     const std::filesystem::path &tileset_path_from_project_root,
     const std::string &anim_name,
-    const porytiles2::AnimationParams &params)
+    const AnimationParams &params)
 {
     std::ostringstream out;
 
-    const std::string pascal_anim_name = porytiles2::to_pascal_case(anim_name);
+    const std::string pascal_anim_name = to_pascal_case(anim_name);
     const std::size_t max_frame_idx = find_max_frame_index(params.frames());
 
     // Generate INCBIN for each unique frame referenced
@@ -51,19 +79,19 @@ using namespace porytiles2;
     return out.str();
 }
 
-[[nodiscard]] std::string generate_frame_array(
-    const std::string &tileset_name, const std::string &anim_name, const porytiles2::AnimationParams &params)
+[[nodiscard]] std::string
+generate_frame_array(const std::string &tileset_name, const std::string &anim_name, const AnimationParams &params)
 {
     std::ostringstream out;
 
-    const std::string pascal_anim_name = porytiles2::to_pascal_case(anim_name);
+    const std::string pascal_anim_name = to_pascal_case(anim_name);
     const std::string array_name =
         std::format("gTilesetAnims_{}{}_{}", anim::porytiles_managed_prefix, tileset_name, pascal_anim_name);
 
     out << std::format("const u16 *const {}[] = {{\n", array_name);
 
     for (std::size_t i = 0; i < params.frames().size(); ++i) {
-        const std::size_t frame_idx = params.frames()[i];
+        const std::size_t frame_idx = frame_name_to_index(params.frames()[i]);
         out << std::format(
             "    gTilesetAnims_{}{}_{}_{}", anim::porytiles_managed_prefix, tileset_name, pascal_anim_name, frame_idx);
         if (i < params.frames().size() - 1) {
@@ -77,12 +105,12 @@ using namespace porytiles2;
     return out.str();
 }
 
-[[nodiscard]] std::string generate_queue_function(
-    const std::string &tileset_name, const std::string &anim_name, const porytiles2::AnimationParams &params)
+[[nodiscard]] std::string
+generate_queue_function(const std::string &tileset_name, const std::string &anim_name, const AnimationParams &params)
 {
     std::ostringstream out;
 
-    const std::string pascal_anim_name = porytiles2::to_pascal_case(anim_name);
+    const std::string pascal_anim_name = to_pascal_case(anim_name);
     const std::string array_name =
         std::format("gTilesetAnims_{}{}_{}", anim::porytiles_managed_prefix, tileset_name, pascal_anim_name);
     const std::string func_name =
@@ -101,8 +129,8 @@ using namespace porytiles2;
     return out.str();
 }
 
-[[nodiscard]] std::string generate_driver_function(
-    const std::string &tileset_name, const std::map<std::string, porytiles2::AnimationParams> &animations)
+[[nodiscard]] std::string
+generate_driver_function(const std::string &tileset_name, const std::map<std::string, AnimationParams> &animations)
 {
     std::ostringstream out;
 
@@ -112,14 +140,14 @@ using namespace porytiles2;
     out << "{\n";
 
     // Group animations by their frame_factor
-    std::map<std::size_t, std::vector<std::pair<std::string, porytiles2::AnimationParams>>> by_frame_factor;
+    std::map<std::size_t, std::vector<std::pair<std::string, AnimationParams>>> by_frame_factor;
     for (const auto &[anim_name, params] : animations) {
         by_frame_factor[params.frame_factor()].emplace_back(anim_name, params);
     }
 
     for (const auto &[frame_factor, anims] : by_frame_factor) {
         // Group by frame_offset within each frame_factor
-        std::map<std::size_t, std::vector<std::pair<std::string, porytiles2::AnimationParams>>> by_offset;
+        std::map<std::size_t, std::vector<std::pair<std::string, AnimationParams>>> by_offset;
         for (const auto &[anim_name, params] : anims) {
             by_offset[params.frame_offset()].emplace_back(anim_name, params);
         }
@@ -129,7 +157,7 @@ using namespace porytiles2;
             out << "    {\n";
 
             for (const auto &anim_name : offset_anims | std::views::keys) {
-                const std::string pascal_anim_name = porytiles2::to_pascal_case(anim_name);
+                const std::string pascal_anim_name = to_pascal_case(anim_name);
                 out << std::format(
                     "        QueueAnimTiles_{}{}_{}(timer / {});\n",
                     anim::porytiles_managed_prefix,
@@ -148,9 +176,7 @@ using namespace porytiles2;
 }
 
 [[nodiscard]] std::string generate_init_function(
-    const std::string &tileset_name,
-    const std::map<std::string, porytiles2::AnimationParams> &animations,
-    bool is_primary)
+    const std::string &tileset_name, const std::map<std::string, AnimationParams> &animations, bool is_primary)
 {
     std::ostringstream out;
 
@@ -159,7 +185,7 @@ using namespace porytiles2;
     const std::string driver_func_name = std::format("TilesetAnim_{}{}", anim::porytiles_managed_prefix, tileset_name);
 
     // Find the maximum counter_max value across all animations
-    std::size_t max_counter_max = porytiles2::anim::default_counter_max;
+    std::size_t max_counter_max = anim::default_counter_max;
     for (const auto &params : animations | std::views::values) {
         max_counter_max = std::max(max_counter_max, params.counter_max());
     }
@@ -195,7 +221,11 @@ ChainableResult<std::string> AnimCodeGenerator::generate(
 
     std::ostringstream out;
 
-    const std::string pascal_tileset_name = to_pascal_case(tileset_name);
+    /*
+     * TODO: fix all this "gTileset_" handling
+     */
+    const std::string tileset_name_no_prefix = tileset_name.substr(std::size("gTileset_") - 1);
+    const std::string pascal_tileset_name = to_pascal_case(tileset_name_no_prefix);
 
     // Generate header guard
     const std::string guard_name = std::format("GUARD_GENERATED_ANIM_CODE_{}_H", pascal_tileset_name);

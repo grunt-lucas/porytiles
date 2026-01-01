@@ -12,193 +12,140 @@ class StringUtilsTest : public ::testing::Test {};
 // to_pascal_case tests
 // =====================================================
 
-TEST_F(StringUtilsTest, ToPascalCase_EmptyString)
+TEST_F(StringUtilsTest, ToPascalCase)
 {
+    // Empty string
     EXPECT_EQ(to_pascal_case(""), "");
-}
 
-TEST_F(StringUtilsTest, ToPascalCase_SingleWord)
-{
+    // Single word
     EXPECT_EQ(to_pascal_case("hello"), "Hello");
-}
-
-TEST_F(StringUtilsTest, ToPascalCase_SingleWordAlreadyCapitalized)
-{
     EXPECT_EQ(to_pascal_case("Hello"), "Hello");
-}
 
-TEST_F(StringUtilsTest, ToPascalCase_SnakeCaseInput)
-{
+    // Snake case input
     EXPECT_EQ(to_pascal_case("hello_world"), "HelloWorld");
     EXPECT_EQ(to_pascal_case("foo_bar_baz"), "FooBarBaz");
-}
 
-TEST_F(StringUtilsTest, ToPascalCase_KebabCaseInput)
-{
+    // Kebab case input
     EXPECT_EQ(to_pascal_case("hello-world"), "HelloWorld");
     EXPECT_EQ(to_pascal_case("foo-bar-baz"), "FooBarBaz");
-}
 
-TEST_F(StringUtilsTest, ToPascalCase_SpaceSeparatedInput)
-{
+    // Space separated input
     EXPECT_EQ(to_pascal_case("hello world"), "HelloWorld");
     EXPECT_EQ(to_pascal_case("foo bar baz"), "FooBarBaz");
-}
 
-TEST_F(StringUtilsTest, ToPascalCase_MixedSeparators)
-{
+    // Mixed separators
     EXPECT_EQ(to_pascal_case("hello_world-test case"), "HelloWorldTestCase");
-}
 
-TEST_F(StringUtilsTest, ToPascalCase_ConsecutiveSeparators)
-{
+    // Consecutive separators
     EXPECT_EQ(to_pascal_case("hello__world"), "HelloWorld");
     EXPECT_EQ(to_pascal_case("hello--world"), "HelloWorld");
-}
 
-TEST_F(StringUtilsTest, ToPascalCase_LeadingTrailingSeparators)
-{
+    // Leading/trailing separators
     EXPECT_EQ(to_pascal_case("_hello_"), "Hello");
     EXPECT_EQ(to_pascal_case("-hello-"), "Hello");
-}
 
-TEST_F(StringUtilsTest, ToPascalCase_PreservesExistingCase)
-{
-    // Note: to_pascal_case capitalizes after separators but preserves other chars
+    // Preserves existing case (capitalizes after separators but preserves other chars)
     EXPECT_EQ(to_pascal_case("helloWORLD"), "HelloWORLD");
+    EXPECT_EQ(to_pascal_case("HELLO"), "HELLO");
+    EXPECT_EQ(to_pascal_case("HELLO_WORLD"), "HELLOWORLD");
+    EXPECT_EQ(to_pascal_case("HELLO_woRLD"), "HELLOWoRLD");
+
+    // Funky vanilla gTileset_General animation name
+    EXPECT_EQ(to_pascal_case("tv_turned_on"), "TvTurnedOn");
 }
 
 // =====================================================
 // to_snake_case tests
 // =====================================================
 
-TEST_F(StringUtilsTest, ToSnakeCase_EmptyString)
+TEST_F(StringUtilsTest, ToSnakeCase)
 {
+    // Empty string
     EXPECT_EQ(to_snake_case(""), "");
-}
 
-TEST_F(StringUtilsTest, ToSnakeCase_SingleWord)
-{
+    // Single word
     EXPECT_EQ(to_snake_case("hello"), "hello");
     EXPECT_EQ(to_snake_case("Hello"), "hello");
-}
 
-TEST_F(StringUtilsTest, ToSnakeCase_PascalCaseInput)
-{
+    // Pascal case input
     EXPECT_EQ(to_snake_case("HelloWorld"), "hello_world");
     EXPECT_EQ(to_snake_case("FooBarBaz"), "foo_bar_baz");
-}
 
-TEST_F(StringUtilsTest, ToSnakeCase_CamelCaseInput)
-{
+    // Camel case input
     EXPECT_EQ(to_snake_case("helloWorld"), "hello_world");
     EXPECT_EQ(to_snake_case("fooBarBaz"), "foo_bar_baz");
-}
 
-TEST_F(StringUtilsTest, ToSnakeCase_AlreadySnakeCase)
-{
+    // Already snake case
     EXPECT_EQ(to_snake_case("hello_world"), "hello_world");
     EXPECT_EQ(to_snake_case("foo_bar_baz"), "foo_bar_baz");
-}
 
-TEST_F(StringUtilsTest, ToSnakeCase_ConsecutiveUppercase)
-{
+    // Consecutive uppercase (acronyms)
     EXPECT_EQ(to_snake_case("XMLParser"), "xml_parser");
     EXPECT_EQ(to_snake_case("parseXMLDocument"), "parse_xml_document");
     EXPECT_EQ(to_snake_case("HTTPSConnection"), "https_connection");
-}
 
-TEST_F(StringUtilsTest, ToSnakeCase_AllUppercase)
-{
+    // All uppercase
     EXPECT_EQ(to_snake_case("XML"), "xml");
     EXPECT_EQ(to_snake_case("HTTP"), "http");
-}
 
-TEST_F(StringUtilsTest, ToSnakeCase_KebabCaseInput)
-{
+    // Kebab case input
     EXPECT_EQ(to_snake_case("hello-world"), "hello_world");
     EXPECT_EQ(to_snake_case("foo-bar-baz"), "foo_bar_baz");
-}
 
-TEST_F(StringUtilsTest, ToSnakeCase_SpaceSeparatedInput)
-{
+    // Space separated input
     EXPECT_EQ(to_snake_case("hello world"), "hello_world");
     EXPECT_EQ(to_snake_case("foo bar baz"), "foo_bar_baz");
-}
 
-TEST_F(StringUtilsTest, ToSnakeCase_MixedSeparators)
-{
+    // Mixed separators
     EXPECT_EQ(to_snake_case("hello_world-test case"), "hello_world_test_case");
-}
 
-TEST_F(StringUtilsTest, ToSnakeCase_ConsecutiveSeparators)
-{
+    // Consecutive separators
     EXPECT_EQ(to_snake_case("hello__world"), "hello_world");
     EXPECT_EQ(to_snake_case("hello--world"), "hello_world");
-}
 
-TEST_F(StringUtilsTest, ToSnakeCase_LeadingTrailingSeparators)
-{
+    // Leading/trailing separators
     EXPECT_EQ(to_snake_case("_hello_"), "hello");
     EXPECT_EQ(to_snake_case("-hello-"), "hello");
-}
 
-TEST_F(StringUtilsTest, ToSnakeCase_MixedCaseWithSeparators)
-{
+    // Mixed case with separators
     EXPECT_EQ(to_snake_case("Hello_World"), "hello_world");
     EXPECT_EQ(to_snake_case("helloWorld_Test"), "hello_world_test");
+
+    // Funky vanilla gTileset_General animation name
+    EXPECT_EQ(to_snake_case("TVTurnedOn"), "tv_turned_on");
+    EXPECT_EQ(to_snake_case("TvTurnedOn"), "tv_turned_on");
 }
 
 // =====================================================
 // trim_prefix tests
 // =====================================================
 
-TEST_F(StringUtilsTest, TrimPrefix_EmptyStringAndEmptyPrefix)
+TEST_F(StringUtilsTest, TrimPrefix)
 {
+    // Empty string and empty prefix
     EXPECT_EQ(trim_prefix("", ""), "");
-}
-
-TEST_F(StringUtilsTest, TrimPrefix_EmptyPrefix)
-{
     EXPECT_EQ(trim_prefix("hello", ""), "hello");
-}
-
-TEST_F(StringUtilsTest, TrimPrefix_EmptyString)
-{
     EXPECT_EQ(trim_prefix("", "hello"), "");
-}
 
-TEST_F(StringUtilsTest, TrimPrefix_PrefixPresent)
-{
+    // Prefix present
     EXPECT_EQ(trim_prefix("hello_world", "hello_"), "world");
     EXPECT_EQ(trim_prefix("prefix_suffix", "prefix_"), "suffix");
-}
 
-TEST_F(StringUtilsTest, TrimPrefix_PrefixNotPresent)
-{
+    // Prefix not present
     EXPECT_EQ(trim_prefix("hello_world", "foo"), "hello_world");
     EXPECT_EQ(trim_prefix("hello_world", "world"), "hello_world");
-}
 
-TEST_F(StringUtilsTest, TrimPrefix_ExactMatch)
-{
+    // Exact match
     EXPECT_EQ(trim_prefix("hello", "hello"), "");
-}
 
-TEST_F(StringUtilsTest, TrimPrefix_PrefixLongerThanString)
-{
+    // Prefix longer than string
     EXPECT_EQ(trim_prefix("hello", "hello_world"), "hello");
-}
 
-TEST_F(StringUtilsTest, TrimPrefix_PartialMatch)
-{
-    // "hel" is a prefix, but "help" is not
+    // Partial match
     EXPECT_EQ(trim_prefix("hello", "hel"), "lo");
     EXPECT_EQ(trim_prefix("hello", "help"), "hello");
-}
 
-TEST_F(StringUtilsTest, TrimPrefix_CaseSensitive)
-{
+    // Case sensitive
     EXPECT_EQ(trim_prefix("Hello_World", "hello_"), "Hello_World");
     EXPECT_EQ(trim_prefix("Hello_World", "Hello_"), "World");
 }

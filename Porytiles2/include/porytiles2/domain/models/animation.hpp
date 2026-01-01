@@ -1,6 +1,7 @@
 #pragma once
 
 #include <optional>
+#include <ranges>
 #include <string>
 #include <vector>
 
@@ -13,9 +14,13 @@ namespace porytiles2 {
 
 namespace anim {
 
+/*
+ * TODO: define these somewhere else, they are infra concerns
+ */
+constexpr std::string g_tileset_anims_prefix = "gTilesetAnims_";
 constexpr std::string porytiles_managed_prefix = "PorytilesManaged_";
 
-}
+} // namespace anim
 
 /**
  * @brief A complete tileset animation with name, configuration, and frame data.
@@ -24,11 +29,11 @@ constexpr std::string porytiles_managed_prefix = "PorytilesManaged_";
  * Animation represents a full animation definition for a tileset, combining:
  * - A unique name identifying the animation (e.g., "flower", "water", "waterfall")
  * - Configuration parameters (AnimationParams) controlling timing and VRAM placement
- * - Frame data (vector of AnimationFrame) containing the actual tile pixels
+ * - An optional key frame (for Porytiles-format animations)
+ * - Frame data (map of AnimationFrame) containing the actual tile pixels
  *
- * In addition to the standard 0.png, 1.png, etc. frames, there is a special the "key frame" that appears in tiles.png.
- * The GBA game engine uses the other frames (stored as separate .4bpp files) to animate by swapping tile data in VRAM
- * at runtime.
+ * In addition to the standard frames, there is a special "key frame" that appears in tiles.png. The GBA game engine
+ * uses the other frames (stored as separate .4bpp files) to animate by swapping tile data in VRAM at runtime.
  *
  * The template parameter determines the pixel format:
  * - Animation<Rgba32>: Used in PorytilesTilesetComponent (source format, RGBA pixels)
@@ -93,14 +98,19 @@ class Animation {
         key_frame_ = std::move(key_frame);
     }
 
-    [[nodiscard]] const std::vector<AnimationFrame<PixelType>> &frames() const
+    [[nodiscard]] const std::map<std::string, AnimationFrame<PixelType>> &frames() const
     {
         return frames_;
     }
 
-    [[nodiscard]] std::vector<AnimationFrame<PixelType>> &frames()
+    [[nodiscard]] std::map<std::string, AnimationFrame<PixelType>> &frames()
     {
         return frames_;
+    }
+
+    [[nodiscard]] std::vector<AnimationFrame<PixelType>> frames_values() const
+    {
+        return frames_ | std::views::values | std::ranges::to<std::vector>();
     }
 
     /**
@@ -123,36 +133,42 @@ class Animation {
         return frames_.size();
     }
 
-    /**
-     * @brief Returns the frame at the specified index.
-     *
-     * @param index The frame index
-     * @pre index must be less than frame_count()
-     * @return Reference to the frame at the specified index
-     */
-    [[nodiscard]] const AnimationFrame<PixelType> &frame_at(std::size_t index) const
+    bool has_frame(const std::string &frame_name)
     {
-        if (index >= frame_count()) {
-            panic("index " + std::to_string(index) + " is out of range");
-        }
-        return frames_[index];
+        return frames_.contains(frame_name);
     }
 
     /**
-     * @brief Adds a frame to the end of this animation's frame list.
+     * @brief Returns the frame with the specified name.
      *
+     * @param frame_name The frame name
+     * @pre index must be less than frame_count()
+     * @return Reference to the frame at the specified index
+     */
+    [[nodiscard]] const AnimationFrame<PixelType> &frame_for_name(const std::string &frame_name) const
+    {
+        if (!frames_.contains(frame_name)) {
+            panic("anim '" + name_ + "' has no such frame '" + frame_name + "'");
+        }
+        return frames_.at(frame_name);
+    }
+
+    /**
+     * @brief Adds a frame to this Animation frame map.
+     *
+     * @param name The frame name
      * @param frame The frame to add
      */
-    void add_frame(AnimationFrame<PixelType> frame)
+    void put_frame(const std::string &name, AnimationFrame<PixelType> frame)
     {
-        frames_.push_back(std::move(frame));
+        frames_.emplace(name, std::move(frame));
     }
 
   private:
     std::string name_;
     AnimationParams params_;
     std::optional<AnimationFrame<PixelType>> key_frame_;
-    std::vector<AnimationFrame<PixelType>> frames_;
+    std::map<std::string, AnimationFrame<PixelType>> frames_;
 };
 
 } // namespace porytiles2

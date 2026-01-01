@@ -3,12 +3,16 @@
 #include <algorithm>
 #include <filesystem>
 #include <format>
+#include <map>
 #include <ranges>
 #include <string>
+#include <vector>
 
 #include "porytiles2/domain/models/animation.hpp"
-#include "porytiles2/domain/models/tileset_metadata.hpp"
+#include "porytiles2/infra/models/project_tileset_metadata.hpp"
 #include "porytiles2/infra/repos/tileset_artifact_paths.hpp"
+#include "porytiles2/infra/services/anim_yaml_parser.hpp"
+#include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/c_parser/c_parser_facade.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -18,9 +22,19 @@ namespace {
 
 using namespace porytiles2;
 
+// Project source file paths for INCBIN parsing
+// TODO: don't harcode
+const std::filesystem::path graphics_rel_path = std::filesystem::path{"src"} / "data" / "tilesets" / "graphics.h";
+const std::filesystem::path metatiles_rel_path = std::filesystem::path{"src"} / "data" / "tilesets" / "metatiles.h";
+const std::filesystem::path src_graphics_rel_path = std::filesystem::path{"src"} / "graphics.c";
+const std::filesystem::path tileset_anims_c_rel_path = std::filesystem::path{"src"} / "tileset_anims.c";
+
+// Prefix for parsing callback function names
+constexpr std::string init_tileset_anim_prefix = "InitTilesetAnim_";
+
 // Porytiles artifact paths
 const std::filesystem::path anim_dir{"anim"};
-const std::filesystem::path include{"include"};
+const std::filesystem::path include_dir{"include"};
 const std::filesystem::path generated_anim_code_header{"generated_anim_code.h"};
 const std::filesystem::path porytiles_directory{"porytiles"};
 const std::filesystem::path bottom_png{"bottom.png"};
@@ -33,169 +47,26 @@ const std::filesystem::path key_frame{"key.png"};
 const std::filesystem::path config{"porytiles.yaml"};
 const std::filesystem::path local_config{"porytiles.local.yaml"};
 
-// Project source file paths (for parsing metadata)
-const std::filesystem::path headers_rel_path = std::filesystem::path{"src"} / "data" / "tilesets" / "headers.h";
-const std::filesystem::path graphics_rel_path = std::filesystem::path{"src"} / "data" / "tilesets" / "graphics.h";
-const std::filesystem::path metatiles_rel_path = std::filesystem::path{"src"} / "data" / "tilesets" / "metatiles.h";
-const std::filesystem::path src_graphics_rel_path = std::filesystem::path{"src"} / "graphics.c";
-const std::filesystem::path tileset_anims_c_rel_path = std::filesystem::path{"src"} / "tileset_anims.c";
-
-// Prefixes for parsing callback function names
-constexpr std::string_view init_tileset_anim_prefix = "InitTilesetAnim_";
-
 /**
- * @brief Extracts tileset shorthand from a callback function name.
+ * @brief Extracts Porytiles managed status from a callback function name.
  *
  * @details
- * Parses callback function names to extract the tileset identifier:
- * - "InitTilesetAnim_General" -> ("General", false)
- * - "InitTilesetAnim_PorytilesManaged_General" -> ("General", true)
+ * Parses callback function names to extract the Porytiles-managed status, indicated by presence of a
+ * "PorytilesManaged_" prefix:
+ * - "InitTilesetAnim_General" -> false
+ * - "InitTilesetAnim_PorytilesManaged_General" -> true
  *
  * @param callback_func The callback function name from tileset metadata
- * @return Pair of (tileset_shorthand, is_porytiles_managed), or empty string on parse failure
+ * @return If callback is Porytiles-managed
  */
-[[nodiscard]] std::pair<std::string, bool> extract_tileset_from_callback(const std::string &callback_func)
+[[nodiscard]] bool callback_points_to_porytiles_managed(const std::string &callback_func)
 {
-    if (!callback_func.starts_with(init_tileset_anim_prefix)) {
-        return {"", false};
+    const std::string prefix = init_tileset_anim_prefix + anim::porytiles_managed_prefix;
+    if (callback_func.starts_with(prefix)) {
+        return true;
     }
 
-    std::string remainder = callback_func.substr(init_tileset_anim_prefix.size());
-
-    if (remainder.starts_with(anim::porytiles_managed_prefix)) {
-        return {remainder.substr(anim::porytiles_managed_prefix.size()), true};
-    }
-
-    return {remainder, false};
-}
-
-/**
- * @brief Parses an INCBIN variable name to extract animation name and frame index.
- *
- * @details
- * Variable naming patterns:
- * - Vanilla: "gTilesetAnims_General_Flower_Frame0" -> ("Flower", 0)
- * - Porytiles: "gTilesetAnims_PorytilesManaged_General_Water_Frame7" -> ("Water", 7)
- */
-[[nodiscard]] std::optional<std::pair<std::string, std::size_t>>
-parse_anim_frame_var(const std::string &var_name, const std::string &tileset_shorthand, bool porytiles_managed)
-{
-    std::string prefix = "gTilesetAnims_";
-    if (porytiles_managed) {
-        prefix += anim::porytiles_managed_prefix;
-    }
-    prefix += tileset_shorthand + "_";
-
-    if (!var_name.starts_with(prefix)) {
-        return std::nullopt;
-    }
-
-    std::string remainder = var_name.substr(prefix.size());
-
-    auto frame_pos = remainder.find("_Frame");
-    if (frame_pos == std::string::npos) {
-        return std::nullopt;
-    }
-
-    std::string anim_name = remainder.substr(0, frame_pos);
-    std::string frame_str = remainder.substr(frame_pos + 6);
-
-    try {
-        std::size_t frame_index = std::stoull(frame_str);
-        return std::make_pair(anim_name, frame_index);
-    }
-    catch (...) {
-        return std::nullopt;
-    }
-}
-
-/**
- * @brief Parses animation frame INCBINs from a C source file.
- */
-[[nodiscard]] ChainableResult<AnimationFramePaths> parse_anim_incbins_from_file(
-    const std::filesystem::path &c_file,
-    const std::string &tileset_shorthand,
-    bool porytiles_managed,
-    const TextFormatter *format)
-{
-    CParserFacade parser{c_file, format};
-
-    std::string prefix = "gTilesetAnims_";
-    if (porytiles_managed) {
-        prefix += anim::porytiles_managed_prefix;
-    }
-    prefix += tileset_shorthand + "_";
-
-    auto incbins_result = parser.parse_incbin_arrays(prefix);
-    if (!incbins_result.has_value()) {
-        return ChainableResult<AnimationFramePaths>{
-            FormattableError{
-                format->format("{}: failed to parse animation INCBINs", FormatParam{c_file.string(), Style::bold})},
-            incbins_result};
-    }
-
-    std::map<std::string, std::vector<std::pair<std::size_t, std::filesystem::path>>> grouped;
-
-    for (const auto &incbin : incbins_result.value()) {
-        auto parsed = parse_anim_frame_var(incbin.variable_name(), tileset_shorthand, porytiles_managed);
-        if (!parsed.has_value()) {
-            continue;
-        }
-
-        auto [anim_name, frame_index] = parsed.value();
-        std::string snake_anim_name = to_snake_case(anim_name);
-
-        if (!incbin.paths().empty()) {
-            grouped[snake_anim_name].emplace_back(frame_index, std::filesystem::path{incbin.paths().front()});
-        }
-    }
-
-    AnimationFramePaths result;
-    for (auto &[anim_name, frames] : grouped) {
-        std::ranges::sort(frames, [](const auto &a, const auto &b) { return a.first < b.first; });
-
-        std::vector<std::filesystem::path> ordered_paths;
-        ordered_paths.reserve(frames.size());
-        for (const auto &path : frames | std::views::values) {
-            ordered_paths.push_back(path);
-        }
-
-        result[anim_name] = std::move(ordered_paths);
-    }
-
-    return result;
-}
-
-/**
- * @brief Ensures tileset struct headers have been parsed and cached.
- */
-[[nodiscard]] ChainableResult<void> ensure_headers_parsed(
-    const std::filesystem::path &project_root,
-    bool &headers_parsed,
-    std::map<std::string, StructInitializerDeclaration> &tileset_structs,
-    const TextFormatter *format)
-{
-    if (headers_parsed) {
-        return {};
-    }
-
-    const auto headers_path = project_root / headers_rel_path;
-    CParserFacade parser{headers_path, format};
-
-    auto parse_result = parser.parse_struct_initializers("gTileset_");
-    if (!parse_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{
-                format->format("{}: failed to parse tileset headers", FormatParam{headers_path.string(), Style::bold})},
-            parse_result};
-    }
-
-    for (auto &struct_decl : parse_result.value()) {
-        tileset_structs.emplace(struct_decl.variable_name(), std::move(struct_decl));
-    }
-
-    headers_parsed = true;
-    return {};
+    return false;
 }
 
 /**
@@ -323,273 +194,81 @@ parse_anim_frame_var(const std::string &var_name, const std::string &tileset_sho
 }
 
 /**
- * @brief Retrieves metadata for a specific tileset from the struct cache.
+ * @brief Parses an INCBIN variable name to extract the animation name.
+ *
+ * @details
+ * Variable naming patterns:
+ * - Vanilla: "gTilesetAnims_General_Flower_Frame0" -> "Flower"
+ * - Porytiles: "gTilesetAnims_PorytilesManaged_General_Water_Frame7" -> "Water"
+ * - Porytiles: "gTilesetAnims_PorytilesManaged_PorytilesTest_FlowerYellow_FrameCenter" -> "FlowerYellow"
+ *
+ * Note: Frame names (numeric or arbitrary) are extracted from INCBIN paths, not from variable names.
  */
-[[nodiscard]] ChainableResult<TilesetMetadata> metadata_for(
+[[nodiscard]] std::optional<std::string>
+parse_anim_frame_var(const std::string &var_name, const std::string &tileset_shorthand, bool porytiles_managed)
+{
+    std::string prefix = anim::g_tileset_anims_prefix;
+    if (porytiles_managed) {
+        prefix += anim::porytiles_managed_prefix;
+    }
+    prefix += tileset_shorthand + "_";
+
+    if (!var_name.starts_with(prefix)) {
+        return std::nullopt;
+    }
+
+    std::string remainder = var_name.substr(prefix.size());
+
+    auto frame_pos = remainder.find("_Frame");
+    if (frame_pos == std::string::npos) {
+        return std::nullopt;
+    }
+
+    return remainder.substr(0, frame_pos);
+}
+
+/**
+ * @brief Parses animation frame INCBINs from a C source file.
+ */
+[[nodiscard]] ChainableResult<AnimationFramePaths> parse_anim_incbins_from_file(
+    const std::filesystem::path &c_file,
     const std::string &tileset_name,
-    const std::filesystem::path &project_root,
-    bool &headers_parsed,
-    std::map<std::string, StructInitializerDeclaration> &tileset_structs,
+    bool porytiles_managed,
     const TextFormatter *format)
 {
-    if (const auto ensure_result = ensure_headers_parsed(project_root, headers_parsed, tileset_structs, format);
-        !ensure_result.has_value()) {
-        return ChainableResult<TilesetMetadata>{
+    CParserFacade parser{c_file, format};
+    const std::string tileset_shorthand = tileset_name.substr(std::size("gTileset_") - 1);
+
+    std::string prefix = anim::g_tileset_anims_prefix;
+    if (porytiles_managed) {
+        prefix += anim::porytiles_managed_prefix;
+    }
+    prefix += tileset_shorthand + "_";
+
+    auto incbins_result = parser.parse_incbin_arrays(prefix);
+    if (!incbins_result.has_value()) {
+        return ChainableResult<AnimationFramePaths>{
             FormattableError{
-                format->format("failed to get metadata for tileset '{}'", FormatParam{tileset_name, Style::bold})},
-            ensure_result};
+                format->format("{}: failed to parse animation INCBINs", FormatParam{c_file.string(), Style::bold})},
+            incbins_result};
     }
 
-    auto it = tileset_structs.find(tileset_name);
-    if (it == tileset_structs.end()) {
-        return FormattableError{
-            format->format("tileset '{}' not found in headers.h", FormatParam{tileset_name, Style::bold})};
-    }
+    AnimationFramePaths result;
 
-    const auto &struct_decl = it->second;
+    for (const auto &incbin : incbins_result.value()) {
+        auto anim_name_opt = parse_anim_frame_var(incbin.variable_name(), tileset_shorthand, porytiles_managed);
+        if (!anim_name_opt.has_value()) {
+            continue;
+        }
 
-    auto is_secondary_opt = struct_decl.field_value("isSecondary");
-    bool is_secondary = is_secondary_opt.has_value() && is_secondary_opt.value() == "TRUE";
+        std::string snake_anim_name = to_snake_case(anim_name_opt.value());
 
-    auto tiles_var = struct_decl.field_value("tiles");
-    auto palettes_var = struct_decl.field_value("palettes");
-    auto metatiles_var = struct_decl.field_value("metatiles");
-    auto metatile_attributes_var = struct_decl.field_value("metatileAttributes");
-    auto callback_var = struct_decl.field_value("callback");
-
-    if (!tiles_var.has_value()) {
-        return FormattableError{
-            format->format("tileset '{}' missing 'tiles' field", FormatParam{tileset_name, Style::bold})};
-    }
-    if (!palettes_var.has_value()) {
-        return FormattableError{
-            format->format("tileset '{}' missing 'palettes' field", FormatParam{tileset_name, Style::bold})};
-    }
-    if (!metatiles_var.has_value()) {
-        return FormattableError{
-            format->format("tileset '{}' missing 'metatiles' field", FormatParam{tileset_name, Style::bold})};
-    }
-    if (!metatile_attributes_var.has_value()) {
-        return FormattableError{
-            format->format("tileset '{}' missing 'metatileAttributes' field", FormatParam{tileset_name, Style::bold})};
-    }
-
-    std::optional<std::string> callback_func = std::nullopt;
-    if (callback_var.has_value() && callback_var.value() != "NULL") {
-        callback_func = callback_var.value();
-    }
-
-    return TilesetMetadata{
-        tileset_name,
-        is_secondary,
-        tiles_var.value(),
-        palettes_var.value(),
-        metatiles_var.value(),
-        metatile_attributes_var.value(),
-        callback_func};
-}
-
-/**
- * @brief Retrieves resolved artifact paths for a specific tileset.
- */
-[[nodiscard]] ChainableResult<TilesetArtifactPaths> artifact_paths_for_impl(
-    const std::string &tileset_name,
-    const std::filesystem::path &project_root,
-    bool &headers_parsed,
-    bool &incbins_parsed,
-    std::map<std::string, StructInitializerDeclaration> &tileset_structs,
-    std::map<std::string, IncbinDeclaration> &incbin_vars,
-    const TextFormatter *format)
-{
-    auto metadata_result = metadata_for(tileset_name, project_root, headers_parsed, tileset_structs, format);
-    if (!metadata_result.has_value()) {
-        return ChainableResult<TilesetArtifactPaths>{
-            FormattableError{format->format(
-                "failed to get artifact paths for tileset '{}'", FormatParam{tileset_name, Style::bold})},
-            metadata_result};
-    }
-
-    const auto &metadata = metadata_result.value();
-
-    auto tiles_path_result =
-        lookup_incbin_path(metadata.tiles_var(), project_root, incbins_parsed, incbin_vars, format);
-    if (!tiles_path_result.has_value()) {
-        return ChainableResult<TilesetArtifactPaths>{
-            FormattableError{format->format(
-                "failed to resolve tiles path for tileset '{}'", FormatParam{tileset_name, Style::bold})},
-            tiles_path_result};
-    }
-
-    auto palette_paths_result =
-        lookup_incbin_paths(metadata.palettes_var(), project_root, incbins_parsed, incbin_vars, format);
-    if (!palette_paths_result.has_value()) {
-        return ChainableResult<TilesetArtifactPaths>{
-            FormattableError{format->format(
-                "failed to resolve palette paths for tileset '{}'", FormatParam{tileset_name, Style::bold})},
-            palette_paths_result};
-    }
-
-    auto metatiles_path_result =
-        lookup_incbin_path(metadata.metatiles_var(), project_root, incbins_parsed, incbin_vars, format);
-    if (!metatiles_path_result.has_value()) {
-        return ChainableResult<TilesetArtifactPaths>{
-            FormattableError{format->format(
-                "failed to resolve metatiles path for tileset '{}'", FormatParam{tileset_name, Style::bold})},
-            metatiles_path_result};
-    }
-
-    auto metatile_attributes_path_result =
-        lookup_incbin_path(metadata.metatile_attributes_var(), project_root, incbins_parsed, incbin_vars, format);
-    if (!metatile_attributes_path_result.has_value()) {
-        return ChainableResult<TilesetArtifactPaths>{
-            FormattableError{format->format(
-                "failed to resolve metatile attributes path for tileset '{}'", FormatParam{tileset_name, Style::bold})},
-            metatile_attributes_path_result};
-    }
-
-    std::vector<std::filesystem::path> palette_paths;
-    palette_paths.reserve(palette_paths_result.value().size());
-    for (const auto &path_str : palette_paths_result.value()) {
-        palette_paths.emplace_back(path_str);
-    }
-
-    return TilesetArtifactPaths{
-        std::filesystem::path{tiles_path_result.value()},
-        std::move(palette_paths),
-        std::filesystem::path{metatiles_path_result.value()},
-        std::filesystem::path{metatile_attributes_path_result.value()}};
-}
-
-/**
- * @brief Retrieves animation frame paths for a specific tileset.
- */
-[[nodiscard]] ChainableResult<AnimationFramePaths> animation_frame_paths_for_impl(
-    const std::string &tileset_name,
-    const std::filesystem::path &project_root,
-    bool &headers_parsed,
-    bool &incbins_parsed,
-    std::map<std::string, StructInitializerDeclaration> &tileset_structs,
-    std::map<std::string, IncbinDeclaration> &incbin_vars,
-    const TextFormatter *format,
-    const UserDiagnostics *diag)
-{
-    auto metadata_result = metadata_for(tileset_name, project_root, headers_parsed, tileset_structs, format);
-    if (!metadata_result.has_value()) {
-        return ChainableResult<AnimationFramePaths>{
-            FormattableError{format->format(
-                "failed to get animation paths for tileset '{}'", FormatParam{tileset_name, Style::bold})},
-            metadata_result};
-    }
-
-    const auto &metadata = metadata_result.value();
-
-    if (!metadata.has_animations()) {
-        return AnimationFramePaths{};
-    }
-
-    auto [tileset_shorthand, porytiles_managed] = extract_tileset_from_callback(metadata.callback_func().value());
-
-    if (tileset_shorthand.empty()) {
-        diag->warning(
-            "animation-discovery",
-            format->format(
-                "could not parse tileset name from callback '{}'",
-                FormatParam{metadata.callback_func().value(), Style::bold}));
-        return AnimationFramePaths{};
-    }
-
-    auto artifact_paths_result = artifact_paths_for_impl(
-        tileset_name, project_root, headers_parsed, incbins_parsed, tileset_structs, incbin_vars, format);
-    if (!artifact_paths_result.has_value()) {
-        return ChainableResult<AnimationFramePaths>{
-            FormattableError{"failed to determine tileset root for animation discovery"}, artifact_paths_result};
-    }
-
-    const auto tileset_root = project_root / artifact_paths_result.value().tileset_root();
-    const auto generated_header = tileset_root / "include" / "generated_anim_code.h";
-
-    if (std::filesystem::exists(generated_header)) {
-        return parse_anim_incbins_from_file(generated_header, tileset_shorthand, true, format);
-    }
-
-    const auto anims_c = project_root / tileset_anims_c_rel_path;
-    if (!std::filesystem::exists(anims_c)) {
-        diag->warning(
-            "animation-discovery",
-            format->format("tileset_anims.c not found at '{}'", FormatParam{anims_c.string(), Style::bold}));
-        return AnimationFramePaths{};
-    }
-
-    return parse_anim_incbins_from_file(anims_c, tileset_shorthand, porytiles_managed, format);
-}
-
-/**
- * @brief Retrieves animation callback information for a specific tileset.
- */
-[[nodiscard]] ChainableResult<std::optional<AnimationCallbackInfo>> animation_callback_info_for_impl(
-    const std::string &tileset_name,
-    const std::filesystem::path &project_root,
-    bool &headers_parsed,
-    bool &incbins_parsed,
-    std::map<std::string, StructInitializerDeclaration> &tileset_structs,
-    std::map<std::string, IncbinDeclaration> &incbin_vars,
-    const TextFormatter *format,
-    const UserDiagnostics *diag)
-{
-    auto metadata_result = metadata_for(tileset_name, project_root, headers_parsed, tileset_structs, format);
-    if (!metadata_result.has_value()) {
-        return ChainableResult<std::optional<AnimationCallbackInfo>>{
-            FormattableError{format->format(
-                "failed to get animation callback info for tileset '{}'", FormatParam{tileset_name, Style::bold})},
-            metadata_result};
-    }
-
-    const auto &metadata = metadata_result.value();
-
-    if (!metadata.has_animations()) {
-        return std::optional<AnimationCallbackInfo>{std::nullopt};
-    }
-
-    const std::string &callback_func_name = metadata.callback_func().value();
-
-    auto [tileset_shorthand, porytiles_managed] = extract_tileset_from_callback(callback_func_name);
-
-    if (tileset_shorthand.empty()) {
-        diag->warning(
-            "animation-discovery",
-            format->format(
-                "could not parse tileset name from callback '{}'", FormatParam{callback_func_name, Style::bold}));
-        return std::optional<AnimationCallbackInfo>{std::nullopt};
-    }
-
-    auto artifact_paths_result = artifact_paths_for_impl(
-        tileset_name, project_root, headers_parsed, incbins_parsed, tileset_structs, incbin_vars, format);
-    if (!artifact_paths_result.has_value()) {
-        return ChainableResult<std::optional<AnimationCallbackInfo>>{
-            FormattableError{"failed to determine tileset root for animation callback discovery"},
-            artifact_paths_result};
-    }
-
-    const auto tileset_root = project_root / artifact_paths_result.value().tileset_root();
-    const auto generated_header = tileset_root / "include" / "generated_anim_code.h";
-
-    std::filesystem::path c_file_path;
-    if (std::filesystem::exists(generated_header)) {
-        c_file_path = generated_header;
-        porytiles_managed = true;
-    }
-    else {
-        c_file_path = project_root / tileset_anims_c_rel_path;
-        if (!std::filesystem::exists(c_file_path)) {
-            diag->warning(
-                "animation-discovery",
-                format->format("tileset_anims.c not found at '{}'", FormatParam{c_file_path.string(), Style::bold}));
-            return std::optional<AnimationCallbackInfo>{std::nullopt};
+        if (!incbin.paths().empty()) {
+            result[snake_anim_name].emplace_back(incbin.paths().front());
         }
     }
 
-    return std::optional<AnimationCallbackInfo>{
-        AnimationCallbackInfo{callback_func_name, tileset_shorthand, porytiles_managed, c_file_path}};
+    return result;
 }
 
 } // namespace
@@ -604,7 +283,7 @@ ProjectTilesetArtifactKeyProvider::key_for_metatiles_bin(const std::string &tile
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         paths,
-        artifact_paths(tileset_name),
+        artifact_paths_for(tileset_name),
         format_->format("failed to get metatiles.bin key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
         ArtifactKey);
     return ArtifactKey{project_root_ / paths.metatiles_path()};
@@ -615,7 +294,7 @@ ProjectTilesetArtifactKeyProvider::key_for_metatile_attributes_bin(const std::st
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         paths,
-        artifact_paths(tileset_name),
+        artifact_paths_for(tileset_name),
         format_->format(
             "failed to get metatile_attributes.bin key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
         ArtifactKey);
@@ -631,7 +310,7 @@ ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_tiles_pn
      */
     PT_TRY_ASSIGN_CHAIN_ERR(
         paths,
-        artifact_paths(tileset_name),
+        artifact_paths_for(tileset_name),
         format_->format("failed to get tiles.png key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
         ArtifactKey);
     return ArtifactKey{project_root_ / paths.tiles_path().parent_path() / "tiles.png"};
@@ -642,7 +321,7 @@ ProjectTilesetArtifactKeyProvider::key_for_porymap_pal_n(const std::string &tile
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         paths,
-        artifact_paths(tileset_name),
+        artifact_paths_for(tileset_name),
         format_->format("failed to get Porymap pal key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
         ArtifactKey);
     return ArtifactKey{project_root_ / paths.palettes_dir() / pal_filename(index)};
@@ -652,16 +331,39 @@ ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_porymap_
     const std::string &tileset_name, const std::string &anim_name, const std::string &frame_name) const
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
-        tileset_path,
-        tileset_root(tileset_name),
+        frame_paths,
+        porymap_animation_frame_paths_for(tileset_name),
         format_->format(
             "failed to get Porymap anim frame key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
         ArtifactKey);
-    return ArtifactKey{tileset_path / anim_dir / anim_name / (frame_name + std::string{".png"})};
+
+    // Find the animation
+    const auto anim_it = frame_paths.find(anim_name);
+    if (anim_it == frame_paths.end()) {
+        return FormattableError{format_->format(
+            "animation '{}' not found for tileset '{}'",
+            FormatParam{anim_name, Style::bold},
+            FormatParam{tileset_name, Style::bold})};
+    }
+
+    // Find the frame by matching stem (e.g., "0" matches "0.4bpp")
+    for (const auto &path : anim_it->second) {
+        if (path.stem().string() == frame_name) {
+            auto png_path = path;
+            png_path.replace_extension(".png");
+            return ArtifactKey{project_root_ / png_path};
+        }
+    }
+
+    return FormattableError{format_->format(
+        "frame '{}' not found in animation '{}' for tileset '{}'",
+        FormatParam{frame_name, Style::bold},
+        FormatParam{anim_name, Style::bold},
+        FormatParam{tileset_name, Style::bold})};
 }
 
 ChainableResult<ArtifactKey>
-ProjectTilesetArtifactKeyProvider::key_for_generated_anim_code(const std::string &tileset_name) const
+ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_params(const std::string &tileset_name) const
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         tileset_path,
@@ -669,7 +371,7 @@ ProjectTilesetArtifactKeyProvider::key_for_generated_anim_code(const std::string
         format_->format(
             "failed to get generated anim code key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
         ArtifactKey);
-    return ArtifactKey{tileset_path / include / generated_anim_code_header};
+    return ArtifactKey{tileset_path / include_dir / generated_anim_code_header};
 }
 
 /*
@@ -741,19 +443,8 @@ ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_porytile
     return ArtifactKey{tileset_path / porytiles_directory / anim_dir / anim_name / (frame_name + std::string{".png"})};
 }
 
-ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_key_frame(
-    const std::string &tileset_name, const std::string &anim_name) const
-{
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        tileset_path,
-        tileset_root(tileset_name),
-        format_->format(
-            "failed to get Porytiles anim key frame key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        ArtifactKey);
-    return ArtifactKey{tileset_path / porytiles_directory / anim_dir / anim_name / key_frame};
-}
-
-ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_anim_yaml(const std::string &tileset_name) const
+ChainableResult<ArtifactKey>
+ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_params(const std::string &tileset_name) const
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         tileset_path,
@@ -790,119 +481,12 @@ bool ProjectTilesetArtifactKeyProvider::artifact_exists(const ArtifactKey &key) 
     return std::filesystem::exists(artifact);
 }
 
-bool ProjectTilesetArtifactKeyProvider::tileset_exists(const std::string &tileset_name) const
-{
-    auto ensure_result = ensure_headers_parsed(project_root_, headers_parsed_, tileset_structs_, format_);
-    if (!ensure_result.has_value()) {
-        return false;
-    }
-    return tileset_structs_.contains(tileset_name);
-}
-
-ChainableResult<std::set<std::string>>
-ProjectTilesetArtifactKeyProvider::discover_porytiles_anims(const std::string &tileset_name) const
-{
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        tileset_path,
-        tileset_root(tileset_name),
-        format_->format("failed to discover Porytiles anims for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        std::set<std::string>);
-    const auto anims_dir = tileset_path / porytiles_directory / anim_dir;
-
-    std::set<std::string> anim_names;
-
-    if (!std::filesystem::exists(anims_dir) || !std::filesystem::is_directory(anims_dir)) {
-        return anim_names;
-    }
-
-    for (const auto &entry : std::filesystem::directory_iterator(anims_dir)) {
-        if (!entry.is_directory()) {
-            // TODO: warn user about stray file in porytiles/anim folder?
-            continue;
-        }
-
-        // Check if key frame exists (required for Porytiles animations)
-        const auto key_frame_path = entry.path() / key_frame;
-        if (!std::filesystem::exists(key_frame_path)) {
-            // TODO: this is an error condition, an anim folder with no key.png is invalid
-            continue;
-        }
-
-        // Check if 0.png exists (required for Porytiles animations)
-        const auto frame_0_path = entry.path() / "0.png";
-        if (!std::filesystem::exists(frame_0_path)) {
-            // TODO: this is an error condition, an anim folder with no 0.png is invalid
-            continue;
-        }
-
-        const auto anim_name = entry.path().filename().string();
-        anim_names.insert(anim_name);
-    }
-
-    return anim_names;
-}
-
-ChainableResult<std::set<std::string>> ProjectTilesetArtifactKeyProvider::discover_porytiles_anim_frames(
-    const std::string &tileset_name, const std::string &anim_name) const
-{
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        tileset_path,
-        tileset_root(tileset_name),
-        format_->format(
-            "failed to discover Porytiles anim frames for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        std::set<std::string>);
-    const auto anim_path = tileset_path / porytiles_directory / anim_dir / anim_name;
-
-    std::set<std::string> frame_indices;
-
-    if (!std::filesystem::exists(anim_path) || !std::filesystem::is_directory(anim_path)) {
-        return frame_indices;
-    }
-
-    for (const auto &entry : std::filesystem::directory_iterator(anim_path)) {
-        if (!entry.is_regular_file()) {
-            // TODO: warn user about stray folder in porytiles/anim/anim_name folder
-            continue;
-        }
-
-        const auto filename = entry.path().filename().string();
-
-        if (!filename.ends_with(".png")) {
-            // TODO: warn user about stray file in porytiles/anim/anim_name folder
-            continue;
-        }
-
-        // Skip 00.png (frame 0 is required, not discovered), handled in the main discover_anims method
-        if (filename == "0.png") {
-            continue;
-        }
-
-        // Check if it's a valid number
-        const auto frame_str = filename.substr(0, filename.size() - 4); // strip ".png"
-        if (!std::ranges::all_of(frame_str, ::isdigit)) {
-            // TODO: warn user about stray file in porytiles/anim/anim_name folder
-            continue;
-        }
-        frame_indices.insert(frame_str);
-    }
-
-    return frame_indices;
-}
-
 ChainableResult<std::set<std::string>>
 ProjectTilesetArtifactKeyProvider::discover_porymap_anims(const std::string &tileset_name) const
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         frame_paths,
-        animation_frame_paths_for_impl(
-            tileset_name,
-            project_root_,
-            headers_parsed_,
-            incbins_parsed_,
-            tileset_structs_,
-            incbin_vars_,
-            format_,
-            diag_),
+        porymap_animation_frame_paths_for(tileset_name),
         format_->format("failed to discover Porymap anims for tileset '{}'", FormatParam{tileset_name, Style::bold}),
         std::set<std::string>);
 
@@ -918,59 +502,228 @@ ChainableResult<std::set<std::string>> ProjectTilesetArtifactKeyProvider::discov
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         frame_paths,
-        animation_frame_paths_for_impl(
-            tileset_name,
-            project_root_,
-            headers_parsed_,
-            incbins_parsed_,
-            tileset_structs_,
-            incbin_vars_,
-            format_,
-            diag_),
+        porymap_animation_frame_paths_for(tileset_name),
         format_->format(
             "failed to discover Porymap anim frames for tileset '{}'", FormatParam{tileset_name, Style::bold}),
         std::set<std::string>);
 
-    std::set<std::string> frame_indices;
+    std::set<std::string> frame_names;
 
     const auto it = frame_paths.find(anim_name);
     if (it == frame_paths.end()) {
-        return frame_indices;
+        return frame_names;
     }
 
-    const auto &frames = it->second;
-    for (std::size_t i = 0; i < frames.size(); ++i) {
-        // TODO: this is terribly wrong, we should be supporting arbitrary frame names
-        // see animation-refactoring-plan-2.md
-        frame_indices.insert(std::to_string(static_cast<int>(i)));
+    // Extract basenames from INCBIN paths
+    // Path format: "data/tilesets/primary/general/anim/flower/0.4bpp"
+    // We want to return: "0"
+    for (const auto &path : it->second) {
+        // stem() extracts the filename without extension: "0.4bpp" -> "0"
+        std::string basename = path.stem().string();
+        frame_names.insert(basename);
     }
 
-    return frame_indices;
+    return frame_names;
 }
 
-ChainableResult<TilesetArtifactPaths>
-ProjectTilesetArtifactKeyProvider::artifact_paths(const std::string &tileset_name) const
+ChainableResult<std::set<std::string>>
+ProjectTilesetArtifactKeyProvider::discover_porytiles_anims(const std::string &tileset_name) const
 {
-    return artifact_paths_for_impl(
-        tileset_name, project_root_, headers_parsed_, incbins_parsed_, tileset_structs_, incbin_vars_, format_);
+    // Get the anim.yaml path
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        anim_yaml_key,
+        key_for_porytiles_anim_params(tileset_name),
+        format_->format("failed to discover Porytiles anims for tileset '{}'", FormatParam{tileset_name, Style::bold}),
+        std::set<std::string>);
+
+    // If anim.yaml doesn't exist, no Porytiles animations
+    if (!artifact_exists(anim_yaml_key)) {
+        return std::set<std::string>{};
+    }
+
+    // Parse the anim.yaml file (snake_case validation is now handled by AnimYamlParser)
+    AnimYamlParser parser{format_};
+    auto parse_result = parser.parse(anim_yaml_key.key());
+    if (!parse_result.has_value()) {
+        return ChainableResult<std::set<std::string>>{
+            FormattableError{
+                format_->format("failed to parse anim.yaml for tileset '{}'", FormatParam{tileset_name, Style::bold})},
+            parse_result};
+    }
+
+    // Extract animation names
+    std::set<std::string> anim_names;
+    for (const auto &anim_name : parse_result.value() | std::views::keys) {
+        anim_names.insert(anim_name);
+    }
+
+    return anim_names;
+}
+
+ChainableResult<std::set<std::string>> ProjectTilesetArtifactKeyProvider::discover_porytiles_anim_frames(
+    const std::string &tileset_name, const std::string &anim_name) const
+{
+    // Get the anim.yaml path
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        anim_yaml_key,
+        key_for_porytiles_anim_params(tileset_name),
+        format_->format(
+            "failed to discover Porytiles anim frames for tileset '{}'", FormatParam{tileset_name, Style::bold}),
+        std::set<std::string>);
+
+    // If anim.yaml doesn't exist, no frames to discover
+    if (!artifact_exists(anim_yaml_key)) {
+        return std::set<std::string>{};
+    }
+
+    // Parse the anim.yaml file
+    AnimYamlParser parser{format_};
+    auto parse_result = parser.parse(anim_yaml_key.key());
+    if (!parse_result.has_value()) {
+        return ChainableResult<std::set<std::string>>{
+            FormattableError{
+                format_->format("failed to parse anim.yaml for tileset '{}'", FormatParam{tileset_name, Style::bold})},
+            parse_result};
+    }
+
+    // Find the animation in the parsed map
+    const auto &animations = parse_result.value();
+    auto it = animations.find(anim_name);
+    if (it == animations.end()) {
+        return ChainableResult<std::set<std::string>>{FormattableError{format_->format(
+            "animation '{}' not found in anim.yaml for tileset '{}'",
+            FormatParam{anim_name, Style::bold},
+            FormatParam{tileset_name, Style::bold})}};
+    }
+
+    // Extract unique frame names from the frames array
+    std::set<std::string> frame_names;
+    for (const auto &frame_name : it->second.frames()) {
+        frame_names.insert(frame_name);
+    }
+
+    // Porytiles animations always require a key frame
+    // TODO: this is kinda a hack, see TODOLIST.md for ideas on better keyframe handling
+    frame_names.insert("key");
+
+    return frame_names;
 }
 
 [[nodiscard]] ChainableResult<std::filesystem::path>
 ProjectTilesetArtifactKeyProvider::tileset_root(const std::string &tileset_name) const
 {
-    const auto paths_result = artifact_paths(tileset_name);
-    if (!paths_result.has_value()) {
-        return ChainableResult<std::filesystem::path>{paths_result};
+    // Get metadata for tiles_var
+    auto metadata_result = metadata_provider_.metadata_for(tileset_name);
+    if (!metadata_result.has_value()) {
+        return ChainableResult<std::filesystem::path>{
+            FormattableError{
+                format_->format("failed to get tileset root for tileset '{}'", FormatParam{tileset_name, Style::bold})},
+            metadata_result};
     }
 
-    return project_root_ / paths_result.value().tileset_root();
+    // Lookup the tiles INCBIN path
+    auto tiles_path_result = ::lookup_incbin_path(
+        metadata_result.value().tiles_var(), project_root_, incbins_parsed_, incbin_vars_, format_);
+    if (!tiles_path_result.has_value()) {
+        return ChainableResult<std::filesystem::path>{
+            FormattableError{format_->format(
+                "failed to resolve tiles path for tileset '{}'", FormatParam{tileset_name, Style::bold})},
+            tiles_path_result};
+    }
+
+    // Compute tileset_root from tiles path (e.g., "data/tilesets/primary/general/tiles.4bpp" -> parent)
+    std::filesystem::path tiles_path{tiles_path_result.value()};
+    return project_root_ / tiles_path.parent_path();
 }
 
-ChainableResult<std::optional<AnimationCallbackInfo>>
-ProjectTilesetArtifactKeyProvider::animation_callback_info_for(const std::string &tileset_name) const
+ChainableResult<TilesetArtifactPaths>
+ProjectTilesetArtifactKeyProvider::artifact_paths_for(const std::string &tileset_name) const
 {
-    return animation_callback_info_for_impl(
-        tileset_name, project_root_, headers_parsed_, incbins_parsed_, tileset_structs_, incbin_vars_, format_, diag_);
+    // Get metadata to access variable names
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        metadata,
+        metadata_provider_.metadata_for(tileset_name),
+        format_->format("failed to get artifact paths for tileset '{}'", FormatParam{tileset_name, Style::bold}),
+        TilesetArtifactPaths);
+
+    // Resolve all INCBIN paths using local helpers
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tiles_path_str,
+        ::lookup_incbin_path(metadata.tiles_var(), project_root_, incbins_parsed_, incbin_vars_, format_),
+        format_->format("failed to resolve tiles path for tileset '{}'", FormatParam{tileset_name, Style::bold}),
+        TilesetArtifactPaths);
+
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        palette_path_strs,
+        ::lookup_incbin_paths(metadata.palettes_var(), project_root_, incbins_parsed_, incbin_vars_, format_),
+        format_->format("failed to resolve palette paths for tileset '{}'", FormatParam{tileset_name, Style::bold}),
+        TilesetArtifactPaths);
+
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        metatiles_path_str,
+        ::lookup_incbin_path(metadata.metatiles_var(), project_root_, incbins_parsed_, incbin_vars_, format_),
+        format_->format("failed to resolve metatiles path for tileset '{}'", FormatParam{tileset_name, Style::bold}),
+        TilesetArtifactPaths);
+
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        metatile_attributes_path_str,
+        ::lookup_incbin_path(metadata.metatile_attributes_var(), project_root_, incbins_parsed_, incbin_vars_, format_),
+        format_->format(
+            "failed to resolve metatile attributes path for tileset '{}'", FormatParam{tileset_name, Style::bold}),
+        TilesetArtifactPaths);
+
+    std::vector<std::filesystem::path> palette_paths;
+    palette_paths.reserve(palette_path_strs.size());
+    for (const auto &path_str : palette_path_strs) {
+        palette_paths.emplace_back(path_str);
+    }
+
+    return TilesetArtifactPaths{
+        std::filesystem::path{tiles_path_str},
+        std::move(palette_paths),
+        std::filesystem::path{metatiles_path_str},
+        std::filesystem::path{metatile_attributes_path_str}};
+}
+
+ChainableResult<AnimationFramePaths>
+ProjectTilesetArtifactKeyProvider::porymap_animation_frame_paths_for(const std::string &tileset_name) const
+{
+    auto metadata_result = metadata_provider_.metadata_for(tileset_name);
+    if (!metadata_result.has_value()) {
+        return ChainableResult<AnimationFramePaths>{
+            FormattableError{format_->format(
+                "failed to get animation paths for tileset '{}'", FormatParam{tileset_name, Style::bold})},
+            metadata_result};
+    }
+
+    const auto &metadata = metadata_result.value();
+    if (!metadata.has_animations()) {
+        // No animations for this tileset
+        return AnimationFramePaths{};
+    }
+
+    // Compute porytiles_managed and anim_c_file_path locally
+    const auto &callback_func = metadata.callback_func();
+    bool porytiles_managed = callback_func.has_value() && callback_points_to_porytiles_managed(callback_func.value());
+
+    std::filesystem::path anim_c_file_path;
+    if (porytiles_managed) {
+        // For Porytiles-managed: <tileset_root>/include/generated_anim_code.h
+        auto tileset_root_result = tileset_root(tileset_name);
+        if (!tileset_root_result.has_value()) {
+            return ChainableResult<AnimationFramePaths>{
+                FormattableError{format_->format(
+                    "failed to compute anim_c_file_path for tileset '{}'", FormatParam{tileset_name, Style::bold})},
+                tileset_root_result};
+        }
+        anim_c_file_path = tileset_root_result.value() / "include" / "generated_anim_code.h";
+    }
+    else {
+        // For vanilla: src/tileset_anims.c
+        anim_c_file_path = project_root_ / tileset_anims_c_rel_path;
+    }
+
+    return parse_anim_incbins_from_file(anim_c_file_path, tileset_name, porytiles_managed, format_);
 }
 
 } // namespace porytiles2

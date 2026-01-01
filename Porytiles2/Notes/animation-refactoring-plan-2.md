@@ -64,7 +64,6 @@ ProjectTilesetArtifactKeyProvider::discover_porytiles_anim_frames(const std::str
     // for Porytiles assets, anim.yaml location is hardcoded to data/tilesets/{primary,secondary}/{tileset_name}/porytiles/anim/anim.yaml
     // extract values from anim.yaml "frames" array under the relevant key (anim_name)
     auto frames = extract_yaml_array(anim_name + ".frames").to_set();
-    frames.insert("key"); // insert key frame, it probably won't be mentioned in the frame array, but Porytiles anims MUST have one 
     return frames;
 }
 
@@ -73,6 +72,15 @@ ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_frame(const std::strin
     const auto asset_path = // see below
     // read isSecondary for 'tileset_name' from headers.h to figure out {primary,secondary}
     // for Porytiles assets, location is hardcoded to data/tilesets/{primary,secondary}/{tileset_name}/porytiles/anim/{anim_name}/{frame_name}.png
+    // at some point, we can support a config override for the 'data/tilesets/{primary,secondary}' path prefix
+    return asset_path;
+}
+
+ChainableResult<ArtifactKey> 
+ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_key_frame(const std::string &tileset_name, const std::string &anim_name) {
+    const auto asset_path = // see below
+    // read isSecondary for 'tileset_name' from headers.h to figure out {primary,secondary}
+    // for Porytiles assets, location is hardcoded to data/tilesets/{primary,secondary}/{tileset_name}/porytiles/anim/{anim_name}/key.png
     // at some point, we can support a config override for the 'data/tilesets/{primary,secondary}' path prefix
     return asset_path;
 }
@@ -128,20 +136,23 @@ if (key_provider_->artifact_exists(porytiles_params_key)) {
         key_provider_->discover_porytiles_anims(tileset->name()),
         "tileset load failed",
         std::unique_ptr<Tileset>);
+
     for (const auto &porytiles_anim_name : porytiles_anims) {
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            key_frame_key,
+            key_provider_->key_for_porytiles_anim_key_frame(tileset->name(), porytiles_anim_name),
+            "tileset load failed",
+            std::unique_ptr<Tileset>);
+        
+        if (!key_provider_->artifact_exists(key_frame_key)) {
+            return FormattableError{missing_required_artifact_msg, FormatParam{key_frame_key.key(), Style::bold}};
+        }
+        
         PT_TRY_ASSIGN_CHAIN_ERR(
             frames,
             key_provider_->discover_porytiles_anim_frames(tileset->name(), porytiles_anim_name),
             "tileset load failed",
             std::unique_ptr<Tileset>);
-
-        if (!frames.contains("key")) {
-            /*
-             * Should this be a required postcondition for discover_porytiles_anim_frames?
-             * Or should we just bake this logic directly into TilesetRepo?
-             */
-            panic("TilesetArtifactKeyProvider::discover_porytiles_anim_frames implementation did not return a 'key' frame");
-        }
 
         std::vector<ArtifactKey> frames_keys{};
         for (const auto &frame : frames) {
@@ -168,10 +179,12 @@ ProjectTilesetArtifactReader::read_porytiles_anim(
     Tileset &dest,
     const std::string &anim_name,
     const ArtifactKey &params_key,
+    const ArtifactKey &key_frame_key,
     const std::vector<ArtifactKey> &frames_keys) {
     // Read params and frames in one shot
     // We have the artifact keys that were constructed from anim.yaml values
     // Panic if the params_key doesn't exist
+    // Panic if the key_frame_key doesn't exist
     // Panic if expected frame from frames_keys doesn't exist (this vector will include key.png)
 }
 ```

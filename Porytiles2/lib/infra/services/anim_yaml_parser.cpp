@@ -5,8 +5,8 @@
 #include "yaml-cpp/yaml.h"
 
 #include "porytiles2/utilities/result/chainable_result.hpp"
-
-#include <iostream>
+#include "porytiles2/utilities/string_utils.hpp"
+#include "porytiles2/utilities/text/file_highlight_printer.hpp"
 
 namespace {
 
@@ -31,9 +31,10 @@ AnimationParams parse_animation_params(const YAML::Node &node)
     }
 
     if (node["frames"]) {
-        std::vector<std::size_t> frames;
+        std::vector<std::string> frames;
         for (const auto &frame : node["frames"]) {
-            frames.push_back(frame.as<std::size_t>());
+            // Read as string - works for both "0" and 0 due to YAML type coercion
+            frames.push_back(frame.as<std::string>());
         }
         params.frames(std::move(frames));
     }
@@ -64,7 +65,7 @@ YAML::Node serialize_animation_params(const AnimationParams &params)
     // Always write frames array since it's the core animation definition
     YAML::Node frames_node;
     frames_node.SetStyle(YAML::EmitterStyle::Flow);
-    for (const auto frame : params.frames()) {
+    for (const auto &frame : params.frames()) {
         frames_node.push_back(frame);
     }
     node["frames"] = frames_node;
@@ -83,13 +84,11 @@ YAML::Node serialize_animation_params(const AnimationParams &params)
 
 namespace porytiles2 {
 
+AnimYamlParser::AnimYamlParser(gsl::not_null<const TextFormatter *> format) : format_{format} {}
+
 ChainableResult<std::map<std::string, AnimationParams>>
 AnimYamlParser::parse(const std::filesystem::path &yaml_path) const
 {
-    /*
-     * TODO: improve error message formatting, should use FileLineHighlighter
-     */
-
     if (!std::filesystem::exists(yaml_path)) {
         return FormattableError{
             std::vector<std::string>{"anim.yaml file not found", "expected file at: {}"},
@@ -102,21 +101,52 @@ AnimYamlParser::parse(const std::filesystem::path &yaml_path) const
         std::map<std::string, AnimationParams> result;
 
         if (!root.IsMap()) {
-            return FormattableError{
-                std::vector<std::string>{"invalid anim.yaml format", "expected a YAML map at the root level"},
-                std::vector<std::vector<FormatParam>>{{}, {}}};
+            FileHighlightPrinter printer{format_};
+            std::vector<std::string> err_lines;
+            err_lines.push_back(format_->format(
+                "{}:1: invalid anim.yaml format, expected a YAML map at the root level",
+                FormatParam{yaml_path.string(), Style::bold}));
+            err_lines.emplace_back();
+            auto context = printer.print(yaml_path, std::vector<std::size_t>{0});
+            err_lines.insert(err_lines.end(), context.begin(), context.end());
+            return FormattableError{std::move(err_lines)};
         }
 
         for (const auto &entry : root) {
             const auto anim_name = entry.first.as<std::string>();
             const YAML::Node &anim_node = entry.second;
+            const auto mark = entry.first.Mark();
+            const std::size_t line_idx = mark.line;
+
+            // Validate snake_case naming convention
+            if (to_snake_case(anim_name) != anim_name) {
+                FileHighlightPrinter printer{format_};
+                std::vector<std::string> err_lines;
+                err_lines.push_back(format_->format(
+                    "{}:{}: animation name '{}' must be snake_case (expected '{}')",
+                    FormatParam{yaml_path.string(), Style::bold},
+                    FormatParam{line_idx + 1},
+                    FormatParam{anim_name, Style::bold},
+                    FormatParam{to_snake_case(anim_name), Style::bold}));
+                err_lines.emplace_back();
+                auto context = printer.print(yaml_path, std::vector<std::size_t>{line_idx});
+                err_lines.insert(err_lines.end(), context.begin(), context.end());
+                return FormattableError{std::move(err_lines)};
+            }
 
             if (!anim_node.IsMap()) {
-                return FormattableError{
-                    std::vector<std::string>{
-                        "invalid animation entry in anim.yaml",
-                        "animation '{}' should be a YAML map with frame_factor, frame_offset, frames fields"},
-                    std::vector<std::vector<FormatParam>>{{}, {FormatParam{anim_name, Style::bold}}}};
+                FileHighlightPrinter printer{format_};
+                std::vector<std::string> err_lines;
+                err_lines.push_back(format_->format(
+                    "{}:{}: invalid animation entry, '{}' should be a YAML map with frame_factor, frame_offset, frames "
+                    "fields",
+                    FormatParam{yaml_path.string(), Style::bold},
+                    FormatParam{line_idx + 1},
+                    FormatParam{anim_name, Style::bold}));
+                err_lines.emplace_back();
+                auto context = printer.print(yaml_path, std::vector<std::size_t>{line_idx});
+                err_lines.insert(err_lines.end(), context.begin(), context.end());
+                return FormattableError{std::move(err_lines)};
             }
 
             result.insert({anim_name, parse_animation_params(anim_node)});
@@ -125,19 +155,35 @@ AnimYamlParser::parse(const std::filesystem::path &yaml_path) const
         return result;
     }
     catch (const YAML::Exception &e) {
-        return FormattableError{
-            std::vector<std::string>{"failed to parse anim.yaml", "YAML error: {}"},
-            std::vector<std::vector<FormatParam>>{{}, {FormatParam{e.what()}}}};
+        FileHighlightPrinter printer{format_};
+        std::vector<std::string> err_lines;
+
+        const auto &mark = e.mark;
+        if (mark.line >= 0) {
+            const std::size_t line_idx = static_cast<std::size_t>(mark.line);
+            err_lines.push_back(format_->format(
+                "{}:{}: failed to parse anim.yaml: {}",
+                FormatParam{yaml_path.string(), Style::bold},
+                FormatParam{line_idx + 1},
+                FormatParam{e.msg}));
+            err_lines.emplace_back();
+            auto context = printer.print(yaml_path, std::vector<std::size_t>{line_idx});
+            err_lines.insert(err_lines.end(), context.begin(), context.end());
+        }
+        else {
+            err_lines.push_back(format_->format(
+                "{}: failed to parse anim.yaml: {}",
+                FormatParam{yaml_path.string(), Style::bold},
+                FormatParam{e.what()}));
+        }
+
+        return FormattableError{std::move(err_lines)};
     }
 }
 
 ChainableResult<void> AnimYamlParser::write(
     const std::filesystem::path &yaml_path, const std::map<std::string, AnimationParams> &params) const
 {
-    /*
-     * TODO: improve error message formatting, should use FileLineHighlighter
-     */
-
     try {
         // Create parent directories if they don't exist
         if (yaml_path.has_parent_path()) {
