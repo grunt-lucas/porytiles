@@ -49,18 +49,15 @@ class HeaderBehaviorMapProvider final : public BehaviorMapProvider {
      * either the define format or the enum format. The header file is loaded lazily when first accessed via lookup()
      * and cached for subsequent lookups.
      *
-     * @param project_root The root directory of the project
-     * @param header_relative_path The path to the metatile_behaviors.h file relative to project_root
+     * @param header_path The path to the project metatile_behaviors.h file
      * @param format The text formatter for styled output
      * @param diag The user diagnostics for error reporting
      */
     HeaderBehaviorMapProvider(
-        std::filesystem::path project_root,
-        std::filesystem::path header_relative_path,
+        std::filesystem::path header_path,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag)
-        : project_root_{std::move(project_root)}, header_relative_path_{std::move(header_relative_path)},
-          format_{format}, diag_{diag}
+        : header_path_{std::move(header_path)}, format_{format}, diag_{diag}
     {
     }
 
@@ -91,8 +88,7 @@ class HeaderBehaviorMapProvider final : public BehaviorMapProvider {
     template <typename Entry>
     ChainableResult<void> try_add_behavior_entry(const Entry &entry) const;
 
-    std::filesystem::path project_root_;
-    std::filesystem::path header_relative_path_;
+    std::filesystem::path header_path_;
     const TextFormatter *format_;
     const UserDiagnostics *diag_;
     mutable bool loaded_{false};

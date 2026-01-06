@@ -1,5 +1,6 @@
 #pragma once
 
+#include <filesystem>
 #include <memory>
 #include <string>
 #include <unistd.h>
@@ -69,12 +70,16 @@ class CompileTilesetCommand final : public Command {
          * - they are not running the CLI tool from the project root directory
          * - they moved fieldmap.h, metatile_behaviors.h, etc to a different location
          */
+        std::filesystem::path project_root{"."};
+        std::filesystem::path fieldmap_header_root_relative{"include/fieldmap.h"};
+        std::filesystem::path behaviors_header_root_relative{"include/constants/metatile_behaviors.h"};
 
         // Setup layered configuration
-        ProjectTilesetArtifactKeyProvider key_provider{".", text_formatter, diag.get()};
+        ProjectTilesetArtifactKeyProvider key_provider{project_root, text_formatter, diag.get()};
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
-        providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, diag.get(), ".", key_provider));
-        providers.push_back(std::make_unique<HeaderDefineProvider>(".", "include/fieldmap.h", text_formatter));
+        providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, diag.get(), project_root, key_provider));
+        providers.push_back(
+            std::make_unique<HeaderDefineProvider>(project_root, fieldmap_header_root_relative, text_formatter));
         providers.push_back(std::make_unique<DefaultProvider>());
         LazyLayeredConfig config{text_formatter, std::move(providers)};
 
@@ -97,15 +102,15 @@ class CompileTilesetCommand final : public Command {
 
         // Setup behavior map provider and attributes CSV loader
         HeaderBehaviorMapProvider behavior_map_provider{
-            ".", "include/constants/metatile_behaviors.h", text_formatter, diag.get()};
+            project_root / behaviors_header_root_relative, text_formatter, diag.get()};
         AttributesCsvLoader attributes_csv_loader{text_formatter, &behavior_map_provider};
 
         // Setup metadata provider (needed by artifact reader for animation param loading)
-        ProjectTilesetMetadataProvider metadata_provider{".", text_formatter, diag.get()};
+        ProjectTilesetMetadataProvider metadata_provider{project_root, text_formatter, diag.get()};
 
         // Setup the tileset repository
         ProjectTilesetArtifactReader artifact_reader{
-            ".",
+            project_root,
             &png_rgba_loader,
             &png_indexed_loader,
             &jasc_loader,
@@ -115,7 +120,7 @@ class CompileTilesetCommand final : public Command {
             &metadata_provider};
         ProjectTilesetArtifactWriter artifact_writer{
             &config,
-            ".",
+            project_root,
             text_formatter,
             diag.get(),
             &png_rgba_saver,
@@ -123,8 +128,6 @@ class CompileTilesetCommand final : public Command {
             &jasc_saver,
             &anim_yaml_parser,
             &anim_code_generator};
-        // We already set this up earlier for the Yaml config provider
-        // ProjectTilesetArtifactKeyProvider key_provider{"."};
         ProjectArtifactChecksumProvider checksum_provider{&key_provider};
         TilesetRepo repo{
             &checksum_provider,

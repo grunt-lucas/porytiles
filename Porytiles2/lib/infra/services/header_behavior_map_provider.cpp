@@ -75,7 +75,6 @@ ChainableResult<void> HeaderBehaviorMapProvider::try_add_behavior_entry(const En
 
     auto value = static_cast<std::uint16_t>(raw_value);
     const auto &new_pos = entry.position();
-    const auto header_path = header_relative_path_.string();
 
     // Check for duplicate name
     if (name_to_value_.contains(name)) {
@@ -84,7 +83,7 @@ ChainableResult<void> HeaderBehaviorMapProvider::try_add_behavior_entry(const En
         return make_duplicate_error(
             format_->format(
                 "{}:{}:{}: duplicate behavior name '{}'",
-                FormatParam{header_path, Style::bold},
+                FormatParam{header_path_, Style::bold},
                 new_pos.line,
                 new_pos.column,
                 FormatParam{name, Style::bold}),
@@ -104,7 +103,7 @@ ChainableResult<void> HeaderBehaviorMapProvider::try_add_behavior_entry(const En
         return make_duplicate_error(
             format_->format(
                 "{}:{}:{}: duplicate behavior value '{}': both '{}' and '{}' have this value",
-                FormatParam{header_path, Style::bold},
+                FormatParam{header_path_, Style::bold},
                 new_pos.line,
                 new_pos.column,
                 FormatParam{value, Style::bold},
@@ -150,7 +149,7 @@ ChainableResult<std::uint16_t> HeaderBehaviorMapProvider::lookup(const std::stri
         return FormattableError{
             "behavior '{}' not found in '{}'",
             FormatParam{behavior_name, Style::bold},
-            FormatParam{header_relative_path_.string(), Style::bold}};
+            FormatParam{header_path_.string(), Style::bold}};
     }
     return it->second;
 }
@@ -167,7 +166,7 @@ ChainableResult<std::string> HeaderBehaviorMapProvider::lookup(std::uint16_t beh
         return FormattableError{
             "unknown behavior value '{}' not found in '{}'",
             FormatParam{behavior_value, Style::bold},
-            FormatParam{header_relative_path_.string(), Style::bold}};
+            FormatParam{header_path_.string(), Style::bold}};
     }
     return it->second;
 }
@@ -183,10 +182,8 @@ ChainableResult<void> HeaderBehaviorMapProvider::ensure_loaded() const
 
     loaded_ = true;
 
-    const auto header_path = project_root_ / header_relative_path_;
-
     // Create and store CParserFacade for rich error formatting with source context
-    driver_ = std::make_unique<CParserFacade>(header_path, format_);
+    driver_ = std::make_unique<CParserFacade>(header_path_, format_);
 
     // Parse #define statements
     auto defines_result = driver_->parse_defines();
@@ -222,7 +219,7 @@ ChainableResult<void> HeaderBehaviorMapProvider::ensure_loaded() const
     if (name_to_value_.empty()) {
         load_failed_ = true;
         return FormattableError{
-            "{}: no behavior definitions exist in file", FormatParam{header_path.string(), Style::bold}};
+            "{}: no behavior definitions exist in file", FormatParam{header_path_.string(), Style::bold}};
     }
 
     return {};
