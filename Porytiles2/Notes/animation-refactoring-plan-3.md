@@ -90,9 +90,12 @@ but key generation for new Porymap frames fails because it tries to parse files 
 
 ### Animation Management Modes
 
+Two modes with an optional flag for fine-grained control:
+
 - `porytiles_managed` (default): Porytiles owns animation code generation, uses deterministic paths
-- `user_managed`: Porytiles reads existing animations, doesn't generate code or modify callback
-- `hybrid`: Porytiles compiles new frames but user controls callback wiring
+  - `overwrite_callback: true` (default): Porytiles generates code AND updates `.callback` in headers.h
+  - `overwrite_callback: false`: Porytiles generates code but leaves `.callback` alone (user wires their own callback)
+- `user_managed`: Porytiles reads existing animations but doesn't write Porymap component files. Uses discovery-based key generation for Porymap artifacts. User fully controls animation file organization and callback wiring.
 
 ## Configuration
 
@@ -110,13 +113,21 @@ Add to config schema:
 ```yaml
 # In project root porytiles.yaml (defaults)
 animation:
-  management_mode: porytiles_managed  # or "user_managed" or "hybrid"
-  overwrite_callback: true            # whether to update headers.h callback
+  management_mode: porytiles_managed  # or "user_managed"
+  overwrite_callback: true            # only applies to porytiles_managed mode
 
 # In tileset porytiles/porytiles.yaml (override if needed)
 animation:
   management_mode: user_managed  # This tileset keeps manual control
 ```
+
+#### Mode + Flag Behavior Summary
+
+| Mode | overwrite_callback | Writes Frames | Generates Code | Updates Callback | Key Generation |
+|------|-------------------|---------------|----------------|------------------|----------------|
+| `porytiles_managed` | `true` (default) | Yes | Yes | Yes | Deterministic |
+| `porytiles_managed` | `false` | Yes | Yes | **No** | Deterministic |
+| `user_managed` | (ignored) | No | No | No | Discovery-based |
 
 ## Animation Components
 
@@ -297,7 +308,7 @@ However, if this file doesn't exist (first-time import case), then we'll need to
 ##### Project Key Provider
 
 **KEY CHANGE FROM REVISION 2**: `key_for_porymap_anim_frame` is now mode-aware.
-For `porytiles_managed` and `hybrid` modes, key generation is **deterministic**.
+For `porytiles_managed` mode, key generation is **deterministic**.
 For `user_managed` mode, key generation uses **discovery** (same as Revision 2).
 
 ```c++
@@ -349,7 +360,6 @@ ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_frame(const std::string 
 
     switch (mode) {
         case AnimationManagementMode::porytiles_managed:
-        case AnimationManagementMode::hybrid:
             // DETERMINISTIC: Porytiles controls output location
             // Location is: data/tilesets/{primary,secondary}/{tileset_name}/anim/{anim_name}/{frame_name}.png
             return ArtifactKey{tileset_path / anim_dir / anim_name / (frame_name + ".png")};
@@ -435,8 +445,11 @@ ProjectTilesetArtifactReader::read_porymap_anim(
 ```
 
 #### Project Writer
-For `porytiles_managed` and `hybrid` modes, key generation is deterministic, so writing works.
+For `porytiles_managed` mode, key generation is deterministic, so writing works.
 For `user_managed` mode, the writer should NOT write Porymap animation files (user manages their own).
+
+The `overwrite_callback` flag controls whether Porytiles updates the `.callback` field in headers.h.
+This flag is only relevant in `porytiles_managed` mode.
 
 ```c++
 // TilesetRepo::save snippet for Porymap animations
@@ -446,7 +459,7 @@ if (mode == AnimationManagementMode::user_managed) {
     // Skip writing Porymap animations - user manages their own
     // We might still update anim.yaml or emit warnings
 } else {
-    // porytiles_managed or hybrid: deterministic key generation works
+    // porytiles_managed: deterministic key generation works
     for (const auto &porymap_anim : tileset.porymap_component().anims() | std::views::values) {
         for (std::size_t i = 0; i < porymap_anim.frame_count(); i++) {
             const auto frame_name = std::to_string(i);
@@ -543,13 +556,28 @@ if (!key_provider_->artifact_exists(porytiles_anim_params_key)) {
 
 ## Summary Table
 
-| Method | Porytiles-Managed / Hybrid | User-Managed / Vanilla |
-|--------|---------------------------|------------------------|
+### Discovery vs Key Generation by Mode
+
+| Method | Porytiles-Managed | User-Managed |
+|--------|-------------------|--------------|
 | `discover_porytiles_anims` | Scan `anim.yaml` | Scan `anim.yaml` |
 | `discover_porymap_anims` | Scan `generated_anim_code.h` | Scan INCBIN declarations |
 | `key_for_porytiles_anim_frame` | **Deterministic** | **Deterministic** |
 | `key_for_porymap_anim_frame` | **Deterministic** | Discovery-based |
 | Write Porymap animations | Yes | No (user manages) |
+
+### Mode + Flag Behavior Matrix
+
+| Mode | overwrite_callback | Writes Frames | Generates Code | Updates Callback | Key Generation |
+|------|-------------------|---------------|----------------|------------------|----------------|
+| `porytiles_managed` | `true` (default) | Yes | Yes | Yes | Deterministic |
+| `porytiles_managed` | `false` | Yes | Yes | **No** | Deterministic |
+| `user_managed` | (ignored) | No | No | No | Discovery-based |
+
+**Key insight**: The `overwrite_callback` flag provides fine-grained control within `porytiles_managed` mode.
+Users who want Porytiles to compile animation frames and generate code, but want to wire their own
+callback function, can set `overwrite_callback: false`. This is useful for custom animation behaviors
+that go beyond what Porytiles auto-generates.
 
 ## Precondition / Invariant Summaries
 Porytiles should minimize the number of preconditions / invariants users must follow
