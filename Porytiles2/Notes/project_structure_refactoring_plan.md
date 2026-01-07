@@ -24,6 +24,7 @@ This document consolidates the project structure and animation refactoring plans
     - [5.3 Porytiles Animation Component](#53-porytiles-animation-component)
       - [Artifact: Animation Frames](#artifact-animation-frames)
       - [Artifact: Animation Parameters (anim.yaml)](#artifact-animation-parameters-animyaml)
+      - [Frame Name Preservation](#frame-name-preservation)
       - [Project Key Provider](#project-key-provider)
       - [Project Reader](#project-reader)
     - [5.4 Porymap Animation Component](#54-porymap-animation-component)
@@ -44,6 +45,15 @@ This document consolidates the project structure and animation refactoring plans
       - [After Import](#after-import)
       - [File Structure After Import](#file-structure-after-import)
     - [7.3 Error Handling \& Rollback](#73-error-handling--rollback)
+    - [7.4 tileset\_anims.c Integration](#74-tileset_animsc-integration)
+      - [Changes Made by Import](#changes-made-by-import)
+      - [Component: TilesetAnimsModifier](#component-tilesetanimsmodifier)
+      - [Restore Behavior](#restore-behavior)
+  - [7.5 C Header File Modification](#75-c-header-file-modification)
+    - [Components Needed](#components-needed)
+      - [HeaderStructFieldWriter](#headerstructfieldwriter)
+      - [IncbinDeclarationWriter](#incbindeclarationwriter)
+    - [Write Order for Atomicity](#write-order-for-atomicity)
   - [8. Restore Workflow](#8-restore-workflow)
     - [8.1 Default Behavior (Headers Only)](#81-default-behavior-headers-only)
     - [8.2 Full Cleanup (--full flag)](#82-full-cleanup---full-flag)
@@ -62,6 +72,16 @@ This document consolidates the project structure and animation refactoring plans
     - [Discovery vs Key Generation](#discovery-vs-key-generation)
     - [Animation Configuration Behavior](#animation-configuration-behavior)
     - [Operation vs Path Types](#operation-vs-path-types)
+  - [Appendix C: Implementation Roadmap](#appendix-c-implementation-roadmap)
+    - [Phase 1: Configuration Foundation](#phase-1-configuration-foundation)
+    - [Phase 2: Frame Name Preservation](#phase-2-frame-name-preservation)
+    - [Phase 3: Utility Directory \& Metadata](#phase-3-utility-directory--metadata)
+    - [Phase 4: VanillaAnimationImporter](#phase-4-vanillaanimationimporter)
+    - [Phase 5: C Header File Writers](#phase-5-c-header-file-writers)
+    - [Phase 6: Import Use Case](#phase-6-import-use-case)
+    - [Phase 7: Restore Use Case](#phase-7-restore-use-case)
+    - [Phase 8: Polish \& Edge Cases](#phase-8-polish--edge-cases)
+    - [Implementation Notes](#implementation-notes)
 
 ---
 
@@ -300,11 +320,20 @@ Location: `porytiles/anim/anim.yaml`
 # Animation with named frames
 flower:
   frames: ["center", "left", "center", "right"]
+  frame_names: ["center", "left", "right"]  # Unique frame file names (for round-trip preservation)
 
-# Animation with numbered frames
+# Animation with numbered frames (frame_names optional when using numbers)
 water:
   frame_offset: 1
   frames: ["0", "1", "2", "3"]
+
+# Complete example with all timing parameters
+flower_red:
+  frames: ["center", "left", "center", "right"]
+  frame_names: ["center", "left", "right"]
+  frame_factor: 16      # Modulus divisor for timer % frame_factor (default: 16)
+  frame_offset: 0       # Remainder for timer check (default: 0)
+  counter_max: 256      # Timer wrap-around value (default: 256)
 
 # INVALID: MyAnim fails because to_snake_case("MyAnim") != "MyAnim"
 # MyAnim:
@@ -312,6 +341,31 @@ water:
 ```
 
 Top-level keys are animation names. The `frames` array lists all non-key frames in playback order.
+
+#### Frame Name Preservation
+
+Named frames (e.g., `center.png`, `left.png`) are a Porytiles authoring convenience. During compile, they become numeric (`0.png`, `1.png`). To preserve named frames across compile→decompile round-trips:
+
+**The `frame_names` field** stores unique frame file names in index order:
+- `frame_names: ["center", "left", "right"]` means index 0 = "center", index 1 = "left", etc.
+- During compile: named frames → numeric frames (index based on position in `frame_names`)
+- During decompile: numeric frames → named frames (lookup by index in `frame_names`)
+
+**Compile behavior:**
+```
+porytiles/anim/flower/center.png → anim/flower/0.png
+porytiles/anim/flower/left.png   → anim/flower/1.png
+porytiles/anim/flower/right.png  → anim/flower/2.png
+```
+
+**Decompile behavior (with frame_names present):**
+```
+anim/flower/0.png → porytiles/anim/flower/center.png
+anim/flower/1.png → porytiles/anim/flower/left.png
+anim/flower/2.png → porytiles/anim/flower/right.png
+```
+
+**Decompile behavior (without frame_names):** Numeric names preserved as-is.
 
 #### Project Key Provider
 
@@ -668,6 +722,137 @@ If import fails partway through:
 - Don't leave partial header modifications
 - Provide clear error message indicating what failed and why
 
+### 7.4 tileset_anims.c Integration
+
+Porytiles automatically wires generated animation code into `src/tileset_anims.c` during import.
+
+#### Changes Made by Import
+
+1. **Add #include directive** at the top of the file (after existing includes):
+```c
+#include "data/tilesets/primary/general/include/generated_anim_code.h"
+```
+
+2. **Modify the callback function** to delegate to generated code:
+```c
+void InitTilesetAnim_General(void)
+{
+    // [Porytiles] Original code preserved below
+    // sSecondaryTilesetAnimCounter = 0;
+    // sSecondaryTilesetAnimCounterMax = 256;
+    // sSecondaryTilesetAnimCallback = TilesetAnim_General;
+
+    InitTilesetAnim_PorytilesManaged_General();
+}
+```
+
+The original callback body is preserved as comments for reference and potential manual restoration.
+
+#### Component: TilesetAnimsModifier
+
+A new infra-layer service responsible for parsing and modifying `tileset_anims.c`:
+
+```c++
+class TilesetAnimsModifier {
+  public:
+    /**
+     * @brief Wire generated animation code into tileset_anims.c
+     *
+     * @param tileset_name The tileset to wire (e.g., "gTileset_General")
+     * @param generated_header_path Path to generated_anim_code.h
+     * @pre Callback function for tileset must exist in tileset_anims.c
+     * @post #include directive added, callback modified to delegate
+     */
+    ChainableResult<void> wire_generated_code(
+        const std::string &tileset_name,
+        const std::filesystem::path &generated_header_path);
+
+    /**
+     * @brief Restore original callback from comments
+     *
+     * @param tileset_name The tileset to restore
+     * @pre Callback must have Porytiles comment markers
+     * @post Original code restored, #include removed
+     */
+    ChainableResult<void> restore_original_callback(const std::string &tileset_name);
+};
+```
+
+#### Restore Behavior
+
+During restore, `TilesetAnimsModifier::restore_original_callback`:
+1. Finds the callback function for the tileset
+2. Extracts original code from preserved comments
+3. Replaces the delegation call with original code
+4. Removes the `#include` directive for the generated header
+
+---
+
+## 7.5 C Header File Modification
+
+Import modifies three C header files to point to Porytiles-managed assets. Each requires careful parsing and modification to preserve existing content.
+
+### Components Needed
+
+#### HeaderStructFieldWriter
+
+Modifies `src/data/tilesets/headers.h` to update Tileset struct field values:
+
+```c++
+class HeaderStructFieldWriter {
+  public:
+    /**
+     * @brief Update field values in a Tileset struct declaration
+     *
+     * @param tileset_name Which tileset struct to modify
+     * @param field_updates Map of field name → new value
+     * @pre Tileset struct must exist in headers.h
+     * @post Field values updated, formatting preserved
+     */
+    ChainableResult<void> update_struct_fields(
+        const std::string &tileset_name,
+        const std::map<std::string, std::string> &field_updates);
+};
+```
+
+#### IncbinDeclarationWriter
+
+Modifies `src/data/tilesets/graphics.h` and `metatiles.h` to add INCBIN declarations:
+
+```c++
+class IncbinDeclarationWriter {
+  public:
+    /**
+     * @brief Add INCBIN declarations for a Porytiles-managed tileset
+     *
+     * @param tileset_name Which tileset these declarations are for
+     * @param declarations List of {variable_name, incbin_path, type} tuples
+     * @post New declarations added to appropriate header file
+     */
+    ChainableResult<void> add_declarations(
+        const std::string &tileset_name,
+        const std::vector<IncbinDeclaration> &declarations);
+
+    /**
+     * @brief Remove INCBIN declarations for a tileset (during restore)
+     */
+    ChainableResult<void> remove_declarations(const std::string &tileset_name);
+};
+```
+
+### Write Order for Atomicity
+
+Import writes files in this order to ensure crash recovery is possible:
+
+1. Write all new managed asset files (`porytiles_src/`, `porytiles_bin/`)
+2. Write `original_artifacts.json` (marks intent to modify headers)
+3. Modify `graphics.h` (add new INCBINs)
+4. Modify `metatiles.h` (add new INCBINs)
+5. Modify `tileset_anims.c` (wire generated code)
+6. Modify `headers.h` (swap variable references)
+
+**Recovery:** If a crash occurs after step 2, `original_artifacts.json` exists but headers are inconsistent. The restore command can detect this and complete the restoration.
+
 ---
 
 ## 8. Restore Workflow
@@ -766,12 +951,26 @@ Users importing vanilla tilesets must ensure their `tileset_anims.c` follows thi
 
 ### 10.2 Needed
 
+**Configuration:**
 - [ ] Tileset path config values (`tileset.paths.primary.src/bin`, etc.)
 - [ ] `animation.overwrite_callback` config value
+
+**Animation System:**
+- [ ] `frame_names` field support in AnimYamlParser (for round-trip preservation)
 - [ ] VanillaAnimationImporter service
+
+**Utility Directory:**
 - [ ] `porytiles/` utility directory support
-- [ ] `original_artifacts.json` handling
-- [ ] `restore-tileset` command
+- [ ] `original_artifacts.json` model and reader/writer
+
+**C File Modification:**
+- [ ] HeaderStructFieldWriter (modify headers.h struct fields)
+- [ ] IncbinDeclarationWriter (modify graphics.h, metatiles.h)
+- [ ] TilesetAnimsModifier (wire generated code into tileset_anims.c)
+
+**Use Cases:**
+- [ ] ImportPrimaryTilesetUseCase (replaces defunct version)
+- [ ] RestoreTilesetUseCase
 - [ ] Pre-import validation
 - [ ] Atomic import with rollback
 
@@ -880,3 +1079,191 @@ for (const auto &porymap_anim : tileset.porymap_component().anims() | std::views
 | **Import** | Scattered (INCBIN) | Deterministic |
 | **Load** | Deterministic | N/A (in-memory) |
 | **Save** | N/A (in-memory) | Deterministic |
+
+---
+
+## Appendix C: Implementation Roadmap
+
+This section outlines a high-level step-by-step plan to implement the refactoring. Each phase builds on the previous, allowing incremental testing and validation.
+
+### Phase 1: Configuration Foundation
+
+**Goal:** Add config values needed by the import workflow.
+
+1. **Add tileset path config values** to `config_schema.yaml`:
+   - `tileset.paths.primary.src` (default: `data/tilesets/primary`)
+   - `tileset.paths.primary.bin` (default: `data/tilesets/primary`)
+   - `tileset.paths.secondary.src` (default: `data/tilesets/secondary`)
+   - `tileset.paths.secondary.bin` (default: `data/tilesets/secondary`)
+
+2. **Add animation config value**:
+   - `tileset.animations.overwrite_callback` (default: `true`)
+
+3. **Regenerate config files** using `Scripts/generate_config.py`
+
+4. **Update key providers** to use new config values for path computation
+
+**Verification:** Config values accessible and key generation uses them correctly.
+
+---
+
+### Phase 2: Frame Name Preservation
+
+**Goal:** Enable lossless named frame round-trips.
+
+1. **Add `frame_names` field to AnimationParams** model
+
+2. **Update AnimYamlParser** to read/write `frame_names`
+
+3. **Update compile workflow** to map named frames → numeric indices
+
+4. **Update decompile workflow** to map numeric indices → named frames
+
+**Verification:** Compile a tileset with named frames, decompile it, verify names restored.
+
+---
+
+### Phase 3: Utility Directory & Metadata
+
+**Goal:** Establish porytiles/ directory structure and managed-status tracking.
+
+1. **Create OriginalArtifacts model** (`domain/models/`)
+   - Fields: version, tiles, palettes, metatiles, metatileAttributes, callback
+
+2. **Create OriginalArtifactsReader/Writer** (`infra/services/`)
+   - JSON serialization using nlohmann::json
+
+3. **Update ProjectArtifactChecksumProvider** to write checksums to `porytiles/tilesets/{name}/`
+
+4. **Add utility directory creation** to key provider or a dedicated service
+
+**Verification:** Create porytiles/ structure, write/read original_artifacts.json.
+
+---
+
+### Phase 4: VanillaAnimationImporter
+
+**Goal:** Import animations from vanilla tileset_anims.c.
+
+1. **Create VanillaAnimationImporter** class (`infra/services/`)
+   - Reuse existing AnimCodeParser for callback chain parsing
+   - Read frames from INCBIN paths (scattered locations)
+   - Construct Animation<Rgba32> objects
+
+2. **Add key frame extraction** using AnimationDecompiler logic
+
+3. **Generate anim.yaml** with extracted parameters
+
+**Verification:** Import animations from test vanilla tileset, verify anim.yaml and frames created.
+
+---
+
+### Phase 5: C Header File Writers
+
+**Goal:** Enable modification of pokeemerald C header files.
+
+1. **Create HeaderStructFieldWriter** (`infra/services/`)
+   - Parse headers.h to locate Tileset struct
+   - Update field values preserving formatting
+   - Handle edge cases (multiline values, comments)
+
+2. **Create IncbinDeclarationWriter** (`infra/services/`)
+   - Add new INCBIN declarations to graphics.h
+   - Add new INCBIN declarations to metatiles.h
+   - Support removal during restore
+
+3. **Create TilesetAnimsModifier** (`infra/services/`)
+   - Parse tileset_anims.c to locate callback function
+   - Insert #include directive
+   - Modify callback body (preserve original as comments)
+   - Support restore (uncomment original, remove delegation)
+
+**Verification:** Modify test headers, verify compilation succeeds.
+
+---
+
+### Phase 6: Import Use Case
+
+**Goal:** Orchestrate full import workflow.
+
+1. **Create ImportPrimaryTilesetUseCase** (`app/use_cases/`)
+   - Pre-import validation (tileset exists, not managed, naming conventions)
+   - Orchestrate: VanillaAnimationImporter → TilesetFactory → TilesetRepo::save
+   - Write original_artifacts.json
+   - Call header writers
+   - Transaction semantics (rollback on failure)
+
+2. **Add CLI command** `porytiles import-tileset <tileset_name>`
+
+3. **Integration tests** against test pokeemerald project
+
+**Verification:** Import gTileset_General, verify all files created, project compiles.
+
+---
+
+### Phase 7: Restore Use Case
+
+**Goal:** Revert to vanilla state.
+
+1. **Create RestoreTilesetUseCase** (`app/use_cases/`)
+   - Read original_artifacts.json
+   - Call header writers to restore original values
+   - Call TilesetAnimsModifier to restore callback
+   - Delete original_artifacts.json
+   - Optionally delete porytiles_src/, porytiles_bin/ (`--full` flag)
+
+2. **Add CLI command** `porytiles restore-tileset <tileset_name> [--full]`
+
+3. **Integration tests** for restore workflow
+
+**Verification:** Import, then restore, verify vanilla state returns.
+
+---
+
+### Phase 8: Polish & Edge Cases
+
+**Goal:** Handle edge cases and improve UX.
+
+1. **Improve error messages** for common failures
+   - Wrong animation naming convention
+   - Missing frames
+   - Already managed tileset
+
+2. **Add `--force` flag** to re-import already-managed tilesets
+
+3. **Handle tilesets without animations** (import non-animated tilesets)
+
+4. **Documentation** and usage examples
+
+**Verification:** Test edge cases, verify clear error messages.
+
+---
+
+### Implementation Notes
+
+**Testing Strategy:**
+- Unit tests for each new service (parsers, writers)
+- Integration tests using `pokeemerald_porytilestesttilesets` test project
+- Round-trip tests: import → compile → decompile → verify equality
+
+**Key Files to Modify:**
+- `Porytiles2/config_templates/config_schema.yaml` — new config values
+- `Porytiles2/include/porytiles2/domain/models/animation_params.hpp` — frame_names field
+- `Porytiles2/lib/infra/services/anim_yaml_parser.cpp` — frame_names parsing
+- New files in `infra/services/` for header writers
+- New files in `app/use_cases/` for import/restore
+
+**Dependencies Between Phases:**
+```
+Phase 1 (Config) ─────────────────────────────────────────────┐
+                                                              │
+Phase 2 (Frame Names) ────────────────────────────────────────┤
+                                                              │
+Phase 3 (Utility Dir) ────────────────────────────────────────┤
+                                                              ▼
+Phase 4 (VanillaImporter) ──► Phase 6 (Import UseCase) ──► Phase 8 (Polish)
+                                        │
+Phase 5 (Header Writers) ───────────────┤
+                                        │
+                                        ▼
+                              Phase 7 (Restore UseCase)
