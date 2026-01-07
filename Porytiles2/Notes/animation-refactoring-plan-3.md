@@ -36,6 +36,14 @@
     - [Porytiles/Porymap Animation Name Conversions](#porytilesporymap-animation-name-conversions)
     - [Porytiles Animations Must Follow `porytiles/anim/{anim_name}` Structure](#porytiles-animations-must-follow-porytilesanimanim_name-structure)
     - [Porymap Animation Frame Path Convention](#porymap-animation-frame-path-convention)
+  - [Appendix: Vanilla Import Workflow Design](#appendix-vanilla-import-workflow-design)
+    - [The Problem: Frame Location Mismatch](#the-problem-frame-location-mismatch)
+    - [The Core Insight](#the-core-insight)
+    - [The Three-Workflow Model](#the-three-workflow-model)
+    - [Where VanillaAnimationImporter Lives](#where-vanillaanimationimporter-lives)
+    - [ImportUseCase Pseudocode](#importusecase-pseudocode)
+    - [The Key Invariant](#the-key-invariant)
+    - [Why NOT Put This in TilesetRepo](#why-not-put-this-in-tilesetrepo)
 
 # Animation Loading Refactoring Plan (Revision 3)
 
@@ -599,3 +607,115 @@ by parsing INCBIN declarations in `tileset_anims.c`. After import, frames are wr
 
 Users must ensure their frame arrays in `tileset_anims.c` follow the naming convention: `gTilesetAnims_{TilesetName}_{AnimName}{_optional_suffix}`
 This allows Porytiles to discover and import existing animations during first-time onboarding.
+
+## Appendix: Vanilla Import Workflow Design
+
+### The Problem: Frame Location Mismatch
+
+The main plan establishes that `key_for_porymap_anim_frame` is **always deterministic**. This works perfectly for Porytiles-managed tilesets. However, for first-time vanilla imports, there's a mismatch:
+
+| What We Need | Source |
+|--------------|--------|
+| **Discovery** (what exists) | Parse `tileset_anims.c` ✓ |
+| **Key Generation** (where to write) | Deterministic paths ✓ |
+| **Reading Frames** (where they currently are) | Scattered vanilla paths ✗ |
+
+The standard `TilesetRepo::load` assumes that discovered artifacts exist at their deterministic key locations. For vanilla imports, frames are scattered wherever INCBIN declarations point—not at deterministic paths.
+
+### The Core Insight
+
+**Import is not a load operation.** It's a **migration/transformation**:
+
+| Operation | Source Paths | Destination Paths |
+|-----------|--------------|-------------------|
+| **Import** | Scattered (parsed from INCBIN) | Deterministic |
+| **Load** | Deterministic | N/A (in-memory) |
+| **Save** | N/A (in-memory) | Deterministic |
+
+TilesetRepo handles Load/Save with deterministic paths. Import bridges from the chaotic vanilla world to the deterministic Porytiles world.
+
+### The Three-Workflow Model
+
+```
+┌─────────────────────────────────────────────────────────────────┐
+│                         IMPORT (one-time)                        │
+│  Vanilla tileset → VanillaAnimationImporter → TilesetRepo::save │
+│  (scattered paths)        (reads chaos)        (writes order)   │
+└─────────────────────────────────────────────────────────────────┘
+                                ↓
+                    Tileset is now "Porytiles-managed"
+                                ↓
+┌─────────────────────────────────────────────────────────────────┐
+│                    COMPILE (repeatable)                          │
+│  TilesetRepo::load(porytiles) → transform → TilesetRepo::save   │
+│  (deterministic)                           (deterministic)       │
+└─────────────────────────────────────────────────────────────────┘
+
+┌─────────────────────────────────────────────────────────────────┐
+│                   DECOMPILE (repeatable)                         │
+│  TilesetRepo::load(porymap) → transform → TilesetRepo::save     │
+│  (deterministic)                         (deterministic)         │
+└─────────────────────────────────────────────────────────────────┘
+```
+
+### Where VanillaAnimationImporter Lives
+
+```
+ImportUseCase (app layer)
+    ├── VanillaAnimationImporter (infra) ← reads from scattered paths
+    ├── TilesetFactory (domain)          ← creates empty tileset
+    └── TilesetRepo (infra)              ← saves to deterministic paths
+```
+
+**VanillaAnimationImporter is self-contained:**
+- Lives in `infra/` because it does I/O (parses C files, reads PNGs)
+- Has its **own internal path-finding logic** for parsing INCBIN declarations
+- Does NOT use `ProjectTilesetArtifactKeyProvider`—it predates the "managed" state
+- Returns in-memory `Animation<Rgba32>` objects with frame data already loaded
+
+### ImportUseCase Pseudocode
+
+```c++
+class ImportTilesetUseCase {
+  public:
+    ChainableResult<void> execute(const std::string &tileset_name) {
+        // 1. Use VanillaAnimationImporter to read from scattered vanilla paths
+        //    This is the ONLY place that deals with INCBIN parsing for reads
+        PT_TRY_ASSIGN(imported_anims,
+            vanilla_importer_->import_animations(tileset_name));
+
+        // 2. Create a new Tileset (or load existing non-anim parts)
+        PT_TRY_ASSIGN(tileset, tileset_factory_->create(tileset_name));
+
+        // 3. Add imported animations to tileset (in-memory)
+        for (auto &[name, anim] : imported_anims) {
+            tileset->porytiles_component().add_animation(name, std::move(anim));
+        }
+
+        // 4. Save via TilesetRepo - writes to DETERMINISTIC paths
+        //    This creates anim.yaml, porytiles/anim/*, anim/*, generated_anim_code.h
+        PT_TRY(tileset_repo_->save(*tileset));
+
+        // Tileset is now "Porytiles-managed" - all future ops use deterministic paths
+        return {};
+    }
+};
+```
+
+### The Key Invariant
+
+> **Once Import completes, the tileset is "Porytiles-managed" and all key generation is deterministic.**
+
+This means:
+- `anim.yaml` exists → Porytiles component can be discovered/loaded
+- `generated_anim_code.h` exists → Porymap component can be discovered/loaded
+- All frames are at deterministic paths → `key_for_*_anim_frame` works for both read and write
+
+### Why NOT Put This in TilesetRepo
+
+If we added `load_vanilla_first_time` to TilesetRepo:
+1. **Wrong abstraction level** — "vanilla" is a use-case concept, not a persistence concept
+2. **Leaky abstraction** — TilesetRepo would need to know about INCBIN parsing, `tileset_anims.c`, etc.
+3. **Breaks SRP** — TilesetRepo's job is artifact persistence with deterministic keys, not migration
+
+This follows the **Repository Pattern** correctly: repositories provide a collection-like interface for domain objects. They shouldn't know about data migration or transformation between different storage formats. That's a **use case** concern, handled by an application service that orchestrates the migration.
