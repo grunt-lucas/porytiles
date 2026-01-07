@@ -1,4 +1,10 @@
-#include "porytiles2/app/use_cases/import_primary_tileset.hpp"
+/**
+ * @file defunct_import_primary_tileset.cpp
+ * @deprecated This file contains the legacy import use case.
+ * A new import system is being developed that separates "import" (vanilla migration)
+ * from "decompile" (Porymap → Porytiles transformation). See project_structure_refactoring_plan.md.
+ */
+#include "porytiles2/app/use_cases/defunct_import_primary_tileset.hpp"
 
 #include <memory>
 #include <string>
@@ -8,7 +14,7 @@
 
 namespace porytiles2 {
 
-ChainableResult<void> ImportPrimaryTileset::import(const std::string &name) const
+ChainableResult<void> DefunctImportPrimaryTileset::import(const std::string &name) const
 {
     // 1. Check if the primary tileset exists. If not, abort with error.
     if (!tileset_repo_->exists(name)) {

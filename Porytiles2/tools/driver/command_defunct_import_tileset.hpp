@@ -1,3 +1,9 @@
+/**
+ * @file command_defunct_import_tileset.hpp
+ * @deprecated This file contains the legacy import command.
+ * A new import system is being developed that separates "import" (vanilla migration)
+ * from "decompile" (Porymap → Porytiles transformation). See project_structure_refactoring_plan.md.
+ */
 #pragma once
 
 #include <memory>
@@ -7,11 +13,11 @@
 #include "CLI/CLI.hpp"
 #include "fruit/fruit.h"
 
-#include "porytiles2/app/use_cases/import_primary_tileset.hpp"
+#include "porytiles2/app/use_cases/defunct_import_primary_tileset.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
+#include "porytiles2/domain/services/defunct_primary_tileset_importer.hpp"
 #include "porytiles2/domain/services/palette_printer.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
-#include "porytiles2/domain/services/primary_tileset_importer.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
 #include "porytiles2/infra/config/default_provider.hpp"
 #include "porytiles2/infra/config/header_define_provider.hpp"
@@ -38,9 +44,10 @@
 
 #include "command.hpp"
 
-class ImportTilesetCommand final : public Command {
+class DefunctImportTilesetCommand final : public Command {
   public:
-    explicit ImportTilesetCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+    explicit DefunctImportTilesetCommand(CLI::App &parent_app)
+        : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
     {
         CLI::App &cmd = get_app();
         cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to import")->required();
@@ -96,7 +103,8 @@ class ImportTilesetCommand final : public Command {
         AnimCodeGenerator anim_code_generator{};
 
         // Setup primary importer and compiler
-        PrimaryTilesetImporter importer{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
+        DefunctPrimaryTilesetImporter importer{
+            &config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
         PrimaryTilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
 
         // Setup behavior map provider and attributes CSV loader
@@ -137,7 +145,8 @@ class ImportTilesetCommand final : public Command {
             text_formatter,
             diag.get()};
 
-        ImportPrimaryTileset import_use_case{&repo, &importer, &compiler, &config, &config, text_formatter, diag.get()};
+        DefunctImportPrimaryTileset import_use_case{
+            &repo, &importer, &compiler, &config, &config, text_formatter, diag.get()};
 
         // Run the use case
         auto import_result = import_use_case.import(tileset_name_);
@@ -150,9 +159,9 @@ class ImportTilesetCommand final : public Command {
     }
 
   private:
-    static constexpr auto kCommandName = "import-tileset";
+    static constexpr auto kCommandName = "defunct-import-tileset";
     static constexpr auto kCommandDesc =
-        "Import a tileset, i.e., update the Porytiles assets to match the Porymap assets.";
+        "[DEPRECATED] Import a tileset, i.e., update the Porytiles assets to match the Porymap assets.";
     static constexpr auto kCommandGroup = "COMMANDS";
     std::string tileset_name_;
 };

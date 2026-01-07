@@ -1,3 +1,9 @@
+/**
+ * @file defunct_primary_tileset_importer.hpp
+ * @deprecated This file contains the legacy import implementation.
+ * A new import system is being developed that separates "import" (vanilla migration)
+ * from "decompile" (Porymap → Porytiles transformation). See project_structure_refactoring_plan.md.
+ */
 #pragma once
 
 #include <memory>
@@ -16,10 +22,11 @@ namespace porytiles2 {
 
 /**
  * @brief Service that imports a primary Tileset.
+ * @deprecated See defunct_primary_tileset_importer.hpp file comment.
  */
-class PrimaryTilesetImporter {
+class DefunctPrimaryTilesetImporter {
   public:
-    explicit PrimaryTilesetImporter(
+    explicit DefunctPrimaryTilesetImporter(
         gsl::not_null<const DomainConfig *> config,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag,

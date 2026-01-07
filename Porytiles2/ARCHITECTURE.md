@@ -169,7 +169,7 @@ Unlike pure algorithms, services are classes injected via constructors following
 Examples include:
 
 - `PrimaryTilesetCompiler`: Orchestrates the complete compilation pipeline from Porytiles format to Porymap format
-- `PrimaryTilesetImporter`: Imports Porymap tilesets into Porytiles format (reverse of compilation)
+- `DefunctPrimaryTilesetImporter`: (DEPRECATED) Imports Porymap tilesets into Porytiles format (reverse of compilation). A new import system is being developed.
 - `ImageTileizer`: Converts layer images into tile data structures
 - `LayerImageMetatileizer`: Transforms layer images into metatile assemblies
 - `MetatileDecompiler`: Decompiles Porymap metatile data back into RGBA layer images
@@ -238,7 +238,7 @@ Each use case is a focused class following the Single Responsibility Principle.
 
 Some example use cases include:
 
-- `ImportPrimaryTileset`: Imports Porymap tilesets into Porytiles format (first time only).
+- `DefunctImportPrimaryTileset`: (DEPRECATED) Imports Porymap tilesets into Porytiles format (first time only). A new import system is being developed.
 - `CompilePrimaryTileset`: Orchestrates compilation of a primary tileset from Porytiles RGBA assets to Porymap binary format.
 
 Use cases receive dependencies via constructor injection and return `ChainableResult<T, E>` to propagate errors.
@@ -639,7 +639,7 @@ The `porytiles2` executable uses the **CLI11** library for argument parsing with
 **Command Pattern**:
 The driver uses a `Command` base class that each subcommand inherits from:
 - `CompileTilesetCommand`: Compiles Porytiles assets to Porymap format
-- `ImportTilesetCommand`: Imports existing Porymap tilesets
+- `DefunctImportTilesetCommand`: (DEPRECATED) Imports existing Porymap tilesets. A new import system is being developed.
 
 Each command registers itself with CLI11 and implements a `Run()` method that orchestrates the corresponding use case.
 
