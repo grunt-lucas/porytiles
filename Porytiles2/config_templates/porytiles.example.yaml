@@ -11,10 +11,13 @@ fieldmap:
   num_tiles_per_metatile: 8
 
 diagnostics:
-  include_tags:
-    - "layer-mode-violation"
-    - "tile-color-count-violation"
-  exclude_tags: [ ]
+  errors:
+    include: # explicitly include only two error messages
+      - "layer-mode-violation"
+      - "tile-color-count-violation"
+  warnings: # default settings for warnings, this will include all
+  remarks:
+    exclude: ["*"] # disable all remarks
 
 verify_checksums: true
 

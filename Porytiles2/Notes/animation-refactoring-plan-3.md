@@ -638,7 +638,7 @@ TilesetRepo handles Load/Save with deterministic paths. Import bridges from the 
 
 ```
 ┌─────────────────────────────────────────────────────────────────┐
-│                         IMPORT (one-time)                        │
+│                         IMPORT (one-time)                       │
 │  Vanilla tileset → VanillaAnimationImporter → TilesetRepo::save │
 │  (scattered paths)        (reads chaos)        (writes order)   │
 └─────────────────────────────────────────────────────────────────┘
@@ -646,15 +646,15 @@ TilesetRepo handles Load/Save with deterministic paths. Import bridges from the 
                     Tileset is now "Porytiles-managed"
                                 ↓
 ┌─────────────────────────────────────────────────────────────────┐
-│                    COMPILE (repeatable)                          │
+│                    COMPILE (repeatable)                         │
 │  TilesetRepo::load(porytiles) → transform → TilesetRepo::save   │
-│  (deterministic)                           (deterministic)       │
+│  (deterministic)                           (deterministic)      │
 └─────────────────────────────────────────────────────────────────┘
 
 ┌─────────────────────────────────────────────────────────────────┐
-│                   DECOMPILE (repeatable)                         │
+│                   DECOMPILE (repeatable)                        │
 │  TilesetRepo::load(porymap) → transform → TilesetRepo::save     │
-│  (deterministic)                         (deterministic)         │
+│  (deterministic)                         (deterministic)        │
 └─────────────────────────────────────────────────────────────────┘
 ```
 
