@@ -5,11 +5,11 @@
   - [Solution: Configuration-Driven Key Generation](#solution-configuration-driven-key-generation)
     - [The Core Problem](#the-core-problem)
     - [Key Insight: Discovery vs Key Generation Are Orthogonal](#key-insight-discovery-vs-key-generation-are-orthogonal)
-    - [Animation Management Modes](#animation-management-modes)
+    - [The Solution: Always-Deterministic Key Generation](#the-solution-always-deterministic-key-generation)
   - [Configuration](#configuration)
     - [Configuration Location](#configuration-location)
     - [Configuration Schema](#configuration-schema)
-      - [Mode + Flag Behavior Summary](#mode--flag-behavior-summary)
+      - [Behavior Summary](#behavior-summary)
   - [Animation Components](#animation-components)
     - [Porytiles Animation Component](#porytiles-animation-component)
       - [Artifact: Animation Frames](#artifact-animation-frames)
@@ -30,8 +30,8 @@
     - [Interface](#interface)
     - [Implementation](#implementation)
   - [Summary Table](#summary-table)
-    - [Discovery vs Key Generation by Mode](#discovery-vs-key-generation-by-mode)
-    - [Mode + Flag Behavior Matrix](#mode--flag-behavior-matrix)
+    - [Discovery vs Key Generation](#discovery-vs-key-generation)
+    - [Behavior Summary](#behavior-summary-1)
   - [Precondition / Invariant Summaries](#precondition--invariant-summaries)
     - [Porytiles/Porymap Animation Name Conversions](#porytilesporymap-animation-name-conversions)
     - [Porytiles Animations Must Follow `porytiles/anim/{anim_name}` Structure](#porytiles-animations-must-follow-porytilesanimanim_name-structure)
@@ -91,14 +91,21 @@ but key generation for new Porymap frames fails because it tries to parse files 
 **The fix**: For Porytiles-managed tilesets, `key_for_porymap_anim_frame` uses deterministic paths
 (Porytiles controls where things go). Discovery remains independent.
 
-### Animation Management Modes
+### The Solution: Always-Deterministic Key Generation
 
-Two modes with an optional flag for fine-grained control:
+Since Porytiles must compile animation tiles into `tiles.png` regardless of user preferences, it makes no sense
+to have a mode where Porytiles compiles tiles but doesn't write matching Porymap animation frames. This would
+force users to manually create frames that match exactly what Porytiles wrote — error-prone and tedious.
 
-- `porytiles_managed` (default): Porytiles owns animation code generation, uses deterministic paths
-  - `overwrite_callback: true` (default): Porytiles generates code AND updates `.callback` in headers.h
-  - `overwrite_callback: false`: Porytiles generates code but leaves `.callback` alone (user wires their own callback)
-- `user_managed`: Porytiles reads existing animations but doesn't write Porymap component files. Uses discovery-based key generation for Porymap artifacts. User fully controls animation file organization and callback wiring.
+Therefore, `key_for_porymap_anim_frame` is **always deterministic**, just like `key_for_porytiles_anim_frame`.
+Porytiles always writes both Porytiles component AND Porymap component animation frames.
+
+The only user control is the `overwrite_callback` flag:
+- `overwrite_callback: true` (default): Porytiles generates code AND updates `.callback` in headers.h
+- `overwrite_callback: false`: Porytiles generates code but leaves `.callback` alone (user wires their own callback)
+
+Users who want custom animation driver code simply set `overwrite_callback: false` and write their own
+callback function in `tileset_anims.c`, referencing the Porytiles-generated frames at their deterministic paths.
 
 ## Configuration
 
@@ -116,21 +123,21 @@ Add to config schema:
 ```yaml
 # In project root porytiles.yaml (defaults)
 animation:
-  management_mode: porytiles_managed  # or "user_managed"
-  overwrite_callback: true            # only applies to porytiles_managed mode
+  overwrite_callback: true  # Set to false if you want to write your own callback
 
 # In tileset porytiles/porytiles.yaml (override if needed)
 animation:
-  management_mode: user_managed  # This tileset keeps manual control
+  overwrite_callback: false  # This tileset uses a custom callback
 ```
 
-#### Mode + Flag Behavior Summary
+#### Behavior Summary
 
-| Mode | overwrite_callback | Writes Frames | Generates Code | Updates Callback | Key Generation |
-|------|-------------------|---------------|----------------|------------------|----------------|
-| `porytiles_managed` | `true` (default) | Yes | Yes | Yes | Deterministic |
-| `porytiles_managed` | `false` | Yes | Yes | **No** | Deterministic |
-| `user_managed` | (ignored) | No | No | No | Discovery-based |
+| overwrite_callback | Writes Frames | Generates Code | Updates Callback |
+|-------------------|---------------|----------------|------------------|
+| `true` (default) | Yes | Yes | Yes |
+| `false` | Yes | Yes | **No** |
+
+Key generation is **always deterministic** — Porytiles controls where animation frames are written.
 
 ## Animation Components
 
@@ -298,7 +305,7 @@ The entire `Animation` object for the Porymap component can be constructed from 
 If this file doesn't exist yet (first-time import case), then we have a special code-path to figure out everything from `tileset_anims.c`.
 
 **Source of Truth for Discovery**: `generated_anim_code.h` or `tileset_anims.c`
-**Source of Truth for Key Generation**: Depends on animation management mode
+**Key Generation**: Always deterministic (same as Porytiles component)
 
 **Invariant:** `generated_anim_code.h` will always use `gTilesetAnims_{TilesetName}_{AnimName}{_optional_suffix}`
 as the name format for a tileset animation frame array.
@@ -310,14 +317,13 @@ However, if this file doesn't exist (first-time import case), then we'll need to
 
 ##### Project Key Provider
 
-**KEY CHANGE FROM REVISION 2**: `key_for_porymap_anim_frame` is now mode-aware.
-For `porytiles_managed` mode, key generation is **deterministic**.
-For `user_managed` mode, key generation uses **discovery** (same as Revision 2).
+**KEY CHANGE FROM REVISION 2**: `key_for_porymap_anim_frame` is now **always deterministic**.
+Discovery methods still scan `generated_anim_code.h` or `tileset_anims.c` to find existing animations (needed for vanilla import),
+but key generation always uses the deterministic path convention.
 
 ```c++
 ChainableResult<std::set<std::string>>
 ProjectTilesetArtifactKeyProvider::discover_porymap_anims(const std::string &tileset_name) {
-    // NOTE: Discovery is INDEPENDENT of management mode
     // Always scan the Porymap source of truth (generated_anim_code.h or tileset_anims.c)
     // This supports bidirectional workflows: Porymap -> Porytiles decompilation
 
@@ -336,7 +342,6 @@ ProjectTilesetArtifactKeyProvider::discover_porymap_anims(const std::string &til
 
 ChainableResult<std::set<std::string>>
 ProjectTilesetArtifactKeyProvider::discover_porymap_anim_frames(const std::string &tileset_name, const std::string &anim_name) {
-    // NOTE: Discovery is INDEPENDENT of management mode
     // Always scan the Porymap source of truth
 
     // read isSecondary for 'tileset_name' from headers.h to figure out {primary,secondary}
@@ -356,31 +361,16 @@ ProjectTilesetArtifactKeyProvider::discover_porymap_anim_frames(const std::strin
 
 ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_frame(const std::string &tileset_name, const std::string &anim_name, const std::string &frame_name) {
-    // KEY CHANGE: Mode-aware key generation
-
-    const auto tileset_path = tileset_root(tileset_name);
-    const auto mode = get_animation_management_mode(tileset_name);
-
-    switch (mode) {
-        case AnimationManagementMode::porytiles_managed:
-            // DETERMINISTIC: Porytiles controls output location
-            // Location is: data/tilesets/{primary,secondary}/{tileset_name}/anim/{anim_name}/{frame_name}.png
-            return ArtifactKey{tileset_path / anim_dir / anim_name / (frame_name + ".png")};
-
-        case AnimationManagementMode::user_managed:
-            // DISCOVERY-BASED: Parse existing INCBIN declarations
-            // This is the same as Revision 2 behavior
-            if (exists(generated_anim_code_path)) {
-                return read_g_tileset_anims_var_frame_paths(generated_anim_code_path, tileset_name, anim_name, frame_name);
-            }
-            return read_vanilla_g_tileset_anims_var_frame_paths(tileset_name, anim_name, frame_name);
-    }
+    // DETERMINISTIC: Porytiles controls output location
+    // read isSecondary for 'tileset_name' from headers.h to figure out {primary,secondary}
+    // Location is: data/tilesets/{primary,secondary}/{tileset_name}/anim/{anim_name}/{frame_name}.png
+    return ArtifactKey{tileset_path / anim_dir / anim_name / (frame_name + ".png")};
 }
 ```
 
 #### Artifact: Animation Parameters
-For Porytiles-managed tilesets, animation parameters are stored in `generated_anim_code.h`.
-For user-managed tilesets, animation parameters may be in `tileset_anims.c`.
+Animation parameters are stored in `generated_anim_code.h`.
+For vanilla import cases (before first compile), parameters are read from `tileset_anims.c`.
 
 ##### Project Key Provider
 ```c++
@@ -448,36 +438,27 @@ ProjectTilesetArtifactReader::read_porymap_anim(
 ```
 
 #### Project Writer
-For `porytiles_managed` mode, key generation is deterministic, so writing works.
-For `user_managed` mode, the writer should NOT write Porymap animation files (user manages their own).
+Key generation is always deterministic, so writing Porymap animation frames always works.
 
 The `overwrite_callback` flag controls whether Porytiles updates the `.callback` field in headers.h.
-This flag is only relevant in `porytiles_managed` mode.
 
 ```c++
 // TilesetRepo::save snippet for Porymap animations
 
-const auto mode = get_animation_management_mode(tileset.name());
-if (mode == AnimationManagementMode::user_managed) {
-    // Skip writing Porymap animations - user manages their own
-    // We might still update anim.yaml or emit warnings
-} else {
-    // porytiles_managed: deterministic key generation works
-    for (const auto &porymap_anim : tileset.porymap_component().anims() | std::views::values) {
-        for (std::size_t i = 0; i < porymap_anim.frame_count(); i++) {
-            const auto frame_name = std::to_string(i);
-            // KEY CHANGE: This now succeeds because key_for_porymap_anim_frame is deterministic in managed mode
-            PT_TRY_ASSIGN_CHAIN_ERR(
-                frame_key,
-                key_provider_->key_for_porymap_anim_frame(tileset.name(), porymap_anim.name(), frame_name),
-                "tileset save failed",
-                void);
-            if (auto result = writer_->write_porymap_anim_frame(frame_key, tileset, porymap_anim.name(), frame_name);
-                !result.has_value()) {
-                std::ignore = writer_->rollback();
-                auto failed = FormattableError{"{}: save failed", FormatParam{frame_key.key(), Style::bold}};
-                return ChainableResult<void>{failed, result};
-            }
+for (const auto &porymap_anim : tileset.porymap_component().anims() | std::views::values) {
+    for (std::size_t i = 0; i < porymap_anim.frame_count(); i++) {
+        const auto frame_name = std::to_string(i);
+        // KEY CHANGE: This now succeeds because key_for_porymap_anim_frame is always deterministic
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            frame_key,
+            key_provider_->key_for_porymap_anim_frame(tileset.name(), porymap_anim.name(), frame_name),
+            "tileset save failed",
+            void);
+        if (auto result = writer_->write_porymap_anim_frame(frame_key, tileset, porymap_anim.name(), frame_name);
+            !result.has_value()) {
+            std::ignore = writer_->rollback();
+            auto failed = FormattableError{"{}: save failed", FormatParam{frame_key.key(), Style::bold}};
+            return ChainableResult<void>{failed, result};
         }
     }
 }
@@ -559,28 +540,28 @@ if (!key_provider_->artifact_exists(porytiles_anim_params_key)) {
 
 ## Summary Table
 
-### Discovery vs Key Generation by Mode
+### Discovery vs Key Generation
 
-| Method | Porytiles-Managed | User-Managed |
-|--------|-------------------|--------------|
-| `discover_porytiles_anims` | Scan `anim.yaml` | Scan `anim.yaml` |
-| `discover_porymap_anims` | Scan `generated_anim_code.h` | Scan INCBIN declarations |
-| `key_for_porytiles_anim_frame` | **Deterministic** | **Deterministic** |
-| `key_for_porymap_anim_frame` | **Deterministic** | Discovery-based |
-| Write Porymap animations | Yes | No (user manages) |
+| Method | Discovery | Key Generation |
+|--------|-----------|----------------|
+| `discover_porytiles_anims` | Scan `anim.yaml` | N/A |
+| `discover_porytiles_anim_frames` | Scan `anim.yaml` | N/A |
+| `discover_porymap_anims` | Scan `generated_anim_code.h` or `tileset_anims.c` | N/A |
+| `discover_porymap_anim_frames` | Scan `generated_anim_code.h` or `tileset_anims.c` | N/A |
+| `key_for_porytiles_anim_frame` | N/A | **Always Deterministic** |
+| `key_for_porymap_anim_frame` | N/A | **Always Deterministic** |
 
-### Mode + Flag Behavior Matrix
+### Behavior Summary
 
-| Mode | overwrite_callback | Writes Frames | Generates Code | Updates Callback | Key Generation |
-|------|-------------------|---------------|----------------|------------------|----------------|
-| `porytiles_managed` | `true` (default) | Yes | Yes | Yes | Deterministic |
-| `porytiles_managed` | `false` | Yes | Yes | **No** | Deterministic |
-| `user_managed` | (ignored) | No | No | No | Discovery-based |
+| overwrite_callback | Writes Frames | Generates Code | Updates Callback |
+|-------------------|---------------|----------------|------------------|
+| `true` (default) | Yes | Yes | Yes |
+| `false` | Yes | Yes | **No** |
 
-**Key insight**: The `overwrite_callback` flag provides fine-grained control within `porytiles_managed` mode.
+**Key insight**: The `overwrite_callback` flag provides fine-grained control for users who want custom animation behavior.
 Users who want Porytiles to compile animation frames and generate code, but want to wire their own
-callback function, can set `overwrite_callback: false`. This is useful for custom animation behaviors
-that go beyond what Porytiles auto-generates.
+callback function, can set `overwrite_callback: false`. They can then write their own callback in
+`tileset_anims.c` that references the Porytiles-generated frames at their deterministic paths.
 
 ## Precondition / Invariant Summaries
 Porytiles should minimize the number of preconditions / invariants users must follow
@@ -608,13 +589,13 @@ This makes the Porytiles animation component key provider, reader, and writer lo
 We just assume anim.yaml as source of truth for anim and frame names, and we can easily construct all the frame location paths.
 
 ### Porymap Animation Frame Path Convention
-For **Porytiles-managed** tilesets, Porymap animation frames are stored at deterministic paths:
+Porymap animation frames are always stored at deterministic paths:
 ```
 data/tilesets/{primary,secondary}/{tileset_name}/anim/{anim_name}/{frame_name}.png
 ```
 
-For **user-managed** tilesets, Porymap animation frames can be stored anywhere.
-The key provider discovers their locations by parsing INCBIN declarations.
-Users must ensure their frame arrays follow the naming convention: `gTilesetAnims_{TilesetName}_{AnimName}{_optional_suffix}`
+For vanilla imports (first-time onboarding), VanillaAnimationImporter discovers existing frame locations
+by parsing INCBIN declarations in `tileset_anims.c`. After import, frames are written to the deterministic paths.
 
-This convention allows Porytiles to find and parse animation definitions while giving users flexibility in file organization.
+Users must ensure their frame arrays in `tileset_anims.c` follow the naming convention: `gTilesetAnims_{TilesetName}_{AnimName}{_optional_suffix}`
+This allows Porytiles to discover and import existing animations during first-time onboarding.
