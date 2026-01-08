@@ -73,7 +73,7 @@ This document consolidates the project structure and animation refactoring plans
     - [Animation Configuration Behavior](#animation-configuration-behavior)
     - [Operation vs Path Types](#operation-vs-path-types)
   - [Appendix C: Implementation Roadmap](#appendix-c-implementation-roadmap)
-    - [Phase 1: Configuration Foundation](#phase-1-configuration-foundation)
+    - [~~Phase 1: Configuration Foundation~~ **COMPLETE**](#phase-1-configuration-foundation-complete)
     - [Phase 2: Frame Name Preservation](#phase-2-frame-name-preservation)
     - [Phase 3: Utility Directory \& Metadata](#phase-3-utility-directory--metadata)
     - [Phase 4: VanillaAnimationImporter](#phase-4-vanillaanimationimporter)
@@ -1086,7 +1086,7 @@ for (const auto &porymap_anim : tileset.porymap_component().anims() | std::views
 
 This section outlines a high-level step-by-step plan to implement the refactoring. Each phase builds on the previous, allowing incremental testing and validation.
 
-### Phase 1: Configuration Foundation
+### ~~Phase 1: Configuration Foundation~~ **COMPLETE**
 
 **Goal:** Add config values needed by the import workflow.
 

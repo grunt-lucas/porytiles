@@ -67,6 +67,21 @@ class DefaultProvider final : public ConfigProvider {
 
     [[nodiscard]] LayerValue<TilesPalMode>
     tiles_pal_mode(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] LayerValue<std::string>
+    tileset_paths_primary_src(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] LayerValue<std::string>
+    tileset_paths_primary_bin(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] LayerValue<std::string>
+    tileset_paths_secondary_src(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] LayerValue<std::string>
+    tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] LayerValue<bool>
+    tileset_animations_overwrite_callback(ConfigScopeType type, const std::string &scope) const override;
 };
 
 } // namespace porytiles2

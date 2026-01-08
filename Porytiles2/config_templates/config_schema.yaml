@@ -192,3 +192,53 @@ config_values:
       path: tileset.compile.tiles_pal_mode
     validators: [ ]
     cross_field_validators: [ ]
+
+  - name: tileset_paths_primary_src
+    type: std::string
+    parser: parse_string
+    layer: infra
+    default_value: '"data/tilesets/primary"'
+    yaml:
+      path: tileset.paths.primary.src
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - name: tileset_paths_primary_bin
+    type: std::string
+    parser: parse_string
+    layer: infra
+    default_value: '"data/tilesets/primary"'
+    yaml:
+      path: tileset.paths.primary.bin
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - name: tileset_paths_secondary_src
+    type: std::string
+    parser: parse_string
+    layer: infra
+    default_value: '"data/tilesets/secondary"'
+    yaml:
+      path: tileset.paths.secondary.src
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - name: tileset_paths_secondary_bin
+    type: std::string
+    parser: parse_string
+    layer: infra
+    default_value: '"data/tilesets/secondary"'
+    yaml:
+      path: tileset.paths.secondary.bin
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - name: tileset_animations_overwrite_callback
+    type: bool
+    parser: parse_bool
+    layer: infra
+    default_value: "true"
+    yaml:
+      path: tileset.animations.overwrite_callback
+    validators: [ ]
+    cross_field_validators: [ ]

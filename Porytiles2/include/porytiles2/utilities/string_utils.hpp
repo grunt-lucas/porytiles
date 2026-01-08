@@ -192,6 +192,22 @@ template <typename T>
 }
 
 /**
+ * @brief Identity function for to_string with std::string input.
+ *
+ * @details
+ * This overload enables generic code that calls to_string() to work with std::string types. It simply returns the input
+ * string unchanged. This is needed because std::to_string() only works with numeric types, but generic templates (like
+ * config value caching) may need to convert any type to a string representation.
+ *
+ * @param str The string to return
+ * @return The input string unchanged
+ */
+[[nodiscard]] inline std::string to_string(const std::string &str)
+{
+    return str;
+}
+
+/**
  * @brief Converts a vector to a string representation with curly brace delimiters.
  *
  * @details

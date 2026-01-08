@@ -126,6 +126,21 @@ class HeaderDefineProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<TilesPalMode>
     tiles_pal_mode(ConfigScopeType type, const std::string &scope) const override;
 
+    [[nodiscard]] LayerValue<std::string>
+    tileset_paths_primary_src(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] LayerValue<std::string>
+    tileset_paths_primary_bin(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] LayerValue<std::string>
+    tileset_paths_secondary_src(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] LayerValue<std::string>
+    tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] LayerValue<bool>
+    tileset_animations_overwrite_callback(ConfigScopeType type, const std::string &scope) const override;
+
   private:
     std::unique_ptr<TextFormatter> owned_format_; // Optional owned formatter (when using default ctor)
     const TextFormatter *format_;                 // Non-owning pointer to formatter

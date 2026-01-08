@@ -34,9 +34,39 @@ namespace {
 class MockInfraConfig : public InfraConfig {
   protected:
     [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>>
-    tiles_pal_mode_raw(ConfigScopeType type, const std::string &scope) const override
+    tiles_pal_mode_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{TilesPalMode::true_color, "tiles_pal_mode", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
+    tileset_paths_primary_src_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{std::string{"data/tilesets/primary"}, "tileset_paths_primary_src", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
+    tileset_paths_primary_bin_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{std::string{"data/tilesets/primary"}, "tileset_paths_primary_bin", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
+    tileset_paths_secondary_src_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{std::string{"data/tilesets/secondary"}, "tileset_paths_secondary_src", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
+    tileset_paths_secondary_bin_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{std::string{"data/tilesets/secondary"}, "tileset_paths_secondary_bin", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    tileset_animations_overwrite_callback_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{true, "tileset_animations_overwrite_callback", "mock", {}};
     }
 
   public:

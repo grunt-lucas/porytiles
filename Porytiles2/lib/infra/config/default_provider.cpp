@@ -109,4 +109,34 @@ DefaultProvider::tiles_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_u
     return LayerValue<TilesPalMode>::valid(TilesPalMode::true_color, source_info);
 }
 
+LayerValue<std::string> DefaultProvider::tileset_paths_primary_src(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::string>::valid("data/tilesets/primary", source_info);
+}
+
+LayerValue<std::string> DefaultProvider::tileset_paths_primary_bin(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::string>::valid("data/tilesets/primary", source_info);
+}
+
+LayerValue<std::string> DefaultProvider::tileset_paths_secondary_src(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::string>::valid("data/tilesets/secondary", source_info);
+}
+
+LayerValue<std::string> DefaultProvider::tileset_paths_secondary_bin(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::string>::valid("data/tilesets/secondary", source_info);
+}
+
+LayerValue<bool> DefaultProvider::tileset_animations_overwrite_callback(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<bool>::valid(true, source_info);
+}
+
 } // namespace porytiles2

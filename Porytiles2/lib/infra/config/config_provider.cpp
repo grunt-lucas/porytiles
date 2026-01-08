@@ -98,4 +98,34 @@ ConfigProvider::tiles_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_un
     return LayerValue<TilesPalMode>::not_provided();
 }
 
+LayerValue<std::string> ConfigProvider::tileset_paths_primary_src(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::string>::not_provided();
+}
+
+LayerValue<std::string> ConfigProvider::tileset_paths_primary_bin(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::string>::not_provided();
+}
+
+LayerValue<std::string> ConfigProvider::tileset_paths_secondary_src(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::string>::not_provided();
+}
+
+LayerValue<std::string> ConfigProvider::tileset_paths_secondary_bin(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::string>::not_provided();
+}
+
+LayerValue<bool> ConfigProvider::tileset_animations_overwrite_callback(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<bool>::not_provided();
+}
+
 } // namespace porytiles2

@@ -31,6 +31,46 @@ class InfraConfig {
         return validated_val;
     }
 
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
+    tileset_paths_primary_src(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = tileset_paths_primary_src_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
+    tileset_paths_primary_bin(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = tileset_paths_primary_bin_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
+    tileset_paths_secondary_src(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = tileset_paths_secondary_src_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
+    tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = tileset_paths_secondary_bin_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    tileset_animations_overwrite_callback(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = tileset_animations_overwrite_callback_validated(type, scope);
+        return validated_val;
+    }
+
   protected:
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<TilesPalMode>>
@@ -43,6 +83,66 @@ class InfraConfig {
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<TilesPalMode>>
     tiles_pal_mode_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::string>>
+    tileset_paths_primary_src_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = tileset_paths_primary_src_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::string>>
+    tileset_paths_primary_src_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::string>>
+    tileset_paths_primary_bin_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = tileset_paths_primary_bin_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::string>>
+    tileset_paths_primary_bin_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::string>>
+    tileset_paths_secondary_src_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = tileset_paths_secondary_src_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::string>>
+    tileset_paths_secondary_src_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::string>>
+    tileset_paths_secondary_bin_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = tileset_paths_secondary_bin_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::string>>
+    tileset_paths_secondary_bin_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
+    tileset_animations_overwrite_callback_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = tileset_animations_overwrite_callback_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
+    tileset_animations_overwrite_callback_raw(ConfigScopeType type, const std::string &scope) const = 0;
 };
 
 } // namespace porytiles2

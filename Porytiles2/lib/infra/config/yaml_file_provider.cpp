@@ -285,4 +285,88 @@ LayerValue<TilesPalMode> YamlFileProvider::tiles_pal_mode(ConfigScopeType type, 
         "tiles_pal_mode");
 }
 
+LayerValue<std::string>
+YamlFileProvider::tileset_paths_primary_src(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::string>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<std::string>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["paths"]["primary"]["src"]; },
+        parse_string,
+        "tileset_paths_primary_src");
+}
+
+LayerValue<std::string>
+YamlFileProvider::tileset_paths_primary_bin(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::string>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<std::string>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["paths"]["primary"]["bin"]; },
+        parse_string,
+        "tileset_paths_primary_bin");
+}
+
+LayerValue<std::string>
+YamlFileProvider::tileset_paths_secondary_src(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::string>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<std::string>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["paths"]["secondary"]["src"]; },
+        parse_string,
+        "tileset_paths_secondary_src");
+}
+
+LayerValue<std::string>
+YamlFileProvider::tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::string>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<std::string>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["paths"]["secondary"]["bin"]; },
+        parse_string,
+        "tileset_paths_secondary_bin");
+}
+
+LayerValue<bool>
+YamlFileProvider::tileset_animations_overwrite_callback(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, tileset_key_provider_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<bool>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<bool>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["overwrite_callback"]; },
+        parse_bool,
+        "tileset_animations_overwrite_callback");
+}
+
 } // namespace porytiles2

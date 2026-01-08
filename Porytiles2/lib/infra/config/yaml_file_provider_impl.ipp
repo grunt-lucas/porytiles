@@ -256,6 +256,39 @@ parse_bool(const TextFormatter *format, const YAML::Node &node, const std::strin
 }
 
 /**
+ * @brief Attempts to parse a std::string value from a YAML node.
+ *
+ * @param format The text formatter to use
+ * @param node The YAML node to parse
+ * @param key The configuration key name (for error messages)
+ * @param file_path The YAML file path (for source info)
+ * @return LayerValue containing the parsed value, error, or not_provided status
+ */
+LayerValue<std::string>
+parse_string(const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<std::string>::not_provided();
+    }
+
+    try {
+        const auto value = node.as<std::string>();
+        const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<std::string>::valid(value, source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error =
+            format->format("failed to parse '{}' as std::string: {}", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<std::string>::invalid(error, source, details);
+    }
+}
+
+/**
  * @brief Attempts to parse an Rgba32 color from a YAML node.
  *
  * @details

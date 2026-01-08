@@ -87,6 +87,16 @@ class ConfigProvider {
      * Infra Config
      */
     [[nodiscard]] virtual LayerValue<TilesPalMode> tiles_pal_mode(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::string>
+    tileset_paths_primary_src(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::string>
+    tileset_paths_primary_bin(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::string>
+    tileset_paths_secondary_src(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::string>
+    tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<bool>
+    tileset_animations_overwrite_callback(ConfigScopeType type, const std::string &scope) const;
 };
 
 } // namespace porytiles2

@@ -130,4 +130,39 @@ HeaderDefineProvider::tiles_pal_mode(ConfigScopeType /*type*/, const std::string
     return LayerValue<TilesPalMode>::not_provided();
 }
 
+LayerValue<std::string>
+HeaderDefineProvider::tileset_paths_primary_src(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<std::string>::not_provided();
+}
+
+LayerValue<std::string>
+HeaderDefineProvider::tileset_paths_primary_bin(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<std::string>::not_provided();
+}
+
+LayerValue<std::string>
+HeaderDefineProvider::tileset_paths_secondary_src(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<std::string>::not_provided();
+}
+
+LayerValue<std::string>
+HeaderDefineProvider::tileset_paths_secondary_bin(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<std::string>::not_provided();
+}
+
+LayerValue<bool> HeaderDefineProvider::tileset_animations_overwrite_callback(
+    ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<bool>::not_provided();
+}
+
 } // namespace porytiles2

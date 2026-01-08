@@ -26,11 +26,14 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
 {
     /*
      * WARNING! HACK ALERT! WARNING!
-     * DO NOT DELETE THIS USING STATEMENT.
+     * DO NOT DELETE THESE USING STATEMENTS.
      *
-     * We need to declare this here so that the to_string call below can resolve to either the std:: version or one of
-     * our custom versions automagically.
+     * We need to declare these here so that the to_string call below can resolve to either the std:: version or one of
+     * our custom versions automagically. Both are needed because:
+     * - std::to_string handles numeric types (size_t, bool, etc.)
+     * - porytiles2::to_string handles custom types (Rgba32, std::string, std::vector<T>, etc.)
      */
+    using porytiles2::to_string;
     using std::to_string;
 
     // Check if already cached
@@ -278,6 +281,66 @@ LazyLayeredConfig::tiles_pal_mode_raw(ConfigScopeType type, const std::string &s
         key, [&type, &scope](const ConfigProvider &provider) { return provider.tiles_pal_mode(type, scope); });
 }
 
+ChainableResult<ConfigValue<std::string>>
+LazyLayeredConfig::tileset_paths_primary_src_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<std::string>(key, [&type, &scope](const ConfigProvider &provider) {
+        return provider.tileset_paths_primary_src(type, scope);
+    });
+}
+
+ChainableResult<ConfigValue<std::string>>
+LazyLayeredConfig::tileset_paths_primary_bin_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<std::string>(key, [&type, &scope](const ConfigProvider &provider) {
+        return provider.tileset_paths_primary_bin(type, scope);
+    });
+}
+
+ChainableResult<ConfigValue<std::string>>
+LazyLayeredConfig::tileset_paths_secondary_src_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<std::string>(key, [&type, &scope](const ConfigProvider &provider) {
+        return provider.tileset_paths_secondary_src(type, scope);
+    });
+}
+
+ChainableResult<ConfigValue<std::string>>
+LazyLayeredConfig::tileset_paths_secondary_bin_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<std::string>(key, [&type, &scope](const ConfigProvider &provider) {
+        return provider.tileset_paths_secondary_bin(type, scope);
+    });
+}
+
+ChainableResult<ConfigValue<bool>>
+LazyLayeredConfig::tileset_animations_overwrite_callback_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<bool>(key, [&type, &scope](const ConfigProvider &provider) {
+        return provider.tileset_animations_overwrite_callback(type, scope);
+    });
+}
+
 std::vector<ProvenanceChainLink<std::size_t>>
 LazyLayeredConfig::num_tiles_in_primary_provenance_chain(ConfigScopeType type, const std::string &scope) const
 {
@@ -381,6 +444,42 @@ LazyLayeredConfig::tiles_pal_mode_provenance_chain(ConfigScopeType type, const s
 {
     return collect_provenance_chain<TilesPalMode>(
         [&type, &scope](const ConfigProvider &provider) { return provider.tiles_pal_mode(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::string>>
+LazyLayeredConfig::tileset_paths_primary_src_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::string>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.tileset_paths_primary_src(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::string>>
+LazyLayeredConfig::tileset_paths_primary_bin_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::string>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.tileset_paths_primary_bin(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::string>>
+LazyLayeredConfig::tileset_paths_secondary_src_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::string>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.tileset_paths_secondary_src(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::string>>
+LazyLayeredConfig::tileset_paths_secondary_bin_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::string>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.tileset_paths_secondary_bin(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<bool>> LazyLayeredConfig::tileset_animations_overwrite_callback_provenance_chain(
+    ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<bool>([&type, &scope](const ConfigProvider &provider) {
+        return provider.tileset_animations_overwrite_callback(type, scope);
+    });
 }
 
 } // namespace porytiles2

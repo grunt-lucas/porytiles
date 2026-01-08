@@ -24,6 +24,25 @@ verify_checksums: true
 tileset:
   extrinsic_transparency: [ 255, 0, 255 ]
 
+  # Configure where Porytiles-managed tileset artifacts are stored.
+  # These paths are relative to the project root.
+  # - src: Where Porytiles-format source assets are stored (porytiles_src/)
+  # - bin: Where Porymap-format binary assets are stored (porytiles_bin/)
+  paths:
+    primary:
+      src: data/tilesets/primary
+      bin: data/tilesets/primary
+    secondary:
+      src: data/tilesets/secondary
+      bin: data/tilesets/secondary
+
+  # Animation-related settings for import workflow
+  animations:
+    # When true (default), Porytiles will overwrite the .callback field in headers.h
+    # to point to the generated animation code. Set to false if you want Porytiles
+    # to generate animation frames and code but wire your own custom callback.
+    overwrite_callback: true
+
   compile:
     tiles:
       # Set edit mode for the tiles artifact.

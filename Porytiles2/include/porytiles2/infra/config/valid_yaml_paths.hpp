@@ -31,6 +31,8 @@ inline const std::unordered_set<std::string> valid_yaml_paths = {
     "fieldmap.num_tiles_per_metatile",
     "fieldmap.num_tiles_total",
     "tileset",
+    "tileset.animations",
+    "tileset.animations.overwrite_callback",
     "tileset.compile",
     "tileset.compile.pals",
     "tileset.compile.pals.edit_mode",
@@ -42,6 +44,13 @@ inline const std::unordered_set<std::string> valid_yaml_paths = {
     "tileset.compile.tiles.edit_mode",
     "tileset.compile.tiles_pal_mode",
     "tileset.extrinsic_transparency",
+    "tileset.paths",
+    "tileset.paths.primary",
+    "tileset.paths.primary.bin",
+    "tileset.paths.primary.src",
+    "tileset.paths.secondary",
+    "tileset.paths.secondary.bin",
+    "tileset.paths.secondary.src",
     "verify_checksums",
 };
 
