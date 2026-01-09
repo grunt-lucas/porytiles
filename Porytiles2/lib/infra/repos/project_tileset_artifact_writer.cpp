@@ -90,18 +90,16 @@ save_palette(const Palette<Rgba32, pal::max_size> &pal, const std::filesystem::p
     return {};
 }
 
-ChainableResult<std::filesystem::path> compute_transaction_dest_path(
-    const std::filesystem::path &transaction_root,
-    const std::filesystem::path &project_root,
-    const ArtifactKey &dest_key)
+ChainableResult<std::filesystem::path>
+compute_transaction_dest_path(const std::filesystem::path &transaction_root, const ArtifactKey &dest_key)
 {
     // TODO: just panic here
     if (transaction_root.empty()) {
         return FormattableError{"no transaction in progress"};
     }
 
-    const auto relative_path = std::filesystem::path{dest_key.key()}.lexically_relative(project_root);
-    const auto transaction_dest_path = transaction_root / relative_path;
+    // Keys are now relative to project_root, so we can use them directly
+    const auto transaction_dest_path = transaction_root / dest_key.key();
 
     std::filesystem::create_directories(transaction_dest_path.parent_path());
 
@@ -206,7 +204,6 @@ ChainableResult<void> write_anim_frame_impl(
     const std::string &anim_name,
     const std::string &frame_name,
     const std::filesystem::path &transaction_root,
-    const std::filesystem::path &project_root,
     ComponentGetter component_getter,
     SaveFunc save_func,
     std::string_view component_name)
@@ -247,10 +244,10 @@ ChainableResult<void> write_anim_frame_impl(
         img.palette(std::move(pal_vec));
     }
 
-    // Compute transaction path
+    // Compute transaction path (keys are now relative to project_root)
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
-        compute_transaction_dest_path(transaction_root, project_root, dest_key),
+        compute_transaction_dest_path(transaction_root, dest_key),
         "failed to compute transaction dest path",
         void);
 
@@ -277,7 +274,6 @@ ChainableResult<void> write_config_impl(
     const ArtifactKey &dest_key,
     const Tileset &src,
     const std::filesystem::path &transaction_root,
-    const std::filesystem::path &project_root,
     ConfigGetter config_getter)
 {
     const auto &config = config_getter(src);
@@ -287,9 +283,10 @@ ChainableResult<void> write_config_impl(
         return {};
     }
 
+    // Keys are now relative to project_root
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
-        compute_transaction_dest_path(transaction_root, project_root, dest_key),
+        compute_transaction_dest_path(transaction_root, dest_key),
         "failed to compute transaction dest path",
         void);
 
@@ -446,7 +443,7 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_metatiles_bin(const Ar
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        compute_transaction_dest_path(transaction_root_, dest_key),
         "failed to compute transaction dest path",
         void);
     return save_metatiles_bin(src.porymap_component().metatiles_bin(), transaction_dest_path);
@@ -457,7 +454,7 @@ ProjectTilesetArtifactWriter::write_metatile_attributes_bin(const ArtifactKey &d
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        compute_transaction_dest_path(transaction_root_, dest_key),
         "failed to compute transaction dest path",
         void);
     return save_metatile_attributes_bin(src.porymap_component().metatile_attributes_bin(), transaction_dest_path);
@@ -467,7 +464,7 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_tiles_png(const Artifa
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        compute_transaction_dest_path(transaction_root_, dest_key),
         "failed to compute transaction dest path",
         void);
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -484,7 +481,7 @@ ProjectTilesetArtifactWriter::write_porymap_pal_n(const ArtifactKey &dest_key, c
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        compute_transaction_dest_path(transaction_root_, dest_key),
         "failed to compute transaction dest path",
         void);
     return save_palette(src.porymap_component().pal_at(index), transaction_dest_path, *pal_saver_);
@@ -499,7 +496,6 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
         anim_name,
         frame_name,
         transaction_root_,
-        project_root_,
         [](const Tileset &t) -> const auto & { return t.porymap_component(); },
         [this](const Image<IndexPixel> &img, const std::filesystem::path &path) {
             return save_tiles_png(*png_indexed_saver_, img, path, TilesPalMode::true_color);
@@ -531,8 +527,8 @@ ProjectTilesetArtifactWriter::write_porymap_anim_params(const ArtifactKey &dest_
      * refactor the artifact writer so that it writes animations in one shot. This refactor will be similar to the
      * refactor we did for the artifact reader, which allowed it to read animations in one shot.
      */
-    const auto tileset_root_path =
-        std::filesystem::path{dest_key.key()}.parent_path().parent_path().lexically_relative(project_root_);
+    // Keys are now relative to project_root, so no need to relativize
+    const auto tileset_root_path = std::filesystem::path{dest_key.key()}.parent_path().parent_path();
 
     // TODO: determine if primary or secondary tileset from config
     const bool is_primary = true;
@@ -546,7 +542,7 @@ ProjectTilesetArtifactWriter::write_porymap_anim_params(const ArtifactKey &dest_
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        compute_transaction_dest_path(transaction_root_, dest_key),
         "failed to compute transaction dest path",
         void);
 
@@ -569,7 +565,7 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_bottom_png(const Artif
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        compute_transaction_dest_path(transaction_root_, dest_key),
         "failed to compute transaction dest path",
         void);
     return save_layer_png(*png_rgba_saver_, src.porytiles_component().bottom(), transaction_dest_path);
@@ -579,7 +575,7 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_middle_png(const Artif
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        compute_transaction_dest_path(transaction_root_, dest_key),
         "failed to compute transaction dest path",
         void);
     return save_layer_png(*png_rgba_saver_, src.porytiles_component().middle(), transaction_dest_path);
@@ -589,7 +585,7 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_top_png(const Artifact
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        compute_transaction_dest_path(transaction_root_, dest_key),
         "failed to compute transaction dest path",
         void);
     return save_layer_png(*png_rgba_saver_, src.porytiles_component().top(), transaction_dest_path);
@@ -608,7 +604,7 @@ ProjectTilesetArtifactWriter::write_porytiles_pal_n(const ArtifactKey &dest_key,
     if (src.porytiles_component().pal_at(index).has_value()) {
         PT_TRY_ASSIGN_CHAIN_ERR(
             transaction_dest_path,
-            compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+            compute_transaction_dest_path(transaction_root_, dest_key),
             "failed to compute transaction dest path",
             void);
 
@@ -628,7 +624,6 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_anim_frame(
         anim_name,
         frame_name,
         transaction_root_,
-        project_root_,
         [](const Tileset &t) -> const auto & { return t.porytiles_component(); },
         [this](const Image<Rgba32> &img, const std::filesystem::path &path) {
             return save_layer_png(*png_rgba_saver_, img, path);
@@ -653,7 +648,7 @@ ProjectTilesetArtifactWriter::write_porytiles_anim_params(const ArtifactKey &des
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, project_root_, dest_key),
+        compute_transaction_dest_path(transaction_root_, dest_key),
         "failed to compute transaction dest path",
         void);
 
@@ -663,7 +658,7 @@ ProjectTilesetArtifactWriter::write_porytiles_anim_params(const ArtifactKey &des
 [[nodiscard]] ChainableResult<void>
 ProjectTilesetArtifactWriter::write_config(const ArtifactKey &dest_key, const Tileset &src)
 {
-    return write_config_impl(dest_key, src, transaction_root_, project_root_, [](const Tileset &t) -> const auto & {
+    return write_config_impl(dest_key, src, transaction_root_, [](const Tileset &t) -> const auto & {
         return t.porytiles_component().config();
     });
 }
@@ -671,7 +666,7 @@ ProjectTilesetArtifactWriter::write_config(const ArtifactKey &dest_key, const Ti
 [[nodiscard]] ChainableResult<void>
 ProjectTilesetArtifactWriter::write_local_config(const ArtifactKey &dest_key, const Tileset &src)
 {
-    return write_config_impl(dest_key, src, transaction_root_, project_root_, [](const Tileset &t) -> const auto & {
+    return write_config_impl(dest_key, src, transaction_root_, [](const Tileset &t) -> const auto & {
         return t.porytiles_component().local_config();
     });
 }

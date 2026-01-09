@@ -1,6 +1,7 @@
 #pragma once
 
 #include <string>
+#include <vector>
 
 #include "porytiles2/domain/repos/artifact_checksum_provider.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
@@ -20,7 +21,7 @@ class NoopArtifactChecksumProvider final : public ArtifactChecksumProvider {
     NoopArtifactChecksumProvider() = default;
 
     [[nodiscard]] std::unordered_map<ArtifactKey, std::string>
-    compute_tileset_artifact_checksums(const std::string &name) const override;
+    compute_tileset_artifact_checksums(const std::vector<ArtifactKey> &keys) const override;
 
     [[nodiscard]] std::unordered_map<ArtifactKey, std::string>
     load_cached_tileset_checksums(const std::string &name) const override;

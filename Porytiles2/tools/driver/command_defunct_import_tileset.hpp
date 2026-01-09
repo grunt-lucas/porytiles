@@ -135,7 +135,7 @@ class DefunctImportTilesetCommand final : public Command {
             &jasc_saver,
             &anim_yaml_parser,
             &anim_code_generator};
-        ProjectArtifactChecksumProvider checksum_provider{&key_provider};
+        ProjectArtifactChecksumProvider checksum_provider{project_root};
         TilesetRepo repo{
             &checksum_provider,
             &metadata_provider,

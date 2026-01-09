@@ -12,28 +12,31 @@
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/stream_digest.hpp"
 
+namespace {
+
+// TODO: this is hardcoded in multiple places
+std::filesystem::path checksums_file(const std::filesystem::path &project_root, const std::string &tileset_name)
+{
+    return project_root / "porytiles" / "tilesets" / tileset_name / "artifact_checksums.json";
+}
+
+} // namespace
+
 namespace porytiles2 {
 
 std::unordered_map<ArtifactKey, std::string>
-ProjectArtifactChecksumProvider::compute_tileset_artifact_checksums(const std::string &name) const
+ProjectArtifactChecksumProvider::compute_tileset_artifact_checksums(const std::vector<ArtifactKey> &keys) const
 {
     std::unordered_map<ArtifactKey, std::string> checksums{};
 
-    auto all_keys_result = key_provider_->get_all_artifact_keys(name);
-    if (!all_keys_result.has_value()) {
-        /*
-         * TODO: see note in ProjectTilesetArtifactKeyProvider::animation_frame_paths_for_impl. We probably shouldn't
-         * panic here?
-         */
-        // This is called after a successful save, so artifact keys should be valid
-        panic(std::format("failed to get artifact keys for tileset '{}'", name));
-    }
-    for (const auto &key : all_keys_result.value()) {
+    for (const auto &key : keys) {
         constexpr StreamDigest digest{};
-        if (!key_provider_->artifact_exists(key)) {
-            panic(std::format("expected artifact '{}' does not exist", key.key()));
+        // Keys are relative to project_root_, so prepend for filesystem operations
+        const auto absolute_path = project_root_ / key.key();
+        if (!std::filesystem::exists(absolute_path)) {
+            panic(std::format("expected artifact '{}' does not exist", absolute_path.string()));
         }
-        std::ifstream stream{key.key()};
+        std::ifstream stream{absolute_path};
         const auto key_digest = digest.digest(stream);
         checksums.emplace(key, key_digest);
     }
@@ -42,29 +45,22 @@ ProjectArtifactChecksumProvider::compute_tileset_artifact_checksums(const std::s
 }
 
 std::unordered_map<ArtifactKey, std::string>
-ProjectArtifactChecksumProvider::load_cached_tileset_checksums(const std::string &name) const
+ProjectArtifactChecksumProvider::load_cached_tileset_checksums(const std::string &tileset_name) const
 {
-    // TODO: tileset checksum file location should be configurable?
-    auto tileset_root_result = key_provider_->tileset_root(name);
-    if (!tileset_root_result.has_value()) {
-        // If we can't get tileset root, return empty checksums
-        return {};
-    }
-    const auto &tileset_root = tileset_root_result.value();
-    const auto artifact_checksum_file = tileset_root / "artifact_checksums.json";
+    const auto artifact_checksum_path = checksums_file(project_root_, tileset_name);
 
     // If checksum file doesn't exist, just return nothing
-    if (!exists(artifact_checksum_file)) {
+    if (!exists(artifact_checksum_path)) {
         return {};
     }
 
-    std::ifstream file{artifact_checksum_file};
+    std::ifstream file{artifact_checksum_path};
     nlohmann::json json_data;
     file >> json_data;
 
     std::unordered_map<ArtifactKey, std::string> checksums;
     for (const auto &[key, value] : json_data.items()) {
-        const auto full_path = tileset_root / std::filesystem::path{key};
+        const auto full_path = std::filesystem::path{key};
         checksums.emplace(ArtifactKey{full_path}, value.get<std::string>());
     }
 
@@ -72,24 +68,17 @@ ProjectArtifactChecksumProvider::load_cached_tileset_checksums(const std::string
 }
 
 ChainableResult<void> ProjectArtifactChecksumProvider::cache_tileset_checksums(
-    const std::string &name, const std::unordered_map<ArtifactKey, std::string> &checksums) const
+    const std::string &tileset_name, const std::unordered_map<ArtifactKey, std::string> &checksums) const
 {
-    // TODO: tileset checksum file location should be configurable?
-    PT_TRY_ASSIGN_CHAIN_ERR(tileset_root, key_provider_->tileset_root(name), "failed to cache tileset checksums", void);
-    const auto artifact_checksum_file = tileset_root / "artifact_checksums.json";
+    const auto artifact_checksum_file = checksums_file(project_root_, tileset_name);
+    std::filesystem::create_directories(artifact_checksum_file.parent_path());
     std::ofstream file{artifact_checksum_file};
 
-    // First, collect all relative paths with their checksums
+    // Collect all keys with their checksums in sorted order for consistent JSON output
     std::map<std::string, std::string> sorted_checksums;
     for (const auto &[artifact_key, checksum] : checksums) {
-        /*
-         * Before saving the checksums, relativize the key's path against the tileset root. Since the user might call
-         * the command from different working directories, it shouldn't save the path relative to the working directory.
-         * It also doesn't really make sense to save an absolute path here, since users might rename the tileset or move
-         * their project folder.
-         */
-        const auto relative_key = std::filesystem::relative(artifact_key.key(), tileset_root);
-        sorted_checksums[relative_key] = checksum;
+        // Keys are already relative to project_root_, so use them directly
+        sorted_checksums[artifact_key.key()] = checksum;
     }
 
     /*

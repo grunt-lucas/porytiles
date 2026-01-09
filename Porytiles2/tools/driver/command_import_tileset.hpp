@@ -1,6 +1,5 @@
 #pragma once
 
-#include <filesystem>
 #include <memory>
 #include <string>
 #include <unistd.h>
@@ -8,9 +7,9 @@
 #include "CLI/CLI.hpp"
 #include "fruit/fruit.h"
 
-#include "porytiles2/app/use_cases/compile_primary_tileset.hpp"
+#include "porytiles2/app/use_cases/import_primary_tileset.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
-#include "porytiles2/domain/services/layer_image_metatileizer.hpp"
+#include "porytiles2/domain/services/defunct_primary_tileset_importer.hpp"
 #include "porytiles2/domain/services/palette_printer.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
@@ -32,6 +31,7 @@
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
+#include "porytiles2/infra/services/project_porytiles_tileset_manager.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/di/components.hpp"
 #include "porytiles2/xcut/diagnostics/stderr_styled_user_diagnostics.hpp"
@@ -39,13 +39,12 @@
 
 #include "command.hpp"
 
-class CompileTilesetCommand final : public Command {
+class ImportTilesetCommand final : public Command {
   public:
-    explicit CompileTilesetCommand(CLI::App &parent_app)
-        : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+    explicit ImportTilesetCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
     {
         CLI::App &cmd = get_app();
-        cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to compile")->required();
+        cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to import")->required();
     }
 
     void Run() override
@@ -97,7 +96,9 @@ class CompileTilesetCommand final : public Command {
         AnimCodeParser anim_code_parser{text_formatter, diag.get()};
         AnimCodeGenerator anim_code_generator{};
 
-        // Setup primary compiler
+        // Setup primary importer and compiler
+        DefunctPrimaryTilesetImporter importer{
+            &config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
         PrimaryTilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
 
         // Setup behavior map provider and attributes CSV loader
@@ -105,8 +106,9 @@ class CompileTilesetCommand final : public Command {
             project_root / behaviors_header_root_relative, text_formatter, diag.get()};
         AttributesCsvLoader attributes_csv_loader{text_formatter, &behavior_map_provider};
 
-        // Setup metadata provider (needed by artifact reader for animation param loading)
+        // Setup metadata provider and tileset manager
         ProjectTilesetMetadataProvider metadata_provider{project_root, text_formatter, diag.get()};
+        ProjectPorytilesTilesetManager tileset_manager{project_root};
 
         // Setup the tileset repository
         ProjectTilesetArtifactReader artifact_reader{
@@ -138,22 +140,22 @@ class CompileTilesetCommand final : public Command {
             text_formatter,
             diag.get()};
 
-        CompilePrimaryTileset compile_use_case{&repo, &compiler, &config, &config, text_formatter, diag.get()};
+        ImportPrimaryTileset import_use_case{
+            &repo, &metadata_provider, &tileset_manager, &config, &config, text_formatter, diag.get()};
 
         // Run the use case
-        auto compile_result = compile_use_case.compile(tileset_name_);
-        if (!compile_result.has_value()) {
+        auto import_result = import_use_case.import(tileset_name_);
+        if (!import_result.has_value()) {
             const auto fail_result = ChainableResult<std::unique_ptr<Tileset>>{
-                FormattableError{"failed to compile tileset '{}'", FormatParam{tileset_name_, Style::bold}},
-                compile_result};
+                FormattableError{"failed to import tileset '{}'", FormatParam{tileset_name_, Style::bold}},
+                import_result};
             diag->fatal(fail_result);
         }
     }
 
   private:
-    static constexpr auto kCommandName = "compile-tileset";
-    static constexpr auto kCommandDesc =
-        "Compile a tileset, i.e., update the Porymap assets to match the Porytiles assets.";
+    static constexpr auto kCommandName = "import-tileset";
+    static constexpr auto kCommandDesc = "Import a tileset.";
     static constexpr auto kCommandGroup = "COMMANDS";
     std::string tileset_name_;
 };

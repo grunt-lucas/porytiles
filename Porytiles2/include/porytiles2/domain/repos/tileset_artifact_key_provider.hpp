@@ -416,12 +416,12 @@ class TilesetArtifactKeyProvider {
         PT_TRY_ASSIGN_CHAIN_ERR(
             porytiles_keys,
             get_porytiles_artifact_keys(tileset_name),
-            "failed to get all artifact keys",
+            "failed to get Porytiles artifact keys",
             std::vector<ArtifactKey>);
         PT_TRY_ASSIGN_CHAIN_ERR(
             porymap_keys,
             get_porymap_artifact_keys(tileset_name),
-            "failed to get all artifact keys",
+            "failed to get Porymap artifact keys",
             std::vector<ArtifactKey>);
 
         std::vector<ArtifactKey> result;

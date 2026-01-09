@@ -9,7 +9,7 @@
 namespace porytiles2 {
 
 std::unordered_map<ArtifactKey, std::string>
-NoopArtifactChecksumProvider::compute_tileset_artifact_checksums(const std::string & /*name*/) const
+NoopArtifactChecksumProvider::compute_tileset_artifact_checksums(const std::vector<ArtifactKey> & /*keys*/) const
 {
     return {};
 }

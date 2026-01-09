@@ -24,13 +24,13 @@ class ArtifactChecksumProvider {
     virtual ~ArtifactChecksumProvider() = default;
 
     /**
-     * @brief Computes checksums for the artifacts that belong to the given Tileset.
+     * @brief Computes checksums for the given Tileset artifacts.
      *
-     * @param name The name of the Tileset for which to compute checksums
+     * @param keys The artifact keys for which to compute checksums
      * @return A mapping of artifact keys to their computed checksum
      */
     [[nodiscard]] virtual std::unordered_map<ArtifactKey, std::string>
-    compute_tileset_artifact_checksums(const std::string &name) const = 0;
+    compute_tileset_artifact_checksums(const std::vector<ArtifactKey> &keys) const = 0;
 
     /**
      * @brief Loads the cached checksums for the given Tileset.
@@ -59,13 +59,13 @@ class ArtifactChecksumProvider {
      * vector of keys that don't match.
      *
      * @param name The name of the tileset to check
-     * @param artifact_keys The keys of artifacts to check
+     * @param keys_to_check The keys of artifacts to check
      * @return Vector of artifact keys that have mismatched checksums
      */
     [[nodiscard]] std::vector<ArtifactKey>
-    find_unsynced_tileset_artifacts(const std::string &name, const std::vector<ArtifactKey> &artifact_keys) const
+    find_unsynced_tileset_artifacts(const std::string &name, const std::vector<ArtifactKey> &keys_to_check) const
     {
-        const auto checksums = compute_tileset_artifact_checksums(name);
+        const auto computed_checksums = compute_tileset_artifact_checksums(keys_to_check);
         const auto cached_checksums = load_cached_tileset_checksums(name);
 
         if (cached_checksums.empty()) {
@@ -73,10 +73,10 @@ class ArtifactChecksumProvider {
         }
 
         std::vector<ArtifactKey> mismatched_keys;
-        for (const auto &key : artifact_keys) {
-            const auto checksum_for_key = checksums.contains(key) ? checksums.at(key) : "";
+        for (const auto &key : keys_to_check) {
+            const auto computed_checksum_for_key = computed_checksums.contains(key) ? computed_checksums.at(key) : "";
             const auto cached_checksum_for_key = cached_checksums.contains(key) ? cached_checksums.at(key) : "";
-            if (checksum_for_key != cached_checksum_for_key) {
+            if (computed_checksum_for_key != cached_checksum_for_key) {
                 mismatched_keys.push_back(key);
             }
         }

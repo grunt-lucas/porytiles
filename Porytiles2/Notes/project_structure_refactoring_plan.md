@@ -75,7 +75,7 @@ This document consolidates the project structure and animation refactoring plans
   - [Appendix C: Implementation Roadmap](#appendix-c-implementation-roadmap)
     - [~~Phase 1: Configuration Foundation~~ **COMPLETE**](#phase-1-configuration-foundation-complete)
     - [Phase 2: Frame Name Preservation](#phase-2-frame-name-preservation)
-    - [Phase 3: Utility Directory \& Metadata](#phase-3-utility-directory--metadata)
+    - [~~Phase 3: Utility Directory \& Metadata~~ **COMPLETE**](#phase-3-utility-directory--metadata-complete)
     - [Phase 4: VanillaAnimationImporter](#phase-4-vanillaanimationimporter)
     - [Phase 5: C Header File Writers](#phase-5-c-header-file-writers)
     - [Phase 6: Import Use Case](#phase-6-import-use-case)
@@ -186,11 +186,16 @@ pokeemerald/
 
 ### original_artifacts.json
 
-This file is the **source of truth** for whether a tileset is Porytiles-managed. Its presence indicates the tileset has been imported.
+This file is the **source of truth** for whether a tileset is Porytiles-managed. Its presence indicates the tileset is managed by Porytiles.
+
+The `imported` field distinguishes between two cases:
+
+**Imported tileset** (`imported: true`): Tileset was imported from vanilla pokeemerald. Original field values are stored for restoration.
 
 ```json
 {
     "version": 1,
+    "imported": true,
     ".tiles": "gTilesetTiles_General",
     ".palettes": "gTilesetPalettes_General",
     ".metatiles": "gMetatiles_General",
@@ -199,17 +204,26 @@ This file is the **source of truth** for whether a tileset is Porytiles-managed.
 }
 ```
 
+**Created tileset** (`imported: false`): Tileset was created from scratch by Porytiles. No original values to restore.
+
+```json
+{
+    "version": 1,
+    "imported": false
+}
+```
+
 **Purpose:**
-- Stores the original field values from `src/data/tilesets/headers.h` before import modified them
-- Enables `restore-tileset` command to revert changes
+- Stores the original field values from `src/data/tilesets/headers.h` before import modified them (when `imported: true`)
+- Enables `restore-tileset` command to revert changes (only for imported tilesets)
 - Includes `version` field for future format migrations
+- The `imported` field indicates whether restoration is possible
 
 **Benefits:**
 - No brittle parsing of `.callback` field to detect managed status
 - Simple file existence check: `original_artifacts.json` exists = managed tileset
-- Easy restore: just read the original values and write them back
-
-For tilesets created via `create-tileset` (not imported from vanilla), there is no `original_artifacts.json` file, so `restore-tileset` will error with a clear message.
+- Easy restore: just read the original values and write them back (when `imported: true`)
+- Clear error handling: `imported: false` means `restore-tileset` will error with a helpful message
 
 ### artifact_checksums.json
 
@@ -886,7 +900,7 @@ With `--full`, also delete managed directories:
 | Condition | Behavior |
 |-----------|----------|
 | No `original_artifacts.json` | Error: "Tileset is not Porytiles-managed" |
-| Tileset created via `create-tileset` | Error: "Cannot restore tileset created by Porytiles (no original to restore)" |
+| `imported: false` in `original_artifacts.json` | Error: "Cannot restore tileset created by Porytiles (no original to restore)" |
 | Original vanilla files deleted | Warning: "Original files not found, headers restored but tileset may not compile" |
 
 ---
@@ -1123,7 +1137,7 @@ This section outlines a high-level step-by-step plan to implement the refactorin
 
 ---
 
-### Phase 3: Utility Directory & Metadata
+### ~~Phase 3: Utility Directory & Metadata~~ **COMPLETE**
 
 **Goal:** Establish porytiles/ directory structure and managed-status tracking.
 

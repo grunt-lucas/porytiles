@@ -286,7 +286,7 @@ ProjectTilesetArtifactKeyProvider::key_for_metatiles_bin(const std::string &tile
         artifact_paths_for(tileset_name),
         format_->format("failed to get metatiles.bin key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
         ArtifactKey);
-    return ArtifactKey{project_root_ / paths.metatiles_path()};
+    return ArtifactKey{paths.metatiles_path()};
 }
 
 ChainableResult<ArtifactKey>
@@ -298,7 +298,7 @@ ProjectTilesetArtifactKeyProvider::key_for_metatile_attributes_bin(const std::st
         format_->format(
             "failed to get metatile_attributes.bin key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
         ArtifactKey);
-    return ArtifactKey{project_root_ / paths.metatile_attributes_path()};
+    return ArtifactKey{paths.metatile_attributes_path()};
 }
 
 ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_tiles_png(const std::string &tileset_name) const
@@ -313,7 +313,7 @@ ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_tiles_pn
         artifact_paths_for(tileset_name),
         format_->format("failed to get tiles.png key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
         ArtifactKey);
-    return ArtifactKey{project_root_ / paths.tiles_path().parent_path() / "tiles.png"};
+    return ArtifactKey{paths.tiles_path().parent_path() / "tiles.png"};
 }
 
 ChainableResult<ArtifactKey>
@@ -324,7 +324,7 @@ ProjectTilesetArtifactKeyProvider::key_for_porymap_pal_n(const std::string &tile
         artifact_paths_for(tileset_name),
         format_->format("failed to get Porymap pal key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
         ArtifactKey);
-    return ArtifactKey{project_root_ / paths.palettes_dir() / pal_filename(index)};
+    return ArtifactKey{paths.palettes_dir() / pal_filename(index)};
 }
 
 ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_frame(
@@ -351,7 +351,7 @@ ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_porymap_
         if (path.stem().string() == frame_name) {
             auto png_path = path;
             png_path.replace_extension(".png");
-            return ArtifactKey{project_root_ / png_path};
+            return ArtifactKey{png_path};
         }
     }
 
@@ -477,7 +477,8 @@ ProjectTilesetArtifactKeyProvider::key_for_local_config(const std::string &tiles
 
 bool ProjectTilesetArtifactKeyProvider::artifact_exists(const ArtifactKey &key) const
 {
-    const std::filesystem::path artifact{key.key()};
+    // Keys are relative to project_root_, so prepend for filesystem operations
+    const std::filesystem::path artifact = project_root_ / key.key();
     return std::filesystem::exists(artifact);
 }
 
@@ -542,8 +543,9 @@ ProjectTilesetArtifactKeyProvider::discover_porytiles_anims(const std::string &t
     }
 
     // Parse the anim.yaml file (snake_case validation is now handled by AnimYamlParser)
+    // Keys are relative to project_root_, so prepend for file I/O
     AnimYamlParser parser{format_};
-    auto parse_result = parser.parse(anim_yaml_key.key());
+    auto parse_result = parser.parse((project_root_ / anim_yaml_key.key()).string());
     if (!parse_result.has_value()) {
         return ChainableResult<std::set<std::string>>{
             FormattableError{
@@ -577,8 +579,9 @@ ChainableResult<std::set<std::string>> ProjectTilesetArtifactKeyProvider::discov
     }
 
     // Parse the anim.yaml file
+    // Keys are relative to project_root_, so prepend for file I/O
     AnimYamlParser parser{format_};
-    auto parse_result = parser.parse(anim_yaml_key.key());
+    auto parse_result = parser.parse((project_root_ / anim_yaml_key.key()).string());
     if (!parse_result.has_value()) {
         return ChainableResult<std::set<std::string>>{
             FormattableError{
@@ -632,8 +635,9 @@ ProjectTilesetArtifactKeyProvider::tileset_root(const std::string &tileset_name)
     }
 
     // Compute tileset_root from tiles path (e.g., "data/tilesets/primary/general/tiles.4bpp" -> parent)
+    // Returns relative path (relative to project_root_)
     std::filesystem::path tiles_path{tiles_path_result.value()};
-    return project_root_ / tiles_path.parent_path();
+    return tiles_path.parent_path();
 }
 
 ChainableResult<TilesetArtifactPaths>
@@ -709,6 +713,7 @@ ProjectTilesetArtifactKeyProvider::porymap_animation_frame_paths_for(const std::
     std::filesystem::path anim_c_file_path;
     if (porytiles_managed) {
         // For Porytiles-managed: <tileset_root>/include/generated_anim_code.h
+        // tileset_root() now returns a relative path, so prepend project_root_ for file I/O
         auto tileset_root_result = tileset_root(tileset_name);
         if (!tileset_root_result.has_value()) {
             return ChainableResult<AnimationFramePaths>{
@@ -716,7 +721,7 @@ ProjectTilesetArtifactKeyProvider::porymap_animation_frame_paths_for(const std::
                     "failed to compute anim_c_file_path for tileset '{}'", FormatParam{tileset_name, Style::bold})},
                 tileset_root_result};
         }
-        anim_c_file_path = tileset_root_result.value() / "include" / "generated_anim_code.h";
+        anim_c_file_path = project_root_ / tileset_root_result.value() / "include" / "generated_anim_code.h";
     }
     else {
         // For vanilla: src/tileset_anims.c

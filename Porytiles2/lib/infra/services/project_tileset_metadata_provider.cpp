@@ -63,7 +63,7 @@ const std::filesystem::path headers_rel_path = std::filesystem::path{"src"} / "d
 
 namespace porytiles2 {
 
-bool ProjectTilesetMetadataProvider::tileset_exists(const std::string &tileset_name) const
+bool ProjectTilesetMetadataProvider::exists(const std::string &tileset_name) const
 {
     const auto metadata_result = metadata_for(tileset_name);
     return metadata_result.has_value();

@@ -12,10 +12,8 @@ namespace porytiles2 {
  * @details
  * TilesetMetadataProvider defines a domain-layer abstraction for retrieving metadata about tilesets. This allows the
  * domain logic to query tileset properties (such as whether a tileset is primary/secondary or has animations) without
- * depending on any specific data source or I/O mechanism.
- *
- * Concrete implementations may source this metadata from project files, configuration, or other external systems. This
- * interface enables dependency inversion, keeping the domain layer pure and testable.
+ * depending on any specific data source or I/O mechanism. Concrete implementations may source this metadata from
+ * project files, configuration, or other external systems.
  *
  * @invariant Implementations must return consistent results for the same tileset_name within a single compilation run.
  */
@@ -29,7 +27,7 @@ class TilesetMetadataProvider {
      * @param tileset_name The name of the tileset to check
      * @return True if the tileset exists in the backing store, false otherwise
      */
-    [[nodiscard]] virtual bool tileset_exists(const std::string &tileset_name) const = 0;
+    [[nodiscard]] virtual bool exists(const std::string &tileset_name) const = 0;
 
     /**
      * @brief Determines whether a tileset is a secondary tileset.

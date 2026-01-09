@@ -156,7 +156,7 @@ TEST_F(ProjectTilesetArtifactReaderTest_Fixture1, ReadTilesPngPopulatesTilesetWi
     ASSERT_TRUE(std::filesystem::exists(tiles_path)) << "Test asset not found at: " << tiles_path;
 
     auto tileset = create_empty_tileset("gTileset_General");
-    ArtifactKey key{tiles_path.string()};
+    ArtifactKey key{"data/tilesets/primary/general/tiles.png"};
 
     auto result = reader_->read_tiles_png(tileset, key);
     ASSERT_TRUE(result.has_value()) << "Expected read_tiles_png to succeed";

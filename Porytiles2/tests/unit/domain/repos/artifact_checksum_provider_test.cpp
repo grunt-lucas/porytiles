@@ -16,7 +16,7 @@ class MockArtifactChecksumProvider : public ArtifactChecksumProvider {
     MOCK_METHOD(
         (std::unordered_map<ArtifactKey, std::string>),
         compute_tileset_artifact_checksums,
-        (const std::string &name),
+        (const std::vector<ArtifactKey> &keys),
         (const, override));
     MOCK_METHOD(
         (std::unordered_map<ArtifactKey, std::string>),
@@ -47,7 +47,7 @@ TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_AllChecksumsMatch_Ret
     std::unordered_map<ArtifactKey, std::string> cached_checksums = {
         {ArtifactKey{"key1"}, "checksum1"}, {ArtifactKey{"key2"}, "checksum2"}, {ArtifactKey{"key3"}, "checksum3"}};
 
-    EXPECT_CALL(provider_, compute_tileset_artifact_checksums(test_tileset_name_)).WillOnce(Return(current_checksums));
+    EXPECT_CALL(provider_, compute_tileset_artifact_checksums(artifact_keys)).WillOnce(Return(current_checksums));
     EXPECT_CALL(provider_, load_cached_tileset_checksums(test_tileset_name_)).WillOnce(Return(cached_checksums));
 
     // Act
@@ -68,7 +68,7 @@ TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_SomeChecksumsDoNotMat
     std::unordered_map<ArtifactKey, std::string> cached_checksums = {
         {ArtifactKey{"key1"}, "checksum1"}, {ArtifactKey{"key2"}, "checksum2"}, {ArtifactKey{"key3"}, "checksum3"}};
 
-    EXPECT_CALL(provider_, compute_tileset_artifact_checksums(test_tileset_name_)).WillOnce(Return(current_checksums));
+    EXPECT_CALL(provider_, compute_tileset_artifact_checksums(artifact_keys)).WillOnce(Return(current_checksums));
     EXPECT_CALL(provider_, load_cached_tileset_checksums(test_tileset_name_)).WillOnce(Return(cached_checksums));
 
     // Act
@@ -90,7 +90,7 @@ TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_AllChecksumsDoNotMatc
     std::unordered_map<ArtifactKey, std::string> cached_checksums = {
         {ArtifactKey{"key1"}, "checksum1"}, {ArtifactKey{"key2"}, "checksum2"}, {ArtifactKey{"key3"}, "checksum3"}};
 
-    EXPECT_CALL(provider_, compute_tileset_artifact_checksums(test_tileset_name_)).WillOnce(Return(current_checksums));
+    EXPECT_CALL(provider_, compute_tileset_artifact_checksums(artifact_keys)).WillOnce(Return(current_checksums));
     EXPECT_CALL(provider_, load_cached_tileset_checksums(test_tileset_name_)).WillOnce(Return(cached_checksums));
 
     // Act
@@ -110,7 +110,7 @@ TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_MissingCurrentChecksu
     std::unordered_map<ArtifactKey, std::string> cached_checksums = {
         {ArtifactKey{"key1"}, "checksum1"}, {ArtifactKey{"key2"}, "checksum2"}};
 
-    EXPECT_CALL(provider_, compute_tileset_artifact_checksums(test_tileset_name_)).WillOnce(Return(current_checksums));
+    EXPECT_CALL(provider_, compute_tileset_artifact_checksums(artifact_keys)).WillOnce(Return(current_checksums));
     EXPECT_CALL(provider_, load_cached_tileset_checksums(test_tileset_name_)).WillOnce(Return(cached_checksums));
 
     // Act
@@ -130,7 +130,7 @@ TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_MissingCachedChecksum
     std::unordered_map<ArtifactKey, std::string> cached_checksums = {
         {ArtifactKey{"key1"}, "checksum1"}}; // key2 missing
 
-    EXPECT_CALL(provider_, compute_tileset_artifact_checksums(test_tileset_name_)).WillOnce(Return(current_checksums));
+    EXPECT_CALL(provider_, compute_tileset_artifact_checksums(artifact_keys)).WillOnce(Return(current_checksums));
     EXPECT_CALL(provider_, load_cached_tileset_checksums(test_tileset_name_)).WillOnce(Return(cached_checksums));
 
     // Act
@@ -148,7 +148,7 @@ TEST_F(ArtifactChecksumProviderTest, FindUnsyncedArtifacts_EmptyArtifactKeysList
     std::unordered_map<ArtifactKey, std::string> current_checksums = {{ArtifactKey{"key1"}, "checksum1"}};
     std::unordered_map<ArtifactKey, std::string> cached_checksums = {{ArtifactKey{"key1"}, "checksum1"}};
 
-    EXPECT_CALL(provider_, compute_tileset_artifact_checksums(test_tileset_name_)).WillOnce(Return(current_checksums));
+    EXPECT_CALL(provider_, compute_tileset_artifact_checksums(artifact_keys)).WillOnce(Return(current_checksums));
     EXPECT_CALL(provider_, load_cached_tileset_checksums(test_tileset_name_)).WillOnce(Return(cached_checksums));
 
     // Act
@@ -169,7 +169,7 @@ TEST_F(ArtifactChecksumProviderTest, AllChecksumsMatch_AllMatch_ReturnsTrue)
     std::unordered_map<ArtifactKey, std::string> cached_checksums = {
         {ArtifactKey{"key1"}, "checksum1"}, {ArtifactKey{"key2"}, "checksum2"}, {ArtifactKey{"key3"}, "checksum3"}};
 
-    EXPECT_CALL(provider_, compute_tileset_artifact_checksums(test_tileset_name_)).WillOnce(Return(current_checksums));
+    EXPECT_CALL(provider_, compute_tileset_artifact_checksums(artifact_keys)).WillOnce(Return(current_checksums));
     EXPECT_CALL(provider_, load_cached_tileset_checksums(test_tileset_name_)).WillOnce(Return(cached_checksums));
 
     // Act
@@ -190,7 +190,7 @@ TEST_F(ArtifactChecksumProviderTest, AllChecksumsMatch_SomeDoNotMatch_ReturnsFal
     std::unordered_map<ArtifactKey, std::string> cached_checksums = {
         {ArtifactKey{"key1"}, "checksum1"}, {ArtifactKey{"key2"}, "checksum2"}, {ArtifactKey{"key3"}, "checksum3"}};
 
-    EXPECT_CALL(provider_, compute_tileset_artifact_checksums(test_tileset_name_)).WillOnce(Return(current_checksums));
+    EXPECT_CALL(provider_, compute_tileset_artifact_checksums(artifact_keys)).WillOnce(Return(current_checksums));
     EXPECT_CALL(provider_, load_cached_tileset_checksums(test_tileset_name_)).WillOnce(Return(cached_checksums));
 
     // Act
@@ -207,7 +207,7 @@ TEST_F(ArtifactChecksumProviderTest, AllChecksumsMatch_EmptyArtifactKeysList_Ret
     std::unordered_map<ArtifactKey, std::string> current_checksums = {{ArtifactKey{"key1"}, "checksum1"}};
     std::unordered_map<ArtifactKey, std::string> cached_checksums = {{ArtifactKey{"key1"}, "checksum1"}};
 
-    EXPECT_CALL(provider_, compute_tileset_artifact_checksums(test_tileset_name_)).WillOnce(Return(current_checksums));
+    EXPECT_CALL(provider_, compute_tileset_artifact_checksums(artifact_keys)).WillOnce(Return(current_checksums));
     EXPECT_CALL(provider_, load_cached_tileset_checksums(test_tileset_name_)).WillOnce(Return(cached_checksums));
 
     // Act

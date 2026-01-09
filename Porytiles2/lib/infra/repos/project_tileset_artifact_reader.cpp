@@ -77,10 +77,12 @@ std::vector<PixelTile<PixelType>> extract_tiles_from_image(const Image<PixelType
 ChainableResult<void> import_layer_png(
     Tileset &dest,
     const ArtifactKey &src_key,
+    const std::filesystem::path &project_root,
     const PngRgbaImageLoader &loader,
     const std::function<void(PorytilesTilesetComponent &, const Image<Rgba32> &)> &layer_img_setter)
 {
-    auto image_result = loader.load_from_file(src_key.key());
+    // Keys are relative to project_root, so prepend for file I/O
+    auto image_result = loader.load_from_file((project_root / src_key.key()).string());
     if (!image_result.has_value()) {
         switch (image_result.error().type()) {
             // TODO: this shouldn't load a blank image, it should just error. To support the "import" case, we're going
@@ -102,9 +104,11 @@ ChainableResult<void> import_layer_png(
     return {};
 }
 
-ChainableResult<void> import_metatiles_bin(Tileset &dest, const ArtifactKey &src_key)
+ChainableResult<void>
+import_metatiles_bin(Tileset &dest, const ArtifactKey &src_key, const std::filesystem::path &project_root)
 {
-    std::ifstream metatiles_bin{src_key.key(), std::ios::binary};
+    // Keys are relative to project_root, so prepend for file I/O
+    std::ifstream metatiles_bin{project_root / src_key.key(), std::ios::binary};
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatiles_bin), {}};
 
     if (data_buf.size() % 2 != 0) {
@@ -144,9 +148,11 @@ ChainableResult<void> import_metatiles_bin(Tileset &dest, const ArtifactKey &src
     return {};
 }
 
-ChainableResult<void> import_emerald_metatile_attributes(Tileset &dest, const ArtifactKey &src_key)
+ChainableResult<void>
+import_emerald_metatile_attributes(Tileset &dest, const ArtifactKey &src_key, const std::filesystem::path &project_root)
 {
-    std::ifstream metatile_attr_bin{src_key.key(), std::ios::binary};
+    // Keys are relative to project_root, so prepend for file I/O
+    std::ifstream metatile_attr_bin{project_root / src_key.key(), std::ios::binary};
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
 
     if (data_buf.size() % attr::bytes_per_attr_emerald != 0) {
@@ -174,10 +180,11 @@ ChainableResult<void> import_emerald_metatile_attributes(Tileset &dest, const Ar
     return {};
 }
 
-[[maybe_unused]] ChainableResult<void>
-import_firered_metatile_attributes([[maybe_unused]] Tileset &dest, const ArtifactKey &src_key)
+[[maybe_unused]] ChainableResult<void> import_firered_metatile_attributes(
+    [[maybe_unused]] Tileset &dest, const ArtifactKey &src_key, const std::filesystem::path &project_root)
 {
-    std::ifstream metatile_attr_bin{src_key.key(), std::ios::binary};
+    // Keys are relative to project_root, so prepend for file I/O
+    std::ifstream metatile_attr_bin{project_root / src_key.key(), std::ios::binary};
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
 
     if (data_buf.size() % attr::bytes_per_attr_firered != 0) {
@@ -203,9 +210,14 @@ import_firered_metatile_attributes([[maybe_unused]] Tileset &dest, const Artifac
     return {};
 }
 
-ChainableResult<void> import_tiles_png(Tileset &dest, const ArtifactKey &src_key, const PngIndexedImageLoader &loader)
+ChainableResult<void> import_tiles_png(
+    Tileset &dest,
+    const ArtifactKey &src_key,
+    const std::filesystem::path &project_root,
+    const PngIndexedImageLoader &loader)
 {
-    auto image_result = loader.load_from_file(src_key.key());
+    // Keys are relative to project_root, so prepend for file I/O
+    auto image_result = loader.load_from_file((project_root / src_key.key()).string());
     if (!image_result.has_value()) {
         return ChainableResult<void>{FormattableError{"failed to load tiles.png"}, image_result};
     }
@@ -213,14 +225,19 @@ ChainableResult<void> import_tiles_png(Tileset &dest, const ArtifactKey &src_key
     return {};
 }
 
-ChainableResult<void>
-import_porymap_palette(Tileset &dest, const ArtifactKey &src_key, std::size_t index, const FilePalLoader &loader)
+ChainableResult<void> import_porymap_palette(
+    Tileset &dest,
+    const ArtifactKey &src_key,
+    std::size_t index,
+    const std::filesystem::path &project_root,
+    const FilePalLoader &loader)
 {
     if (index >= pal::num_pals) {
         panic(std::format("invalid pal index {}: out of range", index));
     }
 
-    const auto pal_result = loader.load(src_key.key());
+    // Keys are relative to project_root, so prepend for file I/O
+    const auto pal_result = loader.load((project_root / src_key.key()).string());
     if (!pal_result.has_value()) {
         return ChainableResult<void>{FormattableError{"failed to load palette file"}, pal_result};
     }
@@ -229,14 +246,19 @@ import_porymap_palette(Tileset &dest, const ArtifactKey &src_key, std::size_t in
     return {};
 }
 
-ChainableResult<void>
-import_porytiles_palette(Tileset &dest, const ArtifactKey &src_key, std::size_t index, const FilePalLoader &loader)
+ChainableResult<void> import_porytiles_palette(
+    Tileset &dest,
+    const ArtifactKey &src_key,
+    std::size_t index,
+    const std::filesystem::path &project_root,
+    const FilePalLoader &loader)
 {
     if (index >= pal::num_pals) {
         panic(std::format("invalid pal index {}: out of range", index));
     }
 
-    const auto pal_result = loader.load_with_wildcards(src_key.key());
+    // Keys are relative to project_root, so prepend for file I/O
+    const auto pal_result = loader.load_with_wildcards((project_root / src_key.key()).string());
     if (!pal_result.has_value()) {
         return ChainableResult<void>{FormattableError{"failed to load palette file"}, pal_result};
     }
@@ -269,13 +291,15 @@ template <SupportsTransparency PixelType, typename LoaderType, typename Componen
 ChainableResult<void> import_anim_frame_impl(
     Tileset &dest,
     const ArtifactKey &src_key,
+    const std::filesystem::path &project_root,
     const std::string &anim_name,
     const std::string &frame_name,
     const LoaderType &loader,
     ComponentGetter component_getter,
     std::string_view error_context)
 {
-    auto image_result = loader.load_from_file(src_key.key());
+    // Keys are relative to project_root, so prepend for file I/O
+    auto image_result = loader.load_from_file((project_root / src_key.key()).string());
     if (!image_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{
@@ -339,9 +363,11 @@ ChainableResult<void> import_anim_frame_impl(
  * @return ChainableResult<void> indicating success or failure
  */
 template <typename ConfigSetter>
-ChainableResult<void> read_config_impl(Tileset &dest, const ArtifactKey &src_key, ConfigSetter config_setter)
+ChainableResult<void> read_config_impl(
+    Tileset &dest, const ArtifactKey &src_key, const std::filesystem::path &project_root, ConfigSetter config_setter)
 {
-    std::ifstream config_file{src_key.key()};
+    // Keys are relative to project_root, so prepend for file I/O
+    std::ifstream config_file{project_root / src_key.key()};
     if (!config_file.is_open()) {
         // Config file is optional - if not found, just leave config empty
         return {};
@@ -385,7 +411,7 @@ namespace porytiles2 {
  */
 ChainableResult<void> ProjectTilesetArtifactReader::read_metatiles_bin(Tileset &dest, const ArtifactKey &src_key) const
 {
-    PT_TRY_CALL_PASS_ERR(import_metatiles_bin(dest, src_key), void);
+    PT_TRY_CALL_PASS_ERR(import_metatiles_bin(dest, src_key, project_root_), void);
     return {};
 }
 
@@ -393,20 +419,20 @@ ChainableResult<void>
 ProjectTilesetArtifactReader::read_metatile_attributes_bin(Tileset &dest, const ArtifactKey &src_key) const
 {
     // TODO: branch here based on target base game?
-    PT_TRY_CALL_PASS_ERR(import_emerald_metatile_attributes(dest, src_key), void)
+    PT_TRY_CALL_PASS_ERR(import_emerald_metatile_attributes(dest, src_key, project_root_), void)
     return {};
 }
 
 ChainableResult<void> ProjectTilesetArtifactReader::read_tiles_png(Tileset &dest, const ArtifactKey &src_key) const
 {
-    PT_TRY_CALL_PASS_ERR(import_tiles_png(dest, src_key, *png_indexed_loader_), void)
+    PT_TRY_CALL_PASS_ERR(import_tiles_png(dest, src_key, project_root_, *png_indexed_loader_), void)
     return {};
 }
 
 ChainableResult<void>
 ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const
 {
-    PT_TRY_CALL_PASS_ERR(import_porymap_palette(dest, src_key, index, *pal_loader_), void)
+    PT_TRY_CALL_PASS_ERR(import_porymap_palette(dest, src_key, index, project_root_, *pal_loader_), void)
     return {};
 }
 
@@ -423,6 +449,7 @@ ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKe
             (import_anim_frame_impl<IndexPixel>(
                 dest,
                 frame_key,
+                project_root_,
                 anim_name,
                 frame_name,
                 *png_indexed_loader_,
@@ -453,7 +480,8 @@ ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKe
 
     std::filesystem::path c_path;
     if (porytiles_managed) {
-        c_path = params_key.key();
+        // Keys are relative to project_root_, so prepend for file I/O
+        c_path = project_root_ / params_key.key();
     }
     else {
         c_path = project_root_ / tileset_anims_c_rel_path;
@@ -494,6 +522,7 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_bottom_png(Tileset &des
         import_layer_png(
             dest,
             src_key,
+            project_root_,
             *png_rgba_loader_,
             [](PorytilesTilesetComponent &comp, const Image<Rgba32> &img) { comp.bottom(img); }),
         void);
@@ -506,6 +535,7 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_middle_png(Tileset &des
         import_layer_png(
             dest,
             src_key,
+            project_root_,
             *png_rgba_loader_,
             [](PorytilesTilesetComponent &comp, const Image<Rgba32> &img) { comp.middle(img); }),
         void);
@@ -518,6 +548,7 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_top_png(Tileset &dest, 
         import_layer_png(
             dest,
             src_key,
+            project_root_,
             *png_rgba_loader_,
             [](PorytilesTilesetComponent &comp, const Image<Rgba32> &img) { comp.top(img); }),
         void);
@@ -526,7 +557,8 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_top_png(Tileset &dest, 
 
 ChainableResult<void> ProjectTilesetArtifactReader::read_attributes_csv(Tileset &dest, const ArtifactKey &src_key) const
 {
-    PT_TRY_ASSIGN_PASS_ERR(attributes, attributes_csv_loader_->load(src_key.key()), void);
+    // Keys are relative to project_root_, so prepend for file I/O
+    PT_TRY_ASSIGN_PASS_ERR(attributes, attributes_csv_loader_->load((project_root_ / src_key.key()).string()), void);
     for (const auto &[metatile_id, attribute] : attributes) {
         dest.porytiles_component().insert_attribute(metatile_id, attribute);
     }
@@ -536,7 +568,7 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_attributes_csv(Tileset 
 ChainableResult<void>
 ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const
 {
-    PT_TRY_CALL_PASS_ERR(import_porytiles_palette(dest, src_key, index, *pal_loader_), void);
+    PT_TRY_CALL_PASS_ERR(import_porytiles_palette(dest, src_key, index, project_root_, *pal_loader_), void);
     return {};
 }
 
@@ -548,7 +580,8 @@ ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const Artifact
     const std::vector<std::pair<std::string, ArtifactKey>> &frame_keys) const
 {
     // Parse anim.yaml to get params for this animation
-    auto params_result = anim_yaml_parser_->parse(params_key.key());
+    // Keys are relative to project_root_, so prepend for file I/O
+    auto params_result = anim_yaml_parser_->parse((project_root_ / params_key.key()).string());
     if (!params_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{"{}: failed to parse anim.yaml", FormatParam{params_key.key(), Style::bold}},
@@ -576,6 +609,7 @@ ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const Artifact
         (import_anim_frame_impl<Rgba32>(
             dest,
             key_frame_key,
+            project_root_,
             anim_name,
             "key",
             *png_rgba_loader_,
@@ -589,6 +623,7 @@ ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const Artifact
             (import_anim_frame_impl<Rgba32>(
                 dest,
                 frame_key,
+                project_root_,
                 anim_name,
                 frame_name,
                 *png_rgba_loader_,
@@ -603,7 +638,7 @@ ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const Artifact
 [[nodiscard]] ChainableResult<void>
 ProjectTilesetArtifactReader::read_config(Tileset &dest, const ArtifactKey &src_key) const
 {
-    return read_config_impl(dest, src_key, [](Tileset &t, const std::vector<std::string> &lines) {
+    return read_config_impl(dest, src_key, project_root_, [](Tileset &t, const std::vector<std::string> &lines) {
         t.porytiles_component().config(lines);
     });
 }
@@ -611,7 +646,7 @@ ProjectTilesetArtifactReader::read_config(Tileset &dest, const ArtifactKey &src_
 [[nodiscard]] ChainableResult<void>
 ProjectTilesetArtifactReader::read_local_config(Tileset &dest, const ArtifactKey &src_key) const
 {
-    return read_config_impl(dest, src_key, [](Tileset &t, const std::vector<std::string> &lines) {
+    return read_config_impl(dest, src_key, project_root_, [](Tileset &t, const std::vector<std::string> &lines) {
         t.porytiles_component().local_config(lines);
     });
 }

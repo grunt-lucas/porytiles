@@ -193,7 +193,12 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     // user that stale assets exist on disk?
 
     // Cache checksums after successful save
-    const auto current_checksums = checksum_provider_->compute_tileset_artifact_checksums(tileset.name());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        artifact_keys,
+        key_provider_->get_all_artifact_keys(tileset.name()),
+        "failed to get artifact keys for tileset save",
+        void);
+    const auto current_checksums = checksum_provider_->compute_tileset_artifact_checksums(artifact_keys);
     const auto cache_result = checksum_provider_->cache_tileset_checksums(tileset.name(), current_checksums);
     if (!cache_result.has_value()) {
         return FormattableError{cache_result.error()};
@@ -483,7 +488,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
 
 bool TilesetRepo::exists(const std::string &tileset_name) const
 {
-    return metadata_provider_->tileset_exists(tileset_name);
+    return metadata_provider_->exists(tileset_name);
 }
 
 } // namespace porytiles2

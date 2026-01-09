@@ -241,7 +241,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, BasicTransactionLifecycle)
     ASSERT_TRUE(begin_result.has_value());
 
     auto expected_file = test_root_ / "tileset_bottom.png";
-    ArtifactKey key{expected_file.string()};
+    ArtifactKey key{"tileset_bottom.png"};
     auto write_result = writer_->write_bottom_png(key, tileset);
     if (!write_result.has_value()) {
         FAIL() << "Write error: " << write_result.error().join(PlainTextFormatter{});
@@ -262,7 +262,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, RollbackTransaction)
     ASSERT_TRUE(begin_result.has_value());
 
     auto expected_file = test_root_ / "rollback_test.png";
-    ArtifactKey key{expected_file.string()};
+    ArtifactKey key{"rollback_test.png"};
     auto write_result = writer_->write_bottom_png(key, tileset);
     ASSERT_TRUE(write_result.has_value());
 
@@ -279,15 +279,15 @@ TEST_F(ProjectTilesetArtifactWriterTests, MultipleWritesInTransaction)
     auto begin_result = writer_->begin_transaction();
     ASSERT_TRUE(begin_result.has_value());
 
-    ArtifactKey key1{(test_root_ / "assets/bottom.png").string()};
+    ArtifactKey key1{"assets/bottom.png"};
     auto write_result1 = writer_->write_bottom_png(key1, tileset);
     ASSERT_TRUE(write_result1.has_value());
 
-    ArtifactKey key2{(test_root_ / "assets/middle.png").string()};
+    ArtifactKey key2{"assets/middle.png"};
     auto write_result2 = writer_->write_middle_png(key2, tileset);
     ASSERT_TRUE(write_result2.has_value());
 
-    ArtifactKey key3{(test_root_ / "assets/tiles.png").string()};
+    ArtifactKey key3{"assets/tiles.png"};
     auto write_result3 = writer_->write_tiles_png(key3, tileset);
     ASSERT_TRUE(write_result3.has_value());
 
@@ -316,7 +316,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, OverwriteExistingFiles)
     auto begin_result = writer_->begin_transaction();
     ASSERT_TRUE(begin_result.has_value());
 
-    ArtifactKey key{existing_file.string()};
+    ArtifactKey key{"existing.png"};
     auto write_result = writer_->write_bottom_png(key, tileset);
     ASSERT_TRUE(write_result.has_value());
 
@@ -335,7 +335,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, NestedDirectoryStructure)
     ASSERT_TRUE(begin_result.has_value());
 
     auto expected_file = test_root_ / "deeply/nested/directory/structure/file.png";
-    ArtifactKey key{expected_file.string()};
+    ArtifactKey key{"deeply/nested/directory/structure/file.png"};
     auto write_result = writer_->write_top_png(key, tileset);
     ASSERT_TRUE(write_result.has_value());
 
@@ -359,7 +359,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, NoTransactionInProgress)
     ASSERT_FALSE(rollback_result.has_value());
     EXPECT_EQ(rollback_result.error().details(PlainTextFormatter{}).at(0), "no transaction in progress");
 
-    ArtifactKey key{(test_root_ / "no_transaction.png").string()};
+    ArtifactKey key{"no_transaction.png"};
     auto write_result = writer_->write_bottom_png(key, tileset);
     ASSERT_FALSE(write_result.has_value());
     auto error_lines = write_result.error().details(PlainTextFormatter{});
@@ -391,7 +391,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, CommitCleansUpTempDirectory)
 
     ASSERT_GT(count_temp_dirs(), initial_temp_count);
 
-    ArtifactKey key{(test_root_ / "temp_cleanup.png").string()};
+    ArtifactKey key{"temp_cleanup.png"};
     auto write_result = writer_->write_bottom_png(key, tileset);
     ASSERT_TRUE(write_result.has_value());
 
@@ -425,7 +425,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, WriteMetatilesBin)
     ASSERT_TRUE(begin_result.has_value());
 
     auto expected_file = test_root_ / "metatiles.bin";
-    ArtifactKey key{expected_file.string()};
+    ArtifactKey key{"metatiles.bin"};
     auto write_result = writer_->write_metatiles_bin(key, tileset);
     ASSERT_TRUE(write_result.has_value());
 
@@ -443,7 +443,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, WriteMetatileAttributesBin)
     ASSERT_TRUE(begin_result.has_value());
 
     auto expected_file = test_root_ / "metatile_attributes.bin";
-    ArtifactKey key{expected_file.string()};
+    ArtifactKey key{"metatile_attributes.bin"};
     auto write_result = writer_->write_metatile_attributes_bin(key, tileset);
     ASSERT_TRUE(write_result.has_value());
 
@@ -463,7 +463,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, WritePalette)
     ASSERT_TRUE(begin_result.has_value());
 
     auto expected_file = test_root_ / "palette_0.pal";
-    ArtifactKey key{expected_file.string()};
+    ArtifactKey key{"palette_0.pal"};
     auto write_result = writer_->write_porymap_pal_n(key, tileset, 0);
     ASSERT_TRUE(write_result.has_value());
 
@@ -488,15 +488,15 @@ TEST_F(ProjectTilesetArtifactWriterTests, AtomicCommitAllOrNothing)
     auto begin_result = writer_->begin_transaction();
     ASSERT_TRUE(begin_result.has_value());
 
-    ArtifactKey key1{file1.string()};
+    ArtifactKey key1{"file1.png"};
     auto write_result1 = writer_->write_bottom_png(key1, tileset);
     ASSERT_TRUE(write_result1.has_value());
 
-    ArtifactKey key2{file2.string()};
+    ArtifactKey key2{"subdir/file2.png"};
     auto write_result2 = writer_->write_middle_png(key2, tileset);
     ASSERT_TRUE(write_result2.has_value());
 
-    ArtifactKey key3{file3.string()};
+    ArtifactKey key3{"file3.png"};
     auto write_result3 = writer_->write_top_png(key3, tileset);
     ASSERT_TRUE(write_result3.has_value());
 
@@ -515,7 +515,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, TransactionSequence)
     auto begin1 = writer_->begin_transaction();
     ASSERT_TRUE(begin1.has_value());
 
-    ArtifactKey key1{(test_root_ / "trans1.png").string()};
+    ArtifactKey key1{"trans1.png"};
     auto write_result1 = writer_->write_bottom_png(key1, tileset);
     ASSERT_TRUE(write_result1.has_value());
 
@@ -527,7 +527,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, TransactionSequence)
     auto begin2 = writer_->begin_transaction();
     ASSERT_TRUE(begin2.has_value());
 
-    ArtifactKey key2{(test_root_ / "trans2.png").string()};
+    ArtifactKey key2{"trans2.png"};
     auto write_result2 = writer_->write_middle_png(key2, tileset);
     ASSERT_TRUE(write_result2.has_value());
 
@@ -539,7 +539,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, TransactionSequence)
     auto begin3 = writer_->begin_transaction();
     ASSERT_TRUE(begin3.has_value());
 
-    ArtifactKey key3{(test_root_ / "trans3.png").string()};
+    ArtifactKey key3{"trans3.png"};
     auto write_result3 = writer_->write_top_png(key3, tileset);
     ASSERT_TRUE(write_result3.has_value());
 
