@@ -66,7 +66,7 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsFlowerAnimationParamsFromGen
     EXPECT_EQ(flower.frame_offset(), 0u);
 
     // Verify frames from pointer array [Frame0, Frame1, Frame0, Frame2]
-    const auto &frames = flower.frames();
+    const auto &frames = flower.frame_order();
     ASSERT_EQ(frames.size(), 4u);
     EXPECT_EQ(frames[0], "0");
     EXPECT_EQ(frames[1], "1");
@@ -98,7 +98,7 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsLandWaterEdgeAnimationParams
     EXPECT_EQ(land_water_edge.frame_offset(), 4u);
 
     // Verify frames from pointer array (4 frames for vanilla land_water_edge)
-    const auto &frames = land_water_edge.frames();
+    const auto &frames = land_water_edge.frame_order();
     ASSERT_EQ(frames.size(), 4u);
     for (std::size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(frames[i], std::to_string(i));
@@ -130,7 +130,7 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsWaterAnimationParamsFromGene
     EXPECT_EQ(water.frame_offset(), 1u);
 
     // Verify frames from pointer array
-    const auto &frames = water.frames();
+    const auto &frames = water.frame_order();
     ASSERT_EQ(frames.size(), 8u);
     EXPECT_EQ(frames[0], "0");
     EXPECT_EQ(frames[1], "1");
@@ -190,7 +190,7 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsFlowerAnimationParamsFromVan
     EXPECT_EQ(flower.frame_offset(), 0u);
 
     // Verify frames from pointer array
-    const auto &frames = flower.frames();
+    const auto &frames = flower.frame_order();
     ASSERT_EQ(frames.size(), 4u);
     EXPECT_EQ(frames[0], "0");
     EXPECT_EQ(frames[1], "1");
@@ -220,7 +220,7 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsLandWaterEdgeAnimationParams
     EXPECT_EQ(land_water_edge.frame_offset(), 4u);
 
     // Verify frames from pointer array (4 frames for vanilla land_water_edge)
-    const auto &frames = land_water_edge.frames();
+    const auto &frames = land_water_edge.frame_order();
     ASSERT_EQ(frames.size(), 4u);
     for (std::size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(frames[i], std::to_string(i));
@@ -249,7 +249,7 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsWaterAnimationParamsFromVani
     EXPECT_EQ(water.frame_offset(), 1u);
 
     // Verify frames from pointer array (8 frames for vanilla water)
-    const auto &frames = water.frames();
+    const auto &frames = water.frame_order();
     ASSERT_EQ(frames.size(), 8u);
     for (std::size_t i = 0; i < 8; ++i) {
         EXPECT_EQ(frames[i], std::to_string(i));

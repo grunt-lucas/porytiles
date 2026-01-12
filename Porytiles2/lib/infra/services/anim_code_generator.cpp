@@ -3,51 +3,16 @@
 #include <algorithm>
 #include <cctype>
 #include <format>
+#include <map>
 #include <ranges>
 #include <sstream>
 
 #include "porytiles2/domain/models/animation.hpp"
-#include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
 
 namespace {
 
 using namespace porytiles2;
-
-/**
- * @brief Converts a string frame name to a numeric index for code generation.
- *
- * @details
- * For INCBIN generation, frame names must be numeric (e.g., "0", "1", "2").
- * Named frames like "center" or "left" will cause a panic - the code generator
- * requires numeric frame names.
- *
- * @param frame_name The string frame name to convert
- * @return The numeric frame index
- * @pre frame_name must be a valid non-negative integer string
- */
-[[nodiscard]] std::size_t frame_name_to_index(const std::string &frame_name)
-{
-    // TODO: this is a temporary solution only, we really should support arbitrary frame names
-    try {
-        return std::stoull(frame_name);
-    }
-    catch (...) {
-        panic("frame_name_to_index: frame name '" + frame_name + "' is not a valid numeric index");
-    }
-}
-
-[[nodiscard]] std::size_t find_max_frame_index(const std::vector<std::string> &frames)
-{
-    if (frames.empty()) {
-        return 0;
-    }
-    std::size_t max_idx = 0;
-    for (const auto &frame : frames) {
-        max_idx = std::max(max_idx, frame_name_to_index(frame));
-    }
-    return max_idx;
-}
 
 [[nodiscard]] std::string generate_incbin_statements(
     const std::string &tileset_name,
@@ -58,12 +23,12 @@ using namespace porytiles2;
     std::ostringstream out;
 
     const std::string pascal_anim_name = to_pascal_case(anim_name);
-    const std::size_t max_frame_idx = find_max_frame_index(params.frames());
 
-    // Generate INCBIN for each unique frame referenced
-    for (std::size_t frame_idx = 0; frame_idx <= max_frame_idx; ++frame_idx) {
+    // Generate INCBIN for each unique frame in frame_names (position in vector = FrameN index)
+    for (std::size_t frame_idx = 0; frame_idx < params.frame_names().size(); ++frame_idx) {
+        const auto &frame_name = params.frame_names()[frame_idx];
         const std::string frame_file =
-            (tileset_path_from_project_root / "anim" / anim_name / std::format("{}.4bpp", frame_idx)).string();
+            (tileset_path_from_project_root / "anim" / anim_name / std::format("{}.4bpp", frame_name)).string();
 
         const auto statement = std::format(
             "const u16 gTilesetAnims_{}{}_{}_Frame{}[] = INCBIN_U16(\"{}\");\n",
@@ -88,13 +53,21 @@ generate_frame_array(const std::string &tileset_name, const std::string &anim_na
     const std::string array_name =
         std::format("gTilesetAnims_{}{}_{}", anim::porytiles_managed_prefix, tileset_name, pascal_anim_name);
 
+    // Build name-to-index map from frame_names (position = FrameN index)
+    std::map<std::string, std::size_t> frame_name_to_idx;
+    for (std::size_t i = 0; i < params.frame_names().size(); ++i) {
+        frame_name_to_idx[params.frame_names()[i]] = i;
+    }
+
     out << std::format("const u16 *const {}[] = {{\n", array_name);
 
-    for (std::size_t i = 0; i < params.frames().size(); ++i) {
-        const std::size_t frame_idx = frame_name_to_index(params.frames()[i]);
+    // Generate pointer array following frame_order
+    for (std::size_t i = 0; i < params.frame_order().size(); ++i) {
+        const auto &frame_name = params.frame_order()[i];
+        const std::size_t frame_idx = frame_name_to_idx.at(frame_name);
         out << std::format(
             "    gTilesetAnims_{}{}_{}_{}", anim::porytiles_managed_prefix, tileset_name, pascal_anim_name, frame_idx);
-        if (i < params.frames().size() - 1) {
+        if (i < params.frame_order().size() - 1) {
             out << ",";
         }
         out << "\n";

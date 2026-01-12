@@ -36,27 +36,6 @@
   - even though it's technical a user config file, since Porytiles overwrites it every time, it's unintuitive for users
   - JSON is better since comments are disallowed by default and syntax is simpler, users won't be confused when their idiosyncrasies get clobbered
 
-### Refactor Anim Frame Handling
-```yaml
-flower:
-  # Define frames, this becomes:
-  # const u16 gTilesetAnims_General_Flower_Frame0[] = INCBIN_U16("data/tilesets/primary/general/anim/flower/center.4bpp");
-  # const u16 gTilesetAnims_General_Flower_Frame1[] = INCBIN_U16("data/tilesets/primary/general/anim/flower/left.4bpp");
-  # const u16 gTilesetAnims_General_Flower_Frame2[] = INCBIN_U16("data/tilesets/primary/general/anim/flower/right.4bpp");
-  frames: ["center", "left", "right"]
-  
-  # const u16 *const gTilesetAnims_General_Flower[] = {
-  #          gTilesetAnims_General_Flower_Frame0,
-  #          gTilesetAnims_General_Flower_Frame2,
-  #          gTilesetAnims_General_Flower_Frame0,
-  #          gTilesetAnims_General_Flower_Frame1
-  # };
-  frame_order: ["center", "right", "center", "left"]
-
-  # User can choose key frame, must be a defined frame, otherwise it will just default to frames[0]
-  key_frame: "left"
-```
-
 ## Implement `LayoutDataProvider`
 Once we complete the `ProjectTilesetArtifactKeyProvider` refactor, create a `LayoutDataProvider` which parses `layouts.json`.
 We can then create a `TilesetPairProvider` that reads the layout data and provides mappings between primary/secondary.

@@ -1,7 +1,10 @@
 #include "porytiles2/infra/services/anim_yaml_parser.hpp"
 
 #include <fstream>
+#include <set>
 
+#include "fmt/format.h"
+#include "fmt/ranges.h"
 #include "yaml-cpp/yaml.h"
 
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -30,13 +33,27 @@ AnimationParams parse_animation_params(const YAML::Node &node)
         params.frame_offset(node["frame_offset"].as<std::size_t>());
     }
 
+    // Parse unique frame definitions
     if (node["frames"]) {
-        std::vector<std::string> frames;
+        std::vector<std::string> frame_names;
         for (const auto &frame : node["frames"]) {
             // Read as string - works for both "0" and 0 due to YAML type coercion
-            frames.push_back(frame.as<std::string>());
+            frame_names.push_back(frame.as<std::string>());
         }
-        params.frames(std::move(frames));
+        params.frame_names(std::move(frame_names));
+    }
+
+    // Parse playback sequence
+    if (node["frame_order"]) {
+        std::vector<std::string> frame_order;
+        for (const auto &frame : node["frame_order"]) {
+            frame_order.push_back(frame.as<std::string>());
+        }
+        params.frame_order(std::move(frame_order));
+    }
+    else {
+        // Default: frame_order = frame_names (for simple animations where playback order matches definition order)
+        params.frame_order(params.frame_names());
     }
 
     if (node["counter_max"]) {
@@ -65,10 +82,18 @@ YAML::Node serialize_animation_params(const AnimationParams &params)
     // Always write frames array since it's the core animation definition
     YAML::Node frames_node;
     frames_node.SetStyle(YAML::EmitterStyle::Flow);
-    for (const auto &frame : params.frames()) {
+    for (const auto &frame : params.frame_names()) {
         frames_node.push_back(frame);
     }
     node["frames"] = frames_node;
+
+    // Always write frame_order array since it defines the playback sequence
+    YAML::Node frame_order_node;
+    frame_order_node.SetStyle(YAML::EmitterStyle::Flow);
+    for (const auto &frame : params.frame_order()) {
+        frame_order_node.push_back(frame);
+    }
+    node["frame_order"] = frame_order_node;
 
     if (params.counter_max() != anim::default_counter_max) {
         node["counter_max"] = params.counter_max();
@@ -150,6 +175,30 @@ AnimYamlParser::parse(const std::filesystem::path &yaml_path) const
             }
 
             result.insert({anim_name, parse_animation_params(anim_node)});
+
+            // Validate that frame_order entries reference valid frame_names
+            const auto &parsed_params = result.at(anim_name);
+            std::set<std::string> valid_frames(parsed_params.frame_names().begin(), parsed_params.frame_names().end());
+
+            for (const auto &frame : parsed_params.frame_order()) {
+                if (!valid_frames.contains(frame)) {
+                    FileHighlightPrinter printer{format_};
+                    std::vector<std::string> err_lines;
+                    err_lines.push_back(format_->format(
+                        "{}:{}: frame_order entry '{}' does not exist in frames list",
+                        FormatParam{yaml_path.string(), Style::bold},
+                        FormatParam{line_idx + 1},
+                        FormatParam{frame, Style::bold}));
+                    err_lines.emplace_back();
+                    err_lines.push_back(format_->format(
+                        "valid frames are: {}",
+                        FormatParam{fmt::format("[{}]", fmt::join(parsed_params.frame_names(), ", ")), Style::bold}));
+                    err_lines.emplace_back();
+                    auto context = printer.print(yaml_path, std::vector<std::size_t>{line_idx});
+                    err_lines.insert(err_lines.end(), context.begin(), context.end());
+                    return FormattableError{std::move(err_lines)};
+                }
+            }
         }
 
         return result;

@@ -74,7 +74,7 @@ This document consolidates the project structure and animation refactoring plans
     - [Operation vs Path Types](#operation-vs-path-types)
   - [Appendix C: Implementation Roadmap](#appendix-c-implementation-roadmap)
     - [~~Phase 1: Configuration Foundation~~ **COMPLETE**](#phase-1-configuration-foundation-complete)
-    - [Phase 2: Frame Name Preservation](#phase-2-frame-name-preservation)
+    - [~~Phase 2: Frame Name Preservation~~ **COMPLETE**](#phase-2-frame-name-preservation-complete)
     - [~~Phase 3: Utility Directory \& Metadata~~ **COMPLETE**](#phase-3-utility-directory--metadata-complete)
     - [Phase 4: VanillaAnimationImporter](#phase-4-vanillaanimationimporter)
     - [Phase 5: C Header File Writers](#phase-5-c-header-file-writers)
@@ -1121,13 +1121,13 @@ This section outlines a high-level step-by-step plan to implement the refactorin
 
 ---
 
-### Phase 2: Frame Name Preservation
+### ~~Phase 2: Frame Name Preservation~~ **COMPLETE**
 
 **Goal:** Enable lossless named frame round-trips.
 
 1. **Add `frame_names` field to AnimationParams** model
 
-2. **Update AnimYamlParser** to read/write `frame_names`
+2. **Update AnimYamlParser** to read/write `frame_names` (now reads `frames` as unique definitions, `frame_order` as playback sequence)
 
 3. **Update compile workflow** to map named frames → numeric indices
 

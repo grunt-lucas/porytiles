@@ -24,7 +24,8 @@ inline constexpr std::size_t default_counter_max = 256;
  * The parameters map directly to the generated C code patterns:
  * - frame_factor: The modulus divisor in `timer % frame_factor == frame_offset` conditions
  * - frame_offset: The remainder value in `timer % frame_factor == frame_offset` conditions
- * - frames: The frame sequence array (e.g., [0, 1, 0, 2] means play frame0, frame1, frame0, frame2)
+ * - frame_names: Unique frame definitions; position in vector determines FrameN index (0-indexed)
+ * - frame_order: The playback sequence; each entry must reference a name from frame_names
  * - tile_offset: The VRAM offset where this animation's tiles begin (in TILE_OFFSET_4BPP units)
  * - tile_count: The number of tiles per animation frame
  * - counter_max: The maximum timer value before wrapping (typically 256)
@@ -72,23 +73,43 @@ class AnimationParams {
     }
 
     /**
-     * @brief Returns the frame sequence array.
+     * @brief Returns the unique frame definitions.
      *
      * @details
-     * Defines the order in which animation frames are played. For example, ["0", "1", "0", "2"] means the animation
-     * cycles through frame 0, frame 1, frame 0, frame 2. Frame names refer to the PNG files in the animation directory
-     * (0.png, 1.png, etc.) or can be arbitrary names like "center", "left", "right" for Porytiles animations.
+     * Lists all unique animation frame files. The position in this vector determines the FrameN index used in generated
+     * C code. For example, ["center", "left", "right"] means center.png is Frame0, left.png is Frame1, right.png is
+     * Frame2. Frame names can be arbitrary strings (not just numbers).
      *
-     * @return Reference to the frame sequence vector
+     * @return Reference to the unique frame names vector
      */
-    [[nodiscard]] const std::vector<std::string> &frames() const
+    [[nodiscard]] const std::vector<std::string> &frame_names() const
     {
-        return frames_;
+        return frame_names_;
     }
 
-    void frames(std::vector<std::string> value)
+    void frame_names(std::vector<std::string> value)
     {
-        frames_ = std::move(value);
+        frame_names_ = std::move(value);
+    }
+
+    /**
+     * @brief Returns the playback sequence.
+     *
+     * @details
+     * Defines the order in which animation frames are played. Each entry must reference a name from frame_names().
+     * For example, ["center", "right", "center", "left"] means play center, then right, then center, then left.
+     * Frames can repeat in the sequence to create complex animation patterns.
+     *
+     * @return Reference to the frame order vector
+     */
+    [[nodiscard]] const std::vector<std::string> &frame_order() const
+    {
+        return frame_order_;
+    }
+
+    void frame_order(std::vector<std::string> value)
+    {
+        frame_order_ = std::move(value);
     }
 
     /**
@@ -191,7 +212,8 @@ class AnimationParams {
   private:
     std::size_t frame_factor_{anim::default_frame_factor};
     std::size_t frame_offset_{anim::default_frame_offset};
-    std::vector<std::string> frames_{"0"};
+    std::vector<std::string> frame_names_{"0"};
+    std::vector<std::string> frame_order_{"0"};
     std::size_t tile_offset_{0};
     std::size_t tile_count_{0};
     std::size_t width_tiles_{0};

@@ -503,9 +503,19 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
 
             // Case-insensitive comparison to handle inconsistencies like TVTurnedOn vs TvTurnedOn
             if (to_lower_str(arr_anim_name) == to_lower_str(pascal_name)) {
-                auto frames = extract_frame_names(arr.elements());
-                if (!frames.empty()) {
-                    params.frames(std::move(frames));
+                auto frame_order = extract_frame_names(arr.elements());
+                if (!frame_order.empty()) {
+                    // Derive unique frame_names from frame_order (preserving first occurrence order)
+                    std::vector<std::string> frame_names;
+                    std::set<std::string> seen;
+                    for (const auto &frame : frame_order) {
+                        if (!seen.contains(frame)) {
+                            seen.insert(frame);
+                            frame_names.push_back(frame);
+                        }
+                    }
+                    params.frame_names(std::move(frame_names));
+                    params.frame_order(std::move(frame_order));
                     found_frames = true;
                 }
                 break;

@@ -599,17 +599,17 @@ ChainableResult<std::set<std::string>> ProjectTilesetArtifactKeyProvider::discov
             FormatParam{tileset_name, Style::bold})}};
     }
 
-    // Extract unique frame names from the frames array
-    std::set<std::string> frame_names;
-    for (const auto &frame_name : it->second.frames()) {
-        frame_names.insert(frame_name);
+    // Extract unique frame names from frame_names (the unique frame definitions)
+    std::set<std::string> frame_name_set;
+    for (const auto &frame_name : it->second.frame_names()) {
+        frame_name_set.insert(frame_name);
     }
 
     // Porytiles animations always require a key frame
     // TODO: this is kinda a hack, see TODOLIST.md for ideas on better keyframe handling
-    frame_names.insert("key");
+    frame_name_set.insert("key");
 
-    return frame_names;
+    return frame_name_set;
 }
 
 [[nodiscard]] ChainableResult<std::filesystem::path>
