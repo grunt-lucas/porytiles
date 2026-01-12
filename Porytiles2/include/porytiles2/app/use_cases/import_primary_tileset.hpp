@@ -10,6 +10,7 @@
 #include "porytiles2/domain/services/defunct_primary_tileset_importer.hpp"
 #include "porytiles2/domain/services/porytiles_tileset_manager.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
+#include "porytiles2/domain/services/primary_tileset_importer.hpp"
 #include "porytiles2/domain/services/tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
@@ -25,6 +26,7 @@ class ImportPrimaryTileset {
      * @brief Constructs an ImportPrimaryTileset use case with the given repositories and services.
      */
     ImportPrimaryTileset(
+        gsl::not_null<const PrimaryTilesetImporter *> importer,
         gsl::not_null<const TilesetRepo *> tileset_repo,
         gsl::not_null<const TilesetMetadataProvider *> tileset_metadata_provider,
         gsl::not_null<const PorytilesTilesetManager *> porytiles_tileset_manager,
@@ -32,21 +34,16 @@ class ImportPrimaryTileset {
         gsl::not_null<const AppConfig *> app_config,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag)
-        : tileset_repo_{tileset_repo}, tileset_metadata_provider_{tileset_metadata_provider},
+        : importer_{importer}, tileset_repo_{tileset_repo}, tileset_metadata_provider_{tileset_metadata_provider},
           porytiles_tileset_manager_{porytiles_tileset_manager}, domain_config_{domain_config}, app_config_{app_config},
           format_{format}, diag_{diag}
     {
     }
 
-    /**
-     * @brief Imports the primary Tileset with the given tileset name.
-     *
-     * @param tileset_name The name of the primary Tileset to import
-     * @return An empty ChainableResult on success, otherwise an error chain
-     */
     [[nodiscard]] ChainableResult<void> import(const std::string &tileset_name) const;
 
   private:
+    const PrimaryTilesetImporter *importer_;
     const TilesetRepo *tileset_repo_;
     const TilesetMetadataProvider *tileset_metadata_provider_;
     const PorytilesTilesetManager *porytiles_tileset_manager_;

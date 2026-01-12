@@ -33,10 +33,12 @@ This document consolidates the project structure and animation refactoring plans
       - [Project Key Provider](#project-key-provider-1)
       - [Project Reader](#project-reader-1)
       - [Project Writer](#project-writer)
-  - [6. VanillaAnimationImporter Service](#6-vanillaanimationimporter-service)
+  - [6. ProjectVanillaAnimImporter Service](#6-projectvanillaanimimporter-service)
     - [Purpose](#purpose)
     - [Interface](#interface)
     - [Implementation](#implementation)
+    - [Why IndexPixel Instead of Rgba32?](#why-indexpixel-instead-of-rgba32)
+    - [Key Frames Are NOT Extracted](#key-frames-are-not-extracted)
     - [Usage in ImportUseCase](#usage-in-importusecase)
   - [7. Import Workflow](#7-import-workflow)
     - [7.1 Pre-Import Validation](#71-pre-import-validation)
@@ -76,9 +78,9 @@ This document consolidates the project structure and animation refactoring plans
     - [~~Phase 1: Configuration Foundation~~ **COMPLETE**](#phase-1-configuration-foundation-complete)
     - [~~Phase 2: Frame Name Preservation~~ **COMPLETE**](#phase-2-frame-name-preservation-complete)
     - [~~Phase 3: Utility Directory \& Metadata~~ **COMPLETE**](#phase-3-utility-directory--metadata-complete)
-    - [Phase 4: VanillaAnimationImporter](#phase-4-vanillaanimationimporter)
+    - [~~Phase 4: VanillaAnimationImporter~~ **COMPLETE**](#phase-4-vanillaanimationimporter-complete)
     - [Phase 5: C Header File Writers](#phase-5-c-header-file-writers)
-    - [Phase 6: Import Use Case](#phase-6-import-use-case)
+    - [Phase 6: Import Use Case ⚠️ **PARTIAL**](#phase-6-import-use-case--partial)
     - [Phase 7: Restore Use Case](#phase-7-restore-use-case)
     - [Phase 8: Polish \& Edge Cases](#phase-8-polish--edge-cases)
     - [Implementation Notes](#implementation-notes)
@@ -524,7 +526,7 @@ for (const auto &porymap_anim : tileset.porymap_component().anims() | std::views
 
 ---
 
-## 6. VanillaAnimationImporter Service
+## 6. ProjectVanillaAnimImporter Service
 
 ### Purpose
 
@@ -534,86 +536,155 @@ Isolate all "discovery chaos" for first-time vanilla imports to a dedicated serv
 
 ```c++
 // Located in infra layer (does I/O: parses C files, reads PNGs)
-class VanillaAnimationImporter {
+class ProjectVanillaAnimImporter {
   public:
+    /**
+     * @brief Constructs a ProjectVanillaAnimImporter.
+     *
+     * @param project_root The path to the pokeemerald project root directory
+     * @param format Formatter for error message styling (non-owning, must outlive importer)
+     * @param diag UserDiagnostics for warnings and info messages (non-owning, must outlive importer)
+     */
+    ProjectVanillaAnimImporter(
+        std::filesystem::path project_root,
+        gsl::not_null<const TextFormatter *> format,
+        gsl::not_null<const UserDiagnostics *> diag);
+
     /**
      * @brief Import animations from a vanilla tileset's tileset_anims.c
      *
      * @details
      * Parses tileset_anims.c to discover animation names, frame paths, and parameters.
-     * Produces Animation<Rgba32> objects that can be added to a Tileset's Porytiles component.
+     * Produces Animation<IndexPixel> objects that keep tiles in their original indexed format.
+     *
+     * This importer does NOT extract key frames from tiles.png - that responsibility belongs to
+     * AnimationDecompiler, which needs to understand VRAM layout and palette assignment.
      *
      * @param tileset_name The name of the tileset to import animations from
-     * @return Map of animation names to Animation<Rgba32> objects
+     * @return Map of animation names to Animation<IndexPixel> objects
      * @pre Tileset must exist and have animations defined in tileset_anims.c
      * @pre Animation arrays must follow gTilesetAnims_{TilesetName}_{AnimName} naming convention
+     * @post Each returned Animation has has_key_frame() == false
+     * @post Each returned Animation has frames populated with IndexPixel tile data
      */
-    ChainableResult<std::map<std::string, Animation<Rgba32>>>
-    import_animations(const std::string &tileset_name);
+    [[nodiscard]] ChainableResult<std::map<std::string, Animation<IndexPixel>>>
+    import_animations(const std::string &tileset_name) const;
 };
 ```
 
 ### Implementation
 
+The implementation leverages existing parser services rather than duplicating parsing logic:
+
 ```c++
-ChainableResult<std::map<std::string, Animation<Rgba32>>>
-VanillaAnimationImporter::import_animations(const std::string &tileset_name) {
-    std::map<std::string, Animation<Rgba32>> result;
+ChainableResult<std::map<std::string, Animation<IndexPixel>>>
+ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) const {
+    std::map<std::string, Animation<IndexPixel>> result;
 
-    // 1. Parse tileset_anims.c to find all gTilesetAnims_{TilesetName}_* arrays
-    const auto anim_names = parse_vanilla_anim_names(tileset_name);
+    // Step 1: Get tileset metadata (callback function name) from headers.h
+    ProjectTilesetMetadataProvider metadata_provider{project_root_, format_, diag_};
+    auto metadata = metadata_provider.metadata_for(tileset_name);
+    if (!metadata.has_animations()) {
+        return result;  // No animations - return empty map
+    }
+    const std::string callback_func = metadata.callback_func().value();
+    const std::string pascal_tileset = extract_tileset_shorthand(tileset_name);
 
-    for (const auto &anim_name : anim_names) {
-        // 2. For each animation, find frame INCBIN paths
-        const auto frame_paths = parse_vanilla_frame_paths(tileset_name, anim_name);
+    // Step 2: Parse AnimationParams from tileset_anims.c callback chain
+    AnimCodeParser anim_parser{format_, diag_};
+    auto anim_params_map = anim_parser.parse_from_callback(
+        tileset_anims_path, callback_func, pascal_tileset, /*porytiles_managed=*/false);
 
-        // 3. Read frame PNG files from discovered paths
-        std::vector<AnimationFrame<Rgba32>> frames;
-        for (const auto &path : frame_paths) {
-            const auto frame = read_png_as_frame(path);
-            frames.push_back(frame);
+    // Step 3: Parse INCBIN declarations to find PNG frame file paths
+    CParserFacade c_parser{tileset_anims_path, format_};
+    const std::string incbin_prefix = "gTilesetAnims_" + pascal_tileset + "_";
+    auto incbin_decls = c_parser.parse_incbin_arrays(incbin_prefix);
+
+    // Build map: frame variable name -> .png file path
+    std::map<std::string, std::filesystem::path> frame_paths;
+    for (const auto &decl : incbin_decls) {
+        if (decl.variable_name().find("_Frame") != std::string::npos) {
+            frame_paths[decl.variable_name()] = project_root_ / fourBpp_to_png_path(decl.paths().front());
+        }
+    }
+
+    // Step 4: Load frame PNGs and extract IndexPixel tiles
+    PngIndexedImageLoader png_loader;
+    for (const auto &[anim_name, params] : anim_params_map) {
+        Animation<IndexPixel> anim{anim_name};
+        anim.params(params);
+
+        const std::string pascal_anim_name = to_pascal_case(anim_name);
+        for (const auto &frame_name : params.frame_names()) {
+            const std::string frame_var =
+                "gTilesetAnims_" + pascal_tileset + "_" + pascal_anim_name + "_Frame" + frame_name;
+
+            const auto &frame_png_path = frame_paths.at(frame_var);
+            auto frame_png = png_loader.load_from_file(frame_png_path);
+
+            // Step 5: Extract tiles using domain algorithm
+            std::vector<PixelTile<IndexPixel>> tiles = extract_tiles_from_image(*frame_png);
+
+            AnimationFrame<IndexPixel> frame{frame_name, std::move(tiles)};
+            anim.put_frame(frame_name, std::move(frame));
         }
 
-        // 4. Parse animation parameters from callback code
-        const auto params = parse_vanilla_anim_params(tileset_name, anim_name);
-
-        // 5. Construct Animation object
-        Animation<Rgba32> animation{anim_name, params, frames};
-        result[anim_name] = std::move(animation);
+        result[anim_name] = std::move(anim);
     }
 
     return result;
 }
 ```
 
+### Why IndexPixel Instead of Rgba32?
+
+The implementation uses `Animation<IndexPixel>` instead of `Animation<Rgba32>` for several reasons:
+
+1. **Preserves original format**: Vanilla animation frames are indexed-color PNGs. Converting to RGBA would lose palette information.
+2. **Matches Porymap component**: The animations populate the Porymap component, which uses IndexPixel for tiles.
+3. **Key frame responsibility**: Extracting key frames requires RGBA (for palette matching). This is AnimationDecompiler's job, not the vanilla importer.
+4. **Simpler workflow**: No unnecessary color conversion overhead.
+
+### Key Frames Are NOT Extracted
+
+The `ProjectVanillaAnimImporter` deliberately does NOT extract key frames from `tiles.png`. Key frame extraction requires:
+- Understanding VRAM tile layout
+- Palette assignment knowledge
+- Pixel-level comparison to identify which tile in tiles.png corresponds to the animation
+
+This is `AnimationDecompiler`'s responsibility. The importer only handles the "easy" part: reading animation parameters and frame PNGs from vanilla assets.
+
 ### Usage in ImportUseCase
 
 ```c++
-// First-time import workflow
-if (!key_provider_->artifact_exists(porytiles_anim_params_key)) {
-    // No anim.yaml exists - this is a first-time import
-    const auto imported_anims = vanilla_importer_->import_animations(tileset_name);
-    for (const auto &[name, anim] : imported_anims) {
-        tileset->porytiles_component().add_anim(name, anim);
-    }
-    // After import, tileset is now "managed" and uses deterministic paths
+// During vanilla import workflow
+ProjectVanillaAnimImporter vanilla_importer{project_root, format, diag};
+auto imported_anims = vanilla_importer.import_animations(tileset_name);
+
+// The returned animations have IndexPixel frames but no key frames
+// Key frames are extracted later by AnimationDecompiler during the full decompilation process
+for (const auto &[name, anim] : imported_anims) {
+    porymap_component.add_anim(name, anim);
 }
 ```
 
 **Architecture:**
 
 ```
-ImportUseCase (app layer)
-    ├── VanillaAnimationImporter (infra) ← reads from scattered paths
-    ├── TilesetFactory (domain)          ← creates empty tileset
-    └── TilesetRepo (infra)              ← saves to deterministic paths
+ImportPrimaryTileset (app layer use case)
+    ├── PrimaryTilesetImporter (domain)   ← orchestrates decompilation
+    │   └── ProjectPrimaryTilesetImporter (infra) ← import_from_vanilla()
+    │       └── ProjectVanillaAnimImporter (infra) ← reads animation frames
+    ├── TilesetFactory (domain)           ← creates empty tileset
+    └── TilesetRepo (infra)               ← saves to deterministic paths
 ```
 
-VanillaAnimationImporter is self-contained:
+ProjectVanillaAnimImporter is self-contained:
 - Lives in `infra/` because it does I/O
-- Has its **own internal path-finding logic** for INCBIN parsing
+- Reuses existing parser services (AnimCodeParser, CParserFacade, PngIndexedImageLoader)
 - Does NOT use `ProjectTilesetArtifactKeyProvider`—it predates the "managed" state
-- Returns in-memory objects with frame data already loaded
+- Returns in-memory `Animation<IndexPixel>` objects with frame data already loaded
+- Does NOT extract key frames (that's AnimationDecompiler's job)
 
 ---
 
@@ -962,20 +1033,18 @@ Users importing vanilla tilesets must ensure their `tileset_anims.c` follows thi
 - **Animation models** (Animation<T>, AnimationParams, AnimationFrame)
 - **Config system** with layered approach
 - **anim.yaml parser**
+- **Tileset path config values** (`tileset.paths.primary.src/bin`, etc.)
+- **animation.overwrite_callback** config value
+- **frame_names field support** in AnimYamlParser (reads `frames` as definitions, `frame_order` as playback sequence)
+- **porytiles/ utility directory** support
+- **original_artifacts.json** model and reader/writer (OriginalArtifacts, ProjectPorytilesTilesetManager)
+- **ProjectVanillaAnimImporter** service (returns `Animation<IndexPixel>`, does NOT extract key frames)
+- **extract_tiles_from_image()** domain algorithm in `tile_extractors.hpp`
+- **PrimaryTilesetImporter** domain service (partial - orchestrates decompilation workflow)
+- **ProjectPrimaryTilesetImporter** infra service (stub - needs full implementation)
+- **ImportPrimaryTileset** use case (exists, workflow incomplete)
 
 ### 10.2 Needed
-
-**Configuration:**
-- [ ] Tileset path config values (`tileset.paths.primary.src/bin`, etc.)
-- [ ] `animation.overwrite_callback` config value
-
-**Animation System:**
-- [ ] `frame_names` field support in AnimYamlParser (for round-trip preservation)
-- [ ] VanillaAnimationImporter service
-
-**Utility Directory:**
-- [ ] `porytiles/` utility directory support
-- [ ] `original_artifacts.json` model and reader/writer
 
 **C File Modification:**
 - [ ] HeaderStructFieldWriter (modify headers.h struct fields)
@@ -983,7 +1052,7 @@ Users importing vanilla tilesets must ensure their `tileset_anims.c` follows thi
 - [ ] TilesetAnimsModifier (wire generated code into tileset_anims.c)
 
 **Use Cases:**
-- [ ] ImportPrimaryTilesetUseCase (replaces defunct version)
+- [ ] Complete ImportPrimaryTileset workflow (PrimaryTilesetImporter.import() still returns TODO)
 - [ ] RestoreTilesetUseCase
 - [ ] Pre-import validation
 - [ ] Atomic import with rollback
@@ -1155,20 +1224,35 @@ This section outlines a high-level step-by-step plan to implement the refactorin
 
 ---
 
-### Phase 4: VanillaAnimationImporter
+### ~~Phase 4: VanillaAnimationImporter~~ **COMPLETE**
 
 **Goal:** Import animations from vanilla tileset_anims.c.
 
-1. **Create VanillaAnimationImporter** class (`infra/services/`)
-   - Reuse existing AnimCodeParser for callback chain parsing
-   - Read frames from INCBIN paths (scattered locations)
-   - Construct Animation<Rgba32> objects
+1. **Created ProjectVanillaAnimImporter** class (`infra/services/`)
+   - Reuses existing AnimCodeParser for callback chain parsing
+   - Reuses CParserFacade for INCBIN declaration parsing
+   - Reuses PngIndexedImageLoader for loading frame PNGs
+   - Reads frames from INCBIN paths (scattered locations)
+   - Constructs `Animation<IndexPixel>` objects (keeps indexed format, no RGBA conversion)
 
-2. **Add key frame extraction** using AnimationDecompiler logic
+2. **Created `extract_tiles_from_image()` domain algorithm** (`domain/algorithms/tile_extractors.hpp`)
+   - Generic template function for extracting 8x8 tiles from images
+   - Two overloads: extract all tiles, or extract subset at offset
 
-3. **Generate anim.yaml** with extracted parameters
+3. **Key frame extraction is NOT done by this importer**
+   - Key frame extraction requires VRAM layout knowledge and palette matching
+   - This responsibility stays with AnimationDecompiler
+   - Returned animations have `has_key_frame() == false`
 
-**Verification:** Import animations from test vanilla tileset, verify anim.yaml and frames created.
+4. **anim.yaml generation** happens during the full compile workflow, not during import
+
+**Key Design Decision:** Using `Animation<IndexPixel>` instead of `Animation<Rgba32>` because:
+- Preserves original indexed color format
+- Matches Porymap component tile format
+- Avoids unnecessary RGBA conversion overhead
+- Key frame extraction (which needs RGBA) is AnimationDecompiler's responsibility
+
+**Verification:** Integration tests in `project_vanilla_anim_importer_test.cpp` verify import of all 5 animations from gTileset_General (flower, land_water_edge, sand_water_edge, water, waterfall).
 
 ---
 
@@ -1196,20 +1280,52 @@ This section outlines a high-level step-by-step plan to implement the refactorin
 
 ---
 
-### Phase 6: Import Use Case
+### Phase 6: Import Use Case ⚠️ **PARTIAL**
 
 **Goal:** Orchestrate full import workflow.
 
-1. **Create ImportPrimaryTilesetUseCase** (`app/use_cases/`)
-   - Pre-import validation (tileset exists, not managed, naming conventions)
-   - Orchestrate: VanillaAnimationImporter → TilesetFactory → TilesetRepo::save
-   - Write original_artifacts.json
-   - Call header writers
-   - Transaction semantics (rollback on failure)
+**Completed:**
 
-2. **Add CLI command** `porytiles import-tileset <tileset_name>`
+1. **Created ImportPrimaryTileset** use case (`app/use_cases/`)
+   - Pre-import validation (tileset exists via TilesetMetadataProvider)
+   - Check if already Porytiles-managed (via PorytilesTilesetManager)
+   - Calls PrimaryTilesetImporter.import() to orchestrate decompilation
 
-3. **Integration tests** against test pokeemerald project
+2. **Created PrimaryTilesetImporter** domain service (`domain/services/`)
+   - Abstract base class with `import_from_vanilla()` pure virtual method
+   - `import()` method orchestrates decompilation:
+     - Calls `import_from_vanilla()` to get PorymapTilesetComponent
+     - Triple-layerizes via LayerModeConverter
+     - Decompiles metatiles via MetatileDecompiler
+   - **Incomplete:** Returns `TODO: impl` after decompilation steps
+
+3. **Created ProjectPrimaryTilesetImporter** infra service (`infra/services/`)
+   - Implements `import_from_vanilla()` abstract method
+   - **Stub:** Currently returns `FormattableError{"TODO: impl"}`
+
+4. **Added CLI command** `porytiles import-tileset <tileset_name>` via ImportTilesetCommand
+
+**Still Needed:**
+
+- [ ] Complete `PrimaryTilesetImporter::import()` implementation (after metatile decompilation)
+- [ ] Complete `ProjectPrimaryTilesetImporter::import_from_vanilla()` implementation
+- [ ] Write original_artifacts.json after successful import
+- [ ] Call header writers (Phase 5 components)
+- [ ] Transaction semantics (rollback on failure)
+- [ ] Integration tests against test pokeemerald project
+
+**Architecture (partially implemented):**
+
+```
+ImportPrimaryTileset (app layer use case)
+    ├── TilesetMetadataProvider (domain) ← validates tileset exists
+    ├── PorytilesTilesetManager (domain) ← checks if already managed
+    ├── PrimaryTilesetImporter (domain)  ← orchestrates decompilation
+    │   └── ProjectPrimaryTilesetImporter (infra) ← import_from_vanilla() [STUB]
+    │       └── ProjectVanillaAnimImporter (infra) ← reads animation frames [DONE]
+    ├── TilesetFactory (domain)           ← creates empty tileset
+    └── TilesetRepo (infra)               ← saves to deterministic paths
+```
 
 **Verification:** Import gTileset_General, verify all files created, project compiles.
 

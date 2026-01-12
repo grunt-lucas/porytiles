@@ -8,6 +8,7 @@
 #include <iterator>
 #include <optional>
 
+#include "porytiles2/domain/algorithms/tile_extractors.hpp"
 #include "porytiles2/domain/models/animation.hpp"
 #include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/domain/models/porytiles_tileset_component.hpp"
@@ -25,54 +26,6 @@ using namespace porytiles2;
 
 // TODO: don't hardcode, this is duplicated in ProjectTilesetArtifactKeyProvider
 const std::filesystem::path tileset_anims_c_rel_path = std::filesystem::path{"src"} / "tileset_anims.c";
-
-/**
- * @brief Helper template function to extract 8x8 tiles from an image in row-major order.
- *
- * @tparam PixelType The pixel type (Rgba32 or IndexPixel)
- * @param img The source image
- * @return Vector of extracted tiles
- * @pre Image dimensions must be multiples of 8
- */
-template <typename PixelType>
-std::vector<PixelTile<PixelType>> extract_tiles_from_image(const Image<PixelType> &img)
-{
-    if (img.width() % tile::side_length_pix != 0 || img.height() % tile::side_length_pix != 0) {
-        panic(
-            std::format(
-                "Animation frame dimensions must be multiples of {}, got {}x{}",
-                tile::side_length_pix,
-                img.width(),
-                img.height()));
-    }
-
-    const std::size_t tiles_per_row = img.width() / tile::side_length_pix;
-    const std::size_t tiles_per_col = img.height() / tile::side_length_pix;
-
-    std::vector<PixelTile<PixelType>> tiles;
-    tiles.reserve(tiles_per_row * tiles_per_col);
-
-    for (std::size_t tile_row = 0; tile_row < tiles_per_col; ++tile_row) {
-        for (std::size_t tile_col = 0; tile_col < tiles_per_row; ++tile_col) {
-            PixelTile<PixelType> pixel_tile;
-
-            const std::size_t pixel_row_offset = tile_row * tile::side_length_pix;
-            const std::size_t pixel_col_offset = tile_col * tile::side_length_pix;
-
-            for (std::size_t pixel_row = 0; pixel_row < tile::side_length_pix; ++pixel_row) {
-                for (std::size_t pixel_col = 0; pixel_col < tile::side_length_pix; ++pixel_col) {
-                    const std::size_t src_row = pixel_row_offset + pixel_row;
-                    const std::size_t src_col = pixel_col_offset + pixel_col;
-                    pixel_tile.set(pixel_row, pixel_col, img.at(src_row, src_col));
-                }
-            }
-
-            tiles.push_back(std::move(pixel_tile));
-        }
-    }
-
-    return tiles;
-}
 
 ChainableResult<void> import_layer_png(
     Tileset &dest,

@@ -173,11 +173,6 @@ Animation<Rgba32> AnimationDecompiler::decompile_animation(
 
     const auto &pal = pals.at(pal_index);
 
-    /*
-     * TODO: this is broken until we implement the anim param reading. Currently, when importing a tileset, tile_offset
-     * and tile_count come back as default zero values, since there is no param parsing. So this vector is empty and
-     * thus the saved key frame will be an empty file.
-     */
     // Extract key frame tiles from tiles.png
     std::vector<PixelTile<IndexPixel>> key_frame_index_tiles =
         extract_animation_tiles(tiles_png, tile_offset, tile_count);

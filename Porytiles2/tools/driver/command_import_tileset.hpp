@@ -32,6 +32,7 @@
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/infra/services/project_porytiles_tileset_manager.hpp"
+#include "porytiles2/infra/services/project_primary_tileset_importer.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/di/components.hpp"
 #include "porytiles2/xcut/diagnostics/stderr_styled_user_diagnostics.hpp"
@@ -96,17 +97,12 @@ class ImportTilesetCommand final : public Command {
         AnimCodeParser anim_code_parser{text_formatter, diag.get()};
         AnimCodeGenerator anim_code_generator{};
 
-        // Setup primary importer and compiler
-        DefunctPrimaryTilesetImporter importer{
-            &config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
-        PrimaryTilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
-
         // Setup behavior map provider and attributes CSV loader
         HeaderBehaviorMapProvider behavior_map_provider{
             project_root / behaviors_header_root_relative, text_formatter, diag.get()};
         AttributesCsvLoader attributes_csv_loader{text_formatter, &behavior_map_provider};
 
-        // Setup metadata provider and tileset manager
+        // Setup metadata provider, tileset manager, and vanilla animation importer
         ProjectTilesetMetadataProvider metadata_provider{project_root, text_formatter, diag.get()};
         ProjectPorytilesTilesetManager tileset_manager{project_root};
 
@@ -140,8 +136,15 @@ class ImportTilesetCommand final : public Command {
             text_formatter,
             diag.get()};
 
+        ProjectPrimaryTilesetImporter importer{
+            &config,
+            text_formatter,
+            diag.get(),
+            tile_printer.get(),
+            pal_printer.get(),
+        };
         ImportPrimaryTileset import_use_case{
-            &repo, &metadata_provider, &tileset_manager, &config, &config, text_formatter, diag.get()};
+            &importer, &repo, &metadata_provider, &tileset_manager, &config, &config, text_formatter, diag.get()};
 
         // Run the use case
         auto import_result = import_use_case.import(tileset_name_);
