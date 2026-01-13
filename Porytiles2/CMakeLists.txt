@@ -8,16 +8,8 @@ set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -fstandalone-debug -fno-limit-debug-info -fno-
 # Configuration Code Generation
 # ============================================================================
 
-# Find Python interpreter - prefer venv if it exists
-if (EXISTS "${CMAKE_SOURCE_DIR}/.venv/bin/python3.13")
-    set(Python3_EXECUTABLE "${CMAKE_SOURCE_DIR}/.venv/bin/python3.13")
-elseif (EXISTS "${CMAKE_SOURCE_DIR}/.venv/bin/python3")
-    set(Python3_EXECUTABLE "${CMAKE_SOURCE_DIR}/.venv/bin/python3")
-elseif (EXISTS "${CMAKE_SOURCE_DIR}/.venv/bin/python")
-    set(Python3_EXECUTABLE "${CMAKE_SOURCE_DIR}/.venv/bin/python")
-endif ()
-
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
+# Find uv executable for Python script execution
+find_program(UV_EXECUTABLE uv REQUIRED)
 
 # Define generated output files
 set(GENERATED_CONFIG_FILES
@@ -50,16 +42,17 @@ file(GLOB CONFIG_TEMPLATES
         "${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/*.jinja2"
 )
 
-# Generate config files before building
+# Generate config files before building using uv run
 add_custom_command(
         OUTPUT ${GENERATED_CONFIG_FILES}
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/Scripts/generate_config.py
+        COMMAND ${UV_EXECUTABLE} run ${CMAKE_SOURCE_DIR}/Scripts/generate_config.py
         DEPENDS
         ${CONFIG_SCHEMA}
         ${CMAKE_SOURCE_DIR}/Scripts/generate_config.py
         ${CONFIG_TEMPLATES}
+        ${CMAKE_SOURCE_DIR}/pyproject.toml
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMENT "Generating configuration code from templates..."
+        COMMENT "Generating configuration code from templates (via uv)..."
         VERBATIM
 )
 

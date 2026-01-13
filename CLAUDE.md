@@ -65,15 +65,17 @@ cmake --build clion-build-debug -j7 > /tmp/build.log 2>&1  # Build (check exit c
 
 ## Python Environment For Config System Code Generation
 
-**CRITICAL: ALWAYS use `.venv` when running Python scripts!**
+**CRITICAL: Use `uv` for Python script execution!**
+
+Porytiles2 uses [uv](https://docs.astral.sh/uv/) for Python dependency management.
+Install uv if you haven't: https://docs.astral.sh/uv/getting-started/installation/
 
 ```bash
-# Setup (if needed)
-python3 -m venv .venv && source .venv/bin/activate && pip install Jinja2 PyYAML
-
 # Regenerate config files (after modifying config_schema.yaml or .jinja2 templates)
-source .venv/bin/activate && python Scripts/generate_config.py
+uv run Scripts/generate_config.py
 ```
+
+That's it - `uv run` automatically handles dependencies from `pyproject.toml`.
 
 ## 7 Claude Rules
 
@@ -99,7 +101,7 @@ Follow the style guide in @./STYLE.md
 - When something doesn't work, debug and fix it - **don't start over with a simple version**
 
 ### Code Style Rules
-- **ALWAYS use `.venv`** when running Python scripts
+- **ALWAYS use `uv run`** when running Python scripts
 - **ALWAYS follow the code style** in STYLE.md
 - Use braced initialization where possible (but avoid when ambiguous constructors exist)
 - **Never** include headers using relative paths
