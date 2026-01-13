@@ -103,10 +103,6 @@ class TilesetArtifactKeyProvider {
     [[nodiscard]] virtual ChainableResult<ArtifactKey>
     key_for_porytiles_anim_params(const std::string &tileset_name) const = 0;
 
-    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_config(const std::string &tileset_name) const = 0;
-
-    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_local_config(const std::string &tileset_name) const = 0;
-
     /*
      * Utilities
      */
@@ -376,24 +372,6 @@ class TilesetArtifactKeyProvider {
             std::vector<ArtifactKey>);
         if (artifact_exists(anim_yaml_key)) {
             result.push_back(anim_yaml_key);
-        }
-
-        PT_TRY_ASSIGN_CHAIN_ERR(
-            config_key,
-            key_for_config(tileset_name),
-            "failed to get Porytiles artifact keys",
-            std::vector<ArtifactKey>);
-        if (artifact_exists(config_key)) {
-            result.push_back(config_key);
-        }
-
-        PT_TRY_ASSIGN_CHAIN_ERR(
-            local_config_key,
-            key_for_local_config(tileset_name),
-            "failed to get Porytiles artifact keys",
-            std::vector<ArtifactKey>);
-        if (artifact_exists(local_config_key)) {
-            result.push_back(local_config_key);
         }
 
         return result;

@@ -80,10 +80,6 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
         const ArtifactKey &key_frame_key,
         const std::vector<std::pair<std::string, ArtifactKey>> &frame_keys) const override;
 
-    [[nodiscard]] ChainableResult<void> read_config(Tileset &dest, const ArtifactKey &src_key) const override;
-
-    [[nodiscard]] ChainableResult<void> read_local_config(Tileset &dest, const ArtifactKey &src_key) const override;
-
   private:
     const std::filesystem::path project_root_;
     const PngRgbaImageLoader *png_rgba_loader_;

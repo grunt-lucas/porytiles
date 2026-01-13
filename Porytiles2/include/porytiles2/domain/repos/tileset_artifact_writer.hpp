@@ -126,10 +126,6 @@ class TilesetArtifactWriter {
      */
     [[nodiscard]] virtual ChainableResult<void>
     write_porytiles_anim_params(const ArtifactKey &dest_key, const Tileset &src) = 0;
-
-    [[nodiscard]] virtual ChainableResult<void> write_config(const ArtifactKey &dest_key, const Tileset &src) = 0;
-
-    [[nodiscard]] virtual ChainableResult<void> write_local_config(const ArtifactKey &dest_key, const Tileset &src) = 0;
 };
 
 } // namespace porytiles2

@@ -11,7 +11,6 @@
 
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/packing/models/palette_hint.hpp"
-#include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/infra/config/config_provider.hpp"
 #include "porytiles2/infra/config/valid_yaml_paths.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -594,52 +593,42 @@ std::optional<YAML::Node> load_yaml_file(
  *
  * @details
  * Returns config file paths in priority order (highest to lowest):
- * 1. tileset_folder/config.local.yaml
- * 2. tileset_folder/config.yaml
- * 3. project_root/config.local.yaml
- * 4. project_root/config.yaml
+ * 1. porytiles/tilesets/{tileset_name}/config.local.yaml (tileset-specific local overrides)
+ * 2. porytiles/tilesets/{tileset_name}/config.yaml (tileset-specific config)
+ * 3. porytiles/config.local.yaml (project-wide local overrides)
+ * 4. porytiles/config.yaml (project-wide defaults)
+ *
+ * Config files are stored in the centralized Porytiles utility directory rather than
+ * within individual tileset folders.
  *
  * @param project_root The project root directory
- * @param key_provider Provider for generating tileset artifact keys and paths
  * @param tileset The name of the tileset
- * @return ChainableResult containing vector of config file paths in priority order, or error
+ * @return Vector of config file paths in priority order
  */
-porytiles2::ChainableResult<std::vector<std::filesystem::path>> get_tileset_config_path_chain(
-    const std::filesystem::path &project_root,
-    const TilesetArtifactKeyProvider *key_provider,
-    const std::string &tileset)
+std::vector<std::filesystem::path>
+get_tileset_config_path_chain(const std::filesystem::path &project_root, const std::string &tileset)
 {
     /*
-     * TODO: once we add layout support, we'll need a separate method to resolve the config path chain for layouts,
-     * since layouts will have their own LayoutArtifactKeyProvider.
+     * TODO: once we add layout support, we'll need a separate method to resolve the config path chain for layouts.
      */
 
     std::vector<std::filesystem::path> paths;
 
-    // Get tileset-specific config paths using the key provider
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        tileset_local_config_key,
-        key_provider->key_for_local_config(tileset),
-        "failed to get config path chain for tileset '" + tileset + "'",
-        std::vector<std::filesystem::path>);
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        tileset_config_key,
-        key_provider->key_for_config(tileset),
-        "failed to get config path chain for tileset '" + tileset + "'",
-        std::vector<std::filesystem::path>);
+    // Porytiles utility directory root
+    const auto porytiles_dir = project_root / "porytiles";
 
     // Priority order (highest to lowest):
-    // 1. tileset_folder/porytiles.local.yaml
-    paths.emplace_back(tileset_local_config_key.key());
+    // 1. porytiles/tilesets/{tileset_name}/config.local.yaml
+    paths.push_back(porytiles_dir / "tilesets" / tileset / "config.local.yaml");
 
-    // 2. tileset_folder/porytiles.yaml
-    paths.emplace_back(tileset_config_key.key());
+    // 2. porytiles/tilesets/{tileset_name}/config.yaml
+    paths.push_back(porytiles_dir / "tilesets" / tileset / "config.yaml");
 
-    // 3. project_root/porytiles.local.yaml
-    paths.push_back(project_root / "porytiles.local.yaml");
+    // 3. porytiles/config.local.yaml
+    paths.push_back(porytiles_dir / "config.local.yaml");
 
-    // 4. project_root/porytiles.yaml
-    paths.push_back(project_root / "porytiles.yaml");
+    // 4. porytiles/config.yaml
+    paths.push_back(porytiles_dir / "config.yaml");
 
     return paths;
 }
@@ -652,20 +641,16 @@ porytiles2::ChainableResult<std::vector<std::filesystem::path>> get_tileset_conf
  * lowest. Dispatches to the appropriate path chain function based on the ConfigScopeType.
  *
  * @param project_root The root directory of the project
- * @param key_provider Provider for generating tileset artifact keys and paths
  * @param type The configuration scope type (tileset or layout)
  * @param scope The scope name (tileset name or layout name)
- * @return ChainableResult containing vector of config file paths in priority order, or error
+ * @return ChainableResult containing vector of config file paths in priority order
  */
-porytiles2::ChainableResult<std::vector<std::filesystem::path>> get_config_path_chain(
-    const std::filesystem::path &project_root,
-    const TilesetArtifactKeyProvider *key_provider,
-    ConfigScopeType type,
-    const std::string &scope)
+porytiles2::ChainableResult<std::vector<std::filesystem::path>>
+get_config_path_chain(const std::filesystem::path &project_root, ConfigScopeType type, const std::string &scope)
 {
     switch (type) {
     case ConfigScopeType::tileset:
-        return get_tileset_config_path_chain(project_root, key_provider, scope);
+        return get_tileset_config_path_chain(project_root, scope);
     case ConfigScopeType::layout:
         panic("TODO: implement layout config path chain resolution");
     }

@@ -13,7 +13,6 @@
 
 #include "gsl/pointers"
 
-#include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/infra/config/config_provider.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
@@ -28,10 +27,10 @@ namespace porytiles2 {
  * @details
  * YamlFileProvider loads YAML configuration files from multiple locations and provides access to configuration values
  * defined within them. Config files are searched in priority order:
- * 1. tileset_folder/config.local.yaml (highest priority)
- * 2. tileset_folder/config.yaml
- * 3. project_root/config.local.yaml
- * 4. project_root/config.yaml (lowest priority)
+ * 1. porytiles/tilesets/{tileset_name}/config.local.yaml (highest priority)
+ * 2. porytiles/tilesets/{tileset_name}/config.yaml
+ * 3. porytiles/config.local.yaml
+ * 4. porytiles/config.yaml (lowest priority)
  *
  * Files are loaded lazily and cached for performance. If no config files exist or a key is not found, methods return
  * LayerValue::not_provided(), allowing graceful fallback to other providers in a layered configuration system.
@@ -49,13 +48,11 @@ class YamlFileProvider final : public ConfigProvider {
      * @param format A pointer to the TextFormatter to use
      * @param diagnostics A pointer to UserDiagnostics for emitting warnings about unknown keys
      * @param project_root The root directory of the project
-     * @param tileset_key_provider Provider for generating tileset artifact keys and paths
      */
     explicit YamlFileProvider(
         gsl::not_null<const TextFormatter *> format,
         const UserDiagnostics *diagnostics,
-        const std::filesystem::path &project_root,
-        const TilesetArtifactKeyProvider &tileset_key_provider);
+        const std::filesystem::path &project_root);
 
     /**
      * @brief Constructs a YamlFileProvider with a default PlainTextFormatter.
@@ -68,12 +65,10 @@ class YamlFileProvider final : public ConfigProvider {
      *
      * @param diagnostics A pointer to UserDiagnostics for emitting warnings about unknown keys
      * @param project_root The root directory of the project
-     * @param tileset_key_provider Provider for generating tileset artifact keys and paths
      */
     explicit YamlFileProvider(
         const UserDiagnostics *diagnostics,
-        const std::filesystem::path &project_root,
-        const TilesetArtifactKeyProvider &tileset_key_provider);
+        const std::filesystem::path &project_root);
 
     /**
      * @brief Gets the name of this config layer.
@@ -91,8 +86,6 @@ class YamlFileProvider final : public ConfigProvider {
     const TextFormatter *format_;                 // Non-owning pointer to formatter
     const UserDiagnostics *diagnostics_;          // Non-owning pointer to diagnostics
     std::filesystem::path project_root_;
-    const TilesetArtifactKeyProvider *tileset_key_provider_;
-    // const LayoutArtifactKeyProvider *layout_key_provider_;
 };
 
 } // namespace porytiles2

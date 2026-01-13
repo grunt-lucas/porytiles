@@ -82,7 +82,7 @@ class DefunctImportTilesetCommand final : public Command {
         // Setup layered configuration
         ProjectTilesetArtifactKeyProvider key_provider{project_root, text_formatter, diag.get()};
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
-        providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, diag.get(), project_root, key_provider));
+        providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, diag.get(), project_root));
         providers.push_back(
             std::make_unique<HeaderDefineProvider>(project_root, fieldmap_header_root_relative, text_formatter));
         providers.push_back(std::make_unique<DefaultProvider>());

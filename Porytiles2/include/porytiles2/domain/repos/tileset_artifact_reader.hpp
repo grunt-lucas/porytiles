@@ -94,10 +94,6 @@ class TilesetArtifactReader {
         const ArtifactKey &params_key,
         const ArtifactKey &key_frame_key,
         const std::vector<std::pair<std::string, ArtifactKey>> &frame_keys) const = 0;
-
-    [[nodiscard]] virtual ChainableResult<void> read_config(Tileset &dest, const ArtifactKey &src_key) const = 0;
-
-    [[nodiscard]] virtual ChainableResult<void> read_local_config(Tileset &dest, const ArtifactKey &src_key) const = 0;
 };
 
 } // namespace porytiles2

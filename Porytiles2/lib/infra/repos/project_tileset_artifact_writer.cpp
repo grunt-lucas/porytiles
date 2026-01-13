@@ -255,55 +255,6 @@ ChainableResult<void> write_anim_frame_impl(
     return save_func(img, transaction_dest_path);
 }
 
-/**
- * @brief Template helper for writing config files.
- *
- * @details
- * This function unifies the logic for writing config and local_config files.
- *
- * @tparam ConfigGetter Callable that gets the config from the tileset
- * @param dest_key The artifact key for the destination config file
- * @param src The source tileset
- * @param transaction_root The transaction root directory
- * @param project_root The project root directory
- * @param config_getter Lambda to get the config lines from the component
- * @return ChainableResult<void> indicating success or failure
- */
-template <typename ConfigGetter>
-ChainableResult<void> write_config_impl(
-    const ArtifactKey &dest_key,
-    const Tileset &src,
-    const std::filesystem::path &transaction_root,
-    ConfigGetter config_getter)
-{
-    const auto &config = config_getter(src);
-
-    if (config.empty()) {
-        // No config to write
-        return {};
-    }
-
-    // Keys are now relative to project_root
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        transaction_dest_path,
-        compute_transaction_dest_path(transaction_root, dest_key),
-        "failed to compute transaction dest path",
-        void);
-
-    std::ofstream out{transaction_dest_path};
-    if (!out.is_open()) {
-        return FormattableError{
-            "{}: failed to open file for writing", FormatParam{transaction_dest_path.string(), Style::bold}};
-    }
-
-    for (const auto &line : config) {
-        out << line << '\n';
-    }
-    out.flush();
-
-    return {};
-}
-
 } // namespace
 
 namespace porytiles2 {
@@ -653,22 +604,6 @@ ProjectTilesetArtifactWriter::write_porytiles_anim_params(const ArtifactKey &des
         void);
 
     return anim_yaml_parser_->write(transaction_dest_path, anim_params);
-}
-
-[[nodiscard]] ChainableResult<void>
-ProjectTilesetArtifactWriter::write_config(const ArtifactKey &dest_key, const Tileset &src)
-{
-    return write_config_impl(dest_key, src, transaction_root_, [](const Tileset &t) -> const auto & {
-        return t.porytiles_component().config();
-    });
-}
-
-[[nodiscard]] ChainableResult<void>
-ProjectTilesetArtifactWriter::write_local_config(const ArtifactKey &dest_key, const Tileset &src)
-{
-    return write_config_impl(dest_key, src, transaction_root_, [](const Tileset &t) -> const auto & {
-        return t.porytiles_component().local_config();
-    });
 }
 
 } // namespace porytiles2

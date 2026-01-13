@@ -115,10 +115,6 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
     [[nodiscard]] ChainableResult<ArtifactKey>
     key_for_porytiles_anim_params(const std::string &tileset_name) const override;
 
-    [[nodiscard]] ChainableResult<ArtifactKey> key_for_config(const std::string &tileset_name) const override;
-
-    [[nodiscard]] ChainableResult<ArtifactKey> key_for_local_config(const std::string &tileset_name) const override;
-
     /*
      * Utilities
      */

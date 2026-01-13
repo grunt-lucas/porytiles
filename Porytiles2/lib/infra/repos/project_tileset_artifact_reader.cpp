@@ -304,39 +304,6 @@ ChainableResult<void> import_anim_frame_impl(
 }
 
 /**
- * @brief Template helper for reading config files.
- *
- * @details
- * This function unifies the logic for reading config and local_config files.
- *
- * @tparam ConfigSetter Callable that sets the config on the tileset
- * @param dest The destination tileset
- * @param src_key The artifact key for the config file
- * @param config_setter Lambda to set the config lines on the component
- * @return ChainableResult<void> indicating success or failure
- */
-template <typename ConfigSetter>
-ChainableResult<void> read_config_impl(
-    Tileset &dest, const ArtifactKey &src_key, const std::filesystem::path &project_root, ConfigSetter config_setter)
-{
-    // Keys are relative to project_root, so prepend for file I/O
-    std::ifstream config_file{project_root / src_key.key()};
-    if (!config_file.is_open()) {
-        // Config file is optional - if not found, just leave config empty
-        return {};
-    }
-
-    std::vector<std::string> lines;
-    std::string line;
-    while (std::getline(config_file, line)) {
-        lines.push_back(std::move(line));
-    }
-
-    config_setter(dest, lines);
-    return {};
-}
-
-/**
  * @brief Extracts the PascalCase tileset name from an animation callback function name.
  *
  * @param callback_func The callback function name (e.g., "InitTilesetAnim_General" or
@@ -586,22 +553,6 @@ ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const Artifact
     }
 
     return {};
-}
-
-[[nodiscard]] ChainableResult<void>
-ProjectTilesetArtifactReader::read_config(Tileset &dest, const ArtifactKey &src_key) const
-{
-    return read_config_impl(dest, src_key, project_root_, [](Tileset &t, const std::vector<std::string> &lines) {
-        t.porytiles_component().config(lines);
-    });
-}
-
-[[nodiscard]] ChainableResult<void>
-ProjectTilesetArtifactReader::read_local_config(Tileset &dest, const ArtifactKey &src_key) const
-{
-    return read_config_impl(dest, src_key, project_root_, [](Tileset &t, const std::vector<std::string> &lines) {
-        t.porytiles_component().local_config(lines);
-    });
 }
 
 } // namespace porytiles2

@@ -94,10 +94,6 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
     [[nodiscard]] ChainableResult<void>
     write_porytiles_anim_params(const ArtifactKey &dest_key, const Tileset &src) override;
 
-    [[nodiscard]] ChainableResult<void> write_config(const ArtifactKey &dest_key, const Tileset &src) override;
-
-    [[nodiscard]] ChainableResult<void> write_local_config(const ArtifactKey &dest_key, const Tileset &src) override;
-
   private:
     InfraConfig *config_;
     std::filesystem::path project_root_;

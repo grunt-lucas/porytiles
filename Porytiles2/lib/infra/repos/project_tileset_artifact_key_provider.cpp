@@ -454,27 +454,6 @@ ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_params(const std::stri
     return ArtifactKey{tileset_path / porytiles_directory / anim_dir / anim_yaml};
 }
 
-ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_config(const std::string &tileset_name) const
-{
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        tileset_path,
-        tileset_root(tileset_name),
-        format_->format("failed to get config key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        ArtifactKey);
-    return ArtifactKey{tileset_path / porytiles_directory / config};
-}
-
-ChainableResult<ArtifactKey>
-ProjectTilesetArtifactKeyProvider::key_for_local_config(const std::string &tileset_name) const
-{
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        tileset_path,
-        tileset_root(tileset_name),
-        format_->format("failed to get local config key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        ArtifactKey);
-    return ArtifactKey{tileset_path / porytiles_directory / local_config};
-}
-
 bool ProjectTilesetArtifactKeyProvider::artifact_exists(const ArtifactKey &key) const
 {
     // Keys are relative to project_root_, so prepend for filesystem operations

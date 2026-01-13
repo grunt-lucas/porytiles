@@ -103,26 +103,6 @@ class PorytilesTilesetComponent {
         return anims_;
     }
 
-    [[nodiscard]] const std::vector<std::string> &config() const
-    {
-        return config_;
-    }
-
-    void config(const std::vector<std::string> &config)
-    {
-        config_ = config;
-    }
-
-    [[nodiscard]] const std::vector<std::string> &local_config() const
-    {
-        return local_config_;
-    }
-
-    void local_config(const std::vector<std::string> &local_config)
-    {
-        local_config_ = local_config;
-    }
-
   private:
     Image<Rgba32> bottom_;
     Image<Rgba32> middle_;
@@ -130,8 +110,6 @@ class PorytilesTilesetComponent {
     std::map<std::size_t, MetatileAttribute> metatile_attributes_;
     std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> pals_;
     std::map<std::string, Animation<Rgba32>> anims_;
-    std::vector<std::string> config_;
-    std::vector<std::string> local_config_;
 };
 
 } // namespace porytiles2
