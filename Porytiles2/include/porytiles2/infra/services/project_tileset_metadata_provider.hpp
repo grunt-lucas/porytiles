@@ -9,6 +9,8 @@
 
 #include "porytiles2/domain/services/tileset_metadata_provider.hpp"
 #include "porytiles2/infra/models/project_tileset_metadata.hpp"
+#include "porytiles2/infra/repos/tileset_artifact_paths.hpp"
+#include "porytiles2/utilities/c_parser/incbin_declaration.hpp"
 #include "porytiles2/utilities/c_parser/struct_initializer_declaration.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
@@ -54,6 +56,19 @@ class ProjectTilesetMetadataProvider : public TilesetMetadataProvider {
      */
     [[nodiscard]] ChainableResult<ProjectTilesetMetadata> metadata_for(const std::string &tileset_name) const;
 
+    /**
+     * @brief Resolves artifact paths for a tileset by parsing INCBIN declarations.
+     *
+     * @details
+     * This method retrieves tileset metadata (which contains INCBIN variable names), then looks up the
+     * actual filesystem paths for those variables by parsing graphics.h, metatiles.h, and src/graphics.c.
+     *
+     * @param tileset_name The name of the tileset (e.g., "gTileset_General")
+     * @pre tileset_name must refer to an existing tileset on disk
+     * @return The resolved artifact paths for the tileset
+     */
+    [[nodiscard]] ChainableResult<TilesetArtifactPaths> artifact_paths_for(const std::string &tileset_name) const;
+
   private:
     std::filesystem::path project_root_;
     const TextFormatter *format_;
@@ -62,6 +77,10 @@ class ProjectTilesetMetadataProvider : public TilesetMetadataProvider {
     // Lazy-loaded cache for parsed tileset structs (mutable for const methods)
     mutable bool headers_parsed_{false};
     mutable std::map<std::string, StructInitializerDeclaration> tileset_structs_;
+
+    // Lazy-loaded cache for parsed INCBIN declarations (mutable for const methods)
+    mutable bool incbins_parsed_{false};
+    mutable std::map<std::string, IncbinDeclaration> incbin_vars_;
 };
 
 } // namespace porytiles2

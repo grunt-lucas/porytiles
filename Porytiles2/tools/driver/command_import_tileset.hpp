@@ -143,7 +143,7 @@ class ImportTilesetCommand final : public Command {
             diag.get(),
             tile_printer.get(),
             pal_printer.get(),
-            &key_provider,
+            &metadata_provider,
             &png_indexed_loader,
             &jasc_loader,
         };

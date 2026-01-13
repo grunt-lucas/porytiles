@@ -1,14 +1,3 @@
-/**
- * @file project_primary_tileset_importer.cpp
- *
- * @brief Implementation of ProjectPrimaryTilesetImporter for pokeemerald project structure.
- *
- * @details
- * This file implements the pokeemerald-specific logic for importing vanilla tilesets.
- *
- * @see project_structure_refactoring_plan.md Phase 6 for the implementation roadmap
- */
-
 #include "porytiles2/infra/services/project_primary_tileset_importer.hpp"
 
 #include <format>
@@ -24,11 +13,11 @@ ProjectPrimaryTilesetImporter::import_porymap_component_from_vanilla(const std::
 {
     auto porymap_component = std::make_unique<PorymapTilesetComponent>();
 
-    // Step 1: Get artifact paths from key provider
+    // Step 1: Get artifact paths from metadata provider
     // This resolves INCBIN variable names to actual file paths by parsing graphics.h, metatiles.h, etc.
     PT_TRY_ASSIGN_CHAIN_ERR(
         artifact_paths,
-        key_provider_->artifact_paths_for(tileset_name),
+        metadata_provider_->artifact_paths_for(tileset_name),
         format_->format("failed to get artifact paths for tileset '{}'", FormatParam{tileset_name, Style::bold}),
         std::unique_ptr<PorymapTilesetComponent>);
 
@@ -54,9 +43,14 @@ ProjectPrimaryTilesetImporter::import_porymap_component_from_vanilla(const std::
         porymap_component->push_back_attribute(std::move(attr));
     }
 
-    // Step 4: Load tiles.png (convert .4bpp path to .png)
-    auto tiles_png_path = artifact_paths.tiles_path();
-    tiles_png_path.replace_extension(".png");
+    // Step 4: Load tiles.png (strip all extensions like .4bpp.smol, then add .png)
+    // TODO: we should put this extension stripping logic into a utilities header
+    auto tiles_dir = artifact_paths.tiles_path().parent_path();
+    auto tiles_filename = artifact_paths.tiles_path().filename();
+    while (!tiles_filename.extension().empty()) {
+        tiles_filename = tiles_filename.stem();
+    }
+    auto tiles_png_path = tiles_dir / (tiles_filename.string() + ".png");
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         tiles_image,
@@ -82,13 +76,19 @@ ProjectPrimaryTilesetImporter::import_porymap_component_from_vanilla(const std::
         porymap_component->set_pal(i, std::move(palette));
     }
 
+    /*
+     * TODO: somehow, when we run through this codepath, we're losing the frame dimensions of the original vanilla
+     * animations. We need to figure out where that's happening and fix it. I suspect anim_importer.import_animations
+     * isn't preserving them.
+     */
+
     // Step 6: Import animations using ProjectVanillaAnimImporter
     // Animation import failure is non-fatal - tileset may not have animations
     ProjectVanillaAnimImporter anim_importer{project_root_, format_, diag_};
 
     auto anims_result = anim_importer.import_animations(tileset_name);
     if (anims_result.has_value()) {
-        for (auto &[anim_name, anim] : anims_result.value()) {
+        for (auto &anim : anims_result.value() | std::views::values) {
             porymap_component->add_anim(std::move(anim));
         }
     }
