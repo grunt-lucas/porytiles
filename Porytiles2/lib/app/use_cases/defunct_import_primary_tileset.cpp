@@ -94,7 +94,7 @@ ChainableResult<void> DefunctImportPrimaryTileset::import(const std::string &nam
     }
 
     // 6. Decompile the `PorymapTilesetComponent`, generating a new `PorytilesTilesetComponent`.
-    auto maybe_imported_tileset = importer_->import(*tileset);
+    auto maybe_imported_tileset = decompiler_->decompile(*tileset);
     if (!maybe_imported_tileset.has_value()) {
         return ChainableResult<void>{
             FormattableError{"import job failed for '{}'", FormatParam{name, Style::bold}}, maybe_imported_tileset};

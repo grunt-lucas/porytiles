@@ -1,10 +1,4 @@
-/**
- * @file defunct_primary_tileset_importer.cpp
- * @deprecated This file contains the legacy import implementation.
- * A new import system is being developed that separates "import" (vanilla migration)
- * from "decompile" (Porymap → Porytiles transformation). See project_structure_refactoring_plan.md.
- */
-#include "porytiles2/domain/services/defunct_primary_tileset_importer.hpp"
+#include "porytiles2/domain/services/primary_tileset_decompiler.hpp"
 
 #include <array>
 #include <iostream>
@@ -29,7 +23,7 @@
 
 namespace porytiles2 {
 
-ChainableResult<std::unique_ptr<Tileset>> DefunctPrimaryTilesetImporter::import(const Tileset &tileset) const
+ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(const Tileset &tileset) const
 {
     // Unwrap config values
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, extrinsic_transparency, tileset.name(), std::unique_ptr<Tileset>);

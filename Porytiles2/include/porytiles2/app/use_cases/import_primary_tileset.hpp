@@ -7,9 +7,9 @@
 #include "porytiles2/app/config/app_config.hpp"
 #include "porytiles2/domain/config/domain_config.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
-#include "porytiles2/domain/services/defunct_primary_tileset_importer.hpp"
 #include "porytiles2/domain/services/porytiles_tileset_manager.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
+#include "porytiles2/domain/services/primary_tileset_decompiler.hpp"
 #include "porytiles2/domain/services/primary_tileset_importer.hpp"
 #include "porytiles2/domain/services/tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -27,6 +27,7 @@ class ImportPrimaryTileset {
      */
     ImportPrimaryTileset(
         gsl::not_null<const PrimaryTilesetImporter *> importer,
+        gsl::not_null<const PrimaryTilesetDecompiler *> decompiler,
         gsl::not_null<const TilesetRepo *> tileset_repo,
         gsl::not_null<const TilesetMetadataProvider *> tileset_metadata_provider,
         gsl::not_null<const PorytilesTilesetManager *> porytiles_tileset_manager,
@@ -34,9 +35,9 @@ class ImportPrimaryTileset {
         gsl::not_null<const AppConfig *> app_config,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag)
-        : importer_{importer}, tileset_repo_{tileset_repo}, tileset_metadata_provider_{tileset_metadata_provider},
-          porytiles_tileset_manager_{porytiles_tileset_manager}, domain_config_{domain_config}, app_config_{app_config},
-          format_{format}, diag_{diag}
+        : importer_{importer}, decompiler_{decompiler}, tileset_repo_{tileset_repo},
+          tileset_metadata_provider_{tileset_metadata_provider}, porytiles_tileset_manager_{porytiles_tileset_manager},
+          domain_config_{domain_config}, app_config_{app_config}, format_{format}, diag_{diag}
     {
     }
 
@@ -44,6 +45,7 @@ class ImportPrimaryTileset {
 
   private:
     const PrimaryTilesetImporter *importer_;
+    const PrimaryTilesetDecompiler *decompiler_;
     const TilesetRepo *tileset_repo_;
     const TilesetMetadataProvider *tileset_metadata_provider_;
     const PorytilesTilesetManager *porytiles_tileset_manager_;

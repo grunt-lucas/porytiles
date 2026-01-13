@@ -45,7 +45,7 @@ class ProjectPrimaryTilesetImporter : public PrimaryTilesetImporter {
         gsl::not_null<const UserDiagnostics *> diag,
         gsl::not_null<const TilePrinter *> tile_printer,
         gsl::not_null<const PalettePrinter *> pal_printer)
-        : PrimaryTilesetImporter{config, format, diag, tile_printer, pal_printer}
+        : config_{config}, format_{format}, diag_{diag}, tile_printer_{tile_printer}, pal_printer_{pal_printer}
     {
     }
 
@@ -67,6 +67,13 @@ class ProjectPrimaryTilesetImporter : public PrimaryTilesetImporter {
      */
     [[nodiscard]] ChainableResult<std::unique_ptr<PorymapTilesetComponent>>
     import_porymap_component_from_vanilla(const std::string &tileset_name) const override;
+
+  private:
+    const DomainConfig *config_;
+    const TextFormatter *format_;
+    const UserDiagnostics *diag_;
+    const TilePrinter *tile_printer_;
+    const PalettePrinter *pal_printer_;
 };
 
 } // namespace porytiles2

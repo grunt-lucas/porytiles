@@ -15,9 +15,9 @@
 
 #include "porytiles2/app/use_cases/defunct_import_primary_tileset.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
-#include "porytiles2/domain/services/defunct_primary_tileset_importer.hpp"
 #include "porytiles2/domain/services/palette_printer.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
+#include "porytiles2/domain/services/primary_tileset_decompiler.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
 #include "porytiles2/infra/config/default_provider.hpp"
 #include "porytiles2/infra/config/header_define_provider.hpp"
@@ -103,8 +103,7 @@ class DefunctImportTilesetCommand final : public Command {
         AnimCodeGenerator anim_code_generator{};
 
         // Setup primary importer and compiler
-        DefunctPrimaryTilesetImporter importer{
-            &config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
+        PrimaryTilesetDecompiler decompiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
         PrimaryTilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
 
         // Setup behavior map provider and attributes CSV loader
@@ -146,7 +145,7 @@ class DefunctImportTilesetCommand final : public Command {
             diag.get()};
 
         DefunctImportPrimaryTileset import_use_case{
-            &repo, &importer, &compiler, &config, &config, text_formatter, diag.get()};
+            &repo, &decompiler, &compiler, &config, &config, text_formatter, diag.get()};
 
         // Run the use case
         auto import_result = import_use_case.import(tileset_name_);

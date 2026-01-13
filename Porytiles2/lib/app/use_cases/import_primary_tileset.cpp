@@ -86,22 +86,35 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
     }
 
     // Step 3: Call the importer service to bring in the tileset from vanilla assets
-    auto maybe_imported_tileset = importer_->import(tileset_name);
-    if (!maybe_imported_tileset.has_value()) {
+    auto imported_porymap_component_result = importer_->import_porymap_component_from_vanilla(tileset_name);
+    if (!imported_porymap_component_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{"import job failed for '{}'", FormatParam{tileset_name, Style::bold}},
-            maybe_imported_tileset};
+            imported_porymap_component_result};
     }
-    const auto imported_tileset = std::move(maybe_imported_tileset.value());
+    auto imported_porymap_component = std::move(imported_porymap_component_result.value());
+    auto blank_porytiles_component = std::make_unique<PorytilesTilesetComponent>();
+    auto tileset = std::make_unique<Tileset>(
+        tileset_name, std::move(blank_porytiles_component), std::move(imported_porymap_component));
 
-    // Step 4: Save to deterministic paths
-    if (const auto save_result = tileset_repo_->save(*imported_tileset); !save_result.has_value()) {
+    // Step 4: Decompile the tileset to produce a matching PorytilesTilesetComponent
+    auto decompiled_tileset_result = decompiler_->decompile(*tileset);
+    if (!decompiled_tileset_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{"decompile job failed for '{}'", FormatParam{tileset_name, Style::bold}},
+            decompiled_tileset_result};
+    }
+    const auto decompiled_tileset = std::move(decompiled_tileset_result.value());
+
+    // Step 5: Save to deterministic paths
+    if (const auto save_result = tileset_repo_->save(*decompiled_tileset); !save_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{"tileset save job failed for '{}'", FormatParam{tileset_name, Style::bold}}, save_result};
     }
 
     /*
-     * Step 5: Confirmed save succeeded, now call function that persists "managed" state (which in the Project-based
+     * TODO:
+     * Step 6: Confirmed save succeeded, now call function that persists "managed" state (which in the Project-based
      * impls writes to original_artifacts.json). This should never fail for a reasonable reason, so we don't need to
      * worry about rolling back or weird broken state. Here, this "managed" persist function, assuming Project-based
      * impl, should also perform Phase 5: C Header File Writers tasks.

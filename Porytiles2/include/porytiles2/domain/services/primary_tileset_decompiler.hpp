@@ -1,9 +1,3 @@
-/**
- * @file defunct_primary_tileset_importer.hpp
- * @deprecated This file contains the legacy import implementation.
- * A new import system is being developed that separates "import" (vanilla migration)
- * from "decompile" (Porymap → Porytiles transformation). See project_structure_refactoring_plan.md.
- */
 #pragma once
 
 #include <memory>
@@ -20,13 +14,9 @@
 
 namespace porytiles2 {
 
-/**
- * @brief Service that imports a primary Tileset.
- * @deprecated See defunct_primary_tileset_importer.hpp file comment.
- */
-class DefunctPrimaryTilesetImporter {
+class PrimaryTilesetDecompiler {
   public:
-    explicit DefunctPrimaryTilesetImporter(
+    explicit PrimaryTilesetDecompiler(
         gsl::not_null<const DomainConfig *> config,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag,
@@ -36,7 +26,7 @@ class DefunctPrimaryTilesetImporter {
     {
     }
 
-    [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> import(const Tileset &tileset) const;
+    [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> decompile(const Tileset &tileset) const;
 
   private:
     const DomainConfig *config_;

@@ -64,6 +64,8 @@ class ProjectPorytilesTilesetManager : public PorytilesTilesetManager {
      */
     [[nodiscard]] bool is_porytiles_managed(const std::string &tileset_name) const override;
 
+    [[nodiscard]] ChainableResult<void> persist_managed_state(const std::string &tileset_name) const override;
+
   private:
     std::filesystem::path project_root_;
 };

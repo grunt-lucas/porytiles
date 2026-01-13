@@ -71,4 +71,10 @@ bool ProjectPorytilesTilesetManager::is_porytiles_managed(const std::string &til
     return std::filesystem::exists(artifacts_file(project_root_, tileset_name));
 }
 
+ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_state(const std::string &tileset_name) const
+{
+    // TODO: implement
+    return {};
+}
+
 } // namespace porytiles2

@@ -2,6 +2,8 @@
 
 #include <string>
 
+#include "porytiles2/utilities/result/chainable_result.hpp"
+
 namespace porytiles2 {
 
 /**
@@ -31,6 +33,17 @@ class PorytilesTilesetManager {
      * @return true if the tileset is Porytiles-managed
      */
     [[nodiscard]] virtual bool is_porytiles_managed(const std::string &tileset_name) const = 0;
+
+    /**
+     * @brief Persists managed state for the given tileset.
+     *
+     * @details
+     * The specific details of tileset state management are implementation-defined.
+     *
+     * @param tileset_name The name of the tileset (e.g., "gTileset_General")
+     * @return a ChainableResult indicating success or containing error details
+     */
+    [[nodiscard]] virtual ChainableResult<void> persist_managed_state(const std::string &tileset_name) const = 0;
 };
 
 } // namespace porytiles2
