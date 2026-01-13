@@ -1262,8 +1262,9 @@ This section outlines a high-level step-by-step plan to implement the refactorin
 
 1. **Create HeaderStructFieldWriter** (`infra/services/`)
    - Parse headers.h to locate Tileset struct
-   - Update field values preserving formatting
+   - Update field values preserving formatting (including anim callback)
    - Handle edge cases (multiline values, comments)
+   - Support restore to original values from original_artifacts.json
 
 2. **Create IncbinDeclarationWriter** (`infra/services/`)
    - Add new INCBIN declarations to graphics.h
@@ -1271,10 +1272,8 @@ This section outlines a high-level step-by-step plan to implement the refactorin
    - Support removal during restore
 
 3. **Create TilesetAnimsModifier** (`infra/services/`)
-   - Parse tileset_anims.c to locate callback function
-   - Insert #include directive
-   - Modify callback body (preserve original as comments)
-   - Support restore (uncomment original, remove delegation)
+   - Insert #include directive that points to Porytiles-managed `include/generated_anim_code.h` for relevant tileset
+   - Support restore (remove relevant include directive)
 
 **Verification:** Modify test headers, verify compilation succeeds.
 

@@ -122,6 +122,7 @@ TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsPopulatesFrames)
     // Verify frames are loaded (0, 1, 2)
     const auto &frames = flower.frames_values();
     std::vector<std::string> frame_names;
+    frame_names.reserve(frames.size());
     for (const auto &frame : frames) {
         frame_names.push_back(frame.frame_name());
     }

@@ -38,14 +38,14 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetImporter::import(const s
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         porymap_component,
-        import_from_vanilla(tileset_name),
+        import_porymap_component_from_vanilla(tileset_name),
         format_->format("failed to import '{}' assets from backing store", FormatParam{tileset_name, Style::bold}),
         std::unique_ptr<Tileset>);
 
     // Decompile Porymap tilemap entries
     PT_TRY_ASSIGN_CHAIN_ERR(
         tilemap_entries,
-        layer_mode_converter.triple_layerize(porymap_component),
+        layer_mode_converter.triple_layerize(*porymap_component),
         format_->format(
             "failed to triple-layerize Porymap component for tileset '{}'", FormatParam{tileset_name, Style::bold}),
         std::unique_ptr<Tileset>);
@@ -53,14 +53,19 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetImporter::import(const s
     PT_TRY_ASSIGN_CHAIN_ERR(
         metatiles,
         metatile_decompiler.decompile_metatiles(
-            tilemap_entries, porymap_component.tiles_png(), porymap_component.pals()),
+            tilemap_entries, porymap_component->tiles_png(), porymap_component->pals()),
         format_->format(
             "failed to decompile Porymap component metatiles for tileset '{}'", FormatParam{tileset_name, Style::bold}),
         std::unique_ptr<Tileset>);
 
     auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>();
 
-    return FormattableError{"TODO: impl"};
+    // TODO: fill in new_porytiles_component with decompiled assets.
+
+    auto new_tileset =
+        std::make_unique<Tileset>(tileset_name, std::move(new_porytiles_component), std::move(porymap_component));
+
+    return new_tileset;
 }
 
 } // namespace porytiles2

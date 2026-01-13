@@ -100,6 +100,16 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
             FormattableError{"tileset save job failed for '{}'", FormatParam{tileset_name, Style::bold}}, save_result};
     }
 
+    /*
+     * Step 5: Confirmed save succeeded, now call function that persists "managed" state (which in the Project-based
+     * impls writes to original_artifacts.json). This should never fail for a reasonable reason, so we don't need to
+     * worry about rolling back or weird broken state. Here, this "managed" persist function, assuming Project-based
+     * impl, should also perform Phase 5: C Header File Writers tasks.
+     *
+     * This seems like a job for one of our dedicated services, perhaps the PorytilesTilesetManager? We'll need to
+     * refactor it a bit, since the domain-layer interface doesn't have a write method.
+     */
+
     return {};
 }
 
