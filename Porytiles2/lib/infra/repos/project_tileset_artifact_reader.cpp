@@ -15,6 +15,7 @@
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
+#include "porytiles2/infra/algorithms/porymap_artifact_parsers.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
 
@@ -57,147 +58,8 @@ ChainableResult<void> import_layer_png(
     return {};
 }
 
-ChainableResult<void>
-import_metatiles_bin(Tileset &dest, const ArtifactKey &src_key, const std::filesystem::path &project_root)
-{
-    // Keys are relative to project_root, so prepend for file I/O
-    std::ifstream metatiles_bin{project_root / src_key.key(), std::ios::binary};
-    const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatiles_bin), {}};
-
-    if (data_buf.size() % 2 != 0) {
-        return FormattableError{"metatiles.bin size is not a multiple of 2 bytes, probably corrupted"};
-    }
-
-    for (std::size_t byte_index = 0; byte_index < data_buf.size(); byte_index += 2) {
-        TilemapEntry entry{};
-        const std::uint16_t lower_byte = data_buf.at(byte_index);
-        const std::uint16_t upper_byte = data_buf.at(byte_index + 1);
-        const std::uint16_t entry_bits = (upper_byte << 8) | lower_byte;
-
-        // -------- Metatile BIN Structure --------
-        // The metatiles.bin file contains a sequence of tilemap entries, which are each two bytes with the following
-        // structure:
-        //
-        // 0000 00XX XXXX XXXX
-        // least significant 10 bits are the tile index
-        //
-        // 0000 0X00 0000 0000
-        // 11th bit is the hflip bit
-        //
-        // 0000 X000 0000 0000
-        // 12th bit is the vflip bit
-        //
-        // XXXX 0000 0000 0000
-        // top 4 bits are pal index
-
-        entry.tile_index(entry_bits & 0x03FF);
-        entry.h_flip((entry_bits >> 10) & 0x0001);
-        entry.v_flip((entry_bits >> 11) & 0x0001);
-        entry.pal_index((entry_bits >> 12) & 0x000F);
-
-        dest.porymap_component().push_back_tilemap_entry(entry);
-    }
-
-    return {};
-}
-
-ChainableResult<void>
-import_emerald_metatile_attributes(Tileset &dest, const ArtifactKey &src_key, const std::filesystem::path &project_root)
-{
-    // Keys are relative to project_root, so prepend for file I/O
-    std::ifstream metatile_attr_bin{project_root / src_key.key(), std::ios::binary};
-    const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
-
-    if (data_buf.size() % attr::bytes_per_attr_emerald != 0) {
-        return FormattableError{std::format(
-            "metatile_attributes.bin size is not a multiple of {} bytes, probably corrupted",
-            attr::bytes_per_attr_emerald)};
-    }
-
-    std::size_t metatile_count = data_buf.size() / attr::bytes_per_attr_emerald;
-    for (std::size_t metatile_index = 0; metatile_index < metatile_count; metatile_index++) {
-        std::uint16_t byte0 = data_buf.at((metatile_index * attr::bytes_per_attr_emerald));
-        std::uint16_t byte1 = data_buf.at((metatile_index * attr::bytes_per_attr_emerald) + 1);
-        std::uint16_t attribute = (byte1 << 8) | byte0;
-
-        auto layer_type_result = layer_type_from_int(attribute >> 12 & 0x000F);
-        if (!layer_type_result.has_value()) {
-            return ChainableResult<void>{
-                FormattableError{"invalid layer type for metatile '{}'", FormatParam{metatile_index, Style::bold}},
-                layer_type_result};
-        }
-        MetatileAttribute metatile_attribute{layer_type_result.value(), static_cast<std::uint16_t>(attribute & 0x00FF)};
-        dest.porymap_component().push_back_attribute(metatile_attribute);
-    }
-
-    return {};
-}
-
-[[maybe_unused]] ChainableResult<void> import_firered_metatile_attributes(
-    [[maybe_unused]] Tileset &dest, const ArtifactKey &src_key, const std::filesystem::path &project_root)
-{
-    // Keys are relative to project_root, so prepend for file I/O
-    std::ifstream metatile_attr_bin{project_root / src_key.key(), std::ios::binary};
-    const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
-
-    if (data_buf.size() % attr::bytes_per_attr_firered != 0) {
-        return FormattableError{std::format(
-            "metatile_attributes.bin size is not a multiple of {} bytes, probably corrupted",
-            attr::bytes_per_attr_firered)};
-    }
-
-    std::size_t metatile_count = data_buf.size() / attr::bytes_per_attr_emerald;
-    for (std::size_t metatile_index = 0; metatile_index < metatile_count; metatile_index++) {
-        std::uint32_t byte0 = data_buf.at((metatile_count * attr::bytes_per_attr_firered));
-        std::uint32_t byte1 = data_buf.at((metatile_count * attr::bytes_per_attr_firered) + 1);
-        std::uint32_t byte2 = data_buf.at((metatile_count * attr::bytes_per_attr_firered) + 2);
-        std::uint32_t byte3 = data_buf.at((metatile_count * attr::bytes_per_attr_firered) + 3);
-        std::uint32_t attribute = (byte3 << 24) | (byte2 << 16) | (byte1 << 8) | byte0;
-        // attributes.metatileBehavior = attribute & 0x000001FF;
-        // attributes.terrainType = terrainTypeFromInt((attribute >> 9) & 0x0000001F);
-        // attributes.encounterType = encounterTypeFromInt((attribute >> 24) & 0x00000007);
-        // attributes.layerType = layerTypeFromInt((attribute >> 29) & 0x00000003);
-        // TODO: finish impl: init an attr here and insert into 'dest'
-    }
-
-    return {};
-}
-
-ChainableResult<void> import_tiles_png(
-    Tileset &dest,
-    const ArtifactKey &src_key,
-    const std::filesystem::path &project_root,
-    const PngIndexedImageLoader &loader)
-{
-    // Keys are relative to project_root, so prepend for file I/O
-    auto image_result = loader.load_from_file((project_root / src_key.key()).string());
-    if (!image_result.has_value()) {
-        return ChainableResult<void>{FormattableError{"failed to load tiles.png"}, image_result};
-    }
-    dest.porymap_component().tiles_png(*image_result.value());
-    return {};
-}
-
-ChainableResult<void> import_porymap_palette(
-    Tileset &dest,
-    const ArtifactKey &src_key,
-    std::size_t index,
-    const std::filesystem::path &project_root,
-    const FilePalLoader &loader)
-{
-    if (index >= pal::num_pals) {
-        panic(std::format("invalid pal index {}: out of range", index));
-    }
-
-    // Keys are relative to project_root, so prepend for file I/O
-    const auto pal_result = loader.load((project_root / src_key.key()).string());
-    if (!pal_result.has_value()) {
-        return ChainableResult<void>{FormattableError{"failed to load palette file"}, pal_result};
-    }
-    dest.porymap_component().set_pal(index, pal_result.value());
-
-    return {};
-}
+// NOTE: FireRed metatile attributes parsing is not yet implemented.
+// The format is different from Emerald (4 bytes vs 2 bytes) and requires additional work.
 
 ChainableResult<void> import_porytiles_palette(
     Tileset &dest,
@@ -331,7 +193,11 @@ namespace porytiles2 {
  */
 ChainableResult<void> ProjectTilesetArtifactReader::read_metatiles_bin(Tileset &dest, const ArtifactKey &src_key) const
 {
-    PT_TRY_CALL_PASS_ERR(import_metatiles_bin(dest, src_key, project_root_), void);
+    // Keys are relative to project_root_, so prepend for file I/O
+    PT_TRY_ASSIGN_PASS_ERR(entries, parse_metatiles_bin(project_root_ / src_key.key()), void);
+    for (auto &entry : entries) {
+        dest.porymap_component().push_back_tilemap_entry(std::move(entry));
+    }
     return {};
 }
 
@@ -339,20 +205,31 @@ ChainableResult<void>
 ProjectTilesetArtifactReader::read_metatile_attributes_bin(Tileset &dest, const ArtifactKey &src_key) const
 {
     // TODO: branch here based on target base game?
-    PT_TRY_CALL_PASS_ERR(import_emerald_metatile_attributes(dest, src_key, project_root_), void)
+    // Keys are relative to project_root_, so prepend for file I/O
+    PT_TRY_ASSIGN_PASS_ERR(attributes, parse_emerald_metatile_attributes(project_root_ / src_key.key()), void);
+    for (auto &attr : attributes) {
+        dest.porymap_component().push_back_attribute(std::move(attr));
+    }
     return {};
 }
 
 ChainableResult<void> ProjectTilesetArtifactReader::read_tiles_png(Tileset &dest, const ArtifactKey &src_key) const
 {
-    PT_TRY_CALL_PASS_ERR(import_tiles_png(dest, src_key, project_root_, *png_indexed_loader_), void)
+    // Keys are relative to project_root_, so prepend for file I/O
+    PT_TRY_ASSIGN_PASS_ERR(image, load_indexed_png(project_root_ / src_key.key(), *png_indexed_loader_), void);
+    dest.porymap_component().tiles_png(*image);
     return {};
 }
 
 ChainableResult<void>
 ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const
 {
-    PT_TRY_CALL_PASS_ERR(import_porymap_palette(dest, src_key, index, project_root_, *pal_loader_), void)
+    if (index >= pal::num_pals) {
+        panic(std::format("invalid pal index {}: out of range", index));
+    }
+    // Keys are relative to project_root_, so prepend for file I/O
+    PT_TRY_ASSIGN_PASS_ERR(palette, load_porymap_palette(project_root_ / src_key.key(), *pal_loader_), void);
+    dest.porymap_component().set_pal(index, std::move(palette));
     return {};
 }
 

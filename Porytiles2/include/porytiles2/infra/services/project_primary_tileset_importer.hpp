@@ -1,6 +1,11 @@
 #pragma once
 
+#include <filesystem>
+
 #include "porytiles2/domain/services/primary_tileset_importer.hpp"
+#include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
+#include "porytiles2/infra/services/file_pal_loader.hpp"
+#include "porytiles2/infra/services/png_indexed_image_loader.hpp"
 
 namespace porytiles2 {
 
@@ -33,19 +38,29 @@ class ProjectPrimaryTilesetImporter : public PrimaryTilesetImporter {
     /**
      * @brief Constructs a ProjectPrimaryTilesetImporter with required dependencies.
      *
+     * @param project_root Path to the pokeemerald project root directory
      * @param config Domain configuration containing tileset parameters and paths
      * @param format Text formatter for error message styling
      * @param diag User diagnostics for warnings and informational messages
      * @param tile_printer Tile visualization service for diagnostic output
      * @param pal_printer Palette visualization service for diagnostic output
+     * @param key_provider Provider for resolving artifact paths from tileset metadata
+     * @param png_loader Loader for indexed PNG files (tiles.png)
+     * @param pal_loader Loader for palette files
      */
     explicit ProjectPrimaryTilesetImporter(
+        std::filesystem::path project_root,
         gsl::not_null<const DomainConfig *> config,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag,
         gsl::not_null<const TilePrinter *> tile_printer,
-        gsl::not_null<const PalettePrinter *> pal_printer)
-        : config_{config}, format_{format}, diag_{diag}, tile_printer_{tile_printer}, pal_printer_{pal_printer}
+        gsl::not_null<const PalettePrinter *> pal_printer,
+        gsl::not_null<const ProjectTilesetArtifactKeyProvider *> key_provider,
+        gsl::not_null<const PngIndexedImageLoader *> png_loader,
+        gsl::not_null<const FilePalLoader *> pal_loader)
+        : project_root_{std::move(project_root)}, config_{config}, format_{format}, diag_{diag},
+          tile_printer_{tile_printer}, pal_printer_{pal_printer}, key_provider_{key_provider}, png_loader_{png_loader},
+          pal_loader_{pal_loader}
     {
     }
 
@@ -69,11 +84,15 @@ class ProjectPrimaryTilesetImporter : public PrimaryTilesetImporter {
     import_porymap_component_from_vanilla(const std::string &tileset_name) const override;
 
   private:
+    std::filesystem::path project_root_;
     const DomainConfig *config_;
     const TextFormatter *format_;
     const UserDiagnostics *diag_;
     const TilePrinter *tile_printer_;
     const PalettePrinter *pal_printer_;
+    const ProjectTilesetArtifactKeyProvider *key_provider_;
+    const PngIndexedImageLoader *png_loader_;
+    const FilePalLoader *pal_loader_;
 };
 
 } // namespace porytiles2

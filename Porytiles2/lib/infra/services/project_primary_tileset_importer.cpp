@@ -4,13 +4,18 @@
  * @brief Implementation of ProjectPrimaryTilesetImporter for pokeemerald project structure.
  *
  * @details
- * This file implements the pokeemerald-specific logic for importing vanilla tilesets. The implementation is currently
- * a stub that returns an empty PorymapTilesetComponent. See the TODOs below for what needs to be implemented.
+ * This file implements the pokeemerald-specific logic for importing vanilla tilesets.
  *
  * @see project_structure_refactoring_plan.md Phase 6 for the implementation roadmap
  */
 
 #include "porytiles2/infra/services/project_primary_tileset_importer.hpp"
+
+#include <format>
+
+#include "porytiles2/infra/algorithms/porymap_artifact_parsers.hpp"
+#include "porytiles2/infra/services/project_vanilla_anim_importer.hpp"
+#include "porytiles2/utilities/string_utils.hpp"
 
 namespace porytiles2 {
 
@@ -19,36 +24,76 @@ ProjectPrimaryTilesetImporter::import_porymap_component_from_vanilla(const std::
 {
     auto porymap_component = std::make_unique<PorymapTilesetComponent>();
 
-    /*
-     * TODO (Phase 5/6): Read vanilla Porymap artifacts (metatiles.bin, metatile_attributes.bin, tiles.png, palettes)
-     * into PorymapTilesetComponent.
-     *
-     * Implementation steps:
-     * 1. Use ProjectTilesetMetadataProvider to get tileset metadata from headers.h (isSecondary, variable names)
-     * 2. Parse graphics.h and metatiles.h to resolve INCBIN variable names to actual file paths (may also need to check
-     * src/graphics.c, gTileset_General stores tiles and pals there instead of standard location)
-     * 3. Read tiles.png using PngIndexedImageLoader
-     * 4. Read palettes (00.pal through 15.pal) from discovered palette directory
-     * 5. Read metatiles.bin and metatile_attributes.bin from discovered paths
-     * 6. Populate porymap_component with all loaded data
-     *
-     * Since reading metatiles.bin, metatile_attributes.bin, tiles.png, and palettes are operations that need to be
-     * performed here and in TilesetRepo::load, we should have some reusable code that can handle this for us. If you
-     * look in ProjectTilesetArtifactReader, there's already code for reading metatiles.bin, metatile_attributes.bin,
-     * etc. Let's move it somewhere shareable. Perhaps into headers in infra/algorithms?
-     */
+    // Step 1: Get artifact paths from key provider
+    // This resolves INCBIN variable names to actual file paths by parsing graphics.h, metatiles.h, etc.
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        artifact_paths,
+        key_provider_->artifact_paths_for(tileset_name),
+        format_->format("failed to get artifact paths for tileset '{}'", FormatParam{tileset_name, Style::bold}),
+        std::unique_ptr<PorymapTilesetComponent>);
 
-    /*
-     * TODO: Use ProjectVanillaAnimImporter to read vanilla animations into PorymapTilesetComponent.
-     *
-     * Implementation steps:
-     * 1. Create ProjectVanillaAnimImporter instance with project_root, format_, diag_
-     * 2. Call import_animations(tileset_name) to get map of Animation<IndexPixel>
-     * 3. Add each animation to porymap_component via add_anim()
-     *
-     * Note: The returned animations will have frames populated but NO key frames.
-     * Key frame extraction is done later by AnimationDecompiler in the domain layer.
-     */
+    // Step 2: Parse metatiles.bin
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        metatile_entries,
+        parse_metatiles_bin(project_root_ / artifact_paths.metatiles_path()),
+        "failed to parse metatiles.bin",
+        std::unique_ptr<PorymapTilesetComponent>);
+
+    for (auto &entry : metatile_entries) {
+        porymap_component->push_back_tilemap_entry(std::move(entry));
+    }
+
+    // Step 3: Parse metatile_attributes.bin
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        attributes,
+        parse_emerald_metatile_attributes(project_root_ / artifact_paths.metatile_attributes_path()),
+        "failed to parse metatile_attributes.bin",
+        std::unique_ptr<PorymapTilesetComponent>);
+
+    for (auto &attr : attributes) {
+        porymap_component->push_back_attribute(std::move(attr));
+    }
+
+    // Step 4: Load tiles.png (convert .4bpp path to .png)
+    auto tiles_png_path = artifact_paths.tiles_path();
+    tiles_png_path.replace_extension(".png");
+
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tiles_image,
+        load_indexed_png(project_root_ / tiles_png_path, *png_loader_),
+        "failed to load tiles.png",
+        std::unique_ptr<PorymapTilesetComponent>);
+
+    porymap_component->tiles_png(*tiles_image);
+
+    // Step 5: Load palettes from the discovered palette paths
+    const auto &palette_paths = artifact_paths.palette_paths();
+    for (std::size_t i = 0; i < palette_paths.size() && i < pal::num_pals; ++i) {
+        // Convert .gbapal path to .pal by looking in the palettes directory
+        auto pal_dir = artifact_paths.palettes_dir();
+        auto pal_path = project_root_ / pal_dir / pal_filename(i);
+
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            palette,
+            load_porymap_palette(pal_path, *pal_loader_),
+            format_->format("failed to load palette {}", FormatParam{i}),
+            std::unique_ptr<PorymapTilesetComponent>);
+
+        porymap_component->set_pal(i, std::move(palette));
+    }
+
+    // Step 6: Import animations using ProjectVanillaAnimImporter
+    // Animation import failure is non-fatal - tileset may not have animations
+    ProjectVanillaAnimImporter anim_importer{project_root_, format_, diag_};
+
+    auto anims_result = anim_importer.import_animations(tileset_name);
+    if (anims_result.has_value()) {
+        for (auto &[anim_name, anim] : anims_result.value()) {
+            porymap_component->add_anim(std::move(anim));
+        }
+    }
+    // Note: The returned animations will have frames populated but NO key frames.
+    // Key frame extraction is done later by AnimationDecompiler in the domain layer.
 
     return porymap_component;
 }

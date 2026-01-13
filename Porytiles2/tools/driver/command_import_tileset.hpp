@@ -137,11 +137,15 @@ class ImportTilesetCommand final : public Command {
             diag.get()};
 
         ProjectPrimaryTilesetImporter importer{
+            project_root,
             &config,
             text_formatter,
             diag.get(),
             tile_printer.get(),
             pal_printer.get(),
+            &key_provider,
+            &png_indexed_loader,
+            &jasc_loader,
         };
         PrimaryTilesetDecompiler decompiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
         ImportPrimaryTileset import_use_case{
