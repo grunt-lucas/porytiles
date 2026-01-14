@@ -10,7 +10,7 @@
 
 #include "porytiles2/domain/models/animation.hpp"
 #include "porytiles2/infra/models/project_tileset_metadata.hpp"
-#include "porytiles2/infra/repos/tileset_artifact_paths.hpp"
+#include "porytiles2/infra/repos/project_tileset_artifact_paths.hpp"
 #include "porytiles2/infra/services/anim_yaml_parser.hpp"
 #include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/c_parser/c_parser_facade.hpp"
@@ -619,7 +619,7 @@ ProjectTilesetArtifactKeyProvider::tileset_root(const std::string &tileset_name)
     return tiles_path.parent_path();
 }
 
-ChainableResult<TilesetArtifactPaths>
+ChainableResult<ProjectTilesetArtifactPaths>
 ProjectTilesetArtifactKeyProvider::artifact_paths_for(const std::string &tileset_name) const
 {
     // Get metadata to access variable names
@@ -627,33 +627,33 @@ ProjectTilesetArtifactKeyProvider::artifact_paths_for(const std::string &tileset
         metadata,
         metadata_provider_.metadata_for(tileset_name),
         format_->format("failed to get artifact paths for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        TilesetArtifactPaths);
+        ProjectTilesetArtifactPaths);
 
     // Resolve all INCBIN paths using local helpers
     PT_TRY_ASSIGN_CHAIN_ERR(
         tiles_path_str,
         ::lookup_incbin_path(metadata.tiles_var(), project_root_, incbins_parsed_, incbin_vars_, format_),
         format_->format("failed to resolve tiles path for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        TilesetArtifactPaths);
+        ProjectTilesetArtifactPaths);
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         palette_path_strs,
         ::lookup_incbin_paths(metadata.palettes_var(), project_root_, incbins_parsed_, incbin_vars_, format_),
         format_->format("failed to resolve palette paths for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        TilesetArtifactPaths);
+        ProjectTilesetArtifactPaths);
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         metatiles_path_str,
         ::lookup_incbin_path(metadata.metatiles_var(), project_root_, incbins_parsed_, incbin_vars_, format_),
         format_->format("failed to resolve metatiles path for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        TilesetArtifactPaths);
+        ProjectTilesetArtifactPaths);
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         metatile_attributes_path_str,
         ::lookup_incbin_path(metadata.metatile_attributes_var(), project_root_, incbins_parsed_, incbin_vars_, format_),
         format_->format(
             "failed to resolve metatile attributes path for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        TilesetArtifactPaths);
+        ProjectTilesetArtifactPaths);
 
     std::vector<std::filesystem::path> palette_paths;
     palette_paths.reserve(palette_path_strs.size());
@@ -661,7 +661,7 @@ ProjectTilesetArtifactKeyProvider::artifact_paths_for(const std::string &tileset
         palette_paths.emplace_back(path_str);
     }
 
-    return TilesetArtifactPaths{
+    return ProjectTilesetArtifactPaths{
         std::filesystem::path{tiles_path_str},
         std::move(palette_paths),
         std::filesystem::path{metatiles_path_str},

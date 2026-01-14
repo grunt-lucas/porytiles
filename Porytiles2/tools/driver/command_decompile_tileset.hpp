@@ -34,6 +34,7 @@
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/infra/services/project_porytiles_tileset_manager.hpp"
 #include "porytiles2/infra/services/project_tileset_metadata_writer.hpp"
+#include "porytiles2/infra/services/tileset_anims_modifier.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/di/components.hpp"
 #include "porytiles2/xcut/diagnostics/stderr_styled_user_diagnostics.hpp"
@@ -112,8 +113,9 @@ class DecompileTilesetCommand final : public Command {
         ProjectTilesetMetadataProvider metadata_provider{project_root, text_formatter, diag.get()};
         ProjectTilesetMetadataWriter metadata_writer{project_root, text_formatter};
         IncbinDeclarationAppender incbin_appender{project_root, text_formatter};
+        TilesetAnimsModifier tileset_anims_modifier{project_root, &config, text_formatter, diag.get()};
         ProjectPorytilesTilesetManager tileset_manager{
-            project_root, &metadata_provider, &metadata_writer, &config, &incbin_appender};
+            project_root, &metadata_provider, &metadata_writer, &config, &incbin_appender, &tileset_anims_modifier};
 
         // Setup the tileset repository
         ProjectTilesetArtifactReader artifact_reader{

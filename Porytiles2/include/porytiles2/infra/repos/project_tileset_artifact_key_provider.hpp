@@ -10,7 +10,7 @@
 
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
-#include "porytiles2/infra/repos/tileset_artifact_paths.hpp"
+#include "porytiles2/infra/repos/project_tileset_artifact_paths.hpp"
 #include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/c_parser/incbin_declaration.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
@@ -158,7 +158,7 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
      * @pre tileset_name must refer to an existing tileset on disk
      * @return TilesetArtifactPaths containing resolved paths for all Porymap artifacts
      */
-    [[nodiscard]] ChainableResult<TilesetArtifactPaths> artifact_paths_for(const std::string &tileset_name) const;
+    [[nodiscard]] ChainableResult<ProjectTilesetArtifactPaths> artifact_paths_for(const std::string &tileset_name) const;
 
     /**
      * @brief Returns Porymap animation frame paths discovered from INCBIN declarations.

@@ -189,9 +189,6 @@ TEST_F(ProjectTilesetMetadataProviderTest_Fixture1, ArtifactPathsForReturnsCorre
         EXPECT_FALSE(paths.metatiles_path().empty());
         EXPECT_TRUE(paths.metatiles_path().string().find("metatiles") != std::string::npos)
             << "metatiles_path should contain 'metatiles', got: " << paths.metatiles_path().string();
-
-        // Verify tileset_root
-        EXPECT_FALSE(paths.tileset_root().empty());
     }
 
     // Test artifact_paths_for with gTileset_Shop (secondary tileset, via key provider)
@@ -204,6 +201,5 @@ TEST_F(ProjectTilesetMetadataProviderTest_Fixture1, ArtifactPathsForReturnsCorre
         // Verify basic paths are populated
         EXPECT_FALSE(paths.tiles_path().empty());
         EXPECT_FALSE(paths.metatiles_path().empty());
-        EXPECT_FALSE(paths.tileset_root().empty());
     }
 }

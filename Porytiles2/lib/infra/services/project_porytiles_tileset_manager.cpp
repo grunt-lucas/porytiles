@@ -149,7 +149,18 @@ ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_state(cons
     // Otherwise, leave callback field alone
     const bool should_update_callback = overwrite_callback && original_callback_value.has_value();
 
-    // Step 8: Update headers.h to use Porytiles-managed asset variables
+    // Step 8: Wire include directive in tileset_anims.c (if updating callback)
+    if (should_update_callback) {
+        auto wire_result = tileset_anims_modifier_->wire_include_for_tileset(tileset_name, is_secondary);
+        if (!wire_result.has_value()) {
+            return ChainableResult<void>{
+                FormattableError{
+                    "failed to wire tileset_anims.c include for '{}'", FormatParam{tileset_name, Style::bold}},
+                wire_result};
+        }
+    }
+
+    // Step 9: Update headers.h to use Porytiles-managed asset variables
     return metadata_writer_->update_to_porytiles_managed(tileset_name, should_update_callback);
 }
 

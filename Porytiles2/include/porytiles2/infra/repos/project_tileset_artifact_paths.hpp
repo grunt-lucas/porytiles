@@ -33,18 +33,6 @@ namespace tileset {
 
 } // namespace tileset
 
-/*
- * TODO: ANIM: this is a domain class but it relies on infrastructure layer concepts, e.g. the project folder structure.
- * We should refactor this a bit.
- *
- * Basically, this class is only used in domain layer once: the TilesetMetadataProvider::artifact_paths_for return type.
- * But this function itself is never called in the domain layer. It is only used in the Project implementation of
- * TilesetArtifactKeyProvider. This means tht we can probably make it a special implementation-specific method in
- * ProjectTilesetMetadataProvider. This makes sense, because a theoretical alternative ecosystem not backed by a
- * pokeemerald project probably wouldn't read tileset artifact paths the same way at all. These paths are very specific
- * to the Project ecosystem of models and services.
- */
-
 /**
  * @brief Represents resolved filesystem paths for tileset artifacts from INCBIN declarations.
  *
@@ -73,7 +61,7 @@ namespace tileset {
  * @invariant metatiles_path_ is never empty
  * @invariant metatile_attributes_path_ is never empty
  */
-class TilesetArtifactPaths {
+class ProjectTilesetArtifactPaths {
   public:
     /**
      * @brief Constructs TilesetArtifactPaths from resolved INCBIN paths.
@@ -84,7 +72,7 @@ class TilesetArtifactPaths {
      * @param metatile_attributes_path Path to attributes file (e.g., ".../metatile_attributes.bin")
      * @param animation_frame_paths Animation frame paths grouped by animation name (optional, may be empty)
      */
-    TilesetArtifactPaths(
+    ProjectTilesetArtifactPaths(
         std::filesystem::path tiles_path,
         std::vector<std::filesystem::path> palette_paths,
         std::filesystem::path metatiles_path,
@@ -137,26 +125,6 @@ class TilesetArtifactPaths {
     }
 
     /**
-     * @brief Extracts the tileset root directory from the tiles path.
-     *
-     * @details
-     * Derives the tileset base directory by taking the parent of the tiles file. For
-     * "data/tilesets/primary/general/tiles.4bpp", returns "data/tilesets/primary/general".
-     *
-     * @return The tileset root directory path
-     */
-    [[nodiscard]] std::filesystem::path tileset_root() const
-    {
-        /*
-         * TODO: it's entirely possible (though unlikely) that the user has spread tileset assets around in multiple
-         * places. In that case, tiles_path_.parent_path() may not be the real "root", as there could be multiple
-         * "roots" depending on what the user did. How would we want to handle this? Perhaps a prerequisite to using
-         * Porytiles is that you have your assets in single root per tileset.
-         */
-        return tiles_path_.parent_path();
-    }
-
-    /**
      * @brief Returns animation frame paths grouped by animation name.
      *
      * @details
@@ -192,15 +160,16 @@ class TilesetArtifactPaths {
      */
     [[nodiscard]] std::filesystem::path palettes_dir() const
     {
+        if (palette_paths_.empty()) {
+            return {};
+        }
+
         /*
          * TODO: it's entirely possible (though unlikely) that the user has spread palette assets around in multiple
          * places. In that case, palette_paths_.front().parent_path() may not be the real "root", as there could be
          * multiple "roots" depending on what the user did. How would we want to handle this? Perhaps a prerequisite to
          * using Porytiles is that you have your palettes in a single palette directory.
          */
-        if (palette_paths_.empty()) {
-            return {};
-        }
         return palette_paths_.front().parent_path();
     }
 

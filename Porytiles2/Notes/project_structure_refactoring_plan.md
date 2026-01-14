@@ -79,10 +79,11 @@ This document consolidates the project structure and animation refactoring plans
     - [~~Phase 2: Frame Name Preservation~~ **COMPLETE**](#phase-2-frame-name-preservation-complete)
     - [~~Phase 3: Utility Directory \& Metadata~~ **COMPLETE**](#phase-3-utility-directory--metadata-complete)
     - [~~Phase 4: VanillaAnimationImporter~~ **COMPLETE**](#phase-4-vanillaanimationimporter-complete)
-    - [Phase 5: C Header File Writers](#phase-5-c-header-file-writers)
-    - [Phase 6: Import Use Case ⚠️ **PARTIAL**](#phase-6-import-use-case--partial)
-    - [Phase 7: Restore Use Case](#phase-7-restore-use-case)
-    - [Phase 8: Polish \& Edge Cases](#phase-8-polish--edge-cases)
+    - [~~Phase 5: C Header File Writers~~ **COMPLETE**](#phase-5-c-header-file-writers-complete)
+    - [~~Phase 6: Import Use Case~~ **COMPLETE**](#phase-6-import-use-case-complete)
+    - [Phase 7: Fix TilesetRepo project implementations to use deterministic paths](#phase-7-fix-tilesetrepo-project-implementations-to-use-deterministic-paths)
+    - [Phase 8: Restore Use Case](#phase-8-restore-use-case)
+    - [Phase 9: Polish \& Edge Cases](#phase-9-polish--edge-cases)
     - [Implementation Notes](#implementation-notes)
 
 ---
@@ -1256,7 +1257,7 @@ This section outlines a high-level step-by-step plan to implement the refactorin
 
 ---
 
-### Phase 5: C Header File Writers
+### ~~Phase 5: C Header File Writers~~ **COMPLETE**
 
 **Goal:** Enable modification of pokeemerald C header files.
 
@@ -1279,7 +1280,7 @@ This section outlines a high-level step-by-step plan to implement the refactorin
 
 ---
 
-### Phase 6: Import Use Case ⚠️ **PARTIAL**
+### ~~Phase 6: Import Use Case~~ **COMPLETE**
 
 **Goal:** Orchestrate full import workflow.
 
@@ -1304,33 +1305,47 @@ This section outlines a high-level step-by-step plan to implement the refactorin
 
 4. **Added CLI command** `porytiles import-tileset <tileset_name>` via ImportTilesetCommand
 
-**Still Needed:**
-
-- [ ] Complete `PrimaryTilesetImporter::import()` implementation (after metatile decompilation)
-- [ ] Complete `ProjectPrimaryTilesetImporter::import_from_vanilla()` implementation
-- [ ] Write original_artifacts.json after successful import
-- [ ] Call header writers (Phase 5 components)
-- [ ] Transaction semantics (rollback on failure)
-- [ ] Integration tests against test pokeemerald project
-
-**Architecture (partially implemented):**
-
-```
-ImportPrimaryTileset (app layer use case)
-    ├── TilesetMetadataProvider (domain) ← validates tileset exists
-    ├── PorytilesTilesetManager (domain) ← checks if already managed
-    ├── PrimaryTilesetImporter (domain)  ← orchestrates decompilation
-    │   └── ProjectPrimaryTilesetImporter (infra) ← import_from_vanilla() [STUB]
-    │       └── ProjectVanillaAnimImporter (infra) ← reads animation frames [DONE]
-    ├── TilesetFactory (domain)           ← creates empty tileset
-    └── TilesetRepo (infra)               ← saves to deterministic paths
-```
-
 **Verification:** Import gTileset_General, verify all files created, project compiles.
 
 ---
 
-### Phase 7: Restore Use Case
+### Phase 7: Fix TilesetRepo project implementations to use deterministic paths
+
+**Goal:** Refactor TilesetRepo and its dependencies so that load/save operations for Porytiles-managed tilesets use exclusively deterministic paths, eliminating INCBIN parsing from the normal workflow.
+
+1. **Refactor ProjectTilesetArtifactKeyProvider for Porymap deterministic paths**
+   - Update `key_for_tiles_png()` to return `<tileset_root>/porytiles_bin/tiles.png` for managed tilesets
+   - Update `key_for_metatiles_bin()` to return `<tileset_root>/porytiles_bin/metatiles.bin`
+   - Update `key_for_metatile_attributes_bin()` to return `<tileset_root>/porytiles_bin/metatile_attributes.bin`
+   - Update `key_for_porymap_pal_n()` to return `<tileset_root>/porytiles_bin/palettes/<n>.gbapal`
+   - Update `key_for_porymap_anim_frame()` to return `<tileset_root>/anim/<anim_name>/<frame_name>.png`
+   - Add managed-status check to select between deterministic paths (managed) vs INCBIN-based paths (vanilla/import)
+
+2. **Isolate INCBIN parsing to import-only code paths**
+   - Remove INCBIN fallback logic from normal load/save code paths in the reader/writer
+
+3. **Update discovery methods for managed tilesets**
+   - `discover_porymap_anims()`: For managed tilesets, scan `<tileset_root>/anim/` directory instead of parsing C files
+   - `discover_porymap_anim_frames()`: For managed tilesets, glob `<tileset_root>/anim/<anim_name>/*.png`
+   - Keep INCBIN-based discovery only for vanilla import path
+     - Do we want this? We still have to parse C code get the Porymap-component anim params, we need to decide what's the source of truth
+
+4. **Clean up hardcoded values and path hacks**
+   - Extract `"key"` frame name to a constant or domain-layer definition
+   - Remove path derivation hack in `write_porymap_anim_params()` (currently uses `parent_path().parent_path()`)
+   - Use config values (`tileset.paths.primary.bin`, etc.) consistently for path computation
+
+**Key Design Decision:** After this phase, the `TilesetRepo::load`/`save` workflow for Porytiles-managed tilesets will be completely independent of C source file parsing. INCBIN parsing becomes an import-time concern only, matching the document's Three-Workflow Model where Import handles "discovery chaos" and subsequent operations are deterministic. The ProjectKeyProvider class will now return managed keys only, so any TilesetRepo using it MUST operate on managed tilesets only. 
+
+**Verification:**
+- Unit tests verify key provider returns deterministic paths for managed tilesets
+- Integration tests perform load/save round-trip for managed tileset without triggering INCBIN parsing
+- Verify INCBIN parsing code is only reachable from import workflow
+- Compile test pokeemerald project after load/save to confirm generated paths are correct
+
+---
+
+### Phase 8: Restore Use Case
 
 **Goal:** Revert to vanilla state.
 
@@ -1349,7 +1364,7 @@ ImportPrimaryTileset (app layer use case)
 
 ---
 
-### Phase 8: Polish & Edge Cases
+### Phase 9: Polish & Edge Cases
 
 **Goal:** Handle edge cases and improve UX.
 

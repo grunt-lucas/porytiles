@@ -8,6 +8,7 @@
 #include "porytiles2/infra/services/incbin_declaration_appender.hpp"
 #include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles2/infra/services/project_tileset_metadata_writer.hpp"
+#include "porytiles2/infra/services/tileset_anims_modifier.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
@@ -36,15 +37,18 @@ class ProjectPorytilesTilesetManager : public PorytilesTilesetManager {
      * @param metadata_writer Writer for updating headers.h fields
      * @param infra_config Configuration provider for tileset paths and animation settings
      * @param incbin_appender Service for appending INCBIN declarations to header files
+     * @param tileset_anims_modifier Service for modifying tileset_anims.c includes
      */
     ProjectPorytilesTilesetManager(
         std::filesystem::path project_root,
         const ProjectTilesetMetadataProvider *metadata_provider,
         const ProjectTilesetMetadataWriter *metadata_writer,
         const InfraConfig *infra_config,
-        const IncbinDeclarationAppender *incbin_appender)
+        const IncbinDeclarationAppender *incbin_appender,
+        const TilesetAnimsModifier *tileset_anims_modifier)
         : project_root_{std::move(project_root)}, metadata_provider_{metadata_provider},
-          metadata_writer_{metadata_writer}, infra_config_{infra_config}, incbin_appender_{incbin_appender}
+          metadata_writer_{metadata_writer}, infra_config_{infra_config}, incbin_appender_{incbin_appender},
+          tileset_anims_modifier_{tileset_anims_modifier}
     {
     }
 
@@ -92,6 +96,7 @@ class ProjectPorytilesTilesetManager : public PorytilesTilesetManager {
     const ProjectTilesetMetadataWriter *metadata_writer_;
     const InfraConfig *infra_config_;
     const IncbinDeclarationAppender *incbin_appender_;
+    const TilesetAnimsModifier *tileset_anims_modifier_;
 };
 
 } // namespace porytiles2

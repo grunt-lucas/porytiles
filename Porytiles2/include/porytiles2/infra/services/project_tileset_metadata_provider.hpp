@@ -9,7 +9,7 @@
 
 #include "porytiles2/domain/services/tileset_metadata_provider.hpp"
 #include "porytiles2/infra/models/project_tileset_metadata.hpp"
-#include "porytiles2/infra/repos/tileset_artifact_paths.hpp"
+#include "porytiles2/infra/repos/project_tileset_artifact_paths.hpp"
 #include "porytiles2/utilities/c_parser/incbin_declaration.hpp"
 #include "porytiles2/utilities/c_parser/struct_initializer_declaration.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -67,7 +67,7 @@ class ProjectTilesetMetadataProvider : public TilesetMetadataProvider {
      * @pre tileset_name must refer to an existing tileset on disk
      * @return The resolved artifact paths for the tileset
      */
-    [[nodiscard]] ChainableResult<TilesetArtifactPaths> artifact_paths_for(const std::string &tileset_name) const;
+    [[nodiscard]] ChainableResult<ProjectTilesetArtifactPaths> artifact_paths_for(const std::string &tileset_name) const;
 
   private:
     std::filesystem::path project_root_;
