@@ -102,7 +102,7 @@ class ImportTilesetCommand final : public Command {
             project_root / behaviors_header_root_relative, text_formatter, diag.get()};
         AttributesCsvLoader attributes_csv_loader{text_formatter, &behavior_map_provider};
 
-        // Setup metadata provider, tileset manager, and vanilla animation importer
+        // Setup metadata provider, tileset manager
         ProjectTilesetMetadataProvider metadata_provider{project_root, text_formatter, diag.get()};
         ProjectPorytilesTilesetManager tileset_manager{project_root};
 

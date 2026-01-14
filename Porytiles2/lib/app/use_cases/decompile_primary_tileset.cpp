@@ -1,10 +1,4 @@
-/**
- * @file defunct_import_primary_tileset.cpp
- * @deprecated This file contains the legacy import use case.
- * A new import system is being developed that separates "import" (vanilla migration)
- * from "decompile" (Porymap → Porytiles transformation). See project_structure_refactoring_plan.md.
- */
-#include "porytiles2/app/use_cases/defunct_import_primary_tileset.hpp"
+#include "porytiles2/app/use_cases/decompile_primary_tileset.hpp"
 
 #include <memory>
 #include <string>
@@ -14,11 +8,14 @@
 
 namespace porytiles2 {
 
-ChainableResult<void> DefunctImportPrimaryTileset::import(const std::string &name) const
+ChainableResult<void> DecompilePrimaryTileset::decompile(const std::string &name) const
 {
-    // 1. Check if the primary tileset exists. If not, abort with error.
-    if (!tileset_repo_->exists(name)) {
+    // 1. Check if the primary tileset exists and is Porytiles-managed. If not, abort with error.
+    if (!tileset_metadata_provider_->exists(name)) {
         return FormattableError{"tileset '{}' does not exist", FormatParam{name, Style::bold}};
+    }
+    if (!porytiles_tileset_manager_->is_porytiles_managed(name)) {
+        return FormattableError{"tileset '{}' exists but is not Porytiles-managed", FormatParam{name, Style::bold}};
     }
 
     // 2. Load the tileset into a `Tileset` aggregate.
@@ -88,7 +85,7 @@ ChainableResult<void> DefunctImportPrimaryTileset::import(const std::string &nam
             void);
         if (tileset_repo_->checksum_provider().all_checksums_tileset_match(name, porymap_keys)) {
             // TODO: better message here
-            diag_->warning("nothing-to-do", "Skipping import, no changes found, TODO: give better message here");
+            diag_->warning("nothing-to-do", "Skipping decompile, no changes found, TODO: give better message here");
             return {};
         }
     }

@@ -1,9 +1,3 @@
-/**
- * @file command_defunct_import_tileset.hpp
- * @deprecated This file contains the legacy import command.
- * A new import system is being developed that separates "import" (vanilla migration)
- * from "decompile" (Porymap → Porytiles transformation). See project_structure_refactoring_plan.md.
- */
 #pragma once
 
 #include <memory>
@@ -13,7 +7,7 @@
 #include "CLI/CLI.hpp"
 #include "fruit/fruit.h"
 
-#include "porytiles2/app/use_cases/defunct_import_primary_tileset.hpp"
+#include "porytiles2/app/use_cases/decompile_primary_tileset.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/palette_printer.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
@@ -37,6 +31,7 @@
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
+#include "porytiles2/infra/services/project_porytiles_tileset_manager.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/di/components.hpp"
 #include "porytiles2/xcut/diagnostics/stderr_styled_user_diagnostics.hpp"
@@ -44,13 +39,13 @@
 
 #include "command.hpp"
 
-class DefunctImportTilesetCommand final : public Command {
+class DecompileTilesetCommand final : public Command {
   public:
-    explicit DefunctImportTilesetCommand(CLI::App &parent_app)
+    explicit DecompileTilesetCommand(CLI::App &parent_app)
         : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
     {
         CLI::App &cmd = get_app();
-        cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to import")->required();
+        cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to decompile")->required();
     }
 
     void Run() override
@@ -111,8 +106,9 @@ class DefunctImportTilesetCommand final : public Command {
             project_root / behaviors_header_root_relative, text_formatter, diag.get()};
         AttributesCsvLoader attributes_csv_loader{text_formatter, &behavior_map_provider};
 
-        // Setup metadata provider (needed by artifact reader for animation param loading)
+        // Setup metadata provider, tileset manager
         ProjectTilesetMetadataProvider metadata_provider{project_root, text_formatter, diag.get()};
+        ProjectPorytilesTilesetManager tileset_manager{project_root};
 
         // Setup the tileset repository
         ProjectTilesetArtifactReader artifact_reader{
@@ -144,23 +140,31 @@ class DefunctImportTilesetCommand final : public Command {
             text_formatter,
             diag.get()};
 
-        DefunctImportPrimaryTileset import_use_case{
-            &repo, &decompiler, &compiler, &config, &config, text_formatter, diag.get()};
+        DecompilePrimaryTileset decompile_use_case{
+            &repo,
+            &decompiler,
+            &compiler,
+            &metadata_provider,
+            &tileset_manager,
+            &config,
+            &config,
+            text_formatter,
+            diag.get()};
 
         // Run the use case
-        auto import_result = import_use_case.import(tileset_name_);
-        if (!import_result.has_value()) {
+        auto decompile_result = decompile_use_case.decompile(tileset_name_);
+        if (!decompile_result.has_value()) {
             const auto fail_result = ChainableResult<std::unique_ptr<Tileset>>{
-                FormattableError{"failed to import tileset '{}'", FormatParam{tileset_name_, Style::bold}},
-                import_result};
+                FormattableError{"failed to decompile tileset '{}'", FormatParam{tileset_name_, Style::bold}},
+                decompile_result};
             diag->fatal(fail_result);
         }
     }
 
   private:
-    static constexpr auto kCommandName = "defunct-import-tileset";
+    static constexpr auto kCommandName = "decompile-tileset";
     static constexpr auto kCommandDesc =
-        "[DEPRECATED] Import a tileset, i.e., update the Porytiles assets to match the Porymap assets.";
+        "Decompile a tileset, i.e., update the Porytiles assets to match the Porymap assets.";
     static constexpr auto kCommandGroup = "COMMANDS";
     std::string tileset_name_;
 };
