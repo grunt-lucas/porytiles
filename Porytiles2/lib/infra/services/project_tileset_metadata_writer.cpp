@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <map>
 #include <string>
 #include <utility>
 #include <vector>
@@ -10,6 +11,8 @@
 #include "porytiles2/utilities/c_parser/struct_initializer_declaration.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
+
+#include <ranges>
 
 namespace {
 
@@ -32,6 +35,16 @@ ProjectTilesetMetadataWriter::ProjectTilesetMetadataWriter(
 ChainableResult<void> ProjectTilesetMetadataWriter::update_callback(
     const std::string &tileset_name, const std::string &new_callback_value) const
 {
+    return update_fields(tileset_name, {{"callback", new_callback_value}});
+}
+
+ChainableResult<void> ProjectTilesetMetadataWriter::update_fields(
+    const std::string &tileset_name, const std::map<std::string, std::string> &field_updates) const
+{
+    if (field_updates.empty()) {
+        return {};
+    }
+
     const auto headers_path = project_root_ / headers_rel_path;
 
     // Parse the file to locate the tileset struct
@@ -58,32 +71,37 @@ ChainableResult<void> ProjectTilesetMetadataWriter::update_callback(
             format_->format("tileset '{}' not found in headers.h", FormatParam{tileset_name, Style::bold})};
     }
 
-    // Find the callback field to get its line number
-    const DesignatedInitializerField *callback_field = nullptr;
+    // Build a map of field_name -> line_index for fields we need to update
+    std::map<std::string, std::size_t> field_line_indices;
     for (const auto &field : target_struct->fields()) {
-        if (field.field_name() == "callback") {
-            callback_field = &field;
-            break;
+        if (field_updates.contains(field.field_name())) {
+            field_line_indices[field.field_name()] = field.position().line - 1; // Convert to 0-based
         }
     }
 
-    if (callback_field == nullptr) {
-        return FormattableError{
-            format_->format("tileset '{}' has no .callback field", FormatParam{tileset_name, Style::bold})};
+    // Verify all requested fields were found
+    for (const auto &field_name : field_updates | std::views::keys) {
+        if (!field_line_indices.contains(field_name)) {
+            return FormattableError{format_->format(
+                "tileset '{}' has no .{} field",
+                FormatParam{tileset_name, Style::bold},
+                FormatParam{field_name, Style::bold})};
+        }
     }
 
-    // Get file lines and replace the callback line
+    // Get file lines and update all fields
     std::vector<std::string> file_lines = parser.file_lines();
-    const std::size_t callback_line_index = callback_field->position().line - 1; // Convert to 0-based index
-
-    if (callback_line_index >= file_lines.size()) {
-        return FormattableError{format_->format(
-            "callback field line {} out of bounds for file with {} lines",
-            FormatParam{std::to_string(callback_field->position().line), Style::bold},
-            FormatParam{std::to_string(file_lines.size()), Style::bold})};
+    for (const auto &[field_name, new_value] : field_updates) {
+        const std::size_t line_index = field_line_indices.at(field_name);
+        if (line_index >= file_lines.size()) {
+            return FormattableError{format_->format(
+                ".{} field line {} out of bounds for file with {} lines",
+                FormatParam{field_name, Style::bold},
+                FormatParam{std::to_string(line_index + 1), Style::bold},
+                FormatParam{std::to_string(file_lines.size()), Style::bold})};
+        }
+        file_lines[line_index] = "    ." + field_name + " = " + new_value + ",";
     }
-
-    file_lines[callback_line_index] = "    .callback = " + new_callback_value + ",";
 
     // Write the file back
     std::ofstream out{headers_path};
@@ -103,6 +121,32 @@ ChainableResult<void> ProjectTilesetMetadataWriter::update_callback(
     }
 
     return {};
+}
+
+ChainableResult<void>
+ProjectTilesetMetadataWriter::update_to_porytiles_managed(const std::string &tileset_name, bool update_callback) const
+{
+    // Extract shorthand from tileset name (e.g., "gTileset_General" -> "General")
+    const std::string prefix = "gTileset_";
+    if (!tileset_name.starts_with(prefix)) {
+        return FormattableError{format_->format(
+            "tileset name '{}' does not start with '{}'",
+            FormatParam{tileset_name, Style::bold},
+            FormatParam{prefix, Style::bold})};
+    }
+    const std::string shorthand = tileset_name.substr(prefix.size());
+
+    std::map<std::string, std::string> updates{
+        {"tiles", "gTilesetTiles_PorytilesManaged_" + shorthand},
+        {"palettes", "gTilesetPalettes_PorytilesManaged_" + shorthand},
+        {"metatiles", "gMetatiles_PorytilesManaged_" + shorthand},
+        {"metatileAttributes", "gMetatileAttributes_PorytilesManaged_" + shorthand}};
+
+    if (update_callback) {
+        updates["callback"] = "InitTilesetAnim_PorytilesManaged_" + shorthand;
+    }
+
+    return update_fields(tileset_name, updates);
 }
 
 } // namespace porytiles2

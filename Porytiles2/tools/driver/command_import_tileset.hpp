@@ -33,6 +33,7 @@
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/infra/services/project_porytiles_tileset_manager.hpp"
 #include "porytiles2/infra/services/project_primary_tileset_importer.hpp"
+#include "porytiles2/infra/services/project_tileset_metadata_writer.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/di/components.hpp"
 #include "porytiles2/xcut/diagnostics/stderr_styled_user_diagnostics.hpp"
@@ -104,7 +105,8 @@ class ImportTilesetCommand final : public Command {
 
         // Setup metadata provider, tileset manager
         ProjectTilesetMetadataProvider metadata_provider{project_root, text_formatter, diag.get()};
-        ProjectPorytilesTilesetManager tileset_manager{project_root};
+        ProjectTilesetMetadataWriter metadata_writer{project_root, text_formatter};
+        ProjectPorytilesTilesetManager tileset_manager{project_root, &metadata_provider, &metadata_writer};
 
         // Setup the tileset repository
         ProjectTilesetArtifactReader artifact_reader{

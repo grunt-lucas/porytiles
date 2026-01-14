@@ -73,8 +73,19 @@ bool ProjectPorytilesTilesetManager::is_porytiles_managed(const std::string &til
 
 ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_state(const std::string &tileset_name) const
 {
-    // TODO: implement
-    return {};
+    // TODO: write original_artifacts.json with the original asset variable names
+
+    /*
+     * TODO: Append INCBINs for the Porytiles-managed asset variables
+     *
+     * In order to do this, we'll need to support the tileset.paths.primary/secondary src/bin configs outlined in the
+     * plan. We need to know the paths for the INCBIN. The default for metatiles would be e.g.
+     *
+     * data/tilesets/primary/{snake_case(shorthand(tileset_name))}/porytiles_bin/metatiles.bin
+     */
+
+    // Update headers.h to use Porytiles-managed asset variables
+    return metadata_writer_->update_to_porytiles_managed(tileset_name);
 }
 
 } // namespace porytiles2

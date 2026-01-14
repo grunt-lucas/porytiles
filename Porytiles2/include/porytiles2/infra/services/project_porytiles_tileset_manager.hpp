@@ -4,6 +4,8 @@
 
 #include "porytiles2/domain/services/porytiles_tileset_manager.hpp"
 #include "porytiles2/infra/models/original_artifacts.hpp"
+#include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
+#include "porytiles2/infra/services/project_tileset_metadata_writer.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
@@ -24,7 +26,19 @@ namespace porytiles2 {
  */
 class ProjectPorytilesTilesetManager : public PorytilesTilesetManager {
   public:
-    explicit ProjectPorytilesTilesetManager(std::filesystem::path project_root) : project_root_{std::move(project_root)}
+    /**
+     * @brief Constructs a ProjectPorytilesTilesetManager with required dependencies.
+     *
+     * @param project_root Path to the pokeemerald project root directory
+     * @param metadata_writer Provider for reading headers.h fields
+     * @param metadata_writer Writer for updating headers.h fields
+     */
+    ProjectPorytilesTilesetManager(
+        std::filesystem::path project_root,
+        const ProjectTilesetMetadataProvider *metadata_provider,
+        const ProjectTilesetMetadataWriter *metadata_writer)
+        : project_root_{std::move(project_root)}, metadata_provider_{metadata_provider},
+          metadata_writer_{metadata_writer}
     {
     }
 
@@ -68,6 +82,8 @@ class ProjectPorytilesTilesetManager : public PorytilesTilesetManager {
 
   private:
     std::filesystem::path project_root_;
+    const ProjectTilesetMetadataProvider *metadata_provider_;
+    const ProjectTilesetMetadataWriter *metadata_writer_;
 };
 
 } // namespace porytiles2
