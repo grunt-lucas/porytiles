@@ -122,8 +122,6 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
     }
 
     // Step 4: For each animation, construct Animation<IndexPixel> with frame data
-    PngIndexedImageLoader png_loader;
-
     for (const auto &[anim_name, params] : anim_params_map) {
         Animation<IndexPixel> anim{anim_name};
         anim.params(params);
@@ -132,6 +130,7 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
         const std::string pascal_anim_name = to_pascal_case(anim_name);
 
         for (const auto &frame_name : params.frame_names()) {
+            PngIndexedImageLoader png_loader;
             const std::string frame_var =
                 "gTilesetAnims_" + pascal_tileset + "_" + pascal_anim_name + "_Frame" + frame_name;
 
@@ -162,10 +161,26 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
             }
 
             const Image<IndexPixel> &frame_png = *frame_png_result.value();
+
+            // Capture dimensions before extracting tiles
+            const std::size_t width_tiles = frame_png.width() / tile::side_length_pix;
+            const std::size_t height_tiles = frame_png.height() / tile::side_length_pix;
+
             std::vector<PixelTile<IndexPixel>> tiles = extract_tiles_from_image(frame_png);
 
-            AnimationFrame<IndexPixel> frame{frame_name, std::move(tiles)};
+            AnimationFrame frame{frame_name, std::move(tiles)};
+            if (frame_png.palette().has_value()) {
+                frame.palette(Palette{frame_png.palette().value()});
+            }
             anim.put_frame(frame_name, std::move(frame));
+
+            // Update dimensions in params if not already set (first frame determines dimensions)
+            auto animation_params = anim.params();
+            if (animation_params.width_tiles() == 0 && animation_params.height_tiles() == 0) {
+                animation_params.width_tiles(width_tiles);
+                animation_params.height_tiles(height_tiles);
+                anim.params(std::move(animation_params));
+            }
         }
 
         result[anim_name] = std::move(anim);

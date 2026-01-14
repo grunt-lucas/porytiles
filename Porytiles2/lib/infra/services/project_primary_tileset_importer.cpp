@@ -4,6 +4,7 @@
 
 #include "porytiles2/infra/algorithms/porymap_artifact_parsers.hpp"
 #include "porytiles2/infra/services/project_vanilla_anim_importer.hpp"
+#include "porytiles2/utilities/filesystem_utils.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
 
 namespace porytiles2 {
@@ -44,13 +45,8 @@ ProjectPrimaryTilesetImporter::import_porymap_component_from_vanilla(const std::
     }
 
     // Step 4: Load tiles.png (strip all extensions like .4bpp.smol, then add .png)
-    // TODO: we should put this extension stripping logic into a utilities header
-    auto tiles_dir = artifact_paths.tiles_path().parent_path();
-    auto tiles_filename = artifact_paths.tiles_path().filename();
-    while (!tiles_filename.extension().empty()) {
-        tiles_filename = tiles_filename.stem();
-    }
-    auto tiles_png_path = tiles_dir / (tiles_filename.string() + ".png");
+    auto tiles_png_path = strip_all_extensions(artifact_paths.tiles_path());
+    tiles_png_path += ".png";
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         tiles_image,
@@ -75,12 +71,6 @@ ProjectPrimaryTilesetImporter::import_porymap_component_from_vanilla(const std::
 
         porymap_component->set_pal(i, std::move(palette));
     }
-
-    /*
-     * TODO: somehow, when we run through this codepath, we're losing the frame dimensions of the original vanilla
-     * animations. We need to figure out where that's happening and fix it. I suspect anim_importer.import_animations
-     * isn't preserving them.
-     */
 
     // Step 6: Import animations using ProjectVanillaAnimImporter
     // Animation import failure is non-fatal - tileset may not have animations
