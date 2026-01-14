@@ -5,8 +5,6 @@
 #include <string>
 #include <vector>
 
-#include "porytiles2/utilities/string_utils.hpp"
-
 namespace porytiles2 {
 
 /**
@@ -28,10 +26,6 @@ namespace porytiles2 {
  * @endcode
  */
 using AnimationFramePaths = std::map<std::string, std::vector<std::filesystem::path>>;
-
-namespace tileset {
-
-} // namespace tileset
 
 /**
  * @brief Represents resolved filesystem paths for tileset artifacts from INCBIN declarations.
@@ -146,31 +140,6 @@ class ProjectTilesetArtifactPaths {
     [[nodiscard]] bool has_animation_frame_paths() const
     {
         return !animation_frame_paths_.empty();
-    }
-
-    /**
-     * @brief Extracts the palettes directory from the first palette path.
-     *
-     * @details
-     * Derives the palettes directory by taking the parent of the first palette file. For ".../palettes/00.gbapal",
-     * returns ".../palettes".
-     *
-     * @pre palette_paths_ is not empty
-     * @return The palettes directory path
-     */
-    [[nodiscard]] std::filesystem::path palettes_dir() const
-    {
-        if (palette_paths_.empty()) {
-            return {};
-        }
-
-        /*
-         * TODO: it's entirely possible (though unlikely) that the user has spread palette assets around in multiple
-         * places. In that case, palette_paths_.front().parent_path() may not be the real "root", as there could be
-         * multiple "roots" depending on what the user did. How would we want to handle this? Perhaps a prerequisite to
-         * using Porytiles is that you have your palettes in a single palette directory.
-         */
-        return palette_paths_.front().parent_path();
     }
 
   private:

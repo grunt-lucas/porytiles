@@ -59,13 +59,13 @@ ProjectPrimaryTilesetImporter::import_porymap_component_from_vanilla(const std::
     // Step 5: Load palettes from the discovered palette paths
     const auto &palette_paths = artifact_paths.palette_paths();
     for (std::size_t i = 0; i < palette_paths.size() && i < pal::num_pals; ++i) {
-        // Convert .gbapal path to .pal by looking in the palettes directory
-        auto pal_dir = artifact_paths.palettes_dir();
-        auto pal_path = project_root_ / pal_dir / pal_filename(i);
+        // Convert .gbapal path to .pal by stripping all extensions and adding .pal
+        auto pal_path = strip_all_extensions(palette_paths[i]);
+        pal_path += ".pal";
 
         PT_TRY_ASSIGN_CHAIN_ERR(
             palette,
-            load_porymap_palette(pal_path, *pal_loader_),
+            load_porymap_palette(project_root_ / pal_path, *pal_loader_),
             format_->format("failed to load palette {}", FormatParam{i}),
             std::unique_ptr<PorymapTilesetComponent>);
 

@@ -14,6 +14,7 @@
 #include "porytiles2/infra/services/anim_yaml_parser.hpp"
 #include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/c_parser/c_parser_facade.hpp"
+#include "porytiles2/utilities/filesystem_utils.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
@@ -324,7 +325,19 @@ ProjectTilesetArtifactKeyProvider::key_for_porymap_pal_n(const std::string &tile
         artifact_paths_for(tileset_name),
         format_->format("failed to get Porymap pal key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
         ArtifactKey);
-    return ArtifactKey{paths.palettes_dir() / pal_filename(index)};
+
+    const auto &palette_paths = paths.palette_paths();
+    if (index >= palette_paths.size()) {
+        return FormattableError{format_->format(
+            "palette index '{}' out of bounds (tileset '{}' has {} palettes)",
+            FormatParam{index, Style::bold},
+            FormatParam{tileset_name, Style::bold},
+            FormatParam{palette_paths.size(), Style::bold})};
+    }
+
+    auto pal_path = strip_all_extensions(palette_paths[index]);
+    pal_path += ".pal";
+    return ArtifactKey{pal_path};
 }
 
 ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_frame(
