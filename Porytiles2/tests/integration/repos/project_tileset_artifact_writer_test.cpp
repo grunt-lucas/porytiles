@@ -14,6 +14,7 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
+#include "porytiles2/domain/services/behavior_map_provider.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
 #include "porytiles2/infra/services/anim_code_generator.hpp"
@@ -117,6 +118,21 @@ class MockFilePalSaver : public FilePalSaver {
     }
 };
 
+class MockBehaviorMapProvider : public BehaviorMapProvider {
+  public:
+    [[nodiscard]] ChainableResult<std::uint16_t> lookup(const std::string &behavior_name) const override
+    {
+        // Simple mock: return 0 for any behavior name
+        return std::uint16_t{0};
+    }
+
+    [[nodiscard]] ChainableResult<std::string> lookup(std::uint16_t behavior_value) const override
+    {
+        // Simple mock: return a behavior name based on value
+        return std::string{"MB_NORMAL"};
+    }
+};
+
 Image<Rgba32> create_test_rgba_image()
 {
     return Image<Rgba32>{8, 8};
@@ -169,6 +185,7 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
         pal_saver_ = std::make_unique<MockFilePalSaver>();
         anim_yaml_parser_ = std::make_unique<AnimYamlParser>(formatter_.get());
         anim_code_generator_ = std::make_unique<AnimCodeGenerator>();
+        behavior_map_ = std::make_unique<MockBehaviorMapProvider>();
 
         test_root_ = std::filesystem::temp_directory_path() / "porytiles_artifact_writer_tests";
         std::filesystem::create_directories(test_root_);
@@ -183,7 +200,8 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
             png_indexed_saver_.get(),
             pal_saver_.get(),
             anim_yaml_parser_.get(),
-            anim_code_generator_.get());
+            anim_code_generator_.get(),
+            behavior_map_.get());
     }
 
     void TearDown() override
@@ -230,6 +248,7 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
     std::unique_ptr<MockFilePalSaver> pal_saver_;
     std::unique_ptr<AnimYamlParser> anim_yaml_parser_;
     std::unique_ptr<AnimCodeGenerator> anim_code_generator_;
+    std::unique_ptr<MockBehaviorMapProvider> behavior_map_;
     std::unique_ptr<ProjectTilesetArtifactWriter> writer_;
 };
 

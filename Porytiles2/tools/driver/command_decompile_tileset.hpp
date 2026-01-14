@@ -131,7 +131,8 @@ class DecompileTilesetCommand final : public Command {
             &png_indexed_saver,
             &jasc_saver,
             &anim_yaml_parser,
-            &anim_code_generator};
+            &anim_code_generator,
+            &behavior_map_provider};
         ProjectArtifactChecksumProvider checksum_provider{project_root};
         TilesetRepo repo{
             &checksum_provider,

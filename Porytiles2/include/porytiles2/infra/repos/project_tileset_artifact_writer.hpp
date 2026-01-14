@@ -3,6 +3,7 @@
 #include "gsl/pointers"
 
 #include "porytiles2/domain/repos/tileset_artifact_writer.hpp"
+#include "porytiles2/domain/services/behavior_map_provider.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
 #include "porytiles2/infra/services/anim_code_generator.hpp"
 #include "porytiles2/infra/services/anim_yaml_parser.hpp"
@@ -35,10 +36,11 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
         gsl::not_null<PngIndexedImageSaver *> png_indexed_saver,
         gsl::not_null<FilePalSaver *> pal_saver,
         gsl::not_null<const AnimYamlParser *> anim_yaml_parser,
-        gsl::not_null<const AnimCodeGenerator *> anim_code_generator)
+        gsl::not_null<const AnimCodeGenerator *> anim_code_generator,
+        gsl::not_null<const BehaviorMapProvider *> behavior_map)
         : config_{config}, project_root_{std::move(project_root)}, format_{format}, diag_{diag},
           png_rgba_saver_{png_rgba_saver}, png_indexed_saver_{png_indexed_saver}, pal_saver_{pal_saver},
-          anim_yaml_parser_{anim_yaml_parser}, anim_code_generator_{anim_code_generator},
+          anim_yaml_parser_{anim_yaml_parser}, anim_code_generator_{anim_code_generator}, behavior_map_{behavior_map},
           metadata_provider_{project_root, format, diag}, metadata_writer_{project_root, format}
     {
     }
@@ -105,6 +107,7 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
     FilePalSaver *pal_saver_;
     const AnimYamlParser *anim_yaml_parser_;
     const AnimCodeGenerator *anim_code_generator_;
+    const BehaviorMapProvider *behavior_map_;
     ProjectTilesetMetadataProvider metadata_provider_;
     ProjectTilesetMetadataWriter metadata_writer_;
 };

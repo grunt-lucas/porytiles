@@ -85,6 +85,12 @@ ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_state(cons
      */
 
     // Update headers.h to use Porytiles-managed asset variables
+    /*
+     * TODO: two cases where we shouldn't update callback here, i.e. pass "update_callback = false"
+     *
+     * 1. If user requested overwrite_callback: false
+     * 2. If callback was already NULL
+     */
     return metadata_writer_->update_to_porytiles_managed(tileset_name);
 }
 

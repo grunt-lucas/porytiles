@@ -545,7 +545,53 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_top_png(const Artifact
 ChainableResult<void>
 ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, const Tileset &src)
 {
-    // TODO: implement
+    const auto &attributes = src.porytiles_component().metatile_attributes();
+
+    // Count non-default attributes (behavior != 0 is non-default, since MB_NORMAL = 0 is the implicit default)
+    // TODO : make the default behavior value configurable
+    constexpr std::uint16_t default_behavior = 0;
+    std::size_t non_default_count = 0;
+    for (const auto &attribute : attributes | std::views::values) {
+        if (attribute.behavior() != default_behavior) {
+            non_default_count++;
+        }
+    }
+
+    if (non_default_count == 0) {
+        // No non-default attributes to write
+        return {};
+    }
+
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        transaction_dest_path,
+        compute_transaction_dest_path(transaction_root_, dest_key),
+        "failed to compute transaction dest path",
+        void);
+
+    std::ofstream out{transaction_dest_path};
+    if (!out.is_open()) {
+        return FormattableError{
+            "failed to open file for writing: {}", FormatParam{transaction_dest_path.string(), Style::bold}};
+    }
+
+    // Write header
+    out << "id,behavior\n";
+
+    // Write each non-default attribute row
+    for (const auto &[metatile_id, attribute] : attributes) {
+        if (attribute.behavior() == default_behavior) {
+            // Skip default behavior (MB_NORMAL = 0), since it's implicit for missing entries
+            continue;
+        }
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            behavior_name,
+            behavior_map_->lookup(attribute.behavior()),
+            "failed to lookup behavior name for metatile " + std::to_string(metatile_id),
+            void);
+        out << metatile_id << "," << behavior_name << "\n";
+    }
+
+    out.flush();
     return {};
 }
 

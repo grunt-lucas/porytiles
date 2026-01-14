@@ -60,6 +60,12 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
         i++;
     }
 
+    // Copy metatile attributes from Porymap component to Porytiles component
+    const auto &porymap_attributes = tileset.porymap_component().metatile_attributes_bin();
+    for (std::size_t metatile_id = 0; metatile_id < porymap_attributes.size(); metatile_id++) {
+        new_porytiles_component->insert_attribute(metatile_id, porymap_attributes[metatile_id]);
+    }
+
     // Decompile animations from Porymap component to Porytiles component
     if (const auto &porymap_animations = tileset.porymap_component().anims(); !porymap_animations.empty()) {
         const auto &metatiles_bin = tileset.porymap_component().metatiles_bin();
