@@ -29,8 +29,8 @@ namespace porytiles2 {
  * Tileset metadata and artifact paths are discovered dynamically by parsing C source files (headers.h, graphics.h,
  * metatiles.h) rather than relying on hardcoded filesystem path conventions.
  *
- * For Porymap artifacts (tiles, palettes, metatiles), paths are resolved from INCBIN declarations.
- * For Porytiles artifacts (bottom.png, middle.png, etc.), paths use a hardcoded relative location within each tileset.
+ * For Porymap artifacts (tiles, palettes, metatiles), paths are resolved from INCBIN declarations. For Porytiles
+ * artifacts (bottom.png, middle.png, etc.), paths use a hardcoded relative location within each tileset.
  *
  * Class precondition: the tileset_name parameter in each method below (except tileset_exists) must refer to an existing
  * tileset on-disk. If no tileset corresponds to the given tileset_name, ProjectTilesetKeyProvider will panic.
@@ -73,10 +73,9 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
      * @brief Returns the key for Porymap animation parameters.
      *
      * @details
-     * For Porymap animations, generated_anim_code.h is the source of truth for animation
-     * parameters. For first-time imports where this file doesn't exist, the reader will
-     * fall back to tileset_anims.c. This method is an alias for key_for_generated_anim_code()
-     * but with a more explicit name for the animation loading context.
+     * For Porymap animations, generated_anim_code.h is the source of truth for animation parameters. For first-time
+     * imports where this file doesn't exist, the reader will fall back to tileset_anims.c. This method is an alias for
+     * key_for_generated_anim_code() but with a more explicit name for the animation loading context.
      *
      * @param tileset_name The name of the tileset
      * @return Key for the generated_anim_code.h file
@@ -158,7 +157,8 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
      * @pre tileset_name must refer to an existing tileset on disk
      * @return TilesetArtifactPaths containing resolved paths for all Porymap artifacts
      */
-    [[nodiscard]] ChainableResult<ProjectTilesetArtifactPaths> artifact_paths_for(const std::string &tileset_name) const;
+    [[nodiscard]] ChainableResult<ProjectTilesetArtifactPaths>
+    artifact_paths_for(const std::string &tileset_name) const;
 
     /**
      * @brief Returns Porymap animation frame paths discovered from INCBIN declarations.

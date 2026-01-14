@@ -1,4 +1,4 @@
-#include "porytiles2/infra/services/tileset_anims_modifier.hpp"
+#include "porytiles2/infra/services/project_tileset_anims_modifier.hpp"
 
 #include <cstddef>
 #include <filesystem>
@@ -147,7 +147,7 @@ write_file_lines(const std::filesystem::path &path, const std::vector<std::strin
 
 namespace porytiles2 {
 
-TilesetAnimsModifier::TilesetAnimsModifier(
+ProjectTilesetAnimsModifier::ProjectTilesetAnimsModifier(
     std::filesystem::path project_root,
     gsl::not_null<const InfraConfig *> config,
     gsl::not_null<const TextFormatter *> format,
@@ -157,7 +157,7 @@ TilesetAnimsModifier::TilesetAnimsModifier(
 }
 
 ChainableResult<void>
-TilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset_name, bool is_secondary) const
+ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset_name, bool is_secondary) const
 {
     // Step 1: Extract and validate shorthand
     const std::string shorthand = extract_shorthand(tileset_name);
@@ -213,7 +213,7 @@ TilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset_name, 
 }
 
 ChainableResult<void>
-TilesetAnimsModifier::remove_include_for_tileset(const std::string &tileset_name, bool is_secondary) const
+ProjectTilesetAnimsModifier::remove_include_for_tileset(const std::string &tileset_name, bool is_secondary) const
 {
     // Note: is_secondary is not used in removal since the pattern matching is based solely on
     // the tileset directory name, not the tier. This allows removal to work regardless of which

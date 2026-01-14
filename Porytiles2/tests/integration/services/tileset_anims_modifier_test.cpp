@@ -9,7 +9,7 @@
 
 #include "porytiles2/infra/config/default_provider.hpp"
 #include "porytiles2/infra/config/lazy_layered_config.hpp"
-#include "porytiles2/infra/services/tileset_anims_modifier.hpp"
+#include "porytiles2/infra/services/project_tileset_anims_modifier.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/buffered_user_diagnostics.hpp"
 
@@ -94,7 +94,7 @@ class TilesetAnimsModifierTestBase : public ::testing::Test {
         providers.push_back(std::make_unique<DefaultProvider>());
         config_ = std::make_unique<LazyLayeredConfig>(formatter_.get(), std::move(providers));
 
-        modifier_ = std::make_unique<TilesetAnimsModifier>(temp_dir_, config_.get(), formatter_.get(), diagnostics_.get());
+        modifier_ = std::make_unique<ProjectTilesetAnimsModifier>(temp_dir_, config_.get(), formatter_.get(), diagnostics_.get());
     }
 
     void TearDown() override
@@ -112,7 +112,7 @@ class TilesetAnimsModifierTestBase : public ::testing::Test {
     std::unique_ptr<TextFormatter> formatter_;
     std::unique_ptr<UserDiagnostics> diagnostics_;
     std::unique_ptr<LazyLayeredConfig> config_;
-    std::unique_ptr<TilesetAnimsModifier> modifier_;
+    std::unique_ptr<ProjectTilesetAnimsModifier> modifier_;
 };
 
 /**

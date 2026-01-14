@@ -19,8 +19,6 @@ namespace porytiles2 {
  *
  * @details
  * ProjectVanillaAnimImporter reads animation configuration and frame PNG files from a vanilla pokeemerald project.
- * Unlike ProjectVanillaAnimationImporter (which produces Rgba32), this class keeps tiles in their original indexed
- * format.
  *
  * Workflow:
  * 1. Gets tileset metadata (callback function name) from headers.h
@@ -32,7 +30,6 @@ namespace porytiles2 {
  * needs to understand VRAM layout and palette assignment.
  *
  * @note Returned animations will have has_key_frame() == false
- * @see ProjectVanillaAnimationImporter for the RGBA32 version with full decompilation
  */
 class ProjectVanillaAnimImporter {
   public:
