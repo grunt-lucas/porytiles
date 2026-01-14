@@ -3,7 +3,9 @@
 #include <filesystem>
 
 #include "porytiles2/domain/services/porytiles_tileset_manager.hpp"
+#include "porytiles2/infra/config/infra_config.hpp"
 #include "porytiles2/infra/models/original_artifacts.hpp"
+#include "porytiles2/infra/services/incbin_declaration_appender.hpp"
 #include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles2/infra/services/project_tileset_metadata_writer.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -30,15 +32,19 @@ class ProjectPorytilesTilesetManager : public PorytilesTilesetManager {
      * @brief Constructs a ProjectPorytilesTilesetManager with required dependencies.
      *
      * @param project_root Path to the pokeemerald project root directory
-     * @param metadata_writer Provider for reading headers.h fields
+     * @param metadata_provider Provider for reading headers.h fields
      * @param metadata_writer Writer for updating headers.h fields
+     * @param infra_config Configuration provider for tileset paths and animation settings
+     * @param incbin_appender Service for appending INCBIN declarations to header files
      */
     ProjectPorytilesTilesetManager(
         std::filesystem::path project_root,
         const ProjectTilesetMetadataProvider *metadata_provider,
-        const ProjectTilesetMetadataWriter *metadata_writer)
+        const ProjectTilesetMetadataWriter *metadata_writer,
+        const InfraConfig *infra_config,
+        const IncbinDeclarationAppender *incbin_appender)
         : project_root_{std::move(project_root)}, metadata_provider_{metadata_provider},
-          metadata_writer_{metadata_writer}
+          metadata_writer_{metadata_writer}, infra_config_{infra_config}, incbin_appender_{incbin_appender}
     {
     }
 
@@ -84,6 +90,8 @@ class ProjectPorytilesTilesetManager : public PorytilesTilesetManager {
     std::filesystem::path project_root_;
     const ProjectTilesetMetadataProvider *metadata_provider_;
     const ProjectTilesetMetadataWriter *metadata_writer_;
+    const InfraConfig *infra_config_;
+    const IncbinDeclarationAppender *incbin_appender_;
 };
 
 } // namespace porytiles2

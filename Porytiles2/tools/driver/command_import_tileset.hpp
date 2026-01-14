@@ -25,6 +25,7 @@
 #include "porytiles2/infra/services/attributes_csv_loader.hpp"
 #include "porytiles2/infra/services/color_palette_printer.hpp"
 #include "porytiles2/infra/services/header_behavior_map_provider.hpp"
+#include "porytiles2/infra/services/incbin_declaration_appender.hpp"
 #include "porytiles2/infra/services/jasc_pal_loader.hpp"
 #include "porytiles2/infra/services/jasc_pal_saver.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
@@ -106,7 +107,9 @@ class ImportTilesetCommand final : public Command {
         // Setup metadata provider, tileset manager
         ProjectTilesetMetadataProvider metadata_provider{project_root, text_formatter, diag.get()};
         ProjectTilesetMetadataWriter metadata_writer{project_root, text_formatter};
-        ProjectPorytilesTilesetManager tileset_manager{project_root, &metadata_provider, &metadata_writer};
+        IncbinDeclarationAppender incbin_appender{project_root, text_formatter};
+        ProjectPorytilesTilesetManager tileset_manager{
+            project_root, &metadata_provider, &metadata_writer, &config, &incbin_appender};
 
         // Setup the tileset repository
         ProjectTilesetArtifactReader artifact_reader{

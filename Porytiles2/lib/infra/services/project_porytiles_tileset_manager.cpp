@@ -1,9 +1,13 @@
 #include "porytiles2/infra/services/project_porytiles_tileset_manager.hpp"
 
+#include <cstdint>
 #include <filesystem>
 #include <fstream>
 
 #include "nlohmann/json.hpp"
+
+#include "porytiles2/domain/models/palette.hpp"
+#include "porytiles2/xcut/config/config_scope_type.hpp"
 
 namespace {
 
@@ -47,7 +51,7 @@ ChainableResult<OriginalArtifacts> ProjectPorytilesTilesetManager::read(const st
 
 void ProjectPorytilesTilesetManager::write(const std::string &tileset_name, const OriginalArtifacts &artifacts) const
 {
-    const auto original_artifacts_file = artifacts_file(project_root_, tileset_name).parent_path();
+    const auto original_artifacts_file = artifacts_file(project_root_, tileset_name);
     std::filesystem::create_directories(original_artifacts_file.parent_path());
     std::ofstream file{original_artifacts_file};
 
@@ -73,25 +77,80 @@ bool ProjectPorytilesTilesetManager::is_porytiles_managed(const std::string &til
 
 ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_state(const std::string &tileset_name) const
 {
-    // TODO: write original_artifacts.json with the original asset variable names
+    // Step 1: Read original metadata from headers.h
+    auto metadata_result = metadata_provider_->metadata_for(tileset_name);
+    if (!metadata_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{"failed to read metadata for tileset '{}'", FormatParam{tileset_name, Style::bold}},
+            metadata_result};
+    }
+    const auto &metadata = metadata_result.value();
 
-    /*
-     * TODO: Append INCBINs for the Porytiles-managed asset variables
-     *
-     * In order to do this, we'll need to support the tileset.paths.primary/secondary src/bin configs outlined in the
-     * plan. We need to know the paths for the INCBIN. The default for metatiles would be e.g.
-     *
-     * data/tilesets/primary/{snake_case(shorthand(tileset_name))}/porytiles_bin/metatiles.bin
-     */
+    // Step 2: Build OriginalArtifacts from metadata
+    constexpr std::uint32_t version = 1;
+    const std::optional<std::string> original_callback_value = metadata.callback_func();
 
-    // Update headers.h to use Porytiles-managed asset variables
-    /*
-     * TODO: two cases where we shouldn't update callback here, i.e. pass "update_callback = false"
-     *
-     * 1. If user requested overwrite_callback: false
-     * 2. If callback was already NULL
-     */
-    return metadata_writer_->update_to_porytiles_managed(tileset_name);
+    OriginalArtifacts artifacts{
+        version,
+        metadata.tiles_var(),
+        metadata.palettes_var(),
+        metadata.metatiles_var(),
+        metadata.metatile_attributes_var(),
+        original_callback_value.value_or("NULL")};
+
+    // Step 3: Write original_artifacts.json
+    write(tileset_name, artifacts);
+
+    // Step 4: Get config values for path computation
+    const bool is_secondary = metadata.is_secondary();
+
+    auto bin_path_result = is_secondary
+                               ? infra_config_->tileset_paths_secondary_bin(ConfigScopeType::tileset, tileset_name)
+                               : infra_config_->tileset_paths_primary_bin(ConfigScopeType::tileset, tileset_name);
+    if (!bin_path_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{"failed to get tileset bin path config for '{}'", FormatParam{tileset_name, Style::bold}},
+            bin_path_result};
+    }
+    const std::string bin_path_base = bin_path_result.value();
+
+    // Step 5: Append INCBIN declarations to graphics.h
+    auto graphics_result = incbin_appender_->append_graphics_declarations(tileset_name, bin_path_base, pal::num_pals);
+    if (!graphics_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{
+                "failed to append graphics INCBIN declarations for '{}'", FormatParam{tileset_name, Style::bold}},
+            graphics_result};
+    }
+
+    // Step 6: Append INCBIN declarations to metatiles.h
+    auto metatiles_result = incbin_appender_->append_metatiles_declarations(tileset_name, bin_path_base);
+    if (!metatiles_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{
+                "failed to append metatiles INCBIN declarations for '{}'", FormatParam{tileset_name, Style::bold}},
+            metatiles_result};
+    }
+
+    // Step 7: Determine whether to update callback field
+    auto overwrite_callback_result =
+        infra_config_->tileset_animations_overwrite_callback(ConfigScopeType::tileset, tileset_name);
+    if (!overwrite_callback_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{
+                "failed to get overwrite_callback config for '{}'", FormatParam{tileset_name, Style::bold}},
+            overwrite_callback_result};
+    }
+    const bool overwrite_callback = overwrite_callback_result.value();
+
+    // Update callback if:
+    // 1. User requested overwrite_callback: true, AND
+    // 2. Original callback actually had a value (i.e. it wasn't "NULL")
+    // Otherwise, leave callback field alone
+    const bool should_update_callback = overwrite_callback && original_callback_value.has_value();
+
+    // Step 8: Update headers.h to use Porytiles-managed asset variables
+    return metadata_writer_->update_to_porytiles_managed(tileset_name, should_update_callback);
 }
 
 } // namespace porytiles2
