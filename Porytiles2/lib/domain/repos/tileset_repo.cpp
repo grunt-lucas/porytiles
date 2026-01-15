@@ -13,10 +13,6 @@
 
 namespace porytiles2 {
 
-/*
- * TODO: we need better error handling, specifically the std::unexpected returns should be more descriptive
- */
-
 ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
 {
     // Begin transaction for atomic writes

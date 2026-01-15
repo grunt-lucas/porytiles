@@ -15,9 +15,9 @@
 #include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/c_parser/c_parser_facade.hpp"
 #include "porytiles2/utilities/filesystem_utils.hpp"
-#include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
+#include "porytiles2/xcut/config/unwrap_config.hpp"
 
 namespace {
 
@@ -33,20 +33,35 @@ const std::filesystem::path tileset_anims_c_rel_path = std::filesystem::path{"sr
 // Prefix for parsing callback function names
 constexpr std::string init_tileset_anim_prefix = "InitTilesetAnim_";
 
-// Porytiles artifact paths
+// Artifact paths
+const std::filesystem::path porytiles_src{"porytiles_src"};
+const std::filesystem::path porytiles_bin{"porytiles_bin"};
 const std::filesystem::path anim_dir{"anim"};
 const std::filesystem::path include_dir{"include"};
 const std::filesystem::path generated_anim_code_header{"generated_anim_code.h"};
-const std::filesystem::path porytiles_directory{"porytiles"};
 const std::filesystem::path bottom_png{"bottom.png"};
 const std::filesystem::path middle_png{"middle.png"};
 const std::filesystem::path top_png{"top.png"};
 const std::filesystem::path attributes_csv{"attributes.csv"};
 const std::filesystem::path porytiles_pals{"palettes"};
+const std::filesystem::path porymap_pals{"palettes"};
 const std::filesystem::path anim_yaml{"anim.yaml"};
-const std::filesystem::path key_frame{"key.png"};
-const std::filesystem::path config{"porytiles.yaml"};
-const std::filesystem::path local_config{"porytiles.local.yaml"};
+const std::filesystem::path metatiles_bin{"metatiles.bin"};
+const std::filesystem::path attrs_bin{"metatile_attributes.bin"};
+const std::filesystem::path tiles_png{"tiles.png"};
+
+/**
+ * @brief Extracts shorthand from tileset name (e.g., "gTileset_General" -> "General")
+ */
+[[nodiscard]] std::string extract_shorthand(const std::string &tileset_name)
+{
+    // TODO: this function is duplicated in multiple places
+    constexpr std::string tileset_prefix = "gTileset_";
+    if (!tileset_name.starts_with(tileset_prefix)) {
+        return "";
+    }
+    return tileset_name.substr(tileset_prefix.size());
+}
 
 /**
  * @brief Extracts Porytiles managed status from a callback function name.
@@ -282,109 +297,102 @@ namespace porytiles2 {
 ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_metatiles_bin(const std::string &tileset_name) const
 {
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        paths,
-        artifact_paths_for(tileset_name),
-        format_->format("failed to get metatiles.bin key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        ArtifactKey);
-    return ArtifactKey{paths.metatiles_path()};
+    // Get primary/secondary status of tileset
+    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+
+    // Get base path from config
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
+    auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
+    const std::string snake_tileset_dir = to_snake_case(extract_shorthand(tileset_name));
+    std::filesystem::path path =
+        std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_bin / metatiles_bin;
+
+    return ArtifactKey{path.string()};
 }
 
 ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_metatile_attributes_bin(const std::string &tileset_name) const
 {
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        paths,
-        artifact_paths_for(tileset_name),
-        format_->format(
-            "failed to get metatile_attributes.bin key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        ArtifactKey);
-    return ArtifactKey{paths.metatile_attributes_path()};
+    // Get primary/secondary status of tileset
+    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+
+    // Get base path from config
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
+    auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
+    const std::string snake_tileset_dir = to_snake_case(extract_shorthand(tileset_name));
+    std::filesystem::path path =
+        std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_bin / attrs_bin;
+
+    return ArtifactKey{path.string()};
 }
 
 ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_tiles_png(const std::string &tileset_name) const
 {
-    /*
-     * TODO: instead of harcoding "tiles.png" here, we should extract the filename from the INCBIN and replace .4bpp
-     * extension with .png. This would be a cleaner way to handle things, and could handle a case where the user changed
-     * the name of the tiles file.
-     */
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        paths,
-        artifact_paths_for(tileset_name),
-        format_->format("failed to get tiles.png key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        ArtifactKey);
-    return ArtifactKey{paths.tiles_path().parent_path() / "tiles.png"};
+    // Get primary/secondary status of tileset
+    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+
+    // Get base path from config
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
+    auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
+    const std::string snake_tileset_dir = to_snake_case(extract_shorthand(tileset_name));
+    std::filesystem::path path =
+        std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_bin / tiles_png;
+
+    return ArtifactKey{path.string()};
 }
 
 ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_porymap_pal_n(const std::string &tileset_name, std::size_t index) const
 {
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        paths,
-        artifact_paths_for(tileset_name),
-        format_->format("failed to get Porymap pal key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        ArtifactKey);
+    // Get primary/secondary status of tileset
+    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
 
-    const auto &palette_paths = paths.palette_paths();
-    if (index >= palette_paths.size()) {
-        return FormattableError{format_->format(
-            "palette index '{}' out of bounds (tileset '{}' has {} palettes)",
-            FormatParam{index, Style::bold},
-            FormatParam{tileset_name, Style::bold},
-            FormatParam{palette_paths.size(), Style::bold})};
-    }
+    // Get base path from config
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
+    auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
+    const std::string snake_tileset_dir = to_snake_case(extract_shorthand(tileset_name));
+    std::filesystem::path path = std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_bin /
+                                 porymap_pals / pal_filename(index);
 
-    auto pal_path = strip_all_extensions(palette_paths[index]);
-    pal_path += ".pal";
-    return ArtifactKey{pal_path};
+    return ArtifactKey{path.string()};
 }
 
 ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_frame(
     const std::string &tileset_name, const std::string &anim_name, const std::string &frame_name) const
 {
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        frame_paths,
-        porymap_animation_frame_paths_for(tileset_name),
-        format_->format(
-            "failed to get Porymap anim frame key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        ArtifactKey);
+    // Get primary/secondary status of tileset
+    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
 
-    // Find the animation
-    const auto anim_it = frame_paths.find(anim_name);
-    if (anim_it == frame_paths.end()) {
-        return FormattableError{format_->format(
-            "animation '{}' not found for tileset '{}'",
-            FormatParam{anim_name, Style::bold},
-            FormatParam{tileset_name, Style::bold})};
-    }
+    // Get base path from config
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
+    auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
+    const std::string snake_tileset_dir = to_snake_case(extract_shorthand(tileset_name));
+    std::filesystem::path path = std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_bin /
+                                 anim_dir / anim_name / (frame_name + std::string{".png"});
 
-    // Find the frame by matching stem (e.g., "0" matches "0.4bpp")
-    for (const auto &path : anim_it->second) {
-        if (path.stem().string() == frame_name) {
-            auto png_path = path;
-            png_path.replace_extension(".png");
-            return ArtifactKey{png_path};
-        }
-    }
-
-    return FormattableError{format_->format(
-        "frame '{}' not found in animation '{}' for tileset '{}'",
-        FormatParam{frame_name, Style::bold},
-        FormatParam{anim_name, Style::bold},
-        FormatParam{tileset_name, Style::bold})};
+    return ArtifactKey{path.string()};
 }
 
 ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_params(const std::string &tileset_name) const
 {
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        tileset_path,
-        tileset_root(tileset_name),
-        format_->format(
-            "failed to get generated anim code key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        ArtifactKey);
-    return ArtifactKey{tileset_path / include_dir / generated_anim_code_header};
+    // Get primary/secondary status of tileset
+    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+
+    // Get base path from config
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
+    auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
+    const std::string snake_tileset_dir = to_snake_case(extract_shorthand(tileset_name));
+    std::filesystem::path path = std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_bin /
+                                 include_dir / generated_anim_code_header;
+
+    return ArtifactKey{path.string()};
 }
 
 /*
@@ -393,78 +401,118 @@ ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_params(const std::string
 ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_bottom_png(const std::string &tileset_name) const
 {
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        tileset_path,
-        tileset_root(tileset_name),
-        format_->format("failed to get bottom.png key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        ArtifactKey);
-    return ArtifactKey{tileset_path / porytiles_directory / bottom_png};
+    // Get primary/secondary status of tileset
+    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+
+    // Get base path from config
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
+    auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
+    const std::string snake_tileset_dir = to_snake_case(extract_shorthand(tileset_name));
+    std::filesystem::path path =
+        std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_src / bottom_png;
+
+    return ArtifactKey{path.string()};
 }
 
 ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_middle_png(const std::string &tileset_name) const
 {
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        tileset_path,
-        tileset_root(tileset_name),
-        format_->format("failed to get middle.png key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        ArtifactKey);
-    return ArtifactKey{tileset_path / porytiles_directory / middle_png};
+    // Get primary/secondary status of tileset
+    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+
+    // Get base path from config
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
+    auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
+    const std::string snake_tileset_dir = to_snake_case(extract_shorthand(tileset_name));
+    std::filesystem::path path =
+        std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_src / middle_png;
+
+    return ArtifactKey{path.string()};
 }
 
 ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_top_png(const std::string &tileset_name) const
 {
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        tileset_path,
-        tileset_root(tileset_name),
-        format_->format("failed to get top.png key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        ArtifactKey);
-    return ArtifactKey{tileset_path / porytiles_directory / top_png};
+    // Get primary/secondary status of tileset
+    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+
+    // Get base path from config
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
+    auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
+    const std::string snake_tileset_dir = to_snake_case(extract_shorthand(tileset_name));
+    std::filesystem::path path = std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_src / top_png;
+
+    return ArtifactKey{path.string()};
 }
 
 ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_attributes_csv(const std::string &tileset_name) const
 {
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        tileset_path,
-        tileset_root(tileset_name),
-        format_->format("failed to get attributes.csv key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        ArtifactKey);
-    return ArtifactKey{tileset_path / porytiles_directory / attributes_csv};
+    // Get primary/secondary status of tileset
+    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+
+    // Get base path from config
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
+    auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
+    const std::string snake_tileset_dir = to_snake_case(extract_shorthand(tileset_name));
+    std::filesystem::path path =
+        std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_src / attributes_csv;
+
+    return ArtifactKey{path.string()};
 }
 
 ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_porytiles_pal_n(const std::string &tileset_name, std::size_t index) const
 {
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        tileset_path,
-        tileset_root(tileset_name),
-        format_->format("failed to get Porytiles pal key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        ArtifactKey);
-    return ArtifactKey{tileset_path / porytiles_directory / porytiles_pals / pal_filename(index)};
+    // Get primary/secondary status of tileset
+    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+
+    // Get base path from config
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
+    auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
+    const std::string snake_tileset_dir = to_snake_case(extract_shorthand(tileset_name));
+    std::filesystem::path path = std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_src /
+                                 porytiles_pals / pal_filename(index);
+
+    return ArtifactKey{path.string()};
 }
 
 ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_frame(
     const std::string &tileset_name, const std::string &anim_name, const std::string &frame_name) const
 {
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        tileset_path,
-        tileset_root(tileset_name),
-        format_->format(
-            "failed to get Porytiles anim frame key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        ArtifactKey);
-    return ArtifactKey{tileset_path / porytiles_directory / anim_dir / anim_name / (frame_name + std::string{".png"})};
+    // Get primary/secondary status of tileset
+    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+
+    // Get base path from config
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
+    auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
+    const std::string snake_tileset_dir = to_snake_case(extract_shorthand(tileset_name));
+    std::filesystem::path path = std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_src /
+                                 anim_dir / anim_name / (frame_name + std::string{".png"});
+
+    return ArtifactKey{path.string()};
 }
 
 ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_params(const std::string &tileset_name) const
 {
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        tileset_path,
-        tileset_root(tileset_name),
-        format_->format("failed to get anim.yaml key for tileset '{}'", FormatParam{tileset_name, Style::bold}),
-        ArtifactKey);
-    return ArtifactKey{tileset_path / porytiles_directory / anim_dir / anim_yaml};
+    // Get primary/secondary status of tileset
+    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+
+    // Get base path from config
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
+    auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
+    const std::string snake_tileset_dir = to_snake_case(extract_shorthand(tileset_name));
+    std::filesystem::path path =
+        std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_src / anim_dir / anim_yaml;
+
+    return ArtifactKey{path.string()};
 }
 
 bool ProjectTilesetArtifactKeyProvider::artifact_exists(const ArtifactKey &key) const

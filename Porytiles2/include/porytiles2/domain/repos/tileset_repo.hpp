@@ -21,9 +21,8 @@ namespace porytiles2 {
  * @brief Repository interface for the Tileset aggregate root.
  *
  * @details
- * The TilesetRepo makes no assumptions about the structure of the backing store for the Tileset. Presumably, this store
- * is the canonical 'data/tilesets' directory, but the implementation details handled by the reader, writer, and key
- * provider.
+ * The TilesetRepo makes no assumptions about the structure of the backing store for the Tileset. The implementation
+ * details are handled by the supplied reader, writer, and key provider.
  */
 class TilesetRepo final {
   public:

@@ -94,7 +94,8 @@ class TilesetAnimsModifierTestBase : public ::testing::Test {
         providers.push_back(std::make_unique<DefaultProvider>());
         config_ = std::make_unique<LazyLayeredConfig>(formatter_.get(), std::move(providers));
 
-        modifier_ = std::make_unique<ProjectTilesetAnimsModifier>(temp_dir_, config_.get(), formatter_.get(), diagnostics_.get());
+        modifier_ = std::make_unique<ProjectTilesetAnimsModifier>(
+            temp_dir_, config_.get(), formatter_.get(), diagnostics_.get());
     }
 
     void TearDown() override
@@ -134,7 +135,9 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, WiresIncludeForPrimaryTileset)
     const std::string content = read_file_contents(tileset_anims_path());
 
     // Verify the include directive was added
-    EXPECT_NE(content.find("#include \"data/tilesets/primary/general/porytiles_bin/include/generated_anim_code.h\""), std::string::npos)
+    EXPECT_NE(
+        content.find("#include \"data/tilesets/primary/general/porytiles_bin/include/generated_anim_code.h\""),
+        std::string::npos)
         << "Include directive for gTileset_General not found in tileset_anims.c";
 }
 
@@ -146,7 +149,9 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, WiresIncludeForSecondaryTileset)
     const std::string content = read_file_contents(tileset_anims_path());
 
     // Verify the include directive was added with secondary path
-    EXPECT_NE(content.find("#include \"data/tilesets/secondary/rustboro/porytiles_bin/include/generated_anim_code.h\""), std::string::npos)
+    EXPECT_NE(
+        content.find("#include \"data/tilesets/secondary/rustboro/porytiles_bin/include/generated_anim_code.h\""),
+        std::string::npos)
         << "Include directive for gTileset_Rustboro not found in tileset_anims.c";
 }
 
@@ -203,7 +208,8 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, RemovesIncludeAndComment)
 
     // Verify both include and comment are there
     std::string content = read_file_contents(tileset_anims_path());
-    ASSERT_NE(content.find("data/tilesets/primary/general/porytiles_bin/include/generated_anim_code.h"), std::string::npos);
+    ASSERT_NE(
+        content.find("data/tilesets/primary/general/porytiles_bin/include/generated_anim_code.h"), std::string::npos);
     ASSERT_NE(content.find("// [Porytiles] Auto-generated include. Do not remove."), std::string::npos);
 
     // Now remove it
@@ -212,7 +218,8 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, RemovesIncludeAndComment)
 
     // Verify both include and comment are gone
     content = read_file_contents(tileset_anims_path());
-    EXPECT_EQ(content.find("data/tilesets/primary/general/porytiles_bin/include/generated_anim_code.h"), std::string::npos)
+    EXPECT_EQ(
+        content.find("data/tilesets/primary/general/porytiles_bin/include/generated_anim_code.h"), std::string::npos)
         << "Include directive should have been removed";
     EXPECT_EQ(content.find("// [Porytiles] Auto-generated include. Do not remove."), std::string::npos)
         << "Porytiles comment should have been removed";
@@ -231,8 +238,7 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, PreservesExistingContent)
     const std::string new_content = read_file_contents(tileset_anims_path());
 
     // Verify original includes are still present
-    EXPECT_NE(new_content.find("#include \"global.h\""), std::string::npos)
-        << "Original global.h include was removed";
+    EXPECT_NE(new_content.find("#include \"global.h\""), std::string::npos) << "Original global.h include was removed";
     EXPECT_NE(new_content.find("#include \"fieldmap.h\""), std::string::npos)
         << "Original fieldmap.h include was removed";
 
@@ -257,7 +263,8 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, HandlesSnakeCaseConversion)
 
     // Verify the path uses snake_case
     EXPECT_NE(
-        content.find("#include \"data/tilesets/secondary/battle_frontier/porytiles_bin/include/generated_anim_code.h\""),
+        content.find(
+            "#include \"data/tilesets/secondary/battle_frontier/porytiles_bin/include/generated_anim_code.h\""),
         std::string::npos)
         << "snake_case path conversion not working correctly";
 }
@@ -266,7 +273,8 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, RemoveIsIdempotent_SkipsMissingInc
 {
     // Try to remove an include that doesn't exist
     auto result = modifier_->remove_include_for_tileset("gTileset_General", /*is_secondary=*/false);
-    EXPECT_TRUE(result.has_value()) << "remove_include_for_tileset should succeed (idempotent) even when include missing";
+    EXPECT_TRUE(result.has_value())
+        << "remove_include_for_tileset should succeed (idempotent) even when include missing";
 
     // Verify file wasn't corrupted
     const std::string content = read_file_contents(tileset_anims_path());

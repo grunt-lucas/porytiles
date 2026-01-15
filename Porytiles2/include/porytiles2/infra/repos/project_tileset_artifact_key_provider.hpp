@@ -10,6 +10,7 @@
 
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
+#include "porytiles2/infra/config/infra_config.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_paths.hpp"
 #include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/c_parser/incbin_declaration.hpp"
@@ -32,8 +33,8 @@ namespace porytiles2 {
  * For Porymap artifacts (tiles, palettes, metatiles), paths are resolved from INCBIN declarations. For Porytiles
  * artifacts (bottom.png, middle.png, etc.), paths use a hardcoded relative location within each tileset.
  *
- * Class precondition: the tileset_name parameter in each method below (except tileset_exists) must refer to an existing
- * tileset on-disk. If no tileset corresponds to the given tileset_name, ProjectTilesetKeyProvider will panic.
+ * @pre The tileset_name parameter in each method below (except tileset_exists) must refer to an existing
+ * tileset
  */
 class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvider {
   public:
@@ -46,10 +47,11 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
      */
     explicit ProjectTilesetArtifactKeyProvider(
         std::filesystem::path project_root,
+        gsl::not_null<const InfraConfig *> config,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag)
-        : project_root_{std::move(project_root)}, format_{format}, diag_{diag},
-          metadata_provider_{project_root_, format, diag}
+        : project_root_{std::move(project_root)}, metadata_provider_{project_root_, format, diag}, config_{config},
+          format_{format}, diag_{diag}
     {
     }
 
@@ -180,11 +182,10 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
 
   private:
     std::filesystem::path project_root_;
+    ProjectTilesetMetadataProvider metadata_provider_;
+    const InfraConfig *config_;
     const TextFormatter *format_;
     const UserDiagnostics *diag_;
-
-    // Metadata provider for tileset struct parsing
-    ProjectTilesetMetadataProvider metadata_provider_;
 
     // Lazy-loaded INCBIN cache (mutable for const methods)
     mutable bool incbins_parsed_{false};

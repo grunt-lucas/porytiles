@@ -4,12 +4,57 @@
 #include <memory>
 #include <string>
 
+#include "porytiles2/infra/config/infra_config.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
 #include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
+#include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/xcut/diagnostics/buffered_user_diagnostics.hpp"
 
 using namespace porytiles2;
+
+namespace {
+
+class MockInfraConfig : public InfraConfig {
+  protected:
+    [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>>
+    tiles_pal_mode_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{TilesPalMode::true_color, "tiles_pal_mode", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
+    tileset_paths_primary_src_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{std::string{"data/tilesets/primary"}, "tileset_paths_primary_src", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
+    tileset_paths_primary_bin_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{std::string{"data/tilesets/primary"}, "tileset_paths_primary_bin", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
+    tileset_paths_secondary_src_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{std::string{"data/tilesets/secondary"}, "tileset_paths_secondary_src", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
+    tileset_paths_secondary_bin_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{std::string{"data/tilesets/secondary"}, "tileset_paths_secondary_bin", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    tileset_animations_overwrite_callback_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{true, "tileset_animations_overwrite_callback", "mock", {}};
+    }
+};
+
+} // namespace
 
 /**
  * @brief Base fixture for ProjectTilesetMetadataProvider tests.
@@ -34,16 +79,18 @@ class ProjectTilesetMetadataProviderTestBase : public ::testing::Test {
         ASSERT_TRUE(std::filesystem::exists(project_root_))
             << "Mock pokeemerald project not found at: " << project_root_;
 
+        config_ = std::make_unique<MockInfraConfig>();
         formatter_ = std::make_unique<PlainTextFormatter>();
         diag_ = std::make_unique<BufferedUserDiagnostics>();
 
         metadata_provider_ =
             std::make_unique<ProjectTilesetMetadataProvider>(project_root_, formatter_.get(), diag_.get());
-        key_provider_ =
-            std::make_unique<ProjectTilesetArtifactKeyProvider>(project_root_, formatter_.get(), diag_.get());
+        key_provider_ = std::make_unique<ProjectTilesetArtifactKeyProvider>(
+            project_root_, config_.get(), formatter_.get(), diag_.get());
     }
 
     std::filesystem::path project_root_;
+    std::unique_ptr<MockInfraConfig> config_;
     std::unique_ptr<TextFormatter> formatter_;
     std::unique_ptr<UserDiagnostics> diag_;
     std::unique_ptr<ProjectTilesetMetadataProvider> metadata_provider_;

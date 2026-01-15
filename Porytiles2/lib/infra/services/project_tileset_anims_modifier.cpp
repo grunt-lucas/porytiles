@@ -9,11 +9,11 @@
 
 #include "fmt/format.h"
 
-#include "porytiles2/xcut/config/config_scope_type.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
+#include "porytiles2/xcut/config/config_scope_type.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace {
@@ -23,13 +23,13 @@ using namespace porytiles2;
 // Path to tileset_anims.c relative to project root
 const std::filesystem::path tileset_anims_rel_path = std::filesystem::path{"src"} / "tileset_anims.c";
 
-const std::string tileset_prefix = "gTileset_";
-
 /**
  * @brief Extracts shorthand from tileset name (e.g., "gTileset_General" -> "General")
  */
 [[nodiscard]] std::string extract_shorthand(const std::string &tileset_name)
 {
+    // TODO: this function is duplicated in multiple places
+    constexpr std::string tileset_prefix = "gTileset_";
     if (!tileset_name.starts_with(tileset_prefix)) {
         return "";
     }
@@ -162,20 +162,20 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
     // Step 1: Extract and validate shorthand
     const std::string shorthand = extract_shorthand(tileset_name);
     if (shorthand.empty()) {
-        return FormattableError{
-            format_->format("tileset name '{}' does not start with 'gTileset_'", FormatParam{tileset_name, Style::bold})};
+        return FormattableError{format_->format(
+            "tileset name '{}' does not start with 'gTileset_'", FormatParam{tileset_name, Style::bold})};
     }
 
     // Step 2: Convert to snake_case for directory name
     const std::string snake_dir = to_snake_case(shorthand);
 
     // Step 3: Get base path from config
-    auto base_path_result = is_secondary
-                                ? config_->tileset_paths_secondary_bin(ConfigScopeType::tileset, tileset_name)
-                                : config_->tileset_paths_primary_bin(ConfigScopeType::tileset, tileset_name);
+    auto base_path_result = is_secondary ? config_->tileset_paths_secondary_bin(ConfigScopeType::tileset, tileset_name)
+                                         : config_->tileset_paths_primary_bin(ConfigScopeType::tileset, tileset_name);
     if (!base_path_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"failed to get tileset bin path from config for '{}'", FormatParam{tileset_name, Style::bold}},
+            FormattableError{
+                "failed to get tileset bin path from config for '{}'", FormatParam{tileset_name, Style::bold}},
             base_path_result};
     }
     const std::string base_path = base_path_result.value().value();
@@ -195,7 +195,8 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
         diagnostics_->warning(
             "tileset-anims",
             format_->format(
-                "include for '{}' already exists in tileset_anims.c, skipping", FormatParam{tileset_name, Style::bold}));
+                "include for '{}' already exists in tileset_anims.c, skipping",
+                FormatParam{tileset_name, Style::bold}));
         return {};
     }
 
@@ -223,8 +224,8 @@ ProjectTilesetAnimsModifier::remove_include_for_tileset(const std::string &tiles
     // Step 1: Extract and validate shorthand
     const std::string shorthand = extract_shorthand(tileset_name);
     if (shorthand.empty()) {
-        return FormattableError{
-            format_->format("tileset name '{}' does not start with 'gTileset_'", FormatParam{tileset_name, Style::bold})};
+        return FormattableError{format_->format(
+            "tileset name '{}' does not start with 'gTileset_'", FormatParam{tileset_name, Style::bold})};
     }
 
     // Step 2: Convert to snake_case for directory name

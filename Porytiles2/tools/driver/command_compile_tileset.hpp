@@ -75,7 +75,6 @@ class CompileTilesetCommand final : public Command {
         std::filesystem::path behaviors_header_root_relative{"include/constants/metatile_behaviors.h"};
 
         // Setup layered configuration
-        ProjectTilesetArtifactKeyProvider key_provider{project_root, text_formatter, diag.get()};
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
         providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, diag.get(), project_root));
         providers.push_back(
@@ -109,6 +108,7 @@ class CompileTilesetCommand final : public Command {
         ProjectTilesetMetadataProvider metadata_provider{project_root, text_formatter, diag.get()};
 
         // Setup the tileset repository
+        ProjectTilesetArtifactKeyProvider key_provider{project_root, &config, text_formatter, diag.get()};
         ProjectTilesetArtifactReader artifact_reader{
             project_root,
             &png_rgba_loader,

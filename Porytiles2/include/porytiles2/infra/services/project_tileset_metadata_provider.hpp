@@ -67,7 +67,8 @@ class ProjectTilesetMetadataProvider : public TilesetMetadataProvider {
      * @pre tileset_name must refer to an existing tileset on disk
      * @return The resolved artifact paths for the tileset
      */
-    [[nodiscard]] ChainableResult<ProjectTilesetArtifactPaths> artifact_paths_for(const std::string &tileset_name) const;
+    [[nodiscard]] ChainableResult<ProjectTilesetArtifactPaths>
+    artifact_paths_for(const std::string &tileset_name) const;
 
   private:
     std::filesystem::path project_root_;
