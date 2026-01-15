@@ -17,7 +17,7 @@ namespace {
 // TODO: this is hardcoded in multiple places
 std::filesystem::path checksums_file(const std::filesystem::path &project_root, const std::string &tileset_name)
 {
-    return project_root / "porytiles" / "tilesets" / tileset_name / "artifact_checksums.json";
+    return project_root / "porytiles" / "tilesets" / tileset_name / "tileset.cache.json";
 }
 
 } // namespace

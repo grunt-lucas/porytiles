@@ -47,7 +47,7 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &name) co
     // Only perform the checksum checks if: 1) cached checksums exist and 2) the user is requesting checksum validation
     PT_UNWRAP_TILESET_CONFIG_PTR(app_config_, verify_checksums, name, void);
     if (tileset_repo_->checksum_provider().cached_checksums_exist(name) && verify_checksums.value()) {
-        // 4. If `PorymapTilesetComponent` is not empty, compare with cached checksums in `artifact_checksums.json`. If
+        // 4. If `PorymapTilesetComponent` is not empty, compare with cached checksums in `tileset.cache.json`. If
         // any differ, bail with the message "unimported changes present in Porymap asset X."
         if (!tileset->porymap_component().is_empty()) {
             PT_TRY_ASSIGN_CHAIN_ERR(
@@ -69,7 +69,7 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &name) co
             }
         }
 
-        // 5. If all `PorytilesTilesetComponent` checksums match those cached in `artifact_checksums.json`, bail with
+        // 5. If all `PorytilesTilesetComponent` checksums match those cached in `tileset.cache.json`, bail with
         // the message "nothing to do."
         PT_TRY_ASSIGN_CHAIN_ERR(
             porytiles_keys,

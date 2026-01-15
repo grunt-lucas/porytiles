@@ -14,7 +14,7 @@ namespace porytiles2 {
  *
  * @details
  * This class computes and caches checksums for tileset artifacts stored in a pokeemerald project. Checksums are
- * persisted as JSON in the porytiles utility directory at `porytiles/tilesets/{tileset_name}/artifact_checksums.json`.
+ * persisted as JSON in the porytiles utility directory at `porytiles/tilesets/{tileset_name}/tileset.cache.json`.
  *
  * Key paths are relativized against the project root before being stored, ensuring checksums remain valid even when
  * the project directory is moved.

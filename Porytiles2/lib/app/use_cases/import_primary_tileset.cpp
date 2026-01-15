@@ -53,7 +53,7 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
 
     /*
      * Step 5: Confirmed save succeeded, now call PorytilesTilesetManager::persist_managed_state to persist "managed"
-     * state (which in the Project-based impls writes to original_artifacts.json and updates various project C files).
+     * state (which in the Project-based impls writes to tileset-manifest.json and updates various project C files).
      * This should never fail for a reasonable cause, so we don't need to worry about rolling back or weird broken
      * state. If it does fail for extraordinary reasons, we present a helpful message to users so they can manually
      * recover.

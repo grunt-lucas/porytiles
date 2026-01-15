@@ -14,14 +14,14 @@ namespace {
 // TODO: this is hardcoded in multiple places
 std::filesystem::path artifacts_file(const std::filesystem::path &project_root, const std::string &tileset_name)
 {
-    return project_root / "porytiles" / "tilesets" / tileset_name / "original_artifacts.json";
+    return project_root / "porytiles" / "tilesets" / tileset_name / "tileset-manifest.json";
 }
 
 } // namespace
 
 namespace porytiles2 {
 
-ChainableResult<OriginalArtifacts> ProjectPorytilesTilesetManager::read(const std::string &tileset_name) const
+ChainableResult<TilesetManifest> ProjectPorytilesTilesetManager::read(const std::string &tileset_name) const
 {
     const auto input_path = artifacts_file(project_root_, tileset_name);
 
@@ -37,7 +37,7 @@ ChainableResult<OriginalArtifacts> ProjectPorytilesTilesetManager::read(const st
     const auto imported = json_data["imported"].get<bool>();
 
     if (imported) {
-        return OriginalArtifacts{
+        return TilesetManifest{
             version,
             json_data[".tiles"].get<std::string>(),
             json_data[".palettes"].get<std::string>(),
@@ -46,14 +46,14 @@ ChainableResult<OriginalArtifacts> ProjectPorytilesTilesetManager::read(const st
             json_data[".callback"].get<std::string>()};
     }
 
-    return OriginalArtifacts::for_created_tileset(version);
+    return TilesetManifest::for_created_tileset(version);
 }
 
-void ProjectPorytilesTilesetManager::write(const std::string &tileset_name, const OriginalArtifacts &artifacts) const
+void ProjectPorytilesTilesetManager::write(const std::string &tileset_name, const TilesetManifest &artifacts) const
 {
-    const auto original_artifacts_file = artifacts_file(project_root_, tileset_name);
-    std::filesystem::create_directories(original_artifacts_file.parent_path());
-    std::ofstream file{original_artifacts_file};
+    const auto manifest_file = artifacts_file(project_root_, tileset_name);
+    std::filesystem::create_directories(manifest_file.parent_path());
+    std::ofstream file{manifest_file};
 
     nlohmann::json json_data;
     json_data["version"] = artifacts.version();
@@ -86,11 +86,11 @@ ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_state(cons
     }
     const auto &metadata = metadata_result.value();
 
-    // Step 2: Build OriginalArtifacts from metadata
+    // Step 2: Build TilesetManifest from metadata
     constexpr std::uint32_t version = 1;
     const std::optional<std::string> original_callback_value = metadata.callback_func();
 
-    OriginalArtifacts artifacts{
+    TilesetManifest artifacts{
         version,
         metadata.tiles_var(),
         metadata.palettes_var(),
@@ -98,7 +98,7 @@ ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_state(cons
         metadata.metatile_attributes_var(),
         original_callback_value.value_or("NULL")};
 
-    // Step 3: Write original_artifacts.json
+    // Step 3: Write tileset-manifest.json
     write(tileset_name, artifacts);
 
     // Step 4: Get config values for path computation

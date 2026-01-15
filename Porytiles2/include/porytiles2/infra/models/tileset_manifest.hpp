@@ -6,10 +6,10 @@
 namespace porytiles2 {
 
 /**
- * @brief Stores metadata for Porytiles-managed tilesets.
+ * @brief Stores manifest metadata for Porytiles-managed tilesets.
  *
  * @details
- * This class represents the contents of `original_artifacts.json`, which is the source of truth for whether a tileset
+ * This class represents the contents of `tileset-manifest.json`, which is the source of truth for whether a tileset
  * is Porytiles-managed. The presence of this file in `porytiles/tilesets/{tileset_name}/` indicates the tileset is
  * managed by Porytiles.
  *
@@ -21,16 +21,13 @@ namespace porytiles2 {
  *
  * @invariant When `imported()==true`, all original field values (tiles, palettes, etc.) are non-empty
  * @invariant When `imported()==false`, original field values are empty strings and should not be used
- *
- * @see OriginalArtifactsReader for JSON deserialization
- * @see OriginalArtifactsWriter for JSON serialization
  */
-class OriginalArtifacts {
+class TilesetManifest {
   public:
-    OriginalArtifacts() = default;
+    TilesetManifest() = default;
 
     /**
-     * @brief Constructs an OriginalArtifacts for an imported tileset with all original field values.
+     * @brief Constructs a TilesetManifest for an imported tileset with all original field values.
      *
      * @param version Schema version for future format migrations
      * @param tiles Original `.tiles` field value (e.g., "gTilesetTiles_General")
@@ -40,7 +37,7 @@ class OriginalArtifacts {
      * @param callback Original `.callback` field value (e.g., "InitTilesetAnim_General")
      * @post `imported()` returns `true`
      */
-    OriginalArtifacts(
+    TilesetManifest(
         std::uint32_t version,
         std::string tiles,
         std::string palettes,
@@ -54,18 +51,18 @@ class OriginalArtifacts {
     }
 
     /**
-     * @brief Creates an OriginalArtifacts for a tileset created from scratch by Porytiles.
+     * @brief Creates a TilesetManifest for a tileset created from scratch by Porytiles.
      *
      * @details
      * Use this factory method when creating a new tileset that doesn't originate from vanilla pokeemerald.
      * The resulting object will have `imported()==false` and empty original field values.
      *
      * @param version Schema version for future format migrations
-     * @return OriginalArtifacts with `imported()==false`
+     * @return TilesetManifest with `imported()==false`
      */
-    [[nodiscard]] static OriginalArtifacts for_created_tileset(std::uint32_t version)
+    [[nodiscard]] static TilesetManifest for_created_tileset(std::uint32_t version)
     {
-        OriginalArtifacts result{};
+        TilesetManifest result{};
         result.version_ = version;
         result.imported_ = false;
         return result;
