@@ -1,8 +1,6 @@
 #pragma once
 
 #include <filesystem>
-#include <map>
-#include <optional>
 #include <string>
 #include <utility>
 
@@ -11,9 +9,7 @@
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
-#include "porytiles2/infra/repos/project_tileset_artifact_paths.hpp"
 #include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
-#include "porytiles2/utilities/c_parser/incbin_declaration.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
@@ -133,63 +129,12 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
     [[nodiscard]] ChainableResult<std::set<std::string>>
     discover_porytiles_anim_frames(const std::string &tileset_name, const std::string &anim_name) const override;
 
-    /*
-     * Project Implementation-Specific Methods
-     */
-
-    /**
-     * @brief Returns the filesystem path to the root directory of a tileset.
-     *
-     * @details
-     * This method provides the base directory path where all artifacts for a specific tileset are stored within the
-     * project's filesystem structure. Delegates to ProjectTilesetMetadataProvider for the actual path resolution.
-     *
-     * @param tileset_name The name of the tileset
-     * @return The filesystem path to the tileset's root directory
-     */
-    [[nodiscard]] ChainableResult<std::filesystem::path> tileset_root(const std::string &tileset_name) const;
-
-    /**
-     * @brief Returns resolved filesystem paths for all Porymap artifacts of a tileset.
-     *
-     * @details
-     * Delegates to ProjectTilesetMetadataProvider::artifact_paths_for() for the actual path resolution.
-     *
-     * @param tileset_name The name of the tileset (e.g., "gTileset_General")
-     * @pre tileset_name must refer to an existing tileset on disk
-     * @return TilesetArtifactPaths containing resolved paths for all Porymap artifacts
-     */
-    [[nodiscard]] ChainableResult<ProjectTilesetArtifactPaths>
-    artifact_paths_for(const std::string &tileset_name) const;
-
-    /**
-     * @brief Returns Porymap animation frame paths discovered from INCBIN declarations.
-     *
-     * @details
-     * Discovers Porymap animation frames by parsing INCBIN declarations from the appropriate C source file:
-     * - For Porytiles-managed tilesets: parses `<tileset_root>/include/generated_anim_code.h`
-     * - For vanilla tilesets: parses `src/tileset_anims.c`
-     *
-     * The Porytiles-managed status is determined from tileset metadata. If the callback includes "PorytilesManaged_"
-     * in its prefix, the tileset is considered Porytiles-managed.
-     *
-     * @param tileset_name The name of the tileset (e.g., "gTileset_General")
-     * @pre tileset_name must refer to an existing tileset on disk
-     * @return AnimationFramePaths mapping animation names to ordered frame paths, or empty map if no animations
-     */
-    [[nodiscard]] ChainableResult<AnimationFramePaths>
-    porymap_animation_frame_paths_for(const std::string &tileset_name) const;
-
   private:
     std::filesystem::path project_root_;
     ProjectTilesetMetadataProvider metadata_provider_;
     const InfraConfig *config_;
     const TextFormatter *format_;
     const UserDiagnostics *diag_;
-
-    // Lazy-loaded INCBIN cache (mutable for const methods)
-    mutable bool incbins_parsed_{false};
-    mutable std::map<std::string, IncbinDeclaration> incbin_vars_;
 };
 
 } // namespace porytiles2

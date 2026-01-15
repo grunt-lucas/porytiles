@@ -46,9 +46,7 @@ using AnimationFramePaths = std::map<std::string, std::vector<std::filesystem::p
  * const u16 gMetatileAttributes_General[] = INCBIN_U16("data/tilesets/primary/general/metatile_attributes.bin");
  * @endcode
  *
- * This domain model provides:
- * - Direct access to individual artifact paths
- * - Derived paths like tileset_root() for calculating related paths
+ * This domain model provides direct access to individual artifact paths.
  *
  * @invariant tiles_path_ is never empty
  * @invariant palette_paths_ contains at least one path

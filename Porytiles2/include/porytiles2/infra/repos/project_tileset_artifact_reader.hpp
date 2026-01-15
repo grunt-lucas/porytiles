@@ -1,5 +1,7 @@
 #pragma once
 
+#include <utility>
+
 #include "gsl/pointers"
 
 #include "porytiles2/domain/models/tileset.hpp"
@@ -34,8 +36,9 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
         gsl::not_null<const AnimYamlParser *> anim_yaml_parser,
         gsl::not_null<const AnimCodeParser *> anim_code_parser,
         gsl::not_null<const ProjectTilesetMetadataProvider *> metadata_provider)
-        : project_root_{project_root}, png_rgba_loader_{png_rgba_loader}, png_indexed_loader_{png_indexed_loader},
-          pal_loader_{pal_loader}, attributes_csv_loader_{attributes_csv_loader}, anim_yaml_parser_{anim_yaml_parser},
+        : project_root_{std::move(project_root)}, png_rgba_loader_{png_rgba_loader},
+          png_indexed_loader_{png_indexed_loader}, pal_loader_{pal_loader},
+          attributes_csv_loader_{attributes_csv_loader}, anim_yaml_parser_{anim_yaml_parser},
           anim_code_parser_{anim_code_parser}, metadata_provider_{metadata_provider}
     {
     }

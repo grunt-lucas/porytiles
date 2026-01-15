@@ -1313,22 +1313,22 @@ This section outlines a high-level step-by-step plan to implement the refactorin
 
 **Goal:** Refactor TilesetRepo and its dependencies so that load/save operations for Porytiles-managed tilesets use exclusively deterministic paths, eliminating INCBIN parsing from the normal workflow.
 
-1. **Refactor ProjectTilesetArtifactKeyProvider for Porymap deterministic paths**
+1. ~~Refactor ProjectTilesetArtifactKeyProvider for Porymap deterministic paths~~ **COMPLETE**
    - Update `key_for_tiles_png()` to return `<tileset_root>/porytiles_bin/tiles.png` for managed tilesets
    - Update `key_for_metatiles_bin()` to return `<tileset_root>/porytiles_bin/metatiles.bin`
    - Update `key_for_metatile_attributes_bin()` to return `<tileset_root>/porytiles_bin/metatile_attributes.bin`
    - Update `key_for_porymap_pal_n()` to return `<tileset_root>/porytiles_bin/palettes/<n>.gbapal`
    - Update `key_for_porymap_anim_frame()` to return `<tileset_root>/anim/<anim_name>/<frame_name>.png`
-   - Add managed-status check to select between deterministic paths (managed) vs INCBIN-based paths (vanilla/import)
 
 2. **Isolate INCBIN parsing to import-only code paths**
    - Remove INCBIN fallback logic from normal load/save code paths in the reader/writer
 
-3. **Update discovery methods for managed tilesets**
-   - `discover_porymap_anims()`: For managed tilesets, scan `<tileset_root>/anim/` directory instead of parsing C files
-   - `discover_porymap_anim_frames()`: For managed tilesets, glob `<tileset_root>/anim/<anim_name>/*.png`
-   - Keep INCBIN-based discovery only for vanilla import path
-     - Do we want this? We still have to parse C code get the Porymap-component anim params, we need to decide what's the source of truth
+3. ~~Update discovery methods for managed tilesets~~ **COMPLETE**
+   - `discover_porymap_anims()`: Scan `<tileset_root>/porytiles_bin/anim/` directory instead of parsing C files
+   - `discover_porymap_anim_frames()`: Glob `<tileset_root>/porytiles_bin/anim/<anim_name>/*.png`
+   - `discover_porytiles_anims()`: Scan `<tileset_root>/porytiles_src/anim/` directory instead of parsing anim.yaml
+   - `discover_porytiles_anim_frames()`: Glob `<tileset_root>/porytiles_src/anim/<anim_name>/*.png`
+   - directory names must be snake_case, i.e. `snake_case(dir_name) == dir_name`, if this doesn't hold, throw an error
 
 4. **Clean up hardcoded values and path hacks**
    - Extract `"key"` frame name to a constant or domain-layer definition

@@ -401,6 +401,15 @@ ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const Artifact
     Animation<Rgba32> anim{anim_name, params};
     dest.porytiles_component().add_anim(std::move(anim));
 
+    /*
+     * TODO: I think this logic technically double loads the key frame. We can probably remove the:
+     *   const ArtifactKey &key_frame_key,
+     * param, since it's the caller's responsibility to make sure the key frame actually exists.
+     *
+     * At some point, if we refactor key frame handling to be a user-selected frame, we'll have to rethink all this
+     * anyway.
+     */
+
     // Load key frame using the unified template helper
     PT_TRY_CALL_PASS_ERR(
         (import_anim_frame_impl<Rgba32>(

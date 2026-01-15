@@ -5,7 +5,6 @@
 #include <string>
 
 #include "porytiles2/infra/config/infra_config.hpp"
-#include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
 #include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
@@ -85,8 +84,6 @@ class ProjectTilesetMetadataProviderTestBase : public ::testing::Test {
 
         metadata_provider_ =
             std::make_unique<ProjectTilesetMetadataProvider>(project_root_, formatter_.get(), diag_.get());
-        key_provider_ = std::make_unique<ProjectTilesetArtifactKeyProvider>(
-            project_root_, config_.get(), formatter_.get(), diag_.get());
     }
 
     std::filesystem::path project_root_;
@@ -94,7 +91,6 @@ class ProjectTilesetMetadataProviderTestBase : public ::testing::Test {
     std::unique_ptr<TextFormatter> formatter_;
     std::unique_ptr<UserDiagnostics> diag_;
     std::unique_ptr<ProjectTilesetMetadataProvider> metadata_provider_;
-    std::unique_ptr<ProjectTilesetArtifactKeyProvider> key_provider_;
 };
 
 /**
@@ -196,33 +192,11 @@ TEST_F(ProjectTilesetMetadataProviderTest_Fixture1, GetsCorrectValuesForTilesets
     }
 }
 
-TEST_F(ProjectTilesetMetadataProviderTest_Fixture1, TilesetRootIsComputedByKeyProvider)
-{
-    // Test that tileset_root is now computed by the key provider, not metadata
-    {
-        auto result = key_provider_->tileset_root("gTileset_General");
-        ASSERT_TRUE(result.has_value()) << "Failed to get tileset root for gTileset_General";
-
-        const auto &tileset_root = result.value();
-        EXPECT_TRUE(tileset_root.string().find("general") != std::string::npos)
-            << "tileset_root should contain 'general', got: " << tileset_root.string();
-    }
-
-    // Test secondary tileset
-    {
-        auto result = key_provider_->tileset_root("gTileset_Shop");
-        ASSERT_TRUE(result.has_value()) << "Failed to get tileset root for gTileset_Shop";
-
-        const auto &tileset_root = result.value();
-        EXPECT_FALSE(tileset_root.empty());
-    }
-}
-
 TEST_F(ProjectTilesetMetadataProviderTest_Fixture1, ArtifactPathsForReturnsCorrectPaths)
 {
-    // Test artifact_paths_for with gTileset_General (via key provider)
+    // Test artifact_paths_for with gTileset_General (primary tileset)
     {
-        auto result = key_provider_->artifact_paths_for("gTileset_General");
+        auto result = metadata_provider_->artifact_paths_for("gTileset_General");
         ASSERT_TRUE(result.has_value()) << "Failed to get artifact paths for gTileset_General";
 
         const auto &paths = result.value();
@@ -238,9 +212,9 @@ TEST_F(ProjectTilesetMetadataProviderTest_Fixture1, ArtifactPathsForReturnsCorre
             << "metatiles_path should contain 'metatiles', got: " << paths.metatiles_path().string();
     }
 
-    // Test artifact_paths_for with gTileset_Shop (secondary tileset, via key provider)
+    // Test artifact_paths_for with gTileset_Shop (secondary tileset)
     {
-        auto result = key_provider_->artifact_paths_for("gTileset_Shop");
+        auto result = metadata_provider_->artifact_paths_for("gTileset_Shop");
         ASSERT_TRUE(result.has_value()) << "Failed to get artifact paths for gTileset_Shop";
 
         const auto &paths = result.value();

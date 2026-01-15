@@ -421,13 +421,18 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
             std::unique_ptr<Tileset>);
 
         for (const auto &anim_name : porytiles_anims) {
-            // TODO: don't hardcode key here
+            // TODO: don't hardcode key here?
             PT_TRY_ASSIGN_CHAIN_ERR(
                 key_frame_key,
                 key_provider_->key_for_porytiles_anim_frame(tileset->name(), anim_name, "key"),
                 "tileset load failed",
                 std::unique_ptr<Tileset>);
 
+            /*
+             * Here, we check to make sure the key frame is present. If not, we'll throw an error. In the next step,
+             * we'll discover the actually existing frames to pass to the anim reader. Since we already validated that
+             * the key frame is present, we know it will get passed in.
+             */
             if (!key_provider_->artifact_exists(key_frame_key)) {
                 // TODO: throw error here and continue, like below
                 return FormattableError{missing_required_artifact_msg, FormatParam{key_frame_key.key(), Style::bold}};
