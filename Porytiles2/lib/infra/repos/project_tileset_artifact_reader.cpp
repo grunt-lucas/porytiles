@@ -165,25 +165,6 @@ ChainableResult<void> import_anim_frame_impl(
     return {};
 }
 
-/**
- * @brief Extracts the PascalCase tileset name from an animation callback function name.
- *
- * @param callback_func The callback function name (e.g., "InitTilesetAnim_General" or
- * "InitTilesetAnim_PorytilesManaged_General")
- * @param porytiles_managed Whether this is a Porytiles-managed callback
- * @return The tileset name in PascalCase (e.g., "General")
- */
-std::string extract_tileset_from_callback(const std::string &callback_func, bool porytiles_managed)
-{
-    constexpr std::string_view prefix = "InitTilesetAnim_";
-    constexpr std::string_view managed_prefix = "InitTilesetAnim_PorytilesManaged_";
-
-    if (porytiles_managed) {
-        return callback_func.substr(managed_prefix.size());
-    }
-    return callback_func.substr(prefix.size());
-}
-
 } // namespace
 
 namespace porytiles2 {
@@ -255,38 +236,19 @@ ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKe
             void);
     }
 
-    // Get metadata for this tileset to extract callback info
-    auto metadata_result = metadata_provider_->metadata_for(dest.name());
-    if (!metadata_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{"failed to get metadata for tileset '{}'", FormatParam{dest.name(), Style::bold}},
-            metadata_result};
-    }
-
-    const auto &metadata = metadata_result.value();
-
-    // Skip param loading if no animations configured in tileset metadata
-    if (!metadata.has_animations()) {
+    // Skip param loading if there is no generated header file present
+    if (!std::filesystem::exists(params_key.key())) {
         return {};
     }
 
-    // Extract callback info from metadata
-    const auto &callback_func = metadata.callback_func().value();
-    bool porytiles_managed = callback_func.starts_with("InitTilesetAnim_PorytilesManaged_");
+    // Setup callback info, use Porytiles-managed callback regardless of metadata
     std::string tileset_shorthand = dest.name().substr(std::size("gTileset_") - 1);
+    const std::string callback_func = "InitTilesetAnim_PorytilesManaged_" + tileset_shorthand;
 
-    std::filesystem::path c_path;
-    if (porytiles_managed) {
-        // Keys are relative to project_root_, so prepend for file I/O
-        c_path = project_root_ / params_key.key();
-    }
-    else {
-        c_path = project_root_ / tileset_anims_c_rel_path;
-    }
+    std::filesystem::path c_path = project_root_ / params_key.key();
 
     // Parse C code for animation params
-    auto params_result =
-        anim_code_parser_->parse_from_callback(c_path, callback_func, tileset_shorthand, porytiles_managed);
+    auto params_result = anim_code_parser_->parse_from_callback(c_path, callback_func, tileset_shorthand, true);
 
     if (!params_result.has_value()) {
         return ChainableResult<void>{

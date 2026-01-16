@@ -1,6 +1,5 @@
 #include "porytiles2/infra/services/project_porytiles_tileset_manager.hpp"
 
-#include <cstdint>
 #include <filesystem>
 #include <fstream>
 
@@ -68,6 +67,7 @@ void ProjectPorytilesTilesetManager::write(const std::string &tileset_name, cons
     }
 
     file << json_data.dump(2);
+    file << std::endl;
 }
 
 bool ProjectPorytilesTilesetManager::is_porytiles_managed(const std::string &tileset_name) const

@@ -97,6 +97,7 @@ ChainableResult<void> ProjectArtifactChecksumProvider::cache_tileset_checksums(
 
     // prettify the json with 2-space indentation
     file << json_data.dump(2);
+    file << std::endl;
     return {};
 }
 

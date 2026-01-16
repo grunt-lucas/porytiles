@@ -53,20 +53,18 @@ generate_frame_array(const std::string &tileset_name, const std::string &anim_na
     const std::string array_name =
         std::format("gTilesetAnims_{}{}_{}", anim::porytiles_managed_prefix, tileset_name, pascal_anim_name);
 
-    // Build name-to-index map from frame_names (position = FrameN index)
-    std::map<std::string, std::size_t> frame_name_to_idx;
-    for (std::size_t i = 0; i < params.frame_names().size(); ++i) {
-        frame_name_to_idx[params.frame_names()[i]] = i;
-    }
-
     out << std::format("const u16 *const {}[] = {{\n", array_name);
 
     // Generate pointer array following frame_order
     for (std::size_t i = 0; i < params.frame_order().size(); ++i) {
-        const auto &frame_name = params.frame_order()[i];
-        const std::size_t frame_idx = frame_name_to_idx.at(frame_name);
+        // TODO: somewhere else in the codebase we need to validate the user-supplied frame names are snake_case
+        const auto &frame_name = to_pascal_case(params.frame_order()[i]);
         out << std::format(
-            "    gTilesetAnims_{}{}_{}_{}", anim::porytiles_managed_prefix, tileset_name, pascal_anim_name, frame_idx);
+            "    gTilesetAnims_{}{}_{}_Frame{}",
+            anim::porytiles_managed_prefix,
+            tileset_name,
+            pascal_anim_name,
+            frame_name);
         if (i < params.frame_order().size() - 1) {
             out << ",";
         }

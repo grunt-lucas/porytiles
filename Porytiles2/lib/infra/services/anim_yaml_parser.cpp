@@ -252,6 +252,7 @@ ChainableResult<void> AnimYamlParser::write(
         }
 
         out << root;
+        out << std::endl;
         out.close();
 
         if (!out) {
