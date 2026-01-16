@@ -384,4 +384,29 @@ template <typename T>
     return pad_two_digits(pal_index) + ".pal";
 }
 
+/**
+ * @brief Extracts the Pascal-case tileset short name from the full name.
+ *
+ * @details
+ * Removes the "gTileset_" prefix from a tileset name if present. This is commonly needed when generating animation
+ * variable names or parsing animation code, where the short name (e.g., "General") is used instead of the full name
+ * (e.g., "gTileset_General").
+ *
+ * @param tileset_name The full tileset name (e.g., "gTileset_General")
+ * @return The short name (e.g., "General"), or the original string if prefix not present
+ *
+ * @par Examples
+ * - `"gTileset_General"` → `"General"`
+ * - `"gTileset_Petalburg"` → `"Petalburg"`
+ * - `"General"` → `"General"` (no prefix, unchanged)
+ */
+[[nodiscard]] inline std::string extract_tileset_shorthand(const std::string &tileset_name)
+{
+    constexpr std::string_view prefix = "gTileset_";
+    if (tileset_name.starts_with(prefix)) {
+        return tileset_name.substr(prefix.size());
+    }
+    return tileset_name;
+}
+
 } // namespace porytiles2

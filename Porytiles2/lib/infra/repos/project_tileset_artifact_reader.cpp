@@ -8,13 +8,13 @@
 #include <iterator>
 #include <optional>
 
-#include "porytiles2/domain/algorithms/tile_extractors.hpp"
 #include "porytiles2/domain/models/animation.hpp"
 #include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/domain/models/porytiles_tileset_component.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
+#include "porytiles2/infra/algorithms/animation_frame_loader.hpp"
 #include "porytiles2/infra/algorithms/porymap_artifact_parsers.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
@@ -80,18 +80,19 @@ ChainableResult<void> import_porytiles_palette(
 }
 
 /**
- * @brief Template helper for importing animation frames from PNG files.
+ * @brief Template helper for importing animation frames into a tileset component.
  *
  * @details
- * This function unifies the logic for importing animation frames from both Porymap
- * (IndexPixel) and Porytiles (Rgba32) components. It handles both key frames and
- * regular frames through the frame_name parameter.
+ * This function handles the tileset-specific logic for importing animation frames. It uses the shared
+ * `load_animation_frame_from_png` helper for PNG loading and tile extraction, then manages the tileset component
+ * integration including animation creation, key frame vs regular frame handling, and dimension tracking.
  *
  * @tparam PixelType The pixel type (Rgba32 or IndexPixel)
  * @tparam LoaderType The PNG loader type (must have load_from_file method)
  * @tparam ComponentGetter Callable returning a reference to the tileset component
  * @param dest The destination tileset
  * @param src_key The artifact key for the source PNG file
+ * @param project_root The project root path (keys are relative to this)
  * @param anim_name The name of the animation
  * @param frame_name The frame name ("key" for key frames, otherwise arbitrary string like "0", "1", "left", etc.)
  * @param loader The PNG image loader
@@ -110,28 +111,19 @@ ChainableResult<void> import_anim_frame_impl(
     ComponentGetter component_getter,
     std::string_view error_context)
 {
-    // Keys are relative to project_root, so prepend for file I/O
-    auto image_result = loader.load_from_file((project_root / src_key.key()).string());
-    if (!image_result.has_value()) {
+    // Use shared helper to load PNG and extract tiles
+    const auto png_path = project_root / src_key.key();
+    auto frame_load_result = load_animation_frame_from_png<PixelType>(png_path, frame_name, loader);
+    if (!frame_load_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{
                 "{}: failed to load {}",
                 FormatParam{src_key.key(), Style::bold},
                 FormatParam{std::string{error_context}}},
-            image_result};
+            frame_load_result};
     }
 
-    // Capture dimensions before extracting tiles
-    const auto &img = *image_result.value();
-    const std::size_t width_tiles = img.width() / tile::side_length_pix;
-    const std::size_t height_tiles = img.height() / tile::side_length_pix;
-
-    auto tiles = extract_tiles_from_image(img);
-
-    AnimationFrame<PixelType> frame{frame_name, std::move(tiles)};
-    if (img.palette().has_value()) {
-        frame.palette(Palette<Rgba32>{img.palette().value()});
-    }
+    auto &load_result = frame_load_result.value();
 
     // Get or create the animation in the component
     auto &component = component_getter(dest);
@@ -144,18 +136,18 @@ ChainableResult<void> import_anim_frame_impl(
 
     if (frame_name == "key") {
         // Key frame
-        anim.key_frame(std::move(frame));
+        anim.key_frame(std::move(load_result.frame));
     }
     else {
         // Regular frame - use string-based map storage
-        anim.put_frame(frame_name, std::move(frame));
+        anim.put_frame(frame_name, std::move(load_result.frame));
     }
 
     // Update dimensions in params if not already set
     auto params = anim.params();
     if (params.width_tiles() == 0 && params.height_tiles() == 0) {
-        params.width_tiles(width_tiles);
-        params.height_tiles(height_tiles);
+        params.width_tiles(load_result.width_tiles);
+        params.height_tiles(load_result.height_tiles);
         anim.params(std::move(params));
     }
 
@@ -240,7 +232,7 @@ ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKe
     }
 
     // Setup callback info, use Porytiles-managed callback regardless of metadata
-    std::string tileset_shorthand = dest.name().substr(std::size("gTileset_") - 1);
+    const std::string tileset_shorthand = extract_tileset_shorthand(dest.name());
     const std::string callback_func = "InitTilesetAnim_PorytilesManaged_" + tileset_shorthand;
 
     // Parse C code for animation params

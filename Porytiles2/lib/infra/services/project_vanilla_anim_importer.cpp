@@ -2,10 +2,7 @@
 
 #include <vector>
 
-#include "porytiles2/domain/algorithms/tile_extractors.hpp"
-#include "porytiles2/domain/models/animation_frame.hpp"
-#include "porytiles2/domain/models/image.hpp"
-#include "porytiles2/domain/models/pixel_tile.hpp"
+#include "porytiles2/infra/algorithms/animation_frame_loader.hpp"
 #include "porytiles2/infra/services/anim_code_parser.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
@@ -15,24 +12,6 @@
 namespace {
 
 using namespace porytiles2;
-
-/**
- * @brief Extracts the Pascal-case tileset short name from the full name.
- *
- * @details
- * Converts "gTileset_General" to "General".
- *
- * @param tileset_name The full tileset name (e.g., "gTileset_General")
- * @return The short name (e.g., "General")
- */
-[[nodiscard]] std::string extract_tileset_shorthand(const std::string &tileset_name)
-{
-    constexpr std::string_view prefix = "gTileset_";
-    if (tileset_name.starts_with(prefix)) {
-        return tileset_name.substr(prefix.size());
-    }
-    return tileset_name;
-}
 
 /**
  * @brief Converts a .4bpp INCBIN path to a .png path.
@@ -150,35 +129,25 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
                     FormatParam{frame_name, Style::bold}};
             }
 
-            auto frame_png_result = png_loader.load_from_file(frame_png_path);
-            if (!frame_png_result.has_value()) {
+            // Use shared helper to load frame PNG and extract tiles
+            auto frame_load_result = load_animation_frame_from_png<IndexPixel>(frame_png_path, frame_name, png_loader);
+            if (!frame_load_result.has_value()) {
                 return ChainableResult<std::map<std::string, Animation<IndexPixel>>>{
                     FormattableError{
-                        "failed to load frame PNG '{}' for frame '{}'",
-                        FormatParam{frame_png_path.string(), Style::bold},
-                        FormatParam{frame_name, Style::bold}},
-                    frame_png_result};
+                        "failed to load frame '{}' for animation '{}'",
+                        FormatParam{frame_name, Style::bold},
+                        FormatParam{anim_name, Style::bold}},
+                    frame_load_result};
             }
 
-            const Image<IndexPixel> &frame_png = *frame_png_result.value();
-
-            // Capture dimensions before extracting tiles
-            const std::size_t width_tiles = frame_png.width() / tile::side_length_pix;
-            const std::size_t height_tiles = frame_png.height() / tile::side_length_pix;
-
-            std::vector<PixelTile<IndexPixel>> tiles = extract_tiles_from_image(frame_png);
-
-            AnimationFrame frame{frame_name, std::move(tiles)};
-            if (frame_png.palette().has_value()) {
-                frame.palette(Palette{frame_png.palette().value()});
-            }
-            anim.put_frame(frame_name, std::move(frame));
+            auto &load_result = frame_load_result.value();
+            anim.put_frame(frame_name, std::move(load_result.frame));
 
             // Update dimensions in params if not already set (first frame determines dimensions)
             auto animation_params = anim.params();
             if (animation_params.width_tiles() == 0 && animation_params.height_tiles() == 0) {
-                animation_params.width_tiles(width_tiles);
-                animation_params.height_tiles(height_tiles);
+                animation_params.width_tiles(load_result.width_tiles);
+                animation_params.height_tiles(load_result.height_tiles);
                 anim.params(std::move(animation_params));
             }
         }
