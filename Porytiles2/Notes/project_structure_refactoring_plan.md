@@ -1320,7 +1320,7 @@ This section outlines a high-level step-by-step plan to implement the refactorin
    - Update `key_for_porymap_pal_n()` to return `<tileset_root>/porytiles_bin/palettes/<n>.gbapal`
    - Update `key_for_porymap_anim_frame()` to return `<tileset_root>/anim/<anim_name>/<frame_name>.png`
 
-2. **Isolate INCBIN parsing to import-only code paths**
+2. ~~Isolate INCBIN parsing to import-only code paths~~ **COMPLETE**
    - Remove INCBIN fallback logic from normal load/save code paths in the reader/writer
 
 3. ~~Update discovery methods for managed tilesets~~ **COMPLETE**

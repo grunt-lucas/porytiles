@@ -25,9 +25,6 @@ namespace {
 
 using namespace porytiles2;
 
-// TODO: don't hardcode, this is duplicated in ProjectTilesetArtifactKeyProvider
-const std::filesystem::path tileset_anims_c_rel_path = std::filesystem::path{"src"} / "tileset_anims.c";
-
 ChainableResult<void> import_layer_png(
     Tileset &dest,
     const ArtifactKey &src_key,
@@ -237,7 +234,8 @@ ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKe
     }
 
     // Skip param loading if there is no generated header file present
-    if (!std::filesystem::exists(params_key.key())) {
+    std::filesystem::path params_path = project_root_ / params_key.key();
+    if (!std::filesystem::exists(params_path)) {
         return {};
     }
 
@@ -245,10 +243,8 @@ ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKe
     std::string tileset_shorthand = dest.name().substr(std::size("gTileset_") - 1);
     const std::string callback_func = "InitTilesetAnim_PorytilesManaged_" + tileset_shorthand;
 
-    std::filesystem::path c_path = project_root_ / params_key.key();
-
     // Parse C code for animation params
-    auto params_result = anim_code_parser_->parse_from_callback(c_path, callback_func, tileset_shorthand, true);
+    auto params_result = anim_code_parser_->parse_from_callback(params_path, callback_func, tileset_shorthand, true);
 
     if (!params_result.has_value()) {
         return ChainableResult<void>{
