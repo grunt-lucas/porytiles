@@ -52,13 +52,13 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
     }
 
     /*
-     * Step 5: Confirmed save succeeded, now call PorytilesTilesetManager::persist_managed_state to persist "managed"
+     * Step 5: Confirmed save succeeded, now call PorytilesTilesetManager::persist_existing to persist "managed"
      * state (which in the Project-based impls writes to tileset-manifest.json and updates various project C files).
      * This should never fail for a reasonable cause, so we don't need to worry about rolling back or weird broken
      * state. If it does fail for extraordinary reasons, we present a helpful message to users so they can manually
      * recover.
      */
-    if (const auto persist_state_result = tileset_manager_->persist_managed_state(tileset_name);
+    if (const auto persist_state_result = tileset_manager_->persist_managed_existing(tileset_name);
         !persist_state_result.has_value()) {
         // TODO: add more details to this error message
         return ChainableResult<void>{

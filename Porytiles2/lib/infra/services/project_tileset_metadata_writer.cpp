@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 #include <map>
+#include <sstream>
 #include <string>
 #include <utility>
 #include <vector>
@@ -147,6 +148,77 @@ ProjectTilesetMetadataWriter::update_to_porytiles_managed(const std::string &til
     }
 
     return update_fields(tileset_name, updates);
+}
+
+ChainableResult<void>
+ProjectTilesetMetadataWriter::create_tileset_struct(const std::string &tileset_name, bool is_secondary) const
+{
+    // Extract shorthand from tileset name (e.g., "gTileset_MyTileset" -> "MyTileset")
+    const std::string prefix = "gTileset_";
+    if (!tileset_name.starts_with(prefix)) {
+        return FormattableError{format_->format(
+            "tileset name '{}' does not start with '{}'",
+            FormatParam{tileset_name, Style::bold},
+            FormatParam{prefix, Style::bold})};
+    }
+    const std::string shorthand = tileset_name.substr(prefix.size());
+
+    const auto headers_path = project_root_ / headers_rel_path;
+
+    // First, verify the tileset doesn't already exist
+    CParserFacade parser{headers_path, format_};
+    auto parse_result = parser.parse_struct_initializers("gTileset_");
+    if (!parse_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{format_->format(
+                "{}: failed to parse tileset headers", FormatParam{headers_path.string(), Style::bold})},
+            parse_result};
+    }
+
+    // Check if tileset already exists
+    for (const auto &struct_decl : parse_result.value()) {
+        if (struct_decl.variable_name() == tileset_name) {
+            return FormattableError{
+                format_->format("tileset '{}' already exists in headers.h", FormatParam{tileset_name, Style::bold})};
+        }
+    }
+
+    // Generate the new tileset struct with Porytiles-managed field values
+    const std::string is_secondary_value = is_secondary ? "TRUE" : "FALSE";
+    const std::string tiles_value = "gTilesetTiles_PorytilesManaged_" + shorthand;
+    const std::string palettes_value = "gTilesetPalettes_PorytilesManaged_" + shorthand;
+    const std::string metatiles_value = "gMetatiles_PorytilesManaged_" + shorthand;
+    const std::string attributes_value = "gMetatileAttributes_PorytilesManaged_" + shorthand;
+
+    std::ostringstream struct_text;
+    struct_text << "\n";
+    struct_text << "const struct Tileset " << tileset_name << " =\n";
+    struct_text << "{\n";
+    struct_text << "    .isCompressed = TRUE,\n";
+    struct_text << "    .isSecondary = " << is_secondary_value << ",\n";
+    struct_text << "    .tiles = " << tiles_value << ",\n";
+    struct_text << "    .palettes = " << palettes_value << ",\n";
+    struct_text << "    .metatiles = " << metatiles_value << ",\n";
+    struct_text << "    .metatileAttributes = " << attributes_value << ",\n";
+    struct_text << "    .callback = NULL,\n";
+    struct_text << "};\n";
+
+    // Append to the end of headers.h
+    std::ofstream out{headers_path, std::ios::app};
+    if (!out.is_open()) {
+        return FormattableError{
+            format_->format("{}: failed to open for appending", FormatParam{headers_path.string(), Style::bold})};
+    }
+
+    out << struct_text.str();
+    out.flush();
+
+    if (out.fail()) {
+        return FormattableError{
+            format_->format("{}: failed to append tileset struct", FormatParam{headers_path.string(), Style::bold})};
+    }
+
+    return {};
 }
 
 } // namespace porytiles2

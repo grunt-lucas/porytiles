@@ -7,7 +7,9 @@
 #include "porytiles2/app/config/app_config.hpp"
 #include "porytiles2/domain/config/domain_config.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
+#include "porytiles2/domain/services/porytiles_tileset_manager.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
+#include "porytiles2/domain/services/tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
@@ -24,6 +26,8 @@ class CompilePrimaryTileset {
      *
      * @param tileset_repo A pointer to the TilesetRepo for this use case.
      * @param compiler A pointer to the PrimaryTilesetCompiler for this use case.
+     * @param metadata_provider A pointer to the TilesetMetadataProvider for this use case.
+     * @param tileset_manager A pointer to the PorytilesTilesetManager for this use case.
      * @param domain_config A pointer to the DomainConfig for this use case
      * @param app_config A pointer to the AppConfig for this use case
      * @param format A pointer to a TextFormatter for this use case
@@ -32,12 +36,15 @@ class CompilePrimaryTileset {
     CompilePrimaryTileset(
         gsl::not_null<const TilesetRepo *> tileset_repo,
         gsl::not_null<const PrimaryTilesetCompiler *> compiler,
+        gsl::not_null<const TilesetMetadataProvider *> metadata_provider,
+        gsl::not_null<const PorytilesTilesetManager *> tileset_manager,
         gsl::not_null<const DomainConfig *> domain_config,
         gsl::not_null<const AppConfig *> app_config,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag)
-        : tileset_repo_{tileset_repo}, compiler_{compiler}, domain_config_{domain_config}, app_config_{app_config},
-          format_{format}, diag_{diag}
+        : tileset_repo_{tileset_repo}, compiler_{compiler}, metadata_provider_{metadata_provider},
+          tileset_manager_{tileset_manager}, domain_config_{domain_config}, app_config_{app_config}, format_{format},
+          diag_{diag}
     {
     }
 
@@ -57,6 +64,8 @@ class CompilePrimaryTileset {
   private:
     const TilesetRepo *tileset_repo_;
     const PrimaryTilesetCompiler *compiler_;
+    const TilesetMetadataProvider *metadata_provider_;
+    const PorytilesTilesetManager *tileset_manager_;
     const DomainConfig *domain_config_;
     const AppConfig *app_config_;
     const TextFormatter *format_;

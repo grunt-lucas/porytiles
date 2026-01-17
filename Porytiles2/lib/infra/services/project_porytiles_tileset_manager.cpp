@@ -75,7 +75,35 @@ bool ProjectPorytilesTilesetManager::is_porytiles_managed(const std::string &til
     return std::filesystem::exists(artifacts_file(project_root_, tileset_name));
 }
 
-ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_state(const std::string &tileset_name) const
+namespace {
+
+ChainableResult<void> append_incbin_declarations(
+    const IncbinDeclarationAppender *incbin_appender, const std::string &tileset_name, const std::string &bin_path_base)
+{
+    // Append INCBIN declarations to graphics.h
+    auto graphics_result = incbin_appender->append_graphics_declarations(tileset_name, bin_path_base, pal::num_pals);
+    if (!graphics_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{
+                "failed to append graphics INCBIN declarations for '{}'", FormatParam{tileset_name, Style::bold}},
+            graphics_result};
+    }
+
+    // Append INCBIN declarations to metatiles.h
+    auto metatiles_result = incbin_appender->append_metatiles_declarations(tileset_name, bin_path_base);
+    if (!metatiles_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{
+                "failed to append metatiles INCBIN declarations for '{}'", FormatParam{tileset_name, Style::bold}},
+            metatiles_result};
+    }
+
+    return {};
+}
+
+} // namespace
+
+ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_existing(const std::string &tileset_name) const
 {
     // Step 1: Read original metadata from headers.h
     auto metadata_result = metadata_provider_->metadata_for(tileset_name);
@@ -86,7 +114,7 @@ ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_state(cons
     }
     const auto &metadata = metadata_result.value();
 
-    // Step 2: Build TilesetManifest from metadata
+    // Step 2: Build TilesetManifest from metadata (stores original values for restoration)
     constexpr std::uint32_t version = 1;
     const std::optional<std::string> original_callback_value = metadata.callback_func();
 
@@ -114,25 +142,13 @@ ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_state(cons
     }
     const std::string bin_path_base = bin_path_result.value();
 
-    // Step 5: Append INCBIN declarations to graphics.h
-    auto graphics_result = incbin_appender_->append_graphics_declarations(tileset_name, bin_path_base, pal::num_pals);
-    if (!graphics_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{
-                "failed to append graphics INCBIN declarations for '{}'", FormatParam{tileset_name, Style::bold}},
-            graphics_result};
+    // Step 5: Append INCBIN declarations
+    auto incbin_result = append_incbin_declarations(incbin_appender_, tileset_name, bin_path_base);
+    if (!incbin_result.has_value()) {
+        return incbin_result;
     }
 
-    // Step 6: Append INCBIN declarations to metatiles.h
-    auto metatiles_result = incbin_appender_->append_metatiles_declarations(tileset_name, bin_path_base);
-    if (!metatiles_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{
-                "failed to append metatiles INCBIN declarations for '{}'", FormatParam{tileset_name, Style::bold}},
-            metatiles_result};
-    }
-
-    // Step 7: Determine whether to update callback field
+    // Step 6: Determine whether to update callback field
     auto overwrite_callback_result =
         infra_config_->tileset_animations_overwrite_callback(ConfigScopeType::tileset, tileset_name);
     if (!overwrite_callback_result.has_value()) {
@@ -149,7 +165,7 @@ ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_state(cons
     // Otherwise, leave callback field alone
     const bool should_update_callback = overwrite_callback && original_callback_value.has_value();
 
-    // Step 8: Wire include directive in tileset_anims.c (if updating callback)
+    // Step 7: Wire include directive in tileset_anims.c (if updating callback)
     if (should_update_callback) {
         auto wire_result = tileset_anims_modifier_->wire_include_for_tileset(tileset_name, is_secondary);
         if (!wire_result.has_value()) {
@@ -160,8 +176,44 @@ ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_state(cons
         }
     }
 
-    // Step 9: Update headers.h to use Porytiles-managed asset variables
+    // Step 8: Update headers.h to use Porytiles-managed asset variables
     return metadata_writer_->update_to_porytiles_managed(tileset_name, should_update_callback);
+}
+
+ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_new(const std::string &tileset_name) const
+{
+    // Step 1: Create tileset struct in headers.h (it doesn't exist yet)
+    auto create_result = metadata_writer_->create_tileset_struct(tileset_name, /*is_secondary=*/false);
+    if (!create_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{
+                "failed to create tileset struct in headers.h for '{}'", FormatParam{tileset_name, Style::bold}},
+            create_result};
+    }
+
+    // Step 2: Write TilesetManifest with imported=false
+    constexpr std::uint32_t version = 1;
+    write(tileset_name, TilesetManifest::for_created_tileset(version));
+
+    // Step 3: Get config values for path computation (new tilesets are always primary)
+    auto bin_path_result = infra_config_->tileset_paths_primary_bin(ConfigScopeType::tileset, tileset_name);
+    if (!bin_path_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{"failed to get tileset bin path config for '{}'", FormatParam{tileset_name, Style::bold}},
+            bin_path_result};
+    }
+    const std::string bin_path_base = bin_path_result.value();
+
+    // Step 4: Append INCBIN declarations
+    auto incbin_result = append_incbin_declarations(incbin_appender_, tileset_name, bin_path_base);
+    if (!incbin_result.has_value()) {
+        return incbin_result;
+    }
+
+    // Step 5: Skip callback wiring for new tilesets (no animations to set up)
+    // The headers.h entry was already created with NULL callback
+
+    return {};
 }
 
 } // namespace porytiles2

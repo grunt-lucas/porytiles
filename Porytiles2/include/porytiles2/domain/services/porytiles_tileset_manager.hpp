@@ -35,15 +35,30 @@ class PorytilesTilesetManager {
     [[nodiscard]] virtual bool is_porytiles_managed(const std::string &tileset_name) const = 0;
 
     /**
-     * @brief Persists managed state for the given tileset.
+     * @brief Persists managed state for an existing tileset.
      *
      * @details
-     * The specific details of tileset state management are implementation-defined.
+     * Used when an existing tileset in headers.h is being converted to Porytiles-managed. The implementation reads
+     * original field values from headers.h and stores them in the tileset manifest for potential restoration later.
      *
      * @param tileset_name The name of the tileset (e.g., "gTileset_General")
+     * @pre tileset_name must correspond to an existing tileset in headers.h
      * @return a ChainableResult indicating success or containing error details
      */
-    [[nodiscard]] virtual ChainableResult<void> persist_managed_state(const std::string &tileset_name) const = 0;
+    [[nodiscard]] virtual ChainableResult<void> persist_managed_existing(const std::string &tileset_name) const = 0;
+
+    /**
+     * @brief Persists managed state for a new tileset.
+     *
+     * @details
+     * Used when a new tileset is being added from scratch. The implementation creates a new entry in headers.h rather
+     * than modifying an existing one.
+     *
+     * @param tileset_name The name of the tileset (e.g., "gTileset_MyNewTileset")
+     * @pre tileset_name must not already exist in headers.h
+     * @return a ChainableResult indicating success or containing error details
+     */
+    [[nodiscard]] virtual ChainableResult<void> persist_managed_new(const std::string &tileset_name) const = 0;
 };
 
 } // namespace porytiles2

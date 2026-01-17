@@ -5,6 +5,7 @@
 #include "porytiles2/build_version.h"
 
 #include "command_compile_tileset.hpp"
+#include "command_create_tileset.hpp"
 #include "command_decompile_tileset.hpp"
 #include "command_import_tileset.hpp"
 
@@ -49,6 +50,7 @@ https://github.com/huderlem/porymap)");
         "Print version info and exit.");
     porytiles_app.get_option("--help")->description("Print this help message and exit.");
 
+    CreateTilesetCommand create_tileset{porytiles_app};
     ImportTilesetCommand import_tileset{porytiles_app};
     CompileTilesetCommand compile_tileset{porytiles_app};
     DecompileTilesetCommand decompile_tileset{porytiles_app};

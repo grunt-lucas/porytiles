@@ -23,6 +23,10 @@
 #include "porytiles2/infra/repos/project_tileset_artifact_reader.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
 #include "porytiles2/infra/services/ascii_tile_printer.hpp"
+#include "porytiles2/infra/services/incbin_declaration_appender.hpp"
+#include "porytiles2/infra/services/project_porytiles_tileset_manager.hpp"
+#include "porytiles2/infra/services/project_tileset_anims_modifier.hpp"
+#include "porytiles2/infra/services/project_tileset_metadata_writer.hpp"
 #include "porytiles2/infra/services/attributes_csv_loader.hpp"
 #include "porytiles2/infra/services/color_palette_printer.hpp"
 #include "porytiles2/infra/services/header_behavior_map_provider.hpp"
@@ -107,6 +111,13 @@ class CompileTilesetCommand final : public Command {
         // Setup metadata provider (needed by artifact reader for animation param loading)
         ProjectTilesetMetadataProvider metadata_provider{project_root, text_formatter, diag.get()};
 
+        // Setup Porytiles tileset manager and its dependencies
+        ProjectTilesetMetadataWriter metadata_writer{project_root, text_formatter};
+        IncbinDeclarationAppender incbin_appender{project_root, text_formatter};
+        ProjectTilesetAnimsModifier tileset_anims_modifier{project_root, &config, text_formatter, diag.get()};
+        ProjectPorytilesTilesetManager tileset_manager{
+            project_root, &metadata_provider, &metadata_writer, &config, &incbin_appender, &tileset_anims_modifier};
+
         // Setup the tileset repository
         ProjectTilesetArtifactKeyProvider key_provider{project_root, &config, text_formatter, diag.get()};
         ProjectTilesetArtifactReader artifact_reader{
@@ -139,7 +150,8 @@ class CompileTilesetCommand final : public Command {
             text_formatter,
             diag.get()};
 
-        CompilePrimaryTileset compile_use_case{&repo, &compiler, &config, &config, text_formatter, diag.get()};
+        CompilePrimaryTileset compile_use_case{
+            &repo, &compiler, &metadata_provider, &tileset_manager, &config, &config, text_formatter, diag.get()};
 
         // Run the use case
         auto compile_result = compile_use_case.compile(tileset_name_);

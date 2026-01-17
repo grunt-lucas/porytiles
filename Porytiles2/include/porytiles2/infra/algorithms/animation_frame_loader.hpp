@@ -86,7 +86,7 @@ template <SupportsTransparency PixelType, typename LoaderType>
     auto image_result = loader.load_from_file(png_path);
     if (!image_result.has_value()) {
         return ChainableResult<FrameLoadResult<PixelType>>{
-            FormattableError{"{}: failed to load animation frame PNG", FormatParam{png_path.string(), Style::bold}}, 
+            FormattableError{"{}: failed to load animation frame PNG", FormatParam{png_path.string(), Style::bold}},
             image_result};
     }
 

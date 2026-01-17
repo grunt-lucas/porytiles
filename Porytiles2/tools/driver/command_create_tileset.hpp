@@ -7,11 +7,11 @@
 #include "CLI/CLI.hpp"
 #include "fruit/fruit.h"
 
-#include "porytiles2/app/use_cases/import_primary_tileset.hpp"
+#include "porytiles2/app/use_cases/create_primary_tileset.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/palette_printer.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
-#include "porytiles2/domain/services/primary_tileset_decompiler.hpp"
+#include "porytiles2/domain/services/primary_tileset_creator.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
 #include "porytiles2/infra/config/default_provider.hpp"
 #include "porytiles2/infra/config/header_define_provider.hpp"
@@ -33,7 +33,6 @@
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/infra/services/project_porytiles_tileset_manager.hpp"
-#include "porytiles2/infra/services/project_primary_tileset_importer.hpp"
 #include "porytiles2/infra/services/project_tileset_anims_modifier.hpp"
 #include "porytiles2/infra/services/project_tileset_metadata_writer.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -43,36 +42,27 @@
 
 #include "command.hpp"
 
-class ImportTilesetCommand final : public Command {
+class CreateTilesetCommand final : public Command {
   public:
-    explicit ImportTilesetCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+    explicit CreateTilesetCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
     {
         CLI::App &cmd = get_app();
-        cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to import")->required();
+        cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to create (e.g., gTileset_MyTileset)")
+            ->required();
     }
 
     void Run() override
     {
         using namespace porytiles2;
 
-        /*
-         * TODO: once we have more compilation code finished, we should come back and do more dependency injection via
-         * Fruit.
-         */
         // Use Fruit DI to inject TextFormatter based on no_color flag
-        const bool no_color = !isatty(STDERR_FILENO); // Disable color when stderr is not a terminal
+        const bool no_color = !isatty(STDERR_FILENO);
         fruit::Injector injector{di::get_formatter_component, no_color};
         auto text_formatter = injector.get<TextFormatter *>();
 
         // Manually create other services (not yet using DI for these)
         std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter);
 
-        /*
-         * TODO: below we're passing hardcoded "." for project root and "include/" for structural project files. At
-         * some point we'll want the CLI tool to provide a way for users to change these values, in case:
-         * - they are not running the CLI tool from the project root directory
-         * - they moved fieldmap.h, metatile_behaviors.h, etc to a different location
-         */
         std::filesystem::path project_root{"."};
         std::filesystem::path fieldmap_header_root_relative{"include/fieldmap.h"};
         std::filesystem::path behaviors_header_root_relative{"include/constants/metatile_behaviors.h"};
@@ -104,7 +94,7 @@ class ImportTilesetCommand final : public Command {
             project_root / behaviors_header_root_relative, text_formatter, diag.get()};
         AttributesCsvLoader attributes_csv_loader{text_formatter, &behavior_map_provider};
 
-        // Setup metadata provider, tileset manager
+        // Setup metadata provider and tileset manager
         ProjectTilesetMetadataProvider metadata_provider{project_root, text_formatter, diag.get()};
         ProjectTilesetMetadataWriter metadata_writer{project_root, text_formatter};
         IncbinDeclarationAppender incbin_appender{project_root, text_formatter};
@@ -144,21 +134,14 @@ class ImportTilesetCommand final : public Command {
             text_formatter,
             diag.get()};
 
-        ProjectPrimaryTilesetImporter importer{
-            project_root,
-            &config,
-            text_formatter,
-            diag.get(),
-            tile_printer.get(),
-            pal_printer.get(),
-            &metadata_provider,
-            &png_indexed_loader,
-            &jasc_loader,
-        };
-        PrimaryTilesetDecompiler decompiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
-        ImportPrimaryTileset import_use_case{
-            &importer,
-            &decompiler,
+        // Setup creator and compiler
+        PrimaryTilesetCreator creator{};
+        PrimaryTilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
+
+        // Create the use case
+        CreatePrimaryTileset create_use_case{
+            &creator,
+            &compiler,
             &repo,
             &metadata_provider,
             &tileset_manager,
@@ -168,18 +151,18 @@ class ImportTilesetCommand final : public Command {
             diag.get()};
 
         // Run the use case
-        auto import_result = import_use_case.import(tileset_name_);
-        if (!import_result.has_value()) {
-            const auto fail_result = ChainableResult<std::unique_ptr<Tileset>>{
-                FormattableError{"failed to import tileset '{}'", FormatParam{tileset_name_, Style::bold}},
-                import_result};
+        auto create_result = create_use_case.create(tileset_name_);
+        if (!create_result.has_value()) {
+            const auto fail_result = ChainableResult<void>{
+                FormattableError{"failed to create tileset '{}'", FormatParam{tileset_name_, Style::bold}},
+                create_result};
             diag->fatal(fail_result);
         }
     }
 
   private:
-    static constexpr auto kCommandName = "import-tileset";
-    static constexpr auto kCommandDesc = "Import a pre-existing tileset into Porytiles.";
+    static constexpr auto kCommandName = "create-tileset";
+    static constexpr auto kCommandDesc = "Create a new Porytiles-managed tileset from scratch.";
     static constexpr auto kCommandGroup = "COMMANDS";
     std::string tileset_name_;
 };

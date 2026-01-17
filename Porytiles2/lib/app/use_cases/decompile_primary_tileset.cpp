@@ -11,10 +11,10 @@ namespace porytiles2 {
 ChainableResult<void> DecompilePrimaryTileset::decompile(const std::string &name) const
 {
     // 1. Check if the primary tileset exists and is Porytiles-managed. If not, abort with error.
-    if (!tileset_metadata_provider_->exists(name)) {
+    if (!metadata_provider_->exists(name)) {
         return FormattableError{"tileset '{}' does not exist", FormatParam{name, Style::bold}};
     }
-    if (!porytiles_tileset_manager_->is_porytiles_managed(name)) {
+    if (!tileset_manager_->is_porytiles_managed(name)) {
         return FormattableError{"tileset '{}' exists but is not Porytiles-managed", FormatParam{name, Style::bold}};
     }
 

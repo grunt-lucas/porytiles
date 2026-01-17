@@ -15,6 +15,11 @@
 
 namespace porytiles2 {
 
+PorymapTilesetComponent::PorymapTilesetComponent()
+{
+    pals_.fill(Palette<Rgba32, pal::max_size>{Rgba32{}});
+}
+
 void PorymapTilesetComponent::push_back_tilemap_entry(TilemapEntry entry)
 {
     // std::move here even though TilemapEntry is trivially-copyable, in case it changes later

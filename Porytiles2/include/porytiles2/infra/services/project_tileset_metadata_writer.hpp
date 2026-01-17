@@ -80,6 +80,35 @@ class ProjectTilesetMetadataWriter {
     [[nodiscard]] ChainableResult<void>
     update_to_porytiles_managed(const std::string &tileset_name, bool update_callback = true) const;
 
+    /**
+     * @brief Creates a new tileset struct and appends it to headers.h.
+     *
+     * @details
+     * Generates a complete Tileset struct with Porytiles-managed field values and appends it to the end of headers.h.
+     * The struct uses the standard pokeemerald format:
+     *
+     * @code
+     * const struct Tileset gTileset_MyTileset =
+     * {
+     *     .isCompressed = TRUE,
+     *     .isSecondary = FALSE,
+     *     .tiles = gTilesetTiles_PorytilesManaged_MyTileset,
+     *     .palettes = gTilesetPalettes_PorytilesManaged_MyTileset,
+     *     .metatiles = gMetatiles_PorytilesManaged_MyTileset,
+     *     .metatileAttributes = gMetatileAttributes_PorytilesManaged_MyTileset,
+     *     .callback = NULL,
+     * };
+     * @endcode
+     *
+     * @param tileset_name The tileset name (e.g., "gTileset_MyTileset")
+     * @param is_secondary If true, sets .isSecondary = TRUE; if false, sets .isSecondary = FALSE
+     * @pre tileset_name must start with "gTileset_"
+     * @pre tileset_name must not already exist in headers.h
+     * @return Success or error result with details
+     * @post A new tileset struct exists at the end of headers.h
+     */
+    [[nodiscard]] ChainableResult<void> create_tileset_struct(const std::string &tileset_name, bool is_secondary) const;
+
   private:
     std::filesystem::path project_root_;
     const TextFormatter *format_;

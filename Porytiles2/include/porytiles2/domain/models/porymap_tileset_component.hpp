@@ -18,7 +18,7 @@ namespace porytiles2 {
 
 class PorymapTilesetComponent {
   public:
-    PorymapTilesetComponent() = default;
+    PorymapTilesetComponent();
 
     /**
      * @brief Add a TilemapEntry to the end of the entry vector.
