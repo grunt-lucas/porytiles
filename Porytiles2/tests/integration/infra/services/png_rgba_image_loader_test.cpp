@@ -19,18 +19,18 @@ TEST(PngRgbaImageLoaderTests, LoadFromFileShouldFailGracefullyOnBadFile)
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
     AnsiStyledTextFormatter formatter{};
 
-    auto result = loader->load_from_file("Resources/Tests/integration/image_io/non_existent_file.png");
+    auto result = loader->load_from_file("Resources/Tests/integration/infra/services/image_io/non_existent_file.png");
     ASSERT_FALSE(result.has_value());
     EXPECT_TRUE(result.error().type() == ImageLoadError::Type::file_not_found);
 
-    auto result2 = loader->load_from_file("Resources/Tests/integration/metatile_behaviors.h");
+    auto result2 = loader->load_from_file("Resources/Tests/integration/shared/metatile_behaviors.h");
     ASSERT_FALSE(result2.has_value());
     auto details = result2.error().details(formatter);
     bool found = false;
     for (const auto &line : details) {
         if (line.contains(
                 "Failed to recognize format of file "
-                "'Resources/Tests/integration/metatile_behaviors.h'")) {
+                "'Resources/Tests/integration/shared/metatile_behaviors.h'")) {
             found = true;
             break;
         }
@@ -42,7 +42,7 @@ TEST(PngRgbaImageLoaderTests, ShouldLoadValidPngFile)
 {
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
-    const auto result = loader->load_from_file("Resources/Tests/integration/image_io/pattern.png");
+    const auto result = loader->load_from_file("Resources/Tests/integration/infra/services/image_io/pattern.png");
     ASSERT_TRUE(result.has_value());
     ASSERT_NE(result.value(), nullptr);
 
@@ -56,7 +56,7 @@ TEST(PngRgbaImageLoaderTests, ShouldLoadRgbImageWithOpaqueAlpha)
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
     // Use one of the available PNG files that should be RGB (3-channel)
-    const auto result = loader->load_from_file("Resources/Tests/integration/image_io/bottom.png");
+    const auto result = loader->load_from_file("Resources/Tests/integration/infra/services/image_io/bottom.png");
     ASSERT_TRUE(result.has_value());
     ASSERT_NE(result.value(), nullptr);
 
@@ -84,7 +84,7 @@ TEST(PngRgbaImageLoaderTests, ShouldLoadImageDimensionsCorrectly)
 {
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
-    auto result = loader->load_from_file("Resources/Tests/integration/image_io/pattern.png");
+    auto result = loader->load_from_file("Resources/Tests/integration/infra/services/image_io/pattern.png");
     ASSERT_TRUE(result.has_value());
     ASSERT_NE(result.value(), nullptr);
 
@@ -102,7 +102,7 @@ TEST(PngRgbaImageLoaderTests, ShouldLoadPixelDataCorrectly)
 {
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
-    auto result = loader->load_from_file("Resources/Tests/integration/image_io/pattern.png");
+    auto result = loader->load_from_file("Resources/Tests/integration/infra/services/image_io/pattern.png");
     ASSERT_TRUE(result.has_value());
     ASSERT_NE(result.value(), nullptr);
 
@@ -137,10 +137,10 @@ TEST(PngRgbaImageLoaderTests, ShouldHandleMultipleImageFormats)
 
     // Test reading different PNG files to ensure the reader works with various formats
     const std::vector<std::string> test_files = {
-        "Resources/Tests/integration/image_io/bottom.png",
-        "Resources/Tests/integration/image_io/middle.png",
-        "Resources/Tests/integration/image_io/top.png",
-        "Resources/Tests/integration/image_io/flower_key.png"};
+        "Resources/Tests/integration/infra/services/image_io/bottom.png",
+        "Resources/Tests/integration/infra/services/image_io/middle.png",
+        "Resources/Tests/integration/infra/services/image_io/top.png",
+        "Resources/Tests/integration/infra/services/image_io/flower_key.png"};
 
     for (const auto &file : test_files) {
         auto result = loader->load_from_file(file);
@@ -158,7 +158,7 @@ TEST(PngRgbaImageLoaderTests, ShouldCorrectlyHandleAlphaChannels)
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
     // Test with a key.png file which likely has transparency
-    const auto result = loader->load_from_file("Resources/Tests/integration/image_io/flower_key.png");
+    const auto result = loader->load_from_file("Resources/Tests/integration/infra/services/image_io/flower_key.png");
     ASSERT_TRUE(result.has_value());
     ASSERT_NE(result.value(), nullptr);
 
@@ -190,7 +190,7 @@ TEST(PngRgbaImageLoaderTests, ShouldHandleSmallImages)
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
     // Test with pattern.png which should be a small test image
-    auto result = loader->load_from_file("Resources/Tests/integration/image_io/pattern.png");
+    auto result = loader->load_from_file("Resources/Tests/integration/infra/services/image_io/pattern.png");
     ASSERT_TRUE(result.has_value());
     ASSERT_NE(result.value(), nullptr);
 
@@ -213,8 +213,8 @@ TEST(PngRgbaImageLoaderTests, ShouldConsistentlyLoadSameFile)
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
     // Read the same file multiple times to ensure consistent results
-    auto result1 = loader->load_from_file("Resources/Tests/integration/image_io/pattern.png");
-    auto result2 = loader->load_from_file("Resources/Tests/integration/image_io/pattern.png");
+    auto result1 = loader->load_from_file("Resources/Tests/integration/infra/services/image_io/pattern.png");
+    auto result2 = loader->load_from_file("Resources/Tests/integration/infra/services/image_io/pattern.png");
 
     ASSERT_TRUE(result1.has_value());
     ASSERT_TRUE(result2.has_value());

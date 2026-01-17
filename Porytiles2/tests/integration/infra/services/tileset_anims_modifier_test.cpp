@@ -123,7 +123,7 @@ class TilesetAnimsModifierTest_VanillaStock : public TilesetAnimsModifierTestBas
   protected:
     [[nodiscard]] std::filesystem::path source_project_path() const override
     {
-        return "Resources/Tests/integration/repos/pokeemerald_vanilla_stock";
+        return "Resources/Tests/integration/shared/repos/pokeemerald_vanilla_stock";
     }
 };
 

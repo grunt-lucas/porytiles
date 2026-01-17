@@ -13,7 +13,7 @@ namespace porytiles2 {
 
 class ProjectVanillaAnimImporterTest : public ::testing::Test {
   protected:
-    static constexpr auto kTestProjectRoot = "Resources/Tests/integration/repos/pokeemerald_vanilla_stock";
+    static constexpr auto kTestProjectRoot = "Resources/Tests/integration/shared/repos/pokeemerald_vanilla_stock";
 
     PlainTextFormatter formatter_{};
     BufferedUserDiagnostics diag_{};

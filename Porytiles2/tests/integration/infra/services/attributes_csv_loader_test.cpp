@@ -12,7 +12,7 @@ using namespace porytiles2;
 
 namespace {
 
-const std::filesystem::path kTestResourcesDir = "Resources/Tests/integration/services/attributes_csv";
+const std::filesystem::path kTestResourcesDir = "Resources/Tests/integration/infra/services/attributes_csv";
 
 /**
  * @brief A stub BehaviorMapProvider for testing that returns known values for known behavior names.

@@ -95,7 +95,7 @@ class ProjectTilesetMetadataWriterTest_Fixture1 : public ProjectTilesetMetadataW
   protected:
     [[nodiscard]] std::filesystem::path source_project_path() const override
     {
-        return "Resources/Tests/integration/repos/pokeemerald_porytilestesttilesets";
+        return "Resources/Tests/integration/shared/repos/pokeemerald_porytilestesttilesets";
     }
 };
 

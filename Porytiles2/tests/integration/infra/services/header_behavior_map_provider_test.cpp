@@ -10,7 +10,7 @@ using namespace porytiles2;
 
 namespace {
 
-const std::filesystem::path test_resources_dir = "Resources/Tests/integration/services";
+const std::filesystem::path test_resources_dir = "Resources/Tests/integration/infra/services/behavior_headers";
 
 class HeaderBehaviorMapProviderTest : public ::testing::Test {
   protected:

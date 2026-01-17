@@ -25,7 +25,7 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackDiscoversAllAnimationsInGeneratedHea
     const std::string callback_func = "InitTilesetAnim_" + anim::porytiles_managed_prefix + "General";
 
     auto result = parser_.parse_from_callback(
-        "Resources/Tests/integration/anim/generated_anim_code.h", callback_func, "General", true);
+        "Resources/Tests/integration/shared/anim/generated_anim_code.h", callback_func, "General", true);
 
     ASSERT_TRUE(result.has_value()) << "Parsing should succeed";
     const auto &anims = result.value();
@@ -46,7 +46,7 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsFlowerAnimationParamsFromGen
     const std::string callback_func = "InitTilesetAnim_" + anim::porytiles_managed_prefix + "General";
 
     auto result = parser_.parse_from_callback(
-        "Resources/Tests/integration/anim/generated_anim_code.h", callback_func, "General", true);
+        "Resources/Tests/integration/shared/anim/generated_anim_code.h", callback_func, "General", true);
 
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
@@ -79,7 +79,7 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsLandWaterEdgeAnimationParams
     const std::string callback_func = "InitTilesetAnim_" + anim::porytiles_managed_prefix + "General";
 
     auto result = parser_.parse_from_callback(
-        "Resources/Tests/integration/anim/generated_anim_code.h", callback_func, "General", true);
+        "Resources/Tests/integration/shared/anim/generated_anim_code.h", callback_func, "General", true);
 
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
@@ -110,7 +110,7 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsWaterAnimationParamsFromGene
     const std::string callback_func = "InitTilesetAnim_" + anim::porytiles_managed_prefix + "General";
 
     auto result = parser_.parse_from_callback(
-        "Resources/Tests/integration/anim/generated_anim_code.h", callback_func, "General", true);
+        "Resources/Tests/integration/shared/anim/generated_anim_code.h", callback_func, "General", true);
 
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
@@ -157,7 +157,7 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackDiscoversAnimationsInVanillaFile)
 {
     // The callback for vanilla tilesets: InitTilesetAnim_General
     auto result = parser_.parse_from_callback(
-        "Resources/Tests/integration/anim/tileset_anims.c", "InitTilesetAnim_General", "General", false);
+        "Resources/Tests/integration/shared/anim/tileset_anims.c", "InitTilesetAnim_General", "General", false);
 
     ASSERT_TRUE(result.has_value()) << "Parsing should succeed";
     const auto &anims = result.value();
@@ -171,7 +171,7 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackDiscoversAnimationsInVanillaFile)
 TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsFlowerAnimationParamsFromVanilla)
 {
     auto result = parser_.parse_from_callback(
-        "Resources/Tests/integration/anim/tileset_anims.c", "InitTilesetAnim_General", "General", false);
+        "Resources/Tests/integration/shared/anim/tileset_anims.c", "InitTilesetAnim_General", "General", false);
 
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
@@ -201,7 +201,7 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsFlowerAnimationParamsFromVan
 TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsLandWaterEdgeAnimationParamsFromVanilla)
 {
     auto result = parser_.parse_from_callback(
-        "Resources/Tests/integration/anim/tileset_anims.c", "InitTilesetAnim_General", "General", false);
+        "Resources/Tests/integration/shared/anim/tileset_anims.c", "InitTilesetAnim_General", "General", false);
 
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
@@ -230,7 +230,7 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsLandWaterEdgeAnimationParams
 TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsWaterAnimationParamsFromVanilla)
 {
     auto result = parser_.parse_from_callback(
-        "Resources/Tests/integration/anim/tileset_anims.c", "InitTilesetAnim_General", "General", false);
+        "Resources/Tests/integration/shared/anim/tileset_anims.c", "InitTilesetAnim_General", "General", false);
 
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
@@ -259,7 +259,7 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsWaterAnimationParamsFromVani
 TEST_F(AnimCodeParserTest, ParseFromCallbackReturnsEmptyForNonExistentCallback)
 {
     auto result = parser_.parse_from_callback(
-        "Resources/Tests/integration/anim/tileset_anims.c", "InitTilesetAnim_NonExistent", "NonExistent", false);
+        "Resources/Tests/integration/shared/anim/tileset_anims.c", "InitTilesetAnim_NonExistent", "NonExistent", false);
 
     ASSERT_TRUE(result.has_value()) << "Parsing should succeed even with no matches";
     EXPECT_TRUE(result.value().empty()) << "Should return empty map for unknown tileset callback";
