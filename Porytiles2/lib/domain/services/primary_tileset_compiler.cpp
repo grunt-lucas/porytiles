@@ -23,6 +23,7 @@
 #include "porytiles2/domain/packing/services/best_fusion_strategy.hpp"
 #include "porytiles2/domain/packing/services/overload_and_remove_strategy.hpp"
 #include "porytiles2/domain/packing/services/palette_packer.hpp"
+#include "porytiles2/domain/services/anim_tile_matcher.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
 #include "porytiles2/domain/services/metatile_decompiler.hpp"
@@ -109,6 +110,10 @@ class CompilerTask {
     [[nodiscard]] ChainableResult<ColorIndexMap<Rgba32>>
     pipeline_helper_build_color_index_map(const std::vector<PaletteHint> &hints, std::size_t color_count_limit) const;
 
+    // Pipeline helpers - animation processing
+    [[nodiscard]] ChainableResult<void> pipeline_helper_register_animations();
+    void pipeline_helper_compile_animations();
+
     // Pipeline helpers - error emission
     void pipeline_helper_emit_no_matching_tile_error(
         std::size_t tile_index,
@@ -154,6 +159,7 @@ class CompilerTask {
     // Working data
     std::unique_ptr<PorymapTilesetComponent> new_porymap_component_{};
     std::unique_ptr<TilesPngWorkspace> tiles_workspace_{};
+    AnimTileMatcher anim_tile_matcher_{};
 };
 
 ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
@@ -312,6 +318,15 @@ ChainableResult<void> CompilerTask::pipeline_step3_setup_working_data()
         panic("unexpected tiles_edit_mode");
     }(tiles_edit_mode_, tileset_, num_tiles_in_primary_.value());
 
+    // Register animations (reserve slots, compile keyframes, register matcher)
+    // Must be done before regular tile matching so animation slots are reserved
+    /*
+     * TODO: before registering animations, run a validator service that:
+     * 1. Ensures there are no transparent key frame tiles
+     * 2. Makes sure all key frame tiles are unique across all animations
+     */
+    PT_TRY_CALL_CHAIN_ERR(pipeline_helper_register_animations(), "failed to register animations", void);
+
     // Create new Porymap component for output
     new_porymap_component_ = std::make_unique<PorymapTilesetComponent>();
 
@@ -459,6 +474,9 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step5_assemble_output()
         new_porymap_component_->set_pal(i, new_porymap_pals_[i]);
     }
 
+    // Compile animations from Porytiles format to Porymap format
+    pipeline_helper_compile_animations();
+
     // Create the full Tileset and return
     return std::make_unique<Tileset>(
         tileset_.name(), std::move(new_porytiles_component), std::move(new_porymap_component_));
@@ -527,6 +545,15 @@ TileAssignmentResult CompilerTask::pipeline_helper_assign_tile_via_pal_match(con
     const auto &matched_pal = new_porymap_pals_.at(pal_index);
     const auto index_tile = index_tile_from_color_tile(porytiles_tile, matched_pal, extrinsic_transparency_.value());
     const CanonicalPixelTile canonical_index_tile{index_tile};
+
+    // Check if tile matches a registered animation keyframe
+    if (const auto anim_match = anim_tile_matcher_.find_match(CanonicalPixelTile{porytiles_tile});
+        anim_match.has_value()) {
+        // Use the animation tile index with computed flip bits
+        result.status = TileAssignmentResult::Status::success;
+        result.entry = TilemapEntry{anim_match->tile_index, pal_index, anim_match->h_flip, anim_match->v_flip};
+        return result;
+    }
 
     // Tile found in workspace
     if (const auto maybe_tile_index = tiles_workspace_->first_occurrence_of(canonical_index_tile);
@@ -747,6 +774,180 @@ ChainableResult<ColorIndexMap<Rgba32>> CompilerTask::pipeline_helper_build_color
     }
 
     return color_index_map;
+}
+
+ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
+{
+    /*
+     * This function has two primary responsibilities. For each anim:
+     *
+     * 1. Place the anim's key frame tiles into tiles.png at computed offsets
+     * 2. Register each animation and save the computed offsets
+     */
+    const auto &anims = tileset_.porytiles_component().anims();
+
+    // Early exit if no animations
+    if (anims.empty()) {
+        return {};
+    }
+
+    // Only support animations in optimize mode for now
+    if (tiles_edit_mode_ != ArtifactEditMode::optimize) {
+        // In locked/patch mode, animations should already have been placed in tiles.png
+        // We just need to register them with the matcher using existing offsets.
+        // In patch mode, we can allow anim placing in free space, need to support this in TilesPngWorkspace, see TODO
+        // note there.
+        // TODO: implement locked/patch mode animation handling
+        panic("TODO: implement locked/patch mode animation handling");
+    }
+
+    // Compute total key frame tiles needed across all animations
+    std::size_t total_key_frame_tiles = 0;
+    for (const auto &anim : anims | std::views::values) {
+        if (anim.has_frames()) {
+            total_key_frame_tiles += anim.key_frame().tiles().size();
+        }
+    }
+
+    // Reserve animation slots in workspace (starting at index 1)
+    tiles_workspace_->reserve_anim_slots(total_key_frame_tiles);
+
+    // Build a map of animation offsets for registration step
+    std::map<std::string, std::size_t> anim_offsets; // name -> tile_offset
+
+    // Process each animation: compile key frame tiles
+    std::size_t current_offset = TilesPngWorkspace::anim_start_offset();
+    for (const auto &[anim_name, anim] : anims) {
+        if (!anim.has_frames()) {
+            panic("anim '" + anim_name + "' has no frames");
+        }
+
+        const AnimationFrame<Rgba32> &composite_frame = anim.composite_frame(extrinsic_transparency_);
+        const std::size_t tile_count = composite_frame.tiles().size();
+        const std::size_t this_anim_offset = current_offset;
+
+        // Process each composite and key frame tile
+        for (std::size_t tile_idx = 0; tile_idx < tile_count; ++tile_idx) {
+            const PixelTile<Rgba32> &composite_rgba_tile = composite_frame.tile_at(tile_idx);
+            const PixelTile<Rgba32> &key_rgba_tile = anim.key_frame().tile_at(tile_idx);
+
+            if (key_rgba_tile.is_transparent(extrinsic_transparency_.value())) {
+                // TODO: ANIM: is this the right place to throw errors about transparent key frames? Or earlier?
+                panic("illegal transparent key frame tile");
+            }
+
+            /*
+             * Match tile to palette, we use the composite tile to guarantee that we're selecting the correct palette,
+             * i.e. the one that can fully cover this subtile of the animation. The earlier palette packing step already
+             * guaranteed this.
+             */
+            std::vector<PaletteMatchResult<Rgba32>> matches =
+                match_or_best(composite_rgba_tile, new_porymap_pals_, extrinsic_transparency_.value(), 1);
+
+            // TODO: ANIM: better error message here
+            if (!matches.at(0).is_covered) {
+                return FormattableError{
+                    "animation '{}' composite subtile '{}' has no covering palette",
+                    FormatParam{anim_name, Style::bold},
+                    FormatParam{tile_idx, Style::bold}};
+            }
+
+            // Convert key frame tile to IndexPixel using matched palette
+            const std::size_t pal_index = matches.at(0).pal_index;
+            const auto &matched_pal = new_porymap_pals_.at(pal_index);
+            const PixelTile<IndexPixel> indexed_key_frame_tile =
+                index_tile_from_color_tile(key_rgba_tile, matched_pal, extrinsic_transparency_.value());
+            const CanonicalPixelTile canonical_key_frame_tile{indexed_key_frame_tile};
+
+            // Place in reserved workspace slot
+            const std::size_t reserved_index = current_offset - TilesPngWorkspace::anim_start_offset();
+            tiles_workspace_->place_anim_tile(reserved_index, canonical_key_frame_tile);
+
+            ++current_offset;
+        }
+
+        // Store offset info for later use
+        anim_offsets[anim_name] = this_anim_offset;
+    }
+
+    // Register all animations with the matcher for keyframe tile detection
+    for (const auto &[anim_name, anim] : anims) {
+        const std::size_t tile_offset = anim_offsets[anim_name];
+
+        // Register with matcher
+        anim_tile_matcher_.register_animation(anim_name, anim, tile_offset, extrinsic_transparency_);
+    }
+
+    return {};
+}
+
+void CompilerTask::pipeline_helper_compile_animations()
+{
+    const auto &source_anims = tileset_.porytiles_component().anims();
+
+    // Early exit if no animations
+    if (source_anims.empty()) {
+        return;
+    }
+
+    for (const auto &[anim_name, source_anim] : source_anims) {
+        // 1. Get the computed tile offset from matcher
+        auto maybe_tile_offset = anim_tile_matcher_.tile_offset_for(anim_name);
+        if (!maybe_tile_offset.has_value()) {
+            panic("animation '" + anim_name + "' not registered in anim_tile_matcher_");
+        }
+        const std::size_t tile_offset = maybe_tile_offset.value();
+
+        // 2. Compute composite frame for per-subtile palette selection
+        const AnimationFrame<Rgba32> composite = source_anim.composite_frame(extrinsic_transparency_.value());
+        const std::size_t tile_count = composite.tile_count();
+
+        // 3. Build per-subtile palette indices (same logic as registration step)
+        std::vector<std::size_t> subtile_pal_indices;
+        subtile_pal_indices.reserve(tile_count);
+
+        for (std::size_t tile_idx = 0; tile_idx < tile_count; ++tile_idx) {
+            const PixelTile<Rgba32> &composite_tile = composite.tile_at(tile_idx);
+
+            std::vector<PaletteMatchResult<Rgba32>> matches =
+                match_or_best(composite_tile, new_porymap_pals_, extrinsic_transparency_.value(), 1);
+
+            if (!matches.at(0).is_covered) {
+                panic(
+                    "animation '" + anim_name + "' subtile " + std::to_string(tile_idx) +
+                    " has no covering palette during compilation");
+            }
+
+            subtile_pal_indices.push_back(matches.at(0).pal_index);
+        }
+
+        // 4. Convert regular frames (key frame not needed in compiled format)
+        Animation<IndexPixel> compiled_anim{anim_name};
+
+        for (const auto &[frame_name, source_frame] : source_anim.frames()) {
+            std::vector<PixelTile<IndexPixel>> frame_index_tiles;
+            frame_index_tiles.reserve(tile_count);
+
+            for (std::size_t tile_idx = 0; tile_idx < tile_count; ++tile_idx) {
+                const PixelTile<Rgba32> &rgba_tile = source_frame.tile_at(tile_idx);
+                const auto &pal = new_porymap_pals_.at(subtile_pal_indices[tile_idx]);
+
+                frame_index_tiles.push_back(
+                    index_tile_from_color_tile(rgba_tile, pal, extrinsic_transparency_.value()));
+            }
+
+            compiled_anim.put_frame(frame_name, AnimationFrame{frame_name, std::move(frame_index_tiles)});
+        }
+
+        // 5. Set params with updated tile_offset/tile_count
+        AnimationParams params = source_anim.params();
+        params.tile_offset(tile_offset);
+        params.tile_count(tile_count);
+        compiled_anim.params(std::move(params));
+
+        // 6. Add to output component (key_frame left as std::nullopt)
+        new_porymap_component_->add_anim(std::move(compiled_anim));
+    }
 }
 
 void CompilerTask::pipeline_helper_emit_no_matching_tile_error(

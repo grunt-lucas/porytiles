@@ -70,9 +70,15 @@ class PackableTile {
         std::size_t index_;
     };
 
-    /*
-     * TODO: add AnimId once we implement anims
+    /**
+     * @brief Identifies a tile created from an animation.
      */
+    struct AnimId {
+        std::string name;
+        std::size_t frame_index;
+        [[nodiscard]] auto operator<=>(const AnimId &) const = default;
+        [[nodiscard]] bool operator==(const AnimId &) const = default;
+    };
 
     /**
      * @brief Identifies a regular input tile.

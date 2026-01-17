@@ -238,6 +238,7 @@ ChainableResult<PalettePacking> PalettePacker::pack_tiles(const PackingParams &p
     regular_tiles.reserve(params.tiles_.size());
     for (std::size_t i = 0; i < params.tiles_.size(); ++i) {
         auto color_set = build_color_set_from_tile(params.tiles_[i], params.color_map_, params.extrinsic_transparency_);
+        // TODO: ANIM: we can pack anim composite tiles in as regular tiles here I think
         regular_tiles.emplace_back(PackableTile::RegularId{i}, color_set);
     }
 
@@ -282,7 +283,9 @@ ChainableResult<PalettePacking> PalettePacker::pack_tiles(const PackingParams &p
                     // For regular tiles, update the tile index to pal index map
                     packing.tile_to_pal_[id.index] = pal_index;
                 }
-                // TODO: impl branch + map setup for AnimId once we have it
+                else if constexpr (std::is_same_v<Id, PackableTile::AnimId>) {
+                    // TODO: ANIM: do we care about anim?
+                }
                 else if constexpr (std::is_same_v<Id, PackableTile::HintId>) {
                     // We don't currently care to store where hints got assigned
                 }

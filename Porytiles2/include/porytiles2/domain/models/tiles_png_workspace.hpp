@@ -265,6 +265,89 @@ class TilesPngWorkspace {
      */
     [[nodiscard]] bool at_capacity() const;
 
+    /*
+     * TODO: these methods below work great when tiles are in ArtifactEditMode::optimize. But what about the
+     * ArtifactEditMode::patch case? Here, we might have "fragmentation", i.e. free spaces that are too small to fit the
+     * contiguous key frame. We won't necessarily be able to reserve space at the start of the workspace, since that
+     * space is probably already taken. It's also possible that the tiles we need are already present, this is a patch
+     * build after all. We should provide some kind of functionality that scans the workspace for the requisite free
+     * space and uses it. This means our anim_end_offset_ variable is probably an over-simplification.
+     */
+
+    /**
+     * @brief Reserves contiguous slots for animation keyframe tiles starting at index 1.
+     *
+     * @details
+     * Animation tiles are placed at the beginning of tiles.png (after the transparent tile 0) to ensure stable offsets
+     * that can be referenced by the generated animation C code. This method reserves a contiguous block of slots for
+     * animation tiles and moves the cursor past the reserved region.
+     *
+     * After calling this method:
+     * - Indices 1 through `anim_tile_count` (inclusive) are reserved for animation tiles
+     * - The cursor is positioned at `anim_tile_count + 1` (first slot after reserved region)
+     * - Regular tile insertions via insert_tile() will not overwrite the reserved region
+     *
+     * @param anim_tile_count Total number of tiles to reserve for animation keyframes
+     * @pre Must be called before any regular tile insertions via insert_tile()
+     * @pre anim_tile_count must be less than capacity - 1 (leaving room for tile 0 and at least one regular tile)
+     */
+    void reserve_anim_slots(std::size_t anim_tile_count);
+
+    /**
+     * @brief Places an animation keyframe tile at a specific reserved index.
+     *
+     * @details
+     * Places a tile in the reserved animation region. The index is an offset within the reserved region, NOT an
+     * absolute index. For example, if animation_tile_count tiles were reserved:
+     * - place_animation_tile(0, tile) places at absolute index 1
+     * - place_animation_tile(1, tile) places at absolute index 2
+     * - etc.
+     *
+     * @param reserved_index The index within the reserved animation region (0-based)
+     * @param tile The tile to place at the specified position
+     * @pre reserve_animation_slots() must have been called first
+     * @pre reserved_index must be less than the reserved count
+     */
+    void place_anim_tile(std::size_t reserved_index, const CanonicalPixelTile<IndexPixel> &tile);
+
+    /**
+     * @brief Returns the starting absolute index for animation tiles (always 1).
+     *
+     * @details
+     * By convention, animation tiles always start at index 1 (after the transparent tile 0). This static method makes
+     * this convention explicit and provides a named constant for code clarity.
+     *
+     * @return 1 (the animation start index)
+     */
+    [[nodiscard]] static constexpr std::size_t anim_start_offset()
+    {
+        return 1;
+    }
+
+    /**
+     * @brief Returns the ending absolute index for animation tiles (exclusive).
+     *
+     * @details
+     * Returns the index just past the last reserved animation slot. If no animation slots were reserved, returns 1
+     * (same as animation_start_offset()). Regular tile insertion begins at this index.
+     *
+     * @return The first index after the animation region
+     */
+    [[nodiscard]] std::size_t anim_end_offset() const
+    {
+        return anim_end_offset_;
+    }
+
+    /**
+     * @brief Returns whether animation slots have been reserved.
+     *
+     * @return True if reserve_animation_slots() has been called with a non-zero count
+     */
+    [[nodiscard]] bool has_anim_slots() const
+    {
+        return anim_end_offset_ > 1;
+    }
+
     /**
      * @brief Returns the maximum number of tiles this workspace can hold.
      *
@@ -284,6 +367,7 @@ class TilesPngWorkspace {
     std::map<PixelTile<IndexPixel>, std::vector<std::size_t>> canonical_forms_;
     std::size_t cursor_;
     std::size_t capacity_;
+    std::size_t anim_end_offset_{1}; // First index after anim region (defaults to 1, i.e. no animations)
 };
 
 } // namespace porytiles2

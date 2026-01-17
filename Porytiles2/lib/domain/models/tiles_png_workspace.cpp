@@ -242,4 +242,63 @@ bool TilesPngWorkspace::at_capacity() const
     return cursor_ == capacity_;
 }
 
+void TilesPngWorkspace::reserve_anim_slots(std::size_t anim_tile_count)
+{
+    const PlainTextFormatter formatter{};
+
+    // Precondition: must be called before any regular tile insertions
+    // Cursor should be at 1 (initial position after reserved tile 0)
+    if (cursor_ != 1) {
+        panic("reserve_animation_slots must be called before any regular tile insertions");
+    }
+
+    // Precondition: anim_tile_count must fit in the workspace
+    // Need room for: tile 0 (transparent) + anim_tile_count + at least one regular tile
+    if (anim_tile_count >= capacity_ - 1) {
+        const auto msg = formatter.format(
+            "anim_tile_count ({}) must be less than capacity - 1 ({})", anim_tile_count, capacity_ - 1);
+        panic(msg);
+    }
+
+    // Animation tiles occupy indices 1 through anim_tile_count (inclusive)
+    // So animation_end_offset_ is anim_tile_count + 1 (first index after animation region)
+    anim_end_offset_ = anim_tile_count + 1;
+
+    // Move cursor past the reserved animation region
+    cursor_ = anim_end_offset_;
+}
+
+void TilesPngWorkspace::place_anim_tile(std::size_t reserved_index, const CanonicalPixelTile<IndexPixel> &tile)
+{
+    const PlainTextFormatter formatter{};
+
+    // Precondition: animation slots must have been reserved
+    if (anim_end_offset_ <= 1) {
+        panic("place_animation_tile called but no animation slots were reserved");
+    }
+
+    // reserved_index is 0-based within the reserved region
+    // So absolute index is reserved_index + animation_start_offset() = reserved_index + 1
+    const std::size_t absolute_index = reserved_index + anim_start_offset();
+
+    // Precondition: reserved_index must be within the reserved region
+    if (absolute_index >= anim_end_offset_) {
+        const auto msg = formatter.format(
+            "reserved_index ({}) is out of bounds for animation region (max: {})",
+            reserved_index,
+            anim_end_offset_ - anim_start_offset() - 1);
+        panic(msg);
+    }
+
+    // Place the tile at the absolute index
+    tiles_[absolute_index] = tile;
+
+    // Add to canonical_forms_ map for deduplication support
+    if (tile.is_transparent()) {
+        panic("illegal transparent key frame tile");
+    }
+    const PixelTile<IndexPixel> &base_tile = tile;
+    canonical_forms_[base_tile].push_back(absolute_index);
+}
+
 } // namespace porytiles2

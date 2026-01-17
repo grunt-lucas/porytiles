@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <ranges>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -162,6 +163,62 @@ class Animation {
     void put_frame(const std::string &name, AnimationFrame<PixelType> frame)
     {
         frames_.emplace(name, std::move(frame));
+    }
+
+    /**
+     * @brief Returns the "composite" frame for this animation.
+     *
+     * @details
+     * The "composite" frame for an Animation is a special, artificially constructed frame where each constituent
+     * subtile contains all colors across all AnimationFrames (including the key frame) for the given subtile index.
+     * This is essential: since animation tiles are dynamic but the palette index is fixed, the palette packer needs to
+     * know all possible colors that could appear in a given 8x8 animation tile region at any point in the animation.
+     * The composite frame's pixel arrangement is arbitrary and shouldn't be relied upon for meaningful information.
+     *
+     * @param extrinsic_transparency The extrinsic transparency color to use when filtering pixels
+     * @pre has_key_frame() must return true
+     * @return A composite frame for this Animation
+     *
+     * @todo This method currently only supports extrinsic transparency (Rgba32). Consider extending to support
+     * intrinsic transparency (IndexPixel) if needed in the future.
+     */
+    [[nodiscard]] AnimationFrame<PixelType> composite_frame(const PixelType &extrinsic_transparency) const
+        requires requires(const PixelType &p) { p.is_transparent(p); }
+    {
+        if (!has_key_frame()) {
+            panic("composite_frame() called on Animation with no key frame");
+        }
+
+        AnimationFrame<PixelType> composite{"composite"};
+        const std::size_t tile_count = key_frame().tile_count();
+
+        for (std::size_t tile_idx = 0; tile_idx < tile_count; ++tile_idx) {
+            std::set<PixelType> all_colors;
+
+            // Collect from key frame
+            auto key_colors = key_frame().tile_at(tile_idx).unique_nontransparent_colors(extrinsic_transparency);
+            all_colors.merge(key_colors);
+
+            // Collect from regular frames
+            for (const auto &[name, frame] : frames_) {
+                auto colors = frame.tile_at(tile_idx).unique_nontransparent_colors(extrinsic_transparency);
+                all_colors.merge(colors);
+            }
+
+            // Create composite tile with all colors packed arbitrarily, first pixel is guaranteed extrinsic_transparent
+            PixelTile<PixelType> composite_tile{extrinsic_transparency};
+            std::size_t pix_idx = 1;
+            for (const auto &color : all_colors) {
+                if (pix_idx >= tile::size_pix) {
+                    break;
+                }
+                composite_tile.set(pix_idx++, color);
+            }
+
+            composite.add_tile(std::move(composite_tile));
+        }
+
+        return composite;
     }
 
   private:
