@@ -17,10 +17,10 @@ namespace porytiles2 {
 ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_name) const
 {
     // Step 1: Validate tileset exists and isn't already Porytiles-managed
-    if (!tileset_metadata_provider_->exists(tileset_name)) {
+    if (!metadata_provider_->exists(tileset_name)) {
         return FormattableError{"tileset '{}' does not exist", FormatParam{tileset_name, Style::bold}};
     }
-    if (porytiles_tileset_manager_->is_porytiles_managed(tileset_name)) {
+    if (tileset_manager_->is_porytiles_managed(tileset_name)) {
         return FormattableError{"tileset '{}' is already Porytiles-managed", FormatParam{tileset_name, Style::bold}};
     }
 
@@ -58,7 +58,7 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
      * state. If it does fail for extraordinary reasons, we present a helpful message to users so they can manually
      * recover.
      */
-    if (const auto persist_state_result = porytiles_tileset_manager_->persist_managed_state(tileset_name);
+    if (const auto persist_state_result = tileset_manager_->persist_managed_state(tileset_name);
         !persist_state_result.has_value()) {
         // TODO: add more details to this error message
         return ChainableResult<void>{
