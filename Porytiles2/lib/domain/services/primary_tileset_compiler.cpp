@@ -466,21 +466,19 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step5_assemble_output()
 
 std::optional<TilemapEntry> CompilerTask::pipeline_helper_try_reuse_porymap_tile(std::size_t tile_index)
 {
-    /*
-     * TODO: this is wrong. E.g. user could be asking for a tiles:locked build but have added new metatiles. We need to
-     * account for adding or removing metatiles, since that is still allowed during a tiles/pals locked build.
-     */
     // Preconditions for non-optimize mode
     assert_or_panic(tile_index < porytiles_pixel_rgba_.size(), "tile_index out of bounds for porytiles_pixel_rgba_");
-    assert_or_panic(tile_index < porymap_pixel_rgba_.size(), "tile_index out of bounds for porymap_pixel_rgba_");
     assert_or_panic(
-        tile_index < porytiles_canonical_pixel_rgba_.size(),
-        "tile_index out of bounds for porytiles_canonical_pixel_rgba_");
+        porymap_pixel_rgba_.size() == porymap_canonical_pixel_rgba_.size(),
+        "porymap_pixel_rgba_.size() != porymap_canonical_pixel_rgba_.size()");
     assert_or_panic(
-        tile_index < porymap_canonical_pixel_rgba_.size(),
-        "tile_index out of bounds for porymap_canonical_pixel_rgba_");
-    assert_or_panic(
-        tile_index < porymap_tilemap_entries_.size(), "tile_index out of bounds for porymap_tilemap_entries_");
+        porymap_canonical_pixel_rgba_.size() == porymap_tilemap_entries_.size(),
+        "porymap_canonical_pixel_rgba_.size() != porymap_tilemap_entries_.size()");
+
+    if (tile_index >= porymap_pixel_rgba_.size()) {
+        // tile_index is out-of-range to reuse Porymap assets, so just return nullopt
+        return std::nullopt;
+    }
 
     const auto &porytiles_tile = porytiles_pixel_rgba_[tile_index];
     const auto &porymap_tile = porymap_pixel_rgba_[tile_index];
