@@ -17,8 +17,8 @@ ChainableResult<void> CreatePrimaryTileset::create(const std::string &name) cons
             "cannot create tileset '{}': a tileset with this name already exists", FormatParam{name, Style::bold}};
     }
 
-    // Step 2: Create blank PorytilesTilesetComponent via PrimaryTilesetCreator
-    auto porytiles_component_result = creator_->create_porytiles_component(name);
+    // Step 2: Create a default PorytilesTilesetComponent via PrimaryTilesetCreator
+    auto porytiles_component_result = creator_->create_sample_porytiles_component(name);
     if (!porytiles_component_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{"failed to create PorytilesTilesetComponent for '{}'", FormatParam{name, Style::bold}},
@@ -30,7 +30,7 @@ ChainableResult<void> CreatePrimaryTileset::create(const std::string &name) cons
     auto porymap_component = std::make_unique<PorymapTilesetComponent>();
     auto tileset = std::make_unique<Tileset>(name, std::move(porytiles_component), std::move(porymap_component));
 
-    // Step 4: Compile (generates minimal valid Porymap assets from the empty Porytiles component)
+    // Step 4: Compile (generates minimal valid Porymap assets from the minimal Porytiles component)
     auto compile_result = compiler_->compile(*tileset);
     if (!compile_result.has_value()) {
         return ChainableResult<void>{

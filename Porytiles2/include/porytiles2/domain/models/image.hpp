@@ -24,10 +24,22 @@ class Image {
   public:
     Image() : Image(0, 0) {}
 
-    explicit Image(std::size_t width, std::size_t height) : pixels_(width * height), width_{width}, height_{height} {}
+    Image(std::size_t width, std::size_t height) : pixels_(width * height), width_{width}, height_{height} {}
 
     Image(std::size_t width, std::size_t height, std::vector<Rgba32> palette)
         : pixels_(width * height), palette_(std::move(palette)), width_{width}, height_{height}
+    {
+    }
+
+    /**
+     * @brief Constructs an image with all pixels set to a specified fill value.
+     *
+     * @param width The width of the image in pixels.
+     * @param height The height of the image in pixels.
+     * @param fill_color The pixel value to fill the entire image with.
+     */
+    Image(std::size_t width, std::size_t height, PixelType fill_color)
+        : pixels_(width * height, fill_color), width_{width}, height_{height}
     {
     }
 

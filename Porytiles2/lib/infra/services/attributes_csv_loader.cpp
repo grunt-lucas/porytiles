@@ -88,7 +88,7 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
         std::ifstream stream{path};
         std::string line_buf{};
         while (std::getline(stream, line_buf)) {
-            trim_line_ending(line_buf);
+            std::ignore = trim_line_ending(line_buf);
             lines.push_back(line_buf);
         }
     }

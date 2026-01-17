@@ -63,6 +63,12 @@ class CreateTilesetCommand final : public Command {
         // Manually create other services (not yet using DI for these)
         std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter);
 
+        /*
+         * TODO: below we're passing hardcoded "." for project root and "include/" for structural project files. At
+         * some point we'll want the CLI tool to provide a way for users to change these values, in case:
+         * - they are not running the CLI tool from the project root directory
+         * - they moved fieldmap.h, metatile_behaviors.h, etc to a different location
+         */
         std::filesystem::path project_root{"."};
         std::filesystem::path fieldmap_header_root_relative{"include/fieldmap.h"};
         std::filesystem::path behaviors_header_root_relative{"include/constants/metatile_behaviors.h"};
@@ -135,7 +141,7 @@ class CreateTilesetCommand final : public Command {
             diag.get()};
 
         // Setup creator and compiler
-        PrimaryTilesetCreator creator{};
+        PrimaryTilesetCreator creator{&config, &behavior_map_provider};
         PrimaryTilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
 
         // Create the use case
