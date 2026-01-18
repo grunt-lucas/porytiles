@@ -59,6 +59,25 @@ class PorytilesTilesetManager {
      * @return a ChainableResult indicating success or containing error details
      */
     [[nodiscard]] virtual ChainableResult<void> persist_managed_new(const std::string &tileset_name) const = 0;
+
+    /**
+     * @brief Wires animation code for a tileset that already has its manifest persisted.
+     *
+     * @details
+     * Called after compilation when a tileset has animations. Performs:
+     * 1. Adds #include for generated_anim_code.h in tileset_anims.c
+     * 2. Adds function declaration in tileset_anims.h
+     * 3. Updates .callback field in headers.h
+     *
+     * Idempotent - safe to call multiple times.
+     *
+     * @param tileset_name The tileset name (e.g., "gTileset_MyTileset")
+     * @param is_secondary True for secondary tilesets, false for primary
+     * @pre tileset_name must be an existing Porytiles-managed tileset
+     * @return ChainableResult indicating success or error details
+     */
+    [[nodiscard]] virtual ChainableResult<void>
+    wire_anim_code(const std::string &tileset_name, bool is_secondary) const = 0;
 };
 
 } // namespace porytiles2

@@ -28,7 +28,8 @@ using namespace porytiles2;
     for (std::size_t frame_idx = 0; frame_idx < params.frame_names().size(); ++frame_idx) {
         const auto &frame_name = params.frame_names()[frame_idx];
         const std::string frame_file =
-            (tileset_path_from_project_root / "anim" / anim_name / std::format("{}.4bpp", frame_name)).string();
+            (tileset_path_from_project_root / "porytiles_bin" / "anim" / anim_name / std::format("{}.4bpp", frame_name))
+                .string();
 
         const auto statement = std::format(
             "const u16 gTilesetAnims_{}{}_{}_Frame{}[] = INCBIN_U16(\"{}\");\n",

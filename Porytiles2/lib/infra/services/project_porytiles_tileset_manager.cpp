@@ -6,6 +6,7 @@
 #include "nlohmann/json.hpp"
 
 #include "porytiles2/domain/models/palette.hpp"
+#include "porytiles2/utilities/string_utils.hpp"
 #include "porytiles2/xcut/config/config_scope_type.hpp"
 
 namespace {
@@ -212,6 +213,33 @@ ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_new(const 
 
     // Step 5: Skip callback wiring for new tilesets (no animations to set up)
     // The headers.h entry was already created with NULL callback
+
+    return {};
+}
+
+ChainableResult<void>
+ProjectPorytilesTilesetManager::wire_anim_code(const std::string &tileset_name, bool is_secondary) const
+{
+    // Step 1: Wire include in tileset_anims.c AND declaration in tileset_anims.h
+    auto wire_result = tileset_anims_modifier_->wire_include_for_tileset(tileset_name, is_secondary);
+    if (!wire_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{
+                "failed to wire tileset_anims include/declaration for '{}'", FormatParam{tileset_name, Style::bold}},
+            wire_result};
+    }
+
+    // Step 2: Generate callback function name
+    const std::string shorthand = extract_tileset_shorthand(tileset_name);
+    const std::string callback_name = "InitTilesetAnim_PorytilesManaged_" + shorthand;
+
+    // Step 3: Update callback field in headers.h
+    auto callback_result = metadata_writer_->update_callback(tileset_name, callback_name);
+    if (!callback_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{"failed to update callback in headers.h for '{}'", FormatParam{tileset_name, Style::bold}},
+            callback_result};
+    }
 
     return {};
 }
