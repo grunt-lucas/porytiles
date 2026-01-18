@@ -104,9 +104,20 @@ class TilesetAnimsModifierTestBase : public ::testing::Test {
         std::filesystem::remove_all(temp_dir_);
     }
 
-    [[nodiscard]] std::filesystem::path tileset_anims_path() const
+    [[nodiscard]] std::filesystem::path tileset_anims_c_path() const
     {
         return temp_dir_ / "src" / "tileset_anims.c";
+    }
+
+    [[nodiscard]] std::filesystem::path tileset_anims_h_path() const
+    {
+        return temp_dir_ / "include" / "tileset_anims.h";
+    }
+
+    // Backwards compatibility alias
+    [[nodiscard]] std::filesystem::path tileset_anims_path() const
+    {
+        return tileset_anims_c_path();
     }
 
     std::filesystem::path temp_dir_;
@@ -135,9 +146,7 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, WiresIncludeForPrimaryTileset)
     const std::string content = read_file_contents(tileset_anims_path());
 
     // Verify the include directive was added
-    EXPECT_NE(
-        content.find("#include \"data/tilesets/primary/general/porytiles_bin/include/generated_anim_code.h\""),
-        std::string::npos)
+    EXPECT_NE(content.find("#include \"data/tilesets/primary/general/generated_anim_code.h\""), std::string::npos)
         << "Include directive for gTileset_General not found in tileset_anims.c";
 }
 
@@ -149,9 +158,7 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, WiresIncludeForSecondaryTileset)
     const std::string content = read_file_contents(tileset_anims_path());
 
     // Verify the include directive was added with secondary path
-    EXPECT_NE(
-        content.find("#include \"data/tilesets/secondary/rustboro/porytiles_bin/include/generated_anim_code.h\""),
-        std::string::npos)
+    EXPECT_NE(content.find("#include \"data/tilesets/secondary/rustboro/generated_anim_code.h\""), std::string::npos)
         << "Include directive for gTileset_Rustboro not found in tileset_anims.c";
 }
 
@@ -164,7 +171,7 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, AppendsAtBottomOfFile)
 
     // Find positions of various elements
     const std::size_t new_include_pos =
-        content.find("#include \"data/tilesets/primary/general/porytiles_bin/include/generated_anim_code.h\"");
+        content.find("#include \"data/tilesets/primary/general/generated_anim_code.h\"");
     const std::size_t porytiles_comment_pos = content.find("// [Porytiles] Auto-generated include. Do not remove.");
 
     ASSERT_NE(new_include_pos, std::string::npos) << "New include not found";
@@ -195,8 +202,7 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, IsIdempotent_SkipsExistingInclude)
     const std::string content = read_file_contents(tileset_anims_path());
 
     // Count occurrences - should only be 1
-    const std::size_t count =
-        count_occurrences(content, "data/tilesets/primary/general/porytiles_bin/include/generated_anim_code.h");
+    const std::size_t count = count_occurrences(content, "data/tilesets/primary/general/generated_anim_code.h");
     EXPECT_EQ(count, 1) << "Include directive should only appear once (idempotency)";
 }
 
@@ -208,8 +214,7 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, RemovesIncludeAndComment)
 
     // Verify both include and comment are there
     std::string content = read_file_contents(tileset_anims_path());
-    ASSERT_NE(
-        content.find("data/tilesets/primary/general/porytiles_bin/include/generated_anim_code.h"), std::string::npos);
+    ASSERT_NE(content.find("data/tilesets/primary/general/generated_anim_code.h"), std::string::npos);
     ASSERT_NE(content.find("// [Porytiles] Auto-generated include. Do not remove."), std::string::npos);
 
     // Now remove it
@@ -218,8 +223,7 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, RemovesIncludeAndComment)
 
     // Verify both include and comment are gone
     content = read_file_contents(tileset_anims_path());
-    EXPECT_EQ(
-        content.find("data/tilesets/primary/general/porytiles_bin/include/generated_anim_code.h"), std::string::npos)
+    EXPECT_EQ(content.find("data/tilesets/primary/general/generated_anim_code.h"), std::string::npos)
         << "Include directive should have been removed";
     EXPECT_EQ(content.find("// [Porytiles] Auto-generated include. Do not remove."), std::string::npos)
         << "Porytiles comment should have been removed";
@@ -263,9 +267,7 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, HandlesSnakeCaseConversion)
 
     // Verify the path uses snake_case
     EXPECT_NE(
-        content.find(
-            "#include \"data/tilesets/secondary/battle_frontier/porytiles_bin/include/generated_anim_code.h\""),
-        std::string::npos)
+        content.find("#include \"data/tilesets/secondary/battle_frontier/generated_anim_code.h\""), std::string::npos)
         << "snake_case path conversion not working correctly";
 }
 
@@ -279,4 +281,112 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, RemoveIsIdempotent_SkipsMissingInc
     // Verify file wasn't corrupted
     const std::string content = read_file_contents(tileset_anims_path());
     EXPECT_NE(content.find("#include \"global.h\""), std::string::npos) << "File content was corrupted";
+}
+
+// ============================================================================
+// Header file declaration tests
+// ============================================================================
+
+TEST_F(TilesetAnimsModifierTest_VanillaStock, WiresDeclarationToHeaderFile)
+{
+    auto result = modifier_->wire_include_for_tileset("gTileset_General", /*is_secondary=*/false);
+    ASSERT_TRUE(result.has_value()) << "wire_include_for_tileset failed";
+
+    const std::string h_content = read_file_contents(tileset_anims_h_path());
+
+    // Verify the declaration was added with PorytilesManaged prefix
+    EXPECT_NE(h_content.find("void InitTilesetAnim_PorytilesManaged_General(void);"), std::string::npos)
+        << "Declaration for gTileset_General not found in tileset_anims.h";
+
+    // Verify the Porytiles comment was added
+    EXPECT_NE(h_content.find("// [Porytiles] Auto-generated declaration. Do not remove."), std::string::npos)
+        << "Porytiles declaration comment not found in tileset_anims.h";
+}
+
+TEST_F(TilesetAnimsModifierTest_VanillaStock, DeclarationIsInsertedBeforeEndif)
+{
+    auto result = modifier_->wire_include_for_tileset("gTileset_General", /*is_secondary=*/false);
+    ASSERT_TRUE(result.has_value()) << "wire_include_for_tileset failed";
+
+    const std::string h_content = read_file_contents(tileset_anims_h_path());
+
+    const std::size_t decl_pos = h_content.find("InitTilesetAnim_PorytilesManaged_General");
+    const std::size_t endif_pos = h_content.find("#endif");
+
+    ASSERT_NE(decl_pos, std::string::npos) << "Declaration not found";
+    ASSERT_NE(endif_pos, std::string::npos) << "#endif not found";
+
+    // Declaration should appear before #endif
+    EXPECT_LT(decl_pos, endif_pos) << "Declaration should appear before #endif guard";
+}
+
+TEST_F(TilesetAnimsModifierTest_VanillaStock, DeclarationPreservesPascalCase)
+{
+    // BattleFrontier should remain PascalCase in the declaration (not snake_case)
+    auto result = modifier_->wire_include_for_tileset("gTileset_BattleFrontier", /*is_secondary=*/true);
+    ASSERT_TRUE(result.has_value()) << "wire_include_for_tileset failed";
+
+    const std::string h_content = read_file_contents(tileset_anims_h_path());
+
+    // Declaration should use PascalCase shorthand
+    EXPECT_NE(h_content.find("void InitTilesetAnim_PorytilesManaged_BattleFrontier(void);"), std::string::npos)
+        << "Declaration should preserve PascalCase shorthand";
+}
+
+TEST_F(TilesetAnimsModifierTest_VanillaStock, RemovesDeclarationFromHeaderFile)
+{
+    // First wire the include and declaration
+    auto wire_result = modifier_->wire_include_for_tileset("gTileset_General", /*is_secondary=*/false);
+    ASSERT_TRUE(wire_result.has_value()) << "wire_include_for_tileset failed";
+
+    // Verify declaration is there
+    std::string h_content = read_file_contents(tileset_anims_h_path());
+    ASSERT_NE(h_content.find("InitTilesetAnim_PorytilesManaged_General"), std::string::npos);
+
+    // Now remove it
+    auto remove_result = modifier_->remove_include_for_tileset("gTileset_General", /*is_secondary=*/false);
+    ASSERT_TRUE(remove_result.has_value()) << "remove_include_for_tileset failed";
+
+    // Verify declaration is gone
+    h_content = read_file_contents(tileset_anims_h_path());
+    EXPECT_EQ(h_content.find("InitTilesetAnim_PorytilesManaged_General"), std::string::npos)
+        << "Declaration should have been removed from tileset_anims.h";
+}
+
+TEST_F(TilesetAnimsModifierTest_VanillaStock, HeaderFilePreservesExistingDeclarations)
+{
+    // Get original content
+    const std::string original_h_content = read_file_contents(tileset_anims_h_path());
+    ASSERT_FALSE(original_h_content.empty()) << "Original tileset_anims.h is empty";
+
+    // Wire include
+    auto result = modifier_->wire_include_for_tileset("gTileset_General", /*is_secondary=*/false);
+    ASSERT_TRUE(result.has_value()) << "wire_include_for_tileset failed";
+
+    const std::string new_h_content = read_file_contents(tileset_anims_h_path());
+
+    // Verify original declarations are still present
+    EXPECT_NE(new_h_content.find("void InitTilesetAnim_General(void);"), std::string::npos)
+        << "Original InitTilesetAnim_General declaration was removed";
+    EXPECT_NE(new_h_content.find("void InitTilesetAnimations(void);"), std::string::npos)
+        << "Original InitTilesetAnimations declaration was removed";
+    EXPECT_NE(new_h_content.find("#ifndef GUARD_TILESET_ANIMS_H"), std::string::npos)
+        << "Header guard was removed";
+}
+
+TEST_F(TilesetAnimsModifierTest_VanillaStock, DeclarationIdempotency)
+{
+    // Wire include first time
+    auto result1 = modifier_->wire_include_for_tileset("gTileset_General", /*is_secondary=*/false);
+    ASSERT_TRUE(result1.has_value()) << "First wire_include_for_tileset failed";
+
+    // Wire include second time (should be idempotent)
+    auto result2 = modifier_->wire_include_for_tileset("gTileset_General", /*is_secondary=*/false);
+    ASSERT_TRUE(result2.has_value()) << "Second wire_include_for_tileset should succeed (idempotent)";
+
+    const std::string h_content = read_file_contents(tileset_anims_h_path());
+
+    // Count occurrences - should only be 1
+    const std::size_t count = count_occurrences(h_content, "InitTilesetAnim_PorytilesManaged_General");
+    EXPECT_EQ(count, 1) << "Declaration should only appear once (idempotency)";
 }

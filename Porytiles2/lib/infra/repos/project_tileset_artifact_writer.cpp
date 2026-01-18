@@ -477,8 +477,10 @@ ProjectTilesetArtifactWriter::write_porymap_anim_params(const ArtifactKey &dest_
      * To fix this here, we need to figure out a way to pass the writer the frame paths. The best way to do this is to
      * refactor the artifact writer so that it writes animations in one shot. This refactor will be similar to the
      * refactor we did for the artifact reader, which allowed it to read animations in one shot.
+     *
+     * TODO: and yep, we're now hitting this issue. Since we moved where the anim params are stored, this hack is now
+     * broken. It writes broken paths into the generated anim code.
      */
-    // Keys are now relative to project_root, so no need to relativize
     const auto tileset_root_path = std::filesystem::path{dest_key.key()}.parent_path().parent_path();
 
     // TODO: determine if primary or secondary tileset from config
