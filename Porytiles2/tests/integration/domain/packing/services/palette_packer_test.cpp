@@ -171,7 +171,10 @@ TEST(PalettePackerIntegration, SingleTileOneColor_PacksIntoOnePalette)
     PalettePacker packer{&strategy, &formatter, &diag};
 
     std::vector<PixelTile<Rgba32>> tiles{make_solid_tile(rgba_red)};
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    for (const auto &tile : tiles) {
+        color_map.add_tile(tile, rgba_magenta);
+    }
 
     PackingParams params{};
     params.tiles_ = tiles;
@@ -206,7 +209,10 @@ TEST(PalettePackerIntegration, SingleTileMaxColors_PacksIntoOnePalette)
     // Generate 15 distinct colors (max per palette, excluding transparency slot)
     const auto distinct_colors = generate_distinct_colors(15);
     std::vector<PixelTile<Rgba32>> tiles{make_tile_with_colors(distinct_colors)};
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    for (const auto &tile : tiles) {
+        color_map.add_tile(tile, rgba_magenta);
+    }
 
     PackingParams params{};
     params.tiles_ = tiles;
@@ -243,7 +249,10 @@ TEST(PalettePackerIntegration, TwoTilesIdenticalColors_SharePalette)
 
     std::vector<PixelTile<Rgba32>> tiles{
         make_tile_with_colors({rgba_red, rgba_blue}), make_tile_with_colors({rgba_red, rgba_blue})};
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    for (const auto &tile : tiles) {
+        color_map.add_tile(tile, rgba_magenta);
+    }
 
     PackingParams params{};
     params.tiles_ = tiles;
@@ -280,7 +289,10 @@ TEST(PalettePackerIntegration, TwoTilesDisjointColorsFitTogether_PacksSuccessful
     colors_b.erase(colors_b.begin(), colors_b.begin() + 7);
 
     std::vector<PixelTile<Rgba32>> tiles{make_tile_with_colors(colors_a), make_tile_with_colors(colors_b)};
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    for (const auto &tile : tiles) {
+        color_map.add_tile(tile, rgba_magenta);
+    }
 
     PackingParams params{};
     params.tiles_ = tiles;
@@ -332,7 +344,10 @@ TEST(PalettePackerIntegration, NoAvailablePalettes_Fails)
     PalettePacker packer{&strategy, &formatter, &diag};
 
     std::vector<PixelTile<Rgba32>> tiles{make_solid_tile(rgba_red)};
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    for (const auto &tile : tiles) {
+        color_map.add_tile(tile, rgba_magenta);
+    }
 
     PackingParams params{};
     params.tiles_ = tiles;
@@ -375,7 +390,10 @@ TEST(PalettePackerIntegration, AllPalettesNeeded_Success)
         tiles.push_back(make_tile_with_colors(tile_colors));
     }
 
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    for (const auto &tile : tiles) {
+        color_map.add_tile(tile, rgba_magenta);
+    }
 
     PackingParams params{};
     params.tiles_ = tiles;
@@ -435,7 +453,10 @@ TEST(PalettePackerIntegration, AlmostFullPrefilledPalette_TilesGoElsewhere)
     // Slots 14-15 are wildcards
 
     // Create ColorIndexMap from tiles, then add prefilled palette colors
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    for (const auto &tile : tiles) {
+        color_map.add_tile(tile, rgba_magenta);
+    }
     color_map.add_pal(prefilled_pal, rgba_magenta);
 
     std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> prefilled_pals{};
@@ -484,7 +505,10 @@ TEST(PalettePackerIntegration, PartiallyPrefilledPalette_TileCanMerge)
     std::vector<PixelTile<Rgba32>> tiles{make_tile_with_colors({rgba_red, rgba_blue, rgba_purple, rgba_lime})};
 
     // Create ColorIndexMap from tiles, then add prefilled palette colors
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    for (const auto &tile : tiles) {
+        color_map.add_tile(tile, rgba_magenta);
+    }
     color_map.add_pal(prefilled_pal, rgba_magenta);
 
     PackingParams params{};
@@ -547,7 +571,10 @@ TEST(PalettePackerIntegration, OutOfBandPrefilledPalette_PrefilledShouldNotBeUse
     std::vector<PixelTile<Rgba32>> tiles{make_tile_with_colors({rgba_red, rgba_blue, rgba_purple, rgba_lime})};
 
     // Create ColorIndexMap from tiles, then add prefilled palette colors
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    for (const auto &tile : tiles) {
+        color_map.add_tile(tile, rgba_magenta);
+    }
     color_map.add_pal(prefilled_pal, rgba_magenta);
 
     PackingParams params{};
@@ -604,7 +631,10 @@ TEST(PalettePackerIntegration, PrefilledPaletteWithDuplicateColors_CapacityCorre
     std::vector<PixelTile<Rgba32>> tiles{make_solid_tile(new_color)};
 
     // Create ColorIndexMap from tiles, then add prefilled palette colors
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    for (const auto &tile : tiles) {
+        color_map.add_tile(tile, rgba_magenta);
+    }
     color_map.add_pal(prefilled_pal, rgba_magenta);
 
     PackingParams params{};
@@ -651,7 +681,10 @@ TEST(PalettePackerIntegration, TransparentPixelsIgnored_OnlyNonTransparentPacked
         pixels[i] = rgba_red; // Non-transparent
     }
     std::vector<PixelTile<Rgba32>> tiles{PixelTile<Rgba32>{pixels}};
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    for (const auto &tile : tiles) {
+        color_map.add_tile(tile, rgba_magenta);
+    }
 
     PackingParams params{};
     params.tiles_ = tiles;

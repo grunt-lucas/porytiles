@@ -1,5 +1,7 @@
 #include <gtest/gtest.h>
 
+#include "porytiles2/domain/models/animation.hpp"
+#include "porytiles2/domain/models/animation_frame.hpp"
 #include "porytiles2/domain/models/color_index.hpp"
 #include "porytiles2/domain/models/color_index_map.hpp"
 #include "porytiles2/domain/models/palette.hpp"
@@ -15,10 +17,8 @@ TEST(ColorIndexMapTests, DefaultConstructedMapShouldBeEmpty)
     EXPECT_TRUE(map.empty());
 }
 
-TEST(ColorIndexMapTests, ConstructorShouldBuildBidirectionalMapping)
+TEST(ColorIndexMapTests, AddTileShouldBuildBidirectionalMapping)
 {
-    std::vector<PixelTile<Rgba32>> tiles;
-
     // Create a tile with 3 unique non-transparent colors
     PixelTile<Rgba32> tile{};
     tile.set(0, Rgba32{255, 0, 0}); // red
@@ -27,9 +27,8 @@ TEST(ColorIndexMapTests, ConstructorShouldBuildBidirectionalMapping)
     tile.set(3, Rgba32{255, 0, 0}); // red (duplicate)
     // Rest remain default (transparent)
 
-    tiles.push_back(tile);
-
-    ColorIndexMap<Rgba32> map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> map{};
+    map.add_tile(tile, rgba_magenta);
 
     // Should have 3 unique colors
     EXPECT_EQ(3, map.size());
@@ -37,16 +36,13 @@ TEST(ColorIndexMapTests, ConstructorShouldBuildBidirectionalMapping)
 
 TEST(ColorIndexMapTests, ForwardLookupShouldMapColorToIndex)
 {
-    std::vector<PixelTile<Rgba32>> tiles;
-
     PixelTile<Rgba32> tile{};
     tile.set(0, Rgba32{255, 0, 0}); // red
     tile.set(1, Rgba32{0, 255, 0}); // green
     tile.set(2, Rgba32{0, 0, 255}); // blue
 
-    tiles.push_back(tile);
-
-    ColorIndexMap<Rgba32> map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> map{};
+    map.add_tile(tile, rgba_magenta);
 
     // Each color should have an index
     auto red_index = map.index_at_color(Rgba32{255, 0, 0});
@@ -70,16 +66,13 @@ TEST(ColorIndexMapTests, ForwardLookupShouldMapColorToIndex)
 
 TEST(ColorIndexMapTests, ReverseLookupShouldMapIndexToColor)
 {
-    std::vector<PixelTile<Rgba32>> tiles;
-
     PixelTile<Rgba32> tile{};
     tile.set(0, Rgba32{255, 0, 0}); // red
     tile.set(1, Rgba32{0, 255, 0}); // green
     tile.set(2, Rgba32{0, 0, 255}); // blue
 
-    tiles.push_back(tile);
-
-    ColorIndexMap<Rgba32> map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> map{};
+    map.add_tile(tile, rgba_magenta);
 
     // Each index should have a color
     auto color_at_0 = map.color_at_index(ColorIndex{0});
@@ -107,16 +100,13 @@ TEST(ColorIndexMapTests, ReverseLookupShouldMapIndexToColor)
 
 TEST(ColorIndexMapTests, BidirectionalLookupShouldBeConsistent)
 {
-    std::vector<PixelTile<Rgba32>> tiles;
-
     PixelTile<Rgba32> tile{};
     tile.set(0, Rgba32{255, 0, 0}); // red
     tile.set(1, Rgba32{0, 255, 0}); // green
     tile.set(2, Rgba32{0, 0, 255}); // blue
 
-    tiles.push_back(tile);
-
-    ColorIndexMap<Rgba32> map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> map{};
+    map.add_tile(tile, rgba_magenta);
 
     const Rgba32 red{255, 0, 0};
     const Rgba32 green{0, 255, 0};
@@ -148,14 +138,11 @@ TEST(ColorIndexMapTests, BidirectionalLookupShouldBeConsistent)
 
 TEST(ColorIndexMapTests, LookupNonexistentColorShouldReturnNullopt)
 {
-    std::vector<PixelTile<Rgba32>> tiles;
-
     PixelTile<Rgba32> tile{};
     tile.set(0, Rgba32{255, 0, 0}); // red
 
-    tiles.push_back(tile);
-
-    ColorIndexMap<Rgba32> map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> map{};
+    map.add_tile(tile, rgba_magenta);
 
     // Yellow was never added
     auto yellow_index = map.index_at_color(Rgba32{255, 255, 0});
@@ -164,14 +151,11 @@ TEST(ColorIndexMapTests, LookupNonexistentColorShouldReturnNullopt)
 
 TEST(ColorIndexMapTests, LookupNonexistentIndexShouldReturnNullopt)
 {
-    std::vector<PixelTile<Rgba32>> tiles;
-
     PixelTile<Rgba32> tile{};
     tile.set(0, Rgba32{255, 0, 0}); // red
 
-    tiles.push_back(tile);
-
-    ColorIndexMap<Rgba32> map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> map{};
+    map.add_tile(tile, rgba_magenta);
 
     // Should only have index 0, not 99
     auto color_at_99 = map.color_at_index(ColorIndex{99});
@@ -180,16 +164,13 @@ TEST(ColorIndexMapTests, LookupNonexistentIndexShouldReturnNullopt)
 
 TEST(ColorIndexMapTests, TransparentColorsShouldBeFiltered)
 {
-    std::vector<PixelTile<Rgba32>> tiles;
-
     PixelTile<Rgba32> tile{};
     tile.set(0, Rgba32{255, 0, 0});                          // red (non-transparent)
     tile.set(1, Rgba32{255, 0, 255});                        // magenta (extrinsically transparent)
     tile.set(2, Rgba32{0, 0, 0, Rgba32::alpha_transparent}); // black with alpha=0 (intrinsically transparent)
 
-    tiles.push_back(tile);
-
-    ColorIndexMap<Rgba32> map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> map{};
+    map.add_tile(tile, rgba_magenta);
 
     // Should only have red (index 0)
     EXPECT_EQ(1, map.size());
@@ -206,8 +187,6 @@ TEST(ColorIndexMapTests, TransparentColorsShouldBeFiltered)
 
 TEST(ColorIndexMapTests, DeduplicationAcrossMultipleTiles)
 {
-    std::vector<PixelTile<Rgba32>> tiles;
-
     // Tile 1 with red and green
     PixelTile<Rgba32> tile1{};
     tile1.set(0, Rgba32{255, 0, 0}); // red
@@ -218,10 +197,9 @@ TEST(ColorIndexMapTests, DeduplicationAcrossMultipleTiles)
     tile2.set(0, Rgba32{0, 255, 0}); // green (duplicate)
     tile2.set(1, Rgba32{0, 0, 255}); // blue
 
-    tiles.push_back(tile1);
-    tiles.push_back(tile2);
-
-    ColorIndexMap<Rgba32> map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> map{};
+    map.add_tile(tile1, rgba_magenta);
+    map.add_tile(tile2, rgba_magenta);
 
     // Should have 3 unique colors (red, green, blue)
     EXPECT_EQ(3, map.size());
@@ -239,94 +217,19 @@ TEST(ColorIndexMapTests, DeduplicationAcrossMultipleTiles)
 
 TEST(ColorIndexMapTests, SequentialIndicesStartAtZero)
 {
-    std::vector<PixelTile<Rgba32>> tiles;
-
     PixelTile<Rgba32> tile{};
     tile.set(0, Rgba32{255, 0, 0}); // red
     tile.set(1, Rgba32{0, 255, 0}); // green
     tile.set(2, Rgba32{0, 0, 255}); // blue
 
-    tiles.push_back(tile);
-
-    ColorIndexMap<Rgba32> map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> map{};
+    map.add_tile(tile, rgba_magenta);
 
     // Should have indices 0, 1, 2, 3
     EXPECT_TRUE(map.color_at_index(ColorIndex{0}).has_value());
     EXPECT_TRUE(map.color_at_index(ColorIndex{1}).has_value());
     EXPECT_TRUE(map.color_at_index(ColorIndex{2}).has_value());
     EXPECT_FALSE(map.color_at_index(ColorIndex{3}).has_value());
-}
-
-// ============================================================================
-// Constructor equivalence tests
-// ============================================================================
-
-TEST(ColorIndexMapTests, VectorCtorShouldMatchIncrementalAddTile)
-{
-    // Create multiple tiles with various colors
-    std::vector<PixelTile<Rgba32>> tiles;
-
-    PixelTile<Rgba32> tile1{};
-    tile1.set(0, Rgba32{255, 0, 0});   // red
-    tile1.set(1, Rgba32{0, 255, 0});   // green
-    tile1.set(2, Rgba32{255, 0, 255}); // magenta (transparent)
-
-    PixelTile<Rgba32> tile2{};
-    tile2.set(0, Rgba32{0, 0, 255});   // blue
-    tile2.set(1, Rgba32{255, 0, 0});   // red (duplicate from tile1)
-    tile2.set(2, Rgba32{255, 255, 0}); // yellow
-
-    PixelTile<Rgba32> tile3{};
-    tile3.set(0, Rgba32{0, 255, 255});                        // cyan
-    tile3.set(1, Rgba32{0, 0, 0, Rgba32::alpha_transparent}); // intrinsically transparent
-
-    tiles.push_back(tile1);
-    tiles.push_back(tile2);
-    tiles.push_back(tile3);
-
-    // Construct using vector constructor
-    ColorIndexMap<Rgba32> ctor_map{tiles, rgba_magenta};
-
-    // Construct incrementally using add_tile
-    ColorIndexMap<Rgba32> incremental_map{};
-    for (const auto &tile : tiles) {
-        incremental_map.add_tile(tile, rgba_magenta);
-    }
-
-    // Both maps should have the same size
-    EXPECT_EQ(ctor_map.size(), incremental_map.size());
-
-    // Expected colors: red, green, blue, yellow, cyan (5 total)
-    // Transparent colors (magenta, alpha=0) should be filtered out
-    EXPECT_EQ(5, ctor_map.size());
-
-    // Verify all colors have consistent mappings in both maps
-    const std::vector<Rgba32> expected_colors = {
-        Rgba32{255, 0, 0},   // red
-        Rgba32{0, 255, 0},   // green
-        Rgba32{0, 0, 255},   // blue
-        Rgba32{255, 255, 0}, // yellow
-        Rgba32{0, 255, 255}  // cyan
-    };
-
-    for (const auto &color : expected_colors) {
-        auto ctor_index = ctor_map.index_at_color(color);
-        auto incr_index = incremental_map.index_at_color(color);
-
-        ASSERT_TRUE(ctor_index.has_value()) << "ctor_map missing color";
-        ASSERT_TRUE(incr_index.has_value()) << "incremental_map missing color";
-
-        // Both should map to the same index
-        EXPECT_EQ(ctor_index.value(), incr_index.value());
-
-        // Reverse lookup should also match
-        auto ctor_color = ctor_map.color_at_index(ctor_index.value());
-        auto incr_color = incremental_map.color_at_index(incr_index.value());
-
-        ASSERT_TRUE(ctor_color.has_value());
-        ASSERT_TRUE(incr_color.has_value());
-        EXPECT_EQ(ctor_color.value(), incr_color.value());
-    }
 }
 
 // ============================================================================
@@ -568,4 +471,246 @@ TEST(ColorIndexMapTests, AddMethodsShouldMaintainBidirectionalConsistency)
     // Consistency check
     EXPECT_EQ(red, color_at_red_index.value());
     EXPECT_EQ(green, color_at_green_index.value());
+}
+
+// ============================================================================
+// add_anim tests
+// ============================================================================
+
+TEST(ColorIndexMapTests, AddAnimWithOnlyKeyFrameShouldAddColors)
+{
+    ColorIndexMap<Rgba32> map{};
+
+    // Create an animation with only a key frame
+    Animation<Rgba32> anim{"test_anim"};
+
+    PixelTile<Rgba32> key_tile{};
+    key_tile.set(0, Rgba32{255, 0, 0}); // red
+    key_tile.set(1, Rgba32{0, 255, 0}); // green
+
+    AnimationFrame<Rgba32> key_frame{"key"};
+    key_frame.add_tile(std::move(key_tile));
+    anim.key_frame(std::move(key_frame));
+
+    map.add_anim(anim, rgba_magenta);
+
+    EXPECT_EQ(2, map.size());
+    EXPECT_TRUE(map.index_at_color(Rgba32{255, 0, 0}).has_value());
+    EXPECT_TRUE(map.index_at_color(Rgba32{0, 255, 0}).has_value());
+}
+
+TEST(ColorIndexMapTests, AddAnimWithOnlyRegularFramesShouldAddColors)
+{
+    ColorIndexMap<Rgba32> map{};
+
+    // Create an animation with only regular frames (no key frame)
+    Animation<Rgba32> anim{"test_anim"};
+
+    PixelTile<Rgba32> frame0_tile{};
+    frame0_tile.set(0, Rgba32{255, 0, 0}); // red
+
+    PixelTile<Rgba32> frame1_tile{};
+    frame1_tile.set(0, Rgba32{0, 255, 0}); // green
+
+    AnimationFrame<Rgba32> frame0{"0"};
+    frame0.add_tile(std::move(frame0_tile));
+    anim.put_frame("0", std::move(frame0));
+
+    AnimationFrame<Rgba32> frame1{"1"};
+    frame1.add_tile(std::move(frame1_tile));
+    anim.put_frame("1", std::move(frame1));
+
+    map.add_anim(anim, rgba_magenta);
+
+    EXPECT_EQ(2, map.size());
+    EXPECT_TRUE(map.index_at_color(Rgba32{255, 0, 0}).has_value());
+    EXPECT_TRUE(map.index_at_color(Rgba32{0, 255, 0}).has_value());
+}
+
+TEST(ColorIndexMapTests, AddAnimWithKeyFrameAndRegularFramesShouldAddAllColors)
+{
+    ColorIndexMap<Rgba32> map{};
+
+    // Create an animation with key frame and regular frames
+    Animation<Rgba32> anim{"test_anim"};
+
+    // Key frame with red
+    PixelTile<Rgba32> key_tile{};
+    key_tile.set(0, Rgba32{255, 0, 0}); // red
+    AnimationFrame<Rgba32> key_frame{"key"};
+    key_frame.add_tile(std::move(key_tile));
+    anim.key_frame(std::move(key_frame));
+
+    // Frame 0 with green
+    PixelTile<Rgba32> frame0_tile{};
+    frame0_tile.set(0, Rgba32{0, 255, 0}); // green
+    AnimationFrame<Rgba32> frame0{"0"};
+    frame0.add_tile(std::move(frame0_tile));
+    anim.put_frame("0", std::move(frame0));
+
+    // Frame 1 with blue
+    PixelTile<Rgba32> frame1_tile{};
+    frame1_tile.set(0, Rgba32{0, 0, 255}); // blue
+    AnimationFrame<Rgba32> frame1{"1"};
+    frame1.add_tile(std::move(frame1_tile));
+    anim.put_frame("1", std::move(frame1));
+
+    map.add_anim(anim, rgba_magenta);
+
+    EXPECT_EQ(3, map.size());
+    EXPECT_TRUE(map.index_at_color(Rgba32{255, 0, 0}).has_value()); // red from key
+    EXPECT_TRUE(map.index_at_color(Rgba32{0, 255, 0}).has_value()); // green from frame 0
+    EXPECT_TRUE(map.index_at_color(Rgba32{0, 0, 255}).has_value()); // blue from frame 1
+}
+
+TEST(ColorIndexMapTests, AddAnimShouldDeduplicateColorsAcrossFrames)
+{
+    ColorIndexMap<Rgba32> map{};
+
+    Animation<Rgba32> anim{"test_anim"};
+
+    // Key frame with red and green
+    PixelTile<Rgba32> key_tile{};
+    key_tile.set(0, Rgba32{255, 0, 0}); // red
+    key_tile.set(1, Rgba32{0, 255, 0}); // green
+    AnimationFrame<Rgba32> key_frame{"key"};
+    key_frame.add_tile(std::move(key_tile));
+    anim.key_frame(std::move(key_frame));
+
+    // Frame 0 with red (duplicate) and blue
+    PixelTile<Rgba32> frame0_tile{};
+    frame0_tile.set(0, Rgba32{255, 0, 0}); // red (duplicate)
+    frame0_tile.set(1, Rgba32{0, 0, 255}); // blue
+    AnimationFrame<Rgba32> frame0{"0"};
+    frame0.add_tile(std::move(frame0_tile));
+    anim.put_frame("0", std::move(frame0));
+
+    // Frame 1 with green (duplicate)
+    PixelTile<Rgba32> frame1_tile{};
+    frame1_tile.set(0, Rgba32{0, 255, 0}); // green (duplicate)
+    AnimationFrame<Rgba32> frame1{"1"};
+    frame1.add_tile(std::move(frame1_tile));
+    anim.put_frame("1", std::move(frame1));
+
+    map.add_anim(anim, rgba_magenta);
+
+    EXPECT_EQ(3, map.size()); // red, green, blue (no duplicates)
+}
+
+TEST(ColorIndexMapTests, AddAnimShouldFilterTransparentColors)
+{
+    ColorIndexMap<Rgba32> map{};
+
+    Animation<Rgba32> anim{"test_anim"};
+
+    PixelTile<Rgba32> key_tile{};
+    key_tile.set(0, Rgba32{255, 0, 0});                          // red (non-transparent)
+    key_tile.set(1, Rgba32{255, 0, 255});                        // magenta (extrinsically transparent)
+    key_tile.set(2, Rgba32{0, 0, 0, Rgba32::alpha_transparent}); // black with alpha=0 (intrinsically transparent)
+    AnimationFrame<Rgba32> key_frame{"key"};
+    key_frame.add_tile(std::move(key_tile));
+    anim.key_frame(std::move(key_frame));
+
+    map.add_anim(anim, rgba_magenta);
+
+    EXPECT_EQ(1, map.size());
+    EXPECT_TRUE(map.index_at_color(Rgba32{255, 0, 0}).has_value());
+    EXPECT_FALSE(map.index_at_color(Rgba32{255, 0, 255}).has_value());
+    EXPECT_FALSE(map.index_at_color(Rgba32{0, 0, 0, Rgba32::alpha_transparent}).has_value());
+}
+
+TEST(ColorIndexMapTests, AddAnimShouldAddColorsFromAllSubtiles)
+{
+    ColorIndexMap<Rgba32> map{};
+
+    Animation<Rgba32> anim{"test_anim"};
+
+    // Key frame with two subtiles
+    PixelTile<Rgba32> key_tile0{};
+    key_tile0.set(0, Rgba32{255, 0, 0}); // red
+    PixelTile<Rgba32> key_tile1{};
+    key_tile1.set(0, Rgba32{0, 255, 0}); // green
+
+    AnimationFrame<Rgba32> key_frame{"key"};
+    key_frame.add_tile(std::move(key_tile0));
+    key_frame.add_tile(std::move(key_tile1));
+    anim.key_frame(std::move(key_frame));
+
+    // Frame 0 with two subtiles
+    PixelTile<Rgba32> frame0_tile0{};
+    frame0_tile0.set(0, Rgba32{0, 0, 255}); // blue
+    PixelTile<Rgba32> frame0_tile1{};
+    frame0_tile1.set(0, Rgba32{255, 255, 0}); // yellow
+
+    AnimationFrame<Rgba32> frame0{"0"};
+    frame0.add_tile(std::move(frame0_tile0));
+    frame0.add_tile(std::move(frame0_tile1));
+    anim.put_frame("0", std::move(frame0));
+
+    map.add_anim(anim, rgba_magenta);
+
+    EXPECT_EQ(4, map.size()); // red, green, blue, yellow
+    EXPECT_TRUE(map.index_at_color(Rgba32{255, 0, 0}).has_value());
+    EXPECT_TRUE(map.index_at_color(Rgba32{0, 255, 0}).has_value());
+    EXPECT_TRUE(map.index_at_color(Rgba32{0, 0, 255}).has_value());
+    EXPECT_TRUE(map.index_at_color(Rgba32{255, 255, 0}).has_value());
+}
+
+TEST(ColorIndexMapTests, AddAnimWithEmptyAnimationShouldNotAddColors)
+{
+    ColorIndexMap<Rgba32> map{};
+
+    Animation<Rgba32> anim{"empty_anim"};
+
+    map.add_anim(anim, rgba_magenta);
+
+    EXPECT_EQ(0, map.size());
+    EXPECT_TRUE(map.empty());
+}
+
+TEST(ColorIndexMapTests, AddAnimCombinedWithAddTileShouldDeduplicateAcrossBoth)
+{
+    ColorIndexMap<Rgba32> map{};
+
+    // Add a tile with red
+    PixelTile<Rgba32> tile{};
+    tile.set(0, Rgba32{255, 0, 0}); // red
+    map.add_tile(tile, rgba_magenta);
+
+    // Add an animation with red (duplicate) and green
+    Animation<Rgba32> anim{"test_anim"};
+    PixelTile<Rgba32> key_tile{};
+    key_tile.set(0, Rgba32{255, 0, 0}); // red (duplicate)
+    key_tile.set(1, Rgba32{0, 255, 0}); // green
+    AnimationFrame<Rgba32> key_frame{"key"};
+    key_frame.add_tile(std::move(key_tile));
+    anim.key_frame(std::move(key_frame));
+
+    map.add_anim(anim, rgba_magenta);
+
+    EXPECT_EQ(2, map.size()); // red and green
+}
+
+TEST(ColorIndexMapTests, AddAnimCombinedWithAddPalShouldDeduplicateAcrossBoth)
+{
+    ColorIndexMap<Rgba32> map{};
+
+    // Add a palette with red
+    Palette<Rgba32> pal{};
+    pal.add(Rgba32{255, 0, 255}); // transparent
+    pal.add(Rgba32{255, 0, 0});   // red
+    map.add_pal(pal, rgba_magenta);
+
+    // Add an animation with red (duplicate) and blue
+    Animation<Rgba32> anim{"test_anim"};
+    PixelTile<Rgba32> key_tile{};
+    key_tile.set(0, Rgba32{255, 0, 0}); // red (duplicate)
+    key_tile.set(1, Rgba32{0, 0, 255}); // blue
+    AnimationFrame<Rgba32> key_frame{"key"};
+    key_frame.add_tile(std::move(key_tile));
+    anim.key_frame(std::move(key_frame));
+
+    map.add_anim(anim, rgba_magenta);
+
+    EXPECT_EQ(2, map.size()); // red and blue
 }

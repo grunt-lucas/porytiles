@@ -94,11 +94,12 @@ class CompilerTask {
 
   private:
     // Pipeline steps
-    [[nodiscard]] ChainableResult<void> pipeline_step1_process_porytiles_input();
-    [[nodiscard]] ChainableResult<void> pipeline_step2_process_porymap_input();
-    [[nodiscard]] ChainableResult<void> pipeline_step3_setup_working_data();
-    [[nodiscard]] ChainableResult<void> pipeline_step4_match_tiles_pals();
-    [[nodiscard]] std::unique_ptr<Tileset> pipeline_step5_assemble_output();
+    [[nodiscard]] ChainableResult<void> pipeline_step_process_porytiles_input();
+    [[nodiscard]] ChainableResult<void> pipeline_step_process_porymap_input();
+    [[nodiscard]] ChainableResult<void> pipeline_step_validate_input();
+    [[nodiscard]] ChainableResult<void> pipeline_step_setup_working_data();
+    [[nodiscard]] ChainableResult<void> pipeline_step_match_tiles_pals();
+    [[nodiscard]] std::unique_ptr<Tileset> pipeline_step_assemble_output();
 
     // Pipeline helpers - tile matching
     [[nodiscard]] std::optional<TilemapEntry> pipeline_helper_try_reuse_porymap_tile(std::size_t tile_index);
@@ -194,21 +195,22 @@ ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
     pal_hints_ = pal_hints;
 
     // Execute subtasks
-    PT_TRY_CALL_PASS_ERR(pipeline_step1_process_porytiles_input(), std::unique_ptr<Tileset>);
+    PT_TRY_CALL_PASS_ERR(pipeline_step_process_porytiles_input(), std::unique_ptr<Tileset>);
 
-    PT_TRY_CALL_PASS_ERR(pipeline_step2_process_porymap_input(), std::unique_ptr<Tileset>);
+    PT_TRY_CALL_PASS_ERR(pipeline_step_process_porymap_input(), std::unique_ptr<Tileset>);
 
-    PT_TRY_CALL_PASS_ERR(pipeline_step3_setup_working_data(), std::unique_ptr<Tileset>);
+    PT_TRY_CALL_PASS_ERR(pipeline_step_validate_input(), std::unique_ptr<Tileset>);
 
-    PT_TRY_CALL_PASS_ERR(pipeline_step4_match_tiles_pals(), std::unique_ptr<Tileset>);
+    PT_TRY_CALL_PASS_ERR(pipeline_step_setup_working_data(), std::unique_ptr<Tileset>);
 
-    return pipeline_step5_assemble_output();
+    PT_TRY_CALL_PASS_ERR(pipeline_step_match_tiles_pals(), std::unique_ptr<Tileset>);
+
+    return pipeline_step_assemble_output();
 }
 
-ChainableResult<void> CompilerTask::pipeline_step1_process_porytiles_input()
+ChainableResult<void> CompilerTask::pipeline_step_process_porytiles_input()
 {
     LayerImageMetatileizer<Rgba32> metatileizer{};
-    MetatileValidator validator{&format_, &diag_, &tile_printer_, &pal_printer_, &config_, tileset_.name()};
 
     // Read Porytiles layer images into metatile vector
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -221,12 +223,6 @@ ChainableResult<void> CompilerTask::pipeline_step1_process_porytiles_input()
         void);
     porytiles_metatiles_ = std::move(metatiles);
 
-    // Run validation on Porytiles metatiles
-    PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_primary(porytiles_metatiles_),
-        "encountered error(s) while validating Porytiles metatiles",
-        void);
-
     // Decompose Porytiles metatiles and generate canonical versions
     porytiles_pixel_rgba_ = metatile::decompose(porytiles_metatiles_);
     porytiles_canonical_pixel_rgba_ = transform<CanonicalPixelTile<Rgba32>>(porytiles_pixel_rgba_);
@@ -234,7 +230,7 @@ ChainableResult<void> CompilerTask::pipeline_step1_process_porytiles_input()
     return {};
 }
 
-ChainableResult<void> CompilerTask::pipeline_step2_process_porymap_input()
+ChainableResult<void> CompilerTask::pipeline_step_process_porymap_input()
 {
     LayerModeConverter layer_mode_converter{&format_, &diag_, &tile_printer_, extrinsic_transparency_};
     MetatileDecompiler metatile_decompiler{&format_, &diag_, &tile_printer_, extrinsic_transparency_};
@@ -269,8 +265,16 @@ ChainableResult<void> CompilerTask::pipeline_step2_process_porymap_input()
     return {};
 }
 
-ChainableResult<void> CompilerTask::pipeline_step3_setup_working_data()
+ChainableResult<void> CompilerTask::pipeline_step_validate_input()
 {
+    MetatileValidator validator{&format_, &diag_, &tile_printer_, &pal_printer_, &config_, tileset_.name()};
+
+    // Run validation on Porytiles metatiles
+    PT_TRY_CALL_CHAIN_ERR(
+        validator.validate_primary(porytiles_metatiles_),
+        "encountered error(s) while validating Porytiles metatiles",
+        void);
+
     // Validate Porytiles palettes, Porymap palettes, and hints
     const std::vector<PaletteHint> hints = pal_hints_enabled_.value() ? pal_hints_.value() : std::vector<PaletteHint>{};
     const PaletteValidator pal_validator{
@@ -281,6 +285,11 @@ ChainableResult<void> CompilerTask::pipeline_step3_setup_working_data()
         "palette validation failed",
         void);
 
+    return {};
+}
+
+ChainableResult<void> CompilerTask::pipeline_step_setup_working_data()
+{
     // Create palettes
     if (pals_edit_mode_ == ArtifactEditMode::locked) {
         // Collect all palettes from existing Porymap component
@@ -292,6 +301,8 @@ ChainableResult<void> CompilerTask::pipeline_step3_setup_working_data()
         panic("TODO: implement handling for pals ArtifactEditMode::patch");
     }
     else if (pals_edit_mode_ == ArtifactEditMode::optimize) {
+        const std::vector<PaletteHint> hints =
+            pal_hints_enabled_.value() ? pal_hints_.value() : std::vector<PaletteHint>{};
         PT_TRY_CALL_PASS_ERR(pipeline_helper_run_pal_packing(hints), void);
     }
     else {
@@ -333,7 +344,7 @@ ChainableResult<void> CompilerTask::pipeline_step3_setup_working_data()
     return {};
 }
 
-ChainableResult<void> CompilerTask::pipeline_step4_match_tiles_pals()
+ChainableResult<void> CompilerTask::pipeline_step_match_tiles_pals()
 {
     // Temporary: pals:patch is not yet supported by underlying service code
     if (pals_edit_mode_ == ArtifactEditMode::patch) {
@@ -397,7 +408,7 @@ ChainableResult<void> CompilerTask::pipeline_step4_match_tiles_pals()
     return {};
 }
 
-std::unique_ptr<Tileset> CompilerTask::pipeline_step5_assemble_output()
+std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
 {
     /*
      * TODO: we should track tile+pal use and warn the user here about any unused tiles or pal colors. This would be
@@ -718,12 +729,17 @@ ChainableResult<ColorIndexMap<Rgba32>> CompilerTask::pipeline_helper_build_color
     constexpr auto tag = "global-color-count-violation";
 
     // Create ColorIndexMap from the Porytiles tiles
-    ColorIndexMap color_index_map{porytiles_pixel_rgba_, extrinsic_transparency_.value()};
-
-    // Check color count after initial tile colors are added
-    if (color_index_map.size() > color_count_limit) {
-        panic("color_index_map.size() > count_limit - this should have already been validated by MetatileValidator");
+    ColorIndexMap<Rgba32> color_index_map{};
+    for (const auto &tile : porytiles_pixel_rgba_) {
+        color_index_map.add_tile(tile, extrinsic_transparency_.value());
     }
+
+    // Add Porytiles anims and validate
+    for (const auto &anim : tileset_.porytiles_component().anims() | std::views::values) {
+        color_index_map.add_anim(anim, extrinsic_transparency_.value());
+    }
+
+    // TODO: instead of validating here, let's validate at an earlier step so we can give good error messages
 
     // Add Porytiles palettes and validate after each
     for (std::size_t pal_index = 0; pal_index < tileset_.porytiles_component().pals().size(); ++pal_index) {
@@ -771,6 +787,11 @@ ChainableResult<ColorIndexMap<Rgba32>> CompilerTask::pipeline_helper_build_color
                 FormatParam{hint.name(), Style::bold},
                 FormatParam{color_count_limit, Style::bold}};
         }
+    }
+
+    // Check color count one more time, we validated this earlier and provided granular feedback to user
+    if (color_index_map.size() > color_count_limit) {
+        panic("color_index_map.size() > count_limit - this should have already been validated by MetatileValidator");
     }
 
     return color_index_map;

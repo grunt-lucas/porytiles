@@ -25,8 +25,8 @@ TEST(TileConvertersTests, FromPixelTileSimpleConversion)
     pixel_tile.set(2, 2, rgba_red); // Diagonal
 
     // Create ColorIndexMap
-    std::vector<PixelTile<Rgba32>> tiles{pixel_tile};
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    color_map.add_tile(pixel_tile, rgba_magenta);
 
     // Convert to ShapeTile
     auto shape_tile = from_pixel_tile(pixel_tile, color_map, rgba_magenta);
@@ -65,8 +65,8 @@ TEST(TileConvertersTests, FromPixelTileWithMultipleColors)
     pixel_tile.set(2, 0, rgba_green);
 
     // Create ColorIndexMap
-    std::vector<PixelTile<Rgba32>> tiles{pixel_tile};
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    color_map.add_tile(pixel_tile, rgba_magenta);
 
     // Convert to ShapeTile
     auto shape_tile = from_pixel_tile(pixel_tile, color_map, rgba_magenta);
@@ -127,8 +127,8 @@ TEST(TileConvertersTests, FromPixelTileSkipsTransparentPixels)
     pixel_tile.set(1, 1, rgba_red);           // Non-transparent
 
     // Create ColorIndexMap (should only have rgba_red)
-    std::vector<PixelTile<Rgba32>> tiles{pixel_tile};
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    color_map.add_tile(pixel_tile, rgba_magenta);
 
     // Convert to ShapeTile
     auto shape_tile = from_pixel_tile(pixel_tile, color_map, rgba_magenta);
@@ -150,8 +150,8 @@ TEST(TileConvertersTests, FromPixelTileAllTransparentProducesEmptyShapeTile)
     PixelTile<Rgba32> pixel_tile; // Default constructor creates all transparent pixels (alpha=0)
 
     // Create ColorIndexMap (will be empty)
-    std::vector<PixelTile<Rgba32>> tiles{pixel_tile};
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    color_map.add_tile(pixel_tile, rgba_magenta);
 
     // Convert to ShapeTile
     auto shape_tile = from_pixel_tile(pixel_tile, color_map, rgba_magenta);
@@ -169,11 +169,10 @@ TEST(TileConvertersTests, FromPixelTilePanicsWhenPixelNotInMap)
     pixel_tile.set(1, 1, rgba_yellow); // This pixel won't be in the map
 
     // Create ColorIndexMap with only one tile (missing rgba_yellow)
-    std::vector<PixelTile<Rgba32>> tiles;
     PixelTile<Rgba32> map_tile;
     map_tile.set(0, 0, rgba_red); // Only has rgba_red
-    tiles.push_back(map_tile);
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    color_map.add_tile(map_tile, rgba_magenta);
 
     // Should panic when trying to convert (rgba_yellow not in map)
     EXPECT_DEATH({ (void)from_pixel_tile(pixel_tile, color_map, rgba_magenta); }, "Pixel not found in ColorIndexMap");
@@ -190,8 +189,8 @@ TEST(TileConvertersTests, FromPixelTileMixedTransparencyTypes)
     pixel_tile.set(2, 0, Rgba32{0, 0, 0, 0}); // Intrinsically transparent (alpha=0)
 
     // Create ColorIndexMap (should filter out transparent pixels)
-    std::vector<PixelTile<Rgba32>> tiles{pixel_tile};
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    color_map.add_tile(pixel_tile, rgba_magenta);
 
     // Convert to ShapeTile with extrinsic transparency
     auto shape_tile = from_pixel_tile(pixel_tile, color_map, rgba_magenta);
@@ -245,8 +244,8 @@ TEST(TileConvertersTests, FromShapeTileSimpleConversion)
     // Create ColorIndexMap
     PixelTile<Rgba32> pixel_tile;
     pixel_tile.set(0, 0, rgba_red);
-    std::vector<PixelTile<Rgba32>> tiles{pixel_tile};
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    color_map.add_tile(pixel_tile, rgba_magenta);
 
     // Convert to PixelTile
     auto result = from_shape_tile<Rgba32>(shape_tile, color_map);
@@ -282,8 +281,8 @@ TEST(TileConvertersTests, FromShapeTileWithMultipleColors)
     pixel_tile.set(0, 0, rgba_red);
     pixel_tile.set(1, 0, rgba_blue);
     pixel_tile.set(2, 0, rgba_green);
-    std::vector<PixelTile<Rgba32>> tiles{pixel_tile};
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    color_map.add_tile(pixel_tile, rgba_magenta);
 
     // Get indices
     auto red_index = *color_map.index_at_color(rgba_red);
@@ -320,8 +319,7 @@ TEST(TileConvertersTests, FromShapeTileEmptyProducesTransparentTile)
     ShapeTile<ColorIndex> shape_tile;
 
     // Create ColorIndexMap (can be empty)
-    std::vector<PixelTile<Rgba32>> tiles;
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
 
     // Convert to PixelTile
     auto result = from_shape_tile<Rgba32>(shape_tile, color_map);
@@ -341,8 +339,8 @@ TEST(TileConvertersTests, FromShapeTilePanicsWhenIndexNotInMap)
     // Create ColorIndexMap with only one color
     PixelTile<Rgba32> pixel_tile;
     pixel_tile.set(0, 0, rgba_red);
-    std::vector<PixelTile<Rgba32>> tiles{pixel_tile};
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    color_map.add_tile(pixel_tile, rgba_magenta);
 
     // Should panic when trying to convert
     EXPECT_DEATH({ (void)from_shape_tile<Rgba32>(shape_tile, color_map); }, "ColorIndex not found in ColorIndexMap");
@@ -365,8 +363,8 @@ TEST(TileConvertersTests, FromShapeTilePanicsOnOverlappingMasks)
     PixelTile<Rgba32> pixel_tile;
     pixel_tile.set(0, 0, rgba_red);
     pixel_tile.set(1, 0, rgba_blue);
-    std::vector<PixelTile<Rgba32>> tiles{pixel_tile};
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    color_map.add_tile(pixel_tile, rgba_magenta);
 
     auto red_index = *color_map.index_at_color(rgba_red);
     auto blue_index = *color_map.index_at_color(rgba_blue);
@@ -395,8 +393,8 @@ TEST(TileConvertersTests, ShapeTileToPixelColorsSimpleConversion)
     // Create ColorIndexMap
     PixelTile<Rgba32> pixel_tile;
     pixel_tile.set(0, 0, rgba_red);
-    std::vector<PixelTile<Rgba32>> tiles{pixel_tile};
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    color_map.add_tile(pixel_tile, rgba_magenta);
 
     // Convert to ShapeTile<Rgba32>
     auto result = shape_tile_to_pixel_colors<Rgba32>(shape_tile, color_map);
@@ -430,8 +428,8 @@ TEST(TileConvertersTests, ShapeTileToPixelColorsWithMultipleColors)
     pixel_tile.set(0, 0, rgba_red);
     pixel_tile.set(1, 0, rgba_blue);
     pixel_tile.set(2, 0, rgba_green);
-    std::vector<PixelTile<Rgba32>> tiles{pixel_tile};
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    color_map.add_tile(pixel_tile, rgba_magenta);
 
     // Get indices
     auto red_index = *color_map.index_at_color(rgba_red);
@@ -478,8 +476,7 @@ TEST(TileConvertersTests, ShapeTileToPixelColorsEmptyProducesEmptyShapeTile)
     ShapeTile<ColorIndex> shape_tile;
 
     // Create ColorIndexMap (can be empty)
-    std::vector<PixelTile<Rgba32>> tiles;
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
 
     // Convert to ShapeTile<Rgba32>
     auto result = shape_tile_to_pixel_colors<Rgba32>(shape_tile, color_map);
@@ -500,8 +497,8 @@ TEST(TileConvertersTests, ShapeTileToPixelColorsPanicsWhenIndexNotInMap)
     // Create ColorIndexMap with only one color
     PixelTile<Rgba32> pixel_tile;
     pixel_tile.set(0, 0, rgba_red);
-    std::vector<PixelTile<Rgba32>> tiles{pixel_tile};
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    color_map.add_tile(pixel_tile, rgba_magenta);
 
     // Should panic when trying to convert
     EXPECT_DEATH(
@@ -523,8 +520,8 @@ TEST(TileConvertersTests, RoundTripPixelToShapeToPixel)
     original.set(2, 0, rgba_green);
 
     // Create ColorIndexMap
-    std::vector<PixelTile<Rgba32>> tiles{original};
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    color_map.add_tile(original, rgba_magenta);
 
     // Convert to ShapeTile
     auto shape_tile = from_pixel_tile(original, color_map, rgba_magenta);
@@ -546,8 +543,8 @@ TEST(TileConvertersTests, RoundTripWithTransparentPixels)
     // Rest are transparent
 
     // Create ColorIndexMap
-    std::vector<PixelTile<Rgba32>> tiles{original};
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    color_map.add_tile(original, rgba_magenta);
 
     // Convert to ShapeTile
     auto shape_tile = from_pixel_tile(original, color_map, rgba_magenta);
@@ -570,8 +567,8 @@ TEST(TileConvertersTests, RoundTripAllTransparent)
     PixelTile<Rgba32> original; // Default is all transparent
 
     // Create ColorIndexMap (empty)
-    std::vector<PixelTile<Rgba32>> tiles{original};
-    ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+    ColorIndexMap<Rgba32> color_map{};
+    color_map.add_tile(original, rgba_magenta);
 
     // Convert to ShapeTile
     auto shape_tile = from_pixel_tile(original, color_map, rgba_magenta);

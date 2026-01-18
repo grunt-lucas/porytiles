@@ -5,6 +5,7 @@
 #include <set>
 #include <vector>
 
+#include "porytiles2/domain/models/animation.hpp"
 #include "porytiles2/domain/models/color_index.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
@@ -41,7 +42,10 @@ namespace porytiles2 {
  * Example usage:
  * @code{.cpp}
  * std::vector<PixelTile<Rgba32>> tiles = {...};
- * ColorIndexMap<Rgba32> color_map{tiles, rgba_magenta};
+ * ColorIndexMap<Rgba32> color_map{};
+ * for (const auto &tile : tiles) {
+ *     color_map.add_tile(tile, rgba_magenta);
+ * }
  *
  * // Forward lookup: color -> index
  * auto index_opt = color_map.index_at_color(Rgba32{255, 0, 0});
@@ -60,60 +64,6 @@ template <SupportsTransparency PixelType>
 class ColorIndexMap {
   public:
     ColorIndexMap() = default;
-
-    /**
-     * @brief Constructs a ColorIndexMap from a collection of tiles using intrinsic transparency.
-     *
-     * @details
-     * This constructor analyzes all provided tiles to identify unique non-transparent colors and assigns each a
-     * sequential integer index starting from 0. The process:
-     *
-     * 1. Iterates through each tile in the collection
-     * 2. Extracts unique non-transparent colors from each tile (using PixelTile::unique_nontransparent_colors)
-     * 3. Filters colors based on intrinsic transparency only (e.g., index 0 for IndexPixel)
-     * 4. Assigns each unique color that passes filtering a sequential index (0, 1, 2, ...)
-     * 5. Ensures deduplication: colors appearing in multiple tiles receive the same index
-     *
-     * This overload is only available for pixel types that support intrinsic transparency (e.g., IndexPixel).
-     *
-     * The order of index assignment depends on the order in which colors are encountered during tile iteration.
-     *
-     * @param tiles A vector of tiles with the specified pixel type to analyze for unique colors
-     */
-    ColorIndexMap(const std::vector<PixelTile<PixelType>> &tiles)
-        requires requires(const PixelType &p) { p.is_transparent(); }
-    {
-        constructor_impl(tiles, [](const PixelTile<PixelType> &tile) { return tile.unique_nontransparent_colors(); });
-    }
-
-    /**
-     * @brief Constructs a ColorIndexMap from a collection of tiles and an extrinsic transparency value.
-     *
-     * @details
-     * This constructor analyzes all provided tiles to identify unique non-transparent colors and assigns each a
-     * sequential integer index starting from 0. The process:
-     *
-     * 1. Iterates through each tile in the collection
-     * 2. Extracts unique non-transparent colors from each tile (using PixelTile::unique_nontransparent_colors)
-     * 3. Filters colors based on both intrinsic transparency (alpha=0) and extrinsic transparency (matching the
-     *    provided extrinsic parameter)
-     * 4. Assigns each unique color that passes filtering a sequential index (0, 1, 2, ...)
-     * 5. Ensures deduplication: colors appearing in multiple tiles receive the same index
-     *
-     * This overload is only available for pixel types that support extrinsic transparency (e.g., Rgba32).
-     *
-     * The order of index assignment depends on the order in which colors are encountered during tile iteration.
-     *
-     * @param tiles A vector of tiles with the specified pixel type to analyze for unique colors
-     * @param extrinsic The extrinsic transparency value used for transparency filtering
-     */
-    ColorIndexMap(const std::vector<PixelTile<PixelType>> &tiles, const PixelType &extrinsic)
-        requires requires(const PixelType &p) { p.is_transparent(p); }
-    {
-        constructor_impl(tiles, [&extrinsic](const PixelTile<PixelType> &tile) {
-            return tile.unique_nontransparent_colors(extrinsic);
-        });
-    }
 
     /**
      * @brief Returns the number of unique colors in the mapping.
@@ -251,6 +201,61 @@ class ColorIndexMap {
     }
 
     /**
+     * @brief Adds colors from an animation to the mapping using intrinsic transparency.
+     *
+     * @details
+     * Iterates through all tiles in the animation's key frame (if present) and all regular frames, adding any new colors
+     * to the mapping. Colors that already exist in the mapping are skipped. New colors are assigned sequential indices
+     * starting from the current size of the mapping.
+     *
+     * This overload is only available for pixel types that support intrinsic transparency (e.g., IndexPixel).
+     *
+     * @param anim The animation to extract colors from
+     */
+    void add_anim(const Animation<PixelType> &anim)
+        requires requires(const PixelType &p) { p.is_transparent(); }
+    {
+        if (anim.has_key_frame()) {
+            for (const auto &tile : anim.key_frame().tiles()) {
+                add_tile(tile);
+            }
+        }
+        for (const auto &[name, frame] : anim.frames()) {
+            for (const auto &tile : frame.tiles()) {
+                add_tile(tile);
+            }
+        }
+    }
+
+    /**
+     * @brief Adds colors from an animation to the mapping using extrinsic transparency.
+     *
+     * @details
+     * Iterates through all tiles in the animation's key frame (if present) and all regular frames, adding any new colors
+     * to the mapping. Colors that already exist in the mapping are skipped. New colors are assigned sequential indices
+     * starting from the current size of the mapping.
+     *
+     * This overload is only available for pixel types that support extrinsic transparency (e.g., Rgba32).
+     *
+     * @param anim The animation to extract colors from
+     * @param extrinsic The extrinsic transparency value used for transparency filtering
+     */
+    void add_anim(const Animation<PixelType> &anim, const PixelType &extrinsic)
+        requires requires(const PixelType &p) { p.is_transparent(p); }
+    {
+        if (anim.has_key_frame()) {
+            for (const auto &tile : anim.key_frame().tiles()) {
+                add_tile(tile, extrinsic);
+            }
+        }
+        for (const auto &[name, frame] : anim.frames()) {
+            for (const auto &tile : frame.tiles()) {
+                add_tile(tile, extrinsic);
+            }
+        }
+    }
+
+    /**
      * @brief Retrieves the color associated with a given index.
      *
      * @details
@@ -295,38 +300,6 @@ class ColorIndexMap {
     }
 
   private:
-    /**
-     * @brief Helper method implementing the core ColorIndexMap construction logic.
-     *
-     * @details
-     * This private helper contains the common construction logic shared by both ColorIndexMap constructors. It accepts
-     * a color extractor function that determines how to extract unique non-transparent colors from each tile, allowing
-     * the same implementation to work with both intrinsic and extrinsic transparency checking.
-     *
-     * @tparam ColorExtractor A callable type that takes a PixelTile and returns std::set<PixelType>
-     * @param tiles A vector of tiles with the specified pixel type to analyze for unique colors
-     * @param extract_colors A function that extracts unique non-transparent colors from a tile
-     */
-    template <typename ColorExtractor>
-    void constructor_impl(const std::vector<PixelTile<PixelType>> &tiles, ColorExtractor extract_colors)
-    {
-        std::map<PixelType, ColorIndex> pixel_indexes{};
-        std::map<ColorIndex, PixelType> index_to_color{};
-
-        std::size_t color_index = 0;
-        for (const auto &tile : tiles) {
-            for (const auto &pixel : extract_colors(tile)) {
-                if (pixel_indexes.insert({pixel, ColorIndex{color_index}}).second) {
-                    index_to_color.insert({ColorIndex{color_index}, pixel});
-                    color_index++;
-                }
-            }
-        }
-
-        index_map_ = pixel_indexes;
-        color_map_ = index_to_color;
-    }
-
     /**
      * @brief Helper method to add colors from a set to the mapping.
      *
