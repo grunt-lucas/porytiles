@@ -73,6 +73,23 @@ class TilesetArtifactKeyProvider {
     key_for_porymap_anim_params(const std::string &tileset_name) const = 0;
 
     /*
+     * TODO: this function is a bit of a hack, as it exposes what is arguably an infra concept (filesystem directory) in
+     * the domain layer. There isn't really a domain concept of a "tileset root", it's an infra concept. However, it's
+     * the easiest way to fix the anim code generation for now, we can come back to this later.
+     */
+    /**
+     * @brief Returns the key for the tileset root directory.
+     *
+     * @details
+     * Returns the path to the tileset's root directory from the project root, suitable for constructing INCBIN paths in
+     * generated code (e.g., "data/tilesets/primary/general").
+     *
+     * @param tileset_name The name of the tileset
+     * @return Key for the tileset root directory
+     */
+    [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_tileset_root(const std::string &tileset_name) const = 0;
+
+    /*
      * Porytiles artifacts
      */
     [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_bottom_png(const std::string &tileset_name) const = 0;

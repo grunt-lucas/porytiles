@@ -454,37 +454,31 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
         "Porymap");
 }
 
-[[nodiscard]] ChainableResult<void>
-ProjectTilesetArtifactWriter::write_porymap_anim_params(const ArtifactKey &dest_key, const Tileset &src)
+[[nodiscard]] ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_params(
+    const ArtifactKey &dest_key, const ArtifactKey &tileset_root_key, const Tileset &src)
 {
     const auto &porymap_anims = src.porymap_component().anims();
     if (porymap_anims.empty()) {
-        // No animations to write
         return {};
     }
 
-    // Extract params from animations
     std::map<std::string, AnimationParams> anim_params;
     for (const auto &[anim_name, anim] : porymap_anims) {
         anim_params[anim_name] = anim.params();
     }
 
-    /*
-     * TODO: this is a hack. Technically, we should be passing in the frame paths here, so that the generator can write
-     * the paths correctly. For now, we're just assuming that dest_key is pointing at the
-     * "include/generated_anim_code.h" file, so two parent paths up is the tileset root folder.
-     *
-     * To fix this here, we need to figure out a way to pass the writer the frame paths. The best way to do this is to
-     * refactor the artifact writer so that it writes animations in one shot. This refactor will be similar to the
-     * refactor we did for the artifact reader, which allowed it to read animations in one shot.
-     *
-     * TODO: and yep, we're now hitting this issue. Since we moved where the anim params are stored, this hack is now
-     * broken. It writes broken paths into the generated anim code.
-     */
-    const auto tileset_root_path = std::filesystem::path{dest_key.key()}.parent_path().parent_path();
+    // Use the tileset root key directly
+    const auto tileset_root_path = std::filesystem::path{tileset_root_key.key()};
 
-    // TODO: determine if primary or secondary tileset from config
-    const bool is_primary = true;
+    // Determine primary/secondary from metadata
+    auto is_secondary_result = metadata_provider_.is_secondary(src.name());
+    if (!is_secondary_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{
+                "failed to determine primary/secondary status for '{}'", FormatParam{src.name(), Style::bold}},
+            is_secondary_result};
+    }
+    const bool is_primary = !is_secondary_result.value();
 
     auto code_result = anim_code_generator_->generate(src.name(), tileset_root_path, anim_params, is_primary);
     if (!code_result.has_value()) {
@@ -499,7 +493,6 @@ ProjectTilesetArtifactWriter::write_porymap_anim_params(const ArtifactKey &dest_
         "failed to compute transaction dest path",
         void);
 
-    // Write the generated code to file
     std::ofstream out{transaction_dest_path};
     if (!out.is_open()) {
         return FormattableError{

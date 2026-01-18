@@ -219,6 +219,18 @@ ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_params(const std::string
     return ArtifactKey{path.string()};
 }
 
+ChainableResult<ArtifactKey>
+ProjectTilesetArtifactKeyProvider::key_for_tileset_root(const std::string &tileset_name) const
+{
+    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
+    auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
+    const std::string snake_tileset_dir = to_snake_case(extract_tileset_shorthand(tileset_name));
+    std::filesystem::path path = std::filesystem::path{base_path.value()} / snake_tileset_dir;
+    return ArtifactKey{path.string()};
+}
+
 /*
  * Porytiles artifacts
  */

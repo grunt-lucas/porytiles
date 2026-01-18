@@ -84,13 +84,15 @@ class TilesetArtifactWriter {
      *
      * @details
      * Generates and writes the animation parameters for all animations in the Porymap component.
+     * The tileset_root_key provides the path used for constructing INCBIN statements.
      *
      * @param dest_key Key identifying where to write the parameters
+     * @param tileset_root_key Key for tileset root directory (for INCBIN paths)
      * @param src The Tileset object to extract animation data from
      * @return Empty ChainableResult on success, otherwise an error chain
      */
     [[nodiscard]] virtual ChainableResult<void>
-    write_porymap_anim_params(const ArtifactKey &dest_key, const Tileset &src) = 0;
+    write_porymap_anim_params(const ArtifactKey &dest_key, const ArtifactKey &tileset_root_key, const Tileset &src) = 0;
 
     /*
      * Porytiles artifacts
