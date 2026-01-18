@@ -10,6 +10,7 @@
 #include "porytiles2/domain/models/animation_params.hpp"
 #include "porytiles2/domain/models/supports_transparency.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
 
 namespace porytiles2 {
 
@@ -20,6 +21,38 @@ namespace anim {
  */
 constexpr std::string g_tileset_anims_prefix = "gTilesetAnims_";
 constexpr std::string porytiles_managed_prefix = "PorytilesManaged_";
+
+[[nodiscard]] inline std::string message_header(
+    const TextFormatter &format,
+    const std::string &anim_name,
+    const std::string &frame_name,
+    std::size_t internal_tile_index,
+    std::size_t subtile_row,
+    std::size_t subtile_col)
+{
+    return format.format(
+        "{} '{}' | frame '{}' | subtile {} | pixel {},{}",
+        FormatParam{"anim"},
+        FormatParam{anim_name},
+        FormatParam{frame_name},
+        FormatParam{std::to_string(internal_tile_index)},
+        FormatParam{std::to_string(subtile_row)},
+        FormatParam{std::to_string(subtile_col)});
+}
+
+[[nodiscard]] inline std::string message_header(
+    const TextFormatter &format,
+    const std::string &anim_name,
+    const std::string &frame_name,
+    std::size_t internal_tile_index)
+{
+    return format.format(
+        "{} '{}' | frame '{}' | subtile {}",
+        FormatParam{"anim"},
+        FormatParam{anim_name},
+        FormatParam{frame_name},
+        FormatParam{std::to_string(internal_tile_index)});
+}
 
 } // namespace anim
 
@@ -170,34 +203,51 @@ class Animation {
      *
      * @details
      * The "composite" frame for an Animation is a special, artificially constructed frame where each constituent
-     * subtile contains all colors across all AnimationFrames (including the key frame) for the given subtile index.
-     * This is essential: since animation tiles are dynamic but the palette index is fixed, the palette packer needs to
-     * know all possible colors that could appear in a given 8x8 animation tile region at any point in the animation.
-     * The composite frame's pixel arrangement is arbitrary and shouldn't be relied upon for meaningful information.
+     * subtile contains all colors across all AnimationFrames (including the key frame, if present) for the given
+     * subtile index. This is essential: since animation tiles are dynamic but the palette index is fixed, the palette
+     * packer needs to know all possible colors that could appear in a given 8x8 animation tile region at any point in
+     * the animation. The composite frame's pixel arrangement is arbitrary and shouldn't be relied upon for meaningful
+     * information.
+     *
+     * If a key frame is present, its tile count determines the composite frame size. Otherwise, the first regular
+     * frame's tile count is used. This allows animations without key frames to support manual animation linking
+     * workflows.
      *
      * @param extrinsic_transparency The extrinsic transparency color to use when filtering pixels
-     * @pre has_key_frame() must return true
-     * @return A composite frame for this Animation
-     *
-     * @todo This method currently only supports extrinsic transparency (Rgba32). Consider extending to support
-     * intrinsic transparency (IndexPixel) if needed in the future.
+     * @pre has_key_frame() or has_frames() must return true
+     * @post Each composite tile within the frame will have <= 15 unique colors.
+     * @return A composite frame for this Animation.
      */
     [[nodiscard]] AnimationFrame<PixelType> composite_frame(const PixelType &extrinsic_transparency) const
         requires requires(const PixelType &p) { p.is_transparent(p); }
     {
-        if (!has_key_frame()) {
-            panic("composite_frame() called on Animation with no key frame");
+        /*
+         * TODO: This method currently only supports extrinsic transparency (Rgba32). Consider extending to support
+         * intrinsic transparency (IndexPixel) if needed in the future.
+         */
+
+        // Determine tile count from key frame or first regular frame
+        std::size_t tile_count = 0;
+        if (has_key_frame()) {
+            tile_count = key_frame().tile_count();
+        }
+        else if (has_frames()) {
+            tile_count = frames_.begin()->second.tile_count();
+        }
+        else {
+            panic("composite_frame() called on Animation with no key frame and no frames");
         }
 
         AnimationFrame<PixelType> composite{"composite"};
-        const std::size_t tile_count = key_frame().tile_count();
 
         for (std::size_t tile_idx = 0; tile_idx < tile_count; ++tile_idx) {
             std::set<PixelType> all_colors;
 
-            // Collect from key frame
-            auto key_colors = key_frame().tile_at(tile_idx).unique_nontransparent_colors(extrinsic_transparency);
-            all_colors.merge(key_colors);
+            // Collect from key frame (if present)
+            if (has_key_frame()) {
+                auto key_colors = key_frame().tile_at(tile_idx).unique_nontransparent_colors(extrinsic_transparency);
+                all_colors.merge(key_colors);
+            }
 
             // Collect from regular frames
             for (const auto &[name, frame] : frames_) {
@@ -210,9 +260,13 @@ class Animation {
             std::size_t pix_idx = 1;
             for (const auto &color : all_colors) {
                 if (pix_idx >= tile::size_pix) {
-                    break;
+                    panic("pix_idx exceeded tile size in pixels");
                 }
                 composite_tile.set(pix_idx++, color);
+            }
+
+            if (composite_tile.unique_nontransparent_colors(extrinsic_transparency).size() >= pal::max_size) {
+                panic("composite tile had >= 16 colors");
             }
 
             composite.add_tile(std::move(composite_tile));

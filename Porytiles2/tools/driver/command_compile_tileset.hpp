@@ -23,19 +23,19 @@
 #include "porytiles2/infra/repos/project_tileset_artifact_reader.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
 #include "porytiles2/infra/services/ascii_tile_printer.hpp"
-#include "porytiles2/infra/services/incbin_declaration_appender.hpp"
-#include "porytiles2/infra/services/project_porytiles_tileset_manager.hpp"
-#include "porytiles2/infra/services/project_tileset_anims_modifier.hpp"
-#include "porytiles2/infra/services/project_tileset_metadata_writer.hpp"
 #include "porytiles2/infra/services/attributes_csv_loader.hpp"
 #include "porytiles2/infra/services/color_palette_printer.hpp"
 #include "porytiles2/infra/services/header_behavior_map_provider.hpp"
+#include "porytiles2/infra/services/incbin_declaration_appender.hpp"
 #include "porytiles2/infra/services/jasc_pal_loader.hpp"
 #include "porytiles2/infra/services/jasc_pal_saver.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
+#include "porytiles2/infra/services/project_porytiles_tileset_manager.hpp"
+#include "porytiles2/infra/services/project_tileset_anims_modifier.hpp"
+#include "porytiles2/infra/services/project_tileset_metadata_writer.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/di/components.hpp"
 #include "porytiles2/xcut/diagnostics/stderr_styled_user_diagnostics.hpp"
@@ -157,7 +157,7 @@ class CompileTilesetCommand final : public Command {
         auto compile_result = compile_use_case.compile(tileset_name_);
         if (!compile_result.has_value()) {
             const auto fail_result = ChainableResult<std::unique_ptr<Tileset>>{
-                FormattableError{"failed to compile tileset '{}'", FormatParam{tileset_name_, Style::bold}},
+                FormattableError{"Failed to compile tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
                 compile_result};
             diag->fatal(fail_result);
         }

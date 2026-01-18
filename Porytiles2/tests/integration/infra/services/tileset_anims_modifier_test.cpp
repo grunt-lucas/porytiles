@@ -370,8 +370,7 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, HeaderFilePreservesExistingDeclara
         << "Original InitTilesetAnim_General declaration was removed";
     EXPECT_NE(new_h_content.find("void InitTilesetAnimations(void);"), std::string::npos)
         << "Original InitTilesetAnimations declaration was removed";
-    EXPECT_NE(new_h_content.find("#ifndef GUARD_TILESET_ANIMS_H"), std::string::npos)
-        << "Header guard was removed";
+    EXPECT_NE(new_h_content.find("#ifndef GUARD_TILESET_ANIMS_H"), std::string::npos) << "Header guard was removed";
 }
 
 TEST_F(TilesetAnimsModifierTest_VanillaStock, DeclarationIdempotency)

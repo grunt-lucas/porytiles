@@ -583,6 +583,11 @@ std::optional<YAML::Node> load_yaml_file(
         return node;
     }
     catch (const YAML::Exception &) {
+        /*
+         * TODO: when we hit this, it just silently fails and is EXTREMELY unintuitive. We need to figure out a way to
+         * loudly fail here with an error message so users can fix their YAML. There is really no point continuing the
+         * operation if the user has supplied a syntactically invalid YAML file.
+         */
         // Failed to parse YAML, return nullopt
         return std::nullopt;
     }
@@ -645,7 +650,7 @@ get_tileset_config_path_chain(const std::filesystem::path &project_root, const s
  * @param scope The scope name (tileset name or layout name)
  * @return ChainableResult containing vector of config file paths in priority order
  */
-porytiles2::ChainableResult<std::vector<std::filesystem::path>>
+ChainableResult<std::vector<std::filesystem::path>>
 get_config_path_chain(const std::filesystem::path &project_root, ConfigScopeType type, const std::string &scope)
 {
     switch (type) {

@@ -1,6 +1,12 @@
 #!/usr/bin/env python3
 """
 Script to set a specific pixel in a PNG file with RGBA values.
+
+Usage:
+    uv run --with pillow Scripts/set_pixel.py <image_path> <row> <col> <r> <g> <b> <a>
+
+Example:
+    uv run --with pillow Scripts/set_pixel.py image.png 10 20 255 0 0 255
 """
 
 import argparse

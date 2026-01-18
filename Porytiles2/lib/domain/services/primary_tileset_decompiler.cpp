@@ -14,7 +14,6 @@
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
 #include "porytiles2/domain/services/metatile_decompiler.hpp"
-#include "porytiles2/domain/services/metatile_validator.hpp"
 #include "porytiles2/utilities/functional/transform.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"

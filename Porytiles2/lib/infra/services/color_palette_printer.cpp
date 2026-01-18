@@ -6,6 +6,7 @@
 
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/domain/packing/models/palette_hint.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 
 namespace {
@@ -19,8 +20,8 @@ std::vector<std::string> print_palette_with_highlights_impl(
     std::vector<std::string> lines{};
 
     // JASC pal front matter
-    lines.push_back("  JASC-PAL");
-    lines.push_back("  0100");
+    lines.emplace_back("  JASC-PAL");
+    lines.emplace_back("  0100");
     lines.push_back(format->format("  {}", FormatParam{pal.size()}));
 
     for (std::size_t i = 0; i < pal.size(); ++i) {
@@ -68,16 +69,59 @@ std::vector<std::string> ColorPalettePrinter::print_rgba_palette(const Palette<R
     return print_palette_with_highlights_impl(pal, {}, format_);
 }
 
-std::vector<std::string> ColorPalettePrinter::print_rgba_palette_with_highlights(
+std::vector<std::string> ColorPalettePrinter::print_rgba_pal_with_highlights(
     const Palette<Rgba32> &pal, const std::vector<std::size_t> &slots) const
 {
     return print_palette_with_highlights_impl(pal, slots, format_);
 }
 
-std::vector<std::string> ColorPalettePrinter::print_rgba_palette_with_highlights(
+std::vector<std::string> ColorPalettePrinter::print_rgba_pal_with_highlights(
     const Palette<Rgba32, pal::max_size> &pal, const std::vector<std::size_t> &slots) const
 {
     return print_palette_with_highlights_impl(pal, slots, format_);
+}
+
+std::vector<std::string> ColorPalettePrinter::print_pal_hint_with_highlights(
+    const PaletteHint &hint, const std::vector<std::size_t> &slots) const
+{
+    std::vector<std::string> lines{};
+
+    // JASC pal front matter
+    lines.push_back(format_->format("name: \"{}\"", FormatParam{hint.name(), Style::bold}));
+    lines.emplace_back("colors:");
+
+    for (std::size_t i = 0; i < hint.pal().size(); ++i) {
+        const bool is_highlighted = std::ranges::find(slots, i) != slots.end();
+
+        std::string prefix;
+        if (is_highlighted) {
+            prefix = format_->format("{}", FormatParam{"➞ ", Style::bold | Style::yellow});
+        }
+        else {
+            prefix = "  ";
+        }
+
+        std::string slot_str;
+        if (hint.pal().is_wildcard(i)) {
+            panic("illegal wildcard in pal hint '" + hint.name() + "' at index '" + std::to_string(i) + "'");
+        }
+        const Rgba32 color = hint.pal().at(i);
+        const Style color_style = rgb_fg_style(color.red(), color.green(), color.blue());
+
+        if (is_highlighted) {
+            const std::string color_text =
+                format_->style(color.to_csv_str(), Style::bold | Style::italic | color_style);
+            slot_str = format_->format("{} - [ {} ]", FormatParam{prefix}, FormatParam{color_text});
+        }
+        else {
+            const std::string color_text = format_->style(color.to_csv_str(), color_style);
+            slot_str = format_->format("{} - [ {} ]", FormatParam{prefix}, FormatParam{color_text});
+        }
+
+        lines.push_back(slot_str);
+    }
+
+    return lines;
 }
 
 [[nodiscard]] std::vector<std::string> ColorPalettePrinter::print_rgba_palette_covered_missing(

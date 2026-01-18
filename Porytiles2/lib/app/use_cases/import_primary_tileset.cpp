@@ -18,17 +18,17 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
 {
     // Step 1: Validate tileset exists and isn't already Porytiles-managed
     if (!metadata_provider_->exists(tileset_name)) {
-        return FormattableError{"tileset '{}' does not exist", FormatParam{tileset_name, Style::bold}};
+        return FormattableError{"Tileset '{}' does not exist.", FormatParam{tileset_name, Style::bold}};
     }
     if (tileset_manager_->is_porytiles_managed(tileset_name)) {
-        return FormattableError{"tileset '{}' is already Porytiles-managed", FormatParam{tileset_name, Style::bold}};
+        return FormattableError{"Tileset '{}' is already Porytiles-managed.", FormatParam{tileset_name, Style::bold}};
     }
 
     // Step 2: Call the importer service to bring in the PorymapTilesetComponent from vanilla assets
     auto imported_porymap_component_result = importer_->import_porymap_component_from_vanilla(tileset_name);
     if (!imported_porymap_component_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"import job failed for '{}'", FormatParam{tileset_name, Style::bold}},
+            FormattableError{"Import job failed for '{}'.", FormatParam{tileset_name, Style::bold}},
             imported_porymap_component_result};
     }
     auto imported_porymap_component = std::move(imported_porymap_component_result.value());
@@ -40,7 +40,7 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
     auto decompiled_tileset_result = decompiler_->decompile(*tileset);
     if (!decompiled_tileset_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"decompile job failed for '{}'", FormatParam{tileset_name, Style::bold}},
+            FormattableError{"Decompile job failed for '{}'.", FormatParam{tileset_name, Style::bold}},
             decompiled_tileset_result};
     }
     const auto decompiled_tileset = std::move(decompiled_tileset_result.value());
@@ -48,7 +48,7 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
     // Step 4: Save to deterministic paths
     if (const auto save_result = tileset_repo_->save(*decompiled_tileset); !save_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"tileset save job failed for '{}'", FormatParam{tileset_name, Style::bold}}, save_result};
+            FormattableError{"Tileset save job failed for '{}'.", FormatParam{tileset_name, Style::bold}}, save_result};
     }
 
     /*
@@ -63,7 +63,7 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
         // TODO: add more details to this error message
         return ChainableResult<void>{
             FormattableError{
-                "failed to persist Porytiles-managed state for '{}'", FormatParam{tileset_name, Style::bold}},
+                "Failed to persist Porytiles-managed state for '{}'.", FormatParam{tileset_name, Style::bold}},
             persist_state_result};
     }
 

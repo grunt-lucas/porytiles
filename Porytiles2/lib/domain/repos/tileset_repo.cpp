@@ -77,10 +77,7 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     }
 
     PT_TRY_ASSIGN_CHAIN_ERR(
-        tileset_root_key,
-        key_provider_->key_for_tileset_root(tileset.name()),
-        "tileset save failed",
-        void);
+        tileset_root_key, key_provider_->key_for_tileset_root(tileset.name()), "tileset save failed", void);
     PT_TRY_ASSIGN_CHAIN_ERR(
         generated_anim_code_key,
         key_provider_->key_for_porymap_anim_params(tileset.name()),

@@ -6,8 +6,8 @@
 #include "gsl/pointers"
 
 #include "porytiles2/domain/config/domain_config.hpp"
-#include "porytiles2/domain/services/behavior_map_provider.hpp"
 #include "porytiles2/domain/models/porytiles_tileset_component.hpp"
+#include "porytiles2/domain/services/behavior_map_provider.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {

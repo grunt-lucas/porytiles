@@ -141,6 +141,36 @@ The timer div and mod parameters can be specified in the anim params file.
 Everything else in this function is stock.
 Spend some time analyzing the VDests stuff to figure out the best way to handle it.
 
+### Note From The Future: Use JSON Instead?
+Also, here is the format for manual animation linking:
+```json
+{
+  "flower": {
+    "sPrimaryTilesetAnimCounter": 0, // users can specify this if they want
+    "frame_factor": 16, // this is modulus used in the main TilesetAnim function
+    "frame_offset": 1,  // this is the value on the right of the equals sign in the "i % 16 == 1" constructs
+    "frames": [ // this array defines the order of the frames, e.g. the "const u16 *const gTilesetAnims_PorytilesPrimaryTutorial_Flower[]"
+      0,
+      1,
+      0,
+      2
+    ],
+    // metatile definitions here
+    "metatiles": [
+      {
+        "id": 22,
+        "layer": "middle",
+        "subtile": "northwest",
+        "frame_subtile_index": 1,
+        "hflip": true,
+        "vflip": false
+      }
+    ]
+  }
+}
+```
+We can spit out a warning if the user specified a metatile subtile that didn't match a subtile in 00.png of the corresponding animation. E.g. in the example above, if on the middle layer sheet the northwest subtile of metatile 22 is not the hflipped version of flower's 00.png subtile 1, then we warn the user that the contents of the layer sheet doesn't match the configured animation, and the compilation result may not look as they expect.
+
 ## Key Frames
 We'll retain the "key frame" concept.
 However, it will be significantly more intuitive.

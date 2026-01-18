@@ -14,14 +14,15 @@ ChainableResult<void> CreatePrimaryTileset::create(const std::string &name) cons
     // Step 1: Error if tileset already exists
     if (metadata_provider_->exists(name)) {
         return FormattableError{
-            "cannot create tileset '{}': a tileset with this name already exists", FormatParam{name, Style::bold}};
+            std::vector<std::string>{"Cannot create tileset '{}'.", "A tileset with this name already exists."},
+            std::vector<std::vector<FormatParam>>{std::vector{FormatParam{name, Style::bold}}}};
     }
 
     // Step 2: Create a default PorytilesTilesetComponent via PrimaryTilesetCreator
     auto porytiles_component_result = creator_->create_sample_porytiles_component(name);
     if (!porytiles_component_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"failed to create PorytilesTilesetComponent for '{}'", FormatParam{name, Style::bold}},
+            FormattableError{"Failed to create Porytiles source assets for '{}'.", FormatParam{name, Style::bold}},
             porytiles_component_result};
     }
     auto porytiles_component = std::move(porytiles_component_result.value());
@@ -34,7 +35,7 @@ ChainableResult<void> CreatePrimaryTileset::create(const std::string &name) cons
     auto compile_result = compiler_->compile(*tileset);
     if (!compile_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"compilation failed for '{}'", FormatParam{name, Style::bold}}, compile_result};
+            FormattableError{"Compilation failed for '{}'.", FormatParam{name, Style::bold}}, compile_result};
     }
     auto compiled_tileset = std::move(compile_result.value());
 
@@ -43,7 +44,7 @@ ChainableResult<void> CreatePrimaryTileset::create(const std::string &name) cons
     auto persist_result = tileset_manager_->persist_managed_new(name);
     if (!persist_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"failed to persist managed state for '{}'", FormatParam{name, Style::bold}},
+            FormattableError{"Failed to persist managed state for '{}'.", FormatParam{name, Style::bold}},
             persist_result};
     }
 
@@ -51,7 +52,7 @@ ChainableResult<void> CreatePrimaryTileset::create(const std::string &name) cons
     auto save_result = tileset_repo_->save(*compiled_tileset);
     if (!save_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"failed to save tileset '{}'", FormatParam{name, Style::bold}}, save_result};
+            FormattableError{"Failed to save tileset '{}'.", FormatParam{name, Style::bold}}, save_result};
     }
 
     return {};

@@ -4,7 +4,6 @@
 
 #include "gsl/pointers"
 
-#include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/config/domain_config.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/services/palette_printer.hpp"

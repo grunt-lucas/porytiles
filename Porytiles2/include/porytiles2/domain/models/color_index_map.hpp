@@ -204,9 +204,9 @@ class ColorIndexMap {
      * @brief Adds colors from an animation to the mapping using intrinsic transparency.
      *
      * @details
-     * Iterates through all tiles in the animation's key frame (if present) and all regular frames, adding any new colors
-     * to the mapping. Colors that already exist in the mapping are skipped. New colors are assigned sequential indices
-     * starting from the current size of the mapping.
+     * Iterates through all tiles in the animation's key frame (if present) and all regular frames, adding any new
+     * colors to the mapping. Colors that already exist in the mapping are skipped. New colors are assigned sequential
+     * indices starting from the current size of the mapping.
      *
      * This overload is only available for pixel types that support intrinsic transparency (e.g., IndexPixel).
      *
@@ -231,9 +231,9 @@ class ColorIndexMap {
      * @brief Adds colors from an animation to the mapping using extrinsic transparency.
      *
      * @details
-     * Iterates through all tiles in the animation's key frame (if present) and all regular frames, adding any new colors
-     * to the mapping. Colors that already exist in the mapping are skipped. New colors are assigned sequential indices
-     * starting from the current size of the mapping.
+     * Iterates through all tiles in the animation's key frame (if present) and all regular frames, adding any new
+     * colors to the mapping. Colors that already exist in the mapping are skipped. New colors are assigned sequential
+     * indices starting from the current size of the mapping.
      *
      * This overload is only available for pixel types that support extrinsic transparency (e.g., Rgba32).
      *

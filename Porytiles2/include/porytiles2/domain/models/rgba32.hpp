@@ -72,6 +72,8 @@ class Rgba32 {
 
     [[nodiscard]] std::string to_jasc_str() const;
 
+    [[nodiscard]] std::string to_csv_str() const;
+
     [[nodiscard]] bool equals_ignoring_alpha(const Rgba32 &other) const;
 
     // friend std::ostream &operator<<(std::ostream &os, const Rgba32 &rgba);

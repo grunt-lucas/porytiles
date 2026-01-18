@@ -10,6 +10,7 @@
 #include "porytiles2/domain/algorithms/diagnostic_stencils.hpp"
 #include "porytiles2/domain/algorithms/palette_matchers.hpp"
 #include "porytiles2/domain/algorithms/tile_converters.hpp"
+#include "porytiles2/domain/algorithms/tileset_compile_validators.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/canonical_shape_tile.hpp"
@@ -27,15 +28,11 @@
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
 #include "porytiles2/domain/services/metatile_decompiler.hpp"
-#include "porytiles2/domain/services/metatile_validator.hpp"
-#include "porytiles2/domain/services/palette_validator.hpp"
 #include "porytiles2/utilities/functional/transform.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
-#include "porytiles2/xcut/config/config_validators.hpp"
 #include "porytiles2/xcut/config/unwrap_config.hpp"
-#include "porytiles2/xcut/di/components.hpp"
 
 namespace {
 
@@ -173,6 +170,10 @@ ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
      *
      * Need to think about the right way to fix. Is there a scenario where setting pals::optimize tiles::locked even
      * makes sense? Instead of adding more tortured logic to the compiler, we could just ban this combo.
+     *
+     * Thinking about it more, I think we need to ban this combo. Tiles as an artifact are fundamentally dependent on
+     * the palettes. If palettes change, tiles have to change. So it doesn't make sense to allow a setting where
+     * palettes are being changed but then the tiles aren't.
      */
 
     // Unwrap config values
@@ -267,23 +268,84 @@ ChainableResult<void> CompilerTask::pipeline_step_process_porymap_input()
 
 ChainableResult<void> CompilerTask::pipeline_step_validate_input()
 {
-    MetatileValidator validator{&format_, &diag_, &tile_printer_, &pal_printer_, &config_, tileset_.name()};
-
-    // Run validation on Porytiles metatiles
-    PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_primary(porytiles_metatiles_),
-        "encountered error(s) while validating Porytiles metatiles",
-        void);
-
-    // Validate Porytiles palettes, Porymap palettes, and hints
+    TilesetCompileValidatorServices services{config_, format_, diag_, tile_printer_, pal_printer_};
     const std::vector<PaletteHint> hints = pal_hints_enabled_.value() ? pal_hints_.value() : std::vector<PaletteHint>{};
-    const PaletteValidator pal_validator{
-        &format_, &diag_, &pal_printer_, &config_, tileset_.name(), pals_edit_mode_ != ArtifactEditMode::optimize};
-    PT_TRY_CALL_CHAIN_ERR(
-        pal_validator.validate_primary(
-            tileset_.porymap_component().pals(), tileset_.porytiles_component().pals(), hints),
-        "palette validation failed",
+
+    /*
+     * TODO: do we want to collate some of these before returning? It would present more errors to user at once. There
+     * are pros and cons to this.
+     */
+
+    // Run metatile count validation
+    PT_TRY_CALL_PASS_ERR(validate_metatile_count(services, tileset_.name(), false, porytiles_metatiles_), void);
+
+    if (pals_edit_mode_ != ArtifactEditMode::optimize) {
+        // Validate Porymap pals if user is asking for pals:locked or pals:patch
+        for (std::size_t pal_index = 0; pal_index < tileset_.porymap_component().pals().size(); ++pal_index) {
+            PT_TRY_CALL_PASS_ERR(
+                validate_porymap_pal(
+                    services, tileset_.name(), tileset_.porymap_component().pals().at(pal_index), pal_index),
+                void);
+        }
+    }
+
+    // Validate Porytiles pals
+    // TODO: this loop should respect num_pals_in_primary setting
+    for (std::size_t pal_index = 0; pal_index < tileset_.porytiles_component().pals().size(); ++pal_index) {
+        if (tileset_.porytiles_component().pals().at(pal_index).has_value()) {
+            PT_TRY_CALL_PASS_ERR(
+                validate_porytiles_pal(
+                    services, tileset_.name(), tileset_.porytiles_component().pals().at(pal_index).value(), pal_index),
+                void);
+        }
+    }
+
+    // Validate palette hints
+    for (const auto &hint : hints) {
+        PT_TRY_CALL_PASS_ERR(validate_pal_hint(services, tileset_.name(), hint), void);
+    }
+
+    // Run alpha channel validation
+    PT_TRY_CALL_PASS_ERR(
+        validate_alpha_channels(
+            services, tileset_.name(), porytiles_metatiles_, tileset_.porytiles_component().anims()),
         void);
+
+    // Run layer mode validation
+    PT_TRY_CALL_PASS_ERR(validate_layer_mode(services, tileset_.name(), porytiles_metatiles_), void);
+
+    // Run tile color count validation
+    PT_TRY_CALL_PASS_ERR(
+        validate_tile_color_count(
+            services, tileset_.name(), porytiles_metatiles_, tileset_.porytiles_component().anims()),
+        void);
+
+    // Run global color count validation
+    PT_TRY_CALL_PASS_ERR(
+        validate_global_color_count(
+            services,
+            tileset_.name(),
+            false,
+            porytiles_metatiles_,
+            tileset_.porytiles_component().anims(),
+            tileset_.porytiles_component().pals(),
+            hints),
+        void);
+
+    // Run precision loss validation
+    PT_TRY_CALL_PASS_ERR(
+        validate_precision_loss(
+            services,
+            tileset_.name(),
+            porytiles_metatiles_,
+            tileset_.porytiles_component().anims(),
+            tileset_.porytiles_component().pals(),
+            hints,
+            std::nullopt),
+        void);
+
+    // Run animation validation
+    PT_TRY_CALL_PASS_ERR(validate_anim_frames(services, tileset_.name(), tileset_.porytiles_component().anims()), void);
 
     return {};
 }
@@ -726,8 +788,6 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing(const std::v
 ChainableResult<ColorIndexMap<Rgba32>> CompilerTask::pipeline_helper_build_color_index_map(
     const std::vector<PaletteHint> &hints, std::size_t color_count_limit) const
 {
-    constexpr auto tag = "global-color-count-violation";
-
     // Create ColorIndexMap from the Porytiles tiles
     ColorIndexMap<Rgba32> color_index_map{};
     for (const auto &tile : porytiles_pixel_rgba_) {
@@ -739,59 +799,29 @@ ChainableResult<ColorIndexMap<Rgba32>> CompilerTask::pipeline_helper_build_color
         color_index_map.add_anim(anim, extrinsic_transparency_.value());
     }
 
-    // TODO: instead of validating here, let's validate at an earlier step so we can give good error messages
-
-    // Add Porytiles palettes and validate after each
+    // Add Porytiles palettes
+    /*
+     * TODO: we should be respecting the num_pals_in_primary fieldmap setting here: don't add palettes for pals that
+     * aren't active.
+     */
     for (std::size_t pal_index = 0; pal_index < tileset_.porytiles_component().pals().size(); ++pal_index) {
         const auto &maybe_porytiles_pal = tileset_.porytiles_component().pals().at(pal_index);
         if (!maybe_porytiles_pal.has_value()) {
             continue;
         }
         color_index_map.add_pal(maybe_porytiles_pal.value(), extrinsic_transparency_.value());
-        if (color_index_map.size() > color_count_limit) {
-            diag_.error(
-                tag,
-                format_.format(
-                    "found '{}' global unique colors after adding Porytiles palette '{}', limit is '{}'",
-                    FormatParam{color_index_map.size(), Style::bold},
-                    FormatParam{pal_filename(pal_index), Style::bold},
-                    FormatParam{color_count_limit, Style::bold}));
-            diag_.note(tag, global_color_limit_definition(format_, color_count_limit, num_pals_in_primary_));
-
-            return FormattableError{
-                "{}: found '{}' unique colors after adding Porytiles palette '{}', limit is '{}'",
-                FormatParam{tag, Style::bold},
-                FormatParam{color_index_map.size(), Style::bold},
-                FormatParam{pal_filename(pal_index), Style::bold},
-                FormatParam{color_count_limit, Style::bold}};
-        }
     }
 
-    // Add palette hints and validate after each
+    // Add palette hints
     for (const auto &hint : hints) {
         color_index_map.add_pal(hint.pal(), extrinsic_transparency_.value());
-        if (color_index_map.size() > color_count_limit) {
-            diag_.error(
-                tag,
-                format_.format(
-                    "found '{}' global unique colors after adding palette hint '{}', limit is '{}'",
-                    FormatParam{color_index_map.size(), Style::bold},
-                    FormatParam{hint.name(), Style::bold},
-                    FormatParam{color_count_limit, Style::bold}));
-            diag_.note(tag, global_color_limit_definition(format_, color_count_limit, num_pals_in_primary_));
-
-            return FormattableError{
-                "{}: found '{}' unique colors after adding palette hint '{}', limit is '{}'",
-                FormatParam{tag, Style::bold},
-                FormatParam{color_index_map.size(), Style::bold},
-                FormatParam{hint.name(), Style::bold},
-                FormatParam{color_count_limit, Style::bold}};
-        }
     }
 
     // Check color count one more time, we validated this earlier and provided granular feedback to user
     if (color_index_map.size() > color_count_limit) {
-        panic("color_index_map.size() > count_limit - this should have already been validated by MetatileValidator");
+        panic(
+            "color_index_map.size() > count_limit - this should have already been validated by "
+            "pipeline_step_validate_input");
     }
 
     return color_index_map;

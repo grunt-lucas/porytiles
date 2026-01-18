@@ -124,7 +124,7 @@ ChainableResult<PackingOutput> BestFusionStrategy::pack(const PackingInput &inpu
      * allow regular tiles that are large to go before smaller hints, since this probably helps to find an optimal
      * result -- that larger tile *has to* get put somewhere in order for a solution to be found. No sense placing the
      * hint first, only to block ourselves from finding a possible solution down the line. In other words, the promised
-     * hint precondition is not violated, and we potentially get a better solution.
+     * hint postcondition is not violated, and we potentially get a better solution.
      */
 
     // Presort the tile pool so tiles with larger color counts come first (First Fit Decreasing heuristic)

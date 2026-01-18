@@ -82,7 +82,7 @@ std::vector<std::string> render_tile_with_highlights(
             const auto color_style_bg = rgba_to_bg_style(pixel_color);
             const auto color_style_fg = rgba_to_fg_style(pixel_color);
             if (highlight_coords.contains({row, col})) {
-                ss << format->format("{}", FormatParam{"XX", Style::bold | color_style_fg});
+                ss << format->format("{}", FormatParam{"XX", Style::bold | Style::blink | color_style_fg});
             }
             else {
                 ss << format->format("{}", FormatParam{"  ", Style::bold | color_style_bg});

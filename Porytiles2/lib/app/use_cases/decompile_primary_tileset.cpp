@@ -12,17 +12,17 @@ ChainableResult<void> DecompilePrimaryTileset::decompile(const std::string &name
 {
     // 1. Check if the primary tileset exists and is Porytiles-managed. If not, abort with error.
     if (!metadata_provider_->exists(name)) {
-        return FormattableError{"tileset '{}' does not exist", FormatParam{name, Style::bold}};
+        return FormattableError{"Tileset '{}' does not exist.", FormatParam{name, Style::bold}};
     }
     if (!tileset_manager_->is_porytiles_managed(name)) {
-        return FormattableError{"tileset '{}' exists but is not Porytiles-managed", FormatParam{name, Style::bold}};
+        return FormattableError{"Tileset '{}' exists but is not Porytiles-managed.", FormatParam{name, Style::bold}};
     }
 
     // 2. Load the tileset into a `Tileset` aggregate.
     auto maybe_tileset = tileset_repo_->load(name);
     if (!maybe_tileset.has_value()) {
         return ChainableResult<void>{
-            FormattableError{format_->format("failed to load tileset '{}'", FormatParam{name, Style::bold})},
+            FormattableError{format_->format("Failed to load tileset '{}'.", FormatParam{name, Style::bold})},
             maybe_tileset};
     }
     const auto tileset = std::move(maybe_tileset.value());
@@ -37,7 +37,7 @@ ChainableResult<void> DecompilePrimaryTileset::decompile(const std::string &name
          * metatile tilemap entries on which to operate. If not, then the import will basically wipe everything, We
          * should think about this more.
          */
-        return FormattableError{"metatiles.bin is empty, nothing to import"};
+        return FormattableError{"Artifact metatiles.bin is empty, nothing to import."};
     }
 
     /*
@@ -60,7 +60,7 @@ ChainableResult<void> DecompilePrimaryTileset::decompile(const std::string &name
             PT_TRY_ASSIGN_CHAIN_ERR(
                 porytiles_keys,
                 tileset_repo_->key_provider().get_porytiles_artifact_keys(name),
-                "failed to get Porytiles artifact keys",
+                "Failed to get Porytiles artifact keys.",
                 void);
             const auto mismatched_keys =
                 tileset_repo_->checksum_provider().find_unsynced_tileset_artifacts(name, porytiles_keys);
@@ -68,7 +68,7 @@ ChainableResult<void> DecompilePrimaryTileset::decompile(const std::string &name
                 // TODO: better message here
                 std::vector<std::string> err_msg{};
                 err_msg.reserve(mismatched_keys.size());
-                err_msg.emplace_back("uncompiled changes present in Porytiles assets:");
+                err_msg.emplace_back("Uncompiled changes present in Porytiles assets:");
                 for (const auto &key : mismatched_keys) {
                     err_msg.emplace_back("  " + key.key());
                 }
@@ -81,7 +81,7 @@ ChainableResult<void> DecompilePrimaryTileset::decompile(const std::string &name
         PT_TRY_ASSIGN_CHAIN_ERR(
             porymap_keys,
             tileset_repo_->key_provider().get_porymap_artifact_keys(name),
-            "failed to get Porymap artifact keys",
+            "Failed to get Porymap artifact keys.",
             void);
         if (tileset_repo_->checksum_provider().all_checksums_tileset_match(name, porymap_keys)) {
             // TODO: better message here
@@ -94,14 +94,14 @@ ChainableResult<void> DecompilePrimaryTileset::decompile(const std::string &name
     auto maybe_imported_tileset = decompiler_->decompile(*tileset);
     if (!maybe_imported_tileset.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"import job failed for '{}'", FormatParam{name, Style::bold}}, maybe_imported_tileset};
+            FormattableError{"Import job failed for '{}'.", FormatParam{name, Style::bold}}, maybe_imported_tileset};
     }
     const auto imported_tileset = std::move(maybe_imported_tileset.value());
 
     // 7. Persist the `Tileset` (which also caches the checksums).
     if (const auto save_result = tileset_repo_->save(*imported_tileset); !save_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"tileset save job failed for '{}'", FormatParam{name, Style::bold}}, save_result};
+            FormattableError{"Tileset save job failed for '{}'.", FormatParam{name, Style::bold}}, save_result};
     }
 
     return {};
