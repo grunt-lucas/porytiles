@@ -962,7 +962,32 @@ void CompilerTask::pipeline_helper_compile_animations()
             subtile_pal_indices.push_back(matches.at(0).pal_index);
         }
 
-        // 4. Convert regular frames (key frame not needed in compiled format)
+        // 4. Determine palette for PNG display and warn if multiple palettes are used
+        const std::size_t frame_pal_index = subtile_pal_indices.at(0);
+        const bool uses_multiple_palettes =
+            !std::ranges::all_of(subtile_pal_indices, [&](std::size_t idx) { return idx == frame_pal_index; });
+
+        if (uses_multiple_palettes) {
+            std::vector<std::string> warning_lines;
+            warning_lines.emplace_back(format_.format(
+                "animation '{}' uses multiple palettes across subtiles", FormatParam{anim_name, Style::bold}));
+            warning_lines.emplace_back(format_.format(
+                "Frame PNGs will be saved using palette '{}' for display purposes.",
+                FormatParam{pal_filename(frame_pal_index), Style::bold}));
+            diag_.warning("multi-palette-animation", warning_lines);
+        }
+
+        // Build a dynamic palette for embedding in the AnimationFrame
+        const auto &fixed_pal = new_porymap_pals_.at(frame_pal_index);
+        Palette<Rgba32> anim_palette{};
+        for (std::size_t i = 0; i < fixed_pal.size(); ++i) {
+            if (fixed_pal.is_wildcard(i)) {
+                panic("Porymap pal '" + std::to_string(frame_pal_index) + "' has illegal wildcard");
+            }
+            anim_palette.add(fixed_pal.at(i));
+        }
+
+        // 5. Convert regular frames (key frame not needed in compiled format)
         Animation<IndexPixel> compiled_anim{anim_name};
 
         for (const auto &[frame_name, source_frame] : source_anim.frames()) {
@@ -977,16 +1002,18 @@ void CompilerTask::pipeline_helper_compile_animations()
                     index_tile_from_color_tile(rgba_tile, pal, extrinsic_transparency_.value()));
             }
 
-            compiled_anim.put_frame(frame_name, AnimationFrame{frame_name, std::move(frame_index_tiles)});
+            AnimationFrame<IndexPixel> frame{frame_name, std::move(frame_index_tiles)};
+            frame.palette(anim_palette);
+            compiled_anim.put_frame(frame_name, std::move(frame));
         }
 
-        // 5. Set params with updated tile_offset/tile_count
+        // 6. Set params with updated tile_offset/tile_count
         AnimationParams params = source_anim.params();
         params.tile_offset(tile_offset);
         params.tile_count(tile_count);
         compiled_anim.params(std::move(params));
 
-        // 6. Add to output component (key_frame left as std::nullopt)
+        // 7. Add to output component (key_frame left as std::nullopt)
         new_porymap_component_->add_anim(std::move(compiled_anim));
     }
 }
