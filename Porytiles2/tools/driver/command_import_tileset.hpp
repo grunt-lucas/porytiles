@@ -171,7 +171,7 @@ class ImportTilesetCommand final : public Command {
         auto import_result = import_use_case.import(tileset_name_);
         if (!import_result.has_value()) {
             const auto fail_result = ChainableResult<std::unique_ptr<Tileset>>{
-                FormattableError{"failed to import tileset '{}'", FormatParam{tileset_name_, Style::bold}},
+                FormattableError{"Failed to import tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
                 import_result};
             diag->fatal(fail_result);
         }

@@ -70,7 +70,7 @@ ChainableResult<void> DecompilePrimaryTileset::decompile(const std::string &name
                 err_msg.reserve(mismatched_keys.size());
                 err_msg.emplace_back("Uncompiled changes present in Porytiles assets:");
                 for (const auto &key : mismatched_keys) {
-                    err_msg.emplace_back("  " + key.key());
+                    err_msg.emplace_back(format_->format("  {}", FormatParam{key.key(), Style::bold}));
                 }
                 return ChainableResult<void>{FormattableError{err_msg}};
             }
@@ -91,15 +91,15 @@ ChainableResult<void> DecompilePrimaryTileset::decompile(const std::string &name
     }
 
     // 6. Decompile the `PorymapTilesetComponent`, generating a new `PorytilesTilesetComponent`.
-    auto maybe_imported_tileset = decompiler_->decompile(*tileset);
-    if (!maybe_imported_tileset.has_value()) {
+    auto maybe_decompiled_tileset = decompiler_->decompile(*tileset);
+    if (!maybe_decompiled_tileset.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"Import job failed for '{}'.", FormatParam{name, Style::bold}}, maybe_imported_tileset};
+            FormattableError{"Import job failed for '{}'.", FormatParam{name, Style::bold}}, maybe_decompiled_tileset};
     }
-    const auto imported_tileset = std::move(maybe_imported_tileset.value());
+    const auto decompiled_tileset = std::move(maybe_decompiled_tileset.value());
 
     // 7. Persist the `Tileset` (which also caches the checksums).
-    if (const auto save_result = tileset_repo_->save(*imported_tileset); !save_result.has_value()) {
+    if (const auto save_result = tileset_repo_->save(*decompiled_tileset); !save_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{"Tileset save job failed for '{}'.", FormatParam{name, Style::bold}}, save_result};
     }

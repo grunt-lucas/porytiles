@@ -160,7 +160,7 @@ class CreateTilesetCommand final : public Command {
         auto create_result = create_use_case.create(tileset_name_);
         if (!create_result.has_value()) {
             const auto fail_result = ChainableResult<void>{
-                FormattableError{"failed to create tileset '{}'", FormatParam{tileset_name_, Style::bold}},
+                FormattableError{"Failed to create tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
                 create_result};
             diag->fatal(fail_result);
         }

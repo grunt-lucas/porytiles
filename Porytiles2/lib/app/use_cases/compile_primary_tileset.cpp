@@ -51,9 +51,9 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &name) co
                 // TODO: better message here
                 std::vector<std::string> err_msg{};
                 err_msg.reserve(mismatched_keys.size());
-                err_msg.emplace_back("unimported changes present in Porymap assets:");
+                err_msg.emplace_back("Unimported changes present in Porymap assets:");
                 for (const auto &key : mismatched_keys) {
-                    err_msg.emplace_back("  " + key.key());
+                    err_msg.emplace_back(format_->format("  {}", FormatParam{key.key(), Style::bold}));
                 }
                 return ChainableResult<void>{FormattableError{err_msg}};
             }

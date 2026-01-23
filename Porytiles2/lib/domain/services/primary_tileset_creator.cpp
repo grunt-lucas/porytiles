@@ -1325,7 +1325,7 @@ PrimaryTilesetCreator::create_sample_porytiles_component(const std::string &tile
     set_grass_at(middle, 1);
     // TODO: add this back once we finish anim compilation
     // For now, comment it out to expose potential bugs and help with dev
-    // set_flower_key_frame_at(middle, 2);
+    set_flower_key_frame_at(middle, 2);
 
     component->bottom(bottom);
     component->middle(middle);

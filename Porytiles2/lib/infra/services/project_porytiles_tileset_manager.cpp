@@ -86,7 +86,7 @@ ChainableResult<void> append_incbin_declarations(
     if (!graphics_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{
-                "failed to append graphics INCBIN declarations for '{}'", FormatParam{tileset_name, Style::bold}},
+                "Failed to append graphics INCBIN declarations for '{}'.", FormatParam{tileset_name, Style::bold}},
             graphics_result};
     }
 
@@ -95,7 +95,7 @@ ChainableResult<void> append_incbin_declarations(
     if (!metatiles_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{
-                "failed to append metatiles INCBIN declarations for '{}'", FormatParam{tileset_name, Style::bold}},
+                "Failed to append metatiles INCBIN declarations for '{}'.", FormatParam{tileset_name, Style::bold}},
             metatiles_result};
     }
 
@@ -110,7 +110,7 @@ ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_existing(c
     auto metadata_result = metadata_provider_->metadata_for(tileset_name);
     if (!metadata_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"failed to read metadata for tileset '{}'", FormatParam{tileset_name, Style::bold}},
+            FormattableError{"Failed to read metadata for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
             metadata_result};
     }
     const auto &metadata = metadata_result.value();
@@ -138,7 +138,7 @@ ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_existing(c
                                : infra_config_->tileset_paths_primary_bin(ConfigScopeType::tileset, tileset_name);
     if (!bin_path_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"failed to get tileset bin path config for '{}'", FormatParam{tileset_name, Style::bold}},
+            FormattableError{"Failed to get tileset bin path config for '{}'.", FormatParam{tileset_name, Style::bold}},
             bin_path_result};
     }
     const std::string bin_path_base = bin_path_result.value();
@@ -155,7 +155,7 @@ ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_existing(c
     if (!overwrite_callback_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{
-                "failed to get overwrite_callback config for '{}'", FormatParam{tileset_name, Style::bold}},
+                "Failed to get overwrite_callback config for '{}'.", FormatParam{tileset_name, Style::bold}},
             overwrite_callback_result};
     }
     const bool overwrite_callback = overwrite_callback_result.value();
@@ -172,7 +172,7 @@ ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_existing(c
         if (!wire_result.has_value()) {
             return ChainableResult<void>{
                 FormattableError{
-                    "failed to wire tileset_anims.c include for '{}'", FormatParam{tileset_name, Style::bold}},
+                    "Failed to wire tileset_anims.c include for '{}'.", FormatParam{tileset_name, Style::bold}},
                 wire_result};
         }
     }
@@ -188,7 +188,7 @@ ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_new(const 
     if (!create_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{
-                "failed to create tileset struct in headers.h for '{}'", FormatParam{tileset_name, Style::bold}},
+                "Failed to create tileset struct in headers.h for '{}'.", FormatParam{tileset_name, Style::bold}},
             create_result};
     }
 
@@ -200,7 +200,7 @@ ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_new(const 
     auto bin_path_result = infra_config_->tileset_paths_primary_bin(ConfigScopeType::tileset, tileset_name);
     if (!bin_path_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"failed to get tileset bin path config for '{}'", FormatParam{tileset_name, Style::bold}},
+            FormattableError{"Failed to get tileset bin path config for '{}'.", FormatParam{tileset_name, Style::bold}},
             bin_path_result};
     }
     const std::string bin_path_base = bin_path_result.value();
@@ -225,7 +225,7 @@ ProjectPorytilesTilesetManager::wire_anim_code(const std::string &tileset_name, 
     if (!wire_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{
-                "failed to wire tileset_anims include/declaration for '{}'", FormatParam{tileset_name, Style::bold}},
+                "Failed to wire tileset_anims include/declaration for '{}'.", FormatParam{tileset_name, Style::bold}},
             wire_result};
     }
 
@@ -237,7 +237,8 @@ ProjectPorytilesTilesetManager::wire_anim_code(const std::string &tileset_name, 
     auto callback_result = metadata_writer_->update_callback(tileset_name, callback_name);
     if (!callback_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"failed to update callback in headers.h for '{}'", FormatParam{tileset_name, Style::bold}},
+            FormattableError{
+                "Failed to update callback in headers.h for '{}'.", FormatParam{tileset_name, Style::bold}},
             callback_result};
     }
 

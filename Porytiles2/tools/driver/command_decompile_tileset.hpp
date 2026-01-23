@@ -163,7 +163,7 @@ class DecompileTilesetCommand final : public Command {
         auto decompile_result = decompile_use_case.decompile(tileset_name_);
         if (!decompile_result.has_value()) {
             const auto fail_result = ChainableResult<std::unique_ptr<Tileset>>{
-                FormattableError{"failed to decompile tileset '{}'", FormatParam{tileset_name_, Style::bold}},
+                FormattableError{"Failed to decompile tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
                 decompile_result};
             diag->fatal(fail_result);
         }

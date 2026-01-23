@@ -55,6 +55,16 @@ ChainableResult<void> CreatePrimaryTileset::create(const std::string &name) cons
             FormattableError{"Failed to save tileset '{}'.", FormatParam{name, Style::bold}}, save_result};
     }
 
+    // Step 7: Wire animation code if tileset has animations
+    if (!compiled_tileset->porymap_component().anims().empty()) {
+        auto wire_result = tileset_manager_->wire_anim_code(name, /*is_secondary=*/false);
+        if (!wire_result.has_value()) {
+            return ChainableResult<void>{
+                FormattableError{"Failed to wire animation code for '{}'.", FormatParam{name, Style::bold}},
+                wire_result};
+        }
+    }
+
     return {};
 }
 
