@@ -552,11 +552,6 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
         }
     }
 
-    if (non_default_count == 0) {
-        // No non-default attributes to write
-        return {};
-    }
-
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
         compute_transaction_dest_path(transaction_root_, dest_key),
@@ -571,6 +566,12 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
 
     // Write header
     out << "id,behavior\n";
+
+    if (non_default_count == 0) {
+        // No non-default attributes to write
+        out.flush();
+        return {};
+    }
 
     // Write each non-default attribute row
     for (const auto &[metatile_id, attribute] : attributes) {

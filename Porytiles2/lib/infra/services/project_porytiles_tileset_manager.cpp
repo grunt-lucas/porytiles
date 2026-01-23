@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <ranges>
 
 #include "nlohmann/json.hpp"
 
@@ -220,6 +221,34 @@ ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_new(const 
 ChainableResult<void>
 ProjectPorytilesTilesetManager::wire_anim_code(const std::string &tileset_name, bool is_secondary) const
 {
+    /*
+     * TODO: update the whole callback handling thing here. Instead of 'tileset.animations.overwrite_callback', let's
+     * call the config value 'tileset.animations.wire_anim_code'. If enabled, this wire_anim_code method calls the
+     * TilesetAnimsModifier::wire_include_for_tileset and update_callback("callback_name"). If disabled, this method can
+     * call TilesetAnimsModifier::remove_include_for_tileset and update_callback("NULL").
+     */
+
+    // Determine whether to update callback field
+    auto overwrite_callback_result =
+        infra_config_->tileset_animations_overwrite_callback(ConfigScopeType::tileset, tileset_name);
+    if (!overwrite_callback_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{
+                "Failed to get overwrite_callback config for '{}'.", FormatParam{tileset_name, Style::bold}},
+            overwrite_callback_result};
+    }
+    const auto &overwrite_callback = overwrite_callback_result.value();
+
+    if (!overwrite_callback) {
+        std::vector<std::string> remark_text;
+        remark_text.push_back(format_->format(
+            "skipping animation wiring due to configuration:", FormatParam{overwrite_callback, Style::bold}));
+        remark_text.emplace_back("");
+        std::ranges::copy(overwrite_callback.prettify(*format_), std::back_inserter(remark_text));
+        diag_->remark("wire-tileset-animation", remark_text);
+        return {};
+    }
+
     // Step 1: Wire include in tileset_anims.c AND declaration in tileset_anims.h
     auto wire_result = tileset_anims_modifier_->wire_include_for_tileset(tileset_name, is_secondary);
     if (!wire_result.has_value()) {

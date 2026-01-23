@@ -114,7 +114,14 @@ class DecompileTilesetCommand final : public Command {
         IncbinDeclarationAppender incbin_appender{project_root, text_formatter};
         ProjectTilesetAnimsModifier tileset_anims_modifier{project_root, &config, text_formatter, diag.get()};
         ProjectPorytilesTilesetManager tileset_manager{
-            project_root, &metadata_provider, &metadata_writer, &config, &incbin_appender, &tileset_anims_modifier};
+            project_root,
+            &metadata_provider,
+            &metadata_writer,
+            &config,
+            text_formatter,
+            diag.get(),
+            &incbin_appender,
+            &tileset_anims_modifier};
 
         // Setup the tileset repository
         ProjectTilesetArtifactKeyProvider key_provider{project_root, &config, text_formatter, diag.get()};
