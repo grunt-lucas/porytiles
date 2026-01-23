@@ -75,7 +75,7 @@ class PackableTile {
      */
     struct AnimId {
         std::string name;
-        std::size_t frame_index;
+        std::size_t subtile_index;
         [[nodiscard]] auto operator<=>(const AnimId &) const = default;
         [[nodiscard]] bool operator==(const AnimId &) const = default;
     };
@@ -95,7 +95,7 @@ class PackableTile {
      * @details
      * The order of alternatives determines sorting: HintId < PrefilledPaletteId < RegularId.
      */
-    using Id = std::variant<HintId, PrefilledPaletteId, RegularId>;
+    using Id = std::variant<HintId, PrefilledPaletteId, RegularId, AnimId>;
 
     /**
      * @brief Constructs a PackableTile from a palette hint.
@@ -120,6 +120,14 @@ class PackableTile {
      * @param color_set The set of colors present in this tile
      */
     PackableTile(RegularId id, ColorSet color_set);
+
+    /**
+     * @brief Constructs a PackableTile from an animation.
+     *
+     * @param id The anim identifier
+     * @param color_set The set of colors present in this tile
+     */
+    PackableTile(AnimId id, ColorSet color_set);
 
     /**
      * @brief Constructs a PackableTile from an Id variant.
@@ -262,6 +270,13 @@ inline std::string to_string(const PackableTile::Id &id)
             else if constexpr (std::is_same_v<T, PackableTile::RegularId>) {
                 return "Regular(" + std::to_string(value.index) + ")";
             }
+            else if constexpr (std::is_same_v<T, PackableTile::AnimId>) {
+                return "Anim(" + value.name + ", " + std::to_string(value.subtile_index) + ")";
+            }
+            else {
+                static_assert(sizeof(T) == 0, "Unhandled PackableTile::Id variant alternative");
+                panic("Unhandled PackableTile::Id variant alternative");
+            }
         },
         id);
 }
@@ -290,5 +305,17 @@ struct std::hash<porytiles2::PackableTile::RegularId> {
     std::size_t operator()(const porytiles2::PackableTile::RegularId &id) const noexcept
     {
         return std::hash<std::size_t>{}(id.index);
+    }
+};
+
+template <>
+struct std::hash<porytiles2::PackableTile::AnimId> {
+    std::size_t operator()(const porytiles2::PackableTile::AnimId &id) const noexcept
+    {
+        // Hash combining via Boost's hash_combine formula: the magic constant 0x9e3779b9 is the golden ratio's
+        // fractional part scaled to 32 bits, and the bit shifts spread bits to avoid collisions
+        std::size_t seed = std::hash<std::string>{}(id.name);
+        seed ^= std::hash<std::size_t>{}(id.subtile_index) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        return seed;
     }
 };

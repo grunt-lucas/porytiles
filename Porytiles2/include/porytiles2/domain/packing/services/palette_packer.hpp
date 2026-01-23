@@ -33,6 +33,11 @@ struct PackingParams {
     std::vector<PixelTile<Rgba32>> tiles_;
 
     /**
+     * @brief RGBA animations to pack into palettes.
+     */
+    std::map<std::string, Animation<Rgba32>> anims_;
+
+    /**
      * @brief Bidirectional mapping between Rgba32 colors and ColorIndex
      */
     ColorIndexMap<Rgba32> color_map_;

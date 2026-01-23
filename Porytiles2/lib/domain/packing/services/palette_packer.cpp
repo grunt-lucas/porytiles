@@ -233,13 +233,21 @@ namespace porytiles2 {
 
 ChainableResult<PalettePacking> PalettePacker::pack_tiles(const PackingParams &params) const
 {
-    // === STEP 1: Convert regular tiles to PackableTile vector ===
+    // === STEP 1: Convert regular tiles and anims to PackableTile vector ===
     std::vector<PackableTile> regular_tiles;
     regular_tiles.reserve(params.tiles_.size());
     for (std::size_t i = 0; i < params.tiles_.size(); ++i) {
         auto color_set = build_color_set_from_tile(params.tiles_[i], params.color_map_, params.extrinsic_transparency_);
-        // TODO: ANIM: we can pack anim composite tiles in as regular tiles here I think
         regular_tiles.emplace_back(PackableTile::RegularId{i}, color_set);
+    }
+    for (const auto &[anim_name, anim] : params.anims_) {
+        const auto &composite_frame = anim.composite_frame(params.extrinsic_transparency_);
+        for (std::size_t subtile_index = 0; subtile_index < composite_frame.tiles().size(); ++subtile_index) {
+            const auto &composite_tile = composite_frame.tiles().at(subtile_index);
+            auto color_set =
+                build_color_set_from_tile(composite_tile, params.color_map_, params.extrinsic_transparency_);
+            regular_tiles.emplace_back(PackableTile::AnimId{anim_name, subtile_index}, color_set);
+        }
     }
 
     // === STEP 2: Convert hints to PackableTile vector ===

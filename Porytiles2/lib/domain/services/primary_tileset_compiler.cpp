@@ -104,7 +104,7 @@ class CompilerTask {
     pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> &porytiles_tile);
 
     // Pipeline helpers - palette packing
-    [[nodiscard]] ChainableResult<void> pipeline_helper_run_pal_packing(const std::vector<PaletteHint> &hints);
+    [[nodiscard]] ChainableResult<void> pipeline_helper_run_pal_packing();
     [[nodiscard]] ChainableResult<ColorIndexMap<Rgba32>>
     pipeline_helper_build_color_index_map(const std::vector<PaletteHint> &hints, std::size_t color_count_limit) const;
 
@@ -269,7 +269,6 @@ ChainableResult<void> CompilerTask::pipeline_step_process_porymap_input()
 ChainableResult<void> CompilerTask::pipeline_step_validate_input()
 {
     TilesetCompileValidatorServices services{config_, format_, diag_, tile_printer_, pal_printer_};
-    const std::vector<PaletteHint> hints = pal_hints_enabled_.value() ? pal_hints_.value() : std::vector<PaletteHint>{};
 
     /*
      * TODO: do we want to collate some of these before returning? It would present more errors to user at once. There
@@ -301,7 +300,7 @@ ChainableResult<void> CompilerTask::pipeline_step_validate_input()
     }
 
     // Validate palette hints
-    for (const auto &hint : hints) {
+    for (const auto &hint : pal_hints_.value()) {
         PT_TRY_CALL_PASS_ERR(validate_pal_hint(services, tileset_.name(), hint), void);
     }
 
@@ -329,7 +328,7 @@ ChainableResult<void> CompilerTask::pipeline_step_validate_input()
             porytiles_metatiles_,
             tileset_.porytiles_component().anims(),
             tileset_.porytiles_component().pals(),
-            hints),
+            pal_hints_.value()),
         void);
 
     // Run precision loss validation
@@ -340,7 +339,7 @@ ChainableResult<void> CompilerTask::pipeline_step_validate_input()
             porytiles_metatiles_,
             tileset_.porytiles_component().anims(),
             tileset_.porytiles_component().pals(),
-            hints,
+            pal_hints_.value(),
             std::nullopt),
         void);
 
@@ -363,9 +362,7 @@ ChainableResult<void> CompilerTask::pipeline_step_setup_working_data()
         panic("TODO: implement handling for pals ArtifactEditMode::patch");
     }
     else if (pals_edit_mode_ == ArtifactEditMode::optimize) {
-        const std::vector<PaletteHint> hints =
-            pal_hints_enabled_.value() ? pal_hints_.value() : std::vector<PaletteHint>{};
-        PT_TRY_CALL_PASS_ERR(pipeline_helper_run_pal_packing(hints), void);
+        PT_TRY_CALL_PASS_ERR(pipeline_helper_run_pal_packing(), void);
     }
     else {
         panic("unexpected pals ArtifactEditMode");
@@ -666,7 +663,7 @@ TileAssignmentResult CompilerTask::pipeline_helper_assign_tile_via_pal_match(con
     return result;
 }
 
-ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing(const std::vector<PaletteHint> &hints)
+ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
 {
     /*
      * Create ColorIndexMap from the Porytiles tiles, Porytiles pals, and palette hints. This validates that we
@@ -675,17 +672,9 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing(const std::v
     const std::size_t color_count_limit = num_pals_in_primary_.value() * (pal::max_size - 1);
     PT_TRY_ASSIGN_CHAIN_ERR(
         color_index_map,
-        pipeline_helper_build_color_index_map(hints, color_count_limit),
+        pipeline_helper_build_color_index_map(pal_hints_.value(), color_count_limit),
         "failed to build color index map for tileset " + tileset_.name(),
         void);
-
-    /*
-     * TODO: we should have warnings get generated here if any colors in the hints/Porytiles pals did not appear in
-     * the layer PNGs.
-     *
-     * - tileset_.porytiles_component().pals()
-     * - hints
-     */
 
     /*
      * TODO: create canonical ShapeTile vectors here once we implement 'compile.tiles.sharing:' config option
@@ -709,10 +698,11 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing(const std::v
     }
     PackingParams packing_params{};
     packing_params.tiles_ = porytiles_pixel_rgba_;
+    packing_params.anims_ = tileset_.porytiles_component().anims();
     packing_params.color_map_ = color_index_map;
     packing_params.extrinsic_transparency_ = extrinsic_transparency_.value();
     packing_params.prefilled_pals_ = tileset_.porytiles_component().pals();
-    packing_params.hints_ = hints;
+    packing_params.hints_ = pal_hints_.value();
     packing_params.available_pals_ = available_pals;
 
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -794,7 +784,7 @@ ChainableResult<ColorIndexMap<Rgba32>> CompilerTask::pipeline_helper_build_color
         color_index_map.add_tile(tile, extrinsic_transparency_.value());
     }
 
-    // Add Porytiles anims and validate
+    // Add Porytiles anims
     for (const auto &anim : tileset_.porytiles_component().anims() | std::views::values) {
         color_index_map.add_anim(anim, extrinsic_transparency_.value());
     }
