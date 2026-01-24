@@ -39,10 +39,10 @@ class DecompilePrimaryTileset {
     /**
      * @brief Decompiles the primary Tileset with the given tileset name.
      *
-     * @param name The name of the primary Tileset to decompile
+     * @param tileset_name The name of the primary Tileset to decompile
      * @return An empty ChainableResult on success, otherwise an error chain
      */
-    [[nodiscard]] ChainableResult<void> decompile(const std::string &name) const;
+    [[nodiscard]] ChainableResult<void> decompile(const std::string &tileset_name) const;
 
   private:
     const TilesetRepo *tileset_repo_;

@@ -127,7 +127,7 @@ class YamlFileProvider final : public ConfigProvider {
     tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<bool>
-    tileset_animations_overwrite_callback(ConfigScopeType type, const std::string &scope) const override;
+    tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const override;
 
   private:
     std::unique_ptr<TextFormatter> owned_format_; // Optional owned formatter (when using default ctor)

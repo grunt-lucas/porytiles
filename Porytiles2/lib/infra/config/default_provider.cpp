@@ -133,7 +133,7 @@ LayerValue<std::string> DefaultProvider::tileset_paths_secondary_bin(
     return LayerValue<std::string>::valid("data/tilesets/secondary", source_info);
 }
 
-LayerValue<bool> DefaultProvider::tileset_animations_overwrite_callback(
+LayerValue<bool> DefaultProvider::tileset_animations_wire_anim_code(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<bool>::valid(true, source_info);

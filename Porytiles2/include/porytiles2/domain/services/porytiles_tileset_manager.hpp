@@ -78,6 +78,30 @@ class PorytilesTilesetManager {
      */
     [[nodiscard]] virtual ChainableResult<void>
     wire_anim_code(const std::string &tileset_name, bool is_secondary) const = 0;
+
+    /**
+     * @brief Removes wired animation code for a tileset from the project.
+     *
+     * @details
+     * Performs the inverse of wire_anim_code(). This method:
+     * 1. Removes the #include directive from tileset_anims.c
+     * 2. Removes the function declaration from tileset_anims.h
+     * 3. Updates the .callback field in headers.h to "NULL" (only if it's a Porytiles-managed callback)
+     *
+     * The callback is only cleared if it starts with "InitTilesetAnim_PorytilesManaged_".
+     * User-managed callbacks are preserved, allowing users to set wire_anim_code=false
+     * while maintaining their own custom animation callbacks.
+     *
+     * This method is idempotent - safe to call even if no wiring exists.
+     * Should be called after compilation when a tileset has no animations
+     * to ensure stale animation references are cleaned up.
+     *
+     * @param tileset_name Name of the tileset to remove wiring for
+     * @param is_secondary True if this is a secondary tileset
+     * @return ChainableResult<void> Success or error
+     */
+    [[nodiscard]] virtual ChainableResult<void>
+    remove_wired_anim_code(const std::string &tileset_name, bool is_secondary) const = 0;
 };
 
 } // namespace porytiles2

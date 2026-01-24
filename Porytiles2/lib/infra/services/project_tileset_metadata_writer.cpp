@@ -124,8 +124,7 @@ ChainableResult<void> ProjectTilesetMetadataWriter::update_fields(
     return {};
 }
 
-ChainableResult<void>
-ProjectTilesetMetadataWriter::update_to_porytiles_managed(const std::string &tileset_name, bool update_callback) const
+ChainableResult<void> ProjectTilesetMetadataWriter::update_to_porytiles_managed(const std::string &tileset_name) const
 {
     // Extract shorthand from tileset name (e.g., "gTileset_General" -> "General")
     const std::string prefix = "gTileset_";
@@ -142,10 +141,6 @@ ProjectTilesetMetadataWriter::update_to_porytiles_managed(const std::string &til
         {"palettes", "gTilesetPalettes_PorytilesManaged_" + shorthand},
         {"metatiles", "gMetatiles_PorytilesManaged_" + shorthand},
         {"metatileAttributes", "gMetatileAttributes_PorytilesManaged_" + shorthand}};
-
-    if (update_callback) {
-        updates["callback"] = "InitTilesetAnim_PorytilesManaged_" + shorthand;
-    }
 
     return update_fields(tileset_name, updates);
 }

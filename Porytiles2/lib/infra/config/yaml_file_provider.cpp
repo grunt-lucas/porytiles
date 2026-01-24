@@ -348,7 +348,7 @@ YamlFileProvider::tileset_paths_secondary_bin(ConfigScopeType type, const std::s
 }
 
 LayerValue<bool>
-YamlFileProvider::tileset_animations_overwrite_callback(ConfigScopeType type, const std::string &scope) const
+YamlFileProvider::tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
@@ -358,9 +358,9 @@ YamlFileProvider::tileset_animations_overwrite_callback(ConfigScopeType type, co
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["overwrite_callback"]; },
+        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["wire_anim_code"]; },
         parse_bool,
-        "tileset_animations_overwrite_callback");
+        "tileset_animations_wire_anim_code");
 }
 
 } // namespace porytiles2

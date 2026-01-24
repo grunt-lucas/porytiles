@@ -122,7 +122,7 @@ LayerValue<std::string> ConfigProvider::tileset_paths_secondary_bin(
     return LayerValue<std::string>::not_provided();
 }
 
-LayerValue<bool> ConfigProvider::tileset_animations_overwrite_callback(
+LayerValue<bool> ConfigProvider::tileset_animations_wire_anim_code(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<bool>::not_provided();

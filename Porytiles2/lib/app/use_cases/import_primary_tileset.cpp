@@ -67,6 +67,27 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
             persist_state_result};
     }
 
+    // 6. Handle animation code wiring
+    if (!decompiled_tileset->porytiles_component().anims().empty()) {
+        // Tileset has animations - wire the generated code
+        auto wire_result = tileset_manager_->wire_anim_code(tileset_name, /*is_secondary=*/false);
+        if (!wire_result.has_value()) {
+            return ChainableResult<void>{
+                FormattableError{"Failed to wire animation code for '{}'.", FormatParam{tileset_name, Style::bold}},
+                wire_result};
+        }
+    }
+    else {
+        // Tileset has no animations - remove any stale wiring
+        auto remove_result = tileset_manager_->remove_wired_anim_code(tileset_name, /*is_secondary=*/false);
+        if (!remove_result.has_value()) {
+            return ChainableResult<void>{
+                FormattableError{
+                    "Failed to remove wired animation code for '{}'.", FormatParam{tileset_name, Style::bold}},
+                remove_result};
+        }
+    }
+
     return {};
 }
 

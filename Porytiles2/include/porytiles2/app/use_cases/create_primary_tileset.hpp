@@ -67,16 +67,16 @@ class CreatePrimaryTileset {
      * @brief Creates a new primary Tileset with the given name.
      *
      * @details
-     * Creates a brand new primary tileset from scratch. The tileset will have:
+     * Creates a brand-new primary tileset from scratch. The tileset will have:
      * - A new entry in src/data/tilesets/headers.h with Porytiles-managed field values
      * - Minimal valid Porymap assets (metatiles.bin, metatile_attributes.bin, tiles.png, palettes)
      * - A tileset-manifest.json marking it as Porytiles-managed (imported=false)
      *
-     * @param name The name for the new tileset (e.g., "gTileset_MyNewTileset")
+     * @param tileset_name The name for the new tileset (e.g., "gTileset_MyNewTileset")
      * @pre name must not correspond to an existing tileset in headers.h
      * @return Success or error result with details
      */
-    [[nodiscard]] ChainableResult<void> create(const std::string &name) const;
+    [[nodiscard]] ChainableResult<void> create(const std::string &tileset_name) const;
 
   private:
     const PrimaryTilesetCreator *creator_;

@@ -68,17 +68,13 @@ class ProjectTilesetMetadataWriter {
      * - .palettes = gTilesetPalettes_PorytilesManaged_{Shorthand}
      * - .metatiles = gMetatiles_PorytilesManaged_{Shorthand}
      * - .metatileAttributes = gMetatileAttributes_PorytilesManaged_{Shorthand}
-     * - .callback = InitTilesetAnim_PorytilesManaged_{Shorthand} (only if update_callback is true)
      *
      * @param tileset_name The tileset name (e.g., "gTileset_General")
-     * @param update_callback If true (default), also updates .callback field. If false, leaves .callback unchanged.
-     *        Set to false when animation.overwrite_callback config is false.
      * @pre tileset_name must start with "gTileset_"
      * @pre tileset_name must correspond to an existing tileset in headers.h
      * @return Success or error result with details
      */
-    [[nodiscard]] ChainableResult<void>
-    update_to_porytiles_managed(const std::string &tileset_name, bool update_callback = true) const;
+    [[nodiscard]] ChainableResult<void> update_to_porytiles_managed(const std::string &tileset_name) const;
 
     /**
      * @brief Creates a new tileset struct and appends it to headers.h.

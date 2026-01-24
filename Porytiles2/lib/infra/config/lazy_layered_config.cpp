@@ -330,14 +330,14 @@ LazyLayeredConfig::tileset_paths_secondary_bin_raw(ConfigScopeType type, const s
 }
 
 ChainableResult<ConfigValue<bool>>
-LazyLayeredConfig::tileset_animations_overwrite_callback_raw(ConfigScopeType type, const std::string &scope) const
+LazyLayeredConfig::tileset_animations_wire_anim_code_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<bool>(key, [&type, &scope](const ConfigProvider &provider) {
-        return provider.tileset_animations_overwrite_callback(type, scope);
+        return provider.tileset_animations_wire_anim_code(type, scope);
     });
 }
 
@@ -474,11 +474,11 @@ LazyLayeredConfig::tileset_paths_secondary_bin_provenance_chain(ConfigScopeType 
         [&type, &scope](const ConfigProvider &provider) { return provider.tileset_paths_secondary_bin(type, scope); });
 }
 
-std::vector<ProvenanceChainLink<bool>> LazyLayeredConfig::tileset_animations_overwrite_callback_provenance_chain(
+std::vector<ProvenanceChainLink<bool>> LazyLayeredConfig::tileset_animations_wire_anim_code_provenance_chain(
     ConfigScopeType type, const std::string &scope) const
 {
     return collect_provenance_chain<bool>([&type, &scope](const ConfigProvider &provider) {
-        return provider.tileset_animations_overwrite_callback(type, scope);
+        return provider.tileset_animations_wire_anim_code(type, scope);
     });
 }
 

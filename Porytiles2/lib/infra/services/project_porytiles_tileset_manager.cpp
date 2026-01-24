@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 #include <ranges>
+#include <string_view>
 
 #include "nlohmann/json.hpp"
 
@@ -12,10 +13,46 @@
 
 namespace {
 
+using namespace porytiles2;
+
 // TODO: this is hardcoded in multiple places
 std::filesystem::path artifacts_file(const std::filesystem::path &project_root, const std::string &tileset_name)
 {
     return project_root / "porytiles" / "tilesets" / tileset_name / "tileset-manifest.json";
+}
+
+constexpr std::string_view porytiles_managed_callback_prefix = "InitTilesetAnim_PorytilesManaged_";
+
+[[nodiscard]] bool is_porytiles_managed_callback(const std::optional<std::string> &callback)
+{
+    if (!callback.has_value()) {
+        return false;
+    }
+    return callback->starts_with(porytiles_managed_callback_prefix);
+}
+
+ChainableResult<void> append_incbin_declarations(
+    const IncbinDeclarationAppender *incbin_appender, const std::string &tileset_name, const std::string &bin_path_base)
+{
+    // Append INCBIN declarations to graphics.h
+    auto graphics_result = incbin_appender->append_graphics_declarations(tileset_name, bin_path_base, pal::num_pals);
+    if (!graphics_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{
+                "Failed to append graphics INCBIN declarations for '{}'.", FormatParam{tileset_name, Style::bold}},
+            graphics_result};
+    }
+
+    // Append INCBIN declarations to metatiles.h
+    auto metatiles_result = incbin_appender->append_metatiles_declarations(tileset_name, bin_path_base);
+    if (!metatiles_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{
+                "Failed to append metatiles INCBIN declarations for '{}'.", FormatParam{tileset_name, Style::bold}},
+            metatiles_result};
+    }
+
+    return {};
 }
 
 } // namespace
@@ -77,34 +114,6 @@ bool ProjectPorytilesTilesetManager::is_porytiles_managed(const std::string &til
     return std::filesystem::exists(artifacts_file(project_root_, tileset_name));
 }
 
-namespace {
-
-ChainableResult<void> append_incbin_declarations(
-    const IncbinDeclarationAppender *incbin_appender, const std::string &tileset_name, const std::string &bin_path_base)
-{
-    // Append INCBIN declarations to graphics.h
-    auto graphics_result = incbin_appender->append_graphics_declarations(tileset_name, bin_path_base, pal::num_pals);
-    if (!graphics_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{
-                "Failed to append graphics INCBIN declarations for '{}'.", FormatParam{tileset_name, Style::bold}},
-            graphics_result};
-    }
-
-    // Append INCBIN declarations to metatiles.h
-    auto metatiles_result = incbin_appender->append_metatiles_declarations(tileset_name, bin_path_base);
-    if (!metatiles_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{
-                "Failed to append metatiles INCBIN declarations for '{}'.", FormatParam{tileset_name, Style::bold}},
-            metatiles_result};
-    }
-
-    return {};
-}
-
-} // namespace
-
 ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_existing(const std::string &tileset_name) const
 {
     // Step 1: Read original metadata from headers.h
@@ -150,36 +159,9 @@ ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_existing(c
         return incbin_result;
     }
 
-    // Step 6: Determine whether to update callback field
-    auto overwrite_callback_result =
-        infra_config_->tileset_animations_overwrite_callback(ConfigScopeType::tileset, tileset_name);
-    if (!overwrite_callback_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{
-                "Failed to get overwrite_callback config for '{}'.", FormatParam{tileset_name, Style::bold}},
-            overwrite_callback_result};
-    }
-    const bool overwrite_callback = overwrite_callback_result.value();
-
-    // Update callback if:
-    // 1. User requested overwrite_callback: true, AND
-    // 2. Original callback actually had a value (i.e. it wasn't "NULL")
-    // Otherwise, leave callback field alone
-    const bool should_update_callback = overwrite_callback && original_callback_value.has_value();
-
-    // Step 7: Wire include directive in tileset_anims.c (if updating callback)
-    if (should_update_callback) {
-        auto wire_result = tileset_anims_modifier_->wire_include_for_tileset(tileset_name, is_secondary);
-        if (!wire_result.has_value()) {
-            return ChainableResult<void>{
-                FormattableError{
-                    "Failed to wire tileset_anims.c include for '{}'.", FormatParam{tileset_name, Style::bold}},
-                wire_result};
-        }
-    }
-
-    // Step 8: Update headers.h to use Porytiles-managed asset variables
-    return metadata_writer_->update_to_porytiles_managed(tileset_name, should_update_callback);
+    // Step 6: Update headers.h to use Porytiles-managed asset variables
+    // Note: Callback update is handled separately by wire_anim_code() in the use-case layer
+    return metadata_writer_->update_to_porytiles_managed(tileset_name);
 }
 
 ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_new(const std::string &tileset_name) const
@@ -212,41 +194,28 @@ ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_new(const 
         return incbin_result;
     }
 
-    // Step 5: Skip callback wiring for new tilesets (no animations to set up)
-    // The headers.h entry was already created with NULL callback
-
     return {};
 }
 
 ChainableResult<void>
 ProjectPorytilesTilesetManager::wire_anim_code(const std::string &tileset_name, bool is_secondary) const
 {
-    /*
-     * TODO: update the whole callback handling thing here. Instead of 'tileset.animations.overwrite_callback', let's
-     * call the config value 'tileset.animations.wire_anim_code'. If enabled, this wire_anim_code method calls the
-     * TilesetAnimsModifier::wire_include_for_tileset and update_callback("callback_name"). If disabled, this method can
-     * call TilesetAnimsModifier::remove_include_for_tileset and update_callback("NULL").
-     */
-
-    // Determine whether to update callback field
-    auto overwrite_callback_result =
-        infra_config_->tileset_animations_overwrite_callback(ConfigScopeType::tileset, tileset_name);
-    if (!overwrite_callback_result.has_value()) {
+    // Check config - if wire_anim_code is disabled, delegate to remove
+    auto wire_config_result = infra_config_->tileset_animations_wire_anim_code(ConfigScopeType::tileset, tileset_name);
+    if (!wire_config_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{
-                "Failed to get overwrite_callback config for '{}'.", FormatParam{tileset_name, Style::bold}},
-            overwrite_callback_result};
+            FormattableError{"Failed to get wire_anim_code config for '{}'.", FormatParam{tileset_name, Style::bold}},
+            wire_config_result};
     }
-    const auto &overwrite_callback = overwrite_callback_result.value();
+    const auto &should_wire = wire_config_result.value();
 
-    if (!overwrite_callback) {
+    if (!should_wire) {
         std::vector<std::string> remark_text;
-        remark_text.push_back(format_->format(
-            "skipping animation wiring due to configuration:", FormatParam{overwrite_callback, Style::bold}));
+        remark_text.emplace_back("Config 'tileset.animations.wire_anim_code' is false, removing any existing wiring");
         remark_text.emplace_back("");
-        std::ranges::copy(overwrite_callback.prettify(*format_), std::back_inserter(remark_text));
+        std::ranges::copy(should_wire.prettify(*format_), std::back_inserter(remark_text));
         diag_->remark("wire-tileset-animation", remark_text);
-        return {};
+        return remove_wired_anim_code(tileset_name, is_secondary);
     }
 
     // Step 1: Wire include in tileset_anims.c AND declaration in tileset_anims.h
@@ -269,6 +238,39 @@ ProjectPorytilesTilesetManager::wire_anim_code(const std::string &tileset_name, 
             FormattableError{
                 "Failed to update callback in headers.h for '{}'.", FormatParam{tileset_name, Style::bold}},
             callback_result};
+    }
+
+    return {};
+}
+
+ChainableResult<void>
+ProjectPorytilesTilesetManager::remove_wired_anim_code(const std::string &tileset_name, bool is_secondary) const
+{
+    // Step 1: Remove include from tileset_anims.c and declaration from tileset_anims.h
+    auto remove_result = tileset_anims_modifier_->remove_include_for_tileset(tileset_name, is_secondary);
+    if (!remove_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{"Failed to remove animation includes for '{}'.", FormatParam{tileset_name, Style::bold}},
+            remove_result};
+    }
+
+    // Step 2: Only update callback to NULL if it's a Porytiles-managed callback
+    // This preserves user-managed callbacks when wire_anim_code is false
+    auto metadata_result = metadata_provider_->metadata_for(tileset_name);
+    if (!metadata_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{"Failed to read metadata for '{}'.", FormatParam{tileset_name, Style::bold}},
+            metadata_result};
+    }
+
+    const auto &current_callback = metadata_result.value().callback_func();
+    if (is_porytiles_managed_callback(current_callback)) {
+        auto callback_result = metadata_writer_->update_callback(tileset_name, "NULL");
+        if (!callback_result.has_value()) {
+            return ChainableResult<void>{
+                FormattableError{"Failed to update callback to NULL for '{}'.", FormatParam{tileset_name, Style::bold}},
+                callback_result};
+        }
     }
 
     return {};

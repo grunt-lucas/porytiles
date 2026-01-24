@@ -81,7 +81,7 @@ class DefaultProvider final : public ConfigProvider {
     tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<bool>
-    tileset_animations_overwrite_callback(ConfigScopeType type, const std::string &scope) const override;
+    tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const override;
 };
 
 } // namespace porytiles2

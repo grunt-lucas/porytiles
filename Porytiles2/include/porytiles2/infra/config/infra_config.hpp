@@ -65,9 +65,9 @@ class InfraConfig {
 
     // Public method with cross-field validation only (Tier 3)
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
-    tileset_animations_overwrite_callback(ConfigScopeType type, const std::string &scope) const
+    tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const
     {
-        auto validated_val = tileset_animations_overwrite_callback_validated(type, scope);
+        auto validated_val = tileset_animations_wire_anim_code_validated(type, scope);
         return validated_val;
     }
 
@@ -134,15 +134,15 @@ class InfraConfig {
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
-    tileset_animations_overwrite_callback_validated(ConfigScopeType type, const std::string &scope) const
+    tileset_animations_wire_anim_code_validated(ConfigScopeType type, const std::string &scope) const
     {
-        auto raw_val = tileset_animations_overwrite_callback_raw(type, scope);
+        auto raw_val = tileset_animations_wire_anim_code_raw(type, scope);
         return raw_val;
     }
 
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
-    tileset_animations_overwrite_callback_raw(ConfigScopeType type, const std::string &scope) const = 0;
+    tileset_animations_wire_anim_code_raw(ConfigScopeType type, const std::string &scope) const = 0;
 };
 
 } // namespace porytiles2

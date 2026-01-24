@@ -148,7 +148,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     [[nodiscard]] ChainableResult<ConfigValue<std::string>>
     tileset_paths_secondary_bin_raw(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
-    tileset_animations_overwrite_callback_raw(ConfigScopeType type, const std::string &scope) const override;
+    tileset_animations_wire_anim_code_raw(ConfigScopeType type, const std::string &scope) const override;
 
   public:
     /*
@@ -443,7 +443,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     tileset_paths_secondary_bin_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
     /**
-     * @brief Gets the full provenance chain for tileset_animations_overwrite_callback.
+     * @brief Gets the full provenance chain for tileset_animations_wire_anim_code.
      *
      * @details
      * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
@@ -455,7 +455,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      * @return Vector of ProvenanceChainLink entries, one per provider
      */
     [[nodiscard]] std::vector<ProvenanceChainLink<bool>>
-    tileset_animations_overwrite_callback_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+    tileset_animations_wire_anim_code_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
   private:
     std::unique_ptr<TextFormatter> owned_format_; // Optional owned formatter (when using default ctor)

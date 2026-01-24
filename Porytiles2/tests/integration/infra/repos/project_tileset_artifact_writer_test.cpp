@@ -65,9 +65,9 @@ class MockInfraConfig : public InfraConfig {
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
-    tileset_animations_overwrite_callback_raw(ConfigScopeType, const std::string &) const override
+    tileset_animations_wire_anim_code_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{true, "tileset_animations_overwrite_callback", "mock", {}};
+        return ConfigValue{true, "tileset_animations_wire_anim_code", "mock", {}};
     }
 
   public:

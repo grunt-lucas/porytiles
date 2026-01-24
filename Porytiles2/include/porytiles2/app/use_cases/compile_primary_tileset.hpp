@@ -56,10 +56,10 @@ class CompilePrimaryTileset {
      * case's configured repos to load and save the tileset assets. Uses the given TilesetCompilationService to perform
      * the compilation operation.
      *
-     * @param name The name of the primary Tileset to compile.
+     * @param tileset_name The name of the primary Tileset to compile.
      * @return An empty Result on success, otherwise an error description.
      */
-    [[nodiscard]] ChainableResult<void> compile(const std::string &name) const;
+    [[nodiscard]] ChainableResult<void> compile(const std::string &tileset_name) const;
 
   private:
     const TilesetRepo *tileset_repo_;

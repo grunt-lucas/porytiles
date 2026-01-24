@@ -99,6 +99,9 @@ class ProjectPorytilesTilesetManager : public PorytilesTilesetManager {
     [[nodiscard]] ChainableResult<void>
     wire_anim_code(const std::string &tileset_name, bool is_secondary) const override;
 
+    [[nodiscard]] ChainableResult<void>
+    remove_wired_anim_code(const std::string &tileset_name, bool is_secondary) const override;
+
   private:
     std::filesystem::path project_root_;
     const ProjectTilesetMetadataProvider *metadata_provider_;

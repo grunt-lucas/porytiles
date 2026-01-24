@@ -233,12 +233,12 @@ config_values:
     validators: [ ]
     cross_field_validators: [ ]
 
-  - name: tileset_animations_overwrite_callback
+  - name: tileset_animations_wire_anim_code
     type: bool
     parser: parse_bool
     layer: infra
     default_value: "true"
     yaml:
-      path: tileset.animations.overwrite_callback
+      path: tileset.animations.wire_anim_code
     validators: [ ]
     cross_field_validators: [ ]

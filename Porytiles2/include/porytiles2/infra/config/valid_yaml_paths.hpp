@@ -32,7 +32,7 @@ inline const std::unordered_set<std::string> valid_yaml_paths = {
     "fieldmap.num_tiles_total",
     "tileset",
     "tileset.animations",
-    "tileset.animations.overwrite_callback",
+    "tileset.animations.wire_anim_code",
     "tileset.compile",
     "tileset.compile.pals",
     "tileset.compile.pals.edit_mode",

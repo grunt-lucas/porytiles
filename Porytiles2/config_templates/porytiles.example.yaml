@@ -36,12 +36,13 @@ tileset:
       src: data/tilesets/secondary
       bin: data/tilesets/secondary
 
-  # Animation-related settings for import workflow
+  # Animation-related settings for compile/import workflow
   animations:
-    # When true (default), Porytiles will overwrite the .callback field in headers.h
-    # to point to the generated animation code. Set to false if you want Porytiles
-    # to generate animation frames and code but wire your own custom callback.
-    overwrite_callback: true
+    # When true (default), Porytiles will wire the generated animation code into
+    # tileset_anims.c/h and update the .callback field in headers.h. Set to false
+    # if you want Porytiles to generate animation frames and code but handle
+    # wiring yourself.
+    wire_anim_code: true
 
   compile:
     tiles:
