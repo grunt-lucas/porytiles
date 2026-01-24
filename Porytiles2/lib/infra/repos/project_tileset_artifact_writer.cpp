@@ -46,10 +46,9 @@ enum class ArtifactCategory { porytiles_src, porytiles_bin, special };
  * @brief Parsed information about an artifact's destination.
  *
  * @details
- * Contains the category and the directory path that should be atomically moved.
- * For porytiles_src/porytiles_bin categories, `directory` is the path up to and
- * including the marker directory. For special files, `directory` is the parent
- * directory of the file.
+ * Contains the category and the directory path that should be atomically moved. For porytiles_src/porytiles_bin
+ * categories, `directory` is the path up to and including the marker directory. For special files, `directory` is the
+ * parent directory of the file.
  */
 struct ArtifactPathInfo {
     ArtifactCategory category;
@@ -60,9 +59,9 @@ struct ArtifactPathInfo {
  * @brief Categorizes an artifact key to determine its commit handling.
  *
  * @details
- * Parses the artifact key path to find marker directories (porytiles_src, porytiles_bin,
- * or porytiles_generated) and returns categorization info. The directory returned is the
- * path up to and including the marker, which will be atomically moved during commit.
+ * Parses the artifact key path to find marker directories (porytiles_src, porytiles_bin, or porytiles_generated) and
+ * returns categorization info. The directory returned is the path up to and including the marker, which will be
+ * atomically moved during commit.
  *
  * @param key_path The artifact key path (relative to project root)
  * @return ArtifactPathInfo with category and directory to move
@@ -206,7 +205,6 @@ save_palette(const Palette<Rgba32, pal::max_size> &pal, const std::filesystem::p
  * @param dest_key The artifact key (path relative to project root)
  * @param staged_directories Map to register staged directories
  * @param staged_special_files Vector to register special files
- * @param StagedDirectory Type alias for the StagedDirectory struct
  * @return The path where the artifact should be written during the transaction
  */
 template <typename StagedDirectory>
@@ -241,7 +239,7 @@ ChainableResult<std::filesystem::path> compute_transaction_dest_path(
     const auto dest_dir = project_root / category_dir;
 
     // Register this directory if not already registered
-    if (staged_directories.find(dest_dir) == staged_directories.end()) {
+    if (!staged_directories.contains(dest_dir)) {
         // Create a unique staging directory for this category
         const auto staging_dir = transaction_root / category_dir;
         staged_directories[dest_dir] = StagedDirectory{staging_dir, dest_dir};
@@ -849,10 +847,11 @@ ProjectTilesetArtifactWriter::write_porytiles_anim_params(const ArtifactKey &des
 {
     const auto &porytiles_anims = src.porytiles_component().anims();
     if (porytiles_anims.empty()) {
-        // If there are no anims, but the params file exists, remove it
-        if (std::filesystem::exists(project_root_ / dest_key.key())) {
-            std::filesystem::remove(project_root_ / dest_key.key());
-        }
+        /*
+         * Unlike in write_porymap_anim_params, we don't need to delete anything here. That's because anim.yaml is
+         * within porytiles_src dir, which is written using an atomic move. If the new porytiles_src dir doesn't contain
+         * an anim.yaml, the old one will get wiped by the commit() call.
+         */
         return {};
     }
 
