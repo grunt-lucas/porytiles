@@ -401,51 +401,6 @@ std::optional<std::size_t> TilesPngWorkspace::find_contiguous_transparent_slots(
     return std::nullopt;
 }
 
-std::optional<std::size_t>
-TilesPngWorkspace::find_existing_contiguous_tiles(const std::vector<CanonicalPixelTile<IndexPixel>> &tiles) const
-{
-    // Edge case: empty sequence is trivially found
-    if (tiles.empty()) {
-        return 1; // Return first valid position after tile 0
-    }
-
-    // Look up the first tile in canonical_forms_ map
-    const PixelTile<IndexPixel> &first_base_tile = tiles[0];
-    auto it = canonical_forms_.find(first_base_tile);
-    if (it == canonical_forms_.end() || it->second.empty()) {
-        // First tile not found in workspace
-        return std::nullopt;
-    }
-
-    // For each candidate position where the first tile exists, check if remaining tiles are contiguous
-    for (const std::size_t candidate_start : it->second) {
-        // Check if there's enough room for all tiles from this position
-        if (candidate_start + tiles.size() > capacity_) {
-            continue;
-        }
-
-        // Verify all tiles in sequence match
-        bool all_match = true;
-        for (std::size_t offset = 0; offset < tiles.size(); ++offset) {
-            const std::size_t check_index = candidate_start + offset;
-            const PixelTile<IndexPixel> &expected_base = tiles[offset];
-            const PixelTile<IndexPixel> &actual_base = tiles_[check_index];
-
-            if (expected_base != actual_base) {
-                all_match = false;
-                break;
-            }
-        }
-
-        if (all_match) {
-            return candidate_start;
-        }
-    }
-
-    // No contiguous sequence found
-    return std::nullopt;
-}
-
 std::optional<std::size_t> TilesPngWorkspace::find_existing_contiguous_tiles_by_color(
     const std::vector<CanonicalPixelTile<IndexPixel>> &tiles,
     const std::vector<const Palette<Rgba32, pal::max_size> *> &palettes) const

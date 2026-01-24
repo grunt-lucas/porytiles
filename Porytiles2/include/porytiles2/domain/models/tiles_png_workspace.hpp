@@ -388,35 +388,20 @@ class TilesPngWorkspace {
     [[nodiscard]] std::optional<std::size_t> find_contiguous_transparent_slots(std::size_t count) const;
 
     /**
-     * @brief Checks if a sequence of canonical tiles already exists contiguously in the workspace.
-     *
-     * @details
-     * For each candidate position where the first tile exists, verifies that the remaining tiles appear
-     * contiguously in sequence. Comparison is done on canonical (base) tile data so that flipped variants
-     * match their canonical counterparts. This enables reusing existing animation keyframes in patch mode.
-     *
-     * @param tiles The sequence of canonical tiles to search for
-     * @return The starting index if found contiguously, or std::nullopt if not found
-     */
-    [[nodiscard]] std::optional<std::size_t>
-    find_existing_contiguous_tiles(const std::vector<CanonicalPixelTile<IndexPixel>> &tiles) const;
-
-    /**
      * @brief Checks if a sequence of tiles already exists contiguously using color-equivalence comparison.
      *
      * @details
-     * Similar to find_existing_contiguous_tiles(), but uses color-equivalence comparison instead of exact index
-     * matching. This handles the case where palettes contain duplicate colors at different indices. Two pixels are
-     * considered equivalent if they reference the same color value in the palette, even if their indices differ.
+     * Uses color-equivalence comparison to find contiguous tile sequences. This handles the case where palettes
+     * contain duplicate colors at different indices. Two pixels are considered equivalent if they reference the same
+     * color value in the palette, even if their indices differ.
      *
-     * This is necessary for patch builds where the vanilla workspace tiles may use a different palette index than the
-     * one computed by index_tile_from_color_tile() (which always picks the first matching index). For example, if
+     * This is necessary for patch/locked builds where vanilla workspace tiles may use a different palette index than
+     * the one computed by index_tile_from_color_tile() (which always picks the first matching index). For example, if
      * palette slot 7 and slot 14 both contain the same color, vanilla tiles might use slot 14 while our computed tiles
      * use slot 7 - they should still be considered matching.
      *
-     * Note: This method performs a linear scan of the workspace (O(capacity × tiles × 64)) instead of the O(1) map
-     * lookup used by find_existing_contiguous_tiles(). This is acceptable because animation sequences are typically
-     * small and workspace capacity is bounded.
+     * Note: This method performs a linear scan of the workspace (O(capacity × tiles × 64)). This is acceptable because
+     * animation sequences are typically small and workspace capacity is bounded.
      *
      * @param tiles The sequence of canonical tiles to search for
      * @param palettes Parallel vector of palette pointers corresponding to each tile (for color lookup)

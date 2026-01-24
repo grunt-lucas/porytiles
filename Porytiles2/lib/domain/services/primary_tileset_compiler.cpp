@@ -958,7 +958,9 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
         }
         else if (tiles_edit_mode_ == ArtifactEditMode::locked) {
             // In locked mode, keyframes must already exist contiguously
-            if (const auto existing_offset = tiles_workspace_->find_existing_contiguous_tiles(keyframe_data.tiles);
+            // Use color-equivalence comparison to handle duplicate palette colors (same fix as patch mode)
+            if (const auto existing_offset = tiles_workspace_->find_existing_contiguous_tiles_by_color(
+                    keyframe_data.tiles, keyframe_data.palettes);
                 existing_offset.has_value()) {
                 offset = existing_offset.value();
             }
