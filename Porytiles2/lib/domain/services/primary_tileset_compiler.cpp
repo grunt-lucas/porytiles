@@ -110,6 +110,9 @@ class CompilerTask {
 
     // Pipeline helpers - animation processing
     [[nodiscard]] ChainableResult<void> pipeline_helper_register_animations();
+    [[nodiscard]] ChainableResult<void> pipeline_helper_register_animations_optimize();
+    [[nodiscard]] ChainableResult<void> pipeline_helper_register_animations_patch();
+    [[nodiscard]] ChainableResult<void> pipeline_helper_register_animations_locked();
     void pipeline_helper_compile_animations();
 
     // Pipeline helpers - error emission
@@ -390,11 +393,6 @@ ChainableResult<void> CompilerTask::pipeline_step_setup_working_data()
 
     // Register animations (reserve slots, compile keyframes, register matcher)
     // Must be done before regular tile matching so animation slots are reserved
-    /*
-     * TODO: before registering animations, run a validator service that:
-     * 1. Ensures there are no transparent key frame tiles
-     * 2. Makes sure all key frame tiles are unique across all animations
-     */
     PT_TRY_CALL_CHAIN_ERR(pipeline_helper_register_animations(), "failed to register animations", void);
 
     // Create new Porymap component for output
@@ -824,6 +822,11 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
      *
      * 1. Place the anim's key frame tiles into tiles.png at computed offsets
      * 2. Register each animation and save the computed offsets
+     *
+     * The strategy differs by mode:
+     * - optimize: Reserve slots at the start, place keyframes in reserved region
+     * - patch: Try to reuse existing keyframes, else find contiguous free space
+     * - locked: Keyframes must already exist in tiles.png
      */
     const auto &anims = tileset_.porytiles_component().anims();
 
@@ -832,15 +835,23 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
         return {};
     }
 
-    // Only support animations in optimize mode for now
-    if (tiles_edit_mode_ != ArtifactEditMode::optimize) {
-        // In locked/patch mode, animations should already have been placed in tiles.png
-        // We just need to register them with the matcher using existing offsets.
-        // In patch mode, we can allow anim placing in free space, need to support this in TilesPngWorkspace, see TODO
-        // note there.
-        // TODO: implement locked/patch mode animation handling
-        panic("TODO: implement locked/patch mode animation handling");
+    // TODO: ANIM: these register functions are 75% code dupe
+    if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
+        return pipeline_helper_register_animations_optimize();
     }
+    if (tiles_edit_mode_ == ArtifactEditMode::patch) {
+        return pipeline_helper_register_animations_patch();
+    }
+    if (tiles_edit_mode_ == ArtifactEditMode::locked) {
+        return pipeline_helper_register_animations_locked();
+    }
+
+    panic("unexpected tiles_edit_mode");
+}
+
+ChainableResult<void> CompilerTask::pipeline_helper_register_animations_optimize()
+{
+    const auto &anims = tileset_.porytiles_component().anims();
 
     // Compute total key frame tiles needed across all animations
     std::size_t total_key_frame_tiles = 0;
@@ -873,7 +884,6 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
             const PixelTile<Rgba32> &key_rgba_tile = anim.key_frame().tile_at(tile_idx);
 
             if (key_rgba_tile.is_transparent(extrinsic_transparency_.value())) {
-                // TODO: ANIM: is this the right place to throw errors about transparent key frames? Or earlier?
                 panic("illegal transparent key frame tile");
             }
 
@@ -909,6 +919,178 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
 
         // Store offset info for later use
         anim_offsets[anim_name] = this_anim_offset;
+    }
+
+    // Register all animations with the matcher for keyframe tile detection
+    for (const auto &[anim_name, anim] : anims) {
+        const std::size_t tile_offset = anim_offsets[anim_name];
+
+        // Register with matcher
+        anim_tile_matcher_.register_animation(anim_name, anim, tile_offset, extrinsic_transparency_);
+    }
+
+    return {};
+}
+
+ChainableResult<void> CompilerTask::pipeline_helper_register_animations_patch()
+{
+    const auto &anims = tileset_.porytiles_component().anims();
+
+    // Build a map of animation offsets for registration step
+    std::map<std::string, std::size_t> anim_offsets; // name -> tile_offset
+
+    // Process each animation
+    for (const auto &[anim_name, anim] : anims) {
+        if (!anim.has_frames()) {
+            panic("anim '" + anim_name + "' has no frames");
+        }
+
+        const AnimationFrame<Rgba32> &composite_frame = anim.composite_frame(extrinsic_transparency_);
+        const std::size_t tile_count = composite_frame.tiles().size();
+
+        // Build canonical IndexPixel keyframe tiles for this animation
+        std::vector<CanonicalPixelTile<IndexPixel>> keyframe_tiles;
+        keyframe_tiles.reserve(tile_count);
+
+        for (std::size_t tile_idx = 0; tile_idx < tile_count; ++tile_idx) {
+            const PixelTile<Rgba32> &composite_rgba_tile = composite_frame.tile_at(tile_idx);
+            const PixelTile<Rgba32> &key_rgba_tile = anim.key_frame().tile_at(tile_idx);
+
+            if (key_rgba_tile.is_transparent(extrinsic_transparency_.value())) {
+                panic("illegal transparent key frame tile");
+            }
+
+            // Match tile to palette using composite frame
+            std::vector<PaletteMatchResult<Rgba32>> matches =
+                match_or_best(composite_rgba_tile, new_porymap_pals_, extrinsic_transparency_.value(), 1);
+
+            if (!matches.at(0).is_covered) {
+                // TODO: ANIM: better error message here
+                return FormattableError{
+                    "animation '{}' composite subtile '{}' has no covering palette",
+                    FormatParam{anim_name, Style::bold},
+                    FormatParam{tile_idx, Style::bold}};
+            }
+
+            // Convert key frame tile to IndexPixel using matched palette
+            const std::size_t pal_index = matches.at(0).pal_index;
+            const auto &matched_pal = new_porymap_pals_.at(pal_index);
+            /*
+             * TODO: ANIM: this is broken. E.g. when compiling vanilla general waterfall, it breaks because pal 04.pal
+             * has duplicate colors in slot 7 and slot 14 and the vanilla game uses the slot 14 instance of the color.
+             * This means that our function here computes an index tile that doesn't match (it always chooses first slot
+             * matching color, so it chooses slot 7), and so the find_existing_contiguous_tiles call below fails to find
+             * the block of tiles it should.
+             *
+             * One idea for a solution: index_tile_from_color_tile computes all possible index tiles (accounting for
+             * this fact), and we try them all. This is not a great solution.
+             *
+             * It turns out, color 7 in 04.pal is unused. Maybe we can leverage that somehow.
+             *
+             * We need to figure this out, because it totally breaks gTileset_General patch builds.
+             */
+            const PixelTile<IndexPixel> indexed_key_frame_tile =
+                index_tile_from_color_tile(key_rgba_tile, matched_pal, extrinsic_transparency_.value());
+
+            keyframe_tiles.emplace_back(indexed_key_frame_tile);
+        }
+
+        // Step 1: Try to find existing contiguous keyframe sequence in workspace
+        if (const auto existing_offset = tiles_workspace_->find_existing_contiguous_tiles(keyframe_tiles);
+            existing_offset.has_value()) {
+            // Reuse existing keyframes
+            anim_offsets[anim_name] = existing_offset.value();
+            continue;
+        }
+
+        // Step 2: Find contiguous free space for new keyframes
+        if (const auto free_offset = tiles_workspace_->find_contiguous_transparent_slots(tile_count);
+            free_offset.has_value()) {
+            // Place tiles at the found location
+            tiles_workspace_->place_tiles_at(free_offset.value(), keyframe_tiles);
+            anim_offsets[anim_name] = free_offset.value();
+            continue;
+        }
+
+        // Step 3: No space found - error
+        // TODO: ANIM: better error message here
+        return FormattableError{
+            "animation '{}' requires {} contiguous tiles but no sufficient space found",
+            FormatParam{anim_name, Style::bold},
+            FormatParam{tile_count, Style::bold}};
+    }
+
+    // Register all animations with the matcher for keyframe tile detection
+    for (const auto &[anim_name, anim] : anims) {
+        const std::size_t tile_offset = anim_offsets[anim_name];
+
+        // Register with matcher
+        anim_tile_matcher_.register_animation(anim_name, anim, tile_offset, extrinsic_transparency_);
+    }
+
+    return {};
+}
+
+ChainableResult<void> CompilerTask::pipeline_helper_register_animations_locked()
+{
+    const auto &anims = tileset_.porytiles_component().anims();
+
+    // Build a map of animation offsets for registration step
+    std::map<std::string, std::size_t> anim_offsets; // name -> tile_offset
+
+    // Process each animation - in locked mode, keyframes must already exist
+    for (const auto &[anim_name, anim] : anims) {
+        if (!anim.has_frames()) {
+            panic("anim '" + anim_name + "' has no frames");
+        }
+
+        const AnimationFrame<Rgba32> &composite_frame = anim.composite_frame(extrinsic_transparency_);
+        const std::size_t tile_count = composite_frame.tiles().size();
+
+        // Build canonical IndexPixel keyframe tiles for this animation
+        std::vector<CanonicalPixelTile<IndexPixel>> keyframe_tiles;
+        keyframe_tiles.reserve(tile_count);
+
+        for (std::size_t tile_idx = 0; tile_idx < tile_count; ++tile_idx) {
+            const PixelTile<Rgba32> &composite_rgba_tile = composite_frame.tile_at(tile_idx);
+            const PixelTile<Rgba32> &key_rgba_tile = anim.key_frame().tile_at(tile_idx);
+
+            if (key_rgba_tile.is_transparent(extrinsic_transparency_.value())) {
+                panic("illegal transparent key frame tile");
+            }
+
+            // Match tile to palette using composite frame
+            std::vector<PaletteMatchResult<Rgba32>> matches =
+                match_or_best(composite_rgba_tile, new_porymap_pals_, extrinsic_transparency_.value(), 1);
+
+            if (!matches.at(0).is_covered) {
+                return FormattableError{
+                    "animation '{}' composite subtile '{}' has no covering palette",
+                    FormatParam{anim_name, Style::bold},
+                    FormatParam{tile_idx, Style::bold}};
+            }
+
+            // Convert key frame tile to IndexPixel using matched palette
+            const std::size_t pal_index = matches.at(0).pal_index;
+            const auto &matched_pal = new_porymap_pals_.at(pal_index);
+            const PixelTile<IndexPixel> indexed_key_frame_tile =
+                index_tile_from_color_tile(key_rgba_tile, matched_pal, extrinsic_transparency_.value());
+
+            keyframe_tiles.emplace_back(indexed_key_frame_tile);
+        }
+
+        // In locked mode, keyframes MUST already exist contiguously
+        if (const auto existing_offset = tiles_workspace_->find_existing_contiguous_tiles(keyframe_tiles);
+            existing_offset.has_value()) {
+            anim_offsets[anim_name] = existing_offset.value();
+        }
+        else {
+            // TODO: better error here
+            return FormattableError{
+                "Tiles edit_mode is '{}': animation '{}' keyframes not found in existing tiles.png",
+                FormatParam{"locked", Style::bold},
+                FormatParam{anim_name, Style::bold}};
+        }
     }
 
     // Register all animations with the matcher for keyframe tile detection

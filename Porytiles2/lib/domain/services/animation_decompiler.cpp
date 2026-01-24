@@ -48,12 +48,12 @@ std::size_t find_palette_for_animation_tiles(
 
     if (found_pal_indices.empty()) {
         /*
-         * TODO: some tilesets will hit this case. E.g. land_water_edge in vanilla primary general is not used within
-         * general itself. But the tiles within the anim range are referenced in lilycove tileset, using primary pal 3.
-         * So maybe here we should warn the user. And perhaps we need to provide some way to allow the user to select
-         * which pal to use when importing an animation, if no pal is found? Alternatively, we could scan all the other
-         * tilesets in the game and look for context? To do this, we'd need to parse the layouts file to figure out
-         * candidates. At a certain point, it becomes ridiculous to try to automate stuff like this. Users will be
+         * TODO: ANIM: some tilesets will hit this case. E.g. land_water_edge in vanilla primary general is not used
+         * within general itself. But the tiles within the anim range are referenced in lilycove tileset, using primary
+         * pal 3. So maybe here we should warn the user. And perhaps we need to provide some way to allow the user to
+         * select which pal to use when importing an animation, if no pal is found? Alternatively, we could scan all the
+         * other tilesets in the game and look for context? To do this, we'd need to parse the layouts file to figure
+         * out candidates. At a certain point, it becomes ridiculous to try to automate stuff like this. Users will be
          * expected to have some understanding of how the game works in order to use the tool properly.
          *
          * As a fallback, after performing a full tileset scan, if still no usages were found, we could just check the
@@ -78,7 +78,7 @@ std::size_t find_palette_for_animation_tiles(
 
     if (found_pal_indices.size() > 1) {
         /*
-         * TODO: handle this without panicking
+         * TODO: ANIM: handle this without panicking
          */
         std::string pal_list;
         for (const auto &pal_idx : found_pal_indices) {
@@ -163,9 +163,9 @@ Animation<Rgba32> AnimationDecompiler::decompile_animation(
     const std::size_t tile_count = anim.params().tile_count();
 
     /*
-     * TODO: adapt this code so that it computes a separate pal index for each subtile of the key frame. Technically,
-     * advanced users could make animations where different subtiles use different palettes. None of the vanilla game
-     * animations work this way, but it's possible and thus a use-case I want to support.
+     * TODO: ANIM: adapt this code so that it computes a separate pal index for each subtile of the key frame.
+     * Technically, advanced users could make animations where different subtiles use different palettes. None of the
+     * vanilla game animations work this way, but it's possible and thus a use-case I want to support.
      */
     // Recover the palette index by scanning metatiles for all animation tiles
     // All tiles in an animation must use the same palette
@@ -181,6 +181,7 @@ Animation<Rgba32> AnimationDecompiler::decompile_animation(
     for (std::size_t i = 0; i < key_frame_index_tiles.size(); ++i) {
         for (std::size_t j = i + 1; j < key_frame_index_tiles.size(); ++j) {
             if (key_frame_index_tiles[i] == key_frame_index_tiles[j]) {
+                // TODO: ANIM: handle this properly
                 std::cerr << std::endl;
                 std::cerr << "---------------------------------" << std::endl;
                 std::cerr << "|            TODO               |" << std::endl;

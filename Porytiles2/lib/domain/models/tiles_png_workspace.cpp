@@ -98,6 +98,14 @@ export_image_helper(const TilesPngWorkspace &workspace, ExportFlipMode flip_mode
 
 namespace porytiles2 {
 
+void TilesPngWorkspace::advance_cursor_to_next_transparent()
+{
+    cursor_++;
+    while (cursor_ < capacity_ && !tiles_[cursor_].is_transparent()) {
+        cursor_++;
+    }
+}
+
 TilesPngWorkspace::TilesPngWorkspace(std::size_t capacity) : cursor_{1}, capacity_{capacity}
 {
     // Initialize tiles_ vector with capacity number of transparent tiles
@@ -179,10 +187,9 @@ TilesPngWorkspace::TilesPngWorkspace(const Image<IndexPixel> &img, std::size_t c
     tiles_.resize(capacity, transparent_tile);
 
     // Set cursor to first transparent tile after tile 0
-    cursor_ = 1;
-    while (cursor_ < capacity && !tiles_[cursor_].is_transparent()) {
-        cursor_++;
-    }
+    // Start at 0 and let advance_cursor_to_next_transparent increment to 1 and scan forward
+    cursor_ = 0;
+    advance_cursor_to_next_transparent();
 }
 
 std::size_t TilesPngWorkspace::insert_tile(const CanonicalPixelTile<IndexPixel> &tile)
@@ -206,10 +213,7 @@ std::size_t TilesPngWorkspace::insert_tile(const CanonicalPixelTile<IndexPixel> 
     canonical_forms_[base_tile].push_back(cursor_);
 
     // Fast-forward cursor to next transparent tile
-    cursor_++;
-    while (cursor_ < capacity_ && !tiles_[cursor_].is_transparent()) {
-        cursor_++;
-    }
+    advance_cursor_to_next_transparent();
 
     return old_cursor;
 }
@@ -299,6 +303,129 @@ void TilesPngWorkspace::place_anim_tile(std::size_t reserved_index, const Canoni
     }
     const PixelTile<IndexPixel> &base_tile = tile;
     canonical_forms_[base_tile].push_back(absolute_index);
+}
+
+std::optional<std::size_t> TilesPngWorkspace::find_contiguous_transparent_slots(std::size_t count) const
+{
+    // Edge case: count of 0 is trivially satisfied at any position
+    if (count == 0) {
+        return 1; // Return first valid position after tile 0
+    }
+
+    // Scan from index 1 (skip reserved tile 0) looking for contiguous transparent runs
+    std::size_t run_start = 0;
+    std::size_t run_length = 0;
+
+    for (std::size_t i = 1; i < capacity_; ++i) {
+        if (tiles_[i].is_transparent()) {
+            if (run_length == 0) {
+                run_start = i;
+            }
+            run_length++;
+
+            if (run_length >= count) {
+                return run_start;
+            }
+        }
+        else {
+            // Non-transparent tile breaks the run
+            run_length = 0;
+        }
+    }
+
+    // No suitable run found
+    return std::nullopt;
+}
+
+std::optional<std::size_t>
+TilesPngWorkspace::find_existing_contiguous_tiles(const std::vector<CanonicalPixelTile<IndexPixel>> &tiles) const
+{
+    // Edge case: empty sequence is trivially found
+    if (tiles.empty()) {
+        return 1; // Return first valid position after tile 0
+    }
+
+    // Look up the first tile in canonical_forms_ map
+    const PixelTile<IndexPixel> &first_base_tile = tiles[0];
+    auto it = canonical_forms_.find(first_base_tile);
+    if (it == canonical_forms_.end() || it->second.empty()) {
+        // First tile not found in workspace
+        return std::nullopt;
+    }
+
+    // For each candidate position where the first tile exists, check if remaining tiles are contiguous
+    for (const std::size_t candidate_start : it->second) {
+        // Check if there's enough room for all tiles from this position
+        if (candidate_start + tiles.size() > capacity_) {
+            continue;
+        }
+
+        // Verify all tiles in sequence match
+        bool all_match = true;
+        for (std::size_t offset = 0; offset < tiles.size(); ++offset) {
+            const std::size_t check_index = candidate_start + offset;
+            const PixelTile<IndexPixel> &expected_base = tiles[offset];
+            const PixelTile<IndexPixel> &actual_base = tiles_[check_index];
+
+            if (expected_base != actual_base) {
+                all_match = false;
+                break;
+            }
+        }
+
+        if (all_match) {
+            return candidate_start;
+        }
+    }
+
+    // No contiguous sequence found
+    return std::nullopt;
+}
+
+void TilesPngWorkspace::place_tiles_at(
+    std::size_t start_index, const std::vector<CanonicalPixelTile<IndexPixel>> &tiles)
+{
+    const PlainTextFormatter formatter{};
+
+    // Precondition: tiles must fit in workspace
+    if (start_index + tiles.size() > capacity_) {
+        const auto msg = formatter.format(
+            "place_tiles_at: start_index ({}) + tiles.size() ({}) exceeds capacity ({})",
+            start_index,
+            tiles.size(),
+            capacity_);
+        panic(msg);
+    }
+
+    // Precondition: all target positions must be transparent
+    for (std::size_t offset = 0; offset < tiles.size(); ++offset) {
+        const std::size_t target_index = start_index + offset;
+        if (!tiles_[target_index].is_transparent()) {
+            const auto msg =
+                formatter.format("place_tiles_at: position {} is not transparent, cannot place tile", target_index);
+            panic(msg);
+        }
+    }
+
+    // Place tiles and update canonical_forms_ map
+    for (std::size_t offset = 0; offset < tiles.size(); ++offset) {
+        const std::size_t target_index = start_index + offset;
+        const auto &tile = tiles[offset];
+
+        tiles_[target_index] = tile;
+
+        // Add to canonical_forms_ map (skip transparent tiles, though they shouldn't be in the input)
+        if (!tile.is_transparent()) {
+            const PixelTile<IndexPixel> &base_tile = tile;
+            canonical_forms_[base_tile].push_back(target_index);
+        }
+    }
+
+    // Advance cursor past any newly-filled positions if needed
+    // The cursor should skip over non-transparent tiles
+    while (cursor_ < capacity_ && !tiles_[cursor_].is_transparent()) {
+        cursor_++;
+    }
 }
 
 } // namespace porytiles2

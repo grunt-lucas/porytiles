@@ -802,3 +802,377 @@ TEST(TilesPngWorkspaceTests, ExportCanonicalShouldMatchForSymmetricTiles)
         }
     }
 }
+
+// ========================================
+// find_contiguous_transparent_slots Tests
+// ========================================
+
+TEST(TilesPngWorkspaceTests, FindContiguousTransparentSlotsShouldFindSlotsInFreshWorkspace)
+{
+    TilesPngWorkspace workspace{20};
+
+    // Fresh workspace should have 19 contiguous transparent slots (indices 1-19, skipping tile 0)
+    auto result = workspace.find_contiguous_transparent_slots(5);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 1); // Should start at index 1
+}
+
+TEST(TilesPngWorkspaceTests, FindContiguousTransparentSlotsShouldFindSlotsAfterInsertions)
+{
+    TilesPngWorkspace workspace{20};
+
+    // Insert some tiles at indices 1, 2, 3
+    for (std::size_t i = 0; i < 3; ++i) {
+        PixelTile<IndexPixel> pixel_tile;
+        pixel_tile.set(0, 0, IndexPixel{i + 1});
+        CanonicalPixelTile<IndexPixel> tile{pixel_tile};
+        std::ignore = workspace.insert_tile(tile);
+    }
+
+    // Should now find contiguous slots starting at index 4
+    auto result = workspace.find_contiguous_transparent_slots(5);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 4);
+}
+
+TEST(TilesPngWorkspaceTests, FindContiguousTransparentSlotsShouldFindSlotsInFragmentedWorkspace)
+{
+    // Create workspace from image with scattered non-transparent tiles
+    Image<IndexPixel> img{64, 8};  // 8 tiles
+    img.set(0, 0, IndexPixel{1});  // Tile 0 non-transparent
+    img.set(0, 16, IndexPixel{2}); // Tile 2 non-transparent
+    img.set(0, 40, IndexPixel{3}); // Tile 5 non-transparent
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Available transparent runs: tiles 1 (len 1), tiles 3-4 (len 2), tiles 6-7 + padding (len 14)
+    // Looking for 3 contiguous should find starting at tile 6
+    auto result = workspace.find_contiguous_transparent_slots(3);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 6);
+}
+
+TEST(TilesPngWorkspaceTests, FindContiguousTransparentSlotsShouldReturnNulloptWhenNoSpace)
+{
+    // Create a nearly full workspace
+    TilesPngWorkspace workspace{5};
+
+    // Insert tiles to fill all slots except tile 0
+    for (std::size_t i = 0; i < 4; ++i) {
+        PixelTile<IndexPixel> pixel_tile;
+        pixel_tile.set(0, 0, IndexPixel{i + 1});
+        CanonicalPixelTile<IndexPixel> tile{pixel_tile};
+        std::ignore = workspace.insert_tile(tile);
+    }
+
+    // No contiguous space for 2 tiles
+    auto result = workspace.find_contiguous_transparent_slots(2);
+    EXPECT_FALSE(result.has_value());
+}
+
+TEST(TilesPngWorkspaceTests, FindContiguousTransparentSlotsShouldHandleCountZero)
+{
+    TilesPngWorkspace workspace{10};
+
+    // Count 0 is trivially satisfied
+    auto result = workspace.find_contiguous_transparent_slots(0);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 1);
+}
+
+TEST(TilesPngWorkspaceTests, FindContiguousTransparentSlotsShouldHandleExactCapacityMinus1)
+{
+    constexpr std::size_t capacity = 10;
+    TilesPngWorkspace workspace{capacity};
+
+    // Looking for capacity-1 tiles (all except tile 0)
+    auto result = workspace.find_contiguous_transparent_slots(capacity - 1);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 1);
+}
+
+TEST(TilesPngWorkspaceTests, FindContiguousTransparentSlotsShouldReturnNulloptWhenRequestExceedsCapacity)
+{
+    constexpr std::size_t capacity = 10;
+    TilesPngWorkspace workspace{capacity};
+
+    // Looking for more tiles than available (capacity - 1 is max since tile 0 is reserved)
+    auto result = workspace.find_contiguous_transparent_slots(capacity);
+    EXPECT_FALSE(result.has_value());
+}
+
+// ========================================
+// find_existing_contiguous_tiles Tests
+// ========================================
+
+TEST(TilesPngWorkspaceTests, FindExistingContiguousTilesShouldFindExistingSequence)
+{
+    // Create workspace with known tile sequence at indices 1, 2, 3
+    Image<IndexPixel> img{32, 8}; // 4 tiles
+    // Tile 0: transparent
+    // Tile 1: pattern A (filled with 10)
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            img.set(row, col, IndexPixel{10});
+        }
+    }
+    // Tile 2: pattern B (filled with 20)
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 16; col < 24; ++col) {
+            img.set(row, col, IndexPixel{20});
+        }
+    }
+    // Tile 3: pattern C (filled with 30)
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 24; col < 32; ++col) {
+            img.set(row, col, IndexPixel{30});
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Build the same sequence of tiles
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_find;
+    for (std::size_t val : {10, 20, 30}) {
+        PixelTile<IndexPixel> pixel_tile;
+        for (std::size_t i = 0; i < 64; ++i) {
+            pixel_tile.set(i, IndexPixel{val});
+        }
+        tiles_to_find.emplace_back(pixel_tile);
+    }
+
+    auto result = workspace.find_existing_contiguous_tiles(tiles_to_find);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 1); // Should find at index 1
+}
+
+TEST(TilesPngWorkspaceTests, FindExistingContiguousTilesShouldReturnNulloptWhenScattered)
+{
+    // Create workspace with tiles at non-contiguous positions
+    Image<IndexPixel> img{48, 8}; // 6 tiles
+    // Tile 1: pattern A
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            img.set(row, col, IndexPixel{10});
+        }
+    }
+    // Tile 2: transparent (gap)
+    // Tile 3: pattern B
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 24; col < 32; ++col) {
+            img.set(row, col, IndexPixel{20});
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Try to find A followed by B (not contiguous in workspace)
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_find;
+    PixelTile<IndexPixel> tile_a;
+    for (std::size_t i = 0; i < 64; ++i) {
+        tile_a.set(i, IndexPixel{10});
+    }
+    tiles_to_find.emplace_back(tile_a);
+
+    PixelTile<IndexPixel> tile_b;
+    for (std::size_t i = 0; i < 64; ++i) {
+        tile_b.set(i, IndexPixel{20});
+    }
+    tiles_to_find.emplace_back(tile_b);
+
+    auto result = workspace.find_existing_contiguous_tiles(tiles_to_find);
+    EXPECT_FALSE(result.has_value());
+}
+
+TEST(TilesPngWorkspaceTests, FindExistingContiguousTilesShouldReturnNulloptWhenNotExists)
+{
+    TilesPngWorkspace workspace{20};
+
+    // Insert some tiles
+    PixelTile<IndexPixel> pixel_tile;
+    pixel_tile.set(0, 0, IndexPixel{5});
+    CanonicalPixelTile<IndexPixel> tile{pixel_tile};
+    std::ignore = workspace.insert_tile(tile);
+
+    // Search for a different tile
+    PixelTile<IndexPixel> different_tile;
+    different_tile.set(0, 0, IndexPixel{99});
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_find;
+    tiles_to_find.emplace_back(different_tile);
+
+    auto result = workspace.find_existing_contiguous_tiles(tiles_to_find);
+    EXPECT_FALSE(result.has_value());
+}
+
+TEST(TilesPngWorkspaceTests, FindExistingContiguousTilesShouldHandleEmptySequence)
+{
+    TilesPngWorkspace workspace{10};
+
+    std::vector<CanonicalPixelTile<IndexPixel>> empty_tiles;
+
+    auto result = workspace.find_existing_contiguous_tiles(empty_tiles);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 1);
+}
+
+TEST(TilesPngWorkspaceTests, FindExistingContiguousTilesShouldMatchCanonicalForms)
+{
+    // Test that flipped variants match their canonical counterparts
+    TilesPngWorkspace workspace{20};
+
+    // Insert a tile that will be canonicalized
+    PixelTile<IndexPixel> original_tile;
+    original_tile.set(0, 0, IndexPixel{42}); // Top-left pixel set
+
+    CanonicalPixelTile<IndexPixel> canonical_tile{original_tile};
+    std::ignore = workspace.insert_tile(canonical_tile);
+
+    // Search for the same canonical tile
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_find;
+    tiles_to_find.push_back(canonical_tile);
+
+    auto result = workspace.find_existing_contiguous_tiles(tiles_to_find);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 1);
+}
+
+// ========================================
+// place_tiles_at Tests
+// ========================================
+
+TEST(TilesPngWorkspaceTests, PlaceTilesAtShouldPlaceTilesAtSpecifiedPosition)
+{
+    TilesPngWorkspace workspace{20};
+
+    // Create tiles to place
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_place;
+    for (std::size_t val : {10, 20, 30}) {
+        PixelTile<IndexPixel> pixel_tile;
+        for (std::size_t i = 0; i < 64; ++i) {
+            pixel_tile.set(i, IndexPixel{val});
+        }
+        tiles_to_place.emplace_back(pixel_tile);
+    }
+
+    // Place at position 5
+    workspace.place_tiles_at(5, tiles_to_place);
+
+    // Verify tiles are at positions 5, 6, 7
+    EXPECT_FALSE(workspace.tile_at(5).is_transparent());
+    EXPECT_FALSE(workspace.tile_at(6).is_transparent());
+    EXPECT_FALSE(workspace.tile_at(7).is_transparent());
+
+    // Verify positions before and after are still transparent
+    EXPECT_TRUE(workspace.tile_at(4).is_transparent());
+    EXPECT_TRUE(workspace.tile_at(8).is_transparent());
+}
+
+TEST(TilesPngWorkspaceTests, PlaceTilesAtShouldUpdateCanonicalFormsMap)
+{
+    TilesPngWorkspace workspace{20};
+
+    // Create a tile
+    PixelTile<IndexPixel> pixel_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        pixel_tile.set(i, IndexPixel{42});
+    }
+    CanonicalPixelTile<IndexPixel> tile{pixel_tile};
+
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_place;
+    tiles_to_place.push_back(tile);
+
+    // Place at position 10
+    workspace.place_tiles_at(10, tiles_to_place);
+
+    // Should be findable via first_occurrence_of
+    auto occurrence = workspace.first_occurrence_of(tile);
+    EXPECT_TRUE(occurrence.has_value());
+    EXPECT_EQ(occurrence.value(), 10);
+}
+
+TEST(TilesPngWorkspaceTests, PlaceTilesAtShouldPanicWhenPositionNotTransparent)
+{
+    TilesPngWorkspace workspace{20};
+
+    // Insert a tile at position 5
+    PixelTile<IndexPixel> blocking_tile;
+    blocking_tile.set(0, 0, IndexPixel{99});
+    CanonicalPixelTile<IndexPixel> blocking{blocking_tile};
+
+    // Insert tiles at 1, 2, 3, 4 first to move cursor to 5
+    for (std::size_t i = 0; i < 4; ++i) {
+        PixelTile<IndexPixel> pt;
+        pt.set(0, 0, IndexPixel{i + 1});
+        CanonicalPixelTile<IndexPixel> t{pt};
+        std::ignore = workspace.insert_tile(t);
+    }
+
+    // Now position 5 has a tile, trying to place there should panic
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_place;
+    PixelTile<IndexPixel> new_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        new_tile.set(i, IndexPixel{50});
+    }
+    tiles_to_place.emplace_back(new_tile);
+
+    // This should panic because we're trying to overwrite position 1 (not transparent)
+    ASSERT_DEATH(workspace.place_tiles_at(1, tiles_to_place), "is not transparent");
+}
+
+TEST(TilesPngWorkspaceTests, PlaceTilesAtShouldAdvanceCursorPastPlacedTiles)
+{
+    TilesPngWorkspace workspace{20};
+
+    // Cursor starts at 1
+    // Place tiles at 1, 2, 3
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_place;
+    for (std::size_t val : {10, 20, 30}) {
+        PixelTile<IndexPixel> pixel_tile;
+        for (std::size_t i = 0; i < 64; ++i) {
+            pixel_tile.set(i, IndexPixel{val});
+        }
+        tiles_to_place.emplace_back(pixel_tile);
+    }
+
+    workspace.place_tiles_at(1, tiles_to_place);
+
+    // Now insert another tile - it should go to position 4
+    PixelTile<IndexPixel> new_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        new_tile.set(i, IndexPixel{40});
+    }
+    CanonicalPixelTile<IndexPixel> tile{new_tile};
+
+    std::size_t inserted_at = workspace.insert_tile(tile);
+    EXPECT_EQ(inserted_at, 4);
+}
+
+TEST(TilesPngWorkspaceTests, PlaceTilesAtShouldPanicWhenExceedsCapacity)
+{
+    TilesPngWorkspace workspace{5};
+
+    // Try to place 3 tiles starting at position 4 (would need positions 4, 5, 6 but capacity is 5)
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_place;
+    for (std::size_t i = 0; i < 3; ++i) {
+        PixelTile<IndexPixel> pixel_tile;
+        for (std::size_t j = 0; j < 64; ++j) {
+            pixel_tile.set(j, IndexPixel{i + 1});
+        }
+        tiles_to_place.emplace_back(pixel_tile);
+    }
+
+    ASSERT_DEATH(workspace.place_tiles_at(4, tiles_to_place), "exceeds capacity");
+}
+
+TEST(TilesPngWorkspaceTests, PlaceTilesAtShouldHandleEmptyTileVector)
+{
+    TilesPngWorkspace workspace{10};
+
+    std::vector<CanonicalPixelTile<IndexPixel>> empty_tiles;
+
+    // Should not panic, just do nothing
+    workspace.place_tiles_at(5, empty_tiles);
+
+    // Workspace should be unchanged
+    EXPECT_TRUE(workspace.tile_at(5).is_transparent());
+}

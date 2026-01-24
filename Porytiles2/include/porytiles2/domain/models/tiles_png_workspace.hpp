@@ -349,6 +349,48 @@ class TilesPngWorkspace {
     }
 
     /**
+     * @brief Finds the first contiguous run of transparent tiles that can accommodate the requested count.
+     *
+     * @details
+     * Scans the workspace starting from index 1 (skipping reserved tile 0) to find a contiguous sequence of
+     * transparent tiles with length >= count. This is useful in patch mode to find free space for animation
+     * keyframes when they don't already exist in the workspace.
+     *
+     * @param count The number of contiguous transparent slots needed
+     * @return The starting index of the first suitable run, or std::nullopt if no run found
+     */
+    [[nodiscard]] std::optional<std::size_t> find_contiguous_transparent_slots(std::size_t count) const;
+
+    /**
+     * @brief Checks if a sequence of canonical tiles already exists contiguously in the workspace.
+     *
+     * @details
+     * For each candidate position where the first tile exists, verifies that the remaining tiles appear
+     * contiguously in sequence. Comparison is done on canonical (base) tile data so that flipped variants
+     * match their canonical counterparts. This enables reusing existing animation keyframes in patch mode.
+     *
+     * @param tiles The sequence of canonical tiles to search for
+     * @return The starting index if found contiguously, or std::nullopt if not found
+     */
+    [[nodiscard]] std::optional<std::size_t>
+    find_existing_contiguous_tiles(const std::vector<CanonicalPixelTile<IndexPixel>> &tiles) const;
+
+    /**
+     * @brief Places tiles at specific positions for patch mode animation placement.
+     *
+     * @details
+     * Places the provided tiles starting at the specified index. All target positions must be transparent
+     * (the method panics if any position is non-transparent). After placement, the canonical_forms_ map is
+     * updated and the cursor is advanced past any newly-filled positions.
+     *
+     * @param start_index The starting index where tiles should be placed
+     * @param tiles The tiles to place at consecutive positions starting from start_index
+     * @pre All target positions must be transparent
+     * @pre start_index + tiles.size() must not exceed capacity
+     */
+    void place_tiles_at(std::size_t start_index, const std::vector<CanonicalPixelTile<IndexPixel>> &tiles);
+
+    /**
      * @brief Returns the maximum number of tiles this workspace can hold.
      *
      * @details
@@ -363,6 +405,16 @@ class TilesPngWorkspace {
     }
 
   private:
+    /**
+     * @brief Advances the cursor to the next transparent tile slot.
+     *
+     * @details
+     * Increments the cursor and then scans forward to find the next transparent tile. If no transparent tiles
+     * remain, the cursor reaches capacity_. This helper is used after tile insertion/placement to maintain
+     * the cursor invariant.
+     */
+    void advance_cursor_to_next_transparent();
+
     std::vector<CanonicalPixelTile<IndexPixel>> tiles_;
     std::map<PixelTile<IndexPixel>, std::vector<std::size_t>> canonical_forms_;
     std::size_t cursor_;
