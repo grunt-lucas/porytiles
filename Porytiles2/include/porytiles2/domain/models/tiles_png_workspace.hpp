@@ -7,7 +7,9 @@
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
+#include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 
 namespace porytiles2 {
 
@@ -374,6 +376,32 @@ class TilesPngWorkspace {
      */
     [[nodiscard]] std::optional<std::size_t>
     find_existing_contiguous_tiles(const std::vector<CanonicalPixelTile<IndexPixel>> &tiles) const;
+
+    /**
+     * @brief Checks if a sequence of tiles already exists contiguously using color-equivalence comparison.
+     *
+     * @details
+     * Similar to find_existing_contiguous_tiles(), but uses color-equivalence comparison instead of exact index
+     * matching. This handles the case where palettes contain duplicate colors at different indices. Two pixels are
+     * considered equivalent if they reference the same color value in the palette, even if their indices differ.
+     *
+     * This is necessary for patch builds where the vanilla workspace tiles may use a different palette index than the
+     * one computed by index_tile_from_color_tile() (which always picks the first matching index). For example, if
+     * palette slot 7 and slot 14 both contain the same color, vanilla tiles might use slot 14 while our computed tiles
+     * use slot 7 - they should still be considered matching.
+     *
+     * Note: This method performs a linear scan of the workspace (O(capacity × tiles × 64)) instead of the O(1) map
+     * lookup used by find_existing_contiguous_tiles(). This is acceptable because animation sequences are typically
+     * small and workspace capacity is bounded.
+     *
+     * @param tiles The sequence of canonical tiles to search for
+     * @param palettes Parallel vector of palette pointers corresponding to each tile (for color lookup)
+     * @pre tiles.size() == palettes.size()
+     * @return The starting index if found contiguously, or std::nullopt if not found
+     */
+    [[nodiscard]] std::optional<std::size_t> find_existing_contiguous_tiles_by_color(
+        const std::vector<CanonicalPixelTile<IndexPixel>> &tiles,
+        const std::vector<const Palette<Rgba32, pal::max_size> *> &palettes) const;
 
     /**
      * @brief Places tiles at specific positions for patch mode animation placement.

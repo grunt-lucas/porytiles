@@ -948,9 +948,11 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations_patch()
         const AnimationFrame<Rgba32> &composite_frame = anim.composite_frame(extrinsic_transparency_);
         const std::size_t tile_count = composite_frame.tiles().size();
 
-        // Build canonical IndexPixel keyframe tiles for this animation
+        // Build canonical IndexPixel keyframe tiles for this animation, along with parallel palette vector
         std::vector<CanonicalPixelTile<IndexPixel>> keyframe_tiles;
+        std::vector<const Palette<Rgba32, pal::max_size> *> keyframe_palettes;
         keyframe_tiles.reserve(tile_count);
+        keyframe_palettes.reserve(tile_count);
 
         for (std::size_t tile_idx = 0; tile_idx < tile_count; ++tile_idx) {
             const PixelTile<Rgba32> &composite_rgba_tile = composite_frame.tile_at(tile_idx);
@@ -975,28 +977,17 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations_patch()
             // Convert key frame tile to IndexPixel using matched palette
             const std::size_t pal_index = matches.at(0).pal_index;
             const auto &matched_pal = new_porymap_pals_.at(pal_index);
-            /*
-             * TODO: ANIM: this is broken. E.g. when compiling vanilla general waterfall, it breaks because pal 04.pal
-             * has duplicate colors in slot 7 and slot 14 and the vanilla game uses the slot 14 instance of the color.
-             * This means that our function here computes an index tile that doesn't match (it always chooses first slot
-             * matching color, so it chooses slot 7), and so the find_existing_contiguous_tiles call below fails to find
-             * the block of tiles it should.
-             *
-             * One idea for a solution: index_tile_from_color_tile computes all possible index tiles (accounting for
-             * this fact), and we try them all. This is not a great solution.
-             *
-             * It turns out, color 7 in 04.pal is unused. Maybe we can leverage that somehow.
-             *
-             * We need to figure this out, because it totally breaks gTileset_General patch builds.
-             */
             const PixelTile<IndexPixel> indexed_key_frame_tile =
                 index_tile_from_color_tile(key_rgba_tile, matched_pal, extrinsic_transparency_.value());
 
             keyframe_tiles.emplace_back(indexed_key_frame_tile);
+            keyframe_palettes.push_back(&matched_pal);
         }
 
-        // Step 1: Try to find existing contiguous keyframe sequence in workspace
-        if (const auto existing_offset = tiles_workspace_->find_existing_contiguous_tiles(keyframe_tiles);
+        // Step 1: Try to find existing contiguous keyframe sequence in workspace using color-equivalence comparison
+        // This handles the case where palettes contain duplicate colors at different indices
+        if (const auto existing_offset =
+                tiles_workspace_->find_existing_contiguous_tiles_by_color(keyframe_tiles, keyframe_palettes);
             existing_offset.has_value()) {
             // Reuse existing keyframes
             anim_offsets[anim_name] = existing_offset.value();

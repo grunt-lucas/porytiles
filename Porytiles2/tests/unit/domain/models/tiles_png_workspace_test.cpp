@@ -1176,3 +1176,285 @@ TEST(TilesPngWorkspaceTests, PlaceTilesAtShouldHandleEmptyTileVector)
     // Workspace should be unchanged
     EXPECT_TRUE(workspace.tile_at(5).is_transparent());
 }
+
+// ========================================
+// find_existing_contiguous_tiles_by_color Tests
+// ========================================
+
+TEST(TilesPngWorkspaceTests, FindByColorShouldMatchDuplicatePaletteIndices)
+{
+    // This is the core bug fix test case:
+    // Palette has duplicate colors at slots 7 and 14
+    // Workspace tile uses slot 14, computed tile uses slot 7
+    // They should still match because palette[7] == palette[14]
+
+    // Set up a palette with duplicate colors
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 255});        // Transparent slot (unused for color matching)
+    palette.set(7, Rgba32{100, 150, 200, 255});  // Color at slot 7
+    palette.set(14, Rgba32{100, 150, 200, 255}); // Same color at slot 14
+
+    // Create a tile in the workspace using index 14
+    PixelTile<IndexPixel> workspace_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        workspace_tile.set(i, IndexPixel{14});
+    }
+
+    // Create workspace with this tile at index 1
+    Image<IndexPixel> img{16, 8}; // 2 tiles
+    // Tile 0: transparent (all zeros by default)
+    // Tile 1: filled with index 14
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            img.set(row, col, IndexPixel{14});
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Create search tile using index 7 (different index, same color)
+    PixelTile<IndexPixel> search_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        search_tile.set(i, IndexPixel{7});
+    }
+
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_find;
+    tiles_to_find.emplace_back(search_tile);
+
+    std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+    palettes.push_back(&palette);
+
+    // Should find the tile despite different indices, because colors match
+    auto result = workspace.find_existing_contiguous_tiles_by_color(tiles_to_find, palettes);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 1);
+}
+
+TEST(TilesPngWorkspaceTests, FindByColorShouldNotMatchDifferentColors)
+{
+    // Set up a palette with different colors at slots 7 and 14
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 255});
+    palette.set(7, Rgba32{100, 150, 200, 255}); // Color A at slot 7
+    palette.set(14, Rgba32{200, 100, 50, 255}); // Different color B at slot 14
+
+    // Create workspace with tile using index 14
+    Image<IndexPixel> img{16, 8}; // 2 tiles
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            img.set(row, col, IndexPixel{14});
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Create search tile using index 7 (different index, different color)
+    PixelTile<IndexPixel> search_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        search_tile.set(i, IndexPixel{7});
+    }
+
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_find;
+    tiles_to_find.emplace_back(search_tile);
+
+    std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+    palettes.push_back(&palette);
+
+    // Should NOT find because colors are different
+    auto result = workspace.find_existing_contiguous_tiles_by_color(tiles_to_find, palettes);
+    EXPECT_FALSE(result.has_value());
+}
+
+TEST(TilesPngWorkspaceTests, FindByColorShouldHandleTransparentPixels)
+{
+    // Transparency (index 0) should only match transparency, not other indices
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 0}); // Transparent
+    palette.set(1, Rgba32{100, 150, 200, 255});
+
+    // Create workspace with tile that has some transparent pixels
+    Image<IndexPixel> img{16, 8}; // 2 tiles
+    // Tile 1: alternating transparent and non-transparent
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            if ((row + col) % 2 == 0) {
+                img.set(row, col, IndexPixel{0}); // Transparent
+            }
+            else {
+                img.set(row, col, IndexPixel{1}); // Non-transparent
+            }
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Create search tile with same pattern
+    PixelTile<IndexPixel> search_tile;
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 0; col < 8; ++col) {
+            if ((row + col) % 2 == 0) {
+                search_tile.set(row, col, IndexPixel{0});
+            }
+            else {
+                search_tile.set(row, col, IndexPixel{1});
+            }
+        }
+    }
+
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_find;
+    tiles_to_find.emplace_back(search_tile);
+
+    std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+    palettes.push_back(&palette);
+
+    // Should find because patterns match
+    auto result = workspace.find_existing_contiguous_tiles_by_color(tiles_to_find, palettes);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 1);
+}
+
+TEST(TilesPngWorkspaceTests, FindByColorShouldFailOnTransparencyMismatch)
+{
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 0});
+    palette.set(1, Rgba32{100, 150, 200, 255});
+
+    // Create workspace with all non-transparent tile
+    Image<IndexPixel> img{16, 8}; // 2 tiles
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            img.set(row, col, IndexPixel{1});
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Create search tile with some transparent pixels
+    PixelTile<IndexPixel> search_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        search_tile.set(i, IndexPixel{static_cast<std::size_t>(i % 2 == 0 ? 0 : 1)}); // Half transparent
+    }
+
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_find;
+    tiles_to_find.emplace_back(search_tile);
+
+    std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+    palettes.push_back(&palette);
+
+    // Should NOT find because transparency patterns differ
+    auto result = workspace.find_existing_contiguous_tiles_by_color(tiles_to_find, palettes);
+    EXPECT_FALSE(result.has_value());
+}
+
+TEST(TilesPngWorkspaceTests, FindByColorShouldFindContiguousSequence)
+{
+    // Test finding a multi-tile contiguous sequence
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 0});
+    palette.set(1, Rgba32{10, 10, 10, 255});
+    palette.set(2, Rgba32{20, 20, 20, 255});
+    palette.set(3, Rgba32{30, 30, 30, 255});
+
+    // Create workspace with 3 contiguous tiles at indices 1, 2, 3
+    Image<IndexPixel> img{32, 8}; // 4 tiles
+    // Tile 1: filled with index 1
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            img.set(row, col, IndexPixel{1});
+        }
+    }
+    // Tile 2: filled with index 2
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 16; col < 24; ++col) {
+            img.set(row, col, IndexPixel{2});
+        }
+    }
+    // Tile 3: filled with index 3
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 24; col < 32; ++col) {
+            img.set(row, col, IndexPixel{3});
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Create search sequence
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_find;
+    std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+
+    for (std::uint8_t idx : {1, 2, 3}) {
+        PixelTile<IndexPixel> tile;
+        for (std::size_t i = 0; i < 64; ++i) {
+            tile.set(i, IndexPixel{idx});
+        }
+        tiles_to_find.emplace_back(tile);
+        palettes.push_back(&palette);
+    }
+
+    auto result = workspace.find_existing_contiguous_tiles_by_color(tiles_to_find, palettes);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 1);
+}
+
+TEST(TilesPngWorkspaceTests, FindByColorShouldReturnNulloptWhenNotFound)
+{
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 0});
+    palette.set(1, Rgba32{10, 10, 10, 255});
+    palette.set(5, Rgba32{50, 50, 50, 255});
+
+    // Create workspace with tile using index 1
+    Image<IndexPixel> img{16, 8}; // 2 tiles
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            img.set(row, col, IndexPixel{1});
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Search for a different tile (index 5)
+    PixelTile<IndexPixel> search_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        search_tile.set(i, IndexPixel{5});
+    }
+
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_find;
+    tiles_to_find.emplace_back(search_tile);
+
+    std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+    palettes.push_back(&palette);
+
+    auto result = workspace.find_existing_contiguous_tiles_by_color(tiles_to_find, palettes);
+    EXPECT_FALSE(result.has_value());
+}
+
+TEST(TilesPngWorkspaceTests, FindByColorShouldHandleEmptySequence)
+{
+    TilesPngWorkspace workspace{10};
+
+    std::vector<CanonicalPixelTile<IndexPixel>> empty_tiles;
+    std::vector<const Palette<Rgba32, pal::max_size> *> empty_palettes;
+
+    auto result = workspace.find_existing_contiguous_tiles_by_color(empty_tiles, empty_palettes);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 1);
+}
+
+TEST(TilesPngWorkspaceTests, FindByColorShouldPanicOnMismatchedVectorSizes)
+{
+    TilesPngWorkspace workspace{10};
+
+    PixelTile<IndexPixel> tile;
+    tile.set(0, 0, IndexPixel{1});
+
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles;
+    tiles.emplace_back(tile);
+
+    std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+    // Intentionally leave palettes empty to cause mismatch
+
+    ASSERT_DEATH(
+        std::ignore = workspace.find_existing_contiguous_tiles_by_color(tiles, palettes),
+        "tiles and palettes vectors must have the same size");
+}

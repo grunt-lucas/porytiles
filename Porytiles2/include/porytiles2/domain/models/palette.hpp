@@ -311,6 +311,15 @@ class Palette {
      * Slot 0 is explicitly excluded because it is reserved for the transparent color and handled separately. Wildcard
      * slots are also excluded.
      *
+     * @warning Duplicate Color Handling: Since std::map stores only one value per key, if the palette contains
+     * duplicate colors at multiple indices, only the first occurrence (lowest index) will be stored in the map. For
+     * example, if slots 7 and 14 both contain the same RGBA color, the map will only contain an entry for slot 7.
+     *
+     * This can cause issues when comparing tiles that were indexed using different palette slots for the same color.
+     * If you need to match tiles where the palette may have duplicate colors, use color-equivalence comparison (compare
+     * the actual palette colors at each index) rather than direct index comparison. See
+     * TilesPngWorkspace::find_existing_contiguous_tiles_by_color() for an example of this pattern.
+     *
      * @return A map from ColorType to PaletteIndex for non-wildcard indices 1 through size()-1
      */
     [[nodiscard]] std::map<ColorType, PaletteIndex> color_to_index_map() const

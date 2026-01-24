@@ -8,6 +8,49 @@ namespace {
 using namespace porytiles2;
 
 /**
+ * @brief Checks if two tiles are color-equivalent using the provided palette for color lookup.
+ *
+ * @details
+ * Two tiles are color-equivalent if, for every pixel position, the colors they reference in the palette are equal.
+ * This handles the case where palettes contain duplicate colors at different indices - e.g., if palette slots 7 and 14
+ * both contain the same color, pixels using index 7 and index 14 are considered equivalent.
+ *
+ * Note: Index 0 always represents transparency in GBA tilesets, so we treat index 0 specially - two pixels are only
+ * equivalent if both have index 0 (both transparent) or both have non-zero indices with matching colors.
+ *
+ * @param expected The expected tile (from computed keyframe)
+ * @param actual The actual tile in the workspace
+ * @param palette The palette to use for color lookup
+ * @return true if tiles are color-equivalent, false otherwise
+ */
+bool tiles_color_equivalent(
+    const PixelTile<IndexPixel> &expected,
+    const PixelTile<IndexPixel> &actual,
+    const Palette<Rgba32, pal::max_size> &palette)
+{
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        const auto expected_idx = expected.at(i).index();
+        const auto actual_idx = actual.at(i).index();
+
+        // Fast path: identical indices are always equivalent
+        if (expected_idx == actual_idx) {
+            continue;
+        }
+
+        // Transparency mismatch: index 0 is special (transparent), can't match non-zero
+        if (expected_idx == 0 || actual_idx == 0) {
+            return false;
+        }
+
+        // Both non-zero but different indices: check if they reference the same color
+        if (palette.at(expected_idx) != palette.at(actual_idx)) {
+            return false;
+        }
+    }
+    return true;
+}
+
+/**
  * @brief Helper function to export workspace tiles with optional flip transformations and trimming.
  *
  * @param workspace The TilesPngWorkspace to export from
@@ -368,6 +411,51 @@ TilesPngWorkspace::find_existing_contiguous_tiles(const std::vector<CanonicalPix
             const PixelTile<IndexPixel> &actual_base = tiles_[check_index];
 
             if (expected_base != actual_base) {
+                all_match = false;
+                break;
+            }
+        }
+
+        if (all_match) {
+            return candidate_start;
+        }
+    }
+
+    // No contiguous sequence found
+    return std::nullopt;
+}
+
+std::optional<std::size_t> TilesPngWorkspace::find_existing_contiguous_tiles_by_color(
+    const std::vector<CanonicalPixelTile<IndexPixel>> &tiles,
+    const std::vector<const Palette<Rgba32, pal::max_size> *> &palettes) const
+{
+    // Edge case: empty sequence is trivially found
+    if (tiles.empty()) {
+        return 1; // Return first valid position after tile 0
+    }
+
+    // Precondition: parallel vectors must have same size
+    if (tiles.size() != palettes.size()) {
+        panic("tiles and palettes vectors must have the same size");
+    }
+
+    // Linear scan through workspace looking for contiguous match
+    // Start at index 1 (skip reserved tile 0)
+    for (std::size_t candidate_start = 1; candidate_start < capacity_; ++candidate_start) {
+        // Check if there's enough room for all tiles from this position
+        if (candidate_start + tiles.size() > capacity_) {
+            break; // No more valid starting positions
+        }
+
+        // Verify all tiles in sequence match using color-equivalence
+        bool all_match = true;
+        for (std::size_t offset = 0; offset < tiles.size(); ++offset) {
+            const std::size_t check_index = candidate_start + offset;
+            const PixelTile<IndexPixel> &expected_base = tiles[offset];
+            const PixelTile<IndexPixel> &actual_base = tiles_[check_index];
+            const auto &palette = *palettes[offset];
+
+            if (!tiles_color_equivalent(expected_base, actual_base, palette)) {
                 all_match = false;
                 break;
             }
