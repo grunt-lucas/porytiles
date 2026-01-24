@@ -271,6 +271,27 @@ std::optional<std::size_t> TilesPngWorkspace::first_occurrence_of(const Canonica
     return std::nullopt;
 }
 
+std::optional<std::size_t> TilesPngWorkspace::first_occurrence_of_by_color(
+    const CanonicalPixelTile<IndexPixel> &tile, const Palette<Rgba32, pal::max_size> &palette) const
+{
+    if (tile.is_transparent()) {
+        return std::nullopt;
+    }
+
+    const PixelTile<IndexPixel> &tile_base = tile;
+
+    for (std::size_t i = 1; i < capacity_; ++i) {
+        if (tiles_[i].is_transparent()) {
+            continue;
+        }
+        const PixelTile<IndexPixel> &workspace_tile_base = tiles_[i];
+        if (tiles_color_equivalent(tile_base, workspace_tile_base, palette)) {
+            return i;
+        }
+    }
+    return std::nullopt;
+}
+
 CanonicalPixelTile<IndexPixel> TilesPngWorkspace::tile_at(std::size_t index) const
 {
     if (index >= tiles_.size()) {

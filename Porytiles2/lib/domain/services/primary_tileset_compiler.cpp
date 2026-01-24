@@ -634,9 +634,22 @@ TileAssignmentResult CompilerTask::pipeline_helper_assign_tile_via_pal_match(con
         return result;
     }
 
-    // Tile found in workspace
-    if (const auto maybe_tile_index = tiles_workspace_->first_occurrence_of(canonical_index_tile);
-        maybe_tile_index.has_value()) {
+    /*
+     * Tile found in workspace
+     *
+     * In optimize mode, we use fast O(1) exact index matching because palettes are freshly computed by the palette
+     * packing algorithm, which never produces duplicate colors. In patch/locked modes, we use O(n) color-equivalence
+     * comparison because vanilla palettes may contain duplicate colors at different indices. For example, if palette
+     * slots 7 and 14 both contain RGB(255,0,0), our index_tile_from_color_tile() always picks slot 7 (the first
+     * match), but vanilla workspace tiles might use slot 14. Exact index matching would fail to find the tile, causing
+     * unnecessary tile insertions or "tile not found" errors in locked mode.
+     */
+    const auto maybe_tile_index =
+        (tiles_edit_mode_ == ArtifactEditMode::optimize)
+            ? tiles_workspace_->first_occurrence_of(canonical_index_tile)
+            : tiles_workspace_->first_occurrence_of_by_color(canonical_index_tile, matched_pal);
+
+    if (maybe_tile_index.has_value()) {
         const auto workspace_tile_index = maybe_tile_index.value();
         const auto workspace_tile = tiles_workspace_->tile_at(workspace_tile_index);
         const bool pt_to_pm_hflip = canonical_index_tile.h_flip() ^ workspace_tile.h_flip();

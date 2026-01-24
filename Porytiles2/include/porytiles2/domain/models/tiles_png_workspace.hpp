@@ -202,6 +202,30 @@ class TilesPngWorkspace {
     [[nodiscard]] std::optional<std::size_t> first_occurrence_of(const CanonicalPixelTile<IndexPixel> &tile) const;
 
     /**
+     * @brief Finds the first occurrence of a tile using color-equivalence comparison.
+     *
+     * @details
+     * Similar to first_occurrence_of(), but uses color-equivalence comparison instead of exact index matching. This
+     * handles the case where palettes contain duplicate colors at different indices. Two pixels are considered
+     * equivalent if they reference the same color value in the palette, even if their indices differ.
+     *
+     * This is necessary for patch/locked builds where vanilla workspace tiles may use a different palette index than
+     * the one computed by index_tile_from_color_tile() (which always picks the first matching index). For example, if
+     * palette slot 7 and slot 14 both contain the same color, vanilla tiles might use slot 14 while our computed tiles
+     * use slot 7 - they should still be considered matching.
+     *
+     * Note: This method performs a linear scan of the workspace (O(capacity × 64)) instead of the O(1) map lookup used
+     * by first_occurrence_of(). This is acceptable because workspace capacity is bounded and this method is only used
+     * in patch/locked modes.
+     *
+     * @param tile The canonical pixel tile to search for
+     * @param palette The palette to use for color lookup
+     * @return The index of the tile's first occurrence if found, std::nullopt otherwise
+     */
+    [[nodiscard]] std::optional<std::size_t> first_occurrence_of_by_color(
+        const CanonicalPixelTile<IndexPixel> &tile, const Palette<Rgba32, pal::max_size> &palette) const;
+
+    /**
      * @brief Retrieves the canonical tile at the specified index in the workspace.
      *
      * @details

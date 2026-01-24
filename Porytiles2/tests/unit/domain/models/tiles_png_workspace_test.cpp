@@ -1458,3 +1458,187 @@ TEST(TilesPngWorkspaceTests, FindByColorShouldPanicOnMismatchedVectorSizes)
         std::ignore = workspace.find_existing_contiguous_tiles_by_color(tiles, palettes),
         "tiles and palettes vectors must have the same size");
 }
+
+// ========================================
+// first_occurrence_of_by_color Tests
+// ========================================
+
+TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorShouldMatchDuplicatePaletteIndices)
+{
+    // This is the core bug fix test case:
+    // Palette has duplicate colors at slots 7 and 14
+    // Workspace tile uses slot 14, computed tile uses slot 7
+    // They should still match because palette[7] == palette[14]
+
+    // Set up a palette with duplicate colors
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 255});        // Transparent slot (unused for color matching)
+    palette.set(7, Rgba32{100, 150, 200, 255});  // Color at slot 7
+    palette.set(14, Rgba32{100, 150, 200, 255}); // Same color at slot 14
+
+    // Create workspace with tile using index 14
+    Image<IndexPixel> img{16, 8}; // 2 tiles
+    // Tile 0: transparent (all zeros by default)
+    // Tile 1: filled with index 14
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            img.set(row, col, IndexPixel{14});
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Create search tile using index 7 (different index, same color)
+    PixelTile<IndexPixel> search_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        search_tile.set(i, IndexPixel{7});
+    }
+    CanonicalPixelTile<IndexPixel> canonical_search_tile{search_tile};
+
+    // Should find the tile despite different indices, because colors match
+    auto result = workspace.first_occurrence_of_by_color(canonical_search_tile, palette);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 1);
+}
+
+TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorShouldNotMatchDifferentColors)
+{
+    // Set up a palette with different colors at slots 7 and 14
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 255});
+    palette.set(7, Rgba32{100, 150, 200, 255}); // Color A at slot 7
+    palette.set(14, Rgba32{200, 100, 50, 255}); // Different color B at slot 14
+
+    // Create workspace with tile using index 14
+    Image<IndexPixel> img{16, 8}; // 2 tiles
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            img.set(row, col, IndexPixel{14});
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Create search tile using index 7 (different index, different color)
+    PixelTile<IndexPixel> search_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        search_tile.set(i, IndexPixel{7});
+    }
+    CanonicalPixelTile<IndexPixel> canonical_search_tile{search_tile};
+
+    // Should NOT find because colors are different
+    auto result = workspace.first_occurrence_of_by_color(canonical_search_tile, palette);
+    EXPECT_FALSE(result.has_value());
+}
+
+TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorShouldReturnNulloptForTransparentTile)
+{
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 0});
+    palette.set(1, Rgba32{100, 150, 200, 255});
+
+    TilesPngWorkspace workspace{20};
+
+    // Insert a non-transparent tile
+    PixelTile<IndexPixel> workspace_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        workspace_tile.set(i, IndexPixel{1});
+    }
+    CanonicalPixelTile<IndexPixel> canonical_workspace_tile{workspace_tile};
+    std::ignore = workspace.insert_tile(canonical_workspace_tile);
+
+    // Create a transparent search tile (all index 0)
+    PixelTile<IndexPixel> transparent_tile;
+    CanonicalPixelTile<IndexPixel> canonical_transparent_tile{transparent_tile};
+
+    // Transparent tiles should return nullopt
+    auto result = workspace.first_occurrence_of_by_color(canonical_transparent_tile, palette);
+    EXPECT_FALSE(result.has_value());
+}
+
+TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorShouldReturnNulloptWhenNotFound)
+{
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 0});
+    palette.set(1, Rgba32{10, 10, 10, 255});
+    palette.set(5, Rgba32{50, 50, 50, 255});
+
+    // Create workspace with tile using index 1
+    Image<IndexPixel> img{16, 8}; // 2 tiles
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            img.set(row, col, IndexPixel{1});
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Search for a different tile (index 5)
+    PixelTile<IndexPixel> search_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        search_tile.set(i, IndexPixel{5});
+    }
+    CanonicalPixelTile<IndexPixel> canonical_search_tile{search_tile};
+
+    auto result = workspace.first_occurrence_of_by_color(canonical_search_tile, palette);
+    EXPECT_FALSE(result.has_value());
+}
+
+TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorShouldFindExactMatch)
+{
+    // Even with exact indices (no duplicates), the color match should work
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 0});
+    palette.set(5, Rgba32{50, 100, 150, 255});
+
+    // Create workspace with tile using index 5
+    Image<IndexPixel> img{16, 8}; // 2 tiles
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            img.set(row, col, IndexPixel{5});
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Search for same tile (index 5)
+    PixelTile<IndexPixel> search_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        search_tile.set(i, IndexPixel{5});
+    }
+    CanonicalPixelTile<IndexPixel> canonical_search_tile{search_tile};
+
+    auto result = workspace.first_occurrence_of_by_color(canonical_search_tile, palette);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 1);
+}
+
+TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorShouldHandleTransparencyMismatch)
+{
+    // Index 0 is special (transparent) and should only match other index 0 pixels
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 0}); // Transparent
+    palette.set(1, Rgba32{100, 150, 200, 255});
+
+    // Create workspace with tile that has all non-transparent pixels
+    Image<IndexPixel> img{16, 8}; // 2 tiles
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            img.set(row, col, IndexPixel{1});
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Create search tile with some transparent pixels (index 0)
+    PixelTile<IndexPixel> search_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        // Half transparent, half non-transparent
+        search_tile.set(i, IndexPixel{static_cast<std::size_t>(i % 2 == 0 ? 0 : 1)});
+    }
+    CanonicalPixelTile<IndexPixel> canonical_search_tile{search_tile};
+
+    // Should NOT find because transparency patterns differ
+    auto result = workspace.first_occurrence_of_by_color(canonical_search_tile, palette);
+    EXPECT_FALSE(result.has_value());
+}
