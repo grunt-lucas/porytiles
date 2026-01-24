@@ -16,6 +16,7 @@ using namespace porytiles2;
 
 // Artifact paths
 const std::filesystem::path src_dir{"src"};
+const std::filesystem::path porytiles_generated_include{"include/porytiles_generated/tilesets"};
 const std::filesystem::path porytiles_src{"porytiles_src"};
 const std::filesystem::path porytiles_bin{"porytiles_bin"};
 const std::filesystem::path anim_dir{"anim"};
@@ -205,17 +206,8 @@ ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_porymap_
 ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_params(const std::string &tileset_name) const
 {
-    // Get primary/secondary status of tileset
-    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
-
-    // Get base path from config
-    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
-    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
-    auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
     const std::string snake_tileset_dir = to_snake_case(extract_tileset_shorthand(tileset_name));
-    std::filesystem::path path =
-        src_dir / std::filesystem::path{base_path.value()} / snake_tileset_dir / generated_anim_code_header;
-
+    std::filesystem::path path = porytiles_generated_include / snake_tileset_dir / generated_anim_code_header;
     return ArtifactKey{path.string()};
 }
 

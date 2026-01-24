@@ -60,14 +60,8 @@ class TilesetArtifactKeyProvider {
     /**
      * @brief Returns the key for Porymap animation parameters.
      *
-     * @details
-     * For Porymap animations, generated_anim_code.h is the source of truth for animation
-     * parameters. For first-time imports where this file doesn't exist, the reader will
-     * fall back to tileset_anims.c. This method is an alias for key_for_generated_anim_code()
-     * but with a more explicit name for the animation loading context.
-     *
-     * @param tileset_name The name of the tileset
-     * @return Key for the generated_anim_code.h file
+     * @param tileset_name The name of the tileset.
+     * @return Key for the Porymap animation parameters.
      */
     [[nodiscard]] virtual ChainableResult<ArtifactKey>
     key_for_porymap_anim_params(const std::string &tileset_name) const = 0;

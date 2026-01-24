@@ -13,7 +13,6 @@
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
-#include "porytiles2/xcut/config/config_scope_type.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace {
@@ -23,20 +22,24 @@ using namespace porytiles2;
 // Paths relative to project root
 const std::filesystem::path tileset_anims_c_rel_path = std::filesystem::path{"src"} / "tileset_anims.c";
 const std::filesystem::path tileset_anims_h_rel_path = std::filesystem::path{"include"} / "tileset_anims.h";
+// Note: "include/" is omitted because pokeemerald's makefile adds "include" to the include path
+const std::string porytiles_generated_include_base = "porytiles_generated/tilesets";
 
 /**
  * @brief Generates the include directive string for a tileset.
  *
  * @details
  * Produces a line like:
- *     #include "data/tilesets/primary/general/generated_anim_code.h"
+ *     #include "porytiles_generated/tilesets/general/generated_anim_code.h"
  *
- * @param base_path The base tileset path from config (e.g., "data/tilesets/primary")
+ * The "include/" prefix is omitted because pokeemerald's makefile already adds
+ * "include" as an include directory.
+ *
  * @param snake_dir The snake_case tileset directory name (e.g., "general")
  */
-[[nodiscard]] std::string generate_include_directive(const std::string &base_path, const std::string &snake_dir)
+[[nodiscard]] std::string generate_include_directive(const std::string &snake_dir)
 {
-    return fmt::format("#include \"{}/{}/generated_anim_code.h\"", base_path, snake_dir);
+    return fmt::format("#include \"{}/{}/generated_anim_code.h\"", porytiles_generated_include_base, snake_dir);
 }
 
 /**
@@ -228,18 +231,7 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
     const std::string shorthand = extract_tileset_shorthand(tileset_name);
     const std::string snake_dir = to_snake_case(shorthand);
 
-    // Step 3: Get base path from config
-    auto base_path_result = is_secondary ? config_->tileset_paths_secondary_bin(ConfigScopeType::tileset, tileset_name)
-                                         : config_->tileset_paths_primary_bin(ConfigScopeType::tileset, tileset_name);
-    if (!base_path_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{
-                "failed to get tileset bin path from config for '{}'", FormatParam{tileset_name, Style::bold}},
-            base_path_result};
-    }
-    const std::string base_path = base_path_result.value().value();
-
-    // Step 4: Read .c file
+    // Step 3: Read .c file
     const auto anims_c_path = project_root_ / tileset_anims_c_rel_path;
     auto c_lines_result = read_file_lines(anims_c_path, format_);
     if (!c_lines_result.has_value()) {
@@ -249,7 +241,7 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
     }
     auto c_lines = std::move(c_lines_result.value());
 
-    // Step 5: Read .h file
+    // Step 4: Read .h file
     const auto anims_h_path = project_root_ / tileset_anims_h_rel_path;
     auto h_lines_result = read_file_lines(anims_h_path, format_);
     if (!h_lines_result.has_value()) {
@@ -259,7 +251,7 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
     }
     auto h_lines = std::move(h_lines_result.value());
 
-    // Step 6: Check idempotency for .c file - warn and skip if already present
+    // Step 5: Check idempotency for .c file - warn and skip if already present
     const bool include_exists = find_existing_include(c_lines, snake_dir).has_value();
     const bool declaration_exists = find_existing_declaration(h_lines, shorthand).has_value();
 
@@ -272,17 +264,17 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
         return {};
     }
 
-    // Step 7: Add include to .c file if not present
+    // Step 6: Add include to .c file if not present
     if (!include_exists) {
         const std::string include_comment = generate_porytiles_include_comment();
-        const std::string include_line = generate_include_directive(base_path, snake_dir);
+        const std::string include_line = generate_include_directive(snake_dir);
 
         c_lines.emplace_back("");
         c_lines.push_back(include_comment);
         c_lines.push_back(include_line);
     }
 
-    // Step 8: Add declaration to .h file if not present
+    // Step 7: Add declaration to .h file if not present
     if (!declaration_exists) {
         // Find #endif to insert before it
         const auto endif_index = find_endif_guard(h_lines);
@@ -313,7 +305,7 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
         h_lines.insert(insert_pos, "");
     }
 
-    // Step 9: Write both files back
+    // Step 8: Write both files back
     auto c_write_result = write_file_lines(anims_c_path, c_lines, format_);
     if (!c_write_result.has_value()) {
         return c_write_result;

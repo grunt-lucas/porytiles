@@ -146,7 +146,9 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, WiresIncludeForPrimaryTileset)
     const std::string content = read_file_contents(tileset_anims_path());
 
     // Verify the include directive was added
-    EXPECT_NE(content.find("#include \"data/tilesets/primary/general/generated_anim_code.h\""), std::string::npos)
+    EXPECT_NE(
+        content.find("#include \"porytiles_generated/tilesets/general/generated_anim_code.h\""),
+        std::string::npos)
         << "Include directive for gTileset_General not found in tileset_anims.c";
 }
 
@@ -157,8 +159,10 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, WiresIncludeForSecondaryTileset)
 
     const std::string content = read_file_contents(tileset_anims_path());
 
-    // Verify the include directive was added with secondary path
-    EXPECT_NE(content.find("#include \"data/tilesets/secondary/rustboro/generated_anim_code.h\""), std::string::npos)
+    // Verify the include directive was added
+    EXPECT_NE(
+        content.find("#include \"porytiles_generated/tilesets/rustboro/generated_anim_code.h\""),
+        std::string::npos)
         << "Include directive for gTileset_Rustboro not found in tileset_anims.c";
 }
 
@@ -171,7 +175,7 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, AppendsAtBottomOfFile)
 
     // Find positions of various elements
     const std::size_t new_include_pos =
-        content.find("#include \"data/tilesets/primary/general/generated_anim_code.h\"");
+        content.find("#include \"porytiles_generated/tilesets/general/generated_anim_code.h\"");
     const std::size_t porytiles_comment_pos = content.find("// [Porytiles] Auto-generated include. Do not remove.");
 
     ASSERT_NE(new_include_pos, std::string::npos) << "New include not found";
@@ -202,7 +206,8 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, IsIdempotent_SkipsExistingInclude)
     const std::string content = read_file_contents(tileset_anims_path());
 
     // Count occurrences - should only be 1
-    const std::size_t count = count_occurrences(content, "data/tilesets/primary/general/generated_anim_code.h");
+    const std::size_t count =
+        count_occurrences(content, "porytiles_generated/tilesets/general/generated_anim_code.h");
     EXPECT_EQ(count, 1) << "Include directive should only appear once (idempotency)";
 }
 
@@ -214,7 +219,7 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, RemovesIncludeAndComment)
 
     // Verify both include and comment are there
     std::string content = read_file_contents(tileset_anims_path());
-    ASSERT_NE(content.find("data/tilesets/primary/general/generated_anim_code.h"), std::string::npos);
+    ASSERT_NE(content.find("porytiles_generated/tilesets/general/generated_anim_code.h"), std::string::npos);
     ASSERT_NE(content.find("// [Porytiles] Auto-generated include. Do not remove."), std::string::npos);
 
     // Now remove it
@@ -223,7 +228,7 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, RemovesIncludeAndComment)
 
     // Verify both include and comment are gone
     content = read_file_contents(tileset_anims_path());
-    EXPECT_EQ(content.find("data/tilesets/primary/general/generated_anim_code.h"), std::string::npos)
+    EXPECT_EQ(content.find("porytiles_generated/tilesets/general/generated_anim_code.h"), std::string::npos)
         << "Include directive should have been removed";
     EXPECT_EQ(content.find("// [Porytiles] Auto-generated include. Do not remove."), std::string::npos)
         << "Porytiles comment should have been removed";
@@ -267,7 +272,8 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, HandlesSnakeCaseConversion)
 
     // Verify the path uses snake_case
     EXPECT_NE(
-        content.find("#include \"data/tilesets/secondary/battle_frontier/generated_anim_code.h\""), std::string::npos)
+        content.find("#include \"porytiles_generated/tilesets/battle_frontier/generated_anim_code.h\""),
+        std::string::npos)
         << "snake_case path conversion not working correctly";
 }
 
