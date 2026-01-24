@@ -179,15 +179,6 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
         return ChainableResult<void>{FormattableError{"tileset commit failed"}, result};
     }
 
-    // TODO: we should "clear" the stale contents of the tileset on disk after saving. That way, if the user e.g.
-    // removed an anim, the stale Porymap version of the anim doesn't remain on disk and clutter the filesystem. Perhaps
-    // this can be part of the tileset commit logic? We'll need some functionality in the writer implementation like
-    // "clear_stale_contents" or something. This applies both ways, e.g. if we delete the anim on the porymap side,
-    // then run an import, it should clear the anim from the porytiles side. I.e. if there is a Porymap anim on disk
-    // that does not exist in the Porytiles component, clear it. If there is a Porytiles anim on disk that does not
-    // exist in the Porymap component, clear it. Perhaps instead of auto-clearing, we can emit a diagnostic warning the
-    // user that stale assets exist on disk?
-
     // Cache checksums after successful save
     PT_TRY_ASSIGN_CHAIN_ERR(
         artifact_keys,

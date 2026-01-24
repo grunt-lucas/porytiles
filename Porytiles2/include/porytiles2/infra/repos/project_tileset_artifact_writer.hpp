@@ -1,5 +1,8 @@
 #pragma once
 
+#include <map>
+#include <vector>
+
 #include "gsl/pointers"
 
 #include "porytiles2/domain/repos/tileset_artifact_writer.hpp"
@@ -97,6 +100,18 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
     write_porytiles_anim_params(const ArtifactKey &dest_key, const Tileset &src) override;
 
   private:
+    /**
+     * @brief Represents a staged directory to be atomically moved during commit.
+     *
+     * @details
+     * Each StagedDirectory tracks a directory in the staging area that will be
+     * atomically moved to its final destination via std::filesystem::rename().
+     */
+    struct StagedDirectory {
+        std::filesystem::path staging_path; ///< Path in the transaction tmpdir
+        std::filesystem::path dest_path;    ///< Final destination path
+    };
+
     InfraConfig *config_;
     std::filesystem::path project_root_;
     std::filesystem::path transaction_root_;
@@ -110,6 +125,11 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
     const BehaviorMapProvider *behavior_map_;
     ProjectTilesetMetadataProvider metadata_provider_;
     ProjectTilesetMetadataWriter metadata_writer_;
+
+    /// Map from destination directory path to its staging info
+    std::map<std::filesystem::path, StagedDirectory> staged_directories_;
+    /// List of (staging_path, dest_path) pairs for special files handled individually
+    std::vector<std::pair<std::filesystem::path, std::filesystem::path>> staged_special_files_;
 };
 
 } // namespace porytiles2

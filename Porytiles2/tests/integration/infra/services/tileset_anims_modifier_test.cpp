@@ -147,8 +147,7 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, WiresIncludeForPrimaryTileset)
 
     // Verify the include directive was added
     EXPECT_NE(
-        content.find("#include \"porytiles_generated/tilesets/general/generated_anim_code.h\""),
-        std::string::npos)
+        content.find("#include \"porytiles_generated/tilesets/general/generated_anim_code.h\""), std::string::npos)
         << "Include directive for gTileset_General not found in tileset_anims.c";
 }
 
@@ -161,8 +160,7 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, WiresIncludeForSecondaryTileset)
 
     // Verify the include directive was added
     EXPECT_NE(
-        content.find("#include \"porytiles_generated/tilesets/rustboro/generated_anim_code.h\""),
-        std::string::npos)
+        content.find("#include \"porytiles_generated/tilesets/rustboro/generated_anim_code.h\""), std::string::npos)
         << "Include directive for gTileset_Rustboro not found in tileset_anims.c";
 }
 
@@ -206,8 +204,7 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, IsIdempotent_SkipsExistingInclude)
     const std::string content = read_file_contents(tileset_anims_path());
 
     // Count occurrences - should only be 1
-    const std::size_t count =
-        count_occurrences(content, "porytiles_generated/tilesets/general/generated_anim_code.h");
+    const std::size_t count = count_occurrences(content, "porytiles_generated/tilesets/general/generated_anim_code.h");
     EXPECT_EQ(count, 1) << "Include directive should only appear once (idempotency)";
 }
 

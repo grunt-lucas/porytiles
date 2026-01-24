@@ -230,9 +230,8 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
     [[nodiscard]] std::size_t count_temp_dirs() const
     {
         std::size_t count = 0;
-        auto tmp_dir = std::filesystem::temp_directory_path();
-        for (const auto &entry : std::filesystem::directory_iterator(tmp_dir)) {
-            if (entry.is_directory() && entry.path().filename().string().starts_with("porytiles_")) {
+        for (const auto &entry : std::filesystem::directory_iterator(test_root_)) {
+            if (entry.is_directory() && entry.path().filename().string().starts_with(".porytiles_tmp_")) {
                 count++;
             }
         }

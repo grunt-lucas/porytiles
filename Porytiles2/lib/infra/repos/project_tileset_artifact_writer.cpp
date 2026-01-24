@@ -5,6 +5,7 @@
 #include <format>
 #include <fstream>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <optional>
 #include <random>
@@ -24,6 +25,104 @@
 namespace {
 
 using namespace porytiles2;
+
+// Marker directories for artifact categorization
+const std::filesystem::path porytiles_src_marker{"porytiles_src"};
+const std::filesystem::path porytiles_bin_marker{"porytiles_bin"};
+const std::filesystem::path porytiles_generated_marker{"porytiles_generated"};
+
+/**
+ * @brief Categories for artifact destinations.
+ *
+ * @details
+ * Artifacts are categorized to determine how they should be atomically committed:
+ * - porytiles_src: Porytiles-format source assets (bottom.png, middle.png, etc.)
+ * - porytiles_bin: Porymap-format binary assets (metatiles.bin, tiles.png, etc.)
+ * - special: Files that live outside standard directories (generated_anim_code.h)
+ */
+enum class ArtifactCategory { porytiles_src, porytiles_bin, special };
+
+/**
+ * @brief Parsed information about an artifact's destination.
+ *
+ * @details
+ * Contains the category and the directory path that should be atomically moved.
+ * For porytiles_src/porytiles_bin categories, `directory` is the path up to and
+ * including the marker directory. For special files, `directory` is the parent
+ * directory of the file.
+ */
+struct ArtifactPathInfo {
+    ArtifactCategory category;
+    std::filesystem::path directory; ///< The directory to atomically move
+};
+
+/**
+ * @brief Categorizes an artifact key to determine its commit handling.
+ *
+ * @details
+ * Parses the artifact key path to find marker directories (porytiles_src, porytiles_bin,
+ * or porytiles_generated) and returns categorization info. The directory returned is the
+ * path up to and including the marker, which will be atomically moved during commit.
+ *
+ * @param key_path The artifact key path (relative to project root)
+ * @return ArtifactPathInfo with category and directory to move
+ */
+[[nodiscard]] ArtifactPathInfo categorize_artifact_key(const std::filesystem::path &key_path)
+{
+    // Walk through path components to find marker directories
+    std::filesystem::path accumulated;
+    for (const auto &component : key_path) {
+        accumulated /= component;
+
+        if (component == porytiles_src_marker) {
+            return ArtifactPathInfo{ArtifactCategory::porytiles_src, accumulated};
+        }
+        if (component == porytiles_bin_marker) {
+            return ArtifactPathInfo{ArtifactCategory::porytiles_bin, accumulated};
+        }
+        if (component == porytiles_generated_marker) {
+            // For porytiles_generated, the whole path up to the file's parent is special
+            return ArtifactPathInfo{ArtifactCategory::special, key_path.parent_path()};
+        }
+    }
+
+    // Default to special category for unrecognized paths
+    return ArtifactPathInfo{ArtifactCategory::special, key_path.parent_path()};
+}
+
+/**
+ * @brief Creates a unique temporary directory inside the project root.
+ *
+ * @details
+ * Creates a tmpdir at {project_root}/.porytiles_tmp_{random_hex} to ensure
+ * same-filesystem with project files, enabling atomic std::filesystem::rename().
+ *
+ * @param project_root The project root directory
+ * @return Path to the newly created temporary directory
+ * @post The returned path points to an existing, empty directory
+ */
+[[nodiscard]] std::filesystem::path create_project_tmpdir(const std::filesystem::path &project_root)
+{
+    int max_tries = 1000;
+    std::random_device random_device;
+    std::mt19937 mersenne_prng(random_device());
+    std::uniform_int_distribution<uint64_t> uniform_int_distribution(0);
+    std::filesystem::path path;
+
+    for (int i = 0; i <= max_tries; ++i) {
+        std::stringstream string_stream;
+        string_stream << std::hex << uniform_int_distribution(mersenne_prng);
+        path = project_root / (".porytiles_tmp_" + string_stream.str());
+        if (std::filesystem::create_directory(path)) {
+            return path;
+        }
+        if (i == max_tries) {
+            panic("create_project_tmpdir: exceeded maximum retries");
+        }
+    }
+    panic("create_project_tmpdir: unreachable");
+    return {}; // unreachable
+}
 
 ChainableResult<void>
 save_layer_png(const PngRgbaImageSaver &saver, const Image<Rgba32> &layer_png, const std::filesystem::path &path)
@@ -90,20 +189,72 @@ save_palette(const Palette<Rgba32, pal::max_size> &pal, const std::filesystem::p
     return {};
 }
 
-ChainableResult<std::filesystem::path>
-compute_transaction_dest_path(const std::filesystem::path &transaction_root, const ArtifactKey &dest_key)
+/**
+ * @brief Computes the staging path for an artifact and registers it for atomic commit.
+ *
+ * @details
+ * This function categorizes the artifact key and determines how it should be staged:
+ * - For porytiles_src/porytiles_bin artifacts: Registers the directory in staged_directories
+ *   and returns a staging path that mirrors the relative structure under the directory.
+ * - For special artifacts: Registers the file in staged_special_files and returns the staging path.
+ *
+ * The staging path maintains the relative structure of files within their category directory,
+ * allowing the entire directory to be atomically moved during commit.
+ *
+ * @param transaction_root The root directory for the current transaction
+ * @param project_root The project root directory
+ * @param dest_key The artifact key (path relative to project root)
+ * @param staged_directories Map to register staged directories
+ * @param staged_special_files Vector to register special files
+ * @param StagedDirectory Type alias for the StagedDirectory struct
+ * @return The path where the artifact should be written during the transaction
+ */
+template <typename StagedDirectory>
+ChainableResult<std::filesystem::path> compute_transaction_dest_path(
+    const std::filesystem::path &transaction_root,
+    const std::filesystem::path &project_root,
+    const ArtifactKey &dest_key,
+    std::map<std::filesystem::path, StagedDirectory> &staged_directories,
+    std::vector<std::pair<std::filesystem::path, std::filesystem::path>> &staged_special_files)
 {
-    // TODO: just panic here
     if (transaction_root.empty()) {
         return FormattableError{"no transaction in progress"};
     }
 
-    // Keys are now relative to project_root, so we can use them directly
-    const auto transaction_dest_path = transaction_root / dest_key.key();
+    const std::filesystem::path key_path{dest_key.key()};
+    const auto path_info = categorize_artifact_key(key_path);
 
-    std::filesystem::create_directories(transaction_dest_path.parent_path());
+    if (path_info.category == ArtifactCategory::special) {
+        // Special files are handled individually - stage them directly
+        const auto staging_path = transaction_root / key_path;
+        std::filesystem::create_directories(staging_path.parent_path());
 
-    return transaction_dest_path;
+        // Register for individual file commit
+        const auto dest_path = project_root / key_path;
+        staged_special_files.emplace_back(staging_path, dest_path);
+
+        return staging_path;
+    }
+
+    // For porytiles_src/porytiles_bin, stage under a directory that will be atomically moved
+    const auto &category_dir = path_info.directory;
+    const auto dest_dir = project_root / category_dir;
+
+    // Register this directory if not already registered
+    if (staged_directories.find(dest_dir) == staged_directories.end()) {
+        // Create a unique staging directory for this category
+        const auto staging_dir = transaction_root / category_dir;
+        staged_directories[dest_dir] = StagedDirectory{staging_dir, dest_dir};
+    }
+
+    // Compute the path relative to the category directory
+    const auto relative_within_category = std::filesystem::relative(key_path, category_dir);
+    const auto staging_path = staged_directories[dest_dir].staging_path / relative_within_category;
+
+    // Create parent directories in staging area
+    std::filesystem::create_directories(staging_path.parent_path());
+
+    return staging_path;
 }
 
 /**
@@ -184,6 +335,7 @@ Image<PixelType> tiles_to_image(
  * regular numbered frames through the frame_index parameter.
  *
  * @tparam PixelType The pixel type (Rgba32 or IndexPixel)
+ * @tparam StagedDirectory The staged directory struct type
  * @tparam ComponentGetter Callable returning a const reference to the tileset component
  * @tparam SaveFunc Callable that saves the image to a file
  * @param dest_key The artifact key for the destination PNG file
@@ -192,18 +344,23 @@ Image<PixelType> tiles_to_image(
  * @param frame_name The name of the frame
  * @param transaction_root The transaction root directory
  * @param project_root The project root directory
+ * @param staged_directories Map to register staged directories
+ * @param staged_special_files Vector to register special files
  * @param component_getter Lambda to get the appropriate component from tileset
  * @param save_func Lambda to save the image (handles indexed vs RGBA saving)
  * @param component_name Name of the component for error messages
  * @return ChainableResult<void> indicating success or failure
  */
-template <SupportsTransparency PixelType, typename ComponentGetter, typename SaveFunc>
+template <SupportsTransparency PixelType, typename StagedDirectory, typename ComponentGetter, typename SaveFunc>
 ChainableResult<void> write_anim_frame_impl(
     const ArtifactKey &dest_key,
     const Tileset &src,
     const std::string &anim_name,
     const std::string &frame_name,
     const std::filesystem::path &transaction_root,
+    const std::filesystem::path &project_root,
+    std::map<std::filesystem::path, StagedDirectory> &staged_directories,
+    std::vector<std::pair<std::filesystem::path, std::filesystem::path>> &staged_special_files,
     ComponentGetter component_getter,
     SaveFunc save_func,
     std::string_view component_name)
@@ -247,7 +404,8 @@ ChainableResult<void> write_anim_frame_impl(
     // Compute transaction path (keys are now relative to project_root)
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
-        compute_transaction_dest_path(transaction_root, dest_key),
+        compute_transaction_dest_path(
+            transaction_root, project_root, dest_key, staged_directories, staged_special_files),
         "failed to compute transaction dest path",
         void);
 
@@ -264,7 +422,13 @@ ChainableResult<void> ProjectTilesetArtifactWriter::begin_transaction()
     if (!transaction_root_.empty()) {
         return FormattableError{"transaction already in progress"};
     }
-    transaction_root_ = create_tmpdir();
+
+    // Create tmpdir inside project root to ensure same-filesystem for atomic moves
+    transaction_root_ = create_project_tmpdir(project_root_);
+
+    // Clear any stale tracking data
+    staged_directories_.clear();
+    staged_special_files_.clear();
 
     return {};
 }
@@ -275,83 +439,104 @@ ChainableResult<void> ProjectTilesetArtifactWriter::commit()
         return FormattableError{"no transaction in progress"};
     }
 
-    std::vector<std::pair<std::filesystem::path, std::filesystem::path>> backed_up_files;
-    std::vector<std::filesystem::path> new_files;
+    // If nothing was staged, just clean up
+    if (staged_directories_.empty() && staged_special_files_.empty()) {
+        std::filesystem::remove_all(transaction_root_);
+        transaction_root_.clear();
+        return {};
+    }
 
-    const auto backup_root = create_tmpdir();
+    // Create backup root inside project for same-filesystem operations
+    const auto backup_root = create_project_tmpdir(project_root_);
+
+    // Track what we've moved for rollback
+    std::vector<std::pair<std::filesystem::path, std::filesystem::path>> moved_directories; // (dest, backup)
+    std::vector<std::pair<std::filesystem::path, std::filesystem::path>> backed_up_special_files;
+    std::vector<std::filesystem::path> new_special_files;
+
     try {
-        // Phase 1: Collect all source files and their destinations
-        std::vector<std::pair<std::filesystem::path, std::filesystem::path>> files_to_copy;
-        for (const auto &entry : std::filesystem::recursive_directory_iterator(transaction_root_)) {
-            if (entry.is_regular_file()) {
-                auto relative_path = std::filesystem::relative(entry.path(), transaction_root_);
-                auto dest_path = project_root_ / relative_path;
-                files_to_copy.emplace_back(entry.path(), dest_path);
-            }
-        }
-
-        // Filter out files that are identical to existing files (skip unchanged artifacts)
-        // TODO: once we have a logging system, print an info log here
-        std::erase_if(files_to_copy, [](const auto &pair) { return files_are_identical(pair.first, pair.second); });
-
-        // Phase 2: Backup existing files that will be overwritten
-        for (const auto &dest : files_to_copy | std::views::values) {
-            if (std::filesystem::exists(dest)) {
-                auto backup_relative = std::filesystem::relative(dest, project_root_);
-                auto backup_path = backup_root / backup_relative;
-
-                // Create backup directory structure
+        // Phase 1: Backup existing destination directories by moving them to backup
+        for (const auto &[dest_dir, staged_info] : staged_directories_) {
+            if (std::filesystem::exists(dest_dir)) {
+                // Create backup path preserving structure
+                const auto relative = std::filesystem::relative(dest_dir, project_root_);
+                const auto backup_path = backup_root / relative;
                 std::filesystem::create_directories(backup_path.parent_path());
 
-                // Copy existing file to backup
-                std::filesystem::copy_file(dest, backup_path);
-                backed_up_files.emplace_back(dest, backup_path);
+                // Move existing directory to backup (atomic on same filesystem)
+                std::filesystem::rename(dest_dir, backup_path);
+                moved_directories.emplace_back(dest_dir, backup_path);
             }
         }
 
-        // Phase 3: Copy all new files to their destinations
-        for (const auto &[src, dest] : files_to_copy) {
+        // Phase 2: Atomic directory moves from staging to destination
+        for (const auto &[dest_dir, staged_info] : staged_directories_) {
             // Create parent directories if needed
-            std::filesystem::create_directories(dest.parent_path());
+            std::filesystem::create_directories(dest_dir.parent_path());
 
-            // Track whether this is a new file (not an overwrite)
-            const bool is_new_file = !std::filesystem::exists(dest);
+            // Atomic move: rename staging directory to final destination
+            std::filesystem::rename(staged_info.staging_path, dest_dir);
+        }
 
-            // Copy the file (overwrite if exists)
-            std::filesystem::copy_file(src, dest, std::filesystem::copy_options::overwrite_existing);
-
-            if (is_new_file) {
-                new_files.push_back(dest);
+        // Phase 3: Handle special files (like generated_anim_code.h)
+        for (const auto &[staging_path, dest_path] : staged_special_files_) {
+            // Backup existing special file if it exists
+            if (std::filesystem::exists(dest_path)) {
+                const auto relative = std::filesystem::relative(dest_path, project_root_);
+                const auto backup_path = backup_root / relative;
+                std::filesystem::create_directories(backup_path.parent_path());
+                std::filesystem::copy_file(dest_path, backup_path);
+                backed_up_special_files.emplace_back(dest_path, backup_path);
             }
+            else {
+                new_special_files.push_back(dest_path);
+            }
+
+            // Copy special file to destination (create dirs if needed)
+            std::filesystem::create_directories(dest_path.parent_path());
+            std::filesystem::copy_file(staging_path, dest_path, std::filesystem::copy_options::overwrite_existing);
         }
 
         // Phase 4: Success - clean up transaction and backup directories
         std::filesystem::remove_all(transaction_root_);
         std::filesystem::remove_all(backup_root);
         transaction_root_.clear();
+        staged_directories_.clear();
+        staged_special_files_.clear();
 
         return {};
     }
     catch (const std::filesystem::filesystem_error &e) {
-        // Phase 5: Error occurred - restore backups and clean up new files
+        // Phase 5: Error occurred - rollback
         try {
-            // Restore backed up files
-            for (const auto &[original_path, backup_path] : backed_up_files) {
+            // Rollback moved directories: move backups back to their original locations
+            for (const auto &[original_path, backup_path] : moved_directories) {
+                if (std::filesystem::exists(backup_path)) {
+                    // Remove any partially moved directory at destination
+                    if (std::filesystem::exists(original_path)) {
+                        std::filesystem::remove_all(original_path);
+                    }
+                    std::filesystem::rename(backup_path, original_path);
+                }
+            }
+
+            // Rollback special files
+            for (const auto &[original_path, backup_path] : backed_up_special_files) {
                 if (std::filesystem::exists(backup_path)) {
                     std::filesystem::copy_file(
                         backup_path, original_path, std::filesystem::copy_options::overwrite_existing);
                 }
             }
 
-            // Remove any new files that were created
-            for (const auto &new_file : new_files) {
+            // Remove new special files that were created
+            for (const auto &new_file : new_special_files) {
                 if (std::filesystem::exists(new_file)) {
                     std::filesystem::remove(new_file);
                 }
             }
         }
-        catch (const std::filesystem::filesystem_error &restore_error) {
-            // Critical error during restore - log but continue cleanup
+        catch (const std::filesystem::filesystem_error &) {
+            // Critical error during restore - best effort cleanup
             // TODO: emit a diagnostic here?
         }
 
@@ -363,6 +548,8 @@ ChainableResult<void> ProjectTilesetArtifactWriter::commit()
             std::filesystem::remove_all(transaction_root_);
         }
         transaction_root_.clear();
+        staged_directories_.clear();
+        staged_special_files_.clear();
 
         return FormattableError{"failed to commit transaction: {}", FormatParam{e.what()}};
     }
@@ -379,10 +566,14 @@ ChainableResult<void> ProjectTilesetArtifactWriter::rollback()
             std::filesystem::remove_all(transaction_root_);
         }
         transaction_root_.clear();
+        staged_directories_.clear();
+        staged_special_files_.clear();
         return {};
     }
     catch (const std::filesystem::filesystem_error &e) {
         transaction_root_.clear();
+        staged_directories_.clear();
+        staged_special_files_.clear();
         return FormattableError{"failed to rollback transaction: {}", FormatParam{e.what()}};
     }
 }
@@ -394,7 +585,8 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_metatiles_bin(const Ar
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, dest_key),
+        compute_transaction_dest_path(
+            transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
         "failed to compute transaction dest path",
         void);
     return save_metatiles_bin(src.porymap_component().metatiles_bin(), transaction_dest_path);
@@ -405,7 +597,8 @@ ProjectTilesetArtifactWriter::write_metatile_attributes_bin(const ArtifactKey &d
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, dest_key),
+        compute_transaction_dest_path(
+            transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
         "failed to compute transaction dest path",
         void);
     return save_metatile_attributes_bin(src.porymap_component().metatile_attributes_bin(), transaction_dest_path);
@@ -415,7 +608,8 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_tiles_png(const Artifa
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, dest_key),
+        compute_transaction_dest_path(
+            transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
         "failed to compute transaction dest path",
         void);
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -432,7 +626,8 @@ ProjectTilesetArtifactWriter::write_porymap_pal_n(const ArtifactKey &dest_key, c
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, dest_key),
+        compute_transaction_dest_path(
+            transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
         "failed to compute transaction dest path",
         void);
     return save_palette(src.porymap_component().pal_at(index), transaction_dest_path, *pal_saver_);
@@ -447,6 +642,9 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
         anim_name,
         frame_name,
         transaction_root_,
+        project_root_,
+        staged_directories_,
+        staged_special_files_,
         [](const Tileset &t) -> const auto & { return t.porymap_component(); },
         [this](const Image<IndexPixel> &img, const std::filesystem::path &path) {
             return save_tiles_png(*png_indexed_saver_, img, path, TilesPalMode::true_color);
@@ -460,8 +658,8 @@ ProjectTilesetArtifactWriter::write_porymap_anim_params(const ArtifactKey &dest_
     const auto &porymap_anims = src.porymap_component().anims();
     if (porymap_anims.empty()) {
         // If there are no anims, but the params file exists, remove it
-        if (std::filesystem::exists(dest_key.key())) {
-            std::filesystem::remove(dest_key.key());
+        if (std::filesystem::exists(project_root_ / dest_key.key())) {
+            std::filesystem::remove(project_root_ / dest_key.key());
         }
         return {};
     }
@@ -501,7 +699,8 @@ ProjectTilesetArtifactWriter::write_porymap_anim_params(const ArtifactKey &dest_
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, dest_key),
+        compute_transaction_dest_path(
+            transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
         "failed to compute transaction dest path",
         void);
 
@@ -523,7 +722,8 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_bottom_png(const Artif
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, dest_key),
+        compute_transaction_dest_path(
+            transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
         "failed to compute transaction dest path",
         void);
     return save_layer_png(*png_rgba_saver_, src.porytiles_component().bottom(), transaction_dest_path);
@@ -533,7 +733,8 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_middle_png(const Artif
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, dest_key),
+        compute_transaction_dest_path(
+            transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
         "failed to compute transaction dest path",
         void);
     return save_layer_png(*png_rgba_saver_, src.porytiles_component().middle(), transaction_dest_path);
@@ -543,7 +744,8 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_top_png(const Artifact
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, dest_key),
+        compute_transaction_dest_path(
+            transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
         "failed to compute transaction dest path",
         void);
     return save_layer_png(*png_rgba_saver_, src.porytiles_component().top(), transaction_dest_path);
@@ -566,7 +768,8 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, dest_key),
+        compute_transaction_dest_path(
+            transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
         "failed to compute transaction dest path",
         void);
 
@@ -609,7 +812,8 @@ ProjectTilesetArtifactWriter::write_porytiles_pal_n(const ArtifactKey &dest_key,
     if (src.porytiles_component().pal_at(index).has_value()) {
         PT_TRY_ASSIGN_CHAIN_ERR(
             transaction_dest_path,
-            compute_transaction_dest_path(transaction_root_, dest_key),
+            compute_transaction_dest_path(
+                transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
             "failed to compute transaction dest path",
             void);
 
@@ -629,6 +833,9 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_anim_frame(
         anim_name,
         frame_name,
         transaction_root_,
+        project_root_,
+        staged_directories_,
+        staged_special_files_,
         [](const Tileset &t) -> const auto & { return t.porytiles_component(); },
         [this](const Image<Rgba32> &img, const std::filesystem::path &path) {
             return save_layer_png(*png_rgba_saver_, img, path);
@@ -642,8 +849,8 @@ ProjectTilesetArtifactWriter::write_porytiles_anim_params(const ArtifactKey &des
     const auto &porytiles_anims = src.porytiles_component().anims();
     if (porytiles_anims.empty()) {
         // If there are no anims, but the params file exists, remove it
-        if (std::filesystem::exists(dest_key.key())) {
-            std::filesystem::remove(dest_key.key());
+        if (std::filesystem::exists(project_root_ / dest_key.key())) {
+            std::filesystem::remove(project_root_ / dest_key.key());
         }
         return {};
     }
@@ -656,7 +863,8 @@ ProjectTilesetArtifactWriter::write_porytiles_anim_params(const ArtifactKey &des
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
-        compute_transaction_dest_path(transaction_root_, dest_key),
+        compute_transaction_dest_path(
+            transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
         "failed to compute transaction dest path",
         void);
 
