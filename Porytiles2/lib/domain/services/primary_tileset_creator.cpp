@@ -27,15 +27,15 @@ constexpr std::array grass_layer{
         grass_bulk,
         grass_bulk,
         grass_bulk,
+        grass_dark,
         grass_bulk,
         grass_bulk,
         grass_bulk,
+        grass_light,
         grass_bulk,
         grass_bulk,
         grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
+        grass_dark,
         grass_bulk,
         grass_bulk,
         grass_bulk,
@@ -45,7 +45,7 @@ constexpr std::array grass_layer{
     std::array{
         grass_bulk,
         grass_bulk,
-        grass_bulk,
+        grass_light,
         grass_light,
         grass_bulk,
         grass_bulk,
@@ -58,21 +58,21 @@ constexpr std::array grass_layer{
         grass_bulk,
         grass_bulk,
         grass_bulk,
-        grass_bulk},
+        grass_dark},
 
     // Row 2
     std::array{
         grass_bulk,
+        grass_dark,
+        grass_light,
         grass_light,
         grass_bulk,
         grass_bulk,
-        grass_light,
         grass_bulk,
         grass_bulk,
         grass_bulk,
         grass_bulk,
         grass_bulk,
-        grass_light,
         grass_bulk,
         grass_bulk,
         grass_bulk,
@@ -83,17 +83,17 @@ constexpr std::array grass_layer{
     std::array{
         grass_bulk,
         grass_bulk,
-        grass_light,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
         grass_bulk,
         grass_light,
         grass_bulk,
         grass_bulk,
         grass_bulk,
-        grass_bulk,
-        grass_light,
-        grass_bulk,
-        grass_bulk,
-        grass_light,
         grass_bulk,
         grass_bulk,
         grass_bulk},
@@ -103,17 +103,17 @@ constexpr std::array grass_layer{
         grass_bulk,
         grass_bulk,
         grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
         grass_light,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
         grass_light,
-        grass_bulk,
-        grass_light,
-        grass_bulk,
-        grass_bulk,
         grass_bulk,
         grass_bulk},
 
@@ -128,17 +128,21 @@ constexpr std::array grass_layer{
         grass_bulk,
         grass_bulk,
         grass_bulk,
+        grass_dark,
+        grass_bulk,
         grass_bulk,
         grass_light,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
+        grass_light,
         grass_bulk,
         grass_bulk},
 
     // Row 6
     std::array{
         grass_bulk,
+        grass_light,
+        grass_bulk,
+        grass_bulk,
+        grass_dark,
         grass_bulk,
         grass_bulk,
         grass_bulk,
@@ -149,11 +153,7 @@ constexpr std::array grass_layer{
         grass_bulk,
         grass_bulk,
         grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk},
+        grass_dark},
 
     // Row 7
     std::array{
@@ -179,6 +179,7 @@ constexpr std::array grass_layer{
         grass_bulk,
         grass_bulk,
         grass_bulk,
+        grass_dark,
         grass_bulk,
         grass_bulk,
         grass_bulk,
@@ -186,12 +187,11 @@ constexpr std::array grass_layer{
         grass_bulk,
         grass_bulk,
         grass_bulk,
+        grass_dark,
         grass_bulk,
         grass_bulk,
         grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk},
+        grass_light},
 
     // Row 9
     std::array{
@@ -199,14 +199,14 @@ constexpr std::array grass_layer{
         grass_bulk,
         grass_bulk,
         grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_dark,
+        grass_bulk,
+        grass_bulk,
         grass_light,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
+        grass_light,
         grass_bulk,
         grass_bulk,
         grass_bulk,
@@ -216,16 +216,16 @@ constexpr std::array grass_layer{
     std::array{
         grass_bulk,
         grass_bulk,
-        grass_light,
         grass_bulk,
         grass_bulk,
-        grass_light,
+        grass_bulk,
         grass_bulk,
         grass_bulk,
         grass_bulk,
         grass_bulk,
         grass_dark,
-        grass_bulk,
+        grass_light,
+        grass_light,
         grass_bulk,
         grass_bulk,
         grass_bulk,
@@ -234,18 +234,18 @@ constexpr std::array grass_layer{
     // Row 11
     std::array{
         grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_light,
-        grass_bulk,
         grass_light,
         grass_bulk,
         grass_bulk,
         grass_bulk,
-        grass_dark,
         grass_bulk,
         grass_bulk,
-        grass_dark,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
         grass_bulk,
         grass_bulk,
         grass_bulk},
@@ -257,13 +257,13 @@ constexpr std::array grass_layer{
         grass_bulk,
         grass_bulk,
         grass_light,
+        grass_light,
         grass_bulk,
         grass_bulk,
         grass_bulk,
         grass_bulk,
-        grass_dark,
         grass_bulk,
-        grass_dark,
+        grass_bulk,
         grass_bulk,
         grass_bulk,
         grass_bulk,
@@ -272,16 +272,16 @@ constexpr std::array grass_layer{
     // Row 13
     std::array{
         grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
         grass_dark,
+        grass_bulk,
+        grass_bulk,
+        grass_light,
+        grass_light,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
         grass_bulk,
         grass_bulk,
         grass_bulk,
@@ -297,12 +297,12 @@ constexpr std::array grass_layer{
         grass_bulk,
         grass_bulk,
         grass_bulk,
+        grass_dark,
+        grass_bulk,
+        grass_light,
         grass_bulk,
         grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
+        grass_dark,
         grass_bulk,
         grass_bulk,
         grass_bulk},
@@ -1252,6 +1252,311 @@ constexpr std::array flower_frame_left{
         grass_bulk,
         grass_bulk}};
 
+constexpr std::array tall_grass_layer{
+    // Row 0
+    std::array{
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        flower_shadow,
+        flower_shadow,
+        grass_bulk,
+        grass_bulk},
+
+    // Row 1
+    std::array{
+        grass_bulk,
+        grass_bulk,
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        flower_shadow,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        flower_shadow,
+        flower_shadow,
+        grass_light,
+        grass_light,
+        flower_shadow,
+        grass_bulk},
+
+    // Row 2
+    std::array{
+        grass_bulk,
+        grass_bulk,
+        flower_shadow,
+        grass_light,
+        grass_light,
+        grass_bulk,
+        flower_outline_dark,
+        grass_bulk,
+        grass_bulk,
+        flower_shadow,
+        grass_light,
+        grass_light,
+        grass_light,
+        flower_shadow,
+        grass_bulk,
+        grass_bulk},
+
+    // Row 3
+    std::array{
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        flower_outline_dark,
+        grass_bulk,
+        grass_bulk,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        grass_bulk,
+        grass_bulk,
+        grass_light,
+        flower_outline_dark,
+        flower_shadow,
+        grass_bulk,
+        grass_bulk},
+
+    // Row 4
+    std::array{
+        grass_bulk,
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow,
+        grass_bulk},
+
+    // Row 5
+    std::array{
+        flower_shadow,
+        grass_light,
+        grass_light,
+        grass_bulk,
+        flower_shadow,
+        flower_outline_dark,
+        flower_shadow,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        flower_shadow,
+        grass_light,
+        grass_light,
+        grass_light,
+        flower_outline_dark},
+
+    // Row 6
+    std::array{
+        flower_shadow,
+        flower_shadow,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_outline_dark,
+        grass_bulk,
+        grass_bulk,
+        grass_light,
+        grass_light,
+        flower_outline_dark,
+        grass_bulk},
+
+    // Row 7
+    std::array{
+        grass_bulk,
+        flower_outline_dark,
+        grass_bulk,
+        grass_bulk,
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_outline_dark,
+        flower_shadow,
+        grass_bulk,
+        grass_light,
+        flower_shadow,
+        grass_bulk,
+        grass_bulk},
+
+    // Row 8
+    std::array{
+        grass_bulk,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow,
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        grass_bulk},
+
+    // Row 9
+    std::array{
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow},
+
+    // Row 10
+    std::array{
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        grass_bulk,
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow,
+        grass_bulk,
+        grass_bulk,
+        flower_outline_dark,
+        grass_bulk},
+
+    // Row 11
+    std::array{
+        grass_bulk,
+        flower_outline_dark,
+        grass_light,
+        grass_bulk,
+        grass_bulk,
+        flower_shadow,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        flower_shadow,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        flower_outline_dark},
+
+    // Row 12
+    std::array{
+        grass_bulk,
+        flower_shadow,
+        grass_bulk,
+        grass_light,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        grass_bulk,
+        grass_bulk,
+        flower_shadow,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow},
+
+    // Row 13
+    std::array{
+        grass_bulk,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_outline_dark,
+        grass_bulk,
+        flower_shadow,
+        grass_bulk,
+        grass_bulk,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow},
+
+    // Row 14
+    std::array{
+        grass_bulk,
+        grass_bulk,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        grass_bulk,
+        flower_outline_dark,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow,
+        grass_bulk},
+
+    // Row 15
+    std::array{
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk}};
+
 void set_grass_at(Image<Rgba32> &img, std::size_t metatile_index)
 {
     const std::size_t col_offset = metatile_index * metatile::side_length_pix;
@@ -1264,11 +1569,20 @@ void set_grass_at(Image<Rgba32> &img, std::size_t metatile_index)
 
 void set_flower_key_frame_at(Image<Rgba32> &img, std::size_t metatile_index)
 {
-    // TODO: hardcode the flower here once we implement anim compilation
     const std::size_t col_offset = metatile_index * metatile::side_length_pix;
     for (std::size_t row = 0; row < metatile::side_length_pix; ++row) {
         for (std::size_t col = 0; col < metatile::side_length_pix; ++col) {
             img.set(row, col_offset + col, flower_frame_key[row][col]);
+        }
+    }
+}
+
+void set_tall_grass_at(Image<Rgba32> &img, std::size_t metatile_index)
+{
+    const std::size_t col_offset = metatile_index * metatile::side_length_pix;
+    for (std::size_t row = 0; row < metatile::side_length_pix; ++row) {
+        for (std::size_t col = 0; col < metatile::side_length_pix; ++col) {
+            img.set(row, col_offset + col, tall_grass_layer[row][col]);
         }
     }
 }
@@ -1323,27 +1637,27 @@ PrimaryTilesetCreator::create_sample_porytiles_component(const std::string &tile
     Image<Rgba32> top{128, 16, extrinsic_transparency};
 
     set_grass_at(middle, 1);
-    // TODO: add this back once we finish anim compilation
-    // For now, comment it out to expose potential bugs and help with dev
     set_flower_key_frame_at(middle, 2);
+    set_tall_grass_at(middle, 3);
 
     component->bottom(bottom);
     component->middle(middle);
     component->top(top);
 
-    // Set metatile attributes for the sample tiles
-    // TODO: add a tall grass metatile and move this to that one
+    /*
+     * Set metatile attribute for the tall grass metatile. But only set the behavior if the user project had an
+     * MB_TALL_GRASS behavior.
+     */
     const auto behavior_result = behavior_map_->lookup("MB_TALL_GRASS");
     if (behavior_result.has_value()) {
-        // Only set the behavior if the user project had an MB_TALL_GRASS behavior
-        component->insert_attribute(1, MetatileAttribute{LayerType::normal, behavior_result.value()});
+        component->insert_attribute(3, MetatileAttribute{LayerType::normal, behavior_result.value()});
     }
 
     // Set up flower animation frames using the conversion helper
-    AnimationFrame<Rgba32> flower_key{"key", metatile_array_to_tiles(flower_frame_key)};
-    AnimationFrame<Rgba32> flower_center{"center", metatile_array_to_tiles(flower_frame_center)};
-    AnimationFrame<Rgba32> flower_right{"right", metatile_array_to_tiles(flower_frame_right)};
-    AnimationFrame<Rgba32> flower_left{"left", metatile_array_to_tiles(flower_frame_left)};
+    AnimationFrame flower_key{"key", metatile_array_to_tiles(flower_frame_key)};
+    AnimationFrame flower_center{"center", metatile_array_to_tiles(flower_frame_center)};
+    AnimationFrame flower_right{"right", metatile_array_to_tiles(flower_frame_right)};
+    AnimationFrame flower_left{"left", metatile_array_to_tiles(flower_frame_left)};
 
     AnimationParams flower_params{};
     flower_params.frame_names(std::vector<std::string>{"center", "right", "left"});
