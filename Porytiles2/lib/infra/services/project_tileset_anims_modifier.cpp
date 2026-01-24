@@ -295,13 +295,22 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
         const std::string decl_comment = generate_porytiles_declaration_comment();
         const std::string decl_line = generate_declaration(shorthand);
 
-        // Insert blank line, comment, and declaration before #endif
+        // Insert blank line (if needed), comment, declaration, and trailing blank before #endif
         auto insert_pos = h_lines.begin() + static_cast<std::ptrdiff_t>(endif_index.value());
-        insert_pos = h_lines.insert(insert_pos, "");
-        ++insert_pos;
+
+        // Only insert leading blank if the line before #endif is not already blank
+        const std::size_t idx = endif_index.value();
+        if (idx == 0 || !h_lines[idx - 1].empty()) {
+            insert_pos = h_lines.insert(insert_pos, "");
+            ++insert_pos;
+        }
+
         insert_pos = h_lines.insert(insert_pos, decl_comment);
         ++insert_pos;
-        h_lines.insert(insert_pos, decl_line);
+        insert_pos = h_lines.insert(insert_pos, decl_line);
+        ++insert_pos;
+        // Add trailing blank line to ensure spacing before #endif
+        h_lines.insert(insert_pos, "");
     }
 
     // Step 9: Write both files back

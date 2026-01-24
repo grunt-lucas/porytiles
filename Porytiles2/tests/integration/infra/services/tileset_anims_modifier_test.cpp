@@ -389,3 +389,46 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, DeclarationIdempotency)
     const std::size_t count = count_occurrences(h_content, "InitTilesetAnim_PorytilesManaged_General");
     EXPECT_EQ(count, 1) << "Declaration should only appear once (idempotency)";
 }
+
+TEST_F(TilesetAnimsModifierTest_VanillaStock, DeclarationHasBlankLineBeforeEndif)
+{
+    // Wire a single declaration
+    auto result = modifier_->wire_include_for_tileset("gTileset_General", /*is_secondary=*/false);
+    ASSERT_TRUE(result.has_value()) << "wire_include_for_tileset failed";
+
+    const std::string h_content = read_file_contents(tileset_anims_h_path());
+
+    // There should be a blank line between the declaration and #endif
+    // The pattern is: declaration line, blank line, #endif line
+    EXPECT_NE(h_content.find("General(void);\n\n#endif"), std::string::npos)
+        << "Declaration should have a blank line before #endif guard";
+}
+
+TEST_F(TilesetAnimsModifierTest_VanillaStock, MultipleDeclarationsHaveProperSpacing)
+{
+    // Wire two declarations
+    auto result1 = modifier_->wire_include_for_tileset("gTileset_General", /*is_secondary=*/false);
+    ASSERT_TRUE(result1.has_value()) << "First wire_include_for_tileset failed";
+
+    auto result2 = modifier_->wire_include_for_tileset("gTileset_Rustboro", /*is_secondary=*/true);
+    ASSERT_TRUE(result2.has_value()) << "Second wire_include_for_tileset failed";
+
+    const std::string h_content = read_file_contents(tileset_anims_h_path());
+
+    // Verify both declarations exist
+    ASSERT_NE(h_content.find("InitTilesetAnim_PorytilesManaged_General"), std::string::npos);
+    ASSERT_NE(h_content.find("InitTilesetAnim_PorytilesManaged_Rustboro"), std::string::npos);
+
+    // Verify proper spacing: single blank line between declarations
+    // Pattern: first decl, blank line, comment, second decl
+    EXPECT_NE(h_content.find("General(void);\n\n// [Porytiles]"), std::string::npos)
+        << "Should have exactly one blank line between declarations";
+
+    // Verify blank line before #endif (after last declaration)
+    EXPECT_NE(h_content.find("Rustboro(void);\n\n#endif"), std::string::npos)
+        << "Last declaration should have a blank line before #endif guard";
+
+    // Verify no double blank lines between declarations (would indicate a bug)
+    EXPECT_EQ(h_content.find("General(void);\n\n\n"), std::string::npos)
+        << "Should NOT have double blank lines between declarations";
+}
