@@ -70,8 +70,8 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
         const std::string &anim_name,
         const std::string &frame_name) override;
 
-    [[nodiscard]] ChainableResult<void> write_porymap_anim_params(
-        const ArtifactKey &dest_key, const ArtifactKey &tileset_root_key, const Tileset &src) override;
+    [[nodiscard]] ChainableResult<void>
+    write_porymap_anim_params(const ArtifactKey &dest_key, const Tileset &src) override;
 
     /*
      * Porytiles artifacts

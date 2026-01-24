@@ -454,11 +454,15 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
         "Porymap");
 }
 
-[[nodiscard]] ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_params(
-    const ArtifactKey &dest_key, const ArtifactKey &tileset_root_key, const Tileset &src)
+[[nodiscard]] ChainableResult<void>
+ProjectTilesetArtifactWriter::write_porymap_anim_params(const ArtifactKey &dest_key, const Tileset &src)
 {
     const auto &porymap_anims = src.porymap_component().anims();
     if (porymap_anims.empty()) {
+        // If there are no anims, but the params file exists, remove it
+        if (std::filesystem::exists(dest_key.key())) {
+            std::filesystem::remove(dest_key.key());
+        }
         return {};
     }
 
@@ -466,9 +470,6 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
     for (const auto &[anim_name, anim] : porymap_anims) {
         anim_params[anim_name] = anim.params();
     }
-
-    // Use the tileset root key directly
-    const auto tileset_root_path = std::filesystem::path{tileset_root_key.key()};
 
     // Determine primary/secondary from metadata
     auto is_secondary_result = metadata_provider_.is_secondary(src.name());
@@ -480,7 +481,18 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
     }
     const bool is_primary = !is_secondary_result.value();
 
-    auto code_result = anim_code_generator_->generate(src.name(), tileset_root_path, anim_params, is_primary);
+    // Read tileset bin path from config based on primary/secondary status
+    auto bin_path_result = is_primary ? config_->tileset_paths_primary_bin(ConfigScopeType::tileset, src.name())
+                                      : config_->tileset_paths_secondary_bin(ConfigScopeType::tileset, src.name());
+    if (!bin_path_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{"failed to get tileset bin path config for '{}'", FormatParam{src.name(), Style::bold}},
+            bin_path_result};
+    }
+    const std::string bin_path_base = bin_path_result.value();
+    const std::filesystem::path tileset_path = std::filesystem::path{bin_path_base} / src.name();
+
+    auto code_result = anim_code_generator_->generate(src.name(), tileset_path, anim_params, is_primary);
     if (!code_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{"failed to generate animation code for '{}'", FormatParam{src.name(), Style::bold}},
@@ -629,7 +641,10 @@ ProjectTilesetArtifactWriter::write_porytiles_anim_params(const ArtifactKey &des
 {
     const auto &porytiles_anims = src.porytiles_component().anims();
     if (porytiles_anims.empty()) {
-        // No animations to write
+        // If there are no anims, but the params file exists, remove it
+        if (std::filesystem::exists(dest_key.key())) {
+            std::filesystem::remove(dest_key.key());
+        }
         return {};
     }
 

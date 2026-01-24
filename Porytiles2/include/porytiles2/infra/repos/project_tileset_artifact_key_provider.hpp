@@ -76,8 +76,6 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
     [[nodiscard]] ChainableResult<ArtifactKey>
     key_for_porymap_anim_params(const std::string &tileset_name) const override;
 
-    [[nodiscard]] ChainableResult<ArtifactKey> key_for_tileset_root(const std::string &tileset_name) const override;
-
     /*
      * Porytiles artifacts
      */
