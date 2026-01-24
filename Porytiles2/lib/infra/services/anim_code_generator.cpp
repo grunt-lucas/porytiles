@@ -25,8 +25,7 @@ using namespace porytiles2;
     const std::string pascal_anim_name = to_pascal_case(anim_name);
 
     // Generate INCBIN for each unique frame in frame_names (position in vector = FrameN index)
-    for (std::size_t frame_idx = 0; frame_idx < params.frame_names().size(); ++frame_idx) {
-        const auto &frame_name = params.frame_names()[frame_idx];
+    for (const auto &frame_name : params.frame_names()) {
         const std::string frame_file =
             (tileset_path_from_project_root / "porytiles_bin" / "anim" / anim_name / std::format("{}.4bpp", frame_name))
                 .string();
@@ -36,7 +35,7 @@ using namespace porytiles2;
             anim::porytiles_managed_prefix,
             tileset_name,
             pascal_anim_name,
-            frame_idx,
+            to_pascal_case(frame_name),
             frame_file);
 
         out << statement;

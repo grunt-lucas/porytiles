@@ -21,7 +21,7 @@ constexpr Rgba32 grass_bulk{112, 192, 160};
 constexpr Rgba32 grass_light{160, 224, 192};
 constexpr Rgba32 grass_dark{56, 192, 128};
 
-constexpr std::array<std::array<Rgba32, metatile::side_length_pix>, metatile::side_length_pix> grass_layer{
+constexpr std::array grass_layer{
     // Row 0
     std::array{
         grass_bulk,
@@ -333,7 +333,7 @@ constexpr Rgba32 flower_outline_light{57, 139, 49};
 constexpr Rgba32 flower_outline_dark{57, 82, 0};
 constexpr Rgba32 flower_leaf{131, 197, 98};
 
-constexpr std::array<std::array<Rgba32, metatile::side_length_pix>, metatile::side_length_pix> flower_frame_key{
+constexpr std::array flower_frame_key{
     // Row 0
     std::array{
         grass_bulk,
@@ -639,10 +639,10 @@ constexpr std::array<std::array<Rgba32, metatile::side_length_pix>, metatile::si
         grass_bulk}};
 
 // Frame 0 matches key frame in this case
-constexpr std::array<std::array<Rgba32, metatile::side_length_pix>, metatile::side_length_pix> flower_frame_0 =
+constexpr std::array<std::array<Rgba32, metatile::side_length_pix>, metatile::side_length_pix> flower_frame_center =
     flower_frame_key;
 
-constexpr std::array<std::array<Rgba32, metatile::side_length_pix>, metatile::side_length_pix> flower_frame_1{
+constexpr std::array flower_frame_right{
     // Row 0
     std::array{
         grass_bulk,
@@ -947,7 +947,7 @@ constexpr std::array<std::array<Rgba32, metatile::side_length_pix>, metatile::si
         grass_bulk,
         grass_bulk}};
 
-constexpr std::array<std::array<Rgba32, metatile::side_length_pix>, metatile::side_length_pix> flower_frame_2{
+constexpr std::array flower_frame_left{
     // Row 0
     std::array{
         grass_bulk,
@@ -1341,21 +1341,21 @@ PrimaryTilesetCreator::create_sample_porytiles_component(const std::string &tile
 
     // Set up flower animation frames using the conversion helper
     AnimationFrame<Rgba32> flower_key{"key", metatile_array_to_tiles(flower_frame_key)};
-    AnimationFrame<Rgba32> flower_0{"0", metatile_array_to_tiles(flower_frame_0)};
-    AnimationFrame<Rgba32> flower_1{"1", metatile_array_to_tiles(flower_frame_1)};
-    AnimationFrame<Rgba32> flower_2{"2", metatile_array_to_tiles(flower_frame_2)};
+    AnimationFrame<Rgba32> flower_center{"center", metatile_array_to_tiles(flower_frame_center)};
+    AnimationFrame<Rgba32> flower_right{"right", metatile_array_to_tiles(flower_frame_right)};
+    AnimationFrame<Rgba32> flower_left{"left", metatile_array_to_tiles(flower_frame_left)};
 
     AnimationParams flower_params{};
-    flower_params.frame_names(std::vector<std::string>{"0", "1", "2"});
-    flower_params.frame_order(std::vector<std::string>{"0", "1", "0", "2"});
+    flower_params.frame_names(std::vector<std::string>{"center", "right", "left"});
+    flower_params.frame_order(std::vector<std::string>{"center", "right", "center", "left"});
     flower_params.width_tiles(2);
     flower_params.height_tiles(2);
 
     Animation<Rgba32> flower{"flower", flower_params};
     flower.key_frame(flower_key);
-    flower.put_frame(flower_0.frame_name(), flower_0);
-    flower.put_frame(flower_1.frame_name(), flower_1);
-    flower.put_frame(flower_2.frame_name(), flower_2);
+    flower.put_frame(flower_center.frame_name(), flower_center);
+    flower.put_frame(flower_right.frame_name(), flower_right);
+    flower.put_frame(flower_left.frame_name(), flower_left);
     component->add_anim(flower);
 
     return component;

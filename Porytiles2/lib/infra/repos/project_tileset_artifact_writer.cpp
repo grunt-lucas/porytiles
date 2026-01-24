@@ -688,7 +688,8 @@ ProjectTilesetArtifactWriter::write_porymap_anim_params(const ArtifactKey &dest_
             bin_path_result};
     }
     const std::string bin_path_base = bin_path_result.value();
-    const std::filesystem::path tileset_path = std::filesystem::path{bin_path_base} / src.name();
+    const std::filesystem::path tileset_path =
+        std::filesystem::path{bin_path_base} / to_snake_case(extract_tileset_shorthand(src.name()));
 
     auto code_result = anim_code_generator_->generate(src.name(), tileset_path, anim_params, is_primary);
     if (!code_result.has_value()) {

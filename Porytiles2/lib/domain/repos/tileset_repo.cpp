@@ -60,14 +60,14 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     }
 
     for (const auto &porymap_anim : tileset.porymap_component().anims() | std::views::values) {
-        for (std::size_t i = 0; i < porymap_anim.frame_count(); i++) {
-            const auto frame_name = std::to_string(i);
+        for (const auto &frame : porymap_anim.frames_values()) {
             PT_TRY_ASSIGN_CHAIN_ERR(
                 frame_key,
-                key_provider_->key_for_porymap_anim_frame(tileset.name(), porymap_anim.name(), frame_name),
+                key_provider_->key_for_porymap_anim_frame(tileset.name(), porymap_anim.name(), frame.frame_name()),
                 "tileset save failed",
                 void);
-            if (auto result = writer_->write_porymap_anim_frame(frame_key, tileset, porymap_anim.name(), frame_name);
+            if (auto result =
+                    writer_->write_porymap_anim_frame(frame_key, tileset, porymap_anim.name(), frame.frame_name());
                 !result.has_value()) {
                 std::ignore = writer_->rollback();
                 auto failed = FormattableError{"{}: save failed", FormatParam{frame_key.key(), Style::bold}};
