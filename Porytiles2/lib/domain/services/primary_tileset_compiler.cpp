@@ -4,12 +4,14 @@
 #include <iostream>
 #include <memory>
 #include <ranges>
+#include <unordered_map>
 #include <unordered_set>
 #include <vector>
 
 #include "porytiles2/domain/algorithms/diagnostic_stencils.hpp"
 #include "porytiles2/domain/algorithms/palette_matchers.hpp"
 #include "porytiles2/domain/algorithms/tile_converters.hpp"
+#include "porytiles2/domain/algorithms/tile_extractors.hpp"
 #include "porytiles2/domain/algorithms/tileset_compile_validators.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
@@ -124,6 +126,9 @@ class CompilerTask {
     [[nodiscard]] ChainableResult<AnimKeyframeData>
     pipeline_helper_build_keyframe_data(const std::string &anim_name, const Animation<Rgba32> &anim) const;
     void pipeline_helper_compile_animations();
+
+    // Pipeline helpers - true_color mode
+    void pipeline_helper_apply_true_color_to_tiles_png();
 
     // Pipeline helpers - error emission
     void pipeline_helper_emit_no_matching_tile_error(
@@ -562,14 +567,10 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
     // Compile animations from Porytiles format to Porymap format
     pipeline_helper_compile_animations();
 
-    /*
-     * TODO: here, if TilesPalMode is true_color, we need to update new_porymap_component_->tiles_png Image<IndexPixel>
-     * so that the bottom four bits of the index remain the same, but the top four bits should select into the relevant
-     * palette for the given 8x8 tile. In order to determine which palette to use, we can scan the tilemap entries, find
-     * the first usage of the tile there, and use the palette in that entry. Technically, users may have arranged
-     * tiles/pals in such a way that a single 8x8 tile is used in multiple pal contexts. However, for display purposes,
-     * we have to pick one, so just pick the first one.
-     */
+    // Apply true_color palette encoding to tiles.png if configured
+    if (tiles_pal_mode_ == TilesPalMode::true_color) {
+        pipeline_helper_apply_true_color_to_tiles_png();
+    }
 
     // Create the full Tileset and return
     return std::make_unique<Tileset>(
@@ -1097,6 +1098,206 @@ void CompilerTask::pipeline_helper_compile_animations()
         // 7. Add to output component (key_frame left as std::nullopt)
         new_porymap_component_->add_anim(std::move(compiled_anim));
     }
+}
+
+void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
+{
+    // Phase 1: Build tile_index -> first_pal_index map from tilemap entries
+    std::unordered_map<std::size_t, std::size_t> tile_to_first_pal;
+    std::unordered_map<std::size_t, std::set<std::size_t>> tile_to_all_pals;
+
+    for (const auto &entry : new_porymap_component_->metatiles_bin()) {
+        const auto tile_idx = entry.tile_index();
+        const auto pal_idx = entry.pal_index();
+
+        if (tile_idx == 0) {
+            continue; // Skip transparent tile
+        }
+
+        tile_to_all_pals[tile_idx].insert(pal_idx);
+
+        if (!tile_to_first_pal.contains(tile_idx)) {
+            tile_to_first_pal[tile_idx] = pal_idx;
+        }
+    }
+
+    // Phase 2: Handle animation-only tiles (not in metatiles_bin)
+    for (const auto &[anim_name, source_anim] : tileset_.porytiles_component().anims()) {
+        auto maybe_tile_offset = anim_tile_matcher_.tile_offset_for(anim_name);
+        if (!maybe_tile_offset.has_value()) {
+            continue;
+        }
+
+        const std::size_t tile_offset = maybe_tile_offset.value();
+        const AnimationFrame<Rgba32> composite = source_anim.composite_frame(extrinsic_transparency_.value());
+        const std::size_t tile_count = composite.tile_count();
+
+        for (std::size_t subtile_idx = 0; subtile_idx < tile_count; ++subtile_idx) {
+            const std::size_t absolute_tile_idx = tile_offset + subtile_idx;
+
+            if (tile_to_first_pal.contains(absolute_tile_idx)) {
+                continue; // Already mapped from metatiles_bin
+            }
+
+            const PixelTile<Rgba32> &composite_tile = composite.tile_at(subtile_idx);
+            std::vector<PaletteMatchResult<Rgba32>> matches =
+                match_or_best(composite_tile, new_porymap_pals_, extrinsic_transparency_.value(), 1);
+
+            if (matches.at(0).is_covered) {
+                const std::size_t matched_pal_idx = matches.at(0).pal_index;
+                tile_to_first_pal[absolute_tile_idx] = matched_pal_idx;
+
+                // Extract the tile to check for transparency and for visualization
+                const auto &tiles_img = new_porymap_component_->tiles_png();
+                const PixelTile<IndexPixel> index_tile = extract_single_tile(tiles_img, absolute_tile_idx);
+
+                // Skip remark for transparent tiles (unused slots)
+                if (index_tile.is_transparent()) {
+                    continue;
+                }
+
+                // Emit remark for animation-only tiles not referenced in metatiles
+                constexpr auto tag = "true-color-anim-only-tile";
+                std::vector<std::string> remark_lines;
+                remark_lines.emplace_back(format_.format(
+                    "tile index '{}' (animation '{}', subtile '{}') is not referenced in metatiles",
+                    FormatParam{absolute_tile_idx, Style::bold},
+                    FormatParam{anim_name, Style::bold},
+                    FormatParam{subtile_idx, Style::bold}));
+                remark_lines.emplace_back(format_.format(
+                    "Using '{}' for true-color encoding (determined via palette matching).",
+                    FormatParam{pal_filename(matched_pal_idx), Style::bold}));
+
+                // Visualize the tile using the matched palette
+                const PixelTile<Rgba32> rgba_tile = color_tile_from_index_tile(
+                    index_tile, new_porymap_pals_.at(matched_pal_idx), extrinsic_transparency_.value());
+                remark_lines.emplace_back();
+                std::ranges::copy(
+                    tile_printer_.print_tile(rgba_tile, extrinsic_transparency_.value()),
+                    std::back_inserter(remark_lines));
+
+                diag_.remark(tag, remark_lines);
+            }
+        }
+    }
+
+    // Phase 3: Emit diagnostic remark for tiles used with multiple palettes
+    for (const auto &[tile_idx, pals] : tile_to_all_pals) {
+        if (pals.size() > 1) {
+            // Extract the tile to check for transparency and for visualization
+            const auto &tiles_img = new_porymap_component_->tiles_png();
+            const PixelTile<IndexPixel> index_tile = extract_single_tile(tiles_img, tile_idx);
+
+            // Skip remark for transparent tiles (unused slots)
+            if (index_tile.is_transparent()) {
+                continue;
+            }
+
+            constexpr auto tag = "true-color-multi-palette-tile";
+            std::vector<std::string> remark_lines;
+            remark_lines.emplace_back(
+                format_.format("tile index '{}' is used with multiple palettes", FormatParam{tile_idx, Style::bold}));
+
+            std::string pal_list;
+            for (const auto pal : pals) {
+                if (!pal_list.empty()) {
+                    pal_list += ", ";
+                }
+                pal_list += pal_filename(pal);
+            }
+
+            const std::size_t selected_pal_idx = tile_to_first_pal.at(tile_idx);
+            remark_lines.emplace_back(format_.format(
+                "Palettes used: {}; tiles.png will display using '{}'.",
+                FormatParam{pal_list},
+                FormatParam{pal_filename(selected_pal_idx), Style::bold}));
+
+            // Visualize the tile under each palette resolution
+            for (const auto pal_idx : pals) {
+                remark_lines.emplace_back();
+                remark_lines.emplace_back(
+                    format_.format("{} resolution:", FormatParam{pal_filename(pal_idx), Style::bold}));
+                const PixelTile<Rgba32> rgba_tile = color_tile_from_index_tile(
+                    index_tile, new_porymap_pals_.at(pal_idx), extrinsic_transparency_.value());
+                std::ranges::copy(
+                    tile_printer_.print_tile(rgba_tile, extrinsic_transparency_.value()),
+                    std::back_inserter(remark_lines));
+            }
+
+            diag_.remark(tag, remark_lines);
+        }
+    }
+
+    // Phase 4: Transform tiles_png pixels
+    Image<IndexPixel> tiles_img = new_porymap_component_->tiles_png();
+    constexpr std::size_t tiles_per_row = metatile::metatiles_per_row * metatile::tiles_per_side;
+
+    const std::size_t total_tiles = tiles_img.size_in_tiles();
+
+    for (std::size_t tile_idx = 1; tile_idx < total_tiles; ++tile_idx) {
+        if (!tile_to_first_pal.contains(tile_idx)) {
+            // Extract the tile to check for transparency
+            const PixelTile<IndexPixel> index_tile = extract_single_tile(tiles_img, tile_idx, tiles_per_row);
+
+            // Skip warning for transparent tiles (unused slots) - user already knows they're unused
+            if (index_tile.is_transparent()) {
+                continue;
+            }
+
+            // Emit warning for unreferenced non-transparent tiles
+            constexpr auto tag = "true-color-unreferenced-tile";
+            std::vector<std::string> warning_lines;
+            warning_lines.emplace_back(format_.format(
+                "tile index '{}' is not referenced in metatiles or animations", FormatParam{tile_idx, Style::bold}));
+            diag_.warning(tag, warning_lines);
+
+            std::vector<std::string> note_lines;
+            note_lines.emplace_back("This tile may be used by a secondary tileset, or it may be completely unused.");
+            note_lines.emplace_back(format_.format(
+                "Displaying using '{}' for color resolution.", FormatParam{pal_filename(0), Style::bold}));
+
+            // Visualize the tile using palette 0
+            const PixelTile<Rgba32> rgba_tile =
+                color_tile_from_index_tile(index_tile, new_porymap_pals_.at(0), extrinsic_transparency_.value());
+            note_lines.emplace_back();
+            std::ranges::copy(
+                tile_printer_.print_tile(rgba_tile, extrinsic_transparency_.value()), std::back_inserter(note_lines));
+
+            diag_.note(tag, note_lines);
+            continue; // Skip unreferenced tiles (no palette encoding needed)
+        }
+
+        const std::size_t pal_idx = tile_to_first_pal.at(tile_idx);
+        const std::size_t tile_row = tile_idx / tiles_per_row;
+        const std::size_t tile_col = tile_idx % tiles_per_row;
+        const std::size_t pixel_row_start = tile_row * tile::side_length_pix;
+        const std::size_t pixel_col_start = tile_col * tile::side_length_pix;
+
+        for (std::size_t py = 0; py < tile::side_length_pix; ++py) {
+            for (std::size_t px = 0; px < tile::side_length_pix; ++px) {
+                const std::size_t row = pixel_row_start + py;
+                const std::size_t col = pixel_col_start + px;
+                const IndexPixel old_pixel = tiles_img.at(row, col);
+                const std::size_t old_index = old_pixel.index();
+                const std::size_t new_index = (pal_idx << 4) | (old_index & 0x0F);
+                tiles_img.set(row, col, IndexPixel{new_index});
+            }
+        }
+    }
+
+    // Phase 5: Build the 8-bit palette for the PNG (num_pals_in_primary * 16 colors)
+    std::vector<Rgba32> true_color_palette;
+    true_color_palette.reserve(num_pals_in_primary_.value() * pal::max_size);
+
+    for (std::size_t pal_idx = 0; pal_idx < num_pals_in_primary_.value(); ++pal_idx) {
+        const auto &pal = new_porymap_pals_.at(pal_idx);
+        for (std::size_t color_idx = 0; color_idx < pal::max_size; ++color_idx) {
+            true_color_palette.push_back(pal.at(color_idx));
+        }
+    }
+
+    tiles_img.palette(std::move(true_color_palette));
+    new_porymap_component_->tiles_png(tiles_img);
 }
 
 void CompilerTask::pipeline_helper_emit_no_matching_tile_error(

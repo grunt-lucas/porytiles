@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "porytiles2/domain/models/image.hpp"
+#include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 
@@ -101,6 +102,28 @@ template <typename PixelType>
     const std::size_t total_tiles = img.size_in_tiles();
 
     return extract_tiles_from_image(img, 0, total_tiles, tiles_per_row);
+}
+
+/**
+ * @brief Extracts a single tile from an image at a given tile index.
+ *
+ * @details
+ * Convenience wrapper around extract_tiles_from_image for single-tile extraction. Useful for extracting individual
+ * tiles for diagnostic visualization.
+ *
+ * @tparam PixelType The pixel type of the image and resulting tile
+ * @param img The source tileset image
+ * @param tile_idx The tile index to extract (0-based)
+ * @param tiles_per_row The number of tiles per row in the source image (default 16 for standard tiles.png)
+ * @return The extracted PixelTile at the specified index
+ */
+template <typename PixelType>
+[[nodiscard]] PixelTile<PixelType> extract_single_tile(
+    const Image<PixelType> &img,
+    std::size_t tile_idx,
+    std::size_t tiles_per_row = metatile::metatiles_per_row * metatile::tiles_per_side)
+{
+    return extract_tiles_from_image(img, tile_idx, 1, tiles_per_row).at(0);
 }
 
 } // namespace porytiles2

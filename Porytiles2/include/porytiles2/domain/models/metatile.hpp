@@ -19,6 +19,7 @@ inline constexpr std::size_t tiles_per_metatile = tiles_per_metatile_layer * 3;
 inline constexpr std::size_t side_length_pix = tiles_per_side * tile::side_length_pix;
 inline constexpr std::size_t entries_per_metatile_dual = 8;
 inline constexpr std::size_t entries_per_metatile_triple = 12;
+inline constexpr std::size_t metatiles_per_row = 8;
 
 enum class Layer : std::uint8_t { bottom = 0, middle = 1, top = 2 };
 
