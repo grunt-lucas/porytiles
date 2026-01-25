@@ -137,7 +137,7 @@ config_values:
     layer: domain
     default_value: "ArtifactEditMode::optimize"
     yaml:
-      path: tileset.compile.tiles.edit_mode
+      path: tileset.tiles.edit_mode
     validators: [ ]
     cross_field_validators: [ ]
 
@@ -147,7 +147,7 @@ config_values:
     layer: domain
     default_value: "ArtifactEditMode::optimize"
     yaml:
-      path: tileset.compile.pals.edit_mode
+      path: tileset.pals.edit_mode
     validators: [ ]
     cross_field_validators: [ ]
 
@@ -157,7 +157,7 @@ config_values:
     layer: domain
     default_value: "true"
     yaml:
-      path: tileset.compile.pals.packing.hints.enabled
+      path: tileset.pals.packing.hints_enabled
     validators: [ ]
     cross_field_validators: [ ]
 
@@ -167,7 +167,7 @@ config_values:
     layer: domain
     default_value: "std::vector<PaletteHint>{}"
     yaml:
-      path: tileset.compile.pals.packing.hints.hints
+      path: tileset.pals.packing.hints
     validators: [ ]
     cross_field_validators: [ ]
 
@@ -187,9 +187,9 @@ config_values:
     type: TilesPalMode
     parser: parse_tiles_pal_mode
     layer: infra
-    default_value: "TilesPalMode::true_color"
+    default_value: "TilesPalMode::greyscale"
     yaml:
-      path: tileset.compile.tiles_pal_mode
+      path: tileset.tiles.pal_mode
     validators: [ ]
     cross_field_validators: [ ]
 

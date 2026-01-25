@@ -196,7 +196,7 @@ LayerValue<ArtifactEditMode> YamlFileProvider::tiles_edit_mode(ConfigScopeType t
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["tileset"]["compile"]["tiles"]["edit_mode"]; },
+        [](const YAML::Node &doc) { return doc["tileset"]["tiles"]["edit_mode"]; },
         parse_artifact_edit_mode,
         "tiles_edit_mode");
 }
@@ -212,7 +212,7 @@ LayerValue<ArtifactEditMode> YamlFileProvider::pals_edit_mode(ConfigScopeType ty
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["tileset"]["compile"]["pals"]["edit_mode"]; },
+        [](const YAML::Node &doc) { return doc["tileset"]["pals"]["edit_mode"]; },
         parse_artifact_edit_mode,
         "pals_edit_mode");
 }
@@ -227,7 +227,7 @@ LayerValue<bool> YamlFileProvider::pal_hints_enabled(ConfigScopeType type, const
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["tileset"]["compile"]["pals"]["packing"]["hints"]["enabled"]; },
+        [](const YAML::Node &doc) { return doc["tileset"]["pals"]["packing"]["hints_enabled"]; },
         parse_bool,
         "pal_hints_enabled");
 }
@@ -243,7 +243,7 @@ LayerValue<std::vector<PaletteHint>> YamlFileProvider::pal_hints(ConfigScopeType
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["tileset"]["compile"]["pals"]["packing"]["hints"]["hints"]; },
+        [](const YAML::Node &doc) { return doc["tileset"]["pals"]["packing"]["hints"]; },
         parse_pal_hints,
         "pal_hints");
 }
@@ -274,7 +274,7 @@ LayerValue<TilesPalMode> YamlFileProvider::tiles_pal_mode(ConfigScopeType type, 
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["tileset"]["compile"]["tiles_pal_mode"]; },
+        [](const YAML::Node &doc) { return doc["tileset"]["tiles"]["pal_mode"]; },
         parse_tiles_pal_mode,
         "tiles_pal_mode");
 }
