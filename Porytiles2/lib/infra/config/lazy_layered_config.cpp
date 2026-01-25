@@ -6,7 +6,7 @@
 #include <stdexcept>
 #include <string>
 
-#include "porytiles2/infra/config/tiles_pal_mode.hpp"
+#include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/source_locations.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
@@ -259,17 +259,6 @@ LazyLayeredConfig::pal_hints_raw(ConfigScopeType type, const std::string &scope)
         key, [&type, &scope](const ConfigProvider &provider) { return provider.pal_hints(type, scope); });
 }
 
-ChainableResult<ConfigValue<bool>>
-LazyLayeredConfig::verify_checksums_raw(ConfigScopeType type, const std::string &scope) const
-{
-    const auto name = extract_function_name();
-    // Strip the _raw suffix from the function name for cache key
-    const auto base_name = name.substr(0, name.size() - 4);
-    const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<bool>(
-        key, [&type, &scope](const ConfigProvider &provider) { return provider.verify_checksums(type, scope); });
-}
-
 ChainableResult<ConfigValue<TilesPalMode>>
 LazyLayeredConfig::tiles_pal_mode_raw(ConfigScopeType type, const std::string &scope) const
 {
@@ -279,6 +268,17 @@ LazyLayeredConfig::tiles_pal_mode_raw(ConfigScopeType type, const std::string &s
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<TilesPalMode>(
         key, [&type, &scope](const ConfigProvider &provider) { return provider.tiles_pal_mode(type, scope); });
+}
+
+ChainableResult<ConfigValue<bool>>
+LazyLayeredConfig::verify_checksums_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<bool>(
+        key, [&type, &scope](const ConfigProvider &provider) { return provider.verify_checksums(type, scope); });
 }
 
 ChainableResult<ConfigValue<std::string>>
@@ -432,18 +432,18 @@ LazyLayeredConfig::pal_hints_provenance_chain(ConfigScopeType type, const std::s
         [&type, &scope](const ConfigProvider &provider) { return provider.pal_hints(type, scope); });
 }
 
-std::vector<ProvenanceChainLink<bool>>
-LazyLayeredConfig::verify_checksums_provenance_chain(ConfigScopeType type, const std::string &scope) const
-{
-    return collect_provenance_chain<bool>(
-        [&type, &scope](const ConfigProvider &provider) { return provider.verify_checksums(type, scope); });
-}
-
 std::vector<ProvenanceChainLink<TilesPalMode>>
 LazyLayeredConfig::tiles_pal_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const
 {
     return collect_provenance_chain<TilesPalMode>(
         [&type, &scope](const ConfigProvider &provider) { return provider.tiles_pal_mode(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<bool>>
+LazyLayeredConfig::verify_checksums_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<bool>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.verify_checksums(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<std::string>>

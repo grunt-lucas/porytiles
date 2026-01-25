@@ -121,10 +121,10 @@ class HeaderDefineProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<std::vector<PaletteHint>>
     pal_hints(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<bool> verify_checksums(ConfigScopeType type, const std::string &scope) const override;
-
     [[nodiscard]] LayerValue<TilesPalMode>
     tiles_pal_mode(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] LayerValue<bool> verify_checksums(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<std::string>
     tileset_paths_primary_src(ConfigScopeType type, const std::string &scope) const override;

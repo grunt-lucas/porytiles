@@ -16,12 +16,6 @@ namespace {
 
 class MockInfraConfig : public InfraConfig {
   protected:
-    [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>>
-    tiles_pal_mode_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{TilesPalMode::true_color, "tiles_pal_mode", "mock", {}};
-    }
-
     [[nodiscard]] ChainableResult<ConfigValue<std::string>>
     tileset_paths_primary_src_raw(ConfigScopeType, const std::string &) const override
     {

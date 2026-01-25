@@ -86,16 +86,16 @@ ConfigProvider::pal_hints([[maybe_unused]] ConfigScopeType type, [[maybe_unused]
     return LayerValue<std::vector<PaletteHint>>::not_provided();
 }
 
-LayerValue<bool>
-ConfigProvider::verify_checksums([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    return LayerValue<bool>::not_provided();
-}
-
 LayerValue<TilesPalMode>
 ConfigProvider::tiles_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<TilesPalMode>::not_provided();
+}
+
+LayerValue<bool>
+ConfigProvider::verify_checksums([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<bool>::not_provided();
 }
 
 LayerValue<std::string> ConfigProvider::tileset_paths_primary_src(

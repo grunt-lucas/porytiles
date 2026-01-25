@@ -3,10 +3,10 @@
 #include <filesystem>
 #include <memory>
 
+#include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/infra/config/tiles_pal_mode.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"

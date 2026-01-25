@@ -248,21 +248,6 @@ LayerValue<std::vector<PaletteHint>> YamlFileProvider::pal_hints(ConfigScopeType
         "pal_hints");
 }
 
-LayerValue<bool> YamlFileProvider::verify_checksums(ConfigScopeType type, const std::string &scope) const
-{
-    auto paths_result = get_config_path_chain(project_root_, type, scope);
-    if (!paths_result.has_value()) {
-        return LayerValue<bool>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
-    }
-    return search_config_files<bool>(
-        format_,
-        paths_result.value(),
-        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["verify_checksums"]; },
-        parse_bool,
-        "verify_checksums");
-}
-
 LayerValue<TilesPalMode> YamlFileProvider::tiles_pal_mode(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
@@ -277,6 +262,21 @@ LayerValue<TilesPalMode> YamlFileProvider::tiles_pal_mode(ConfigScopeType type, 
         [](const YAML::Node &doc) { return doc["tileset"]["tiles"]["pal_mode"]; },
         parse_tiles_pal_mode,
         "tiles_pal_mode");
+}
+
+LayerValue<bool> YamlFileProvider::verify_checksums(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<bool>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<bool>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["verify_checksums"]; },
+        parse_bool,
+        "verify_checksums");
 }
 
 LayerValue<std::string>

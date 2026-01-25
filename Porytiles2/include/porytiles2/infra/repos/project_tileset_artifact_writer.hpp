@@ -5,6 +5,7 @@
 
 #include "gsl/pointers"
 
+#include "porytiles2/domain/config/domain_config.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_writer.hpp"
 #include "porytiles2/domain/services/behavior_map_provider.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
@@ -31,7 +32,8 @@ namespace porytiles2 {
 class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
   public:
     ProjectTilesetArtifactWriter(
-        gsl::not_null<InfraConfig *> config,
+        gsl::not_null<DomainConfig *> domain_config,
+        gsl::not_null<InfraConfig *> infra_config,
         std::filesystem::path project_root,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag,
@@ -41,10 +43,11 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
         gsl::not_null<const AnimYamlParser *> anim_yaml_parser,
         gsl::not_null<const AnimCodeGenerator *> anim_code_generator,
         gsl::not_null<const BehaviorMapProvider *> behavior_map)
-        : config_{config}, project_root_{std::move(project_root)}, format_{format}, diag_{diag},
-          png_rgba_saver_{png_rgba_saver}, png_indexed_saver_{png_indexed_saver}, pal_saver_{pal_saver},
-          anim_yaml_parser_{anim_yaml_parser}, anim_code_generator_{anim_code_generator}, behavior_map_{behavior_map},
-          metadata_provider_{project_root, format, diag}, metadata_writer_{project_root, format}
+        : domain_config_{domain_config}, infra_config_{infra_config}, project_root_{std::move(project_root)},
+          format_{format}, diag_{diag}, png_rgba_saver_{png_rgba_saver}, png_indexed_saver_{png_indexed_saver},
+          pal_saver_{pal_saver}, anim_yaml_parser_{anim_yaml_parser}, anim_code_generator_{anim_code_generator},
+          behavior_map_{behavior_map}, metadata_provider_{project_root, format, diag},
+          metadata_writer_{project_root, format}
     {
     }
 
@@ -112,7 +115,8 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
         std::filesystem::path dest_path;    ///< Final destination path
     };
 
-    InfraConfig *config_;
+    DomainConfig *domain_config_;
+    InfraConfig *infra_config_;
     std::filesystem::path project_root_;
     std::filesystem::path transaction_root_;
     const TextFormatter *format_;

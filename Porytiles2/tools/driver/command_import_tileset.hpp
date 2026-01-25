@@ -132,6 +132,7 @@ class ImportTilesetCommand final : public Command {
             &metadata_provider};
         ProjectTilesetArtifactWriter artifact_writer{
             &config,
+            &config,
             project_root,
             text_formatter,
             diag.get(),

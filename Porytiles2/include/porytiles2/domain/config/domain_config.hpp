@@ -3,6 +3,7 @@
 #include <string>
 
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
+#include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/packing/models/palette_hint.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -201,6 +202,14 @@ class DomainConfig {
         return validated_val;
     }
 
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>>
+    tiles_pal_mode(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = tiles_pal_mode_validated(type, scope);
+        return validated_val;
+    }
+
   protected:
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
@@ -389,6 +398,18 @@ class DomainConfig {
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::vector<PaletteHint>>>
     pal_hints_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<TilesPalMode>>
+    tiles_pal_mode_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = tiles_pal_mode_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<TilesPalMode>>
+    tiles_pal_mode_raw(ConfigScopeType type, const std::string &scope) const = 0;
 };
 
 } // namespace porytiles2

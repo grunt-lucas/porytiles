@@ -171,6 +171,16 @@ config_values:
     validators: [ ]
     cross_field_validators: [ ]
 
+  - name: tiles_pal_mode
+    type: TilesPalMode
+    parser: parse_tiles_pal_mode
+    layer: domain
+    default_value: "TilesPalMode::true_color"
+    yaml:
+      path: tileset.tiles.pal_mode
+    validators: [ ]
+    cross_field_validators: [ ]
+
   # Application Layer Configuration Values
   - name: verify_checksums
     type: bool
@@ -183,16 +193,6 @@ config_values:
     cross_field_validators: [ ]
 
   # Infrastructure Layer Configuration Values
-  - name: tiles_pal_mode
-    type: TilesPalMode
-    parser: parse_tiles_pal_mode
-    layer: infra
-    default_value: "TilesPalMode::true_color"
-    yaml:
-      path: tileset.tiles.pal_mode
-    validators: [ ]
-    cross_field_validators: [ ]
-
   - name: tileset_paths_primary_src
     type: std::string
     parser: parse_string

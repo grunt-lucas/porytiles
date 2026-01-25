@@ -117,17 +117,17 @@ HeaderDefineProvider::pal_hints(ConfigScopeType /*type*/, const std::string & /*
     return LayerValue<std::vector<PaletteHint>>::not_provided();
 }
 
-LayerValue<bool> HeaderDefineProvider::verify_checksums(ConfigScopeType /*type*/, const std::string & /*scope*/) const
-{
-    // No header_define specified for this config value
-    return LayerValue<bool>::not_provided();
-}
-
 LayerValue<TilesPalMode>
 HeaderDefineProvider::tiles_pal_mode(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {
     // No header_define specified for this config value
     return LayerValue<TilesPalMode>::not_provided();
+}
+
+LayerValue<bool> HeaderDefineProvider::verify_checksums(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<bool>::not_provided();
 }
 
 LayerValue<std::string>

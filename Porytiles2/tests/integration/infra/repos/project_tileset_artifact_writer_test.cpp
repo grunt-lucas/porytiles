@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "porytiles2/domain/config/artifact_edit_mode.hpp"
+#include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/palette.hpp"
@@ -14,6 +16,7 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
+#include "porytiles2/domain/packing/models/palette_hint.hpp"
 #include "porytiles2/domain/services/behavior_map_provider.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
@@ -32,14 +35,95 @@ using namespace porytiles2;
 
 namespace {
 
-class MockInfraConfig : public InfraConfig {
+class MockDomainConfig : public DomainConfig {
   protected:
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    num_tiles_in_primary_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{std::size_t{512}, "num_tiles_in_primary", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    num_tiles_total_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{std::size_t{1024}, "num_tiles_total", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    num_metatiles_in_primary_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{std::size_t{512}, "num_metatiles_in_primary", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    num_metatiles_total_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{std::size_t{1024}, "num_metatiles_total", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    num_pals_in_primary_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{std::size_t{6}, "num_pals_in_primary", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    num_pals_total_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{std::size_t{13}, "num_pals_total", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    max_map_data_size_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{std::size_t{10000}, "max_map_data_size", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    num_tiles_per_metatile_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{std::size_t{8}, "num_tiles_per_metatile", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<Rgba32>>
+    extrinsic_transparency_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{Rgba32{0, 0, 0, 0}, "extrinsic_transparency", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<ArtifactEditMode>>
+    tiles_edit_mode_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{ArtifactEditMode::optimize, "tiles_edit_mode", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<ArtifactEditMode>>
+    pals_edit_mode_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{ArtifactEditMode::optimize, "pals_edit_mode", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    pal_hints_enabled_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{false, "pal_hints_enabled", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::vector<PaletteHint>>>
+    pal_hints_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{std::vector<PaletteHint>{}, "pal_hints", "mock", {}};
+    }
+
     [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>>
     tiles_pal_mode_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{TilesPalMode::true_color, "tiles_pal_mode", "mock", {}};
     }
+};
 
+class MockInfraConfig : public InfraConfig {
+  protected:
     [[nodiscard]] ChainableResult<ConfigValue<std::string>>
     tileset_paths_primary_src_raw(ConfigScopeType, const std::string &) const override
     {
@@ -179,7 +263,8 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
     {
         formatter_ = std::make_unique<PlainTextFormatter>();
         diag_ = std::make_unique<BufferedUserDiagnostics>();
-        config_ = std::make_unique<MockInfraConfig>();
+        domain_config_ = std::make_unique<MockDomainConfig>();
+        infra_config_ = std::make_unique<MockInfraConfig>();
         png_rgba_saver_ = std::make_unique<MockPngRgbaImageSaver>();
         png_indexed_saver_ = std::make_unique<MockPngIndexedImageSaver>();
         pal_saver_ = std::make_unique<MockFilePalSaver>();
@@ -189,10 +274,11 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
 
         test_root_ = std::filesystem::temp_directory_path() / "porytiles_artifact_writer_tests";
         std::filesystem::create_directories(test_root_);
-        config_->test_root(test_root_);
+        infra_config_->test_root(test_root_);
 
         writer_ = std::make_unique<ProjectTilesetArtifactWriter>(
-            config_.get(),
+            domain_config_.get(),
+            infra_config_.get(),
             test_root_,
             formatter_.get(),
             diag_.get(),
@@ -241,7 +327,8 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
     std::filesystem::path test_root_;
     std::unique_ptr<TextFormatter> formatter_;
     std::unique_ptr<UserDiagnostics> diag_;
-    std::unique_ptr<MockInfraConfig> config_;
+    std::unique_ptr<MockDomainConfig> domain_config_;
+    std::unique_ptr<MockInfraConfig> infra_config_;
     std::unique_ptr<MockPngRgbaImageSaver> png_rgba_saver_;
     std::unique_ptr<MockPngIndexedImageSaver> png_indexed_saver_;
     std::unique_ptr<MockFilePalSaver> pal_saver_;

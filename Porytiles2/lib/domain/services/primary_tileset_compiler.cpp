@@ -12,6 +12,7 @@
 #include "porytiles2/domain/algorithms/tile_converters.hpp"
 #include "porytiles2/domain/algorithms/tileset_compile_validators.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
+#include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/canonical_shape_tile.hpp"
 #include "porytiles2/domain/models/color_index_map.hpp"
@@ -89,13 +90,11 @@ class CompilerTask {
         const UserDiagnostics &diag,
         const TilePrinter &tile_printer,
         const PalettePrinter &pal_printer,
-        const DomainConfig &config,
-        const ArtifactEditMode tiles_edit_mode,
-        const ArtifactEditMode pals_edit_mode)
+        const DomainConfig &config)
         : tileset_{tileset}, format_{format}, diag_{diag}, tile_printer_{tile_printer}, pal_printer_{pal_printer},
-          config_{config}, tiles_edit_mode_{tiles_edit_mode}, pals_edit_mode_{pals_edit_mode},
-          extrinsic_transparency_{}, num_pals_in_primary_{}, num_pals_total_{}, num_metatiles_in_primary_{},
-          num_tiles_in_primary_{}, num_tiles_per_metatile_{}, pal_hints_enabled_{}, pal_hints_{}
+          config_{config}, extrinsic_transparency_{}, num_pals_in_primary_{}, num_pals_total_{},
+          num_metatiles_in_primary_{}, num_tiles_in_primary_{}, num_tiles_per_metatile_{}, pal_hints_enabled_{},
+          pal_hints_{}
     {
     }
 
@@ -143,8 +142,6 @@ class CompilerTask {
     const TilePrinter &tile_printer_;
     const PalettePrinter &pal_printer_;
     const DomainConfig &config_;
-    const ArtifactEditMode tiles_edit_mode_;
-    const ArtifactEditMode pals_edit_mode_;
 
     // Config values (populated in run())
     ConfigValue<Rgba32> extrinsic_transparency_;
@@ -155,6 +152,9 @@ class CompilerTask {
     ConfigValue<std::size_t> num_tiles_per_metatile_;
     ConfigValue<bool> pal_hints_enabled_;
     ConfigValue<std::vector<PaletteHint>> pal_hints_;
+    ConfigValue<ArtifactEditMode> tiles_edit_mode_;
+    ConfigValue<ArtifactEditMode> pals_edit_mode_;
+    ConfigValue<TilesPalMode> tiles_pal_mode_;
 
     // Intermediate state - Porytiles
     std::vector<Metatile<Rgba32>> porytiles_metatiles_{};
@@ -199,6 +199,9 @@ ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
     PT_UNWRAP_TILESET_CONFIG_REF(config_, num_tiles_per_metatile, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, pal_hints_enabled, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, pal_hints, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, tiles_edit_mode, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, pals_edit_mode, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, tiles_pal_mode, tileset_.name(), std::unique_ptr<Tileset>);
 
     extrinsic_transparency_ = extrinsic_transparency;
     num_pals_in_primary_ = num_pals_in_primary;
@@ -208,6 +211,9 @@ ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
     num_tiles_per_metatile_ = num_tiles_per_metatile;
     pal_hints_enabled_ = pal_hints_enabled;
     pal_hints_ = pal_hints;
+    tiles_edit_mode_ = tiles_edit_mode;
+    pals_edit_mode_ = pals_edit_mode;
+    tiles_pal_mode_ = tiles_pal_mode;
 
     // Execute subtasks
     PT_TRY_CALL_PASS_ERR(pipeline_step_process_porytiles_input(), std::unique_ptr<Tileset>);
@@ -555,6 +561,15 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
 
     // Compile animations from Porytiles format to Porymap format
     pipeline_helper_compile_animations();
+
+    /*
+     * TODO: here, if TilesPalMode is true_color, we need to update new_porymap_component_->tiles_png Image<IndexPixel>
+     * so that the bottom four bits of the index remain the same, but the top four bits should select into the relevant
+     * palette for the given 8x8 tile. In order to determine which palette to use, we can scan the tilemap entries, find
+     * the first usage of the tile there, and use the palette in that entry. Technically, users may have arranged
+     * tiles/pals in such a way that a single 8x8 tile is used in multiple pal contexts. However, for display purposes,
+     * we have to pick one, so just pick the first one.
+     */
 
     // Create the full Tileset and return
     return std::make_unique<Tileset>(
@@ -1068,7 +1083,7 @@ void CompilerTask::pipeline_helper_compile_animations()
                     index_tile_from_color_tile(rgba_tile, pal, extrinsic_transparency_.value()));
             }
 
-            AnimationFrame<IndexPixel> frame{frame_name, std::move(frame_index_tiles)};
+            AnimationFrame frame{frame_name, std::move(frame_index_tiles)};
             frame.palette(anim_palette);
             compiled_anim.put_frame(frame_name, std::move(frame));
         }
@@ -1199,17 +1214,7 @@ namespace porytiles2 {
 
 ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const Tileset &tileset) const
 {
-    PT_UNWRAP_TILESET_CONFIG_PTR(config_, tiles_edit_mode, tileset.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_PTR(config_, pals_edit_mode, tileset.name(), std::unique_ptr<Tileset>);
-    CompilerTask task{
-        tileset,
-        *format_,
-        *diag_,
-        *tile_printer_,
-        *pal_printer_,
-        *config_,
-        tiles_edit_mode.value(),
-        pals_edit_mode.value()};
+    CompilerTask task{tileset, *format_, *diag_, *tile_printer_, *pal_printer_, *config_};
     return task.run();
 }
 

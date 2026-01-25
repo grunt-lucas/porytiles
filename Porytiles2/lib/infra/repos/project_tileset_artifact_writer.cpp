@@ -625,7 +625,7 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_tiles_png(const Artifa
         void);
     PT_TRY_ASSIGN_CHAIN_ERR(
         tiles_pal_mode_config,
-        config_->tiles_pal_mode(ConfigScopeType::tileset, src.name()),
+        domain_config_->tiles_pal_mode(ConfigScopeType::tileset, src.name()),
         "failed to get tiles_pal_mode config",
         void);
     return save_tiles_png(
@@ -649,7 +649,7 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         tiles_pal_mode_config,
-        config_->tiles_pal_mode(ConfigScopeType::tileset, src.name()),
+        domain_config_->tiles_pal_mode(ConfigScopeType::tileset, src.name()),
         "failed to get tiles_pal_mode config",
         void);
     return write_anim_frame_impl<IndexPixel>(
@@ -696,8 +696,9 @@ ProjectTilesetArtifactWriter::write_porymap_anim_params(const ArtifactKey &dest_
     const bool is_primary = !is_secondary_result.value();
 
     // Read tileset bin path from config based on primary/secondary status
-    auto bin_path_result = is_primary ? config_->tileset_paths_primary_bin(ConfigScopeType::tileset, src.name())
-                                      : config_->tileset_paths_secondary_bin(ConfigScopeType::tileset, src.name());
+    auto bin_path_result = is_primary
+                               ? infra_config_->tileset_paths_primary_bin(ConfigScopeType::tileset, src.name())
+                               : infra_config_->tileset_paths_secondary_bin(ConfigScopeType::tileset, src.name());
     if (!bin_path_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{"failed to get tileset bin path config for '{}'", FormatParam{src.name(), Style::bold}},
