@@ -58,7 +58,8 @@ ChainableResult<void> PngIndexedImageSaver::save_to_file(
 
     // Write PNG to filesystem using the appropriate pixel type for mode
     try {
-        if (mode == greyscale) {
+        // If internal palette is size 16 or less, use 4-bit PNG palette
+        if (palette_to_use.size() <= 16) {
             png::image<png::index_pixel_4> out{image.width(), image.height()};
             write_image(out);
         }

@@ -188,6 +188,19 @@ save_palette(const Palette<Rgba32, pal::max_size> &pal, const std::filesystem::p
     return {};
 }
 
+ChainableResult<void> save_porymap_anim_frame(
+    const PngIndexedImageSaver &saver,
+    const Image<IndexPixel> &frame,
+    const std::filesystem::path &path,
+    TilesPalMode tiles_pal_mode)
+{
+    auto result = saver.save_to_file(frame, path, tiles_pal_mode);
+    if (!result.has_value()) {
+        return result;
+    }
+    return {};
+}
+
 /**
  * @brief Computes the staging path for an artifact and registers it for atomic commit.
  *
@@ -634,6 +647,11 @@ ProjectTilesetArtifactWriter::write_porymap_pal_n(const ArtifactKey &dest_key, c
 ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
     const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, const std::string &frame_name)
 {
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tiles_pal_mode_config,
+        config_->tiles_pal_mode(ConfigScopeType::tileset, src.name()),
+        "failed to get tiles_pal_mode config",
+        void);
     return write_anim_frame_impl<IndexPixel>(
         dest_key,
         src,
@@ -644,8 +662,8 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
         staged_directories_,
         staged_special_files_,
         [](const Tileset &t) -> const auto & { return t.porymap_component(); },
-        [this](const Image<IndexPixel> &img, const std::filesystem::path &path) {
-            return save_tiles_png(*png_indexed_saver_, img, path, TilesPalMode::true_color);
+        [this, &tiles_pal_mode_config](const Image<IndexPixel> &img, const std::filesystem::path &path) {
+            return save_porymap_anim_frame(*png_indexed_saver_, img, path, tiles_pal_mode_config.value());
         },
         "Porymap");
 }

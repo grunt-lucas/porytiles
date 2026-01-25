@@ -303,7 +303,8 @@ inline void report_color_counts(
             pal,
             filename,
             std::vector<std::size_t>{0});
-        print_extrinsic_transparency_note(services.format, services.diag, "porymap-pal-slot-0", extrinsic_transparency);
+        print_extrinsic_transparency_note(
+            services.format, services.diag, "porymap-palette-slot-0", extrinsic_transparency);
     }
 
     // Check 2: Non-slot-0 positions cannot contain extrinsic transparency

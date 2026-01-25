@@ -106,7 +106,7 @@ LayerValue<bool> DefaultProvider::verify_checksums(
 LayerValue<TilesPalMode>
 DefaultProvider::tiles_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<TilesPalMode>::valid(TilesPalMode::greyscale, source_info);
+    return LayerValue<TilesPalMode>::valid(TilesPalMode::true_color, source_info);
 }
 
 LayerValue<std::string> DefaultProvider::tileset_paths_primary_src(

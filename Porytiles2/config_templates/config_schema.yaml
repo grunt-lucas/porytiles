@@ -187,7 +187,7 @@ config_values:
     type: TilesPalMode
     parser: parse_tiles_pal_mode
     layer: infra
-    default_value: "TilesPalMode::greyscale"
+    default_value: "TilesPalMode::true_color"
     yaml:
       path: tileset.tiles.pal_mode
     validators: [ ]
