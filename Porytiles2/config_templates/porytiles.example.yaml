@@ -63,7 +63,7 @@ tileset:
     # - optimal: fail compilation if any color-isomorphic tiles can't be shared
     sharing: manual
 
-  pals:
+  palettes:
     # Set edit mode for the palette artifacts.
     # Allowed values:
     # - locked: no changes allowed to Porymap palettes

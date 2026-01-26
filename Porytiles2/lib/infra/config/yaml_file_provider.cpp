@@ -212,7 +212,7 @@ LayerValue<ArtifactEditMode> YamlFileProvider::pals_edit_mode(ConfigScopeType ty
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["tileset"]["pals"]["edit_mode"]; },
+        [](const YAML::Node &doc) { return doc["tileset"]["palettes"]["edit_mode"]; },
         parse_artifact_edit_mode,
         "pals_edit_mode");
 }
@@ -227,7 +227,7 @@ LayerValue<bool> YamlFileProvider::pal_hints_enabled(ConfigScopeType type, const
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["tileset"]["pals"]["packing"]["hints_enabled"]; },
+        [](const YAML::Node &doc) { return doc["tileset"]["palettes"]["packing"]["hints_enabled"]; },
         parse_bool,
         "pal_hints_enabled");
 }
@@ -243,7 +243,7 @@ LayerValue<std::vector<PaletteHint>> YamlFileProvider::pal_hints(ConfigScopeType
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["tileset"]["pals"]["packing"]["hints"]; },
+        [](const YAML::Node &doc) { return doc["tileset"]["palettes"]["packing"]["hints"]; },
         parse_pal_hints,
         "pal_hints");
 }

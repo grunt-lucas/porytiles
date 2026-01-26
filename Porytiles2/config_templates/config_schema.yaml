@@ -147,7 +147,7 @@ config_values:
     layer: domain
     default_value: "ArtifactEditMode::optimize"
     yaml:
-      path: tileset.pals.edit_mode
+      path: tileset.palettes.edit_mode
     validators: [ ]
     cross_field_validators: [ ]
 
@@ -157,7 +157,7 @@ config_values:
     layer: domain
     default_value: "true"
     yaml:
-      path: tileset.pals.packing.hints_enabled
+      path: tileset.palettes.packing.hints_enabled
     validators: [ ]
     cross_field_validators: [ ]
 
@@ -167,7 +167,7 @@ config_values:
     layer: domain
     default_value: "std::vector<PaletteHint>{}"
     yaml:
-      path: tileset.pals.packing.hints
+      path: tileset.palettes.packing.hints
     validators: [ ]
     cross_field_validators: [ ]
 
