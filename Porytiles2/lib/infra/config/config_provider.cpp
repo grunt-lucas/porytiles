@@ -92,6 +92,12 @@ ConfigProvider::tiles_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_un
     return LayerValue<TilesPalMode>::not_provided();
 }
 
+LayerValue<AnimPalResolutionStrategy> ConfigProvider::anim_pal_resolution_strategy(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<AnimPalResolutionStrategy>::not_provided();
+}
+
 LayerValue<bool>
 ConfigProvider::verify_checksums([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

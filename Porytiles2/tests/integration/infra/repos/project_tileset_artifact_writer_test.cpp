@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/image.hpp"
@@ -119,6 +120,12 @@ class MockDomainConfig : public DomainConfig {
     tiles_pal_mode_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{TilesPalMode::true_color, "tiles_pal_mode", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<AnimPalResolutionStrategy>>
+    anim_pal_resolution_strategy_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{AnimPalResolutionStrategy::internal_png_palette, "anim_pal_resolution_strategy", "mock", {}};
     }
 };
 

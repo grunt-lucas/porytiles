@@ -270,6 +270,18 @@ LazyLayeredConfig::tiles_pal_mode_raw(ConfigScopeType type, const std::string &s
         key, [&type, &scope](const ConfigProvider &provider) { return provider.tiles_pal_mode(type, scope); });
 }
 
+ChainableResult<ConfigValue<AnimPalResolutionStrategy>>
+LazyLayeredConfig::anim_pal_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<AnimPalResolutionStrategy>(key, [&type, &scope](const ConfigProvider &provider) {
+        return provider.anim_pal_resolution_strategy(type, scope);
+    });
+}
+
 ChainableResult<ConfigValue<bool>>
 LazyLayeredConfig::verify_checksums_raw(ConfigScopeType type, const std::string &scope) const
 {
@@ -437,6 +449,13 @@ LazyLayeredConfig::tiles_pal_mode_provenance_chain(ConfigScopeType type, const s
 {
     return collect_provenance_chain<TilesPalMode>(
         [&type, &scope](const ConfigProvider &provider) { return provider.tiles_pal_mode(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<AnimPalResolutionStrategy>>
+LazyLayeredConfig::anim_pal_resolution_strategy_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<AnimPalResolutionStrategy>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.anim_pal_resolution_strategy(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<bool>>

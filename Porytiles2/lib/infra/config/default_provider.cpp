@@ -103,6 +103,12 @@ DefaultProvider::tiles_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_u
     return LayerValue<TilesPalMode>::valid(TilesPalMode::true_color, source_info);
 }
 
+LayerValue<AnimPalResolutionStrategy> DefaultProvider::anim_pal_resolution_strategy(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<AnimPalResolutionStrategy>::valid(AnimPalResolutionStrategy::internal_png_palette, source_info);
+}
+
 LayerValue<bool> DefaultProvider::verify_checksums(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

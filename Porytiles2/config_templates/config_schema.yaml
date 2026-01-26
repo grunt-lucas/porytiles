@@ -181,6 +181,16 @@ config_values:
     validators: [ ]
     cross_field_validators: [ ]
 
+  - name: anim_pal_resolution_strategy
+    type: AnimPalResolutionStrategy
+    parser: parse_anim_pal_resolution_strategy
+    layer: domain
+    default_value: "AnimPalResolutionStrategy::internal_png_palette"
+    yaml:
+      path: tileset.animations.palette_resolution_strategy
+    validators: [ ]
+    cross_field_validators: [ ]
+
   # Application Layer Configuration Values
   - name: verify_checksums
     type: bool

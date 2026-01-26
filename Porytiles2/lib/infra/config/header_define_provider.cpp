@@ -124,6 +124,13 @@ HeaderDefineProvider::tiles_pal_mode(ConfigScopeType /*type*/, const std::string
     return LayerValue<TilesPalMode>::not_provided();
 }
 
+LayerValue<AnimPalResolutionStrategy>
+HeaderDefineProvider::anim_pal_resolution_strategy(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<AnimPalResolutionStrategy>::not_provided();
+}
+
 LayerValue<bool> HeaderDefineProvider::verify_checksums(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {
     // No header_define specified for this config value

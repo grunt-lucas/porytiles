@@ -9,6 +9,7 @@
 
 #include "yaml-cpp/yaml.h"
 
+#include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/packing/models/palette_hint.hpp"
 #include "porytiles2/infra/config/config_provider.hpp"
@@ -529,6 +530,39 @@ LayerValue<ArtifactEditMode> parse_artifact_edit_mode(
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<ArtifactEditMode>::invalid(error, source, details);
+    }
+}
+
+LayerValue<AnimPalResolutionStrategy> parse_anim_pal_resolution_strategy(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<AnimPalResolutionStrategy>::not_provided();
+    }
+
+    try {
+        const auto mark = node.Mark();
+        const auto details = make_source_details(format, file_path, mark);
+        const auto str = node.as<std::string>();
+        const auto mode_opt = anim_pal_resolution_strategy_from_str(str);
+
+        if (!mode_opt.has_value()) {
+            const auto error = format->format(
+                "'{}' has invalid value '{}'", FormatParam{key, Style::bold}, FormatParam{str, Style::bold});
+            const auto source = make_source_string(format, file_path, mark);
+            return LayerValue<AnimPalResolutionStrategy>::invalid(error, source, details);
+        }
+
+        const auto source = make_source_string(format, file_path, mark);
+        return LayerValue<AnimPalResolutionStrategy>::valid(mode_opt.value(), source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error = format->format(
+            "failed to parse '{}' as AnimPalResolutionStrategy: {}", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<AnimPalResolutionStrategy>::invalid(error, source, details);
     }
 }
 

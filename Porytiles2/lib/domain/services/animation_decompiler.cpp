@@ -49,7 +49,7 @@ std::size_t find_palette_for_animation_tiles(
     if (found_pal_indices.empty()) {
         /*
          * TODO: ANIM: some tilesets will hit this case. E.g. land_water_edge in vanilla primary general is not used
-         * within general itself. But the tiles within the anim range are referenced in lilycove tileset, using primary
+         * within general itself. But the tiles within the anim range are referenced in mossdeep tileset, using primary
          * pal 3. So maybe here we should warn the user. And perhaps we need to provide some way to allow the user to
          * select which pal to use when importing an animation, if no pal is found? Alternatively, we could scan all the
          * other tilesets in the game and look for context? To do this, we'd need to parse the layouts file to figure

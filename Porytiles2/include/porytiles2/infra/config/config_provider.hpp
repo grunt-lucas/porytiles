@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
@@ -78,6 +79,9 @@ class ConfigProvider {
     pal_hints(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<TilesPalMode> tiles_pal_mode(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<AnimPalResolutionStrategy>
+    anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const;
 
     /*
      * App Config
