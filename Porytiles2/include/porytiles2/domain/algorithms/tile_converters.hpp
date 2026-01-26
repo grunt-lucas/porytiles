@@ -177,19 +177,22 @@ template <SupportsTransparency ColorType, std::size_t N = 0>
 
     for (std::size_t i = 0; i < tile::size_pix; ++i) {
         const auto &index_pixel = index_tile.at(i);
-        const std::size_t index = index_pixel.index();
+        // Use color_index() to extract the lower 4 bits, which is the actual palette color index.
+        // This is critical for true-color mode where the full 8-bit value encodes both palette index (upper 4 bits)
+        // and color index (lower 4 bits). For standard 4-bit pixels, color_index() == index().
+        const std::size_t color_index = index_pixel.color_index();
 
-        if (index == 0) {
-            // Index 0 is the transparent slot
+        if (color_index == 0) {
+            // Color index 0 is the transparent slot
             color_pixels[i] = transparent_color;
         }
         else {
             // Look up in index-to-color map for non-zero indices
-            auto it = index_to_color.find(PaletteIndex{index});
+            auto it = index_to_color.find(PaletteIndex{color_index});
             if (it == index_to_color.end()) {
                 panic(
-                    "index " + std::to_string(index) + " out of palette bounds [0, " + std::to_string(palette.size()) +
-                    ")");
+                    "color_index " + std::to_string(color_index) + " out of palette bounds [0, " +
+                    std::to_string(palette.size()) + ")");
             }
             color_pixels[i] = it->second;
         }

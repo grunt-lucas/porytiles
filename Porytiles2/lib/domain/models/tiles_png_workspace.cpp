@@ -29,20 +29,27 @@ bool tiles_color_equivalent(
     const Palette<Rgba32, pal::max_size> &palette)
 {
     for (std::size_t i = 0; i < tile::size_pix; ++i) {
-        const auto expected_idx = expected.at(i).index();
-        const auto actual_idx = actual.at(i).index();
+        // Use color_index() to extract lower 4 bits - safe for true-color encoded pixels
+        const auto expected_idx = expected.at(i).color_index();
+        const auto actual_idx = actual.at(i).color_index();
 
-        // Fast path: identical indices are always equivalent
+        // Fast path: identical color indices are always equivalent
         if (expected_idx == actual_idx) {
             continue;
         }
 
-        // Transparency mismatch: index 0 is special (transparent), can't match non-zero
-        if (expected_idx == 0 || actual_idx == 0) {
+        // Transparency check: use is_transparent() to properly handle true-color encoding
+        const bool expected_transparent = expected.at(i).is_transparent();
+        const bool actual_transparent = actual.at(i).is_transparent();
+        if (expected_transparent != actual_transparent) {
             return false;
         }
+        if (expected_transparent) {
+            // Both transparent, skip color comparison
+            continue;
+        }
 
-        // Both non-zero but different indices: check if they reference the same color
+        // Both non-transparent but different indices: check if they reference the same color
         if (palette.at(expected_idx) != palette.at(actual_idx)) {
             return false;
         }

@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <format>
+#include <type_traits>
 
 #include "png++/png.hpp"
 
@@ -45,13 +46,22 @@ ChainableResult<void> PngIndexedImageSaver::save_to_file(
         png_pal.emplace_back(color.red(), color.green(), color.blue());
     }
 
-    // Generic lambda to write indexed PNG with any pixel type
+    // Generic lambda to write indexed PNG with any pixel type.
+    // For 4-bit PNGs, we explicitly extract the lower 4 bits (color_index) to be self-documenting.
+    // For 8-bit PNGs, we use the full index value which may encode both palette and color index.
     auto write_image = [&]<typename PixelType>(png::image<PixelType> &img) {
         img.set_palette(png_pal);
         for (std::size_t pixel_index = 0; pixel_index < image.size(); pixel_index++) {
             const auto row = pixel_index / image.width();
             const auto col = pixel_index % image.width();
-            img[row][col] = image.at(pixel_index).index();
+            if constexpr (std::is_same_v<PixelType, png::index_pixel_4>) {
+                // 4-bit PNG: extract only the lower 4 bits (color index within palette)
+                img[row][col] = image.at(pixel_index).color_index();
+            }
+            else {
+                // 8-bit PNG: preserve full value (may include palette index in upper 4 bits for true-color mode)
+                img[row][col] = image.at(pixel_index).index();
+            }
         }
         img.write(path);
     };

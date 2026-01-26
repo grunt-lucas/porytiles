@@ -1278,8 +1278,8 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
                 const std::size_t row = pixel_row_start + py;
                 const std::size_t col = pixel_col_start + px;
                 const IndexPixel old_pixel = tiles_img.at(row, col);
-                const std::size_t old_index = old_pixel.index();
-                const std::size_t new_index = (pal_idx << 4) | (old_index & 0x0F);
+                const std::size_t color_idx = old_pixel.color_index();
+                const std::size_t new_index = (pal_idx << 4) | color_idx;
                 tiles_img.set(row, col, IndexPixel{new_index});
             }
         }

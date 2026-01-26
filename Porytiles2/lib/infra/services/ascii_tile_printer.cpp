@@ -324,20 +324,9 @@ AsciiTilePrinter::print_tile(const PixelTile<IndexPixel> &tile, const Rgba32 &ex
     for (std::size_t row = 0; row < tile::side_length_pix; row++) {
         for (std::size_t col = 0; col < tile::side_length_pix; col++) {
             const auto index_pixel = tile.at(row, col);
-
-            Rgba32 pixel_color{};
-            if (index_pixel.index() < greyscale_pal.size()) {
-                pixel_color = greyscale_pal[index_pixel.index()];
-            }
-            else {
-                /*
-                 * TODO: once we have IndexPixel4 and IndexPixel8, we can remove this fallback and have different
-                 * templates for each type.
-                 */
-                // Fallback for out-of-range indices: use modulo to wrap around
-                pixel_color = greyscale_pal[index_pixel.index() % greyscale_pal.size()];
-            }
-
+            // Use color_index() to extract the lower 4 bits, which is always in range [0, 15].
+            // This handles both standard 4-bit pixels and true-color encoded 8-bit pixels correctly.
+            const Rgba32 pixel_color = greyscale_pal[index_pixel.color_index()];
             const auto color_style_bg = rgba_to_bg_style(pixel_color);
             ss << format_->format("{}", FormatParam{"  ", Style::bold | color_style_bg});
         }
