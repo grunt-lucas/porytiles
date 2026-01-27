@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "porytiles2/domain/algorithms/palette_matchers.hpp"
+#include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/services/animation_decompiler.hpp"
@@ -31,6 +32,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_metatiles_in_primary, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_tiles_in_primary, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_tiles_per_metatile, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, anim_pal_resolution_strategy, tileset.name(), std::unique_ptr<Tileset>);
 
     LayerModeConverter layer_mode_converter{format_, diag_, tile_printer_, extrinsic_transparency};
     MetatileDecompiler metatile_decompiler{format_, diag_, tile_printer_, extrinsic_transparency};
@@ -70,7 +72,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
         const auto &metatiles_bin = tileset.porymap_component().metatiles_bin();
 
         for (const auto &index_pixel_anim : porymap_animations | std::views::values) {
-            AnimationDecompiler anim_decompiler{};
+            AnimationDecompiler anim_decompiler{format_, diag_, tile_printer_, pal_printer_};
             // Decompile the IndexPixel animation to Rgba32 format
             // Palette index is recovered from metatile data by scanning for animation tile references
             Animation<Rgba32> rgba_anim = anim_decompiler.decompile_animation(
@@ -78,7 +80,8 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
                 tileset.porymap_component().pals(),
                 metatiles_bin,
                 tileset.porymap_component().tiles_png(),
-                extrinsic_transparency);
+                extrinsic_transparency,
+                anim_pal_resolution_strategy);
 
             new_porytiles_component->add_anim(std::move(rgba_anim));
         }

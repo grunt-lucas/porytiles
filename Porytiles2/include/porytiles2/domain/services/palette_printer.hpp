@@ -5,6 +5,7 @@
 
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/domain/packing/models/palette_hint.hpp"
 #include "porytiles2/utilities/count_map_to_list.hpp"
 
 namespace porytiles2 {

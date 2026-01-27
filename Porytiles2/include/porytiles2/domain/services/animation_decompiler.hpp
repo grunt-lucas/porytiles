@@ -5,13 +5,22 @@
 #include <span>
 #include <string>
 
+#include "gsl/pointers"
+
+#include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/models/animation.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
+#include "porytiles2/domain/models/tileset.hpp"
+#include "porytiles2/domain/services/palette_printer.hpp"
+#include "porytiles2/domain/services/tile_printer.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
+#include "porytiles2/xcut/config/config_value.hpp"
+#include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles2 {
 
@@ -29,18 +38,18 @@ namespace porytiles2 {
  * The correct palette for each animation tile is recovered by scanning metatile entries (metatiles_bin) to find which
  * palette index is used when referencing the animation tile. If a tile is referenced with multiple different palette
  * indices (ambiguous), the most common one is used.
- *
- * Usage during import:
- * @code
- * AnimationDecompiler decompiler;
- *
- * // Decompile to RGBA, recovering palette from metatile data
- * auto rgba_anim = decompiler.decompile_animation(
- *     index_anim, palettes, metatiles_bin, extrinsic_transparency);
- * @endcode
  */
 class AnimationDecompiler {
   public:
+    explicit AnimationDecompiler(
+        gsl::not_null<const TextFormatter *> format,
+        gsl::not_null<const UserDiagnostics *> diag,
+        gsl::not_null<const TilePrinter *> tile_printer,
+        gsl::not_null<const PalettePrinter *> pal_printer)
+        : format_{format}, diag_{diag}, tile_printer_{tile_printer}, pal_printer_{pal_printer}
+    {
+    }
+
     /**
      * @brief Decompiles an IndexPixel animation to Rgba32 format.
      *
@@ -54,14 +63,19 @@ class AnimationDecompiler {
      *
      * For transparent pixels (index 0), the extrinsic transparency color is used.
      *
-     * If an animation tile is not found in any metatile entry, falls back to palette 0. If multiple palettes reference
-     * the same tile (ambiguous), the most common palette index is used.
+     * If an animation tile is not found in any metatile entry, the behavior depends on the strategy parameter:
+     * - default_pal: Falls back to palette 0
+     * - internal_png_palette: Attempts to match frame PNG internal palettes against tileset palettes
+     * - full_tileset_scan: Not yet implemented (panics)
+     *
+     * If multiple palettes reference the same tile (ambiguous), the most common palette index is used.
      *
      * @param anim The indexed animation to decompile
      * @param pals Array of palettes to use for color lookup
      * @param metatiles_bin The metatile entries containing tile and palette references
      * @param tiles_png The indexed tiles.png image containing key frame tiles
      * @param extrinsic_transparency The RGBA color representing transparency
+     * @param strategy The strategy for resolving palette when no metatile reference is found
      * @pre All key frame tiles must be unique (no duplicates)
      * @return The decompiled RGBA animation with key frame and frames populated
      */
@@ -70,7 +84,14 @@ class AnimationDecompiler {
         const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals,
         std::span<const TilemapEntry> metatiles_bin,
         const Image<IndexPixel> &tiles_png,
-        const Rgba32 &extrinsic_transparency) const;
+        const Rgba32 &extrinsic_transparency,
+        const ConfigValue<AnimPalResolutionStrategy> &strategy) const;
+
+  private:
+    const TextFormatter *format_;
+    const UserDiagnostics *diag_;
+    const TilePrinter *tile_printer_;
+    const PalettePrinter *pal_printer_;
 };
 
 } // namespace porytiles2

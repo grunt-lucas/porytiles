@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
@@ -206,6 +207,20 @@ inline void print_extrinsic_transparency_note(
     config_note_text.emplace_back("");
     std::ranges::copy(extrinsic_transparency.prettify(format), std::back_inserter(config_note_text));
     diag.note(note_tag, config_note_text);
+}
+
+inline void print_anim_pal_resolution_strategy_remark(
+    const TextFormatter &format,
+    const UserDiagnostics &diag,
+    const std::string &remark_tag,
+    const ConfigValue<AnimPalResolutionStrategy> &strategy)
+{
+    std::vector<std::string> config_text;
+    config_text.push_back(
+        format.format("{} is '{}' due to configuration", strategy.name(), FormatParam{strategy, Style::bold}));
+    config_text.emplace_back("");
+    std::ranges::copy(strategy.prettify(format), std::back_inserter(config_text));
+    diag.remark(remark_tag, config_text);
 }
 
 } // namespace porytiles2
