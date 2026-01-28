@@ -9,6 +9,7 @@
 
 #include "porytiles2/domain/algorithms/diagnostic_stencils.hpp"
 #include "porytiles2/domain/algorithms/tile_converters.hpp"
+#include "porytiles2/domain/algorithms/tile_extractors.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/models/animation_frame.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
@@ -19,55 +20,6 @@
 namespace {
 
 using namespace porytiles2;
-
-/**
- * @brief Extracts animation tiles from a tiles.png image.
- *
- * @details
- * Extracts tiles from the specified offset in tiles.png for the given tile count. This is used to get the keyframe
- * tiles for an animation given its parameters.
- *
- * @param tiles_png The tiles.png image (indexed format)
- * @param tile_offset Starting tile index in tiles.png
- * @param tile_count Number of tiles to extract
- * @return Vector of extracted tiles
- */
-std::vector<PixelTile<IndexPixel>>
-extract_animation_tiles(const Image<IndexPixel> &tiles_png, std::size_t tile_offset, std::size_t tile_count)
-{
-    std::vector<PixelTile<IndexPixel>> result;
-    result.reserve(tile_count);
-
-    // tiles.png is 128 pixels wide (16 tiles per row)
-    constexpr std::size_t tiles_per_row = 16;
-
-    const std::size_t img_height = tiles_png.height();
-    const std::size_t total_tiles = (tiles_png.width() / tile::side_length_pix) * (img_height / tile::side_length_pix);
-
-    if (tile_offset + tile_count > total_tiles) {
-        panic("tile_offset + tile_count exceeds tiles in tiles.png");
-    }
-
-    for (std::size_t i = 0; i < tile_count; ++i) {
-        const std::size_t tile_idx = tile_offset + i;
-        const std::size_t tile_row = tile_idx / tiles_per_row;
-        const std::size_t tile_col = tile_idx % tiles_per_row;
-
-        const std::size_t pixel_x = tile_col * tile::side_length_pix;
-        const std::size_t pixel_y = tile_row * tile::side_length_pix;
-
-        PixelTile<IndexPixel> tile;
-        for (std::size_t row = 0; row < tile::side_length_pix; ++row) {
-            for (std::size_t col = 0; col < tile::side_length_pix; ++col) {
-                tile.set(row, col, tiles_png.at(pixel_y + row, pixel_x + col));
-            }
-        }
-
-        result.push_back(std::move(tile));
-    }
-
-    return result;
-}
 
 /**
  * @brief Matches a PNG internal palette against tileset palettes using exact slot-by-slot comparison.
@@ -84,6 +36,7 @@ extract_animation_tiles(const Image<IndexPixel> &tiles_png, std::size_t tile_off
  *
  * Intrinsically transparent colors (alpha == 0) are skipped during comparison since they represent unused slots.
  *
+ * @param anim The animation to search
  * @param png_pal The PNG file's internal palette
  * @param tileset_pals The tileset's palettes to match against
  * @param extrinsic_transparency The RGBA color representing transparency
@@ -91,7 +44,8 @@ extract_animation_tiles(const Image<IndexPixel> &tiles_png, std::size_t tile_off
  * @param pal_printer The palette printer for formatting palette output
  * @return The matching palette index, or std::nullopt if no match found
  */
-[[nodiscard]] std::optional<std::size_t> find_palette_index_from_png_palette(
+[[nodiscard]] std::optional<std::size_t> find_pal_index_from_png_pal(
+    const Animation<IndexPixel> &anim,
     const Palette<Rgba32> &png_pal,
     const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &tileset_pals,
     const Rgba32 &extrinsic_transparency,
@@ -157,10 +111,11 @@ extract_animation_tiles(const Image<IndexPixel> &tiles_png, std::size_t tile_off
 
         if (matches) {
             // Emit remark showing matched palette
-            // TODO: more context here, it prints and user has no idea what it's talking about
             std::vector<std::string> remark_lines;
             remark_lines.emplace_back(diag.formatter().format(
-                "PNG internal palette matched tileset palette {}", FormatParam{pal_idx, Style::bold}));
+                "animation '{}' internal palette matched tileset palette '{}'",
+                FormatParam{anim.name(), Style::bold},
+                FormatParam{pal_filename(pal_idx), Style::bold}));
             remark_lines.emplace_back("");
             std::ranges::copy(pal_printer.print_rgba_palette(tileset_pals[pal_idx]), std::back_inserter(remark_lines));
             diag.remark("animation-palette-match", remark_lines);
@@ -185,7 +140,7 @@ extract_animation_tiles(const Image<IndexPixel> &tiles_png, std::size_t tile_off
  * @param pal_printer The palette printer for formatting palette output
  * @return The matching palette index, or std::nullopt if no frame has a matching palette
  */
-[[nodiscard]] std::optional<std::size_t> find_palette_from_animation_frames(
+[[nodiscard]] std::optional<std::size_t> internal_png_pal_strategy(
     const Animation<IndexPixel> &anim,
     const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &tileset_pals,
     const Rgba32 &extrinsic_transparency,
@@ -194,8 +149,8 @@ extract_animation_tiles(const Image<IndexPixel> &tiles_png, std::size_t tile_off
 {
     for (const auto &frame : anim.frames_values()) {
         if (frame.has_palette()) {
-            auto match = find_palette_index_from_png_palette(
-                frame.palette(), tileset_pals, extrinsic_transparency, diag, pal_printer);
+            auto match = find_pal_index_from_png_pal(
+                anim, frame.palette(), tileset_pals, extrinsic_transparency, diag, pal_printer);
             if (match.has_value()) {
                 return match;
             }
@@ -229,7 +184,7 @@ extract_animation_tiles(const Image<IndexPixel> &tiles_png, std::size_t tile_off
  * @pre tile_count must be greater than 0
  * @return The palette index used by all animation tiles
  */
-std::size_t find_palette_for_animation_tiles(
+std::size_t find_pal_for_anim_tiles(
     const std::string &anim_name,
     std::size_t tile_offset,
     std::size_t tile_count,
@@ -256,16 +211,16 @@ std::size_t find_palette_for_animation_tiles(
     if (found_pal_indices.empty()) {
         diag.remark(
             "animation-palette-resolution-strategy",
-            diag.formatter().format(
-                "animation '{}' not referenced in any metatiles", FormatParam{anim_name, Style::bold}));
+            "animation '{}' not referenced in any metatiles, falling back to strategy",
+            FormatParam{anim_name, Style::bold});
         diag.remark_note("animation-palette-resolution-strategy", format_config_note(diag.formatter(), strategy));
+
         switch (strategy) {
         case AnimPalResolutionStrategy::default_pal:
             return 0;
 
-        case AnimPalResolutionStrategy::internal_png_palette: {
-            const auto match =
-                find_palette_from_animation_frames(anim, pals, extrinsic_transparency, diag, pal_printer);
+        case AnimPalResolutionStrategy::internal_png_pal: {
+            const auto match = internal_png_pal_strategy(anim, pals, extrinsic_transparency, diag, pal_printer);
             if (match.has_value()) {
                 return match.value();
             }
@@ -289,7 +244,9 @@ std::size_t find_palette_for_animation_tiles(
 
     if (found_pal_indices.size() > 1) {
         /*
-         * TODO: ANIM: handle this without panicking, see comment in main decompile_animation function
+         * TODO: ANIM: adapt this code so that it computes a separate pal index for each subtile of the key frame.
+         * Technically, advanced users could make animations where different subtiles use different palettes. None of
+         * the vanilla game animations work this way, but it's possible and thus a use-case I want to support.
          */
         std::string pal_list;
         for (const auto &pal_idx : found_pal_indices) {
@@ -331,7 +288,7 @@ Animation<Rgba32> AnimationDecompiler::decompile_animation(
      * vanilla game animations work this way, but it's possible and thus a use-case I want to support.
      */
     // Recover the palette index by scanning metatiles for all animation tiles
-    const std::size_t pal_index = find_palette_for_animation_tiles(
+    const std::size_t pal_index = find_pal_for_anim_tiles(
         anim.name(),
         tile_offset,
         tile_count,
@@ -347,7 +304,7 @@ Animation<Rgba32> AnimationDecompiler::decompile_animation(
 
     // Extract key frame tiles from tiles.png
     std::vector<PixelTile<IndexPixel>> key_frame_index_tiles =
-        extract_animation_tiles(tiles_png, tile_offset, tile_count);
+        extract_tiles_from_image(tiles_png, tile_offset, tile_count);
 
     // Check for duplicate tiles within the key frame
     for (std::size_t i = 0; i < key_frame_index_tiles.size(); ++i) {

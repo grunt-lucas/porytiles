@@ -20,7 +20,7 @@ enum class AnimPalResolutionStrategy {
     /**
      * @brief Use the Porymap-component frame PNG internal palette, if present.
      */
-    internal_png_palette,
+    internal_png_pal,
 
     /**
      * @brief Scan layouts config and find all tilesets paired with current tileset, see if an index is present in any.
@@ -35,7 +35,7 @@ anim_pal_resolution_strategy_from_str(const std::string &str)
         return std::optional{AnimPalResolutionStrategy::default_pal};
     }
     if (str == "internal_png_palette") {
-        return std::optional{AnimPalResolutionStrategy::internal_png_palette};
+        return std::optional{AnimPalResolutionStrategy::internal_png_pal};
     }
     if (str == "full_tileset_scan") {
         return std::optional{AnimPalResolutionStrategy::full_tileset_scan};
@@ -48,7 +48,7 @@ anim_pal_resolution_strategy_from_str(const std::string &str)
     switch (s) {
     case AnimPalResolutionStrategy::default_pal:
         return "default_pal";
-    case AnimPalResolutionStrategy::internal_png_palette:
+    case AnimPalResolutionStrategy::internal_png_pal:
         return "internal_png_palette";
     case AnimPalResolutionStrategy::full_tileset_scan:
         return "full_tileset_scan";

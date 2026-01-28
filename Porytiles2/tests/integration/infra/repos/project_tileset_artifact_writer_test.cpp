@@ -125,7 +125,7 @@ class MockDomainConfig : public DomainConfig {
     [[nodiscard]] ChainableResult<ConfigValue<AnimPalResolutionStrategy>>
     anim_pal_resolution_strategy_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{AnimPalResolutionStrategy::internal_png_palette, "anim_pal_resolution_strategy", "mock", {}};
+        return ConfigValue{AnimPalResolutionStrategy::internal_png_pal, "anim_pal_resolution_strategy", "mock", {}};
     }
 };
 

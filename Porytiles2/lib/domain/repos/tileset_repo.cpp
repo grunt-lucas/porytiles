@@ -267,8 +267,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
             std::unique_ptr<Tileset>);
         if (!key_provider_->artifact_exists(pal_key)) {
             diag_->error(
-                missing_required_artifact_tag,
-                diag_->formatter().format(missing_required_artifact_msg, FormatParam{pal_key.key(), Style::bold}));
+                missing_required_artifact_tag, missing_required_artifact_msg, FormatParam{pal_key.key(), Style::bold});
             fail_at_exit = true;
             continue;
         }
@@ -376,8 +375,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     }
     else {
         diag_->warning(
-            missing_optional_artifact_tag,
-            diag_->formatter().format(missing_optional_artifact_msg, FormatParam{attr_csv_key.key(), Style::bold}));
+            missing_optional_artifact_tag, missing_optional_artifact_msg, FormatParam{attr_csv_key.key(), Style::bold});
         diag_->warning_note(missing_optional_artifact_tag, "all attributes will receive default or inferred values");
     }
 
@@ -448,8 +446,8 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
                 if (!key_provider_->artifact_exists(frame_key)) {
                     diag_->error(
                         missing_required_artifact_tag,
-                        diag_->formatter().format(
-                            missing_required_artifact_msg, FormatParam{frame_key.key(), Style::bold}));
+                        missing_required_artifact_msg,
+                        FormatParam{frame_key.key(), Style::bold});
                     fail_at_exit = true;
                     anim_has_missing_frames = true;
                     continue;

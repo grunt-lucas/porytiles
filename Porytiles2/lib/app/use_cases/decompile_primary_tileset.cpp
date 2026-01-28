@@ -31,9 +31,7 @@ ChainableResult<void> DecompilePrimaryTileset::decompile(const std::string &tile
 
     if (!tileset_repo_->checksum_provider().cached_checksums_exist(tileset_name)) {
         diag_->warning(
-            "missing-checksums",
-            diag_->formatter().format(
-                "no cached checksums found for tileset '{}'", FormatParam{tileset_name, Style::bold}));
+            "missing-checksums", "no cached checksums found for tileset '{}'", FormatParam{tileset_name, Style::bold});
     }
 
     // 3. If `PorytilesTilesetComponent` is not empty, compare with cached checksums in `tileset.cache.json`.

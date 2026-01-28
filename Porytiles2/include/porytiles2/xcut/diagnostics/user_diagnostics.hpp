@@ -2,6 +2,7 @@
 
 #include <ranges>
 #include <string>
+#include <type_traits>
 
 #include "gsl/pointers"
 
@@ -63,6 +64,35 @@ class UserDiagnostics {
     }
 
     /**
+     * @brief Variadic template overload for formatted remark messages.
+     *
+     * @details
+     * Enables inline formatting of remark messages by accepting a format string and variadic FormatParam arguments.
+     * The format string uses fmtlib-style `{}` placeholders.
+     *
+     * Example:
+     * ```C++
+     * diag.remark("tile-assign", "Assigned tile {} to palette {}", tile_id, pal_idx);
+     * ```
+     *
+     * @tparam FirstParam Type of the first format parameter
+     * @tparam RestParams Types of remaining format parameters
+     * @param tag Categorization tag for the remark
+     * @param format_str Format string with `{}` placeholders
+     * @param first First parameter to substitute
+     * @param rest Remaining parameters to substitute
+     */
+    template <typename FirstParam, typename... RestParams>
+        requires(
+            !std::is_same_v<std::decay_t<FirstParam>, std::vector<FormatParam>> &&
+            std::is_constructible_v<FormatParam, FirstParam> &&
+            (std::is_constructible_v<FormatParam, RestParams> && ...))
+    void remark(const std::string &tag, const std::string &format_str, FirstParam &&first, RestParams &&...rest) const
+    {
+        remark(tag, formatter().format(format_str, std::forward<FirstParam>(first), std::forward<RestParams>(rest)...));
+    }
+
+    /**
      * @brief Display a tagged warning message.
      *
      * @details
@@ -83,6 +113,36 @@ class UserDiagnostics {
     void warning(const std::string &tag, const std::string &msg) const
     {
         warning(tag, std::vector{msg});
+    }
+
+    /**
+     * @brief Variadic template overload for formatted warning messages.
+     *
+     * @details
+     * Enables inline formatting of warning messages by accepting a format string and variadic FormatParam arguments.
+     * The format string uses fmtlib-style `{}` placeholders.
+     *
+     * Example:
+     * ```C++
+     * diag.warning("parse", "File {} has {} errors", filename, count);
+     * ```
+     *
+     * @tparam FirstParam Type of the first format parameter
+     * @tparam RestParams Types of remaining format parameters
+     * @param tag Categorization tag for the warning
+     * @param format_str Format string with `{}` placeholders
+     * @param first First parameter to substitute
+     * @param rest Remaining parameters to substitute
+     */
+    template <typename FirstParam, typename... RestParams>
+        requires(
+            !std::is_same_v<std::decay_t<FirstParam>, std::vector<FormatParam>> &&
+            std::is_constructible_v<FormatParam, FirstParam> &&
+            (std::is_constructible_v<FormatParam, RestParams> && ...))
+    void warning(const std::string &tag, const std::string &format_str, FirstParam &&first, RestParams &&...rest) const
+    {
+        warning(
+            tag, formatter().format(format_str, std::forward<FirstParam>(first), std::forward<RestParams>(rest)...));
     }
 
     /**
@@ -110,6 +170,35 @@ class UserDiagnostics {
     }
 
     /**
+     * @brief Variadic template overload for formatted error messages.
+     *
+     * @details
+     * Enables inline formatting of error messages by accepting a format string and variadic FormatParam arguments.
+     * The format string uses fmtlib-style `{}` placeholders.
+     *
+     * Example:
+     * ```C++
+     * diag.error("validation", "Expected {} but got {}", expected, actual);
+     * ```
+     *
+     * @tparam FirstParam Type of the first format parameter
+     * @tparam RestParams Types of remaining format parameters
+     * @param tag Categorization tag for the error
+     * @param format_str Format string with `{}` placeholders
+     * @param first First parameter to substitute
+     * @param rest Remaining parameters to substitute
+     */
+    template <typename FirstParam, typename... RestParams>
+        requires(
+            !std::is_same_v<std::decay_t<FirstParam>, std::vector<FormatParam>> &&
+            std::is_constructible_v<FormatParam, FirstParam> &&
+            (std::is_constructible_v<FormatParam, RestParams> && ...))
+    void error(const std::string &tag, const std::string &format_str, FirstParam &&first, RestParams &&...rest) const
+    {
+        error(tag, formatter().format(format_str, std::forward<FirstParam>(first), std::forward<RestParams>(rest)...));
+    }
+
+    /**
      * @brief Display a tagged note message associated with a remark.
      *
      * @details
@@ -131,6 +220,37 @@ class UserDiagnostics {
     void remark_note(const std::string &tag, const std::string &msg) const
     {
         remark_note(tag, std::vector{msg});
+    }
+
+    /**
+     * @brief Variadic template overload for formatted remark note messages.
+     *
+     * @details
+     * Enables inline formatting of remark note messages by accepting a format string and variadic FormatParam
+     * arguments. The format string uses fmtlib-style `{}` placeholders.
+     *
+     * Example:
+     * ```C++
+     * diag.remark_note("tile-assign", "Previous assignment was at index {}", prev_idx);
+     * ```
+     *
+     * @tparam FirstParam Type of the first format parameter
+     * @tparam RestParams Types of remaining format parameters
+     * @param tag Categorization tag for the note (should match the parent remark's tag)
+     * @param format_str Format string with `{}` placeholders
+     * @param first First parameter to substitute
+     * @param rest Remaining parameters to substitute
+     */
+    template <typename FirstParam, typename... RestParams>
+        requires(
+            !std::is_same_v<std::decay_t<FirstParam>, std::vector<FormatParam>> &&
+            std::is_constructible_v<FormatParam, FirstParam> &&
+            (std::is_constructible_v<FormatParam, RestParams> && ...))
+    void
+    remark_note(const std::string &tag, const std::string &format_str, FirstParam &&first, RestParams &&...rest) const
+    {
+        remark_note(
+            tag, formatter().format(format_str, std::forward<FirstParam>(first), std::forward<RestParams>(rest)...));
     }
 
     /**
@@ -158,6 +278,37 @@ class UserDiagnostics {
     }
 
     /**
+     * @brief Variadic template overload for formatted warning note messages.
+     *
+     * @details
+     * Enables inline formatting of warning note messages by accepting a format string and variadic FormatParam
+     * arguments. The format string uses fmtlib-style `{}` placeholders.
+     *
+     * Example:
+     * ```C++
+     * diag.warning_note("parse", "Consider using {} instead", alternative);
+     * ```
+     *
+     * @tparam FirstParam Type of the first format parameter
+     * @tparam RestParams Types of remaining format parameters
+     * @param tag Categorization tag for the note (should match the parent warning's tag)
+     * @param format_str Format string with `{}` placeholders
+     * @param first First parameter to substitute
+     * @param rest Remaining parameters to substitute
+     */
+    template <typename FirstParam, typename... RestParams>
+        requires(
+            !std::is_same_v<std::decay_t<FirstParam>, std::vector<FormatParam>> &&
+            std::is_constructible_v<FormatParam, FirstParam> &&
+            (std::is_constructible_v<FormatParam, RestParams> && ...))
+    void
+    warning_note(const std::string &tag, const std::string &format_str, FirstParam &&first, RestParams &&...rest) const
+    {
+        warning_note(
+            tag, formatter().format(format_str, std::forward<FirstParam>(first), std::forward<RestParams>(rest)...));
+    }
+
+    /**
      * @brief Display a tagged note message associated with an error.
      *
      * @details
@@ -179,6 +330,37 @@ class UserDiagnostics {
     void error_note(const std::string &tag, const std::string &msg) const
     {
         error_note(tag, std::vector{msg});
+    }
+
+    /**
+     * @brief Variadic template overload for formatted error note messages.
+     *
+     * @details
+     * Enables inline formatting of error note messages by accepting a format string and variadic FormatParam arguments.
+     * The format string uses fmtlib-style `{}` placeholders.
+     *
+     * Example:
+     * ```C++
+     * diag.error_note("validation", "See definition at {}:{}", file, line);
+     * ```
+     *
+     * @tparam FirstParam Type of the first format parameter
+     * @tparam RestParams Types of remaining format parameters
+     * @param tag Categorization tag for the note (should match the parent error's tag)
+     * @param format_str Format string with `{}` placeholders
+     * @param first First parameter to substitute
+     * @param rest Remaining parameters to substitute
+     */
+    template <typename FirstParam, typename... RestParams>
+        requires(
+            !std::is_same_v<std::decay_t<FirstParam>, std::vector<FormatParam>> &&
+            std::is_constructible_v<FormatParam, FirstParam> &&
+            (std::is_constructible_v<FormatParam, RestParams> && ...))
+    void
+    error_note(const std::string &tag, const std::string &format_str, FirstParam &&first, RestParams &&...rest) const
+    {
+        error_note(
+            tag, formatter().format(format_str, std::forward<FirstParam>(first), std::forward<RestParams>(rest)...));
     }
 
     /**

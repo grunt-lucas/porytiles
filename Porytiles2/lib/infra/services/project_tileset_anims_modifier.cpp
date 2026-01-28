@@ -257,9 +257,8 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
     if (include_exists && declaration_exists) {
         diagnostics_->remark(
             "wire-tileset-animation",
-            diagnostics_->formatter().format(
-                "anim include and declaration for '{}' already exist, skipping wire operation",
-                FormatParam{tileset_name, Style::bold}));
+            "anim include and declaration for '{}' already exist, skipping wire operation",
+            FormatParam{tileset_name, Style::bold});
         return {};
     }
 
@@ -359,9 +358,8 @@ ProjectTilesetAnimsModifier::remove_include_for_tileset(const std::string &tiles
     if (!include_index.has_value() && !decl_index.has_value()) {
         diagnostics_->remark(
             "wire-tileset-animation",
-            diagnostics_->formatter().format(
-                "anim include and declaration for '{}' not found, skipping remove operation",
-                FormatParam{tileset_name, Style::bold}));
+            "anim include and declaration for '{}' not found, skipping remove operation",
+            FormatParam{tileset_name, Style::bold});
         return {};
     }
 

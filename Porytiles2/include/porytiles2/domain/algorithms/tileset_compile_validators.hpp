@@ -81,7 +81,8 @@ inline void report_validation_error_in_metatile(
     auto [layer, subtile] = metatile::from_internal_tile_index(internal_tile_index);
     std::vector errors = {services.diag.formatter().format(
         "{}: {}",
-        FormatParam{metatile::message_header(services.diag.formatter(), metatile_index, layer, subtile, row, col), Style::bold},
+        FormatParam{
+            metatile::message_header(services.diag.formatter(), metatile_index, layer, subtile, row, col), Style::bold},
         FormatParam{error_message})};
     std::vector highlight = services.tile_printer.print_metatile_pixel_highlight(
         metatile, layer, subtile, row, col, extrinsic_transparency);
@@ -123,7 +124,8 @@ inline void report_validation_error_in_anim(
     std::vector errors = {services.diag.formatter().format(
         "{}: {}",
         FormatParam{
-            anim::message_header(services.diag.formatter(), anim_name, frame_name, internal_tile_index, row, col), Style::bold},
+            anim::message_header(services.diag.formatter(), anim_name, frame_name, internal_tile_index, row, col),
+            Style::bold},
         FormatParam{error_message})};
     std::vector highlight = services.tile_printer.print_tile_pixel_highlight(tile, row, col, extrinsic_transparency);
     std::ranges::copy(highlight, std::back_inserter(errors));
@@ -159,7 +161,8 @@ inline void report_validation_error_in_anim_tile(
 {
     std::vector errors = {services.diag.formatter().format(
         "{}: {}",
-        FormatParam{anim::message_header(services.diag.formatter(), anim_name, frame_name, internal_tile_index), Style::bold},
+        FormatParam{
+            anim::message_header(services.diag.formatter(), anim_name, frame_name, internal_tile_index), Style::bold},
         FormatParam{error_message})};
     std::vector tile_visual = services.tile_printer.print_tile(tile, extrinsic_transparency);
     std::ranges::copy(tile_visual, std::back_inserter(errors));
@@ -223,10 +226,9 @@ inline void report_color_counts(
     if (metatiles.size() > metatile_limit) {
         services.diag.error(
             "metatile-limit-exceeded",
-            services.diag.formatter().format(
-                "too many metatiles ({}) in Porytiles component for tileset '{}'",
-                FormatParam{metatiles.size(), Style::bold},
-                FormatParam{tileset_name, Style::bold}));
+            "too many metatiles ({}) in Porytiles component for tileset '{}'",
+            FormatParam{metatiles.size(), Style::bold},
+            FormatParam{tileset_name, Style::bold});
 
         std::vector<std::string> note_text;
         note_text.push_back(services.diag.formatter().format(
@@ -755,7 +757,8 @@ inline void report_color_counts(
                 hit_error = true;
                 std::vector errors = {services.diag.formatter().format(
                     "{}: {}",
-                    FormatParam{metatile::message_header(services.diag.formatter(), metatile_index, subtile), Style::bold},
+                    FormatParam{
+                        metatile::message_header(services.diag.formatter(), metatile_index, subtile), Style::bold},
                     FormatParam{"non-transparent content on all three layers"})};
                 std::vector bottom_highlight = services.tile_printer.print_metatile_tile_highlight(
                     metatile, metatile::Layer::bottom, subtile, extrinsic_transparency);
@@ -1131,7 +1134,12 @@ inline void report_color_counts(
                     services.diag.error_note(
                         "global-color-count-violation",
                         build_porytiles_pal_highlight_lines(
-                            services.diag.formatter(), services.pal_printer, "violating slot", pal, filename, violating_slot));
+                            services.diag.formatter(),
+                            services.pal_printer,
+                            "violating slot",
+                            pal,
+                            filename,
+                            violating_slot));
                 }
             } // END: loop over all slots in override pal
 
@@ -1201,7 +1209,12 @@ inline void report_color_counts(
                 services.diag.error_note(
                     "global-color-count-violation",
                     build_pal_hint_highlight_lines(
-                        services.diag.formatter(), services.pal_printer, "violating slot", hint, hint.name(), violating_slot));
+                        services.diag.formatter(),
+                        services.pal_printer,
+                        "violating slot",
+                        hint,
+                        hint.name(),
+                        violating_slot));
             }
         } // END: loop over all slots in pal hint
 
@@ -1229,7 +1242,8 @@ inline void report_color_counts(
                 FormatParam{count_max, Style::bold}));
         details::report_color_counts("global-color-count-violation", services, color_counts);
         services.diag.error_note(
-            "global-color-count-violation", build_global_color_limit_lines(services.diag.formatter(), count_max, num_pals_cfg));
+            "global-color-count-violation",
+            build_global_color_limit_lines(services.diag.formatter(), count_max, num_pals_cfg));
         return FormattableError{
             "Found '{}' unique colors globally, limit is '{}'.",
             FormatParam{color_counts.size(), Style::bold},

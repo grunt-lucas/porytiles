@@ -32,9 +32,7 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
 
     if (!tileset_repo_->checksum_provider().cached_checksums_exist(tileset_name)) {
         diag_->warning(
-            "missing-checksums",
-            diag_->formatter().format(
-                "no cached checksums found for tileset '{}'", FormatParam{tileset_name, Style::bold}));
+            "missing-checksums", "no cached checksums found for tileset '{}'", FormatParam{tileset_name, Style::bold});
     }
 
     // Only perform the checksum checks if: 1) cached checksums exist and 2) the user is requesting checksum validation
