@@ -4,7 +4,6 @@
 #include <vector>
 
 #include "porytiles2/utilities/result/error.hpp"
-#include "porytiles2/utilities/text/plain_text_formatter.hpp"
 
 namespace porytiles2 {
 
@@ -14,10 +13,22 @@ void BufferedUserDiagnostics::remark(const std::string &tag, const std::vector<s
     remark_tag_counts_[tag]++;
 }
 
-void BufferedUserDiagnostics::note(const std::string &tag, const std::vector<std::string> &lines) const
+void BufferedUserDiagnostics::remark_note(const std::string &tag, const std::vector<std::string> &lines) const
 {
-    notes_.push_back(lines);
-    note_tag_counts_[tag]++;
+    remark_notes_.push_back(lines);
+    remark_note_tag_counts_[tag]++;
+}
+
+void BufferedUserDiagnostics::warning_note(const std::string &tag, const std::vector<std::string> &lines) const
+{
+    warning_notes_.push_back(lines);
+    warning_note_tag_counts_[tag]++;
+}
+
+void BufferedUserDiagnostics::error_note(const std::string &tag, const std::vector<std::string> &lines) const
+{
+    error_notes_.push_back(lines);
+    error_note_tag_counts_[tag]++;
 }
 
 void BufferedUserDiagnostics::warning(const std::string &tag, const std::vector<std::string> &lines) const
@@ -34,20 +45,17 @@ void BufferedUserDiagnostics::error(const std::string &tag, const std::vector<st
 
 void BufferedUserDiagnostics::emit_fatal_proximate(const Error &err) const
 {
-    PlainTextFormatter formatter{};
-    fatal_proximates_.push_back(err.details(formatter));
+    fatal_proximates_.push_back(err.details(formatter()));
 }
 
 void BufferedUserDiagnostics::emit_fatal_step(const Error &err) const
 {
-    PlainTextFormatter formatter{};
-    fatal_steps_.push_back(err.details(formatter));
+    fatal_steps_.push_back(err.details(formatter()));
 }
 
 void BufferedUserDiagnostics::emit_fatal_root(const Error &err) const
 {
-    PlainTextFormatter formatter{};
-    fatal_roots_.push_back(err.details(formatter));
+    fatal_roots_.push_back(err.details(formatter()));
 }
 
 } // namespace porytiles2

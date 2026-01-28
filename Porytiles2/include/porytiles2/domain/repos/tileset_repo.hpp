@@ -12,7 +12,6 @@
 #include "porytiles2/domain/repos/tileset_artifact_writer.hpp"
 #include "porytiles2/domain/services/tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
-#include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles2 {
@@ -38,7 +37,6 @@ class TilesetRepo final {
      * @param key_provider Provider for generating keys and discovering artifacts in the backing store
      * @param reader Reader implementation for loading artifacts from the backing store
      * @param writer Writer implementation for saving artifacts to the backing store
-     * @param format Pointer to a TextFormatter for this repo
      * @param diag Pointer to a UserDiagnostics for this repo
      */
     explicit TilesetRepo(
@@ -47,10 +45,9 @@ class TilesetRepo final {
         gsl::not_null<const TilesetArtifactKeyProvider *> key_provider,
         gsl::not_null<const TilesetArtifactReader *> reader,
         gsl::not_null<TilesetArtifactWriter *> writer,
-        gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag)
         : checksum_provider_{checksum_provider}, metadata_provider_{metadata_provider}, key_provider_{key_provider},
-          reader_{reader}, writer_{writer}, format_{format}, diag_{diag}
+          reader_{reader}, writer_{writer}, diag_{diag}
     {
     }
 
@@ -108,7 +105,6 @@ class TilesetRepo final {
     const TilesetArtifactKeyProvider *key_provider_;
     const TilesetArtifactReader *reader_;
     TilesetArtifactWriter *writer_;
-    const TextFormatter *format_;
     const UserDiagnostics *diag_;
 };
 

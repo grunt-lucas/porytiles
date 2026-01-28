@@ -72,7 +72,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
         const auto &metatiles_bin = tileset.porymap_component().metatiles_bin();
 
         for (const auto &index_pixel_anim : porymap_animations | std::views::values) {
-            AnimationDecompiler anim_decompiler{format_, diag_, tile_printer_, pal_printer_};
+            AnimationDecompiler anim_decompiler{diag_, tile_printer_, pal_printer_};
             // Decompile the IndexPixel animation to Rgba32 format
             // Palette index is recovered from metatile data by scanning for animation tile references
             Animation<Rgba32> rgba_anim = anim_decompiler.decompile_animation(

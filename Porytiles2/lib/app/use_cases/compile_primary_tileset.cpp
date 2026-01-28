@@ -24,7 +24,8 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
     auto maybe_tileset = tileset_repo_->load(tileset_name);
     if (!maybe_tileset.has_value()) {
         return ChainableResult<void>{
-            FormattableError{format_->format("Failed to load tileset '{}'.", FormatParam{tileset_name, Style::bold})},
+            FormattableError{
+                diag_->formatter().format("Failed to load tileset '{}'.", FormatParam{tileset_name, Style::bold})},
             maybe_tileset};
     }
     const auto tileset = std::move(maybe_tileset.value());
@@ -32,7 +33,8 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
     if (!tileset_repo_->checksum_provider().cached_checksums_exist(tileset_name)) {
         diag_->warning(
             "missing-checksums",
-            format_->format("no cached checksums found for tileset '{}'", FormatParam{tileset_name, Style::bold}));
+            diag_->formatter().format(
+                "no cached checksums found for tileset '{}'", FormatParam{tileset_name, Style::bold}));
     }
 
     // Only perform the checksum checks if: 1) cached checksums exist and 2) the user is requesting checksum validation
@@ -54,7 +56,7 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
                 err_msg.reserve(mismatched_keys.size());
                 err_msg.emplace_back("Unimported changes present in Porymap assets:");
                 for (const auto &key : mismatched_keys) {
-                    err_msg.emplace_back(format_->format("  {}", FormatParam{key.key(), Style::bold}));
+                    err_msg.emplace_back(diag_->formatter().format("  {}", FormatParam{key.key(), Style::bold}));
                 }
                 return ChainableResult<void>{FormattableError{err_msg}};
             }

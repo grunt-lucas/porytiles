@@ -112,13 +112,12 @@ class DecompileTilesetCommand final : public Command {
         ProjectTilesetMetadataProvider metadata_provider{project_root, text_formatter, diag.get()};
         ProjectTilesetMetadataWriter metadata_writer{project_root, text_formatter};
         IncbinDeclarationAppender incbin_appender{project_root, text_formatter};
-        ProjectTilesetAnimsModifier tileset_anims_modifier{project_root, &config, text_formatter, diag.get()};
+        ProjectTilesetAnimsModifier tileset_anims_modifier{project_root, &config, diag.get()};
         ProjectPorytilesTilesetManager tileset_manager{
             project_root,
             &metadata_provider,
             &metadata_writer,
             &config,
-            text_formatter,
             diag.get(),
             &incbin_appender,
             &tileset_anims_modifier};
@@ -148,24 +147,10 @@ class DecompileTilesetCommand final : public Command {
             &behavior_map_provider};
         ProjectArtifactChecksumProvider checksum_provider{project_root};
         TilesetRepo repo{
-            &checksum_provider,
-            &metadata_provider,
-            &key_provider,
-            &artifact_reader,
-            &artifact_writer,
-            text_formatter,
-            diag.get()};
+            &checksum_provider, &metadata_provider, &key_provider, &artifact_reader, &artifact_writer, diag.get()};
 
         DecompilePrimaryTileset decompile_use_case{
-            &repo,
-            &decompiler,
-            &compiler,
-            &metadata_provider,
-            &tileset_manager,
-            &config,
-            &config,
-            text_formatter,
-            diag.get()};
+            &repo, &decompiler, &compiler, &metadata_provider, &tileset_manager, &config, &config, diag.get()};
 
         // Run the use case
         auto decompile_result = decompile_use_case.decompile(tileset_name_);

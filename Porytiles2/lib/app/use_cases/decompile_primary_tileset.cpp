@@ -23,7 +23,8 @@ ChainableResult<void> DecompilePrimaryTileset::decompile(const std::string &tile
     auto maybe_tileset = tileset_repo_->load(tileset_name);
     if (!maybe_tileset.has_value()) {
         return ChainableResult<void>{
-            FormattableError{format_->format("Failed to load tileset '{}'.", FormatParam{tileset_name, Style::bold})},
+            FormattableError{
+                diag_->formatter().format("Failed to load tileset '{}'.", FormatParam{tileset_name, Style::bold})},
             maybe_tileset};
     }
     const auto tileset = std::move(maybe_tileset.value());
@@ -31,7 +32,8 @@ ChainableResult<void> DecompilePrimaryTileset::decompile(const std::string &tile
     if (!tileset_repo_->checksum_provider().cached_checksums_exist(tileset_name)) {
         diag_->warning(
             "missing-checksums",
-            format_->format("no cached checksums found for tileset '{}'", FormatParam{tileset_name, Style::bold}));
+            diag_->formatter().format(
+                "no cached checksums found for tileset '{}'", FormatParam{tileset_name, Style::bold}));
     }
 
     // 3. If `PorytilesTilesetComponent` is not empty, compare with cached checksums in `tileset.cache.json`.
@@ -54,7 +56,7 @@ ChainableResult<void> DecompilePrimaryTileset::decompile(const std::string &tile
                 err_msg.reserve(mismatched_keys.size());
                 err_msg.emplace_back("Uncompiled changes present in Porytiles assets:");
                 for (const auto &key : mismatched_keys) {
-                    err_msg.emplace_back(format_->format("  {}", FormatParam{key.key(), Style::bold}));
+                    err_msg.emplace_back(diag_->formatter().format("  {}", FormatParam{key.key(), Style::bold}));
                 }
                 return ChainableResult<void>{FormattableError{err_msg}};
             }

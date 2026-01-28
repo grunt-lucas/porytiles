@@ -16,7 +16,6 @@
 #include "porytiles2/utilities/filesystem_utils.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
-#include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/config/unwrap_config.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
@@ -43,7 +42,6 @@ namespace porytiles2 {
  */
 struct TilesetCompileValidatorServices {
     const DomainConfig &config;
-    const TextFormatter &format;
     const UserDiagnostics &diag;
     const TilePrinter &tile_printer;
     const PalettePrinter &pal_printer;
@@ -81,9 +79,9 @@ inline void report_validation_error_in_metatile(
     const Rgba32 &extrinsic_transparency)
 {
     auto [layer, subtile] = metatile::from_internal_tile_index(internal_tile_index);
-    std::vector errors = {services.format.format(
+    std::vector errors = {services.diag.formatter().format(
         "{}: {}",
-        FormatParam{metatile::message_header(services.format, metatile_index, layer, subtile, row, col), Style::bold},
+        FormatParam{metatile::message_header(services.diag.formatter(), metatile_index, layer, subtile, row, col), Style::bold},
         FormatParam{error_message})};
     std::vector highlight = services.tile_printer.print_metatile_pixel_highlight(
         metatile, layer, subtile, row, col, extrinsic_transparency);
@@ -122,10 +120,10 @@ inline void report_validation_error_in_anim(
     const std::string &error_message,
     const Rgba32 &extrinsic_transparency)
 {
-    std::vector errors = {services.format.format(
+    std::vector errors = {services.diag.formatter().format(
         "{}: {}",
         FormatParam{
-            anim::message_header(services.format, anim_name, frame_name, internal_tile_index, row, col), Style::bold},
+            anim::message_header(services.diag.formatter(), anim_name, frame_name, internal_tile_index, row, col), Style::bold},
         FormatParam{error_message})};
     std::vector highlight = services.tile_printer.print_tile_pixel_highlight(tile, row, col, extrinsic_transparency);
     std::ranges::copy(highlight, std::back_inserter(errors));
@@ -159,9 +157,9 @@ inline void report_validation_error_in_anim_tile(
     const std::string &error_message,
     const Rgba32 &extrinsic_transparency)
 {
-    std::vector errors = {services.format.format(
+    std::vector errors = {services.diag.formatter().format(
         "{}: {}",
-        FormatParam{anim::message_header(services.format, anim_name, frame_name, internal_tile_index), Style::bold},
+        FormatParam{anim::message_header(services.diag.formatter(), anim_name, frame_name, internal_tile_index), Style::bold},
         FormatParam{error_message})};
     std::vector tile_visual = services.tile_printer.print_tile(tile, extrinsic_transparency);
     std::ranges::copy(tile_visual, std::back_inserter(errors));
@@ -188,7 +186,7 @@ inline void report_color_counts(
     color_lines.emplace_back("color counts:");
     auto counts = services.pal_printer.print_rgba_pal_counts(color_counts);
     std::ranges::copy(counts, std::back_inserter(color_lines));
-    services.diag.note(tag, color_lines);
+    services.diag.error_note(tag, color_lines);
 }
 
 } // namespace details
@@ -225,17 +223,17 @@ inline void report_color_counts(
     if (metatiles.size() > metatile_limit) {
         services.diag.error(
             "metatile-limit-exceeded",
-            services.format.format(
+            services.diag.formatter().format(
                 "too many metatiles ({}) in Porytiles component for tileset '{}'",
                 FormatParam{metatiles.size(), Style::bold},
                 FormatParam{tileset_name, Style::bold}));
 
         std::vector<std::string> note_text;
-        note_text.push_back(services.format.format(
+        note_text.push_back(services.diag.formatter().format(
             "metatile limit is '{}' due to configuration", FormatParam{metatile_limit, Style::bold}));
         note_text.emplace_back("");
-        std::ranges::copy(limit_cfg.prettify(services.format), std::back_inserter(note_text));
-        services.diag.note("metatile-limit-exceeded", note_text);
+        std::ranges::copy(limit_cfg.prettify(services.diag.formatter()), std::back_inserter(note_text));
+        services.diag.error_note("metatile-limit-exceeded", note_text);
 
         return FormattableError{
             "Found '{}' metatiles, limit is '{}'.",
@@ -285,7 +283,7 @@ inline void report_color_counts(
     const Rgba32 slot0_color = pal.slot_zero_color();
     if (!slot0_color.is_extrinsically_transparent(extrinsic_transparency)) {
         std::vector<std::string> warning_lines;
-        warning_lines.emplace_back(services.format.format(
+        warning_lines.emplace_back(services.diag.formatter().format(
             "Porymap palette '{}' slot 0 color '{}' does not match extrinsic transparency '{}'",
             FormatParam{filename, Style::bold},
             FormatParam{slot0_color.to_jasc_str(), Style::bold},
@@ -294,17 +292,17 @@ inline void report_color_counts(
         warning_lines.emplace_back("If you are using slot 0 for a .pla blend color, you can ignore this warning.");
         services.diag.warning("porymap-palette-slot-0", warning_lines);
 
-        print_porymap_pal_with_highlights_note(
-            services.format,
-            services.diag,
-            services.pal_printer,
+        services.diag.warning_note(
             "porymap-palette-slot-0",
-            "reserved transparency slot",
-            pal,
-            filename,
-            std::vector<std::size_t>{0});
-        print_extrinsic_transparency_note(
-            services.format, services.diag, "porymap-palette-slot-0", extrinsic_transparency);
+            build_porymap_pal_highlight_lines(
+                services.diag.formatter(),
+                services.pal_printer,
+                "reserved transparency slot",
+                pal,
+                filename,
+                std::vector<std::size_t>{0}));
+        services.diag.warning_note(
+            "porymap-palette-slot-0", format_config_note(services.diag.formatter(), extrinsic_transparency));
     }
 
     // Check 2: Non-slot-0 positions cannot contain extrinsic transparency
@@ -317,7 +315,7 @@ inline void report_color_counts(
             hit_error = true;
             violating_slots.push_back(slot);
             std::vector<std::string> error_lines;
-            error_lines.emplace_back(services.format.format(
+            error_lines.emplace_back(services.diag.formatter().format(
                 "Porymap palette '{}' slot '{}' contains extrinsic transparency color '{}'",
                 FormatParam{filename, Style::bold},
                 FormatParam{slot, Style::bold},
@@ -329,17 +327,17 @@ inline void report_color_counts(
 
     if (hit_error) {
         // Print the palette with violating slots highlighted
-        print_porymap_pal_with_highlights_note(
-            services.format,
-            services.diag,
-            services.pal_printer,
+        services.diag.error_note(
             "porymap-palette-transparency",
-            "slots with invalid extrinsic transparency",
-            pal,
-            filename,
-            violating_slots);
-        print_extrinsic_transparency_note(
-            services.format, services.diag, "porymap-palette-transparency", extrinsic_transparency);
+            build_porymap_pal_highlight_lines(
+                services.diag.formatter(),
+                services.pal_printer,
+                "slots with invalid extrinsic transparency",
+                pal,
+                filename,
+                violating_slots));
+        services.diag.error_note(
+            "porymap-palette-transparency", format_config_note(services.diag.formatter(), extrinsic_transparency));
 
         return FormattableError{"Validation failed for Porymap palette '{}'.", FormatParam{filename, Style::bold}};
     }
@@ -386,7 +384,7 @@ inline void report_color_counts(
         if (!slot0_color.is_extrinsically_transparent(extrinsic_transparency)) {
             // Build the warning text
             std::vector<std::string> warning_text;
-            warning_text.emplace_back(services.format.format(
+            warning_text.emplace_back(services.diag.formatter().format(
                 "Porytiles palette '{}' slot 0 color '{}' does not match extrinsic transparency '{}'",
                 FormatParam{filename, Style::bold},
                 FormatParam{slot0_color.to_jasc_str(), Style::bold},
@@ -396,17 +394,17 @@ inline void report_color_counts(
             services.diag.warning("porytiles-palette-slot-0", warning_text);
 
             // Print the palette and config notes.
-            print_porytiles_pal_with_highlights_note(
-                services.format,
-                services.diag,
-                services.pal_printer,
+            services.diag.warning_note(
                 "porytiles-palette-slot-0",
-                "reserved transparency slot",
-                pal,
-                filename,
-                std::vector<std::size_t>{0});
-            print_extrinsic_transparency_note(
-                services.format, services.diag, "porytiles-palette-slot-0", extrinsic_transparency);
+                build_porytiles_pal_highlight_lines(
+                    services.diag.formatter(),
+                    services.pal_printer,
+                    "reserved transparency slot",
+                    pal,
+                    filename,
+                    std::vector<std::size_t>{0}));
+            services.diag.warning_note(
+                "porytiles-palette-slot-0", format_config_note(services.diag.formatter(), extrinsic_transparency));
         }
     }
 
@@ -420,7 +418,7 @@ inline void report_color_counts(
             hit_error = true;
             violating_slots.push_back(slot);
             std::vector<std::string> error_lines;
-            error_lines.emplace_back(services.format.format(
+            error_lines.emplace_back(services.diag.formatter().format(
                 "Porytiles palette '{}' slot '{}' contains extrinsic transparency color '{}'",
                 FormatParam{filename, Style::bold},
                 FormatParam{slot, Style::bold},
@@ -432,17 +430,17 @@ inline void report_color_counts(
 
     if (hit_error) {
         // Print the palette and config notes
-        print_porytiles_pal_with_highlights_note(
-            services.format,
-            services.diag,
-            services.pal_printer,
+        services.diag.error_note(
             "porytiles-palette-transparency",
-            "slots with invalid extrinsic transparency",
-            pal,
-            filename,
-            violating_slots);
-        print_extrinsic_transparency_note(
-            services.format, services.diag, "porytiles-palette-transparency", extrinsic_transparency);
+            build_porytiles_pal_highlight_lines(
+                services.diag.formatter(),
+                services.pal_printer,
+                "slots with invalid extrinsic transparency",
+                pal,
+                filename,
+                violating_slots));
+        services.diag.error_note(
+            "porytiles-palette-transparency", format_config_note(services.diag.formatter(), extrinsic_transparency));
 
         return FormattableError{"Validation failed for Porytiles palette '{}'.", FormatParam{filename, Style::bold}};
     }
@@ -484,20 +482,20 @@ inline void report_color_counts(
     if (hint.pal().size() >= pal::max_size) {
         services.diag.error(
             "palette-hint-size-violation",
-            services.format.format(
+            services.diag.formatter().format(
                 "palette hint '{}' has size '{}', max allowed size is '{}'",
                 FormatParam{hint_name, Style::bold},
                 FormatParam{hint.pal().size(), Style::bold},
                 FormatParam{pal::max_size - 1, Style::bold}));
-        print_pal_hint_with_highlights_note(
-            services.format,
-            services.diag,
-            services.pal_printer,
+        services.diag.error_note(
             "palette-hint-size-violation",
-            "invalid extra slots start here",
-            hint,
-            hint_name,
-            std::vector{pal::max_size});
+            build_pal_hint_highlight_lines(
+                services.diag.formatter(),
+                services.pal_printer,
+                "invalid extra slots start here",
+                hint,
+                hint_name,
+                std::vector{pal::max_size}));
         return FormattableError{"Validation failed for palette hint '{}'.", FormatParam{hint_name, Style::bold}};
     }
 
@@ -515,7 +513,7 @@ inline void report_color_counts(
             hit_any_error = true;
             violating_slots.push_back(slot);
             std::vector<std::string> error_lines;
-            error_lines.emplace_back(services.format.format(
+            error_lines.emplace_back(services.diag.formatter().format(
                 "palette hint '{}' slot '{}' contains extrinsic transparency color '{}'",
                 FormatParam{hint_name, Style::bold},
                 FormatParam{slot, Style::bold},
@@ -525,17 +523,17 @@ inline void report_color_counts(
         }
     }
     if (!violating_slots.empty()) {
-        print_pal_hint_with_highlights_note(
-            services.format,
-            services.diag,
-            services.pal_printer,
+        services.diag.error_note(
             "palette-hint-transparency",
-            "slots with invalid extrinsic transparency",
-            hint,
-            hint_name,
-            violating_slots);
-        print_extrinsic_transparency_note(
-            services.format, services.diag, "palette-hint-transparency", extrinsic_transparency);
+            build_pal_hint_highlight_lines(
+                services.diag.formatter(),
+                services.pal_printer,
+                "slots with invalid extrinsic transparency",
+                hint,
+                hint_name,
+                violating_slots));
+        services.diag.error_note(
+            "palette-hint-transparency", format_config_note(services.diag.formatter(), extrinsic_transparency));
     }
     violating_slots.clear();
 
@@ -550,7 +548,7 @@ inline void report_color_counts(
             hit_any_error = true;
             violating_slots.push_back(slot);
             std::vector<std::string> error_lines;
-            error_lines.emplace_back(services.format.format(
+            error_lines.emplace_back(services.diag.formatter().format(
                 "palette hint '{}' contains duplicate color '{}' at slot '{}'",
                 FormatParam{hint_name, Style::bold},
                 FormatParam{color.to_jasc_str(), Style::bold},
@@ -561,15 +559,15 @@ inline void report_color_counts(
         seen_colors.insert(color);
     }
     if (!violating_slots.empty()) {
-        print_pal_hint_with_highlights_note(
-            services.format,
-            services.diag,
-            services.pal_printer,
+        services.diag.error_note(
             "palette-hint-duplicate-color",
-            "slots with invalid duplicate colors",
-            hint,
-            hint_name,
-            violating_slots);
+            build_pal_hint_highlight_lines(
+                services.diag.formatter(),
+                services.pal_printer,
+                "slots with invalid duplicate colors",
+                hint,
+                hint_name,
+                violating_slots));
     }
 
     if (hit_any_error) {
@@ -619,7 +617,7 @@ inline void report_color_counts(
                     const auto &pixel = tile.at(row, col);
                     if (pixel.alpha() != Rgba32::alpha_opaque && pixel.alpha() != Rgba32::alpha_transparent) {
                         hit_error = true;
-                        std::string error_message = services.format.format(
+                        std::string error_message = services.diag.formatter().format(
                             "invalid alpha channel: {}", FormatParam{std::to_string(pixel.alpha()), Style::bold});
                         details::report_validation_error_in_metatile(
                             services,
@@ -655,7 +653,7 @@ inline void report_color_counts(
                     // validate
                     if (pixel.alpha() != Rgba32::alpha_opaque && pixel.alpha() != Rgba32::alpha_transparent) {
                         hit_error = true;
-                        std::string error_message = services.format.format(
+                        std::string error_message = services.diag.formatter().format(
                             "invalid alpha channel: {}", FormatParam{std::to_string(pixel.alpha()), Style::bold});
                         details::report_validation_error_in_anim(
                             services,
@@ -755,9 +753,9 @@ inline void report_color_counts(
             // Error condition if implied mode is triple for a dual-layer compilation
             if (implied_mode == LayerMode::triple && configured_layer_mode == LayerMode::dual) {
                 hit_error = true;
-                std::vector errors = {services.format.format(
+                std::vector errors = {services.diag.formatter().format(
                     "{}: {}",
-                    FormatParam{metatile::message_header(services.format, metatile_index, subtile), Style::bold},
+                    FormatParam{metatile::message_header(services.diag.formatter(), metatile_index, subtile), Style::bold},
                     FormatParam{"non-transparent content on all three layers"})};
                 std::vector bottom_highlight = services.tile_printer.print_metatile_tile_highlight(
                     metatile, metatile::Layer::bottom, subtile, extrinsic_transparency);
@@ -777,24 +775,24 @@ inline void report_color_counts(
 
     if (hit_error) {
         std::vector<std::string> note_text;
-        note_text.push_back(services.format.format(
+        note_text.push_back(services.diag.formatter().format(
             "implied layer mode is '{}' due to configuration", FormatParam{LayerMode::dual, Style::bold}));
         note_text.emplace_back("");
-        std::ranges::copy(num_tiles_per_metatile.prettify(services.format), std::back_inserter(note_text));
+        std::ranges::copy(num_tiles_per_metatile.prettify(services.diag.formatter()), std::back_inserter(note_text));
         note_text.emplace_back("");
         note_text.emplace_back("Consider enabling triple-layer metatiles.");
-        note_text.push_back(services.format.format(
+        note_text.push_back(services.diag.formatter().format(
             "To enable layer mode '{}' for your project:", FormatParam{LayerMode::triple, Style::bold}));
-        note_text.push_back(services.format.format(
+        note_text.push_back(services.diag.formatter().format(
             "   - set '{}' = '{}'",
             FormatParam{num_tiles_per_metatile.name(), Style::bold},
             FormatParam{metatile::entries_per_metatile_triple, Style::bold}));
-        note_text.push_back(services.format.format(
+        note_text.push_back(services.diag.formatter().format(
             "   - follow the steps here: {}",
             FormatParam{"https://github.com/pret/pokeemerald/wiki/Triple-layer-metatiles", Style::underline}));
 
         // Emit note
-        services.diag.note("layer-mode-violation", note_text);
+        services.diag.error_note("layer-mode-violation", note_text);
 
         return FormattableError{"Found metatile(s) with mismatched implied layer mode."};
     }
@@ -848,7 +846,7 @@ inline void report_color_counts(
 
                     if (color_counts.size() > pal::max_size - 1) {
                         hit_error = true;
-                        std::string error_message = services.format.format(
+                        std::string error_message = services.diag.formatter().format(
                             "found {}th unique tile color: {}",
                             FormatParam{pal::max_size},
                             FormatParam{pixel.to_jasc_str(), Style::bold});
@@ -890,7 +888,7 @@ inline void report_color_counts(
 
                     if (color_counts.size() > pal::max_size - 1) {
                         hit_error = true;
-                        std::string error_message = services.format.format(
+                        std::string error_message = services.diag.formatter().format(
                             "found {}th unique frame tile color: {}",
                             FormatParam{pal::max_size},
                             FormatParam{pixel.to_jasc_str(), Style::bold});
@@ -995,7 +993,7 @@ inline void report_color_counts(
                      */
                     if (color_counts.size() > count_max && !hit_first_violation) {
                         hit_first_violation = true;
-                        std::string error_message = services.format.format(
+                        std::string error_message = services.diag.formatter().format(
                             "found {}th globally unique color: {}",
                             FormatParam{pal::max_size},
                             FormatParam{pixel.to_jasc_str(), Style::bold});
@@ -1039,7 +1037,7 @@ inline void report_color_counts(
                      */
                     if (color_counts.size() > count_max && !hit_first_violation) {
                         hit_first_violation = true;
-                        std::string error_message = services.format.format(
+                        std::string error_message = services.diag.formatter().format(
                             "found {}th globally unique color: {}",
                             FormatParam{pal::max_size},
                             FormatParam{pixel.to_jasc_str(), Style::bold});
@@ -1102,7 +1100,7 @@ inline void report_color_counts(
                     !pixel.is_transparent(extrinsic_transparency)) {
                     services.diag.warning(
                         "unused-manual-color",
-                        services.format.format(
+                        services.diag.formatter().format(
                             "color '{}' in slot '{}' of Porytiles palette '{}' is unused",
                             FormatParam{pixel, Style::bold},
                             FormatParam{slot_index, Style::bold},
@@ -1122,7 +1120,7 @@ inline void report_color_counts(
                  */
                 if (color_counts.size() > count_max && !hit_first_violation) {
                     hit_first_violation = true;
-                    std::string error_message = services.format.format(
+                    std::string error_message = services.diag.formatter().format(
                         "in Porytiles palette '{}': found {}th globally unique color: {}",
                         FormatParam{filename, Style::bold},
                         FormatParam{pal::max_size},
@@ -1130,29 +1128,24 @@ inline void report_color_counts(
                     services.diag.error("global-color-count-violation", error_message);
                     std::vector<std::size_t> violating_slot{};
                     violating_slot.push_back(slot_index);
-                    print_porytiles_pal_with_highlights_note(
-                        services.format,
-                        services.diag,
-                        services.pal_printer,
+                    services.diag.error_note(
                         "global-color-count-violation",
-                        "violating slot",
-                        pal,
-                        filename,
-                        violating_slot);
+                        build_porytiles_pal_highlight_lines(
+                            services.diag.formatter(), services.pal_printer, "violating slot", pal, filename, violating_slot));
                 }
             } // END: loop over all slots in override pal
 
             // Print note highlighting all unused slots in this pal
             if (!unused_slots.empty()) {
-                print_porytiles_pal_with_highlights_note(
-                    services.format,
-                    services.diag,
-                    services.pal_printer,
+                services.diag.warning_note(
                     "unused-manual-color",
-                    "slots with unused colors",
-                    pal,
-                    filename,
-                    unused_slots);
+                    build_porytiles_pal_highlight_lines(
+                        services.diag.formatter(),
+                        services.pal_printer,
+                        "slots with unused colors",
+                        pal,
+                        filename,
+                        unused_slots));
             }
             unused_slots.clear();
         }
@@ -1177,7 +1170,7 @@ inline void report_color_counts(
                 !pixel.is_transparent(extrinsic_transparency)) {
                 services.diag.warning(
                     "unused-manual-color",
-                    services.format.format(
+                    services.diag.formatter().format(
                         "color '{}' in slot '{}' of palette hint '{}' is unused",
                         FormatParam{pixel, Style::bold},
                         FormatParam{slot_index, Style::bold},
@@ -1197,7 +1190,7 @@ inline void report_color_counts(
              */
             if (color_counts.size() > count_max && !hit_first_violation) {
                 hit_first_violation = true;
-                std::string error_message = services.format.format(
+                std::string error_message = services.diag.formatter().format(
                     "in palette hint '{}': found {}th globally unique color: {}",
                     FormatParam{hint.name(), Style::bold},
                     FormatParam{pal::max_size},
@@ -1205,29 +1198,24 @@ inline void report_color_counts(
                 services.diag.error("global-color-count-violation", error_message);
                 std::vector<std::size_t> violating_slot{};
                 violating_slot.push_back(slot_index);
-                print_pal_hint_with_highlights_note(
-                    services.format,
-                    services.diag,
-                    services.pal_printer,
+                services.diag.error_note(
                     "global-color-count-violation",
-                    "violating slot",
-                    hint,
-                    hint.name(),
-                    violating_slot);
+                    build_pal_hint_highlight_lines(
+                        services.diag.formatter(), services.pal_printer, "violating slot", hint, hint.name(), violating_slot));
             }
         } // END: loop over all slots in pal hint
 
         // Print note highlighting all unused slots in this pal
         if (!unused_slots.empty()) {
-            print_pal_hint_with_highlights_note(
-                services.format,
-                services.diag,
-                services.pal_printer,
+            services.diag.warning_note(
                 "unused-manual-color",
-                "slots with unused colors",
-                hint,
-                hint.name(),
-                unused_slots);
+                build_pal_hint_highlight_lines(
+                    services.diag.formatter(),
+                    services.pal_printer,
+                    "slots with unused colors",
+                    hint,
+                    hint.name(),
+                    unused_slots));
         }
         unused_slots.clear();
     } // END: loop over all pal hints
@@ -1235,13 +1223,13 @@ inline void report_color_counts(
     if (color_counts.size() > count_max) {
         services.diag.error(
             "global-color-count-violation",
-            services.format.format(
+            services.diag.formatter().format(
                 "global color count violation: found '{}' unique colors, limit is '{}'",
                 FormatParam{color_counts.size(), Style::bold},
                 FormatParam{count_max, Style::bold}));
         details::report_color_counts("global-color-count-violation", services, color_counts);
-        print_global_color_limit_definition(
-            services.format, services.diag, "global-color-count-violation", count_max, num_pals_cfg);
+        services.diag.error_note(
+            "global-color-count-violation", build_global_color_limit_lines(services.diag.formatter(), count_max, num_pals_cfg));
         return FormattableError{
             "Found '{}' unique colors globally, limit is '{}'.",
             FormatParam{color_counts.size(), Style::bold},
@@ -1346,7 +1334,7 @@ inline void report_color_counts(
                     error_message,
                     extrinsic_transparency);
 
-                services.diag.note(
+                services.diag.error_note(
                     "transparent-key-frame",
                     std::vector<std::string>{
                         "Key frame tiles cannot be fully transparent because they would be",
@@ -1402,13 +1390,13 @@ inline void report_color_counts(
             std::vector<std::string> note_lines;
             note_lines.emplace_back("This tile appears as a key frame in multiple locations:");
             for (const auto &[anim_name, tile_idx] : occurrences) {
-                note_lines.push_back(services.format.format(
+                note_lines.push_back(services.diag.formatter().format(
                     "   - anim '{}' subtile {}", FormatParam{anim_name, Style::bold}, FormatParam{tile_idx}));
             }
             note_lines.emplace_back("");
             note_lines.emplace_back("Each key frame tile must be unique so that Porytiles can");
             note_lines.emplace_back("identify which animation a tile belongs to at runtime.");
-            services.diag.note("duplicate-key-frame", note_lines);
+            services.diag.error_note("duplicate-key-frame", note_lines);
         }
     }
 
@@ -1475,7 +1463,7 @@ inline void report_color_counts(
             if (found_violation) {
                 hit_error = true;
 
-                std::string error_message = services.format.format(
+                std::string error_message = services.diag.formatter().format(
                     "found {}th unique composite frame tile color: {}",
                     FormatParam{pal::max_size},
                     FormatParam{violation_pixel.to_jasc_str(), Style::bold});
@@ -1495,7 +1483,7 @@ inline void report_color_counts(
                 note_lines.emplace_back("The composite frame aggregates all colors across all animation frames");
                 note_lines.emplace_back("for each tile position. Since the palette index is fixed for the");
                 note_lines.emplace_back("entire animation lifecycle, each composite tile cannot exceed 15 colors.");
-                services.diag.note("composite-color-count-violation", note_lines);
+                services.diag.error_note("composite-color-count-violation", note_lines);
 
                 // Print all frame tiles at this position to show what's contributing colors
                 std::vector<std::string> frame_tiles_note;
@@ -1503,7 +1491,7 @@ inline void report_color_counts(
 
                 // Print key frame tile
                 frame_tiles_note.emplace_back("");
-                frame_tiles_note.push_back(services.format.format(
+                frame_tiles_note.push_back(services.diag.formatter().format(
                     "Frame '{}' subtile {}:", FormatParam{key_frame.frame_name(), Style::bold}, FormatParam{tile_idx}));
                 auto key_tile_visual =
                     services.tile_printer.print_tile(key_frame.tile_at(tile_idx), extrinsic_transparency);
@@ -1512,14 +1500,14 @@ inline void report_color_counts(
                 // Print regular frame tiles
                 for (const auto &[frame_name, frame] : anim.frames()) {
                     frame_tiles_note.emplace_back("");
-                    frame_tiles_note.push_back(services.format.format(
+                    frame_tiles_note.push_back(services.diag.formatter().format(
                         "Frame '{}' subtile {}:", FormatParam{frame_name, Style::bold}, FormatParam{tile_idx}));
                     auto frame_tile_visual =
                         services.tile_printer.print_tile(frame.tile_at(tile_idx), extrinsic_transparency);
                     std::ranges::copy(frame_tile_visual, std::back_inserter(frame_tiles_note));
                 }
 
-                services.diag.note("composite-color-count-violation", frame_tiles_note);
+                services.diag.error_note("composite-color-count-violation", frame_tiles_note);
 
                 details::report_color_counts("composite-color-count-violation", services, color_counts);
             }

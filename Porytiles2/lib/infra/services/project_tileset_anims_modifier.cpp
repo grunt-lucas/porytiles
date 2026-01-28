@@ -12,7 +12,6 @@
 #include "porytiles2/infra/config/infra_config.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
-#include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace {
@@ -164,12 +163,12 @@ find_existing_declaration(const std::vector<std::string> &lines, const std::stri
  * @brief Reads all lines from a file into a vector
  */
 [[nodiscard]] ChainableResult<std::vector<std::string>>
-read_file_lines(const std::filesystem::path &path, const TextFormatter *format)
+read_file_lines(const std::filesystem::path &path, const UserDiagnostics *diag)
 {
     std::ifstream in{path};
     if (!in.is_open()) {
         return FormattableError{
-            format->format("{}: failed to open for reading", FormatParam{path.string(), Style::bold})};
+            diag->formatter().format("{}: failed to open for reading", FormatParam{path.string(), Style::bold})};
     }
 
     std::vector<std::string> lines;
@@ -184,12 +183,12 @@ read_file_lines(const std::filesystem::path &path, const TextFormatter *format)
  * @brief Writes all lines to a file
  */
 [[nodiscard]] ChainableResult<void>
-write_file_lines(const std::filesystem::path &path, const std::vector<std::string> &lines, const TextFormatter *format)
+write_file_lines(const std::filesystem::path &path, const std::vector<std::string> &lines, const UserDiagnostics *diag)
 {
     std::ofstream out{path};
     if (!out.is_open()) {
         return FormattableError{
-            format->format("{}: failed to open for writing", FormatParam{path.string(), Style::bold})};
+            diag->formatter().format("{}: failed to open for writing", FormatParam{path.string(), Style::bold})};
     }
 
     for (const auto &line : lines) {
@@ -198,7 +197,8 @@ write_file_lines(const std::filesystem::path &path, const std::vector<std::strin
     out.flush();
 
     if (out.fail()) {
-        return FormattableError{format->format("{}: failed to write file", FormatParam{path.string(), Style::bold})};
+        return FormattableError{
+            diag->formatter().format("{}: failed to write file", FormatParam{path.string(), Style::bold})};
     }
 
     return {};
@@ -211,9 +211,8 @@ namespace porytiles2 {
 ProjectTilesetAnimsModifier::ProjectTilesetAnimsModifier(
     std::filesystem::path project_root,
     gsl::not_null<const InfraConfig *> config,
-    gsl::not_null<const TextFormatter *> format,
     gsl::not_null<const UserDiagnostics *> diagnostics)
-    : project_root_{std::move(project_root)}, config_{config}, format_{format}, diagnostics_{diagnostics}
+    : project_root_{std::move(project_root)}, config_{config}, diagnostics_{diagnostics}
 {
 }
 
@@ -223,7 +222,7 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
     // Step 1: Validate tileset name starts with expected prefix
     constexpr std::string_view tileset_prefix = "gTileset_";
     if (!tileset_name.starts_with(tileset_prefix)) {
-        return FormattableError{format_->format(
+        return FormattableError{diagnostics_->formatter().format(
             "tileset name '{}' does not start with 'gTileset_'", FormatParam{tileset_name, Style::bold})};
     }
 
@@ -233,7 +232,7 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
 
     // Step 3: Read .c file
     const auto anims_c_path = project_root_ / tileset_anims_c_rel_path;
-    auto c_lines_result = read_file_lines(anims_c_path, format_);
+    auto c_lines_result = read_file_lines(anims_c_path, diagnostics_);
     if (!c_lines_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{"failed to read tileset_anims.c for tileset '{}'", FormatParam{tileset_name, Style::bold}},
@@ -243,7 +242,7 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
 
     // Step 4: Read .h file
     const auto anims_h_path = project_root_ / tileset_anims_h_rel_path;
-    auto h_lines_result = read_file_lines(anims_h_path, format_);
+    auto h_lines_result = read_file_lines(anims_h_path, diagnostics_);
     if (!h_lines_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{"failed to read tileset_anims.h for tileset '{}'", FormatParam{tileset_name, Style::bold}},
@@ -258,7 +257,7 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
     if (include_exists && declaration_exists) {
         diagnostics_->remark(
             "wire-tileset-animation",
-            format_->format(
+            diagnostics_->formatter().format(
                 "anim include and declaration for '{}' already exist, skipping wire operation",
                 FormatParam{tileset_name, Style::bold}));
         return {};
@@ -279,7 +278,7 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
         // Find #endif to insert before it
         const auto endif_index = find_endif_guard(h_lines);
         if (!endif_index.has_value()) {
-            return FormattableError{format_->format(
+            return FormattableError{diagnostics_->formatter().format(
                 "failed to find #endif guard in tileset_anims.h for tileset '{}'",
                 FormatParam{tileset_name, Style::bold})};
         }
@@ -306,12 +305,12 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
     }
 
     // Step 8: Write both files back
-    auto c_write_result = write_file_lines(anims_c_path, c_lines, format_);
+    auto c_write_result = write_file_lines(anims_c_path, c_lines, diagnostics_);
     if (!c_write_result.has_value()) {
         return c_write_result;
     }
 
-    return write_file_lines(anims_h_path, h_lines, format_);
+    return write_file_lines(anims_h_path, h_lines, diagnostics_);
 }
 
 ChainableResult<void>
@@ -325,7 +324,7 @@ ProjectTilesetAnimsModifier::remove_include_for_tileset(const std::string &tiles
     // Step 1: Validate tileset name starts with expected prefix
     constexpr std::string_view tileset_prefix = "gTileset_";
     if (!tileset_name.starts_with(tileset_prefix)) {
-        return FormattableError{format_->format(
+        return FormattableError{diagnostics_->formatter().format(
             "tileset name '{}' does not start with 'gTileset_'", FormatParam{tileset_name, Style::bold})};
     }
 
@@ -335,7 +334,7 @@ ProjectTilesetAnimsModifier::remove_include_for_tileset(const std::string &tiles
 
     // Step 3: Read .c file
     const auto anims_c_path = project_root_ / tileset_anims_c_rel_path;
-    auto c_lines_result = read_file_lines(anims_c_path, format_);
+    auto c_lines_result = read_file_lines(anims_c_path, diagnostics_);
     if (!c_lines_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{"failed to read tileset_anims.c for tileset '{}'", FormatParam{tileset_name, Style::bold}},
@@ -345,7 +344,7 @@ ProjectTilesetAnimsModifier::remove_include_for_tileset(const std::string &tiles
 
     // Step 4: Read .h file
     const auto anims_h_path = project_root_ / tileset_anims_h_rel_path;
-    auto h_lines_result = read_file_lines(anims_h_path, format_);
+    auto h_lines_result = read_file_lines(anims_h_path, diagnostics_);
     if (!h_lines_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{"failed to read tileset_anims.h for tileset '{}'", FormatParam{tileset_name, Style::bold}},
@@ -360,7 +359,7 @@ ProjectTilesetAnimsModifier::remove_include_for_tileset(const std::string &tiles
     if (!include_index.has_value() && !decl_index.has_value()) {
         diagnostics_->remark(
             "wire-tileset-animation",
-            format_->format(
+            diagnostics_->formatter().format(
                 "anim include and declaration for '{}' not found, skipping remove operation",
                 FormatParam{tileset_name, Style::bold}));
         return {};
@@ -401,12 +400,12 @@ ProjectTilesetAnimsModifier::remove_include_for_tileset(const std::string &tiles
     }
 
     // Step 8: Write both files back
-    auto c_write_result = write_file_lines(anims_c_path, c_lines, format_);
+    auto c_write_result = write_file_lines(anims_c_path, c_lines, diagnostics_);
     if (!c_write_result.has_value()) {
         return c_write_result;
     }
 
-    return write_file_lines(anims_h_path, h_lines, format_);
+    return write_file_lines(anims_h_path, h_lines, diagnostics_);
 }
 
 } // namespace porytiles2

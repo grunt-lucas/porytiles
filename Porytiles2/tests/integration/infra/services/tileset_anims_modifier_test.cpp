@@ -94,8 +94,7 @@ class TilesetAnimsModifierTestBase : public ::testing::Test {
         providers.push_back(std::make_unique<DefaultProvider>());
         config_ = std::make_unique<LazyLayeredConfig>(formatter_.get(), std::move(providers));
 
-        modifier_ = std::make_unique<ProjectTilesetAnimsModifier>(
-            temp_dir_, config_.get(), formatter_.get(), diagnostics_.get());
+        modifier_ = std::make_unique<ProjectTilesetAnimsModifier>(temp_dir_, config_.get(), diagnostics_.get());
     }
 
     void TearDown() override

@@ -2,12 +2,8 @@
 
 #include <string>
 
-#include "gsl/pointers"
-
 #include "porytiles2/domain/packing/services/packing_strategy.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
-#include "porytiles2/utilities/text/text_formatter.hpp"
-#include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles2 {
 
@@ -24,17 +20,7 @@ namespace porytiles2 {
  */
 class OverloadAndRemoveStrategy final : public PackingStrategy {
   public:
-    /**
-     * @brief Constructs a OverloadAndRemoveStrategy with the specified dependencies.
-     *
-     * @param format TextFormatter for building diagnostic output
-     * @param diag UserDiagnostics for warnings and errors
-     */
-    explicit OverloadAndRemoveStrategy(
-        gsl::not_null<const TextFormatter *> format, gsl::not_null<const UserDiagnostics *> diag)
-        : format_{format}, diag_{diag}
-    {
-    }
+    OverloadAndRemoveStrategy() = default;
 
     /**
      * @brief Packs tiles into palettes using the Overload-And-Remove algorithm.
@@ -53,10 +39,6 @@ class OverloadAndRemoveStrategy final : public PackingStrategy {
     {
         return "Overload-And-Remove";
     }
-
-  private:
-    const TextFormatter *format_;
-    const UserDiagnostics *diag_;
 };
 
 } // namespace porytiles2

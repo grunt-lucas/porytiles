@@ -12,7 +12,6 @@
 #include "porytiles2/domain/services/primary_tileset_creator.hpp"
 #include "porytiles2/domain/services/tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
-#include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles2 {
@@ -44,7 +43,6 @@ class CreatePrimaryTileset {
      * @param tileset_manager Service for persisting managed state and headers.h entries
      * @param domain_config Configuration for domain layer operations
      * @param app_config Configuration for app layer operations
-     * @param format Text formatter for error messages
      * @param diag User diagnostics for warnings and errors
      */
     CreatePrimaryTileset(
@@ -55,11 +53,9 @@ class CreatePrimaryTileset {
         gsl::not_null<const PorytilesTilesetManager *> tileset_manager,
         gsl::not_null<const DomainConfig *> domain_config,
         gsl::not_null<const AppConfig *> app_config,
-        gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag)
         : creator_{creator}, compiler_{compiler}, tileset_repo_{tileset_repo}, metadata_provider_{metadata_provider},
-          tileset_manager_{tileset_manager}, domain_config_{domain_config}, app_config_{app_config}, format_{format},
-          diag_{diag}
+          tileset_manager_{tileset_manager}, domain_config_{domain_config}, app_config_{app_config}, diag_{diag}
     {
     }
 
@@ -86,7 +82,6 @@ class CreatePrimaryTileset {
     const PorytilesTilesetManager *tileset_manager_;
     const DomainConfig *domain_config_;
     const AppConfig *app_config_;
-    const TextFormatter *format_;
     const UserDiagnostics *diag_;
 };
 

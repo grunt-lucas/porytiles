@@ -10,7 +10,6 @@
 #include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles2/infra/services/project_tileset_metadata_writer.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
-#include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles2 {
@@ -38,6 +37,7 @@ class ProjectPorytilesTilesetManager : public PorytilesTilesetManager {
      * @param metadata_provider Provider for reading headers.h fields
      * @param metadata_writer Writer for updating headers.h fields
      * @param infra_config Configuration provider for tileset paths and animation settings
+     * @param diag Diagnostics interface for warnings/notes
      * @param incbin_appender Service for appending INCBIN declarations to header files
      * @param tileset_anims_modifier Service for modifying tileset_anims.c includes
      */
@@ -46,12 +46,11 @@ class ProjectPorytilesTilesetManager : public PorytilesTilesetManager {
         const ProjectTilesetMetadataProvider *metadata_provider,
         const ProjectTilesetMetadataWriter *metadata_writer,
         const InfraConfig *infra_config,
-        gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag,
         const IncbinDeclarationAppender *incbin_appender,
         const ProjectTilesetAnimsModifier *tileset_anims_modifier)
         : project_root_{std::move(project_root)}, metadata_provider_{metadata_provider},
-          metadata_writer_{metadata_writer}, infra_config_{infra_config}, format_{format}, diag_{diag},
+          metadata_writer_{metadata_writer}, infra_config_{infra_config}, diag_{diag},
           incbin_appender_{incbin_appender}, tileset_anims_modifier_{tileset_anims_modifier}
     {
     }
@@ -107,7 +106,6 @@ class ProjectPorytilesTilesetManager : public PorytilesTilesetManager {
     const ProjectTilesetMetadataProvider *metadata_provider_;
     const ProjectTilesetMetadataWriter *metadata_writer_;
     const InfraConfig *infra_config_;
-    const TextFormatter *format_;
     const UserDiagnostics *diag_;
     const IncbinDeclarationAppender *incbin_appender_;
     const ProjectTilesetAnimsModifier *tileset_anims_modifier_;

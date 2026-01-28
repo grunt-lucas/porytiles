@@ -7,7 +7,6 @@
 
 #include "porytiles2/infra/config/infra_config.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
-#include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles2 {
@@ -41,13 +40,11 @@ class ProjectTilesetAnimsModifier {
      *
      * @param project_root Path to the pokeemerald project root directory
      * @param config Configuration interface for tileset paths (non-owning, must outlive this object)
-     * @param format Formatter for styled error messages (non-owning, must outlive this object)
      * @param diagnostics Diagnostics interface for warnings/notes (non-owning, must outlive this object)
      */
     ProjectTilesetAnimsModifier(
         std::filesystem::path project_root,
         gsl::not_null<const InfraConfig *> config,
-        gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diagnostics);
 
     /**
@@ -91,7 +88,6 @@ class ProjectTilesetAnimsModifier {
   private:
     std::filesystem::path project_root_;
     const InfraConfig *config_;
-    const TextFormatter *format_;
     const UserDiagnostics *diagnostics_;
 };
 

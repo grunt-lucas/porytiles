@@ -3,14 +3,18 @@
 #include <ranges>
 #include <string>
 
+#include "gsl/pointers"
+
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/result/error.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
+#include "porytiles2/xcut/config/config_value.hpp"
 
 namespace porytiles2 {
 
 /**
- * @brief Abstract interface for structured error reporting and diagnostic output.
+ * @brief Abstract class for structured error reporting and diagnostic output.
  *
  * @details
  * UserDiagnostics provides a polymorphic interface for communicating diagnostics, warnings, errors, and fatal
@@ -19,10 +23,10 @@ namespace porytiles2 {
  *
  * The diagnostic system categorizes output into:
  * - Remark: Compiler messages explaining internal compiler mechanisms / decisions of possible interest to the user
- * - Notes: Informational messages for user awareness, associated with a warning or error
  * - Warnings: Non-fatal issues that indicate possible user input mistakes
  * - Errors: Serious issues requiring attention, operation will die but may continue in order to generate more errors
  * - Fatal Errors: Complete failure scenarios with full error context
+ * - Notes: Informational messages for user awareness, associated with a remark, warning, or error
  *
  * All methods support both single-line messages (std::string) and multi-line messages (std::vector<std::string>) for
  * flexible diagnostic formatting.
@@ -31,14 +35,16 @@ class UserDiagnostics {
   public:
     virtual ~UserDiagnostics() = default;
 
+    explicit UserDiagnostics(gsl::not_null<const TextFormatter *> format) : format_(format) {}
+
     /**
      * @brief Display a tagged remark message.
      *
      * @details
      * Remarks are the lowest severity diagnostic level, used for communicating internal compiler mechanisms or
-     * decisions that may be of interest to users. Unlike notes (which clarify warnings/errors), remarks are standalone
-     * informational messages about compiler behavior such as optimization decisions, tile assignment choices, or
-     * palette allocation strategies.
+     * decisions that may be of interest to users. Unlike notes (which clarify other remarks/warnings/errors), remarks
+     * are standalone informational messages about compiler behavior such as optimization decisions, tile assignment
+     * choices, or palette allocation strategies.
      *
      * Implementations typically format the first line with a "remark:" prefix and the tag, with subsequent lines
      * appropriately indented.
@@ -54,29 +60,6 @@ class UserDiagnostics {
     void remark(const std::string &tag, const std::string &msg) const
     {
         remark(tag, std::vector{msg});
-    }
-
-    /**
-     * @brief Display a tagged note message.
-     *
-     * @details
-     * Notes are the second-lowest severity diagnostic level, used for informational messages that further clarify
-     * warning or error conditions.
-     *
-     * Implementations typically format the first line with a "note:" prefix and subsequent lines with appropriate
-     * indentation.
-     *
-     * @param tag Categorization tag for the note
-     * @param lines Vector of strings representing each line of the message
-     */
-    virtual void note(const std::string &tag, const std::vector<std::string> &lines) const = 0;
-
-    /**
-     * @brief Convenience overload for single line messages.
-     */
-    void note(const std::string &tag, const std::string &msg) const
-    {
-        note(tag, std::vector{msg});
     }
 
     /**
@@ -102,24 +85,6 @@ class UserDiagnostics {
         warning(tag, std::vector{msg});
     }
 
-    // /**
-    //  * @brief Display a tagged warning message using a formatter-aware builder function.
-    //  *
-    //  * @details
-    //  * This overload allows callers to provide a function that dynamically generates warning messages with access to
-    //  * text formatting capabilities. The TextFormatter is provided to enable conditional styling based on TTY output
-    //  * settings.
-    //  *
-    //  * @param tag Categorization tag for the warning
-    //  * @param msg_builder Function that receives a TextFormatter reference and returns formatted message lines
-    //  */
-    // void warn(const std::string &tag, const FormattedMessageBuilder &msg_builder) const
-    // {
-    //     // TODO: inject this formatter
-    //     AnsiStyledTextFormatter formatter{};
-    //     warn(tag, msg_builder(formatter));
-    // }
-
     /**
      * @brief Display a tagged error message.
      *
@@ -142,6 +107,78 @@ class UserDiagnostics {
     void error(const std::string &tag, const std::string &msg) const
     {
         error(tag, std::vector{msg});
+    }
+
+    /**
+     * @brief Display a tagged note message associated with a remark.
+     *
+     * @details
+     * Notes are informational messages that further clarify a parent diagnostic. This method is specifically for notes
+     * that follow a remark diagnostic, enabling proper filtering - when a remark is filtered out, its associated notes
+     * can also be suppressed.
+     *
+     * Implementations typically format the first line with a "note:" prefix and subsequent lines with appropriate
+     * indentation. All note types use identical styling regardless of parent diagnostic type.
+     *
+     * @param tag Categorization tag for the note (should match the parent remark's tag)
+     * @param lines Vector of strings representing each line of the message
+     */
+    virtual void remark_note(const std::string &tag, const std::vector<std::string> &lines) const = 0;
+
+    /**
+     * @brief Convenience overload for single line messages.
+     */
+    void remark_note(const std::string &tag, const std::string &msg) const
+    {
+        remark_note(tag, std::vector{msg});
+    }
+
+    /**
+     * @brief Display a tagged note message associated with a warning.
+     *
+     * @details
+     * Notes are informational messages that further clarify a parent diagnostic. This method is specifically for notes
+     * that follow a warning diagnostic, enabling proper filtering - when a warning is filtered out, its associated
+     * notes can also be suppressed.
+     *
+     * Implementations typically format the first line with a "note:" prefix and subsequent lines with appropriate
+     * indentation. All note types use identical styling regardless of parent diagnostic type.
+     *
+     * @param tag Categorization tag for the note (should match the parent warning's tag)
+     * @param lines Vector of strings representing each line of the message
+     */
+    virtual void warning_note(const std::string &tag, const std::vector<std::string> &lines) const = 0;
+
+    /**
+     * @brief Convenience overload for single line messages.
+     */
+    void warning_note(const std::string &tag, const std::string &msg) const
+    {
+        warning_note(tag, std::vector{msg});
+    }
+
+    /**
+     * @brief Display a tagged note message associated with an error.
+     *
+     * @details
+     * Notes are informational messages that further clarify a parent diagnostic. This method is specifically for notes
+     * that follow an error diagnostic, enabling proper filtering - when an error is filtered out, its associated notes
+     * can also be suppressed.
+     *
+     * Implementations typically format the first line with a "note:" prefix and subsequent lines with appropriate
+     * indentation. All note types use identical styling regardless of parent diagnostic type.
+     *
+     * @param tag Categorization tag for the note (should match the parent error's tag)
+     * @param lines Vector of strings representing each line of the message
+     */
+    virtual void error_note(const std::string &tag, const std::vector<std::string> &lines) const = 0;
+
+    /**
+     * @brief Convenience overload for single line messages.
+     */
+    void error_note(const std::string &tag, const std::string &msg) const
+    {
+        error_note(tag, std::vector{msg});
     }
 
     /**
@@ -237,6 +274,14 @@ class UserDiagnostics {
             emit_fatal_root(*filtered_chain.back());
         }
     }
+
+    [[nodiscard]] const TextFormatter &formatter() const
+    {
+        return *format_;
+    }
+
+  private:
+    const TextFormatter *format_;
 };
 
 } // namespace porytiles2

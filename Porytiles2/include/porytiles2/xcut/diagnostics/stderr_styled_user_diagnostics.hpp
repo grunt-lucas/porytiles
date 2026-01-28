@@ -42,7 +42,7 @@ namespace porytiles2 {
  */
 class StderrStyledUserDiagnostics final : public UserDiagnostics {
   public:
-    explicit StderrStyledUserDiagnostics(const gsl::not_null<TextFormatter *> format) : format_{format} {}
+    explicit StderrStyledUserDiagnostics(const gsl::not_null<TextFormatter *> format) : UserDiagnostics{format} {}
 
     /**
      * @brief Display a multi-line tagged informational remark to stderr.
@@ -57,16 +57,43 @@ class StderrStyledUserDiagnostics final : public UserDiagnostics {
     void remark(const std::string &tag, const std::vector<std::string> &lines) const override;
 
     /**
-     * @brief Display a multi-line tagged informational note to stderr.
+     * @brief Display a multi-line tagged note associated with a remark to stderr.
      *
      * @details
      * Outputs informational messages with cyan "note:" prefix and tag suffix on the first line, formatted as "note:
-     * <message> [<tag>]" with appropriate indentation for subsequent lines.
+     * <message> [<tag>]" with appropriate indentation for subsequent lines. Uses identical styling to warning_note and
+     * error_note since notes are informational regardless of parent diagnostic type.
      *
-     * @param tag Categorization tag for the note
+     * @param tag Categorization tag for the note (should match the parent remark's tag)
      * @param lines Vector of strings representing each line of the note
      */
-    void note(const std::string &tag, const std::vector<std::string> &lines) const override;
+    void remark_note(const std::string &tag, const std::vector<std::string> &lines) const override;
+
+    /**
+     * @brief Display a multi-line tagged note associated with a warning to stderr.
+     *
+     * @details
+     * Outputs informational messages with cyan "note:" prefix and tag suffix on the first line, formatted as "note:
+     * <message> [<tag>]" with appropriate indentation for subsequent lines. Uses identical styling to remark_note and
+     * error_note since notes are informational regardless of parent diagnostic type.
+     *
+     * @param tag Categorization tag for the note (should match the parent warning's tag)
+     * @param lines Vector of strings representing each line of the note
+     */
+    void warning_note(const std::string &tag, const std::vector<std::string> &lines) const override;
+
+    /**
+     * @brief Display a multi-line tagged note associated with an error to stderr.
+     *
+     * @details
+     * Outputs informational messages with cyan "note:" prefix and tag suffix on the first line, formatted as "note:
+     * <message> [<tag>]" with appropriate indentation for subsequent lines. Uses identical styling to remark_note and
+     * warning_note since notes are informational regardless of parent diagnostic type.
+     *
+     * @param tag Categorization tag for the note (should match the parent error's tag)
+     * @param lines Vector of strings representing each line of the note
+     */
+    void error_note(const std::string &tag, const std::vector<std::string> &lines) const override;
 
     /**
      * @brief Display a multi-line tagged warning to stderr.
@@ -128,7 +155,7 @@ class StderrStyledUserDiagnostics final : public UserDiagnostics {
     void emit_fatal_root(const Error &err) const override;
 
   private:
-    TextFormatter *format_;
+    void emit_note_impl(const std::string &tag, const std::vector<std::string> &lines) const;
     mutable std::string last_seen_tag_;
 };
 

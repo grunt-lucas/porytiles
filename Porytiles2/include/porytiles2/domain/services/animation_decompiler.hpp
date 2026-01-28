@@ -18,7 +18,6 @@
 #include "porytiles2/domain/services/palette_printer.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
-#include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
@@ -42,11 +41,10 @@ namespace porytiles2 {
 class AnimationDecompiler {
   public:
     explicit AnimationDecompiler(
-        gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag,
         gsl::not_null<const TilePrinter *> tile_printer,
         gsl::not_null<const PalettePrinter *> pal_printer)
-        : format_{format}, diag_{diag}, tile_printer_{tile_printer}, pal_printer_{pal_printer}
+        : diag_{diag}, tile_printer_{tile_printer}, pal_printer_{pal_printer}
     {
     }
 
@@ -88,7 +86,6 @@ class AnimationDecompiler {
         const ConfigValue<AnimPalResolutionStrategy> &strategy) const;
 
   private:
-    const TextFormatter *format_;
     const UserDiagnostics *diag_;
     const TilePrinter *tile_printer_;
     const PalettePrinter *pal_printer_;

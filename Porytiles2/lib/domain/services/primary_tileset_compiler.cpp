@@ -293,7 +293,7 @@ ChainableResult<void> CompilerTask::pipeline_step_process_porymap_input()
 
 ChainableResult<void> CompilerTask::pipeline_step_validate_input()
 {
-    TilesetCompileValidatorServices services{config_, format_, diag_, tile_printer_, pal_printer_};
+    TilesetCompileValidatorServices services{config_, diag_, tile_printer_, pal_printer_};
 
     /*
      * TODO: do we want to collate some of these before returning? It would present more errors to user at once. There
@@ -727,7 +727,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
     //         return CanonicalShapeTile{shape_tile_to_pixel_colors(tile, color_index_map)};
     //     });
 
-    OverloadAndRemoveStrategy packing_strategy{&format_, &diag_};
+    OverloadAndRemoveStrategy packing_strategy{};
     PalettePacker pal_packer{&packing_strategy, &format_, &diag_};
     std::bitset<pal::num_pals> available_pals{0};
     for (std::size_t i = 0; i < num_pals_in_primary_; i++) {
@@ -1263,7 +1263,7 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
             std::ranges::copy(
                 tile_printer_.print_tile(rgba_tile, extrinsic_transparency_.value()), std::back_inserter(note_lines));
 
-            diag_.note(tag, note_lines);
+            diag_.warning_note(tag, note_lines);
             continue; // Skip unreferenced tiles (no palette encoding needed)
         }
 
@@ -1324,14 +1324,14 @@ void CompilerTask::pipeline_helper_emit_no_matching_tile_error(
     std::vector<std::string> pal_note{};
     pal_note.emplace_back(format_.format("matched palette '{}':", FormatParam{pal_filename(pal_index), Style::bold}));
     std::ranges::copy(pal_printer_.print_rgba_palette(matched_pal), std::back_inserter(pal_note));
-    diag_.note(tag, pal_note);
+    diag_.error_note(tag, pal_note);
 
     // Print note showing the generated IndexPixel tile
     std::vector<std::string> tile_note{};
     tile_note.emplace_back("generated index tile:");
     std::ranges::copy(
         tile_printer_.print_tile(index_tile, extrinsic_transparency_.value()), std::back_inserter(tile_note));
-    diag_.note(tag, tile_note);
+    diag_.error_note(tag, tile_note);
 }
 
 void CompilerTask::pipeline_helper_emit_no_matching_pal_error(
@@ -1380,7 +1380,7 @@ void CompilerTask::pipeline_helper_emit_no_matching_pal_error(
             std::back_inserter(closest_n_note));
         match_index++;
     }
-    diag_.note(tag, closest_n_note);
+    diag_.error_note(tag, closest_n_note);
 }
 
 void CompilerTask::pipeline_helper_emit_tile_limit_error(std::size_t tile_index, std::size_t tile_limit)
@@ -1406,7 +1406,7 @@ void CompilerTask::pipeline_helper_emit_tile_limit_error(std::size_t tile_index,
         format_.format("tile limit is '{}' due to configuration", FormatParam{num_tiles_in_primary_, Style::bold}));
     note_text.emplace_back();
     std::ranges::copy(num_tiles_in_primary_.prettify(format_), std::back_inserter(note_text));
-    diag_.note(tag, note_text);
+    diag_.error_note(tag, note_text);
 }
 
 } // namespace

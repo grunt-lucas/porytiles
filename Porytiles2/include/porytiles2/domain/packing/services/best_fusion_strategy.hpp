@@ -2,12 +2,8 @@
 
 #include <string>
 
-#include "gsl/pointers"
-
 #include "porytiles2/domain/packing/services/packing_strategy.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
-#include "porytiles2/utilities/text/text_formatter.hpp"
-#include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles2 {
 
@@ -35,17 +31,7 @@ namespace porytiles2 {
  */
 class BestFusionStrategy final : public PackingStrategy {
   public:
-    /**
-     * @brief Constructs a BestFusionStrategy with the specified dependencies.
-     *
-     * @param format TextFormatter for building diagnostic output
-     * @param diag UserDiagnostics for warnings and errors
-     */
-    explicit BestFusionStrategy(
-        gsl::not_null<const TextFormatter *> format, gsl::not_null<const UserDiagnostics *> diag)
-        : format_{format}, diag_{diag}
-    {
-    }
+    BestFusionStrategy() = default;
 
     /**
      * @brief Packs tiles into palettes using the Best Fusion algorithm.
@@ -64,10 +50,6 @@ class BestFusionStrategy final : public PackingStrategy {
     {
         return "Best Fusion";
     }
-
-  private:
-    const TextFormatter *format_;
-    const UserDiagnostics *diag_;
 };
 
 } // namespace porytiles2

@@ -89,7 +89,6 @@ extract_animation_tiles(const Image<IndexPixel> &tiles_png, std::size_t tile_off
  * @param extrinsic_transparency The RGBA color representing transparency
  * @param diag The diagnostics interface for emitting warnings and remarks
  * @param pal_printer The palette printer for formatting palette output
- * @param format The text formatter for styling output
  * @return The matching palette index, or std::nullopt if no match found
  */
 [[nodiscard]] std::optional<std::size_t> find_palette_index_from_png_palette(
@@ -97,8 +96,7 @@ extract_animation_tiles(const Image<IndexPixel> &tiles_png, std::size_t tile_off
     const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &tileset_pals,
     const Rgba32 &extrinsic_transparency,
     const UserDiagnostics &diag,
-    const PalettePrinter &pal_printer,
-    const TextFormatter &format)
+    const PalettePrinter &pal_printer)
 {
     // PNG palette must have exactly 16 colors to match GBA palette format
     if (png_pal.size() != pal::max_size) {
@@ -124,7 +122,7 @@ extract_animation_tiles(const Image<IndexPixel> &tiles_png, std::size_t tile_off
             slot_list += std::to_string(slot);
         }
         std::vector<std::string> warning_lines;
-        warning_lines.emplace_back(format.format(
+        warning_lines.emplace_back(diag.formatter().format(
             "PNG palette contains extrinsic transparency color '{}' in non-zero slot(s): {}",
             FormatParam{extrinsic_transparency.to_jasc_str(), Style::bold},
             FormatParam{slot_list, Style::bold}));
@@ -161,8 +159,8 @@ extract_animation_tiles(const Image<IndexPixel> &tiles_png, std::size_t tile_off
             // Emit remark showing matched palette
             // TODO: more context here, it prints and user has no idea what it's talking about
             std::vector<std::string> remark_lines;
-            remark_lines.emplace_back(
-                format.format("PNG internal palette matched tileset palette {}", FormatParam{pal_idx, Style::bold}));
+            remark_lines.emplace_back(diag.formatter().format(
+                "PNG internal palette matched tileset palette {}", FormatParam{pal_idx, Style::bold}));
             remark_lines.emplace_back("");
             std::ranges::copy(pal_printer.print_rgba_palette(tileset_pals[pal_idx]), std::back_inserter(remark_lines));
             diag.remark("animation-palette-match", remark_lines);
@@ -185,7 +183,6 @@ extract_animation_tiles(const Image<IndexPixel> &tiles_png, std::size_t tile_off
  * @param extrinsic_transparency The RGBA color representing transparency
  * @param diag The diagnostics interface for emitting warnings and remarks
  * @param pal_printer The palette printer for formatting palette output
- * @param format The text formatter for styling output
  * @return The matching palette index, or std::nullopt if no frame has a matching palette
  */
 [[nodiscard]] std::optional<std::size_t> find_palette_from_animation_frames(
@@ -193,13 +190,12 @@ extract_animation_tiles(const Image<IndexPixel> &tiles_png, std::size_t tile_off
     const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &tileset_pals,
     const Rgba32 &extrinsic_transparency,
     const UserDiagnostics &diag,
-    const PalettePrinter &pal_printer,
-    const TextFormatter &format)
+    const PalettePrinter &pal_printer)
 {
     for (const auto &frame : anim.frames_values()) {
         if (frame.has_palette()) {
             auto match = find_palette_index_from_png_palette(
-                frame.palette(), tileset_pals, extrinsic_transparency, diag, pal_printer, format);
+                frame.palette(), tileset_pals, extrinsic_transparency, diag, pal_printer);
             if (match.has_value()) {
                 return match;
             }
@@ -230,7 +226,6 @@ extract_animation_tiles(const Image<IndexPixel> &tiles_png, std::size_t tile_off
  * @param extrinsic_transparency The RGBA color representing transparency
  * @param diag The diagnostics interface for emitting warnings and remarks
  * @param pal_printer The palette printer for formatting palette output
- * @param format The text formatter for styling output
  * @pre tile_count must be greater than 0
  * @return The palette index used by all animation tiles
  */
@@ -244,8 +239,7 @@ std::size_t find_palette_for_animation_tiles(
     const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals,
     const Rgba32 &extrinsic_transparency,
     const UserDiagnostics &diag,
-    const PalettePrinter &pal_printer,
-    const TextFormatter &format)
+    const PalettePrinter &pal_printer)
 {
     std::set<std::size_t> found_pal_indices{};
 
@@ -260,25 +254,25 @@ std::size_t find_palette_for_animation_tiles(
     }
 
     if (found_pal_indices.empty()) {
-        // TODO: show config here, we should add explicit ConfigValue printing to our diag interface
         diag.remark(
             "animation-palette-resolution-strategy",
-            format.format("animation '{}' not referenced in any metatiles", FormatParam{anim_name, Style::bold}));
-        print_anim_pal_resolution_strategy_remark(format, diag, "animation-palette-resolution-strategy", strategy);
+            diag.formatter().format(
+                "animation '{}' not referenced in any metatiles", FormatParam{anim_name, Style::bold}));
+        diag.remark_note("animation-palette-resolution-strategy", format_config_note(diag.formatter(), strategy));
         switch (strategy) {
         case AnimPalResolutionStrategy::default_pal:
             return 0;
 
         case AnimPalResolutionStrategy::internal_png_palette: {
             const auto match =
-                find_palette_from_animation_frames(anim, pals, extrinsic_transparency, diag, pal_printer, format);
+                find_palette_from_animation_frames(anim, pals, extrinsic_transparency, diag, pal_printer);
             if (match.has_value()) {
                 return match.value();
             }
             // Warn that we fell back despite the internal_png_palette config
             diag.warning(
                 "animation-palette-fallback",
-                {format.format(
+                {diag.formatter().format(
                      "Animation '{}' configured to use internal PNG palette, but no match found",
                      FormatParam{anim_name, Style::bold}),
                  "",
@@ -288,8 +282,9 @@ std::size_t find_palette_for_animation_tiles(
 
         case AnimPalResolutionStrategy::full_tileset_scan:
             panic("full_tileset_scan not yet implemented");
+        default:
+            panic("unhandled AnimPalResolutionStrategy value");
         }
-        panic("unhandled AnimPalResolutionStrategy value");
     }
 
     if (found_pal_indices.size() > 1) {
@@ -346,8 +341,7 @@ Animation<Rgba32> AnimationDecompiler::decompile_animation(
         pals,
         extrinsic_transparency,
         *diag_,
-        *pal_printer_,
-        *format_);
+        *pal_printer_);
 
     const auto &pal = pals.at(pal_index);
 

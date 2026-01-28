@@ -114,13 +114,12 @@ class CompileTilesetCommand final : public Command {
         // Setup Porytiles tileset manager and its dependencies
         ProjectTilesetMetadataWriter metadata_writer{project_root, text_formatter};
         IncbinDeclarationAppender incbin_appender{project_root, text_formatter};
-        ProjectTilesetAnimsModifier tileset_anims_modifier{project_root, &config, text_formatter, diag.get()};
+        ProjectTilesetAnimsModifier tileset_anims_modifier{project_root, &config, diag.get()};
         ProjectPorytilesTilesetManager tileset_manager{
             project_root,
             &metadata_provider,
             &metadata_writer,
             &config,
-            text_formatter,
             diag.get(),
             &incbin_appender,
             &tileset_anims_modifier};
@@ -150,16 +149,10 @@ class CompileTilesetCommand final : public Command {
             &behavior_map_provider};
         ProjectArtifactChecksumProvider checksum_provider{project_root};
         TilesetRepo repo{
-            &checksum_provider,
-            &metadata_provider,
-            &key_provider,
-            &artifact_reader,
-            &artifact_writer,
-            text_formatter,
-            diag.get()};
+            &checksum_provider, &metadata_provider, &key_provider, &artifact_reader, &artifact_writer, diag.get()};
 
         CompilePrimaryTileset compile_use_case{
-            &repo, &compiler, &metadata_provider, &tileset_manager, &config, &config, text_formatter, diag.get()};
+            &repo, &compiler, &metadata_provider, &tileset_manager, &config, &config, diag.get()};
 
         // Run the use case
         auto compile_result = compile_use_case.compile(tileset_name_);

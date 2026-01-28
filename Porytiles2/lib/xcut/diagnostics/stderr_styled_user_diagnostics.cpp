@@ -20,15 +20,30 @@ void StderrStyledUserDiagnostics::remark(const std::string &tag, const std::vect
         std::cerr << std::endl;
     }
     last_seen_tag_ = tag;
-    std::cerr << format_->style("remark:", Style::bold | Style::blue) << " ";
+    std::cerr << formatter().style("remark:", Style::bold | Style::blue) << " ";
     std::cerr << lines.at(0);
-    std::cerr << " [" << format_->style(tag, Style::bold | Style::blue) << "]" << std::endl;
+    std::cerr << " [" << formatter().style(tag, Style::bold | Style::blue) << "]" << std::endl;
     for (const auto &note_line : std::ranges::views::drop(lines, 1)) {
-        std::cerr << format_->style("│", Style::bold | Style::blue) << " " << note_line << std::endl;
+        std::cerr << formatter().style("│", Style::bold | Style::blue) << " " << note_line << std::endl;
     }
 }
 
-void StderrStyledUserDiagnostics::note(const std::string &tag, const std::vector<std::string> &lines) const
+void StderrStyledUserDiagnostics::remark_note(const std::string &tag, const std::vector<std::string> &lines) const
+{
+    emit_note_impl(tag, lines);
+}
+
+void StderrStyledUserDiagnostics::warning_note(const std::string &tag, const std::vector<std::string> &lines) const
+{
+    emit_note_impl(tag, lines);
+}
+
+void StderrStyledUserDiagnostics::error_note(const std::string &tag, const std::vector<std::string> &lines) const
+{
+    emit_note_impl(tag, lines);
+}
+
+void StderrStyledUserDiagnostics::emit_note_impl(const std::string &tag, const std::vector<std::string> &lines) const
 {
     assert_or_panic(!lines.empty(), "lines vector is empty");
     assert_or_panic(!tag.empty(), "tag is empty");
@@ -38,11 +53,11 @@ void StderrStyledUserDiagnostics::note(const std::string &tag, const std::vector
         std::cerr << std::endl;
     }
     last_seen_tag_ = tag;
-    std::cerr << format_->style("note:", Style::bold | Style::cyan) << " ";
+    std::cerr << formatter().style("note:", Style::bold | Style::cyan) << " ";
     std::cerr << lines.at(0);
-    std::cerr << " [" << format_->style(tag, Style::bold | Style::cyan) << "]" << std::endl;
+    std::cerr << " [" << formatter().style(tag, Style::bold | Style::cyan) << "]" << std::endl;
     for (const auto &note_line : std::ranges::views::drop(lines, 1)) {
-        std::cerr << format_->style("│", Style::bold | Style::cyan) << " " << note_line << std::endl;
+        std::cerr << formatter().style("│", Style::bold | Style::cyan) << " " << note_line << std::endl;
     }
 }
 
@@ -56,11 +71,11 @@ void StderrStyledUserDiagnostics::warning(const std::string &tag, const std::vec
         std::cerr << std::endl;
     }
     last_seen_tag_ = tag;
-    std::cerr << format_->style("warning:", Style::bold | Style::magenta) << " ";
+    std::cerr << formatter().style("warning:", Style::bold | Style::magenta) << " ";
     std::cerr << lines.at(0);
-    std::cerr << " [" << format_->style(tag, Style::bold | Style::magenta) << "]" << std::endl;
+    std::cerr << " [" << formatter().style(tag, Style::bold | Style::magenta) << "]" << std::endl;
     for (const auto &warn_line : std::ranges::views::drop(lines, 1)) {
-        std::cerr << format_->style("│", Style::bold | Style::magenta) << " " << warn_line << std::endl;
+        std::cerr << formatter().style("│", Style::bold | Style::magenta) << " " << warn_line << std::endl;
     }
 }
 
@@ -74,11 +89,11 @@ void StderrStyledUserDiagnostics::error(const std::string &tag, const std::vecto
         std::cerr << std::endl;
     }
     last_seen_tag_ = tag;
-    std::cerr << format_->style("error:", Style::bold | Style::red) << " ";
+    std::cerr << formatter().style("error:", Style::bold | Style::red) << " ";
     std::cerr << lines.at(0);
-    std::cerr << " [" << format_->style(tag, Style::bold | Style::red) << "]" << std::endl;
+    std::cerr << " [" << formatter().style(tag, Style::bold | Style::red) << "]" << std::endl;
     for (const auto &err_line : std::ranges::views::drop(lines, 1)) {
-        std::cerr << format_->style("│", Style::bold | Style::red) << " " << err_line << std::endl;
+        std::cerr << formatter().style("│", Style::bold | Style::red) << " " << err_line << std::endl;
     }
 }
 
@@ -95,42 +110,42 @@ void StderrStyledUserDiagnostics::emit_fatal_proximate(const Error &err) const
         std::cerr << std::endl;
     }
 
-    auto lines = err.details(*format_);
+    auto lines = err.details(formatter());
     if (!lines.empty()) {
-        std::cerr << format_->style("fatal:", Style::bold | Style::red) << " ";
+        std::cerr << formatter().style("fatal:", Style::bold | Style::red) << " ";
         std::cerr << lines.at(0) << std::endl;
         for (const auto &line : std::ranges::views::drop(lines, 1)) {
-            std::cerr << format_->style("│", Style::bold | Style::red) << " " << line << std::endl;
+            std::cerr << formatter().style("│", Style::bold | Style::red) << " " << line << std::endl;
         }
     }
 }
 
 void StderrStyledUserDiagnostics::emit_fatal_step(const Error &err) const
 {
-    std::cerr << format_->style("│", Style::bold | Style::red) << " " << std::endl;
-    std::cerr << format_->style("├ caused by:", Style::bold | Style::red) << std::endl;
-    std::cerr << format_->style("│", Style::bold | Style::red) << " " << std::endl;
+    std::cerr << formatter().style("│", Style::bold | Style::red) << " " << std::endl;
+    std::cerr << formatter().style("├ caused by:", Style::bold | Style::red) << std::endl;
+    std::cerr << formatter().style("│", Style::bold | Style::red) << " " << std::endl;
 
-    auto lines = err.details(*format_);
+    auto lines = err.details(formatter());
     if (!lines.empty()) {
-        std::cerr << format_->style("│", Style::bold | Style::red) << " " << lines.at(0) << std::endl;
+        std::cerr << formatter().style("│", Style::bold | Style::red) << " " << lines.at(0) << std::endl;
         for (const auto &line : std::ranges::views::drop(lines, 1)) {
-            std::cerr << format_->style("│", Style::bold | Style::red) << " " << line << std::endl;
+            std::cerr << formatter().style("│", Style::bold | Style::red) << " " << line << std::endl;
         }
     }
 }
 
 void StderrStyledUserDiagnostics::emit_fatal_root(const Error &err) const
 {
-    std::cerr << format_->style("│", Style::bold | Style::red) << " " << std::endl;
-    std::cerr << format_->style("├ root cause:", Style::bold | Style::red) << std::endl;
-    std::cerr << format_->style("│", Style::bold | Style::red) << " " << std::endl;
+    std::cerr << formatter().style("│", Style::bold | Style::red) << " " << std::endl;
+    std::cerr << formatter().style("├ root cause:", Style::bold | Style::red) << std::endl;
+    std::cerr << formatter().style("│", Style::bold | Style::red) << " " << std::endl;
 
-    auto lines = err.details(*format_);
+    auto lines = err.details(formatter());
     if (!lines.empty()) {
-        std::cerr << format_->style("│", Style::bold | Style::red) << " " << lines.at(0) << std::endl;
+        std::cerr << formatter().style("│", Style::bold | Style::red) << " " << lines.at(0) << std::endl;
         for (const auto &line : std::ranges::views::drop(lines, 1)) {
-            std::cerr << format_->style("│", Style::bold | Style::red) << " " << line << std::endl;
+            std::cerr << formatter().style("│", Style::bold | Style::red) << " " << line << std::endl;
         }
     }
 }

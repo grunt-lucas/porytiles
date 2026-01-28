@@ -1,10 +1,12 @@
 #pragma once
 
 #include <map>
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "porytiles2/utilities/result/error.hpp"
+#include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles2 {
@@ -30,9 +32,23 @@ namespace porytiles2 {
  */
 class BufferedUserDiagnostics final : public UserDiagnostics {
   public:
+    /**
+     * @brief Construct a BufferedUserDiagnostics with a PlainTextFormatter.
+     *
+     * @details
+     * Creates a PlainTextFormatter for use in formatting error details. Since this class is intended for testing
+     * scenarios where diagnostic output needs to be captured and inspected, plain text formatting (no ANSI styling)
+     * is always used.
+     */
+    BufferedUserDiagnostics() : BufferedUserDiagnostics{std::make_unique<PlainTextFormatter>()} {}
+
     void remark(const std::string &tag, const std::vector<std::string> &lines) const override;
 
-    void note(const std::string &tag, const std::vector<std::string> &lines) const override;
+    void remark_note(const std::string &tag, const std::vector<std::string> &lines) const override;
+
+    void warning_note(const std::string &tag, const std::vector<std::string> &lines) const override;
+
+    void error_note(const std::string &tag, const std::vector<std::string> &lines) const override;
 
     void warning(const std::string &tag, const std::vector<std::string> &lines) const override;
 
@@ -59,17 +75,45 @@ class BufferedUserDiagnostics final : public UserDiagnostics {
     }
 
     /**
-     * @brief Get the buffered note messages.
+     * @brief Get the buffered remark-associated note messages.
      *
      * @details
-     * Returns a reference to the vector containing all note messages that were passed to note(). Each element
-     * represents one call to note(), stored as a vector of lines.
+     * Returns a reference to the vector containing all note messages that were passed to remark_note(). Each element
+     * represents one call to remark_note(), stored as a vector of lines.
      *
-     * @return Reference to the note buffer
+     * @return Reference to the remark note buffer
      */
-    [[nodiscard]] const std::vector<std::vector<std::string>> &notes() const
+    [[nodiscard]] const std::vector<std::vector<std::string>> &remark_notes() const
     {
-        return notes_;
+        return remark_notes_;
+    }
+
+    /**
+     * @brief Get the buffered warning-associated note messages.
+     *
+     * @details
+     * Returns a reference to the vector containing all note messages that were passed to warning_note(). Each element
+     * represents one call to warning_note(), stored as a vector of lines.
+     *
+     * @return Reference to the warning note buffer
+     */
+    [[nodiscard]] const std::vector<std::vector<std::string>> &warning_notes() const
+    {
+        return warning_notes_;
+    }
+
+    /**
+     * @brief Get the buffered error-associated note messages.
+     *
+     * @details
+     * Returns a reference to the vector containing all note messages that were passed to error_note(). Each element
+     * represents one call to error_note(), stored as a vector of lines.
+     *
+     * @return Reference to the error note buffer
+     */
+    [[nodiscard]] const std::vector<std::vector<std::string>> &error_notes() const
+    {
+        return error_notes_;
     }
 
     /**
@@ -158,17 +202,45 @@ class BufferedUserDiagnostics final : public UserDiagnostics {
     }
 
     /**
-     * @brief Get the count of note messages by tag.
+     * @brief Get the count of remark-associated note messages by tag.
      *
      * @details
-     * Returns a reference to a map that tracks how many times each tag was used in calls to note().
+     * Returns a reference to a map that tracks how many times each tag was used in calls to remark_note().
      * The keys are tag strings and the values are the number of times each tag appeared.
      *
-     * @return Reference to the note tag count map
+     * @return Reference to the remark note tag count map
      */
-    [[nodiscard]] const std::map<std::string, size_t> &note_tag_counts() const
+    [[nodiscard]] const std::map<std::string, size_t> &remark_note_tag_counts() const
     {
-        return note_tag_counts_;
+        return remark_note_tag_counts_;
+    }
+
+    /**
+     * @brief Get the count of warning-associated note messages by tag.
+     *
+     * @details
+     * Returns a reference to a map that tracks how many times each tag was used in calls to warning_note().
+     * The keys are tag strings and the values are the number of times each tag appeared.
+     *
+     * @return Reference to the warning note tag count map
+     */
+    [[nodiscard]] const std::map<std::string, size_t> &warning_note_tag_counts() const
+    {
+        return warning_note_tag_counts_;
+    }
+
+    /**
+     * @brief Get the count of error-associated note messages by tag.
+     *
+     * @details
+     * Returns a reference to a map that tracks how many times each tag was used in calls to error_note().
+     * The keys are tag strings and the values are the number of times each tag appeared.
+     *
+     * @return Reference to the error note tag count map
+     */
+    [[nodiscard]] const std::map<std::string, size_t> &error_note_tag_counts() const
+    {
+        return error_note_tag_counts_;
     }
 
     /**
@@ -200,17 +272,28 @@ class BufferedUserDiagnostics final : public UserDiagnostics {
     }
 
   private:
+    explicit BufferedUserDiagnostics(std::unique_ptr<TextFormatter> formatter)
+        : UserDiagnostics{formatter.get()}, format_{std::move(formatter)}
+    {
+    }
+
     mutable std::vector<std::vector<std::string>> remarks_;
-    mutable std::vector<std::vector<std::string>> notes_;
+    mutable std::vector<std::vector<std::string>> remark_notes_;
+    mutable std::vector<std::vector<std::string>> warning_notes_;
+    mutable std::vector<std::vector<std::string>> error_notes_;
     mutable std::vector<std::vector<std::string>> warnings_;
     mutable std::vector<std::vector<std::string>> errors_;
     mutable std::vector<std::vector<std::string>> fatal_proximates_;
     mutable std::vector<std::vector<std::string>> fatal_steps_;
     mutable std::vector<std::vector<std::string>> fatal_roots_;
     mutable std::map<std::string, size_t> remark_tag_counts_;
-    mutable std::map<std::string, size_t> note_tag_counts_;
+    mutable std::map<std::string, size_t> remark_note_tag_counts_;
+    mutable std::map<std::string, size_t> warning_note_tag_counts_;
+    mutable std::map<std::string, size_t> error_note_tag_counts_;
     mutable std::map<std::string, size_t> warning_tag_counts_;
     mutable std::map<std::string, size_t> error_tag_counts_;
+
+    std::unique_ptr<TextFormatter> format_;
 };
 
 } // namespace porytiles2
