@@ -119,7 +119,9 @@ void StderrStyledUserDiagnostics::emit_note_impl(const std::string &tag, const s
     assert_or_panic(!lines.empty(), "lines vector is empty");
     assert_or_panic(!tag.empty(), "tag is empty");
 
-    std::cerr << formatter().style("note:", Style::bold | Style::cyan) << std::endl;
+    std::cerr << formatter().style("note ", Style::bold | Style::cyan)
+              << formatter().style("[", Style::bold | Style::cyan) << formatter().style(tag, Style::bold | Style::cyan)
+              << formatter().style("]:", Style::bold | Style::cyan) << std::endl;
     std::cerr << formatter().style("│", Style::bold | Style::cyan) << std::endl;
     for (const auto &line : lines) {
         std::cerr << formatter().style("│", Style::bold | Style::cyan) << " " << line << std::endl;
