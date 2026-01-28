@@ -161,6 +161,7 @@ class CompileTilesetCommand final : public Command {
                 FormattableError{"Failed to compile tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
                 compile_result};
             diag->fatal(fail_result);
+            // TODO: return error code 1
         }
     }
 

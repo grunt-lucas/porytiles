@@ -159,6 +159,7 @@ class DecompileTilesetCommand final : public Command {
                 FormattableError{"Failed to decompile tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
                 decompile_result};
             diag->fatal(fail_result);
+            // TODO: return error code 1
         }
     }
 

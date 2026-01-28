@@ -31,16 +31,27 @@ ChainableResult<void> DecompilePrimaryTileset::decompile(const std::string &tile
     }
     const auto tileset = std::move(maybe_tileset.value());
 
-    if (!tileset_repo_->checksum_provider().cached_checksums_exist(tileset_name)) {
-        diag_->warning(
-            "missing-checksums", "No cached checksums found for tileset '{}'.", FormatParam{tileset_name, Style::bold});
+    PT_UNWRAP_TILESET_CONFIG_PTR(app_config_, verify_checksums, tileset_name, void);
+    if (!tileset_repo_->checksum_provider().cached_checksums_exist(tileset_name) && verify_checksums) {
+        std::vector<std::string> err_msg{};
+        err_msg.emplace_back(diag_->formatter().format(
+            "No cached checksums found for tileset '{}'.", FormatParam{tileset_name, Style::bold}));
+        err_msg.emplace_back(diag_->formatter().format(
+            "Expected to find file '{}'.",
+            FormatParam{"porytiles/tilesets/" + tileset_name + "/tileset.cache.json", Style::bold}));
+        err_msg.emplace_back("Checksum verification requested via configuration.");
+        err_msg.emplace_back("");
+        err_msg.emplace_back("--------");
+        err_msg.emplace_back("");
+        std::ranges::copy(format_config_note(diag_->formatter(), verify_checksums), std::back_inserter(err_msg));
+
+        return ChainableResult<void>{FormattableError{err_msg}};
     }
 
     // 3. If `PorytilesTilesetComponent` is not empty, compare with cached checksums in `tileset.cache.json`.
     // If any differ, bail with the message "uncompiled changes present in Porytiles asset X."
 
     // Only perform the checksum checks if: 1) cached checksums exist and 2) the user is requesting checksum validation
-    PT_UNWRAP_TILESET_CONFIG_PTR(app_config_, verify_checksums, tileset_name, void);
     if (tileset_repo_->checksum_provider().cached_checksums_exist(tileset_name) && verify_checksums.value()) {
         if (!tileset->porytiles_component().is_empty()) {
             PT_TRY_ASSIGN_CHAIN_ERR(
