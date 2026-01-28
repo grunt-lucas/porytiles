@@ -1,8 +1,10 @@
 #include "porytiles2/app/use_cases/compile_primary_tileset.hpp"
 
 #include <memory>
+#include <ranges>
 #include <string>
 
+#include "porytiles2/domain/algorithms/diagnostic_stencils.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/config/unwrap_config.hpp"
@@ -32,7 +34,7 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
 
     if (!tileset_repo_->checksum_provider().cached_checksums_exist(tileset_name)) {
         diag_->warning(
-            "missing-checksums", "no cached checksums found for tileset '{}'", FormatParam{tileset_name, Style::bold});
+            "missing-checksums", "No cached checksums found for tileset '{}'.", FormatParam{tileset_name, Style::bold});
     }
 
     // Only perform the checksum checks if: 1) cached checksums exist and 2) the user is requesting checksum validation
@@ -49,13 +51,29 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
             const auto mismatched_keys =
                 tileset_repo_->checksum_provider().find_unsynced_tileset_artifacts(tileset_name, porymap_keys);
             if (!mismatched_keys.empty()) {
-                // TODO: better message here
                 std::vector<std::string> err_msg{};
-                err_msg.reserve(mismatched_keys.size());
-                err_msg.emplace_back("Unimported changes present in Porymap assets:");
+                err_msg.emplace_back("Changes present in Porymap assets:");
                 for (const auto &key : mismatched_keys) {
                     err_msg.emplace_back(diag_->formatter().format("  {}", FormatParam{key.key(), Style::bold}));
                 }
+                err_msg.emplace_back("");
+                err_msg.emplace_back("Compiling now would clobber your Porymap asset changes.");
+                err_msg.emplace_back("To resolve:");
+                err_msg.emplace_back(diag_->formatter().format(
+                    "  - Run '{} {}' to synchronize assets.",
+                    FormatParam{"decompile-tileset", Style::bold},
+                    FormatParam{tileset_name, Style::bold}));
+                err_msg.emplace_back(diag_->formatter().format(
+                    "  - {} disable checksum verification to allow the clobber.", FormatParam{"OR", Style::bold}));
+                err_msg.emplace_back(diag_->formatter().format(
+                    "  - {} delete '{}' cache file.",
+                    FormatParam{"OR", Style::bold},
+                    FormatParam{"porytiles/tilesets/" + tileset_name + "/tileset.cache.json", Style::bold}));
+                err_msg.emplace_back("");
+                err_msg.emplace_back("--------");
+                err_msg.emplace_back("");
+                std::ranges::copy(
+                    format_config_note(diag_->formatter(), verify_checksums), std::back_inserter(err_msg));
                 return ChainableResult<void>{FormattableError{err_msg}};
             }
         }
@@ -68,8 +86,10 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
             "Failed to get Porytiles artifact keys.",
             void);
         if (tileset_repo_->checksum_provider().all_checksums_tileset_match(tileset_name, porytiles_keys)) {
-            // TODO: better message here
-            diag_->warning("nothing-to-do", "Skipping compilation, no changes found, TODO: give better message here");
+            diag_->warning(
+                "nothing-to-do",
+                "Skipping compilation for '{}', no changes found.",
+                FormatParam{tileset_name, Style::bold});
             return {};
         }
     }

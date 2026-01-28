@@ -346,10 +346,6 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
     }
 };
 
-/*
- * TODO: These macros need to support multi-line error messages with format params.
- */
-
 /**
  * @brief Unwraps a ChainableResult, chaining a new error message on failure.
  *

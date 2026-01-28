@@ -57,45 +57,6 @@ class StderrStyledUserDiagnostics final : public UserDiagnostics {
     void remark(const std::string &tag, const std::vector<std::string> &lines) const override;
 
     /**
-     * @brief Display a multi-line tagged note associated with a remark to stderr.
-     *
-     * @details
-     * Outputs informational messages with cyan "note:" prefix and tag suffix on the first line, formatted as "note:
-     * <message> [<tag>]" with appropriate indentation for subsequent lines. Uses identical styling to warning_note and
-     * error_note since notes are informational regardless of parent diagnostic type.
-     *
-     * @param tag Categorization tag for the note (should match the parent remark's tag)
-     * @param lines Vector of strings representing each line of the note
-     */
-    void remark_note(const std::string &tag, const std::vector<std::string> &lines) const override;
-
-    /**
-     * @brief Display a multi-line tagged note associated with a warning to stderr.
-     *
-     * @details
-     * Outputs informational messages with cyan "note:" prefix and tag suffix on the first line, formatted as "note:
-     * <message> [<tag>]" with appropriate indentation for subsequent lines. Uses identical styling to remark_note and
-     * error_note since notes are informational regardless of parent diagnostic type.
-     *
-     * @param tag Categorization tag for the note (should match the parent warning's tag)
-     * @param lines Vector of strings representing each line of the note
-     */
-    void warning_note(const std::string &tag, const std::vector<std::string> &lines) const override;
-
-    /**
-     * @brief Display a multi-line tagged note associated with an error to stderr.
-     *
-     * @details
-     * Outputs informational messages with cyan "note:" prefix and tag suffix on the first line, formatted as "note:
-     * <message> [<tag>]" with appropriate indentation for subsequent lines. Uses identical styling to remark_note and
-     * warning_note since notes are informational regardless of parent diagnostic type.
-     *
-     * @param tag Categorization tag for the note (should match the parent error's tag)
-     * @param lines Vector of strings representing each line of the note
-     */
-    void error_note(const std::string &tag, const std::vector<std::string> &lines) const override;
-
-    /**
      * @brief Display a multi-line tagged warning to stderr.
      *
      * @details
@@ -153,6 +114,45 @@ class StderrStyledUserDiagnostics final : public UserDiagnostics {
      * @param err The root cause error to display
      */
     void emit_fatal_root(const Error &err) const override;
+
+    /**
+     * @brief Display a multi-line tagged note associated with a remark to stderr.
+     *
+     * @details
+     * Outputs informational messages with cyan "note:" prefix and tag suffix on the first line, formatted as "note:
+     * <message> [<tag>]" with appropriate indentation for subsequent lines. Uses identical styling to warning_note and
+     * error_note since notes are informational regardless of parent diagnostic type.
+     *
+     * @param tag Categorization tag for the note (should match the parent remark's tag)
+     * @param lines Vector of strings representing each line of the note
+     */
+    void remark_note(const std::string &tag, const std::vector<std::string> &lines) const override;
+
+    /**
+     * @brief Display a multi-line tagged note associated with a warning to stderr.
+     *
+     * @details
+     * Outputs informational messages with cyan "note:" prefix and tag suffix on the first line, formatted as "note:
+     * <message> [<tag>]" with appropriate indentation for subsequent lines. Uses identical styling to remark_note and
+     * error_note since notes are informational regardless of parent diagnostic type.
+     *
+     * @param tag Categorization tag for the note (should match the parent warning's tag)
+     * @param lines Vector of strings representing each line of the note
+     */
+    void warning_note(const std::string &tag, const std::vector<std::string> &lines) const override;
+
+    /**
+     * @brief Display a multi-line tagged note associated with an error to stderr.
+     *
+     * @details
+     * Outputs informational messages with cyan "note:" prefix and tag suffix on the first line, formatted as "note:
+     * <message> [<tag>]" with appropriate indentation for subsequent lines. Uses identical styling to remark_note and
+     * warning_note since notes are informational regardless of parent diagnostic type.
+     *
+     * @param tag Categorization tag for the note (should match the parent error's tag)
+     * @param lines Vector of strings representing each line of the note
+     */
+    void error_note(const std::string &tag, const std::vector<std::string> &lines) const override;
 
   private:
     void emit_note_impl(const std::string &tag, const std::vector<std::string> &lines) const;
