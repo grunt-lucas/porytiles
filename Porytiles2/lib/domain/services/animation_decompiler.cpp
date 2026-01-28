@@ -113,12 +113,12 @@ using namespace porytiles2;
             // Emit remark showing matched palette
             std::vector<std::string> remark_lines;
             remark_lines.emplace_back(diag.formatter().format(
-                "animation '{}' internal palette matched tileset palette '{}'",
+                "Animation '{}' internal palette matched Porymap palette '{}':",
                 FormatParam{anim.name(), Style::bold},
                 FormatParam{pal_filename(pal_idx), Style::bold}));
             remark_lines.emplace_back("");
             std::ranges::copy(pal_printer.print_rgba_palette(tileset_pals[pal_idx]), std::back_inserter(remark_lines));
-            diag.remark("animation-palette-match", remark_lines);
+            diag.remark("animation-palette-resolution-strategy", remark_lines);
             return pal_idx;
         }
     }
@@ -211,8 +211,9 @@ std::size_t find_pal_for_anim_tiles(
     if (found_pal_indices.empty()) {
         diag.remark(
             "animation-palette-resolution-strategy",
-            "animation '{}' not referenced in any metatiles, falling back to strategy",
-            FormatParam{anim_name, Style::bold});
+            {diag.formatter().format(
+                 "Animation '{}' not referenced in metatiles.", FormatParam{anim_name, Style::bold}),
+             "Falling back to palette resolution strategy."});
         diag.remark_note("animation-palette-resolution-strategy", format_config_note(diag.formatter(), strategy));
 
         switch (strategy) {
@@ -226,9 +227,9 @@ std::size_t find_pal_for_anim_tiles(
             }
             // Warn that we fell back despite the internal_png_palette config
             diag.warning(
-                "animation-palette-fallback",
+                "animation-palette-resolution-strategy",
                 {diag.formatter().format(
-                     "Animation '{}' configured to use internal PNG palette, but no match found",
+                     "Animation '{}' configured to use internal PNG palette, but no match found.",
                      FormatParam{anim_name, Style::bold}),
                  "",
                  "Falling back to default palette 0."});

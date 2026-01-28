@@ -181,7 +181,7 @@ template <typename T>
 {
     std::vector<std::string> lines{};
     lines.push_back(format.format(
-        "'{}' is '{}' due to configuration",
+        "'{}' is '{}' due to configuration:",
         FormatParam{config.name(), Style::bold},
         FormatParam{config.value(), Style::bold}));
     lines.emplace_back("");

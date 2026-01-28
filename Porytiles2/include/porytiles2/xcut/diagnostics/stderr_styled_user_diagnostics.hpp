@@ -156,7 +156,6 @@ class StderrStyledUserDiagnostics final : public UserDiagnostics {
 
   private:
     void emit_note_impl(const std::string &tag, const std::vector<std::string> &lines) const;
-    mutable std::string last_seen_tag_;
 };
 
 } // namespace porytiles2
