@@ -81,14 +81,7 @@ constexpr auto anim_parsing_error = "animation-parsing-error";
         auto frame_pos = elem.find("_Frame");
         if (frame_pos != std::string::npos) {
             std::string frame_str = elem.substr(frame_pos + 6); // Skip "_Frame"
-            // Validate it's a valid frame name (should be numeric for now)
-            try {
-                std::stoull(frame_str); // Validate it's a number
-                frames.push_back(frame_str);
-            }
-            catch (...) {
-                // Skip elements that don't match the pattern
-            }
+            frames.push_back(frame_str);
         }
     }
 
@@ -515,10 +508,8 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
         }
 
         if (!found_frames) {
-            diag_->warning(
-                anim_parsing_error,
-                "could not find frame array for animation '{}'",
-                FormatParam{to_snake_case(pascal_name), Style::bold});
+            return FormattableError{
+                "Could not find frame array for animation '{}'.", FormatParam{to_snake_case(pascal_name), Style::bold}};
         }
 
         // Convert PascalCase to snake_case for result key
