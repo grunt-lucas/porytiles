@@ -804,8 +804,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
             remark_lines.emplace_back(
                 format_.format("packed '{}' contents:", FormatParam{pal_filename(i), Style::bold}));
             remark_lines.emplace_back();
-            std::ranges::copy(
-                pal_printer_.print_rgba_palette(maybe_packed_pal.value()), std::back_inserter(remark_lines));
+            std::ranges::copy(pal_printer_.print_rgba_pal(maybe_packed_pal.value()), std::back_inserter(remark_lines));
             diag_.remark(tag, remark_lines);
         }
     }
@@ -1323,7 +1322,7 @@ void CompilerTask::pipeline_helper_emit_no_matching_tile_error(
     // Print note showing the palette that matched
     std::vector<std::string> pal_note{};
     pal_note.emplace_back(format_.format("matched palette '{}':", FormatParam{pal_filename(pal_index), Style::bold}));
-    std::ranges::copy(pal_printer_.print_rgba_palette(matched_pal), std::back_inserter(pal_note));
+    std::ranges::copy(pal_printer_.print_rgba_pal(matched_pal), std::back_inserter(pal_note));
     diag_.error_note(tag, pal_note);
 
     // Print note showing the generated IndexPixel tile

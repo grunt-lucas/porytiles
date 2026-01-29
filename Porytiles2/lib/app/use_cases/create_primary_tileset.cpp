@@ -33,6 +33,23 @@ ChainableResult<void> CreatePrimaryTileset::create(const std::string &tileset_na
     auto tileset =
         std::make_unique<Tileset>(tileset_name, std::move(porytiles_component), std::move(porymap_component));
 
+    /*
+     * TODO: we need to create a way for internal code to override user configuration. E.g., for this recompilation
+     * operation, we want to be able to control a lot of the configuration values like extrinsic_transparency,
+     * artifact_edit_mode, etc. I have a couple of ideas:
+     *
+     * 1. Create a master Config interface with one method: add_provider. Domain, App, InfraConfig all inherit from this
+     * interface. LazyLayeredConfig implements this add_provider method. Then, within this create function, we can
+     * easily just call domain_config->add_provider(override_provider), where OverrideProvider is a new provider type
+     * that will allow us to specify config values we care about, and leave alone ones we want to come from the user.
+     *
+     * 2. We can construct the compiler within the create function instead of injecting it. And then as the DomainConfig
+     * param we provide a MockDomainConfig that's defined locally in an anonymous namespace, that forces the settings we
+     * want. The downside to this is that we don't respect any user settings. We might want to respect some of the user
+     * compilation settings that aren't necessarily relevant to this compilation. I.e., while we must override settings
+     * like extrinsic_transparency, since our created tileset transparency might not match the user global setting, some
+     * settings like tileset.paths.primary from the user should absolutely be respected.
+     */
     // 4. Compile (generates minimal valid Porymap assets from the minimal Porytiles component)
     auto compile_result = compiler_->compile(*tileset);
     if (!compile_result.has_value()) {

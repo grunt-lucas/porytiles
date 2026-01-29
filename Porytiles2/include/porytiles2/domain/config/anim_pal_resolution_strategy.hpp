@@ -13,6 +13,11 @@ namespace porytiles2 {
  */
 enum class AnimPalResolutionStrategy {
     /**
+     * @brief Disallow palette resolution fallback and error out.
+     */
+    error,
+
+    /**
      * @brief Use palette 00.pal.
      */
     default_pal,
@@ -31,6 +36,9 @@ enum class AnimPalResolutionStrategy {
 [[nodiscard]] inline std::optional<AnimPalResolutionStrategy>
 anim_pal_resolution_strategy_from_str(const std::string &str)
 {
+    if (str == "error") {
+        return std::optional{AnimPalResolutionStrategy::error};
+    }
     if (str == "default_pal") {
         return std::optional{AnimPalResolutionStrategy::default_pal};
     }
@@ -46,6 +54,8 @@ anim_pal_resolution_strategy_from_str(const std::string &str)
 [[nodiscard]] inline std::string to_string(const AnimPalResolutionStrategy s)
 {
     switch (s) {
+    case AnimPalResolutionStrategy::error:
+        return "error";
     case AnimPalResolutionStrategy::default_pal:
         return "default_pal";
     case AnimPalResolutionStrategy::internal_png_pal:

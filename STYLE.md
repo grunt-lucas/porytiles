@@ -111,6 +111,8 @@ class Foo {
    // 9. @note/@warning/@see (if applicable)
    // 10. @todo (for formal documentation of possible upcoming changes)
    //
+   // You can use @c for code and @p for parameters.
+   //
    // IMPORTANT: Do NOT use @throws/@exception tags
    // This codebase uses panic/abort for unrecoverable errors (like precondition
    // violations) rather than C++ exceptions. Precondition violations should be
@@ -125,19 +127,19 @@ class Foo {
     * The function panics if the factor is negative, exceeds the maximum safe value,
     * or if the base is zero. The computation is optimized for positive integers.
     *
-    * @tparam ResultType The type to cast the result to (must be numeric)
-    * @param factor The factor to use in the computation
-    * @param base The base value to multiply with the factor
-    * @pre factor must be non-negative
-    * @pre factor must be less than MAX_SAFE_FACTOR
-    * @pre base must not be zero
-    * @return The computed bar value cast to ResultType
-    * @post The returned value is always positive
-    * @post The returned value is less than MAX_BAR_VALUE
-    * @note This function is thread-safe
-    * @warning This function may lose precision when casting to smaller numeric types
-    * @see compute_baz() for a related computation
-    * @see apply_factor() for a simpler version without base parameter
+    * @tparam ResultType The type to cast the result to (must be numeric).
+    * @param factor The factor to use in the computation.
+    * @param base The base value to multiply with the factor.
+    * @pre @p factor must be non-negative.
+    * @pre @p factor must be less than @c MAX_SAFE_FACTOR.
+    * @pre @p base must not be zero.
+    * @return The computed bar value cast to @c ResultType.
+    * @post The returned value is always positive.
+    * @post The returned value is less than @c MAX_BAR_VALUE.
+    * @note This function is thread-safe.
+    * @warning This function may lose precision when casting to smaller numeric types.
+    * @see @c compute_baz() for a related computation.
+    * @see @c apply_factor() for a simpler version without base parameter.
     * @todo Handle MAX_SAFE_FACTOR more elegantly
     */
     template <typename ResultType>

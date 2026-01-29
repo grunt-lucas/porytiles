@@ -189,4 +189,29 @@ template <typename T>
     return lines;
 }
 
+/**
+ * @brief Format a ConfigValue into diagnostic note lines with a separator.
+ *
+ * @details
+ * This method is the same as format_config_note, but it includes a separator section above the config note. This is
+ * useful for cases where the caller is already printing some other information and wants some visual separation between
+ * that info and the config printout.
+ *
+ * @tparam T The underlying type of the ConfigValue
+ * @param format The TextFormatter for styling
+ * @param config The ConfigValue to format
+ * @return Vector of formatted lines ready for note output
+ */
+template <typename T>
+[[nodiscard]] std::vector<std::string>
+format_config_note_with_separator(const TextFormatter &format, const ConfigValue<T> &config)
+{
+    std::vector<std::string> lines{};
+    lines.emplace_back("");
+    lines.emplace_back("--------");
+    lines.emplace_back("");
+    std::ranges::copy(format_config_note(format, config), std::back_inserter(lines));
+    return lines;
+}
+
 } // namespace porytiles2

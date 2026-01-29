@@ -64,7 +64,12 @@ std::vector<std::string> print_palette_with_highlights_impl(
 
 namespace porytiles2 {
 
-std::vector<std::string> ColorPalettePrinter::print_rgba_palette(const Palette<Rgba32, pal::max_size> &pal) const
+std::vector<std::string> ColorPalettePrinter::print_rgba_pal(const Palette<Rgba32, pal::max_size> &pal) const
+{
+    return print_palette_with_highlights_impl(pal, {}, format_);
+}
+
+std::vector<std::string> ColorPalettePrinter::print_rgba_pal(const Palette<Rgba32> &pal) const
 {
     return print_palette_with_highlights_impl(pal, {}, format_);
 }

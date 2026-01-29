@@ -68,21 +68,21 @@ class AnimationDecompiler {
      *
      * If multiple palettes reference the same tile (ambiguous), the most common palette index is used.
      *
-     * @param anim The indexed animation to decompile
-     * @param pals Array of palettes to use for color lookup
-     * @param metatiles_bin The metatile entries containing tile and palette references
-     * @param tiles_png The indexed tiles.png image containing key frame tiles
-     * @param extrinsic_transparency The RGBA color representing transparency
-     * @param strategy The strategy for resolving palette when no metatile reference is found
-     * @pre All key frame tiles must be unique (no duplicates)
-     * @return The decompiled RGBA animation with key frame and frames populated
+     * @param anim The indexed animation to decompile.
+     * @param pals Array of palettes to use for color lookup.
+     * @param metatiles_bin The metatile entries containing tile and palette references.
+     * @param tiles_png The indexed tiles.png image containing key frame tiles.
+     * @param extrinsic_transparency The RGBA color representing transparency.
+     * @param strategy The strategy for resolving palette when no metatile reference is found.
+     * @pre All key frame tiles must be unique (no duplicates).
+     * @return The decompiled RGBA animation with key frame and frames populated, or error.
      */
-    [[nodiscard]] Animation<Rgba32> decompile_animation(
+    [[nodiscard]] ChainableResult<Animation<Rgba32>> decompile_animation(
         const Animation<IndexPixel> &anim,
         const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals,
         std::span<const TilemapEntry> metatiles_bin,
         const Image<IndexPixel> &tiles_png,
-        const Rgba32 &extrinsic_transparency,
+        const ConfigValue<Rgba32> &extrinsic_transparency,
         const ConfigValue<AnimPalResolutionStrategy> &strategy) const;
 
   private:

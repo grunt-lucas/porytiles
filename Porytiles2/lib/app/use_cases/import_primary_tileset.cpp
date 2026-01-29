@@ -45,6 +45,12 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
     }
     const auto decompiled_tileset = std::move(decompiled_tileset_result.value());
 
+    /*
+     * TODO: before saving, we should probably perform an aritfact_edit_mode:locked compilation here. That way, Porymap
+     * assets completely match their Porytiles counterparts. See note about user config override in
+     * CreatePrimaryTileset.
+     */
+
     // Step 4: Save to deterministic paths
     if (const auto save_result = tileset_repo_->save(*decompiled_tileset); !save_result.has_value()) {
         return ChainableResult<void>{

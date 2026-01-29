@@ -40,10 +40,8 @@ ChainableResult<void> DecompilePrimaryTileset::decompile(const std::string &tile
             "Expected to find file '{}'.",
             FormatParam{"porytiles/tilesets/" + tileset_name + "/tileset.cache.json", Style::bold}));
         err_msg.emplace_back("Checksum verification requested via configuration.");
-        err_msg.emplace_back("");
-        err_msg.emplace_back("--------");
-        err_msg.emplace_back("");
-        std::ranges::copy(format_config_note(diag_->formatter(), verify_checksums), std::back_inserter(err_msg));
+        std::ranges::copy(
+            format_config_note_with_separator(diag_->formatter(), verify_checksums), std::back_inserter(err_msg));
 
         return ChainableResult<void>{FormattableError{err_msg}};
     }
@@ -80,11 +78,9 @@ ChainableResult<void> DecompilePrimaryTileset::decompile(const std::string &tile
                     "  - {} delete '{}' cache file.",
                     FormatParam{"OR", Style::bold},
                     FormatParam{"porytiles/tilesets/" + tileset_name + "/tileset.cache.json", Style::bold}));
-                err_msg.emplace_back("");
-                err_msg.emplace_back("--------");
-                err_msg.emplace_back("");
                 std::ranges::copy(
-                    format_config_note(diag_->formatter(), verify_checksums), std::back_inserter(err_msg));
+                    format_config_note_with_separator(diag_->formatter(), verify_checksums),
+                    std::back_inserter(err_msg));
                 return ChainableResult<void>{FormattableError{err_msg}};
             }
         }

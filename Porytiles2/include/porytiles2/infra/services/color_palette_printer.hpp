@@ -14,7 +14,9 @@ class ColorPalettePrinter : public PalettePrinter {
   public:
     explicit ColorPalettePrinter(gsl::not_null<TextFormatter *> format) : format_{format} {}
 
-    [[nodiscard]] std::vector<std::string> print_rgba_palette(const Palette<Rgba32, pal::max_size> &pal) const override;
+    [[nodiscard]] std::vector<std::string> print_rgba_pal(const Palette<Rgba32, pal::max_size> &pal) const override;
+
+    [[nodiscard]] std::vector<std::string> print_rgba_pal(const Palette<Rgba32> &pal) const override;
 
     [[nodiscard]] std::vector<std::string>
     print_rgba_pal_with_highlights(const Palette<Rgba32> &pal, const std::vector<std::size_t> &slots) const override;

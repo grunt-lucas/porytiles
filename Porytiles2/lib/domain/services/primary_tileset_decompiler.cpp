@@ -19,6 +19,7 @@
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/config/config_validators.hpp"
+#include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/xcut/config/unwrap_config.hpp"
 
 namespace porytiles2 {
@@ -75,13 +76,18 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
             AnimationDecompiler anim_decompiler{diag_, tile_printer_, pal_printer_};
             // Decompile the IndexPixel animation to Rgba32 format
             // Palette index is recovered from metatile data by scanning for animation tile references
-            Animation<Rgba32> rgba_anim = anim_decompiler.decompile_animation(
-                index_pixel_anim,
-                tileset.porymap_component().pals(),
-                metatiles_bin,
-                tileset.porymap_component().tiles_png(),
-                extrinsic_transparency,
-                anim_pal_resolution_strategy);
+            PT_TRY_ASSIGN_CHAIN_ERR(
+                rgba_anim,
+                anim_decompiler.decompile_animation(
+                    index_pixel_anim,
+                    tileset.porymap_component().pals(),
+                    metatiles_bin,
+                    tileset.porymap_component().tiles_png(),
+                    extrinsic_transparency,
+                    anim_pal_resolution_strategy),
+                diag_->formatter().format(
+                    "Failed to decompile animation '{}'.", FormatParam{index_pixel_anim.name(), Style::bold}),
+                std::unique_ptr<Tileset>);
 
             new_porytiles_component->add_anim(std::move(rgba_anim));
         }

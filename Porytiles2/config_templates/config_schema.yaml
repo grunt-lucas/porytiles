@@ -185,7 +185,7 @@ config_values:
     type: AnimPalResolutionStrategy
     parser: parse_anim_pal_resolution_strategy
     layer: domain
-    default_value: "AnimPalResolutionStrategy::internal_png_palette"
+    default_value: "AnimPalResolutionStrategy::error"
     yaml:
       path: tileset.animations.palette_resolution_strategy
     validators: [ ]

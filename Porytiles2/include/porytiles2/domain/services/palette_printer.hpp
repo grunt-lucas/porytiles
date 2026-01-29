@@ -17,8 +17,9 @@ class PalettePrinter {
   public:
     virtual ~PalettePrinter() = default;
 
-    [[nodiscard]] virtual std::vector<std::string>
-    print_rgba_palette(const Palette<Rgba32, pal::max_size> &pal) const = 0;
+    [[nodiscard]] virtual std::vector<std::string> print_rgba_pal(const Palette<Rgba32, pal::max_size> &pal) const = 0;
+
+    [[nodiscard]] virtual std::vector<std::string> print_rgba_pal(const Palette<Rgba32> &pal) const = 0;
 
     [[nodiscard]] virtual std::vector<std::string>
     print_rgba_pal_with_highlights(const Palette<Rgba32> &pal, const std::vector<std::size_t> &slots) const = 0;
