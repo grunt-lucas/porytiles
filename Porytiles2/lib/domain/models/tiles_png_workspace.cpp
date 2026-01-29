@@ -1,5 +1,8 @@
 #include "porytiles2/domain/models/tiles_png_workspace.hpp"
 
+#include "porytiles2/domain/algorithms/tile_converters.hpp"
+#include "porytiles2/domain/models/canonical_pixel_tile.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 
@@ -28,33 +31,15 @@ bool tiles_color_equivalent(
     const PixelTile<IndexPixel> &actual,
     const Palette<Rgba32, pal::max_size> &palette)
 {
-    for (std::size_t i = 0; i < tile::size_pix; ++i) {
-        // Use color_index() to extract lower 4 bits - safe for true-color encoded pixels
-        const auto expected_idx = expected.at(i).color_index();
-        const auto actual_idx = actual.at(i).color_index();
-
-        // Fast path: identical color indices are always equivalent
-        if (expected_idx == actual_idx) {
-            continue;
-        }
-
-        // Transparency check: use is_transparent() to properly handle true-color encoding
-        const bool expected_transparent = expected.at(i).is_transparent();
-        const bool actual_transparent = actual.at(i).is_transparent();
-        if (expected_transparent != actual_transparent) {
-            return false;
-        }
-        if (expected_transparent) {
-            // Both transparent, skip color comparison
-            continue;
-        }
-
-        // Both non-transparent but different indices: check if they reference the same color
-        if (palette.at(expected_idx) != palette.at(actual_idx)) {
-            return false;
-        }
-    }
-    return true;
+    // Convert both tiles to color space to handle duplicate palette entries, then re-canonicalize
+    constexpr Rgba32 extrinsic{};
+    const auto expected_rgba = color_tile_from_index_tile(expected, palette, extrinsic);
+    const auto actual_rgba = color_tile_from_index_tile(actual, palette, extrinsic);
+    const CanonicalPixelTile canonical_expected{expected_rgba};
+    const CanonicalPixelTile canonical_actual{actual_rgba};
+    const PixelTile<Rgba32> &canonical_expected_pixel = canonical_expected;
+    const PixelTile<Rgba32> &canonical_actual_pixel = canonical_actual;
+    return canonical_expected_pixel == canonical_actual_pixel;
 }
 
 /**

@@ -7,6 +7,7 @@
 
 #include "gsl/pointers"
 
+#include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/models/animation.hpp"
 #include "porytiles2/domain/models/image.hpp"
@@ -22,6 +23,9 @@
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles2 {
+
+// Forward declaration for backporting mangled tiles
+class PorymapTilesetComponent;
 
 /**
  * @brief Decompiles indexed animation tiles to RGBA format.
@@ -61,20 +65,25 @@ class AnimationDecompiler {
      *
      * For transparent pixels (index 0), the extrinsic transparency color is used.
      *
-     * If an animation tile is not found in any metatile entry, the behavior depends on the strategy parameter:
+     * If an animation tile is not found in any metatile entry, the behavior depends on the pal_strategy parameter:
      * - default_pal: Falls back to palette 0
      * - internal_png_palette: Attempts to match frame PNG internal palettes against tileset palettes
      * - full_tileset_scan: Not yet implemented (panics)
      *
      * If multiple palettes reference the same tile (ambiguous), the most common palette index is used.
      *
+     * If duplicate key frame tiles are detected, the behavior depends on the key_frame_strategy parameter:
+     * - error: Returns an error with details about which tiles are duplicates
+     * - mangle: Modifies duplicate tiles to make them unique and backports changes to tiles.png via porymap_component
+     *
      * @param anim The indexed animation to decompile.
      * @param pals Array of palettes to use for color lookup.
      * @param metatiles_bin The metatile entries containing tile and palette references.
      * @param tiles_png The indexed tiles.png image containing key frame tiles.
      * @param extrinsic_transparency The RGBA color representing transparency.
-     * @param strategy The strategy for resolving palette when no metatile reference is found.
-     * @pre All key frame tiles must be unique (no duplicates).
+     * @param pal_strategy The strategy for resolving palette when no metatile reference is found.
+     * @param key_frame_strategy The strategy for handling duplicate key frame tiles.
+     * @param porymap_component The Porymap component to backport tile changes to (may be nullptr to skip backporting).
      * @return The decompiled RGBA animation with key frame and frames populated, or error.
      */
     [[nodiscard]] ChainableResult<Animation<Rgba32>> decompile_animation(
@@ -83,7 +92,9 @@ class AnimationDecompiler {
         std::span<const TilemapEntry> metatiles_bin,
         const Image<IndexPixel> &tiles_png,
         const ConfigValue<Rgba32> &extrinsic_transparency,
-        const ConfigValue<AnimPalResolutionStrategy> &strategy) const;
+        const ConfigValue<AnimPalResolutionStrategy> &pal_strategy,
+        const ConfigValue<AnimKeyFrameResolutionStrategy> &key_frame_strategy,
+        PorymapTilesetComponent *porymap_component) const;
 
   private:
     const UserDiagnostics *diag_;

@@ -282,6 +282,18 @@ LazyLayeredConfig::anim_pal_resolution_strategy_raw(ConfigScopeType type, const 
     });
 }
 
+ChainableResult<ConfigValue<AnimKeyFrameResolutionStrategy>>
+LazyLayeredConfig::anim_key_frame_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<AnimKeyFrameResolutionStrategy>(key, [&type, &scope](const ConfigProvider &provider) {
+        return provider.anim_key_frame_resolution_strategy(type, scope);
+    });
+}
+
 ChainableResult<ConfigValue<bool>>
 LazyLayeredConfig::verify_checksums_raw(ConfigScopeType type, const std::string &scope) const
 {
@@ -456,6 +468,15 @@ LazyLayeredConfig::anim_pal_resolution_strategy_provenance_chain(ConfigScopeType
 {
     return collect_provenance_chain<AnimPalResolutionStrategy>(
         [&type, &scope](const ConfigProvider &provider) { return provider.anim_pal_resolution_strategy(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<AnimKeyFrameResolutionStrategy>>
+LazyLayeredConfig::anim_key_frame_resolution_strategy_provenance_chain(
+    ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<AnimKeyFrameResolutionStrategy>([&type, &scope](const ConfigProvider &provider) {
+        return provider.anim_key_frame_resolution_strategy(type, scope);
+    });
 }
 
 std::vector<ProvenanceChainLink<bool>>

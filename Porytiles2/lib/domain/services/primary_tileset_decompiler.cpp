@@ -8,6 +8,7 @@
 #include <vector>
 
 #include "porytiles2/domain/algorithms/palette_matchers.hpp"
+#include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
@@ -34,6 +35,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_tiles_in_primary, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_tiles_per_metatile, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, anim_pal_resolution_strategy, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, anim_key_frame_resolution_strategy, tileset.name(), std::unique_ptr<Tileset>);
 
     LayerModeConverter layer_mode_converter{format_, diag_, tile_printer_, extrinsic_transparency};
     MetatileDecompiler metatile_decompiler{format_, diag_, tile_printer_, extrinsic_transparency};
@@ -45,12 +47,11 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
         "failed to triple-layerize Porymap component for tileset " + tileset.name(),
         std::unique_ptr<Tileset>);
 
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        metatiles,
-        metatile_decompiler.decompile_metatiles(
-            tilemap_entries, tileset.porymap_component().tiles_png(), tileset.porymap_component().pals()),
-        "failed to decompile Porymap component for tileset " + tileset.name(),
-        std::unique_ptr<Tileset>);
+    // Create the new Porymap component early so we can pass it for potential backporting during animation decompilation
+    // If mangle strategy is used, duplicate key frame tiles will be modified and backported to tiles_png
+    // IMPORTANT: This must happen BEFORE metatile decompilation so that mangled tiles are used when decompiling
+    // metatiles
+    auto new_porymap_component = std::make_unique<PorymapTilesetComponent>(tileset.porymap_component());
 
     auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>();
     std::size_t i = 0;
@@ -69,6 +70,8 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
     }
 
     // Decompile animations from Porymap component to Porytiles component
+    // IMPORTANT: This must happen BEFORE metatile decompilation so that any mangled key frame tiles
+    // are present in new_porymap_component->tiles_png() when metatiles are decompiled
     if (const auto &porymap_animations = tileset.porymap_component().anims(); !porymap_animations.empty()) {
         const auto &metatiles_bin = tileset.porymap_component().metatiles_bin();
 
@@ -76,15 +79,18 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
             AnimationDecompiler anim_decompiler{diag_, tile_printer_, pal_printer_};
             // Decompile the IndexPixel animation to Rgba32 format
             // Palette index is recovered from metatile data by scanning for animation tile references
+            // If duplicate key frame tiles are found, they may be mangled and backported to new_porymap_component
             PT_TRY_ASSIGN_CHAIN_ERR(
                 rgba_anim,
                 anim_decompiler.decompile_animation(
                     index_pixel_anim,
                     tileset.porymap_component().pals(),
                     metatiles_bin,
-                    tileset.porymap_component().tiles_png(),
+                    new_porymap_component->tiles_png(),
                     extrinsic_transparency,
-                    anim_pal_resolution_strategy),
+                    anim_pal_resolution_strategy,
+                    anim_key_frame_resolution_strategy,
+                    new_porymap_component.get()),
                 diag_->formatter().format(
                     "Failed to decompile animation '{}'.", FormatParam{index_pixel_anim.name(), Style::bold}),
                 std::unique_ptr<Tileset>);
@@ -92,6 +98,14 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
             new_porytiles_component->add_anim(std::move(rgba_anim));
         }
     }
+
+    // Decompile metatiles AFTER animation processing so that any mangled key frame tiles are used
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        metatiles,
+        metatile_decompiler.decompile_metatiles(
+            tilemap_entries, new_porymap_component->tiles_png(), tileset.porymap_component().pals()),
+        "failed to decompile Porymap component for tileset " + tileset.name(),
+        std::unique_ptr<Tileset>);
 
     // Convert metatiles into three layer images
     LayerImageMetatileizer<Rgba32> metatileizer{};
@@ -109,9 +123,6 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
     new_porytiles_component->bottom(bottom_image);
     new_porytiles_component->middle(middle_image);
     new_porytiles_component->top(top_image);
-
-    // No changes here, this is an import operation - no writebacks into input assets
-    auto new_porymap_component = std::make_unique<PorymapTilesetComponent>(tileset.porymap_component());
 
     auto new_tileset =
         std::make_unique<Tileset>(tileset.name(), std::move(new_porytiles_component), std::move(new_porymap_component));

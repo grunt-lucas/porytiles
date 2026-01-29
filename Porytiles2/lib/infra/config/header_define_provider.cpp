@@ -131,6 +131,13 @@ HeaderDefineProvider::anim_pal_resolution_strategy(ConfigScopeType /*type*/, con
     return LayerValue<AnimPalResolutionStrategy>::not_provided();
 }
 
+LayerValue<AnimKeyFrameResolutionStrategy>
+HeaderDefineProvider::anim_key_frame_resolution_strategy(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<AnimKeyFrameResolutionStrategy>::not_provided();
+}
+
 LayerValue<bool> HeaderDefineProvider::verify_checksums(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {
     // No header_define specified for this config value

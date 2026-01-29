@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
@@ -126,6 +127,12 @@ class MockDomainConfig : public DomainConfig {
     anim_pal_resolution_strategy_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{AnimPalResolutionStrategy::internal_png_pal, "anim_pal_resolution_strategy", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<AnimKeyFrameResolutionStrategy>>
+    anim_key_frame_resolution_strategy_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{AnimKeyFrameResolutionStrategy::error, "anim_key_frame_resolution_strategy", "mock", {}};
     }
 };
 

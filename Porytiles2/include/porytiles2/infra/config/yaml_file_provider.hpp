@@ -115,6 +115,9 @@ class YamlFileProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<AnimPalResolutionStrategy>
     anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
 
+    [[nodiscard]] LayerValue<AnimKeyFrameResolutionStrategy>
+    anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
+
     [[nodiscard]] LayerValue<bool> verify_checksums(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<std::string>

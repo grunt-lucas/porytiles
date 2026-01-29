@@ -109,6 +109,12 @@ LayerValue<AnimPalResolutionStrategy> DefaultProvider::anim_pal_resolution_strat
     return LayerValue<AnimPalResolutionStrategy>::valid(AnimPalResolutionStrategy::error, source_info);
 }
 
+LayerValue<AnimKeyFrameResolutionStrategy> DefaultProvider::anim_key_frame_resolution_strategy(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<AnimKeyFrameResolutionStrategy>::valid(AnimKeyFrameResolutionStrategy::error, source_info);
+}
+
 LayerValue<bool> DefaultProvider::verify_checksums(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

@@ -191,6 +191,16 @@ config_values:
     validators: [ ]
     cross_field_validators: [ ]
 
+  - name: anim_key_frame_resolution_strategy
+    type: AnimKeyFrameResolutionStrategy
+    parser: parse_anim_key_frame_resolution_strategy
+    layer: domain
+    default_value: "AnimKeyFrameResolutionStrategy::error"
+    yaml:
+      path: tileset.animations.key_frame_resolution_strategy
+    validators: [ ]
+    cross_field_validators: [ ]
+
   # Application Layer Configuration Values
   - name: verify_checksums
     type: bool

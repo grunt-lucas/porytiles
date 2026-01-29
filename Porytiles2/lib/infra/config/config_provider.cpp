@@ -98,6 +98,12 @@ LayerValue<AnimPalResolutionStrategy> ConfigProvider::anim_pal_resolution_strate
     return LayerValue<AnimPalResolutionStrategy>::not_provided();
 }
 
+LayerValue<AnimKeyFrameResolutionStrategy> ConfigProvider::anim_key_frame_resolution_strategy(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<AnimKeyFrameResolutionStrategy>::not_provided();
+}
+
 LayerValue<bool>
 ConfigProvider::verify_checksums([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

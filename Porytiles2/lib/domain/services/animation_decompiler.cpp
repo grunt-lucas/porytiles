@@ -1,21 +1,28 @@
 #include "porytiles2/domain/services/animation_decompiler.hpp"
 
 #include <algorithm>
-#include <iostream>
 #include <iterator>
 #include <ranges>
 #include <set>
 #include <string>
+#include <utility>
+#include <vector>
 
 #include "porytiles2/domain/algorithms/diagnostic_stencils.hpp"
 #include "porytiles2/domain/algorithms/tile_converters.hpp"
 #include "porytiles2/domain/algorithms/tile_extractors.hpp"
+#include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/models/animation_frame.hpp"
+#include "porytiles2/domain/models/canonical_pixel_tile.hpp"
+#include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
+#include "porytiles2/domain/models/porymap_tileset_component.hpp"
 #include "porytiles2/domain/packing/models/palette_hint.hpp"
+#include "porytiles2/domain/services/anim_key_frame_mangler.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/utilities/result/error.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
 
 namespace {
@@ -252,6 +259,54 @@ ChainableResult<std::size_t> find_pal_for_anim_tiles(
     return *found_pal_indices.begin();
 }
 
+/**
+ * @brief Finds all pairs of duplicate tiles in a vector.
+ *
+ * @param tiles The tiles to check for duplicates
+ * @return Vector of (i, j) pairs where tiles[i] == tiles[j] and i < j
+ */
+std::vector<std::pair<std::size_t, std::size_t>>
+find_duplicate_tile_pairs(const std::vector<PixelTile<IndexPixel>> &tiles)
+{
+    std::vector<std::pair<std::size_t, std::size_t>> duplicates;
+    for (std::size_t i = 0; i < tiles.size(); ++i) {
+        for (std::size_t j = i + 1; j < tiles.size(); ++j) {
+            if (tiles[i] == tiles[j]) {
+                duplicates.emplace_back(i, j);
+            }
+        }
+    }
+    return duplicates;
+}
+
+/**
+ * @brief Backports mangle records to the tiles.png image in the Porymap component.
+ *
+ * @param component The Porymap component containing tiles_png to modify
+ * @param base_tile_offset The tile offset of the animation in tiles.png
+ * @param records The mangle records describing pixel changes
+ */
+void backport_mangles_to_tiles_png(
+    PorymapTilesetComponent *component, std::size_t base_tile_offset, const std::vector<TileMangleRecord> &records)
+{
+    Image<IndexPixel> tiles_img = component->tiles_png();
+    constexpr std::size_t tiles_per_row = 16;
+
+    for (const auto &record : records) {
+        const std::size_t global_tile_idx = base_tile_offset + record.tile_index;
+        const std::size_t tile_row = global_tile_idx / tiles_per_row;
+        const std::size_t tile_col = global_tile_idx % tiles_per_row;
+
+        const auto [pixel_row, pixel_col] = tile::index_to_row_col(record.pixel_index);
+        const std::size_t img_row = tile_row * tile::side_length_pix + pixel_row;
+        const std::size_t img_col = tile_col * tile::side_length_pix + pixel_col;
+
+        tiles_img.set(img_row, img_col, record.mangled_pixel);
+    }
+
+    component->tiles_png(tiles_img);
+}
+
 } // namespace
 
 namespace porytiles2 {
@@ -262,7 +317,9 @@ ChainableResult<Animation<Rgba32>> AnimationDecompiler::decompile_animation(
     std::span<const TilemapEntry> metatiles_bin,
     const Image<IndexPixel> &tiles_png,
     const ConfigValue<Rgba32> &extrinsic_transparency,
-    const ConfigValue<AnimPalResolutionStrategy> &strategy) const
+    const ConfigValue<AnimPalResolutionStrategy> &pal_strategy,
+    const ConfigValue<AnimKeyFrameResolutionStrategy> &key_frame_strategy,
+    PorymapTilesetComponent *porymap_component) const
 {
     Animation<Rgba32> result{anim.name()};
     result.params(anim.params());
@@ -284,7 +341,7 @@ ChainableResult<Animation<Rgba32>> AnimationDecompiler::decompile_animation(
             tile_offset,
             tile_count,
             metatiles_bin,
-            strategy,
+            pal_strategy,
             anim,
             pals,
             extrinsic_transparency,
@@ -300,18 +357,54 @@ ChainableResult<Animation<Rgba32>> AnimationDecompiler::decompile_animation(
         extract_tiles_from_image(tiles_png, tile_offset, tile_count);
 
     // Check for duplicate tiles within the key frame
-    for (std::size_t i = 0; i < key_frame_index_tiles.size(); ++i) {
-        for (std::size_t j = i + 1; j < key_frame_index_tiles.size(); ++j) {
-            if (key_frame_index_tiles[i] == key_frame_index_tiles[j]) {
-                // TODO: ANIM: handle this properly
-                std::cerr << std::endl;
-                std::cerr << "---------------------------------" << std::endl;
-                std::cerr << "|            TODO               |" << std::endl;
-                std::cerr << "---------------------------------" << std::endl;
-                std::cerr << "Animation '" << anim.name() << "' has duplicate key frame tiles at indices:" << std::endl;
-                std::cerr << " - " << std::to_string(i) << std::endl;
-                std::cerr << " - " << std::to_string(j) << std::endl;
+    const auto duplicate_pairs = find_duplicate_tile_pairs(key_frame_index_tiles);
+
+    if (!duplicate_pairs.empty()) {
+        switch (key_frame_strategy.value()) {
+        case AnimKeyFrameResolutionStrategy::error: {
+            std::vector<std::string> err_msg{};
+            err_msg.emplace_back(diag_->formatter().format(
+                "Animation '{}' has duplicate key frame tiles:", FormatParam{anim.name(), Style::bold}));
+            for (const auto &[i, j] : duplicate_pairs) {
+                err_msg.emplace_back(diag_->formatter().format(
+                    "  - tile {} and tile {} are identical", FormatParam{i, Style::bold}, FormatParam{j, Style::bold}));
             }
+            err_msg.emplace_back("");
+            err_msg.emplace_back("Consider using 'mangle' strategy to auto-resolve.");
+            std::ranges::copy(
+                format_config_note_with_separator(diag_->formatter(), key_frame_strategy), std::back_inserter(err_msg));
+            return FormattableError{err_msg};
+        }
+
+        case AnimKeyFrameResolutionStrategy::mangle: {
+            // Build set of existing tiles in canonical form for uniqueness checking.
+            // Using canonical forms ensures tiles that are flip-equivalent are treated as duplicates,
+            // matching the behavior of AnimTileMatcher during recompilation.
+            std::set<PixelTile<IndexPixel>> existing_canonical_tiles;
+            for (const auto &tile : key_frame_index_tiles) {
+                CanonicalPixelTile<IndexPixel> canonical{tile};
+                existing_canonical_tiles.insert(static_cast<const PixelTile<IndexPixel> &>(canonical));
+            }
+
+            AnimKeyFrameMangler mangler{diag_, tile_printer_};
+            PT_TRY_ASSIGN_CHAIN_ERR(
+                mangle_result,
+                mangler.mangle_duplicates(anim.name(), std::move(key_frame_index_tiles), pal, existing_canonical_tiles),
+                diag_->formatter().format(
+                    "Failed to mangle duplicate key frame tiles for animation '{}'.",
+                    FormatParam{anim.name(), Style::bold}),
+                Animation<Rgba32>);
+            key_frame_index_tiles = std::move(mangle_result.tiles);
+
+            // Backport changes to tiles.png
+            if (porymap_component != nullptr && !mangle_result.mangle_records.empty()) {
+                backport_mangles_to_tiles_png(porymap_component, tile_offset, mangle_result.mangle_records);
+            }
+            break;
+        }
+
+        default:
+            panic("unhandled AnimKeyFrameResolutionStrategy value");
         }
     }
 
