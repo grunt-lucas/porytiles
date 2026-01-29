@@ -1,5 +1,7 @@
 #pragma once
 
+#include <filesystem>
+
 #include "gsl/pointers"
 
 #include "porytiles2/infra/services/file_pal_saver.hpp"

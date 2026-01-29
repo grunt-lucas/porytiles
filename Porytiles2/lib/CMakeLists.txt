@@ -59,6 +59,15 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(yaml-cpp)
 
+# cpptrace - cross-platform stacktrace library
+# (std::stacktrace not available on macOS with Apple Clang)
+FetchContent_Declare(
+        cpptrace
+        GIT_REPOSITORY "https://github.com/jeremy-rifkin/cpptrace.git"
+        GIT_TAG "v0.7.5"
+)
+FetchContent_MakeAvailable(cpptrace)
+
 # Google Fruit DI
 FetchContent_Declare(
         fruit
@@ -155,6 +164,7 @@ target_link_libraries(Porytiles2Lib PRIVATE yaml-cpp::yaml-cpp)
 # C++23 std::format does not support runtime-variable argument counts.
 # All other fmt::format usages have been migrated to std::format.
 target_link_libraries(Porytiles2Lib PRIVATE fmt::fmt)
+target_link_libraries(Porytiles2Lib PRIVATE cpptrace::cpptrace)
 
 
 ##################################

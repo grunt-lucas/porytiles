@@ -1,16 +1,10 @@
 #pragma once
 
 #include <concepts>
-#include <cstdlib>
-#include <filesystem>
-#include <format>
-#include <iostream>
 #include <source_location>
 #include <string_view>
 
 namespace porytiles2 {
-
-// TODO: this should be in the utilities tree, it's a true utility
 
 /**
  * @brief A wrapper for std::string_view with a taggable std::source_location.
@@ -45,6 +39,25 @@ struct StringViewSourceLoc {
 };
 
 /**
+ * @brief Enables or disables stacktrace generation on panic.
+ *
+ * @details
+ * When disabled, panic will still print the error message and source location, but skip the expensive stacktrace
+ * generation. This is useful for test suites with many intentional panics where stacktrace overhead is undesirable.
+ * Defaults to enabled.
+ *
+ * @param enabled Whether to generate stacktraces on panic
+ */
+void set_panic_stacktrace_enabled(bool enabled);
+
+/**
+ * @brief Returns whether stacktrace generation is enabled on panic.
+ *
+ * @return True if stacktraces will be generated, false otherwise
+ */
+[[nodiscard]] bool is_panic_stacktrace_enabled();
+
+/**
  * @brief Unconditionally terminates the program with a panic message.
  *
  * @details
@@ -53,17 +66,7 @@ struct StringViewSourceLoc {
  *
  * @param s The StringViewSourceLoc containing the panic message and location
  */
-[[noreturn]] inline void panic(const StringViewSourceLoc &s)
-{
-    const std::filesystem::path path{s.loc_.file_name()};
-    std::cerr << "---------------------------------" << std::endl;
-    std::cerr << "|             PANIC             |" << std::endl;
-    std::cerr << "---------------------------------" << std::endl;
-    std::cerr << std::format("{}:{}", path.filename().string(), s.loc_.line()) << std::endl;
-    std::cerr << std::format("-> {}", s.loc_.function_name()) << std::endl;
-    std::cerr << s.msg_ << std::endl;
-    std::abort();
-}
+[[noreturn]] void panic(const StringViewSourceLoc &s);
 
 /**
  * @brief Conditionally panics if the given condition is false.
@@ -75,15 +78,6 @@ struct StringViewSourceLoc {
  * @param condition The condition to check
  * @param s The StringViewSourceLoc containing the panic message and location
  */
-inline void assert_or_panic(const bool condition, const StringViewSourceLoc &s)
-{
-    if (!condition) {
-        const std::filesystem::path path{s.loc_.file_name()};
-        const auto msg = std::format(
-            "{}:{} {} - panic: {}\n", path.filename().string(), s.loc_.line(), s.loc_.function_name(), s.msg_);
-        std::fputs(msg.c_str(), stderr);
-        std::abort();
-    }
-}
+void assert_or_panic(bool condition, const StringViewSourceLoc &s);
 
 } // namespace porytiles2

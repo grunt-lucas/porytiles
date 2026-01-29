@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <array>
 #include <set>
+#include <string>
 
 #include "porytiles2/domain/models/supports_transparency.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
