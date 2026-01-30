@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "porytiles2/domain/algorithms/tile_converters.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/palette.hpp"
@@ -237,6 +238,7 @@ ChainableResult<MangleResult> AnimKeyFrameMangler::mangle_duplicates(
     const std::string &anim_name,
     std::vector<PixelTile<IndexPixel>> tiles,
     const Palette<Rgba32, pal::max_size> &palette,
+    const Rgba32 &extrinsic_transparency,
     const std::set<PixelTile<IndexPixel>> &existing_canonical_tiles) const
 {
     MangleResult result;
@@ -272,6 +274,7 @@ ChainableResult<MangleResult> AnimKeyFrameMangler::mangle_duplicates(
 
         if (is_duplicate_of_previous || is_duplicate_of_existing) {
             // Need to mangle this tile
+            const PixelTile<IndexPixel> original_tile = current_tile;
             const std::optional<std::pair<PixelTile<IndexPixel>, TileMangleRecord>> mangle_result =
                 try_mangle_tile(current_tile, i, palette, all_canonical_tiles);
 
@@ -294,15 +297,31 @@ ChainableResult<MangleResult> AnimKeyFrameMangler::mangle_duplicates(
 
             // Emit a remark about the mangle
             const auto [pixel_row, pixel_col] = tile::index_to_row_col(mangle_result->second.pixel_index);
-            diag_->remark(
-                "anim-key-frame-mangle",
-                "Mangled tile {} in animation '{}': pixel ({},{}) changed from index {} to {}",
+            std::vector<std::string> remark_lines;
+            remark_lines.push_back(diag_->formatter().format(
+                "Mangled tile {} in animation '{}': pixel ({},{}) changed from index {} to {}.",
                 FormatParam{i, Style::bold},
                 FormatParam{anim_name, Style::bold},
                 FormatParam{pixel_row},
                 FormatParam{pixel_col},
                 FormatParam{mangle_result->second.original_pixel.index()},
-                FormatParam{mangle_result->second.mangled_pixel.index()});
+                FormatParam{mangle_result->second.mangled_pixel.index()}));
+
+            const PixelTile<Rgba32> original_rgba =
+                color_tile_from_index_tile(original_tile, palette, extrinsic_transparency);
+            const PixelTile<Rgba32> mangled_rgba =
+                color_tile_from_index_tile(current_tile, palette, extrinsic_transparency);
+
+            remark_lines.emplace_back("");
+            remark_lines.emplace_back("Original tile:");
+            std::ranges::copy(
+                tile_printer_->print_tile(original_rgba, extrinsic_transparency), std::back_inserter(remark_lines));
+
+            remark_lines.emplace_back("Mangled tile:");
+            std::ranges::copy(
+                tile_printer_->print_tile(mangled_rgba, extrinsic_transparency), std::back_inserter(remark_lines));
+
+            diag_->remark("anim-key-frame-mangle", remark_lines);
         }
 
         // Re-canonicalize after potential mangle and add to tracking sets

@@ -1,7 +1,7 @@
 #pragma once
 
-#include <cstddef>
 #include <compare>
+#include <cstddef>
 #include <set>
 #include <string>
 #include <vector>
@@ -95,6 +95,7 @@ class AnimKeyFrameMangler {
      * @param anim_name Animation name (for diagnostic messages)
      * @param tiles Key frame tiles to process (will be copied and potentially modified)
      * @param palette The palette used by these tiles (for color similarity calculations)
+     * @param extrinsic_transparency The extrinsic transparency color (for tile color conversion in diagnostics)
      * @param existing_tiles Set of all existing tiles to check uniqueness against
      * @return MangleResult containing unique tiles and a record of all modifications, or an error if mangling failed
      */
@@ -102,6 +103,7 @@ class AnimKeyFrameMangler {
         const std::string &anim_name,
         std::vector<PixelTile<IndexPixel>> tiles,
         const Palette<Rgba32, pal::max_size> &palette,
+        const Rgba32 &extrinsic_transparency,
         const std::set<PixelTile<IndexPixel>> &existing_tiles) const;
 
   private:

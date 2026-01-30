@@ -380,19 +380,26 @@ ChainableResult<Animation<Rgba32>> AnimationDecompiler::decompile_animation(
         }
 
         case AnimKeyFrameResolutionStrategy::mangle: {
-            // Build set of existing tiles in canonical form for uniqueness checking.
-            // Using canonical forms ensures tiles that are flip-equivalent are treated as duplicates,
-            // matching the behavior of AnimTileMatcher during recompilation.
+            /*
+             * Build set of all tiles in tiles.png OUTSIDE the current animation's key frame range. This prevents the
+             * mangler from producing a tile that collides with an unrelated tile.
+             */
+            const std::size_t total_tiles =
+                (tiles_png.height() / tile::side_length_pix) * (tiles_png.width() / tile::side_length_pix);
             std::set<PixelTile<IndexPixel>> existing_canonical_tiles;
-            for (const auto &tile : key_frame_index_tiles) {
-                CanonicalPixelTile canonical{tile};
-                existing_canonical_tiles.insert(canonical);
+            for (std::size_t i = 0; i < total_tiles; ++i) {
+                if (i >= tile_offset && i < tile_offset + tile_count) {
+                    continue;
+                }
+                const CanonicalPixelTile canonical{extract_single_tile(tiles_png, i)};
+                const PixelTile<IndexPixel> &base = canonical;
+                existing_canonical_tiles.insert(base);
             }
 
             AnimKeyFrameMangler mangler{diag_, tile_printer_};
             PT_TRY_ASSIGN_CHAIN_ERR(
                 mangle_result,
-                mangler.mangle_duplicates(anim.name(), std::move(key_frame_index_tiles), pal, existing_canonical_tiles),
+                mangler.mangle_duplicates(anim.name(), std::move(key_frame_index_tiles), pal, extrinsic_transparency.value(), existing_canonical_tiles),
                 diag_->formatter().format(
                     "Failed to mangle duplicate key frame tiles for animation '{}'.",
                     FormatParam{anim.name(), Style::bold}),
