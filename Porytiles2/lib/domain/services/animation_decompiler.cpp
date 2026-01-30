@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <iterator>
+#include <map>
 #include <ranges>
 #include <set>
 #include <string>
@@ -260,23 +261,75 @@ ChainableResult<std::size_t> find_pal_for_anim_tiles(
 }
 
 /**
- * @brief Finds all pairs of duplicate tiles in a vector.
+ * @brief Checks whether any key frame tiles are duplicates, considering both cross-range and intra-animation duplicates.
  *
- * @param tiles The tiles to check for duplicates
- * @return Vector of (i, j) pairs where tiles[i] == tiles[j] and i < j
+ * @details
+ * A duplicate is detected if a key frame tile's canonical form matches either:
+ * - An external tile (cross-range duplicate: animation tile matches a non-animation tile in tiles.png)
+ * - An earlier key frame tile (intra-animation duplicate: two animation tiles are flip-equivalent)
+ *
+ * @param key_frame_tiles The animation key frame tiles to check
+ * @param external_canonical_tiles Canonical forms of all non-animation tiles in tiles.png
+ * @return True if any duplicate is found
  */
-std::vector<std::pair<std::size_t, std::size_t>>
-find_duplicate_tile_pairs(const std::vector<PixelTile<IndexPixel>> &tiles)
+bool has_duplicate_key_frame_tiles(
+    const std::vector<PixelTile<IndexPixel>> &key_frame_tiles,
+    const std::set<PixelTile<IndexPixel>> &external_canonical_tiles)
 {
-    std::vector<std::pair<std::size_t, std::size_t>> duplicates;
-    for (std::size_t i = 0; i < tiles.size(); ++i) {
-        for (std::size_t j = i + 1; j < tiles.size(); ++j) {
-            if (tiles[i] == tiles[j]) {
-                duplicates.emplace_back(i, j);
-            }
+    std::set<PixelTile<IndexPixel>> seen;
+    for (const auto &tile : key_frame_tiles) {
+        const CanonicalPixelTile canonical{tile};
+        const PixelTile<IndexPixel> &base = canonical;
+        if (external_canonical_tiles.contains(base)) {
+            return true;
+        }
+        if (!seen.insert(base).second) {
+            return true;
         }
     }
-    return duplicates;
+    return false;
+}
+
+struct DuplicateInfo {
+    std::vector<std::size_t> cross_range_indices;
+    std::vector<std::pair<std::size_t, std::size_t>> intra_animation_pairs;
+};
+
+/**
+ * @brief Categorizes duplicate key frame tiles into cross-range and intra-animation duplicates.
+ *
+ * @details
+ * Cross-range duplicates are key frame tiles whose canonical form matches an external (non-animation) tile.
+ * Intra-animation duplicates are pairs of key frame tiles that are flip-equivalent to each other.
+ *
+ * @param key_frame_tiles The animation key frame tiles to categorize
+ * @param external_canonical_tiles Canonical forms of all non-animation tiles in tiles.png
+ * @return DuplicateInfo with indices of cross-range duplicates and pairs of intra-animation duplicates
+ */
+DuplicateInfo categorize_duplicate_key_frame_tiles(
+    const std::vector<PixelTile<IndexPixel>> &key_frame_tiles,
+    const std::set<PixelTile<IndexPixel>> &external_canonical_tiles)
+{
+    DuplicateInfo info;
+
+    // Map from canonical base tile to first index seen
+    std::map<PixelTile<IndexPixel>, std::size_t> seen;
+
+    for (std::size_t i = 0; i < key_frame_tiles.size(); ++i) {
+        const CanonicalPixelTile canonical{key_frame_tiles[i]};
+        const PixelTile<IndexPixel> &base = canonical;
+
+        if (external_canonical_tiles.contains(base)) {
+            info.cross_range_indices.push_back(i);
+        }
+
+        auto [it, inserted] = seen.emplace(base, i);
+        if (!inserted) {
+            info.intra_animation_pairs.emplace_back(it->second, i);
+        }
+    }
+
+    return info;
 }
 
 /**
@@ -362,25 +415,44 @@ ChainableResult<Animation<Rgba32>> AnimationDecompiler::decompile_animation(
         extract_tiles_from_image(tiles_png, tile_offset, tile_count);
 
     /*
-     * Check for duplicate tiles within the key frame.
-     *
-     * TODO: this check doesn't even work quite right. E.g. find_duplicate_tile_pairs is only looking within the
-     * key_frame_index_tiles. If tiles.png contains duplicate tiles, one of which is in the anim tile range, we won't
-     * actually detect that problem, and the mangler won't be invoked. And when we go to recompile, the compiler will
-     * link to the first occurrence of the tile, which may be incorrect if we're in patch mode and the anim version of
-     * the tile comes after the non-anim duplicate tile.
+     * Build canonical tile set for all tiles in tiles.png OUTSIDE the current animation's key frame range. This is
+     * used both for duplicate detection (cross-range) and to prevent the mangler from producing collisions.
      */
-    const auto duplicate_pairs = find_duplicate_tile_pairs(key_frame_index_tiles);
+    const std::size_t total_tiles =
+        (tiles_png.height() / tile::side_length_pix) * (tiles_png.width() / tile::side_length_pix);
+    std::set<PixelTile<IndexPixel>> existing_canonical_tiles;
+    for (std::size_t i = 0; i < total_tiles; ++i) {
+        if (i >= tile_offset && i < tile_offset + tile_count) {
+            continue;
+        }
+        const CanonicalPixelTile canonical{extract_single_tile(tiles_png, i)};
+        const PixelTile<IndexPixel> &base = canonical;
+        existing_canonical_tiles.insert(base);
+    }
 
-    if (!duplicate_pairs.empty()) {
+    /*
+     * Check for duplicate key frame tiles using canonical (flip-equivalent) comparison. Detects both:
+     * - Cross-range duplicates: animation tile matches a non-animation tile in tiles.png
+     * - Intra-animation duplicates: two animation tiles are flip-equivalent to each other
+     */
+    if (has_duplicate_key_frame_tiles(key_frame_index_tiles, existing_canonical_tiles)) {
         switch (key_frame_strategy.value()) {
         case AnimKeyFrameResolutionStrategy::error: {
+            const auto dup_info = categorize_duplicate_key_frame_tiles(key_frame_index_tiles, existing_canonical_tiles);
             std::vector<std::string> err_msg{};
             err_msg.emplace_back(diag_->formatter().format(
-                "Animation '{}' has duplicate key frame tiles:", FormatParam{anim.name(), Style::bold}));
-            for (const auto &[i, j] : duplicate_pairs) {
+                "Animation '{}' has duplicate key frame tiles (flip-equivalent tiles are considered duplicates):",
+                FormatParam{anim.name(), Style::bold}));
+            for (const auto &idx : dup_info.cross_range_indices) {
                 err_msg.emplace_back(diag_->formatter().format(
-                    "  - tile {} and tile {} are identical", FormatParam{i, Style::bold}, FormatParam{j, Style::bold}));
+                    "  - tile {} is flip-equivalent to a non-animation tile in tiles.png",
+                    FormatParam{idx, Style::bold}));
+            }
+            for (const auto &[i, j] : dup_info.intra_animation_pairs) {
+                err_msg.emplace_back(diag_->formatter().format(
+                    "  - tile {} and tile {} are flip-equivalent",
+                    FormatParam{i, Style::bold},
+                    FormatParam{j, Style::bold}));
             }
             err_msg.emplace_back("");
             err_msg.emplace_back("Consider using 'mangle' strategy to auto-resolve.");
@@ -390,22 +462,6 @@ ChainableResult<Animation<Rgba32>> AnimationDecompiler::decompile_animation(
         }
 
         case AnimKeyFrameResolutionStrategy::mangle: {
-            /*
-             * Build set of all tiles in tiles.png OUTSIDE the current animation's key frame range. This prevents the
-             * mangler from producing a tile that collides with an unrelated tile.
-             */
-            const std::size_t total_tiles =
-                (tiles_png.height() / tile::side_length_pix) * (tiles_png.width() / tile::side_length_pix);
-            std::set<PixelTile<IndexPixel>> existing_canonical_tiles;
-            for (std::size_t i = 0; i < total_tiles; ++i) {
-                if (i >= tile_offset && i < tile_offset + tile_count) {
-                    continue;
-                }
-                const CanonicalPixelTile canonical{extract_single_tile(tiles_png, i)};
-                const PixelTile<IndexPixel> &base = canonical;
-                existing_canonical_tiles.insert(base);
-            }
-
             AnimKeyFrameMangler mangler{diag_, tile_printer_};
             PT_TRY_ASSIGN_CHAIN_ERR(
                 mangle_result,
