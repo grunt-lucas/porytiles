@@ -292,9 +292,11 @@ void backport_mangles_to_tiles_png(
     Image<IndexPixel> tiles_img = component->tiles_png();
     constexpr std::size_t tiles_per_row = metatile::metatiles_per_row * metatile::tiles_per_side;
 
-    // Mangle records are non-overlapping: each targets a distinct tile_index (guaranteed by mangle_duplicates).
-    // Sequential application is therefore safe and order-independent, producing results consistent with the
-    // in-memory key frame tiles that were mangled during decompilation.
+    /*
+     * Mangle records are non-overlapping: each targets a distinct tile_index (guaranteed by mangle_duplicates).
+     * Sequential application is therefore safe and order-independent, producing results consistent with the in-memory
+     * key frame tiles that were mangled during decompilation.
+     */
     for (const auto &record : records) {
         const std::size_t global_tile_idx = base_tile_offset + record.tile_index;
         const std::size_t tile_row = global_tile_idx / tiles_per_row;
@@ -359,7 +361,15 @@ ChainableResult<Animation<Rgba32>> AnimationDecompiler::decompile_animation(
     std::vector<PixelTile<IndexPixel>> key_frame_index_tiles =
         extract_tiles_from_image(tiles_png, tile_offset, tile_count);
 
-    // Check for duplicate tiles within the key frame
+    /*
+     * Check for duplicate tiles within the key frame.
+     *
+     * TODO: this check doesn't even work quite right. E.g. find_duplicate_tile_pairs is only looking within the
+     * key_frame_index_tiles. If tiles.png contains duplicate tiles, one of which is in the anim tile range, we won't
+     * actually detect that problem, and the mangler won't be invoked. And when we go to recompile, the compiler will
+     * link to the first occurrence of the tile, which may be incorrect if we're in patch mode and the anim version of
+     * the tile comes after the non-anim duplicate tile.
+     */
     const auto duplicate_pairs = find_duplicate_tile_pairs(key_frame_index_tiles);
 
     if (!duplicate_pairs.empty()) {
@@ -399,7 +409,12 @@ ChainableResult<Animation<Rgba32>> AnimationDecompiler::decompile_animation(
             AnimKeyFrameMangler mangler{diag_, tile_printer_};
             PT_TRY_ASSIGN_CHAIN_ERR(
                 mangle_result,
-                mangler.mangle_duplicates(anim.name(), std::move(key_frame_index_tiles), pal, extrinsic_transparency.value(), existing_canonical_tiles),
+                mangler.mangle_duplicates(
+                    anim.name(),
+                    std::move(key_frame_index_tiles),
+                    pal,
+                    extrinsic_transparency.value(),
+                    existing_canonical_tiles),
                 diag_->formatter().format(
                     "Failed to mangle duplicate key frame tiles for animation '{}'.",
                     FormatParam{anim.name(), Style::bold}),

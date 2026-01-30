@@ -245,6 +245,15 @@ ChainableResult<MangleResult> AnimKeyFrameMangler::mangle_duplicates(
     result.tiles = std::move(tiles);
 
     /*
+     * TODO: I think there is *STILL* actually a potential bug with the mangling process. Here, we are tracking
+     * "existing" tiles using the canonical index version. The 'existing_canonical_tiles' variable is set to contain all
+     * the tiles from tiles.png, which is supposed to prevent us from creating a mangled tile that matches one of the
+     * existing tiles.
+     *
+     * TODO: what am I saying here?
+     */
+
+    /*
      * Build a set of all canonical tiles we need to be unique against. This includes the input existing_canonical_tiles
      * plus tiles we've already processed. Using canonical forms ensures tiles that are flip-equivalent are treated as
      * duplicates.
