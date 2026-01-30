@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <compare>
 #include <set>
 #include <string>
 #include <vector>
@@ -24,12 +25,26 @@ namespace porytiles2 {
  * When a tile is mangled to make it unique, this struct records the exact change made: which tile was modified, which
  * pixel within that tile was changed, and the original vs. new pixel values. This information is needed to backport the
  * change to the tiles.png image.
+ *
+ * Each TileMangleRecord targets a distinct tile_index — no two records share the same tile_index.
+ * This invariant is guaranteed by mangle_duplicates, which visits each tile at most once.
  */
 struct TileMangleRecord {
-    std::size_t tile_index{};  ///< Which tile in the key frame (0-based index)
+    std::size_t tile_index{};  ///< Which tile in the key frame (0-based index, unique across records)
     std::size_t pixel_index{}; ///< Which pixel in the tile (0-63, linear index)
     IndexPixel original_pixel; ///< The pixel value before mangling
     IndexPixel mangled_pixel;  ///< The pixel value after mangling
+
+    /// @brief Orders records by tile_index, enabling storage in std::set to enforce the non-overlapping invariant.
+    [[nodiscard]] friend auto operator<=>(const TileMangleRecord &lhs, const TileMangleRecord &rhs)
+    {
+        return lhs.tile_index <=> rhs.tile_index;
+    }
+
+    [[nodiscard]] friend bool operator==(const TileMangleRecord &lhs, const TileMangleRecord &rhs)
+    {
+        return lhs.tile_index == rhs.tile_index;
+    }
 };
 
 /**
@@ -40,8 +55,9 @@ struct TileMangleRecord {
  * mangle_records vector will be empty and tiles will be unchanged.
  */
 struct MangleResult {
-    std::vector<PixelTile<IndexPixel>> tiles;     ///< The tiles after mangling (unique)
-    std::vector<TileMangleRecord> mangle_records; ///< Record of all modifications made
+    std::vector<PixelTile<IndexPixel>> tiles; ///< The tiles after mangling (unique)
+    // Keyed by tile_index: the set structurally enforces that each record targets a distinct tile.
+    std::set<TileMangleRecord> mangle_records; ///< Record of all modifications made (ordered by tile_index)
 };
 
 /**

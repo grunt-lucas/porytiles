@@ -287,11 +287,14 @@ find_duplicate_tile_pairs(const std::vector<PixelTile<IndexPixel>> &tiles)
  * @param records The mangle records describing pixel changes
  */
 void backport_mangles_to_tiles_png(
-    PorymapTilesetComponent *component, std::size_t base_tile_offset, const std::vector<TileMangleRecord> &records)
+    PorymapTilesetComponent *component, std::size_t base_tile_offset, const std::set<TileMangleRecord> &records)
 {
     Image<IndexPixel> tiles_img = component->tiles_png();
     constexpr std::size_t tiles_per_row = metatile::metatiles_per_row * metatile::tiles_per_side;
 
+    // Mangle records are non-overlapping: each targets a distinct tile_index (guaranteed by mangle_duplicates).
+    // Sequential application is therefore safe and order-independent, producing results consistent with the
+    // in-memory key frame tiles that were mangled during decompilation.
     for (const auto &record : records) {
         const std::size_t global_tile_idx = base_tile_offset + record.tile_index;
         const std::size_t tile_row = global_tile_idx / tiles_per_row;
@@ -382,8 +385,8 @@ ChainableResult<Animation<Rgba32>> AnimationDecompiler::decompile_animation(
             // matching the behavior of AnimTileMatcher during recompilation.
             std::set<PixelTile<IndexPixel>> existing_canonical_tiles;
             for (const auto &tile : key_frame_index_tiles) {
-                CanonicalPixelTile<IndexPixel> canonical{tile};
-                existing_canonical_tiles.insert(static_cast<const PixelTile<IndexPixel> &>(canonical));
+                CanonicalPixelTile canonical{tile};
+                existing_canonical_tiles.insert(canonical);
             }
 
             AnimKeyFrameMangler mangler{diag_, tile_printer_};

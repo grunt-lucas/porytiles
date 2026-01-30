@@ -139,7 +139,7 @@ TEST_F(AnimKeyFrameManglerTests, shouldMangleSimpleDuplicatePair)
     EXPECT_NE(result.value().tiles[0], result.value().tiles[1]);
 
     // Verify the mangle record
-    const auto &record = result.value().mangle_records[0];
+    const auto &record = *result.value().mangle_records.begin();
     EXPECT_EQ(record.tile_index, 1); // Second tile was mangled
     EXPECT_NE(record.original_pixel, record.mangled_pixel);
 }
@@ -234,7 +234,7 @@ TEST_F(AnimKeyFrameManglerTests, shouldPreservePaletteIndex)
     EXPECT_EQ(result.value().mangle_records.size(), 1);
 
     // The mangled pixel should preserve the palette index
-    const auto &record = result.value().mangle_records[0];
+    const auto &record = *result.value().mangle_records.begin();
     EXPECT_EQ(record.mangled_pixel.palette_index(), pal_index);
 }
 
@@ -290,7 +290,7 @@ TEST_F(AnimKeyFrameManglerTests, shouldMangleSolidColorTile)
     EXPECT_NE(result.value().tiles[0], result.value().tiles[1]);
 
     // The mangled pixel should use a different color from the palette
-    const auto &record = result.value().mangle_records[0];
+    const auto &record = *result.value().mangle_records.begin();
     EXPECT_NE(record.original_pixel.color_index(), record.mangled_pixel.color_index());
 }
 
@@ -321,7 +321,7 @@ TEST_F(AnimKeyFrameManglerTests, shouldHandleTransparentPixels)
     EXPECT_EQ(result.value().mangle_records.size(), 1);
 
     // Mangled pixel should not be at a transparent position
-    const auto &record = result.value().mangle_records[0];
+    const auto &record = *result.value().mangle_records.begin();
     EXPECT_FALSE(record.original_pixel.is_transparent());
 }
 
@@ -344,7 +344,7 @@ TEST_F(AnimKeyFrameManglerTests, shouldMakeMangledRecordsAccurate)
     ASSERT_TRUE(result.has_value());
     ASSERT_EQ(result.value().mangle_records.size(), 1);
 
-    const auto &record = result.value().mangle_records[0];
+    const auto &record = *result.value().mangle_records.begin();
 
     // The record should accurately describe the change
     // Original pixel at the recorded index should match record.original_pixel

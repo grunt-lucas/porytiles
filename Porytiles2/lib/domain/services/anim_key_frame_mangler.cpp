@@ -162,9 +162,9 @@ find_most_similar_color(std::size_t current_color_index, const Palette<Rgba32, p
  * @brief Attempts to mangle a single tile to make it unique.
  *
  * @details
- * Tries each pixel in priority order, attempting to swap it to a visually similar color. Returns the first successful
- * modification that produces a unique tile. Uniqueness is checked against canonical forms to ensure tiles that are
- * flip-equivalent are also treated as duplicates.
+ * Tries each pixel in priority order, attempting to swap it to a visually similar color. Modifies exactly one pixel
+ * and returns the first successful modification that produces a unique tile. Uniqueness is checked against canonical
+ * forms to ensure tiles that are flip-equivalent are also treated as duplicates.
  *
  * @param tile The tile to mangle
  * @param tile_index The index of the tile in the animation
@@ -242,19 +242,26 @@ ChainableResult<MangleResult> AnimKeyFrameMangler::mangle_duplicates(
     MangleResult result;
     result.tiles = std::move(tiles);
 
-    // Build a set of all canonical tiles we need to be unique against.
-    // This includes the input existing_canonical_tiles plus tiles we've already processed.
-    // Using canonical forms ensures tiles that are flip-equivalent are treated as duplicates.
+    /*
+     * Build a set of all canonical tiles we need to be unique against. This includes the input existing_canonical_tiles
+     * plus tiles we've already processed. Using canonical forms ensures tiles that are flip-equivalent are treated as
+     * duplicates.
+     */
     std::set<PixelTile<IndexPixel>> all_canonical_tiles = existing_canonical_tiles;
 
     // Map to track which canonical tiles we've seen at which indices (for duplicate detection)
     std::map<PixelTile<IndexPixel>, std::size_t> canonical_first_occurrence;
 
+    /*
+     * Each tile index is visited exactly once. A tile is mangled at most once, producing at most one TileMangleRecord.
+     * This guarantees that mangle_records contains non-overlapping entries (no two records share the same tile_index),
+     * so they can be applied independently in any order.
+     */
     for (std::size_t i = 0; i < result.tiles.size(); ++i) {
         PixelTile<IndexPixel> &current_tile = result.tiles[i];
 
         // Canonicalize the current tile for duplicate checking
-        CanonicalPixelTile<IndexPixel> canonical_current{current_tile};
+        CanonicalPixelTile canonical_current{current_tile};
         const PixelTile<IndexPixel> &current_base = canonical_current;
 
         // Check if this tile is a duplicate (either of existing_canonical_tiles or a previous tile in this batch)
@@ -283,7 +290,7 @@ ChainableResult<MangleResult> AnimKeyFrameMangler::mangle_duplicates(
 
             // Apply the mangle
             current_tile = mangle_result->first;
-            result.mangle_records.push_back(mangle_result->second);
+            result.mangle_records.insert(mangle_result->second);
 
             // Emit a remark about the mangle
             const auto [pixel_row, pixel_col] = tile::index_to_row_col(mangle_result->second.pixel_index);
