@@ -290,7 +290,7 @@ void backport_mangles_to_tiles_png(
     PorymapTilesetComponent *component, std::size_t base_tile_offset, const std::vector<TileMangleRecord> &records)
 {
     Image<IndexPixel> tiles_img = component->tiles_png();
-    constexpr std::size_t tiles_per_row = 16;
+    constexpr std::size_t tiles_per_row = metatile::metatiles_per_row * metatile::tiles_per_side;
 
     for (const auto &record : records) {
         const std::size_t global_tile_idx = base_tile_offset + record.tile_index;

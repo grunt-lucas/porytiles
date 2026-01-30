@@ -299,7 +299,7 @@ ChainableResult<MangleResult> AnimKeyFrameMangler::mangle_duplicates(
         }
 
         // Re-canonicalize after potential mangle and add to tracking sets
-        CanonicalPixelTile<IndexPixel> final_canonical{current_tile};
+        CanonicalPixelTile final_canonical{current_tile};
         const PixelTile<IndexPixel> &final_base = final_canonical;
         canonical_first_occurrence.emplace(final_base, i);
         all_canonical_tiles.insert(final_base);

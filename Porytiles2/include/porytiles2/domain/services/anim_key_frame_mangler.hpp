@@ -26,8 +26,8 @@ namespace porytiles2 {
  * change to the tiles.png image.
  */
 struct TileMangleRecord {
-    std::size_t tile_index;    ///< Which tile in the key frame (0-based index)
-    std::size_t pixel_index;   ///< Which pixel in the tile (0-63, linear index)
+    std::size_t tile_index{};  ///< Which tile in the key frame (0-based index)
+    std::size_t pixel_index{}; ///< Which pixel in the tile (0-63, linear index)
     IndexPixel original_pixel; ///< The pixel value before mangling
     IndexPixel mangled_pixel;  ///< The pixel value after mangling
 };

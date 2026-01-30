@@ -2,6 +2,7 @@
 
 #include "porytiles2/domain/algorithms/tile_converters.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
+#include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
@@ -54,7 +55,7 @@ Image<IndexPixel>
 export_image_helper(const TilesPngWorkspace &workspace, ExportFlipMode flip_mode, ExportTrimMode trim_mode)
 {
     // Standard tiles.png format: 16 tiles per row (128 pixels wide)
-    constexpr std::size_t tiles_per_row = 16;
+    constexpr std::size_t tiles_per_row = metatile::metatiles_per_row * metatile::tiles_per_side;
 
     // Determine the effective tile count based on export mode
     std::size_t effective_tile_count = workspace.capacity();
