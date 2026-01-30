@@ -12,4 +12,5 @@ runs:
         sudo apt-get install -y cmake
         sudo apt-get install -y doxygen
         sudo apt-get install -y graphviz
-        sudo apt-get install -y uv
+        curl -LsSf https://astral.sh/uv/install.sh | sh
+        echo "$HOME/.local/bin" >> $GITHUB_PATH
