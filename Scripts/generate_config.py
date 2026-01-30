@@ -13,6 +13,27 @@ from jinja2 import Environment, FileSystemLoader, select_autoescape
 from pathlib import Path
 
 
+def extract_all_yaml_paths(config_values):
+    """
+    Extract all valid YAML paths from config values, including intermediate paths.
+
+    For path "fieldmap.num_tiles_in_primary", generates both:
+    - "fieldmap" (valid as an intermediate node)
+    - "fieldmap.num_tiles_in_primary" (valid as a leaf node)
+
+    Returns a sorted list for deterministic output.
+    """
+    paths = set()
+    for config in config_values:
+        if "yaml" in config and "path" in config["yaml"]:
+            full_path = config["yaml"]["path"]
+            parts = full_path.split(".")
+            # Add all prefixes and the full path
+            for i in range(1, len(parts) + 1):
+                paths.add(".".join(parts[:i]))
+    return sorted(paths)
+
+
 def generate_config_files():
     """Main generation function."""
     # Determine project root (script is in Scripts/)
@@ -120,6 +141,11 @@ def generate_config_files():
 
     print(f"Loaded {len(schema['config_values'])} config values from schema")
 
+    # Extract all valid YAML paths for unknown key detection
+    all_yaml_paths = extract_all_yaml_paths(schema["config_values"])
+    schema["all_yaml_paths"] = all_yaml_paths
+    print(f"Extracted {len(all_yaml_paths)} valid YAML paths")
+
     # Setup Jinja2 environment with new template directory
     template_dir = project_root / "Porytiles2" / "config_templates"
     env = Environment(
@@ -179,6 +205,20 @@ def generate_config_files():
         (
             "yaml_file_provider.cpp.jinja2",
             "Porytiles2/lib/infra/config/yaml_file_provider.cpp",
+        ),
+        # HeaderDefineProvider
+        (
+            "header_define_provider.hpp.jinja2",
+            "Porytiles2/include/porytiles2/infra/config/header_define_provider.hpp",
+        ),
+        (
+            "header_define_provider.cpp.jinja2",
+            "Porytiles2/lib/infra/config/header_define_provider.cpp",
+        ),
+        # Valid YAML paths for unknown key detection
+        (
+            "valid_yaml_paths.hpp.jinja2",
+            "Porytiles2/include/porytiles2/infra/config/valid_yaml_paths.hpp",
         ),
     ]
 

@@ -2,8 +2,11 @@
 
 #include <array>
 
+#include "porytiles2/domain/models/layer.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/supports_transparency.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
+#include "porytiles2/utilities/string_utils.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 
 namespace porytiles2 {
@@ -16,10 +19,11 @@ inline constexpr std::size_t tiles_per_metatile = tiles_per_metatile_layer * 3;
 inline constexpr std::size_t side_length_pix = tiles_per_side * tile::side_length_pix;
 inline constexpr std::size_t entries_per_metatile_dual = 8;
 inline constexpr std::size_t entries_per_metatile_triple = 12;
+inline constexpr std::size_t metatiles_per_row = 8;
 
 enum class Layer : std::uint8_t { bottom = 0, middle = 1, top = 2 };
 
-inline std::string to_string(Layer layer)
+[[nodiscard]] inline std::string to_string(Layer layer)
 {
     switch (layer) {
     case Layer::bottom:
@@ -32,9 +36,20 @@ inline std::string to_string(Layer layer)
     panic("unhandled Layer value");
 }
 
+inline std::ostream &operator<<(std::ostream &os, const Layer &layer)
+{
+    os << to_string(layer);
+    return os;
+}
+
 enum class Subtile : std::uint8_t { northwest = 0, northeast = 1, southwest = 2, southeast = 3 };
 
-inline std::string to_string(Subtile layer)
+[[nodiscard]] inline Subtile subtile_from_index(std::size_t i)
+{
+    return static_cast<Subtile>(i);
+}
+
+[[nodiscard]] inline std::string to_string(Subtile layer)
 {
     switch (layer) {
     case Subtile::northwest:
@@ -49,6 +64,29 @@ inline std::string to_string(Subtile layer)
     panic("unhandled Subtile value");
 }
 
+inline std::ostream &operator<<(std::ostream &os, const Subtile &subtile)
+{
+    os << to_string(subtile);
+    return os;
+}
+
+/**
+ * @brief Decomposes a global tile index into its metatile index, layer, and subtile position.
+ *
+ * @details
+ * Converts a linear tile index from the global tileset into three components:
+ * - The metatile index (which metatile this tile belongs to)
+ * - The layer within that metatile (bottom, middle, or top)
+ * - The subtile position within that layer (northwest, northeast, southwest, or southeast)
+ *
+ * Tiles are indexed in metatile-major order: all tiles of metatile 0 come first (bottom layer, then middle layer, then
+ * top layer), followed by all tiles of metatile 1, and so on.
+ *
+ * @param tile_index The global tile index to decompose
+ * @return A tuple containing (metatile_index, layer, subtile)
+ *
+ * @see from_internal_tile_index() for decomposing indices within a single metatile
+ */
 [[nodiscard]] inline std::tuple<std::size_t, Layer, Subtile> from_tile_index(std::size_t tile_index)
 {
     const std::size_t metatile_index = tile_index / tiles_per_metatile;
@@ -59,22 +97,75 @@ inline std::string to_string(Subtile layer)
     return {metatile_index, layer, subtile};
 }
 
+/**
+ * @brief Decomposes an internal tile index into its layer and subtile position within a metatile.
+ *
+ * @details
+ * Converts a tile index local to a single metatile (range 0-11) into two components:
+ * - The layer within the metatile (bottom, middle, or top)
+ * - The subtile position within that layer (northwest, northeast, southwest, or southeast)
+ *
+ * Tiles within a metatile are indexed in layer-major order: bottom layer tiles (0-3), followed by middle layer tiles
+ * (4-7), then top layer tiles (8-11).
+ *
+ * @param tile_index The internal tile index to decompose (must be in range [0, tiles_per_metatile))
+ * @pre tile_index < tiles_per_metatile (i.e., tile_index must be in range [0, 11])
+ * @return A tuple containing (layer, subtile)
+ *
+ * @see from_tile_index() for decomposing global tile indices
+ */
+[[nodiscard]] inline std::tuple<Layer, Subtile> from_internal_tile_index(std::size_t tile_index)
+{
+    if (tile_index >= tiles_per_metatile) {
+        panic("tile_index (" + std::to_string(tile_index) + ") >= tiles_per_metatile");
+    }
+
+    const std::size_t local_index = tile_index % tiles_per_metatile;
+    const auto layer = static_cast<Layer>(local_index / tiles_per_metatile_layer);
+    const auto subtile = static_cast<Subtile>(local_index % tiles_per_metatile_layer);
+
+    return {layer, subtile};
+}
+
 [[nodiscard]] inline std::string message_header(
+    const TextFormatter &format,
     std::size_t index,
     Layer layer,
     Subtile subtile,
     std::size_t subtile_row,
-    std::size_t subtile_col,
-    const TextFormatter &format)
+    std::size_t subtile_col)
 {
     return format.format(
-        "{} {}|{}|{}|{},{}",
-        FormatParam{"metatile", Style::bold},
-        FormatParam{index, Style::bold},
-        FormatParam{to_string(layer), Style::bold},
-        FormatParam{to_string(subtile), Style::bold},
-        FormatParam{std::to_string(subtile_row), Style::bold},
-        FormatParam{std::to_string(subtile_col), Style::bold});
+        "{} {}({})|{}|{}|{},{}",
+        FormatParam{"metatile"},
+        FormatParam{int_to_hex_str(index)},
+        FormatParam{index},
+        FormatParam{to_string(layer)},
+        FormatParam{to_string(subtile)},
+        FormatParam{std::to_string(subtile_row)},
+        FormatParam{std::to_string(subtile_col)});
+}
+
+[[nodiscard]] inline std::string
+message_header(const TextFormatter &format, std::size_t index, Layer layer, Subtile subtile)
+{
+    return format.format(
+        "{} {}({})|{}|{}",
+        FormatParam{"metatile"},
+        FormatParam{int_to_hex_str(index)},
+        FormatParam{index},
+        FormatParam{to_string(layer)},
+        FormatParam{to_string(subtile)});
+}
+
+[[nodiscard]] inline std::string message_header(const TextFormatter &format, std::size_t index, Subtile subtile)
+{
+    return format.format(
+        "{} {}({})|{}",
+        FormatParam{"metatile"},
+        FormatParam{int_to_hex_str(index)},
+        FormatParam{index},
+        FormatParam{to_string(subtile)});
 }
 
 } // namespace metatile
@@ -162,6 +253,78 @@ class Metatile {
     }
 
     /**
+     * @brief Infers the layer mode (dual or triple) based on metatile content (intrinsic transparency only).
+     *
+     * @details
+     * A metatile uses triple-layer mode if all three layers contain at least one non-transparent pixel.
+     * Otherwise, it uses dual-layer mode. This overload uses intrinsic transparency checking.
+     *
+     * @return LayerMode::triple if all layers have content, LayerMode::dual otherwise
+     */
+    [[nodiscard]] LayerMode infer_layer_mode() const
+        requires requires(const PixelType &p) { p.is_transparent(); }
+    {
+        return infer_layer_mode_impl([](const PixelType &pixel) { return pixel.is_transparent(); });
+    }
+
+    /**
+     * @brief Infers the layer mode (dual or triple) based on metatile content.
+     *
+     * @details
+     * A metatile uses triple-layer mode if all three layers contain at least one non-transparent pixel.
+     * Otherwise, it uses dual-layer mode. This overload uses both intrinsic and extrinsic transparency checking.
+     *
+     * @param extrinsic The extrinsic transparency value to check each pixel against
+     * @return LayerMode::triple if all layers have content, LayerMode::dual otherwise
+     */
+    [[nodiscard]] LayerMode infer_layer_mode(const PixelType &extrinsic) const
+        requires requires(const PixelType &p) { p.is_transparent(p); }
+    {
+        return infer_layer_mode_impl([&extrinsic](const PixelType &pixel) { return pixel.is_transparent(extrinsic); });
+    }
+
+    /**
+     * @brief Infers the layer type based on which layers contain content (intrinsic transparency only).
+     *
+     * @details
+     * Determines which layers (bottom, middle, top) are active for rendering based on content:
+     * - Triple-layer mode always returns LayerType::normal
+     * - For dual-layer mode, determines the layer type based on which layers have content:
+     *   - Bottom only → covered
+     *   - Bottom + middle → covered
+     *   - Bottom + top → split
+     *   - All other combinations → normal
+     *
+     * @return The inferred LayerType
+     */
+    [[nodiscard]] LayerType infer_layer_type() const
+        requires requires(const PixelType &p) { p.is_transparent(); }
+    {
+        return infer_layer_type_impl([](const PixelType &pixel) { return pixel.is_transparent(); });
+    }
+
+    /**
+     * @brief Infers the layer type based on which layers contain content.
+     *
+     * @details
+     * Determines which layers (bottom, middle, top) are active for rendering based on content:
+     * - Triple-layer mode always returns LayerType::normal
+     * - For dual-layer mode, determines the layer type based on which layers have content:
+     *   - Bottom only → covered
+     *   - Bottom + middle → covered
+     *   - Bottom + top → split
+     *   - All other combinations → normal
+     *
+     * @param extrinsic The extrinsic transparency value to check each pixel against
+     * @return The inferred LayerType
+     */
+    [[nodiscard]] LayerType infer_layer_type(const PixelType &extrinsic) const
+        requires requires(const PixelType &p) { p.is_transparent(p); }
+    {
+        return infer_layer_type_impl([&extrinsic](const PixelType &pixel) { return pixel.is_transparent(extrinsic); });
+    }
+
+    /**
      * @brief Get a constant reference to a PixelTile from the bottom layer.
      *
      * @details
@@ -173,7 +336,7 @@ class Metatile {
     [[nodiscard]] const PixelTile<PixelType> &bottom(std::size_t i) const
     {
         if (i > 3) {
-            panic(fmt::format("index {} out of bounds: must be [0,3]", i));
+            panic(std::format("index {} out of bounds: must be [0,3]", i));
         }
         return bottom_[i];
     }
@@ -203,7 +366,7 @@ class Metatile {
     void set_bottom(std::size_t i, PixelTile<PixelType> tile)
     {
         if (i > 3) {
-            panic(fmt::format("index {} out of bounds: must be [0,3]", i));
+            panic(std::format("index {} out of bounds: must be [0,3]", i));
         }
         bottom_[i] = std::move(tile);
     }
@@ -220,7 +383,7 @@ class Metatile {
     [[nodiscard]] const PixelTile<PixelType> &middle(std::size_t i) const
     {
         if (i > 3) {
-            panic(fmt::format("index {} out of bounds: must be [0,3]", i));
+            panic(std::format("index {} out of bounds: must be [0,3]", i));
         }
         return middle_[i];
     }
@@ -250,7 +413,7 @@ class Metatile {
     void set_middle(std::size_t i, PixelTile<PixelType> tile)
     {
         if (i > 3) {
-            panic(fmt::format("index {} out of bounds: must be [0,3]", i));
+            panic(std::format("index {} out of bounds: must be [0,3]", i));
         }
         middle_[i] = std::move(tile);
     }
@@ -267,7 +430,7 @@ class Metatile {
     [[nodiscard]] const PixelTile<PixelType> &top(std::size_t i) const
     {
         if (i > 3) {
-            panic(fmt::format("index {} out of bounds: must be [0,3]", i));
+            panic(std::format("index {} out of bounds: must be [0,3]", i));
         }
         return top_[i];
     }
@@ -297,16 +460,103 @@ class Metatile {
     void set_top(std::size_t i, PixelTile<PixelType> tile)
     {
         if (i > 3) {
-            panic(fmt::format("index {} out of bounds: must be [0,3]", i));
+            panic(std::format("index {} out of bounds: must be [0,3]", i));
         }
         top_[i] = std::move(tile);
     }
 
   private:
+    /**
+     * @brief Helper method to check if a layer has any non-transparent content.
+     *
+     * @details
+     * Checks if at least one tile in the given layer array contains at least one non-transparent pixel.
+     *
+     * @tparam TransparencyPredicate A callable type that takes a PixelType and returns bool
+     * @param layer The layer array to check
+     * @param is_transparent_pred A predicate function that returns true if a pixel is transparent
+     * @return True if the layer has any non-transparent content, false otherwise
+     */
+    template <typename TransparencyPredicate>
+    [[nodiscard]] bool layer_has_content(
+        const std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> &layer,
+        TransparencyPredicate is_transparent_pred) const
+    {
+        return std::ranges::any_of(layer, [&is_transparent_pred](const auto &tile) {
+            return std::ranges::any_of(
+                tile.pix(), [&is_transparent_pred](const auto &pixel) { return !is_transparent_pred(pixel); });
+        });
+    }
+
+    /**
+     * @brief Implementation helper for infer_layer_mode().
+     *
+     * @details
+     * Contains the core layer mode inference logic that works with any transparency predicate.
+     *
+     * @tparam TransparencyPredicate A callable type that takes a PixelType and returns bool
+     * @param is_transparent_pred A predicate function that returns true if a pixel is transparent
+     * @return LayerMode::triple if all layers have content, LayerMode::dual otherwise
+     */
+    template <typename TransparencyPredicate>
+    [[nodiscard]] LayerMode infer_layer_mode_impl(TransparencyPredicate is_transparent_pred) const
+    {
+        const bool bottom_has_content = layer_has_content(bottom_, is_transparent_pred);
+        const bool middle_has_content = layer_has_content(middle_, is_transparent_pred);
+        const bool top_has_content = layer_has_content(top_, is_transparent_pred);
+
+        if (bottom_has_content && middle_has_content && top_has_content) {
+            return LayerMode::triple;
+        }
+        return LayerMode::dual;
+    }
+
+    /**
+     * @brief Implementation helper for infer_layer_type().
+     *
+     * @details
+     * Contains the core layer type inference logic that works with any transparency predicate.
+     *
+     * @tparam TransparencyPredicate A callable type that takes a PixelType and returns bool
+     * @param is_transparent_pred A predicate function that returns true if a pixel is transparent
+     * @return The inferred LayerType
+     */
+    template <typename TransparencyPredicate>
+    [[nodiscard]] LayerType infer_layer_type_impl(TransparencyPredicate is_transparent_pred) const
+    {
+        // If triple-layer mode, always return normal
+        const LayerMode mode = infer_layer_mode_impl(is_transparent_pred);
+        if (mode == LayerMode::triple) {
+            return LayerType::normal;
+        }
+
+        // For dual-layer mode, determine which layers have content
+        const bool bottom_has_content = layer_has_content(bottom_, is_transparent_pred);
+        const bool middle_has_content = layer_has_content(middle_, is_transparent_pred);
+        const bool top_has_content = layer_has_content(top_, is_transparent_pred);
+
+        // Apply the case logic
+        if (bottom_has_content && !middle_has_content && top_has_content) {
+            // Case 6: bottom/top content -> split
+            return LayerType::split;
+        }
+        if (bottom_has_content && (middle_has_content || !top_has_content)) {
+            // Case 1: bottom only -> covered
+            // Case 5: bottom/middle content -> covered
+            return LayerType::covered;
+        }
+        // All other cases (including no content) -> normal
+        // Case 0: completely transparent -> normal
+        // Case 2: middle only -> normal
+        // Case 3: top only -> normal
+        // Case 4: middle/top content -> normal
+        return LayerType::normal;
+    }
+
     std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> bottom_;
     std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> middle_;
     std::array<PixelTile<PixelType>, metatile::tiles_per_metatile_layer> top_;
-    unsigned int id_;
+    std::size_t id_;
 };
 
 namespace metatile {

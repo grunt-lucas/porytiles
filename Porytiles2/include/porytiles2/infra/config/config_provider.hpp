@@ -2,10 +2,14 @@
 
 #include <string>
 
-#include "porytiles2/app/config/incremental_build_mode.hpp"
+#include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
+#include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
+#include "porytiles2/domain/config/artifact_edit_mode.hpp"
+#include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/domain/packing/models/palette_hint.hpp"
 #include "porytiles2/infra/config/layer_value.hpp"
-#include "porytiles2/infra/config/tiles_pal_mode.hpp"
+#include "porytiles2/xcut/config/config_scope_type.hpp"
 
 namespace porytiles2 {
 
@@ -39,34 +43,69 @@ class ConfigProvider {
      * Domain Config
      */
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_primary(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<std::size_t>
+    num_tiles_in_primary(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_total(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_total(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_metatiles_primary(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<std::size_t>
+    num_metatiles_in_primary(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_metatiles_total(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<std::size_t>
+    num_metatiles_total(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_primary(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<std::size_t>
+    num_pals_in_primary(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_total(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_total(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> max_map_data_size(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<std::size_t>
+    max_map_data_size(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_per_metatile(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<std::size_t>
+    num_tiles_per_metatile(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<Rgba32> extrinsic_transparency(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<Rgba32>
+    extrinsic_transparency(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<bool> patch_build_enabled(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<ArtifactEditMode>
+    tiles_edit_mode(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<ArtifactEditMode>
+    pals_edit_mode(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<bool> pal_hints_enabled(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<std::vector<PaletteHint>>
+    pal_hints(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<TilesPalMode> tiles_pal_mode(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<AnimPalResolutionStrategy>
+    anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<AnimKeyFrameResolutionStrategy>
+    anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const;
 
     /*
      * App Config
      */
 
+    [[nodiscard]] virtual LayerValue<bool> verify_checksums(ConfigScopeType type, const std::string &scope) const;
+
     /*
      * Infra Config
      */
-    [[nodiscard]] virtual LayerValue<TilesPalMode> tiles_pal_mode(const std::string &tileset) const;
+    [[nodiscard]] virtual LayerValue<std::string>
+    tileset_paths_primary_src(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::string>
+    tileset_paths_primary_bin(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::string>
+    tileset_paths_secondary_src(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::string>
+    tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<bool>
+    tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const;
 };
 
 } // namespace porytiles2

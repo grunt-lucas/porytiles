@@ -2,9 +2,11 @@
 
 // ReSharper disable once CppUnusedIncludeDirective
 #include <cstdint>
+#include <format>
 #include <ostream>
 #include <set>
 #include <string>
+#include <vector>
 
 namespace porytiles2 {
 
@@ -35,6 +37,28 @@ class Rgba32 {
     bool operator==(const Rgba32 &rgba) const = default;
 
     /**
+     * @brief Checks if this color is intrinsically transparent based on its alpha channel.
+     *
+     * @details
+     * A color is intrinsically transparent if its alpha value is 0.
+     *
+     * @return True if alpha == alpha_transparent, false otherwise
+     */
+    [[nodiscard]] bool is_intrinsically_transparent() const;
+
+    /**
+     * @brief Checks if this color matches the extrinsic transparency color.
+     *
+     * @details
+     * A color is extrinsically transparent if its RGB components match the extrinsic transparency color, regardless of
+     * alpha values.
+     *
+     * @param extrinsic The extrinsic transparency color to check against
+     * @return True if this color's RGB components match the extrinsic color, false otherwise
+     */
+    [[nodiscard]] bool is_extrinsically_transparent(const Rgba32 &extrinsic) const;
+
+    /**
      * @brief Checks if this color should be treated as transparent.
      *
      * @details
@@ -47,6 +71,8 @@ class Rgba32 {
     [[nodiscard]] bool is_transparent(const Rgba32 &extrinsic) const;
 
     [[nodiscard]] std::string to_jasc_str() const;
+
+    [[nodiscard]] std::string to_csv_str() const;
 
     [[nodiscard]] bool equals_ignoring_alpha(const Rgba32 &other) const;
 
@@ -95,17 +121,6 @@ inline std::ostream &operator<<(std::ostream &os, const Rgba32 &rgba)
     return os;
 }
 
-/**
- * @brief Provides a simple way for fmtlib to format an Rgba32.
- *
- * @details
- * https://fmt.dev/11.1/api/#formatting-user-defined-types
- */
-inline auto format_as(const Rgba32 &rgba)
-{
-    return rgba.to_jasc_str();
-}
-
 inline std::string to_string(const Rgba32 &rgba)
 {
     return rgba.to_jasc_str();
@@ -122,6 +137,37 @@ constexpr Rgba32 rgba_magenta{255, 0, 255, Rgba32::alpha_opaque};
 constexpr Rgba32 rgba_cyan{0, 255, 255, Rgba32::alpha_opaque};
 constexpr Rgba32 rgba_purple{128, 0, 255, Rgba32::alpha_opaque};
 constexpr Rgba32 rgba_lime{128, 255, 128, Rgba32::alpha_opaque};
+
+/**
+ * @brief Returns the standard 16-color greyscale palette used for indexed tile output.
+ *
+ * @details
+ * This palette maps index 0 to pure white and index 15 to pure black, which matches vanilla game tilesets. The
+ * intermediate values are evenly spaced greyscale tones.
+ *
+ * @return A vector of 16 Rgba32 colors representing the greyscale palette
+ */
+inline std::vector<Rgba32> standard_greyscale_pal()
+{
+    return {
+        Rgba32{255, 255, 255, 255},
+        Rgba32{238, 238, 238, 255},
+        Rgba32{222, 222, 222, 255},
+        Rgba32{205, 205, 205, 255},
+        Rgba32{189, 189, 189, 255},
+        Rgba32{172, 172, 172, 255},
+        Rgba32{156, 156, 156, 255},
+        Rgba32{139, 139, 139, 255},
+        Rgba32{115, 115, 115, 255},
+        Rgba32{98, 98, 98, 255},
+        Rgba32{82, 82, 82, 255},
+        Rgba32{65, 65, 65, 255},
+        Rgba32{49, 49, 49, 255},
+        Rgba32{32, 32, 32, 255},
+        Rgba32{16, 16, 16, 255},
+        Rgba32{0, 0, 0, 255},
+    };
+}
 
 // std::size_t hash_value(const Rgba32 &obj) {
 //     std::size_t seed = 0x7A22F97A;
@@ -144,5 +190,18 @@ struct std::hash<porytiles2::Rgba32> {
         const std::size_t h3 = std::hash<std::uint8_t>{}(rgba.blue());
         const std::size_t h4 = std::hash<std::uint8_t>{}(rgba.alpha());
         return h1 ^ (h2 << 8) ^ (h3 << 16) ^ (h4 << 24);
+    }
+};
+
+template <>
+struct std::formatter<porytiles2::Rgba32> {
+    constexpr auto parse(std::format_parse_context &ctx)
+    {
+        return ctx.begin();
+    }
+
+    auto format(const porytiles2::Rgba32 &rgba, std::format_context &ctx) const
+    {
+        return std::format_to(ctx.out(), "{}", rgba.to_jasc_str());
     }
 };

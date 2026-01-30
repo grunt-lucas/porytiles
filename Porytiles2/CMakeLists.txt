@@ -2,22 +2,12 @@
 # Set a variable that points to the global include directory for Porytiles
 set(PORYTILES2_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/Porytiles2/include)
 
-set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -fstandalone-debug -fno-limit-debug-info -fno-omit-frame-pointer")
-
 # ============================================================================
 # Configuration Code Generation
 # ============================================================================
 
-# Find Python interpreter - prefer venv if it exists
-if (EXISTS "${CMAKE_SOURCE_DIR}/.venv/bin/python3.13")
-    set(Python3_EXECUTABLE "${CMAKE_SOURCE_DIR}/.venv/bin/python3.13")
-elseif (EXISTS "${CMAKE_SOURCE_DIR}/.venv/bin/python3")
-    set(Python3_EXECUTABLE "${CMAKE_SOURCE_DIR}/.venv/bin/python3")
-elseif (EXISTS "${CMAKE_SOURCE_DIR}/.venv/bin/python")
-    set(Python3_EXECUTABLE "${CMAKE_SOURCE_DIR}/.venv/bin/python")
-endif ()
-
-find_package(Python3 COMPONENTS Interpreter REQUIRED)
+# Find uv executable for Python script execution
+find_program(UV_EXECUTABLE uv REQUIRED)
 
 # Define generated output files
 set(GENERATED_CONFIG_FILES
@@ -37,6 +27,7 @@ set(GENERATED_CONFIG_FILES
         # YamlFileProvider
         ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/infra/config/yaml_file_provider.hpp
         ${CMAKE_SOURCE_DIR}/Porytiles2/lib/infra/config/yaml_file_provider.cpp
+        ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/infra/config/valid_yaml_paths.hpp
 )
 
 # Define schema and template files
@@ -44,30 +35,22 @@ set(CONFIG_SCHEMA
         ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/config_schema.yaml
 )
 
-set(CONFIG_TEMPLATES
-        ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/domain_config.hpp.jinja2
-        ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/app_config.hpp.jinja2
-        ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/infra_config.hpp.jinja2
-        ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/lazy_layered_config.hpp.jinja2
-        ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/lazy_layered_config.cpp.jinja2
-        ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/config_provider.hpp.jinja2
-        ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/config_provider.cpp.jinja2
-        ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/default_provider.hpp.jinja2
-        ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/default_provider.cpp.jinja2
-        ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/yaml_file_provider.hpp.jinja2
-        ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/yaml_file_provider.cpp.jinja2
+# Glob all template files in the config_templates directory
+file(GLOB CONFIG_TEMPLATES
+        "${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/*.jinja2"
 )
 
-# Generate config files before building
+# Generate config files before building using uv run
 add_custom_command(
         OUTPUT ${GENERATED_CONFIG_FILES}
-        COMMAND ${Python3_EXECUTABLE} ${CMAKE_SOURCE_DIR}/Scripts/generate_config.py
+        COMMAND ${UV_EXECUTABLE} run ${CMAKE_SOURCE_DIR}/Scripts/generate_config.py
         DEPENDS
         ${CONFIG_SCHEMA}
         ${CMAKE_SOURCE_DIR}/Scripts/generate_config.py
         ${CONFIG_TEMPLATES}
+        ${CMAKE_SOURCE_DIR}/pyproject.toml
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
-        COMMENT "Generating configuration code from templates..."
+        COMMENT "Generating configuration code from templates (via uv)..."
         VERBATIM
 )
 

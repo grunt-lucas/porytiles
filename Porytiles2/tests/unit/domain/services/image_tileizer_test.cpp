@@ -3,7 +3,7 @@
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/services/image_tileizer.hpp"
-#include "porytiles2/xcut/result/chainable_result.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 using namespace porytiles2;
 

@@ -4,6 +4,8 @@
 
 namespace porytiles2 {
 
+enum class AnsiColorMode { plain, colors_256, colors_24_bit };
+
 /**
  * @brief TextFormatter implementation that applies ANSI escape codes for terminal styling.
  *
@@ -24,6 +26,10 @@ namespace porytiles2 {
  */
 class AnsiStyledTextFormatter final : public TextFormatter {
   public:
+    AnsiStyledTextFormatter() : mode_{AnsiColorMode::plain} {}
+
+    explicit AnsiStyledTextFormatter(AnsiColorMode mode) : mode_{mode} {}
+
     /**
      * @brief Applies ANSI escape codes to style text according to the specified Style flags.
      *
@@ -40,6 +46,9 @@ class AnsiStyledTextFormatter final : public TextFormatter {
      * @return The text wrapped with appropriate ANSI escape codes, or unchanged if styles is Style::none
      */
     [[nodiscard]] std::string style(const std::string &text, Style styles) const override;
+
+  private:
+    AnsiColorMode mode_;
 };
 
 } // namespace porytiles2

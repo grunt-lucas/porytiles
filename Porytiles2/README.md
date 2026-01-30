@@ -6,8 +6,7 @@ MV2's code lives in this `Porytiles2` directory,
 and the driver code lives in the `tools/driver` subtree.
 MV2 is tested via GoogleTest: the tests live in the `tests` subtree.
 
-Unlike MV1, MV2 uses a library-based architecture [inspired by clang](https://clang.llvm.org/features.html#libraryarch)
-and informed by domain-driven design principles.
+Unlike MV1, MV2 uses a library-based architecture informed by domain-driven design principles.
 This should make it much easier for other developers
 to integrate with their own tooling.
 Our long-term goal is to integrate the core Porytiles functionality
@@ -18,15 +17,16 @@ directly into Porymap.
 Porytiles2 uses a code generation system for configuration classes based on Python and Jinja2.
 Configuration values are defined in `config_templates/config_schema.yaml` and C++ code is auto-generated.
 
-### Setting up the Python environment
+### Prerequisites
 
-On a new workstation, you'll need to set up the Python virtual environment:
+Install [uv](https://docs.astral.sh/uv/getting-started/installation/) - a fast Python package manager:
 
 ```bash
-# From the project root directory
-python3.13 -m venv .venv
-source .venv/bin/activate
-pip install -r Scripts/requirements.txt
+# macOS/Linux
+curl -LsSf https://astral.sh/uv/install.sh | sh
+
+# Or via Homebrew
+brew install uv
 ```
 
 ### Regenerating configuration code
@@ -39,6 +39,5 @@ To manually regenerate configuration code:
 
 ```bash
 # From the project root directory
-source .venv/bin/activate
-python Scripts/generate_config.py
+uv run Scripts/generate_config.py
 ```

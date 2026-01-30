@@ -177,13 +177,14 @@ TEST(TilesPngWorkspaceTests, InsertTileShouldInsertNonTransparentTile)
     pixel_tile.set(0, 0, IndexPixel{1});
     CanonicalPixelTile<IndexPixel> tile{pixel_tile};
 
-    bool result = workspace.insert_tile(tile);
+    std::size_t result = workspace.insert_tile(tile);
 
-    EXPECT_TRUE(result);
+    // Should return index 1 (first slot after reserved tile 0)
+    EXPECT_EQ(result, 1);
     EXPECT_FALSE(workspace.tile_at(1).is_transparent());
 }
 
-TEST(TilesPngWorkspaceTests, InsertTileShouldReturnFalseForTransparentTile)
+TEST(TilesPngWorkspaceTests, InsertTileShouldReturnZeroForTransparentTile)
 {
     TilesPngWorkspace workspace{10};
 
@@ -191,12 +192,13 @@ TEST(TilesPngWorkspaceTests, InsertTileShouldReturnFalseForTransparentTile)
     PixelTile<IndexPixel> pixel_tile;
     CanonicalPixelTile<IndexPixel> tile{pixel_tile};
 
-    bool result = workspace.insert_tile(tile);
+    std::size_t result = workspace.insert_tile(tile);
 
-    EXPECT_FALSE(result);
+    // Transparent tiles return 0 (the standard transparent tile index)
+    EXPECT_EQ(result, 0);
 }
 
-TEST(TilesPngWorkspaceTests, InsertTileShouldReturnFalseWhenAtCapacity)
+TEST(TilesPngWorkspaceTests, InsertTileShouldPanicWhenAtCapacity)
 {
     TilesPngWorkspace workspace{1};
 
@@ -208,9 +210,8 @@ TEST(TilesPngWorkspaceTests, InsertTileShouldReturnFalseWhenAtCapacity)
     // Workspace with capacity 1 should be at capacity initially (tile 0 is reserved)
     EXPECT_TRUE(workspace.at_capacity());
 
-    bool result = workspace.insert_tile(tile);
-
-    EXPECT_FALSE(result);
+    // Attempting to insert when at capacity should panic
+    ASSERT_DEATH(std::ignore = workspace.insert_tile(tile), "TilesPngWorkspace is at capacity");
 }
 
 TEST(TilesPngWorkspaceTests, InsertTileShouldFillCapacityProperly)
@@ -221,23 +222,23 @@ TEST(TilesPngWorkspaceTests, InsertTileShouldFillCapacityProperly)
     // Insert tiles until at capacity
     for (std::size_t i = 1; i < capacity; ++i) {
         PixelTile<IndexPixel> pixel_tile;
-        pixel_tile.set(0, 0, IndexPixel{static_cast<unsigned int>(i)});
+        pixel_tile.set(0, 0, IndexPixel{i});
         CanonicalPixelTile<IndexPixel> tile{pixel_tile};
 
-        bool result = workspace.insert_tile(tile);
-        EXPECT_TRUE(result);
+        std::size_t result = workspace.insert_tile(tile);
+        // Each tile should be inserted at its expected index
+        EXPECT_EQ(result, i);
     }
 
     // Now should be at capacity
     EXPECT_TRUE(workspace.at_capacity());
 
-    // Try to insert one more
+    // Try to insert one more - should panic
     PixelTile<IndexPixel> pixel_tile;
     pixel_tile.set(0, 0, IndexPixel{99});
     CanonicalPixelTile<IndexPixel> tile{pixel_tile};
 
-    bool result = workspace.insert_tile(tile);
-    EXPECT_FALSE(result);
+    ASSERT_DEATH(std::ignore = workspace.insert_tile(tile), "TilesPngWorkspace is at capacity");
 }
 
 TEST(TilesPngWorkspaceTests, InsertTileShouldFastForwardCursorCorrectly)
@@ -247,7 +248,7 @@ TEST(TilesPngWorkspaceTests, InsertTileShouldFastForwardCursorCorrectly)
     // Insert a few non-transparent tiles
     for (std::size_t i = 0; i < 3; ++i) {
         PixelTile<IndexPixel> pixel_tile;
-        pixel_tile.set(0, 0, IndexPixel{static_cast<unsigned int>(i + 1)});
+        pixel_tile.set(0, 0, IndexPixel{i + 1});
         CanonicalPixelTile<IndexPixel> tile{pixel_tile};
 
         std::ignore = workspace.insert_tile(tile);
@@ -390,7 +391,7 @@ TEST(TilesPngWorkspaceTests, AtCapacityShouldReturnTrueWhenFull)
     // Fill workspace
     for (std::size_t i = 1; i < capacity; ++i) {
         PixelTile<IndexPixel> pixel_tile;
-        pixel_tile.set(0, 0, IndexPixel{static_cast<unsigned int>(i)});
+        pixel_tile.set(0, 0, IndexPixel{i});
         CanonicalPixelTile<IndexPixel> tile{pixel_tile};
         std::ignore = workspace.insert_tile(tile);
     }
@@ -426,10 +427,11 @@ TEST(TilesPngWorkspaceTests, ShouldHandleComplexWorkflow)
     pixel_tile.set(0, 0, IndexPixel{3});
     CanonicalPixelTile<IndexPixel> tile{pixel_tile};
 
-    bool result = workspace.insert_tile(tile);
-    EXPECT_TRUE(result);
+    std::size_t result = workspace.insert_tile(tile);
+    // Should be inserted at index 2 (after the two tiles loaded from image)
+    EXPECT_EQ(result, 2);
 
-    // Verify the inserted tile
+    // Verify the inserted tile via first_occurrence_of
     auto occurrence = workspace.first_occurrence_of(tile);
     EXPECT_TRUE(occurrence.has_value());
     EXPECT_EQ(occurrence.value(), 2);
@@ -467,7 +469,7 @@ TEST(TilesPngWorkspaceTests, ExportImageShouldHaveCorrectDimensions)
 {
     TilesPngWorkspace workspace{256};
 
-    auto img = workspace.export_canonical_image();
+    auto img = workspace.export_image(ExportFlipMode::original, ExportTrimMode::include_trailing_transparent);
 
     // Standard tiles.png format: 128 pixels wide (16 tiles)
     EXPECT_EQ(img.width(), 128);
@@ -479,7 +481,7 @@ TEST(TilesPngWorkspaceTests, ExportImageShouldCalculateHeightForNonSquareCapacit
 {
     TilesPngWorkspace workspace{32};
 
-    auto img = workspace.export_canonical_image();
+    auto img = workspace.export_image(ExportFlipMode::original, ExportTrimMode::include_trailing_transparent);
 
     // Standard tiles.png format: 128 pixels wide (16 tiles)
     EXPECT_EQ(img.width(), 128);
@@ -491,7 +493,7 @@ TEST(TilesPngWorkspaceTests, ExportImageShouldHandleNonEvenCapacity)
 {
     TilesPngWorkspace workspace{20};
 
-    auto img = workspace.export_canonical_image();
+    auto img = workspace.export_image(ExportFlipMode::original, ExportTrimMode::include_trailing_transparent);
 
     // Standard tiles.png format: 128 pixels wide (16 tiles)
     EXPECT_EQ(img.width(), 128);
@@ -503,7 +505,7 @@ TEST(TilesPngWorkspaceTests, ExportImageShouldBeAllTransparentForEmptyWorkspace)
 {
     TilesPngWorkspace workspace{16};
 
-    auto img = workspace.export_canonical_image();
+    auto img = workspace.export_image(ExportFlipMode::original, ExportTrimMode::include_trailing_transparent);
 
     // All pixels should be transparent (IndexPixel(0))
     for (std::size_t row = 0; row < img.height(); ++row) {
@@ -526,9 +528,9 @@ TEST(TilesPngWorkspaceTests, ExportImageShouldContainInsertedTiles)
     }
     CanonicalPixelTile<IndexPixel> tile{pixel_tile};
 
-    workspace.insert_tile(tile);
+    std::ignore = workspace.insert_tile(tile);
 
-    auto img = workspace.export_canonical_image();
+    auto img = workspace.export_image();
 
     // Tile 1 should be at pixel position (0, 8) since tile 0 is transparent
     // Tile 1 starts at pixel column 8 (second tile in first row)
@@ -561,7 +563,7 @@ TEST(TilesPngWorkspaceTests, RoundTripShouldPreserveImageContents)
     TilesPngWorkspace workspace{original, 10};
 
     // Export back to image
-    auto exported = workspace.export_canonical_image();
+    auto exported = workspace.export_image();
 
     // Verify the tiles are preserved - check a few pixels from each tile
     EXPECT_EQ(exported.at(0, 0).index(), 1);
@@ -611,7 +613,7 @@ TEST(TilesPngWorkspaceTests, RoundTripShouldPreserveComplexImage)
     TilesPngWorkspace workspace{original, 256};
 
     // Export back to image
-    auto exported = workspace.export_canonical_image();
+    auto exported = workspace.export_image();
 
     // Verify dimensions match (workspace capacity may be larger)
     EXPECT_EQ(exported.width(), 128); // Standard width
@@ -639,7 +641,7 @@ TEST(TilesPngWorkspaceTests, ExportImageShouldPlaceTilesInCorrectPositions)
         pixel_tile1.set(i, IndexPixel{100});
     }
     CanonicalPixelTile<IndexPixel> tile1{pixel_tile1};
-    workspace.insert_tile(tile1);
+    std::ignore = workspace.insert_tile(tile1);
 
     // Create and insert another tile
     PixelTile<IndexPixel> pixel_tile2;
@@ -647,9 +649,9 @@ TEST(TilesPngWorkspaceTests, ExportImageShouldPlaceTilesInCorrectPositions)
         pixel_tile2.set(i, IndexPixel{200});
     }
     CanonicalPixelTile<IndexPixel> tile2{pixel_tile2};
-    workspace.insert_tile(tile2);
+    std::ignore = workspace.insert_tile(tile2);
 
-    auto img = workspace.export_canonical_image();
+    auto img = workspace.export_image();
 
     // Tile 0 should be transparent
     EXPECT_EQ(img.at(0, 0).index(), 0);
@@ -678,7 +680,7 @@ TEST(TilesPngWorkspaceTests, ExportOriginalImageShouldPreserveOriginalPixelArran
     TilesPngWorkspace workspace{original, 10};
 
     // Export with original form restoration
-    auto exported_original = workspace.export_original_image();
+    auto exported_original = workspace.export_image(ExportFlipMode::original);
 
     // The original pixel arrangement should be preserved
     EXPECT_EQ(exported_original.at(0, 0).index(), 42);
@@ -705,8 +707,8 @@ TEST(TilesPngWorkspaceTests, ExportOriginalVsCanonicalShouldDifferForNonCanonica
     TilesPngWorkspace workspace{original, 10};
 
     // Export both forms
-    auto exported_canonical = workspace.export_canonical_image();
-    auto exported_original = workspace.export_original_image();
+    auto exported_canonical = workspace.export_image();
+    auto exported_original = workspace.export_image(ExportFlipMode::original);
 
     // Canonical form should have the pixel at (7,7) due to HV flip being lex-minimal
     EXPECT_EQ(exported_canonical.at(7, 7).index(), 99);
@@ -736,7 +738,7 @@ TEST(TilesPngWorkspaceTests, RoundTripWithExportOriginalShouldPreserveAllPixels)
     TilesPngWorkspace workspace{original, 10};
 
     // Export with original form restoration
-    auto exported = workspace.export_original_image();
+    auto exported = workspace.export_image(ExportFlipMode::original);
 
     // Verify all specific pixels are preserved
     EXPECT_EQ(exported.at(0, 0).index(), 10);
@@ -755,14 +757,14 @@ TEST(TilesPngWorkspaceTests, ExportOriginalImageShouldHandleComplexPatterns)
 
     // Create a diagonal gradient pattern (top-left to bottom-right)
     for (std::size_t i = 0; i < 8; ++i) {
-        original.set(i, i, IndexPixel{static_cast<unsigned int>(i + 1)});
+        original.set(i, i, IndexPixel{i + 1});
     }
 
     // Load into workspace
     TilesPngWorkspace workspace{original, 10};
 
     // Export with original form restoration
-    auto exported = workspace.export_original_image();
+    auto exported = workspace.export_image(ExportFlipMode::original);
 
     // Verify the diagonal pattern is preserved
     for (std::size_t i = 0; i < 8; ++i) {
@@ -789,8 +791,8 @@ TEST(TilesPngWorkspaceTests, ExportCanonicalShouldMatchForSymmetricTiles)
     TilesPngWorkspace workspace{original, 10};
 
     // Export both forms
-    auto exported_canonical = workspace.export_canonical_image();
-    auto exported_original = workspace.export_original_image();
+    auto exported_canonical = workspace.export_image();
+    auto exported_original = workspace.export_image(ExportFlipMode::original);
 
     // For symmetric tiles, both exports should be identical
     for (std::size_t row = 0; row < 8; ++row) {
@@ -799,4 +801,709 @@ TEST(TilesPngWorkspaceTests, ExportCanonicalShouldMatchForSymmetricTiles)
             EXPECT_EQ(exported_canonical.at(row, col).index(), 50);
         }
     }
+}
+
+// ========================================
+// find_contiguous_transparent_slots Tests
+// ========================================
+
+TEST(TilesPngWorkspaceTests, FindContiguousTransparentSlotsShouldFindSlotsInFreshWorkspace)
+{
+    TilesPngWorkspace workspace{20};
+
+    // Fresh workspace should have 19 contiguous transparent slots (indices 1-19, skipping tile 0)
+    auto result = workspace.find_contiguous_transparent_slots(5);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 1); // Should start at index 1
+}
+
+TEST(TilesPngWorkspaceTests, FindContiguousTransparentSlotsShouldFindSlotsAfterInsertions)
+{
+    TilesPngWorkspace workspace{20};
+
+    // Insert some tiles at indices 1, 2, 3
+    for (std::size_t i = 0; i < 3; ++i) {
+        PixelTile<IndexPixel> pixel_tile;
+        pixel_tile.set(0, 0, IndexPixel{i + 1});
+        CanonicalPixelTile<IndexPixel> tile{pixel_tile};
+        std::ignore = workspace.insert_tile(tile);
+    }
+
+    // Should now find contiguous slots starting at index 4
+    auto result = workspace.find_contiguous_transparent_slots(5);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 4);
+}
+
+TEST(TilesPngWorkspaceTests, FindContiguousTransparentSlotsShouldFindSlotsInFragmentedWorkspace)
+{
+    // Create workspace from image with scattered non-transparent tiles
+    Image<IndexPixel> img{64, 8};  // 8 tiles
+    img.set(0, 0, IndexPixel{1});  // Tile 0 non-transparent
+    img.set(0, 16, IndexPixel{2}); // Tile 2 non-transparent
+    img.set(0, 40, IndexPixel{3}); // Tile 5 non-transparent
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Available transparent runs: tiles 1 (len 1), tiles 3-4 (len 2), tiles 6-7 + padding (len 14)
+    // Looking for 3 contiguous should find starting at tile 6
+    auto result = workspace.find_contiguous_transparent_slots(3);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 6);
+}
+
+TEST(TilesPngWorkspaceTests, FindContiguousTransparentSlotsShouldReturnNulloptWhenNoSpace)
+{
+    // Create a nearly full workspace
+    TilesPngWorkspace workspace{5};
+
+    // Insert tiles to fill all slots except tile 0
+    for (std::size_t i = 0; i < 4; ++i) {
+        PixelTile<IndexPixel> pixel_tile;
+        pixel_tile.set(0, 0, IndexPixel{i + 1});
+        CanonicalPixelTile<IndexPixel> tile{pixel_tile};
+        std::ignore = workspace.insert_tile(tile);
+    }
+
+    // No contiguous space for 2 tiles
+    auto result = workspace.find_contiguous_transparent_slots(2);
+    EXPECT_FALSE(result.has_value());
+}
+
+TEST(TilesPngWorkspaceTests, FindContiguousTransparentSlotsShouldHandleCountZero)
+{
+    TilesPngWorkspace workspace{10};
+
+    // Count 0 is trivially satisfied
+    auto result = workspace.find_contiguous_transparent_slots(0);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 1);
+}
+
+TEST(TilesPngWorkspaceTests, FindContiguousTransparentSlotsShouldHandleExactCapacityMinus1)
+{
+    constexpr std::size_t capacity = 10;
+    TilesPngWorkspace workspace{capacity};
+
+    // Looking for capacity-1 tiles (all except tile 0)
+    auto result = workspace.find_contiguous_transparent_slots(capacity - 1);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 1);
+}
+
+TEST(TilesPngWorkspaceTests, FindContiguousTransparentSlotsShouldReturnNulloptWhenRequestExceedsCapacity)
+{
+    constexpr std::size_t capacity = 10;
+    TilesPngWorkspace workspace{capacity};
+
+    // Looking for more tiles than available (capacity - 1 is max since tile 0 is reserved)
+    auto result = workspace.find_contiguous_transparent_slots(capacity);
+    EXPECT_FALSE(result.has_value());
+}
+
+// ========================================
+// place_tiles_at Tests
+// ========================================
+
+TEST(TilesPngWorkspaceTests, PlaceTilesAtShouldPlaceTilesAtSpecifiedPosition)
+{
+    TilesPngWorkspace workspace{20};
+
+    // Create tiles to place
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_place;
+    for (std::size_t val : {10, 20, 30}) {
+        PixelTile<IndexPixel> pixel_tile;
+        for (std::size_t i = 0; i < 64; ++i) {
+            pixel_tile.set(i, IndexPixel{val});
+        }
+        tiles_to_place.emplace_back(pixel_tile);
+    }
+
+    // Place at position 5
+    workspace.place_tiles_at(5, tiles_to_place);
+
+    // Verify tiles are at positions 5, 6, 7
+    EXPECT_FALSE(workspace.tile_at(5).is_transparent());
+    EXPECT_FALSE(workspace.tile_at(6).is_transparent());
+    EXPECT_FALSE(workspace.tile_at(7).is_transparent());
+
+    // Verify positions before and after are still transparent
+    EXPECT_TRUE(workspace.tile_at(4).is_transparent());
+    EXPECT_TRUE(workspace.tile_at(8).is_transparent());
+}
+
+TEST(TilesPngWorkspaceTests, PlaceTilesAtShouldUpdateCanonicalFormsMap)
+{
+    TilesPngWorkspace workspace{20};
+
+    // Create a tile
+    PixelTile<IndexPixel> pixel_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        pixel_tile.set(i, IndexPixel{42});
+    }
+    CanonicalPixelTile<IndexPixel> tile{pixel_tile};
+
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_place;
+    tiles_to_place.push_back(tile);
+
+    // Place at position 10
+    workspace.place_tiles_at(10, tiles_to_place);
+
+    // Should be findable via first_occurrence_of
+    auto occurrence = workspace.first_occurrence_of(tile);
+    EXPECT_TRUE(occurrence.has_value());
+    EXPECT_EQ(occurrence.value(), 10);
+}
+
+TEST(TilesPngWorkspaceTests, PlaceTilesAtShouldPanicWhenPositionNotTransparent)
+{
+    TilesPngWorkspace workspace{20};
+
+    // Insert a tile at position 5
+    PixelTile<IndexPixel> blocking_tile;
+    blocking_tile.set(0, 0, IndexPixel{99});
+    CanonicalPixelTile<IndexPixel> blocking{blocking_tile};
+
+    // Insert tiles at 1, 2, 3, 4 first to move cursor to 5
+    for (std::size_t i = 0; i < 4; ++i) {
+        PixelTile<IndexPixel> pt;
+        pt.set(0, 0, IndexPixel{i + 1});
+        CanonicalPixelTile<IndexPixel> t{pt};
+        std::ignore = workspace.insert_tile(t);
+    }
+
+    // Now position 5 has a tile, trying to place there should panic
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_place;
+    PixelTile<IndexPixel> new_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        new_tile.set(i, IndexPixel{50});
+    }
+    tiles_to_place.emplace_back(new_tile);
+
+    // This should panic because we're trying to overwrite position 1 (not transparent)
+    ASSERT_DEATH(workspace.place_tiles_at(1, tiles_to_place), "is not transparent");
+}
+
+TEST(TilesPngWorkspaceTests, PlaceTilesAtShouldAdvanceCursorPastPlacedTiles)
+{
+    TilesPngWorkspace workspace{20};
+
+    // Cursor starts at 1
+    // Place tiles at 1, 2, 3
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_place;
+    for (std::size_t val : {10, 20, 30}) {
+        PixelTile<IndexPixel> pixel_tile;
+        for (std::size_t i = 0; i < 64; ++i) {
+            pixel_tile.set(i, IndexPixel{val});
+        }
+        tiles_to_place.emplace_back(pixel_tile);
+    }
+
+    workspace.place_tiles_at(1, tiles_to_place);
+
+    // Now insert another tile - it should go to position 4
+    PixelTile<IndexPixel> new_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        new_tile.set(i, IndexPixel{40});
+    }
+    CanonicalPixelTile<IndexPixel> tile{new_tile};
+
+    std::size_t inserted_at = workspace.insert_tile(tile);
+    EXPECT_EQ(inserted_at, 4);
+}
+
+TEST(TilesPngWorkspaceTests, PlaceTilesAtShouldPanicWhenExceedsCapacity)
+{
+    TilesPngWorkspace workspace{5};
+
+    // Try to place 3 tiles starting at position 4 (would need positions 4, 5, 6 but capacity is 5)
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_place;
+    for (std::size_t i = 0; i < 3; ++i) {
+        PixelTile<IndexPixel> pixel_tile;
+        for (std::size_t j = 0; j < 64; ++j) {
+            pixel_tile.set(j, IndexPixel{i + 1});
+        }
+        tiles_to_place.emplace_back(pixel_tile);
+    }
+
+    ASSERT_DEATH(workspace.place_tiles_at(4, tiles_to_place), "exceeds capacity");
+}
+
+TEST(TilesPngWorkspaceTests, PlaceTilesAtShouldHandleEmptyTileVector)
+{
+    TilesPngWorkspace workspace{10};
+
+    std::vector<CanonicalPixelTile<IndexPixel>> empty_tiles;
+
+    // Should not panic, just do nothing
+    workspace.place_tiles_at(5, empty_tiles);
+
+    // Workspace should be unchanged
+    EXPECT_TRUE(workspace.tile_at(5).is_transparent());
+}
+
+// ========================================
+// find_existing_contiguous_tiles_by_color Tests
+// ========================================
+
+TEST(TilesPngWorkspaceTests, FindByColorShouldMatchDuplicatePaletteIndices)
+{
+    // This is the core bug fix test case:
+    // Palette has duplicate colors at slots 7 and 14
+    // Workspace tile uses slot 14, computed tile uses slot 7
+    // They should still match because palette[7] == palette[14]
+
+    // Set up a palette with duplicate colors
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 255});        // Transparent slot (unused for color matching)
+    palette.set(7, Rgba32{100, 150, 200, 255});  // Color at slot 7
+    palette.set(14, Rgba32{100, 150, 200, 255}); // Same color at slot 14
+
+    // Create a tile in the workspace using index 14
+    PixelTile<IndexPixel> workspace_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        workspace_tile.set(i, IndexPixel{14});
+    }
+
+    // Create workspace with this tile at index 1
+    Image<IndexPixel> img{16, 8}; // 2 tiles
+    // Tile 0: transparent (all zeros by default)
+    // Tile 1: filled with index 14
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            img.set(row, col, IndexPixel{14});
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Create search tile using index 7 (different index, same color)
+    PixelTile<IndexPixel> search_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        search_tile.set(i, IndexPixel{7});
+    }
+
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_find;
+    tiles_to_find.emplace_back(search_tile);
+
+    std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+    palettes.push_back(&palette);
+
+    // Should find the tile despite different indices, because colors match
+    auto result = workspace.find_existing_contiguous_tiles_by_color(tiles_to_find, palettes);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 1);
+}
+
+TEST(TilesPngWorkspaceTests, FindByColorShouldNotMatchDifferentColors)
+{
+    // Set up a palette with different colors at slots 7 and 14
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 255});
+    palette.set(7, Rgba32{100, 150, 200, 255}); // Color A at slot 7
+    palette.set(14, Rgba32{200, 100, 50, 255}); // Different color B at slot 14
+
+    // Create workspace with tile using index 14
+    Image<IndexPixel> img{16, 8}; // 2 tiles
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            img.set(row, col, IndexPixel{14});
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Create search tile using index 7 (different index, different color)
+    PixelTile<IndexPixel> search_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        search_tile.set(i, IndexPixel{7});
+    }
+
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_find;
+    tiles_to_find.emplace_back(search_tile);
+
+    std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+    palettes.push_back(&palette);
+
+    // Should NOT find because colors are different
+    auto result = workspace.find_existing_contiguous_tiles_by_color(tiles_to_find, palettes);
+    EXPECT_FALSE(result.has_value());
+}
+
+TEST(TilesPngWorkspaceTests, FindByColorShouldHandleTransparentPixels)
+{
+    // Transparency (index 0) should only match transparency, not other indices
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 0}); // Transparent
+    palette.set(1, Rgba32{100, 150, 200, 255});
+
+    // Create workspace with tile that has some transparent pixels
+    Image<IndexPixel> img{16, 8}; // 2 tiles
+    // Tile 1: alternating transparent and non-transparent
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            if ((row + col) % 2 == 0) {
+                img.set(row, col, IndexPixel{0}); // Transparent
+            }
+            else {
+                img.set(row, col, IndexPixel{1}); // Non-transparent
+            }
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Create search tile with same pattern
+    PixelTile<IndexPixel> search_tile;
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 0; col < 8; ++col) {
+            if ((row + col) % 2 == 0) {
+                search_tile.set(row, col, IndexPixel{0});
+            }
+            else {
+                search_tile.set(row, col, IndexPixel{1});
+            }
+        }
+    }
+
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_find;
+    tiles_to_find.emplace_back(search_tile);
+
+    std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+    palettes.push_back(&palette);
+
+    // Should find because patterns match
+    auto result = workspace.find_existing_contiguous_tiles_by_color(tiles_to_find, palettes);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 1);
+}
+
+TEST(TilesPngWorkspaceTests, FindByColorShouldFailOnTransparencyMismatch)
+{
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 0});
+    palette.set(1, Rgba32{100, 150, 200, 255});
+
+    // Create workspace with all non-transparent tile
+    Image<IndexPixel> img{16, 8}; // 2 tiles
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            img.set(row, col, IndexPixel{1});
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Create search tile with some transparent pixels
+    PixelTile<IndexPixel> search_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        search_tile.set(i, IndexPixel{static_cast<std::size_t>(i % 2 == 0 ? 0 : 1)}); // Half transparent
+    }
+
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_find;
+    tiles_to_find.emplace_back(search_tile);
+
+    std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+    palettes.push_back(&palette);
+
+    // Should NOT find because transparency patterns differ
+    auto result = workspace.find_existing_contiguous_tiles_by_color(tiles_to_find, palettes);
+    EXPECT_FALSE(result.has_value());
+}
+
+TEST(TilesPngWorkspaceTests, FindByColorShouldFindContiguousSequence)
+{
+    // Test finding a multi-tile contiguous sequence
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 0});
+    palette.set(1, Rgba32{10, 10, 10, 255});
+    palette.set(2, Rgba32{20, 20, 20, 255});
+    palette.set(3, Rgba32{30, 30, 30, 255});
+
+    // Create workspace with 3 contiguous tiles at indices 1, 2, 3
+    Image<IndexPixel> img{32, 8}; // 4 tiles
+    // Tile 1: filled with index 1
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            img.set(row, col, IndexPixel{1});
+        }
+    }
+    // Tile 2: filled with index 2
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 16; col < 24; ++col) {
+            img.set(row, col, IndexPixel{2});
+        }
+    }
+    // Tile 3: filled with index 3
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 24; col < 32; ++col) {
+            img.set(row, col, IndexPixel{3});
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Create search sequence
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_find;
+    std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+
+    for (std::uint8_t idx : {1, 2, 3}) {
+        PixelTile<IndexPixel> tile;
+        for (std::size_t i = 0; i < 64; ++i) {
+            tile.set(i, IndexPixel{idx});
+        }
+        tiles_to_find.emplace_back(tile);
+        palettes.push_back(&palette);
+    }
+
+    auto result = workspace.find_existing_contiguous_tiles_by_color(tiles_to_find, palettes);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 1);
+}
+
+TEST(TilesPngWorkspaceTests, FindByColorShouldReturnNulloptWhenNotFound)
+{
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 0});
+    palette.set(1, Rgba32{10, 10, 10, 255});
+    palette.set(5, Rgba32{50, 50, 50, 255});
+
+    // Create workspace with tile using index 1
+    Image<IndexPixel> img{16, 8}; // 2 tiles
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            img.set(row, col, IndexPixel{1});
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Search for a different tile (index 5)
+    PixelTile<IndexPixel> search_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        search_tile.set(i, IndexPixel{5});
+    }
+
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_find;
+    tiles_to_find.emplace_back(search_tile);
+
+    std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+    palettes.push_back(&palette);
+
+    auto result = workspace.find_existing_contiguous_tiles_by_color(tiles_to_find, palettes);
+    EXPECT_FALSE(result.has_value());
+}
+
+TEST(TilesPngWorkspaceTests, FindByColorShouldHandleEmptySequence)
+{
+    TilesPngWorkspace workspace{10};
+
+    std::vector<CanonicalPixelTile<IndexPixel>> empty_tiles;
+    std::vector<const Palette<Rgba32, pal::max_size> *> empty_palettes;
+
+    auto result = workspace.find_existing_contiguous_tiles_by_color(empty_tiles, empty_palettes);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 1);
+}
+
+TEST(TilesPngWorkspaceTests, FindByColorShouldPanicOnMismatchedVectorSizes)
+{
+    TilesPngWorkspace workspace{10};
+
+    PixelTile<IndexPixel> tile;
+    tile.set(0, 0, IndexPixel{1});
+
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles;
+    tiles.emplace_back(tile);
+
+    std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+    // Intentionally leave palettes empty to cause mismatch
+
+    ASSERT_DEATH(
+        std::ignore = workspace.find_existing_contiguous_tiles_by_color(tiles, palettes),
+        "tiles and palettes vectors must have the same size");
+}
+
+// ========================================
+// first_occurrence_of_by_color Tests
+// ========================================
+
+TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorShouldMatchDuplicatePaletteIndices)
+{
+    // This is the core bug fix test case:
+    // Palette has duplicate colors at slots 7 and 14
+    // Workspace tile uses slot 14, computed tile uses slot 7
+    // They should still match because palette[7] == palette[14]
+
+    // Set up a palette with duplicate colors
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 255});        // Transparent slot (unused for color matching)
+    palette.set(7, Rgba32{100, 150, 200, 255});  // Color at slot 7
+    palette.set(14, Rgba32{100, 150, 200, 255}); // Same color at slot 14
+
+    // Create workspace with tile using index 14
+    Image<IndexPixel> img{16, 8}; // 2 tiles
+    // Tile 0: transparent (all zeros by default)
+    // Tile 1: filled with index 14
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            img.set(row, col, IndexPixel{14});
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Create search tile using index 7 (different index, same color)
+    PixelTile<IndexPixel> search_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        search_tile.set(i, IndexPixel{7});
+    }
+    CanonicalPixelTile<IndexPixel> canonical_search_tile{search_tile};
+
+    // Should find the tile despite different indices, because colors match
+    auto result = workspace.first_occurrence_of_by_color(canonical_search_tile, palette);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 1);
+}
+
+TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorShouldNotMatchDifferentColors)
+{
+    // Set up a palette with different colors at slots 7 and 14
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 255});
+    palette.set(7, Rgba32{100, 150, 200, 255}); // Color A at slot 7
+    palette.set(14, Rgba32{200, 100, 50, 255}); // Different color B at slot 14
+
+    // Create workspace with tile using index 14
+    Image<IndexPixel> img{16, 8}; // 2 tiles
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            img.set(row, col, IndexPixel{14});
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Create search tile using index 7 (different index, different color)
+    PixelTile<IndexPixel> search_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        search_tile.set(i, IndexPixel{7});
+    }
+    CanonicalPixelTile<IndexPixel> canonical_search_tile{search_tile};
+
+    // Should NOT find because colors are different
+    auto result = workspace.first_occurrence_of_by_color(canonical_search_tile, palette);
+    EXPECT_FALSE(result.has_value());
+}
+
+TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorShouldReturnNulloptForTransparentTile)
+{
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 0});
+    palette.set(1, Rgba32{100, 150, 200, 255});
+
+    TilesPngWorkspace workspace{20};
+
+    // Insert a non-transparent tile
+    PixelTile<IndexPixel> workspace_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        workspace_tile.set(i, IndexPixel{1});
+    }
+    CanonicalPixelTile<IndexPixel> canonical_workspace_tile{workspace_tile};
+    std::ignore = workspace.insert_tile(canonical_workspace_tile);
+
+    // Create a transparent search tile (all index 0)
+    PixelTile<IndexPixel> transparent_tile;
+    CanonicalPixelTile<IndexPixel> canonical_transparent_tile{transparent_tile};
+
+    // Transparent tiles should return nullopt
+    auto result = workspace.first_occurrence_of_by_color(canonical_transparent_tile, palette);
+    EXPECT_FALSE(result.has_value());
+}
+
+TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorShouldReturnNulloptWhenNotFound)
+{
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 0});
+    palette.set(1, Rgba32{10, 10, 10, 255});
+    palette.set(5, Rgba32{50, 50, 50, 255});
+
+    // Create workspace with tile using index 1
+    Image<IndexPixel> img{16, 8}; // 2 tiles
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            img.set(row, col, IndexPixel{1});
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Search for a different tile (index 5)
+    PixelTile<IndexPixel> search_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        search_tile.set(i, IndexPixel{5});
+    }
+    CanonicalPixelTile<IndexPixel> canonical_search_tile{search_tile};
+
+    auto result = workspace.first_occurrence_of_by_color(canonical_search_tile, palette);
+    EXPECT_FALSE(result.has_value());
+}
+
+TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorShouldFindExactMatch)
+{
+    // Even with exact indices (no duplicates), the color match should work
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 0});
+    palette.set(5, Rgba32{50, 100, 150, 255});
+
+    // Create workspace with tile using index 5
+    Image<IndexPixel> img{16, 8}; // 2 tiles
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            img.set(row, col, IndexPixel{5});
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Search for same tile (index 5)
+    PixelTile<IndexPixel> search_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        search_tile.set(i, IndexPixel{5});
+    }
+    CanonicalPixelTile<IndexPixel> canonical_search_tile{search_tile};
+
+    auto result = workspace.first_occurrence_of_by_color(canonical_search_tile, palette);
+    EXPECT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), 1);
+}
+
+TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorShouldHandleTransparencyMismatch)
+{
+    // Index 0 is special (transparent) and should only match other index 0 pixels
+    Palette<Rgba32, pal::max_size> palette{};
+    palette.set(0, Rgba32{0, 0, 0, 0}); // Transparent
+    palette.set(1, Rgba32{100, 150, 200, 255});
+
+    // Create workspace with tile that has all non-transparent pixels
+    Image<IndexPixel> img{16, 8}; // 2 tiles
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 8; col < 16; ++col) {
+            img.set(row, col, IndexPixel{1});
+        }
+    }
+
+    TilesPngWorkspace workspace{img, 20};
+
+    // Create search tile with some transparent pixels (index 0)
+    PixelTile<IndexPixel> search_tile;
+    for (std::size_t i = 0; i < 64; ++i) {
+        // Half transparent, half non-transparent
+        search_tile.set(i, IndexPixel{static_cast<std::size_t>(i % 2 == 0 ? 0 : 1)});
+    }
+    CanonicalPixelTile<IndexPixel> canonical_search_tile{search_tile};
+
+    // Should NOT find because transparency patterns differ
+    auto result = workspace.first_occurrence_of_by_color(canonical_search_tile, palette);
+    EXPECT_FALSE(result.has_value());
 }

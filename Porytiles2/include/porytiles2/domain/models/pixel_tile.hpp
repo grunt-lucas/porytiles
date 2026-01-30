@@ -3,9 +3,10 @@
 #include <algorithm>
 #include <array>
 #include <set>
+#include <string>
 
 #include "porytiles2/domain/models/supports_transparency.hpp"
-#include "porytiles2/xcut/panic/panic.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
 
 namespace porytiles2 {
 
@@ -87,6 +88,16 @@ class PixelTile {
     PixelTile() : pix_{} {}
 
     explicit PixelTile(std::array<PixelType, tile::size_pix> pix) : pix_{std::move(pix)} {}
+
+    /**
+     * @brief Constructs a PixelTile with all pixels set to a fill value.
+     *
+     * @param fill_value The pixel value to fill all 64 pixels with
+     */
+    explicit PixelTile(const PixelType &fill_value) : pix_{}
+    {
+        std::fill(pix_.begin(), pix_.end(), fill_value);
+    }
 
     auto operator<=>(const PixelTile &) const = default;
 

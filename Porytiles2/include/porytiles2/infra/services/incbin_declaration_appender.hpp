@@ -1,0 +1,91 @@
+#pragma once
+
+#include <cstddef>
+#include <filesystem>
+#include <string>
+
+#include "gsl/pointers"
+
+#include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
+
+namespace porytiles2 {
+
+/**
+ * @brief Appends INCBIN declarations for Porytiles-managed tileset assets.
+ *
+ * @details
+ * This service adds new INCBIN array declarations to pokeemerald's graphics.h and metatiles.h
+ * files for Porytiles-managed tilesets. The declarations follow the naming convention
+ * `gTilesetTiles_PorytilesManaged_{Shorthand}` and point to deterministic paths in
+ * the `porytiles_bin/` directory.
+ *
+ * The service uses a parse-modify-write pattern to surgically append declarations
+ * without disrupting existing file content.
+ *
+ * @see ProjectTilesetMetadataWriter for the pattern used for surgical file edits
+ */
+class IncbinDeclarationAppender {
+  public:
+    /**
+     * @brief Constructs an IncbinDeclarationAppender with required dependencies.
+     *
+     * @param project_root Path to the pokeemerald project root directory
+     * @param format Formatter for styled error messages (non-owning, must outlive this object)
+     */
+    IncbinDeclarationAppender(std::filesystem::path project_root, gsl::not_null<const TextFormatter *> format);
+
+    /**
+     * @brief Appends INCBIN declarations for a Porytiles-managed tileset to graphics.h.
+     *
+     * @details
+     * Adds declarations for tiles and palettes:
+     * - `gTilesetTiles_PorytilesManaged_{Shorthand}` pointing to `porytiles_bin/tiles.4bpp.lz`
+     * - `gTilesetPalettes_PorytilesManaged_{Shorthand}` pointing to `porytiles_bin/palettes/x.gbapal`
+     *
+     * The paths are constructed using the provided bin_path_base and tileset shorthand.
+     *
+     * @param tileset_name The tileset name (e.g., "gTileset_General")
+     * @param bin_path_base The base path for binary assets (e.g., "data/tilesets/primary")
+     * @param num_palettes Number of palette files to include (typically 6 for primary, 13 for secondary)
+     * @pre tileset_name must start with "gTileset_"
+     * @return Success or error result with details
+     */
+    [[nodiscard]] ChainableResult<void> append_graphics_declarations(
+        const std::string &tileset_name, const std::string &bin_path_base, std::size_t num_palettes) const;
+
+    /**
+     * @brief Appends INCBIN declarations for a Porytiles-managed tileset to metatiles.h.
+     *
+     * @details
+     * Adds declarations for metatiles and attributes:
+     * - `gMetatiles_PorytilesManaged_{Shorthand}` pointing to `porytiles_bin/metatiles.bin`
+     * - `gMetatileAttributes_PorytilesManaged_{Shorthand}` pointing to `porytiles_bin/metatile_attributes.bin`
+     *
+     * @param tileset_name The tileset name (e.g., "gTileset_General")
+     * @param bin_path_base The base path for binary assets (e.g., "data/tilesets/primary")
+     * @pre tileset_name must start with "gTileset_"
+     * @return Success or error result with details
+     */
+    [[nodiscard]] ChainableResult<void>
+    append_metatiles_declarations(const std::string &tileset_name, const std::string &bin_path_base) const;
+
+    /**
+     * @brief Removes INCBIN declarations for a Porytiles-managed tileset (for restore workflow).
+     *
+     * @details
+     * Removes all declarations matching `*_PorytilesManaged_{Shorthand}` pattern from
+     * both graphics.h and metatiles.h.
+     *
+     * @param tileset_name The tileset name (e.g., "gTileset_General")
+     * @pre tileset_name must start with "gTileset_"
+     * @return Success or error result with details
+     */
+    [[nodiscard]] ChainableResult<void> remove_declarations(const std::string &tileset_name) const;
+
+  private:
+    std::filesystem::path project_root_;
+    const TextFormatter *format_;
+};
+
+} // namespace porytiles2

@@ -3,6 +3,7 @@
 #include <memory>
 #include <vector>
 
+#include "porytiles2/domain/algorithms/tile_converters.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/metatile.hpp"
@@ -10,49 +11,16 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/services/image_tileizer.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
-#include "porytiles2/xcut/panic/panic.hpp"
-#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
-
-namespace {
-
-/**
- * @brief Converts an IndexPixel tile to an Rgba32 tile using a palette.
- *
- * @details
- * Takes each pixel's index from the IndexPixel tile and looks up the corresponding Rgba32 color from the specified
- * palette to construct a new PixelTile<Rgba32>.
- *
- * @param index_tile The source tile with indexed color pixels
- * @param pal_index The palette index to use for color lookup
- * @param pals The array of palettes containing the color data
- * @return A new PixelTile<Rgba32> with colors from the palette
- */
-PixelTile<Rgba32> convert_tile(
-    const PixelTile<IndexPixel> &index_tile,
-    unsigned int pal_index,
-    const std::array<Palette<Rgba32>, pal::num_pals> &pals)
-{
-    std::array<Rgba32, tile::size_pix> rgba_pixels{};
-    const auto &palette_colors = pals[pal_index].colors();
-
-    for (std::size_t i = 0; i < tile::size_pix; ++i) {
-        const unsigned int color_index = index_tile.at(i).index();
-        // TODO: we should normalize transparency here based on user extrinsic transparency setting
-        rgba_pixels[i] = palette_colors[color_index];
-    }
-
-    return PixelTile{rgba_pixels};
-}
-
-} // namespace
 
 ChainableResult<std::vector<Metatile<Rgba32>>> MetatileDecompiler::decompile_metatiles(
     const std::vector<TilemapEntry> &entries,
     const Image<IndexPixel> &tiles_png,
-    const std::array<Palette<Rgba32>, pal::num_pals> &pals)
+    const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals)
 {
     std::vector<Metatile<Rgba32>> decompiled;
 
@@ -75,8 +43,8 @@ ChainableResult<std::vector<Metatile<Rgba32>>> MetatileDecompiler::decompile_met
         for (std::size_t i = 0; i < metatile::tiles_per_metatile_layer; ++i) {
             const auto &entry = entries[base_entry_idx + i];
             const auto &index_tile = tiles[entry.tile_index()];
-            auto flipped_tile = index_tile.flip(entry.hflip(), entry.vflip());
-            auto rgba_tile = convert_tile(flipped_tile, entry.pal_index(), pals);
+            auto flipped_tile = index_tile.flip(entry.h_flip(), entry.v_flip());
+            auto rgba_tile = color_tile_from_index_tile(flipped_tile, pals[entry.pal_index()], extrinsic_transparency_);
             metatile.set_bottom(i, std::move(rgba_tile));
         }
 
@@ -84,8 +52,8 @@ ChainableResult<std::vector<Metatile<Rgba32>>> MetatileDecompiler::decompile_met
         for (std::size_t i = 0; i < metatile::tiles_per_metatile_layer; ++i) {
             const auto &entry = entries[base_entry_idx + metatile::tiles_per_metatile_layer + i];
             const auto &index_tile = tiles[entry.tile_index()];
-            auto flipped_tile = index_tile.flip(entry.hflip(), entry.vflip());
-            auto rgba_tile = convert_tile(flipped_tile, entry.pal_index(), pals);
+            auto flipped_tile = index_tile.flip(entry.h_flip(), entry.v_flip());
+            auto rgba_tile = color_tile_from_index_tile(flipped_tile, pals[entry.pal_index()], extrinsic_transparency_);
             metatile.set_middle(i, std::move(rgba_tile));
         }
 
@@ -93,8 +61,8 @@ ChainableResult<std::vector<Metatile<Rgba32>>> MetatileDecompiler::decompile_met
         for (std::size_t i = 0; i < metatile::tiles_per_metatile_layer; ++i) {
             const auto &entry = entries[base_entry_idx + 2 * metatile::tiles_per_metatile_layer + i];
             const auto &index_tile = tiles[entry.tile_index()];
-            auto flipped_tile = index_tile.flip(entry.hflip(), entry.vflip());
-            auto rgba_tile = convert_tile(flipped_tile, entry.pal_index(), pals);
+            auto flipped_tile = index_tile.flip(entry.h_flip(), entry.v_flip());
+            auto rgba_tile = color_tile_from_index_tile(flipped_tile, pals[entry.pal_index()], extrinsic_transparency_);
             metatile.set_top(i, std::move(rgba_tile));
         }
 

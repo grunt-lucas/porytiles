@@ -1,13 +1,12 @@
 #pragma once
 
 #include <cstddef>
+#include <format>
 #include <vector>
-
-#include "fmt/format.h"
 
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
-#include "porytiles2/xcut/result/chainable_result.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -56,7 +55,7 @@ class ImageTileizer {
     {
         // Validate that image dimensions are multiples of tile size
         if (img.width() % tile::side_length_pix != 0 || img.height() % tile::side_length_pix != 0) {
-            return FormattableError{fmt::format(
+            return FormattableError{std::format(
                 "image dimensions must be a multiple of {}, got {}x{}",
                 tile::side_length_pix,
                 img.width(),

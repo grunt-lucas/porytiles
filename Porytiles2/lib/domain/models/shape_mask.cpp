@@ -24,17 +24,17 @@ ShapeMask ShapeMask::flip(bool h, bool v) const
     return result;
 }
 
-void ShapeMask::set(int row, int col)
+void ShapeMask::set(std::size_t row, std::size_t col)
 {
     rows_[row] |= (1 << (7 - col));
 }
 
-void ShapeMask::unset(int row, int col)
+void ShapeMask::unset(std::size_t row, std::size_t col)
 {
     rows_[row] &= ~(1 << (7 - col));
 }
 
-bool ShapeMask::get(int row, int col) const
+bool ShapeMask::get(std::size_t row, std::size_t col) const
 {
     return (rows_[row] & (1 << (7 - col))) != 0;
 }

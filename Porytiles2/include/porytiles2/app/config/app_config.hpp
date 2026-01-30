@@ -2,10 +2,10 @@
 
 #include <string>
 
-#include "porytiles2/app/config/incremental_build_mode.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/xcut/config/config_scope_type.hpp"
 #include "porytiles2/xcut/config/config_validators.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
-#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -17,16 +17,31 @@ namespace porytiles2 {
 
 /**
  * @brief Interface that defines a complete app layer configuration.
- *
- * @details
- * The app layer operates with this interface - it doesn't need to worry about implementation. Every config value is
- * either virtual (i.e., comes from the user) or defined in terms of other virtual values.
  */
 class AppConfig {
   public:
     virtual ~AppConfig() = default;
 
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    verify_checksums(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = verify_checksums_validated(type, scope);
+        return validated_val;
+    }
+
   protected:
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
+    verify_checksums_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = verify_checksums_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
+    verify_checksums_raw(ConfigScopeType type, const std::string &scope) const = 0;
 };
 
 } // namespace porytiles2

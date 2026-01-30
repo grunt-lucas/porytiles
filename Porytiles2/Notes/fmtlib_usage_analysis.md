@@ -18,7 +18,7 @@ This document catalogs all uses of the fmtlib dependency outside of the `Porytil
 
 ### 1. Cross-cutting Concerns (xcut)
 
-#### **Porytiles2/include/porytiles2/xcut/panic/panic.hpp**
+#### **Porytiles2/include/porytiles2/utilities/panic/panic.hpp**
 - **Usage:** `fmt::format()` for formatting panic messages
 - **Lines:** 55, 73
 - **Pattern:** `fmt::format("{}:{} panic: {}\n", s.loc_.file_name(), s.loc_.line(), s.msg_)`
@@ -159,7 +159,7 @@ This document catalogs all uses of the fmtlib dependency outside of the `Porytil
 ## Refactoring Recommendations
 
 ### High Priority (Should Refactor)
-1. **xcut/panic/panic.hpp** - Core infrastructure affecting entire codebase
+1. **utilities/panic/panic.hpp** - Core infrastructure affecting entire codebase
 2. **All FormattableError uses** in domain services - User-facing error messages
 3. **Infrastructure diagnostics** - Primary formatting consumer
 4. **Driver/CLI code** - User interface

@@ -1,11 +1,20 @@
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 
 #include <array>
+#include <iostream>
 #include <memory>
 #include <ranges>
+#include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
+#include "porytiles2/domain/algorithms/diagnostic_stencils.hpp"
+#include "porytiles2/domain/algorithms/palette_matchers.hpp"
 #include "porytiles2/domain/algorithms/tile_converters.hpp"
+#include "porytiles2/domain/algorithms/tile_extractors.hpp"
+#include "porytiles2/domain/algorithms/tileset_compile_validators.hpp"
+#include "porytiles2/domain/config/artifact_edit_mode.hpp"
+#include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/canonical_shape_tile.hpp"
 #include "porytiles2/domain/models/color_index_map.hpp"
@@ -13,282 +22,704 @@
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/domain/models/tiles_png_workspace.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
+#include "porytiles2/domain/packing/services/best_fusion_strategy.hpp"
+#include "porytiles2/domain/packing/services/overload_and_remove_strategy.hpp"
+#include "porytiles2/domain/packing/services/palette_packer.hpp"
+#include "porytiles2/domain/services/anim_tile_matcher.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
 #include "porytiles2/domain/services/metatile_decompiler.hpp"
-#include "porytiles2/domain/services/pack_set_generator.hpp"
-#include "porytiles2/domain/services/tile_validator.hpp"
-#include "porytiles2/utilities/transform.hpp"
-#include "porytiles2/utilities/unwrap_config.hpp"
-#include "porytiles2/xcut/config/config_validators.hpp"
-#include "porytiles2/xcut/panic/panic.hpp"
-#include "porytiles2/xcut/result/chainable_result.hpp"
+#include "porytiles2/utilities/functional/transform.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/utilities/string_utils.hpp"
+#include "porytiles2/xcut/config/unwrap_config.hpp"
 
-#include <unordered_set>
+namespace {
 
-namespace porytiles2 {
+using namespace porytiles2;
 
-ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const Tileset &tileset)
+/**
+ * @brief Result type for tile assignment operations during compilation.
+ *
+ * @details
+ * Encapsulates the outcome of attempting to assign a tile via palette matching. Contains all information needed for
+ * error reporting in failure cases.
+ */
+struct TileAssignmentResult {
+    enum class Status { success, no_covering_pal, tile_not_found, tile_limit_reached };
+
+    Status status{Status::success};
+    std::optional<TilemapEntry> entry{};
+
+    // Error reporting data (populated on failure)
+    std::vector<PaletteMatchResult<Rgba32>> match_results{};
+    PixelTile<IndexPixel> index_tile{};
+    std::size_t pal_index{0};
+    Palette<Rgba32, pal::max_size> matched_pal{};
+};
+
+/**
+ * @brief Data structure holding processed keyframe tiles and their matched palettes.
+ *
+ * @details
+ * Used to pass the results of building keyframe data from the common helper to the mode-specific placement logic. The
+ * palettes vector is only used in patch mode for color-equivalence matching; optimize and locked modes ignore it.
+ */
+struct AnimKeyframeData {
+    std::vector<CanonicalPixelTile<IndexPixel>> tiles;
+    std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+};
+
+/**
+ * @brief Task encapsulating the compilation operation for primary tilesets.
+ *
+ * @details
+ * Breaks the monolithic compilation logic into discrete phases:
+ * - process_porytiles_input() - metatileize, validate, decompose Porytiles layers
+ * - process_porymap_input() - triple-layerize, decompile, decompose Porymap data
+ * - setup_working_data() - initialize palettes, workspace, and output Porymap component
+ * - match_tiles() - main loop matching Porytiles tiles to Porymap tiles/palettes
+ * - assemble_output() - finalize output with dual-layer conversion, attributes, exports
+ */
+class CompilerTask {
+  public:
+    CompilerTask(
+        const Tileset &tileset,
+        const TextFormatter &format,
+        const UserDiagnostics &diag,
+        const TilePrinter &tile_printer,
+        const PalettePrinter &pal_printer,
+        const DomainConfig &config)
+        : tileset_{tileset}, format_{format}, diag_{diag}, tile_printer_{tile_printer}, pal_printer_{pal_printer},
+          config_{config}, extrinsic_transparency_{}, num_pals_in_primary_{}, num_pals_total_{},
+          num_metatiles_in_primary_{}, num_tiles_in_primary_{}, num_tiles_per_metatile_{}, pal_hints_enabled_{},
+          pal_hints_{}
+    {
+    }
+
+    [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> run();
+
+  private:
+    // Pipeline steps
+    [[nodiscard]] ChainableResult<void> pipeline_step_process_porytiles_input();
+    [[nodiscard]] ChainableResult<void> pipeline_step_process_porymap_input();
+    [[nodiscard]] ChainableResult<void> pipeline_step_validate_input();
+    [[nodiscard]] ChainableResult<void> pipeline_step_setup_working_data();
+    [[nodiscard]] ChainableResult<void> pipeline_step_match_tiles_pals();
+    [[nodiscard]] std::unique_ptr<Tileset> pipeline_step_assemble_output();
+
+    // Pipeline helpers - tile matching
+    [[nodiscard]] std::optional<TilemapEntry> pipeline_helper_try_reuse_porymap_tile(std::size_t tile_index);
+    [[nodiscard]] TileAssignmentResult
+    pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> &porytiles_tile);
+
+    // Pipeline helpers - palette packing
+    [[nodiscard]] ChainableResult<void> pipeline_helper_run_pal_packing();
+    [[nodiscard]] ChainableResult<ColorIndexMap<Rgba32>>
+    pipeline_helper_build_color_index_map(const std::vector<PaletteHint> &hints, std::size_t color_count_limit) const;
+
+    // Pipeline helpers - animation processing
+    [[nodiscard]] ChainableResult<void> pipeline_helper_register_animations();
+    [[nodiscard]] ChainableResult<AnimKeyframeData>
+    pipeline_helper_build_keyframe_data(const std::string &anim_name, const Animation<Rgba32> &anim) const;
+    void pipeline_helper_compile_animations();
+
+    // Pipeline helpers - true_color mode
+    void pipeline_helper_apply_true_color_to_tiles_png();
+
+    // Pipeline helpers - error emission
+    void pipeline_helper_emit_no_matching_tile_error(
+        std::size_t tile_index,
+        const PixelTile<IndexPixel> &index_tile,
+        std::size_t pal_index,
+        const Palette<Rgba32, pal::max_size> &matched_pal);
+    void pipeline_helper_emit_no_matching_pal_error(
+        std::size_t tile_index, const std::vector<PaletteMatchResult<Rgba32>> &matches);
+    void pipeline_helper_emit_tile_limit_error(std::size_t tile_index, std::size_t tile_limit);
+
+    // Dependencies (injected in ctor)
+    const Tileset &tileset_;
+    const TextFormatter &format_;
+    const UserDiagnostics &diag_;
+    const TilePrinter &tile_printer_;
+    const PalettePrinter &pal_printer_;
+    const DomainConfig &config_;
+
+    // Config values (populated in run())
+    ConfigValue<Rgba32> extrinsic_transparency_;
+    ConfigValue<std::size_t> num_pals_in_primary_;
+    ConfigValue<std::size_t> num_pals_total_;
+    ConfigValue<std::size_t> num_metatiles_in_primary_;
+    ConfigValue<std::size_t> num_tiles_in_primary_;
+    ConfigValue<std::size_t> num_tiles_per_metatile_;
+    ConfigValue<bool> pal_hints_enabled_;
+    ConfigValue<std::vector<PaletteHint>> pal_hints_;
+    ConfigValue<ArtifactEditMode> tiles_edit_mode_;
+    ConfigValue<ArtifactEditMode> pals_edit_mode_;
+    ConfigValue<TilesPalMode> tiles_pal_mode_;
+
+    // Intermediate state - Porytiles
+    std::vector<Metatile<Rgba32>> porytiles_metatiles_{};
+    std::vector<PixelTile<Rgba32>> porytiles_pixel_rgba_{};
+    std::vector<CanonicalPixelTile<Rgba32>> porytiles_canonical_pixel_rgba_{};
+
+    // Intermediate state - Porymap
+    std::vector<TilemapEntry> porymap_tilemap_entries_{};
+    std::vector<Metatile<Rgba32>> porymap_metatiles_{};
+    std::vector<PixelTile<Rgba32>> porymap_pixel_rgba_{};
+    std::vector<CanonicalPixelTile<Rgba32>> porymap_canonical_pixel_rgba_{};
+    std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> new_porymap_pals_{};
+
+    // Working data
+    std::unique_ptr<PorymapTilesetComponent> new_porymap_component_{};
+    std::unique_ptr<TilesPngWorkspace> tiles_workspace_{};
+    AnimTileMatcher anim_tile_matcher_{};
+};
+
+ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
 {
-    // Initialize all the compilation services
+    /*
+     * TODO: we have a bug. If pals_edit_mode::optimize and tiles_edit_mode::locked, on the first compile pass after
+     * making no changes, it will optimize the pals, but emit identical metatile entries (since the Porytiles and
+     * Porymap metatiles will match). Then it will emit the optimized pals but identical tilemap entries. The tileset
+     * becomes corrupted and subsequent compilations crash out with a bazillion errors.
+     *
+     * Need to think about the right way to fix. Is there a scenario where setting pals::optimize tiles::locked even
+     * makes sense? Instead of adding more tortured logic to the compiler, we could just ban this combo.
+     *
+     * Thinking about it more, I think we need to ban this combo. Tiles as an artifact are fundamentally dependent on
+     * the palettes. If palettes change, tiles have to change. So it doesn't make sense to allow a setting where
+     * palettes are being changed but then the tiles aren't.
+     */
+
+    // Unwrap config values
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, extrinsic_transparency, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, num_pals_in_primary, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, num_pals_total, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, num_metatiles_in_primary, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, num_tiles_in_primary, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, num_tiles_per_metatile, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, pal_hints_enabled, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, pal_hints, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, tiles_edit_mode, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, pals_edit_mode, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, tiles_pal_mode, tileset_.name(), std::unique_ptr<Tileset>);
+
+    extrinsic_transparency_ = extrinsic_transparency;
+    num_pals_in_primary_ = num_pals_in_primary;
+    num_pals_total_ = num_pals_total;
+    num_metatiles_in_primary_ = num_metatiles_in_primary;
+    num_tiles_in_primary_ = num_tiles_in_primary;
+    num_tiles_per_metatile_ = num_tiles_per_metatile;
+    pal_hints_enabled_ = pal_hints_enabled;
+    pal_hints_ = pal_hints;
+    tiles_edit_mode_ = tiles_edit_mode;
+    pals_edit_mode_ = pals_edit_mode;
+    tiles_pal_mode_ = tiles_pal_mode;
+
+    // Execute subtasks
+    PT_TRY_CALL_PASS_ERR(pipeline_step_process_porytiles_input(), std::unique_ptr<Tileset>);
+
+    PT_TRY_CALL_PASS_ERR(pipeline_step_process_porymap_input(), std::unique_ptr<Tileset>);
+
+    PT_TRY_CALL_PASS_ERR(pipeline_step_validate_input(), std::unique_ptr<Tileset>);
+
+    PT_TRY_CALL_PASS_ERR(pipeline_step_setup_working_data(), std::unique_ptr<Tileset>);
+
+    PT_TRY_CALL_PASS_ERR(pipeline_step_match_tiles_pals(), std::unique_ptr<Tileset>);
+
+    return pipeline_step_assemble_output();
+}
+
+ChainableResult<void> CompilerTask::pipeline_step_process_porytiles_input()
+{
     LayerImageMetatileizer<Rgba32> metatileizer{};
-    TileValidator validator{format_, diag_, tile_printer_};
-    LayerModeConverter layer_converter{format_, diag_, tile_printer_};
 
-    // Grab configuration values we'll need
-    PT_UNWRAP_SCOPED_CONFIG(config_, extrinsic_transparency, tileset.name(), std::unique_ptr<Tileset>);
-
-    // Convert layer images into vector<RgbaMetatile>
+    // Read Porytiles layer images into metatile vector
     PT_TRY_ASSIGN_CHAIN_ERR(
         metatiles,
         metatileizer.metatileize(
-            tileset.porytiles_component().bottom(),
-            tileset.porytiles_component().middle(),
-            tileset.porytiles_component().top()),
-        "failed to metatileize input layer images for " + tileset.name(),
-        std::unique_ptr<Tileset>);
+            tileset_.porytiles_component().bottom(),
+            tileset_.porytiles_component().middle(),
+            tileset_.porytiles_component().top()),
+        "failed to metatileize input layer images for " + tileset_.name(),
+        void);
+    porytiles_metatiles_ = std::move(metatiles);
 
-    /*
-     * TODO: our first step in any compilation operation should validate the LayerMode. First, we need to check the
-     * num_tiles_per_metatile configuration setting. If it's set to 8, the user is requesting dual-layer compilation. If
-     * it's 12, triple. Any other value will have been caught earlier by config validation. If it's 8, then we need to
-     * check the input metatiles and throw an error for all metatiles that have non-transparent content on all three
-     * layers. While doing this, we can also compute the inferred layer type and save it into a vector for later.
-     *
-     * If it's 12, then we're good, just move on. No need to validate or do anything special for the inferred layer type
-     * vector. Just set it to LayerType::normal and move on.
-     *
-     * Since we'll be overwriting the output tilemap entries and attributes as part of the compilation operation, no
-     * need to validate them via detect_layer_mode at this point. (Let's really think through this. Would we want to
-     * warn the user somewhere if the Porymap component metatiles are corrupt? Obviously in the decompilation operations
-     * this is an error condition.)
-     */
+    // Decompose Porytiles metatiles and generate canonical versions
+    porytiles_pixel_rgba_ = metatile::decompose(porytiles_metatiles_);
+    porytiles_canonical_pixel_rgba_ = transform<CanonicalPixelTile<Rgba32>>(porytiles_pixel_rgba_);
 
-    // TODO: remove, here for testing
-    PT_TRY_CALL_CHAIN_ERR(
-        tileset.porymap_component().detect_layer_mode(), "layer mode detection failed", std::unique_ptr<Tileset>);
-
-    // TODO: remove these, just here to test config/diagnostic stuff
-    PT_UNWRAP_SCOPED_CONFIG(config_, num_tiles_primary, tileset.name(), std::unique_ptr<Tileset>);
-    diag_->note(
-        "config-info",
-        std::vector{
-            format_->format(
-                "{} {}",
-                FormatParam{num_tiles_primary.name() + ":", Style::bold},
-                FormatParam{num_tiles_primary, Style::bold}),
-            format_->format("({})", num_tiles_primary.source()),
-            std::string{"foo"},
-            std::string{"bar"}});
-    diag_->warn("test-warning", std::vector{std::string{"foo"}, std::string{"bar"}, std::string{"baz"}});
-    diag_->warn_note("test-warning", std::vector{std::string{"foo"}, std::string{"bar"}, std::string{"baz"}});
-    diag_->err("test-error", std::vector{std::string{"foo"}, std::string{"bar"}, std::string{"baz"}});
-
-    // Leaf step to throw error if there are too many metatiles.
-    PT_UNWRAP_SCOPED_CONFIG(config_, num_metatiles_primary, tileset.name(), std::unique_ptr<Tileset>);
-    if (metatiles.size() > num_metatiles_primary.value()) {
-        return FormattableError{
-            "too many input metatiles: found '{}' > '{}' (num_metatiles_primary)",
-            FormatParam{metatiles.size(), Style::bold},
-            FormatParam{num_metatiles_primary, Style::bold}};
-    }
-
-    // Decompose vector<RgbaMetatile> into vector<PixelTile<Rgba32>>
-    std::vector<PixelTile<Rgba32>> tiles{};
-    tiles.reserve(metatiles.size() * metatile::tiles_per_metatile);
-    for (const auto &metatile : metatiles) {
-        const auto decomposed = metatile.decompose();
-        for (const auto &pixel_tile : decomposed) {
-            tiles.push_back(pixel_tile);
-        }
-    }
-
-    // Leaf step to throw errors if:
-    // - any tiles contain an invalid alpha value
-    // - any tiles have more than 15+1 colors
-    // - generate precision loss warnings if some colors collapse to the same 5-bit color
-    PT_TRY_CALL_CHAIN_ERR(validator.validate_alpha_channels(tiles), "tile validation error", std::unique_ptr<Tileset>);
-    PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_unique_color_count(tiles, extrinsic_transparency.value()),
-        "tile validation error",
-        std::unique_ptr<Tileset>);
-    PT_TRY_CALL_CHAIN_ERR(
-        validator.generate_precision_loss_warnings(tiles), "tile validation error", std::unique_ptr<Tileset>);
-
-    // Create color index map from vector<RgbaTile>
-    // TODO: impl
-
-    // Throw error if ColorIndexMap has too many unique colors
-
-    // Create PackSets for the bin packing step
-    // const auto &color_index_map = color_index_map_builder.build_map(norm_tiles, rgba_magenta);
-    // ColorSetBuilder color_set_builder{text_formatter_};
-    // PackSetGenerator assignable_tile_generator{&color_set_builder};
-    // std::vector<PackSet> assignable_tiles = assignable_tile_generator.generate(norm_tiles, color_index_map);
-
-    // TODO: set up these components correctly, for now we just use some dummy values
-    auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>(tileset.porytiles_component());
-
-    // TODO: The resulting PorymapTilesetComponent may be incomplete. E.g., the user may have specified PLA
-    // files; they will be present on disk. We don't want to clobber them when saving the newly compiled
-    // component. So we'll need to pull them from the original component and inject them into this one before
-    // returning. We should probably add PLA file handling to the Tileset repository aggregate root. That way. all
-    // this is handled automatically via the save/load abstraction mechanisms. PLA files are a first-class domain
-    // concept, so they should be handled like any other file type (e.g. pal files, override files, etc). If we do that,
-    // then here, instead of making a new PorymapComponent, we can invoke the copy ctor. And then we should add explicit
-    // "reset" functions for the tilemap entries, tiles.png, pals, etc to clear the old values.
-    auto new_porymap_component = std::make_unique<PorymapTilesetComponent>();
-
-    Image<IndexPixel> tiles_png{128, 128};
-    Palette pal{rgba_red};
-    pal.set(extrinsic_transparency.value(), 0);
-
-    new_porymap_component->tiles_png(tiles_png);
-    for (unsigned int i = 0; i < pal::num_pals; i++) {
-        new_porymap_component->set_pal(pal, i);
-    }
-
-    /*
-     * TODO: here, we need to check if dual-layer output is enabled. If so, check the layer type and skip the empty
-     * layer.
-     */
-    new_porymap_component->push_back_tilemap_entry(TilemapEntry{1, 1, false, false});
-    new_porymap_component->push_back_tilemap_entry(TilemapEntry{1, 1, true, true});
-
-    // TODO: write attributes for real, for now just write back what we read
-    for (const auto &attr : tileset.porymap_component().metatile_attributes_bin()) {
-        new_porymap_component->push_back_attribute(attr);
-    }
-
-    auto new_tileset =
-        std::make_unique<Tileset>(tileset.name(), std::move(new_porytiles_component), std::move(new_porymap_component));
-
-    return new_tileset;
+    return {};
 }
 
-ChainableResult<std::unique_ptr<Tileset>>
-PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tileset)
+ChainableResult<void> CompilerTask::pipeline_step_process_porymap_input()
 {
-    // Initialize all the compilation services
-    LayerImageMetatileizer<Rgba32> metatileizer{};
-    TileValidator validator{format_, diag_, tile_printer_};
-    LayerModeConverter layer_mode_converter{format_, diag_, tile_printer_};
-    MetatileDecompiler metatile_decompiler{format_, diag_, tile_printer_};
-
-    // Showcase how config validation can work
-    // ConfigValue<std::size_t> test{0, "foo", "bar", std::vector<std::string>{"baz", "bat", "cat", "mat"}};
-    // PT_TRY_CALL_CHAIN_ERR(size_t_val_greater_than_zero(test), "config validation failed", std::unique_ptr<Tileset>);
-
-    // Grab configuration values we'll need
-    PT_UNWRAP_SCOPED_CONFIG(config_, extrinsic_transparency, tileset.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_SCOPED_CONFIG(config_, num_pals_total, tileset.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_SCOPED_CONFIG(config_, num_pals_primary, tileset.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_SCOPED_CONFIG(config_, num_metatiles_primary, tileset.name(), std::unique_ptr<Tileset>);
-
-    // Read Porytiles layer images and decompose into tile vectors
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        porytiles_metatiles,
-        metatileizer.metatileize(
-            tileset.porytiles_component().bottom(),
-            tileset.porytiles_component().middle(),
-            tileset.porytiles_component().top()),
-        "failed to metatileize input layer images for " + tileset.name(),
-        std::unique_ptr<Tileset>);
-    if (porytiles_metatiles.size() > num_metatiles_primary) {
-        // TODO: better error message
-        return FormattableError{"too many input metatiles in Porytiles component"};
-    }
-    std::vector<PixelTile<Rgba32>> porytiles_pixel_rgba = metatile::decompose(porytiles_metatiles);
-    std::vector<CanonicalPixelTile<Rgba32>> porytiles_canonical_pixel_rgba =
-        transform<CanonicalPixelTile<Rgba32>>(porytiles_pixel_rgba);
-
-    // Leaf step to throw errors if:
-    // - any tiles contain an invalid alpha value
-    // - any tiles have more than 15+1 colors
-    // - generate precision loss warnings if some colors collapse to the same 5-bit color
-    PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_alpha_channels(porytiles_pixel_rgba), "tile validation error", std::unique_ptr<Tileset>);
-    PT_TRY_CALL_CHAIN_ERR(
-        validator.validate_unique_color_count(porytiles_pixel_rgba, extrinsic_transparency.value()),
-        "tile validation error",
-        std::unique_ptr<Tileset>);
-    PT_TRY_CALL_CHAIN_ERR(
-        validator.generate_precision_loss_warnings(porytiles_pixel_rgba),
-        "tile validation error",
-        std::unique_ptr<Tileset>);
+    LayerModeConverter layer_mode_converter{&format_, &diag_, &tile_printer_, extrinsic_transparency_};
+    MetatileDecompiler metatile_decompiler{&format_, &diag_, &tile_printer_, extrinsic_transparency_};
 
     // Decompile Porymap tilemap entries and decompose into tile vector
     PT_TRY_ASSIGN_CHAIN_ERR(
         tilemap_entries,
-        layer_mode_converter.triple_layerize(tileset.porymap_component()),
-        "failed to triple-layerize Porymap component for tileset " + tileset.name(),
-        std::unique_ptr<Tileset>);
+        layer_mode_converter.triple_layerize(tileset_.porymap_component()),
+        "failed to triple-layerize Porymap component for tileset " + tileset_.name(),
+        void);
+    porymap_tilemap_entries_ = std::move(tilemap_entries);
+
     PT_TRY_ASSIGN_CHAIN_ERR(
-        porymap_metatiles,
+        metatiles,
         metatile_decompiler.decompile_metatiles(
-            tilemap_entries, tileset.porymap_component().tiles_png(), tileset.porymap_component().pals()),
-        "failed to decompile Porymap component for tileset " + tileset.name(),
-        std::unique_ptr<Tileset>);
-    /*
-     * We don't need to check porymap_metatiles size here. We're going to overwrite it anyway. We only need to check the
-     * size of the final tilemap entry vector. Patch builds don't need to preserve tilemap entries since those cannot be
-     * referenced by other tilesets.
-     */
-    std::vector<PixelTile<Rgba32>> porymap_pixel_rgba = metatile::decompose(porymap_metatiles);
-    std::vector<CanonicalPixelTile<Rgba32>> porymap_canonical_pixel_rgba =
-        transform<CanonicalPixelTile<Rgba32>>(porymap_pixel_rgba);
+            porymap_tilemap_entries_, tileset_.porymap_component().tiles_png(), tileset_.porymap_component().pals()),
+        "failed to decompile Porymap component for tileset " + tileset_.name(),
+        void);
+    porymap_metatiles_ = std::move(metatiles);
 
     /*
-     * Create ColorIndexMap from porytiles_tiles. We don't actually need a ColorIndexMap for a pals:fixed patch build.
-     * However, we build one so that we can throw if the user specified too many unique colors in the input. We're
-     * guaranteed to fail again at a later step if this is triggered. But we'll use this opportunity to emit an error
-     * early and then continue.
+     * We don't need to run any validation (including size validation) on porymap_metatiles here. We're going to
+     * overwrite them anyway. We only need to check the size of the final tilemap entry vector. Patch builds don't need
+     * to preserve tilemap entries since those cannot be referenced by other tilesets. We can just write a new entry
+     * vector every time.
      */
-    ColorIndexMap color_index_map{porytiles_pixel_rgba, extrinsic_transparency.value()};
-    std::size_t color_count = color_index_map.size();
-    std::size_t color_count_limit = num_pals_primary.value() * (pal::max_size - 1);
-    if (color_count > color_count_limit) {
-        diag_->err(
-            "color-limit-exceeded",
-            format_->format(
-                "too many unique colors ({}) in Porytiles component for tileset '{}'",
-                FormatParam{color_count, Style::bold},
-                FormatParam{tileset.name(), Style::bold}));
 
-        std::vector<std::string> note_text;
-        note_text.push_back(format_->format(
-            "unique color count limit is '{}' due to configuration", FormatParam{color_count_limit, Style::bold}));
-        note_text.push_back(format_->format(
-            "{} = {}",
-            FormatParam{num_pals_primary.name(), Style::bold},
-            FormatParam{num_pals_primary.value(), Style::bold}));
-        note_text.push_back(format_->format("Source: {}", num_pals_primary.source()));
-        // Add source details if available
-        if (!num_pals_primary.source_details().empty()) {
-            note_text.emplace_back("");
-            std::ranges::copy(num_pals_primary.source_details(), std::back_inserter(note_text));
+    // Decompose Porymap metatiles and generate canonical versions
+    porymap_pixel_rgba_ = metatile::decompose(porymap_metatiles_);
+    porymap_canonical_pixel_rgba_ = transform<CanonicalPixelTile<Rgba32>>(porymap_pixel_rgba_);
+
+    return {};
+}
+
+ChainableResult<void> CompilerTask::pipeline_step_validate_input()
+{
+    TilesetCompileValidatorServices services{config_, diag_, tile_printer_, pal_printer_};
+
+    /*
+     * TODO: do we want to collate some of these before returning? It would present more errors to user at once. There
+     * are pros and cons to this.
+     */
+
+    // Run metatile count validation
+    PT_TRY_CALL_PASS_ERR(validate_metatile_count(services, tileset_.name(), false, porytiles_metatiles_), void);
+
+    if (pals_edit_mode_ != ArtifactEditMode::optimize) {
+        // Validate Porymap pals if user is asking for pals:locked or pals:patch
+        for (std::size_t pal_index = 0; pal_index < tileset_.porymap_component().pals().size(); ++pal_index) {
+            PT_TRY_CALL_PASS_ERR(
+                validate_porymap_pal(
+                    services, tileset_.name(), tileset_.porymap_component().pals().at(pal_index), pal_index),
+                void);
         }
-        note_text.emplace_back("");
-        note_text.push_back(format_->format(
-            "Color limit definition: {} * {}: {} * {}: {}",
-            FormatParam{num_pals_primary.name(), Style::bold},
-            FormatParam{"nontransparent_colors_per_pal", Style::bold},
-            FormatParam{num_pals_primary.value(), Style::bold},
-            FormatParam{(pal::max_size - 1), Style::bold},
-            FormatParam{color_count_limit, Style::bold}));
-
-        diag_->note("color-limit-exceeded", note_text);
     }
 
-    // Create canonical ShapeTile vectors from porytiles input
-    // We don't actually need this for tiles:fixed pals:fixed builds.
-    // But if we were going to do pal assignment, we'd need std::vector<CanonicalShapeTile<ColorIndex>>.
-    // If pals weren't fixed, here we'd want to do bin packing to get new colors into the pals with the Porymap pals
-    // used as overrides in the packing process.
-    //
+    // Validate Porytiles pals
+    // TODO: this loop should respect num_pals_in_primary setting
+    for (std::size_t pal_index = 0; pal_index < tileset_.porytiles_component().pals().size(); ++pal_index) {
+        if (tileset_.porytiles_component().pals().at(pal_index).has_value()) {
+            PT_TRY_CALL_PASS_ERR(
+                validate_porytiles_pal(
+                    services, tileset_.name(), tileset_.porytiles_component().pals().at(pal_index).value(), pal_index),
+                void);
+        }
+    }
+
+    // Validate palette hints
+    for (const auto &hint : pal_hints_.value()) {
+        PT_TRY_CALL_PASS_ERR(validate_pal_hint(services, tileset_.name(), hint), void);
+    }
+
+    // Run alpha channel validation
+    PT_TRY_CALL_PASS_ERR(
+        validate_alpha_channels(
+            services, tileset_.name(), porytiles_metatiles_, tileset_.porytiles_component().anims()),
+        void);
+
+    // Run layer mode validation
+    PT_TRY_CALL_PASS_ERR(validate_layer_mode(services, tileset_.name(), porytiles_metatiles_), void);
+
+    // Run tile color count validation
+    PT_TRY_CALL_PASS_ERR(
+        validate_tile_color_count(
+            services, tileset_.name(), porytiles_metatiles_, tileset_.porytiles_component().anims()),
+        void);
+
+    // Run global color count validation
+    PT_TRY_CALL_PASS_ERR(
+        validate_global_color_count(
+            services,
+            tileset_.name(),
+            false,
+            porytiles_metatiles_,
+            tileset_.porytiles_component().anims(),
+            tileset_.porytiles_component().pals(),
+            pal_hints_.value()),
+        void);
+
+    // Run precision loss validation
+    PT_TRY_CALL_PASS_ERR(
+        validate_precision_loss(
+            services,
+            tileset_.name(),
+            porytiles_metatiles_,
+            tileset_.porytiles_component().anims(),
+            tileset_.porytiles_component().pals(),
+            pal_hints_.value(),
+            std::nullopt),
+        void);
+
+    // Run animation validation
+    PT_TRY_CALL_PASS_ERR(validate_anim_frames(services, tileset_.name(), tileset_.porytiles_component().anims()), void);
+
+    return {};
+}
+
+ChainableResult<void> CompilerTask::pipeline_step_setup_working_data()
+{
+    // Create palettes
+    if (pals_edit_mode_ == ArtifactEditMode::locked) {
+        // Collect all palettes from existing Porymap component
+        for (std::size_t i = 0; i < pal::num_pals; i++) {
+            new_porymap_pals_[i] = tileset_.porymap_component().pals()[i];
+        }
+    }
+    else if (pals_edit_mode_ == ArtifactEditMode::patch) {
+        panic("TODO: implement handling for pals ArtifactEditMode::patch");
+    }
+    else if (pals_edit_mode_ == ArtifactEditMode::optimize) {
+        PT_TRY_CALL_PASS_ERR(pipeline_helper_run_pal_packing(), void);
+    }
+    else {
+        panic("unexpected pals ArtifactEditMode");
+    }
+
+    // Create tiles workspace
+    tiles_workspace_ = [](ArtifactEditMode tiles_edit_mode, const Tileset &tileset, std::size_t num_tiles_in_primary) {
+        if (tiles_edit_mode == ArtifactEditMode::locked) {
+            /*
+             * When tiles are locked, compute the exact size of tiles.png so we keep it completely unchanged. When we
+             * output, we'll also set ExportTrimMode::include_trailing_transparent so that if there was transparency at
+             * the end, we don't remove it.
+             */
+            const auto size_in_tiles = tileset.porymap_component().tiles_png().size_in_tiles();
+            return std::make_unique<TilesPngWorkspace>(tileset.porymap_component().tiles_png(), size_in_tiles);
+        }
+        if (tiles_edit_mode == ArtifactEditMode::patch) {
+            return std::make_unique<TilesPngWorkspace>(tileset.porymap_component().tiles_png(), num_tiles_in_primary);
+        }
+        if (tiles_edit_mode == ArtifactEditMode::optimize) {
+            return std::make_unique<TilesPngWorkspace>(num_tiles_in_primary);
+        }
+        panic("unexpected tiles_edit_mode");
+    }(tiles_edit_mode_, tileset_, num_tiles_in_primary_.value());
+
+    // Register animations (reserve slots, compile keyframes, register matcher)
+    // Must be done before regular tile matching so animation slots are reserved
+    PT_TRY_CALL_CHAIN_ERR(pipeline_helper_register_animations(), "failed to register animations", void);
+
+    // Create new Porymap component for output
+    new_porymap_component_ = std::make_unique<PorymapTilesetComponent>();
+
+    return {};
+}
+
+ChainableResult<void> CompilerTask::pipeline_step_match_tiles_pals()
+{
+    // Temporary: pals:patch is not yet supported by underlying service code
+    if (pals_edit_mode_ == ArtifactEditMode::patch) {
+        panic("TODO: implement handling for pals ArtifactEditMode::patch");
+    }
+
+    bool matched_all_tiles = true;
+    for (std::size_t i = 0; i < porytiles_pixel_rgba_.size(); i++) {
+        const auto &porytiles_tile = porytiles_pixel_rgba_[i];
+
+        // In non-optimize mode, first try to reuse existing porymap tile
+        if (tiles_edit_mode_ != ArtifactEditMode::optimize) {
+            if (const auto maybe_tilemap_entry = pipeline_helper_try_reuse_porymap_tile(i);
+                maybe_tilemap_entry.has_value()) {
+                new_porymap_component_->push_back_tilemap_entry(maybe_tilemap_entry.value());
+                continue;
+            }
+        }
+
+        // Assign via palette matching (shared logic for all modes)
+        const auto tile_assignment_result = pipeline_helper_assign_tile_via_pal_match(porytiles_tile);
+
+        switch (tile_assignment_result.status) {
+        case TileAssignmentResult::Status::success:
+            new_porymap_component_->push_back_tilemap_entry(tile_assignment_result.entry.value());
+            break;
+
+        case TileAssignmentResult::Status::no_covering_pal:
+            if (pals_edit_mode_ == ArtifactEditMode::optimize) {
+                panic("ArtifactEditMode::optimize but no covering pal found - this should have failed at packing step");
+            }
+            matched_all_tiles = false;
+            pipeline_helper_emit_no_matching_pal_error(i, tile_assignment_result.match_results);
+            break;
+
+        case TileAssignmentResult::Status::tile_not_found:
+            matched_all_tiles = false;
+            pipeline_helper_emit_no_matching_tile_error(
+                i,
+                tile_assignment_result.index_tile,
+                tile_assignment_result.pal_index,
+                tile_assignment_result.matched_pal);
+            break;
+
+        case TileAssignmentResult::Status::tile_limit_reached:
+            matched_all_tiles = false;
+            pipeline_helper_emit_tile_limit_error(i, tiles_workspace_->capacity());
+            break;
+        }
+
+        // Early exit on tile limit, no point printing a bazillion "limit hit" errors after first one
+        if (tile_assignment_result.status == TileAssignmentResult::Status::tile_limit_reached) {
+            break;
+        }
+    }
+
+    if (!matched_all_tiles) {
+        return ChainableResult<void>{FormattableError{"failed to match all Porytiles tiles"}};
+    }
+
+    return {};
+}
+
+std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
+{
+    /*
+     * TODO: we should track tile+pal use and warn the user here about any unused tiles or pal colors. This would be
+     * nice for cases where users add some assets and compile with "tiles/pals:patch", but then later decide to remove
+     * the assets. We could warn them these assets are unused so that they can optionally remove to free up space. We
+     * could also have a compilation option "force_remove" that forcibly removes unused stuff. This is obviously less
+     * safe, since for vanilla primary tilesets, seemingly unused assets may be in use from the secondaries. We can
+     * solve this by eventually having code that reads all tileset pairings from layouts.json and computes which primary
+     * assets are truly unused. In fact, we'll need something like this in order to truly implement pals:patch mode,
+     * since palettes have no "unused" sentinel value. And in fact, many of the vanilla '0 0 0' colors are actually used
+     * by secondaries *facepalm* (e.g. see cave tileset). Which means we can't even assume '0 0 0' is unused. Until we
+     * implement this, users can still simulate pals:patch by bringing in all Porymap pals as Porytiles override pals,
+     * wildcarding slots they are OK overwriting, and setting pals:optimize.
+     */
+
+    // No changes here, this is a compilation operation - no writebacks into input assets
+    auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>(tileset_.porytiles_component());
+
+    /*
+     * If user is requesting dual-layer, use the input Porytiles-format metatiles to infer the LayerType for each
+     * metatile and remove the relevant tilemap entries. Here, we assume that the Porytiles metatiles have already been
+     * validated in an earlier step as dual-layer compatible.
+     */
+    LayerModeConverter layer_mode_converter{&format_, &diag_, &tile_printer_, extrinsic_transparency_};
+    const auto configured_layer_mode = layer_mode_from_val(num_tiles_per_metatile_);
+    if (configured_layer_mode == LayerMode::dual) {
+        const auto &dual_layerized =
+            layer_mode_converter.dual_layerize(new_porymap_component_->metatiles_bin(), porytiles_metatiles_);
+        new_porymap_component_->metatiles_bin(dual_layerized);
+    }
+
+    // Copy metatile attributes from original
+    for (std::size_t i = 0; i < porytiles_metatiles_.size(); i++) {
+        const auto &metatile = porytiles_metatiles_[i];
+        LayerType layer_type;
+        if (configured_layer_mode == LayerMode::dual) {
+            layer_type = metatile.infer_layer_type(extrinsic_transparency_.value());
+        }
+        else {
+            layer_type = LayerType::normal;
+        }
+        const auto maybe_porytiles_attr = tileset_.porytiles_component().get_attribute(i);
+        MetatileAttribute new_attr{};
+        new_attr.layer_type(layer_type);
+
+        // TODO: handle firered/custom stuff here properly
+        if (maybe_porytiles_attr.has_value()) {
+            // Copy over attribute from Porytiles component, use inferred layer type.
+            new_attr.behavior(maybe_porytiles_attr.value().behavior());
+        }
+        new_porymap_component_->push_back_attribute(new_attr);
+    }
+
+    // TODO: Copy over PLA files once we implement handling
+
+    // Export tiles in original form
+    if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
+        /*
+         * TODO: why is using ExportFlipMode::canonical here bugged? I think it has to do with how we computed the flip
+         * bits in 'pipeline_helper_try_reuse_porymap_tile' and 'pipeline_helper_assign_tile_via_pal_match'. If we're
+         * going to make this configurable, we'll need to check the config value in the matcher functions so we can
+         * compute the flip bits correctly.
+         */
+        new_porymap_component_->tiles_png(
+            tiles_workspace_->export_image(ExportFlipMode::original, ExportTrimMode::trim_trailing_transparent));
+    }
+    else {
+        new_porymap_component_->tiles_png(
+            tiles_workspace_->export_image(ExportFlipMode::original, ExportTrimMode::include_trailing_transparent));
+    }
+
+    // Copy palettes from our processed porymap_pals vector
+    for (std::size_t i = 0; i < pal::num_pals; i++) {
+        new_porymap_component_->set_pal(i, new_porymap_pals_[i]);
+    }
+
+    // Compile animations from Porytiles format to Porymap format
+    pipeline_helper_compile_animations();
+
+    // Apply true_color palette encoding to tiles.png if configured
+    if (tiles_pal_mode_ == TilesPalMode::true_color) {
+        pipeline_helper_apply_true_color_to_tiles_png();
+    }
+
+    // Create the full Tileset and return
+    return std::make_unique<Tileset>(
+        tileset_.name(), std::move(new_porytiles_component), std::move(new_porymap_component_));
+}
+
+std::optional<TilemapEntry> CompilerTask::pipeline_helper_try_reuse_porymap_tile(std::size_t tile_index)
+{
+    // Preconditions for non-optimize mode
+    assert_or_panic(tile_index < porytiles_pixel_rgba_.size(), "tile_index out of bounds for porytiles_pixel_rgba_");
+    assert_or_panic(
+        porymap_pixel_rgba_.size() == porymap_canonical_pixel_rgba_.size(),
+        "porymap_pixel_rgba_.size() != porymap_canonical_pixel_rgba_.size()");
+    assert_or_panic(
+        porymap_canonical_pixel_rgba_.size() == porymap_tilemap_entries_.size(),
+        "porymap_canonical_pixel_rgba_.size() != porymap_tilemap_entries_.size()");
+
+    if (tile_index >= porymap_pixel_rgba_.size()) {
+        // tile_index is out-of-range to reuse Porymap assets, so just return nullopt
+        return std::nullopt;
+    }
+
+    const auto &porytiles_tile = porytiles_pixel_rgba_[tile_index];
+    const auto &porymap_tile = porymap_pixel_rgba_[tile_index];
+    const auto &canonical_porytiles_tile = porytiles_canonical_pixel_rgba_[tile_index];
+    const auto &canonical_porymap_tile = porymap_canonical_pixel_rgba_[tile_index];
+    const auto &porymap_tilemap_entry = porymap_tilemap_entries_[tile_index];
+
+    // CASE: Exact match - Porytiles tile exactly matches Porymap tile
+    if (porytiles_tile.equals_ignoring_transparency(porymap_tile, extrinsic_transparency_)) {
+        return porymap_tilemap_entry;
+    }
+
+    // CASE: Canonical match - tiles match under flip transformation
+    if (canonical_porytiles_tile.equals_ignoring_transparency(canonical_porymap_tile, extrinsic_transparency_)) {
+        // XOR flip bits to compute transformation from Porytiles orientation to Porymap orientation
+        const bool pt_to_pm_hflip = canonical_porytiles_tile.h_flip() ^ canonical_porymap_tile.h_flip();
+        const bool pt_to_pm_vflip = canonical_porytiles_tile.v_flip() ^ canonical_porymap_tile.v_flip();
+        return TilemapEntry{
+            porymap_tilemap_entry.tile_index(),
+            porymap_tilemap_entry.pal_index(),
+            static_cast<bool>(porymap_tilemap_entry.h_flip() ^ pt_to_pm_hflip),
+            static_cast<bool>(porymap_tilemap_entry.v_flip() ^ pt_to_pm_vflip)};
+    }
+
+    // No match found
+    return std::nullopt;
+}
+
+TileAssignmentResult CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> &porytiles_tile)
+{
+    TileAssignmentResult result{};
+
+    // TODO: top_n matches should be configurable
+    // TODO: what if multiple pals match?
+    std::vector<PaletteMatchResult<Rgba32>> matches =
+        match_or_best(porytiles_tile, new_porymap_pals_, extrinsic_transparency_.value(), 1);
+
+    // No covering palette found
+    if (!matches.at(0).is_covered) {
+        result.status = TileAssignmentResult::Status::no_covering_pal;
+        result.match_results = std::move(matches);
+        return result;
+    }
+
+    const auto pal_index = matches.at(0).pal_index;
+    const auto &matched_pal = new_porymap_pals_.at(pal_index);
+    const auto index_tile = index_tile_from_color_tile(porytiles_tile, matched_pal, extrinsic_transparency_.value());
+    const CanonicalPixelTile canonical_index_tile{index_tile};
+
+    // Check if tile matches a registered animation keyframe
+    if (const auto anim_match = anim_tile_matcher_.find_match(CanonicalPixelTile{porytiles_tile});
+        anim_match.has_value()) {
+        // Use the animation tile index with computed flip bits
+        result.status = TileAssignmentResult::Status::success;
+        result.entry = TilemapEntry{anim_match->tile_index, pal_index, anim_match->h_flip, anim_match->v_flip};
+        return result;
+    }
+
+    /*
+     * Tile found in workspace
+     *
+     * In optimize mode, we use fast O(1) exact index matching because palettes are freshly computed by the palette
+     * packing algorithm, which never produces duplicate colors. In patch/locked modes, we use O(n) color-equivalence
+     * comparison because vanilla palettes may contain duplicate colors at different indices. For example, if palette
+     * slots 7 and 14 both contain RGB(255,0,0), our index_tile_from_color_tile() always picks slot 7 (the first
+     * match), but vanilla workspace tiles might use slot 14. Exact index matching would fail to find the tile, causing
+     * unnecessary tile insertions or "tile not found" errors in locked mode.
+     */
+    const auto maybe_tile_index =
+        (tiles_edit_mode_ == ArtifactEditMode::optimize)
+            ? tiles_workspace_->first_occurrence_of(canonical_index_tile)
+            : tiles_workspace_->first_occurrence_of_by_color(canonical_index_tile, matched_pal);
+
+    if (maybe_tile_index.has_value()) {
+        const auto workspace_tile_index = maybe_tile_index.value();
+        const auto workspace_tile = tiles_workspace_->tile_at(workspace_tile_index);
+        const bool pt_to_pm_hflip = canonical_index_tile.h_flip() ^ workspace_tile.h_flip();
+        const bool pt_to_pm_vflip = canonical_index_tile.v_flip() ^ workspace_tile.v_flip();
+        result.status = TileAssignmentResult::Status::success;
+        result.entry = TilemapEntry{workspace_tile_index, pal_index, pt_to_pm_hflip, pt_to_pm_vflip};
+        return result;
+    }
+
+    // Tile not found - locked mode cannot insert new tiles
+    if (tiles_edit_mode_ == ArtifactEditMode::locked) {
+        result.status = TileAssignmentResult::Status::tile_not_found;
+        // TODO: pass index_tile or canonical_index_tile depending on user setting for the tiles.png output
+        result.index_tile = index_tile;
+        result.pal_index = pal_index;
+        result.matched_pal = matched_pal;
+        return result;
+    }
+
+    // Tile not found - check capacity before inserting
+    if (tiles_workspace_->at_capacity()) {
+        result.status = TileAssignmentResult::Status::tile_limit_reached;
+        return result;
+    }
+
+    // Insert the new tile
+    const std::size_t inserted_index = tiles_workspace_->insert_tile(canonical_index_tile);
+    const auto workspace_tile = tiles_workspace_->tile_at(inserted_index);
+    result.status = TileAssignmentResult::Status::success;
+    const bool pt_to_pm_hflip = canonical_index_tile.h_flip() ^ workspace_tile.h_flip();
+    const bool pt_to_pm_vflip = canonical_index_tile.v_flip() ^ workspace_tile.v_flip();
+    result.entry = TilemapEntry{inserted_index, pal_index, pt_to_pm_hflip, pt_to_pm_vflip};
+    return result;
+}
+
+ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
+{
+    /*
+     * Create ColorIndexMap from the Porytiles tiles, Porytiles pals, and palette hints. This validates that we
+     * don't exceed the global color count limit.
+     */
+    const std::size_t color_count_limit = num_pals_in_primary_.value() * (pal::max_size - 1);
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        color_index_map,
+        pipeline_helper_build_color_index_map(pal_hints_.value(), color_count_limit),
+        "failed to build color index map for tileset " + tileset_.name(),
+        void);
+
+    /*
+     * TODO: create canonical ShapeTile vectors here once we implement 'compile.tiles.sharing:' config option
+     */
     // std::vector<CanonicalShapeTile<ColorIndex>> porytiles_canonical_color_index_shapes =
-    //     transform(porytiles_pixel_rgba, [&color_index_map, &extrinsic_transparency](const PixelTile<Rgba32> &tile) {
+    //     transform(porytiles_pixel_rgba, [&color_index_map, &extrinsic_transparency](const PixelTile<Rgba32>
+    //     &tile) {
     //         return CanonicalShapeTile{from_pixel_tile(tile, color_index_map, extrinsic_transparency.value())};
     //     });
     // std::vector<CanonicalShapeTile<Rgba32>> porytiles_canonical_rgba_shapes = transform(
@@ -296,15 +727,695 @@ PrimaryTilesetCompiler::compile_patch_tiles_fixed_pals_fixed(const Tileset &tile
     //         return CanonicalShapeTile{shape_tile_to_pixel_colors(tile, color_index_map)};
     //     });
 
-    // TODO: Copy in the Porymap pals then normalize transparency
-    std::vector<unsigned int> pal_indexes;
-    std::vector<Palette<Rgba32>> porymap_pals{};
-    porymap_pals.reserve(num_pals_primary.value());
-    for (unsigned int i = 0; i < num_pals_primary.value(); i++) {
-        porymap_pals.push_back(tileset.porymap_component().pals()[i]);
+    OverloadAndRemoveStrategy packing_strategy{};
+    PalettePacker pal_packer{&packing_strategy, &format_, &diag_};
+    std::bitset<pal::num_pals> available_pals{0};
+    for (std::size_t i = 0; i < num_pals_in_primary_; i++) {
+        // TODO: support out-of-band primary palettes - see "Primary Palette Fixing" in topic_staging_area.md
+        available_pals.set(i, true);
+    }
+    PackingParams packing_params{};
+    packing_params.tiles_ = porytiles_pixel_rgba_;
+    packing_params.anims_ = tileset_.porytiles_component().anims();
+    packing_params.color_map_ = color_index_map;
+    packing_params.extrinsic_transparency_ = extrinsic_transparency_.value();
+    packing_params.prefilled_pals_ = tileset_.porytiles_component().pals();
+    packing_params.hints_ = pal_hints_.value();
+    packing_params.available_pals_ = available_pals;
+
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        pal_packing,
+        pal_packer.pack_tiles(packing_params),
+        "failed to pack palettes for tileset " + tileset_.name(),
+        void);
+
+    for (std::size_t i = 0; i < pal::num_pals; i++) {
+        if (const auto &maybe_packed_pal = pal_packing.pals_.at(i); maybe_packed_pal.has_value()) {
+            // Copy over the packed palette
+            new_porymap_pals_[i] = maybe_packed_pal.value();
+        }
+        else if (tileset_.porytiles_component().pal_at(i).has_value()) {
+            /*
+             * Out-of-band Porytiles palette: exists but wasn't used in packing (e.g., palette 11.pal in a primary
+             * tileset). Resolve all wildcards to black and copy it over.
+             */
+            const auto &porytiles_pal = tileset_.porytiles_component().pal_at(i).value();
+            Palette<Rgba32, pal::max_size> resolved_pal{Rgba32{0, 0, 0, Rgba32::alpha_opaque}};
+
+            // Handle slot 0: preserve if not wildcard, otherwise use extrinsic transparency
+            if (!porytiles_pal.is_wildcard(0)) {
+                resolved_pal.set(0, porytiles_pal.at(0));
+            }
+            else {
+                resolved_pal.set(0, extrinsic_transparency_.value());
+            }
+
+            // Copy non-wildcard slots (wildcards remain as the default black)
+            for (std::size_t j = 1; j < pal::max_size; ++j) {
+                if (!porytiles_pal.is_wildcard(j)) {
+                    resolved_pal.set(j, porytiles_pal.at(j));
+                }
+            }
+
+            new_porymap_pals_[i] = resolved_pal;
+        }
+        else {
+            /*
+             * Copy remaining secondary palettes from the original component. The "secondary" pals in a primary
+             * tileset's folder won't be actually loaded by the game engine. Porymap also doesn't show them -- it
+             * will grab pals from the relevant secondary set folder. However, we copy them here for consistency. If
+             * for some reason the user had edited them, we don't want to clobber their edits. Porytiles should be
+             * surgical where possible.
+             *
+             * Copy junk pals. 13.pal, 14.pal, 15.pal exist in the tileset but are reserved by the game engine for
+             * overworld/shop UI. Here we just copy them over as-is. Again, if for some reason the user had edited
+             * them, let's not clobber anything unnecessarily.
+             */
+            new_porymap_pals_[i] = tileset_.porymap_component().pal_at(i);
+        }
     }
 
-    panic("TODO: finish implementation");
+    // Emit diagnostic remarks for packed palettes
+    for (std::size_t i = 0; i < pal::num_pals; i++) {
+        const auto &maybe_packed_pal = pal_packing.pals_.at(i);
+        if (maybe_packed_pal.has_value()) {
+            constexpr auto tag = "palette-packing-result";
+            std::vector<std::string> remark_lines;
+            remark_lines.emplace_back(
+                format_.format("packed '{}' contents:", FormatParam{pal_filename(i), Style::bold}));
+            remark_lines.emplace_back();
+            std::ranges::copy(pal_printer_.print_rgba_pal(maybe_packed_pal.value()), std::back_inserter(remark_lines));
+            diag_.remark(tag, remark_lines);
+        }
+    }
+
+    return {};
+}
+
+ChainableResult<ColorIndexMap<Rgba32>> CompilerTask::pipeline_helper_build_color_index_map(
+    const std::vector<PaletteHint> &hints, std::size_t color_count_limit) const
+{
+    // Create ColorIndexMap from the Porytiles tiles
+    ColorIndexMap<Rgba32> color_index_map{};
+    for (const auto &tile : porytiles_pixel_rgba_) {
+        color_index_map.add_tile(tile, extrinsic_transparency_.value());
+    }
+
+    // Add Porytiles anims
+    for (const auto &anim : tileset_.porytiles_component().anims() | std::views::values) {
+        color_index_map.add_anim(anim, extrinsic_transparency_.value());
+    }
+
+    // Add Porytiles palettes
+    for (std::size_t pal_index = 0; pal_index < num_pals_in_primary_; ++pal_index) {
+        const auto &maybe_porytiles_pal = tileset_.porytiles_component().pals().at(pal_index);
+        if (!maybe_porytiles_pal.has_value()) {
+            continue;
+        }
+        color_index_map.add_pal(maybe_porytiles_pal.value(), extrinsic_transparency_.value());
+    }
+
+    // Add palette hints
+    for (const auto &hint : hints) {
+        color_index_map.add_pal(hint.pal(), extrinsic_transparency_.value());
+    }
+
+    // Check color count one more time, we validated this earlier and provided granular feedback to user
+    if (color_index_map.size() > color_count_limit) {
+        panic(
+            "color_index_map.size() > count_limit - this should have already been validated by "
+            "pipeline_step_validate_input");
+    }
+
+    return color_index_map;
+}
+
+ChainableResult<AnimKeyframeData>
+CompilerTask::pipeline_helper_build_keyframe_data(const std::string &anim_name, const Animation<Rgba32> &anim) const
+{
+    const AnimationFrame<Rgba32> &composite_frame = anim.composite_frame(extrinsic_transparency_);
+    const std::size_t tile_count = composite_frame.tiles().size();
+
+    AnimKeyframeData result;
+    result.tiles.reserve(tile_count);
+    result.palettes.reserve(tile_count);
+
+    for (std::size_t tile_idx = 0; tile_idx < tile_count; ++tile_idx) {
+        const PixelTile<Rgba32> &composite_rgba_tile = composite_frame.tile_at(tile_idx);
+        const PixelTile<Rgba32> &key_rgba_tile = anim.key_frame().tile_at(tile_idx);
+
+        if (key_rgba_tile.is_transparent(extrinsic_transparency_.value())) {
+            panic("illegal transparent key frame tile");
+        }
+
+        // Match tile to palette using composite frame to guarantee correct palette selection
+        std::vector<PaletteMatchResult<Rgba32>> matches =
+            match_or_best(composite_rgba_tile, new_porymap_pals_, extrinsic_transparency_.value(), 1);
+
+        if (!matches.at(0).is_covered) {
+            return FormattableError{
+                "animation '{}' composite subtile '{}' has no covering palette",
+                FormatParam{anim_name, Style::bold},
+                FormatParam{tile_idx, Style::bold}};
+        }
+
+        // Convert key frame tile to IndexPixel using matched palette
+        const std::size_t pal_index = matches.at(0).pal_index;
+        const auto &matched_pal = new_porymap_pals_.at(pal_index);
+        const PixelTile<IndexPixel> indexed_key_frame_tile =
+            index_tile_from_color_tile(key_rgba_tile, matched_pal, extrinsic_transparency_.value());
+
+        result.tiles.emplace_back(indexed_key_frame_tile);
+        // We'll only actually use this vector in patch mode, but compute anyway to simplify code paths
+        result.palettes.push_back(&matched_pal);
+    }
+
+    return result;
+}
+
+ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
+{
+    /*
+     * This function has two primary responsibilities. For each anim:
+     *
+     * 1. Place the anim's key frame tiles into tiles.png at computed offsets
+     * 2. Register each animation and save the computed offsets
+     *
+     * The strategy differs by mode:
+     * - optimize: Reserve slots at the start, place keyframes in reserved region
+     * - patch: Try to reuse existing keyframes, else find contiguous free space
+     * - locked: Keyframes must already exist in tiles.png
+     */
+    const auto &anims = tileset_.porytiles_component().anims();
+
+    // Early exit if no animations
+    if (anims.empty()) {
+        return {};
+    }
+
+    // ========================================================================
+    // Phase 1: Pre-loop setup (optimize mode only)
+    // ========================================================================
+    if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
+        std::size_t total_keyframe_tiles = 0;
+        for (const auto &anim : anims | std::views::values) {
+            if (anim.has_frames()) {
+                total_keyframe_tiles += anim.key_frame().tiles().size();
+            }
+        }
+        tiles_workspace_->reserve_anim_slots(total_keyframe_tiles);
+    }
+
+    // ========================================================================
+    // Phase 2: Build keyframes and place/find tiles for each animation
+    // ========================================================================
+    std::map<std::string, std::size_t> anim_offsets;
+    std::size_t current_offset = TilesPngWorkspace::anim_start_offset();
+
+    for (const auto &[anim_name, anim] : anims) {
+        if (!anim.has_frames()) {
+            panic("anim '" + anim_name + "' has no frames");
+        }
+
+        // Build keyframe data (common to all modes)
+        PT_TRY_ASSIGN_PASS_ERR(keyframe_data, pipeline_helper_build_keyframe_data(anim_name, anim), void);
+
+        const std::size_t tile_count = keyframe_data.tiles.size();
+        std::size_t offset{};
+
+        // Mode-specific placement logic
+        if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
+            offset = current_offset;
+            for (std::size_t i = 0; i < tile_count; ++i) {
+                const std::size_t reserved_index = current_offset - TilesPngWorkspace::anim_start_offset();
+                tiles_workspace_->place_anim_tile(reserved_index, keyframe_data.tiles[i]);
+                ++current_offset;
+            }
+        }
+        else if (tiles_edit_mode_ == ArtifactEditMode::patch) {
+            // Try to find existing contiguous keyframe sequence using color-equivalence comparison
+            if (const auto existing_offset = tiles_workspace_->find_existing_contiguous_tiles_by_color(
+                    keyframe_data.tiles, keyframe_data.palettes);
+                existing_offset.has_value()) {
+                offset = existing_offset.value();
+            }
+            else if (const auto free_offset = tiles_workspace_->find_contiguous_transparent_slots(tile_count);
+                     free_offset.has_value()) {
+                tiles_workspace_->place_tiles_at(free_offset.value(), keyframe_data.tiles);
+                offset = free_offset.value();
+            }
+            else {
+                return FormattableError{
+                    "animation '{}' requires {} contiguous tiles but no sufficient space found",
+                    FormatParam{anim_name, Style::bold},
+                    FormatParam{tile_count, Style::bold}};
+            }
+        }
+        else if (tiles_edit_mode_ == ArtifactEditMode::locked) {
+            // In locked mode, keyframes must already exist contiguously
+            // Use color-equivalence comparison to handle duplicate palette colors (same fix as patch mode)
+            if (const auto existing_offset = tiles_workspace_->find_existing_contiguous_tiles_by_color(
+                    keyframe_data.tiles, keyframe_data.palettes);
+                existing_offset.has_value()) {
+                offset = existing_offset.value();
+            }
+            else {
+                return FormattableError{
+                    "Tiles edit_mode is '{}': animation '{}' keyframes not found in existing tiles.png",
+                    FormatParam{"locked", Style::bold},
+                    FormatParam{anim_name, Style::bold}};
+            }
+        }
+        else {
+            panic("unexpected tiles_edit_mode");
+        }
+
+        anim_offsets[anim_name] = offset;
+    }
+
+    // ========================================================================
+    // Phase 3: Register all animations with the matcher
+    // ========================================================================
+    for (const auto &[anim_name, anim] : anims) {
+        anim_tile_matcher_.register_animation(anim_name, anim, anim_offsets[anim_name], extrinsic_transparency_);
+    }
+
+    return {};
+}
+
+void CompilerTask::pipeline_helper_compile_animations()
+{
+    const auto &source_anims = tileset_.porytiles_component().anims();
+
+    // Early exit if no animations
+    if (source_anims.empty()) {
+        return;
+    }
+
+    for (const auto &[anim_name, source_anim] : source_anims) {
+        // 1. Get the computed tile offset from matcher
+        auto maybe_tile_offset = anim_tile_matcher_.tile_offset_for(anim_name);
+        if (!maybe_tile_offset.has_value()) {
+            panic("animation '" + anim_name + "' not registered in anim_tile_matcher_");
+        }
+        const std::size_t tile_offset = maybe_tile_offset.value();
+
+        // 2. Compute composite frame for per-subtile palette selection
+        const AnimationFrame<Rgba32> composite = source_anim.composite_frame(extrinsic_transparency_.value());
+        const std::size_t tile_count = composite.tile_count();
+
+        // 3. Build per-subtile palette indices (same logic as registration step)
+        std::vector<std::size_t> subtile_pal_indices;
+        subtile_pal_indices.reserve(tile_count);
+
+        for (std::size_t tile_idx = 0; tile_idx < tile_count; ++tile_idx) {
+            const PixelTile<Rgba32> &composite_tile = composite.tile_at(tile_idx);
+
+            std::vector<PaletteMatchResult<Rgba32>> matches =
+                match_or_best(composite_tile, new_porymap_pals_, extrinsic_transparency_.value(), 1);
+
+            if (!matches.at(0).is_covered) {
+                panic(
+                    "animation '" + anim_name + "' subtile " + std::to_string(tile_idx) +
+                    " has no covering palette during compilation");
+            }
+
+            subtile_pal_indices.push_back(matches.at(0).pal_index);
+        }
+
+        // 4. Determine palette for PNG display and warn if multiple palettes are used
+        const std::size_t frame_pal_index = subtile_pal_indices.at(0);
+        const bool uses_multiple_palettes =
+            !std::ranges::all_of(subtile_pal_indices, [&](std::size_t idx) { return idx == frame_pal_index; });
+
+        if (uses_multiple_palettes) {
+            std::vector<std::string> warning_lines;
+            warning_lines.emplace_back(format_.format(
+                "animation '{}' uses multiple palettes across subtiles", FormatParam{anim_name, Style::bold}));
+            warning_lines.emplace_back(format_.format(
+                "Frame PNGs will be saved using palette '{}' for display purposes.",
+                FormatParam{pal_filename(frame_pal_index), Style::bold}));
+            diag_.warning("multi-palette-animation", warning_lines);
+        }
+
+        // Build a dynamic palette for embedding in the AnimationFrame
+        const auto &fixed_pal = new_porymap_pals_.at(frame_pal_index);
+        Palette<Rgba32> anim_palette{};
+        for (std::size_t i = 0; i < fixed_pal.size(); ++i) {
+            if (fixed_pal.is_wildcard(i)) {
+                panic("Porymap pal '" + std::to_string(frame_pal_index) + "' has illegal wildcard");
+            }
+            anim_palette.add(fixed_pal.at(i));
+        }
+
+        // 5. Convert regular frames (key frame not needed in compiled format)
+        Animation<IndexPixel> compiled_anim{anim_name};
+
+        for (const auto &[frame_name, source_frame] : source_anim.frames()) {
+            std::vector<PixelTile<IndexPixel>> frame_index_tiles;
+            frame_index_tiles.reserve(tile_count);
+
+            for (std::size_t tile_idx = 0; tile_idx < tile_count; ++tile_idx) {
+                const PixelTile<Rgba32> &rgba_tile = source_frame.tile_at(tile_idx);
+                const auto &pal = new_porymap_pals_.at(subtile_pal_indices[tile_idx]);
+
+                frame_index_tiles.push_back(
+                    index_tile_from_color_tile(rgba_tile, pal, extrinsic_transparency_.value()));
+            }
+
+            AnimationFrame frame{frame_name, std::move(frame_index_tiles)};
+            frame.palette(anim_palette);
+            compiled_anim.put_frame(frame_name, std::move(frame));
+        }
+
+        // 6. Set params with updated tile_offset/tile_count
+        AnimationParams params = source_anim.params();
+        params.tile_offset(tile_offset);
+        params.tile_count(tile_count);
+        compiled_anim.params(std::move(params));
+
+        // 7. Add to output component (key_frame left as std::nullopt)
+        new_porymap_component_->add_anim(std::move(compiled_anim));
+    }
+}
+
+void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
+{
+    // Phase 1: Build tile_index -> first_pal_index map from tilemap entries
+    std::unordered_map<std::size_t, std::size_t> tile_to_first_pal;
+    std::unordered_map<std::size_t, std::set<std::size_t>> tile_to_all_pals;
+
+    for (const auto &entry : new_porymap_component_->metatiles_bin()) {
+        const auto tile_idx = entry.tile_index();
+        const auto pal_idx = entry.pal_index();
+
+        if (tile_idx == 0) {
+            continue; // Skip transparent tile
+        }
+
+        tile_to_all_pals[tile_idx].insert(pal_idx);
+
+        if (!tile_to_first_pal.contains(tile_idx)) {
+            tile_to_first_pal[tile_idx] = pal_idx;
+        }
+    }
+
+    // Phase 2: Handle animation-only tiles (not in metatiles_bin)
+    for (const auto &[anim_name, source_anim] : tileset_.porytiles_component().anims()) {
+        auto maybe_tile_offset = anim_tile_matcher_.tile_offset_for(anim_name);
+        if (!maybe_tile_offset.has_value()) {
+            continue;
+        }
+
+        const std::size_t tile_offset = maybe_tile_offset.value();
+        const AnimationFrame<Rgba32> composite = source_anim.composite_frame(extrinsic_transparency_.value());
+        const std::size_t tile_count = composite.tile_count();
+
+        for (std::size_t subtile_idx = 0; subtile_idx < tile_count; ++subtile_idx) {
+            const std::size_t absolute_tile_idx = tile_offset + subtile_idx;
+
+            if (tile_to_first_pal.contains(absolute_tile_idx)) {
+                continue; // Already mapped from metatiles_bin
+            }
+
+            const PixelTile<Rgba32> &composite_tile = composite.tile_at(subtile_idx);
+            std::vector<PaletteMatchResult<Rgba32>> matches =
+                match_or_best(composite_tile, new_porymap_pals_, extrinsic_transparency_.value(), 1);
+
+            if (matches.at(0).is_covered) {
+                const std::size_t matched_pal_idx = matches.at(0).pal_index;
+                tile_to_first_pal[absolute_tile_idx] = matched_pal_idx;
+
+                // Extract the tile to check for transparency and for visualization
+                const auto &tiles_img = new_porymap_component_->tiles_png();
+                const PixelTile<IndexPixel> index_tile = extract_single_tile(tiles_img, absolute_tile_idx);
+
+                // Skip remark for transparent tiles (unused slots)
+                if (index_tile.is_transparent()) {
+                    continue;
+                }
+
+                // Emit remark for animation-only tiles not referenced in metatiles
+                constexpr auto tag = "true-color-anim-only-tile";
+                std::vector<std::string> remark_lines;
+                remark_lines.emplace_back(format_.format(
+                    "tile index '{}' (animation '{}', subtile '{}') is not referenced in metatiles",
+                    FormatParam{absolute_tile_idx, Style::bold},
+                    FormatParam{anim_name, Style::bold},
+                    FormatParam{subtile_idx, Style::bold}));
+                remark_lines.emplace_back(format_.format(
+                    "Using '{}' for true-color encoding (determined via palette matching).",
+                    FormatParam{pal_filename(matched_pal_idx), Style::bold}));
+
+                // Visualize the tile using the matched palette
+                const PixelTile<Rgba32> rgba_tile = color_tile_from_index_tile(
+                    index_tile, new_porymap_pals_.at(matched_pal_idx), extrinsic_transparency_.value());
+                remark_lines.emplace_back();
+                std::ranges::copy(
+                    tile_printer_.print_tile(rgba_tile, extrinsic_transparency_.value()),
+                    std::back_inserter(remark_lines));
+
+                diag_.remark(tag, remark_lines);
+            }
+        }
+    }
+
+    // Phase 3: Emit diagnostic remark for tiles used with multiple palettes
+    for (const auto &[tile_idx, pals] : tile_to_all_pals) {
+        if (pals.size() > 1) {
+            // Extract the tile to check for transparency and for visualization
+            const auto &tiles_img = new_porymap_component_->tiles_png();
+            const PixelTile<IndexPixel> index_tile = extract_single_tile(tiles_img, tile_idx);
+
+            // Skip remark for transparent tiles (unused slots)
+            if (index_tile.is_transparent()) {
+                continue;
+            }
+
+            constexpr auto tag = "true-color-multi-palette-tile";
+            std::vector<std::string> remark_lines;
+            remark_lines.emplace_back(
+                format_.format("tile index '{}' is used with multiple palettes", FormatParam{tile_idx, Style::bold}));
+
+            std::string pal_list;
+            for (const auto pal : pals) {
+                if (!pal_list.empty()) {
+                    pal_list += ", ";
+                }
+                pal_list += pal_filename(pal);
+            }
+
+            const std::size_t selected_pal_idx = tile_to_first_pal.at(tile_idx);
+            remark_lines.emplace_back(format_.format(
+                "Palettes used: {}; tiles.png will display using '{}'.",
+                FormatParam{pal_list},
+                FormatParam{pal_filename(selected_pal_idx), Style::bold}));
+
+            // Visualize the tile under each palette resolution
+            for (const auto pal_idx : pals) {
+                remark_lines.emplace_back();
+                remark_lines.emplace_back(
+                    format_.format("{} resolution:", FormatParam{pal_filename(pal_idx), Style::bold}));
+                const PixelTile<Rgba32> rgba_tile = color_tile_from_index_tile(
+                    index_tile, new_porymap_pals_.at(pal_idx), extrinsic_transparency_.value());
+                std::ranges::copy(
+                    tile_printer_.print_tile(rgba_tile, extrinsic_transparency_.value()),
+                    std::back_inserter(remark_lines));
+            }
+
+            diag_.remark(tag, remark_lines);
+        }
+    }
+
+    // Phase 4: Transform tiles_png pixels
+    Image<IndexPixel> tiles_img = new_porymap_component_->tiles_png();
+    constexpr std::size_t tiles_per_row = metatile::metatiles_per_row * metatile::tiles_per_side;
+
+    const std::size_t total_tiles = tiles_img.size_in_tiles();
+
+    for (std::size_t tile_idx = 1; tile_idx < total_tiles; ++tile_idx) {
+        if (!tile_to_first_pal.contains(tile_idx)) {
+            // Extract the tile to check for transparency
+            const PixelTile<IndexPixel> index_tile = extract_single_tile(tiles_img, tile_idx, tiles_per_row);
+
+            // Skip warning for transparent tiles (unused slots) - user already knows they're unused
+            if (index_tile.is_transparent()) {
+                continue;
+            }
+
+            // Emit warning for unreferenced non-transparent tiles
+            constexpr auto tag = "true-color-unreferenced-tile";
+            std::vector<std::string> warning_lines;
+            warning_lines.emplace_back(format_.format(
+                "tile index '{}' is not referenced in metatiles or animations", FormatParam{tile_idx, Style::bold}));
+            diag_.warning(tag, warning_lines);
+
+            std::vector<std::string> note_lines;
+            note_lines.emplace_back("This tile may be used by a secondary tileset, or it may be completely unused.");
+            note_lines.emplace_back(format_.format(
+                "Displaying using '{}' for color resolution.", FormatParam{pal_filename(0), Style::bold}));
+
+            // Visualize the tile using palette 0
+            const PixelTile<Rgba32> rgba_tile =
+                color_tile_from_index_tile(index_tile, new_porymap_pals_.at(0), extrinsic_transparency_.value());
+            note_lines.emplace_back();
+            std::ranges::copy(
+                tile_printer_.print_tile(rgba_tile, extrinsic_transparency_.value()), std::back_inserter(note_lines));
+
+            diag_.warning_note(tag, note_lines);
+            continue; // Skip unreferenced tiles (no palette encoding needed)
+        }
+
+        const std::size_t pal_idx = tile_to_first_pal.at(tile_idx);
+        const std::size_t tile_row = tile_idx / tiles_per_row;
+        const std::size_t tile_col = tile_idx % tiles_per_row;
+        const std::size_t pixel_row_start = tile_row * tile::side_length_pix;
+        const std::size_t pixel_col_start = tile_col * tile::side_length_pix;
+
+        for (std::size_t py = 0; py < tile::side_length_pix; ++py) {
+            for (std::size_t px = 0; px < tile::side_length_pix; ++px) {
+                const std::size_t row = pixel_row_start + py;
+                const std::size_t col = pixel_col_start + px;
+                const IndexPixel old_pixel = tiles_img.at(row, col);
+                const std::size_t color_idx = old_pixel.color_index();
+                const std::size_t new_index = (pal_idx << 4) | color_idx;
+                tiles_img.set(row, col, IndexPixel{new_index});
+            }
+        }
+    }
+
+    // Phase 5: Build the 8-bit palette for the PNG (num_pals_in_primary * 16 colors)
+    std::vector<Rgba32> true_color_palette;
+    true_color_palette.reserve(num_pals_in_primary_.value() * pal::max_size);
+
+    for (std::size_t pal_idx = 0; pal_idx < num_pals_in_primary_.value(); ++pal_idx) {
+        const auto &pal = new_porymap_pals_.at(pal_idx);
+        for (std::size_t color_idx = 0; color_idx < pal::max_size; ++color_idx) {
+            true_color_palette.push_back(pal.at(color_idx));
+        }
+    }
+
+    tiles_img.palette(std::move(true_color_palette));
+    new_porymap_component_->tiles_png(tiles_img);
+}
+
+void CompilerTask::pipeline_helper_emit_no_matching_tile_error(
+    std::size_t tile_index,
+    const PixelTile<IndexPixel> &index_tile,
+    std::size_t pal_index,
+    const Palette<Rgba32, pal::max_size> &matched_pal)
+{
+    constexpr auto tag = "no-matching-tile";
+    auto [metatile_index, layer, subtile] = metatile::from_tile_index(tile_index);
+
+    // Emit error
+    std::vector<std::string> no_match_err{};
+    no_match_err.emplace_back(format_.format(
+        "{}: no matching tile found",
+        FormatParam{metatile::message_header(format_, metatile_index, layer, subtile), Style::bold}));
+    std::ranges::copy(
+        tile_printer_.print_metatile_tile_highlight(
+            porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_),
+        std::back_inserter(no_match_err));
+    diag_.error(tag, no_match_err);
+
+    // Print note showing the palette that matched
+    std::vector<std::string> pal_note{};
+    pal_note.emplace_back(format_.format("matched palette '{}':", FormatParam{pal_filename(pal_index), Style::bold}));
+    std::ranges::copy(pal_printer_.print_rgba_pal(matched_pal), std::back_inserter(pal_note));
+    diag_.error_note(tag, pal_note);
+
+    // Print note showing the generated IndexPixel tile
+    std::vector<std::string> tile_note{};
+    tile_note.emplace_back("generated index tile:");
+    std::ranges::copy(
+        tile_printer_.print_tile(index_tile, extrinsic_transparency_.value()), std::back_inserter(tile_note));
+    diag_.error_note(tag, tile_note);
+}
+
+void CompilerTask::pipeline_helper_emit_no_matching_pal_error(
+    std::size_t tile_index, const std::vector<PaletteMatchResult<Rgba32>> &matches)
+{
+    constexpr auto tag = "no-matching-palette";
+    auto [metatile_index, layer, subtile] = metatile::from_tile_index(tile_index);
+
+    // Emit error
+    std::vector<std::string> no_match_err{};
+    no_match_err.emplace_back(format_.format(
+        "{}: no matching palette found",
+        FormatParam{metatile::message_header(format_, metatile_index, layer, subtile), Style::bold}));
+    std::ranges::copy(
+        tile_printer_.print_metatile_tile_highlight(
+            porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_),
+        std::back_inserter(no_match_err));
+    diag_.error(tag, no_match_err);
+
+    // Emit a long note showing the top N closest matches
+    std::vector<std::string> closest_n_note{};
+    // TODO: substitute configurable top_n for N
+    closest_n_note.emplace_back("closest N match(es) with covered colors highlighted:");
+    int match_index = 0;
+    for (const auto &match : matches) {
+        if (match_index != 0) {
+            // Add a blank line between subsequent matches
+            closest_n_note.emplace_back();
+        }
+        closest_n_note.push_back(
+            format_.format("Palette match candidate: {}", FormatParam{pal_filename(match.pal_index), Style::bold}));
+        std::ranges::copy(
+            pal_printer_.print_rgba_palette_covered_missing(
+                new_porymap_pals_.at(match.pal_index), match.covered_colors, match.missing_colors),
+            std::back_inserter(closest_n_note));
+        closest_n_note.emplace_back();
+        closest_n_note.push_back(
+            format_.format("Uncovered pixels with {}:", FormatParam{pal_filename(match.pal_index), Style::bold}));
+        std::ranges::copy(
+            tile_printer_.print_metatile_pixel_highlights(
+                porytiles_metatiles_.at(metatile_index),
+                layer,
+                subtile,
+                match.uncovered_pixel_indices,
+                extrinsic_transparency_),
+            std::back_inserter(closest_n_note));
+        match_index++;
+    }
+    diag_.error_note(tag, closest_n_note);
+}
+
+void CompilerTask::pipeline_helper_emit_tile_limit_error(std::size_t tile_index, std::size_t tile_limit)
+{
+    constexpr auto tag = "tile-limit";
+    auto [metatile_index, layer, subtile] = metatile::from_tile_index(tile_index);
+
+    // Emit error
+    std::vector<std::string> tile_limit_error{};
+    tile_limit_error.emplace_back(format_.format(
+        "{}: hit limit of '{}' unique tiles",
+        FormatParam{metatile::message_header(format_, metatile_index, layer, subtile), Style::bold},
+        FormatParam{tile_limit, Style::bold}));
+    std::ranges::copy(
+        tile_printer_.print_metatile_tile_highlight(
+            porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_),
+        std::back_inserter(tile_limit_error));
+    diag_.error(tag, tile_limit_error);
+
+    // Construct note text
+    std::vector<std::string> note_text;
+    note_text.push_back(
+        format_.format("tile limit is '{}' due to configuration", FormatParam{num_tiles_in_primary_, Style::bold}));
+    note_text.emplace_back();
+    std::ranges::copy(num_tiles_in_primary_.prettify(format_), std::back_inserter(note_text));
+    diag_.error_note(tag, note_text);
+}
+
+} // namespace
+
+namespace porytiles2 {
+
+ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const Tileset &tileset) const
+{
+    CompilerTask task{tileset, *format_, *diag_, *tile_printer_, *pal_printer_, *config_};
+    return task.run();
 }
 
 } // namespace porytiles2

@@ -16,10 +16,10 @@ namespace porytiles2 {
  */
 class TilemapEntry {
   public:
-    TilemapEntry() : tile_index_{0}, pal_index_{0}, hflip_{false}, vflip_{false} {}
+    TilemapEntry() : tile_index_{0}, pal_index_{0}, h_flip_{false}, v_flip_{false} {}
 
-    TilemapEntry(unsigned int tile_index, unsigned int pal_index, bool hflip, bool vflip)
-        : tile_index_{tile_index}, pal_index_{pal_index}, hflip_{hflip}, vflip_{vflip}
+    TilemapEntry(std::size_t tile_index, std::size_t pal_index, bool hflip, bool vflip)
+        : tile_index_{tile_index}, pal_index_{pal_index}, h_flip_{hflip}, v_flip_{vflip}
     {
     }
 
@@ -36,51 +36,51 @@ class TilemapEntry {
      */
     [[nodiscard]] bool is_transparent() const;
 
-    [[nodiscard]] unsigned int tile_index() const
+    [[nodiscard]] std::size_t tile_index() const
     {
         return tile_index_;
     }
 
-    void tile_index(unsigned int tile_index)
+    void tile_index(std::size_t tile_index)
     {
         tile_index_ = tile_index;
     }
 
-    [[nodiscard]] unsigned int pal_index() const
+    [[nodiscard]] std::size_t pal_index() const
     {
         return pal_index_;
     }
 
-    void pal_index(unsigned int pal_index)
+    void pal_index(std::size_t pal_index)
     {
         pal_index_ = pal_index;
     }
 
-    [[nodiscard]] bool hflip() const
+    [[nodiscard]] bool h_flip() const
     {
-        return hflip_;
+        return h_flip_;
     }
 
-    void hflip(bool hflip)
+    void h_flip(bool hflip)
     {
-        hflip_ = hflip;
+        h_flip_ = hflip;
     }
 
-    [[nodiscard]] bool vflip() const
+    [[nodiscard]] bool v_flip() const
     {
-        return vflip_;
+        return v_flip_;
     }
 
-    void vflip(bool vflip)
+    void v_flip(bool vflip)
     {
-        vflip_ = vflip;
+        v_flip_ = vflip;
     }
 
   private:
-    unsigned int tile_index_;
-    unsigned int pal_index_;
-    bool hflip_;
-    bool vflip_;
+    std::size_t tile_index_;
+    std::size_t pal_index_;
+    bool h_flip_;
+    bool v_flip_;
 };
 
 } // namespace porytiles2

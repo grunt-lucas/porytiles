@@ -2,10 +2,10 @@
 
 #include <string>
 
-#include "porytiles2/infra/config/tiles_pal_mode.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/xcut/config/config_scope_type.hpp"
 #include "porytiles2/xcut/config/config_validators.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
-#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -17,26 +17,111 @@ namespace porytiles2 {
 
 /**
  * @brief Interface that defines a complete infra layer configuration.
- *
- * @details
- * The infra layer operates with this interface - it doesn't need to worry about implementation. Every config value is
- * either virtual (i.e., comes from the user) or defined in terms of other virtual values.
  */
 class InfraConfig {
   public:
     virtual ~InfraConfig() = default;
 
-    // Public method with validation
-    [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>> tiles_pal_mode(const std::string &tileset) const
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
+    tileset_paths_primary_src(ConfigScopeType type, const std::string &scope) const
     {
-        auto raw_val = tiles_pal_mode_raw(tileset);
-        return raw_val;
+        auto validated_val = tileset_paths_primary_src_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
+    tileset_paths_primary_bin(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = tileset_paths_primary_bin_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
+    tileset_paths_secondary_src(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = tileset_paths_secondary_src_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
+    tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = tileset_paths_secondary_bin_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = tileset_animations_wire_anim_code_validated(type, scope);
+        return validated_val;
     }
 
   protected:
-    // Protected virtual method that fetches raw value from provider
-    [[nodiscard]] virtual ChainableResult<ConfigValue<TilesPalMode>>
-    tiles_pal_mode_raw(const std::string &tileset) const = 0;
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::string>>
+    tileset_paths_primary_src_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = tileset_paths_primary_src_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::string>>
+    tileset_paths_primary_src_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::string>>
+    tileset_paths_primary_bin_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = tileset_paths_primary_bin_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::string>>
+    tileset_paths_primary_bin_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::string>>
+    tileset_paths_secondary_src_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = tileset_paths_secondary_src_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::string>>
+    tileset_paths_secondary_src_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::string>>
+    tileset_paths_secondary_bin_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = tileset_paths_secondary_bin_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::string>>
+    tileset_paths_secondary_bin_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
+    tileset_animations_wire_anim_code_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = tileset_animations_wire_anim_code_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
+    tileset_animations_wire_anim_code_raw(ConfigScopeType type, const std::string &scope) const = 0;
 };
 
 } // namespace porytiles2

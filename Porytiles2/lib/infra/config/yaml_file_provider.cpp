@@ -8,13 +8,10 @@
 
 #include "yaml-cpp/yaml.h"
 
-#include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 
-#define YAML_FILE_PROVIDER_CPP_COMPILING
 #include "./yaml_file_provider_impl.ipp"
-#undef YAML_FILE_PROVIDER_CPP_COMPILING
 
 namespace porytiles2 {
 
@@ -25,18 +22,17 @@ namespace porytiles2 {
  */
 
 YamlFileProvider::YamlFileProvider(
-    gsl::not_null<TextFormatter *> format,
-    const std::filesystem::path &project_root,
-    const TilesetArtifactKeyProvider &tileset_key_provider)
-    : format_{format}, project_root_{project_root}, tileset_key_provider_{&tileset_key_provider}
+    gsl::not_null<const TextFormatter *> format,
+    const UserDiagnostics *diagnostics,
+    const std::filesystem::path &project_root)
+    : format_{format}, diagnostics_{diagnostics}, project_root_{project_root}
 {
     // Config files are loaded lazily when first accessed via the anonymous namespace functions
 }
 
-YamlFileProvider::YamlFileProvider(
-    const std::filesystem::path &project_root, const TilesetArtifactKeyProvider &tileset_key_provider)
-    : owned_format_{std::make_unique<PlainTextFormatter>()}, format_{owned_format_.get()}, project_root_{project_root},
-      tileset_key_provider_{&tileset_key_provider}
+YamlFileProvider::YamlFileProvider(const UserDiagnostics *diagnostics, const std::filesystem::path &project_root)
+    : owned_format_{std::make_unique<PlainTextFormatter>()}, format_{owned_format_.get()}, diagnostics_{diagnostics},
+      project_root_{project_root}
 {
     // Config files are loaded lazily when first accessed via the anonymous namespace functions
 }
@@ -46,136 +42,359 @@ std::string YamlFileProvider::name() const
     return "YamlFileProvider";
 }
 
-LayerValue<std::size_t> YamlFileProvider::num_tiles_primary(const std::string &tileset) const
+LayerValue<std::size_t> YamlFileProvider::num_tiles_in_primary(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::size_t>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
     return search_config_files<std::size_t>(
         format_,
-        paths,
-        load_yaml_file,
-        [](const YAML::Node &doc) { return doc["fieldmap"]["num_tiles_primary"]; },
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["fieldmap"]["num_tiles_in_primary"]; },
         parse_size_t,
-        "num_tiles_primary");
+        "num_tiles_in_primary");
 }
 
-LayerValue<std::size_t> YamlFileProvider::num_tiles_total(const std::string &tileset) const
+LayerValue<std::size_t> YamlFileProvider::num_tiles_total(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::size_t>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
     return search_config_files<std::size_t>(
         format_,
-        paths,
-        load_yaml_file,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_tiles_total"]; },
         parse_size_t,
         "num_tiles_total");
 }
 
-LayerValue<std::size_t> YamlFileProvider::num_metatiles_primary(const std::string &tileset) const
+LayerValue<std::size_t> YamlFileProvider::num_metatiles_in_primary(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::size_t>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
     return search_config_files<std::size_t>(
         format_,
-        paths,
-        load_yaml_file,
-        [](const YAML::Node &doc) { return doc["fieldmap"]["num_metatiles_primary"]; },
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["fieldmap"]["num_metatiles_in_primary"]; },
         parse_size_t,
-        "num_metatiles_primary");
+        "num_metatiles_in_primary");
 }
 
-LayerValue<std::size_t> YamlFileProvider::num_metatiles_total(const std::string &tileset) const
+LayerValue<std::size_t> YamlFileProvider::num_metatiles_total(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::size_t>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
     return search_config_files<std::size_t>(
         format_,
-        paths,
-        load_yaml_file,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_metatiles_total"]; },
         parse_size_t,
         "num_metatiles_total");
 }
 
-LayerValue<std::size_t> YamlFileProvider::num_pals_primary(const std::string &tileset) const
+LayerValue<std::size_t> YamlFileProvider::num_pals_in_primary(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::size_t>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
     return search_config_files<std::size_t>(
         format_,
-        paths,
-        load_yaml_file,
-        [](const YAML::Node &doc) { return doc["fieldmap"]["num_pals_primary"]; },
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["fieldmap"]["num_pals_in_primary"]; },
         parse_size_t,
-        "num_pals_primary");
+        "num_pals_in_primary");
 }
 
-LayerValue<std::size_t> YamlFileProvider::num_pals_total(const std::string &tileset) const
+LayerValue<std::size_t> YamlFileProvider::num_pals_total(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::size_t>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
     return search_config_files<std::size_t>(
         format_,
-        paths,
-        load_yaml_file,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_pals_total"]; },
         parse_size_t,
         "num_pals_total");
 }
 
-LayerValue<std::size_t> YamlFileProvider::max_map_data_size(const std::string &tileset) const
+LayerValue<std::size_t> YamlFileProvider::max_map_data_size(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::size_t>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
     return search_config_files<std::size_t>(
         format_,
-        paths,
-        load_yaml_file,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["fieldmap"]["max_map_data_size"]; },
         parse_size_t,
         "max_map_data_size");
 }
 
-LayerValue<std::size_t> YamlFileProvider::num_tiles_per_metatile(const std::string &tileset) const
+LayerValue<std::size_t> YamlFileProvider::num_tiles_per_metatile(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::size_t>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
     return search_config_files<std::size_t>(
         format_,
-        paths,
-        load_yaml_file,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_tiles_per_metatile"]; },
         parse_size_t,
         "num_tiles_per_metatile");
 }
 
-LayerValue<Rgba32> YamlFileProvider::extrinsic_transparency(const std::string &tileset) const
+LayerValue<Rgba32> YamlFileProvider::extrinsic_transparency(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<Rgba32>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
     return search_config_files<Rgba32>(
         format_,
-        paths,
-        load_yaml_file,
-        [](const YAML::Node &doc) { return doc["extrinsic_transparency"]; },
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["extrinsic_transparency"]; },
         parse_rgba32,
         "extrinsic_transparency");
 }
 
-LayerValue<bool> YamlFileProvider::patch_build_enabled(const std::string &tileset) const
+LayerValue<ArtifactEditMode> YamlFileProvider::tiles_edit_mode(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
-    return search_config_files<bool>(
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<ArtifactEditMode>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<ArtifactEditMode>(
         format_,
-        paths,
-        load_yaml_file,
-        [](const YAML::Node &doc) { return doc["patch"]["enabled"]; },
-        parse_bool,
-        "patch_build_enabled");
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["tiles"]["edit_mode"]; },
+        parse_artifact_edit_mode,
+        "tiles_edit_mode");
 }
 
-LayerValue<TilesPalMode> YamlFileProvider::tiles_pal_mode(const std::string &tileset) const
+LayerValue<ArtifactEditMode> YamlFileProvider::pals_edit_mode(ConfigScopeType type, const std::string &scope) const
 {
-    const auto paths = get_tileset_config_path_chain(project_root_, tileset_key_provider_, tileset);
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<ArtifactEditMode>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<ArtifactEditMode>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["palettes"]["edit_mode"]; },
+        parse_artifact_edit_mode,
+        "pals_edit_mode");
+}
+
+LayerValue<bool> YamlFileProvider::pal_hints_enabled(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<bool>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<bool>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["palettes"]["packing"]["hints_enabled"]; },
+        parse_bool,
+        "pal_hints_enabled");
+}
+
+LayerValue<std::vector<PaletteHint>> YamlFileProvider::pal_hints(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::vector<PaletteHint>>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<std::vector<PaletteHint>>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["palettes"]["packing"]["hints"]; },
+        parse_pal_hints,
+        "pal_hints");
+}
+
+LayerValue<TilesPalMode> YamlFileProvider::tiles_pal_mode(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<TilesPalMode>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
     return search_config_files<TilesPalMode>(
         format_,
-        paths,
-        load_yaml_file,
-        [](const YAML::Node &doc) { return doc["tiles_pal_mode"]; },
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["tiles"]["pal_mode"]; },
         parse_tiles_pal_mode,
         "tiles_pal_mode");
+}
+
+LayerValue<AnimPalResolutionStrategy>
+YamlFileProvider::anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<AnimPalResolutionStrategy>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<AnimPalResolutionStrategy>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["palette_resolution_strategy"]; },
+        parse_anim_pal_resolution_strategy,
+        "anim_pal_resolution_strategy");
+}
+
+LayerValue<AnimKeyFrameResolutionStrategy>
+YamlFileProvider::anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<AnimKeyFrameResolutionStrategy>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<AnimKeyFrameResolutionStrategy>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["key_frame_resolution_strategy"]; },
+        parse_anim_key_frame_resolution_strategy,
+        "anim_key_frame_resolution_strategy");
+}
+
+LayerValue<bool> YamlFileProvider::verify_checksums(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<bool>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<bool>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["verify_checksums"]; },
+        parse_bool,
+        "verify_checksums");
+}
+
+LayerValue<std::string>
+YamlFileProvider::tileset_paths_primary_src(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::string>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<std::string>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["paths"]["primary"]["src"]; },
+        parse_string,
+        "tileset_paths_primary_src");
+}
+
+LayerValue<std::string>
+YamlFileProvider::tileset_paths_primary_bin(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::string>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<std::string>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["paths"]["primary"]["bin"]; },
+        parse_string,
+        "tileset_paths_primary_bin");
+}
+
+LayerValue<std::string>
+YamlFileProvider::tileset_paths_secondary_src(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::string>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<std::string>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["paths"]["secondary"]["src"]; },
+        parse_string,
+        "tileset_paths_secondary_src");
+}
+
+LayerValue<std::string>
+YamlFileProvider::tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::string>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<std::string>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["paths"]["secondary"]["bin"]; },
+        parse_string,
+        "tileset_paths_secondary_bin");
+}
+
+LayerValue<bool>
+YamlFileProvider::tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<bool>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<bool>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["wire_anim_code"]; },
+        parse_bool,
+        "tileset_animations_wire_anim_code");
 }
 
 } // namespace porytiles2

@@ -18,7 +18,7 @@ TEST(CanonicalPixelTileTests, ShouldFindCanonicalRepresentation)
     PixelTile<IndexPixel> tile{};
     for (std::size_t row = 0; row < 8; ++row) {
         for (std::size_t col = 0; col < 8; ++col) {
-            tile.set(row, col, IndexPixel{static_cast<unsigned int>(row + col + 1)});
+            tile.set(row, col, IndexPixel{row + col + 1});
         }
     }
 
@@ -95,7 +95,7 @@ TEST(CanonicalPixelTileTests, ShouldProduceConsistentResults)
     // Create a test tile
     PixelTile<IndexPixel> tile{};
     for (std::size_t i = 0; i < 64; ++i) {
-        tile.set(i, IndexPixel{static_cast<unsigned int>(i % 16)});
+        tile.set(i, IndexPixel{i % 16});
     }
 
     // Create multiple canonical tiles from the same source

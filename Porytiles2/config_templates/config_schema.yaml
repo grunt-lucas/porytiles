@@ -3,102 +3,110 @@
 #
 # Fields:
 #   name: Method name for the config value
+#
 #   type: C++ type for the value
+#
 #   parser: Parser function name (e.g., "parse_size_t") - shared across all providers (if relevant)
+#
 #   layer: Configuration layer (domain/app/infra)
-#   scope_type: Method parameter scope (tileset/layout)
-#     - tileset: Takes const std::string &tileset parameter
-#     - layout: Takes const std::string &layout parameter
+#
 #   default_value: Default value for DefaultProvider (C++ expression as string)
+#
 #   yaml: YAML configuration for YamlFileProvider
 #     path: Dot-separated YAML path (e.g., "fieldmap.num_tiles_primary")
+#
+#   header_define: (optional) Name of the #define macro in header files for HeaderDefineProvider
+#     - Only supported for std::size_t types
+#     - Example: "NUM_TILES_IN_PRIMARY" to match "#define NUM_TILES_IN_PRIMARY 512"
+#
 #   validators: List of validator function names to apply (required, use empty list [] if none)
 #     - Validators are chainable functions taking ConfigValue<T> and returning ChainableResult<ConfigValue<T>>
+#     - Defined in xcut/config/config_validators.hpp or <layer>/config/<layer>_config_validators.hpp
 #     - Applied in sequence after fetching from provider, before returning to caller
 #     - Example: [size_t_val_greater_than_zero]
+#
 #   cross_field_validators: List of cross-field validators that can access other config values (required, use empty list [] if none)
 #     - Applied after regular validators, have access to config object and can fetch other values
-#     - Simple comparisons: "compare_<op>:<field_name>" (e.g., "compare_greater_than:num_tiles_primary")
-#       Supported ops: greater_than, less_than, greater_equal, less_equal, equal, not_equal
-#     - Custom validators: Function name taking (ConfigValue<T>, ConfigInterface, std::string) signature
-#     - Example: ["compare_greater_than:num_tiles_primary", "my_custom_cross_field_validator"]
+#     - Defined in xcut/config/config_validators.hpp or <layer>/config/<layer>_config_validators.hpp
+#     - Reference syntax: "<validator_func_name>:<field_name>"
+#     - Example: [compare_greater_than:num_tiles_primary]
 
 config_values:
   # Domain Layer Configuration Values
-  - name: num_tiles_primary
+  - name: num_tiles_in_primary
     type: std::size_t
     parser: parse_size_t
     layer: domain
-    scope_type: tileset
     default_value: "512"
     yaml:
-      path: fieldmap.num_tiles_primary
+      path: fieldmap.num_tiles_in_primary
+    header_define: NUM_TILES_IN_PRIMARY
     validators: [ size_t_val_greater_than_zero ]
-    cross_field_validators: [ ]
+    cross_field_validators: [ compare_less_equal:num_tiles_total ]
 
   - name: num_tiles_total
     type: std::size_t
     parser: parse_size_t
     layer: domain
-    scope_type: tileset
     default_value: "1024"
     yaml:
       path: fieldmap.num_tiles_total
+    header_define: NUM_TILES_TOTAL
     validators: [ size_t_val_greater_than_zero ]
-    cross_field_validators: [ "compare_greater_equal:num_tiles_primary" ]
+    cross_field_validators: [ compare_greater_equal:num_tiles_in_primary ]
 
-  - name: num_metatiles_primary
+  - name: num_metatiles_in_primary
     type: std::size_t
     parser: parse_size_t
     layer: domain
-    scope_type: tileset
     default_value: "512"
     yaml:
-      path: fieldmap.num_metatiles_primary
+      path: fieldmap.num_metatiles_in_primary
+    header_define: NUM_METATILES_IN_PRIMARY
     validators: [ size_t_val_greater_than_zero ]
-    cross_field_validators: [ ]
+    cross_field_validators: [ compare_less_equal:num_metatiles_total ]
 
   - name: num_metatiles_total
     type: std::size_t
     parser: parse_size_t
     layer: domain
-    scope_type: tileset
     default_value: "1024"
     yaml:
       path: fieldmap.num_metatiles_total
+    header_define: NUM_METATILES_TOTAL
     validators: [ size_t_val_greater_than_zero ]
-    cross_field_validators: [ "compare_greater_equal:num_metatiles_primary" ]
+    cross_field_validators: [ compare_greater_equal:num_metatiles_in_primary ]
 
-  - name: num_pals_primary
+  - name: num_pals_in_primary
     type: std::size_t
     parser: parse_size_t
     layer: domain
-    scope_type: tileset
     default_value: "6"
     yaml:
-      path: fieldmap.num_pals_primary
+      path: fieldmap.num_pals_in_primary
+    header_define: NUM_PALS_IN_PRIMARY
     validators: [ size_t_val_greater_than_zero ]
-    cross_field_validators: [ ]
+    cross_field_validators: [ compare_less_equal:num_pals_total ]
 
   - name: num_pals_total
     type: std::size_t
     parser: parse_size_t
     layer: domain
-    scope_type: tileset
     default_value: "13"
     yaml:
       path: fieldmap.num_pals_total
+    header_define: NUM_PALS_TOTAL
     validators: [ size_t_val_greater_than_zero ]
-    cross_field_validators: [ "compare_greater_equal:num_pals_primary" ]
+    cross_field_validators: [ compare_greater_equal:num_pals_in_primary ]
 
   - name: max_map_data_size
     type: std::size_t
     parser: parse_size_t
     layer: domain
-    scope_type: tileset
     default_value: "10240"
     yaml:
       path: fieldmap.max_map_data_size
+    header_define: MAX_MAP_DATA_SIZE
     validators: [ size_t_val_greater_than_zero ]
     cross_field_validators: [ ]
 
@@ -106,43 +114,151 @@ config_values:
     type: std::size_t
     parser: parse_size_t
     layer: domain
-    scope_type: tileset
     default_value: "8"
     yaml:
       path: fieldmap.num_tiles_per_metatile
-    validators: [ ]
+    header_define: NUM_TILES_PER_METATILE
+    validators: [ size_t_val_eight_or_twelve ]
     cross_field_validators: [ ]
 
   - name: extrinsic_transparency
     type: Rgba32
     parser: parse_rgba32
     layer: domain
-    scope_type: tileset
     default_value: "rgba_magenta"
     yaml:
-      path: extrinsic_transparency
+      path: tileset.extrinsic_transparency
     validators: [ ]
     cross_field_validators: [ ]
 
-  - name: patch_build_enabled
+  - name: tiles_edit_mode
+    type: ArtifactEditMode
+    parser: parse_artifact_edit_mode
+    layer: domain
+    default_value: "ArtifactEditMode::optimize"
+    yaml:
+      path: tileset.tiles.edit_mode
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - name: pals_edit_mode
+    type: ArtifactEditMode
+    parser: parse_artifact_edit_mode
+    layer: domain
+    default_value: "ArtifactEditMode::optimize"
+    yaml:
+      path: tileset.palettes.edit_mode
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - name: pal_hints_enabled
     type: bool
     parser: parse_bool
     layer: domain
-    scope_type: tileset
-    default_value: "false"
+    default_value: "true"
     yaml:
-      path: patch.enabled
+      path: tileset.palettes.packing.hints_enabled
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - name: pal_hints
+    type: std::vector<PaletteHint>
+    parser: parse_pal_hints
+    layer: domain
+    default_value: "std::vector<PaletteHint>{}"
+    yaml:
+      path: tileset.palettes.packing.hints
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - name: tiles_pal_mode
+    type: TilesPalMode
+    parser: parse_tiles_pal_mode
+    layer: domain
+    default_value: "TilesPalMode::true_color"
+    yaml:
+      path: tileset.tiles.pal_mode
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - name: anim_pal_resolution_strategy
+    type: AnimPalResolutionStrategy
+    parser: parse_anim_pal_resolution_strategy
+    layer: domain
+    default_value: "AnimPalResolutionStrategy::error"
+    yaml:
+      path: tileset.animations.palette_resolution_strategy
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - name: anim_key_frame_resolution_strategy
+    type: AnimKeyFrameResolutionStrategy
+    parser: parse_anim_key_frame_resolution_strategy
+    layer: domain
+    default_value: "AnimKeyFrameResolutionStrategy::error"
+    yaml:
+      path: tileset.animations.key_frame_resolution_strategy
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  # Application Layer Configuration Values
+  - name: verify_checksums
+    type: bool
+    parser: parse_bool
+    layer: app
+    default_value: "true"
+    yaml:
+      path: verify_checksums
     validators: [ ]
     cross_field_validators: [ ]
 
   # Infrastructure Layer Configuration Values
-  - name: tiles_pal_mode
-    type: TilesPalMode
-    parser: parse_tiles_pal_mode
+  - name: tileset_paths_primary_src
+    type: std::string
+    parser: parse_string
     layer: infra
-    scope_type: tileset
-    default_value: "TilesPalMode::true_color"
+    default_value: '"data/tilesets/primary"'
     yaml:
-      path: tiles_pal_mode
+      path: tileset.paths.primary.src
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - name: tileset_paths_primary_bin
+    type: std::string
+    parser: parse_string
+    layer: infra
+    default_value: '"data/tilesets/primary"'
+    yaml:
+      path: tileset.paths.primary.bin
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - name: tileset_paths_secondary_src
+    type: std::string
+    parser: parse_string
+    layer: infra
+    default_value: '"data/tilesets/secondary"'
+    yaml:
+      path: tileset.paths.secondary.src
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - name: tileset_paths_secondary_bin
+    type: std::string
+    parser: parse_string
+    layer: infra
+    default_value: '"data/tilesets/secondary"'
+    yaml:
+      path: tileset.paths.secondary.bin
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - name: tileset_animations_wire_anim_code
+    type: bool
+    parser: parse_bool
+    layer: infra
+    default_value: "true"
+    yaml:
+      path: tileset.animations.wire_anim_code
     validators: [ ]
     cross_field_validators: [ ]

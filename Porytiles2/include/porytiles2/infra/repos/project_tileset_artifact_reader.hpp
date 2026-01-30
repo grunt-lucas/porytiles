@@ -1,15 +1,20 @@
 #pragma once
 
+#include <utility>
+
 #include "gsl/pointers"
 
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
-#include "porytiles2/domain/repos/tileset_artifact.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_reader.hpp"
+#include "porytiles2/infra/services/anim_code_parser.hpp"
+#include "porytiles2/infra/services/anim_yaml_parser.hpp"
+#include "porytiles2/infra/services/attributes_csv_loader.hpp"
 #include "porytiles2/infra/services/file_pal_loader.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
-#include "porytiles2/templates/result.hpp"
+#include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -23,20 +28,70 @@ namespace porytiles2 {
 class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
   public:
     ProjectTilesetArtifactReader(
-        gsl::not_null<PngRgbaImageLoader *> png_rgba_loader,
-        gsl::not_null<PngIndexedImageLoader *> png_indexed_loader,
-        gsl::not_null<FilePalLoader *> pal_loader)
-        : png_rgba_loader_{png_rgba_loader}, png_indexed_loader_{png_indexed_loader}, pal_loader_{pal_loader}
+        std::filesystem::path project_root,
+        gsl::not_null<const PngRgbaImageLoader *> png_rgba_loader,
+        gsl::not_null<const PngIndexedImageLoader *> png_indexed_loader,
+        gsl::not_null<const FilePalLoader *> pal_loader,
+        gsl::not_null<const AttributesCsvLoader *> attributes_csv_loader,
+        gsl::not_null<const AnimYamlParser *> anim_yaml_parser,
+        gsl::not_null<const AnimCodeParser *> anim_code_parser,
+        gsl::not_null<const ProjectTilesetMetadataProvider *> metadata_provider)
+        : project_root_{std::move(project_root)}, png_rgba_loader_{png_rgba_loader},
+          png_indexed_loader_{png_indexed_loader}, pal_loader_{pal_loader},
+          attributes_csv_loader_{attributes_csv_loader}, anim_yaml_parser_{anim_yaml_parser},
+          anim_code_parser_{anim_code_parser}, metadata_provider_{metadata_provider}
     {
     }
 
+    /*
+     * Porymap artifacts
+     */
+    [[nodiscard]] ChainableResult<void> read_metatiles_bin(Tileset &dest, const ArtifactKey &src_key) const override;
+
     [[nodiscard]] ChainableResult<void>
-    read(Tileset &dest, const ArtifactKey &src_key, const TilesetArtifact &artifact) const override;
+    read_metatile_attributes_bin(Tileset &dest, const ArtifactKey &src_key) const override;
+
+    [[nodiscard]] ChainableResult<void> read_tiles_png(Tileset &dest, const ArtifactKey &src_key) const override;
+
+    [[nodiscard]] ChainableResult<void>
+    read_porymap_pal_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const override;
+
+    [[nodiscard]] ChainableResult<void> read_porymap_anim(
+        Tileset &dest,
+        const std::string &anim_name,
+        const ArtifactKey &params_key,
+        const std::vector<std::pair<std::string, ArtifactKey>> &frame_keys) const override;
+
+    /*
+     * Porytiles artifacts
+     */
+    [[nodiscard]] ChainableResult<void> read_bottom_png(Tileset &dest, const ArtifactKey &src_key) const override;
+
+    [[nodiscard]] ChainableResult<void> read_middle_png(Tileset &dest, const ArtifactKey &src_key) const override;
+
+    [[nodiscard]] ChainableResult<void> read_top_png(Tileset &dest, const ArtifactKey &src_key) const override;
+
+    [[nodiscard]] ChainableResult<void> read_attributes_csv(Tileset &dest, const ArtifactKey &src_key) const override;
+
+    [[nodiscard]] ChainableResult<void>
+    read_porytiles_pal_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const override;
+
+    [[nodiscard]] ChainableResult<void> read_porytiles_anim(
+        Tileset &dest,
+        const std::string &anim_name,
+        const ArtifactKey &params_key,
+        const ArtifactKey &key_frame_key,
+        const std::vector<std::pair<std::string, ArtifactKey>> &frame_keys) const override;
 
   private:
-    PngRgbaImageLoader *png_rgba_loader_;
-    PngIndexedImageLoader *png_indexed_loader_;
-    FilePalLoader *pal_loader_;
+    const std::filesystem::path project_root_;
+    const PngRgbaImageLoader *png_rgba_loader_;
+    const PngIndexedImageLoader *png_indexed_loader_;
+    const FilePalLoader *pal_loader_;
+    const AttributesCsvLoader *attributes_csv_loader_;
+    const AnimYamlParser *anim_yaml_parser_;
+    const AnimCodeParser *anim_code_parser_;
+    const ProjectTilesetMetadataProvider *metadata_provider_;
 };
 
 } // namespace porytiles2

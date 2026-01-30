@@ -1,19 +1,20 @@
+#include <format>
+
 #include "CLI/CLI.hpp"
-#include "fmt/format.h"
 
 #include "porytiles2/build_version.h"
 
-#include "command.hpp"
-#include "create_tileset_command.hpp"
-#include "debug_commands.hpp"
-#include "verify_tileset_command.hpp"
+#include "command_compile_tileset.hpp"
+#include "command_create_tileset.hpp"
+#include "command_decompile_tileset.hpp"
+#include "command_import_tileset.hpp"
 
 int main(const int argc, char **argv)
 {
     CLI::App porytiles_app{"Porytiles"};
 
     porytiles_app.description(
-        fmt::format(
+        std::format(
             R"(porytiles {} {}
 grunt-lucas <grunt.lucas@yahoo.com>
 
@@ -50,8 +51,9 @@ https://github.com/huderlem/porymap)");
     porytiles_app.get_option("--help")->description("Print this help message and exit.");
 
     CreateTilesetCommand create_tileset{porytiles_app};
-    VerifyTilesetCommand verify_tileset{porytiles_app};
-    DebugPrimaryCompileCommand debug_compile{porytiles_app};
+    ImportTilesetCommand import_tileset{porytiles_app};
+    CompileTilesetCommand compile_tileset{porytiles_app};
+    DecompileTilesetCommand decompile_tileset{porytiles_app};
 
     porytiles_app.require_subcommand();
 

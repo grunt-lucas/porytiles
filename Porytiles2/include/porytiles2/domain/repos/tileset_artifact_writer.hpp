@@ -4,9 +4,7 @@
 
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
-#include "porytiles2/domain/repos/tileset_artifact.hpp"
-#include "porytiles2/templates/result.hpp"
-#include "porytiles2/xcut/result/chainable_result.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -33,9 +31,9 @@ class TilesetArtifactWriter {
      * Starts a transaction that buffers all subsequent write operations until a commit() call. If a transaction is
      * already active, this should return an error.
      *
-     * @return Empty Result on success, otherwise an error description
+     * @return Empty ChainableResult on success, otherwise an error description
      */
-    [[nodiscard]] virtual Result<void> begin_transaction() = 0;
+    [[nodiscard]] virtual ChainableResult<void> begin_transaction() = 0;
 
     /**
      * @brief Commits all buffered write operations in the current transaction.
@@ -57,32 +55,78 @@ class TilesetArtifactWriter {
      * transaction is closed and a new one must be started for further transactional writes. If no transaction is
      * active, this should return an error.
      *
-     * @return Empty Result on success, otherwise an error description
+     * @return Empty ChainableResult on success, otherwise an error description
      */
-    [[nodiscard]] virtual Result<void> rollback() = 0;
+    [[nodiscard]] virtual ChainableResult<void> rollback() = 0;
 
-    /**
-     * @brief Writes an artifact from a Tileset to the backing store.
-     *
-     * @details
-     * This method extracts the appropriate data from the source Tileset object and writes the specified artifact to the
-     * backing store location identified by the dest_key. The TilesetArtifact parameter specifies the type and metadata
-     * needed to determine what data to extract and how to format it.
-     *
-     * The implementation should handle formatting the specific artifact type (PNG images, binary data, etc.) and
-     * extracting the correct data from the Tileset components (Porymap or Porytiles components, palettes, animations,
-     * etc.).
-     *
-     * If a transaction is active (via begin_transaction()), the write should buffer until a commit() call. If no
-     * transaction is active, the behavior is implementation-defined (immediate write or error).
-     *
-     * @param dest_key The ArtifactKey identifying the destination location in the backing store
-     * @param artifact The TilesetArtifact specification including type and optional metadata
-     * @param src The Tileset object containing the data to be written
-     * @return Empty ChainableResult on success, otherwise an error trace
+    /*
+     * Porymap artifacts
      */
     [[nodiscard]] virtual ChainableResult<void>
-    write(const ArtifactKey &dest_key, const TilesetArtifact &artifact, const Tileset &src) = 0;
+    write_metatiles_bin(const ArtifactKey &dest_key, const Tileset &src) = 0;
+
+    [[nodiscard]] virtual ChainableResult<void>
+    write_metatile_attributes_bin(const ArtifactKey &dest_key, const Tileset &src) = 0;
+
+    [[nodiscard]] virtual ChainableResult<void> write_tiles_png(const ArtifactKey &dest_key, const Tileset &src) = 0;
+
+    [[nodiscard]] virtual ChainableResult<void>
+    write_porymap_pal_n(const ArtifactKey &dest_key, const Tileset &src, std::size_t index) = 0;
+
+    [[nodiscard]] virtual ChainableResult<void> write_porymap_anim_frame(
+        const ArtifactKey &dest_key,
+        const Tileset &src,
+        const std::string &anim_name,
+        const std::string &frame_name) = 0;
+
+    /**
+     * @brief Writes the animation parameters to the Porymap component backing store.
+     *
+     * @details
+     * Generates and writes the animation parameters for all animations in the Porymap component.
+     * The tileset_root_key provides the path used for constructing INCBIN statements.
+     *
+     * @param dest_key Key identifying where to write the parameters
+     * @param src The Tileset object to extract animation data from
+     * @return Empty ChainableResult on success, otherwise an error chain
+     */
+    [[nodiscard]] virtual ChainableResult<void>
+    write_porymap_anim_params(const ArtifactKey &dest_key, const Tileset &src) = 0;
+
+    /*
+     * Porytiles artifacts
+     */
+    [[nodiscard]] virtual ChainableResult<void> write_bottom_png(const ArtifactKey &dest_key, const Tileset &src) = 0;
+
+    [[nodiscard]] virtual ChainableResult<void> write_middle_png(const ArtifactKey &dest_key, const Tileset &src) = 0;
+
+    [[nodiscard]] virtual ChainableResult<void> write_top_png(const ArtifactKey &dest_key, const Tileset &src) = 0;
+
+    [[nodiscard]] virtual ChainableResult<void>
+    write_attributes_csv(const ArtifactKey &dest_key, const Tileset &src) = 0;
+
+    [[nodiscard]] virtual ChainableResult<void>
+    write_porytiles_pal_n(const ArtifactKey &dest_key, const Tileset &src, std::size_t index) = 0;
+
+    [[nodiscard]] virtual ChainableResult<void> write_porytiles_anim_frame(
+        const ArtifactKey &dest_key,
+        const Tileset &src,
+        const std::string &anim_name,
+        const std::string &frame_name) = 0;
+
+    /**
+     * @brief Writes animation parameters to the Porytiles component backing store.
+     *
+     * @details
+     * Generates and writes the animation parameters (frame sequences, timing, etc.) for all animations in the Porytiles
+     * component.
+     *
+     * @param dest_key Key identifying where to write the parameters
+     * @param src The Tileset object from which to extract animation parameters
+     * @return Empty ChainableResult on success, otherwise an error chain
+     */
+    [[nodiscard]] virtual ChainableResult<void>
+    write_porytiles_anim_params(const ArtifactKey &dest_key, const Tileset &src) = 0;
 };
 
 } // namespace porytiles2

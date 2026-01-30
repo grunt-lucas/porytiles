@@ -5,9 +5,9 @@
 #include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/domain/models/porymap_tileset_component.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
-#include "porytiles2/xcut/panic/panic.hpp"
-#include "porytiles2/xcut/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -15,7 +15,7 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(c
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         layer_mode, component.detect_layer_mode(), "layer mode detection failed", std::vector<TilemapEntry>);
-    if (layer_mode == tileset::LayerMode::triple) {
+    if (layer_mode == LayerMode::triple) {
         // No-op case
         return component.metatiles_bin();
     }
@@ -38,7 +38,7 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(c
         const std::size_t input_offset = i * metatile::entries_per_metatile_dual;
 
         switch (attribute.layer_type()) {
-        case attr::LayerType::normal:
+        case LayerType::normal:
             // Insert 4 transparent entries at the start
             for (std::size_t j = 0; j < transparent_entries; ++j) {
                 result.push_back(transparent);
@@ -49,7 +49,7 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(c
             }
             break;
 
-        case attr::LayerType::covered:
+        case LayerType::covered:
             // Copy the 8 original entries
             for (std::size_t j = 0; j < metatile::entries_per_metatile_dual; ++j) {
                 result.push_back(metatiles_bin[input_offset + j]);
@@ -60,7 +60,7 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(c
             }
             break;
 
-        case attr::LayerType::split:
+        case LayerType::split:
             // Copy the first 4 entries
             for (std::size_t j = 0; j < transparent_entries; ++j) {
                 result.push_back(metatiles_bin[input_offset + j]);
@@ -80,16 +80,60 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(c
     return result;
 }
 
-ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::dual_layerize(const PorymapTilesetComponent &component)
+[[nodiscard]] std::vector<TilemapEntry> LayerModeConverter::dual_layerize(
+    const std::vector<TilemapEntry> &entries, const std::vector<Metatile<Rgba32>> &source_metatiles)
 {
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        layer_mode, component.detect_layer_mode(), "layer mode detection failed", std::vector<TilemapEntry>);
-    if (layer_mode == tileset::LayerMode::dual) {
-        // No-op case
-        return component.metatiles_bin();
+    const std::size_t expected_entries_size = source_metatiles.size() * metatile::entries_per_metatile_triple;
+    if (entries.size() != expected_entries_size) {
+        panic(
+            "entries vector size " + std::to_string(entries.size()) + " did not match expected size " +
+            std::to_string(expected_entries_size));
     }
-    // Iterate over component tilemap entries and attributes.
-    panic("TODO: implement");
+
+    std::vector<TilemapEntry> result;
+    result.reserve(source_metatiles.size() * metatile::entries_per_metatile_dual);
+
+    for (std::size_t i = 0; i < source_metatiles.size(); ++i) {
+        const auto &metatile = source_metatiles[i];
+        const std::size_t input_offset = i * metatile::entries_per_metatile_triple;
+
+        // Check precondition: no metatile should have implied LayerMode::triple
+        const LayerMode layer_mode = metatile.infer_layer_mode(extrinsic_transparency_);
+        if (layer_mode == LayerMode::triple) {
+            panic("metatile " + std::to_string(i) + " has implied LayerMode::triple, cannot dual_layerize");
+        }
+
+        // Infer the layer type for this metatile using magenta as extrinsic transparency
+        const LayerType layer_type = metatile.infer_layer_type(extrinsic_transparency_);
+
+        switch (layer_type) {
+        case LayerType::normal:
+            // Skip first 4 transparent entries, copy next 8
+            for (std::size_t j = 4; j < metatile::entries_per_metatile_triple; ++j) {
+                result.push_back(entries[input_offset + j]);
+            }
+            break;
+
+        case LayerType::covered:
+            // Copy first 8 entries, skip last 4 transparent
+            for (std::size_t j = 0; j < metatile::entries_per_metatile_dual; ++j) {
+                result.push_back(entries[input_offset + j]);
+            }
+            break;
+
+        case LayerType::split:
+            // Copy first 4, skip middle 4 transparent, copy last 4
+            for (std::size_t j = 0; j < 4; ++j) {
+                result.push_back(entries[input_offset + j]);
+            }
+            for (std::size_t j = 8; j < metatile::entries_per_metatile_triple; ++j) {
+                result.push_back(entries[input_offset + j]);
+            }
+            break;
+        }
+    }
+
+    return result;
 }
 
 } // namespace porytiles2

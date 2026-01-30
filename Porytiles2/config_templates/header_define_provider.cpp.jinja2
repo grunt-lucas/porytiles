@@ -1,0 +1,45 @@
+{#
+  Template for generating header_define_provider.cpp
+
+  This template generates the HeaderDefineProvider implementations. For config values
+  with a header_define field, it generates code to search for and parse the #define.
+  For config values without header_define, it returns not_provided().
+#}
+{% import '_macros.jinja2' as macros %}
+#include "porytiles2/infra/config/header_define_provider.hpp"
+
+#include <filesystem>
+#include <string>
+#include <vector>
+
+#include "./header_define_provider_impl.ipp"
+
+namespace porytiles2 {
+
+{{ macros.autogen_warning() }}
+
+std::string HeaderDefineProvider::name() const
+{
+    return "HeaderDefineProvider";
+}
+{% for value in config_values %}
+
+LayerValue<{{ value.type }}> HeaderDefineProvider::{{ value.name }}(ConfigScopeType /*type*/, const std::string &/*scope*/) const
+{
+{% if value.header_define is defined and value.header_define %}
+    const auto header_path = project_root_ / header_relative_path_;
+    return search_header_define<{{ value.type }}>(
+        parser_driver_,
+        format_,
+        header_path,
+        "{{ value.header_define }}",
+        {{ value.parser }},
+        "{{ value.name }}");
+{% else %}
+    // No header_define specified for this config value
+    return LayerValue<{{ value.type }}>::not_provided();
+{% endif %}
+}
+{% endfor %}
+
+} // namespace porytiles2

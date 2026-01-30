@@ -20,6 +20,8 @@
         "${workspaceFolder}/vscode-build/_deps/yaml-cpp-src/include/**",
         "${workspaceFolder}/vscode-build/_deps/fruit-src/include/**",
         "${workspaceFolder}/vscode-build/_deps/fruit-build/include/**",
+        "${workspaceFolder}/vscode-build/_deps/fruit-build/include/**",
+        "${workspaceFolder}/vscode-build/_deps/cpptrace-src/include/**",
         "/opt/homebrew/opt/libpng/include/**"
       ],
       "defines": [

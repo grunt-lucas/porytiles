@@ -1,0 +1,114 @@
+# Example porytiles.yaml
+
+fieldmap:
+  num_tiles_in_primary: 512
+  num_tiles_total: 1024
+  num_metatiles_in_primary: 512
+  num_metatiles_total: 1024
+  num_pals_in_primary: 6
+  num_pals_total: 13
+  max_map_data_size: 10240
+  num_tiles_per_metatile: 8
+
+diagnostics:
+  errors:
+    include: # explicitly include only two error messages
+      - "layer-mode-violation"
+      - "tile-color-count-violation"
+  warnings: # default settings for warnings, this will include all
+  remarks:
+    exclude: [ "*" ] # disable all remarks
+
+verify_checksums: true
+
+tileset:
+  extrinsic_transparency: [ 255, 0, 255 ]
+
+  # Configure where Porytiles-managed tileset artifacts are stored.
+  # These paths are relative to the project root.
+  # - src: Where Porytiles-format source assets are stored (porytiles_src/)
+  # - bin: Where Porymap-format binary assets are stored (porytiles_bin/)
+  paths:
+    primary:
+      src: data/tilesets/primary
+      bin: data/tilesets/primary
+    secondary:
+      src: data/tilesets/secondary
+      bin: data/tilesets/secondary
+
+  tiles:
+    # Set edit mode for the tiles artifact.
+    # Allowed values:
+    # - locked: no changes allowed to tiles.png
+    # - patch: allow additions to tiles.png in transparent slots
+    # - [default] optimize: current Porytiles1 behavior; clear the whole tile workspace and pack tiles optimally
+    edit_mode: locked
+
+    # Set palette mode for output 'tiles.png'
+    # Allowed values:
+    # - [default] true-color: 8-bit index value, full output pal stored in PNG, upper 4 bits map into pal for true-color output
+    # - greyscale: greyscale palette mapped to index values: [0, 15] -> [[255,255,255], [0,0,0]]
+    pal_mode: true-color
+
+    # Set tile sharing optimization mode
+    # Allowed values:
+    # - [default] manual: no automatic optimization, use Porytiles palettes (and/or tiles.override.png) to force shared tiles [default]
+    # - opportunistic:
+    #     - greedily pack palettes
+    #     - exploit any tile-sharing opportunities during final palette construction
+    #     - may not find all possible optimizations
+    # - aggressive:
+    #     - actively look for tile sharing opportunities while packing palettes
+    #     - allow for some backoff to save compilation
+    # - optimal: fail compilation if any color-isomorphic tiles can't be shared
+    sharing: manual
+
+  palettes:
+    # Set edit mode for the palette artifacts.
+    # Allowed values:
+    # - locked: no changes allowed to Porymap palettes
+    # - patch: allow additions to palettes in unused slots
+    # - [default] optimize: current Porytiles1 behavior; clear the palettes and pack optimally
+    edit_mode: locked
+
+    # in edit_mode: locked, if not palette matches, show closest n matches in diagnostic output
+    match_candidate_top_n: 1
+
+    packing:
+      algorithm: bfs
+      prune: dynamic
+      hints_enabled: true
+      hints:
+        - name: "foliage"
+          colors:
+            - [ 12, 190, 20 ]
+            - [ 40, 210, 10 ]
+
+  animations:
+    # When true (default), Porytiles will wire the generated animation code into
+    # tileset_anims.c/h and update the .callback field in headers.h. Set to false
+    # if you want Porytiles to generate animation frames and code but handle
+    # wiring yourself.
+    wire_anim_code: true
+
+    # Some vanilla tileset animations aren't actually referenced within the primary tileset
+    # metatiles. E.g. Pokeemerald 'primary/general' tileset, anim 'land_water_edge' tiles are
+    # referenced only from 'secondary/mossdeep'. This means that when we import/decompile the anim,
+    # Porytiles can't immediately tell which palette to use for the Porytiles-component anim frames.
+    # This setting allows the user to configure the resolution strategy. Settings:
+    # - default_palette: Porytiles will use palette 00.pal to save the RGB frame assets. The user will have to fix the colors manually.
+    # - [default] internal_png_palette: The Porymap-component frame PNG probably has an internal palette, so use that. If it doesn't have one, fall back to default_palette setting.
+    # - full_tileset_scan: Scan layouts.json and find all tilesets paired with current tileset, see if an index is present in any. If not, fall back to internal_png_palette setting. And if that doesn't work, fall back to default_palette setting.
+    palette_resolution_strategy: internal_png_palette
+  
+  # Set transparency handling for import.
+  # Allowed values:
+  # - alpha: all transparent tiles are set to alpha=0
+  # - extrinsic: all transparent tiles are set to extrinsic transparency [default]
+  # - mixed:
+  #     - in dual-layer mode:
+  #       - the missing layer is set to alpha=0
+  #       - transparency on the present layer is set to extrinsic
+  #     - in triple-layer mode:
+  #       - effectively equivalent to extrinsic
+  import_transparency: extrinsic

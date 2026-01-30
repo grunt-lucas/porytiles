@@ -6,12 +6,13 @@
 #include "gsl/pointers"
 
 #include "porytiles2/domain/models/tileset.hpp"
+#include "porytiles2/domain/repos/artifact_checksum_provider.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_reader.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_writer.hpp"
-#include "porytiles2/domain/services/artifact_checksum_provider.hpp"
-#include "porytiles2/templates/result.hpp"
-#include "porytiles2/xcut/result/chainable_result.hpp"
+#include "porytiles2/domain/services/tileset_metadata_provider.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles2 {
 
@@ -19,13 +20,11 @@ namespace porytiles2 {
  * @brief Repository interface for the Tileset aggregate root.
  *
  * @details
- * The TilesetRepo makes no assumptions about the structure of the backing store for the Tileset. Presumably, this store
- * is the canonical 'data/tilesets' directory, but the details here are implementation-defined.
+ * The TilesetRepo makes no assumptions about the structure of the backing store for the Tileset. The implementation
+ * details are handled by the supplied reader, writer, and key provider.
  */
-class TilesetRepo {
+class TilesetRepo final {
   public:
-    virtual ~TilesetRepo() = default;
-
     /**
      * @brief Constructs a TilesetRepo with the required dependencies.
      *
@@ -34,16 +33,21 @@ class TilesetRepo {
      * provide the concrete implementations for metadata management, key generation, and artifact I/O operations.
      *
      * @param checksum_provider Provider for computing and caching artifact checksums
+     * @param metadata_provider Provider for getting tileset metadata
      * @param key_provider Provider for generating keys and discovering artifacts in the backing store
      * @param reader Reader implementation for loading artifacts from the backing store
      * @param writer Writer implementation for saving artifacts to the backing store
+     * @param diag Pointer to a UserDiagnostics for this repo
      */
     explicit TilesetRepo(
-        gsl::not_null<ArtifactChecksumProvider *> checksum_provider,
-        gsl::not_null<TilesetArtifactKeyProvider *> key_provider,
-        gsl::not_null<TilesetArtifactReader *> reader,
-        gsl::not_null<TilesetArtifactWriter *> writer)
-        : checksum_provider_{checksum_provider}, key_provider_{key_provider}, reader_{reader}, writer_{writer}
+        gsl::not_null<const ArtifactChecksumProvider *> checksum_provider,
+        gsl::not_null<const TilesetMetadataProvider *> metadata_provider,
+        gsl::not_null<const TilesetArtifactKeyProvider *> key_provider,
+        gsl::not_null<const TilesetArtifactReader *> reader,
+        gsl::not_null<TilesetArtifactWriter *> writer,
+        gsl::not_null<const UserDiagnostics *> diag)
+        : checksum_provider_{checksum_provider}, metadata_provider_{metadata_provider}, key_provider_{key_provider},
+          reader_{reader}, writer_{writer}, diag_{diag}
     {
     }
 
@@ -70,10 +74,10 @@ class TilesetRepo {
     /**
      * @brief Checks if the given Tileset exists in the backing store.
      *
-     * @param name The name of the Tileset to check.
+     * @param tileset_name The name of the Tileset to check.
      * @return True if the named tileset exists, false otherwise.
      */
-    [[nodiscard]] bool exists(const std::string &name) const;
+    [[nodiscard]] bool exists(const std::string &tileset_name) const;
 
     /**
      * @brief Gets a reference to the ArtifactChecksumProvider for this repo.
@@ -96,10 +100,12 @@ class TilesetRepo {
     }
 
   private:
-    ArtifactChecksumProvider *checksum_provider_;
-    TilesetArtifactKeyProvider *key_provider_;
-    TilesetArtifactReader *reader_;
+    const ArtifactChecksumProvider *checksum_provider_;
+    const TilesetMetadataProvider *metadata_provider_;
+    const TilesetArtifactKeyProvider *key_provider_;
+    const TilesetArtifactReader *reader_;
     TilesetArtifactWriter *writer_;
+    const UserDiagnostics *diag_;
 };
 
 } // namespace porytiles2

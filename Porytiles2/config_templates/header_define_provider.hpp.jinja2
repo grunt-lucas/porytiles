@@ -1,0 +1,102 @@
+{#
+  Template for generating header_define_provider.hpp
+
+  This template generates the HeaderDefineProvider class header with override declarations
+  for all configuration values defined in config_schema.yaml.
+#}
+{% import '_macros.jinja2' as macros %}
+#pragma once
+
+#include <filesystem>
+#include <memory>
+#include <optional>
+#include <string>
+
+#include "gsl/pointers"
+
+#include "porytiles2/infra/config/config_provider.hpp"
+#include "porytiles2/utilities/c_parser/c_parser_facade.hpp"
+#include "porytiles2/utilities/text/plain_text_formatter.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
+
+namespace porytiles2 {
+
+{{ macros.autogen_warning() }}
+
+/**
+ * @brief A ConfigProvider implementation that reads configuration values from #define directives in a header file.
+ *
+ * @details
+ * HeaderDefineProvider parses a C/C++ header file looking for #define directives that correspond to configuration
+ * values. This is useful for reading configuration from decompilation project headers like include/fieldmap.h.
+ *
+ * The provider uses a full C parser that supports:
+ * - Simple integer literals: `#define NUM_TILES 512`
+ * - Hexadecimal, octal, and binary literals: `#define FLAGS 0xFF`
+ * - Arithmetic expressions: `#define SIZE (1 << 10)`
+ * - Macro references: `#define TOTAL (PRIMARY + SECONDARY)`
+ *
+ * The header file is loaded lazily and cached for performance. If the file doesn't exist or a define is not found,
+ * methods return LayerValue::not_provided(), allowing graceful fallback to other providers.
+ */
+class HeaderDefineProvider final : public ConfigProvider {
+  public:
+    /**
+     * @brief Constructs a HeaderDefineProvider that reads #define values from a header file.
+     *
+     * @details
+     * This constructor sets up the provider to read configuration values from #define directives in the specified
+     * header file. The header file is loaded lazily when first accessed and cached for subsequent lookups.
+     *
+     * @param header_relative_path The path to the header file relative to project_root
+     * @param format A pointer to the TextFormatter to use
+     * @param project_root The root directory of the project
+     */
+    explicit HeaderDefineProvider(
+        std::filesystem::path project_root,
+        std::filesystem::path header_relative_path,
+        gsl::not_null<const TextFormatter *> format)
+        : format_{format}, project_root_{std::move(project_root)},
+          header_relative_path_{std::move(header_relative_path)}
+    {
+        // CParserFacade is lazily initialized on first define lookup
+    }
+
+    /**
+     * @brief Constructs a HeaderDefineProvider with a default PlainTextFormatter.
+     *
+     * @details
+     * This constructor creates an internally owned PlainTextFormatter instance and uses it for formatting. The
+     * HeaderDefineProvider will read configuration values from #define directives in the specified header file. The
+     * header file is loaded lazily when first accessed and cached for subsequent lookups.
+     *
+     * @param project_root The root directory of the project
+     * @param header_relative_path The path to the header file relative to project_root
+     */
+    explicit HeaderDefineProvider(std::filesystem::path project_root, std::filesystem::path header_relative_path)
+        : owned_format_{std::make_unique<PlainTextFormatter>()}, format_{owned_format_.get()},
+          project_root_{std::move(project_root)}, header_relative_path_{std::move(header_relative_path)}
+    {
+        // CParserFacade is lazily initialized on first define lookup
+    }
+
+    /**
+     * @brief Gets the name of this config layer.
+     *
+     * @return The name "HeaderDefineProvider"
+     */
+    [[nodiscard]] std::string name() const override;
+{% for value in config_values %}
+
+    [[nodiscard]] LayerValue<{{ value.type }}> {{ value.name }}(ConfigScopeType type, const std::string &scope) const override;
+{% endfor %}
+
+  private:
+    std::unique_ptr<TextFormatter> owned_format_;   // Optional owned formatter (when using default ctor)
+    const TextFormatter *format_;                   // Non-owning pointer to formatter
+    std::filesystem::path project_root_;
+    std::filesystem::path header_relative_path_;
+    mutable std::optional<CParserFacade> parser_driver_; // Lazy-initialized C parser
+};
+
+} // namespace porytiles2

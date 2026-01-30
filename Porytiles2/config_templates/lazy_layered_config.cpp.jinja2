@@ -10,15 +10,14 @@
 #include <any>
 #include <functional>
 #include <ranges>
+#include <stdexcept>
 #include <string>
 
-#include "fmt/format.h"
-
-#include "porytiles2/app/config/incremental_build_mode.hpp"
-#include "porytiles2/infra/config/tiles_pal_mode.hpp"
+#include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/utilities/source_locations.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
-#include "porytiles2/xcut/panic/panic.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
+#include "porytiles2/utilities/string_utils.hpp"
 
 namespace porytiles2 {
 
@@ -30,17 +29,25 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
 {
     /*
      * WARNING! HACK ALERT! WARNING!
-     * DO NOT DELETE THIS USING STATEMENT.
+     * DO NOT DELETE THESE USING STATEMENTS.
      *
-     * We need to declare this here so that the to_string call below can resolve to either the std:: version or one of
-     * our custom versions automagically.
+     * We need to declare these here so that the to_string call below can resolve to either the std:: version or one of
+     * our custom versions automagically. Both are needed because:
+     * - std::to_string handles numeric types (size_t, bool, etc.)
+     * - porytiles2::to_string handles custom types (Rgba32, std::string, std::vector<T>, etc.)
      */
     using std::to_string;
+    using porytiles2::to_string;
 
     // Check if already cached
     if (cache_.contains(cache_key)) {
-        // TODO: catch bad_any_cast here and panic
-        T cached_value = std::any_cast<T>(cache_.at(cache_key));
+        T cached_value{};
+        try {
+            cached_value = std::any_cast<T>(cache_.at(cache_key));
+        }
+        catch (const std::bad_any_cast &) {
+            panic(format_->format("bad_any_cast for cache key '{}': cached type does not match requested type", cache_key));
+        }
         std::string source = source_.at(cache_key);
         std::vector<std::string> source_details = source_details_.at(cache_key);
         return ConfigValue<T>{cached_value, cache_key, source, source_details};
@@ -54,7 +61,13 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
         if (layer_value.state == ValidationState::invalid) {
             const auto source_info = format_->format("{}", layer_value.source_info);
             std::vector<std::string> error_lines;
-            error_lines.push_back(format_->format("{}: invalid: {}", source_info, layer_value.error_message));
+                        error_lines.push_back(format_->format(
+                            "invalid value for '{}' from config source '{}':",
+                            FormatParam{cache_key, Style::bold},
+                            FormatParam{source_info, Style::bold}));
+            error_lines.emplace_back();
+            error_lines.push_back("Details:");
+            error_lines.push_back(format_->format("{}", layer_value.error_message));
 
             if (!layer_value.source_details.empty()) {
                 error_lines.emplace_back(""); // Blank line separator
@@ -78,68 +91,51 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
         }
 
         // Otherwise, state is not_provided - continue to next provider
+        if (layer_value.state == ValidationState::not_provided) {
+            continue;
+        }
+
+        panic("hit unexpected ValidationState");
     }
 
     // No value found in any layer - this is a programmer error
     panic(format_->format("no value found for '{}' in any config layer", cache_key));
 }
+
+template <typename T>
+std::vector<ProvenanceChainLink<T>> LazyLayeredConfig::collect_provenance_chain(
+    std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const
+{
+    std::vector<ProvenanceChainLink<T>> chain;
+    chain.reserve(providers_.size());
+
+    for (const auto &provider : providers_) {
+        LayerValue<T> layer_value = provider_call(*provider);
+        chain.push_back(ProvenanceChainLink<T>{provider->name(), std::move(layer_value)});
+    }
+
+    return chain;
+}
 {% for value in config_values %}
 
-ChainableResult<ConfigValue<{{ value.type }}>> LazyLayeredConfig::{{ value.name }}_raw({% if value.scope_type == 'tileset' %}const std::string &tileset{% elif value.scope_type == 'layout' %}const std::string &layout{% endif %}) const
+ChainableResult<ConfigValue<{{ value.type }}>> LazyLayeredConfig::{{ value.name }}_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
-    const auto key = {% if value.scope_type == 'tileset' %}tileset{% elif value.scope_type == 'layout' %}layout{% endif %} + ":" + base_name;
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<{{ value.type }}>(
-        key, [&{% if value.scope_type == 'tileset' %}tileset{% elif value.scope_type == 'layout' %}layout{% endif %}](const ConfigProvider &provider) { return provider.{{ value.name }}({% if value.scope_type == 'tileset' %}tileset{% elif value.scope_type == 'layout' %}layout{% endif %}); });
+        key, [&type, &scope](const ConfigProvider &provider) { return provider.{{ value.name }}(type, scope); });
 }
 {% endfor %}
+{% for value in config_values %}
 
-std::string LazyLayeredConfig::dump() const
+std::vector<ProvenanceChainLink<{{ value.type }}>>
+LazyLayeredConfig::{{ value.name }}_provenance_chain(ConfigScopeType type, const std::string &scope) const
 {
-    if (cache_.empty()) {
-        return "LazyLayeredConfig {}";
-    }
-
-    std::string result = "LazyLayeredConfig {\n";
-    for (const auto &key : cache_ | std::views::keys) {
-        const auto provenance_it = source_.find(key);
-        const std::string provenance_info =
-            (provenance_it != source_.end()) ? provenance_it->second : "<unknown source>";
-
-        const auto value_it = cache_value_strings_.find(key);
-        const std::string value_str = (value_it != cache_value_strings_.end()) ? value_it->second : "<unknown value>";
-
-        result += format_->format("  {} = {} [{}]\n", key, value_str, provenance_info);
-    }
-    result += "}\n";
-
-    return result;
+    return collect_provenance_chain<{{ value.type }}>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.{{ value.name }}(type, scope); });
 }
-
-void LazyLayeredConfig::warmup_cache(const std::vector<std::string> &tileset_names) const
-{
-    for (const auto &tileset_name : tileset_names) {
-        // Note: These calls now return ChainableResult, but we ignore both success and error cases
-        // This is intentional for warmup - we just want to populate the cache
-        // If you want to validate config at startup, call these and check has_value()
-
-        // Domain config
-{% for value in config_values if value.layer == 'domain' %}
-        std::ignore = {{ value.name }}(tileset_name);
 {% endfor %}
-
-        // App config
-{% for value in config_values if value.layer == 'app' %}
-        std::ignore = {{ value.name }}(tileset_name);
-{% endfor %}
-
-        // Infra config
-{% for value in config_values if value.layer == 'infra' %}
-        std::ignore = {{ value.name }}(tileset_name);
-{% endfor %}
-    }
-}
 
 } // namespace porytiles2

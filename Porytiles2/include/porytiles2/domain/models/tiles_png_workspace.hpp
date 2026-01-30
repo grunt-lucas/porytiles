@@ -7,9 +7,67 @@
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
+#include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 
 namespace porytiles2 {
+
+/**
+ * @brief Defines whether flip transformations should be applied during image export.
+ *
+ * @details
+ * This enum controls whether tiles are exported in their canonical (lexicographically minimal) form
+ * or with flip transformations applied to restore their original orientations.
+ */
+enum class ExportFlipMode {
+    /**
+     * @brief Export tiles in canonical form without applying flip transformations.
+     *
+     * @details
+     * Tiles are exported exactly as stored in the workspace - in their canonical (lexicographically minimal)
+     * orientation. This is appropriate for fresh compilations where there is no "original" tile orientation to
+     * preserve.
+     */
+    canonical,
+
+    /**
+     * @brief Export tiles in original form by applying stored flip transformations.
+     *
+     * @details
+     * Tiles are exported with h_flip and v_flip transformations applied to restore their original pixel arrangements as
+     * they were before canonicalization. This enables round-trip preservation of tile orientations, which is
+     * particularly useful in patch builds.
+     */
+    original
+};
+
+/**
+ * @brief Defines how trailing transparent tiles should be handled during image export.
+ *
+ * @details
+ * This enum controls whether the exported image should include all tiles up to the workspace capacity or trim trailing
+ * transparent tiles to produce a more compact output.
+ */
+enum class ExportTrimMode {
+    /**
+     * @brief Include all tiles up to workspace capacity, even if trailing tiles are transparent.
+     *
+     * @details
+     * This mode exports a full image with dimensions calculated to accommodate all tiles in the workspace, including
+     * any transparent tiles at the end. This is the default behavior and maintains compatibility with existing code.
+     */
+    include_trailing_transparent,
+
+    /**
+     * @brief Trim trailing transparent tiles from the exported image.
+     *
+     * @details
+     * This mode finds the last non-transparent tile and exports only tiles up to and including that tile, producing a
+     * more compact image. If all tiles are transparent, the image will contain only tile 0.
+     */
+    trim_trailing_transparent
+};
 
 /**
  * @brief A workspace for managing canonical IndexPixel tiles destined for tiles.png output.
@@ -96,12 +154,12 @@ class TilesPngWorkspace {
      * @details
      * Inserts the given canonical tile at the cursor position, replacing the transparent tile that was there. After
      * insertion, the cursor is advanced to the next available transparent tile slot. The inserted tile is added to the
-     * canonical_forms_ map for deduplication support.
+     * canonical_forms_ map for deduplication support. The function then returns the index of the inserted tile.
      *
      * Insertion Criteria:
-     * - Returns false if the workspace is at capacity (cursor >= capacity)
-     * - Returns false if the tile is transparent (no point inserting transparent tiles)
-     * - Returns true if the tile was successfully inserted
+     * - Panics if the workspace is at capacity (cursor >= capacity)
+     * - Returns 0 if the tile is transparent (index 0 is standard location for transparent tile)
+     * - Returns index if the tile was successfully inserted
      *
      * Post-insertion State:
      * - The tile replaces the transparent tile at the cursor position
@@ -115,10 +173,10 @@ class TilesPngWorkspace {
      * in the common case.
      *
      * @param tile The canonical pixel tile to insert; must be non-transparent for successful insertion
-     * @return true if the tile was successfully inserted, false if the workspace is at capacity or the tile is
-     * transparent
+     * @pre Workspace cursor is less than capacity, i.e., there is room in the workspace for new tiles
+     * @return The index of the inserted tile
      */
-    [[nodiscard]] bool insert_tile(const CanonicalPixelTile<IndexPixel> &tile);
+    [[nodiscard]] std::size_t insert_tile(const CanonicalPixelTile<IndexPixel> &tile);
 
     /**
      * @brief Finds the first occurrence index of a given canonical tile in the workspace.
@@ -144,6 +202,30 @@ class TilesPngWorkspace {
     [[nodiscard]] std::optional<std::size_t> first_occurrence_of(const CanonicalPixelTile<IndexPixel> &tile) const;
 
     /**
+     * @brief Finds the first occurrence of a tile using color-equivalence comparison.
+     *
+     * @details
+     * Similar to first_occurrence_of(), but uses color-equivalence comparison instead of exact index matching. This
+     * handles the case where palettes contain duplicate colors at different indices. Two pixels are considered
+     * equivalent if they reference the same color value in the palette, even if their indices differ.
+     *
+     * This is necessary for patch/locked builds where vanilla workspace tiles may use a different palette index than
+     * the one computed by index_tile_from_color_tile() (which always picks the first matching index). For example, if
+     * palette slot 7 and slot 14 both contain the same color, vanilla tiles might use slot 14 while our computed tiles
+     * use slot 7 - they should still be considered matching.
+     *
+     * Note: This method performs a linear scan of the workspace (O(capacity × 64)) instead of the O(1) map lookup used
+     * by first_occurrence_of(). This is acceptable because workspace capacity is bounded and this method is only used
+     * in patch/locked modes.
+     *
+     * @param tile The canonical pixel tile to search for
+     * @param palette The palette to use for color lookup
+     * @return The index of the tile's first occurrence if found, std::nullopt otherwise
+     */
+    [[nodiscard]] std::optional<std::size_t> first_occurrence_of_by_color(
+        const CanonicalPixelTile<IndexPixel> &tile, const Palette<Rgba32, pal::max_size> &palette) const;
+
+    /**
      * @brief Retrieves the canonical tile at the specified index in the workspace.
      *
      * @details
@@ -162,64 +244,188 @@ class TilesPngWorkspace {
     [[nodiscard]] CanonicalPixelTile<IndexPixel> tile_at(std::size_t index) const;
 
     /**
-     * @brief Exports the workspace tiles to an Image<IndexPixel> in canonical form (tiles.png format).
+     * @brief Exports the workspace tiles to an Image<IndexPixel> in tiles.png format.
      *
      * @details
-     * Creates an Image<IndexPixel> representation of all tiles in the workspace, arranged in row-major order with 16
-     * tiles per row (128 pixels wide). This method exports tiles in their canonical (lexicographically minimal) form
-     * as stored in the workspace, without applying any flip transformations.
+     * Creates an Image<IndexPixel> representation of tiles in the workspace, arranged in row-major order with 16
+     * tiles per row (128 pixels wide). This method provides flexible control over both flip transformation
+     * application and trailing transparent tile trimming via enum parameters.
      *
      * Image Layout:
      * - Width: Always 128 pixels (16 tiles × 8 pixels per tile)
-     * - Height: Calculated to accommodate all tiles in the workspace (must be a multiple of 8)
+     * - Height: Calculated based on the trim_mode parameter
      * - Tile arrangement: Row-major order, matching the extraction order from the constructor
      *
-     * Canonical Form:
-     * Each tile is exported exactly as stored in the workspace - in its canonical (lexicographically minimal)
-     * orientation among all flip variants. Flip flags are not applied during export. This is the appropriate format
-     * for tiles.png output in fresh compilations, where there is no "original" tile orientation to preserve.
+     * Flip Mode:
+     * - ExportFlipMode::canonical: Exports tiles in their canonical (lexicographically minimal) form as stored,
+     *   without applying flip transformations. Appropriate for fresh compilations.
+     * - ExportFlipMode::original: Applies h_flip/v_flip transformations to restore original pixel arrangements,
+     *   enabling round-trip preservation useful in patch builds.
      *
-     * @return An Image<IndexPixel> containing all workspace tiles in canonical form (tiles.png format)
+     * Trim Mode:
+     * - ExportTrimMode::include_trailing_transparent: Exports all tiles up to workspace capacity.
+     * - ExportTrimMode::trim_trailing_transparent: Exports only tiles up to and including the last non-transparent
+     *   tile, producing a more compact image.
+     *
+     * @param flip_mode Controls whether tiles are exported in canonical or original (flipped) form
+     * @param trim_mode Controls whether trailing transparent tiles are included or trimmed
+     * @return An Image<IndexPixel> containing workspace tiles in the specified format (tiles.png format)
      */
-    [[nodiscard]] Image<IndexPixel> export_canonical_image() const;
-
-    /**
-     * @brief Exports the workspace tiles to an Image<IndexPixel> in original (pre-canonicalization) form.
-     *
-     * @details
-     * Creates an Image<IndexPixel> representation of all tiles in the workspace, arranged in row-major order with 16
-     * tiles per row (128 pixels wide). This method applies flip transformations to restore tiles to their original
-     * orientations as they were before canonicalization.
-     *
-     * Image Layout:
-     * - Width: Always 128 pixels (16 tiles × 8 pixels per tile)
-     * - Height: Calculated to accommodate all tiles in the workspace (must be a multiple of 8)
-     * - Tile arrangement: Row-major order, matching the extraction order from the constructor
-     *
-     * Original Form Restoration:
-     * Each tile is exported with flip transformations applied based on its stored h_flip and v_flip flags. This
-     * reverses the canonicalization process, restoring tiles to their original pixel arrangements. This enables
-     * round-trip preservation: original image → workspace → exported original image, which is particularly useful in
-     * patch builds.
-     *
-     * @return An Image<IndexPixel> containing all workspace tiles in original (flipped) form
-     */
-    [[nodiscard]] Image<IndexPixel> export_original_image() const;
+    [[nodiscard]] Image<IndexPixel> export_image(
+        ExportFlipMode flip_mode = ExportFlipMode::canonical,
+        ExportTrimMode trim_mode = ExportTrimMode::trim_trailing_transparent) const;
 
     /**
      * @brief Checks if the workspace has reached capacity and can no longer accept new tile insertions.
      *
      * @details
      * Returns true when the cursor has reached or exceeded the capacity, indicating that all available transparent tile
-     * slots have been filled with non-transparent tiles. At this point, insert_tile() will return false for any further
+     * slots have been filled with non-transparent tiles. At this point, insert_tile() will panic for any further
      * insertion attempts.
      *
-     * Note: This method returns true even if there are still transparent tiles in the workspace beyond the cursor
-     * position, as the cursor always advances forward and never backtracks.
+     * Note: This method returns true even if there are still transparent tiles in the workspace behind the cursor
+     * position, as the cursor always advances forward and never backtracks. However, this state shouldn't be reachable
+     * under normal operation conditions.
      *
      * @return true if cursor == capacity, false otherwise
      */
     [[nodiscard]] bool at_capacity() const;
+
+    /*
+     * TODO: these methods below work great when tiles are in ArtifactEditMode::optimize. But what about the
+     * ArtifactEditMode::patch case? Here, we might have "fragmentation", i.e. free spaces that are too small to fit the
+     * contiguous key frame. We won't necessarily be able to reserve space at the start of the workspace, since that
+     * space is probably already taken. It's also possible that the tiles we need are already present, this is a patch
+     * build after all. We should provide some kind of functionality that scans the workspace for the requisite free
+     * space and uses it. This means our anim_end_offset_ variable is probably an over-simplification.
+     */
+
+    /**
+     * @brief Reserves contiguous slots for animation keyframe tiles starting at index 1.
+     *
+     * @details
+     * Animation tiles are placed at the beginning of tiles.png (after the transparent tile 0) to ensure stable offsets
+     * that can be referenced by the generated animation C code. This method reserves a contiguous block of slots for
+     * animation tiles and moves the cursor past the reserved region.
+     *
+     * After calling this method:
+     * - Indices 1 through `anim_tile_count` (inclusive) are reserved for animation tiles
+     * - The cursor is positioned at `anim_tile_count + 1` (first slot after reserved region)
+     * - Regular tile insertions via insert_tile() will not overwrite the reserved region
+     *
+     * @param anim_tile_count Total number of tiles to reserve for animation keyframes
+     * @pre Must be called before any regular tile insertions via insert_tile()
+     * @pre anim_tile_count must be less than capacity - 1 (leaving room for tile 0 and at least one regular tile)
+     */
+    void reserve_anim_slots(std::size_t anim_tile_count);
+
+    /**
+     * @brief Places an animation keyframe tile at a specific reserved index.
+     *
+     * @details
+     * Places a tile in the reserved animation region. The index is an offset within the reserved region, NOT an
+     * absolute index. For example, if animation_tile_count tiles were reserved:
+     * - place_animation_tile(0, tile) places at absolute index 1
+     * - place_animation_tile(1, tile) places at absolute index 2
+     * - etc.
+     *
+     * @param reserved_index The index within the reserved animation region (0-based)
+     * @param tile The tile to place at the specified position
+     * @pre reserve_animation_slots() must have been called first
+     * @pre reserved_index must be less than the reserved count
+     */
+    void place_anim_tile(std::size_t reserved_index, const CanonicalPixelTile<IndexPixel> &tile);
+
+    /**
+     * @brief Returns the starting absolute index for animation tiles (always 1).
+     *
+     * @details
+     * By convention, animation tiles always start at index 1 (after the transparent tile 0). This static method makes
+     * this convention explicit and provides a named constant for code clarity.
+     *
+     * @return 1 (the animation start index)
+     */
+    [[nodiscard]] static constexpr std::size_t anim_start_offset()
+    {
+        return 1;
+    }
+
+    /**
+     * @brief Returns the ending absolute index for animation tiles (exclusive).
+     *
+     * @details
+     * Returns the index just past the last reserved animation slot. If no animation slots were reserved, returns 1
+     * (same as animation_start_offset()). Regular tile insertion begins at this index.
+     *
+     * @return The first index after the animation region
+     */
+    [[nodiscard]] std::size_t anim_end_offset() const
+    {
+        return anim_end_offset_;
+    }
+
+    /**
+     * @brief Returns whether animation slots have been reserved.
+     *
+     * @return True if reserve_animation_slots() has been called with a non-zero count
+     */
+    [[nodiscard]] bool has_anim_slots() const
+    {
+        return anim_end_offset_ > 1;
+    }
+
+    /**
+     * @brief Finds the first contiguous run of transparent tiles that can accommodate the requested count.
+     *
+     * @details
+     * Scans the workspace starting from index 1 (skipping reserved tile 0) to find a contiguous sequence of
+     * transparent tiles with length >= count. This is useful in patch mode to find free space for animation
+     * keyframes when they don't already exist in the workspace.
+     *
+     * @param count The number of contiguous transparent slots needed
+     * @return The starting index of the first suitable run, or std::nullopt if no run found
+     */
+    [[nodiscard]] std::optional<std::size_t> find_contiguous_transparent_slots(std::size_t count) const;
+
+    /**
+     * @brief Checks if a sequence of tiles already exists contiguously using color-equivalence comparison.
+     *
+     * @details
+     * Uses color-equivalence comparison to find contiguous tile sequences. This handles the case where palettes
+     * contain duplicate colors at different indices. Two pixels are considered equivalent if they reference the same
+     * color value in the palette, even if their indices differ.
+     *
+     * This is necessary for patch/locked builds where vanilla workspace tiles may use a different palette index than
+     * the one computed by index_tile_from_color_tile() (which always picks the first matching index). For example, if
+     * palette slot 7 and slot 14 both contain the same color, vanilla tiles might use slot 14 while our computed tiles
+     * use slot 7 - they should still be considered matching.
+     *
+     * Note: This method performs a linear scan of the workspace (O(capacity × tiles × 64)). This is acceptable because
+     * animation sequences are typically small and workspace capacity is bounded.
+     *
+     * @param tiles The sequence of canonical tiles to search for
+     * @param palettes Parallel vector of palette pointers corresponding to each tile (for color lookup)
+     * @pre tiles.size() == palettes.size()
+     * @return The starting index if found contiguously, or std::nullopt if not found
+     */
+    [[nodiscard]] std::optional<std::size_t> find_existing_contiguous_tiles_by_color(
+        const std::vector<CanonicalPixelTile<IndexPixel>> &tiles,
+        const std::vector<const Palette<Rgba32, pal::max_size> *> &palettes) const;
+
+    /**
+     * @brief Places tiles at specific positions for patch mode animation placement.
+     *
+     * @details
+     * Places the provided tiles starting at the specified index. All target positions must be transparent
+     * (the method panics if any position is non-transparent). After placement, the canonical_forms_ map is
+     * updated and the cursor is advanced past any newly-filled positions.
+     *
+     * @param start_index The starting index where tiles should be placed
+     * @param tiles The tiles to place at consecutive positions starting from start_index
+     * @pre All target positions must be transparent
+     * @pre start_index + tiles.size() must not exceed capacity
+     */
+    void place_tiles_at(std::size_t start_index, const std::vector<CanonicalPixelTile<IndexPixel>> &tiles);
 
     /**
      * @brief Returns the maximum number of tiles this workspace can hold.
@@ -236,10 +442,21 @@ class TilesPngWorkspace {
     }
 
   private:
+    /**
+     * @brief Advances the cursor to the next transparent tile slot.
+     *
+     * @details
+     * Increments the cursor and then scans forward to find the next transparent tile. If no transparent tiles
+     * remain, the cursor reaches capacity_. This helper is used after tile insertion/placement to maintain
+     * the cursor invariant.
+     */
+    void advance_cursor_to_next_transparent();
+
     std::vector<CanonicalPixelTile<IndexPixel>> tiles_;
     std::map<PixelTile<IndexPixel>, std::vector<std::size_t>> canonical_forms_;
     std::size_t cursor_;
     std::size_t capacity_;
+    std::size_t anim_end_offset_{1}; // First index after anim region (defaults to 1, i.e. no animations)
 };
 
 } // namespace porytiles2

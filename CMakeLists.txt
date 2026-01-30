@@ -2,6 +2,23 @@ cmake_minimum_required(VERSION 3.20)
 
 project(Porytiles CXX)
 
+# Debug builds: no optimization, full debug info
+set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -fstandalone-debug -fno-limit-debug-info -fno-omit-frame-pointer"
+        CACHE STRING "Flags used by the CXX compiler during DEBUG builds." FORCE)
+
+# Release builds: optimized with debug symbols for useful stacktraces
+if (MSVC)
+    set(CMAKE_CXX_FLAGS_RELEASE "/O2 /Zi"
+            CACHE STRING "Flags used by the CXX compiler during RELEASE builds." FORCE)
+    set(CMAKE_EXE_LINKER_FLAGS_RELEASE "/DEBUG /OPT:REF /OPT:ICF"
+            CACHE STRING "Flags used by the linker during RELEASE builds." FORCE)
+else ()
+    # -gfull embeds complete debug info in the binary (no external .o/.dSYM needed)
+    # -gline-tables-only would be smaller but only provides file:line, no variable info
+    set(CMAKE_CXX_FLAGS_RELEASE "-O2 -g -fno-omit-frame-pointer"
+            CACHE STRING "Flags used by the CXX compiler during RELEASE builds." FORCE)
+endif ()
+
 set(CMAKE_CXX_STANDARD 23)
 set(CMAKE_CXX_STANDARD_REQUIRED ON)
 set(CMAKE_CXX_EXTENSIONS OFF)

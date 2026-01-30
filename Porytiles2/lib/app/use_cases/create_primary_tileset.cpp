@@ -3,66 +3,96 @@
 #include <memory>
 #include <string>
 
-#include "porytiles2/domain/services/primary_tileset_compiler.hpp"
-#include "porytiles2/templates/result.hpp"
-#include "porytiles2/utilities/text/plain_text_formatter.hpp"
-#include "porytiles2/xcut/result/chainable_result.hpp"
+#include "porytiles2/domain/models/porymap_tileset_component.hpp"
+#include "porytiles2/domain/models/tileset.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
-Result<void> CreatePrimaryTileset::create(const std::string &tileset_name) const
+ChainableResult<void> CreatePrimaryTileset::create(const std::string &tileset_name) const
 {
-    // 1. Check if the primary tileset already exists. If so, abort with an error message.
-    if (tileset_repo_->exists(tileset_name)) {
-        return std::unexpected{"tileset already exists"};
+    // 1. Error if tileset already exists
+    if (metadata_provider_->exists(tileset_name)) {
+        return FormattableError{
+            std::vector<std::string>{"Cannot create tileset '{}'.", "A tileset with this name already exists."},
+            std::vector<std::vector<FormatParam>>{std::vector{FormatParam{tileset_name, Style::bold}}}};
     }
 
-    // 2. Initialize a `PorytilesTilesetComponent` with default assets.
-    auto maybe_porytiles_component = asset_generator_->generate();
-    if (!maybe_porytiles_component.has_value()) {
-        return std::unexpected{maybe_porytiles_component.error()};
+    // 2. Create a default PorytilesTilesetComponent via PrimaryTilesetCreator
+    auto porytiles_component_result = creator_->create_sample_porytiles_component(tileset_name);
+    if (!porytiles_component_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{
+                "Failed to create Porytiles source assets for '{}'.", FormatParam{tileset_name, Style::bold}},
+            porytiles_component_result};
     }
-    auto porytiles_component = std::move(maybe_porytiles_component.value());
+    auto porytiles_component = std::move(porytiles_component_result.value());
 
-    // 3. Initialize a blank `PorymapTilesetComponent`, to be filled later.
+    // 3. Create blank PorymapTilesetComponent and wrap in Tileset
     auto porymap_component = std::make_unique<PorymapTilesetComponent>();
+    auto tileset =
+        std::make_unique<Tileset>(tileset_name, std::move(porytiles_component), std::move(porymap_component));
 
-    // 4. Initialize a `Tileset` aggregate with the components.
-    Tileset tileset{tileset_name, std::move(porytiles_component), std::move(porymap_component)};
-
-    // 5. Compile the `Tileset`, generating a new modified `Tileset`.
-    auto maybe_new_tileset = compiler_->compile(tileset);
-    if (!maybe_new_tileset.has_value()) {
-        auto error_lines = maybe_new_tileset.error().details(PlainTextFormatter{});
-        std::string joined_error;
-        for (std::size_t i = 0; i < error_lines.size(); ++i) {
-            if (i > 0) {
-                joined_error += "\n";
-            }
-            joined_error += error_lines[i];
-        }
-        return std::unexpected{joined_error};
+    /*
+     * TODO: we need to create a way for internal code to override user configuration. E.g., for this recompilation
+     * operation, we want to be able to control a lot of the configuration values like extrinsic_transparency,
+     * artifact_edit_mode, etc. I have a couple of ideas:
+     *
+     * 1. Create a master Config interface with one method: add_provider. Domain, App, InfraConfig all inherit from this
+     * interface. LazyLayeredConfig implements this add_provider method. Then, within this create function, we can
+     * easily just call domain_config->add_provider(override_provider), where OverrideProvider is a new provider type
+     * that will allow us to specify config values we care about, and leave alone ones we want to come from the user.
+     *
+     * 2. We can construct the compiler within the create function instead of injecting it. And then as the DomainConfig
+     * param we provide a MockDomainConfig that's defined locally in an anonymous namespace, that forces the settings we
+     * want. The downside to this is that we don't respect any user settings. We might want to respect some of the user
+     * compilation settings that aren't necessarily relevant to this compilation. I.e., while we must override settings
+     * like extrinsic_transparency, since our created tileset transparency might not match the user global setting, some
+     * settings like tileset.paths.primary from the user should absolutely be respected.
+     */
+    // 4. Compile (generates minimal valid Porymap assets from the minimal Porytiles component)
+    auto compile_result = compiler_->compile(*tileset);
+    if (!compile_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{"Compilation failed for '{}'.", FormatParam{tileset_name, Style::bold}}, compile_result};
     }
-    const auto new_tileset = std::move(maybe_new_tileset.value());
+    auto compiled_tileset = std::move(compile_result.value());
 
-    // 6. Update the source and header files.
-    // TODO: this should use some kind of capable C source modification utility
-    // if (const auto header_update_result = file_modifier_->append_tileset_declarations(tileset_name);
-    //     !header_update_result.has_value()) {
-    //     return std::unexpected{header_update_result.error()};
-    // }
+    // 5. Persist managed state for the new tileset
+    // This creates the headers.h entry and tileset-manifest.json BEFORE saving assets
+    auto persist_result = tileset_manager_->persist_managed_new(tileset_name);
+    if (!persist_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{"Failed to persist managed state for '{}'.", FormatParam{tileset_name, Style::bold}},
+            persist_result};
+    }
 
-    // 7. Persist the new `Tileset` (which also caches the checksums).
-    if (const auto save_result = tileset_repo_->save(*new_tileset); !save_result.has_value()) {
-        auto error_lines = save_result.error().details(PlainTextFormatter{});
-        std::string joined_error;
-        for (std::size_t i = 0; i < error_lines.size(); ++i) {
-            if (i > 0) {
-                joined_error += "\n";
-            }
-            joined_error += error_lines[i];
+    // 6. Save via TilesetRepo (writes all Porymap artifacts)
+    auto save_result = tileset_repo_->save(*compiled_tileset);
+    if (!save_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{"Failed to save tileset '{}'.", FormatParam{tileset_name, Style::bold}}, save_result};
+    }
+
+    // 7. Handle animation code wiring
+    if (!compiled_tileset->porymap_component().anims().empty()) {
+        // Tileset has animations - wire the generated code
+        auto wire_result = tileset_manager_->wire_anim_code(tileset_name, /*is_secondary=*/false);
+        if (!wire_result.has_value()) {
+            return ChainableResult<void>{
+                FormattableError{"Failed to wire animation code for '{}'.", FormatParam{tileset_name, Style::bold}},
+                wire_result};
         }
-        return std::unexpected{joined_error};
+    }
+    else {
+        // Tileset has no animations - remove any stale wiring
+        auto remove_result = tileset_manager_->remove_wired_anim_code(tileset_name, /*is_secondary=*/false);
+        if (!remove_result.has_value()) {
+            return ChainableResult<void>{
+                FormattableError{
+                    "Failed to remove wired animation code for '{}'.", FormatParam{tileset_name, Style::bold}},
+                remove_result};
+        }
     }
 
     return {};

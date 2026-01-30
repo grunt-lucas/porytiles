@@ -2,15 +2,20 @@
 
 #include <ranges>
 #include <string>
+#include <type_traits>
 
-#include "porytiles2/xcut/panic/panic.hpp"
-#include "porytiles2/xcut/result/chainable_result.hpp"
-#include "porytiles2/xcut/result/error.hpp"
+#include "gsl/pointers"
+
+#include "porytiles2/utilities/panic/panic.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/utilities/result/error.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
+#include "porytiles2/xcut/config/config_value.hpp"
 
 namespace porytiles2 {
 
 /**
- * @brief Abstract interface for structured error reporting and diagnostic output.
+ * @brief Abstract class for structured error reporting and diagnostic output.
  *
  * @details
  * UserDiagnostics provides a polymorphic interface for communicating diagnostics, warnings, errors, and fatal
@@ -18,11 +23,11 @@ namespace porytiles2 {
  * to provide hierarchical error chain visualization.
  *
  * The diagnostic system categorizes output into:
- * - Notes: Informational messages for user awareness
- * - Warning Notes: Notes that are emitted in concert with a particular warning
- * - Warnings: Non-fatal issues with categorization tags
- * - Errors: Serious issues requiring attention
+ * - Remark: Compiler messages explaining internal compiler mechanisms / decisions of possible interest to the user
+ * - Warnings: Non-fatal issues that indicate possible user input mistakes
+ * - Errors: Serious issues requiring attention, operation will die but may continue in order to generate more errors
  * - Fatal Errors: Complete failure scenarios with full error context
+ * - Notes: Informational messages for user awareness, associated with a remark, warning, or error
  *
  * All methods support both single-line messages (std::string) and multi-line messages (std::vector<std::string>) for
  * flexible diagnostic formatting.
@@ -31,105 +36,114 @@ class UserDiagnostics {
   public:
     virtual ~UserDiagnostics() = default;
 
+    explicit UserDiagnostics(gsl::not_null<const TextFormatter *> format) : format_(format) {}
+
     /**
-     * @brief Display a tagged informational note message.
+     * @brief Display a tagged remark message.
      *
      * @details
-     * Notes are the lowest severity diagnostic level, used for informational messages that help users understand what's
-     * happening without indicating any problems. They include a categorization tag to help users understand and/or
-     * filter the type of note being reported.
+     * Remarks are the lowest severity diagnostic level, used for communicating internal compiler mechanisms or
+     * decisions that may be of interest to users. Unlike notes (which clarify other remarks/warnings/errors), remarks
+     * are standalone informational messages about compiler behavior such as optimization decisions, tile assignment
+     * choices, or palette allocation strategies.
      *
-     * @param tag Categorization tag for the note
-     * @param msg The informational message to display
+     * Implementations typically format the first line with a "remark:" prefix and the tag, with subsequent lines
+     * appropriately indented.
+     *
+     * @param tag Categorization tag for the remark
+     * @param lines Vector of strings representing each line of the message
      */
-    void note(const std::string &tag, const std::string &msg) const
+    virtual void remark(const std::string &tag, const std::vector<std::string> &lines) const = 0;
+
+    /**
+     * @brief Convenience overload for single line messages.
+     */
+    void remark(const std::string &tag, const std::string &msg) const
     {
-        note(tag, std::vector{msg});
+        remark(tag, std::vector{msg});
     }
 
     /**
-     * @brief Display a multi-line tagged informational note message.
+     * @brief Variadic template overload for formatted remark messages.
      *
      * @details
-     * Virtual method for displaying multi-line informational messages. Implementations typically format the first line
-     * with a "note:" prefix and subsequent lines with appropriate indentation.
+     * Enables inline formatting of remark messages by accepting a format string and variadic FormatParam arguments.
+     * The format string uses fmtlib-style `{}` placeholders.
      *
-     * @param tag Categorization tag for the note
-     * @param lines Vector of strings representing each line of the note
+     * Example:
+     * ```C++
+     * diag.remark("tile-assign", "Assigned tile {} to palette {}", tile_id, pal_idx);
+     * ```
+     *
+     * @tparam FirstParam Type of the first format parameter
+     * @tparam RestParams Types of remaining format parameters
+     * @param tag Categorization tag for the remark
+     * @param format_str Format string with `{}` placeholders
+     * @param first First parameter to substitute
+     * @param rest Remaining parameters to substitute
      */
-    virtual void note(const std::string &tag, const std::vector<std::string> &lines) const = 0;
-
-    /**
-     * @brief Display a note message with a warning tag.
-     *
-     * @details
-     * Warning notes are note messages that are emitted in concert with a specific warning. They have tags so that like
-     * warnings they can be filtered by the user.
-     *
-     * @param tag Categorization tag for the warning note
-     * @param msg The warning note message to display
-     */
-    void warn_note(const std::string &tag, const std::string &msg) const
+    template <typename FirstParam, typename... RestParams>
+        requires(
+            !std::is_same_v<std::decay_t<FirstParam>, std::vector<FormatParam>> &&
+            std::is_constructible_v<FormatParam, FirstParam> &&
+            (std::is_constructible_v<FormatParam, RestParams> && ...))
+    void remark(const std::string &tag, const std::string &format_str, FirstParam &&first, RestParams &&...rest) const
     {
-        warn_note(tag, std::vector{msg});
+        remark(tag, formatter().format(format_str, std::forward<FirstParam>(first), std::forward<RestParams>(rest)...));
     }
-
-    /**
-     * @brief Display a multi-line tagged warning note message.
-     *
-     * @details
-     * Virtual method for displaying multi-line warning notes with categorization. Implementations typically format
-     * these with note-style prefixes but include the tag for categorization purposes.
-     *
-     * @param tag Categorization tag for the warning note
-     * @param lines Vector of strings representing each line of the warning note
-     */
-    virtual void warn_note(const std::string &tag, const std::vector<std::string> &lines) const = 0;
 
     /**
      * @brief Display a tagged warning message.
      *
      * @details
-     * Warnings indicate non-fatal issues that users should be aware of. They include a categorization tag to help users
-     * understand and/or filter the type of warning being reported.
+     * Warnings indicate non-fatal issues that users should be aware of. They include a categorization tag to help
+     * users understand and/or filter the type of warning being reported.
      *
-     * @param tag Categorization tag for the warning
-     * @param msg The warning message to display
-     */
-    void warn(const std::string &tag, const std::string &msg) const
-    {
-        warn(tag, std::vector{msg});
-    }
-
-    /**
-     * @brief Display a multi-line tagged warning message.
-     *
-     * @details
-     * Virtual method for displaying multi-line warnings with categorization. Implementations typically format the first
-     * line with a "warning:" prefix and the tag, with subsequent lines appropriately indented.
+     * Implementations typically format the first line with a "warning:" prefix and the tag, with subsequent lines
+     * appropriately indented.
      *
      * @param tag Categorization tag for the warning
      * @param lines Vector of strings representing each line of the warning
      */
-    virtual void warn(const std::string &tag, const std::vector<std::string> &lines) const = 0;
+    virtual void warning(const std::string &tag, const std::vector<std::string> &lines) const = 0;
 
-    // /**
-    //  * @brief Display a tagged warning message using a formatter-aware builder function.
-    //  *
-    //  * @details
-    //  * This overload allows callers to provide a function that dynamically generates warning messages with access to
-    //  * text formatting capabilities. The TextFormatter is provided to enable conditional styling based on TTY output
-    //  * settings.
-    //  *
-    //  * @param tag Categorization tag for the warning
-    //  * @param msg_builder Function that receives a TextFormatter reference and returns formatted message lines
-    //  */
-    // void warn(const std::string &tag, const FormattedMessageBuilder &msg_builder) const
-    // {
-    //     // TODO: inject this formatter
-    //     AnsiStyledTextFormatter formatter{};
-    //     warn(tag, msg_builder(formatter));
-    // }
+    /**
+     * @brief Convenience overload for single line messages.
+     */
+    void warning(const std::string &tag, const std::string &msg) const
+    {
+        warning(tag, std::vector{msg});
+    }
+
+    /**
+     * @brief Variadic template overload for formatted warning messages.
+     *
+     * @details
+     * Enables inline formatting of warning messages by accepting a format string and variadic FormatParam arguments.
+     * The format string uses fmtlib-style `{}` placeholders.
+     *
+     * Example:
+     * ```C++
+     * diag.warning("parse", "File {} has {} errors", filename, count);
+     * ```
+     *
+     * @tparam FirstParam Type of the first format parameter
+     * @tparam RestParams Types of remaining format parameters
+     * @param tag Categorization tag for the warning
+     * @param format_str Format string with `{}` placeholders
+     * @param first First parameter to substitute
+     * @param rest Remaining parameters to substitute
+     */
+    template <typename FirstParam, typename... RestParams>
+        requires(
+            !std::is_same_v<std::decay_t<FirstParam>, std::vector<FormatParam>> &&
+            std::is_constructible_v<FormatParam, FirstParam> &&
+            (std::is_constructible_v<FormatParam, RestParams> && ...))
+    void warning(const std::string &tag, const std::string &format_str, FirstParam &&first, RestParams &&...rest) const
+    {
+        warning(
+            tag, formatter().format(format_str, std::forward<FirstParam>(first), std::forward<RestParams>(rest)...));
+    }
 
     /**
      * @brief Display a tagged error message.
@@ -139,25 +153,215 @@ class UserDiagnostics {
      * current operation. They include a categorization tag to help users understand and/or filter the type of error
      * being reported.
      *
-     * @param tag Categorization tag for the error
-     * @param msg The error message to display
-     */
-    void err(const std::string &tag, const std::string &msg) const
-    {
-        err(tag, std::vector{msg});
-    }
-
-    /**
-     * @brief Display a multi-line tagged error message.
-     *
-     * @details
-     * Virtual method for displaying multi-line error messages. Implementations typically format the first line with
-     * an "error:" prefix and subsequent lines with appropriate indentation.
+     * Implementations typically format the first line with an "error:" prefix and subsequent lines with appropriate
+     * indentation.
      *
      * @param tag Categorization tag for the error
      * @param lines Vector of strings representing each line of the error
      */
-    virtual void err(const std::string &tag, const std::vector<std::string> &lines) const = 0;
+    virtual void error(const std::string &tag, const std::vector<std::string> &lines) const = 0;
+
+    /**
+     * @brief Convenience overload for single line messages.
+     */
+    void error(const std::string &tag, const std::string &msg) const
+    {
+        error(tag, std::vector{msg});
+    }
+
+    /**
+     * @brief Variadic template overload for formatted error messages.
+     *
+     * @details
+     * Enables inline formatting of error messages by accepting a format string and variadic FormatParam arguments.
+     * The format string uses fmtlib-style `{}` placeholders.
+     *
+     * Example:
+     * ```C++
+     * diag.error("validation", "Expected {} but got {}", expected, actual);
+     * ```
+     *
+     * @tparam FirstParam Type of the first format parameter
+     * @tparam RestParams Types of remaining format parameters
+     * @param tag Categorization tag for the error
+     * @param format_str Format string with `{}` placeholders
+     * @param first First parameter to substitute
+     * @param rest Remaining parameters to substitute
+     */
+    template <typename FirstParam, typename... RestParams>
+        requires(
+            !std::is_same_v<std::decay_t<FirstParam>, std::vector<FormatParam>> &&
+            std::is_constructible_v<FormatParam, FirstParam> &&
+            (std::is_constructible_v<FormatParam, RestParams> && ...))
+    void error(const std::string &tag, const std::string &format_str, FirstParam &&first, RestParams &&...rest) const
+    {
+        error(tag, formatter().format(format_str, std::forward<FirstParam>(first), std::forward<RestParams>(rest)...));
+    }
+
+    /**
+     * @brief Display a tagged note message associated with a remark.
+     *
+     * @details
+     * Notes are informational messages that further clarify a parent diagnostic. This method is specifically for notes
+     * that follow a remark diagnostic, enabling proper filtering - when a remark is filtered out, its associated notes
+     * can also be suppressed.
+     *
+     * Implementations typically format the first line with a "note:" prefix and subsequent lines with appropriate
+     * indentation. All note types use identical styling regardless of parent diagnostic type.
+     *
+     * @param tag Categorization tag for the note (should match the parent remark's tag)
+     * @param lines Vector of strings representing each line of the message
+     */
+    virtual void remark_note(const std::string &tag, const std::vector<std::string> &lines) const = 0;
+
+    /**
+     * @brief Convenience overload for single line messages.
+     */
+    void remark_note(const std::string &tag, const std::string &msg) const
+    {
+        remark_note(tag, std::vector{msg});
+    }
+
+    /**
+     * @brief Variadic template overload for formatted remark note messages.
+     *
+     * @details
+     * Enables inline formatting of remark note messages by accepting a format string and variadic FormatParam
+     * arguments. The format string uses fmtlib-style `{}` placeholders.
+     *
+     * Example:
+     * ```C++
+     * diag.remark_note("tile-assign", "Previous assignment was at index {}", prev_idx);
+     * ```
+     *
+     * @tparam FirstParam Type of the first format parameter
+     * @tparam RestParams Types of remaining format parameters
+     * @param tag Categorization tag for the note (should match the parent remark's tag)
+     * @param format_str Format string with `{}` placeholders
+     * @param first First parameter to substitute
+     * @param rest Remaining parameters to substitute
+     */
+    template <typename FirstParam, typename... RestParams>
+        requires(
+            !std::is_same_v<std::decay_t<FirstParam>, std::vector<FormatParam>> &&
+            std::is_constructible_v<FormatParam, FirstParam> &&
+            (std::is_constructible_v<FormatParam, RestParams> && ...))
+    void
+    remark_note(const std::string &tag, const std::string &format_str, FirstParam &&first, RestParams &&...rest) const
+    {
+        remark_note(
+            tag, formatter().format(format_str, std::forward<FirstParam>(first), std::forward<RestParams>(rest)...));
+    }
+
+    /**
+     * @brief Display a tagged note message associated with a warning.
+     *
+     * @details
+     * Notes are informational messages that further clarify a parent diagnostic. This method is specifically for notes
+     * that follow a warning diagnostic, enabling proper filtering - when a warning is filtered out, its associated
+     * notes can also be suppressed.
+     *
+     * Implementations typically format the first line with a "note:" prefix and subsequent lines with appropriate
+     * indentation. All note types use identical styling regardless of parent diagnostic type.
+     *
+     * @param tag Categorization tag for the note (should match the parent warning's tag)
+     * @param lines Vector of strings representing each line of the message
+     */
+    virtual void warning_note(const std::string &tag, const std::vector<std::string> &lines) const = 0;
+
+    /**
+     * @brief Convenience overload for single line messages.
+     */
+    void warning_note(const std::string &tag, const std::string &msg) const
+    {
+        warning_note(tag, std::vector{msg});
+    }
+
+    /**
+     * @brief Variadic template overload for formatted warning note messages.
+     *
+     * @details
+     * Enables inline formatting of warning note messages by accepting a format string and variadic FormatParam
+     * arguments. The format string uses fmtlib-style `{}` placeholders.
+     *
+     * Example:
+     * ```C++
+     * diag.warning_note("parse", "Consider using {} instead", alternative);
+     * ```
+     *
+     * @tparam FirstParam Type of the first format parameter
+     * @tparam RestParams Types of remaining format parameters
+     * @param tag Categorization tag for the note (should match the parent warning's tag)
+     * @param format_str Format string with `{}` placeholders
+     * @param first First parameter to substitute
+     * @param rest Remaining parameters to substitute
+     */
+    template <typename FirstParam, typename... RestParams>
+        requires(
+            !std::is_same_v<std::decay_t<FirstParam>, std::vector<FormatParam>> &&
+            std::is_constructible_v<FormatParam, FirstParam> &&
+            (std::is_constructible_v<FormatParam, RestParams> && ...))
+    void
+    warning_note(const std::string &tag, const std::string &format_str, FirstParam &&first, RestParams &&...rest) const
+    {
+        warning_note(
+            tag, formatter().format(format_str, std::forward<FirstParam>(first), std::forward<RestParams>(rest)...));
+    }
+
+    /**
+     * @brief Display a tagged note message associated with an error.
+     *
+     * @details
+     * Notes are informational messages that further clarify a parent diagnostic. This method is specifically for notes
+     * that follow an error diagnostic, enabling proper filtering - when an error is filtered out, its associated notes
+     * can also be suppressed.
+     *
+     * Implementations typically format the first line with a "note:" prefix and subsequent lines with appropriate
+     * indentation. All note types use identical styling regardless of parent diagnostic type.
+     *
+     * @param tag Categorization tag for the note (should match the parent error's tag)
+     * @param lines Vector of strings representing each line of the message
+     */
+    virtual void error_note(const std::string &tag, const std::vector<std::string> &lines) const = 0;
+
+    /**
+     * @brief Convenience overload for single line messages.
+     */
+    void error_note(const std::string &tag, const std::string &msg) const
+    {
+        error_note(tag, std::vector{msg});
+    }
+
+    /**
+     * @brief Variadic template overload for formatted error note messages.
+     *
+     * @details
+     * Enables inline formatting of error note messages by accepting a format string and variadic FormatParam arguments.
+     * The format string uses fmtlib-style `{}` placeholders.
+     *
+     * Example:
+     * ```C++
+     * diag.error_note("validation", "See definition at {}:{}", file, line);
+     * ```
+     *
+     * @tparam FirstParam Type of the first format parameter
+     * @tparam RestParams Types of remaining format parameters
+     * @param tag Categorization tag for the note (should match the parent error's tag)
+     * @param format_str Format string with `{}` placeholders
+     * @param first First parameter to substitute
+     * @param rest Remaining parameters to substitute
+     */
+    template <typename FirstParam, typename... RestParams>
+        requires(
+            !std::is_same_v<std::decay_t<FirstParam>, std::vector<FormatParam>> &&
+            std::is_constructible_v<FormatParam, FirstParam> &&
+            (std::is_constructible_v<FormatParam, RestParams> && ...))
+    void
+    error_note(const std::string &tag, const std::string &format_str, FirstParam &&first, RestParams &&...rest) const
+    {
+        error_note(
+            tag, formatter().format(format_str, std::forward<FirstParam>(first), std::forward<RestParams>(rest)...));
+    }
 
     /**
      * @brief Emit the proximate (immediate) error in a fatal error chain.
@@ -235,7 +439,7 @@ class UserDiagnostics {
             filtered_chain.push_back(err.get());
         }
 
-        // If all errors were blank FormattableErrors (defensive, shouldn't happen), return early
+        // If all errors were blank FormattableErrors (defensive, shouldn't happen), panic
         if (filtered_chain.empty()) {
             panic("filtered error chain was empty, there should always be at least one FormattableError with details");
         }
@@ -252,6 +456,14 @@ class UserDiagnostics {
             emit_fatal_root(*filtered_chain.back());
         }
     }
+
+    [[nodiscard]] const TextFormatter &formatter() const
+    {
+        return *format_;
+    }
+
+  private:
+    const TextFormatter *format_;
 };
 
 } // namespace porytiles2

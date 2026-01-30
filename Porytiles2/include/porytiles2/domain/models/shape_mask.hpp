@@ -70,7 +70,7 @@ class ShapeMask {
      * @param row The row index (0-7)
      * @param col The column index (0-7)
      */
-    void set(int row, int col);
+    void set(std::size_t row, std::size_t col);
 
     /**
      * @brief Sets the bit at the specified row and column to 0.
@@ -82,7 +82,7 @@ class ShapeMask {
      * @param row The row index (0-7)
      * @param col The column index (0-7)
      */
-    void unset(int row, int col);
+    void unset(std::size_t row, std::size_t col);
 
     /**
      * @brief Gets the bit value at the specified row and column.
@@ -95,7 +95,7 @@ class ShapeMask {
      * @param col The column index (0-7)
      * @return True if the bit is set, false otherwise
      */
-    [[nodiscard]] bool get(int row, int col) const;
+    [[nodiscard]] bool get(std::size_t row, std::size_t col) const;
 
     /**
      * @brief Checks if this entire ShapeMask is transparent.

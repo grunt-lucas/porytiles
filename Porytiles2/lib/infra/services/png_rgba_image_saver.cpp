@@ -2,14 +2,14 @@
 
 #include <expected>
 #include <filesystem>
+#include <format>
 #include <string>
 
 #include "CImg.h"
-#include "fmt/format.h"
 
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/xcut/result/chainable_result.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -42,7 +42,7 @@ PngRgbaImageSaver::save_to_file(const Image<Rgba32> &image, const std::filesyste
         std::ignore = cimg_png.save_png(path_c_str);
     }
     catch (const std::exception &e) {
-        return FormattableError{fmt::format("{}: save failed: {}", path.filename().c_str(), e.what())};
+        return FormattableError{std::format("{}: save failed: {}", path.filename().c_str(), e.what())};
     }
 
     return {};

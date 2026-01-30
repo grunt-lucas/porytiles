@@ -1,17 +1,16 @@
 #pragma once
 
 #include <cstddef>
+#include <format>
 #include <tuple>
 #include <vector>
-
-#include "fmt/format.h"
 
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/services/image_tileizer.hpp"
-#include "porytiles2/xcut/panic/panic.hpp"
-#include "porytiles2/xcut/result/chainable_result.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -54,7 +53,7 @@ class LayerImageMetatileizer {
         // Validate that all images have the same dimensions
         if (bottom.width() != middle.width() || bottom.height() != middle.height() || bottom.width() != top.width() ||
             bottom.height() != top.height()) {
-            return FormattableError{fmt::format(
+            return FormattableError{std::format(
                 "layer images have mismatched dimensions: bottom={}x{}, middle={}x{}, top={}x{}",
                 bottom.width(),
                 bottom.height(),
@@ -93,7 +92,7 @@ class LayerImageMetatileizer {
          * dimensions are a multiple of 16 to confirm that it can be correctly metatileized.
          */
         if (bottom.width() % metatile::side_length_pix != 0 || bottom.height() % metatile::side_length_pix != 0) {
-            return FormattableError{fmt::format(
+            return FormattableError{std::format(
                 "image dimensions must be multiples of {}, got {}x{}",
                 metatile::side_length_pix,
                 bottom.width(),

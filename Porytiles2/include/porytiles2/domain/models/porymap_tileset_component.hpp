@@ -1,10 +1,14 @@
 #pragma once
 
 #include <array>
+#include <map>
+#include <string>
 #include <vector>
 
+#include "porytiles2/domain/models/animation.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
+#include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
@@ -12,26 +16,9 @@
 
 namespace porytiles2 {
 
-namespace tileset {
-
-enum class LayerMode { dual, triple };
-
-inline std::string to_string(LayerMode mode)
-{
-    switch (mode) {
-    case LayerMode::dual:
-        return "dual";
-    case LayerMode::triple:
-        return "triple";
-    }
-    panic("unhandled LayerMode value");
-}
-
-} // namespace tileset
-
 class PorymapTilesetComponent {
   public:
-    PorymapTilesetComponent() = default;
+    PorymapTilesetComponent();
 
     /**
      * @brief Add a TilemapEntry to the end of the entry vector.
@@ -53,17 +40,34 @@ class PorymapTilesetComponent {
      */
     void push_back_attribute(MetatileAttribute attribute);
 
-    void set_pal(Palette<Rgba32> pal, unsigned int pal_index);
+    void set_pal(std::size_t pal_index, Palette<Rgba32, pal::max_size> pal);
 
-    [[nodiscard]] const Palette<Rgba32> &pal_at(unsigned int pal_index) const;
+    [[nodiscard]] const Palette<Rgba32, pal::max_size> &pal_at(std::size_t pal_index) const;
 
     [[nodiscard]] bool is_empty() const;
 
-    [[nodiscard]] ChainableResult<tileset::LayerMode> detect_layer_mode() const;
+    [[nodiscard]] ChainableResult<LayerMode> detect_layer_mode() const;
+
+    void add_anim(Animation<IndexPixel> anim);
+
+    [[nodiscard]] bool has_anim(const std::string &name) const
+    {
+        return anims_.contains(name);
+    }
+
+    [[nodiscard]] const Animation<IndexPixel> &anim_for_name(const std::string &name) const
+    {
+        return anims_.at(name);
+    }
 
     [[nodiscard]] const std::vector<TilemapEntry> &metatiles_bin() const
     {
         return metatiles_bin_;
+    }
+
+    void metatiles_bin(const std::vector<TilemapEntry> &new_entries)
+    {
+        metatiles_bin_ = new_entries;
     }
 
     [[nodiscard]] const std::vector<MetatileAttribute> &metatile_attributes_bin() const
@@ -81,16 +85,27 @@ class PorymapTilesetComponent {
         tiles_png_ = tiles_png;
     }
 
-    [[nodiscard]] const std::array<Palette<Rgba32>, pal::num_pals> &pals() const
+    [[nodiscard]] const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals() const
     {
         return pals_;
+    }
+
+    [[nodiscard]] const std::map<std::string, Animation<IndexPixel>> &anims() const
+    {
+        return anims_;
+    }
+
+    [[nodiscard]] std::map<std::string, Animation<IndexPixel>> &anims()
+    {
+        return anims_;
     }
 
   private:
     std::vector<TilemapEntry> metatiles_bin_;
     std::vector<MetatileAttribute> metatile_attributes_;
     Image<IndexPixel> tiles_png_;
-    std::array<Palette<Rgba32>, pal::num_pals> pals_;
+    std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> pals_;
+    std::map<std::string, Animation<IndexPixel>> anims_;
 };
 
 } // namespace porytiles2

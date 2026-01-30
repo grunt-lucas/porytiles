@@ -59,6 +59,27 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(yaml-cpp)
 
+# Find libz.a before cpptrace so that libdwarf's find_package(ZLIB) resolves to
+# the static archive instead of libz.so (which breaks -static linking on Linux).
+find_library(ZLIB_STATIC
+        NAMES libz.a
+        PATHS /opt/homebrew/opt/zlib/lib
+        PATHS /usr/local/opt/zlib/lib
+        PATHS /usr/lib/x86_64-linux-gnu
+        PATHS /usr/lib/aarch64-linux-gnu)
+if (ZLIB_STATIC)
+    set(ZLIB_LIBRARY ${ZLIB_STATIC} CACHE FILEPATH "Path to zlib library" FORCE)
+endif ()
+
+# cpptrace - cross-platform stacktrace library
+# (std::stacktrace not available on macOS with Apple Clang)
+FetchContent_Declare(
+        cpptrace
+        GIT_REPOSITORY "https://github.com/jeremy-rifkin/cpptrace.git"
+        GIT_TAG "v0.7.5"
+)
+FetchContent_MakeAvailable(cpptrace)
+
 # Google Fruit DI
 FetchContent_Declare(
         fruit
@@ -81,14 +102,6 @@ find_library(PNG_STATIC
         PATHS /usr/local/opt/libpng/lib
         PATHS /usr/lib/x86_64-linux-gnu
         PATHS /usr/lib/aarch64-linux-gnu)
-find_library(ZLIB_STATIC
-        NAMES libz.a
-        PATHS /opt/homebrew/opt/zlib/lib
-        PATHS /usr/local/opt/zlib/lib
-        PATHS /usr/lib/x86_64-linux-gnu
-        PATHS /usr/lib/aarch64-linux-gnu)
-
-
 ##############################################
 #### Set up Porytiles library compilation ####
 ##############################################
@@ -141,17 +154,21 @@ endif ()
 #### Link dependencies ####
 ###########################
 
-# Link the static libpng and zlib we searched for earlier
+### Link the static libpng and zlib we searched for earlier ###
 target_link_libraries(Porytiles2Lib PRIVATE ${PNG_STATIC})
 target_link_libraries(Porytiles2Lib PRIVATE ${ZLIB_STATIC})
 
-# Public link API exposed libs
-target_link_libraries(Porytiles2Lib PUBLIC fmt::fmt)
+### Public link API exposed libs ###
 target_link_libraries(Porytiles2Lib PUBLIC Microsoft.GSL::GSL)
 target_link_libraries(Porytiles2Lib PUBLIC fruit)
 
-# Private link internal libs
+### Private link internal libs ###
 target_link_libraries(Porytiles2Lib PRIVATE yaml-cpp::yaml-cpp)
+# NOTE: fmt is still required for TextFormatter which uses fmt::dynamic_format_arg_store.
+# C++23 std::format does not support runtime-variable argument counts.
+# All other fmt::format usages have been migrated to std::format.
+target_link_libraries(Porytiles2Lib PRIVATE fmt::fmt)
+target_link_libraries(Porytiles2Lib PRIVATE cpptrace::cpptrace)
 
 
 ##################################

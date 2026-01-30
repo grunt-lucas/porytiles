@@ -1,8 +1,8 @@
 #include "gtest/gtest.h"
 
+#include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/utilities/result/error.hpp"
 #include "porytiles2/xcut/diagnostics/buffered_user_diagnostics.hpp"
-#include "porytiles2/xcut/result/chainable_result.hpp"
-#include "porytiles2/xcut/result/error.hpp"
 
 using namespace porytiles2;
 

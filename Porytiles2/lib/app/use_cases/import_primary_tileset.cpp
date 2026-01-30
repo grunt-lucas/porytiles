@@ -1,72 +1,97 @@
 #include "porytiles2/app/use_cases/import_primary_tileset.hpp"
 
+#include <map>
 #include <memory>
 #include <string>
 
-#include "porytiles2/templates/result.hpp"
-#include "porytiles2/utilities/text/plain_text_formatter.hpp"
+#include "porytiles2/domain/models/animation.hpp"
+#include "porytiles2/domain/models/porymap_tileset_component.hpp"
+#include "porytiles2/domain/models/porytiles_tileset_component.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/domain/models/tileset.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/xcut/config/unwrap_config.hpp"
 
 namespace porytiles2 {
 
-Result<void> ImportPrimaryTileset::import(const std::string &tileset_name) const
+ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_name) const
 {
-    // 1. Check if the primary tileset exists. If not, abort with error.
-    if (!tileset_repo_->exists(tileset_name)) {
-        return std::unexpected{fmt::format("tileset {} does not exist", tileset_name)};
+    // Step 1: Validate tileset exists and isn't already Porytiles-managed
+    if (!metadata_provider_->exists(tileset_name)) {
+        return FormattableError{"Tileset '{}' does not exist.", FormatParam{tileset_name, Style::bold}};
+    }
+    if (tileset_manager_->is_porytiles_managed(tileset_name)) {
+        return FormattableError{"Tileset '{}' is already Porytiles-managed.", FormatParam{tileset_name, Style::bold}};
     }
 
-    // 2. Load the tileset into a `Tileset` aggregate.
-    auto maybe_tileset = tileset_repo_->load(tileset_name);
-    if (!maybe_tileset.has_value()) {
-        // TODO: hook up ChainableError here
-        return std::unexpected{"failed to load tileset"};
+    // Step 2: Call the importer service to bring in the PorymapTilesetComponent from vanilla assets
+    auto imported_porymap_component_result = importer_->import_porymap_component_from_vanilla(tileset_name);
+    if (!imported_porymap_component_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{"Import job failed for '{}'.", FormatParam{tileset_name, Style::bold}},
+            imported_porymap_component_result};
     }
-    const auto tileset = std::move(maybe_tileset.value());
+    auto imported_porymap_component = std::move(imported_porymap_component_result.value());
+    auto blank_porytiles_component = std::make_unique<PorytilesTilesetComponent>();
+    auto tileset = std::make_unique<Tileset>(
+        tileset_name, std::move(blank_porytiles_component), std::move(imported_porymap_component));
 
-    // 3. If `PorymapTilesetComponent` is empty, bail with error.
-    if (tileset->porymap_component().is_empty()) {
-        return std::unexpected{"PorymapTilesetComponent was empty"};
+    // Step 3: Decompile the PorymapTilesetComponent to produce a matching PorytilesTilesetComponent
+    auto decompiled_tileset_result = decompiler_->decompile(*tileset);
+    if (!decompiled_tileset_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{"Decompile job failed for '{}'.", FormatParam{tileset_name, Style::bold}},
+            decompiled_tileset_result};
+    }
+    const auto decompiled_tileset = std::move(decompiled_tileset_result.value());
+
+    /*
+     * TODO: before saving, we should probably perform an aritfact_edit_mode:locked compilation here. That way, Porymap
+     * assets completely match their Porytiles counterparts. See note about user config override in
+     * CreatePrimaryTileset.
+     */
+
+    // Step 4: Save to deterministic paths
+    if (const auto save_result = tileset_repo_->save(*decompiled_tileset); !save_result.has_value()) {
+        return ChainableResult<void>{
+            FormattableError{"Tileset save job failed for '{}'.", FormatParam{tileset_name, Style::bold}}, save_result};
     }
 
-    // 4. If `PorytilesTilesetComponent` is not empty, compare with cached checksums in `artifact_checksums.json`. If
-    // any differ, bail with the message "uncompiled changes present in Porytiles asset X."
-    if (!tileset->porytiles_component().is_empty()) {
-        const auto porytiles_keys = tileset_repo_->key_provider().get_porytiles_artifact_keys(tileset_name);
-        const auto mismatched_keys =
-            tileset_repo_->checksum_provider().find_unsynced_tileset_artifacts(tileset_name, porytiles_keys);
-        if (!mismatched_keys.empty()) {
-            return std::unexpected{"uncompiled changes present in Porytiles assets: TODO keys here"};
+    /*
+     * Step 5: Confirmed save succeeded, now call PorytilesTilesetManager::persist_existing to persist "managed"
+     * state (which in the Project-based impls writes to tileset-manifest.json and updates various project C files).
+     * This should never fail for a reasonable cause, so we don't need to worry about rolling back or weird broken
+     * state. If it does fail for extraordinary reasons, we present a helpful message to users so they can manually
+     * recover.
+     */
+    if (const auto persist_state_result = tileset_manager_->persist_managed_existing(tileset_name);
+        !persist_state_result.has_value()) {
+        // TODO: add more details to this error message
+        return ChainableResult<void>{
+            FormattableError{
+                "Failed to persist Porytiles-managed state for '{}'.", FormatParam{tileset_name, Style::bold}},
+            persist_state_result};
+    }
+
+    // 6. Handle animation code wiring
+    if (!decompiled_tileset->porytiles_component().anims().empty()) {
+        // Tileset has animations - wire the generated code
+        auto wire_result = tileset_manager_->wire_anim_code(tileset_name, /*is_secondary=*/false);
+        if (!wire_result.has_value()) {
+            return ChainableResult<void>{
+                FormattableError{"Failed to wire animation code for '{}'.", FormatParam{tileset_name, Style::bold}},
+                wire_result};
         }
     }
-
-    // 5. If all `PorymapTilesetComponent` checksums match those cached in `artifact_checksums.json`, bail with the
-    // message "nothing to do."
-    const auto porymap_keys = tileset_repo_->key_provider().get_porymap_artifact_keys(tileset_name);
-    if (tileset_repo_->checksum_provider().all_checksums_tileset_match(tileset_name, porymap_keys)) {
-        // TODO: display a nothing_to_do message to the user
-        return {};
-    }
-
-    // 6. Decompile the `PorymapTilesetComponent`, generating a new `PorytilesTilesetComponent`.
-    // TODO: The resulting PorytilesTilesetComponent may be incomplete. E.g., the user may have specified palette
-    // overrides or hints; they will be present on disk. We don't want to clobber them when saving the decompiled
-    // component. So we'll need to pull them from the original component and inject them into this one before
-    // persisting.
-
-    // 7. Perform a patch build.
-    // TODO: add this
-
-    // 8. Persist the `Tileset` (which also caches the checksums).
-    if (const auto save_result = tileset_repo_->save(*tileset); !save_result.has_value()) {
-        auto error_lines = save_result.error().details(PlainTextFormatter{});
-        std::string joined_error;
-        for (std::size_t i = 0; i < error_lines.size(); ++i) {
-            if (i > 0) {
-                joined_error += "\n";
-            }
-            joined_error += error_lines[i];
+    else {
+        // Tileset has no animations - remove any stale wiring
+        auto remove_result = tileset_manager_->remove_wired_anim_code(tileset_name, /*is_secondary=*/false);
+        if (!remove_result.has_value()) {
+            return ChainableResult<void>{
+                FormattableError{
+                    "Failed to remove wired animation code for '{}'.", FormatParam{tileset_name, Style::bold}},
+                remove_result};
         }
-        return std::unexpected{joined_error};
     }
 
     return {};

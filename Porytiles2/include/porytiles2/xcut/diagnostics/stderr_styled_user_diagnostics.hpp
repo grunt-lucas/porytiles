@@ -5,9 +5,9 @@
 
 #include "gsl/pointers"
 
+#include "porytiles2/utilities/result/error.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
-#include "porytiles2/xcut/result/error.hpp"
 
 namespace porytiles2 {
 
@@ -17,6 +17,11 @@ namespace porytiles2 {
  * 2. Colors on or off
  * 3. Diagnostic tag include and exclude filters
  * 4. Diagnostic tag settable limits: stop showing diagnostics with a given tag when a limit is hit
+ */
+/*
+ * TODO: add configurable tag filtering handling here. Handle in the UserDiagnostics interface? Or handle it here
+ * in the implementation? We want to have an include-list and exclude-list of tags. Make them regex-able? Lots of
+ * questions to answer.
  */
 
 /**
@@ -37,31 +42,19 @@ namespace porytiles2 {
  */
 class StderrStyledUserDiagnostics final : public UserDiagnostics {
   public:
-    explicit StderrStyledUserDiagnostics(const gsl::not_null<TextFormatter *> format) : format_{format} {}
+    explicit StderrStyledUserDiagnostics(const gsl::not_null<TextFormatter *> format) : UserDiagnostics{format} {}
 
     /**
-     * @brief Display a multi-line tagged informational note to stderr.
+     * @brief Display a multi-line tagged informational remark to stderr.
      *
      * @details
-     * Outputs informational messages with cyan "note:" prefix and tag suffix on the first line, formatted as "note:
+     * Outputs informational messages with blue "remark:" prefix and tag suffix on the first line, formatted as "remark:
      * <message> [<tag>]" with appropriate indentation for subsequent lines.
      *
-     * @param tag Categorization tag for the note
-     * @param lines Vector of strings representing each line of the note
+     * @param tag Categorization tag for the remark
+     * @param lines Vector of strings representing each line of the remark
      */
-    void note(const std::string &tag, const std::vector<std::string> &lines) const override;
-
-    /**
-     * @brief Display a multi-line tagged warning note to stderr.
-     *
-     * @details
-     * Outputs warning notes with cyan "note:" prefix and tag suffix on the first line, formatted as "note: <message>
-     * [<tag>]" with appropriate indentation for subsequent lines.
-     *
-     * @param tag Categorization tag for the warning note
-     * @param lines Vector of strings representing each line of the warning note
-     */
-    void warn_note(const std::string &tag, const std::vector<std::string> &lines) const override;
+    void remark(const std::string &tag, const std::vector<std::string> &lines) const override;
 
     /**
      * @brief Display a multi-line tagged warning to stderr.
@@ -73,7 +66,7 @@ class StderrStyledUserDiagnostics final : public UserDiagnostics {
      * @param tag Categorization tag for the warning
      * @param lines Vector of strings representing each line of the warning
      */
-    void warn(const std::string &tag, const std::vector<std::string> &lines) const override;
+    void warning(const std::string &tag, const std::vector<std::string> &lines) const override;
 
     /**
      * @brief Display a multi-line tagged error message to stderr.
@@ -85,7 +78,7 @@ class StderrStyledUserDiagnostics final : public UserDiagnostics {
      * @param tag Categorization tag for the error
      * @param lines Vector of strings representing each line of the error
      */
-    void err(const std::string &tag, const std::vector<std::string> &lines) const override;
+    void error(const std::string &tag, const std::vector<std::string> &lines) const override;
 
     /**
      * @brief Emit the proximate (immediate) error in a fatal error chain to stderr.
@@ -122,8 +115,47 @@ class StderrStyledUserDiagnostics final : public UserDiagnostics {
      */
     void emit_fatal_root(const Error &err) const override;
 
+    /**
+     * @brief Display a multi-line tagged note associated with a remark to stderr.
+     *
+     * @details
+     * Outputs informational messages with cyan "note:" prefix and tag suffix on the first line, formatted as "note:
+     * <message> [<tag>]" with appropriate indentation for subsequent lines. Uses identical styling to warning_note and
+     * error_note since notes are informational regardless of parent diagnostic type.
+     *
+     * @param tag Categorization tag for the note (should match the parent remark's tag)
+     * @param lines Vector of strings representing each line of the note
+     */
+    void remark_note(const std::string &tag, const std::vector<std::string> &lines) const override;
+
+    /**
+     * @brief Display a multi-line tagged note associated with a warning to stderr.
+     *
+     * @details
+     * Outputs informational messages with cyan "note:" prefix and tag suffix on the first line, formatted as "note:
+     * <message> [<tag>]" with appropriate indentation for subsequent lines. Uses identical styling to remark_note and
+     * error_note since notes are informational regardless of parent diagnostic type.
+     *
+     * @param tag Categorization tag for the note (should match the parent warning's tag)
+     * @param lines Vector of strings representing each line of the note
+     */
+    void warning_note(const std::string &tag, const std::vector<std::string> &lines) const override;
+
+    /**
+     * @brief Display a multi-line tagged note associated with an error to stderr.
+     *
+     * @details
+     * Outputs informational messages with cyan "note:" prefix and tag suffix on the first line, formatted as "note:
+     * <message> [<tag>]" with appropriate indentation for subsequent lines. Uses identical styling to remark_note and
+     * warning_note since notes are informational regardless of parent diagnostic type.
+     *
+     * @param tag Categorization tag for the note (should match the parent error's tag)
+     * @param lines Vector of strings representing each line of the note
+     */
+    void error_note(const std::string &tag, const std::vector<std::string> &lines) const override;
+
   private:
-    TextFormatter *format_;
+    void emit_note_impl(const std::string &tag, const std::vector<std::string> &lines) const;
 };
 
 } // namespace porytiles2

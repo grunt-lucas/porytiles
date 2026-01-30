@@ -2,13 +2,13 @@
 
 #include <expected>
 #include <filesystem>
+#include <format>
 #include <unordered_set>
 
 #include "CLI/CLI.hpp"
-#include "fmt/format.h"
 
 #include "porytiles2/infra/config/tiles_pal_mode.hpp"
-#include "porytiles2/templates/parse_int.hpp"
+#include "porytiles2/utilities/parse_int.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
 
 class TilesPalModeValidator final : public CLI::Validator {
@@ -75,13 +75,13 @@ class RgbStringValidator final : public CLI::Validator {
             const auto blue = blue_result.value();
 
             if (red < 0 || red > 255) {
-                return fmt::format("rgb red component out of range: {}", red);
+                return std::format("rgb red component out of range: {}", red);
             }
             if (green < 0 || green > 255) {
-                return fmt::format("rgb green component out of range: {}", green);
+                return std::format("rgb green component out of range: {}", green);
             }
             if (blue < 0 || blue > 255) {
-                return fmt::format("rgb blue component out of range: {}", blue);
+                return std::format("rgb blue component out of range: {}", blue);
             }
 
             return std::string{};
