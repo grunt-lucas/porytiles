@@ -59,6 +59,18 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(yaml-cpp)
 
+# Find libz.a before cpptrace so that libdwarf's find_package(ZLIB) resolves to
+# the static archive instead of libz.so (which breaks -static linking on Linux).
+find_library(ZLIB_STATIC
+        NAMES libz.a
+        PATHS /opt/homebrew/opt/zlib/lib
+        PATHS /usr/local/opt/zlib/lib
+        PATHS /usr/lib/x86_64-linux-gnu
+        PATHS /usr/lib/aarch64-linux-gnu)
+if (ZLIB_STATIC)
+    set(ZLIB_LIBRARY ${ZLIB_STATIC} CACHE FILEPATH "Path to zlib library" FORCE)
+endif ()
+
 # cpptrace - cross-platform stacktrace library
 # (std::stacktrace not available on macOS with Apple Clang)
 FetchContent_Declare(
@@ -90,14 +102,6 @@ find_library(PNG_STATIC
         PATHS /usr/local/opt/libpng/lib
         PATHS /usr/lib/x86_64-linux-gnu
         PATHS /usr/lib/aarch64-linux-gnu)
-find_library(ZLIB_STATIC
-        NAMES libz.a
-        PATHS /opt/homebrew/opt/zlib/lib
-        PATHS /usr/local/opt/zlib/lib
-        PATHS /usr/lib/x86_64-linux-gnu
-        PATHS /usr/lib/aarch64-linux-gnu)
-
-
 ##############################################
 #### Set up Porytiles library compilation ####
 ##############################################
