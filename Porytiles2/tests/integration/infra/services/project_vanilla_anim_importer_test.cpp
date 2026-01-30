@@ -100,7 +100,7 @@ TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsDoesNotSetKeyFrame)
     ASSERT_TRUE(result.has_value());
     const auto &animations = result.value();
 
-    // Key frame extraction is AnimationDecompiler's job, not ours
+    // Key frame extraction is AnimDecompiler's job, not ours
     for (const auto &[name, anim] : animations) {
         EXPECT_FALSE(anim.has_key_frame()) << "Animation '" << name << "' should not have key frame set";
     }

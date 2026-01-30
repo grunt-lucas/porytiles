@@ -16,7 +16,7 @@
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
-#include "porytiles2/domain/services/animation_decompiler.hpp"
+#include "porytiles2/domain/services/anim_decompiler.hpp"
 #include "porytiles2/infra/services/ascii_tile_printer.hpp"
 #include "porytiles2/infra/services/color_palette_printer.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -187,7 +187,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectCrossRangeExactDuplica
 
     auto anim = create_test_animation("test_anim", 1, 1, {shared_tile}, palette_);
 
-    AnimationDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
+    AnimDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     // With mangle strategy, it should succeed and produce a mangled tile
     auto result = decompiler.decompile_animation(
@@ -221,7 +221,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectCrossRangeFlipEquivale
     std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}};
     auto anim = create_test_animation("test_anim", 1, 1, {h_flipped_tile}, palette_);
 
-    AnimationDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
+    AnimDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     // With error strategy, it should fail (duplicate detected)
     auto error_result = decompiler.decompile_animation(
@@ -256,7 +256,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectIntraAnimationFlipEqui
 
     auto anim = create_test_animation("test_anim", 1, 2, {asymmetric_tile, h_flipped_tile}, palette_);
 
-    AnimationDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
+    AnimDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     // Error strategy should detect intra-animation flip-equivalent duplicate
     auto error_result = decompiler.decompile_animation(
@@ -288,7 +288,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldNotFalsePositiveWhenNoDuplic
 
     auto anim = create_test_animation("test_anim", 1, 2, {tile_b, tile_c}, palette_);
 
-    AnimationDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
+    AnimDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     // Even with error strategy, should succeed (no duplicates)
     auto result = decompiler.decompile_animation(
@@ -315,7 +315,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldHandleMixedCrossRangeAndIntr
 
     auto anim = create_test_animation("test_anim", 1, 2, {tile_b, tile_c}, palette_);
 
-    AnimationDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
+    AnimDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     // Error strategy should fail
     auto error_result = decompiler.decompile_animation(

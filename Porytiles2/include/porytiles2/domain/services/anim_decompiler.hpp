@@ -31,7 +31,7 @@ class PorymapTilesetComponent;
  * @brief Decompiles indexed animation tiles to RGBA format.
  *
  * @details
- * AnimationDecompiler converts Animation<IndexPixel> (from Porymap format) to Animation<Rgba32> (for Porytiles format).
+ * AnimDecompiler converts Animation<IndexPixel> (from Porymap format) to Animation<Rgba32> (for Porytiles format).
  * This is used during tileset import to extract animation keyframe tiles from tiles.png and convert them to RGBA
  * format suitable for storage in the Porytiles component.
  *
@@ -42,9 +42,9 @@ class PorymapTilesetComponent;
  * palette index is used when referencing the animation tile. If a tile is referenced with multiple different palette
  * indices (ambiguous), the most common one is used.
  */
-class AnimationDecompiler {
+class AnimDecompiler {
   public:
-    explicit AnimationDecompiler(
+    explicit AnimDecompiler(
         gsl::not_null<const UserDiagnostics *> diag,
         gsl::not_null<const TilePrinter *> tile_printer,
         gsl::not_null<const PalettePrinter *> pal_printer)

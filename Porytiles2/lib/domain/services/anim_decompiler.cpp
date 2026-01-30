@@ -1,4 +1,4 @@
-#include "porytiles2/domain/services/animation_decompiler.hpp"
+#include "porytiles2/domain/services/anim_decompiler.hpp"
 
 #include <algorithm>
 #include <iterator>
@@ -369,7 +369,7 @@ void backport_mangles_to_tiles_png(
 
 namespace porytiles2 {
 
-ChainableResult<Animation<Rgba32>> AnimationDecompiler::decompile_animation(
+ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
     const Animation<IndexPixel> &anim,
     const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals,
     std::span<const TilemapEntry> metatiles_bin,
