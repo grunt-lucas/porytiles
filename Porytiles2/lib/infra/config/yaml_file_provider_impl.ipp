@@ -212,7 +212,7 @@ parse_size_t(const TextFormatter *format, const YAML::Node &node, const std::str
         const auto mark = node.Mark();
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
-        return LayerValue<std::size_t>::valid(value, source, details);
+        return LayerValue<std::size_t>::valid(value, key, source, details);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
@@ -245,7 +245,7 @@ parse_bool(const TextFormatter *format, const YAML::Node &node, const std::strin
         const auto mark = node.Mark();
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
-        return LayerValue<bool>::valid(value, source, details);
+        return LayerValue<bool>::valid(value, key, source, details);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
@@ -277,7 +277,7 @@ parse_string(const TextFormatter *format, const YAML::Node &node, const std::str
         const auto mark = node.Mark();
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
-        return LayerValue<std::string>::valid(value, source, details);
+        return LayerValue<std::string>::valid(value, key, source, details);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
@@ -336,7 +336,7 @@ parse_rgba32(const TextFormatter *format, const YAML::Node &node, const std::str
 
         const Rgba32 color{r, g, b, a};
         const auto source = make_source_string(format, file_path, mark);
-        return LayerValue<Rgba32>::valid(color, source, details);
+        return LayerValue<Rgba32>::valid(color, key, source, details);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
@@ -442,7 +442,7 @@ LayerValue<std::vector<PaletteHint>> parse_pal_hints(
         }
 
         const auto source = make_source_string(format, file_path, mark);
-        return LayerValue<std::vector<PaletteHint>>::valid(std::move(hints), source, details);
+        return LayerValue<std::vector<PaletteHint>>::valid(std::move(hints), key, source, details);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
@@ -489,7 +489,7 @@ LayerValue<TilesPalMode> parse_tiles_pal_mode(
         }
 
         const auto source = make_source_string(format, file_path, mark);
-        return LayerValue<TilesPalMode>::valid(mode_opt.value(), source, details);
+        return LayerValue<TilesPalMode>::valid(mode_opt.value(), key, source, details);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
@@ -522,7 +522,7 @@ LayerValue<ArtifactEditMode> parse_artifact_edit_mode(
         }
 
         const auto source = make_source_string(format, file_path, mark);
-        return LayerValue<ArtifactEditMode>::valid(mode_opt.value(), source, details);
+        return LayerValue<ArtifactEditMode>::valid(mode_opt.value(), key, source, details);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
@@ -555,7 +555,7 @@ LayerValue<AnimPalResolutionStrategy> parse_anim_pal_resolution_strategy(
         }
 
         const auto source = make_source_string(format, file_path, mark);
-        return LayerValue<AnimPalResolutionStrategy>::valid(mode_opt.value(), source, details);
+        return LayerValue<AnimPalResolutionStrategy>::valid(mode_opt.value(), key, source, details);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
@@ -590,7 +590,7 @@ LayerValue<AnimKeyFrameResolutionStrategy> parse_anim_key_frame_resolution_strat
         }
 
         const auto source = make_source_string(format, file_path, mark);
-        return LayerValue<AnimKeyFrameResolutionStrategy>::valid(mode_opt.value(), source, details);
+        return LayerValue<AnimKeyFrameResolutionStrategy>::valid(mode_opt.value(), key, source, details);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
@@ -764,7 +764,8 @@ LayerValue<T> search_config_files(
     LoadFunc load_func,
     NodeExtractFunc extract_node_func,
     ParseFunc parse_func,
-    const std::string &key)
+    const std::string &key,
+    const std::string &provider_name)
 {
     for (const auto &path : paths) {
         const auto yaml_doc = load_func(path);
@@ -775,10 +776,11 @@ LayerValue<T> search_config_files(
 
         try {
             const auto node = extract_node_func(yaml_doc.value());
-            const auto result = parse_func(format, node, key, path.string());
+            auto result = parse_func(format, node, key, path.string());
 
             // If we got a valid value or an error, return it immediately
             if (result.state == ValidationState::valid || result.state == ValidationState::invalid) {
+                result.provider_name = provider_name;
                 return result;
             }
 

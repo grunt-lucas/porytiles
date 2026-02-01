@@ -27,7 +27,7 @@ class MockConfigurableProvider final : public ConfigProvider {
     num_tiles_in_primary(ConfigScopeType type, const std::string &scope) const override
     {
         if (num_tiles_primary_.contains(scope)) {
-            return LayerValue<std::size_t>::valid(num_tiles_primary_.at(scope), metadata_);
+            return LayerValue<std::size_t>::valid(num_tiles_primary_.at(scope), name_, metadata_);
         }
         return LayerValue<std::size_t>::not_provided();
     }
@@ -35,7 +35,7 @@ class MockConfigurableProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<std::size_t> num_tiles_total(ConfigScopeType type, const std::string &scope) const override
     {
         if (num_tiles_total_.contains(scope)) {
-            return LayerValue<std::size_t>::valid(num_tiles_total_.at(scope), metadata_);
+            return LayerValue<std::size_t>::valid(num_tiles_total_.at(scope), name_, metadata_);
         }
         return LayerValue<std::size_t>::not_provided();
     }

@@ -55,7 +55,8 @@ LayerValue<std::size_t> YamlFileProvider::num_tiles_in_primary(ConfigScopeType t
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_tiles_in_primary"]; },
         parse_size_t,
-        "num_tiles_in_primary");
+        "fieldmap.num_tiles_in_primary",
+        "fieldmap.num_tiles_in_primary");
 }
 
 LayerValue<std::size_t> YamlFileProvider::num_tiles_total(ConfigScopeType type, const std::string &scope) const
@@ -71,7 +72,8 @@ LayerValue<std::size_t> YamlFileProvider::num_tiles_total(ConfigScopeType type, 
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_tiles_total"]; },
         parse_size_t,
-        "num_tiles_total");
+        "fieldmap.num_tiles_total",
+        "fieldmap.num_tiles_total");
 }
 
 LayerValue<std::size_t> YamlFileProvider::num_metatiles_in_primary(ConfigScopeType type, const std::string &scope) const
@@ -87,7 +89,8 @@ LayerValue<std::size_t> YamlFileProvider::num_metatiles_in_primary(ConfigScopeTy
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_metatiles_in_primary"]; },
         parse_size_t,
-        "num_metatiles_in_primary");
+        "fieldmap.num_metatiles_in_primary",
+        "fieldmap.num_metatiles_in_primary");
 }
 
 LayerValue<std::size_t> YamlFileProvider::num_metatiles_total(ConfigScopeType type, const std::string &scope) const
@@ -103,7 +106,8 @@ LayerValue<std::size_t> YamlFileProvider::num_metatiles_total(ConfigScopeType ty
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_metatiles_total"]; },
         parse_size_t,
-        "num_metatiles_total");
+        "fieldmap.num_metatiles_total",
+        "fieldmap.num_metatiles_total");
 }
 
 LayerValue<std::size_t> YamlFileProvider::num_pals_in_primary(ConfigScopeType type, const std::string &scope) const
@@ -119,7 +123,8 @@ LayerValue<std::size_t> YamlFileProvider::num_pals_in_primary(ConfigScopeType ty
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_pals_in_primary"]; },
         parse_size_t,
-        "num_pals_in_primary");
+        "fieldmap.num_pals_in_primary",
+        "fieldmap.num_pals_in_primary");
 }
 
 LayerValue<std::size_t> YamlFileProvider::num_pals_total(ConfigScopeType type, const std::string &scope) const
@@ -135,7 +140,8 @@ LayerValue<std::size_t> YamlFileProvider::num_pals_total(ConfigScopeType type, c
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_pals_total"]; },
         parse_size_t,
-        "num_pals_total");
+        "fieldmap.num_pals_total",
+        "fieldmap.num_pals_total");
 }
 
 LayerValue<std::size_t> YamlFileProvider::max_map_data_size(ConfigScopeType type, const std::string &scope) const
@@ -151,7 +157,8 @@ LayerValue<std::size_t> YamlFileProvider::max_map_data_size(ConfigScopeType type
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["fieldmap"]["max_map_data_size"]; },
         parse_size_t,
-        "max_map_data_size");
+        "fieldmap.max_map_data_size",
+        "fieldmap.max_map_data_size");
 }
 
 LayerValue<std::size_t> YamlFileProvider::num_tiles_per_metatile(ConfigScopeType type, const std::string &scope) const
@@ -167,7 +174,8 @@ LayerValue<std::size_t> YamlFileProvider::num_tiles_per_metatile(ConfigScopeType
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["fieldmap"]["num_tiles_per_metatile"]; },
         parse_size_t,
-        "num_tiles_per_metatile");
+        "fieldmap.num_tiles_per_metatile",
+        "fieldmap.num_tiles_per_metatile");
 }
 
 LayerValue<Rgba32> YamlFileProvider::extrinsic_transparency(ConfigScopeType type, const std::string &scope) const
@@ -182,7 +190,8 @@ LayerValue<Rgba32> YamlFileProvider::extrinsic_transparency(ConfigScopeType type
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["tileset"]["extrinsic_transparency"]; },
         parse_rgba32,
-        "extrinsic_transparency");
+        "tileset.extrinsic_transparency",
+        "tileset.extrinsic_transparency");
 }
 
 LayerValue<ArtifactEditMode> YamlFileProvider::tiles_edit_mode(ConfigScopeType type, const std::string &scope) const
@@ -198,7 +207,8 @@ LayerValue<ArtifactEditMode> YamlFileProvider::tiles_edit_mode(ConfigScopeType t
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["tileset"]["tiles"]["edit_mode"]; },
         parse_artifact_edit_mode,
-        "tiles_edit_mode");
+        "tileset.tiles.edit_mode",
+        "tileset.tiles.edit_mode");
 }
 
 LayerValue<ArtifactEditMode> YamlFileProvider::pals_edit_mode(ConfigScopeType type, const std::string &scope) const
@@ -214,7 +224,8 @@ LayerValue<ArtifactEditMode> YamlFileProvider::pals_edit_mode(ConfigScopeType ty
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["tileset"]["palettes"]["edit_mode"]; },
         parse_artifact_edit_mode,
-        "pals_edit_mode");
+        "tileset.palettes.edit_mode",
+        "tileset.palettes.edit_mode");
 }
 
 LayerValue<bool> YamlFileProvider::pal_hints_enabled(ConfigScopeType type, const std::string &scope) const
@@ -229,7 +240,8 @@ LayerValue<bool> YamlFileProvider::pal_hints_enabled(ConfigScopeType type, const
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["tileset"]["palettes"]["packing"]["hints_enabled"]; },
         parse_bool,
-        "pal_hints_enabled");
+        "tileset.palettes.packing.hints_enabled",
+        "tileset.palettes.packing.hints_enabled");
 }
 
 LayerValue<std::vector<PaletteHint>> YamlFileProvider::pal_hints(ConfigScopeType type, const std::string &scope) const
@@ -245,7 +257,8 @@ LayerValue<std::vector<PaletteHint>> YamlFileProvider::pal_hints(ConfigScopeType
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["tileset"]["palettes"]["packing"]["hints"]; },
         parse_pal_hints,
-        "pal_hints");
+        "tileset.palettes.packing.hints",
+        "tileset.palettes.packing.hints");
 }
 
 LayerValue<TilesPalMode> YamlFileProvider::tiles_pal_mode(ConfigScopeType type, const std::string &scope) const
@@ -259,9 +272,10 @@ LayerValue<TilesPalMode> YamlFileProvider::tiles_pal_mode(ConfigScopeType type, 
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["tileset"]["tiles"]["pal_mode"]; },
+        [](const YAML::Node &doc) { return doc["tileset"]["tiles"]["palette_mode"]; },
         parse_tiles_pal_mode,
-        "tiles_pal_mode");
+        "tileset.tiles.palette_mode",
+        "tileset.tiles.palette_mode");
 }
 
 LayerValue<AnimPalResolutionStrategy>
@@ -278,7 +292,8 @@ YamlFileProvider::anim_pal_resolution_strategy(ConfigScopeType type, const std::
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["tileset"]["animations"]["palette_resolution_strategy"]; },
         parse_anim_pal_resolution_strategy,
-        "anim_pal_resolution_strategy");
+        "tileset.animations.palette_resolution_strategy",
+        "tileset.animations.palette_resolution_strategy");
 }
 
 LayerValue<AnimKeyFrameResolutionStrategy>
@@ -295,7 +310,8 @@ YamlFileProvider::anim_key_frame_resolution_strategy(ConfigScopeType type, const
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["tileset"]["animations"]["key_frame_resolution_strategy"]; },
         parse_anim_key_frame_resolution_strategy,
-        "anim_key_frame_resolution_strategy");
+        "tileset.animations.key_frame_resolution_strategy",
+        "tileset.animations.key_frame_resolution_strategy");
 }
 
 LayerValue<bool> YamlFileProvider::verify_checksums(ConfigScopeType type, const std::string &scope) const
@@ -310,6 +326,7 @@ LayerValue<bool> YamlFileProvider::verify_checksums(ConfigScopeType type, const 
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["verify_checksums"]; },
         parse_bool,
+        "verify_checksums",
         "verify_checksums");
 }
 
@@ -327,7 +344,8 @@ YamlFileProvider::tileset_paths_primary_src(ConfigScopeType type, const std::str
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["tileset"]["paths"]["primary"]["src"]; },
         parse_string,
-        "tileset_paths_primary_src");
+        "tileset.paths.primary.src",
+        "tileset.paths.primary.src");
 }
 
 LayerValue<std::string>
@@ -344,7 +362,8 @@ YamlFileProvider::tileset_paths_primary_bin(ConfigScopeType type, const std::str
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["tileset"]["paths"]["primary"]["bin"]; },
         parse_string,
-        "tileset_paths_primary_bin");
+        "tileset.paths.primary.bin",
+        "tileset.paths.primary.bin");
 }
 
 LayerValue<std::string>
@@ -361,7 +380,8 @@ YamlFileProvider::tileset_paths_secondary_src(ConfigScopeType type, const std::s
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["tileset"]["paths"]["secondary"]["src"]; },
         parse_string,
-        "tileset_paths_secondary_src");
+        "tileset.paths.secondary.src",
+        "tileset.paths.secondary.src");
 }
 
 LayerValue<std::string>
@@ -378,7 +398,8 @@ YamlFileProvider::tileset_paths_secondary_bin(ConfigScopeType type, const std::s
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["tileset"]["paths"]["secondary"]["bin"]; },
         parse_string,
-        "tileset_paths_secondary_bin");
+        "tileset.paths.secondary.bin",
+        "tileset.paths.secondary.bin");
 }
 
 LayerValue<bool>
@@ -394,7 +415,8 @@ YamlFileProvider::tileset_animations_wire_anim_code(ConfigScopeType type, const 
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["tileset"]["animations"]["wire_anim_code"]; },
         parse_bool,
-        "tileset_animations_wire_anim_code");
+        "tileset.animations.wire_anim_code",
+        "tileset.animations.wire_anim_code");
 }
 
 } // namespace porytiles2

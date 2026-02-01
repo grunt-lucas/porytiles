@@ -226,15 +226,15 @@ inline void report_color_counts(
     if (metatiles.size() > metatile_limit) {
         services.diag.error(
             "metatile-limit-exceeded",
-            "too many metatiles ({}) in Porytiles component for tileset '{}'",
+            "Too many metatiles ({}) in Porytiles component for tileset '{}'.",
             FormatParam{metatiles.size(), Style::bold},
             FormatParam{tileset_name, Style::bold});
 
         std::vector<std::string> note_text;
-        note_text.push_back(services.diag.formatter().format(
-            "metatile limit is '{}' due to configuration", FormatParam{metatile_limit, Style::bold}));
+        note_text.push_back(
+            services.diag.formatter().format("Metatile limit is '{}'.", FormatParam{metatile_limit, Style::bold}));
         note_text.emplace_back("");
-        std::ranges::copy(limit_cfg.prettify(services.diag.formatter()), std::back_inserter(note_text));
+        std::ranges::copy(format_config_note(services.diag.formatter(), limit_cfg), std::back_inserter(note_text));
         services.diag.error_note("metatile-limit-exceeded", note_text);
 
         return FormattableError{
@@ -778,17 +778,18 @@ inline void report_color_counts(
 
     if (hit_error) {
         std::vector<std::string> note_text;
-        note_text.push_back(services.diag.formatter().format(
-            "implied layer mode is '{}' due to configuration", FormatParam{LayerMode::dual, Style::bold}));
+        note_text.push_back(
+            services.diag.formatter().format("Implied layer mode is '{}'.", FormatParam{LayerMode::dual, Style::bold}));
         note_text.emplace_back("");
-        std::ranges::copy(num_tiles_per_metatile.prettify(services.diag.formatter()), std::back_inserter(note_text));
+        std::ranges::copy(
+            format_config_note(services.diag.formatter(), num_tiles_per_metatile), std::back_inserter(note_text));
         note_text.emplace_back("");
         note_text.emplace_back("Consider enabling triple-layer metatiles.");
         note_text.push_back(services.diag.formatter().format(
             "To enable layer mode '{}' for your project:", FormatParam{LayerMode::triple, Style::bold}));
         note_text.push_back(services.diag.formatter().format(
             "   - set '{}' = '{}'",
-            FormatParam{num_tiles_per_metatile.name(), Style::bold},
+            FormatParam{num_tiles_per_metatile.canonical_name(), Style::bold},
             FormatParam{metatile::entries_per_metatile_triple, Style::bold}));
         note_text.push_back(services.diag.formatter().format(
             "   - follow the steps here: {}",

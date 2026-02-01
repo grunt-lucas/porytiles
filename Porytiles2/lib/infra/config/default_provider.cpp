@@ -22,133 +22,135 @@ std::string DefaultProvider::name() const
 LayerValue<std::size_t> DefaultProvider::num_tiles_in_primary(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<std::size_t>::valid(512, source_info);
+    return LayerValue<std::size_t>::valid(512, "Number Of Tiles In Primary", source_info);
 }
 
 LayerValue<std::size_t>
 DefaultProvider::num_tiles_total([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<std::size_t>::valid(1024, source_info);
+    return LayerValue<std::size_t>::valid(1024, "Number Of Tiles Total", source_info);
 }
 
 LayerValue<std::size_t> DefaultProvider::num_metatiles_in_primary(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<std::size_t>::valid(512, source_info);
+    return LayerValue<std::size_t>::valid(512, "Number Of Metatiles In Primary", source_info);
 }
 
 LayerValue<std::size_t> DefaultProvider::num_metatiles_total(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<std::size_t>::valid(1024, source_info);
+    return LayerValue<std::size_t>::valid(1024, "Number Of Metatiles Total", source_info);
 }
 
 LayerValue<std::size_t> DefaultProvider::num_pals_in_primary(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<std::size_t>::valid(6, source_info);
+    return LayerValue<std::size_t>::valid(6, "Number Of Palettes In Primary", source_info);
 }
 
 LayerValue<std::size_t>
 DefaultProvider::num_pals_total([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<std::size_t>::valid(13, source_info);
+    return LayerValue<std::size_t>::valid(13, "Number Of Palettes Total", source_info);
 }
 
 LayerValue<std::size_t> DefaultProvider::max_map_data_size(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<std::size_t>::valid(10240, source_info);
+    return LayerValue<std::size_t>::valid(10240, "Max Map Data Size", source_info);
 }
 
 LayerValue<std::size_t> DefaultProvider::num_tiles_per_metatile(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<std::size_t>::valid(8, source_info);
+    return LayerValue<std::size_t>::valid(8, "Number Of Tiles Per Metatile", source_info);
 }
 
 LayerValue<Rgba32> DefaultProvider::extrinsic_transparency(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<Rgba32>::valid(rgba_magenta, source_info);
+    return LayerValue<Rgba32>::valid(rgba_magenta, "Extrinsic Transparency", source_info);
 }
 
 LayerValue<ArtifactEditMode>
 DefaultProvider::tiles_edit_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<ArtifactEditMode>::valid(ArtifactEditMode::optimize, source_info);
+    return LayerValue<ArtifactEditMode>::valid(ArtifactEditMode::optimize, "Tiles Edit Mode", source_info);
 }
 
 LayerValue<ArtifactEditMode>
 DefaultProvider::pals_edit_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<ArtifactEditMode>::valid(ArtifactEditMode::optimize, source_info);
+    return LayerValue<ArtifactEditMode>::valid(ArtifactEditMode::optimize, "Palettes Edit Mode", source_info);
 }
 
 LayerValue<bool> DefaultProvider::pal_hints_enabled(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<bool>::valid(true, source_info);
+    return LayerValue<bool>::valid(true, "Palette Hints Enabled", source_info);
 }
 
 LayerValue<std::vector<PaletteHint>>
 DefaultProvider::pal_hints([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<std::vector<PaletteHint>>::valid(std::vector<PaletteHint>{}, source_info);
+    return LayerValue<std::vector<PaletteHint>>::valid(std::vector<PaletteHint>{}, "Palette Hints", source_info);
 }
 
 LayerValue<TilesPalMode>
 DefaultProvider::tiles_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<TilesPalMode>::valid(TilesPalMode::true_color, source_info);
+    return LayerValue<TilesPalMode>::valid(TilesPalMode::true_color, "Tiles Palette Mode", source_info);
 }
 
 LayerValue<AnimPalResolutionStrategy> DefaultProvider::anim_pal_resolution_strategy(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<AnimPalResolutionStrategy>::valid(AnimPalResolutionStrategy::error, source_info);
+    return LayerValue<AnimPalResolutionStrategy>::valid(
+        AnimPalResolutionStrategy::error, "Animation Palette Resolution Strategy", source_info);
 }
 
 LayerValue<AnimKeyFrameResolutionStrategy> DefaultProvider::anim_key_frame_resolution_strategy(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<AnimKeyFrameResolutionStrategy>::valid(AnimKeyFrameResolutionStrategy::error, source_info);
+    return LayerValue<AnimKeyFrameResolutionStrategy>::valid(
+        AnimKeyFrameResolutionStrategy::error, "Animation Key Frame Resolution Strategy", source_info);
 }
 
 LayerValue<bool> DefaultProvider::verify_checksums(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<bool>::valid(true, source_info);
+    return LayerValue<bool>::valid(true, "Verify Checksums", source_info);
 }
 
 LayerValue<std::string> DefaultProvider::tileset_paths_primary_src(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<std::string>::valid("data/tilesets/primary", source_info);
+    return LayerValue<std::string>::valid("data/tilesets/primary", "Tileset Paths Primary Source", source_info);
 }
 
 LayerValue<std::string> DefaultProvider::tileset_paths_primary_bin(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<std::string>::valid("data/tilesets/primary", source_info);
+    return LayerValue<std::string>::valid("data/tilesets/primary", "Tileset Paths Primary Bin", source_info);
 }
 
 LayerValue<std::string> DefaultProvider::tileset_paths_secondary_src(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<std::string>::valid("data/tilesets/secondary", source_info);
+    return LayerValue<std::string>::valid("data/tilesets/secondary", "Tileset Paths Secondary Source", source_info);
 }
 
 LayerValue<std::string> DefaultProvider::tileset_paths_secondary_bin(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<std::string>::valid("data/tilesets/secondary", source_info);
+    return LayerValue<std::string>::valid("data/tilesets/secondary", "Tileset Paths Secondary Bin", source_info);
 }
 
 LayerValue<bool> DefaultProvider::tileset_animations_wire_anim_code(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<bool>::valid(true, source_info);
+    return LayerValue<bool>::valid(true, "Tileset Animations Wire Anim Code", source_info);
 }
 
 } // namespace porytiles2

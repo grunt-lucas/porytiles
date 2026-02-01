@@ -505,6 +505,9 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     // Config value as string for debug printing
     mutable std::unordered_map<std::string, std::string> cache_value_strings_;
 
+    // Provider name cache
+    mutable std::unordered_map<std::string, std::string> provider_name_;
+
     // Config source and source_details
     mutable std::unordered_map<std::string, std::string> source_;
     mutable std::unordered_map<std::string, std::vector<std::string>> source_details_;
@@ -519,7 +522,9 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      */
     template <typename T>
     ChainableResult<ConfigValue<T>> resolve_config_value(
-        const std::string &cache_key, std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
+        const std::string &cache_key,
+        const std::string &canonical_name,
+        std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
 
     /**
      * @brief Collects the provenance chain by querying all providers.

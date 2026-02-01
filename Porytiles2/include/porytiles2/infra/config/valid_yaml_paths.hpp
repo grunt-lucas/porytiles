@@ -50,7 +50,7 @@ inline const std::unordered_set<std::string> valid_yaml_paths = {
     "tileset.paths.secondary.src",
     "tileset.tiles",
     "tileset.tiles.edit_mode",
-    "tileset.tiles.pal_mode",
+    "tileset.tiles.palette_mode",
     "verify_checksums",
 };
 

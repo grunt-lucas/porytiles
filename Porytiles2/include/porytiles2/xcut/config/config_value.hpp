@@ -13,9 +13,9 @@ namespace porytiles2 {
  * @brief A container that wraps a configuration value with its name and source information.
  *
  * @details
- * ConfigValue provides transparent access to configuration values while also tracking the config value's name and where
- * each value originated (e.g., which ConfigProvider supplied it). It supports implicit conversion to the underlying
- * type for ergonomic usage.
+ * ConfigValue provides transparent access to configuration values while also tracking the config value's canonical
+ * name, provider-specific name, and where each value originated (e.g., which ConfigProvider supplied it). It supports
+ * implicit conversion to the underlying type for ergonomic usage.
  *
  * @tparam T The type of the configuration value
  */
@@ -25,15 +25,22 @@ class ConfigValue {
     ConfigValue() = default;
 
     /**
-     * @brief Constructs a ConfigValue with a value, name, and source information.
+     * @brief Constructs a ConfigValue with a value, names, and source information.
      *
      * @param value The configuration value
-     * @param name The name of the configuration value (e.g., "num_tiles_primary")
+     * @param canonical_name The human-readable name from the schema (e.g., "Number Of Tiles In Primary")
+     * @param provider_name The provider-specific identifier (e.g., "fieldmap.num_tiles_in_primary" for YAML)
      * @param source A string describing where this value came from
      * @param source_details A vector of strings with the optional source details
      */
-    ConfigValue(T value, std::string name, std::string source, const std::vector<std::string> &source_details)
-        : value_{std::move(value)}, name_{std::move(name)}, source_{std::move(source)}, source_details_{source_details}
+    ConfigValue(
+        T value,
+        std::string canonical_name,
+        std::string provider_name,
+        std::string source,
+        const std::vector<std::string> &source_details)
+        : value_{std::move(value)}, canonical_name_{std::move(canonical_name)},
+          provider_name_{std::move(provider_name)}, source_{std::move(source)}, source_details_{source_details}
     {
     }
 
@@ -86,18 +93,34 @@ class ConfigValue {
     }
 
     /**
-     * @brief Gets the name of this configuration value.
+     * @brief Gets the canonical (human-readable) name of this configuration value.
      *
      * @details
-     * The name identifies the configuration value, such as:
-     * - "num_tiles_in_primary"
-     * - "extrinsic_transparency"
+     * The canonical name is the human-readable display name from the schema, such as:
+     * - "Number Of Tiles In Primary"
+     * - "Extrinsic Transparency"
      *
-     * @return A const reference to the name string
+     * @return A const reference to the canonical name string
      */
-    [[nodiscard]] const std::string &name() const
+    [[nodiscard]] const std::string &canonical_name() const
     {
-        return name_;
+        return canonical_name_;
+    }
+
+    /**
+     * @brief Gets the provider-specific name of this configuration value.
+     *
+     * @details
+     * The provider name is the identifier used by the provider that supplied the value, such as:
+     * - "fieldmap.num_tiles_in_primary" (YAML path from YamlFileProvider)
+     * - "NUM_TILES_IN_PRIMARY" (header define from HeaderDefineProvider)
+     * - "Number Of Tiles In Primary" (canonical name from DefaultProvider)
+     *
+     * @return A const reference to the provider name string
+     */
+    [[nodiscard]] const std::string &provider_name() const
+    {
+        return provider_name_;
     }
 
     /**
@@ -135,11 +158,11 @@ class ConfigValue {
      *
      * @details
      * Creates a structured representation of the configuration value suitable for formatted output or error messages.
-     * The output includes the value name, its actual value, the source information, and any additional source details
-     * if available. The format follows the pattern:
+     * The output includes the value's canonical name, its actual value, the source information, and any additional
+     * source details if available. The format follows the pattern:
      *
      * ```
-     * name = value
+     * canonical_name = value
      * Source: source_string
      * [optional source details lines]
      * ```
@@ -168,7 +191,8 @@ class ConfigValue {
         err_text.emplace_back("{} = {}");
         params.push_back(
             std::vector{
-                FormatParam{name(), Style::bold}, FormatParam{value(), Style::bold | Style::italic | Style::yellow}});
+                FormatParam{provider_name(), Style::bold},
+                FormatParam{value(), Style::bold | Style::italic | Style::yellow}});
         err_text.emplace_back("Source: {}");
         params.push_back(std::vector{FormatParam{source(), Style::italic}});
 
@@ -228,7 +252,8 @@ class ConfigValue {
 
   private:
     T value_;
-    std::string name_;
+    std::string canonical_name_;
+    std::string provider_name_;
     std::string source_;
     std::vector<std::string> source_details_;
 };

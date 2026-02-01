@@ -37,6 +37,7 @@ template <typename T>
 struct LayerValue {
     // TODO: add _ to end of these field names
     std::optional<T> value;
+    std::string provider_name;
     std::string source_info;
     std::vector<std::string> source_details;
     ValidationState state = ValidationState::not_provided;
@@ -49,9 +50,10 @@ struct LayerValue {
      * @param source_info String describing the source of this value
      * @return A LayerValue in the valid state
      */
-    static LayerValue valid(T val, std::string source_info)
+    static LayerValue valid(T val, std::string provider_name, std::string source_info)
     {
-        return LayerValue{std::move(val), std::move(source_info), {}, ValidationState::valid, ""};
+        return LayerValue{
+            std::move(val), std::move(provider_name), std::move(source_info), {}, ValidationState::valid, ""};
     }
 
     /**
@@ -62,10 +64,16 @@ struct LayerValue {
      * @param source_details Vector of strings showing contextual lines around the source
      * @return A LayerValue in the valid state
      */
-    static LayerValue valid(T val, std::string source_info, std::vector<std::string> source_details)
+    static LayerValue
+    valid(T val, std::string provider_name, std::string source_info, std::vector<std::string> source_details)
     {
         return LayerValue{
-            std::move(val), std::move(source_info), std::move(source_details), ValidationState::valid, ""};
+            std::move(val),
+            std::move(provider_name),
+            std::move(source_info),
+            std::move(source_details),
+            ValidationState::valid,
+            ""};
     }
 
     /**
@@ -77,7 +85,7 @@ struct LayerValue {
      */
     static LayerValue invalid(std::string error, std::string source_info)
     {
-        return LayerValue{std::nullopt, std::move(source_info), {}, ValidationState::invalid, std::move(error)};
+        return LayerValue{std::nullopt, "", std::move(source_info), {}, ValidationState::invalid, std::move(error)};
     }
 
     /**
@@ -92,6 +100,7 @@ struct LayerValue {
     {
         return LayerValue{
             std::nullopt,
+            "",
             std::move(source_info),
             std::move(source_details),
             ValidationState::invalid,
@@ -105,7 +114,7 @@ struct LayerValue {
      */
     static LayerValue not_provided()
     {
-        return LayerValue{std::nullopt, "", {}, ValidationState::not_provided, ""};
+        return LayerValue{std::nullopt, "", "", {}, ValidationState::not_provided, ""};
     }
 };
 

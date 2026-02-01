@@ -75,10 +75,10 @@ PixelTile<IndexPixel> create_asymmetric_tile(std::size_t left_color, std::size_t
         tile.set(i, IndexPixel{fill_color});
     }
     // Left column only (col 0), rows 0-3
-    tile.set(0, IndexPixel{left_color});   // row 0, col 0
-    tile.set(8, IndexPixel{left_color});   // row 1, col 0
-    tile.set(16, IndexPixel{left_color});  // row 2, col 0
-    tile.set(24, IndexPixel{left_color});  // row 3, col 0
+    tile.set(0, IndexPixel{left_color});  // row 0, col 0
+    tile.set(8, IndexPixel{left_color});  // row 1, col 0
+    tile.set(16, IndexPixel{left_color}); // row 2, col 0
+    tile.set(24, IndexPixel{left_color}); // row 3, col 0
     return tile;
 }
 
@@ -112,8 +112,11 @@ Image<IndexPixel> build_tiles_png(const std::vector<PixelTile<IndexPixel>> &tile
  * @brief Creates a minimal Animation<IndexPixel> with the given params and a single frame.
  */
 Animation<IndexPixel> create_test_animation(
-    const std::string &name, std::size_t tile_offset, std::size_t tile_count,
-    const std::vector<PixelTile<IndexPixel>> &frame_tiles, const Palette<Rgba32, pal::max_size> &pal)
+    const std::string &name,
+    std::size_t tile_offset,
+    std::size_t tile_count,
+    const std::vector<PixelTile<IndexPixel>> &frame_tiles,
+    const Palette<Rgba32, pal::max_size> &pal)
 {
     AnimationParams params;
     params.tile_offset(tile_offset);
@@ -138,18 +141,23 @@ Animation<IndexPixel> create_test_animation(
 
 ConfigValue<Rgba32> make_transparency_config()
 {
-    return ConfigValue<Rgba32>{Rgba32{0, 0, 0, 0}, "extrinsic-transparency", "test", {}};
+    return ConfigValue<Rgba32>{Rgba32{0, 0, 0, 0}, "extrinsic-transparency", "extrinsic-transparency", "test", {}};
 }
 
 ConfigValue<AnimPalResolutionStrategy> make_pal_strategy()
 {
     return ConfigValue<AnimPalResolutionStrategy>{
-        AnimPalResolutionStrategy::internal_png_pal, "anim-pal-resolution-strategy", "test", {}};
+        AnimPalResolutionStrategy::internal_png_pal,
+        "anim-pal-resolution-strategy",
+        "anim-pal-resolution-strategy",
+        "test",
+        {}};
 }
 
 ConfigValue<AnimKeyFrameResolutionStrategy> make_key_frame_strategy(AnimKeyFrameResolutionStrategy strat)
 {
-    return ConfigValue<AnimKeyFrameResolutionStrategy>{strat, "anim-key-frame-resolution-strategy", "test", {}};
+    return ConfigValue<AnimKeyFrameResolutionStrategy>{
+        strat, "anim-key-frame-resolution-strategy", "anim-key-frame-resolution-strategy", "test", {}};
 }
 
 } // namespace
@@ -191,8 +199,14 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectCrossRangeExactDuplica
 
     // With mangle strategy, it should succeed and produce a mangled tile
     auto result = decompiler.decompile_animation(
-        anim, pals_, metatiles, tiles_png, make_transparency_config(), make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::mangle), nullptr);
+        anim,
+        pals_,
+        metatiles,
+        tiles_png,
+        make_transparency_config(),
+        make_pal_strategy(),
+        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::mangle),
+        nullptr);
 
     ASSERT_TRUE(result.has_value()) << "Decompilation should succeed with mangle strategy";
 
@@ -225,15 +239,27 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectCrossRangeFlipEquivale
 
     // With error strategy, it should fail (duplicate detected)
     auto error_result = decompiler.decompile_animation(
-        anim, pals_, metatiles, tiles_png, make_transparency_config(), make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error), nullptr);
+        anim,
+        pals_,
+        metatiles,
+        tiles_png,
+        make_transparency_config(),
+        make_pal_strategy(),
+        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error),
+        nullptr);
 
     EXPECT_FALSE(error_result.has_value()) << "Should detect flip-equivalent cross-range duplicate";
 
     // With mangle strategy, it should succeed
     auto mangle_result = decompiler.decompile_animation(
-        anim, pals_, metatiles, tiles_png, make_transparency_config(), make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::mangle), nullptr);
+        anim,
+        pals_,
+        metatiles,
+        tiles_png,
+        make_transparency_config(),
+        make_pal_strategy(),
+        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::mangle),
+        nullptr);
 
     EXPECT_TRUE(mangle_result.has_value()) << "Mangle strategy should resolve flip-equivalent cross-range duplicate";
 }
@@ -250,9 +276,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectIntraAnimationFlipEqui
     // tiles.png: tile 0 is unique (non-anim), tiles 1-2 are the animation range
     const auto tiles_png = build_tiles_png({unique_tile, asymmetric_tile, h_flipped_tile});
 
-    std::vector<TilemapEntry> metatiles{
-        TilemapEntry{1, 0, false, false},
-        TilemapEntry{2, 0, false, false}};
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}, TilemapEntry{2, 0, false, false}};
 
     auto anim = create_test_animation("test_anim", 1, 2, {asymmetric_tile, h_flipped_tile}, palette_);
 
@@ -260,17 +284,30 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectIntraAnimationFlipEqui
 
     // Error strategy should detect intra-animation flip-equivalent duplicate
     auto error_result = decompiler.decompile_animation(
-        anim, pals_, metatiles, tiles_png, make_transparency_config(), make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error), nullptr);
+        anim,
+        pals_,
+        metatiles,
+        tiles_png,
+        make_transparency_config(),
+        make_pal_strategy(),
+        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error),
+        nullptr);
 
     EXPECT_FALSE(error_result.has_value()) << "Should detect intra-animation flip-equivalent duplicate";
 
     // Mangle strategy should resolve it
     auto mangle_result = decompiler.decompile_animation(
-        anim, pals_, metatiles, tiles_png, make_transparency_config(), make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::mangle), nullptr);
+        anim,
+        pals_,
+        metatiles,
+        tiles_png,
+        make_transparency_config(),
+        make_pal_strategy(),
+        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::mangle),
+        nullptr);
 
-    EXPECT_TRUE(mangle_result.has_value()) << "Mangle strategy should resolve intra-animation flip-equivalent duplicate";
+    EXPECT_TRUE(mangle_result.has_value())
+        << "Mangle strategy should resolve intra-animation flip-equivalent duplicate";
 }
 
 TEST_F(AnimDecompilerDuplicateDetectionTests, shouldNotFalsePositiveWhenNoDuplicates)
@@ -282,9 +319,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldNotFalsePositiveWhenNoDuplic
 
     const auto tiles_png = build_tiles_png({tile_a, tile_b, tile_c});
 
-    std::vector<TilemapEntry> metatiles{
-        TilemapEntry{1, 0, false, false},
-        TilemapEntry{2, 0, false, false}};
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}, TilemapEntry{2, 0, false, false}};
 
     auto anim = create_test_animation("test_anim", 1, 2, {tile_b, tile_c}, palette_);
 
@@ -292,8 +327,14 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldNotFalsePositiveWhenNoDuplic
 
     // Even with error strategy, should succeed (no duplicates)
     auto result = decompiler.decompile_animation(
-        anim, pals_, metatiles, tiles_png, make_transparency_config(), make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error), nullptr);
+        anim,
+        pals_,
+        metatiles,
+        tiles_png,
+        make_transparency_config(),
+        make_pal_strategy(),
+        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error),
+        nullptr);
 
     EXPECT_TRUE(result.has_value()) << "Should not false-positive when no duplicates exist";
 }
@@ -304,14 +345,12 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldHandleMixedCrossRangeAndIntr
     // tile_b: animation tile 0 — exact duplicate of tile_a (cross-range)
     // tile_c: animation tile 1 — h-flip of tile_b (intra-animation flip-equivalent)
     const auto tile_a = create_asymmetric_tile(1, 2);
-    const auto tile_b = tile_a; // exact cross-range duplicate
+    const auto tile_b = tile_a;                   // exact cross-range duplicate
     const auto tile_c = tile_a.flip(true, false); // intra-animation flip-equivalent to tile_b
 
     const auto tiles_png = build_tiles_png({tile_a, tile_b, tile_c});
 
-    std::vector<TilemapEntry> metatiles{
-        TilemapEntry{1, 0, false, false},
-        TilemapEntry{2, 0, false, false}};
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}, TilemapEntry{2, 0, false, false}};
 
     auto anim = create_test_animation("test_anim", 1, 2, {tile_b, tile_c}, palette_);
 
@@ -319,15 +358,27 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldHandleMixedCrossRangeAndIntr
 
     // Error strategy should fail
     auto error_result = decompiler.decompile_animation(
-        anim, pals_, metatiles, tiles_png, make_transparency_config(), make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error), nullptr);
+        anim,
+        pals_,
+        metatiles,
+        tiles_png,
+        make_transparency_config(),
+        make_pal_strategy(),
+        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error),
+        nullptr);
 
     EXPECT_FALSE(error_result.has_value()) << "Should detect mixed cross-range and intra-animation duplicates";
 
     // Mangle strategy should succeed
     auto mangle_result = decompiler.decompile_animation(
-        anim, pals_, metatiles, tiles_png, make_transparency_config(), make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::mangle), nullptr);
+        anim,
+        pals_,
+        metatiles,
+        tiles_png,
+        make_transparency_config(),
+        make_pal_strategy(),
+        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::mangle),
+        nullptr);
 
     EXPECT_TRUE(mangle_result.has_value()) << "Mangle strategy should resolve mixed duplicates";
 }

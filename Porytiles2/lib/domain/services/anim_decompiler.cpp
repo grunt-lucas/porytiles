@@ -261,7 +261,8 @@ ChainableResult<std::size_t> find_pal_for_anim_tiles(
 }
 
 /**
- * @brief Checks whether any key frame tiles are duplicates, considering both cross-range and intra-animation duplicates.
+ * @brief Checks whether any key frame tiles are duplicates, considering both cross-range and intra-animation
+ * duplicates.
  *
  * @details
  * A duplicate is detected if a key frame tile's canonical form matches either:

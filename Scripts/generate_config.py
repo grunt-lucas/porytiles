@@ -25,8 +25,8 @@ def extract_all_yaml_paths(config_values):
     """
     paths = set()
     for config in config_values:
-        if "yaml" in config and "path" in config["yaml"]:
-            full_path = config["yaml"]["path"]
+        if "yaml_path" in config:
+            full_path = config["yaml_path"]
             parts = full_path.split(".")
             # Add all prefixes and the full path
             for i in range(1, len(parts) + 1):
@@ -58,7 +58,7 @@ def generate_config_files():
 
     # Validate that all config values have required fields
     for idx, config_value in enumerate(schema["config_values"]):
-        name = config_value.get("name", f"<unnamed config value at index {idx}>")
+        name = config_value.get("symbol", config_value.get("canonical_name", f"<unnamed config value at index {idx}>"))
 
         # Check for validators field
         if "validators" not in config_value:
@@ -124,7 +124,7 @@ def generate_config_files():
                 current_layer = config_value.get("layer")
                 other_field_exists = False
                 for other_config in schema["config_values"]:
-                    if other_config.get("name") == other_field_name and other_config.get("layer") == current_layer:
+                    if other_config.get("symbol") == other_field_name and other_config.get("layer") == current_layer:
                         other_field_exists = True
                         break
 

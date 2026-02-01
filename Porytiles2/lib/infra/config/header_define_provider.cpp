@@ -24,7 +24,13 @@ HeaderDefineProvider::num_tiles_in_primary(ConfigScopeType /*type*/, const std::
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
-        parser_driver_, format_, header_path, "NUM_TILES_IN_PRIMARY", parse_size_t, "num_tiles_in_primary");
+        parser_driver_,
+        format_,
+        header_path,
+        "NUM_TILES_IN_PRIMARY",
+        parse_size_t,
+        "NUM_TILES_IN_PRIMARY",
+        "NUM_TILES_IN_PRIMARY");
 }
 
 LayerValue<std::size_t>
@@ -32,7 +38,7 @@ HeaderDefineProvider::num_tiles_total(ConfigScopeType /*type*/, const std::strin
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
-        parser_driver_, format_, header_path, "NUM_TILES_TOTAL", parse_size_t, "num_tiles_total");
+        parser_driver_, format_, header_path, "NUM_TILES_TOTAL", parse_size_t, "NUM_TILES_TOTAL", "NUM_TILES_TOTAL");
 }
 
 LayerValue<std::size_t>
@@ -40,7 +46,13 @@ HeaderDefineProvider::num_metatiles_in_primary(ConfigScopeType /*type*/, const s
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
-        parser_driver_, format_, header_path, "NUM_METATILES_IN_PRIMARY", parse_size_t, "num_metatiles_in_primary");
+        parser_driver_,
+        format_,
+        header_path,
+        "NUM_METATILES_IN_PRIMARY",
+        parse_size_t,
+        "NUM_METATILES_IN_PRIMARY",
+        "NUM_METATILES_IN_PRIMARY");
 }
 
 LayerValue<std::size_t>
@@ -48,7 +60,13 @@ HeaderDefineProvider::num_metatiles_total(ConfigScopeType /*type*/, const std::s
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
-        parser_driver_, format_, header_path, "NUM_METATILES_TOTAL", parse_size_t, "num_metatiles_total");
+        parser_driver_,
+        format_,
+        header_path,
+        "NUM_METATILES_TOTAL",
+        parse_size_t,
+        "NUM_METATILES_TOTAL",
+        "NUM_METATILES_TOTAL");
 }
 
 LayerValue<std::size_t>
@@ -56,7 +74,13 @@ HeaderDefineProvider::num_pals_in_primary(ConfigScopeType /*type*/, const std::s
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
-        parser_driver_, format_, header_path, "NUM_PALS_IN_PRIMARY", parse_size_t, "num_pals_in_primary");
+        parser_driver_,
+        format_,
+        header_path,
+        "NUM_PALS_IN_PRIMARY",
+        parse_size_t,
+        "NUM_PALS_IN_PRIMARY",
+        "NUM_PALS_IN_PRIMARY");
 }
 
 LayerValue<std::size_t>
@@ -64,7 +88,7 @@ HeaderDefineProvider::num_pals_total(ConfigScopeType /*type*/, const std::string
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
-        parser_driver_, format_, header_path, "NUM_PALS_TOTAL", parse_size_t, "num_pals_total");
+        parser_driver_, format_, header_path, "NUM_PALS_TOTAL", parse_size_t, "NUM_PALS_TOTAL", "NUM_PALS_TOTAL");
 }
 
 LayerValue<std::size_t>
@@ -72,7 +96,13 @@ HeaderDefineProvider::max_map_data_size(ConfigScopeType /*type*/, const std::str
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
-        parser_driver_, format_, header_path, "MAX_MAP_DATA_SIZE", parse_size_t, "max_map_data_size");
+        parser_driver_,
+        format_,
+        header_path,
+        "MAX_MAP_DATA_SIZE",
+        parse_size_t,
+        "MAX_MAP_DATA_SIZE",
+        "MAX_MAP_DATA_SIZE");
 }
 
 LayerValue<std::size_t>
@@ -80,7 +110,13 @@ HeaderDefineProvider::num_tiles_per_metatile(ConfigScopeType /*type*/, const std
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
-        parser_driver_, format_, header_path, "NUM_TILES_PER_METATILE", parse_size_t, "num_tiles_per_metatile");
+        parser_driver_,
+        format_,
+        header_path,
+        "NUM_TILES_PER_METATILE",
+        parse_size_t,
+        "NUM_TILES_PER_METATILE",
+        "NUM_TILES_PER_METATILE");
 }
 
 LayerValue<Rgba32>

@@ -88,7 +88,7 @@ class HeaderDefineProvider final : public ConfigProvider {
     [[nodiscard]] std::string name() const override;
 {% for value in config_values %}
 
-    [[nodiscard]] LayerValue<{{ value.type }}> {{ value.name }}(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<{{ value.type }}> {{ value.symbol }}(ConfigScopeType type, const std::string &scope) const override;
 {% endfor %}
 
   private:

@@ -125,7 +125,7 @@ LayerValue<std::size_t> parse_size_t(
         return LayerValue<std::size_t>::invalid(error, source, details);
     }
 
-    return LayerValue<std::size_t>::valid(value, source, details);
+    return LayerValue<std::size_t>::valid(value, define.name(), source, details);
 }
 
 /**
@@ -162,7 +162,8 @@ LayerValue<T> search_header_define(
     const std::filesystem::path &header_path,
     const std::string &define_name,
     ParseFunc parse_func,
-    const std::string &key)
+    const std::string &key,
+    const std::string &provider_name)
 {
     // Get or create the parser driver
     auto &parser = get_parser_driver(driver, header_path, format);
@@ -197,7 +198,9 @@ LayerValue<T> search_header_define(
     }
 
     // Parse the value
-    return parse_func(format, result.value().value(), header_path.string(), parser.file_lines(), key);
+    auto layer_result = parse_func(format, result.value().value(), header_path.string(), parser.file_lines(), key);
+    layer_result.provider_name = provider_name;
+    return layer_result;
 }
 
 } // namespace

@@ -19,31 +19,43 @@ class MockInfraConfig : public InfraConfig {
     [[nodiscard]] ChainableResult<ConfigValue<std::string>>
     tileset_paths_primary_src_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{std::string{"data/tilesets/primary"}, "tileset_paths_primary_src", "mock", {}};
+        return ConfigValue{
+            std::string{"data/tilesets/primary"}, "tileset_paths_primary_src", "tileset_paths_primary_src", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<std::string>>
     tileset_paths_primary_bin_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{std::string{"data/tilesets/primary"}, "tileset_paths_primary_bin", "mock", {}};
+        return ConfigValue{
+            std::string{"data/tilesets/primary"}, "tileset_paths_primary_bin", "tileset_paths_primary_bin", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<std::string>>
     tileset_paths_secondary_src_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{std::string{"data/tilesets/secondary"}, "tileset_paths_secondary_src", "mock", {}};
+        return ConfigValue{
+            std::string{"data/tilesets/secondary"},
+            "tileset_paths_secondary_src",
+            "tileset_paths_secondary_src",
+            "mock",
+            {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<std::string>>
     tileset_paths_secondary_bin_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{std::string{"data/tilesets/secondary"}, "tileset_paths_secondary_bin", "mock", {}};
+        return ConfigValue{
+            std::string{"data/tilesets/secondary"},
+            "tileset_paths_secondary_bin",
+            "tileset_paths_secondary_bin",
+            "mock",
+            {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
     tileset_animations_wire_anim_code_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{true, "tileset_animations_wire_anim_code", "mock", {}};
+        return ConfigValue{true, "tileset_animations_wire_anim_code", "tileset_animations_wire_anim_code", "mock", {}};
     }
 };
 
