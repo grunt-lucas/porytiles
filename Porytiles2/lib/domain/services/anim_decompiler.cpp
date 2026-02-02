@@ -44,41 +44,7 @@ using namespace porytiles2;
     const auto &representative_frame = anim.frames().begin()->second;
     const auto &representative_pal = representative_frame.palette();
 
-    // Check all frames share the same internal palette as the representative
-    for (const auto &[frame_name, frame] : anim.frames()) {
-        if (&frame == &representative_frame) {
-            continue;
-        }
-        const auto &frame_pal = frame.palette();
-        bool palettes_match = (frame_pal.size() == representative_pal.size());
-        if (palettes_match) {
-            for (std::size_t slot = 0; slot < representative_pal.size(); ++slot) {
-                if (frame_pal.at(slot) != representative_pal.at(slot)) {
-                    palettes_match = false;
-                    break;
-                }
-            }
-        }
-        if (!palettes_match) {
-            std::vector<std::string> err_msg{};
-            err_msg.emplace_back(diag.formatter().format(
-                "Animation '{}' frame '{}' has an internal palette that does not match the representative frame '{}' "
-                "palette.",
-                FormatParam{anim.name(), Style::bold},
-                FormatParam{frame_name, Style::bold},
-                FormatParam{representative_frame.frame_name(), Style::bold}));
-            err_msg.emplace_back("");
-            err_msg.emplace_back(diag.formatter().format(
-                "Representative frame '{}' palette:", FormatParam{representative_frame.frame_name(), Style::bold}));
-            std::ranges::copy(pal_printer.print_rgba_pal(representative_pal), std::back_inserter(err_msg));
-            err_msg.emplace_back("");
-            err_msg.emplace_back(diag.formatter().format("Frame '{}' palette:", FormatParam{frame_name, Style::bold}));
-            std::ranges::copy(pal_printer.print_rgba_pal(frame_pal), std::back_inserter(err_msg));
-            return FormattableError{err_msg};
-        }
-    }
-
-    // PNG palette must have exactly 16 colors to match GBA palette format
+    // Representative pal must have exactly 16 colors to match GBA palette format
     if (representative_pal.size() != pal::max_size) {
         std::vector<std::string> err_msg{};
         err_msg.emplace_back(diag.formatter().format(
@@ -91,7 +57,7 @@ using namespace porytiles2;
         return FormattableError{err_msg};
     }
 
-    // Check for extrinsic transparency in non-slot-0 positions
+    // Check for extrinsic transparency in non-slot-0 positions in representative pal
     std::vector<std::size_t> extrinsic_transparency_slots;
     for (std::size_t slot = 1; slot < pal::max_size; ++slot) {
         const Rgba32 &color = representative_pal.at(slot);
@@ -126,7 +92,44 @@ using namespace porytiles2;
         return FormattableError{err_msg};
     }
 
-    // Slot-by-slot matching (skip slot 0 which is transparency)
+    // Check all frames share the same internal palette as the representative
+    for (const auto &[frame_name, frame] : anim.frames()) {
+        if (&frame == &representative_frame) {
+            continue;
+        }
+        const auto &frame_pal = frame.palette();
+        bool palettes_match = (frame_pal.size() == representative_pal.size());
+        if (palettes_match) {
+            for (std::size_t slot = 0; slot < representative_pal.size(); ++slot) {
+                if (frame_pal.at(slot) != representative_pal.at(slot)) {
+                    palettes_match = false;
+                    break;
+                }
+            }
+        }
+        if (!palettes_match) {
+            std::vector<std::string> err_msg{};
+            err_msg.emplace_back(diag.formatter().format(
+                "Animation '{}' frame '{}' has an internal palette that does not match the representative frame '{}' "
+                "palette.",
+                FormatParam{anim.name(), Style::bold},
+                FormatParam{frame_name, Style::bold},
+                FormatParam{representative_frame.frame_name(), Style::bold}));
+            err_msg.emplace_back("");
+            err_msg.emplace_back(diag.formatter().format(
+                "Representative frame '{}' palette:", FormatParam{representative_frame.frame_name(), Style::bold}));
+            std::ranges::copy(pal_printer.print_rgba_pal(representative_pal), std::back_inserter(err_msg));
+            err_msg.emplace_back("");
+            err_msg.emplace_back(diag.formatter().format("Frame '{}' palette:", FormatParam{frame_name, Style::bold}));
+            std::ranges::copy(pal_printer.print_rgba_pal(frame_pal), std::back_inserter(err_msg));
+            return FormattableError{err_msg};
+        }
+    }
+
+    /*
+     * Now that we fully validated the representative pal, and we confirmed that all frame pals match, we can try to
+     * match the representative pal to one of the tileset pals.
+     */
     for (std::size_t pal_idx = 0; pal_idx < tileset_pals.size(); ++pal_idx) {
         bool matches = true;
         for (std::size_t slot = 1; slot < pal::max_size; ++slot) {
