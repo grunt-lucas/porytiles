@@ -29,9 +29,8 @@ class Command {
         app_ = parent_app.add_subcommand(name, desc);
         porytiles2::assert_or_panic(app_ != nullptr, "CLI::App::add_subcommand returned nullptr for: " + name);
 
-        if (!group.empty()) {
-            app_->group(group);
-        }
+        // In CLI11, setting group to empty string hides the command from help output
+        app_->group(group);
 
         app_->callback([this] { this->Run(); });
     }

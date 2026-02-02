@@ -105,6 +105,12 @@ class Rgba32 {
     std::uint8_t alpha_;
 };
 
+inline std::string to_string(const Rgba32 &rgba)
+{
+    return "[" + std::to_string(rgba.red()) + ", " + std::to_string(rgba.green()) + ", " + std::to_string(rgba.blue()) +
+           ", " + std::to_string(rgba.alpha()) + "]";
+}
+
 /**
  * @brief Stream insertion operator for Rgba32.
  *
@@ -117,13 +123,8 @@ class Rgba32 {
  */
 inline std::ostream &operator<<(std::ostream &os, const Rgba32 &rgba)
 {
-    os << rgba.to_jasc_str();
+    os << to_string(rgba);
     return os;
-}
-
-inline std::string to_string(const Rgba32 &rgba)
-{
-    return rgba.to_jasc_str();
 }
 
 constexpr Rgba32 rgba_black{0, 0, 0, Rgba32::alpha_opaque};

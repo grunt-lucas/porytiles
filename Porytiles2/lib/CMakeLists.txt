@@ -94,6 +94,14 @@ FetchContent_MakeAvailable(fruit)
 # Restore C++23 for Porytiles
 set(CMAKE_CXX_STANDARD 23)
 
+# CLI11 - command-line parser (needed for CLI option registration in infra layer)
+FetchContent_Declare(
+        cli11_proj
+        GIT_REPOSITORY https://github.com/CLIUtils/CLI11.git
+        GIT_TAG v2.5.0
+)
+FetchContent_MakeAvailable(cli11_proj)
+
 # Find libpng.a and libz.a explicitly. We'll statically link these so users
 # don't need to install.
 find_library(PNG_STATIC
@@ -161,6 +169,7 @@ target_link_libraries(Porytiles2Lib PRIVATE ${ZLIB_STATIC})
 ### Public link API exposed libs ###
 target_link_libraries(Porytiles2Lib PUBLIC Microsoft.GSL::GSL)
 target_link_libraries(Porytiles2Lib PUBLIC fruit)
+target_link_libraries(Porytiles2Lib PUBLIC CLI11::CLI11)
 
 ### Private link internal libs ###
 target_link_libraries(Porytiles2Lib PRIVATE yaml-cpp::yaml-cpp)
@@ -185,4 +194,4 @@ target_link_libraries(Porytiles2Lib PRIVATE cpptrace::cpptrace)
 # - yaml-cpp: Only exports when built as a top-level project (YAML_CPP_INSTALL defaults to
 #             false when used via FetchContent as a subdirectory)
 # These must be manually included so downstream projects can find them as dependencies.
-export(TARGETS Porytiles2Lib GSL fruit yaml-cpp FILE ${CMAKE_CURRENT_BINARY_DIR}/Porytiles2LibraryTargets.cmake)
+export(TARGETS Porytiles2Lib GSL fruit yaml-cpp CLI11 FILE ${CMAKE_CURRENT_BINARY_DIR}/Porytiles2LibraryTargets.cmake)

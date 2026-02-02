@@ -29,18 +29,19 @@ class ConfigValue {
      *
      * @param value The configuration value
      * @param canonical_name The human-readable name from the schema (e.g., "Number Of Tiles In Primary")
-     * @param provider_name The provider-specific identifier (e.g., "fieldmap.num_tiles_in_primary" for YAML)
-     * @param source A string describing where this value came from
+     * @param source_key The provider-specific identifier (e.g., "--num-tiles-per-metatile" for CLI,
+     *        "fieldmap.num_tiles_in_primary" for YAML)
+     * @param source A string describing where this value came from (e.g., "CliOptionProvider", "./porytiles.yaml:12")
      * @param source_details A vector of strings with the optional source details
      */
     ConfigValue(
         T value,
         std::string canonical_name,
-        std::string provider_name,
+        std::string source_key,
         std::string source,
         const std::vector<std::string> &source_details)
-        : value_{std::move(value)}, canonical_name_{std::move(canonical_name)},
-          provider_name_{std::move(provider_name)}, source_{std::move(source)}, source_details_{source_details}
+        : value_{std::move(value)}, canonical_name_{std::move(canonical_name)}, source_key_{std::move(source_key)},
+          source_{std::move(source)}, source_details_{source_details}
     {
     }
 
@@ -108,19 +109,20 @@ class ConfigValue {
     }
 
     /**
-     * @brief Gets the provider-specific name of this configuration value.
+     * @brief Gets the provider-specific key/identifier for this configuration value.
      *
      * @details
-     * The provider name is the identifier used by the provider that supplied the value, such as:
+     * The source key is the identifier used by the provider that supplied the value, such as:
+     * - "--num-tiles-per-metatile" (CLI option from CliOptionProvider)
      * - "fieldmap.num_tiles_in_primary" (YAML path from YamlFileProvider)
      * - "NUM_TILES_IN_PRIMARY" (header define from HeaderDefineProvider)
      * - "Number Of Tiles In Primary" (canonical name from DefaultProvider)
      *
-     * @return A const reference to the provider name string
+     * @return A const reference to the source key string
      */
-    [[nodiscard]] const std::string &provider_name() const
+    [[nodiscard]] const std::string &source_key() const
     {
-        return provider_name_;
+        return source_key_;
     }
 
     /**
@@ -191,7 +193,7 @@ class ConfigValue {
         err_text.emplace_back("{} = {}");
         params.push_back(
             std::vector{
-                FormatParam{provider_name(), Style::bold},
+                FormatParam{source_key(), Style::bold},
                 FormatParam{value(), Style::bold | Style::italic | Style::yellow}});
         err_text.emplace_back("Source: {}");
         params.push_back(std::vector{FormatParam{source(), Style::italic}});
@@ -253,7 +255,7 @@ class ConfigValue {
   private:
     T value_;
     std::string canonical_name_;
-    std::string provider_name_;
+    std::string source_key_;
     std::string source_;
     std::vector<std::string> source_details_;
 };

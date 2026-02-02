@@ -48,7 +48,7 @@ tileset:
     # Allowed values:
     # - [default] true-color: 8-bit index value, full output pal stored in PNG, upper 4 bits map into pal for true-color output
     # - greyscale: greyscale palette mapped to index values: [0, 15] -> [[255,255,255], [0,0,0]]
-    pal_mode: true-color
+    palette_mode: true-color
 
     # Set tile sharing optimization mode
     # Allowed values:

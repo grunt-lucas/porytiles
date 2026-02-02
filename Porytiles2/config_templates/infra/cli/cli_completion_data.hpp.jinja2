@@ -1,0 +1,84 @@
+{#
+  Template for generating cli_completion_data.hpp
+
+  This template generates metadata about CLI options for shell completion scripts.
+  It provides option names, descriptions, and enum choices in a format that can be
+  used by completion generators.
+#}
+{% import '_macros.jinja2' as macros %}
+#pragma once
+
+#include <string>
+#include <vector>
+
+namespace porytiles2 {
+
+{{ macros.autogen_warning() }}
+
+/**
+ * @brief Metadata for a single CLI option, used for shell completion generation.
+ */
+struct CliOptionMeta {
+    std::string long_name;      ///< Long option name (e.g., "num-tiles-in-primary")
+    std::string description;    ///< Human-readable description
+    std::string type_hint;      ///< Type hint for completion (e.g., "integer", "string", "enum")
+    std::vector<std::string> choices;  ///< Valid choices for enum types (empty for non-enums)
+    bool has_negation;          ///< True if this is a bool flag with --no-* variant
+};
+
+/**
+ * @brief Get all CLI option metadata for completion generation.
+ *
+ * @return Vector of CliOptionMeta for all CLI-configurable options
+ */
+[[nodiscard]] inline std::vector<CliOptionMeta> get_cli_option_metadata()
+{
+    return {
+{% for value in config_values if not value.cli_skip %}
+{% if value.type == 'bool' %}
+        CliOptionMeta{
+            "{{ value.cli_option }}",
+            "{{ value.canonical_name }}{% if value.cli_desc %} - {{ value.cli_desc }}{% endif %}",
+            "bool",
+            {},
+            true
+        },
+{% elif value.type == 'std::size_t' %}
+        CliOptionMeta{
+            "{{ value.cli_option }}",
+            "{{ value.canonical_name }}{% if value.cli_desc %} - {{ value.cli_desc }}{% endif %}",
+            "integer",
+            {},
+            false
+        },
+{% elif value.type == 'std::string' %}
+        CliOptionMeta{
+            "{{ value.cli_option }}",
+            "{{ value.canonical_name }}{% if value.cli_desc %} - {{ value.cli_desc }}{% endif %}",
+            "string",
+            {},
+            false
+        },
+{% elif value.type == 'Rgba32' %}
+        CliOptionMeta{
+            "{{ value.cli_option }}",
+            "{{ value.canonical_name }}{% if value.cli_desc %} - {{ value.cli_desc }}{% endif %} (format: R,G,B or R,G,B,A)",
+            "color",
+            {},
+            false
+        },
+{% elif value.type in enum_type_map %}
+{%   set enum_info = enum_type_map[value.type] %}
+        CliOptionMeta{
+            "{{ value.cli_option }}",
+            "{{ value.canonical_name }}{% if value.cli_desc %} - {{ value.cli_desc }}{% endif %}",
+            "enum",
+            { {% for v in enum_info.enum_values %}"{{ v.cli_completion_name }}"{% if not loop.last %}, {% endif %}{% endfor %} },
+            false
+        },
+{% endif %}
+{% endfor %}
+    };
+}
+
+} // namespace porytiles2

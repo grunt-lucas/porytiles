@@ -12,6 +12,7 @@
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
+#include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/packing/models/palette_hint.hpp"
 #include "porytiles2/infra/config/config_provider.hpp"
 #include "porytiles2/infra/config/valid_yaml_paths.hpp"
@@ -111,7 +112,7 @@ make_source_details(const TextFormatter *format, const std::string &file_path, c
 
     // Use FileHighlightPrinter (line_num is already 0-indexed)
     const FileHighlightPrinter printer{format};
-    return printer.print(lines, std::vector<std::size_t>{line_num});
+    return printer.print(lines, std::vector{line_num});
 }
 
 /**
@@ -171,7 +172,7 @@ void validate_yaml_paths(
     collect_yaml_paths(node, "", paths);
 
     for (const auto &[path, mark] : paths) {
-        if (valid_yaml_paths.find(path) == valid_yaml_paths.end()) {
+        if (!valid_yaml_paths.contains(path)) {
             const auto source = make_source_string(format, file_path.string(), mark);
             auto details = make_source_details(format, file_path.string(), mark);
 
@@ -216,8 +217,18 @@ parse_size_t(const TextFormatter *format, const YAML::Node &node, const std::str
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
+        /*
+         * TODO: how to make this multiline? It displays like this:
+         *
+         * Failed to parse 'fieldmap.num_tile_per_meta' as integer: yaml-cpp: error at line 4, column 29: bad conversion
+         *
+         * All on one line. It would be nice to display like this:
+         *
+         * Failed to parse 'fieldmap.num_tile_per_meta' as integer:
+         *   - yaml-cpp: error at line 4, column 29: bad conversion
+         */
         const auto error =
-            format->format("failed to parse '{}' as std::size_t: {}", FormatParam{key, Style::bold}, e.what());
+            format->format("Failed to parse '{}' as integer: {}", FormatParam{key, Style::bold}, e.what());
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<std::size_t>::invalid(error, source, details);
@@ -249,7 +260,8 @@ parse_bool(const TextFormatter *format, const YAML::Node &node, const std::strin
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
-        const auto error = format->format("failed to parse '{}' as bool: {}", FormatParam{key, Style::bold}, e.what());
+        const auto error =
+            format->format("Failed to parse '{}' as boolean: {}", FormatParam{key, Style::bold}, e.what());
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<bool>::invalid(error, source, details);
@@ -282,7 +294,7 @@ parse_string(const TextFormatter *format, const YAML::Node &node, const std::str
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
         const auto error =
-            format->format("failed to parse '{}' as std::string: {}", FormatParam{key, Style::bold}, e.what());
+            format->format("Failed to parse '{}' as string: {}", FormatParam{key, Style::bold}, e.what());
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<std::string>::invalid(error, source, details);
@@ -311,12 +323,12 @@ parse_rgba32(const TextFormatter *format, const YAML::Node &node, const std::str
 
     try {
         const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
 
         if (!node.IsSequence()) {
             const auto error =
                 format->format("'{}' must be a sequence [r, g, b] or [r, g, b, a]", FormatParam{key, Style::bold});
-            const auto source = make_source_string(format, file_path, mark);
             return LayerValue<Rgba32>::invalid(error, source, details);
         }
 
@@ -325,7 +337,6 @@ parse_rgba32(const TextFormatter *format, const YAML::Node &node, const std::str
                 "'{}' must have 3 or 4 elements [r, g, b] or [r, g, b, a], got {}",
                 FormatParam{key, Style::bold},
                 FormatParam{node.size(), Style::bold});
-            const auto source = make_source_string(format, file_path, mark);
             return LayerValue<Rgba32>::invalid(error, source, details);
         }
 
@@ -335,13 +346,11 @@ parse_rgba32(const TextFormatter *format, const YAML::Node &node, const std::str
         const auto a = (node.size() == 4) ? node[3].as<std::uint8_t>() : Rgba32::alpha_opaque;
 
         const Rgba32 color{r, g, b, a};
-        const auto source = make_source_string(format, file_path, mark);
         return LayerValue<Rgba32>::valid(color, key, source, details);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
-        const auto error =
-            format->format("failed to parse '{}' as Rgba32: {}", FormatParam{key, Style::bold}, e.what());
+        const auto error = format->format("Failed to parse '{}' as rgba: {}", FormatParam{key, Style::bold}, e.what());
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<Rgba32>::invalid(error, source, details);
@@ -438,7 +447,7 @@ LayerValue<std::vector<PaletteHint>> parse_pal_hints(
                 colors.emplace_back(r, g, b, a);
             }
 
-            hints.emplace_back(name, Palette<Rgba32>{std::move(colors)});
+            hints.emplace_back(name, Palette{std::move(colors)});
         }
 
         const auto source = make_source_string(format, file_path, mark);
@@ -447,7 +456,7 @@ LayerValue<std::vector<PaletteHint>> parse_pal_hints(
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
         const auto error =
-            format->format("failed to parse '{}' as palette hints: {}", FormatParam{key, Style::bold}, e.what());
+            format->format("Failed to parse '{}' as palette hints: {}", FormatParam{key, Style::bold}, e.what());
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<std::vector<PaletteHint>>::invalid(error, source, details);
@@ -458,7 +467,7 @@ LayerValue<std::vector<PaletteHint>> parse_pal_hints(
  * @brief Attempts to parse a TilesPalMode value from a YAML node.
  *
  * @details
- * Expects a string value that matches one of the valid TilesPalMode strings: "true-color" or "greyscale".
+ * Expects a string value that matches one of the valid TilesPalMode YAML strings: "true_color" or "greyscale".
  *
  * @param format The text formatter to use
  * @param node The YAML node to parse
@@ -475,26 +484,23 @@ LayerValue<TilesPalMode> parse_tiles_pal_mode(
 
     try {
         const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
-        const auto str = node.as<std::string>();
-        const auto mode_opt = tiles_pal_mode_from_str(str);
+        const auto node_value = node.as<std::string>();
+        const auto mode_opt = tiles_pal_mode_from_str(node_value);
 
         if (!mode_opt.has_value()) {
             const auto error = format->format(
-                "'{}' has invalid value '{}', expected 'true-color' or 'greyscale'",
-                FormatParam{key, Style::bold},
-                FormatParam{str, Style::bold});
-            const auto source = make_source_string(format, file_path, mark);
+                "'{}' has invalid value '{}'", FormatParam{key, Style::bold}, FormatParam{node_value, Style::bold});
             return LayerValue<TilesPalMode>::invalid(error, source, details);
         }
 
-        const auto source = make_source_string(format, file_path, mark);
         return LayerValue<TilesPalMode>::valid(mode_opt.value(), key, source, details);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
         const auto error =
-            format->format("failed to parse '{}' as TilesPalMode: {}", FormatParam{key, Style::bold}, e.what());
+            format->format("Failed to parse '{}' as TilesPalMode: {}", FormatParam{key, Style::bold}, e.what());
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<TilesPalMode>::invalid(error, source, details);
@@ -510,24 +516,23 @@ LayerValue<ArtifactEditMode> parse_artifact_edit_mode(
 
     try {
         const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
-        const auto str = node.as<std::string>();
-        const auto mode_opt = artifact_edit_mode_from_str(str);
+        const auto node_value = node.as<std::string>();
+        const auto mode_opt = artifact_edit_mode_from_str(node_value);
 
         if (!mode_opt.has_value()) {
             const auto error = format->format(
-                "'{}' has invalid value '{}'", FormatParam{key, Style::bold}, FormatParam{str, Style::bold});
-            const auto source = make_source_string(format, file_path, mark);
+                "'{}' has invalid value '{}'", FormatParam{key, Style::bold}, FormatParam{node_value, Style::bold});
             return LayerValue<ArtifactEditMode>::invalid(error, source, details);
         }
 
-        const auto source = make_source_string(format, file_path, mark);
         return LayerValue<ArtifactEditMode>::valid(mode_opt.value(), key, source, details);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
         const auto error =
-            format->format("failed to parse '{}' as ArtifactEditMode: {}", FormatParam{key, Style::bold}, e.what());
+            format->format("Failed to parse '{}' as ArtifactEditMode: {}", FormatParam{key, Style::bold}, e.what());
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<ArtifactEditMode>::invalid(error, source, details);
@@ -543,24 +548,23 @@ LayerValue<AnimPalResolutionStrategy> parse_anim_pal_resolution_strategy(
 
     try {
         const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
-        const auto str = node.as<std::string>();
-        const auto mode_opt = anim_pal_resolution_strategy_from_str(str);
+        const auto node_value = node.as<std::string>();
+        const auto mode_opt = anim_pal_resolution_strategy_from_str(node_value);
 
         if (!mode_opt.has_value()) {
             const auto error = format->format(
-                "'{}' has invalid value '{}'", FormatParam{key, Style::bold}, FormatParam{str, Style::bold});
-            const auto source = make_source_string(format, file_path, mark);
+                "'{}' has invalid value '{}'", FormatParam{key, Style::bold}, FormatParam{node_value, Style::bold});
             return LayerValue<AnimPalResolutionStrategy>::invalid(error, source, details);
         }
 
-        const auto source = make_source_string(format, file_path, mark);
         return LayerValue<AnimPalResolutionStrategy>::valid(mode_opt.value(), key, source, details);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
         const auto error = format->format(
-            "failed to parse '{}' as AnimPalResolutionStrategy: {}", FormatParam{key, Style::bold}, e.what());
+            "Failed to parse '{}' as AnimPalResolutionStrategy: {}", FormatParam{key, Style::bold}, e.what());
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<AnimPalResolutionStrategy>::invalid(error, source, details);
@@ -576,26 +580,23 @@ LayerValue<AnimKeyFrameResolutionStrategy> parse_anim_key_frame_resolution_strat
 
     try {
         const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
-        const auto str = node.as<std::string>();
-        const auto mode_opt = anim_key_frame_resolution_strategy_from_str(str);
+        const auto node_value = node.as<std::string>();
+        const auto mode_opt = anim_key_frame_resolution_strategy_from_str(node_value);
 
         if (!mode_opt.has_value()) {
             const auto error = format->format(
-                "'{}' has invalid value '{}', expected 'error' or 'mangle'",
-                FormatParam{key, Style::bold},
-                FormatParam{str, Style::bold});
-            const auto source = make_source_string(format, file_path, mark);
+                "'{}' has invalid value '{}'", FormatParam{key, Style::bold}, FormatParam{node_value, Style::bold});
             return LayerValue<AnimKeyFrameResolutionStrategy>::invalid(error, source, details);
         }
 
-        const auto source = make_source_string(format, file_path, mark);
         return LayerValue<AnimKeyFrameResolutionStrategy>::valid(mode_opt.value(), key, source, details);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
         const auto error = format->format(
-            "failed to parse '{}' as AnimKeyFrameResolutionStrategy: {}", FormatParam{key, Style::bold}, e.what());
+            "Failed to parse '{}' as AnimKeyFrameResolutionStrategy: {}", FormatParam{key, Style::bold}, e.what());
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<AnimKeyFrameResolutionStrategy>::invalid(error, source, details);
@@ -755,6 +756,7 @@ get_config_path_chain(const std::filesystem::path &project_root, ConfigScopeType
  * @param extract_node_func Function to extract the target node from the YAML doc
  * @param parse_func Function to parse the value from the node
  * @param key The configuration key name (for error messages)
+ * @param provider_name The provider-specific name for this value
  * @return The first valid LayerValue found, or not_provided if not found in any file
  */
 template <typename T, typename LoadFunc, typename NodeExtractFunc, typename ParseFunc>
@@ -780,7 +782,7 @@ LayerValue<T> search_config_files(
 
             // If we got a valid value or an error, return it immediately
             if (result.state == ValidationState::valid || result.state == ValidationState::invalid) {
-                result.provider_name = provider_name;
+                result.source_key = provider_name;
                 return result;
             }
 

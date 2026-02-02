@@ -48,10 +48,10 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
         catch (const std::bad_any_cast &) {
             panic(format_->format("bad_any_cast for cache key '{}': cached type does not match requested type", cache_key));
         }
-        std::string cached_provider_name = provider_name_.at(cache_key);
+        std::string cached_source_key = source_key_.at(cache_key);
         std::string source = source_.at(cache_key);
         std::vector<std::string> source_details = source_details_.at(cache_key);
-        return ConfigValue<T>{cached_value, canonical_name, cached_provider_name, source, source_details};
+        return ConfigValue<T>{cached_value, canonical_name, cached_source_key, source, source_details};
     }
 
     // Search through providers in priority order
@@ -62,12 +62,11 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
         if (layer_value.state == ValidationState::invalid) {
             const auto source_info = format_->format("{}", layer_value.source_info);
             std::vector<std::string> error_lines;
-                        error_lines.push_back(format_->format(
-                            "invalid value for '{}' from config source '{}':",
-                            FormatParam{cache_key, Style::bold},
-                            FormatParam{source_info, Style::bold}));
+            error_lines.push_back(format_->format(
+                "Invalid value for '{}' from config source '{}':",
+                FormatParam{canonical_name, Style::bold},
+                FormatParam{source_info, Style::bold}));
             error_lines.emplace_back();
-            error_lines.emplace_back("Details:");
             error_lines.push_back(format_->format("{}", layer_value.error_message));
 
             if (!layer_value.source_details.empty()) {
@@ -85,11 +84,11 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
             T resolved_value = layer_value.value.value();
             cache_[cache_key] = resolved_value;
             cache_value_strings_[cache_key] = to_string(resolved_value);
-            provider_name_[cache_key] = layer_value.provider_name;
+            source_key_[cache_key] = layer_value.source_key;
             std::string source = format_->format("{}", layer_value.source_info);
             source_[cache_key] = source;
             source_details_[cache_key] = layer_value.source_details;
-            return ConfigValue<T>{resolved_value, canonical_name, layer_value.provider_name, source, layer_value.source_details};
+            return ConfigValue<T>{resolved_value, canonical_name, layer_value.source_key, source, layer_value.source_details};
         }
 
         // Otherwise, state is not_provided - continue to next provider

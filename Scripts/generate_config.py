@@ -34,6 +34,43 @@ def extract_all_yaml_paths(config_values):
     return sorted(paths)
 
 
+def process_enum_types(schema):
+    """
+    Process enum_types from schema to compute derived fields and create lookup map.
+
+    For each enum value, computes:
+    - fuzzy_names if not provided (defaults to [name, kebab-case-of-name])
+
+    Creates enum_type_map for template lookup with cli_type_name for each enum.
+
+    Returns the enum_type_map dict keyed by cpp_type.
+    """
+    enum_types = schema.get("enum_types", [])
+    enum_type_map = {}
+
+    for enum in enum_types:
+        # Compute fuzzy_names for each value if not provided
+        cli_names = []
+        for val in enum["enum_values"]:
+            # Compute kebab-case name for CLI display
+            kebab_name = val["name"].replace("_", "-")
+            cli_names.append(kebab_name)
+
+            # Compute fuzzy_names if not provided
+            # Default: include name and kebab-case-of-name
+            if "fuzzy_names" not in val:
+                fuzzy_set = {val["name"], kebab_name}
+                val["fuzzy_names"] = sorted(fuzzy_set)
+
+        # Create CLI type name string like "{locked|patch|optimize}"
+        enum["cli_type_name"] = "{" + "|".join(cli_names) + "}"
+
+        # Add to lookup map
+        enum_type_map[enum["cpp_type"]] = enum
+
+    return enum_type_map
+
+
 def generate_config_files():
     """Main generation function."""
     # Determine project root (script is in Scripts/)
@@ -146,6 +183,11 @@ def generate_config_files():
     schema["all_yaml_paths"] = all_yaml_paths
     print(f"Extracted {len(all_yaml_paths)} valid YAML paths")
 
+    # Process enum types and create lookup map
+    enum_type_map = process_enum_types(schema)
+    schema["enum_type_map"] = enum_type_map
+    print(f"Processed {len(enum_type_map)} enum types")
+
     # Setup Jinja2 environment with new template directory
     template_dir = project_root / "Porytiles2" / "config_templates"
     env = Environment(
@@ -155,70 +197,106 @@ def generate_config_files():
         lstrip_blocks=True,
     )
 
+    # Custom filter to convert PascalCase to snake_case
+    def pascal_to_snake(value):
+        """Convert PascalCase to snake_case (e.g., ArtifactEditMode -> artifact_edit_mode)."""
+        import re
+        # Insert underscore before each capital letter and convert to lowercase
+        s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', value)
+        return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
+
+    env.filters['snake_case'] = pascal_to_snake
+
     # Define template -> output mappings
+    # Templates are organized by layer: domain/, app/, infra/
     templates = [
         # Layer interfaces
         (
-            "domain_config.hpp.jinja2",
+            "domain/config/domain_config.hpp.jinja2",
             "Porytiles2/include/porytiles2/domain/config/domain_config.hpp",
         ),
         (
-            "app_config.hpp.jinja2",
+            "app/config/app_config.hpp.jinja2",
             "Porytiles2/include/porytiles2/app/config/app_config.hpp",
         ),
         (
-            "infra_config.hpp.jinja2",
+            "infra/config/infra_config.hpp.jinja2",
             "Porytiles2/include/porytiles2/infra/config/infra_config.hpp",
         ),
         # LazyLayeredConfig
         (
-            "lazy_layered_config.hpp.jinja2",
+            "infra/config/lazy_layered_config.hpp.jinja2",
             "Porytiles2/include/porytiles2/infra/config/lazy_layered_config.hpp",
         ),
         (
-            "lazy_layered_config.cpp.jinja2",
+            "infra/config/lazy_layered_config.cpp.jinja2",
             "Porytiles2/lib/infra/config/lazy_layered_config.cpp",
         ),
         # ConfigProvider base class
         (
-            "config_provider.hpp.jinja2",
+            "infra/config/config_provider.hpp.jinja2",
             "Porytiles2/include/porytiles2/infra/config/config_provider.hpp",
         ),
         (
-            "config_provider.cpp.jinja2",
+            "infra/config/config_provider.cpp.jinja2",
             "Porytiles2/lib/infra/config/config_provider.cpp",
         ),
         # DefaultProvider
         (
-            "default_provider.hpp.jinja2",
+            "infra/config/default_provider.hpp.jinja2",
             "Porytiles2/include/porytiles2/infra/config/default_provider.hpp",
         ),
         (
-            "default_provider.cpp.jinja2",
+            "infra/config/default_provider.cpp.jinja2",
             "Porytiles2/lib/infra/config/default_provider.cpp",
         ),
         # YamlFileProvider
         (
-            "yaml_file_provider.hpp.jinja2",
+            "infra/config/yaml_file_provider.hpp.jinja2",
             "Porytiles2/include/porytiles2/infra/config/yaml_file_provider.hpp",
         ),
         (
-            "yaml_file_provider.cpp.jinja2",
+            "infra/config/yaml_file_provider.cpp.jinja2",
             "Porytiles2/lib/infra/config/yaml_file_provider.cpp",
         ),
         # HeaderDefineProvider
         (
-            "header_define_provider.hpp.jinja2",
+            "infra/config/header_define_provider.hpp.jinja2",
             "Porytiles2/include/porytiles2/infra/config/header_define_provider.hpp",
         ),
         (
-            "header_define_provider.cpp.jinja2",
+            "infra/config/header_define_provider.cpp.jinja2",
             "Porytiles2/lib/infra/config/header_define_provider.cpp",
         ),
         # Valid YAML paths for unknown key detection
         (
-            "valid_yaml_paths.hpp.jinja2",
+            "infra/config/valid_yaml_paths.hpp.jinja2",
             "Porytiles2/include/porytiles2/infra/config/valid_yaml_paths.hpp",
+        ),
+        # CLI Option System
+        (
+            "infra/cli/cli_option_storage.hpp.jinja2",
+            "Porytiles2/include/porytiles2/infra/cli/cli_option_storage.hpp",
+        ),
+        (
+            "infra/config/cli_option_provider.hpp.jinja2",
+            "Porytiles2/include/porytiles2/infra/config/cli_option_provider.hpp",
+        ),
+        (
+            "infra/config/cli_option_provider.cpp.jinja2",
+            "Porytiles2/lib/infra/config/cli_option_provider.cpp",
+        ),
+        (
+            "infra/cli/cli_option_registration.hpp.jinja2",
+            "Porytiles2/include/porytiles2/infra/cli/cli_option_registration.hpp",
+        ),
+        (
+            "infra/cli/cli_option_registration.cpp.jinja2",
+            "Porytiles2/lib/infra/cli/cli_option_registration.cpp",
+        ),
+        (
+            "infra/cli/cli_completion_data.hpp.jinja2",
+            "Porytiles2/include/porytiles2/infra/cli/cli_completion_data.hpp",
         ),
     ]
 
@@ -229,6 +307,24 @@ def generate_config_files():
         try:
             template = env.get_template(template_name)
             output = template.render(**schema)
+
+            output_path = project_root / output_rel_path
+            output_path.parent.mkdir(parents=True, exist_ok=True)
+            output_path.write_text(output)
+
+            print(f"  ✓ Successfully generated {output_path}")
+        except Exception as e:
+            print(f"  ✗ Failed to generate {output_rel_path}: {e}", file=sys.stderr)
+            sys.exit(1)
+
+    # Generate enum header files
+    enum_template = env.get_template("domain/config/enum_type.hpp.jinja2")
+    for enum in schema.get("enum_types", []):
+        output_rel_path = "Porytiles2/include/" + enum["header_path"]
+        print(f"Generating: {output_rel_path}")
+
+        try:
+            output = enum_template.render(enum=enum)
 
             output_path = project_root / output_rel_path
             output_path.parent.mkdir(parents=True, exist_ok=True)

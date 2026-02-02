@@ -147,8 +147,8 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     // Config value as string for debug printing
     mutable std::unordered_map<std::string, std::string> cache_value_strings_;
 
-    // Provider name cache
-    mutable std::unordered_map<std::string, std::string> provider_name_;
+    // Source key cache (stores the provider-specific identifier for each config value)
+    mutable std::unordered_map<std::string, std::string> source_key_;
 
     // Config source and source_details
     mutable std::unordered_map<std::string, std::string> source_;
@@ -159,12 +159,15 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      *
      * @tparam T The type of the config value
      * @param cache_key The key to use for caching this value (also used for value name)
+     * @param canonical_name The canonical name for this config value
      * @param provider_call Function that calls the appropriate method on a ConfigProvider
      * @return A ChainableResult containing either the resolved config value or an error
      */
     template <typename T>
     ChainableResult<ConfigValue<T>> resolve_config_value(
-        const std::string &cache_key, const std::string &canonical_name, std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
+        const std::string &cache_key,
+        const std::string &canonical_name,
+        std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
 
     /**
      * @brief Collects the provenance chain by querying all providers.
@@ -179,8 +182,8 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      * @return Vector of ProvenanceChainLink entries from all providers
      */
     template <typename T>
-    std::vector<ProvenanceChainLink<T>> collect_provenance_chain(
-        std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
+    std::vector<ProvenanceChainLink<T>>
+    collect_provenance_chain(std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
 };
 
 } // namespace porytiles2

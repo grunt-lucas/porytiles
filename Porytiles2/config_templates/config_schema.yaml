@@ -12,11 +12,15 @@
 #     - Only supported for std::size_t types
 #     - Example: "NUM_TILES_IN_PRIMARY" to match "#define NUM_TILES_IN_PRIMARY 512"
 #
-#   cli_option: CLI option name (e.g., "num-tiles-in-primary"), not yet used in templates
+#   cli_option: CLI option name (e.g., "num-tiles-in-primary")
+#
+#   cli_desc: (optional) Custom description for CLI --help output
+#     - When absent, templates fall back to using canonical_name
+#     - Use this to provide more user-friendly CLI descriptions without changing canonical_name
 #
 #   type: C++ type for the value
 #
-#   parser: Parser function name (e.g., "parse_size_t") - shared across all providers (if relevant)
+#   parser: Parser function name (e.g., "parse_size_t") - used by all providers
 #
 #   layer: Configuration layer (domain/app/infra)
 #
@@ -34,6 +38,102 @@
 #     - Reference syntax: "<validator_func_name>:<field_name>"
 #     - Example: [compare_greater_than:num_tiles_primary]
 
+# ============================================================================
+# Enum Type Definitions
+# ============================================================================
+# Enum types are defined here and used to generate:
+#   - Enum header files (enum class, *_from_str(), to_string(), ostream operator)
+#   - CLI registration code (CheckedTransformer maps)
+#   - CLI completion data (enum choices)
+#
+# Fields:
+#   cpp_type: The C++ enum class name (e.g., "ArtifactEditMode")
+#   header_path: Output path relative to include/ (e.g., "porytiles2/domain/config/artifact_edit_mode.hpp")
+#   brief: Brief description for the enum class (used in Doxygen @brief)
+#   details: (optional) Detailed description (used in Doxygen @details)
+#   enum_values: List of enum values, each with:
+#     - name: The C++ enum constant name (snake_case)
+#     - cli_completion_name: The name to show for CLI tab completion
+#     - fuzzy_names: (optional) List of fuzzy names for case-insensitive matching; auto-computed as [name, kebab-name] if not provided
+#     - brief: Brief description for this value (used in Doxygen @brief)
+
+enum_types:
+  - cpp_type: ArtifactEditMode
+    header_path: porytiles2/domain/config/artifact_edit_mode.hpp
+    brief: Specifies whether artifacts (tiles or palettes) can be modified during patch compilation.
+    details: |
+      Controls the behavior of tile and palette handling when compiling a tileset patch. In locked mode,
+      the compiler must use only the existing artifacts from the base tileset without modifications. In
+      patch mode, the compiler can modify unused or "open" slots as needed. In optimize mode, artifacts
+      are cleared and packed optimally (Porytiles1 behavior).
+    enum_values:
+      - name: locked
+        cli_completion_name: locked
+        fuzzy_names: [ locked ]
+        brief: Artifacts cannot be edited; must use existing from base tileset.
+      - name: patch
+        cli_completion_name: patch
+        fuzzy_names: [ patch ]
+        brief: Artifacts can be freely edited in "open" slots during compilation.
+      - name: optimize
+        cli_completion_name: optimized
+        fuzzy_names: [ optimize ]
+        brief: The Porytiles1 behavior; artifact is cleared and packed optimally.
+
+  - cpp_type: TilesPalMode
+    header_path: porytiles2/domain/config/tiles_pal_mode.hpp
+    brief: Controls how tiles.png is rendered.
+    enum_values:
+      - name: true_color
+        cli_completion_name: true-color
+        fuzzy_names: [ true-color, true_color, truecolor, color ]
+        brief: Render tiles with true colors from the palette.
+      - name: greyscale
+        cli_completion_name: greyscale
+        fuzzy_names: [ greyscale, grayscale, grey, gray ]
+        brief: Render tiles in greyscale (useful for debugging).
+
+  - cpp_type: AnimPalResolutionStrategy
+    header_path: porytiles2/domain/config/anim_pal_resolution_strategy.hpp
+    brief: Strategy for resolving animation frame palette mismatches.
+    details: |
+      When processing animation frames, it's possible for frame palettes to not match the expected
+      tileset palette. This enum determines how to handle such cases during compilation.
+    enum_values:
+      - name: error
+        cli_completion_name: error
+        fuzzy_names: [ error, err ]
+        brief: Disallow palette resolution fallback and error out.
+      - name: default_pal
+        cli_completion_name: default-palette
+        fuzzy_names: [ default-palette, default-pal, default_palette, default_pal, default ]
+        brief: Use palette 00.pal.
+      - name: internal_png_pal
+        cli_completion_name: internal-png-palette
+        fuzzy_names: [ internal-png-palette, internal_png_palette, internal-png-pal, internal_png_pal ]
+        brief: Use the Porymap-component frame PNG internal palette, if present.
+      - name: full_tileset_scan
+        cli_completion_name: full-tileset-scan
+        fuzzy_names: [ full-tileset-scan, full_tileset_scan, fulltilesetscans ]
+        brief: Scan layouts config and find all tilesets paired with current tileset, see if an index is present in any.
+
+  - cpp_type: AnimKeyFrameResolutionStrategy
+    header_path: porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp
+    brief: Strategy for handling duplicate key frame tiles in animation decompilation.
+    details: |
+      When decompiling animations, it's possible for multiple key frame tiles to be identical. This is
+      problematic because during recompilation, identical tiles cannot be distinguished. This enum
+      determines how to handle such cases.
+    enum_values:
+      - name: error
+        cli_completion_name: error
+        fuzzy_names: [ error, err ]
+        brief: Emit a formatted error and fail decompilation.
+      - name: mangle
+        cli_completion_name: mangle
+        fuzzy_names: [ mangle ]
+        brief: Mangle duplicate tiles to make them unique, then backport changes to tiles.png.
+
 config_values:
   # Domain Layer Configuration Values
   - canonical_name: Number Of Tiles In Primary
@@ -41,6 +141,7 @@ config_values:
     yaml_path: fieldmap.num_tiles_in_primary
     header_define: NUM_TILES_IN_PRIMARY
     cli_option: num-tiles-in-primary
+    cli_desc: The NUM_TILES_IN_PRIMARY setting from include/fieldmap.h.
     layer: domain
     type: std::size_t
     parser: parse_size_t
@@ -53,6 +154,7 @@ config_values:
     yaml_path: fieldmap.num_tiles_total
     header_define: NUM_TILES_TOTAL
     cli_option: num-tiles-total
+    cli_desc: The NUM_TILES_TOTAL setting from include/fieldmap.h.
     layer: domain
     type: std::size_t
     parser: parse_size_t
@@ -65,6 +167,7 @@ config_values:
     yaml_path: fieldmap.num_metatiles_in_primary
     header_define: NUM_METATILES_IN_PRIMARY
     cli_option: num-metatiles-in-primary
+    cli_desc: The NUM_METATILES_IN_PRIMARY setting from include/fieldmap.h.
     layer: domain
     type: std::size_t
     parser: parse_size_t
@@ -77,6 +180,7 @@ config_values:
     yaml_path: fieldmap.num_metatiles_total
     header_define: NUM_METATILES_TOTAL
     cli_option: num-metatiles-total
+    cli_desc: The NUM_METATILES_TOTAL setting from include/fieldmap.h.
     layer: domain
     type: std::size_t
     parser: parse_size_t
@@ -89,6 +193,7 @@ config_values:
     yaml_path: fieldmap.num_pals_in_primary
     header_define: NUM_PALS_IN_PRIMARY
     cli_option: num-pals-in-primary
+    cli_desc: The NUM_PALS_IN_PRIMARY setting from include/fieldmap.h.
     layer: domain
     type: std::size_t
     parser: parse_size_t
@@ -101,6 +206,7 @@ config_values:
     yaml_path: fieldmap.num_pals_total
     header_define: NUM_PALS_TOTAL
     cli_option: num-pals-total
+    cli_desc: The NUM_PALS_TOTAL setting from include/fieldmap.h.
     layer: domain
     type: std::size_t
     parser: parse_size_t
@@ -113,6 +219,7 @@ config_values:
     yaml_path: fieldmap.max_map_data_size
     header_define: MAX_MAP_DATA_SIZE
     cli_option: max-map-data-size
+    cli_desc: The MAX_MAP_DATA_SIZE setting from include/fieldmap.h.
     layer: domain
     type: std::size_t
     parser: parse_size_t
@@ -125,6 +232,7 @@ config_values:
     yaml_path: fieldmap.num_tiles_per_metatile
     header_define: NUM_TILES_PER_METATILE
     cli_option: num-tiles-per-metatile
+    cli_desc: The NUM_TILES_PER_METATILE setting from include/fieldmap.h.
     layer: domain
     type: std::size_t
     parser: parse_size_t
@@ -136,17 +244,19 @@ config_values:
     symbol: extrinsic_transparency
     yaml_path: tileset.extrinsic_transparency
     cli_option: extrinsic-transparency
+    cli_desc: The RGB color to treat as transparent during compilation.
     layer: domain
     type: Rgba32
     parser: parse_rgba32
     default_value: "rgba_magenta"
-    validators: [ ]
+    validators: [ rgba_alpha_component_opaque ]
     cross_field_validators: [ ]
 
   - canonical_name: Tiles Edit Mode
     symbol: tiles_edit_mode
     yaml_path: tileset.tiles.edit_mode
     cli_option: tiles-edit-mode
+    cli_desc: The allowed edit mode for the tiles.png artifact.
     layer: domain
     type: ArtifactEditMode
     parser: parse_artifact_edit_mode
@@ -158,6 +268,7 @@ config_values:
     symbol: pals_edit_mode
     yaml_path: tileset.palettes.edit_mode
     cli_option: pals-edit-mode
+    cli_desc: The allowed edit mode for the palettes/ artifacts.
     layer: domain
     type: ArtifactEditMode
     parser: parse_artifact_edit_mode
@@ -169,6 +280,7 @@ config_values:
     symbol: pal_hints_enabled
     yaml_path: tileset.palettes.packing.hints_enabled
     cli_option: pal-hints-enabled
+    cli_desc: Enable configured palette hints.
     layer: domain
     type: bool
     parser: parse_bool
@@ -180,6 +292,7 @@ config_values:
     symbol: pal_hints
     yaml_path: tileset.palettes.packing.hints
     cli_option: pal-hints
+    cli_skip: true  # Too complex for CLI (std::vector<PaletteHint>)
     layer: domain
     type: std::vector<PaletteHint>
     parser: parse_pal_hints
@@ -191,6 +304,7 @@ config_values:
     symbol: tiles_pal_mode
     yaml_path: tileset.tiles.palette_mode
     cli_option: tiles-pal-mode
+    cli_desc: The color mode to use when saving the tiles.png artifact.
     layer: domain
     type: TilesPalMode
     parser: parse_tiles_pal_mode
@@ -202,6 +316,7 @@ config_values:
     symbol: anim_pal_resolution_strategy
     yaml_path: tileset.animations.palette_resolution_strategy
     cli_option: anim-pal-resolution-strategy
+    cli_desc: The strategy to use when resolving the palette for an unreferenced animation.
     layer: domain
     type: AnimPalResolutionStrategy
     parser: parse_anim_pal_resolution_strategy
@@ -213,6 +328,7 @@ config_values:
     symbol: anim_key_frame_resolution_strategy
     yaml_path: tileset.animations.key_frame_resolution_strategy
     cli_option: anim-key-frame-resolution-strategy
+    cli_desc: The strategy to use when decompilation encounters duplicate key frame subtiles.
     layer: domain
     type: AnimKeyFrameResolutionStrategy
     parser: parse_anim_key_frame_resolution_strategy
@@ -225,6 +341,7 @@ config_values:
     symbol: verify_checksums
     yaml_path: verify_checksums
     cli_option: verify-checksums
+    cli_desc: Enable or disable artifact checksum verification.
     layer: app
     type: bool
     parser: parse_bool
@@ -237,6 +354,7 @@ config_values:
     symbol: tileset_paths_primary_src
     yaml_path: tileset.paths.primary.src
     cli_option: tileset-paths-primary-src
+    cli_desc: The directory for primary tileset Porytiles component assets.
     layer: infra
     type: std::string
     parser: parse_string
@@ -248,6 +366,7 @@ config_values:
     symbol: tileset_paths_primary_bin
     yaml_path: tileset.paths.primary.bin
     cli_option: tileset-paths-primary-bin
+    cli_desc: The directory for primary tileset Porymap component assets.
     layer: infra
     type: std::string
     parser: parse_string
@@ -259,6 +378,7 @@ config_values:
     symbol: tileset_paths_secondary_src
     yaml_path: tileset.paths.secondary.src
     cli_option: tileset-paths-secondary-src
+    cli_desc: The directory for secondary tileset Porytiles component assets.
     layer: infra
     type: std::string
     parser: parse_string
@@ -270,6 +390,7 @@ config_values:
     symbol: tileset_paths_secondary_bin
     yaml_path: tileset.paths.secondary.bin
     cli_option: tileset-paths-secondary-bin
+    cli_desc: The directory for secondary tileset Porymap component assets.
     layer: infra
     type: std::string
     parser: parse_string
@@ -281,6 +402,7 @@ config_values:
     symbol: tileset_animations_wire_anim_code
     yaml_path: tileset.animations.wire_anim_code
     cli_option: tileset-animations-wire-anim-code
+    cli_desc: Enable or disable automatic animation code wiring.
     layer: infra
     type: bool
     parser: parse_bool

@@ -37,7 +37,7 @@ template <typename T>
 struct LayerValue {
     // TODO: add _ to end of these field names
     std::optional<T> value;
-    std::string provider_name;
+    std::string source_key;
     std::string source_info;
     std::vector<std::string> source_details;
     ValidationState state = ValidationState::not_provided;
@@ -47,29 +47,32 @@ struct LayerValue {
      * @brief Creates a LayerValue representing a valid configuration value.
      *
      * @param val The valid configuration value
-     * @param source_info String describing the source of this value
+     * @param source_key The provider-specific identifier for this value (e.g., "--num-tiles-per-metatile" for CLI)
+     * @param source_info String describing the source of this value (e.g., "CliOptionProvider")
      * @return A LayerValue in the valid state
      */
-    static LayerValue valid(T val, std::string provider_name, std::string source_info)
+    static LayerValue valid(T val, std::string source_key, std::string source_info)
     {
         return LayerValue{
-            std::move(val), std::move(provider_name), std::move(source_info), {}, ValidationState::valid, ""};
+            std::move(val), std::move(source_key), std::move(source_info), {}, ValidationState::valid, ""};
     }
 
     /**
      * @brief Creates a LayerValue representing a valid configuration value with detailed source context.
      *
      * @param val The valid configuration value
-     * @param source_info String describing the source of this value
+     * @param source_key The provider-specific identifier for this value (e.g., "fieldmap.num_tiles_in_primary" for
+     * YAML)
+     * @param source_info String describing the source of this value (e.g., "./porytiles.yaml:12")
      * @param source_details Vector of strings showing contextual lines around the source
      * @return A LayerValue in the valid state
      */
     static LayerValue
-    valid(T val, std::string provider_name, std::string source_info, std::vector<std::string> source_details)
+    valid(T val, std::string source_key, std::string source_info, std::vector<std::string> source_details)
     {
         return LayerValue{
             std::move(val),
-            std::move(provider_name),
+            std::move(source_key),
             std::move(source_info),
             std::move(source_details),
             ValidationState::valid,

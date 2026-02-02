@@ -69,6 +69,7 @@ cmake --install clion-build-debug --prefix ~/.local        # Install to ~/.local
 ## Testing with pokeemerald-expansion
 
 A pokeemerald-expansion testbed project is available at `../pokeemerald-expansion` for testing the installed `porytiles2` executable against a real decomp project.
+You can either `cd` into the testbed project or run `porytiles2` with the `--project-root` set to `../pokeemerald-expansion`.
 
 ## Documentation Repositories
 

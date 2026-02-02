@@ -199,7 +199,7 @@ LayerValue<T> search_header_define(
 
     // Parse the value
     auto layer_result = parse_func(format, result.value().value(), header_path.string(), parser.file_lines(), key);
-    layer_result.provider_name = provider_name;
+    layer_result.source_key = provider_name;
     return layer_result;
 }
 
