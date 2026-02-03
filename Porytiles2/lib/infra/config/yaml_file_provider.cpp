@@ -30,7 +30,9 @@ YamlFileProvider::YamlFileProvider(
     // Config files are loaded lazily when first accessed via the anonymous namespace functions
 }
 
-YamlFileProvider::YamlFileProvider(const UserDiagnostics *diagnostics, const std::filesystem::path &project_root)
+YamlFileProvider::YamlFileProvider(
+    const UserDiagnostics *diagnostics,
+    const std::filesystem::path &project_root)
     : owned_format_{std::make_unique<PlainTextFormatter>()}, format_{owned_format_.get()}, diagnostics_{diagnostics},
       project_root_{project_root}
 {
@@ -46,8 +48,7 @@ LayerValue<std::size_t> YamlFileProvider::num_tiles_in_primary(ConfigScopeType t
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<std::size_t>::invalid(
-            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+        return LayerValue<std::size_t>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
     return search_config_files<std::size_t>(
         format_,
@@ -63,8 +64,7 @@ LayerValue<std::size_t> YamlFileProvider::num_tiles_total(ConfigScopeType type, 
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<std::size_t>::invalid(
-            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+        return LayerValue<std::size_t>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
     return search_config_files<std::size_t>(
         format_,
@@ -80,8 +80,7 @@ LayerValue<std::size_t> YamlFileProvider::num_metatiles_in_primary(ConfigScopeTy
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<std::size_t>::invalid(
-            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+        return LayerValue<std::size_t>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
     return search_config_files<std::size_t>(
         format_,
@@ -97,8 +96,7 @@ LayerValue<std::size_t> YamlFileProvider::num_metatiles_total(ConfigScopeType ty
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<std::size_t>::invalid(
-            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+        return LayerValue<std::size_t>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
     return search_config_files<std::size_t>(
         format_,
@@ -114,8 +112,7 @@ LayerValue<std::size_t> YamlFileProvider::num_pals_in_primary(ConfigScopeType ty
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<std::size_t>::invalid(
-            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+        return LayerValue<std::size_t>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
     return search_config_files<std::size_t>(
         format_,
@@ -131,8 +128,7 @@ LayerValue<std::size_t> YamlFileProvider::num_pals_total(ConfigScopeType type, c
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<std::size_t>::invalid(
-            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+        return LayerValue<std::size_t>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
     return search_config_files<std::size_t>(
         format_,
@@ -148,8 +144,7 @@ LayerValue<std::size_t> YamlFileProvider::max_map_data_size(ConfigScopeType type
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<std::size_t>::invalid(
-            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+        return LayerValue<std::size_t>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
     return search_config_files<std::size_t>(
         format_,
@@ -165,8 +160,7 @@ LayerValue<std::size_t> YamlFileProvider::num_tiles_per_metatile(ConfigScopeType
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<std::size_t>::invalid(
-            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+        return LayerValue<std::size_t>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
     return search_config_files<std::size_t>(
         format_,
@@ -198,8 +192,7 @@ LayerValue<ArtifactEditMode> YamlFileProvider::tiles_edit_mode(ConfigScopeType t
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<ArtifactEditMode>::invalid(
-            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+        return LayerValue<ArtifactEditMode>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
     return search_config_files<ArtifactEditMode>(
         format_,
@@ -215,8 +208,7 @@ LayerValue<ArtifactEditMode> YamlFileProvider::pals_edit_mode(ConfigScopeType ty
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<ArtifactEditMode>::invalid(
-            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+        return LayerValue<ArtifactEditMode>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
     return search_config_files<ArtifactEditMode>(
         format_,
@@ -248,8 +240,7 @@ LayerValue<std::vector<PaletteHint>> YamlFileProvider::pal_hints(ConfigScopeType
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<std::vector<PaletteHint>>::invalid(
-            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+        return LayerValue<std::vector<PaletteHint>>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
     return search_config_files<std::vector<PaletteHint>>(
         format_,
@@ -265,8 +256,7 @@ LayerValue<TilesPalMode> YamlFileProvider::tiles_pal_mode(ConfigScopeType type, 
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<TilesPalMode>::invalid(
-            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+        return LayerValue<TilesPalMode>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
     return search_config_files<TilesPalMode>(
         format_,
@@ -278,13 +268,11 @@ LayerValue<TilesPalMode> YamlFileProvider::tiles_pal_mode(ConfigScopeType type, 
         "tileset.tiles.palette_mode");
 }
 
-LayerValue<AnimPalResolutionStrategy>
-YamlFileProvider::anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const
+LayerValue<AnimPalResolutionStrategy> YamlFileProvider::anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<AnimPalResolutionStrategy>::invalid(
-            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+        return LayerValue<AnimPalResolutionStrategy>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
     return search_config_files<AnimPalResolutionStrategy>(
         format_,
@@ -296,13 +284,11 @@ YamlFileProvider::anim_pal_resolution_strategy(ConfigScopeType type, const std::
         "tileset.animations.palette_resolution_strategy");
 }
 
-LayerValue<AnimKeyFrameResolutionStrategy>
-YamlFileProvider::anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const
+LayerValue<AnimKeyFrameResolutionStrategy> YamlFileProvider::anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<AnimKeyFrameResolutionStrategy>::invalid(
-            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+        return LayerValue<AnimKeyFrameResolutionStrategy>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
     return search_config_files<AnimKeyFrameResolutionStrategy>(
         format_,
@@ -330,13 +316,11 @@ LayerValue<bool> YamlFileProvider::verify_checksums(ConfigScopeType type, const 
         "verify_checksums");
 }
 
-LayerValue<std::string>
-YamlFileProvider::tileset_paths_primary_src(ConfigScopeType type, const std::string &scope) const
+LayerValue<std::string> YamlFileProvider::tileset_paths_primary_src(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<std::string>::invalid(
-            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+        return LayerValue<std::string>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
     return search_config_files<std::string>(
         format_,
@@ -348,13 +332,11 @@ YamlFileProvider::tileset_paths_primary_src(ConfigScopeType type, const std::str
         "tileset.paths.primary.src");
 }
 
-LayerValue<std::string>
-YamlFileProvider::tileset_paths_primary_bin(ConfigScopeType type, const std::string &scope) const
+LayerValue<std::string> YamlFileProvider::tileset_paths_primary_bin(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<std::string>::invalid(
-            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+        return LayerValue<std::string>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
     return search_config_files<std::string>(
         format_,
@@ -366,13 +348,11 @@ YamlFileProvider::tileset_paths_primary_bin(ConfigScopeType type, const std::str
         "tileset.paths.primary.bin");
 }
 
-LayerValue<std::string>
-YamlFileProvider::tileset_paths_secondary_src(ConfigScopeType type, const std::string &scope) const
+LayerValue<std::string> YamlFileProvider::tileset_paths_secondary_src(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<std::string>::invalid(
-            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+        return LayerValue<std::string>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
     return search_config_files<std::string>(
         format_,
@@ -384,13 +364,11 @@ YamlFileProvider::tileset_paths_secondary_src(ConfigScopeType type, const std::s
         "tileset.paths.secondary.src");
 }
 
-LayerValue<std::string>
-YamlFileProvider::tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const
+LayerValue<std::string> YamlFileProvider::tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<std::string>::invalid(
-            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+        return LayerValue<std::string>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
     return search_config_files<std::string>(
         format_,
@@ -402,8 +380,7 @@ YamlFileProvider::tileset_paths_secondary_bin(ConfigScopeType type, const std::s
         "tileset.paths.secondary.bin");
 }
 
-LayerValue<bool>
-YamlFileProvider::tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const
+LayerValue<bool> YamlFileProvider::tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {

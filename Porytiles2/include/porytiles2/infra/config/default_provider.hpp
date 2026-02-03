@@ -26,68 +26,49 @@ class DefaultProvider final : public ConfigProvider {
      */
     [[nodiscard]] std::string name() const override;
 
-    [[nodiscard]] LayerValue<std::size_t>
-    num_tiles_in_primary(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::size_t> num_tiles_in_primary(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<std::size_t>
-    num_tiles_total(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::size_t> num_tiles_total(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<std::size_t>
-    num_metatiles_in_primary(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::size_t> num_metatiles_in_primary(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<std::size_t>
-    num_metatiles_total(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::size_t> num_metatiles_total(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<std::size_t>
-    num_pals_in_primary(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::size_t> num_pals_in_primary(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<std::size_t> num_pals_total(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<std::size_t>
-    max_map_data_size(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::size_t> max_map_data_size(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<std::size_t>
-    num_tiles_per_metatile(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::size_t> num_tiles_per_metatile(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<Rgba32>
-    extrinsic_transparency(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<Rgba32> extrinsic_transparency(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<ArtifactEditMode>
-    tiles_edit_mode(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<ArtifactEditMode> tiles_edit_mode(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<ArtifactEditMode>
-    pals_edit_mode(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<ArtifactEditMode> pals_edit_mode(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<bool> pal_hints_enabled(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<std::vector<PaletteHint>>
-    pal_hints(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::vector<PaletteHint>> pal_hints(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<TilesPalMode>
-    tiles_pal_mode(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<TilesPalMode> tiles_pal_mode(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<AnimPalResolutionStrategy>
-    anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<AnimPalResolutionStrategy> anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<AnimKeyFrameResolutionStrategy>
-    anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<AnimKeyFrameResolutionStrategy> anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<bool> verify_checksums(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<std::string>
-    tileset_paths_primary_src(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::string> tileset_paths_primary_src(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<std::string>
-    tileset_paths_primary_bin(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::string> tileset_paths_primary_bin(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<std::string>
-    tileset_paths_secondary_src(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::string> tileset_paths_secondary_src(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<std::string>
-    tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::string> tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<bool>
-    tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<bool> tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const override;
 };
 
 } // namespace porytiles2

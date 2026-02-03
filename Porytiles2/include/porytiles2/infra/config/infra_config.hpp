@@ -62,7 +62,9 @@ class InfraConfig {
         return validated_val;
     }
 
+
   protected:
+
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::string>>
     tileset_paths_primary_src_validated(ConfigScopeType type, const std::string &scope) const
@@ -122,6 +124,7 @@ class InfraConfig {
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
     tileset_animations_wire_anim_code_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
 };
 
 } // namespace porytiles2

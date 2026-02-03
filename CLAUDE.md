@@ -59,9 +59,16 @@ Uses CMake 3.20+ with C++23. Requires `zlib`, `libpng`, and GoogleTest.
 Quick reference:
 ```bash
 cmake --build clion-build-debug -j7 > /tmp/build.log 2>&1  # Build (check exit code)
+cmake --install clion-build-debug --prefix ~/.local        # Install to ~/.local/bin
 ./clion-build-debug/Porytiles2/tests/Porytiles2AllTests > /tmp/test.log 2>&1  # Test
 ./Scripts/format.sh 2> /dev/null  # Format code
 ```
+
+**After building, always install the executable to make it available for testing.**
+
+## Testing with pokeemerald-expansion
+
+A pokeemerald-expansion testbed project is available at `../pokeemerald-expansion` for testing the installed `porytiles2` executable against a real decomp project.
 
 ## Python Environment For Config System Code Generation
 

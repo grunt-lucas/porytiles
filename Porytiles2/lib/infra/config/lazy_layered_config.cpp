@@ -7,10 +7,10 @@
 #include <string>
 
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
-#include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/source_locations.hpp"
-#include "porytiles2/utilities/string_utils.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
+#include "porytiles2/utilities/string_utils.hpp"
 
 namespace porytiles2 {
 
@@ -22,9 +22,7 @@ namespace porytiles2 {
 
 template <typename T>
 ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
-    const std::string &cache_key,
-    const std::string &canonical_name,
-    std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const
+    const std::string &cache_key, const std::string &canonical_name, std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const
 {
     /*
      * WARNING! HACK ALERT! WARNING!
@@ -35,8 +33,8 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
      * - std::to_string handles numeric types (size_t, bool, etc.)
      * - porytiles2::to_string handles custom types (Rgba32, std::string, std::vector<T>, etc.)
      */
-    using porytiles2::to_string;
     using std::to_string;
+    using porytiles2::to_string;
 
     // Check if already cached
     if (cache_.contains(cache_key)) {
@@ -45,8 +43,7 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
             cached_value = std::any_cast<T>(cache_.at(cache_key));
         }
         catch (const std::bad_any_cast &) {
-            panic(format_->format(
-                "bad_any_cast for cache key '{}': cached type does not match requested type", cache_key));
+            panic(format_->format("bad_any_cast for cache key '{}': cached type does not match requested type", cache_key));
         }
         std::string cached_provider_name = provider_name_.at(cache_key);
         std::string source = source_.at(cache_key);
@@ -62,10 +59,10 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
         if (layer_value.state == ValidationState::invalid) {
             const auto source_info = format_->format("{}", layer_value.source_info);
             std::vector<std::string> error_lines;
-            error_lines.push_back(format_->format(
-                "invalid value for '{}' from config source '{}':",
-                FormatParam{cache_key, Style::bold},
-                FormatParam{source_info, Style::bold}));
+                        error_lines.push_back(format_->format(
+                            "invalid value for '{}' from config source '{}':",
+                            FormatParam{cache_key, Style::bold},
+                            FormatParam{source_info, Style::bold}));
             error_lines.emplace_back();
             error_lines.emplace_back("Details:");
             error_lines.push_back(format_->format("{}", layer_value.error_message));
@@ -89,8 +86,7 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
             std::string source = format_->format("{}", layer_value.source_info);
             source_[cache_key] = source;
             source_details_[cache_key] = layer_value.source_details;
-            return ConfigValue<T>{
-                resolved_value, canonical_name, layer_value.provider_name, source, layer_value.source_details};
+            return ConfigValue<T>{resolved_value, canonical_name, layer_value.provider_name, source, layer_value.source_details};
         }
 
         // Otherwise, state is not_provided - continue to next provider
@@ -106,8 +102,8 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
 }
 
 template <typename T>
-std::vector<ProvenanceChainLink<T>>
-LazyLayeredConfig::collect_provenance_chain(std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const
+std::vector<ProvenanceChainLink<T>> LazyLayeredConfig::collect_provenance_chain(
+    std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const
 {
     std::vector<ProvenanceChainLink<T>> chain;
     chain.reserve(providers_.size());
@@ -120,286 +116,224 @@ LazyLayeredConfig::collect_provenance_chain(std::function<LayerValue<T>(const Co
     return chain;
 }
 
-ChainableResult<ConfigValue<std::size_t>>
-LazyLayeredConfig::num_tiles_in_primary_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_tiles_in_primary_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<std::size_t>(
-        key, "Number Of Tiles In Primary", [&type, &scope](const ConfigProvider &provider) {
-            return provider.num_tiles_in_primary(type, scope);
-        });
+        key, "Number Of Tiles In Primary", [&type, &scope](const ConfigProvider &provider) { return provider.num_tiles_in_primary(type, scope); });
 }
 
-ChainableResult<ConfigValue<std::size_t>>
-LazyLayeredConfig::num_tiles_total_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_tiles_total_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<std::size_t>(
-        key, "Number Of Tiles Total", [&type, &scope](const ConfigProvider &provider) {
-            return provider.num_tiles_total(type, scope);
-        });
+        key, "Number Of Tiles Total", [&type, &scope](const ConfigProvider &provider) { return provider.num_tiles_total(type, scope); });
 }
 
-ChainableResult<ConfigValue<std::size_t>>
-LazyLayeredConfig::num_metatiles_in_primary_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_metatiles_in_primary_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<std::size_t>(
-        key, "Number Of Metatiles In Primary", [&type, &scope](const ConfigProvider &provider) {
-            return provider.num_metatiles_in_primary(type, scope);
-        });
+        key, "Number Of Metatiles In Primary", [&type, &scope](const ConfigProvider &provider) { return provider.num_metatiles_in_primary(type, scope); });
 }
 
-ChainableResult<ConfigValue<std::size_t>>
-LazyLayeredConfig::num_metatiles_total_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_metatiles_total_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<std::size_t>(
-        key, "Number Of Metatiles Total", [&type, &scope](const ConfigProvider &provider) {
-            return provider.num_metatiles_total(type, scope);
-        });
+        key, "Number Of Metatiles Total", [&type, &scope](const ConfigProvider &provider) { return provider.num_metatiles_total(type, scope); });
 }
 
-ChainableResult<ConfigValue<std::size_t>>
-LazyLayeredConfig::num_pals_in_primary_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_pals_in_primary_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<std::size_t>(
-        key, "Number Of Palettes In Primary", [&type, &scope](const ConfigProvider &provider) {
-            return provider.num_pals_in_primary(type, scope);
-        });
+        key, "Number Of Palettes In Primary", [&type, &scope](const ConfigProvider &provider) { return provider.num_pals_in_primary(type, scope); });
 }
 
-ChainableResult<ConfigValue<std::size_t>>
-LazyLayeredConfig::num_pals_total_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_pals_total_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<std::size_t>(
-        key, "Number Of Palettes Total", [&type, &scope](const ConfigProvider &provider) {
-            return provider.num_pals_total(type, scope);
-        });
+        key, "Number Of Palettes Total", [&type, &scope](const ConfigProvider &provider) { return provider.num_pals_total(type, scope); });
 }
 
-ChainableResult<ConfigValue<std::size_t>>
-LazyLayeredConfig::max_map_data_size_raw(ConfigScopeType type, const std::string &scope) const
-{
-    const auto name = extract_function_name();
-    // Strip the _raw suffix from the function name for cache key
-    const auto base_name = name.substr(0, name.size() - 4);
-    const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<std::size_t>(key, "Max Map Data Size", [&type, &scope](const ConfigProvider &provider) {
-        return provider.max_map_data_size(type, scope);
-    });
-}
-
-ChainableResult<ConfigValue<std::size_t>>
-LazyLayeredConfig::num_tiles_per_metatile_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::max_map_data_size_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<std::size_t>(
-        key, "Number Of Tiles Per Metatile", [&type, &scope](const ConfigProvider &provider) {
-            return provider.num_tiles_per_metatile(type, scope);
-        });
+        key, "Max Map Data Size", [&type, &scope](const ConfigProvider &provider) { return provider.max_map_data_size(type, scope); });
 }
 
-ChainableResult<ConfigValue<Rgba32>>
-LazyLayeredConfig::extrinsic_transparency_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<std::size_t>> LazyLayeredConfig::num_tiles_per_metatile_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<Rgba32>(key, "Extrinsic Transparency", [&type, &scope](const ConfigProvider &provider) {
-        return provider.extrinsic_transparency(type, scope);
-    });
+    return resolve_config_value<std::size_t>(
+        key, "Number Of Tiles Per Metatile", [&type, &scope](const ConfigProvider &provider) { return provider.num_tiles_per_metatile(type, scope); });
 }
 
-ChainableResult<ConfigValue<ArtifactEditMode>>
-LazyLayeredConfig::tiles_edit_mode_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<Rgba32>> LazyLayeredConfig::extrinsic_transparency_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<Rgba32>(
+        key, "Extrinsic Transparency", [&type, &scope](const ConfigProvider &provider) { return provider.extrinsic_transparency(type, scope); });
+}
+
+ChainableResult<ConfigValue<ArtifactEditMode>> LazyLayeredConfig::tiles_edit_mode_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<ArtifactEditMode>(
-        key, "Tiles Edit Mode", [&type, &scope](const ConfigProvider &provider) {
-            return provider.tiles_edit_mode(type, scope);
-        });
+        key, "Tiles Edit Mode", [&type, &scope](const ConfigProvider &provider) { return provider.tiles_edit_mode(type, scope); });
 }
 
-ChainableResult<ConfigValue<ArtifactEditMode>>
-LazyLayeredConfig::pals_edit_mode_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<ArtifactEditMode>> LazyLayeredConfig::pals_edit_mode_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<ArtifactEditMode>(
-        key, "Palettes Edit Mode", [&type, &scope](const ConfigProvider &provider) {
-            return provider.pals_edit_mode(type, scope);
-        });
+        key, "Palettes Edit Mode", [&type, &scope](const ConfigProvider &provider) { return provider.pals_edit_mode(type, scope); });
 }
 
-ChainableResult<ConfigValue<bool>>
-LazyLayeredConfig::pal_hints_enabled_raw(ConfigScopeType type, const std::string &scope) const
-{
-    const auto name = extract_function_name();
-    // Strip the _raw suffix from the function name for cache key
-    const auto base_name = name.substr(0, name.size() - 4);
-    const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<bool>(key, "Palette Hints Enabled", [&type, &scope](const ConfigProvider &provider) {
-        return provider.pal_hints_enabled(type, scope);
-    });
-}
-
-ChainableResult<ConfigValue<std::vector<PaletteHint>>>
-LazyLayeredConfig::pal_hints_raw(ConfigScopeType type, const std::string &scope) const
-{
-    const auto name = extract_function_name();
-    // Strip the _raw suffix from the function name for cache key
-    const auto base_name = name.substr(0, name.size() - 4);
-    const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<std::vector<PaletteHint>>(
-        key, "Palette Hints", [&type, &scope](const ConfigProvider &provider) {
-            return provider.pal_hints(type, scope);
-        });
-}
-
-ChainableResult<ConfigValue<TilesPalMode>>
-LazyLayeredConfig::tiles_pal_mode_raw(ConfigScopeType type, const std::string &scope) const
-{
-    const auto name = extract_function_name();
-    // Strip the _raw suffix from the function name for cache key
-    const auto base_name = name.substr(0, name.size() - 4);
-    const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<TilesPalMode>(
-        key, "Tiles Palette Mode", [&type, &scope](const ConfigProvider &provider) {
-            return provider.tiles_pal_mode(type, scope);
-        });
-}
-
-ChainableResult<ConfigValue<AnimPalResolutionStrategy>>
-LazyLayeredConfig::anim_pal_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const
-{
-    const auto name = extract_function_name();
-    // Strip the _raw suffix from the function name for cache key
-    const auto base_name = name.substr(0, name.size() - 4);
-    const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<AnimPalResolutionStrategy>(
-        key, "Animation Palette Resolution Strategy", [&type, &scope](const ConfigProvider &provider) {
-            return provider.anim_pal_resolution_strategy(type, scope);
-        });
-}
-
-ChainableResult<ConfigValue<AnimKeyFrameResolutionStrategy>>
-LazyLayeredConfig::anim_key_frame_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const
-{
-    const auto name = extract_function_name();
-    // Strip the _raw suffix from the function name for cache key
-    const auto base_name = name.substr(0, name.size() - 4);
-    const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<AnimKeyFrameResolutionStrategy>(
-        key, "Animation Key Frame Resolution Strategy", [&type, &scope](const ConfigProvider &provider) {
-            return provider.anim_key_frame_resolution_strategy(type, scope);
-        });
-}
-
-ChainableResult<ConfigValue<bool>>
-LazyLayeredConfig::verify_checksums_raw(ConfigScopeType type, const std::string &scope) const
-{
-    const auto name = extract_function_name();
-    // Strip the _raw suffix from the function name for cache key
-    const auto base_name = name.substr(0, name.size() - 4);
-    const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<bool>(key, "Verify Checksums", [&type, &scope](const ConfigProvider &provider) {
-        return provider.verify_checksums(type, scope);
-    });
-}
-
-ChainableResult<ConfigValue<std::string>>
-LazyLayeredConfig::tileset_paths_primary_src_raw(ConfigScopeType type, const std::string &scope) const
-{
-    const auto name = extract_function_name();
-    // Strip the _raw suffix from the function name for cache key
-    const auto base_name = name.substr(0, name.size() - 4);
-    const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<std::string>(
-        key, "Tileset Paths Primary Source", [&type, &scope](const ConfigProvider &provider) {
-            return provider.tileset_paths_primary_src(type, scope);
-        });
-}
-
-ChainableResult<ConfigValue<std::string>>
-LazyLayeredConfig::tileset_paths_primary_bin_raw(ConfigScopeType type, const std::string &scope) const
-{
-    const auto name = extract_function_name();
-    // Strip the _raw suffix from the function name for cache key
-    const auto base_name = name.substr(0, name.size() - 4);
-    const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<std::string>(
-        key, "Tileset Paths Primary Bin", [&type, &scope](const ConfigProvider &provider) {
-            return provider.tileset_paths_primary_bin(type, scope);
-        });
-}
-
-ChainableResult<ConfigValue<std::string>>
-LazyLayeredConfig::tileset_paths_secondary_src_raw(ConfigScopeType type, const std::string &scope) const
-{
-    const auto name = extract_function_name();
-    // Strip the _raw suffix from the function name for cache key
-    const auto base_name = name.substr(0, name.size() - 4);
-    const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<std::string>(
-        key, "Tileset Paths Secondary Source", [&type, &scope](const ConfigProvider &provider) {
-            return provider.tileset_paths_secondary_src(type, scope);
-        });
-}
-
-ChainableResult<ConfigValue<std::string>>
-LazyLayeredConfig::tileset_paths_secondary_bin_raw(ConfigScopeType type, const std::string &scope) const
-{
-    const auto name = extract_function_name();
-    // Strip the _raw suffix from the function name for cache key
-    const auto base_name = name.substr(0, name.size() - 4);
-    const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<std::string>(
-        key, "Tileset Paths Secondary Bin", [&type, &scope](const ConfigProvider &provider) {
-            return provider.tileset_paths_secondary_bin(type, scope);
-        });
-}
-
-ChainableResult<ConfigValue<bool>>
-LazyLayeredConfig::tileset_animations_wire_anim_code_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<bool>> LazyLayeredConfig::pal_hints_enabled_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<bool>(
-        key, "Tileset Animations Wire Anim Code", [&type, &scope](const ConfigProvider &provider) {
-            return provider.tileset_animations_wire_anim_code(type, scope);
-        });
+        key, "Palette Hints Enabled", [&type, &scope](const ConfigProvider &provider) { return provider.pal_hints_enabled(type, scope); });
+}
+
+ChainableResult<ConfigValue<std::vector<PaletteHint>>> LazyLayeredConfig::pal_hints_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<std::vector<PaletteHint>>(
+        key, "Palette Hints", [&type, &scope](const ConfigProvider &provider) { return provider.pal_hints(type, scope); });
+}
+
+ChainableResult<ConfigValue<TilesPalMode>> LazyLayeredConfig::tiles_pal_mode_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<TilesPalMode>(
+        key, "Tiles Palette Mode", [&type, &scope](const ConfigProvider &provider) { return provider.tiles_pal_mode(type, scope); });
+}
+
+ChainableResult<ConfigValue<AnimPalResolutionStrategy>> LazyLayeredConfig::anim_pal_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<AnimPalResolutionStrategy>(
+        key, "Animation Palette Resolution Strategy", [&type, &scope](const ConfigProvider &provider) { return provider.anim_pal_resolution_strategy(type, scope); });
+}
+
+ChainableResult<ConfigValue<AnimKeyFrameResolutionStrategy>> LazyLayeredConfig::anim_key_frame_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<AnimKeyFrameResolutionStrategy>(
+        key, "Animation Key Frame Resolution Strategy", [&type, &scope](const ConfigProvider &provider) { return provider.anim_key_frame_resolution_strategy(type, scope); });
+}
+
+ChainableResult<ConfigValue<bool>> LazyLayeredConfig::verify_checksums_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<bool>(
+        key, "Verify Checksums", [&type, &scope](const ConfigProvider &provider) { return provider.verify_checksums(type, scope); });
+}
+
+ChainableResult<ConfigValue<std::string>> LazyLayeredConfig::tileset_paths_primary_src_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<std::string>(
+        key, "Tileset Paths Primary Source", [&type, &scope](const ConfigProvider &provider) { return provider.tileset_paths_primary_src(type, scope); });
+}
+
+ChainableResult<ConfigValue<std::string>> LazyLayeredConfig::tileset_paths_primary_bin_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<std::string>(
+        key, "Tileset Paths Primary Bin", [&type, &scope](const ConfigProvider &provider) { return provider.tileset_paths_primary_bin(type, scope); });
+}
+
+ChainableResult<ConfigValue<std::string>> LazyLayeredConfig::tileset_paths_secondary_src_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<std::string>(
+        key, "Tileset Paths Secondary Source", [&type, &scope](const ConfigProvider &provider) { return provider.tileset_paths_secondary_src(type, scope); });
+}
+
+ChainableResult<ConfigValue<std::string>> LazyLayeredConfig::tileset_paths_secondary_bin_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<std::string>(
+        key, "Tileset Paths Secondary Bin", [&type, &scope](const ConfigProvider &provider) { return provider.tileset_paths_secondary_bin(type, scope); });
+}
+
+ChainableResult<ConfigValue<bool>> LazyLayeredConfig::tileset_animations_wire_anim_code_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<bool>(
+        key, "Tileset Animations Wire Anim Code", [&type, &scope](const ConfigProvider &provider) { return provider.tileset_animations_wire_anim_code(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<std::size_t>>
@@ -508,12 +442,10 @@ LazyLayeredConfig::anim_pal_resolution_strategy_provenance_chain(ConfigScopeType
 }
 
 std::vector<ProvenanceChainLink<AnimKeyFrameResolutionStrategy>>
-LazyLayeredConfig::anim_key_frame_resolution_strategy_provenance_chain(
-    ConfigScopeType type, const std::string &scope) const
+LazyLayeredConfig::anim_key_frame_resolution_strategy_provenance_chain(ConfigScopeType type, const std::string &scope) const
 {
-    return collect_provenance_chain<AnimKeyFrameResolutionStrategy>([&type, &scope](const ConfigProvider &provider) {
-        return provider.anim_key_frame_resolution_strategy(type, scope);
-    });
+    return collect_provenance_chain<AnimKeyFrameResolutionStrategy>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.anim_key_frame_resolution_strategy(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<bool>>
@@ -551,12 +483,11 @@ LazyLayeredConfig::tileset_paths_secondary_bin_provenance_chain(ConfigScopeType 
         [&type, &scope](const ConfigProvider &provider) { return provider.tileset_paths_secondary_bin(type, scope); });
 }
 
-std::vector<ProvenanceChainLink<bool>> LazyLayeredConfig::tileset_animations_wire_anim_code_provenance_chain(
-    ConfigScopeType type, const std::string &scope) const
+std::vector<ProvenanceChainLink<bool>>
+LazyLayeredConfig::tileset_animations_wire_anim_code_provenance_chain(ConfigScopeType type, const std::string &scope) const
 {
-    return collect_provenance_chain<bool>([&type, &scope](const ConfigProvider &provider) {
-        return provider.tileset_animations_wire_anim_code(type, scope);
-    });
+    return collect_provenance_chain<bool>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.tileset_animations_wire_anim_code(type, scope); });
 }
 
 } // namespace porytiles2

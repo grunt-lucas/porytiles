@@ -19,8 +19,7 @@ std::string HeaderDefineProvider::name() const
     return "HeaderDefineProvider";
 }
 
-LayerValue<std::size_t>
-HeaderDefineProvider::num_tiles_in_primary(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<std::size_t> HeaderDefineProvider::num_tiles_in_primary(ConfigScopeType /*type*/, const std::string &/*scope*/) const
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
@@ -33,16 +32,20 @@ HeaderDefineProvider::num_tiles_in_primary(ConfigScopeType /*type*/, const std::
         "NUM_TILES_IN_PRIMARY");
 }
 
-LayerValue<std::size_t>
-HeaderDefineProvider::num_tiles_total(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<std::size_t> HeaderDefineProvider::num_tiles_total(ConfigScopeType /*type*/, const std::string &/*scope*/) const
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
-        parser_driver_, format_, header_path, "NUM_TILES_TOTAL", parse_size_t, "NUM_TILES_TOTAL", "NUM_TILES_TOTAL");
+        parser_driver_,
+        format_,
+        header_path,
+        "NUM_TILES_TOTAL",
+        parse_size_t,
+        "NUM_TILES_TOTAL",
+        "NUM_TILES_TOTAL");
 }
 
-LayerValue<std::size_t>
-HeaderDefineProvider::num_metatiles_in_primary(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<std::size_t> HeaderDefineProvider::num_metatiles_in_primary(ConfigScopeType /*type*/, const std::string &/*scope*/) const
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
@@ -55,8 +58,7 @@ HeaderDefineProvider::num_metatiles_in_primary(ConfigScopeType /*type*/, const s
         "NUM_METATILES_IN_PRIMARY");
 }
 
-LayerValue<std::size_t>
-HeaderDefineProvider::num_metatiles_total(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<std::size_t> HeaderDefineProvider::num_metatiles_total(ConfigScopeType /*type*/, const std::string &/*scope*/) const
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
@@ -69,8 +71,7 @@ HeaderDefineProvider::num_metatiles_total(ConfigScopeType /*type*/, const std::s
         "NUM_METATILES_TOTAL");
 }
 
-LayerValue<std::size_t>
-HeaderDefineProvider::num_pals_in_primary(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<std::size_t> HeaderDefineProvider::num_pals_in_primary(ConfigScopeType /*type*/, const std::string &/*scope*/) const
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
@@ -83,16 +84,20 @@ HeaderDefineProvider::num_pals_in_primary(ConfigScopeType /*type*/, const std::s
         "NUM_PALS_IN_PRIMARY");
 }
 
-LayerValue<std::size_t>
-HeaderDefineProvider::num_pals_total(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<std::size_t> HeaderDefineProvider::num_pals_total(ConfigScopeType /*type*/, const std::string &/*scope*/) const
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
-        parser_driver_, format_, header_path, "NUM_PALS_TOTAL", parse_size_t, "NUM_PALS_TOTAL", "NUM_PALS_TOTAL");
+        parser_driver_,
+        format_,
+        header_path,
+        "NUM_PALS_TOTAL",
+        parse_size_t,
+        "NUM_PALS_TOTAL",
+        "NUM_PALS_TOTAL");
 }
 
-LayerValue<std::size_t>
-HeaderDefineProvider::max_map_data_size(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<std::size_t> HeaderDefineProvider::max_map_data_size(ConfigScopeType /*type*/, const std::string &/*scope*/) const
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
@@ -105,8 +110,7 @@ HeaderDefineProvider::max_map_data_size(ConfigScopeType /*type*/, const std::str
         "MAX_MAP_DATA_SIZE");
 }
 
-LayerValue<std::size_t>
-HeaderDefineProvider::num_tiles_per_metatile(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<std::size_t> HeaderDefineProvider::num_tiles_per_metatile(ConfigScopeType /*type*/, const std::string &/*scope*/) const
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
@@ -119,97 +123,85 @@ HeaderDefineProvider::num_tiles_per_metatile(ConfigScopeType /*type*/, const std
         "NUM_TILES_PER_METATILE");
 }
 
-LayerValue<Rgba32>
-HeaderDefineProvider::extrinsic_transparency(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<Rgba32> HeaderDefineProvider::extrinsic_transparency(ConfigScopeType /*type*/, const std::string &/*scope*/) const
 {
     // No header_define specified for this config value
     return LayerValue<Rgba32>::not_provided();
 }
 
-LayerValue<ArtifactEditMode>
-HeaderDefineProvider::tiles_edit_mode(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<ArtifactEditMode> HeaderDefineProvider::tiles_edit_mode(ConfigScopeType /*type*/, const std::string &/*scope*/) const
 {
     // No header_define specified for this config value
     return LayerValue<ArtifactEditMode>::not_provided();
 }
 
-LayerValue<ArtifactEditMode>
-HeaderDefineProvider::pals_edit_mode(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<ArtifactEditMode> HeaderDefineProvider::pals_edit_mode(ConfigScopeType /*type*/, const std::string &/*scope*/) const
 {
     // No header_define specified for this config value
     return LayerValue<ArtifactEditMode>::not_provided();
 }
 
-LayerValue<bool> HeaderDefineProvider::pal_hints_enabled(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<bool> HeaderDefineProvider::pal_hints_enabled(ConfigScopeType /*type*/, const std::string &/*scope*/) const
 {
     // No header_define specified for this config value
     return LayerValue<bool>::not_provided();
 }
 
-LayerValue<std::vector<PaletteHint>>
-HeaderDefineProvider::pal_hints(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<std::vector<PaletteHint>> HeaderDefineProvider::pal_hints(ConfigScopeType /*type*/, const std::string &/*scope*/) const
 {
     // No header_define specified for this config value
     return LayerValue<std::vector<PaletteHint>>::not_provided();
 }
 
-LayerValue<TilesPalMode>
-HeaderDefineProvider::tiles_pal_mode(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<TilesPalMode> HeaderDefineProvider::tiles_pal_mode(ConfigScopeType /*type*/, const std::string &/*scope*/) const
 {
     // No header_define specified for this config value
     return LayerValue<TilesPalMode>::not_provided();
 }
 
-LayerValue<AnimPalResolutionStrategy>
-HeaderDefineProvider::anim_pal_resolution_strategy(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<AnimPalResolutionStrategy> HeaderDefineProvider::anim_pal_resolution_strategy(ConfigScopeType /*type*/, const std::string &/*scope*/) const
 {
     // No header_define specified for this config value
     return LayerValue<AnimPalResolutionStrategy>::not_provided();
 }
 
-LayerValue<AnimKeyFrameResolutionStrategy>
-HeaderDefineProvider::anim_key_frame_resolution_strategy(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<AnimKeyFrameResolutionStrategy> HeaderDefineProvider::anim_key_frame_resolution_strategy(ConfigScopeType /*type*/, const std::string &/*scope*/) const
 {
     // No header_define specified for this config value
     return LayerValue<AnimKeyFrameResolutionStrategy>::not_provided();
 }
 
-LayerValue<bool> HeaderDefineProvider::verify_checksums(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<bool> HeaderDefineProvider::verify_checksums(ConfigScopeType /*type*/, const std::string &/*scope*/) const
 {
     // No header_define specified for this config value
     return LayerValue<bool>::not_provided();
 }
 
-LayerValue<std::string>
-HeaderDefineProvider::tileset_paths_primary_src(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<std::string> HeaderDefineProvider::tileset_paths_primary_src(ConfigScopeType /*type*/, const std::string &/*scope*/) const
 {
     // No header_define specified for this config value
     return LayerValue<std::string>::not_provided();
 }
 
-LayerValue<std::string>
-HeaderDefineProvider::tileset_paths_primary_bin(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<std::string> HeaderDefineProvider::tileset_paths_primary_bin(ConfigScopeType /*type*/, const std::string &/*scope*/) const
 {
     // No header_define specified for this config value
     return LayerValue<std::string>::not_provided();
 }
 
-LayerValue<std::string>
-HeaderDefineProvider::tileset_paths_secondary_src(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<std::string> HeaderDefineProvider::tileset_paths_secondary_src(ConfigScopeType /*type*/, const std::string &/*scope*/) const
 {
     // No header_define specified for this config value
     return LayerValue<std::string>::not_provided();
 }
 
-LayerValue<std::string>
-HeaderDefineProvider::tileset_paths_secondary_bin(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<std::string> HeaderDefineProvider::tileset_paths_secondary_bin(ConfigScopeType /*type*/, const std::string &/*scope*/) const
 {
     // No header_define specified for this config value
     return LayerValue<std::string>::not_provided();
 }
 
-LayerValue<bool>
-HeaderDefineProvider::tileset_animations_wire_anim_code(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<bool> HeaderDefineProvider::tileset_animations_wire_anim_code(ConfigScopeType /*type*/, const std::string &/*scope*/) const
 {
     // No header_define specified for this config value
     return LayerValue<bool>::not_provided();

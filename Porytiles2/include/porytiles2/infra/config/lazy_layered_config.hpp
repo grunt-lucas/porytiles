@@ -16,10 +16,10 @@
 #include "porytiles2/domain/packing/models/palette_hint.hpp"
 #include "porytiles2/infra/config/config_provider.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
-#include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
 
@@ -146,16 +146,11 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      * Infra Config Raw Methods (Tier 1)
      * Note: _validated methods (Tier 2) are inherited from InfraConfig and not overridden
      */
-    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
-    tileset_paths_primary_src_raw(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
-    tileset_paths_primary_bin_raw(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
-    tileset_paths_secondary_src_raw(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
-    tileset_paths_secondary_bin_raw(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] ChainableResult<ConfigValue<bool>>
-    tileset_animations_wire_anim_code_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>> tileset_paths_primary_src_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>> tileset_paths_primary_bin_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>> tileset_paths_secondary_src_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>> tileset_paths_secondary_bin_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<bool>> tileset_animations_wire_anim_code_raw(ConfigScopeType type, const std::string &scope) const override;
 
   public:
     /*
@@ -522,9 +517,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      */
     template <typename T>
     ChainableResult<ConfigValue<T>> resolve_config_value(
-        const std::string &cache_key,
-        const std::string &canonical_name,
-        std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
+        const std::string &cache_key, const std::string &canonical_name, std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
 
     /**
      * @brief Collects the provenance chain by querying all providers.
@@ -539,8 +532,8 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      * @return Vector of ProvenanceChainLink entries from all providers
      */
     template <typename T>
-    std::vector<ProvenanceChainLink<T>>
-    collect_provenance_chain(std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
+    std::vector<ProvenanceChainLink<T>> collect_provenance_chain(
+        std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
 };
 
 } // namespace porytiles2

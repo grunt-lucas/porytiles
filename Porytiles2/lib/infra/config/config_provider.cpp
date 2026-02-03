@@ -8,134 +8,112 @@
 
 namespace porytiles2 {
 
-LayerValue<std::size_t> ConfigProvider::num_tiles_in_primary(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> ConfigProvider::num_tiles_in_primary([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t>
-ConfigProvider::num_tiles_total([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> ConfigProvider::num_tiles_total([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_metatiles_in_primary(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> ConfigProvider::num_metatiles_in_primary([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_metatiles_total(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> ConfigProvider::num_metatiles_total([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_pals_in_primary(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> ConfigProvider::num_pals_in_primary([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t>
-ConfigProvider::num_pals_total([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> ConfigProvider::num_pals_total([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::max_map_data_size(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> ConfigProvider::max_map_data_size([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_tiles_per_metatile(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> ConfigProvider::num_tiles_per_metatile([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<Rgba32> ConfigProvider::extrinsic_transparency(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<Rgba32> ConfigProvider::extrinsic_transparency([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<Rgba32>::not_provided();
 }
 
-LayerValue<ArtifactEditMode>
-ConfigProvider::tiles_edit_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<ArtifactEditMode> ConfigProvider::tiles_edit_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<ArtifactEditMode>::not_provided();
 }
 
-LayerValue<ArtifactEditMode>
-ConfigProvider::pals_edit_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<ArtifactEditMode> ConfigProvider::pals_edit_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<ArtifactEditMode>::not_provided();
 }
 
-LayerValue<bool> ConfigProvider::pal_hints_enabled(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<bool> ConfigProvider::pal_hints_enabled([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<bool>::not_provided();
 }
 
-LayerValue<std::vector<PaletteHint>>
-ConfigProvider::pal_hints([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::vector<PaletteHint>> ConfigProvider::pal_hints([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::vector<PaletteHint>>::not_provided();
 }
 
-LayerValue<TilesPalMode>
-ConfigProvider::tiles_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<TilesPalMode> ConfigProvider::tiles_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<TilesPalMode>::not_provided();
 }
 
-LayerValue<AnimPalResolutionStrategy> ConfigProvider::anim_pal_resolution_strategy(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<AnimPalResolutionStrategy> ConfigProvider::anim_pal_resolution_strategy([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<AnimPalResolutionStrategy>::not_provided();
 }
 
-LayerValue<AnimKeyFrameResolutionStrategy> ConfigProvider::anim_key_frame_resolution_strategy(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<AnimKeyFrameResolutionStrategy> ConfigProvider::anim_key_frame_resolution_strategy([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<AnimKeyFrameResolutionStrategy>::not_provided();
 }
 
-LayerValue<bool>
-ConfigProvider::verify_checksums([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<bool> ConfigProvider::verify_checksums([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<bool>::not_provided();
 }
 
-LayerValue<std::string> ConfigProvider::tileset_paths_primary_src(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::string> ConfigProvider::tileset_paths_primary_src([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::string>::not_provided();
 }
 
-LayerValue<std::string> ConfigProvider::tileset_paths_primary_bin(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::string> ConfigProvider::tileset_paths_primary_bin([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::string>::not_provided();
 }
 
-LayerValue<std::string> ConfigProvider::tileset_paths_secondary_src(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::string> ConfigProvider::tileset_paths_secondary_src([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::string>::not_provided();
 }
 
-LayerValue<std::string> ConfigProvider::tileset_paths_secondary_bin(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::string> ConfigProvider::tileset_paths_secondary_bin([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::string>::not_provided();
 }
 
-LayerValue<bool> ConfigProvider::tileset_animations_wire_anim_code(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<bool> ConfigProvider::tileset_animations_wire_anim_code([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<bool>::not_provided();
 }
