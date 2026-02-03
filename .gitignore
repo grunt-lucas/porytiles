@@ -28,3 +28,8 @@ tmp/**
 # Ignore Python venv
 venv/**
 .venv/**
+
+# Ignore porytiles docs projects
+porytiles-user-docs
+porytiles-dev-docs
+
