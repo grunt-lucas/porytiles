@@ -70,6 +70,35 @@ cmake --install clion-build-debug --prefix ~/.local        # Install to ~/.local
 
 A pokeemerald-expansion testbed project is available at `../pokeemerald-expansion` for testing the installed `porytiles2` executable against a real decomp project.
 
+## Documentation Repositories
+
+Porytiles has two separate documentation repositories (gitignored in the main repo):
+
+- **porytiles-user-docs/**: User-facing documentation (tutorials, CLI reference, usage guides)
+  - URL: https://grunt-lucas.github.io/porytiles-user-docs/
+  - GitHub: https://github.com/grunt-lucas/porytiles-user-docs
+
+- **porytiles-dev-docs/**: Developer documentation (architecture, contributing, API)
+  - URL: https://grunt-lucas.github.io/porytiles-dev-docs/
+  - GitHub: https://github.com/grunt-lucas/porytiles-dev-docs
+
+These are **separate git repositories** cloned into the main porytiles directory. They follow [porymap's documentation pattern](https://github.com/huderlem/porymap) with Sphinx and the Read the Docs theme.
+
+### Building Documentation
+
+```bash
+# Navigate to the docs repo
+cd porytiles-user-docs  # or porytiles-dev-docs
+
+# Build HTML locally
+cd docsrc && uv run make html
+
+# Build and deploy to docs/ for GitHub Pages
+cd docsrc && uv run make github
+```
+
+After running `make github`, commit and push the changes in the docs repo to deploy to GitHub Pages.
+
 ## Python Environment For Config System Code Generation
 
 **CRITICAL: Use `uv` for Python script execution!**
