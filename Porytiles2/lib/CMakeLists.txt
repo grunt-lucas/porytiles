@@ -7,9 +7,9 @@ include(FetchContent)
 #### Find dependencies ####
 ###########################
 
-# Find the PNG package in the standard way. We won't use this for linking, only
-# for including the headers correctly.
+# Find PNG and ZLIB packages using standard CMake discovery
 find_package(PNG REQUIRED)
+find_package(ZLIB REQUIRED)
 
 # fmtlib
 FetchContent_Declare(
@@ -51,18 +51,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(yaml-cpp)
 
-# Find libz.a before cpptrace so that libdwarf's find_package(ZLIB) resolves to
-# the static archive instead of libz.so (which breaks -static linking on Linux).
-find_library(ZLIB_STATIC
-        NAMES libz.a
-        PATHS /opt/homebrew/opt/zlib/lib
-        PATHS /usr/local/opt/zlib/lib
-        PATHS /usr/lib/x86_64-linux-gnu
-        PATHS /usr/lib/aarch64-linux-gnu)
-if (ZLIB_STATIC)
-    set(ZLIB_LIBRARY ${ZLIB_STATIC} CACHE FILEPATH "Path to zlib library" FORCE)
-endif ()
-
 # cpptrace - cross-platform stacktrace library
 # (std::stacktrace not available on macOS with Apple Clang)
 FetchContent_Declare(
@@ -94,14 +82,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(cli11_proj)
 
-# Find libpng.a and libz.a explicitly. We'll statically link these so users
-# don't need to install.
-find_library(PNG_STATIC
-        NAMES libpng.a
-        PATHS /opt/homebrew/opt/libpng/lib
-        PATHS /usr/local/opt/libpng/lib
-        PATHS /usr/lib/x86_64-linux-gnu
-        PATHS /usr/lib/aarch64-linux-gnu)
 ##############################################
 #### Set up Porytiles library compilation ####
 ##############################################
@@ -121,8 +101,7 @@ add_dependencies(Porytiles2Lib generate_config_code)
 target_include_directories(Porytiles2Lib PUBLIC ${PORYTILES2_INCLUDE_DIR})
 # target_include_directories(Porytiles2Lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-# Find the libpng include dirs located via find_package
-target_include_directories(Porytiles2Lib PRIVATE ${PNG_INCLUDE_DIRS})
+# PNG::PNG imported target handles include directories automatically
 
 # For header-only libs, we pull the sources and add headers to include path
 if (pngpp_SOURCE_DIR)
@@ -142,9 +121,9 @@ endif ()
 #### Link dependencies ####
 ###########################
 
-### Link the static libpng and zlib we searched for earlier ###
-target_link_libraries(Porytiles2Lib PRIVATE ${PNG_STATIC})
-target_link_libraries(Porytiles2Lib PRIVATE ${ZLIB_STATIC})
+### Link PNG and ZLIB using imported targets ###
+target_link_libraries(Porytiles2Lib PRIVATE PNG::PNG)
+target_link_libraries(Porytiles2Lib PRIVATE ZLIB::ZLIB)
 
 ### Public link API exposed libs ###
 target_link_libraries(Porytiles2Lib PUBLIC Microsoft.GSL::GSL)
