@@ -97,7 +97,7 @@ TEST_F(AnimKeyFrameManglerTests, shouldPassthroughWhenNoDuplicates)
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
-    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, existing_tiles);
+    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, Rgba32{}, existing_tiles);
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -122,7 +122,7 @@ TEST_F(AnimKeyFrameManglerTests, shouldMangleSimpleDuplicatePair)
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
-    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, existing_tiles);
+    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, Rgba32{}, existing_tiles);
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -139,7 +139,7 @@ TEST_F(AnimKeyFrameManglerTests, shouldMangleSimpleDuplicatePair)
     EXPECT_NE(result.value().tiles[0], result.value().tiles[1]);
 
     // Verify the mangle record
-    const auto &record = result.value().mangle_records[0];
+    const auto &record = *result.value().mangle_records.begin();
     EXPECT_EQ(record.tile_index, 1); // Second tile was mangled
     EXPECT_NE(record.original_pixel, record.mangled_pixel);
 }
@@ -158,7 +158,7 @@ TEST_F(AnimKeyFrameManglerTests, shouldMangleMultipleDuplicatesOfSameTile)
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
-    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, existing_tiles);
+    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, Rgba32{}, existing_tiles);
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -190,7 +190,7 @@ TEST_F(AnimKeyFrameManglerTests, shouldAvoidDuplicatingExistingTiles)
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
-    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, existing_tiles);
+    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, Rgba32{}, existing_tiles);
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -201,6 +201,49 @@ TEST_F(AnimKeyFrameManglerTests, shouldAvoidDuplicatingExistingTiles)
     // Both result tiles should be unique against existing_tiles too
     EXPECT_EQ(existing_tiles.find(result.value().tiles[0]), existing_tiles.end());
     // Note: tiles[0] equals original_tile which is already NOT in existing_tiles (only preexisting_tile is)
+}
+
+TEST_F(AnimKeyFrameManglerTests, shouldNotMangleIntoCollisionWithExistingCanonicalTile)
+{
+    // arrange
+    const auto original_tile = create_two_color_tile(1, 2); // Red corners, green fill
+    std::vector<PixelTile<IndexPixel>> tiles;
+    tiles.push_back(original_tile);
+    tiles.push_back(original_tile); // Duplicate — forces a mangle
+
+    // Create the tile that a naive mangle would produce:
+    // The mangler tries pixel 0 first (corner at index 0) and swaps color 1 (red)
+    // to its nearest palette neighbor. With our test palette, the nearest neighbor
+    // to red (255,0,0) is index 8 (grey 128,128,128) at distance 48897.
+    auto naive_mangle_tile = original_tile;
+    naive_mangle_tile.set(0, IndexPixel{8}); // What the mangler's first attempt would produce
+
+    // Insert the canonical form of this naive mangle into existing tiles,
+    // simulating an unrelated tile in tiles.png that happens to match
+    CanonicalPixelTile<IndexPixel> naive_canonical{naive_mangle_tile};
+    const PixelTile<IndexPixel> &naive_base = naive_canonical;
+
+    std::set<PixelTile<IndexPixel>> existing_canonical_tiles;
+    existing_canonical_tiles.insert(naive_base);
+
+    AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
+
+    // act
+    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, Rgba32{}, existing_canonical_tiles);
+
+    // assert
+    ASSERT_TRUE(result.has_value());
+
+    // The mangled tile should NOT match the naive mangle (mangler had to skip it)
+    EXPECT_NE(result.value().tiles[1], naive_mangle_tile);
+
+    // The mangled tile should still be different from the original
+    EXPECT_NE(result.value().tiles[1], original_tile);
+
+    // The canonical form of the mangled tile should not collide with existing_canonical_tiles
+    CanonicalPixelTile<IndexPixel> result_canonical{result.value().tiles[1]};
+    const PixelTile<IndexPixel> &result_base = result_canonical;
+    EXPECT_EQ(existing_canonical_tiles.find(result_base), existing_canonical_tiles.end());
 }
 
 TEST_F(AnimKeyFrameManglerTests, shouldPreservePaletteIndex)
@@ -227,14 +270,14 @@ TEST_F(AnimKeyFrameManglerTests, shouldPreservePaletteIndex)
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
-    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, existing_tiles);
+    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, Rgba32{}, existing_tiles);
 
     // assert
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().mangle_records.size(), 1);
 
     // The mangled pixel should preserve the palette index
-    const auto &record = result.value().mangle_records[0];
+    const auto &record = *result.value().mangle_records.begin();
     EXPECT_EQ(record.mangled_pixel.palette_index(), pal_index);
 }
 
@@ -251,7 +294,7 @@ TEST_F(AnimKeyFrameManglerTests, shouldEmitRemarkWhenMangling)
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
-    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, existing_tiles);
+    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, Rgba32{}, existing_tiles);
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -280,7 +323,7 @@ TEST_F(AnimKeyFrameManglerTests, shouldMangleSolidColorTile)
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
-    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, existing_tiles);
+    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, Rgba32{}, existing_tiles);
 
     // assert - should SUCCEED by introducing a different palette color
     ASSERT_TRUE(result.has_value());
@@ -290,7 +333,7 @@ TEST_F(AnimKeyFrameManglerTests, shouldMangleSolidColorTile)
     EXPECT_NE(result.value().tiles[0], result.value().tiles[1]);
 
     // The mangled pixel should use a different color from the palette
-    const auto &record = result.value().mangle_records[0];
+    const auto &record = *result.value().mangle_records.begin();
     EXPECT_NE(record.original_pixel.color_index(), record.mangled_pixel.color_index());
 }
 
@@ -314,14 +357,14 @@ TEST_F(AnimKeyFrameManglerTests, shouldHandleTransparentPixels)
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
-    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, existing_tiles);
+    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, Rgba32{}, existing_tiles);
 
     // assert
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().mangle_records.size(), 1);
 
     // Mangled pixel should not be at a transparent position
-    const auto &record = result.value().mangle_records[0];
+    const auto &record = *result.value().mangle_records.begin();
     EXPECT_FALSE(record.original_pixel.is_transparent());
 }
 
@@ -338,13 +381,13 @@ TEST_F(AnimKeyFrameManglerTests, shouldMakeMangledRecordsAccurate)
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
-    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, existing_tiles);
+    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, Rgba32{}, existing_tiles);
 
     // assert
     ASSERT_TRUE(result.has_value());
     ASSERT_EQ(result.value().mangle_records.size(), 1);
 
-    const auto &record = result.value().mangle_records[0];
+    const auto &record = *result.value().mangle_records.begin();
 
     // The record should accurately describe the change
     // Original pixel at the recorded index should match record.original_pixel
@@ -390,7 +433,7 @@ TEST_F(AnimKeyFrameManglerTests, shouldTreatFlipEquivalentTilesAsDuplicates)
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
-    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, existing_canonical_tiles);
+    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, Rgba32{}, existing_canonical_tiles);
 
     // assert
     ASSERT_TRUE(result.has_value());

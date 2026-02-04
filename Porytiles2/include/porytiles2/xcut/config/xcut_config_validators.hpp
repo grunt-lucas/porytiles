@@ -72,8 +72,8 @@ size_t_val_greater_than_zero(const ConfigValue<std::size_t> &val)
         std::vector<std::string> err_text{};
         std::vector<std::vector<FormatParam>> params{};
 
-        err_text.emplace_back("'{}' must be greater than '{}'");
-        params.emplace_back(std::vector{FormatParam{val.name(), Style::bold}, FormatParam{"0", Style::bold}});
+        err_text.emplace_back("'{}' must be greater than '{}'.");
+        params.emplace_back(std::vector{FormatParam{val.canonical_name(), Style::bold}, FormatParam{"0", Style::bold}});
         err_text.emplace_back("");
         params.emplace_back();
 
@@ -99,10 +99,12 @@ size_t_val_eight_or_twelve(const ConfigValue<std::size_t> &val)
         std::vector<std::string> err_text{};
         std::vector<std::vector<FormatParam>> params{};
 
-        err_text.emplace_back("'{}' must be either '{}' or '{}'");
+        err_text.emplace_back("'{}' must be either '{}' or '{}'.");
         params.emplace_back(
             std::vector{
-                FormatParam{val.name(), Style::bold}, FormatParam{"8", Style::bold}, FormatParam{"12", Style::bold}});
+                FormatParam{val.canonical_name(), Style::bold},
+                FormatParam{"8", Style::bold},
+                FormatParam{"12", Style::bold}});
         err_text.emplace_back("");
         params.emplace_back();
 
@@ -164,10 +166,10 @@ template <typename T, typename ConfigInterface, typename FetchFunc, typename Com
         std::vector<std::string> err_text{};
         std::vector<std::vector<FormatParam>> params{};
 
-        err_text.emplace_back("'{}' {} '{}'");
+        err_text.emplace_back("'{}' {} '{}'.");
         params.emplace_back(
             std::vector{
-                FormatParam{val.name(), Style::bold},
+                FormatParam{val.canonical_name(), Style::bold},
                 FormatParam{std::string{error_message}, Style::none},
                 FormatParam{other_field_name, Style::bold}});
         err_text.emplace_back("");

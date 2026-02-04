@@ -10,14 +10,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(googletest)
 
-# Pull in CImg so we can test internal library impl that uses it
-FetchContent_Declare(
-        CImg
-        GIT_REPOSITORY "https://github.com/dtschump/CImg.git"
-        GIT_TAG "v.3.5.5"
-)
-FetchContent_MakeAvailable(CImg)
-
 # Get all sources in a list
 FILE(GLOB_RECURSE CppUnitSources CONFIGURE_DEPENDS unit/*.cpp)
 FILE(GLOB_RECURSE CppIntegrationSources CONFIGURE_DEPENDS integration/*.cpp)

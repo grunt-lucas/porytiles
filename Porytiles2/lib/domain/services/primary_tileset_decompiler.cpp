@@ -12,14 +12,13 @@
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
-#include "porytiles2/domain/services/animation_decompiler.hpp"
+#include "porytiles2/domain/services/anim_decompiler.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
 #include "porytiles2/domain/services/metatile_decompiler.hpp"
 #include "porytiles2/utilities/functional/transform.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
-#include "porytiles2/xcut/config/config_validators.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/xcut/config/unwrap_config.hpp"
 
@@ -76,7 +75,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
         const auto &metatiles_bin = tileset.porymap_component().metatiles_bin();
 
         for (const auto &index_pixel_anim : porymap_animations | std::views::values) {
-            AnimationDecompiler anim_decompiler{diag_, tile_printer_, pal_printer_};
+            AnimDecompiler anim_decompiler{diag_, tile_printer_, pal_printer_};
             // Decompile the IndexPixel animation to Rgba32 format
             // Palette index is recovered from metatile data by scanning for animation tile references
             // If duplicate key frame tiles are found, they may be mangled and backported to new_porymap_component

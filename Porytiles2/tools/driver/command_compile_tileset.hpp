@@ -14,6 +14,9 @@
 #include "porytiles2/domain/services/palette_printer.hpp"
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
+#include "porytiles2/infra/cli/cli_option_registration.hpp"
+#include "porytiles2/infra/cli/cli_option_storage.hpp"
+#include "porytiles2/infra/config/cli_option_provider.hpp"
 #include "porytiles2/infra/config/default_provider.hpp"
 #include "porytiles2/infra/config/header_define_provider.hpp"
 #include "porytiles2/infra/config/lazy_layered_config.hpp"
@@ -42,6 +45,7 @@
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 #include "command.hpp"
+#include "option.hpp"
 
 class CompileTilesetCommand final : public Command {
   public:
@@ -50,6 +54,8 @@ class CompileTilesetCommand final : public Command {
     {
         CLI::App &cmd = get_app();
         cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to compile")->required();
+        project_root_opt_.RegisterOpt(cmd);
+        porytiles2::register_config_options(cmd, cli_storage_);
     }
 
     void Run() override
@@ -69,17 +75,17 @@ class CompileTilesetCommand final : public Command {
         std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter);
 
         /*
-         * TODO: below we're passing hardcoded "." for project root and "include/" for structural project files. At
-         * some point we'll want the CLI tool to provide a way for users to change these values, in case:
-         * - they are not running the CLI tool from the project root directory
+         * TODO: below we're passing hardcoded "include/" for structural project files. At some point we'll want the
+         * CLI tool to provide a way for users to change these values, in case:
          * - they moved fieldmap.h, metatile_behaviors.h, etc to a different location
          */
-        std::filesystem::path project_root{"."};
+        std::filesystem::path project_root = project_root_opt_.project_root();
         std::filesystem::path fieldmap_header_root_relative{"include/fieldmap.h"};
         std::filesystem::path behaviors_header_root_relative{"include/constants/metatile_behaviors.h"};
 
-        // Setup layered configuration
+        // Setup layered configuration (CLI options have highest priority)
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
+        providers.push_back(std::make_unique<CliOptionProvider>(cli_storage_));
         providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, diag.get(), project_root));
         providers.push_back(
             std::make_unique<HeaderDefineProvider>(project_root, fieldmap_header_root_relative, text_formatter));
@@ -168,7 +174,9 @@ class CompileTilesetCommand final : public Command {
   private:
     static constexpr auto kCommandName = "compile-tileset";
     static constexpr auto kCommandDesc =
-        "Compile a tileset, i.e., update the Porymap assets to match the Porytiles assets.";
+        "Compile a tileset -- update the Porymap assets to match the Porytiles assets.";
     static constexpr auto kCommandGroup = "COMMANDS";
     std::string tileset_name_;
+    OptProjectRoot project_root_opt_;
+    porytiles2::CliOptionStorage cli_storage_;
 };

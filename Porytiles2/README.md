@@ -12,32 +12,19 @@ to integrate with their own tooling.
 Our long-term goal is to integrate the core Porytiles functionality
 directly into Porymap.
 
-## Configuration System Setup
+## Configuration System
 
-Porytiles2 uses a code generation system for configuration classes based on Python and Jinja2.
-Configuration values are defined in `config_templates/config_schema.yaml` and C++ code is auto-generated.
+Porytiles2 uses a code generation system for configuration classes.
+Configuration values are defined in YAML and C++ code is auto-generated using Jinja2 templates.
 
-### Prerequisites
+**See [`config_templates/README.md`](config_templates/README.md) for full documentation**, including:
+- Directory structure and template organization
+- How to add new config values
+- How to add enum-based config values
+- Validator usage
 
-Install [uv](https://docs.astral.sh/uv/getting-started/installation/) - a fast Python package manager:
-
-```bash
-# macOS/Linux
-curl -LsSf https://astral.sh/uv/install.sh | sh
-
-# Or via Homebrew
-brew install uv
-```
-
-### Regenerating configuration code
-
-The CMake build system automatically regenerates configuration code when needed.
-If you modify `config_templates/config_schema.yaml` or any template files,
-the next build will regenerate the affected C++ headers and implementation files.
-
-To manually regenerate configuration code:
+To regenerate configuration code:
 
 ```bash
-# From the project root directory
 uv run Scripts/generate_config.py
 ```

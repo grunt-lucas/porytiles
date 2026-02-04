@@ -1,17 +1,24 @@
 #include <format>
+#include <memory>
 
 #include "CLI/CLI.hpp"
 
 #include "porytiles2/build_version.h"
 
 #include "command_compile_tileset.hpp"
+#include "command_completion.hpp"
 #include "command_create_tileset.hpp"
 #include "command_decompile_tileset.hpp"
 #include "command_import_tileset.hpp"
+#include "command_list_tilesets.hpp"
+#include "custom_formatter.hpp"
 
 int main(const int argc, char **argv)
 {
     CLI::App porytiles_app{"Porytiles"};
+
+    // Set custom formatter for cleaner help output (inherited by subcommands)
+    porytiles_app.formatter(std::make_shared<porytiles2::PorytilesFormatter>());
 
     porytiles_app.description(
         std::format(
@@ -28,8 +35,18 @@ Home Page: https://github.com/grunt-lucas/porytiles)",
             std::string{PORYTILES_BUILD_DATE}));
 
     porytiles_app.footer(
-        R"(To get more help with Porytiles, check out the guides at:
-https://github.com/grunt-lucas/porytiles/wiki
+        R"(To get more help with Porytiles, check out the following guides:
+
+USER DOCUMENTATION
+https://grunt-lucas.github.io/porytiles-user-docs
+
+DEVELOPER DOCUMENTATION
+https://grunt-lucas.github.io/porytiles-dev-docs
+
+DOXYGEN SOURCE CODE DOCUMENTATION
+https://grunt-lucas.github.io/porytiles
+
+COMMUNITY-MADE TUTORIAL VIDEOS
 https://www.youtube.com/playlist?list=PLuyjFojPxF7-O5o_mS6uTBtyYcuyFf_Ce
 
 SEE ALSO
@@ -54,6 +71,8 @@ https://github.com/huderlem/porymap)");
     ImportTilesetCommand import_tileset{porytiles_app};
     CompileTilesetCommand compile_tileset{porytiles_app};
     DecompileTilesetCommand decompile_tileset{porytiles_app};
+    CompletionCommand completion{porytiles_app};
+    ListTilesetsCommand list_tilesets{porytiles_app};
 
     porytiles_app.require_subcommand();
 

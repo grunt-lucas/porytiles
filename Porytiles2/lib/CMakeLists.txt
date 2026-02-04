@@ -7,9 +7,9 @@ include(FetchContent)
 #### Find dependencies ####
 ###########################
 
-# Find the PNG package in the standard way. We won't use this for linking, only
-# for including the headers correctly.
+# Find PNG and ZLIB packages using standard CMake discovery
 find_package(PNG REQUIRED)
+find_package(ZLIB REQUIRED)
 
 # fmtlib
 FetchContent_Declare(
@@ -27,14 +27,6 @@ FetchContent_Declare(
         GIT_SHALLOW ON
 )
 FetchContent_MakeAvailable(GSL)
-
-# CImg
-FetchContent_Declare(
-        CImg
-        GIT_REPOSITORY "https://github.com/GreycLab/CImg"
-        GIT_TAG "v.3.5.5"
-)
-FetchContent_MakeAvailable(CImg)
 
 # png++
 FetchContent_Declare(
@@ -59,18 +51,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(yaml-cpp)
 
-# Find libz.a before cpptrace so that libdwarf's find_package(ZLIB) resolves to
-# the static archive instead of libz.so (which breaks -static linking on Linux).
-find_library(ZLIB_STATIC
-        NAMES libz.a
-        PATHS /opt/homebrew/opt/zlib/lib
-        PATHS /usr/local/opt/zlib/lib
-        PATHS /usr/lib/x86_64-linux-gnu
-        PATHS /usr/lib/aarch64-linux-gnu)
-if (ZLIB_STATIC)
-    set(ZLIB_LIBRARY ${ZLIB_STATIC} CACHE FILEPATH "Path to zlib library" FORCE)
-endif ()
-
 # cpptrace - cross-platform stacktrace library
 # (std::stacktrace not available on macOS with Apple Clang)
 FetchContent_Declare(
@@ -94,14 +74,14 @@ FetchContent_MakeAvailable(fruit)
 # Restore C++23 for Porytiles
 set(CMAKE_CXX_STANDARD 23)
 
-# Find libpng.a and libz.a explicitly. We'll statically link these so users
-# don't need to install.
-find_library(PNG_STATIC
-        NAMES libpng.a
-        PATHS /opt/homebrew/opt/libpng/lib
-        PATHS /usr/local/opt/libpng/lib
-        PATHS /usr/lib/x86_64-linux-gnu
-        PATHS /usr/lib/aarch64-linux-gnu)
+# CLI11 - command-line parser (needed for CLI option registration in infra layer)
+FetchContent_Declare(
+        cli11_proj
+        GIT_REPOSITORY https://github.com/CLIUtils/CLI11.git
+        GIT_TAG v2.5.0
+)
+FetchContent_MakeAvailable(cli11_proj)
+
 ##############################################
 #### Set up Porytiles library compilation ####
 ##############################################
@@ -114,12 +94,6 @@ set_target_properties(Porytiles2Lib PROPERTIES OUTPUT_NAME "${CANONICAL_LIB_NAME
 # Ensure config code is generated before building the library
 add_dependencies(Porytiles2Lib generate_config_code)
 
-# Configure CImg
-target_compile_definitions(Porytiles2Lib PRIVATE cimg_use_png)
-target_compile_definitions(Porytiles2Lib PRIVATE cimg_display=0)
-target_compile_definitions(Porytiles2Lib PRIVATE cimg_verbosity=0)
-
-
 #######################################
 #### Configure include directories ####
 #######################################
@@ -127,16 +101,9 @@ target_compile_definitions(Porytiles2Lib PRIVATE cimg_verbosity=0)
 target_include_directories(Porytiles2Lib PUBLIC ${PORYTILES2_INCLUDE_DIR})
 # target_include_directories(Porytiles2Lib PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 
-# Find the libpng include dirs located via find_package
-target_include_directories(Porytiles2Lib PRIVATE ${PNG_INCLUDE_DIRS})
+# PNG::PNG imported target handles include directories automatically
 
 # For header-only libs, we pull the sources and add headers to include path
-if (cimg_SOURCE_DIR)
-    target_include_directories(Porytiles2Lib PRIVATE ${cimg_SOURCE_DIR})
-else ()
-    message(FATAL_ERROR "cimg_SOURCE_DIR was empty")
-endif ()
-
 if (pngpp_SOURCE_DIR)
     target_include_directories(Porytiles2Lib PRIVATE ${pngpp_SOURCE_DIR}/include)
 else ()
@@ -154,13 +121,14 @@ endif ()
 #### Link dependencies ####
 ###########################
 
-### Link the static libpng and zlib we searched for earlier ###
-target_link_libraries(Porytiles2Lib PRIVATE ${PNG_STATIC})
-target_link_libraries(Porytiles2Lib PRIVATE ${ZLIB_STATIC})
+### Link PNG and ZLIB using imported targets ###
+target_link_libraries(Porytiles2Lib PRIVATE PNG::PNG)
+target_link_libraries(Porytiles2Lib PRIVATE ZLIB::ZLIB)
 
 ### Public link API exposed libs ###
 target_link_libraries(Porytiles2Lib PUBLIC Microsoft.GSL::GSL)
 target_link_libraries(Porytiles2Lib PUBLIC fruit)
+target_link_libraries(Porytiles2Lib PUBLIC CLI11::CLI11)
 
 ### Private link internal libs ###
 target_link_libraries(Porytiles2Lib PRIVATE yaml-cpp::yaml-cpp)
@@ -185,4 +153,4 @@ target_link_libraries(Porytiles2Lib PRIVATE cpptrace::cpptrace)
 # - yaml-cpp: Only exports when built as a top-level project (YAML_CPP_INSTALL defaults to
 #             false when used via FetchContent as a subdirectory)
 # These must be manually included so downstream projects can find them as dependencies.
-export(TARGETS Porytiles2Lib GSL fruit yaml-cpp FILE ${CMAKE_CURRENT_BINARY_DIR}/Porytiles2LibraryTargets.cmake)
+export(TARGETS Porytiles2Lib GSL fruit yaml-cpp CLI11 FILE ${CMAKE_CURRENT_BINARY_DIR}/Porytiles2LibraryTargets.cmake)

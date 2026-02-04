@@ -13,6 +13,57 @@
 namespace porytiles2 {
 
 /**
+ * @brief Format a ConfigValue into diagnostic note lines.
+ *
+ * @details
+ * Shared helper that constructs the standard format for displaying configuration values in note diagnostics. The
+ * output includes a header line showing the config name and value, followed by a blank line, then the full
+ * prettified configuration context.
+ *
+ * @tparam T The underlying type of the ConfigValue
+ * @param format The TextFormatter for styling
+ * @param config The ConfigValue to format
+ * @return Vector of formatted lines ready for note output
+ */
+template <typename T>
+[[nodiscard]] std::vector<std::string> format_config_note(const TextFormatter &format, const ConfigValue<T> &config)
+{
+    std::vector<std::string> lines{};
+    lines.push_back(format.format(
+        "'{}' is '{}' due to configuration:",
+        FormatParam{config.canonical_name(), Style::bold},
+        FormatParam{config.value(), Style::bold}));
+    lines.emplace_back("");
+    std::ranges::copy(config.prettify(format), std::back_inserter(lines));
+    return lines;
+}
+
+/**
+ * @brief Format a ConfigValue into diagnostic note lines with a separator.
+ *
+ * @details
+ * This method is the same as format_config_note, but it includes a separator section above the config note. This is
+ * useful for cases where the caller is already printing some other information and wants some visual separation between
+ * that info and the config printout.
+ *
+ * @tparam T The underlying type of the ConfigValue
+ * @param format The TextFormatter for styling
+ * @param config The ConfigValue to format
+ * @return Vector of formatted lines ready for note output
+ */
+template <typename T>
+[[nodiscard]] std::vector<std::string>
+format_config_note_with_separator(const TextFormatter &format, const ConfigValue<T> &config)
+{
+    std::vector<std::string> lines{};
+    lines.emplace_back("");
+    lines.emplace_back("--------");
+    lines.emplace_back("");
+    std::ranges::copy(format_config_note(format, config), std::back_inserter(lines));
+    return lines;
+}
+
+/**
  * @brief Builds note lines explaining the global color count limit for primary tileset compilation.
  *
  * @details
@@ -33,13 +84,12 @@ namespace porytiles2 {
     const TextFormatter &format, std::size_t color_count_limit, const ConfigValue<std::size_t> &num_pals)
 {
     std::vector<std::string> lines;
-    lines.push_back(format.format(
-        "unique color count limit is '{}' due to configuration", FormatParam{color_count_limit, Style::bold}));
+    lines.push_back(format.format("Global unique color limit is '{}'.", FormatParam{color_count_limit, Style::bold}));
     lines.emplace_back("");
     lines.emplace_back("Color limit definition:");
     lines.push_back(format.format(
         "{} * {}:",
-        FormatParam{num_pals.name(), Style::bold | Style::yellow},
+        FormatParam{num_pals.canonical_name(), Style::bold | Style::yellow},
         FormatParam{"nontransparent_colors_per_pal", Style::bold}));
     lines.push_back(format.format(
         "{} * {} = {}",
@@ -47,7 +97,7 @@ namespace porytiles2 {
         FormatParam{(pal::max_size - 1), Style::bold},
         FormatParam{color_count_limit, Style::bold}));
     lines.emplace_back("");
-    std::ranges::copy(num_pals.prettify(format), std::back_inserter(lines));
+    std::ranges::copy(format_config_note(format, num_pals), std::back_inserter(lines));
     return lines;
 }
 
@@ -160,57 +210,6 @@ template <std::size_t N>
         format.format("palette hint '{}': {}:", FormatParam{pal_label, Style::bold}, FormatParam{message}));
     lines.emplace_back();
     std::ranges::copy(pal_printer.print_pal_hint_with_highlights(hint, violating_slots), std::back_inserter(lines));
-    return lines;
-}
-
-/**
- * @brief Format a ConfigValue into diagnostic note lines.
- *
- * @details
- * Shared helper that constructs the standard format for displaying configuration values in note diagnostics. The
- * output includes a header line showing the config name and value, followed by a blank line, then the full
- * prettified configuration context.
- *
- * @tparam T The underlying type of the ConfigValue
- * @param format The TextFormatter for styling
- * @param config The ConfigValue to format
- * @return Vector of formatted lines ready for note output
- */
-template <typename T>
-[[nodiscard]] std::vector<std::string> format_config_note(const TextFormatter &format, const ConfigValue<T> &config)
-{
-    std::vector<std::string> lines{};
-    lines.push_back(format.format(
-        "'{}' is '{}' due to configuration:",
-        FormatParam{config.name(), Style::bold},
-        FormatParam{config.value(), Style::bold}));
-    lines.emplace_back("");
-    std::ranges::copy(config.prettify(format), std::back_inserter(lines));
-    return lines;
-}
-
-/**
- * @brief Format a ConfigValue into diagnostic note lines with a separator.
- *
- * @details
- * This method is the same as format_config_note, but it includes a separator section above the config note. This is
- * useful for cases where the caller is already printing some other information and wants some visual separation between
- * that info and the config printout.
- *
- * @tparam T The underlying type of the ConfigValue
- * @param format The TextFormatter for styling
- * @param config The ConfigValue to format
- * @return Vector of formatted lines ready for note output
- */
-template <typename T>
-[[nodiscard]] std::vector<std::string>
-format_config_note_with_separator(const TextFormatter &format, const ConfigValue<T> &config)
-{
-    std::vector<std::string> lines{};
-    lines.emplace_back("");
-    lines.emplace_back("--------");
-    lines.emplace_back("");
-    std::ranges::copy(format_config_note(format, config), std::back_inserter(lines));
     return lines;
 }
 

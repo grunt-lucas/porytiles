@@ -25,7 +25,7 @@ namespace porytiles2 {
 
 template <typename T>
 ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
-    const std::string &cache_key, std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const
+    const std::string &cache_key, const std::string &canonical_name, std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const
 {
     /*
      * WARNING! HACK ALERT! WARNING!
@@ -48,9 +48,10 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
         catch (const std::bad_any_cast &) {
             panic(format_->format("bad_any_cast for cache key '{}': cached type does not match requested type", cache_key));
         }
+        std::string cached_source_key = source_key_.at(cache_key);
         std::string source = source_.at(cache_key);
         std::vector<std::string> source_details = source_details_.at(cache_key);
-        return ConfigValue<T>{cached_value, cache_key, source, source_details};
+        return ConfigValue<T>{cached_value, canonical_name, cached_source_key, source, source_details};
     }
 
     // Search through providers in priority order
@@ -61,12 +62,11 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
         if (layer_value.state == ValidationState::invalid) {
             const auto source_info = format_->format("{}", layer_value.source_info);
             std::vector<std::string> error_lines;
-                        error_lines.push_back(format_->format(
-                            "invalid value for '{}' from config source '{}':",
-                            FormatParam{cache_key, Style::bold},
-                            FormatParam{source_info, Style::bold}));
+            error_lines.push_back(format_->format(
+                "Invalid value for '{}' from config source '{}':",
+                FormatParam{canonical_name, Style::bold},
+                FormatParam{source_info, Style::bold}));
             error_lines.emplace_back();
-            error_lines.push_back("Details:");
             error_lines.push_back(format_->format("{}", layer_value.error_message));
 
             if (!layer_value.source_details.empty()) {
@@ -84,10 +84,11 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
             T resolved_value = layer_value.value.value();
             cache_[cache_key] = resolved_value;
             cache_value_strings_[cache_key] = to_string(resolved_value);
+            source_key_[cache_key] = layer_value.source_key;
             std::string source = format_->format("{}", layer_value.source_info);
             source_[cache_key] = source;
             source_details_[cache_key] = layer_value.source_details;
-            return ConfigValue<T>{resolved_value, cache_key, source, layer_value.source_details};
+            return ConfigValue<T>{resolved_value, canonical_name, layer_value.source_key, source, layer_value.source_details};
         }
 
         // Otherwise, state is not_provided - continue to next provider
@@ -118,23 +119,23 @@ std::vector<ProvenanceChainLink<T>> LazyLayeredConfig::collect_provenance_chain(
 }
 {% for value in config_values %}
 
-ChainableResult<ConfigValue<{{ value.type }}>> LazyLayeredConfig::{{ value.name }}_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<{{ value.type }}>> LazyLayeredConfig::{{ value.symbol }}_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<{{ value.type }}>(
-        key, [&type, &scope](const ConfigProvider &provider) { return provider.{{ value.name }}(type, scope); });
+        key, "{{ value.canonical_name }}", [&type, &scope](const ConfigProvider &provider) { return provider.{{ value.symbol }}(type, scope); });
 }
 {% endfor %}
 {% for value in config_values %}
 
 std::vector<ProvenanceChainLink<{{ value.type }}>>
-LazyLayeredConfig::{{ value.name }}_provenance_chain(ConfigScopeType type, const std::string &scope) const
+LazyLayeredConfig::{{ value.symbol }}_provenance_chain(ConfigScopeType type, const std::string &scope) const
 {
     return collect_provenance_chain<{{ value.type }}>(
-        [&type, &scope](const ConfigProvider &provider) { return provider.{{ value.name }}(type, scope); });
+        [&type, &scope](const ConfigProvider &provider) { return provider.{{ value.symbol }}(type, scope); });
 }
 {% endfor %}
 

@@ -28,6 +28,13 @@ set(GENERATED_CONFIG_FILES
         ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/infra/config/yaml_file_provider.hpp
         ${CMAKE_SOURCE_DIR}/Porytiles2/lib/infra/config/yaml_file_provider.cpp
         ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/infra/config/valid_yaml_paths.hpp
+        # CLI Option System
+        ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/infra/cli/cli_option_storage.hpp
+        ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/infra/config/cli_option_provider.hpp
+        ${CMAKE_SOURCE_DIR}/Porytiles2/lib/infra/config/cli_option_provider.cpp
+        ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/infra/cli/cli_option_registration.hpp
+        ${CMAKE_SOURCE_DIR}/Porytiles2/lib/infra/cli/cli_option_registration.cpp
+        ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/infra/cli/cli_completion_data.hpp
 )
 
 # Define schema and template files
@@ -35,8 +42,8 @@ set(CONFIG_SCHEMA
         ${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/config_schema.yaml
 )
 
-# Glob all template files in the config_templates directory
-file(GLOB CONFIG_TEMPLATES
+# Glob all template files in the config_templates directory (recursively)
+file(GLOB_RECURSE CONFIG_TEMPLATES
         "${CMAKE_SOURCE_DIR}/Porytiles2/config_templates/*.jinja2"
 )
 

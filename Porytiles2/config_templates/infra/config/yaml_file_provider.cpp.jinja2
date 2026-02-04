@@ -48,7 +48,7 @@ std::string YamlFileProvider::name() const
 }
 {% for value in config_values %}
 
-LayerValue<{{ value.type }}> YamlFileProvider::{{ value.name }}(ConfigScopeType type, const std::string &scope) const
+LayerValue<{{ value.type }}> YamlFileProvider::{{ value.symbol }}(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
@@ -58,9 +58,10 @@ LayerValue<{{ value.type }}> YamlFileProvider::{{ value.name }}(ConfigScopeType 
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc{{ macros.yaml_path(value.yaml.path) }}; },
+        [](const YAML::Node &doc) { return doc{{ macros.yaml_path(value.yaml_path) }}; },
         {{ value.parser }},
-        "{{ value.name }}");
+        "{{ value.yaml_path }}",
+        "{{ value.yaml_path }}");
 }
 {% endfor %}
 

@@ -91,7 +91,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
 {% for value in config_values if value.layer == 'domain' %}
 
     [[nodiscard]] ChainableResult<ConfigValue<{{ value.type }}>>
-    {{ value.name }}_raw(ConfigScopeType type, const std::string &scope) const override;
+    {{ value.symbol }}_raw(ConfigScopeType type, const std::string &scope) const override;
 {% endfor %}
 
     /*
@@ -101,7 +101,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
 {% for value in config_values if value.layer == 'app' %}
 
     [[nodiscard]] ChainableResult<ConfigValue<{{ value.type }}>>
-    {{ value.name }}_raw(ConfigScopeType type, const std::string &scope) const override;
+    {{ value.symbol }}_raw(ConfigScopeType type, const std::string &scope) const override;
 {% endfor %}
 
     /*
@@ -109,7 +109,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      * Note: _validated methods (Tier 2) are inherited from InfraConfig and not overridden
      */
 {% for value in config_values if value.layer == 'infra' %}
-    [[nodiscard]] ChainableResult<ConfigValue<{{ value.type }}>> {{ value.name }}_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<{{ value.type }}>> {{ value.symbol }}_raw(ConfigScopeType type, const std::string &scope) const override;
 {% endfor %}
 
   public:
@@ -121,7 +121,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
 {% for value in config_values %}
 
     /**
-     * @brief Gets the full provenance chain for {{ value.name }}.
+     * @brief Gets the full provenance chain for {{ value.symbol }}.
      *
      * @details
      * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
@@ -133,7 +133,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      * @return Vector of ProvenanceChainLink entries, one per provider
      */
     [[nodiscard]] std::vector<ProvenanceChainLink<{{ value.type }}>>
-    {{ value.name }}_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+    {{ value.symbol }}_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 {% endfor %}
 
   private:
@@ -147,6 +147,9 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     // Config value as string for debug printing
     mutable std::unordered_map<std::string, std::string> cache_value_strings_;
 
+    // Source key cache (stores the provider-specific identifier for each config value)
+    mutable std::unordered_map<std::string, std::string> source_key_;
+
     // Config source and source_details
     mutable std::unordered_map<std::string, std::string> source_;
     mutable std::unordered_map<std::string, std::vector<std::string>> source_details_;
@@ -156,12 +159,15 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      *
      * @tparam T The type of the config value
      * @param cache_key The key to use for caching this value (also used for value name)
+     * @param canonical_name The canonical name for this config value
      * @param provider_call Function that calls the appropriate method on a ConfigProvider
      * @return A ChainableResult containing either the resolved config value or an error
      */
     template <typename T>
     ChainableResult<ConfigValue<T>> resolve_config_value(
-        const std::string &cache_key, std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
+        const std::string &cache_key,
+        const std::string &canonical_name,
+        std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
 
     /**
      * @brief Collects the provenance chain by querying all providers.
@@ -176,8 +182,8 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      * @return Vector of ProvenanceChainLink entries from all providers
      */
     template <typename T>
-    std::vector<ProvenanceChainLink<T>> collect_provenance_chain(
-        std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
+    std::vector<ProvenanceChainLink<T>>
+    collect_provenance_chain(std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
 };
 
 } // namespace porytiles2

@@ -19,7 +19,7 @@ runs:
         cmake -B build \
           -DCMAKE_BUILD_TYPE="Release" \
           -DCMAKE_CXX_FLAGS="-stdlib=libc++ -DPORYTILES_BUILD_VERSION_=${{ inputs.build-version }} -DPORYTILES_BUILD_DATE_=${BUILD_DATE}" \
-          -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -static"
+          -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++"
         cd build
         cmake --build .
         file ./Porytiles1/tools/driver/porytiles

@@ -10,6 +10,7 @@
 #include <string>
 #include <vector>
 
+#include "porytiles2/domain/algorithms/tile_converters.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/palette.hpp"
@@ -162,9 +163,9 @@ find_most_similar_color(std::size_t current_color_index, const Palette<Rgba32, p
  * @brief Attempts to mangle a single tile to make it unique.
  *
  * @details
- * Tries each pixel in priority order, attempting to swap it to a visually similar color. Returns the first successful
- * modification that produces a unique tile. Uniqueness is checked against canonical forms to ensure tiles that are
- * flip-equivalent are also treated as duplicates.
+ * Tries each pixel in priority order, attempting to swap it to a visually similar color. Modifies exactly one pixel
+ * and returns the first successful modification that produces a unique tile. Uniqueness is checked against canonical
+ * forms to ensure tiles that are flip-equivalent are also treated as duplicates.
  *
  * @param tile The tile to mangle
  * @param tile_index The index of the tile in the animation
@@ -237,24 +238,41 @@ ChainableResult<MangleResult> AnimKeyFrameMangler::mangle_duplicates(
     const std::string &anim_name,
     std::vector<PixelTile<IndexPixel>> tiles,
     const Palette<Rgba32, pal::max_size> &palette,
+    const Rgba32 &extrinsic_transparency,
     const std::set<PixelTile<IndexPixel>> &existing_canonical_tiles) const
 {
     MangleResult result;
     result.tiles = std::move(tiles);
 
-    // Build a set of all canonical tiles we need to be unique against.
-    // This includes the input existing_canonical_tiles plus tiles we've already processed.
-    // Using canonical forms ensures tiles that are flip-equivalent are treated as duplicates.
+    /*
+     * TODO: I think there is *STILL* actually a potential bug with the mangling process. Here, we are tracking
+     * "existing" tiles using the canonical index version. The 'existing_canonical_tiles' variable is set to contain all
+     * the tiles from tiles.png, which is supposed to prevent us from creating a mangled tile that matches one of the
+     * existing tiles.
+     *
+     * TODO: what am I saying here?
+     */
+
+    /*
+     * Build a set of all canonical tiles we need to be unique against. This includes the input existing_canonical_tiles
+     * plus tiles we've already processed. Using canonical forms ensures tiles that are flip-equivalent are treated as
+     * duplicates.
+     */
     std::set<PixelTile<IndexPixel>> all_canonical_tiles = existing_canonical_tiles;
 
     // Map to track which canonical tiles we've seen at which indices (for duplicate detection)
     std::map<PixelTile<IndexPixel>, std::size_t> canonical_first_occurrence;
 
+    /*
+     * Each tile index is visited exactly once. A tile is mangled at most once, producing at most one TileMangleRecord.
+     * This guarantees that mangle_records contains non-overlapping entries (no two records share the same tile_index),
+     * so they can be applied independently in any order.
+     */
     for (std::size_t i = 0; i < result.tiles.size(); ++i) {
         PixelTile<IndexPixel> &current_tile = result.tiles[i];
 
         // Canonicalize the current tile for duplicate checking
-        CanonicalPixelTile<IndexPixel> canonical_current{current_tile};
+        CanonicalPixelTile canonical_current{current_tile};
         const PixelTile<IndexPixel> &current_base = canonical_current;
 
         // Check if this tile is a duplicate (either of existing_canonical_tiles or a previous tile in this batch)
@@ -265,6 +283,7 @@ ChainableResult<MangleResult> AnimKeyFrameMangler::mangle_duplicates(
 
         if (is_duplicate_of_previous || is_duplicate_of_existing) {
             // Need to mangle this tile
+            const PixelTile<IndexPixel> original_tile = current_tile;
             const std::optional<std::pair<PixelTile<IndexPixel>, TileMangleRecord>> mangle_result =
                 try_mangle_tile(current_tile, i, palette, all_canonical_tiles);
 
@@ -283,23 +302,39 @@ ChainableResult<MangleResult> AnimKeyFrameMangler::mangle_duplicates(
 
             // Apply the mangle
             current_tile = mangle_result->first;
-            result.mangle_records.push_back(mangle_result->second);
+            result.mangle_records.insert(mangle_result->second);
 
             // Emit a remark about the mangle
             const auto [pixel_row, pixel_col] = tile::index_to_row_col(mangle_result->second.pixel_index);
-            diag_->remark(
-                "anim-key-frame-mangle",
-                "Mangled tile {} in animation '{}': pixel ({},{}) changed from index {} to {}",
+            std::vector<std::string> remark_lines;
+            remark_lines.push_back(diag_->formatter().format(
+                "Mangled tile {} in animation '{}': pixel ({},{}) changed from index {} to {}.",
                 FormatParam{i, Style::bold},
                 FormatParam{anim_name, Style::bold},
                 FormatParam{pixel_row},
                 FormatParam{pixel_col},
                 FormatParam{mangle_result->second.original_pixel.index()},
-                FormatParam{mangle_result->second.mangled_pixel.index()});
+                FormatParam{mangle_result->second.mangled_pixel.index()}));
+
+            const PixelTile<Rgba32> original_rgba =
+                color_tile_from_index_tile(original_tile, palette, extrinsic_transparency);
+            const PixelTile<Rgba32> mangled_rgba =
+                color_tile_from_index_tile(current_tile, palette, extrinsic_transparency);
+
+            remark_lines.emplace_back("");
+            remark_lines.emplace_back("Original tile:");
+            std::ranges::copy(
+                tile_printer_->print_tile(original_rgba, extrinsic_transparency), std::back_inserter(remark_lines));
+
+            remark_lines.emplace_back("Mangled tile:");
+            std::ranges::copy(
+                tile_printer_->print_tile(mangled_rgba, extrinsic_transparency), std::back_inserter(remark_lines));
+
+            diag_->remark("anim-key-frame-mangle", remark_lines);
         }
 
         // Re-canonicalize after potential mangle and add to tracking sets
-        CanonicalPixelTile<IndexPixel> final_canonical{current_tile};
+        CanonicalPixelTile final_canonical{current_tile};
         const PixelTile<IndexPixel> &final_base = final_canonical;
         canonical_first_occurrence.emplace(final_base, i);
         all_canonical_tiles.insert(final_base);

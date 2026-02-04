@@ -1,7 +1,8 @@
-#include "porytiles2/domain/services/animation_decompiler.hpp"
+#include "porytiles2/domain/services/anim_decompiler.hpp"
 
 #include <algorithm>
 #include <iterator>
+#include <map>
 #include <ranges>
 #include <set>
 #include <string>
@@ -43,41 +44,7 @@ using namespace porytiles2;
     const auto &representative_frame = anim.frames().begin()->second;
     const auto &representative_pal = representative_frame.palette();
 
-    // Check all frames share the same internal palette as the representative
-    for (const auto &[frame_name, frame] : anim.frames()) {
-        if (&frame == &representative_frame) {
-            continue;
-        }
-        const auto &frame_pal = frame.palette();
-        bool palettes_match = (frame_pal.size() == representative_pal.size());
-        if (palettes_match) {
-            for (std::size_t slot = 0; slot < representative_pal.size(); ++slot) {
-                if (frame_pal.at(slot) != representative_pal.at(slot)) {
-                    palettes_match = false;
-                    break;
-                }
-            }
-        }
-        if (!palettes_match) {
-            std::vector<std::string> err_msg{};
-            err_msg.emplace_back(diag.formatter().format(
-                "Animation '{}' frame '{}' has an internal palette that does not match the representative frame '{}' "
-                "palette.",
-                FormatParam{anim.name(), Style::bold},
-                FormatParam{frame_name, Style::bold},
-                FormatParam{representative_frame.frame_name(), Style::bold}));
-            err_msg.emplace_back("");
-            err_msg.emplace_back(diag.formatter().format(
-                "Representative frame '{}' palette:", FormatParam{representative_frame.frame_name(), Style::bold}));
-            std::ranges::copy(pal_printer.print_rgba_pal(representative_pal), std::back_inserter(err_msg));
-            err_msg.emplace_back("");
-            err_msg.emplace_back(diag.formatter().format("Frame '{}' palette:", FormatParam{frame_name, Style::bold}));
-            std::ranges::copy(pal_printer.print_rgba_pal(frame_pal), std::back_inserter(err_msg));
-            return FormattableError{err_msg};
-        }
-    }
-
-    // PNG palette must have exactly 16 colors to match GBA palette format
+    // Representative pal must have exactly 16 colors to match GBA palette format
     if (representative_pal.size() != pal::max_size) {
         std::vector<std::string> err_msg{};
         err_msg.emplace_back(diag.formatter().format(
@@ -90,7 +57,7 @@ using namespace porytiles2;
         return FormattableError{err_msg};
     }
 
-    // Check for extrinsic transparency in non-slot-0 positions
+    // Check for extrinsic transparency in non-slot-0 positions in representative pal
     std::vector<std::size_t> extrinsic_transparency_slots;
     for (std::size_t slot = 1; slot < pal::max_size; ++slot) {
         const Rgba32 &color = representative_pal.at(slot);
@@ -125,7 +92,44 @@ using namespace porytiles2;
         return FormattableError{err_msg};
     }
 
-    // Slot-by-slot matching (skip slot 0 which is transparency)
+    // Check all frames share the same internal palette as the representative
+    for (const auto &[frame_name, frame] : anim.frames()) {
+        if (&frame == &representative_frame) {
+            continue;
+        }
+        const auto &frame_pal = frame.palette();
+        bool palettes_match = (frame_pal.size() == representative_pal.size());
+        if (palettes_match) {
+            for (std::size_t slot = 0; slot < representative_pal.size(); ++slot) {
+                if (frame_pal.at(slot) != representative_pal.at(slot)) {
+                    palettes_match = false;
+                    break;
+                }
+            }
+        }
+        if (!palettes_match) {
+            std::vector<std::string> err_msg{};
+            err_msg.emplace_back(diag.formatter().format(
+                "Animation '{}' frame '{}' has an internal palette that does not match the representative frame '{}' "
+                "palette.",
+                FormatParam{anim.name(), Style::bold},
+                FormatParam{frame_name, Style::bold},
+                FormatParam{representative_frame.frame_name(), Style::bold}));
+            err_msg.emplace_back("");
+            err_msg.emplace_back(diag.formatter().format(
+                "Representative frame '{}' palette:", FormatParam{representative_frame.frame_name(), Style::bold}));
+            std::ranges::copy(pal_printer.print_rgba_pal(representative_pal), std::back_inserter(err_msg));
+            err_msg.emplace_back("");
+            err_msg.emplace_back(diag.formatter().format("Frame '{}' palette:", FormatParam{frame_name, Style::bold}));
+            std::ranges::copy(pal_printer.print_rgba_pal(frame_pal), std::back_inserter(err_msg));
+            return FormattableError{err_msg};
+        }
+    }
+
+    /*
+     * Now that we fully validated the representative pal, and we confirmed that all frame pals match, we can try to
+     * match the representative pal to one of the tileset pals.
+     */
     for (std::size_t pal_idx = 0; pal_idx < tileset_pals.size(); ++pal_idx) {
         bool matches = true;
         for (std::size_t slot = 1; slot < pal::max_size; ++slot) {
@@ -260,23 +264,76 @@ ChainableResult<std::size_t> find_pal_for_anim_tiles(
 }
 
 /**
- * @brief Finds all pairs of duplicate tiles in a vector.
+ * @brief Checks whether any key frame tiles are duplicates, considering both cross-range and intra-animation
+ * duplicates.
  *
- * @param tiles The tiles to check for duplicates
- * @return Vector of (i, j) pairs where tiles[i] == tiles[j] and i < j
+ * @details
+ * A duplicate is detected if a key frame tile's canonical form matches either:
+ * - An external tile (cross-range duplicate: animation tile matches a non-animation tile in tiles.png)
+ * - An earlier key frame tile (intra-animation duplicate: two animation tiles are flip-equivalent)
+ *
+ * @param key_frame_tiles The animation key frame tiles to check
+ * @param external_canonical_tiles Canonical forms of all non-animation tiles in tiles.png
+ * @return True if any duplicate is found
  */
-std::vector<std::pair<std::size_t, std::size_t>>
-find_duplicate_tile_pairs(const std::vector<PixelTile<IndexPixel>> &tiles)
+bool has_duplicate_key_frame_tiles(
+    const std::vector<PixelTile<IndexPixel>> &key_frame_tiles,
+    const std::set<PixelTile<IndexPixel>> &external_canonical_tiles)
 {
-    std::vector<std::pair<std::size_t, std::size_t>> duplicates;
-    for (std::size_t i = 0; i < tiles.size(); ++i) {
-        for (std::size_t j = i + 1; j < tiles.size(); ++j) {
-            if (tiles[i] == tiles[j]) {
-                duplicates.emplace_back(i, j);
-            }
+    std::set<PixelTile<IndexPixel>> seen;
+    for (const auto &tile : key_frame_tiles) {
+        const CanonicalPixelTile canonical{tile};
+        const PixelTile<IndexPixel> &base = canonical;
+        if (external_canonical_tiles.contains(base)) {
+            return true;
+        }
+        if (!seen.insert(base).second) {
+            return true;
         }
     }
-    return duplicates;
+    return false;
+}
+
+struct DuplicateInfo {
+    std::vector<std::size_t> cross_range_indices;
+    std::vector<std::pair<std::size_t, std::size_t>> intra_animation_pairs;
+};
+
+/**
+ * @brief Categorizes duplicate key frame tiles into cross-range and intra-animation duplicates.
+ *
+ * @details
+ * Cross-range duplicates are key frame tiles whose canonical form matches an external (non-animation) tile.
+ * Intra-animation duplicates are pairs of key frame tiles that are flip-equivalent to each other.
+ *
+ * @param key_frame_tiles The animation key frame tiles to categorize
+ * @param external_canonical_tiles Canonical forms of all non-animation tiles in tiles.png
+ * @return DuplicateInfo with indices of cross-range duplicates and pairs of intra-animation duplicates
+ */
+DuplicateInfo categorize_duplicate_key_frame_tiles(
+    const std::vector<PixelTile<IndexPixel>> &key_frame_tiles,
+    const std::set<PixelTile<IndexPixel>> &external_canonical_tiles)
+{
+    DuplicateInfo info;
+
+    // Map from canonical base tile to first index seen
+    std::map<PixelTile<IndexPixel>, std::size_t> seen;
+
+    for (std::size_t i = 0; i < key_frame_tiles.size(); ++i) {
+        const CanonicalPixelTile canonical{key_frame_tiles[i]};
+        const PixelTile<IndexPixel> &base = canonical;
+
+        if (external_canonical_tiles.contains(base)) {
+            info.cross_range_indices.push_back(i);
+        }
+
+        auto [it, inserted] = seen.emplace(base, i);
+        if (!inserted) {
+            info.intra_animation_pairs.emplace_back(it->second, i);
+        }
+    }
+
+    return info;
 }
 
 /**
@@ -287,11 +344,16 @@ find_duplicate_tile_pairs(const std::vector<PixelTile<IndexPixel>> &tiles)
  * @param records The mangle records describing pixel changes
  */
 void backport_mangles_to_tiles_png(
-    PorymapTilesetComponent *component, std::size_t base_tile_offset, const std::vector<TileMangleRecord> &records)
+    PorymapTilesetComponent *component, std::size_t base_tile_offset, const std::set<TileMangleRecord> &records)
 {
     Image<IndexPixel> tiles_img = component->tiles_png();
-    constexpr std::size_t tiles_per_row = 16;
+    constexpr std::size_t tiles_per_row = metatile::metatiles_per_row * metatile::tiles_per_side;
 
+    /*
+     * Mangle records are non-overlapping: each targets a distinct tile_index (guaranteed by mangle_duplicates).
+     * Sequential application is therefore safe and order-independent, producing results consistent with the in-memory
+     * key frame tiles that were mangled during decompilation.
+     */
     for (const auto &record : records) {
         const std::size_t global_tile_idx = base_tile_offset + record.tile_index;
         const std::size_t tile_row = global_tile_idx / tiles_per_row;
@@ -311,7 +373,7 @@ void backport_mangles_to_tiles_png(
 
 namespace porytiles2 {
 
-ChainableResult<Animation<Rgba32>> AnimationDecompiler::decompile_animation(
+ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
     const Animation<IndexPixel> &anim,
     const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals,
     std::span<const TilemapEntry> metatiles_bin,
@@ -356,18 +418,45 @@ ChainableResult<Animation<Rgba32>> AnimationDecompiler::decompile_animation(
     std::vector<PixelTile<IndexPixel>> key_frame_index_tiles =
         extract_tiles_from_image(tiles_png, tile_offset, tile_count);
 
-    // Check for duplicate tiles within the key frame
-    const auto duplicate_pairs = find_duplicate_tile_pairs(key_frame_index_tiles);
+    /*
+     * Build canonical tile set for all tiles in tiles.png OUTSIDE the current animation's key frame range. This is
+     * used both for duplicate detection (cross-range) and to prevent the mangler from producing collisions.
+     */
+    const std::size_t total_tiles =
+        (tiles_png.height() / tile::side_length_pix) * (tiles_png.width() / tile::side_length_pix);
+    std::set<PixelTile<IndexPixel>> existing_canonical_tiles;
+    for (std::size_t i = 0; i < total_tiles; ++i) {
+        if (i >= tile_offset && i < tile_offset + tile_count) {
+            continue;
+        }
+        const CanonicalPixelTile canonical{extract_single_tile(tiles_png, i)};
+        const PixelTile<IndexPixel> &base = canonical;
+        existing_canonical_tiles.insert(base);
+    }
 
-    if (!duplicate_pairs.empty()) {
+    /*
+     * Check for duplicate key frame tiles using canonical (flip-equivalent) comparison. Detects both:
+     * - Cross-range duplicates: animation tile matches a non-animation tile in tiles.png
+     * - Intra-animation duplicates: two animation tiles are flip-equivalent to each other
+     */
+    if (has_duplicate_key_frame_tiles(key_frame_index_tiles, existing_canonical_tiles)) {
         switch (key_frame_strategy.value()) {
         case AnimKeyFrameResolutionStrategy::error: {
+            const auto dup_info = categorize_duplicate_key_frame_tiles(key_frame_index_tiles, existing_canonical_tiles);
             std::vector<std::string> err_msg{};
             err_msg.emplace_back(diag_->formatter().format(
-                "Animation '{}' has duplicate key frame tiles:", FormatParam{anim.name(), Style::bold}));
-            for (const auto &[i, j] : duplicate_pairs) {
+                "Animation '{}' has duplicate key frame tiles (flip-equivalent tiles are considered duplicates):",
+                FormatParam{anim.name(), Style::bold}));
+            for (const auto &idx : dup_info.cross_range_indices) {
                 err_msg.emplace_back(diag_->formatter().format(
-                    "  - tile {} and tile {} are identical", FormatParam{i, Style::bold}, FormatParam{j, Style::bold}));
+                    "  - tile {} is flip-equivalent to a non-animation tile in tiles.png",
+                    FormatParam{idx, Style::bold}));
+            }
+            for (const auto &[i, j] : dup_info.intra_animation_pairs) {
+                err_msg.emplace_back(diag_->formatter().format(
+                    "  - tile {} and tile {} are flip-equivalent",
+                    FormatParam{i, Style::bold},
+                    FormatParam{j, Style::bold}));
             }
             err_msg.emplace_back("");
             err_msg.emplace_back("Consider using 'mangle' strategy to auto-resolve.");
@@ -377,19 +466,15 @@ ChainableResult<Animation<Rgba32>> AnimationDecompiler::decompile_animation(
         }
 
         case AnimKeyFrameResolutionStrategy::mangle: {
-            // Build set of existing tiles in canonical form for uniqueness checking.
-            // Using canonical forms ensures tiles that are flip-equivalent are treated as duplicates,
-            // matching the behavior of AnimTileMatcher during recompilation.
-            std::set<PixelTile<IndexPixel>> existing_canonical_tiles;
-            for (const auto &tile : key_frame_index_tiles) {
-                CanonicalPixelTile<IndexPixel> canonical{tile};
-                existing_canonical_tiles.insert(static_cast<const PixelTile<IndexPixel> &>(canonical));
-            }
-
             AnimKeyFrameMangler mangler{diag_, tile_printer_};
             PT_TRY_ASSIGN_CHAIN_ERR(
                 mangle_result,
-                mangler.mangle_duplicates(anim.name(), std::move(key_frame_index_tiles), pal, existing_canonical_tiles),
+                mangler.mangle_duplicates(
+                    anim.name(),
+                    std::move(key_frame_index_tiles),
+                    pal,
+                    extrinsic_transparency.value(),
+                    existing_canonical_tiles),
                 diag_->formatter().format(
                     "Failed to mangle duplicate key frame tiles for animation '{}'.",
                     FormatParam{anim.name(), Style::bold}),

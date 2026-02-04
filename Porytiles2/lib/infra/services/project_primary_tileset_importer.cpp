@@ -83,7 +83,7 @@ ProjectPrimaryTilesetImporter::import_porymap_component_from_vanilla(const std::
         }
     }
     // Note: The returned animations will have frames populated but NO key frames.
-    // Key frame extraction is done later by AnimationDecompiler in the domain layer.
+    // Key frame extraction is done later by AnimDecompiler in the domain layer.
 
     return porymap_component;
 }

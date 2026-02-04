@@ -415,7 +415,7 @@ ChainableResult<void> CompilerTask::pipeline_step_setup_working_data()
 
     // Register animations (reserve slots, compile keyframes, register matcher)
     // Must be done before regular tile matching so animation slots are reserved
-    PT_TRY_CALL_CHAIN_ERR(pipeline_helper_register_animations(), "failed to register animations", void);
+    PT_TRY_CALL_CHAIN_ERR(pipeline_helper_register_animations(), "Failed to register animations.", void);
 
     // Create new Porymap component for output
     new_porymap_component_ = std::make_unique<PorymapTilesetComponent>();
@@ -481,7 +481,7 @@ ChainableResult<void> CompilerTask::pipeline_step_match_tiles_pals()
     }
 
     if (!matched_all_tiles) {
-        return ChainableResult<void>{FormattableError{"failed to match all Porytiles tiles"}};
+        return ChainableResult<void>{FormattableError{"Failed to match all Porytiles tiles."}};
     }
 
     return {};
@@ -873,10 +873,37 @@ CompilerTask::pipeline_helper_build_keyframe_data(const std::string &anim_name, 
             match_or_best(composite_rgba_tile, new_porymap_pals_, extrinsic_transparency_.value(), 1);
 
         if (!matches.at(0).is_covered) {
-            return FormattableError{
-                "animation '{}' composite subtile '{}' has no covering palette",
-                FormatParam{anim_name, Style::bold},
-                FormatParam{tile_idx, Style::bold}};
+            std::vector<std::string> err_lines;
+            std::vector<std::vector<FormatParam>> err_params;
+
+            // Header line
+            err_lines.emplace_back("Animation '{}' composite subtile '{}': no matching palette found.");
+            err_params.push_back({FormatParam{anim_name, Style::bold}, FormatParam{tile_idx, Style::bold}});
+
+            // Closest N match(es) with covered/missing colors
+            err_lines.emplace_back();
+            err_params.emplace_back();
+            err_lines.emplace_back("Closest N match(es) with covered colors highlighted:");
+            err_lines.emplace_back();
+            err_params.emplace_back();
+            err_params.emplace_back();
+            int match_idx = 0;
+            for (const auto &match : matches) {
+                if (match_idx != 0) {
+                    err_lines.emplace_back();
+                    err_params.emplace_back();
+                }
+                err_lines.emplace_back("Palette match candidate: {}");
+                err_params.push_back({FormatParam{pal_filename(match.pal_index), Style::bold}});
+                for (const auto &line : pal_printer_.print_rgba_palette_covered_missing(
+                         new_porymap_pals_.at(match.pal_index), match.covered_colors, match.missing_colors)) {
+                    err_lines.push_back(line);
+                    err_params.emplace_back();
+                }
+                match_idx++;
+            }
+
+            return FormattableError{std::move(err_lines), std::move(err_params)};
         }
 
         // Convert key frame tile to IndexPixel using matched palette

@@ -26,7 +26,7 @@ namespace porytiles2 {
  * 3. Parses INCBIN declarations to find PNG frame file paths
  * 4. Loads frame PNG files and extracts IndexPixel tiles
  *
- * This importer does NOT extract key frames from tiles.png - that responsibility belongs to AnimationDecompiler, which
+ * This importer does NOT extract key frames from tiles.png - that responsibility belongs to AnimDecompiler, which
  * needs to understand VRAM layout and palette assignment.
  *
  * @note Returned animations will have has_key_frame() == false
