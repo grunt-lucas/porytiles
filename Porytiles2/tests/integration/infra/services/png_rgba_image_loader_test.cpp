@@ -8,7 +8,6 @@
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
-#include "porytiles2/utilities/text/ansi_styled_text_formatter.hpp"
 
 using namespace porytiles2;
 
@@ -17,7 +16,6 @@ using namespace porytiles2;
 TEST(PngRgbaImageLoaderTests, LoadFromFileShouldFailGracefullyOnBadFile)
 {
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
-    AnsiStyledTextFormatter formatter{};
 
     auto result = loader->load_from_file("Resources/Tests/integration/infra/services/image_io/non_existent_file.png");
     ASSERT_FALSE(result.has_value());
@@ -25,17 +23,7 @@ TEST(PngRgbaImageLoaderTests, LoadFromFileShouldFailGracefullyOnBadFile)
 
     auto result2 = loader->load_from_file("Resources/Tests/integration/shared/metatile_behaviors.h");
     ASSERT_FALSE(result2.has_value());
-    auto details = result2.error().details(formatter);
-    bool found = false;
-    for (const auto &line : details) {
-        if (line.contains(
-                "Failed to recognize format of file "
-                "'Resources/Tests/integration/shared/metatile_behaviors.h'")) {
-            found = true;
-            break;
-        }
-    }
-    EXPECT_TRUE(found);
+    EXPECT_TRUE(result2.error().type() == ImageLoadError::Type::other_load_error);
 }
 
 TEST(PngRgbaImageLoaderTests, ShouldLoadValidPngFile)

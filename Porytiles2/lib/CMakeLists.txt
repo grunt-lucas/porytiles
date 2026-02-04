@@ -28,14 +28,6 @@ FetchContent_Declare(
 )
 FetchContent_MakeAvailable(GSL)
 
-# CImg
-FetchContent_Declare(
-        CImg
-        GIT_REPOSITORY "https://github.com/GreycLab/CImg"
-        GIT_TAG "v.3.5.5"
-)
-FetchContent_MakeAvailable(CImg)
-
 # png++
 FetchContent_Declare(
         pngpp
@@ -122,12 +114,6 @@ set_target_properties(Porytiles2Lib PROPERTIES OUTPUT_NAME "${CANONICAL_LIB_NAME
 # Ensure config code is generated before building the library
 add_dependencies(Porytiles2Lib generate_config_code)
 
-# Configure CImg
-target_compile_definitions(Porytiles2Lib PRIVATE cimg_use_png)
-target_compile_definitions(Porytiles2Lib PRIVATE cimg_display=0)
-target_compile_definitions(Porytiles2Lib PRIVATE cimg_verbosity=0)
-
-
 #######################################
 #### Configure include directories ####
 #######################################
@@ -139,12 +125,6 @@ target_include_directories(Porytiles2Lib PUBLIC ${PORYTILES2_INCLUDE_DIR})
 target_include_directories(Porytiles2Lib PRIVATE ${PNG_INCLUDE_DIRS})
 
 # For header-only libs, we pull the sources and add headers to include path
-if (cimg_SOURCE_DIR)
-    target_include_directories(Porytiles2Lib PRIVATE ${cimg_SOURCE_DIR})
-else ()
-    message(FATAL_ERROR "cimg_SOURCE_DIR was empty")
-endif ()
-
 if (pngpp_SOURCE_DIR)
     target_include_directories(Porytiles2Lib PRIVATE ${pngpp_SOURCE_DIR}/include)
 else ()
