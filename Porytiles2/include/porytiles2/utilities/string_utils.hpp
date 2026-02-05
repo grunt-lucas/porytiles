@@ -208,6 +208,22 @@ template <typename T>
 }
 
 /**
+ * @brief Converts a boolean to its string representation.
+ *
+ * @details
+ * This overload is necessary because std::to_string() has no bool overload and implicitly converts bool to int,
+ * resulting in "1" or "0" instead of "true" or "false". This function provides human-readable boolean string
+ * representation for use in diagnostic messages and configuration value display.
+ *
+ * @param value The boolean value to convert.
+ * @return "true" if value is true, "false" otherwise.
+ */
+[[nodiscard]] inline std::string to_string(bool value)
+{
+    return value ? "true" : "false";
+}
+
+/**
  * @brief Converts a vector to a string representation with curly brace delimiters.
  *
  * @details

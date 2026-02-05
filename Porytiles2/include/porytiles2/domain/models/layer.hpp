@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstdint>
+#include <format>
 #include <optional>
 #include <ostream>
 #include <string>
@@ -131,3 +132,29 @@ enum class LayerType : unsigned int { normal = 0, covered = 1, split = 2 };
 }
 
 } // namespace porytiles2
+
+template <>
+struct std::formatter<porytiles2::LayerMode> {
+    constexpr auto parse(std::format_parse_context &ctx)
+    {
+        return ctx.begin();
+    }
+
+    auto format(const porytiles2::LayerMode &value, auto &ctx) const
+    {
+        return std::format_to(ctx.out(), "{}", porytiles2::to_string(value));
+    }
+};
+
+template <>
+struct std::formatter<porytiles2::LayerType> {
+    constexpr auto parse(std::format_parse_context &ctx)
+    {
+        return ctx.begin();
+    }
+
+    auto format(const porytiles2::LayerType &value, auto &ctx) const
+    {
+        return std::format_to(ctx.out(), "{}", porytiles2::to_string(value));
+    }
+};

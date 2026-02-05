@@ -1428,8 +1428,8 @@ void CompilerTask::pipeline_helper_emit_tile_limit_error(std::size_t tile_index,
 
     // Construct note text
     std::vector<std::string> note_text;
-    note_text.push_back(
-        format_.format("tile limit is '{}' due to configuration", FormatParam{num_tiles_in_primary_, Style::bold}));
+    note_text.push_back(format_.format(
+        "tile limit is '{}' due to configuration", FormatParam{num_tiles_in_primary_.value(), Style::bold}));
     note_text.emplace_back();
     std::ranges::copy(num_tiles_in_primary_.prettify(format_), std::back_inserter(note_text));
     diag_.error_note(tag, note_text);

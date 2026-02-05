@@ -1,6 +1,7 @@
 #include "porytiles2/infra/config/lazy_layered_config.hpp"
 
 #include <any>
+#include <format>
 #include <functional>
 #include <ranges>
 #include <stdexcept>
@@ -9,7 +10,6 @@
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/source_locations.hpp"
-#include "porytiles2/utilities/string_utils.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
 
 namespace porytiles2 {
@@ -27,18 +27,6 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
     const std::string &canonical_name,
     std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const
 {
-    /*
-     * WARNING! HACK ALERT! WARNING!
-     * DO NOT DELETE THESE USING STATEMENTS.
-     *
-     * We need to declare these here so that the to_string call below can resolve to either the std:: version or one of
-     * our custom versions automagically. Both are needed because:
-     * - std::to_string handles numeric types (size_t, bool, etc.)
-     * - porytiles2::to_string handles custom types (Rgba32, std::string, std::vector<T>, etc.)
-     */
-    using porytiles2::to_string;
-    using std::to_string;
-
     // Check if already cached
     if (cache_.contains(cache_key)) {
         T cached_value{};
@@ -84,7 +72,7 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
         if (layer_value.state == ValidationState::valid) {
             T resolved_value = layer_value.value.value();
             cache_[cache_key] = resolved_value;
-            cache_value_strings_[cache_key] = to_string(resolved_value);
+            cache_value_strings_[cache_key] = std::format("{}", resolved_value);
             source_key_[cache_key] = layer_value.source_key;
             std::string source = format_->format("{}", layer_value.source_info);
             source_[cache_key] = source;

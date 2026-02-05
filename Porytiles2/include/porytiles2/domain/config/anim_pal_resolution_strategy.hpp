@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <format>
 #include <optional>
 #include <ostream>
 #include <string>
@@ -175,3 +176,16 @@ inline std::ostream &operator<<(std::ostream &os, const AnimPalResolutionStrateg
 }
 
 } // namespace porytiles2
+
+template <>
+struct std::formatter<porytiles2::AnimPalResolutionStrategy> {
+    constexpr auto parse(std::format_parse_context &ctx)
+    {
+        return ctx.begin();
+    }
+
+    auto format(const porytiles2::AnimPalResolutionStrategy &value, auto &ctx) const
+    {
+        return std::format_to(ctx.out(), "{}", porytiles2::to_string(value));
+    }
+};

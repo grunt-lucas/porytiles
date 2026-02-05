@@ -115,7 +115,8 @@ inline std::string to_string(const Rgba32 &rgba)
  * @brief Stream insertion operator for Rgba32.
  *
  * @details
- * Allows Rgba32 objects to be written to output streams using the << operator. Uses the JASC string representation.
+ * Allows Rgba32 objects to be written to output streams using the << operator. Uses the bracketed component format
+ * (e.g., "[R, G, B, A]").
  *
  * @param os The output stream
  * @param rgba The Rgba32 color to output
@@ -194,6 +195,25 @@ struct std::hash<porytiles2::Rgba32> {
     }
 };
 
+/**
+ * @brief std::formatter specialization for Rgba32.
+ *
+ * @details
+ * Enables Rgba32 to be used with std::format() and related formatting functions. This makes Rgba32 participate in
+ * the FormatParam string conversion chain via the std::formattable concept.
+ *
+ * Example usage:
+ * ```c++
+ * Rgba32 color{255, 128, 0, 255};
+ * std::string s = std::format("Color: {}", color);  // "Color: [255, 128, 0, 255]"
+ *
+ * // Works automatically with FormatParam:
+ * FormattableError{"Invalid color: {}", FormatParam{color, Style::bold}};
+ * ```
+ *
+ * This is the recommended way to add formatting support for custom types in Porytiles2. The formatter delegates to
+ * the porytiles2::to_string() overload for consistent string representation across the codebase.
+ */
 template <>
 struct std::formatter<porytiles2::Rgba32> {
     constexpr auto parse(std::format_parse_context &ctx)
@@ -201,8 +221,8 @@ struct std::formatter<porytiles2::Rgba32> {
         return ctx.begin();
     }
 
-    auto format(const porytiles2::Rgba32 &rgba, std::format_context &ctx) const
+    auto format(const porytiles2::Rgba32 &rgba, auto &ctx) const
     {
-        return std::format_to(ctx.out(), "{}", rgba.to_jasc_str());
+        return std::format_to(ctx.out(), "{}", porytiles2::to_string(rgba));
     }
 };

@@ -147,6 +147,39 @@ class Foo {
 };
 ```
 
+## std::formatter Specializations
+
+When adding `std::formatter<T>` specializations for custom types, the `format()` method
+**MUST** use `auto &ctx` — not `std::format_context &ctx`:
+
+```c++
+// CORRECT — works with std::formattable concept on all compilers:
+auto format(const MyType &val, auto &ctx) const
+
+// BROKEN on Apple Clang / libc++ — std::formattable<MyType, char> evaluates to false:
+auto format(const MyType &val, std::format_context &ctx) const
+```
+
+This is due to a libc++ implementation issue (LLVM #66466) where the std::formattable concept
+tests against an internal context type, not std::format_context directly.
+
+All formatters should delegate to the type's porytiles2::to_string() overload for consistency:
+
+```c++
+template <>
+struct std::formatter<porytiles2::MyType> {
+    constexpr auto parse(std::format_parse_context &ctx)
+    {
+        return ctx.begin();
+    }
+
+    auto format(const porytiles2::MyType &value, auto &ctx) const
+    {
+        return std::format_to(ctx.out(), "{}", porytiles2::to_string(value));
+    }
+};
+```
+
 Note about markdown code blocks: when writing multiline C++ code blocks,
 use "c++" after the triple backticks. E.g.,
 ```c++
