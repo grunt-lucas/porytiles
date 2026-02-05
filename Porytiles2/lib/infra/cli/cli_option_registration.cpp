@@ -20,60 +20,73 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
     config_group->add_option(
         "--num-tiles-in-primary",
         storage.num_tiles_in_primary,
-        "The NUM_TILES_IN_PRIMARY setting from include/fieldmap.h.");
+        "Number Of Tiles In Primary - The NUM_TILES_IN_PRIMARY setting from include/fieldmap.h.");
 
     // Number Of Tiles Total (std::size_t, captured as string, parsed by CliOptionProvider)
     config_group->add_option(
-        "--num-tiles-total", storage.num_tiles_total, "The NUM_TILES_TOTAL setting from include/fieldmap.h.");
+        "--num-tiles-total",
+        storage.num_tiles_total,
+        "Number Of Tiles Total - The NUM_TILES_TOTAL setting from include/fieldmap.h.");
 
     // Number Of Metatiles In Primary (std::size_t, captured as string, parsed by CliOptionProvider)
     config_group->add_option(
         "--num-metatiles-in-primary",
         storage.num_metatiles_in_primary,
-        "The NUM_METATILES_IN_PRIMARY setting from include/fieldmap.h.");
+        "Number Of Metatiles In Primary - The NUM_METATILES_IN_PRIMARY setting from include/fieldmap.h.");
 
     // Number Of Metatiles Total (std::size_t, captured as string, parsed by CliOptionProvider)
     config_group->add_option(
         "--num-metatiles-total",
         storage.num_metatiles_total,
-        "The NUM_METATILES_TOTAL setting from include/fieldmap.h.");
+        "Number Of Metatiles Total - The NUM_METATILES_TOTAL setting from include/fieldmap.h.");
 
     // Number Of Palettes In Primary (std::size_t, captured as string, parsed by CliOptionProvider)
     config_group->add_option(
         "--num-pals-in-primary",
         storage.num_pals_in_primary,
-        "The NUM_PALS_IN_PRIMARY setting from include/fieldmap.h.");
+        "Number Of Palettes In Primary - The NUM_PALS_IN_PRIMARY setting from include/fieldmap.h.");
 
     // Number Of Palettes Total (std::size_t, captured as string, parsed by CliOptionProvider)
     config_group->add_option(
-        "--num-pals-total", storage.num_pals_total, "The NUM_PALS_TOTAL setting from include/fieldmap.h.");
+        "--num-pals-total",
+        storage.num_pals_total,
+        "Number Of Palettes Total - The NUM_PALS_TOTAL setting from include/fieldmap.h.");
 
     // Max Map Data Size (std::size_t, captured as string, parsed by CliOptionProvider)
     config_group->add_option(
-        "--max-map-data-size", storage.max_map_data_size, "The MAX_MAP_DATA_SIZE setting from include/fieldmap.h.");
+        "--max-map-data-size",
+        storage.max_map_data_size,
+        "Max Map Data Size - The MAX_MAP_DATA_SIZE setting from include/fieldmap.h.");
 
     // Number Of Tiles Per Metatile (std::size_t, captured as string, parsed by CliOptionProvider)
     config_group->add_option(
         "--num-tiles-per-metatile",
         storage.num_tiles_per_metatile,
-        "The NUM_TILES_PER_METATILE setting from include/fieldmap.h.");
+        "Number Of Tiles Per Metatile - The NUM_TILES_PER_METATILE setting from include/fieldmap.h.");
 
     // Extrinsic Transparency (Rgba32, captured as string, parsed by CliOptionProvider)
     config_group
         ->add_option(
             "--extrinsic-transparency",
             storage.extrinsic_transparency,
-            "The RGB color to treat as transparent during compilation. (format: R,G,B or R,G,B,A, values 0-255)")
+            "Extrinsic Transparency - The RGB color to treat as transparent during compilation. (format: R,G,B or "
+            "R,G,B,A, values 0-255)")
         ->type_name("R,G,B[,A]");
 
     // Tiles Edit Mode (enum ArtifactEditMode, captured as string, parsed by CliOptionProvider)
     config_group
-        ->add_option("--tiles-edit-mode", storage.tiles_edit_mode, "The allowed edit mode for the tiles.png artifact.")
+        ->add_option(
+            "--tiles-edit-mode",
+            storage.tiles_edit_mode,
+            "Tiles Edit Mode - The allowed edit mode for the tiles.png artifact.")
         ->type_name("{locked|patch|optimize}");
 
     // Palettes Edit Mode (enum ArtifactEditMode, captured as string, parsed by CliOptionProvider)
     config_group
-        ->add_option("--pals-edit-mode", storage.pals_edit_mode, "The allowed edit mode for the palettes/ artifacts.")
+        ->add_option(
+            "--pals-edit-mode",
+            storage.pals_edit_mode,
+            "Palettes Edit Mode - The allowed edit mode for the palettes/ artifacts.")
         ->type_name("{locked|patch|optimize}");
 
     // Palette Hints Enabled (bool with --flag/--no-flag, captured as "true"/"false" string)
@@ -88,12 +101,14 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
             }
             // count == 0 means neither flag was provided, leave optional empty
         },
-        "Enable configured palette hints.");
+        "Palette Hints Enabled - Enable configured palette hints.");
 
     // Tiles Palette Mode (enum TilesPalMode, captured as string, parsed by CliOptionProvider)
     config_group
         ->add_option(
-            "--tiles-pal-mode", storage.tiles_pal_mode, "The color mode to use when saving the tiles.png artifact.")
+            "--tiles-pal-mode",
+            storage.tiles_pal_mode,
+            "Tiles Palette Mode - The color mode to use when saving the tiles.png artifact.")
         ->type_name("{true-color|greyscale}");
 
     // Animation Palette Resolution Strategy (enum AnimPalResolutionStrategy, captured as string, parsed by
@@ -102,7 +117,8 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
         ->add_option(
             "--anim-pal-resolution-strategy",
             storage.anim_pal_resolution_strategy,
-            "The strategy to use when resolving the palette for an unreferenced animation.")
+            "Animation Palette Resolution Strategy - The strategy to use when resolving the palette for an "
+            "unreferenced animation.")
         ->type_name("{error|default-pal|internal-png-pal|full-tileset-scan}");
 
     // Animation Key Frame Resolution Strategy (enum AnimKeyFrameResolutionStrategy, captured as string, parsed by
@@ -111,8 +127,9 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
         ->add_option(
             "--anim-key-frame-resolution-strategy",
             storage.anim_key_frame_resolution_strategy,
-            "The strategy to use when decompilation encounters duplicate key frame subtiles.")
-        ->type_name("{error|mangle}");
+            "Animation Key Frame Resolution Strategy - The strategy to use when decompilation encounters duplicate key "
+            "frame subtiles.")
+        ->type_name("{error|warning|manual-override|mangle}");
 
     // Verify Checksums (bool with --flag/--no-flag, captured as "true"/"false" string)
     config_group->add_flag(
@@ -126,31 +143,31 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
             }
             // count == 0 means neither flag was provided, leave optional empty
         },
-        "Enable or disable artifact checksum verification.");
+        "Verify Checksums - Enable or disable artifact checksum verification.");
 
     // Tileset Paths Primary Source (std::string)
     config_group->add_option(
         "--tileset-paths-primary-src",
         storage.tileset_paths_primary_src,
-        "The directory for primary tileset Porytiles component assets.");
+        "Tileset Paths Primary Source - The directory for primary tileset Porytiles component assets.");
 
     // Tileset Paths Primary Bin (std::string)
     config_group->add_option(
         "--tileset-paths-primary-bin",
         storage.tileset_paths_primary_bin,
-        "The directory for primary tileset Porymap component assets.");
+        "Tileset Paths Primary Bin - The directory for primary tileset Porymap component assets.");
 
     // Tileset Paths Secondary Source (std::string)
     config_group->add_option(
         "--tileset-paths-secondary-src",
         storage.tileset_paths_secondary_src,
-        "The directory for secondary tileset Porytiles component assets.");
+        "Tileset Paths Secondary Source - The directory for secondary tileset Porytiles component assets.");
 
     // Tileset Paths Secondary Bin (std::string)
     config_group->add_option(
         "--tileset-paths-secondary-bin",
         storage.tileset_paths_secondary_bin,
-        "The directory for secondary tileset Porymap component assets.");
+        "Tileset Paths Secondary Bin - The directory for secondary tileset Porymap component assets.");
 
     // Tileset Animations Wire Anim Code (bool with --flag/--no-flag, captured as "true"/"false" string)
     config_group->add_flag(
@@ -164,7 +181,7 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
             }
             // count == 0 means neither flag was provided, leave optional empty
         },
-        "Enable or disable automatic animation code wiring.");
+        "Tileset Animations Wire Anim Code - Enable or disable automatic animation code wiring.");
 }
 
 } // namespace porytiles2

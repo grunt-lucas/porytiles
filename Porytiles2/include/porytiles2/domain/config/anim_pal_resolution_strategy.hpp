@@ -101,6 +101,9 @@ anim_pal_resolution_strategy_from_str(const std::string &str)
     if (lower_str == "default_pal") {
         return std::optional{AnimPalResolutionStrategy::default_pal};
     }
+    if (lower_str == "defaultpal") {
+        return std::optional{AnimPalResolutionStrategy::default_pal};
+    }
     if (lower_str == "default") {
         return std::optional{AnimPalResolutionStrategy::default_pal};
     }
@@ -117,6 +120,9 @@ anim_pal_resolution_strategy_from_str(const std::string &str)
     if (lower_str == "internal_png_pal") {
         return std::optional{AnimPalResolutionStrategy::internal_png_pal};
     }
+    if (lower_str == "internalpngpal") {
+        return std::optional{AnimPalResolutionStrategy::internal_png_pal};
+    }
     // Fuzzy names for full_tileset_scan
     if (lower_str == "full-tileset-scan") {
         return std::optional{AnimPalResolutionStrategy::full_tileset_scan};
@@ -124,7 +130,7 @@ anim_pal_resolution_strategy_from_str(const std::string &str)
     if (lower_str == "full_tileset_scan") {
         return std::optional{AnimPalResolutionStrategy::full_tileset_scan};
     }
-    if (lower_str == "fulltilesetscans") {
+    if (lower_str == "fulltilesetscan") {
         return std::optional{AnimPalResolutionStrategy::full_tileset_scan};
     }
 

@@ -106,15 +106,15 @@ enum_types:
         brief: Disallow palette resolution fallback and error out.
       - name: default_pal
         cli_completion_name: default-palette
-        fuzzy_names: [ default-palette, default-pal, default_palette, default_pal, default ]
+        fuzzy_names: [ default-palette, default-pal, default_palette, default_pal, defaultpal, default ]
         brief: Use palette 00.pal.
       - name: internal_png_pal
         cli_completion_name: internal-png-palette
-        fuzzy_names: [ internal-png-palette, internal_png_palette, internal-png-pal, internal_png_pal ]
+        fuzzy_names: [ internal-png-palette, internal_png_palette, internal-png-pal, internal_png_pal, internalpngpal ]
         brief: Use the Porymap-component frame PNG internal palette, if present.
       - name: full_tileset_scan
         cli_completion_name: full-tileset-scan
-        fuzzy_names: [ full-tileset-scan, full_tileset_scan, fulltilesetscans ]
+        fuzzy_names: [ full-tileset-scan, full_tileset_scan, fulltilesetscan ]
         brief: Scan layouts config and find all tilesets paired with current tileset, see if an index is present in any.
 
   - cpp_type: AnimKeyFrameResolutionStrategy
@@ -129,6 +129,14 @@ enum_types:
         cli_completion_name: error
         fuzzy_names: [ error, err ]
         brief: Emit a formatted error and fail decompilation.
+      - name: warning
+        cli_completion_name: warning
+        fuzzy_names: [ warning, warn ]
+        brief: Emit a warning and continue decompilation.
+      - name: manual_override
+        cli_completion_name: manual-override
+        fuzzy_names: [ manual_override, manual-override, manualoverride ]
+        brief: Emit a manual override configuration for this animation.
       - name: mangle
         cli_completion_name: mangle
         fuzzy_names: [ mangle ]

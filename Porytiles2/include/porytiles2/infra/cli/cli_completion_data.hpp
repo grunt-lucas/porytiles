@@ -118,7 +118,7 @@ struct CliOptionMeta {
             "Animation Key Frame Resolution Strategy - The strategy to use when decompilation encounters duplicate key "
             "frame subtiles.",
             "enum",
-            {"error", "mangle"},
+            {"error", "warning", "manual-override", "mangle"},
             false},
         CliOptionMeta{
             "verify-checksums",

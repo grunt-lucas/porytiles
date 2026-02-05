@@ -217,6 +217,10 @@ ChainableResult<std::size_t> find_pal_for_anim_tiles(
         }
 
         case AnimPalResolutionStrategy::default_pal:
+            /*
+             * TODO: instead of default_pal, have a strategy for each pal, i.e. pal_0, pal_1, pal_2, etc. Also, it would
+             * be nice if there was a way to configure this strategy PER ANIM.
+             */
             return 0;
 
         case AnimPalResolutionStrategy::internal_png_pal: {
@@ -296,7 +300,7 @@ bool has_duplicate_key_frame_tiles(
 
 struct DuplicateInfo {
     std::vector<std::size_t> cross_range_indices;
-    std::vector<std::pair<std::size_t, std::size_t>> intra_animation_pairs;
+    std::vector<std::pair<std::size_t, std::size_t>> intra_anim_pairs;
 };
 
 /**
@@ -329,7 +333,7 @@ DuplicateInfo categorize_duplicate_key_frame_tiles(
 
         auto [it, inserted] = seen.emplace(base, i);
         if (!inserted) {
-            info.intra_animation_pairs.emplace_back(it->second, i);
+            info.intra_anim_pairs.emplace_back(it->second, i);
         }
     }
 
@@ -452,7 +456,7 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
                     "  - tile {} is flip-equivalent to a non-animation tile in tiles.png",
                     FormatParam{idx, Style::bold}));
             }
-            for (const auto &[i, j] : dup_info.intra_animation_pairs) {
+            for (const auto &[i, j] : dup_info.intra_anim_pairs) {
                 err_msg.emplace_back(diag_->formatter().format(
                     "  - tile {} and tile {} are flip-equivalent",
                     FormatParam{i, Style::bold},
@@ -463,6 +467,15 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
             std::ranges::copy(
                 format_config_note_with_separator(diag_->formatter(), key_frame_strategy), std::back_inserter(err_msg));
             return FormattableError{err_msg};
+        }
+
+        case AnimKeyFrameResolutionStrategy::warning: {
+            // TODO: impl
+            panic("warning not yet implemented");
+        }
+
+        case AnimKeyFrameResolutionStrategy::manual_override: {
+            panic("manual_override not yet implemented");
         }
 
         case AnimKeyFrameResolutionStrategy::mangle: {
