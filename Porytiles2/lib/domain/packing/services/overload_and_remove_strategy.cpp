@@ -1,9 +1,14 @@
 #include "porytiles2/domain/packing/services/overload_and_remove_strategy.hpp"
 
 #include <algorithm>
+#include <cstddef>
+#include <cstdint>
 #include <deque>
 #include <map>
+#include <optional>
+#include <random>
 #include <set>
+#include <utility>
 
 #include "porytiles2/domain/packing/algorithms/packing_initializer.hpp"
 #include "porytiles2/domain/packing/algorithms/packing_metrics.hpp"
@@ -68,6 +73,29 @@ namespace porytiles2 {
 
 ChainableResult<PackingOutput> OverloadAndRemoveStrategy::pack(const PackingInput &input) const
 {
+    // First attempt: FFD ordering (deterministic, theoretically best for bin packing)
+    auto first_result = try_pack(input, std::nullopt);
+    if (first_result.has_value() || shuffle_strategy_ == ShuffleStrategy::single_ffd || max_attempts_ <= 1) {
+        return first_result;
+    }
+
+    // Subsequent attempts: orderings determined by shuffle_strategy_ with seeded PRNG
+    std::mt19937_64 seed_generator{seed_};
+    for (std::size_t attempt = 1; attempt < max_attempts_; ++attempt) {
+        std::uint64_t shuffle_seed = seed_generator();
+        auto result = try_pack(input, shuffle_seed);
+        if (result.has_value()) {
+            return result;
+        }
+    }
+
+    // All attempts failed — return the first attempt's error (most informative)
+    return std::move(first_result);
+}
+
+ChainableResult<PackingOutput>
+OverloadAndRemoveStrategy::try_pack(const PackingInput &input, std::optional<std::uint64_t> shuffle_seed) const
+{
     PackingOutput output;
     PalettePool pal_pool = input.pal_pool_;
 
@@ -105,9 +133,25 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::pack(const PackingInpu
      * hint precondition is not violated, and we potentially get a better solution.
      */
 
-    // Presort the tile pool so tiles with larger color counts come first (First Fit Decreasing heuristic)
-    std::ranges::sort(
-        tile_pool, [](const TileInfo &a, const TileInfo &b) { return a.tile.color_count() > b.tile.color_count(); });
+    // Order tiles based on shuffle strategy
+    if (shuffle_seed.has_value()) {
+        std::mt19937_64 rng{shuffle_seed.value()};
+        std::ranges::shuffle(tile_pool, rng);
+        if (shuffle_strategy_ == ShuffleStrategy::noisy_ffd) {
+            // Noisy FFD: shuffle first for random tiebreaking, then stable_sort by color_count descending.
+            // This preserves the large-first FFD property while randomly reordering tiles of equal size.
+            std::ranges::stable_sort(tile_pool, [](const TileInfo &a, const TileInfo &b) {
+                return a.tile.color_count() > b.tile.color_count();
+            });
+        }
+        // ShuffleStrategy::random: just the shuffle above (original behavior)
+    }
+    else {
+        // FFD: sort by color count descending (deterministic first attempt for all strategies)
+        std::ranges::sort(tile_pool, [](const TileInfo &a, const TileInfo &b) {
+            return a.tile.color_count() > b.tile.color_count();
+        });
+    }
 
     // Pop first tile and assign to first available palette
     TileInfo first_tile_info = std::move(tile_pool.front());
@@ -231,9 +275,39 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::pack(const PackingInpu
                 }
             }
 
-            // If all tiles have same efficiency, we can't make progress
+            // If all tiles have same efficiency, use tiebreakers instead of giving up
             if (std::abs(min_efficiency - max_efficiency) < 1e-9) {
-                break;
+                // Primary tiebreaker: remove tile with most colors (frees most palette capacity)
+                // Secondary tiebreaker: among equal color counts, remove most recently added (LIFO)
+                std::optional<std::size_t> best_removal_pos;
+                std::size_t best_color_count = 0;
+
+                for (std::size_t pos = 0; pos < assigned_ids.size(); ++pos) {
+                    const auto &tid = assigned_ids[pos];
+                    // Never remove prefilled palette tiles
+                    if (std::holds_alternative<PackableTile::PrefilledPaletteId>(tid)) {
+                        continue;
+                    }
+                    const auto it = tile_colors_map.find(tid);
+                    if (it == tile_colors_map.end()) {
+                        continue;
+                    }
+
+                    std::size_t cc = color_set_count(it->second);
+                    // Prefer higher color count (frees more capacity), then later position (LIFO)
+                    if (!best_removal_pos.has_value() || cc > best_color_count ||
+                        (cc == best_color_count && pos > best_removal_pos.value())) {
+                        best_removal_pos = pos;
+                        best_color_count = cc;
+                    }
+                }
+
+                // If no removable tile found (only prefilled tiles), truly stuck
+                if (!best_removal_pos.has_value()) {
+                    break;
+                }
+
+                worst_tile_id = assigned_ids[best_removal_pos.value()];
             }
 
             // Remove worst tile and re-add to pool with forbidden marker
