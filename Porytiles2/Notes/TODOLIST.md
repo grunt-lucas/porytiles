@@ -1,14 +1,7 @@
 # Tasks
 
 ## Refactor and finish TilesetRepo and project impl
-- Make PLA files a first class type in Porymap component (need a domain type for PLA)
-- `TilesetRepo::write` should do a clean wipe of the current tileset folder before writing new artifacts?
-  - See various TODOs about stale artifacts and "possibly incomplete" components
-  - Switch to the original "atomic move" idea
-  - Or figure out how to "delete" irrelevant assets, maybe we can move them to a .bak directory or something
-    - It should be easy, the only assets we need to actually delete are anims
-    - we can figure out which ones should exist by looking at the "target component" of the operation and also the ArtifactEditMode
-    - (will need to think through how anim handling will work in locked, patch, optimize)
+- Make .pla files a first class type in Porymap component (need a domain type for .pla)
 - Project Impl
   - Finish handling for attributes.csv
     - attribute importing
@@ -31,9 +24,9 @@
 - Make each layer a completely isolated library so that the compiler enforces dependency rules
 
 ## Start building animation system
-- See initial attempt in 2/anim1
-- change to `anim.json` instead of `anim.yaml`
-  - even though it's technical a user config file, since Porytiles overwrites it every time, it's unintuitive for users
+- change to `anim.json` instead of `anim.yaml`?
+  - even though it's technically a user config file, since Porytiles overwrites it every time, YAML seems unintuitive
+    - Why? Because users might reasonably do things like put comments, and wonder why their comments keep getting clobbered
   - JSON is better since comments are disallowed by default and syntax is simpler, users won't be confused when their idiosyncrasies get clobbered
 
 ## Implement `LayoutDataProvider`
