@@ -148,7 +148,7 @@ OverloadAndRemoveStrategy::try_pack(const PackingInput &input, std::optional<std
     }
     else {
         // FFD: sort by color count descending (deterministic first attempt for all strategies)
-        std::ranges::sort(tile_pool, [](const TileInfo &a, const TileInfo &b) {
+        std::ranges::stable_sort(tile_pool, [](const TileInfo &a, const TileInfo &b) {
             return a.tile.color_count() > b.tile.color_count();
         });
     }
