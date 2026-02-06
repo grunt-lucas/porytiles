@@ -263,16 +263,16 @@ Limit the output to 10 metatiles, configurable.
 ## Identify unit/integration testing gaps and fill them in
 
 ## Miscellaneous Cleanup
-- Palette hints should be validated entirely within the config system, remove validation from the PaletteValidator
 - Can I use std::span in more places?
 - Fix up `Scripts` directory
   - we should split it up by `Porytiles1` and `Porytiles2` for better usability
 - Provide a configuration that allows users to request ascii-only output
   - e.g. in the file highlighting, the → would become ->
-- Consider storing a global `artifact_checksums.json` instead of per-tileset
-  - all paths are relative to project root anyway
 - Figure out how to cleanup tileset name handling
   - We have code to scrub `gTileset_` prefixes littered all over the place
   - some logic needs full tileset name, other logic needs scrubbed name, it's a mess
+  - Right now, we require users to type full name, e.g. `gTileset_SecretBase`
+    - Could we create a little helper that tries to decode fuzzed names:
+    - e.g. `gTileset_SecretBase`, `secret_base`, `SecretBase`, `secretBase` all would compile the same tileset
 
 ## Clean up TODOs in codebase: `rg -e TODO Porytiles2/`
