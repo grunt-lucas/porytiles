@@ -9,6 +9,7 @@
 #include <optional>
 
 #include "porytiles2/domain/models/animation.hpp"
+#include "porytiles2/domain/models/base_game.hpp"
 #include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/domain/models/porytiles_tileset_component.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
@@ -54,9 +55,6 @@ ChainableResult<void> import_layer_png(
     layer_img_setter(dest.porytiles_component(), *image_result.value());
     return {};
 }
-
-// NOTE: FireRed metatile attributes parsing is not yet implemented.
-// The format is different from Emerald (4 bytes vs 2 bytes) and requires additional work.
 
 ChainableResult<void> import_porytiles_palette(
     Tileset &dest,
@@ -174,10 +172,15 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_metatiles_bin(Tileset &
 ChainableResult<void>
 ProjectTilesetArtifactReader::read_metatile_attributes_bin(Tileset &dest, const ArtifactKey &src_key) const
 {
-    // TODO: branch here based on target base game?
     // Keys are relative to project_root_, so prepend for file I/O
-    PT_TRY_ASSIGN_PASS_ERR(attributes, parse_emerald_metatile_attributes(project_root_ / src_key.key()), void);
-    for (auto &attr : attributes) {
+    const auto path = project_root_ / src_key.key();
+    ChainableResult<std::vector<MetatileAttribute>> attributes_result = base_game_ == BaseGame::pokefirered
+                                                                            ? parse_firered_metatile_attributes(path)
+                                                                            : parse_emerald_metatile_attributes(path);
+    if (!attributes_result.has_value()) {
+        return ChainableResult<void>{FormattableError{"failed to read metatile_attributes.bin"}, attributes_result};
+    }
+    for (auto &attr : attributes_result.value()) {
         dest.porymap_component().push_back_attribute(std::move(attr));
     }
     return {};

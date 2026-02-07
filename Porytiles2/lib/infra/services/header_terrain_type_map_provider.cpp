@@ -1,6 +1,5 @@
-#include "porytiles2/infra/services/header_behavior_map_provider.hpp"
+#include "porytiles2/infra/services/header_terrain_type_map_provider.hpp"
 
-#include <limits>
 #include <utility>
 
 #include "porytiles2/utilities/panic/panic.hpp"
@@ -24,10 +23,8 @@ namespace {
     std::vector<std::string> lines;
     FileHighlightPrinter printer{format};
 
-    // Add header for duplicate location
     lines.push_back(header_message);
 
-    // Add source context for duplicate location (convert 1-based to 0-based)
     assert_or_panic(duplicate_pos.line > 0, "duplicate_pos.line must be positive (1-based)");
     assert_or_panic(duplicate_pos.line <= file_lines.size(), "duplicate_pos.line exceeds file bounds");
     assert_or_panic(duplicate_pos.column > 0, "duplicate_pos.column must be positive (1-based)");
@@ -36,13 +33,10 @@ namespace {
         lines.push_back(std::move(line));
     }
 
-    // Add blank line separator
     lines.emplace_back("");
 
-    // Add note about original location
     lines.push_back(note_message);
 
-    // Add source context for original location (convert 1-based to 0-based)
     assert_or_panic(original_pos.line > 0, "original_pos.line must be positive (1-based)");
     assert_or_panic(original_pos.line <= file_lines.size(), "original_pos.line exceeds file bounds");
     assert_or_panic(original_pos.column > 0, "original_pos.column must be positive (1-based)");
@@ -57,23 +51,23 @@ namespace {
 } // namespace
 
 template <typename Entry>
-ChainableResult<void> HeaderBehaviorMapProvider::try_add_behavior_entry(const Entry &entry) const
+ChainableResult<void> HeaderTerrainTypeMapProvider::try_add_terrain_entry(const Entry &entry) const
 {
     const auto &name = entry.name();
 
-    // Filter: must start with MB_
-    if (!name.starts_with("MB_")) {
+    // Filter: must start with TILE_TERRAIN_
+    if (!name.starts_with("TILE_TERRAIN_")) {
         return {};
     }
 
     auto raw_value = entry.int_value();
 
-    // Filter: value must be in valid range
-    if (raw_value < 0 || raw_value > std::numeric_limits<std::uint16_t>::max()) {
+    // Filter: value must be in valid range (5 bits: 0-31)
+    if (raw_value < 0 || raw_value > 31) {
         return {};
     }
 
-    auto value = static_cast<std::uint16_t>(raw_value);
+    auto value = static_cast<std::uint8_t>(raw_value);
     const auto &new_pos = entry.position();
 
     // Check for duplicate name
@@ -82,7 +76,7 @@ ChainableResult<void> HeaderBehaviorMapProvider::try_add_behavior_entry(const En
         const auto &orig_pos = name_to_position_.at(name);
         return make_duplicate_error(
             format_->format(
-                "{}:{}:{}: duplicate behavior name '{}'.",
+                "{}:{}:{}: duplicate terrain type name '{}'.",
                 FormatParam{header_path_, Style::bold},
                 new_pos.line,
                 new_pos.column,
@@ -102,7 +96,7 @@ ChainableResult<void> HeaderBehaviorMapProvider::try_add_behavior_entry(const En
         const auto &orig_pos = value_to_position_.at(value);
         return make_duplicate_error(
             format_->format(
-                "{}:{}:{}: duplicate behavior value '{}': both '{}' and '{}' have this value.",
+                "{}:{}:{}: duplicate terrain type value '{}': both '{}' and '{}' have this value.",
                 FormatParam{header_path_, Style::bold},
                 new_pos.line,
                 new_pos.column,
@@ -129,53 +123,52 @@ ChainableResult<void> HeaderBehaviorMapProvider::try_add_behavior_entry(const En
     return {};
 }
 
-ChainableResult<std::uint16_t> HeaderBehaviorMapProvider::lookup(const std::string &behavior_name) const
+ChainableResult<std::uint8_t> HeaderTerrainTypeMapProvider::lookup(const std::string &terrain_name) const
 {
-    if (!behavior_name.starts_with("MB_")) {
+    if (!terrain_name.starts_with("TILE_TERRAIN_")) {
         return FormattableError{
-            "Invalid behavior name '{}': expected prefix '{}'.",
-            FormatParam{behavior_name, Style::bold},
-            FormatParam{"MB_", Style::bold}};
+            "Invalid terrain type name '{}': expected prefix '{}'.",
+            FormatParam{terrain_name, Style::bold},
+            FormatParam{"TILE_TERRAIN_", Style::bold}};
     }
 
     auto load_result = ensure_loaded();
     if (!load_result.has_value()) {
-        return ChainableResult<std::uint16_t>{
-            FormattableError{"Metatile behavior provider lookup failed."}, load_result};
+        return ChainableResult<std::uint8_t>{FormattableError{"Terrain type provider lookup failed."}, load_result};
     }
 
-    const auto it = name_to_value_.find(behavior_name);
+    const auto it = name_to_value_.find(terrain_name);
     if (it == name_to_value_.end()) {
         return FormattableError{
-            "Behavior '{}' not found in '{}'.",
-            FormatParam{behavior_name, Style::bold},
+            "Terrain type '{}' not found in '{}'.",
+            FormatParam{terrain_name, Style::bold},
             FormatParam{header_path_.string(), Style::bold}};
     }
     return it->second;
 }
 
-ChainableResult<std::string> HeaderBehaviorMapProvider::lookup(std::uint16_t behavior_value) const
+ChainableResult<std::string> HeaderTerrainTypeMapProvider::lookup(std::uint8_t terrain_value) const
 {
     auto load_result = ensure_loaded();
     if (!load_result.has_value()) {
-        return ChainableResult<std::string>{FormattableError{"Metatile behavior provider lookup failed."}, load_result};
+        return ChainableResult<std::string>{FormattableError{"Terrain type provider lookup failed."}, load_result};
     }
 
-    const auto it = value_to_name_.find(behavior_value);
+    const auto it = value_to_name_.find(terrain_value);
     if (it == value_to_name_.end()) {
         return FormattableError{
-            "Unknown behavior value '{}' not found in '{}'.",
-            FormatParam{behavior_value, Style::bold},
+            "Unknown terrain type value '{}' not found in '{}'.",
+            FormatParam{terrain_value, Style::bold},
             FormatParam{header_path_.string(), Style::bold}};
     }
     return it->second;
 }
 
-ChainableResult<void> HeaderBehaviorMapProvider::ensure_loaded() const
+ChainableResult<void> HeaderTerrainTypeMapProvider::ensure_loaded() const
 {
     if (loaded_) {
         if (load_failed_) {
-            return FormattableError{"Behavior header file previously failed to load."};
+            return FormattableError{"Terrain type header file previously failed to load."};
         }
         return {};
     }
@@ -185,23 +178,9 @@ ChainableResult<void> HeaderBehaviorMapProvider::ensure_loaded() const
     // Create and store CParserFacade for rich error formatting with source context
     driver_ = std::make_unique<CParserFacade>(header_path_, format_);
 
-    // Parse #define statements
-    auto defines_result = driver_->parse_defines();
-    if (!defines_result.has_value()) {
-        load_failed_ = true;
-        return ChainableResult<void>{defines_result};
-    }
-    for (const auto &def : defines_result.value()) {
-        if (!def.has_int_value()) {
-            continue;
-        }
-        auto insert_result = try_add_behavior_entry(def);
-        if (!insert_result.has_value()) {
-            return insert_result;
-        }
-    }
-
-    // Parse enum declarations
+    // Only parse enum declarations — terrain type constants are defined as enum members in global.fieldmap.h.
+    // We intentionally skip parse_defines() because the header may contain complex #define expressions
+    // (e.g., referencing enum constants) that the CParserFacade cannot evaluate.
     auto enums_result = driver_->parse_enums();
     if (!enums_result.has_value()) {
         load_failed_ = true;
@@ -209,7 +188,7 @@ ChainableResult<void> HeaderBehaviorMapProvider::ensure_loaded() const
     }
     for (const auto &enum_decl : enums_result.value()) {
         for (const auto &member : enum_decl.members()) {
-            auto insert_result = try_add_behavior_entry(member);
+            auto insert_result = try_add_terrain_entry(member);
             if (!insert_result.has_value()) {
                 return insert_result;
             }
@@ -219,7 +198,7 @@ ChainableResult<void> HeaderBehaviorMapProvider::ensure_loaded() const
     if (name_to_value_.empty()) {
         load_failed_ = true;
         return FormattableError{
-            "{}: no behavior definitions exist in file.", FormatParam{header_path_.string(), Style::bold}};
+            "{}: no terrain type definitions exist in file.", FormatParam{header_path_.string(), Style::bold}};
     }
 
     return {};

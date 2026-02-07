@@ -2,10 +2,6 @@
 
 ## Refactor and finish TilesetRepo and project impl
 - Make .pla files a first class type in Porymap component (need a domain type for .pla)
-- Project Impl
-  - Finish handling for attributes.csv
-    - attribute importing
-    - firered format attributes
 - JSON Impl
   - Start working on a JSON impl that can read/write tilesets from a standardized JSON format 
 

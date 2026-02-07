@@ -198,6 +198,11 @@ ChainableResult<EnumDeclaration> Parser::parse_enum()
         advance();
     }
 
+    // Skip newlines before opening brace (handles `enum\n{` style)
+    while (check(TokenType::newline)) {
+        advance();
+    }
+
     // Expect opening brace
     if (!check(TokenType::left_brace)) {
         return make_error(peek().position(), "expected '{' after 'enum'");

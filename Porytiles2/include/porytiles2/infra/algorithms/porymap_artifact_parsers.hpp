@@ -50,6 +50,28 @@ namespace porytiles2 {
 parse_emerald_metatile_attributes(const std::filesystem::path &path);
 
 /**
+ * @brief Parses a metatile_attributes.bin file for FireRed format.
+ *
+ * @details
+ * Reads a binary file containing 4-byte metatile attribute entries. Each entry encodes:
+ * - Bits 0-8: behavior value (9 bits)
+ * - Bits 9-13: terrain type (5 bits)
+ * - Bits 14-17: attribute 2 (4 bits)
+ * - Bits 18-23: attribute 3 (6 bits)
+ * - Bits 24-26: encounter type (3 bits)
+ * - Bits 27-28: attribute 5 (2 bits)
+ * - Bits 29-30: layer type (2 bits)
+ * - Bit 31: attribute 7 (1 bit)
+ *
+ * @param path Absolute path to the metatile_attributes.bin file
+ * @pre File must exist and be readable
+ * @pre File size must be a multiple of 4 bytes (attr::bytes_per_attr_firered)
+ * @return Vector of parsed MetatileAttribute objects, or error if file is invalid/corrupted
+ */
+[[nodiscard]] ChainableResult<std::vector<MetatileAttribute>>
+parse_firered_metatile_attributes(const std::filesystem::path &path);
+
+/**
  * @brief Loads an indexed PNG file (e.g., tiles.png).
  *
  * @details

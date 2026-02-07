@@ -531,13 +531,10 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
         }
         const auto maybe_porytiles_attr = tileset_.porytiles_component().get_attribute(i);
         MetatileAttribute new_attr{};
-        new_attr.layer_type(layer_type);
-
-        // TODO: handle firered/custom stuff here properly
         if (maybe_porytiles_attr.has_value()) {
-            // Copy over attribute from Porytiles component, use inferred layer type.
-            new_attr.behavior(maybe_porytiles_attr.value().behavior());
+            new_attr = maybe_porytiles_attr.value();
         }
+        new_attr.layer_type(layer_type);
         new_porymap_component_->push_back_attribute(new_attr);
     }
 

@@ -13,6 +13,7 @@
 #include <sstream>
 #include <string>
 
+#include "porytiles2/domain/models/base_game.hpp"
 #include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
@@ -161,10 +162,9 @@ ChainableResult<void> save_metatiles_bin(const std::vector<TilemapEntry> &entrie
     return {};
 }
 
-ChainableResult<void>
-save_metatile_attributes_bin(const std::vector<MetatileAttribute> &attributes, const std::filesystem::path &path)
+ChainableResult<void> save_emerald_metatile_attributes_bin(
+    const std::vector<MetatileAttribute> &attributes, const std::filesystem::path &path)
 {
-    // TODO: will need different handling for firered attrs
     std::ofstream out{path};
     for (const auto &attribute : attributes) {
         const std::uint16_t behavior = attribute.behavior();
@@ -173,6 +173,38 @@ save_metatile_attributes_bin(const std::vector<MetatileAttribute> &attributes, c
         const auto attribute_value = static_cast<std::uint16_t>((behavior & 0xff) | ((layer_type & 0xf) << 12));
         out << static_cast<std::uint8_t>(attribute_value);
         out << static_cast<std::uint8_t>(attribute_value >> 8);
+    }
+    out.flush();
+    return {};
+}
+
+ChainableResult<void> save_firered_metatile_attributes_bin(
+    const std::vector<MetatileAttribute> &attributes, const std::filesystem::path &path)
+{
+    std::ofstream out{path};
+    for (const auto &attribute : attributes) {
+        // FireRed attribute bit layout (from fieldmap.c):
+        //   Bits  0-8:  behavior       (0x000001FF)
+        //   Bits  9-13: terrain        (0x00003E00)
+        //   Bits 14-17: attribute_2    (0x0003C000)
+        //   Bits 18-23: attribute_3    (0x00FC0000)
+        //   Bits 24-26: encounter_type (0x07000000)
+        //   Bits 27-28: attribute_5    (0x18000000)
+        //   Bits 29-30: layer_type     (0x60000000)
+        //   Bit  31:    attribute_7    (0x80000000)
+        const auto attribute_value = static_cast<std::uint32_t>(
+            (static_cast<std::uint32_t>(attribute.behavior()) & 0x1FF) |
+            ((static_cast<std::uint32_t>(attribute.terrain()) & 0x1F) << 9) |
+            ((static_cast<std::uint32_t>(attribute.attribute_2()) & 0x0F) << 14) |
+            ((static_cast<std::uint32_t>(attribute.attribute_3()) & 0x3F) << 18) |
+            ((static_cast<std::uint32_t>(attribute.encounter_type()) & 0x07) << 24) |
+            ((static_cast<std::uint32_t>(attribute.attribute_5()) & 0x03) << 27) |
+            ((static_cast<std::uint32_t>(attribute.layer_type()) & 0x03) << 29) |
+            ((static_cast<std::uint32_t>(attribute.attribute_7()) & 0x01) << 31));
+        out << static_cast<std::uint8_t>(attribute_value);
+        out << static_cast<std::uint8_t>(attribute_value >> 8);
+        out << static_cast<std::uint8_t>(attribute_value >> 16);
+        out << static_cast<std::uint8_t>(attribute_value >> 24);
     }
     out.flush();
     return {};
@@ -612,7 +644,12 @@ ProjectTilesetArtifactWriter::write_metatile_attributes_bin(const ArtifactKey &d
             transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
         "failed to compute transaction dest path",
         void);
-    return save_metatile_attributes_bin(src.porymap_component().metatile_attributes_bin(), transaction_dest_path);
+    if (base_game_ == BaseGame::pokefirered) {
+        return save_firered_metatile_attributes_bin(
+            src.porymap_component().metatile_attributes_bin(), transaction_dest_path);
+    }
+    return save_emerald_metatile_attributes_bin(
+        src.porymap_component().metatile_attributes_bin(), transaction_dest_path);
 }
 
 ChainableResult<void> ProjectTilesetArtifactWriter::write_tiles_png(const ArtifactKey &dest_key, const Tileset &src)
@@ -774,13 +811,26 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
 {
     const auto &attributes = src.porytiles_component().metatile_attributes();
 
-    // Count non-default attributes (behavior != 0 is non-default, since MB_NORMAL = 0 is the implicit default)
     // TODO : make the default behavior value configurable
     constexpr std::uint16_t default_behavior = 0;
+    constexpr std::uint8_t default_terrain = 0;
+    constexpr std::uint8_t default_encounter = 0;
+
+    const bool is_firered = base_game_ == BaseGame::pokefirered;
+
+    // Count non-default attributes
     std::size_t non_default_count = 0;
     for (const auto &attribute : attributes | std::views::values) {
-        if (attribute.behavior() != default_behavior) {
-            non_default_count++;
+        if (is_firered) {
+            if (attribute.behavior() != default_behavior || attribute.terrain() != default_terrain ||
+                attribute.encounter_type() != default_encounter) {
+                non_default_count++;
+            }
+        }
+        else {
+            if (attribute.behavior() != default_behavior) {
+                non_default_count++;
+            }
         }
     }
 
@@ -798,7 +848,12 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
     }
 
     // Write header
-    out << "id,behavior\n";
+    if (is_firered) {
+        out << "id,behavior,terrainType,encounterType\n";
+    }
+    else {
+        out << "id,behavior\n";
+    }
 
     if (non_default_count == 0) {
         // No non-default attributes to write
@@ -808,16 +863,40 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
 
     // Write each non-default attribute row
     for (const auto &[metatile_id, attribute] : attributes) {
-        if (attribute.behavior() == default_behavior) {
-            // Skip default behavior (MB_NORMAL = 0), since it's implicit for missing entries
-            continue;
+        if (is_firered) {
+            if (attribute.behavior() == default_behavior && attribute.terrain() == default_terrain &&
+                attribute.encounter_type() == default_encounter) {
+                continue;
+            }
+            PT_TRY_ASSIGN_CHAIN_ERR(
+                behavior_name,
+                behavior_map_->lookup(attribute.behavior()),
+                "failed to lookup behavior name for metatile " + std::to_string(metatile_id),
+                void);
+            PT_TRY_ASSIGN_CHAIN_ERR(
+                terrain_name,
+                terrain_map_->lookup(attribute.terrain()),
+                "failed to lookup terrain type name for metatile " + std::to_string(metatile_id),
+                void);
+            PT_TRY_ASSIGN_CHAIN_ERR(
+                encounter_name,
+                encounter_map_->lookup(attribute.encounter_type()),
+                "failed to lookup encounter type name for metatile " + std::to_string(metatile_id),
+                void);
+            out << metatile_id << "," << behavior_name << "," << terrain_name << "," << encounter_name << "\n";
         }
-        PT_TRY_ASSIGN_CHAIN_ERR(
-            behavior_name,
-            behavior_map_->lookup(attribute.behavior()),
-            "failed to lookup behavior name for metatile " + std::to_string(metatile_id),
-            void);
-        out << metatile_id << "," << behavior_name << "\n";
+        else {
+            if (attribute.behavior() == default_behavior) {
+                // Skip default behavior (MB_NORMAL = 0), since it's implicit for missing entries
+                continue;
+            }
+            PT_TRY_ASSIGN_CHAIN_ERR(
+                behavior_name,
+                behavior_map_->lookup(attribute.behavior()),
+                "failed to lookup behavior name for metatile " + std::to_string(metatile_id),
+                void);
+            out << metatile_id << "," << behavior_name << "\n";
+        }
     }
 
     out.flush();

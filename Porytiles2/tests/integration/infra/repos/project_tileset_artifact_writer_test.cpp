@@ -10,6 +10,7 @@
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
+#include "porytiles2/domain/models/base_game.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/palette.hpp"
@@ -316,6 +317,7 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
             domain_config_.get(),
             infra_config_.get(),
             test_root_,
+            BaseGame::pokeemerald,
             formatter_.get(),
             diag_.get(),
             png_rgba_saver_.get(),

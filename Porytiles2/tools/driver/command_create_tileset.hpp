@@ -26,8 +26,11 @@
 #include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
 #include "porytiles2/infra/services/ascii_tile_printer.hpp"
 #include "porytiles2/infra/services/attributes_csv_loader.hpp"
+#include "porytiles2/infra/services/base_game_detector.hpp"
 #include "porytiles2/infra/services/color_palette_printer.hpp"
 #include "porytiles2/infra/services/header_behavior_map_provider.hpp"
+#include "porytiles2/infra/services/header_encounter_type_map_provider.hpp"
+#include "porytiles2/infra/services/header_terrain_type_map_provider.hpp"
 #include "porytiles2/infra/services/incbin_declaration_appender.hpp"
 #include "porytiles2/infra/services/jasc_pal_loader.hpp"
 #include "porytiles2/infra/services/jasc_pal_saver.hpp"
@@ -77,6 +80,7 @@ class CreateTilesetCommand final : public Command {
         std::filesystem::path project_root = project_root_opt_.project_root();
         std::filesystem::path fieldmap_header_root_relative{"include/fieldmap.h"};
         std::filesystem::path behaviors_header_root_relative{"include/constants/metatile_behaviors.h"};
+        std::filesystem::path global_fieldmap_header_root_relative{"include/global.fieldmap.h"};
 
         // Setup layered configuration (CLI options have highest priority)
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
@@ -101,10 +105,9 @@ class CreateTilesetCommand final : public Command {
         AnimCodeParser anim_code_parser{text_formatter, diag.get()};
         AnimCodeGenerator anim_code_generator{};
 
-        // Setup behavior map provider and attributes CSV loader
+        // Setup behavior map provider
         HeaderBehaviorMapProvider behavior_map_provider{
             project_root / behaviors_header_root_relative, text_formatter, diag.get()};
-        AttributesCsvLoader attributes_csv_loader{text_formatter, &behavior_map_provider};
 
         // Setup metadata provider and tileset manager
         ProjectTilesetMetadataProvider metadata_provider{project_root, text_formatter, diag.get()};
@@ -120,10 +123,33 @@ class CreateTilesetCommand final : public Command {
             &incbin_appender,
             &tileset_anims_modifier};
 
+        // Detect base game
+        BaseGameDetector base_game_detector{project_root, text_formatter, diag.get()};
+        auto base_game_result = base_game_detector.detect();
+        if (!base_game_result.has_value()) {
+            diag->fatal(base_game_result);
+        }
+        const BaseGame base_game = base_game_result.value();
+
+        // Conditionally create terrain/encounter providers for FireRed
+        std::unique_ptr<HeaderTerrainTypeMapProvider> terrain_provider;
+        std::unique_ptr<HeaderEncounterTypeMapProvider> encounter_provider;
+        if (base_game == BaseGame::pokefirered) {
+            terrain_provider = std::make_unique<HeaderTerrainTypeMapProvider>(
+                project_root / global_fieldmap_header_root_relative, text_formatter, diag.get());
+            encounter_provider = std::make_unique<HeaderEncounterTypeMapProvider>(
+                project_root / global_fieldmap_header_root_relative, text_formatter, diag.get());
+        }
+
+        // Setup attributes CSV loader (after base game detection for format validation)
+        AttributesCsvLoader attributes_csv_loader{
+            text_formatter, &behavior_map_provider, base_game, terrain_provider.get(), encounter_provider.get()};
+
         // Setup the tileset repository
         ProjectTilesetArtifactKeyProvider key_provider{project_root, &config, text_formatter, diag.get()};
         ProjectTilesetArtifactReader artifact_reader{
             project_root,
+            base_game,
             &png_rgba_loader,
             &png_indexed_loader,
             &jasc_loader,
@@ -135,6 +161,7 @@ class CreateTilesetCommand final : public Command {
             &config,
             &config,
             project_root,
+            base_game,
             text_formatter,
             diag.get(),
             &png_rgba_saver,
@@ -142,7 +169,9 @@ class CreateTilesetCommand final : public Command {
             &jasc_saver,
             &anim_yaml_parser,
             &anim_code_generator,
-            &behavior_map_provider};
+            &behavior_map_provider,
+            terrain_provider.get(),
+            encounter_provider.get()};
         ProjectArtifactChecksumProvider checksum_provider{project_root};
         TilesetRepo repo{
             &checksum_provider, &metadata_provider, &key_provider, &artifact_reader, &artifact_writer, diag.get()};
