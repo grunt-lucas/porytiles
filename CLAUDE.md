@@ -32,36 +32,25 @@ Key directories in Porytiles2:
 
 This project has custom Claude Code agents in `.claude/agents/` for specialized tasks:
 
-**Development:**
 - **build-expert**: CMake builds, compilation errors, linker issues
-- **test-runner**: GoogleTest execution, test failures, adding tests
 - **debugger**: Runtime errors, crashes, logic bugs
-
-**Code Quality:**
 - **code-reviewer**: Code quality, style compliance, security review
-- **documenter**: Doxygen documentation, proper tag ordering
-- **refactorer**: Safe code refactoring, symbol renaming, code moves
-
-**Architecture:**
 - **architect**: DDD layer decisions, component placement, dependency rules
-- **di-expert**: Fruit dependency injection, wiring, DI debugging
-- **config-generator**: Config schema, Jinja2 templates, code generation
-- **migrator**: Porting code from Porytiles1 to Porytiles2
 
 Use these agents for complex tasks in their domains.
 
 ## Build System
 
-Uses CMake 3.20+ with C++23. Requires `zlib`, `libpng`, and GoogleTest.
+Uses CMake 3.20+ with C++23.
 
 **CRITICAL**: Build directories are `clion-build-debug` or `vscode-build` (NEVER `build`).
 
 Quick reference:
 ```bash
+./Scripts/format.sh 2> /dev/null  # Format code
 cmake --build clion-build-debug -j7 > /tmp/build.log 2>&1  # Build (check exit code)
 cmake --install clion-build-debug --prefix ~/.local        # Install to ~/.local/bin
 ./clion-build-debug/Porytiles2/tests/Porytiles2AllTests > /tmp/test.log 2>&1  # Test
-./Scripts/format.sh 2> /dev/null  # Format code
 ```
 
 **After building, always install the executable to make it available for testing.**

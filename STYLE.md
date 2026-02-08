@@ -7,11 +7,11 @@
 #include <vector>
 
 // Next, include project libraries with quotes
-#include "fmt/format.h"
 #include "gsl/pointers"
+#include "yaml-cpp/yaml.h"
 
 // Finally, include other Porytiles headers with quotes
-#include "porytiles2/domain/Foo.hpp"
+#include "porytiles2/domain/foo.hpp"
 
 // Notice that between each include group, we place an extra newline
 
@@ -70,6 +70,12 @@ class MyClass {
 
 // cpp file implementations
 int MyClass::compute_something(int accum_value) const {
+    /*
+     * For extended multi-line code comments,
+     * prefer the slash-star style like so.
+     */
+    // Single line comments can use the two-slash style.
+
     // local variable names are snake_case
     int my_local = 1;
     return my_local + my_val_ + accum_value;
