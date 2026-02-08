@@ -235,7 +235,8 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
     auto c_lines_result = read_file_lines(anims_c_path, diagnostics_);
     if (!c_lines_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"failed to read tileset_anims.c for tileset '{}'", FormatParam{tileset_name, Style::bold}},
+            FormattableError{
+                "Failed to read tileset_anims.c for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
             c_lines_result};
     }
     auto c_lines = std::move(c_lines_result.value());
@@ -245,7 +246,8 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
     auto h_lines_result = read_file_lines(anims_h_path, diagnostics_);
     if (!h_lines_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"failed to read tileset_anims.h for tileset '{}'", FormatParam{tileset_name, Style::bold}},
+            FormattableError{
+                "Failed to read tileset_anims.h for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
             h_lines_result};
     }
     auto h_lines = std::move(h_lines_result.value());
@@ -336,7 +338,8 @@ ProjectTilesetAnimsModifier::remove_include_for_tileset(const std::string &tiles
     auto c_lines_result = read_file_lines(anims_c_path, diagnostics_);
     if (!c_lines_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"failed to read tileset_anims.c for tileset '{}'", FormatParam{tileset_name, Style::bold}},
+            FormattableError{
+                "Failed to read tileset_anims.c for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
             c_lines_result};
     }
     auto c_lines = std::move(c_lines_result.value());
@@ -346,7 +349,8 @@ ProjectTilesetAnimsModifier::remove_include_for_tileset(const std::string &tiles
     auto h_lines_result = read_file_lines(anims_h_path, diagnostics_);
     if (!h_lines_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"failed to read tileset_anims.h for tileset '{}'", FormatParam{tileset_name, Style::bold}},
+            FormattableError{
+                "Failed to read tileset_anims.h for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
             h_lines_result};
     }
     auto h_lines = std::move(h_lines_result.value());

@@ -64,7 +64,7 @@ ChainableResult<TilesetManifest> ProjectPorytilesTilesetManager::read(const std:
     const auto input_path = artifacts_file(project_root_, tileset_name);
 
     if (!std::filesystem::exists(input_path)) {
-        return FormattableError{"{}: file not found", FormatParam{input_path.string(), Style::bold}};
+        return FormattableError{"'{}': File not found.", FormatParam{input_path.string(), Style::bold}};
     }
 
     std::ifstream file{input_path};

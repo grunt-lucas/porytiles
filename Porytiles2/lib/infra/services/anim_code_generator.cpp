@@ -187,7 +187,7 @@ ChainableResult<std::string> AnimCodeGenerator::generate(
     bool is_primary) const
 {
     if (animations.empty()) {
-        return FormattableError{"no animations to generate code for"};
+        return FormattableError{"No animations to generate code for."};
     }
 
     std::ostringstream out;

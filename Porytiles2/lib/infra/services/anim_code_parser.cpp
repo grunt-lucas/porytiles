@@ -299,7 +299,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
     if (!callback_funcs_result.has_value()) {
         return ChainableResult<std::map<std::string, AnimationParams>>{
             FormattableError{format_->format(
-                "{}: failed to parse callback function", FormatParam{c_file_path.string(), Style::bold})},
+                "'{}': Failed to parse callback function.", FormatParam{c_file_path.string(), Style::bold})},
             callback_funcs_result};
     }
 
@@ -312,7 +312,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
     if (callback_funcs.size() > 1) {
         diag_->warning(
             anim_parsing_error,
-            "found multiple callback functions matching '{}', using first",
+            "Found multiple callback functions matching '{}', using first.",
             FormatParam{callback_func_name, Style::bold});
     }
 
@@ -322,7 +322,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
     if (driver_func_name.empty()) {
         diag_->warning(
             anim_parsing_error,
-            "could not find driver function assignment in '{}'",
+            "Could not find driver function assignment in '{}'.",
             FormatParam{callback_func_name, Style::bold});
         return std::map<std::string, AnimationParams>{};
     }
@@ -332,7 +332,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
     if (!driver_funcs_result.has_value()) {
         return ChainableResult<std::map<std::string, AnimationParams>>{
             FormattableError{format_->format(
-                "{}: failed to parse driver function '{}'",
+                "'{}': Failed to parse driver function '{}'.",
                 FormatParam{c_file_path.string(), Style::bold},
                 FormatParam{driver_func_name, Style::bold})},
             driver_funcs_result};
@@ -341,7 +341,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
     const auto &driver_funcs = driver_funcs_result.value();
     if (driver_funcs.empty()) {
         diag_->warning(
-            anim_parsing_error, "driver function '{}' not found in file", FormatParam{driver_func_name, Style::bold});
+            anim_parsing_error, "Driver function '{}' not found in file.", FormatParam{driver_func_name, Style::bold});
         return std::map<std::string, AnimationParams>{};
     }
 
@@ -351,7 +351,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
     if (timer_conditions.empty()) {
         diag_->warning(
             anim_parsing_error,
-            "no timer conditions found in driver function '{}'",
+            "No timer conditions found in driver function '{}'.",
             FormatParam{driver_func_name, Style::bold});
         return std::map<std::string, AnimationParams>{};
     }
@@ -361,7 +361,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
     if (!all_funcs_result.has_value()) {
         return ChainableResult<std::map<std::string, AnimationParams>>{
             FormattableError{
-                format_->format("{}: failed to parse functions", FormatParam{c_file_path.string(), Style::bold})},
+                format_->format("'{}': Failed to parse functions.", FormatParam{c_file_path.string(), Style::bold})},
             all_funcs_result};
     }
 
@@ -379,7 +379,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
         if (it == func_map.end()) {
             diag_->warning(
                 anim_parsing_error,
-                "queue function '{}' not found in file",
+                "Queue function '{}' not found in file.",
                 FormatParam{condition.called_func, Style::bold});
             continue;
         }
@@ -392,7 +392,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
         if (append_calls.empty()) {
             diag_->warning(
                 anim_parsing_error,
-                "no AppendTilesetAnimToBuffer calls in queue function '{}'",
+                "No AppendTilesetAnimToBuffer calls in queue function '{}'.",
                 FormatParam{condition.called_func, Style::bold});
             continue;
         }
@@ -404,7 +404,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
         if (call.argument_count() < 3) {
             diag_->warning(
                 anim_parsing_error,
-                "AppendTilesetAnimToBuffer call in '{}' has fewer than 3 arguments",
+                "AppendTilesetAnimToBuffer call in '{}' has fewer than 3 arguments.",
                 FormatParam{condition.called_func, Style::bold});
             continue;
         }
@@ -416,7 +416,9 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
 
         if (anim_name_pascal.empty()) {
             diag_->warning(
-                anim_parsing_error, "could not extract animation name from '{}'", FormatParam{array_name, Style::bold});
+                anim_parsing_error,
+                "Could not extract animation name from '{}'.",
+                FormatParam{array_name, Style::bold});
             continue;
         }
 
@@ -425,7 +427,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
         if (!tile_offset.has_value()) {
             diag_->warning(
                 anim_parsing_error,
-                "could not extract TILE_OFFSET_4BPP from AppendTilesetAnimToBuffer call for '{}'",
+                "Could not extract TILE_OFFSET_4BPP from AppendTilesetAnimToBuffer call for '{}'.",
                 FormatParam{anim_name_pascal, Style::bold});
             continue;
         }
@@ -435,7 +437,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
         if (!tile_count.has_value()) {
             diag_->warning(
                 anim_parsing_error,
-                "could not extract TILE_SIZE_4BPP from AppendTilesetAnimToBuffer call for '{}'",
+                "Could not extract TILE_SIZE_4BPP from AppendTilesetAnimToBuffer call for '{}'.",
                 FormatParam{anim_name_pascal, Style::bold});
             continue;
         }
@@ -444,8 +446,8 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
         if (append_calls.size() > 1) {
             diag_->warning(
                 "vdests-pattern-detected",
-                "queue function '{}' has multiple AppendTilesetAnimToBuffer calls (VDests pattern); "
-                "using first call only",
+                "Queue function '{}' has multiple AppendTilesetAnimToBuffer calls (VDests pattern); "
+                "using first call only.",
                 FormatParam{condition.called_func, Style::bold});
         }
 

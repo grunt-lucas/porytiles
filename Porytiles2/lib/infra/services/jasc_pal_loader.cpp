@@ -85,7 +85,7 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
     const FileHighlightPrinter &file_printer)
 {
     if (!exists(path)) {
-        return FormattableError{"{}: file does not exist", FormatParam{path.string(), Style::bold}};
+        return FormattableError{"'{}': File does not exist.", FormatParam{path.string(), Style::bold}};
     }
 
     // Slurp the entire file into a vector for FileHighlightPrinter support

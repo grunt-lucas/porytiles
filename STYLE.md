@@ -180,6 +180,37 @@ struct std::formatter<porytiles2::MyType> {
 };
 ```
 
+## Error and Diagnostic Message Style
+
+All user-facing error and diagnostic messages (in `FormattableError`, `PT_TRY_ASSIGN_CHAIN_ERR`,
+`diag_->warning()`, `diag_->error()`, etc.) must follow these rules:
+
+1. **Capital first letter** — the message must start with an uppercase letter
+2. **Ends with a period `.`** — every message must end with a period
+3. **Single quotes and `Style::bold`** around highlightable items (file names, tileset names, keys):
+   `FormatParam{tileset_name, Style::bold}` with `'{}'` in the format string
+4. **List headers ending with `:`** are acceptable (e.g. `"To resolve:"`, `"Changes present in Porymap assets:"`)
+5. **Empty strings** used as separators are fine
+6. **Bullet-point sub-items** in multi-line error lists follow their own style
+
+```c++
+// CORRECT:
+FormattableError{"Tileset '{}' does not exist.", FormatParam{tileset_name, Style::bold}};
+FormattableError{"Failed to read metatile_attributes.bin."};
+FormattableError{"Failed to open file for writing: '{}'.", FormatParam{path, Style::bold}};
+
+// WRONG — lowercase start:
+FormattableError{"tileset save failed"};
+
+// WRONG — missing period:
+FormattableError{"Failed to read metatile_attributes.bin"};
+
+// WRONG — raw string concatenation instead of FormatParam:
+FormattableError{"failed to pack palettes for tileset " + tileset_.name()};
+// Should be:
+FormattableError{"Failed to pack palettes for tileset '{}'.", FormatParam{tileset_.name(), Style::bold}};
+```
+
 Note about markdown code blocks: when writing multiline C++ code blocks,
 use "c++" after the triple backticks. E.g.,
 ```c++

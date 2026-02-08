@@ -1,6 +1,7 @@
 #include "porytiles2/domain/services/primary_tileset_decompiler.hpp"
 
 #include <array>
+#include <format>
 #include <iostream>
 #include <memory>
 #include <ranges>
@@ -43,7 +44,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
     PT_TRY_ASSIGN_CHAIN_ERR(
         tilemap_entries,
         layer_mode_converter.triple_layerize(tileset.porymap_component()),
-        "failed to triple-layerize Porymap component for tileset " + tileset.name(),
+        std::format("Failed to triple-layerize Porymap component for tileset '{}'.", tileset.name()),
         std::unique_ptr<Tileset>);
 
     // Create the new Porymap component early so we can pass it for potential backporting during animation decompilation
@@ -103,7 +104,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
         metatiles,
         metatile_decompiler.decompile_metatiles(
             tilemap_entries, new_porymap_component->tiles_png(), tileset.porymap_component().pals()),
-        "failed to decompile Porymap component for tileset " + tileset.name(),
+        std::format("Failed to decompile Porymap component for tileset '{}'.", tileset.name()),
         std::unique_ptr<Tileset>);
 
     // Convert metatiles into three layer images
@@ -113,7 +114,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
     PT_TRY_ASSIGN_CHAIN_ERR(
         layer_images,
         metatileizer.demetatileize(metatiles, metatiles_per_row),
-        "failed to demetatileize metatiles for tileset " + tileset.name(),
+        std::format("Failed to demetatileize metatiles for tileset '{}'.", tileset.name()),
         std::unique_ptr<Tileset>);
 
     auto &[bottom_image, middle_image, top_image] = layer_images;

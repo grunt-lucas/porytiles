@@ -282,33 +282,33 @@ ProjectTilesetMetadataProvider::artifact_paths_for(const std::string &tileset_na
     PT_TRY_ASSIGN_CHAIN_ERR(
         metadata,
         metadata_for(tileset_name),
-        format_->format("failed to get artifact paths for tileset '{}'", FormatParam{tileset_name, Style::bold}),
+        format_->format("Failed to get artifact paths for tileset '{}'.", FormatParam{tileset_name, Style::bold}),
         ProjectTilesetArtifactPaths);
 
     // Resolve all INCBIN paths using local helpers
     PT_TRY_ASSIGN_CHAIN_ERR(
         tiles_path_str,
         ::lookup_incbin_path(metadata.tiles_var(), project_root_, incbins_parsed_, incbin_vars_, format_),
-        format_->format("failed to resolve tiles path for tileset '{}'", FormatParam{tileset_name, Style::bold}),
+        format_->format("Failed to resolve tiles path for tileset '{}'.", FormatParam{tileset_name, Style::bold}),
         ProjectTilesetArtifactPaths);
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         palette_path_strs,
         ::lookup_incbin_paths(metadata.palettes_var(), project_root_, incbins_parsed_, incbin_vars_, format_),
-        format_->format("failed to resolve palette paths for tileset '{}'", FormatParam{tileset_name, Style::bold}),
+        format_->format("Failed to resolve palette paths for tileset '{}'.", FormatParam{tileset_name, Style::bold}),
         ProjectTilesetArtifactPaths);
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         metatiles_path_str,
         ::lookup_incbin_path(metadata.metatiles_var(), project_root_, incbins_parsed_, incbin_vars_, format_),
-        format_->format("failed to resolve metatiles path for tileset '{}'", FormatParam{tileset_name, Style::bold}),
+        format_->format("Failed to resolve metatiles path for tileset '{}'.", FormatParam{tileset_name, Style::bold}),
         ProjectTilesetArtifactPaths);
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         metatile_attributes_path_str,
         ::lookup_incbin_path(metadata.metatile_attributes_var(), project_root_, incbins_parsed_, incbin_vars_, format_),
         format_->format(
-            "failed to resolve metatile attributes path for tileset '{}'", FormatParam{tileset_name, Style::bold}),
+            "Failed to resolve metatile attributes path for tileset '{}'.", FormatParam{tileset_name, Style::bold}),
         ProjectTilesetArtifactPaths);
 
     std::vector<std::filesystem::path> palette_paths;

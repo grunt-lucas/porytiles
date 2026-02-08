@@ -10,7 +10,7 @@ ChainableResult<std::vector<TilemapEntry>> parse_metatiles_bin(const std::filesy
 {
     std::ifstream metatiles_bin{path, std::ios::binary};
     if (!metatiles_bin) {
-        return FormattableError{"Failed to open metatiles.bin: {}", FormatParam{path.string(), Style::bold}};
+        return FormattableError{"Failed to open metatiles.bin: '{}'.", FormatParam{path.string(), Style::bold}};
     }
 
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatiles_bin), {}};
@@ -59,7 +59,8 @@ ChainableResult<std::vector<MetatileAttribute>> parse_emerald_metatile_attribute
 {
     std::ifstream metatile_attr_bin{path, std::ios::binary};
     if (!metatile_attr_bin) {
-        return FormattableError{"Failed to open metatile_attributes.bin: {}", FormatParam{path.string(), Style::bold}};
+        return FormattableError{
+            "Failed to open metatile_attributes.bin: '{}'.", FormatParam{path.string(), Style::bold}};
     }
 
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
@@ -96,7 +97,8 @@ ChainableResult<std::vector<MetatileAttribute>> parse_firered_metatile_attribute
 {
     std::ifstream metatile_attr_bin{path, std::ios::binary};
     if (!metatile_attr_bin) {
-        return FormattableError{"Failed to open metatile_attributes.bin: {}", FormatParam{path.string(), Style::bold}};
+        return FormattableError{
+            "Failed to open metatile_attributes.bin: '{}'.", FormatParam{path.string(), Style::bold}};
     }
 
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
@@ -165,7 +167,8 @@ load_indexed_png(const std::filesystem::path &path, const PngIndexedImageLoader 
     auto image_result = loader.load_from_file(path);
     if (!image_result.has_value()) {
         return ChainableResult<std::unique_ptr<Image<IndexPixel>>>{
-            FormattableError{"Failed to load indexed PNG: {}", FormatParam{path.string(), Style::bold}}, image_result};
+            FormattableError{"Failed to load indexed PNG: '{}'.", FormatParam{path.string(), Style::bold}},
+            image_result};
     }
     return std::move(image_result.value());
 }
@@ -176,7 +179,8 @@ load_porymap_palette(const std::filesystem::path &path, const FilePalLoader &loa
     auto pal_result = loader.load(path);
     if (!pal_result.has_value()) {
         return ChainableResult<Palette<Rgba32, pal::max_size>>{
-            FormattableError{"Failed to load palette file: {}", FormatParam{path.string(), Style::bold}}, pal_result};
+            FormattableError{"Failed to load palette file: '{}'.", FormatParam{path.string(), Style::bold}},
+            pal_result};
     }
     return pal_result.value();
 }

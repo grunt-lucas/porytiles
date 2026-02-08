@@ -133,7 +133,7 @@ ChainableResult<PackingOutput> BestFusionStrategy::pack(const PackingInput &inpu
 
     for (const auto &tile : tile_pool) {
         if (!assign_tile(tile)) {
-            return FormattableError{"Best Fusion: cannot assign tile  - no palette has room"};
+            return FormattableError{"Best Fusion: cannot assign tile - no palette has room."};
         }
     }
 

@@ -243,7 +243,7 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
 
         if (!row_result.has_value()) {
             return ChainableResult<std::map<std::size_t, MetatileAttribute>>{
-                FormattableError{"Failed to parse csv row."}, row_result};
+                FormattableError{"Failed to parse CSV row."}, row_result};
         }
 
         const auto &row = row_result.value();

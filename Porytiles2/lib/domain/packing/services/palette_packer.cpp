@@ -277,7 +277,7 @@ ChainableResult<PalettePacking> PalettePacker::pack_tiles(const PackingParams &p
         PalettePool{params.available_pals_}};
 
     PT_TRY_ASSIGN_CHAIN_ERR(
-        packing_output, strategy_->pack(packing_input), "low-level palette packing failed", PalettePacking);
+        packing_output, strategy_->pack(packing_input), "Low-level palette packing failed.", PalettePacking);
 
     // === STEP 5: Convert PackingOutput back to PalettePacking ===
     PalettePacking packing{};

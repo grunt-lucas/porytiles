@@ -23,7 +23,7 @@ PngIndexedImageLoader::load_from_file(const std::filesystem::path &path) const
         png::image<png::index_pixel> test{path};
     }
     catch (std::exception &) {
-        return FormattableError{"{}: file not a valid indexed PNG", FormatParam{path.string(), Style::bold}};
+        return FormattableError{"'{}': File not a valid indexed PNG.", FormatParam{path.string(), Style::bold}};
     }
 
     png::image<png::index_pixel> png{path};

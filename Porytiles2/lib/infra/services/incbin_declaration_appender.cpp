@@ -200,7 +200,7 @@ ChainableResult<void> IncbinDeclarationAppender::append_graphics_declarations(
     auto lines_result = read_file_lines(graphics_path, format_);
     if (!lines_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"failed to read graphics.h for tileset '{}'", FormatParam{tileset_name, Style::bold}},
+            FormattableError{"Failed to read graphics.h for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
             lines_result};
     }
     auto lines = std::move(lines_result.value());
@@ -248,7 +248,7 @@ ChainableResult<void> IncbinDeclarationAppender::append_metatiles_declarations(
     auto lines_result = read_file_lines(metatiles_path, format_);
     if (!lines_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"failed to read metatiles.h for tileset '{}'", FormatParam{tileset_name, Style::bold}},
+            FormattableError{"Failed to read metatiles.h for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
             lines_result};
     }
     auto lines = std::move(lines_result.value());
@@ -288,7 +288,7 @@ ChainableResult<void> IncbinDeclarationAppender::remove_declarations(const std::
         auto lines_result = read_file_lines(graphics_path, format_);
         if (!lines_result.has_value()) {
             return ChainableResult<void>{
-                FormattableError{"failed to read graphics.h for tileset '{}'", FormatParam{tileset_name, Style::bold}},
+                FormattableError{"Failed to read graphics.h for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
                 lines_result};
         }
         auto lines = std::move(lines_result.value());
@@ -332,7 +332,8 @@ ChainableResult<void> IncbinDeclarationAppender::remove_declarations(const std::
         auto lines_result = read_file_lines(metatiles_path, format_);
         if (!lines_result.has_value()) {
             return ChainableResult<void>{
-                FormattableError{"failed to read metatiles.h for tileset '{}'", FormatParam{tileset_name, Style::bold}},
+                FormattableError{
+                    "Failed to read metatiles.h for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
                 lines_result};
         }
         auto lines = std::move(lines_result.value());

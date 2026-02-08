@@ -42,13 +42,13 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
     ProjectTilesetMetadataProvider metadata_provider{project_root_, format_, diag_};
 
     if (!metadata_provider.exists(tileset_name)) {
-        return FormattableError{"tileset '{}' does not exist", FormatParam{tileset_name, Style::bold}};
+        return FormattableError{"Tileset '{}' does not exist.", FormatParam{tileset_name, Style::bold}};
     }
 
     auto metadata_result = metadata_provider.metadata_for(tileset_name);
     if (!metadata_result.has_value()) {
         return ChainableResult<std::map<std::string, Animation<IndexPixel>>>{
-            FormattableError{"failed to get tileset metadata"}, metadata_result};
+            FormattableError{"Failed to get tileset metadata."}, metadata_result};
     }
     auto metadata = std::move(metadata_result).value();
 
@@ -65,7 +65,8 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
     const auto tileset_anims_path = project_root_ / "src" / "tileset_anims.c";
 
     if (!std::filesystem::exists(tileset_anims_path)) {
-        return FormattableError{"{}: tileset_anims.c not found", FormatParam{tileset_anims_path.string(), Style::bold}};
+        return FormattableError{
+            "'{}': tileset_anims.c not found.", FormatParam{tileset_anims_path.string(), Style::bold}};
     }
 
     AnimCodeParser anim_parser{format_, diag_};
@@ -73,7 +74,7 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
         anim_parser.parse_from_callback(tileset_anims_path, callback_func, pascal_tileset, /*porytiles_managed=*/false);
     if (!anim_params_result.has_value()) {
         return ChainableResult<std::map<std::string, Animation<IndexPixel>>>{
-            FormattableError{"failed to parse animation params"}, anim_params_result};
+            FormattableError{"Failed to parse animation params."}, anim_params_result};
     }
     auto anim_params_map = std::move(anim_params_result).value();
 
@@ -88,7 +89,7 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
     auto incbin_decls_result = c_parser.parse_incbin_arrays(incbin_prefix);
     if (!incbin_decls_result.has_value()) {
         return ChainableResult<std::map<std::string, Animation<IndexPixel>>>{
-            FormattableError{"failed to parse INCBIN declarations"}, incbin_decls_result};
+            FormattableError{"Failed to parse INCBIN declarations."}, incbin_decls_result};
     }
     auto incbin_decls = std::move(incbin_decls_result).value();
 

@@ -105,7 +105,7 @@ OverloadAndRemoveStrategy::try_pack(const PackingInput &input, std::optional<std
     // Ensure we have at least one palette
     if (output.pals_.empty()) {
         if (!pal_pool.has_available_pal()) {
-            return FormattableError{"Overload-And-Remove: no palettes available in pool"};
+            return FormattableError{"Overload-And-Remove: no palettes available in pool."};
         }
         output.pals_.emplace_back(pal_pool.checkout(), input.pal_capacity_);
     }
@@ -178,7 +178,7 @@ OverloadAndRemoveStrategy::try_pack(const PackingInput &input, std::optional<std
             output.tile_to_pal_[first_tile_info.tile.id()] = output.pals_.back().hardware_index();
         }
         else {
-            return FormattableError{"Overload-And-Remove: first tile cannot fit in any palette"};
+            return FormattableError{"Overload-And-Remove: first tile cannot fit in any palette."};
         }
     }
 

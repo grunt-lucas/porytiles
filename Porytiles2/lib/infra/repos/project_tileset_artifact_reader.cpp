@@ -70,7 +70,7 @@ ChainableResult<void> import_porytiles_palette(
     // Keys are relative to project_root, so prepend for file I/O
     const auto pal_result = loader.load_with_wildcards((project_root / src_key.key()).string());
     if (!pal_result.has_value()) {
-        return ChainableResult<void>{FormattableError{"failed to load palette file"}, pal_result};
+        return ChainableResult<void>{FormattableError{"Failed to load palette file."}, pal_result};
     }
     dest.porytiles_component().set_pal(index, pal_result.value());
 
@@ -178,7 +178,7 @@ ProjectTilesetArtifactReader::read_metatile_attributes_bin(Tileset &dest, const 
                                                                             ? parse_firered_metatile_attributes(path)
                                                                             : parse_emerald_metatile_attributes(path);
     if (!attributes_result.has_value()) {
-        return ChainableResult<void>{FormattableError{"failed to read metatile_attributes.bin"}, attributes_result};
+        return ChainableResult<void>{FormattableError{"Failed to read metatile_attributes.bin."}, attributes_result};
     }
     for (auto &attr : attributes_result.value()) {
         dest.porymap_component().push_back_attribute(std::move(attr));
@@ -243,7 +243,7 @@ ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKe
 
     if (!params_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"{}: failed to parse animation code", FormatParam{params_key.key(), Style::bold}},
+            FormattableError{"'{}': Failed to parse animation code.", FormatParam{params_key.key(), Style::bold}},
             params_result};
     }
 
@@ -334,7 +334,7 @@ ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const Artifact
     auto params_result = anim_yaml_parser_->parse((project_root_ / params_key.key()).string());
     if (!params_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"{}: failed to parse anim.yaml", FormatParam{params_key.key(), Style::bold}},
+            FormattableError{"'{}': Failed to parse anim.yaml.", FormatParam{params_key.key(), Style::bold}},
             params_result};
     }
 

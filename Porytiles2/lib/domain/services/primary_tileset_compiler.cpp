@@ -1,6 +1,7 @@
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 
 #include <array>
+#include <format>
 #include <iostream>
 #include <memory>
 #include <ranges>
@@ -265,7 +266,7 @@ ChainableResult<void> CompilerTask::pipeline_step_process_porymap_input()
     PT_TRY_ASSIGN_CHAIN_ERR(
         tilemap_entries,
         layer_mode_converter.triple_layerize(tileset_.porymap_component()),
-        "failed to triple-layerize Porymap component for tileset " + tileset_.name(),
+        std::format("Failed to triple-layerize Porymap component for tileset '{}'.", tileset_.name()),
         void);
     porymap_tilemap_entries_ = std::move(tilemap_entries);
 
@@ -273,7 +274,7 @@ ChainableResult<void> CompilerTask::pipeline_step_process_porymap_input()
         metatiles,
         metatile_decompiler.decompile_metatiles(
             porymap_tilemap_entries_, tileset_.porymap_component().tiles_png(), tileset_.porymap_component().pals()),
-        "failed to decompile Porymap component for tileset " + tileset_.name(),
+        std::format("Failed to decompile Porymap component for tileset '{}'.", tileset_.name()),
         void);
     porymap_metatiles_ = std::move(metatiles);
 
@@ -708,7 +709,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
     PT_TRY_ASSIGN_CHAIN_ERR(
         color_index_map,
         pipeline_helper_build_color_index_map(pal_hints_.value(), color_count_limit),
-        "failed to build color index map for tileset " + tileset_.name(),
+        std::format("Failed to build color index map for tileset '{}'.", tileset_.name()),
         void);
 
     /*
@@ -743,7 +744,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
     PT_TRY_ASSIGN_CHAIN_ERR(
         pal_packing,
         pal_packer.pack_tiles(packing_params),
-        "failed to pack palettes for tileset " + tileset_.name(),
+        std::format("Failed to pack palettes for tileset '{}'.", tileset_.name()),
         void);
 
     for (std::size_t i = 0; i < pal::num_pals; i++) {
