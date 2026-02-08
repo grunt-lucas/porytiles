@@ -12,7 +12,8 @@ fieldmap:
 
 diagnostics:
   errors:
-    include: # explicitly include only two error messages
+    exclude: [ "*" ]
+    include: # explicitly include only two error messages, include processed after exclude
       - "layer-mode-violation"
       - "tile-color-count-violation"
   warnings: # default settings for warnings, this will include all

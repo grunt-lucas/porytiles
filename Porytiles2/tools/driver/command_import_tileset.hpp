@@ -132,8 +132,15 @@ class ImportTilesetCommand final : public Command {
         auto base_game_result = base_game_detector.detect();
         if (!base_game_result.has_value()) {
             diag->fatal(base_game_result);
+            throw CLI::RuntimeError{1};
         }
         const BaseGame base_game = base_game_result.value();
+        if (base_game == BaseGame::pokeruby) {
+            diag->fatal(
+                ChainableResult<void>{
+                    FormattableError{"Importing pokeruby-based projects is not currently supported."}});
+            throw CLI::RuntimeError{1};
+        }
 
         // Conditionally create terrain/encounter providers for FireRed
         std::unique_ptr<HeaderTerrainTypeMapProvider> terrain_provider;
@@ -203,6 +210,7 @@ class ImportTilesetCommand final : public Command {
                 FormattableError{"Failed to import tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
                 import_result};
             diag->fatal(fail_result);
+            throw CLI::RuntimeError{1};
         }
     }
 

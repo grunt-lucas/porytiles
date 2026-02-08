@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstdlib>
 #include <iostream>
 #include <string>
 
@@ -47,7 +46,7 @@ class CompletionCommand final : public Command {
         else {
             std::cerr << "Unknown shell type: " << shell_ << "\n";
             std::cerr << "Supported shells: bash, zsh, fish\n";
-            std::exit(1);
+            throw CLI::RuntimeError{1};
         }
     }
 

@@ -136,6 +136,7 @@ class DecompileTilesetCommand final : public Command {
         auto base_game_result = base_game_detector.detect();
         if (!base_game_result.has_value()) {
             diag->fatal(base_game_result);
+            throw CLI::RuntimeError{1};
         }
         const BaseGame base_game = base_game_result.value();
 
@@ -194,7 +195,7 @@ class DecompileTilesetCommand final : public Command {
                 FormattableError{"Failed to decompile tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
                 decompile_result};
             diag->fatal(fail_result);
-            // TODO: return error code 1
+            throw CLI::RuntimeError{1};
         }
     }
 
