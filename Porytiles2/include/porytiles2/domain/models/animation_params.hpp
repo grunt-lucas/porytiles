@@ -191,6 +191,28 @@ class AnimationParams {
     }
 
     /**
+     * @brief Returns the original C identifier segment for this animation.
+     *
+     * @details
+     * When parsing vanilla animation code, the animation name is extracted from C identifiers like
+     * `QueueAnimTiles_General_Water_Current_LandWatersEdge`. The segment after the tileset prefix
+     * (e.g., `"Water_Current_LandWatersEdge"`) is stored here verbatim. This avoids the lossy
+     * `to_snake_case` → `to_pascal_case` round-trip when reconstructing frame variable names for
+     * INCBIN lookup.
+     *
+     * @return The original C identifier segment, or empty string if not set
+     */
+    [[nodiscard]] const std::string &vanilla_identifier() const
+    {
+        return vanilla_identifier_;
+    }
+
+    void vanilla_identifier(std::string value)
+    {
+        vanilla_identifier_ = std::move(value);
+    }
+
+    /**
      * @brief Returns the animation counter maximum value.
      *
      * @details
@@ -218,6 +240,7 @@ class AnimationParams {
     std::size_t tile_count_{0};
     std::size_t width_tiles_{0};
     std::size_t height_tiles_{0};
+    std::string vanilla_identifier_;
     std::size_t counter_max_{anim::default_counter_max};
 };
 

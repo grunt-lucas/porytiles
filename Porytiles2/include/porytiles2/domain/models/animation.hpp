@@ -20,6 +20,7 @@ namespace anim {
  * TODO: define these somewhere else, they are infra concerns
  */
 constexpr std::string g_tileset_anims_prefix = "gTilesetAnims_";
+constexpr std::string s_tileset_anims_prefix = "sTilesetAnims_";
 constexpr std::string porytiles_managed_prefix = "PorytilesManaged_";
 
 [[nodiscard]] inline std::string message_header(

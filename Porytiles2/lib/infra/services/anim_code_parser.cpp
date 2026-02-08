@@ -43,7 +43,12 @@ constexpr auto anim_parsing_error = "animation-parsing-error";
     prefix += tileset_shorthand + "_";
 
     if (!identifier.starts_with(prefix)) {
-        return {};
+        if (!porytiles_managed) {
+            prefix = anim::s_tileset_anims_prefix + tileset_shorthand + "_";
+        }
+        if (!identifier.starts_with(prefix)) {
+            return {};
+        }
     }
 
     std::string remainder = identifier.substr(prefix.size());
@@ -469,6 +474,18 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
             anim_frame_arrays_result};
     }
 
+    // Also search with sTilesetAnims_ prefix for vanilla/pokefirered projects
+    if (!porytiles_managed) {
+        const auto s_frame_array_prefix = anim::s_tileset_anims_prefix + pascal_case_tileset;
+        auto s_anim_frame_arrays_result = c_parser.parse_pointer_arrays(s_frame_array_prefix);
+        if (s_anim_frame_arrays_result.has_value()) {
+            auto &merged = anim_frame_arrays_result.value();
+            auto s_arrays = std::move(s_anim_frame_arrays_result).value();
+            merged.insert(
+                merged.end(), std::make_move_iterator(s_arrays.begin()), std::make_move_iterator(s_arrays.end()));
+        }
+    }
+
     // Build AnimationParams for each discovered animation
     for (const auto &[pascal_name, anim_data] : discovered_anims) {
         AnimationParams params;
@@ -513,6 +530,9 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
             return FormattableError{
                 "Could not find frame array for animation '{}'.", FormatParam{to_snake_case(pascal_name), Style::bold}};
         }
+
+        // Preserve original C identifier segment for frame variable name reconstruction
+        params.vanilla_identifier(pascal_name);
 
         // Convert PascalCase to snake_case for result key
         const std::string snake_case_name = to_snake_case(pascal_name);

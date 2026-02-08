@@ -265,4 +265,107 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackReturnsEmptyForNonExistentCallback)
     EXPECT_TRUE(result.value().empty()) << "Should return empty map for unknown tileset callback";
 }
 
+// =============================================================================
+// sTilesetAnims_ Prefix Tests (pokefirered / vanilla pokeemerald)
+// =============================================================================
+
+TEST_F(AnimCodeParserTest, ParseFromCallbackDiscoversAnimationsWithSPrefix)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/tileset_anims_s_prefix.c",
+        "InitTilesetAnim_General",
+        "General",
+        false);
+
+    ASSERT_TRUE(result.has_value()) << "Parsing should succeed";
+    const auto &anims = result.value();
+
+    EXPECT_GE(anims.size(), 2u);
+    EXPECT_TRUE(anims.contains("flower"));
+    EXPECT_TRUE(anims.contains("water"));
+}
+
+TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsFlowerParamsWithSPrefix)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/tileset_anims_s_prefix.c",
+        "InitTilesetAnim_General",
+        "General",
+        false);
+
+    ASSERT_TRUE(result.has_value());
+    const auto &anims = result.value();
+
+    ASSERT_TRUE(anims.contains("flower")) << "Should contain 'flower' animation";
+    const auto &flower = anims.at("flower");
+
+    EXPECT_EQ(flower.tile_offset(), 508u);
+    EXPECT_EQ(flower.tile_count(), 4u);
+    EXPECT_EQ(flower.frame_factor(), 16u);
+    EXPECT_EQ(flower.frame_offset(), 0u);
+
+    const auto &frames = flower.frame_order();
+    ASSERT_EQ(frames.size(), 4u);
+    EXPECT_EQ(frames[0], "0");
+    EXPECT_EQ(frames[1], "1");
+    EXPECT_EQ(frames[2], "0");
+    EXPECT_EQ(frames[3], "2");
+}
+
+// =============================================================================
+// Vanilla Identifier Preservation Tests
+// =============================================================================
+
+TEST_F(AnimCodeParserTest, ParseFromCallbackPreservesVanillaIdentifierForSimpleNames)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/tileset_anims.c", "InitTilesetAnim_General", "General", false);
+
+    ASSERT_TRUE(result.has_value());
+    const auto &anims = result.value();
+
+    // Simple PascalCase names should round-trip cleanly, but vanilla_identifier preserves them exactly
+    ASSERT_TRUE(anims.contains("flower"));
+    EXPECT_EQ(anims.at("flower").vanilla_identifier(), "Flower");
+
+    ASSERT_TRUE(anims.contains("water"));
+    EXPECT_EQ(anims.at("water").vanilla_identifier(), "Water");
+}
+
+TEST_F(AnimCodeParserTest, ParseFromCallbackPreservesVanillaIdentifierForCompoundNames)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/tileset_anims_s_prefix.c",
+        "InitTilesetAnim_General",
+        "General",
+        false);
+
+    ASSERT_TRUE(result.has_value());
+    const auto &anims = result.value();
+
+    // Compound PascalCase names must be preserved verbatim for frame variable lookup
+    ASSERT_TRUE(anims.contains("sand_water_edge"));
+    EXPECT_EQ(anims.at("sand_water_edge").vanilla_identifier(), "SandWaterEdge");
+
+    ASSERT_TRUE(anims.contains("land_water_edge"));
+    EXPECT_EQ(anims.at("land_water_edge").vanilla_identifier(), "LandWaterEdge");
+}
+
+TEST_F(AnimCodeParserTest, ParseFromCallbackPreservesVanillaIdentifierForPorytilesManaged)
+{
+    const std::string callback_func = "InitTilesetAnim_" + anim::porytiles_managed_prefix + "General";
+
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/generated_anim_code.h", callback_func, "General", true);
+
+    ASSERT_TRUE(result.has_value());
+    const auto &anims = result.value();
+
+    ASSERT_TRUE(anims.contains("flower"));
+    EXPECT_EQ(anims.at("flower").vanilla_identifier(), "Flower");
+
+    ASSERT_TRUE(anims.contains("land_water_edge"));
+    EXPECT_EQ(anims.at("land_water_edge").vanilla_identifier(), "LandWaterEdge");
+}
+
 } // namespace porytiles2

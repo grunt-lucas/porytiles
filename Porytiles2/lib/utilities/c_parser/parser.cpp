@@ -767,11 +767,16 @@ ChainableResult<std::vector<ArrayDeclaration>> Parser::parse_pointer_arrays()
             break;
         }
 
-        // Look for pattern: [const] TYPE * [const] IDENTIFIER [] = { ... }
+        // Look for pattern: [static] [const] TYPE * [const] IDENTIFIER [] = { ... }
         // We need to find an identifier followed by [] = {
         // Start by looking for an identifier that could be an array name
 
         std::size_t scan_start = current_;
+
+        // Skip 'static' if present
+        if (check(TokenType::identifier) && peek().text() == "static") {
+            advance();
+        }
 
         // Skip 'const' if present
         if (check(TokenType::identifier) && peek().text() == "const") {
@@ -1180,9 +1185,14 @@ ChainableResult<std::vector<IncbinDeclaration>> Parser::parse_incbin_arrays()
             break;
         }
 
-        // Look for pattern: [const] TYPE IDENTIFIER [] = INCBIN_MACRO("path");
-        // or: [const] TYPE IDENTIFIER [][SIZE] = { INCBIN_MACRO("p1"), ... };
+        // Look for pattern: [static] [const] TYPE IDENTIFIER [] = INCBIN_MACRO("path");
+        // or: [static] [const] TYPE IDENTIFIER [][SIZE] = { INCBIN_MACRO("p1"), ... };
         std::size_t scan_start = current_;
+
+        // Skip 'static' if present
+        if (check(TokenType::identifier) && peek().text() == "static") {
+            advance();
+        }
 
         // Skip 'const' if present
         if (check(TokenType::identifier) && peek().text() == "const") {

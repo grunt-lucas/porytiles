@@ -85,13 +85,26 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
 
     // Step 3: Parse INCBIN declarations for frame paths
     CParserFacade c_parser{tileset_anims_path, format_};
-    const std::string incbin_prefix = "gTilesetAnims_" + pascal_tileset + "_";
-    auto incbin_decls_result = c_parser.parse_incbin_arrays(incbin_prefix);
+    std::string detected_anim_prefix = "gTilesetAnims_";
+    const std::string g_incbin_prefix = "gTilesetAnims_" + pascal_tileset + "_";
+    auto incbin_decls_result = c_parser.parse_incbin_arrays(g_incbin_prefix);
     if (!incbin_decls_result.has_value()) {
         return ChainableResult<std::map<std::string, Animation<IndexPixel>>>{
             FormattableError{"Failed to parse INCBIN declarations."}, incbin_decls_result};
     }
     auto incbin_decls = std::move(incbin_decls_result).value();
+
+    // If no INCBIN declarations found with g prefix, try s prefix (pokefirered/vanilla)
+    if (incbin_decls.empty()) {
+        const std::string s_incbin_prefix = "sTilesetAnims_" + pascal_tileset + "_";
+        auto s_incbin_decls_result = c_parser.parse_incbin_arrays(s_incbin_prefix);
+        if (s_incbin_decls_result.has_value()) {
+            incbin_decls = std::move(s_incbin_decls_result).value();
+            if (!incbin_decls.empty()) {
+                detected_anim_prefix = "sTilesetAnims_";
+            }
+        }
+    }
 
     // Build map: frame variable name -> .png file path
     std::map<std::string, std::filesystem::path> frame_paths;
@@ -106,13 +119,15 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
         Animation<IndexPixel> anim{anim_name};
         anim.params(params);
 
-        // Load and extract tiles from each frame PNG
-        const std::string pascal_anim_name = to_pascal_case(anim_name);
+        // Use preserved vanilla identifier for frame variable name construction
+        // This avoids the lossy to_snake_case → to_pascal_case round-trip for names
+        // with embedded underscores (e.g., pokefirered's "Water_Current_LandWatersEdge")
+        const std::string &pascal_anim_name = params.vanilla_identifier();
 
         for (const auto &frame_name : params.frame_names()) {
             PngIndexedImageLoader png_loader;
             const std::string frame_var =
-                "gTilesetAnims_" + pascal_tileset + "_" + pascal_anim_name + "_Frame" + frame_name;
+                detected_anim_prefix + pascal_tileset + "_" + pascal_anim_name + "_Frame" + frame_name;
 
             auto it = frame_paths.find(frame_var);
             if (it == frame_paths.end()) {
