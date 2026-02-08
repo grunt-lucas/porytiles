@@ -218,10 +218,12 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
     // Validate provider availability for FireRed format
     if (csv_format == CsvFormat::firered) {
         if (terrain_map == nullptr) {
-            panic("firered csv format requires a terrain type provider but none was provided");
+            return FormattableError{
+                "FireRed CSV format requires a terrain type provider but none was provided."};
         }
         if (encounter_map == nullptr) {
-            panic("firered csv format requires an encounter type provider but none was provided");
+            return FormattableError{
+                "FireRed CSV format requires an encounter type provider but none was provided."};
         }
     }
 

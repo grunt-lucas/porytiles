@@ -237,8 +237,8 @@ TEST_F(AttributesCsvLoaderTest, LoadNonExistentFileReturnsError)
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
-    EXPECT_TRUE(error_text.find("not found") != std::string::npos)
-        << "Error should mention file not found. Got: " << error_text;
+    EXPECT_TRUE(error_text.find("does not exist") != std::string::npos)
+        << "Error should mention file does not exist. Got: " << error_text;
 }
 
 TEST_F(AttributesCsvLoaderTest, LoadEmptyFileReturnsError)

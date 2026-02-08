@@ -3,7 +3,6 @@
 #include <filesystem>
 #include <fstream>
 #include <string>
-#include <vector>
 
 namespace porytiles2 {
 
@@ -87,11 +86,10 @@ ChainableResult<BaseGame> BaseGameDetector::detect() const
     }
 
     constexpr auto tag = "base-game-detection";
-    std::vector<std::string> remark_lines;
-    remark_lines.push_back(format_->format("Detected base game '{}'.", FormatParam{to_string(detected), Style::bold}));
-    remark_lines.push_back(
+    diag_->remark(tag, format_->format("Detected base game '{}'.", FormatParam{to_string(detected), Style::bold}));
+    diag_->remark_note(
+        tag,
         format_->format("{} in '{}'.", FormatParam{reason}, FormatParam{global_fieldmap_path.string(), Style::bold}));
-    diag_->remark(tag, remark_lines);
 
     return detected;
 }

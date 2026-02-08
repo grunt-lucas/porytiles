@@ -89,7 +89,7 @@ TEST_F(RgbaLayerImageMetatileizerTests, ShouldFailWithInvalidDimensions)
     auto details = result.error().details(PlainTextFormatter{});
     bool found = false;
     for (const auto &line : details) {
-        if (line.find("failed to tileize") != std::string::npos) {
+        if (line.find("Failed to tileize") != std::string::npos) {
             found = true;
             break;
         }

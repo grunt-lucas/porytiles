@@ -496,11 +496,11 @@ TEST_F(ProjectTilesetArtifactWriterTests, NoTransactionInProgress)
     ASSERT_FALSE(commit_result.has_value());
     auto commit_error_lines = commit_result.error().details(PlainTextFormatter{});
     ASSERT_EQ(commit_error_lines.size(), 1);
-    EXPECT_EQ(commit_error_lines[0], "no transaction in progress");
+    EXPECT_EQ(commit_error_lines[0], "No transaction in progress.");
 
     auto rollback_result = writer_->rollback();
     ASSERT_FALSE(rollback_result.has_value());
-    EXPECT_EQ(rollback_result.error().details(PlainTextFormatter{}).at(0), "no transaction in progress");
+    EXPECT_EQ(rollback_result.error().details(PlainTextFormatter{}).at(0), "No transaction in progress.");
 
     ArtifactKey key{"no_transaction.png"};
     auto write_result = writer_->write_bottom_png(key, tileset);
@@ -508,7 +508,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, NoTransactionInProgress)
     auto error_lines = write_result.error().details(PlainTextFormatter{});
     // The new specific write method chains the error through compute_transaction_dest_path
     ASSERT_GE(error_lines.size(), 1);
-    EXPECT_EQ(error_lines[0], "failed to compute transaction dest path");
+    EXPECT_EQ(error_lines[0], "Failed to compute transaction dest path.");
 }
 
 TEST_F(ProjectTilesetArtifactWriterTests, DoubleBeginTransaction)
@@ -518,7 +518,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, DoubleBeginTransaction)
 
     auto begin_result2 = writer_->begin_transaction();
     ASSERT_FALSE(begin_result2.has_value());
-    EXPECT_EQ(begin_result2.error().details(PlainTextFormatter{}).at(0), "transaction already in progress");
+    EXPECT_EQ(begin_result2.error().details(PlainTextFormatter{}).at(0), "Transaction already in progress.");
 
     auto rollback_result = writer_->rollback();
     ASSERT_TRUE(rollback_result.has_value());
