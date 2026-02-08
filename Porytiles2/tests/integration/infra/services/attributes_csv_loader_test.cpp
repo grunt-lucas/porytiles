@@ -15,7 +15,7 @@ using namespace porytiles2;
 
 namespace {
 
-const std::filesystem::path kTestResourcesDir = "Resources/Tests/integration/infra/services/attributes_csv";
+const std::filesystem::path test_resources_dir = "Resources/Tests/integration/infra/services/attributes_csv";
 
 /**
  * @brief A stub BehaviorMapProvider for testing that returns known values for known behavior names.
@@ -153,7 +153,7 @@ TEST_F(AttributesCsvLoaderTest, LoadValidCsvReturnsCorrectAttributes)
 {
     AttributesCsvLoader loader{&formatter_, &behavior_map_};
 
-    auto result = loader.load(kTestResourcesDir / "valid.csv");
+    auto result = loader.load(test_resources_dir / "valid.csv");
     ASSERT_TRUE(result.has_value()) << "Expected successful load";
 
     const auto &attributes = result.value();
@@ -183,7 +183,7 @@ TEST_F(AttributesCsvLoaderTest, LoadValidFireredCsvReturnsCorrectAttributes)
 {
     AttributesCsvLoader loader{&formatter_, &behavior_map_, BaseGame::pokefirered, &terrain_map_, &encounter_map_};
 
-    auto result = loader.load(kTestResourcesDir / "valid_firered.csv");
+    auto result = loader.load(test_resources_dir / "valid_firered.csv");
     ASSERT_TRUE(result.has_value()) << "Expected successful load";
 
     const auto &attributes = result.value();
@@ -214,7 +214,7 @@ TEST_F(AttributesCsvLoaderTest, LoadFireredCsvWithoutBaseGameAutoDetects)
     // No base_game provided, but terrain/encounter providers are available
     AttributesCsvLoader loader{&formatter_, &behavior_map_, std::nullopt, &terrain_map_, &encounter_map_};
 
-    auto result = loader.load(kTestResourcesDir / "valid_firered.csv");
+    auto result = loader.load(test_resources_dir / "valid_firered.csv");
     ASSERT_TRUE(result.has_value()) << "Expected auto-detection to succeed";
 
     const auto &attributes = result.value();
@@ -233,7 +233,7 @@ TEST_F(AttributesCsvLoaderTest, LoadNonExistentFileReturnsError)
 {
     AttributesCsvLoader loader{&formatter_, &behavior_map_};
 
-    auto result = loader.load(kTestResourcesDir / "does_not_exist.csv");
+    auto result = loader.load(test_resources_dir / "does_not_exist.csv");
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -245,7 +245,7 @@ TEST_F(AttributesCsvLoaderTest, LoadEmptyFileReturnsError)
 {
     AttributesCsvLoader loader{&formatter_, &behavior_map_};
 
-    auto result = loader.load(kTestResourcesDir / "empty.csv");
+    auto result = loader.load(test_resources_dir / "empty.csv");
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -261,7 +261,7 @@ TEST_F(AttributesCsvLoaderTest, LoadInvalidHeaderSingleColumnReturnsError)
 {
     AttributesCsvLoader loader{&formatter_, &behavior_map_};
 
-    auto result = loader.load(kTestResourcesDir / "invalid_header_single_column.csv");
+    auto result = loader.load(test_resources_dir / "invalid_header_single_column.csv");
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -273,7 +273,7 @@ TEST_F(AttributesCsvLoaderTest, LoadInvalidHeaderWrongNamesReturnsError)
 {
     AttributesCsvLoader loader{&formatter_, &behavior_map_};
 
-    auto result = loader.load(kTestResourcesDir / "invalid_header_wrong_names.csv");
+    auto result = loader.load(test_resources_dir / "invalid_header_wrong_names.csv");
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -291,7 +291,7 @@ TEST_F(AttributesCsvLoaderTest, LoadInvalidIdNotIntegerReturnsErrorWithContext)
 {
     AttributesCsvLoader loader{&formatter_, &behavior_map_};
 
-    auto result = loader.load(kTestResourcesDir / "invalid_id_not_integer.csv");
+    auto result = loader.load(test_resources_dir / "invalid_id_not_integer.csv");
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -305,7 +305,7 @@ TEST_F(AttributesCsvLoaderTest, LoadNegativeIdReturnsErrorWithContext)
 {
     AttributesCsvLoader loader{&formatter_, &behavior_map_};
 
-    auto result = loader.load(kTestResourcesDir / "negative_id.csv");
+    auto result = loader.load(test_resources_dir / "negative_id.csv");
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -317,7 +317,7 @@ TEST_F(AttributesCsvLoaderTest, LoadMissingColumnsReturnsErrorWithContext)
 {
     AttributesCsvLoader loader{&formatter_, &behavior_map_};
 
-    auto result = loader.load(kTestResourcesDir / "missing_columns.csv");
+    auto result = loader.load(test_resources_dir / "missing_columns.csv");
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -333,7 +333,7 @@ TEST_F(AttributesCsvLoaderTest, LoadDuplicateIdReturnsErrorWithBothLocations)
 {
     AttributesCsvLoader loader{&formatter_, &behavior_map_};
 
-    auto result = loader.load(kTestResourcesDir / "duplicate_id.csv");
+    auto result = loader.load(test_resources_dir / "duplicate_id.csv");
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -363,7 +363,7 @@ TEST_F(AttributesCsvLoaderTest, LoadUnknownBehaviorReturnsErrorWithContext)
 {
     AttributesCsvLoader loader{&formatter_, &behavior_map_};
 
-    auto result = loader.load(kTestResourcesDir / "unknown_behavior.csv");
+    auto result = loader.load(test_resources_dir / "unknown_behavior.csv");
     EXPECT_FALSE(result.has_value());
 
     // The error chain contains multiple errors - join all of them for the full message
@@ -387,7 +387,7 @@ TEST_F(AttributesCsvLoaderTest, LoadFireredCsvWithEmeraldBaseGameReturnsError)
 {
     AttributesCsvLoader loader{&formatter_, &behavior_map_, BaseGame::pokeemerald, &terrain_map_, &encounter_map_};
 
-    auto result = loader.load(kTestResourcesDir / "valid_firered.csv");
+    auto result = loader.load(test_resources_dir / "valid_firered.csv");
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -401,7 +401,7 @@ TEST_F(AttributesCsvLoaderTest, LoadEmeraldCsvWithFireredBaseGameReturnsError)
 {
     AttributesCsvLoader loader{&formatter_, &behavior_map_, BaseGame::pokefirered, &terrain_map_, &encounter_map_};
 
-    auto result = loader.load(kTestResourcesDir / "valid.csv");
+    auto result = loader.load(test_resources_dir / "valid.csv");
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -415,30 +415,20 @@ TEST_F(AttributesCsvLoaderTest, LoadEmeraldCsvWithFireredBaseGameReturnsError)
 // FireRed Provider Availability Tests
 // =============================================================================
 
-TEST_F(AttributesCsvLoaderTest, LoadFireredCsvWithoutTerrainProviderReturnsError)
+TEST_F(AttributesCsvLoaderTest, LoadFireredCsvWithoutTerrainProviderPanics)
 {
-    // FireRed CSV but no terrain provider
+    // FireRed CSV but no terrain provider -- should panic
     AttributesCsvLoader loader{&formatter_, &behavior_map_, std::nullopt, nullptr, &encounter_map_};
 
-    auto result = loader.load(kTestResourcesDir / "valid_firered.csv");
-    EXPECT_FALSE(result.has_value());
-
-    std::string error_text = result.chain().back()->join(formatter_);
-    EXPECT_TRUE(error_text.find("terrain type provider") != std::string::npos)
-        << "Error should mention missing terrain provider. Got: " << error_text;
+    EXPECT_DEATH(std::ignore = loader.load(test_resources_dir / "valid_firered.csv"), "terrain type provider");
 }
 
-TEST_F(AttributesCsvLoaderTest, LoadFireredCsvWithoutEncounterProviderReturnsError)
+TEST_F(AttributesCsvLoaderTest, LoadFireredCsvWithoutEncounterProviderPanics)
 {
-    // FireRed CSV but no encounter provider
+    // FireRed CSV but no encounter provider -- should panic
     AttributesCsvLoader loader{&formatter_, &behavior_map_, std::nullopt, &terrain_map_, nullptr};
 
-    auto result = loader.load(kTestResourcesDir / "valid_firered.csv");
-    EXPECT_FALSE(result.has_value());
-
-    std::string error_text = result.chain().back()->join(formatter_);
-    EXPECT_TRUE(error_text.find("encounter type provider") != std::string::npos)
-        << "Error should mention missing encounter provider. Got: " << error_text;
+    EXPECT_DEATH(std::ignore = loader.load(test_resources_dir / "valid_firered.csv"), "encounter type provider");
 }
 
 // =============================================================================
@@ -449,7 +439,7 @@ TEST_F(AttributesCsvLoaderTest, LoadFireredCsvUnknownTerrainTypeReturnsError)
 {
     AttributesCsvLoader loader{&formatter_, &behavior_map_, BaseGame::pokefirered, &terrain_map_, &encounter_map_};
 
-    auto result = loader.load(kTestResourcesDir / "firered_unknown_terrain.csv");
+    auto result = loader.load(test_resources_dir / "firered_unknown_terrain.csv");
     EXPECT_FALSE(result.has_value());
 
     std::string full_error_text{};
@@ -468,7 +458,7 @@ TEST_F(AttributesCsvLoaderTest, LoadFireredCsvUnknownEncounterTypeReturnsError)
 {
     AttributesCsvLoader loader{&formatter_, &behavior_map_, BaseGame::pokefirered, &terrain_map_, &encounter_map_};
 
-    auto result = loader.load(kTestResourcesDir / "firered_unknown_encounter.csv");
+    auto result = loader.load(test_resources_dir / "firered_unknown_encounter.csv");
     EXPECT_FALSE(result.has_value());
 
     std::string full_error_text{};
@@ -491,7 +481,7 @@ TEST_F(AttributesCsvLoaderTest, LoadFireredCsvRowTooFewColumnsReturnsError)
 {
     AttributesCsvLoader loader{&formatter_, &behavior_map_, BaseGame::pokefirered, &terrain_map_, &encounter_map_};
 
-    auto result = loader.load(kTestResourcesDir / "firered_row_too_few_columns.csv");
+    auto result = loader.load(test_resources_dir / "firered_row_too_few_columns.csv");
     EXPECT_FALSE(result.has_value());
 
     std::string full_error_text{};
