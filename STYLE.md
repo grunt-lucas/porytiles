@@ -93,7 +93,8 @@ int MyClass::compute_something(int accum_value) const {
  * @brief A basic class for for modeling foos.
  *
  * @details
- * The Foo class assumes that your foos are all like bars, but different.
+ * The Foo class assumes that your foos are all like bars, but different. Notice that the comment goes all the way to
+ * the column limit of 120 before wrapping.
  *
  * @tparam T The type parameter for the foo
  * @invariant Some note would go here
