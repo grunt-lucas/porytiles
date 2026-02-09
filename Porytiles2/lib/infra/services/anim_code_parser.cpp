@@ -224,7 +224,7 @@ struct TimerCondition {
  * @brief Represents animation data discovered from AppendTilesetAnimToBuffer calls.
  */
 struct DiscoveredAnimData {
-    std::string anim_name_pascal; // PascalCase animation name
+    // std::string anim_name_pascal; // PascalCase animation name
     std::size_t tile_offset{};
     std::size_t tile_count{};
     std::size_t frame_factor{};
@@ -260,6 +260,7 @@ struct DiscoveredAnimData {
     return {};
 }
 
+// TODO: move this to a diagnostic stencil header
 [[nodiscard]] std::vector<std::string> make_highlighted_details(
     const SourcePosition &position,
     const TextFormatter &format,
@@ -292,6 +293,10 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
     const std::string &pascal_case_tileset,
     bool porytiles_managed) const
 {
+    /*
+     * TODO: refactor pascal_case_tileset and callback_func_name params to be a DynamicCasedName.
+     */
+
     std::map<std::string, AnimationParams> result;
     CParserFacade c_parser{c_file_path, format_};
 
@@ -458,7 +463,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
 
         // Store discovered animation data
         discovered_anims[anim_name_pascal] = {
-            anim_name_pascal, tile_offset.value(), tile_count.value(), condition.frame_factor, condition.frame_offset};
+            tile_offset.value(), tile_count.value(), condition.frame_factor, condition.frame_offset};
     }
 
     // Step 5: Parse frame pointer arrays to get frame sequences
@@ -474,7 +479,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
             anim_frame_arrays_result};
     }
 
-    // Also search with sTilesetAnims_ prefix for vanilla/pokefirered projects
+    // Also search with sTilesetAnims_ prefix
     if (!porytiles_managed) {
         const auto s_frame_array_prefix = anim::s_tileset_anims_prefix + pascal_case_tileset;
         auto s_anim_frame_arrays_result = c_parser.parse_pointer_arrays(s_frame_array_prefix);
@@ -486,7 +491,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
         }
     }
 
-    // Build AnimationParams for each discovered animation
+    // Step 6: Build AnimationParams for each discovered animation
     for (const auto &[pascal_name, anim_data] : discovered_anims) {
         AnimationParams params;
         params.tile_offset(anim_data.tile_offset);
