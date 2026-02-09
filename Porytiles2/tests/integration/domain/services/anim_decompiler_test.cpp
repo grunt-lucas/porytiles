@@ -121,8 +121,8 @@ Animation<IndexPixel> create_test_animation(
     AnimationParams params;
     params.tile_offset(tile_offset);
     params.tile_count(tile_count);
-    params.frame_names({"0"});
-    params.frame_order({"0"});
+    params.frame_names({DynamicCasedName{"0"}});
+    params.frame_order({DynamicCasedName{"0"}});
 
     Animation<IndexPixel> anim{name, params};
 

@@ -11,7 +11,7 @@
 #include "porytiles2/utilities/c_parser/c_parser_facade.hpp"
 #include "porytiles2/utilities/c_parser/function_call_info.hpp"
 #include "porytiles2/utilities/c_parser/token.hpp"
-#include "porytiles2/utilities/string_utils.hpp"
+#include "porytiles2/utilities/dynamic_cased_name.hpp"
 #include "porytiles2/utilities/text/file_highlight_printer.hpp"
 
 namespace {
@@ -71,14 +71,15 @@ constexpr auto anim_parsing_error = "animation-parsing-error";
  *
  * @details
  * Given element names like ["..._Frame0", "..._Frame1", "..._Frame0", "..._Frame2"],
- * returns the frame names as strings ["0", "1", "0", "2"].
+ * returns the frame names as DynamicCasedName instances ["0", "1", "0", "2"].
+ * Frame names extracted from C identifiers (e.g., "0", "Center") are PascalCase.
  *
  * @param elements Vector of element identifier names
- * @return Vector of frame names in order (as strings)
+ * @return Vector of frame names in order (as DynamicCasedName)
  */
-[[nodiscard]] std::vector<std::string> extract_frame_names(const std::vector<std::string> &elements)
+[[nodiscard]] std::vector<DynamicCasedName> extract_frame_names(const std::vector<std::string> &elements)
 {
-    std::vector<std::string> frames;
+    std::vector<DynamicCasedName> frames;
     frames.reserve(elements.size());
 
     for (const auto &elem : elements) {
@@ -86,7 +87,7 @@ constexpr auto anim_parsing_error = "animation-parsing-error";
         auto frame_pos = elem.find("_Frame");
         if (frame_pos != std::string::npos) {
             std::string frame_str = elem.substr(frame_pos + 6); // Skip "_Frame"
-            frames.push_back(frame_str);
+            frames.push_back(DynamicCasedName::from_pascal_case(frame_str));
         }
     }
 
@@ -294,8 +295,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
     std::map<std::string, AnimationParams> result;
     CParserFacade c_parser{c_file_path, format_};
 
-    // TODO: do we need this here?
-    if (to_pascal_case(pascal_case_tileset) != pascal_case_tileset) {
+    if (DynamicCasedName{pascal_case_tileset}.to_pascal_case() != pascal_case_tileset) {
         panic("param pascal_case_tileset = '" + pascal_case_tileset + "', must be pascal case");
     }
 
@@ -505,13 +505,13 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
             std::string arr_anim_name =
                 extract_anim_name_from_array_ref(arr.name(), pascal_case_tileset, porytiles_managed);
 
-            // Case-insensitive comparison to handle inconsistencies like TVTurnedOn vs TvTurnedOn
-            if (to_lower_str(arr_anim_name) == to_lower_str(pascal_name)) {
+            // DynamicCasedName canonical equality handles inconsistencies like TVTurnedOn vs TvTurnedOn
+            if (DynamicCasedName{arr_anim_name} == DynamicCasedName{pascal_name}) {
                 auto frame_order = extract_frame_names(arr.elements());
                 if (!frame_order.empty()) {
                     // Derive unique frame_names from frame_order (preserving first occurrence order)
-                    std::vector<std::string> frame_names;
-                    std::set<std::string> seen;
+                    std::vector<DynamicCasedName> frame_names;
+                    std::set<DynamicCasedName> seen;
                     for (const auto &frame : frame_order) {
                         if (!seen.contains(frame)) {
                             seen.insert(frame);
@@ -526,17 +526,18 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
             }
         }
 
+        // Parse into DynamicCasedName to preserve structural info for lossless format conversion
+        const auto cased_name = DynamicCasedName::from_c_identifier(pascal_name);
+
         if (!found_frames) {
             return FormattableError{
-                "Could not find frame array for animation '{}'.", FormatParam{to_snake_case(pascal_name), Style::bold}};
+                "Could not find frame array for animation '{}'.", FormatParam{cased_name.to_snake_case(), Style::bold}};
         }
 
-        // Preserve original C identifier segment for frame variable name reconstruction
-        params.vanilla_identifier(pascal_name);
+        params.cased_name(cased_name);
 
-        // Convert PascalCase to snake_case for result key
-        const std::string snake_case_name = to_snake_case(pascal_name);
-        result[snake_case_name] = std::move(params);
+        // Use DynamicCasedName for the snake_case map key
+        result[cased_name.to_snake_case()] = std::move(params);
     }
 
     return result;

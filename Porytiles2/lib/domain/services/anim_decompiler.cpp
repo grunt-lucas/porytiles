@@ -249,8 +249,8 @@ ChainableResult<std::size_t> find_pal_for_anim_tiles(
     if (found_pal_indices.size() > 1) {
         /*
          * TODO: ANIM: adapt this code so that it computes a separate pal index for each subtile of the key frame.
-         * Technically, advanced users could make animations where different subtiles use different palettes. None of
-         * the vanilla game animations work this way, but it's possible and thus a use-case I want to support.
+         * While pokeemerald vanilla animations don't hit this case, pokefirered's do, and some users may have custom
+         * animations that work this way. We MUST support this properly.
          */
         std::string pal_list;
         for (const auto &pal_idx : found_pal_indices) {

@@ -22,9 +22,9 @@ namespace porytiles2 {
  * - Inner vector ("words"): individual words within a segment, split by PascalCase boundaries
  * - All words stored fully lowercase
  *
- * This structure enables lossless conversion to any output format from any input format. Equality and ordering are based
- * on the canonical (all-lowercase, no-separator) form, so names that represent the same identifier in different formats
- * compare as equal.
+ * This structure enables lossless conversion to any output format from any input format. Equality and ordering are
+ * based on the canonical (all-lowercase, no-separator) form, so names that represent the same identifier in different
+ * formats compare as equal.
  *
  * @invariant All words in @c segments_ are non-empty and fully lowercase.
  * @invariant @c canonical_ equals all words concatenated with no separators.
@@ -84,16 +84,16 @@ class DynamicCasedName {
     [[nodiscard]] static DynamicCasedName from_c_identifier(const std::string &input);
 
     /**
-     * @brief Constructs from a smoosh_case input string (all lowercase, no separators).
+     * @brief Constructs from a flatcase input string (all lowercase, no separators).
      *
      * @details
      * The entire lowercased input becomes a single atomic word in a single segment. No word splitting is attempted
-     * since smoosh_case provides no boundary information.
+     * since flatcase provides no boundary information.
      *
-     * @param input The smoosh_case string to parse.
+     * @param input The flatcase string to parse.
      * @return A DynamicCasedName with the parsed structure.
      */
-    [[nodiscard]] static DynamicCasedName from_smoosh_case(const std::string &input);
+    [[nodiscard]] static DynamicCasedName from_flat_case(const std::string &input);
 
     /**
      * @brief Outputs all words flattened and joined with underscores.
@@ -119,9 +119,9 @@ class DynamicCasedName {
     /**
      * @brief Outputs all words joined with no separators, all lowercase.
      *
-     * @return The name in smoosh_case format.
+     * @return The name in flatcase format.
      */
-    [[nodiscard]] std::string to_smoosh_case() const;
+    [[nodiscard]] std::string to_flat_case() const;
 
     /**
      * @brief Returns the canonical form (all words lowercase, no separators).

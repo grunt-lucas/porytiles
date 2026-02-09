@@ -10,6 +10,7 @@
 #include "fmt/format.h"
 
 #include "porytiles2/infra/config/infra_config.hpp"
+#include "porytiles2/utilities/dynamic_cased_name.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
@@ -228,7 +229,7 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
 
     // Step 2: Extract shorthand and convert to snake_case for directory name
     const std::string shorthand = extract_tileset_shorthand(tileset_name);
-    const std::string snake_dir = to_snake_case(shorthand);
+    const std::string snake_dir = DynamicCasedName{shorthand}.to_snake_case();
 
     // Step 3: Read .c file
     const auto anims_c_path = project_root_ / tileset_anims_c_rel_path;
@@ -331,7 +332,7 @@ ProjectTilesetAnimsModifier::remove_include_for_tileset(const std::string &tiles
 
     // Step 2: Extract shorthand and convert to snake_case for directory name
     const std::string shorthand = extract_tileset_shorthand(tileset_name);
-    const std::string snake_dir = to_snake_case(shorthand);
+    const std::string snake_dir = DynamicCasedName{shorthand}.to_snake_case();
 
     // Step 3: Read .c file
     const auto anims_c_path = project_root_ / tileset_anims_c_rel_path;

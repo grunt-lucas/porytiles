@@ -41,9 +41,9 @@ TEST_F(DynamicCasedNameTest, FromCIdentifier)
     EXPECT_EQ(name.segments()[2], (std::vector<std::string>{"land", "waters", "edge"}));
 }
 
-TEST_F(DynamicCasedNameTest, FromSmooshCase)
+TEST_F(DynamicCasedNameTest, FromFlatCase)
 {
-    auto name = DynamicCasedName::from_smoosh_case("sandwatersedge");
+    auto name = DynamicCasedName::from_flat_case("sandwatersedge");
     ASSERT_EQ(name.segments().size(), 1);
     EXPECT_EQ(name.segments()[0], std::vector<std::string>{"sandwatersedge"});
 }
@@ -97,7 +97,7 @@ TEST_F(DynamicCasedNameTest, AutoDetectCIdentifier)
     EXPECT_EQ(name.segments()[2], (std::vector<std::string>{"land", "waters", "edge"}));
 }
 
-TEST_F(DynamicCasedNameTest, AutoDetectSmooshCase)
+TEST_F(DynamicCasedNameTest, AutoDetectFlatCase)
 {
     DynamicCasedName name{"sandwatersedge"};
     ASSERT_EQ(name.segments().size(), 1);
@@ -114,7 +114,7 @@ TEST_F(DynamicCasedNameTest, OutputFromSnakeCase)
     EXPECT_EQ(name.to_snake_case(), "my_tileset");
     EXPECT_EQ(name.to_pascal_case(), "MyTileset");
     EXPECT_EQ(name.to_c_identifier(), "My_Tileset");
-    EXPECT_EQ(name.to_smoosh_case(), "mytileset");
+    EXPECT_EQ(name.to_flat_case(), "mytileset");
 }
 
 TEST_F(DynamicCasedNameTest, OutputFromPascalCase)
@@ -123,7 +123,7 @@ TEST_F(DynamicCasedNameTest, OutputFromPascalCase)
     EXPECT_EQ(name.to_snake_case(), "another_tileset");
     EXPECT_EQ(name.to_pascal_case(), "AnotherTileset");
     EXPECT_EQ(name.to_c_identifier(), "AnotherTileset");
-    EXPECT_EQ(name.to_smoosh_case(), "anothertileset");
+    EXPECT_EQ(name.to_flat_case(), "anothertileset");
 }
 
 TEST_F(DynamicCasedNameTest, OutputFromCIdentifier)
@@ -132,16 +132,16 @@ TEST_F(DynamicCasedNameTest, OutputFromCIdentifier)
     EXPECT_EQ(name.to_snake_case(), "water_current_land_waters_edge");
     EXPECT_EQ(name.to_pascal_case(), "WaterCurrentLandWatersEdge");
     EXPECT_EQ(name.to_c_identifier(), "Water_Current_LandWatersEdge");
-    EXPECT_EQ(name.to_smoosh_case(), "watercurrentlandwatersedge");
+    EXPECT_EQ(name.to_flat_case(), "watercurrentlandwatersedge");
 }
 
-TEST_F(DynamicCasedNameTest, OutputFromSmooshCase)
+TEST_F(DynamicCasedNameTest, OutputFromFlatCase)
 {
-    auto name = DynamicCasedName::from_smoosh_case("sandwatersedge");
+    auto name = DynamicCasedName::from_flat_case("sandwatersedge");
     EXPECT_EQ(name.to_snake_case(), "sandwatersedge");
     EXPECT_EQ(name.to_pascal_case(), "Sandwatersedge");
     EXPECT_EQ(name.to_c_identifier(), "Sandwatersedge");
-    EXPECT_EQ(name.to_smoosh_case(), "sandwatersedge");
+    EXPECT_EQ(name.to_flat_case(), "sandwatersedge");
 }
 
 // =====================================================
@@ -166,10 +166,10 @@ TEST_F(DynamicCasedNameTest, RoundTripCIdentifier)
     EXPECT_EQ(DynamicCasedName::from_c_identifier(input).to_c_identifier(), input);
 }
 
-TEST_F(DynamicCasedNameTest, RoundTripSmooshCase)
+TEST_F(DynamicCasedNameTest, RoundTripFlatCase)
 {
     std::string input = "sandwatersedge";
-    EXPECT_EQ(DynamicCasedName::from_smoosh_case(input).to_smoosh_case(), input);
+    EXPECT_EQ(DynamicCasedName::from_flat_case(input).to_flat_case(), input);
 }
 
 TEST_F(DynamicCasedNameTest, RoundTripPascalCaseWithAcronym)
@@ -196,11 +196,11 @@ TEST_F(DynamicCasedNameTest, EqualityAcrossFormats)
     EXPECT_EQ(from_snake.canonical(), from_pascal.canonical());
 }
 
-TEST_F(DynamicCasedNameTest, EqualitySnakeAndSmoosh)
+TEST_F(DynamicCasedNameTest, EqualitySnakeAndFlat)
 {
     auto from_snake = DynamicCasedName::from_snake_case("my_tileset");
-    auto from_smoosh = DynamicCasedName::from_smoosh_case("mytileset");
-    EXPECT_EQ(from_snake, from_smoosh);
+    auto from_flat = DynamicCasedName::from_flat_case("mytileset");
+    EXPECT_EQ(from_snake, from_flat);
 }
 
 TEST_F(DynamicCasedNameTest, InequalityDifferentNames)
@@ -234,9 +234,9 @@ TEST_F(DynamicCasedNameTest, UsableInStdMap)
     map[DynamicCasedName::from_c_identifier("Gamma_Delta")] = 3;
 
     EXPECT_EQ(map.size(), 3);
-    EXPECT_EQ(map[DynamicCasedName::from_smoosh_case("alpha")], 1);
-    EXPECT_EQ(map[DynamicCasedName::from_smoosh_case("beta")], 2);
-    EXPECT_EQ(map[DynamicCasedName::from_smoosh_case("gammadelta")], 3);
+    EXPECT_EQ(map[DynamicCasedName::from_flat_case("alpha")], 1);
+    EXPECT_EQ(map[DynamicCasedName::from_flat_case("beta")], 2);
+    EXPECT_EQ(map[DynamicCasedName::from_flat_case("gammadelta")], 3);
 }
 
 TEST_F(DynamicCasedNameTest, UsableInStdUnorderedMap)
@@ -246,8 +246,8 @@ TEST_F(DynamicCasedNameTest, UsableInStdUnorderedMap)
     map[DynamicCasedName::from_pascal_case("Beta")] = 2;
 
     EXPECT_EQ(map.size(), 2);
-    EXPECT_EQ(map[DynamicCasedName::from_smoosh_case("alpha")], 1);
-    EXPECT_EQ(map[DynamicCasedName::from_smoosh_case("beta")], 2);
+    EXPECT_EQ(map[DynamicCasedName::from_flat_case("alpha")], 1);
+    EXPECT_EQ(map[DynamicCasedName::from_flat_case("beta")], 2);
 }
 
 TEST_F(DynamicCasedNameTest, HashConsistency)
@@ -270,7 +270,7 @@ TEST_F(DynamicCasedNameTest, EmptyString)
     EXPECT_EQ(name.to_snake_case(), "");
     EXPECT_EQ(name.to_pascal_case(), "");
     EXPECT_EQ(name.to_c_identifier(), "");
-    EXPECT_EQ(name.to_smoosh_case(), "");
+    EXPECT_EQ(name.to_flat_case(), "");
     EXPECT_EQ(name.canonical(), "");
 }
 
@@ -279,7 +279,7 @@ TEST_F(DynamicCasedNameTest, EmptyStringFactories)
     EXPECT_TRUE(DynamicCasedName::from_snake_case("").empty());
     EXPECT_TRUE(DynamicCasedName::from_pascal_case("").empty());
     EXPECT_TRUE(DynamicCasedName::from_c_identifier("").empty());
-    EXPECT_TRUE(DynamicCasedName::from_smoosh_case("").empty());
+    EXPECT_TRUE(DynamicCasedName::from_flat_case("").empty());
 }
 
 TEST_F(DynamicCasedNameTest, DefaultConstructed)
@@ -295,7 +295,7 @@ TEST_F(DynamicCasedNameTest, SingleCharLowercase)
     EXPECT_FALSE(name.empty());
     EXPECT_EQ(name.to_snake_case(), "a");
     EXPECT_EQ(name.to_pascal_case(), "A");
-    EXPECT_EQ(name.to_smoosh_case(), "a");
+    EXPECT_EQ(name.to_flat_case(), "a");
 }
 
 TEST_F(DynamicCasedNameTest, SingleCharUppercase)
@@ -304,7 +304,7 @@ TEST_F(DynamicCasedNameTest, SingleCharUppercase)
     EXPECT_FALSE(name.empty());
     EXPECT_EQ(name.to_snake_case(), "a");
     EXPECT_EQ(name.to_pascal_case(), "A");
-    EXPECT_EQ(name.to_smoosh_case(), "a");
+    EXPECT_EQ(name.to_flat_case(), "a");
 }
 
 TEST_F(DynamicCasedNameTest, LeadingTrailingUnderscores)
@@ -359,7 +359,7 @@ TEST_F(DynamicCasedNameTest, RealWorldGeneral)
     EXPECT_EQ(name.to_snake_case(), "general");
     EXPECT_EQ(name.to_pascal_case(), "General");
     EXPECT_EQ(name.to_c_identifier(), "General");
-    EXPECT_EQ(name.to_smoosh_case(), "general");
+    EXPECT_EQ(name.to_flat_case(), "general");
 }
 
 TEST_F(DynamicCasedNameTest, RealWorldFlower)
@@ -375,23 +375,23 @@ TEST_F(DynamicCasedNameTest, RealWorldWaterCurrentLandWatersEdge)
     EXPECT_EQ(name.to_snake_case(), "water_current_land_waters_edge");
     EXPECT_EQ(name.to_pascal_case(), "WaterCurrentLandWatersEdge");
     EXPECT_EQ(name.to_c_identifier(), "Water_Current_LandWatersEdge");
-    EXPECT_EQ(name.to_smoosh_case(), "watercurrentlandwatersedge");
+    EXPECT_EQ(name.to_flat_case(), "watercurrentlandwatersedge");
 }
 
 TEST_F(DynamicCasedNameTest, RealWorldSandWatersEdge)
 {
-    auto name = DynamicCasedName::from_smoosh_case("sandwatersedge");
+    auto name = DynamicCasedName::from_flat_case("sandwatersedge");
     EXPECT_EQ(name.to_snake_case(), "sandwatersedge");
     EXPECT_EQ(name.to_pascal_case(), "Sandwatersedge");
-    EXPECT_EQ(name.to_smoosh_case(), "sandwatersedge");
+    EXPECT_EQ(name.to_flat_case(), "sandwatersedge");
 }
 
 TEST_F(DynamicCasedNameTest, RealWorldMotorizedDoor)
 {
-    auto name = DynamicCasedName::from_smoosh_case("motorizeddoor");
+    auto name = DynamicCasedName::from_flat_case("motorizeddoor");
     EXPECT_EQ(name.to_snake_case(), "motorizeddoor");
     EXPECT_EQ(name.to_pascal_case(), "Motorizeddoor");
-    EXPECT_EQ(name.to_smoosh_case(), "motorizeddoor");
+    EXPECT_EQ(name.to_flat_case(), "motorizeddoor");
 }
 
 TEST_F(DynamicCasedNameTest, RealWorldTVTurnedOnVsTvTurnedOn)

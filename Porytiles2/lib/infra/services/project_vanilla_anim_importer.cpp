@@ -76,7 +76,7 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
         return ChainableResult<std::map<std::string, Animation<IndexPixel>>>{
             FormattableError{"Failed to parse animation params."}, anim_params_result};
     }
-    auto anim_params_map = std::move(anim_params_result).value();
+    std::map<std::string, AnimationParams> anim_params_map = std::move(anim_params_result).value();
 
     if (anim_params_map.empty()) {
         // No animations found in callback chain
@@ -119,22 +119,22 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
         Animation<IndexPixel> anim{anim_name};
         anim.params(params);
 
-        // Use preserved vanilla identifier for frame variable name construction
-        // This avoids the lossy to_snake_case → to_pascal_case round-trip for names
-        // with embedded underscores (e.g., pokefirered's "Water_Current_LandWatersEdge")
-        const std::string &pascal_anim_name = params.vanilla_identifier();
+        // Use DynamicCasedName for lossless C identifier reconstruction
+        // This handles names with embedded underscores (e.g., pokefirered's "Water_Current_LandWatersEdge")
+        const std::string pascal_anim_name = params.cased_name().to_c_identifier();
 
         for (const auto &frame_name : params.frame_names()) {
             PngIndexedImageLoader png_loader;
+            const std::string frame_name_snake = frame_name.to_snake_case();
             const std::string frame_var =
-                detected_anim_prefix + pascal_tileset + "_" + pascal_anim_name + "_Frame" + frame_name;
+                detected_anim_prefix + pascal_tileset + "_" + pascal_anim_name + "_Frame" + frame_name.to_pascal_case();
 
             auto it = frame_paths.find(frame_var);
             if (it == frame_paths.end()) {
                 return FormattableError{
                     "frame variable '{}' not found in INCBIN declarations for frame '{}'",
                     FormatParam{frame_var, Style::bold},
-                    FormatParam{frame_name, Style::bold}};
+                    FormatParam{frame_name_snake, Style::bold}};
             }
 
             const auto &frame_png_path = it->second;
@@ -142,22 +142,23 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
                 return FormattableError{
                     "frame PNG '{}' not found for frame '{}'",
                     FormatParam{frame_png_path.string(), Style::bold},
-                    FormatParam{frame_name, Style::bold}};
+                    FormatParam{frame_name_snake, Style::bold}};
             }
 
             // Use shared helper to load frame PNG and extract tiles
-            auto frame_load_result = load_animation_frame_from_png<IndexPixel>(frame_png_path, frame_name, png_loader);
+            auto frame_load_result =
+                load_animation_frame_from_png<IndexPixel>(frame_png_path, frame_name_snake, png_loader);
             if (!frame_load_result.has_value()) {
                 return ChainableResult<std::map<std::string, Animation<IndexPixel>>>{
                     FormattableError{
                         "failed to load frame '{}' for animation '{}'",
-                        FormatParam{frame_name, Style::bold},
+                        FormatParam{frame_name_snake, Style::bold},
                         FormatParam{anim_name, Style::bold}},
                     frame_load_result};
             }
 
             auto &load_result = frame_load_result.value();
-            anim.put_frame(frame_name, std::move(load_result.frame));
+            anim.put_frame(frame_name_snake, std::move(load_result.frame));
 
             // Update dimensions in params if not already set (first frame determines dimensions)
             auto animation_params = anim.params();

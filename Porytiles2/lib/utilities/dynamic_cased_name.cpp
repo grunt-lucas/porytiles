@@ -150,7 +150,7 @@ DynamicCasedName::DynamicCasedName(const std::string &input)
         *this = from_pascal_case(input);
     }
     else {
-        *this = from_smoosh_case(input);
+        *this = from_flat_case(input);
     }
 }
 
@@ -211,7 +211,7 @@ DynamicCasedName DynamicCasedName::from_c_identifier(const std::string &input)
     return DynamicCasedName{std::move(segments)};
 }
 
-DynamicCasedName DynamicCasedName::from_smoosh_case(const std::string &input)
+DynamicCasedName DynamicCasedName::from_flat_case(const std::string &input)
 {
     if (input.empty()) {
         return DynamicCasedName{};
@@ -275,7 +275,7 @@ std::string DynamicCasedName::to_c_identifier() const
     return result;
 }
 
-std::string DynamicCasedName::to_smoosh_case() const
+std::string DynamicCasedName::to_flat_case() const
 {
     return canonical_;
 }

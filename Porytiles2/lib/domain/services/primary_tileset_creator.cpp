@@ -1660,8 +1660,14 @@ PrimaryTilesetCreator::create_sample_porytiles_component(const std::string &tile
     AnimationFrame flower_left{"left", metatile_array_to_tiles(flower_frame_left)};
 
     AnimationParams flower_params{};
-    flower_params.frame_names(std::vector<std::string>{"center", "right", "left"});
-    flower_params.frame_order(std::vector<std::string>{"center", "right", "center", "left"});
+    flower_params.frame_names(
+        std::vector<DynamicCasedName>{DynamicCasedName{"center"}, DynamicCasedName{"right"}, DynamicCasedName{"left"}});
+    flower_params.frame_order(
+        std::vector<DynamicCasedName>{
+            DynamicCasedName{"center"},
+            DynamicCasedName{"right"},
+            DynamicCasedName{"center"},
+            DynamicCasedName{"left"}});
     flower_params.width_tiles(2);
     flower_params.height_tiles(2);
 

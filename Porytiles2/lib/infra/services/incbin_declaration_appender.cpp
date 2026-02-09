@@ -8,8 +8,8 @@
 
 #include "fmt/format.h"
 
+#include "porytiles2/utilities/dynamic_cased_name.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
-#include "porytiles2/utilities/string_utils.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 
 namespace {
@@ -193,7 +193,7 @@ ChainableResult<void> IncbinDeclarationAppender::append_graphics_declarations(
             "tileset name '{}' does not start with 'gTileset_'", FormatParam{tileset_name, Style::bold})};
     }
 
-    const std::string snake_dir = to_snake_case(shorthand);
+    const std::string snake_dir = DynamicCasedName{shorthand}.to_snake_case();
     const auto graphics_path = project_root_ / graphics_rel_path;
 
     // Read existing file
@@ -241,7 +241,7 @@ ChainableResult<void> IncbinDeclarationAppender::append_metatiles_declarations(
             "tileset name '{}' does not start with 'gTileset_'", FormatParam{tileset_name, Style::bold})};
     }
 
-    const std::string snake_dir = to_snake_case(shorthand);
+    const std::string snake_dir = DynamicCasedName{shorthand}.to_snake_case();
     const auto metatiles_path = project_root_ / metatiles_rel_path;
 
     // Read existing file

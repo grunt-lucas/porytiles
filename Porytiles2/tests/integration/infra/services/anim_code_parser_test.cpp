@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "porytiles2/domain/models/animation.hpp"
+#include "porytiles2/utilities/dynamic_cased_name.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/buffered_user_diagnostics.hpp"
 
@@ -68,10 +69,10 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsFlowerAnimationParamsFromGen
     // Verify frames from pointer array [Frame0, Frame1, Frame0, Frame2]
     const auto &frames = flower.frame_order();
     ASSERT_EQ(frames.size(), 4u);
-    EXPECT_EQ(frames[0], "0");
-    EXPECT_EQ(frames[1], "1");
-    EXPECT_EQ(frames[2], "0");
-    EXPECT_EQ(frames[3], "2");
+    EXPECT_EQ(frames[0], DynamicCasedName{"0"});
+    EXPECT_EQ(frames[1], DynamicCasedName{"1"});
+    EXPECT_EQ(frames[2], DynamicCasedName{"0"});
+    EXPECT_EQ(frames[3], DynamicCasedName{"2"});
 }
 
 TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsLandWaterEdgeAnimationParamsFromGeneratedHeader)
@@ -101,7 +102,7 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsLandWaterEdgeAnimationParams
     const auto &frames = land_water_edge.frame_order();
     ASSERT_EQ(frames.size(), 4u);
     for (std::size_t i = 0; i < 4; ++i) {
-        EXPECT_EQ(frames[i], std::to_string(i));
+        EXPECT_EQ(frames[i], DynamicCasedName{std::to_string(i)});
     }
 }
 
@@ -132,14 +133,9 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsWaterAnimationParamsFromGene
     // Verify frames from pointer array
     const auto &frames = water.frame_order();
     ASSERT_EQ(frames.size(), 8u);
-    EXPECT_EQ(frames[0], "0");
-    EXPECT_EQ(frames[1], "1");
-    EXPECT_EQ(frames[2], "2");
-    EXPECT_EQ(frames[3], "3");
-    EXPECT_EQ(frames[4], "4");
-    EXPECT_EQ(frames[5], "5");
-    EXPECT_EQ(frames[6], "6");
-    EXPECT_EQ(frames[7], "7");
+    for (std::size_t i = 0; i < 8; ++i) {
+        EXPECT_EQ(frames[i], DynamicCasedName{std::to_string(i)});
+    }
 }
 
 TEST_F(AnimCodeParserTest, ParseFromCallbackReturnsErrorForNonExistentFile)
@@ -192,10 +188,10 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsFlowerAnimationParamsFromVan
     // Verify frames from pointer array
     const auto &frames = flower.frame_order();
     ASSERT_EQ(frames.size(), 4u);
-    EXPECT_EQ(frames[0], "0");
-    EXPECT_EQ(frames[1], "1");
-    EXPECT_EQ(frames[2], "0");
-    EXPECT_EQ(frames[3], "2");
+    EXPECT_EQ(frames[0], DynamicCasedName{"0"});
+    EXPECT_EQ(frames[1], DynamicCasedName{"1"});
+    EXPECT_EQ(frames[2], DynamicCasedName{"0"});
+    EXPECT_EQ(frames[3], DynamicCasedName{"2"});
 }
 
 TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsLandWaterEdgeAnimationParamsFromVanilla)
@@ -223,7 +219,7 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsLandWaterEdgeAnimationParams
     const auto &frames = land_water_edge.frame_order();
     ASSERT_EQ(frames.size(), 4u);
     for (std::size_t i = 0; i < 4; ++i) {
-        EXPECT_EQ(frames[i], std::to_string(i));
+        EXPECT_EQ(frames[i], DynamicCasedName{std::to_string(i)});
     }
 }
 
@@ -252,7 +248,7 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsWaterAnimationParamsFromVani
     const auto &frames = water.frame_order();
     ASSERT_EQ(frames.size(), 8u);
     for (std::size_t i = 0; i < 8; ++i) {
-        EXPECT_EQ(frames[i], std::to_string(i));
+        EXPECT_EQ(frames[i], DynamicCasedName{std::to_string(i)});
     }
 }
 
@@ -306,17 +302,17 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsFlowerParamsWithSPrefix)
 
     const auto &frames = flower.frame_order();
     ASSERT_EQ(frames.size(), 4u);
-    EXPECT_EQ(frames[0], "0");
-    EXPECT_EQ(frames[1], "1");
-    EXPECT_EQ(frames[2], "0");
-    EXPECT_EQ(frames[3], "2");
+    EXPECT_EQ(frames[0], DynamicCasedName{"0"});
+    EXPECT_EQ(frames[1], DynamicCasedName{"1"});
+    EXPECT_EQ(frames[2], DynamicCasedName{"0"});
+    EXPECT_EQ(frames[3], DynamicCasedName{"2"});
 }
 
 // =============================================================================
-// Vanilla Identifier Preservation Tests
+// DynamicCasedName Preservation Tests
 // =============================================================================
 
-TEST_F(AnimCodeParserTest, ParseFromCallbackPreservesVanillaIdentifierForSimpleNames)
+TEST_F(AnimCodeParserTest, ParseFromCallbackPreservesCasedNameForSimpleNames)
 {
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/tileset_anims.c", "InitTilesetAnim_General", "General", false);
@@ -324,15 +320,15 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackPreservesVanillaIdentifierForSimpleN
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
 
-    // Simple PascalCase names should round-trip cleanly, but vanilla_identifier preserves them exactly
+    // Simple PascalCase names should losslessly round-trip via DynamicCasedName
     ASSERT_TRUE(anims.contains("flower"));
-    EXPECT_EQ(anims.at("flower").vanilla_identifier(), "Flower");
+    EXPECT_EQ(anims.at("flower").cased_name().to_c_identifier(), "Flower");
 
     ASSERT_TRUE(anims.contains("water"));
-    EXPECT_EQ(anims.at("water").vanilla_identifier(), "Water");
+    EXPECT_EQ(anims.at("water").cased_name().to_c_identifier(), "Water");
 }
 
-TEST_F(AnimCodeParserTest, ParseFromCallbackPreservesVanillaIdentifierForCompoundNames)
+TEST_F(AnimCodeParserTest, ParseFromCallbackPreservesCasedNameForCompoundNames)
 {
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/tileset_anims_s_prefix.c",
@@ -343,15 +339,15 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackPreservesVanillaIdentifierForCompoun
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
 
-    // Compound PascalCase names must be preserved verbatim for frame variable lookup
+    // Compound PascalCase names must be preserved for frame variable lookup via to_c_identifier()
     ASSERT_TRUE(anims.contains("sand_water_edge"));
-    EXPECT_EQ(anims.at("sand_water_edge").vanilla_identifier(), "SandWaterEdge");
+    EXPECT_EQ(anims.at("sand_water_edge").cased_name().to_c_identifier(), "SandWaterEdge");
 
     ASSERT_TRUE(anims.contains("land_water_edge"));
-    EXPECT_EQ(anims.at("land_water_edge").vanilla_identifier(), "LandWaterEdge");
+    EXPECT_EQ(anims.at("land_water_edge").cased_name().to_c_identifier(), "LandWaterEdge");
 }
 
-TEST_F(AnimCodeParserTest, ParseFromCallbackPreservesVanillaIdentifierForPorytilesManaged)
+TEST_F(AnimCodeParserTest, ParseFromCallbackPreservesCasedNameForPorytilesManaged)
 {
     const std::string callback_func = "InitTilesetAnim_" + anim::porytiles_managed_prefix + "General";
 
@@ -362,10 +358,10 @@ TEST_F(AnimCodeParserTest, ParseFromCallbackPreservesVanillaIdentifierForPorytil
     const auto &anims = result.value();
 
     ASSERT_TRUE(anims.contains("flower"));
-    EXPECT_EQ(anims.at("flower").vanilla_identifier(), "Flower");
+    EXPECT_EQ(anims.at("flower").cased_name().to_c_identifier(), "Flower");
 
     ASSERT_TRUE(anims.contains("land_water_edge"));
-    EXPECT_EQ(anims.at("land_water_edge").vanilla_identifier(), "LandWaterEdge");
+    EXPECT_EQ(anims.at("land_water_edge").cased_name().to_c_identifier(), "LandWaterEdge");
 }
 
 } // namespace porytiles2

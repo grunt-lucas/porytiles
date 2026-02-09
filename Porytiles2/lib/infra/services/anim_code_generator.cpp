@@ -1,14 +1,13 @@
 #include "porytiles2/infra/services/anim_code_generator.hpp"
 
 #include <algorithm>
-#include <cctype>
 #include <format>
 #include <map>
 #include <ranges>
 #include <sstream>
 
 #include "porytiles2/domain/models/animation.hpp"
-#include "porytiles2/utilities/string_utils.hpp"
+#include "porytiles2/utilities/dynamic_cased_name.hpp"
 
 namespace {
 
@@ -22,20 +21,20 @@ using namespace porytiles2;
 {
     std::ostringstream out;
 
-    const std::string pascal_anim_name = to_pascal_case(anim_name);
+    const std::string pascal_anim_name = DynamicCasedName::from_snake_case(anim_name).to_pascal_case();
 
     // Generate INCBIN for each unique frame in frame_names (position in vector = FrameN index)
     for (const auto &frame_name : params.frame_names()) {
-        const std::string frame_file =
-            (tileset_path_from_project_root / "porytiles_bin" / "anim" / anim_name / std::format("{}.4bpp", frame_name))
-                .string();
+        const std::string frame_file = (tileset_path_from_project_root / "porytiles_bin" / "anim" / anim_name /
+                                        std::format("{}.4bpp", frame_name.to_snake_case()))
+                                           .string();
 
         const auto statement = std::format(
             "const u16 gTilesetAnims_{}{}_{}_Frame{}[] = INCBIN_U16(\"{}\");\n",
             anim::porytiles_managed_prefix,
             tileset_name,
             pascal_anim_name,
-            to_pascal_case(frame_name),
+            frame_name.to_pascal_case(),
             frame_file);
 
         out << statement;
@@ -49,7 +48,7 @@ generate_frame_array(const std::string &tileset_name, const std::string &anim_na
 {
     std::ostringstream out;
 
-    const std::string pascal_anim_name = to_pascal_case(anim_name);
+    const std::string pascal_anim_name = DynamicCasedName::from_snake_case(anim_name).to_pascal_case();
     const std::string array_name =
         std::format("gTilesetAnims_{}{}_{}", anim::porytiles_managed_prefix, tileset_name, pascal_anim_name);
 
@@ -57,14 +56,12 @@ generate_frame_array(const std::string &tileset_name, const std::string &anim_na
 
     // Generate pointer array following frame_order
     for (std::size_t i = 0; i < params.frame_order().size(); ++i) {
-        // TODO: somewhere else in the codebase we need to validate the user-supplied frame names are snake_case
-        const auto &frame_name = to_pascal_case(params.frame_order()[i]);
         out << std::format(
             "    gTilesetAnims_{}{}_{}_Frame{}",
             anim::porytiles_managed_prefix,
             tileset_name,
             pascal_anim_name,
-            frame_name);
+            params.frame_order()[i].to_pascal_case());
         if (i < params.frame_order().size() - 1) {
             out << ",";
         }
@@ -81,7 +78,7 @@ generate_queue_function(const std::string &tileset_name, const std::string &anim
 {
     std::ostringstream out;
 
-    const std::string pascal_anim_name = to_pascal_case(anim_name);
+    const std::string pascal_anim_name = DynamicCasedName::from_snake_case(anim_name).to_pascal_case();
     const std::string array_name =
         std::format("gTilesetAnims_{}{}_{}", anim::porytiles_managed_prefix, tileset_name, pascal_anim_name);
     const std::string func_name =
@@ -127,13 +124,12 @@ generate_driver_function(const std::string &tileset_name, const std::map<std::st
             out << std::format("    if (timer % {} == {})\n", frame_factor, frame_offset);
             out << "    {\n";
 
-            for (const auto &anim_name : offset_anims | std::views::keys) {
-                const std::string pascal_anim_name = to_pascal_case(anim_name);
+            for (const auto &[anim_name, anim_params] : offset_anims) {
                 out << std::format(
                     "        QueueAnimTiles_{}{}_{}(timer / {});\n",
                     anim::porytiles_managed_prefix,
                     tileset_name,
-                    pascal_anim_name,
+                    DynamicCasedName::from_snake_case(anim_name).to_pascal_case(),
                     frame_factor);
             }
 
@@ -196,7 +192,7 @@ ChainableResult<std::string> AnimCodeGenerator::generate(
      * TODO: fix all this "gTileset_" handling
      */
     const std::string tileset_name_no_prefix = tileset_name.substr(std::size("gTileset_") - 1);
-    const std::string pascal_tileset_name = to_pascal_case(tileset_name_no_prefix);
+    const std::string pascal_tileset_name = DynamicCasedName{tileset_name_no_prefix}.to_pascal_case();
 
     // Generate header guard
     const std::string guard_name = std::format("GUARD_GENERATED_ANIM_CODE_{}_H", pascal_tileset_name);
