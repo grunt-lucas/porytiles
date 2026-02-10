@@ -334,7 +334,9 @@ ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const Artifact
     auto params_result = anim_yaml_parser_->parse((project_root_ / params_key.key()).string());
     if (!params_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"'{}': Failed to parse anim.yaml.", FormatParam{params_key.key(), Style::bold}},
+            FormattableError{
+                "{}: Failed to parse animation parameters.",
+                FormatParam{project_root_ / params_key.key(), Style::bold}},
             params_result};
     }
 
