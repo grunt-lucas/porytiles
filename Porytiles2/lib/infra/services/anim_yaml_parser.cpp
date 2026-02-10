@@ -112,7 +112,7 @@ namespace porytiles2 {
 
 AnimYamlParser::AnimYamlParser(gsl::not_null<const TextFormatter *> format) : format_{format} {}
 
-ChainableResult<std::map<std::string, AnimationParams>>
+ChainableResult<std::map<DynamicCasedName, AnimationParams>>
 AnimYamlParser::parse(const std::filesystem::path &yaml_path) const
 {
     if (!std::filesystem::exists(yaml_path)) {
@@ -124,7 +124,7 @@ AnimYamlParser::parse(const std::filesystem::path &yaml_path) const
     try {
         YAML::Node root = YAML::LoadFile(yaml_path.string());
 
-        std::map<std::string, AnimationParams> result;
+        std::map<DynamicCasedName, AnimationParams> result;
 
         if (!root.IsMap()) {
             FileHighlightPrinter printer{format_};
@@ -177,10 +177,10 @@ AnimYamlParser::parse(const std::filesystem::path &yaml_path) const
             }
 
             auto parsed = parse_animation_params(anim_name, anim_node);
-            result.insert({anim_name, std::move(parsed)});
+            result.insert({DynamicCasedName{anim_name}, std::move(parsed)});
 
             // Validate that frame_order entries reference valid frame_names
-            const auto &parsed_params = result.at(anim_name);
+            const auto &parsed_params = result.at(DynamicCasedName{anim_name});
             std::set<DynamicCasedName> valid_frames(
                 parsed_params.frame_names().begin(), parsed_params.frame_names().end());
 
@@ -242,7 +242,7 @@ AnimYamlParser::parse(const std::filesystem::path &yaml_path) const
 }
 
 ChainableResult<void> AnimYamlParser::write(
-    const std::filesystem::path &yaml_path, const std::map<std::string, AnimationParams> &params) const
+    const std::filesystem::path &yaml_path, const std::map<DynamicCasedName, AnimationParams> &params) const
 {
     try {
         // Create parent directories if they don't exist
@@ -252,7 +252,7 @@ ChainableResult<void> AnimYamlParser::write(
 
         YAML::Node root;
         for (const auto &[name, anim_params] : params) {
-            root[name] = serialize_animation_params(anim_params);
+            root[name.to_snake_case()] = serialize_animation_params(anim_params);
         }
 
         std::ofstream out(yaml_path);

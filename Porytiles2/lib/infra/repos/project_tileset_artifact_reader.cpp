@@ -17,6 +17,7 @@
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/infra/algorithms/animation_frame_loader.hpp"
 #include "porytiles2/infra/algorithms/porymap_artifact_parsers.hpp"
+#include "porytiles2/utilities/dynamic_cased_name.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
 
@@ -248,10 +249,10 @@ ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKe
     }
 
     // Apply params to the specific animation if found
-    if (params_result.value().contains(anim_name)) {
+    if (params_result.value().contains(DynamicCasedName{anim_name})) {
         auto &anim = dest.porymap_component().anims().at(anim_name);
         auto existing_params = anim.params();
-        auto new_params = params_result.value().at(anim_name);
+        auto new_params = params_result.value().at(DynamicCasedName{anim_name});
 
         // Preserve dimensions from frame import (C code doesn't have this info)
         new_params.width_tiles(existing_params.width_tiles());
@@ -341,11 +342,11 @@ ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const Artifact
     }
 
     // Find params for this specific animation
-    auto it = params_result.value().find(anim_name);
+    auto it = params_result.value().find(DynamicCasedName{anim_name});
     if (it == params_result.value().end()) {
         return ChainableResult<void>{FormattableError{
-            "{}: animation '{}' not found in anim.yaml",
-            FormatParam{params_key.key(), Style::bold},
+            "{}: Animation '{}' not found in animation parameters file.",
+            FormatParam{project_root_ / params_key.key(), Style::bold},
             FormatParam{anim_name, Style::bold}}};
     }
 

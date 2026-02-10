@@ -7,6 +7,7 @@
 #include "gsl/pointers"
 
 #include "porytiles2/domain/models/animation_params.hpp"
+#include "porytiles2/utilities/dynamic_cased_name.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 
@@ -54,7 +55,7 @@ class AnimYamlParser {
      * @param yaml_path Path to the anim.yaml file
      * @return Map of animation name to AnimationParams, or error if parsing fails
      */
-    [[nodiscard]] ChainableResult<std::map<std::string, AnimationParams>>
+    [[nodiscard]] ChainableResult<std::map<DynamicCasedName, AnimationParams>>
     parse(const std::filesystem::path &yaml_path) const;
 
     /**
@@ -69,7 +70,7 @@ class AnimYamlParser {
      * @return Success or error if writing fails
      */
     [[nodiscard]] ChainableResult<void>
-    write(const std::filesystem::path &yaml_path, const std::map<std::string, AnimationParams> &params) const;
+    write(const std::filesystem::path &yaml_path, const std::map<DynamicCasedName, AnimationParams> &params) const;
 
   private:
     const TextFormatter *format_;

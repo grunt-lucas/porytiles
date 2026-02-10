@@ -17,6 +17,7 @@
 #include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
+#include "porytiles2/utilities/dynamic_cased_name.hpp"
 #include "porytiles2/utilities/filesystem_utils.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -717,9 +718,9 @@ ProjectTilesetArtifactWriter::write_porymap_anim_params(const ArtifactKey &dest_
         return {};
     }
 
-    std::map<std::string, AnimationParams> anim_params;
+    std::map<DynamicCasedName, AnimationParams> anim_params;
     for (const auto &[anim_name, anim] : porymap_anims) {
-        anim_params[anim_name] = anim.params();
+        anim_params[DynamicCasedName{anim_name}] = anim.params();
     }
 
     // Determine primary/secondary from metadata
@@ -954,9 +955,9 @@ ProjectTilesetArtifactWriter::write_porytiles_anim_params(const ArtifactKey &des
     }
 
     // Extract params from animations
-    std::map<std::string, AnimationParams> anim_params;
+    std::map<DynamicCasedName, AnimationParams> anim_params;
     for (const auto &[anim_name, anim] : porytiles_anims) {
-        anim_params[anim_name] = anim.params();
+        anim_params[DynamicCasedName{anim_name}] = anim.params();
     }
 
     PT_TRY_ASSIGN_CHAIN_ERR(

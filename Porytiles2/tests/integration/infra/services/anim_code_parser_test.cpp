@@ -34,11 +34,11 @@ TEST_F(AnimCodeParserTest, DiscoversAnimsInPokeemeraldGeneralGeneratedHeader)
     EXPECT_EQ(anims.size(), 5u)
         << "Should discover 5 animations (flower, land_water_edge, sand_water_edge, water, waterfall)";
 
-    EXPECT_TRUE(anims.contains("flower"));
-    EXPECT_TRUE(anims.contains("land_water_edge"));
-    EXPECT_TRUE(anims.contains("sand_water_edge"));
-    EXPECT_TRUE(anims.contains("water"));
-    EXPECT_TRUE(anims.contains("waterfall"));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"flower"}));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"land_water_edge"}));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"sand_water_edge"}));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"water"}));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"waterfall"}));
 }
 
 TEST_F(AnimCodeParserTest, ExtractsAnimParamsFromPokeemeraldGeneralGeneratedHeader)
@@ -55,8 +55,8 @@ TEST_F(AnimCodeParserTest, ExtractsAnimParamsFromPokeemeraldGeneralGeneratedHead
     const auto &anims = result.value();
 
     // Find flower animation
-    ASSERT_TRUE(anims.contains("flower")) << "Should contain 'flower' animation";
-    const auto &flower = anims.at("flower");
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"flower"})) << "Should contain 'flower' animation";
+    const auto &flower = anims.at(DynamicCasedName{"flower"});
     EXPECT_EQ(flower.cased_name().canonical(), "flower");
     EXPECT_EQ(flower.tile_offset(), 508u);
     EXPECT_EQ(flower.tile_count(), 4u);
@@ -70,8 +70,8 @@ TEST_F(AnimCodeParserTest, ExtractsAnimParamsFromPokeemeraldGeneralGeneratedHead
     EXPECT_EQ(flower_frames[3], DynamicCasedName{"2"});
 
     // Find land_water_edge animation
-    ASSERT_TRUE(anims.contains("land_water_edge")) << "Should contain 'land_water_edge' animation";
-    const auto &land_water_edge = anims.at("land_water_edge");
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"land_water_edge"})) << "Should contain 'land_water_edge' animation";
+    const auto &land_water_edge = anims.at(DynamicCasedName{"land_water_edge"});
     EXPECT_EQ(land_water_edge.tile_offset(), 480u);
     EXPECT_EQ(land_water_edge.tile_count(), 10u);
     EXPECT_EQ(land_water_edge.frame_factor(), 16u);
@@ -83,8 +83,8 @@ TEST_F(AnimCodeParserTest, ExtractsAnimParamsFromPokeemeraldGeneralGeneratedHead
     }
 
     // Find sand_water_edge animation
-    ASSERT_TRUE(anims.contains("sand_water_edge")) << "Should contain 'sand_water_edge' animation";
-    const auto &sand_water_edge = anims.at("sand_water_edge");
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"sand_water_edge"})) << "Should contain 'sand_water_edge' animation";
+    const auto &sand_water_edge = anims.at(DynamicCasedName{"sand_water_edge"});
     EXPECT_EQ(sand_water_edge.tile_offset(), 464u);
     EXPECT_EQ(sand_water_edge.tile_count(), 10u);
     EXPECT_EQ(sand_water_edge.frame_factor(), 16u);
@@ -101,8 +101,8 @@ TEST_F(AnimCodeParserTest, ExtractsAnimParamsFromPokeemeraldGeneralGeneratedHead
     EXPECT_EQ(sand_water_edge_frames[7], DynamicCasedName{"0"});
 
     // Find water animation
-    ASSERT_TRUE(anims.contains("water")) << "Should contain 'water' animation";
-    const auto &water = anims.at("water");
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"water"})) << "Should contain 'water' animation";
+    const auto &water = anims.at(DynamicCasedName{"water"});
     EXPECT_EQ(water.tile_offset(), 432u);
     EXPECT_EQ(water.tile_count(), 30u);
     EXPECT_EQ(water.frame_factor(), 16u);
@@ -114,8 +114,8 @@ TEST_F(AnimCodeParserTest, ExtractsAnimParamsFromPokeemeraldGeneralGeneratedHead
     }
 
     // Find waterfall animation
-    ASSERT_TRUE(anims.contains("waterfall")) << "Should contain 'waterfall' animation";
-    const auto &waterfall = anims.at("waterfall");
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"waterfall"})) << "Should contain 'waterfall' animation";
+    const auto &waterfall = anims.at(DynamicCasedName{"waterfall"});
     EXPECT_EQ(waterfall.tile_offset(), 496u);
     EXPECT_EQ(waterfall.tile_count(), 6u);
     EXPECT_EQ(waterfall.frame_factor(), 16u);
@@ -141,8 +141,8 @@ TEST_F(AnimCodeParserTest, DiscoversAnimsInCustom1GeneratedHeader)
     // Should discover all 2 animations
     EXPECT_EQ(anims.size(), 2u) << "Should discover 2 animations (flower, tv_turned_on)";
 
-    EXPECT_TRUE(anims.contains("flower"));
-    EXPECT_TRUE(anims.contains("tv_turned_on"));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"flower"}));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"tv_turned_on"}));
 }
 
 TEST_F(AnimCodeParserTest, ExtractsAnimParamsFromCustom1GeneratedHeader)
@@ -156,8 +156,8 @@ TEST_F(AnimCodeParserTest, ExtractsAnimParamsFromCustom1GeneratedHeader)
     const auto &anims = result.value();
 
     // Find flower animation
-    ASSERT_TRUE(anims.contains("flower")) << "Should contain 'flower' animation";
-    const auto &flower = anims.at("flower");
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"flower"})) << "Should contain 'flower' animation";
+    const auto &flower = anims.at(DynamicCasedName{"flower"});
     EXPECT_EQ(flower.cased_name().canonical(), "flower");
     EXPECT_EQ(flower.tile_offset(), 22);
     EXPECT_EQ(flower.tile_count(), 4u);
@@ -171,8 +171,8 @@ TEST_F(AnimCodeParserTest, ExtractsAnimParamsFromCustom1GeneratedHeader)
     EXPECT_EQ(flower_frames[3], DynamicCasedName{"BazBat"});
 
     // Find tv_turned_on animation
-    ASSERT_TRUE(anims.contains("tv_turned_on")) << "Should contain 'flower' animation";
-    const auto &tv_turned_on = anims.at("tv_turned_on");
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"tv_turned_on"})) << "Should contain 'flower' animation";
+    const auto &tv_turned_on = anims.at(DynamicCasedName{"tv_turned_on"});
     EXPECT_EQ(tv_turned_on.cased_name().canonical(), "tvturnedon");
     EXPECT_EQ(tv_turned_on.tile_offset(), 351);
     EXPECT_EQ(tv_turned_on.tile_count(), 8u);
@@ -207,11 +207,11 @@ TEST_F(AnimCodeParserTest, DiscoversAnimsInPokeemeraldTilesetAnimsC)
     EXPECT_EQ(anims.size(), 5u)
         << "Should discover 5 animations (flower, land_water_edge, sand_water_edge, water, waterfall)";
 
-    EXPECT_TRUE(anims.contains("flower"));
-    EXPECT_TRUE(anims.contains("land_water_edge"));
-    EXPECT_TRUE(anims.contains("sand_water_edge"));
-    EXPECT_TRUE(anims.contains("water"));
-    EXPECT_TRUE(anims.contains("waterfall"));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"flower"}));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"land_water_edge"}));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"sand_water_edge"}));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"water"}));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"waterfall"}));
 }
 
 TEST_F(AnimCodeParserTest, ExtractsAnimParamsInPokeemeraldTilesetAnimsC)
@@ -226,8 +226,8 @@ TEST_F(AnimCodeParserTest, ExtractsAnimParamsInPokeemeraldTilesetAnimsC)
     const auto &anims = result.value();
 
     // Find flower animation
-    ASSERT_TRUE(anims.contains("flower")) << "Should contain 'flower' animation";
-    const auto &flower = anims.at("flower");
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"flower"})) << "Should contain 'flower' animation";
+    const auto &flower = anims.at(DynamicCasedName{"flower"});
     EXPECT_EQ(flower.tile_offset(), 508u);
     EXPECT_EQ(flower.tile_count(), 4u);
     EXPECT_EQ(flower.frame_factor(), 16u);
@@ -240,8 +240,8 @@ TEST_F(AnimCodeParserTest, ExtractsAnimParamsInPokeemeraldTilesetAnimsC)
     EXPECT_EQ(flower_frames[3], DynamicCasedName{"2"});
 
     // Find land_water_edge animation
-    ASSERT_TRUE(anims.contains("land_water_edge")) << "Should contain 'land_water_edge' animation";
-    const auto &land_water_edge = anims.at("land_water_edge");
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"land_water_edge"})) << "Should contain 'land_water_edge' animation";
+    const auto &land_water_edge = anims.at(DynamicCasedName{"land_water_edge"});
     EXPECT_EQ(land_water_edge.tile_offset(), 480u);
     EXPECT_EQ(land_water_edge.tile_count(), 10u);
     EXPECT_EQ(land_water_edge.frame_factor(), 16u);
@@ -253,8 +253,8 @@ TEST_F(AnimCodeParserTest, ExtractsAnimParamsInPokeemeraldTilesetAnimsC)
     }
 
     // Find sand_water_edge animation
-    ASSERT_TRUE(anims.contains("sand_water_edge")) << "Should contain 'sand_water_edge' animation";
-    const auto &sand_water_edge = anims.at("sand_water_edge");
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"sand_water_edge"})) << "Should contain 'sand_water_edge' animation";
+    const auto &sand_water_edge = anims.at(DynamicCasedName{"sand_water_edge"});
     EXPECT_EQ(sand_water_edge.tile_offset(), 464u);
     EXPECT_EQ(sand_water_edge.tile_count(), 10u);
     EXPECT_EQ(sand_water_edge.frame_factor(), 16u);
@@ -271,8 +271,8 @@ TEST_F(AnimCodeParserTest, ExtractsAnimParamsInPokeemeraldTilesetAnimsC)
     EXPECT_EQ(sand_water_edge_frames[7], DynamicCasedName{"0"});
 
     // Find water animation
-    ASSERT_TRUE(anims.contains("water")) << "Should contain 'water' animation";
-    const auto &water = anims.at("water");
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"water"})) << "Should contain 'water' animation";
+    const auto &water = anims.at(DynamicCasedName{"water"});
     EXPECT_EQ(water.tile_offset(), 432u);
     EXPECT_EQ(water.tile_count(), 30u);
     EXPECT_EQ(water.frame_factor(), 16u);
@@ -284,8 +284,8 @@ TEST_F(AnimCodeParserTest, ExtractsAnimParamsInPokeemeraldTilesetAnimsC)
     }
 
     // Find waterfall animation
-    ASSERT_TRUE(anims.contains("waterfall")) << "Should contain 'waterfall' animation";
-    const auto &waterfall = anims.at("waterfall");
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"waterfall"})) << "Should contain 'waterfall' animation";
+    const auto &waterfall = anims.at(DynamicCasedName{"waterfall"});
     EXPECT_EQ(waterfall.tile_offset(), 496u);
     EXPECT_EQ(waterfall.tile_count(), 6u);
     EXPECT_EQ(waterfall.frame_factor(), 16u);
@@ -322,9 +322,9 @@ TEST_F(AnimCodeParserTest, DiscoversAnimsInPokefireredTilesetAnimsC)
 
     EXPECT_EQ(anims.size(), 3u)
         << "Should discover 3 animations (sand_waters_edge, water_current_landwatersedge, flower)";
-    EXPECT_TRUE(anims.contains("flower"));
-    EXPECT_TRUE(anims.contains("sand_waters_edge"));
-    EXPECT_TRUE(anims.contains("water_current_land_waters_edge"));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"flower"}));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"sand_waters_edge"}));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"water_current_land_waters_edge"}));
 }
 
 TEST_F(AnimCodeParserTest, ExtractsAnimParamsInPokefireredTilesetAnimsC)
@@ -339,8 +339,8 @@ TEST_F(AnimCodeParserTest, ExtractsAnimParamsInPokefireredTilesetAnimsC)
     const auto &anims = result.value();
 
     // Find flower animation
-    ASSERT_TRUE(anims.contains("flower")) << "Should contain 'flower' animation";
-    const auto &flower = anims.at("flower");
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"flower"})) << "Should contain 'flower' animation";
+    const auto &flower = anims.at(DynamicCasedName{"flower"});
     EXPECT_EQ(flower.tile_offset(), 508u);
     EXPECT_EQ(flower.tile_count(), 4u);
     EXPECT_EQ(flower.frame_factor(), 16u);
@@ -352,8 +352,8 @@ TEST_F(AnimCodeParserTest, ExtractsAnimParamsInPokefireredTilesetAnimsC)
     }
 
     // Find sand_waters_edge animation
-    ASSERT_TRUE(anims.contains("sand_waters_edge")) << "Should contain 'sand_waters_edge' animation";
-    const auto &sand_waters_edge = anims.at("sand_waters_edge");
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"sand_waters_edge"})) << "Should contain 'sand_waters_edge' animation";
+    const auto &sand_waters_edge = anims.at(DynamicCasedName{"sand_waters_edge"});
     EXPECT_EQ(sand_waters_edge.tile_offset(), 464u);
     EXPECT_EQ(sand_waters_edge.tile_count(), 18u);
     EXPECT_EQ(sand_waters_edge.frame_factor(), 8u);
@@ -365,9 +365,9 @@ TEST_F(AnimCodeParserTest, ExtractsAnimParamsInPokefireredTilesetAnimsC)
     }
 
     // Find water_current_land_waters_edge animation
-    ASSERT_TRUE(anims.contains("water_current_land_waters_edge"))
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"water_current_land_waters_edge"}))
         << "Should contain 'water_current_land_waters_edge' animation";
-    const auto &water_current_land_waters_edge = anims.at("water_current_land_waters_edge");
+    const auto &water_current_land_waters_edge = anims.at(DynamicCasedName{"water_current_land_waters_edge"});
     EXPECT_EQ(water_current_land_waters_edge.tile_offset(), 416u);
     EXPECT_EQ(water_current_land_waters_edge.tile_count(), 48u);
     EXPECT_EQ(water_current_land_waters_edge.frame_factor(), 16u);
@@ -391,8 +391,8 @@ TEST_F(AnimCodeParserTest, PreservesCasedNameForSimpleNames)
     const auto &anims = result.value();
 
     // Simple PascalCase names should losslessly round-trip via DynamicCasedName
-    ASSERT_TRUE(anims.contains("flower"));
-    EXPECT_EQ(anims.at("flower").cased_name().to_c_identifier(), "Flower");
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"flower"}));
+    EXPECT_EQ(anims.at(DynamicCasedName{"flower"}).cased_name().to_c_identifier(), "Flower");
 }
 
 TEST_F(AnimCodeParserTest, PreservesCasedNameForCompoundNames)
@@ -407,12 +407,13 @@ TEST_F(AnimCodeParserTest, PreservesCasedNameForCompoundNames)
     const auto &anims = result.value();
 
     // Compound PascalCase names must be preserved for frame variable lookup via to_c_identifier()
-    ASSERT_TRUE(anims.contains("sand_waters_edge"));
-    EXPECT_EQ(anims.at("sand_waters_edge").cased_name().to_c_identifier(), "SandWatersEdge");
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"sand_waters_edge"}));
+    EXPECT_EQ(anims.at(DynamicCasedName{"sand_waters_edge"}).cased_name().to_c_identifier(), "SandWatersEdge");
 
-    ASSERT_TRUE(anims.contains("water_current_land_waters_edge"));
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"water_current_land_waters_edge"}));
     EXPECT_EQ(
-        anims.at("water_current_land_waters_edge").cased_name().to_c_identifier(), "Water_Current_LandWatersEdge");
+        anims.at(DynamicCasedName{"water_current_land_waters_edge"}).cased_name().to_c_identifier(),
+        "Water_Current_LandWatersEdge");
 }
 
 TEST_F(AnimCodeParserTest, PreservesCasedNameForPorytilesManaged)
@@ -428,11 +429,11 @@ TEST_F(AnimCodeParserTest, PreservesCasedNameForPorytilesManaged)
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
 
-    ASSERT_TRUE(anims.contains("flower"));
-    EXPECT_EQ(anims.at("flower").cased_name().to_c_identifier(), "Flower");
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"flower"}));
+    EXPECT_EQ(anims.at(DynamicCasedName{"flower"}).cased_name().to_c_identifier(), "Flower");
 
-    ASSERT_TRUE(anims.contains("land_water_edge"));
-    EXPECT_EQ(anims.at("land_water_edge").cased_name().to_c_identifier(), "LandWaterEdge");
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"land_water_edge"}));
+    EXPECT_EQ(anims.at(DynamicCasedName{"land_water_edge"}).cased_name().to_c_identifier(), "LandWaterEdge");
 }
 
 } // namespace porytiles2

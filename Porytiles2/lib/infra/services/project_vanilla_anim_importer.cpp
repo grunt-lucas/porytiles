@@ -7,6 +7,7 @@
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/c_parser/c_parser_facade.hpp"
+#include "porytiles2/utilities/dynamic_cased_name.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
 
 namespace {
@@ -76,7 +77,7 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
         return ChainableResult<std::map<std::string, Animation<IndexPixel>>>{
             FormattableError{"Failed to parse animation params."}, anim_params_result};
     }
-    std::map<std::string, AnimationParams> anim_params_map = std::move(anim_params_result).value();
+    std::map<DynamicCasedName, AnimationParams> anim_params_map = std::move(anim_params_result).value();
 
     if (anim_params_map.empty()) {
         // No animations found in callback chain
@@ -116,7 +117,7 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
 
     // Step 4: For each animation, construct Animation<IndexPixel> with frame data
     for (const auto &[anim_name, params] : anim_params_map) {
-        Animation<IndexPixel> anim{anim_name};
+        Animation<IndexPixel> anim{anim_name.to_snake_case()};
         anim.params(params);
 
         // Use DynamicCasedName for lossless C identifier reconstruction
@@ -169,7 +170,7 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
             }
         }
 
-        result[anim_name] = std::move(anim);
+        result[anim_name.to_snake_case()] = std::move(anim);
     }
 
     return result;

@@ -287,7 +287,7 @@ struct DiscoveredAnimData {
 
 namespace porytiles2 {
 
-ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_from_callback(
+ChainableResult<std::map<DynamicCasedName, AnimationParams>> AnimCodeParser::parse_from_callback(
     const std::filesystem::path &c_file_path,
     const std::string &callback_func_name,
     const std::string &pascal_case_tileset,
@@ -297,7 +297,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
      * TODO: refactor pascal_case_tileset and callback_func_name params to be a DynamicCasedName.
      */
 
-    std::map<std::string, AnimationParams> result;
+    std::map<DynamicCasedName, AnimationParams> result;
     CParserFacade c_parser{c_file_path, format_};
 
     if (DynamicCasedName{pascal_case_tileset}.to_pascal_case() != pascal_case_tileset) {
@@ -307,7 +307,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
     // Step 1: Parse the callback function to find the driver function
     auto callback_funcs_result = c_parser.parse_functions(callback_func_name);
     if (!callback_funcs_result.has_value()) {
-        return ChainableResult<std::map<std::string, AnimationParams>>{
+        return ChainableResult<std::map<DynamicCasedName, AnimationParams>>{
             FormattableError{format_->format(
                 "'{}': Failed to parse callback function.", FormatParam{c_file_path.string(), Style::bold})},
             callback_funcs_result};
@@ -316,7 +316,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
     const auto &callback_funcs = callback_funcs_result.value();
     if (callback_funcs.empty()) {
         // No callback function found - this tileset may not have animations
-        return std::map<std::string, AnimationParams>{};
+        return std::map<DynamicCasedName, AnimationParams>{};
     }
 
     if (callback_funcs.size() > 1) {
@@ -334,13 +334,13 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
             anim_parsing_error,
             "Could not find driver function assignment in '{}'.",
             FormatParam{callback_func_name, Style::bold});
-        return std::map<std::string, AnimationParams>{};
+        return std::map<DynamicCasedName, AnimationParams>{};
     }
 
     // Step 2: Parse the driver function to find timer conditions and queue function calls
     auto driver_funcs_result = c_parser.parse_functions(driver_func_name);
     if (!driver_funcs_result.has_value()) {
-        return ChainableResult<std::map<std::string, AnimationParams>>{
+        return ChainableResult<std::map<DynamicCasedName, AnimationParams>>{
             FormattableError{format_->format(
                 "'{}': Failed to parse driver function '{}'.",
                 FormatParam{c_file_path.string(), Style::bold},
@@ -352,7 +352,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
     if (driver_funcs.empty()) {
         diag_->warning(
             anim_parsing_error, "Driver function '{}' not found in file.", FormatParam{driver_func_name, Style::bold});
-        return std::map<std::string, AnimationParams>{};
+        return std::map<DynamicCasedName, AnimationParams>{};
     }
 
     const auto &driver_func = driver_funcs.front();
@@ -363,13 +363,13 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
             anim_parsing_error,
             "No timer conditions found in driver function '{}'.",
             FormatParam{driver_func_name, Style::bold});
-        return std::map<std::string, AnimationParams>{};
+        return std::map<DynamicCasedName, AnimationParams>{};
     }
 
     // Step 3: Parse all functions in the file to find the queue functions
     auto all_funcs_result = c_parser.parse_functions();
     if (!all_funcs_result.has_value()) {
-        return ChainableResult<std::map<std::string, AnimationParams>>{
+        return ChainableResult<std::map<DynamicCasedName, AnimationParams>>{
             FormattableError{
                 format_->format("'{}': Failed to parse functions.", FormatParam{c_file_path.string(), Style::bold})},
             all_funcs_result};
@@ -473,7 +473,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
 
     auto anim_frame_arrays_result = c_parser.parse_pointer_arrays(frame_array_prefix);
     if (!anim_frame_arrays_result.has_value()) {
-        return ChainableResult<std::map<std::string, AnimationParams>>{
+        return ChainableResult<std::map<DynamicCasedName, AnimationParams>>{
             FormattableError{format_->format(
                 "{}: failed to parse animation frame arrays", FormatParam{c_file_path.string(), Style::bold})},
             anim_frame_arrays_result};
@@ -541,8 +541,7 @@ ChainableResult<std::map<std::string, AnimationParams>> AnimCodeParser::parse_fr
 
         params.cased_name(cased_name);
 
-        // Use DynamicCasedName for the snake_case map key
-        result[cased_name.to_snake_case()] = std::move(params);
+        result[cased_name] = std::move(params);
     }
 
     return result;
