@@ -4,6 +4,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <ostream>
 #include <unordered_map>
 #include <vector>
 
@@ -494,6 +495,20 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      */
     [[nodiscard]] std::vector<ProvenanceChainLink<bool>>
     tileset_animations_wire_anim_code_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Dumps the full provenance chain for all config values to an output stream.
+     *
+     * @details
+     * Queries every provider for every config value and prints what each provider would return. This is useful for
+     * debugging configuration issues, e.g. understanding why a particular value was chosen or which provider is
+     * supplying it.
+     *
+     * @param out The output stream to write the dump to
+     * @param type The config scope type
+     * @param scope The scope identifier (e.g. tileset name)
+     */
+    void dump_config(std::ostream &out, ConfigScopeType type, const std::string &scope) const;
 
   private:
     std::unique_ptr<TextFormatter> owned_format_; // Optional owned formatter (when using default ctor)

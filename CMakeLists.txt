@@ -25,6 +25,13 @@ set(CMAKE_CXX_EXTENSIONS OFF)
 set(CMAKE_VERBOSE_MAKEFILE ON)
 set(FETCHCONTENT_QUIET OFF)
 
+# Use libc++ when compiling with Clang. On macOS this is already the default,
+# but on Linux (e.g. WSL) Clang defaults to libstdc++ which may lack C++23 headers.
+if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
+    add_compile_options(-stdlib=libc++)
+    add_link_options(-stdlib=libc++)
+endif ()
+
 # Enable compilation warnings
 if (MSVC)
     add_compile_options(/W4 /WX)

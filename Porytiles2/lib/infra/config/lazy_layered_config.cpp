@@ -3,13 +3,16 @@
 #include <any>
 #include <format>
 #include <functional>
+#include <ostream>
 #include <ranges>
 #include <stdexcept>
 #include <string>
 
+#include "porytiles2/domain/algorithms/diagnostic_stencils.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/source_locations.hpp"
+#include "porytiles2/xcut/config/config_scope_type.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
 
 namespace porytiles2 {
@@ -20,6 +23,135 @@ namespace porytiles2 {
  *
  *   uv run Scripts/generate_config.py
  */
+
+namespace {
+
+template <typename T>
+void dump_single_config_value(
+    std::ostream &out,
+    const TextFormatter &format,
+    const std::string &canonical_name,
+    const std::vector<ProvenanceChainLink<T>> &chain)
+{
+    // Section header: bold config name with faint separator
+    out << format.style(canonical_name, Style::bold) << "\n";
+    out << format.style(std::string(canonical_name.size(), '-'), Style::faint) << "\n";
+
+    // Find the winning link (first valid or invalid) for resolved value display
+    const ProvenanceChainLink<T> *winning_link = nullptr;
+    for (const auto &link : chain) {
+        if (link.layer_value.state == ValidationState::valid || link.layer_value.state == ValidationState::invalid) {
+            winning_link = &link;
+            break;
+        }
+    }
+
+    // Display resolved value using format_config_note, or an error/missing message
+    if (winning_link != nullptr && winning_link->layer_value.state == ValidationState::valid) {
+        ConfigValue<T> config_value{
+            winning_link->layer_value.value.value(),
+            canonical_name,
+            winning_link->layer_value.source_key,
+            winning_link->layer_value.source_info,
+            winning_link->layer_value.source_details};
+        auto note_lines = format_config_note(format, config_value);
+        for (const auto &line : note_lines) {
+            out << "  " << line << "\n";
+        }
+    }
+    else if (winning_link != nullptr && winning_link->layer_value.state == ValidationState::invalid) {
+        out << "  " << format.style("INVALID: " + winning_link->layer_value.error_message, Style::red) << "\n";
+    }
+    else {
+        out << "  " << format.style("(no value found)", Style::faint) << "\n";
+    }
+
+    // Provider chain
+    out << "\n  " << format.style("Provider Chain:", Style::faint) << "\n";
+    for (const auto &link : chain) {
+        switch (link.layer_value.state) {
+        case ValidationState::valid:
+            if (&link == winning_link) {
+                out << "    " << format.style("✓", Style::green) << " " << link.provider_name;
+                out << " = " << format.style(std::format("{}", link.layer_value.value.value()), Style::green);
+            }
+            else {
+                out << "    " << format.style("○", Style::faint) << " "
+                    << format.style(
+                           link.provider_name + " = " + std::format("{}", link.layer_value.value.value()),
+                           Style::faint);
+            }
+            break;
+        case ValidationState::invalid:
+            out << "    " << format.style("✗", Style::red) << " " << link.provider_name;
+            out << " " << format.style("INVALID", Style::red);
+            break;
+        case ValidationState::not_provided:
+            out << "    " << format.style("○", Style::faint) << " "
+                << format.style(link.provider_name + " (not provided)", Style::faint);
+            break;
+        }
+        out << "\n";
+    }
+    out << "\n";
+}
+
+} // anonymous namespace
+
+void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, const std::string &scope) const
+{
+    const std::string header_str = "Configuration dump for {} '{}'";
+    auto type_str = to_string(type);
+    std::string header = std::vformat(header_str, std::make_format_args(type_str, scope));
+    out << format_->format(
+               header_str, FormatParam{to_string(type), Style::bold}, FormatParam{scope, Style::bold | Style::cyan})
+        << "\n";
+    out << format_->style(std::string(header.size(), '='), Style::faint) << "\n\n";
+    dump_single_config_value(
+        out, *format_, "Number Of Tiles In Primary", num_tiles_in_primary_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Number Of Tiles Total", num_tiles_total_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Number Of Metatiles In Primary", num_metatiles_in_primary_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Number Of Metatiles Total", num_metatiles_total_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Number Of Palettes In Primary", num_pals_in_primary_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Number Of Palettes Total", num_pals_total_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Max Map Data Size", max_map_data_size_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Number Of Tiles Per Metatile", num_tiles_per_metatile_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Extrinsic Transparency", extrinsic_transparency_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Tiles Edit Mode", tiles_edit_mode_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Palettes Edit Mode", pals_edit_mode_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Palette Hints Enabled", pal_hints_enabled_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Palette Hints", pal_hints_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Tiles Palette Mode", tiles_pal_mode_provenance_chain(type, scope));
+    dump_single_config_value(
+        out,
+        *format_,
+        "Animation Palette Resolution Strategy",
+        anim_pal_resolution_strategy_provenance_chain(type, scope));
+    dump_single_config_value(
+        out,
+        *format_,
+        "Animation Key Frame Resolution Strategy",
+        anim_key_frame_resolution_strategy_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Verify Checksums", verify_checksums_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Tileset Paths Primary Source", tileset_paths_primary_src_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Tileset Paths Primary Bin", tileset_paths_primary_bin_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Tileset Paths Secondary Source", tileset_paths_secondary_src_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Tileset Paths Secondary Bin", tileset_paths_secondary_bin_provenance_chain(type, scope));
+    dump_single_config_value(
+        out,
+        *format_,
+        "Tileset Animations Wire Anim Code",
+        tileset_animations_wire_anim_code_provenance_chain(type, scope));
+}
 
 template <typename T>
 ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(

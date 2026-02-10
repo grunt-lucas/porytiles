@@ -224,20 +224,6 @@ JSON example:
 }
 ```
 
-## Implement `dump-tileset-config` command
-Dump the full source chain of a tileset config value to the console.
-
-This command will be really useful for debugging purposes,
-allowing users to inspect the full source chain of a config value.
-
-### CLI Invocation
-```sh
-porytiles2 dump-tileset-config MyPrimaryTileset num_tiles_in_primary
-```
-
-### Outputs
-The full source chain of the supplied config value.
-
 ## Implement `find-tileset-color` command
 Given a color, print all locations of that color in a tileset.
 

@@ -9,6 +9,7 @@
 #include "command_completion.hpp"
 #include "command_create_tileset.hpp"
 #include "command_decompile_tileset.hpp"
+#include "command_dump_tileset_config.hpp"
 #include "command_import_tileset.hpp"
 #include "command_list_tilesets.hpp"
 #include "custom_formatter.hpp"
@@ -71,6 +72,7 @@ https://github.com/huderlem/porymap)");
     ImportTilesetCommand import_tileset{porytiles_app};
     CompileTilesetCommand compile_tileset{porytiles_app};
     DecompileTilesetCommand decompile_tileset{porytiles_app};
+    DumpTilesetConfigCommand dump_tileset_config{porytiles_app};
     CompletionCommand completion{porytiles_app};
     ListTilesetsCommand list_tilesets{porytiles_app};
 

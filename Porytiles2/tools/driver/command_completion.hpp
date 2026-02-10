@@ -104,8 +104,8 @@ class CompletionCommand final : public Command {
         std::cout << "    subcommand=\"\"\n";
         std::cout << "    for ((i=1; i < COMP_CWORD; i++)); do\n";
         std::cout << "        case \"${COMP_WORDS[i]}\" in\n";
-        std::cout << "            "
-                     "compile-tileset|create-tileset|decompile-tileset|import-tileset|list-tilesets|completion)\n";
+        std::cout << "            compile-tileset|create-tileset|decompile-tileset|dump-tileset-config|"
+                     "import-tileset|list-tilesets|completion)\n";
         std::cout << "                subcommand=\"${COMP_WORDS[i]}\"\n";
         std::cout << "                break\n";
         std::cout << "                ;;\n";
@@ -114,8 +114,8 @@ class CompletionCommand final : public Command {
         std::cout << "\n";
 
         std::cout << "    # Main commands\n";
-        std::cout << "    local commands=\"compile-tileset create-tileset decompile-tileset import-tileset "
-                     "list-tilesets completion\"\n";
+        std::cout << "    local commands=\"compile-tileset create-tileset decompile-tileset dump-tileset-config "
+                     "import-tileset list-tilesets completion\"\n";
         std::cout << "\n";
         std::cout << "    # Config options\n";
         std::cout << "    local config_opts=\"";
@@ -185,6 +185,10 @@ class CompletionCommand final : public Command {
         std::cout << "        compile-tileset|decompile-tileset)\n";
         std::cout << "            # Only managed tilesets\n";
         std::cout << "            COMPREPLY=( $(_porytiles2_complete_tilesets managed) )\n";
+        std::cout << "            ;;\n";
+        std::cout << "        dump-tileset-config)\n";
+        std::cout << "            # All tilesets (config can be dumped for any)\n";
+        std::cout << "            COMPREPLY=( $(_porytiles2_complete_tilesets all) )\n";
         std::cout << "            ;;\n";
         std::cout << "        import-tileset)\n";
         std::cout << "            # Only unmanaged tilesets\n";
@@ -256,6 +260,7 @@ class CompletionCommand final : public Command {
         std::cout << "        'compile-tileset:Compile a tileset'\n";
         std::cout << "        'create-tileset:Create a new tileset'\n";
         std::cout << "        'decompile-tileset:Decompile a tileset'\n";
+        std::cout << "        'dump-tileset-config:Dump the full configuration provenance chain for a tileset'\n";
         std::cout << "        'import-tileset:Import a pre-existing tileset'\n";
         std::cout << "        'list-tilesets:List tileset names in the project'\n";
         std::cout << "        'completion:Generate shell completion scripts'\n";
@@ -305,6 +310,12 @@ class CompletionCommand final : public Command {
         std::cout << "                        '1:tileset:->tileset_managed'\n";
         std::cout
             << "                    [[ \"$state\" == tileset_managed ]] && _porytiles2_complete_tilesets managed\n";
+        std::cout << "                    ;;\n";
+        std::cout << "                dump-tileset-config)\n";
+        std::cout << "                    _arguments \\\n";
+        std::cout << "                        $config_opts \\\n";
+        std::cout << "                        '1:tileset:->tileset_all'\n";
+        std::cout << "                    [[ \"$state\" == tileset_all ]] && _porytiles2_complete_tilesets all\n";
         std::cout << "                    ;;\n";
         std::cout << "                import-tileset)\n";
         std::cout << "                    _arguments \\\n";
@@ -386,8 +397,8 @@ class CompletionCommand final : public Command {
         std::cout << "    set -l cmd (commandline -opc)\n";
         std::cout << "    for word in $cmd[2..-1]\n";
         std::cout << "        switch $word\n";
-        std::cout << "            case compile-tileset create-tileset decompile-tileset import-tileset list-tilesets "
-                     "completion\n";
+        std::cout << "            case compile-tileset create-tileset decompile-tileset dump-tileset-config "
+                     "import-tileset list-tilesets completion\n";
         std::cout << "                return 1\n";
         std::cout << "        end\n";
         std::cout << "    end\n";
@@ -414,6 +425,8 @@ class CompletionCommand final : public Command {
                      "tileset'\n";
         std::cout << "complete -c porytiles2 -f -n __porytiles2_needs_subcommand -a decompile-tileset -d 'Decompile a "
                      "tileset'\n";
+        std::cout << "complete -c porytiles2 -f -n __porytiles2_needs_subcommand -a dump-tileset-config -d 'Dump the "
+                     "full configuration provenance chain for a tileset'\n";
         std::cout << "complete -c porytiles2 -f -n __porytiles2_needs_subcommand -a import-tileset -d 'Import a "
                      "pre-existing tileset'\n";
         std::cout << "complete -c porytiles2 -f -n __porytiles2_needs_subcommand -a list-tilesets -d 'List tileset "
@@ -434,6 +447,8 @@ class CompletionCommand final : public Command {
                      "'(__porytiles2_complete_tilesets managed)'\n";
         std::cout << "complete -c porytiles2 -f -n '__porytiles2_using_subcommand decompile-tileset' -a "
                      "'(__porytiles2_complete_tilesets managed)'\n";
+        std::cout << "complete -c porytiles2 -f -n '__porytiles2_using_subcommand dump-tileset-config' -a "
+                     "'(__porytiles2_complete_tilesets all)'\n";
         std::cout << "complete -c porytiles2 -f -n '__porytiles2_using_subcommand import-tileset' -a "
                      "'(__porytiles2_complete_tilesets unmanaged)'\n";
         std::cout << "\n";
