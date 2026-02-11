@@ -169,7 +169,7 @@ read_file_lines(const std::filesystem::path &path, const UserDiagnostics *diag)
     std::ifstream in{path};
     if (!in.is_open()) {
         return FormattableError{
-            diag->formatter().format("{}: failed to open for reading", FormatParam{path.string(), Style::bold})};
+            diag->formatter().format("{}: Failed to open for reading.", FormatParam{path.string(), Style::bold})};
     }
 
     std::vector<std::string> lines;
@@ -189,7 +189,7 @@ write_file_lines(const std::filesystem::path &path, const std::vector<std::strin
     std::ofstream out{path};
     if (!out.is_open()) {
         return FormattableError{
-            diag->formatter().format("{}: failed to open for writing", FormatParam{path.string(), Style::bold})};
+            diag->formatter().format("{}: Failed to open for writing.", FormatParam{path.string(), Style::bold})};
     }
 
     for (const auto &line : lines) {
@@ -199,7 +199,7 @@ write_file_lines(const std::filesystem::path &path, const std::vector<std::strin
 
     if (out.fail()) {
         return FormattableError{
-            diag->formatter().format("{}: failed to write file", FormatParam{path.string(), Style::bold})};
+            diag->formatter().format("{}: Failed to write file.", FormatParam{path.string(), Style::bold})};
     }
 
     return {};
@@ -224,7 +224,7 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
     constexpr std::string_view tileset_prefix = "gTileset_";
     if (!tileset_name.starts_with(tileset_prefix)) {
         return FormattableError{diagnostics_->formatter().format(
-            "tileset name '{}' does not start with 'gTileset_'", FormatParam{tileset_name, Style::bold})};
+            "Tileset name '{}' does not start with 'gTileset_'.", FormatParam{tileset_name, Style::bold})};
     }
 
     // Step 2: Extract shorthand and convert to snake_case for directory name
@@ -260,7 +260,7 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
     if (include_exists && declaration_exists) {
         diagnostics_->remark(
             "wire-tileset-animation",
-            "anim include and declaration for '{}' already exist, skipping wire operation",
+            "Animation include and declaration for '{}' already exist, skipping wire operation.",
             FormatParam{tileset_name, Style::bold});
         return {};
     }
@@ -281,7 +281,7 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
         const auto endif_index = find_endif_guard(h_lines);
         if (!endif_index.has_value()) {
             return FormattableError{diagnostics_->formatter().format(
-                "failed to find #endif guard in tileset_anims.h for tileset '{}'",
+                "Failed to find #endif guard in tileset_anims.h for tileset '{}'.",
                 FormatParam{tileset_name, Style::bold})};
         }
 
@@ -327,7 +327,7 @@ ProjectTilesetAnimsModifier::remove_include_for_tileset(const std::string &tiles
     constexpr std::string_view tileset_prefix = "gTileset_";
     if (!tileset_name.starts_with(tileset_prefix)) {
         return FormattableError{diagnostics_->formatter().format(
-            "tileset name '{}' does not start with 'gTileset_'", FormatParam{tileset_name, Style::bold})};
+            "Tileset name '{}' does not start with 'gTileset_'.", FormatParam{tileset_name, Style::bold})};
     }
 
     // Step 2: Extract shorthand and convert to snake_case for directory name
@@ -363,7 +363,7 @@ ProjectTilesetAnimsModifier::remove_include_for_tileset(const std::string &tiles
     if (!include_index.has_value() && !decl_index.has_value()) {
         diagnostics_->remark(
             "wire-tileset-animation",
-            "anim include and declaration for '{}' not found, skipping remove operation",
+            "Animation include and declaration for '{}' not found, skipping remove operation.",
             FormatParam{tileset_name, Style::bold});
         return {};
     }
