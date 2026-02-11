@@ -80,17 +80,15 @@ ProjectPrimaryTilesetImporter::import_porymap_component_from_vanilla(const std::
     ProjectVanillaAnimImporter anim_importer{project_root_, format_, diag_};
 
     auto anims_result = anim_importer.import_animations(tileset_name);
-    if (anims_result.has_value()) {
-        for (auto &anim : anims_result.value() | std::views::values) {
-            porymap_component->add_anim(std::move(anim));
-        }
+    if (!anims_result.has_value()) {
+        return ChainableResult<std::unique_ptr<PorymapTilesetComponent>>{
+            FormattableError{"Failed to import animations for '{}'.", FormatParam{tileset_name, Style::bold}},
+            anims_result};
     }
-    else {
-        diag_->warning(
-            "vanilla-anim-import",
-            "Failed to import animations for '{}'. Animation data will be skipped.",
-            FormatParam{tileset_name, Style::bold});
+    for (auto &anim : anims_result.value() | std::views::values) {
+        porymap_component->add_anim(std::move(anim));
     }
+
     // Note: The returned animations will have frames populated but NO key frames.
     // Key frame extraction is done later by AnimDecompiler in the domain layer.
 

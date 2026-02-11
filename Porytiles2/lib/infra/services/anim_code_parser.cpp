@@ -416,9 +416,7 @@ struct ParsedFunctions {
  * @return ParsedFunctions with definitions and lookup map
  */
 [[nodiscard]] ChainableResult<ParsedFunctions> step_3_build_function_map(
-    CParserFacade &c_parser,
-    const std::filesystem::path &c_file_path,
-    const TextFormatter *format)
+    CParserFacade &c_parser, const std::filesystem::path &c_file_path, const TextFormatter *format)
 {
     auto all_funcs_result = c_parser.parse_functions();
     if (!all_funcs_result.has_value()) {
@@ -452,7 +450,7 @@ struct ParsedFunctions {
  * @param diag UserDiagnostics for warnings
  * @return Map of PascalCase animation name to discovered animation data
  */
-[[nodiscard]] std::map<std::string, DiscoveredAnimData> step_4_extract_animation_data(
+[[nodiscard]] ChainableResult<std::map<std::string, DiscoveredAnimData>> step_4_extract_animation_data(
     const std::vector<TimerCondition> &timer_conditions,
     const std::map<std::string, const FunctionDefinition *> &func_map,
     const std::string &pascal_case_tileset,
@@ -512,30 +510,31 @@ struct ParsedFunctions {
         // Extract tile_offset from second argument
         auto tile_offset = extract_tile_offset(call.argument_at(1));
         if (!tile_offset.has_value()) {
-            diag->warning(
-                anim_parsing_error,
-                "Could not extract TILE_OFFSET_4BPP from AppendTilesetAnimToBuffer call for '{}'.",
-                FormatParam{anim_name_pascal, Style::bold});
-            continue;
+            return ChainableResult<std::map<std::string, DiscoveredAnimData>>{
+                FormattableError{
+                    "Failed to extract TILE_OFFSET_4BPP value from AppendTilesetAnimToBuffer in '{}'.",
+                    FormatParam{condition.called_func, Style::bold}},
+                tile_offset};
         }
 
         // Extract tile_count from third argument
         auto tile_count = extract_tile_count(call.argument_at(2));
         if (!tile_count.has_value()) {
-            diag->warning(
-                anim_parsing_error,
-                "Could not extract TILE_SIZE_4BPP from AppendTilesetAnimToBuffer call for '{}'.",
-                FormatParam{anim_name_pascal, Style::bold});
-            continue;
+            return ChainableResult<std::map<std::string, DiscoveredAnimData>>{FormattableError{
+                "Failed to extract TILE_SIZE_4BPP value from AppendTilesetAnimToBuffer in '{}'.",
+                FormatParam{condition.called_func, Style::bold}}, tile_count};
         }
 
-        // Log warning for multiple AppendTilesetAnimToBuffer calls (VDests pattern)
+        // Handle one of the VDests patterns
         if (append_calls.size() > 1) {
-            diag->warning(
-                "vdests-pattern-detected",
-                "Queue function '{}' has multiple AppendTilesetAnimToBuffer calls (VDests pattern); "
-                "using first call only.",
-                FormatParam{condition.called_func, Style::bold});
+            // TODO: this doesn't handle the typical VDests case, which instead looks like:
+            /*
+             * AppendTilesetAnimToBuffer(gTilesetAnims_Rustboro_WindyWater[timer_div],
+             * gTilesetAnims_Rustboro_WindyWater_VDests[timer_mod], 4 * TILE_SIZE_4BPP);
+             */
+            return FormattableError{
+                "Queue function '{}' has multiple AppendTilesetAnimToBuffer calls (VDests pattern not yet supported).",
+                FormatParam{condition.called_func, Style::bold}};
         }
 
         // Store discovered animation data
@@ -575,7 +574,7 @@ struct ParsedFunctions {
     if (!anim_frame_arrays_result.has_value()) {
         return ChainableResult<std::vector<ArrayDeclaration>>{
             FormattableError{format->format(
-                "{}: failed to parse animation frame arrays", FormatParam{c_file_path.string(), Style::bold})},
+                "{}: Failed to parse animation frame arrays.", FormatParam{c_file_path.string(), Style::bold})},
             anim_frame_arrays_result};
     }
 
@@ -693,30 +692,38 @@ ChainableResult<std::map<DynamicCasedName, AnimationParams>> AnimCodeParser::par
     using ResultType = std::map<DynamicCasedName, AnimationParams>;
 
     // Step 1: Parse callback function -> find driver function name
-    PT_TRY_ASSIGN_PASS_ERR(driver_func_name,
-        step_1_find_driver_function(c_parser, callback_func_name, c_file_path, format_, diag_), ResultType);
+    PT_TRY_ASSIGN_PASS_ERR(
+        driver_func_name,
+        step_1_find_driver_function(c_parser, callback_func_name, c_file_path, format_, diag_),
+        ResultType);
     if (driver_func_name.empty()) {
         return ResultType{};
     }
 
     // Step 2: Parse driver function -> extract timer conditions
-    PT_TRY_ASSIGN_PASS_ERR(timer_conditions,
-        step_2_extract_timer_conditions(c_parser, driver_func_name, c_file_path, format_, diag_), ResultType);
+    PT_TRY_ASSIGN_PASS_ERR(
+        timer_conditions,
+        step_2_extract_timer_conditions(c_parser, driver_func_name, c_file_path, format_, diag_),
+        ResultType);
     if (timer_conditions.empty()) {
         return ResultType{};
     }
 
     // Step 3: Parse all functions -> build lookup map
-    PT_TRY_ASSIGN_PASS_ERR(parsed_funcs,
-        step_3_build_function_map(c_parser, c_file_path, format_), ResultType);
+    PT_TRY_ASSIGN_PASS_ERR(parsed_funcs, step_3_build_function_map(c_parser, c_file_path, format_), ResultType);
 
     // Step 4: Extract animation data from queue functions
-    auto discovered_anims = step_4_extract_animation_data(
-        timer_conditions, parsed_funcs.by_name, pascal_case_tileset, porytiles_managed, diag_);
+    PT_TRY_ASSIGN_PASS_ERR(
+        discovered_anims,
+        step_4_extract_animation_data(
+            timer_conditions, parsed_funcs.by_name, pascal_case_tileset, porytiles_managed, diag_),
+        ResultType);
 
     // Step 5: Parse frame pointer arrays
-    PT_TRY_ASSIGN_PASS_ERR(frame_arrays,
-        step_5_parse_frame_arrays(c_parser, pascal_case_tileset, porytiles_managed, c_file_path, format_), ResultType);
+    PT_TRY_ASSIGN_PASS_ERR(
+        frame_arrays,
+        step_5_parse_frame_arrays(c_parser, pascal_case_tileset, porytiles_managed, c_file_path, format_),
+        ResultType);
 
     // Step 6: Build final AnimationParams map
     return step_6_build_animation_params(discovered_anims, frame_arrays, pascal_case_tileset, porytiles_managed);

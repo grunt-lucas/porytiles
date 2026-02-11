@@ -244,7 +244,7 @@ ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKe
 
     if (!params_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"'{}': Failed to parse animation code.", FormatParam{params_key.key(), Style::bold}},
+            FormattableError{"{}: Failed to parse animation parameters.", FormatParam{params_path, Style::bold}},
             params_result};
     }
 

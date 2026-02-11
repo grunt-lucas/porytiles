@@ -37,6 +37,10 @@ namespace porytiles2 {
 ChainableResult<std::map<std::string, Animation<IndexPixel>>>
 ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) const
 {
+    /*
+     * TODO: refactor map key to be a DynamicCasedName.
+     */
+
     std::map<std::string, Animation<IndexPixel>> result;
 
     // Step 1: Get tileset metadata
@@ -67,7 +71,7 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
 
     if (!std::filesystem::exists(tileset_anims_path)) {
         return FormattableError{
-            "'{}': tileset_anims.c not found.", FormatParam{tileset_anims_path.string(), Style::bold}};
+            "'{}': Animation parameters file not found.", FormatParam{tileset_anims_path.string(), Style::bold}};
     }
 
     AnimCodeParser anim_parser{format_, diag_};
@@ -75,7 +79,11 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
         anim_parser.parse_from_callback(tileset_anims_path, callback_func, pascal_tileset, /*porytiles_managed=*/false);
     if (!anim_params_result.has_value()) {
         return ChainableResult<std::map<std::string, Animation<IndexPixel>>>{
-            FormattableError{"Failed to parse animation params."}, anim_params_result};
+            FormattableError{
+                "Failed to parse animation parameters for '{}' from '{}'.",
+                FormatParam{tileset_name, Style::bold},
+                FormatParam{tileset_anims_path, Style::bold}},
+            anim_params_result};
     }
     std::map<DynamicCasedName, AnimationParams> anim_params_map = std::move(anim_params_result).value();
 
