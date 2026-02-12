@@ -105,8 +105,8 @@ constexpr auto anim_parsing_error = "animation-parsing-error";
  * @param format Text formatter for error message styling
  * @return The tile offset value, or a descriptive error if the pattern was not found
  */
-[[nodiscard]] ChainableResult<std::size_t> extract_tile_offset(
-    const std::vector<Token> &tokens, const TextFormatter &format)
+[[nodiscard]] ChainableResult<std::size_t>
+extract_tile_offset(const std::vector<Token> &tokens, const TextFormatter &format)
 {
     for (std::size_t i = 0; i + 3 < tokens.size(); ++i) {
         if (tokens[i].is(TokenType::identifier) && tokens[i].text() == "TILE_OFFSET_4BPP" &&
@@ -125,7 +125,9 @@ constexpr auto anim_parsing_error = "animation-parsing-error";
     }
 
     return FormattableError{std::vector<std::string>{
-        format.format("Expected token pattern containing '{}'.", FormatParam{"TILE_OFFSET_4BPP(<tile_offset_integer>)", Style::bold}),
+        format.format(
+            "Expected token pattern containing '{}'.",
+            FormatParam{"TILE_OFFSET_4BPP(<tile_offset_integer>)", Style::bold}),
         format.format("Actual tokens: '{}'.", FormatParam{actual, Style::bold}),
     }};
 }
@@ -141,8 +143,8 @@ constexpr auto anim_parsing_error = "animation-parsing-error";
  * @param format Text formatter for error message styling
  * @return The tile count value, or a descriptive error if the pattern was not found
  */
-[[nodiscard]] ChainableResult<std::size_t> extract_tile_count(
-    const std::vector<Token> &tokens, const TextFormatter &format)
+[[nodiscard]] ChainableResult<std::size_t>
+extract_tile_count(const std::vector<Token> &tokens, const TextFormatter &format)
 {
     for (std::size_t i = 0; i + 2 < tokens.size(); ++i) {
         if (tokens[i].is(TokenType::integer_literal) && tokens[i + 1].is(TokenType::star) &&
@@ -160,7 +162,9 @@ constexpr auto anim_parsing_error = "animation-parsing-error";
     }
 
     return FormattableError{std::vector<std::string>{
-        format.format("Expected token pattern containing '{}'.", FormatParam{"<tile_count_integer> * TILE_SIZE_4BPP", Style::bold}),
+        format.format(
+            "Expected token pattern containing '{}'.",
+            FormatParam{"<tile_count_integer> * TILE_SIZE_4BPP", Style::bold}),
         format.format("Actual tokens: '{}'.", FormatParam{actual, Style::bold}),
     }};
 }
@@ -569,12 +573,16 @@ struct ParsedFunctions {
                 tile_count};
         }
 
-        // Handle one of the VDests patterns
+        // Handle the multi-Append VDests pattern, see pokeemerald QueueAnimTiles_Mauville_Flowers for example
         if (append_calls.size() > 1) {
-            // TODO: this doesn't handle the typical VDests case, which instead looks like:
             /*
+             * TODO: this doesn't handle the typical VDests case, which instead looks like:
+             *
              * AppendTilesetAnimToBuffer(gTilesetAnims_Rustboro_WindyWater[timer_div],
              * gTilesetAnims_Rustboro_WindyWater_VDests[timer_mod], 4 * TILE_SIZE_4BPP);
+             *
+             * This is intrinsically handled by the extract_tile_x functions above. When we eventually support VDests,
+             * we'll need to update all these functions accordingly.
              */
             return FormattableError{
                 "Queue function '{}' has multiple AppendTilesetAnimToBuffer calls (VDests pattern not yet supported).",
