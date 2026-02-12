@@ -98,12 +98,15 @@ constexpr auto anim_parsing_error = "animation-parsing-error";
  * @brief Finds TILE_OFFSET_4BPP(X) in tokens and returns X.
  *
  * @details
- * Searches for the token pattern: identifier("TILE_OFFSET_4BPP") + lparen + integer + rparen
+ * Searches for the token pattern: identifier("TILE_OFFSET_4BPP") + lparen + integer + rparen.
+ * On failure, produces a multi-line error showing the expected pattern vs the actual input tokens.
  *
  * @param tokens The token sequence to search
- * @return The tile offset value, or nullopt if not found
+ * @param format Text formatter for error message styling
+ * @return The tile offset value, or a descriptive error if the pattern was not found
  */
-[[nodiscard]] std::optional<std::size_t> extract_tile_offset(const std::vector<Token> &tokens)
+[[nodiscard]] ChainableResult<std::size_t> extract_tile_offset(
+    const std::vector<Token> &tokens, const TextFormatter &format)
 {
     for (std::size_t i = 0; i + 3 < tokens.size(); ++i) {
         if (tokens[i].is(TokenType::identifier) && tokens[i].text() == "TILE_OFFSET_4BPP" &&
@@ -112,19 +115,34 @@ constexpr auto anim_parsing_error = "animation-parsing-error";
             return tokens[i + 2].int_value();
         }
     }
-    return std::nullopt;
+
+    std::string actual;
+    for (std::size_t i = 0; i < tokens.size(); ++i) {
+        if (i > 0) {
+            actual += " ";
+        }
+        actual += tokens[i].text();
+    }
+
+    return FormattableError{std::vector<std::string>{
+        format.format("Expected token pattern containing '{}'.", FormatParam{"TILE_OFFSET_4BPP(<tile_offset_integer>)", Style::bold}),
+        format.format("Actual tokens: '{}'.", FormatParam{actual, Style::bold}),
+    }};
 }
 
 /**
  * @brief Finds X * TILE_SIZE_4BPP in tokens and returns X.
  *
  * @details
- * Searches for the token pattern: integer + star + identifier("TILE_SIZE_4BPP")
+ * Searches for the token pattern: integer + star + identifier("TILE_SIZE_4BPP").
+ * On failure, produces a multi-line error showing the expected pattern vs the actual input tokens.
  *
  * @param tokens The token sequence to search
- * @return The tile count value, or nullopt if not found
+ * @param format Text formatter for error message styling
+ * @return The tile count value, or a descriptive error if the pattern was not found
  */
-[[nodiscard]] std::optional<std::size_t> extract_tile_count(const std::vector<Token> &tokens)
+[[nodiscard]] ChainableResult<std::size_t> extract_tile_count(
+    const std::vector<Token> &tokens, const TextFormatter &format)
 {
     for (std::size_t i = 0; i + 2 < tokens.size(); ++i) {
         if (tokens[i].is(TokenType::integer_literal) && tokens[i + 1].is(TokenType::star) &&
@@ -132,7 +150,19 @@ constexpr auto anim_parsing_error = "animation-parsing-error";
             return tokens[i].int_value();
         }
     }
-    return std::nullopt;
+
+    std::string actual;
+    for (std::size_t i = 0; i < tokens.size(); ++i) {
+        if (i > 0) {
+            actual += " ";
+        }
+        actual += tokens[i].text();
+    }
+
+    return FormattableError{std::vector<std::string>{
+        format.format("Expected token pattern containing '{}'.", FormatParam{"<tile_count_integer> * TILE_SIZE_4BPP", Style::bold}),
+        format.format("Actual tokens: '{}'.", FormatParam{actual, Style::bold}),
+    }};
 }
 
 /**
@@ -447,6 +477,7 @@ struct ParsedFunctions {
  * @param func_map Function name to definition pointer map
  * @param pascal_case_tileset The tileset name in PascalCase
  * @param porytiles_managed Whether this uses the PorytilesManaged_ prefix
+ * @param format Text formatter for error message styling
  * @param diag UserDiagnostics for warnings
  * @return Map of PascalCase animation name to discovered animation data
  */
@@ -455,6 +486,7 @@ struct ParsedFunctions {
     const std::map<std::string, const FunctionDefinition *> &func_map,
     const std::string &pascal_case_tileset,
     bool porytiles_managed,
+    const TextFormatter *format,
     const UserDiagnostics *diag)
 {
     std::map<std::string, DiscoveredAnimData> discovered_anims;
@@ -508,21 +540,33 @@ struct ParsedFunctions {
         }
 
         // Extract tile_offset from second argument
-        auto tile_offset = extract_tile_offset(call.argument_at(1));
+        auto tile_offset = extract_tile_offset(call.argument_at(1), *format);
         if (!tile_offset.has_value()) {
             return ChainableResult<std::map<std::string, DiscoveredAnimData>>{
-                FormattableError{
-                    "Failed to extract TILE_OFFSET_4BPP value from AppendTilesetAnimToBuffer in '{}'.",
-                    FormatParam{condition.called_func, Style::bold}},
+                FormattableError{std::vector<std::string>{
+                    format->format(
+                        "Failed to extract '{}' from second argument of '{}' call in '{}'.",
+                        FormatParam{"TILE_OFFSET_4BPP", Style::bold},
+                        FormatParam{"AppendTilesetAnimToBuffer", Style::bold},
+                        FormatParam{condition.called_func, Style::bold}),
+                    format->format("Full call: '{}'.", FormatParam{call.reconstruct_call_text(), Style::bold}),
+                }},
                 tile_offset};
         }
 
         // Extract tile_count from third argument
-        auto tile_count = extract_tile_count(call.argument_at(2));
+        auto tile_count = extract_tile_count(call.argument_at(2), *format);
         if (!tile_count.has_value()) {
-            return ChainableResult<std::map<std::string, DiscoveredAnimData>>{FormattableError{
-                "Failed to extract TILE_SIZE_4BPP value from AppendTilesetAnimToBuffer in '{}'.",
-                FormatParam{condition.called_func, Style::bold}}, tile_count};
+            return ChainableResult<std::map<std::string, DiscoveredAnimData>>{
+                FormattableError{std::vector<std::string>{
+                    format->format(
+                        "Failed to extract '{}' from third argument of '{}' call in '{}'.",
+                        FormatParam{"TILE_SIZE_4BPP", Style::bold},
+                        FormatParam{"AppendTilesetAnimToBuffer", Style::bold},
+                        FormatParam{condition.called_func, Style::bold}),
+                    format->format("Full call: '{}'.", FormatParam{call.reconstruct_call_text(), Style::bold}),
+                }},
+                tile_count};
         }
 
         // Handle one of the VDests patterns
@@ -590,7 +634,7 @@ struct ParsedFunctions {
         }
     }
 
-    return std::move(anim_frame_arrays_result);
+    return anim_frame_arrays_result;
 }
 
 /**
@@ -716,7 +760,7 @@ ChainableResult<std::map<DynamicCasedName, AnimationParams>> AnimCodeParser::par
     PT_TRY_ASSIGN_PASS_ERR(
         discovered_anims,
         step_4_extract_animation_data(
-            timer_conditions, parsed_funcs.by_name, pascal_case_tileset, porytiles_managed, diag_),
+            timer_conditions, parsed_funcs.by_name, pascal_case_tileset, porytiles_managed, format_, diag_),
         ResultType);
 
     // Step 5: Parse frame pointer arrays
