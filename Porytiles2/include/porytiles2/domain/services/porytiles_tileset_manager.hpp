@@ -88,13 +88,11 @@ class PorytilesTilesetManager {
      * 2. Removes the function declaration from tileset_anims.h
      * 3. Updates the .callback field in headers.h to "NULL" (only if it's a Porytiles-managed callback)
      *
-     * The callback is only cleared if it starts with "InitTilesetAnim_PorytilesManaged_".
-     * User-managed callbacks are preserved, allowing users to set wire_anim_code=false
-     * while maintaining their own custom animation callbacks.
+     * The callback is only cleared if it starts with "InitTilesetAnim_PorytilesManaged_". User-managed callbacks are
+     * preserved, allowing users to set wire_anim_code=false while maintaining their own custom animation callbacks.
      *
-     * This method is idempotent - safe to call even if no wiring exists.
-     * Should be called after compilation when a tileset has no animations
-     * to ensure stale animation references are cleaned up.
+     * This method is idempotent - safe to call even if no wiring exists. Should be called after compilation when a
+     * tileset has no animations to ensure stale animation references are cleaned up.
      *
      * @param tileset_name Name of the tileset to remove wiring for
      * @param is_secondary True if this is a secondary tileset

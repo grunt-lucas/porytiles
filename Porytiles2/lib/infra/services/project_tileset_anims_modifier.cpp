@@ -19,11 +19,13 @@ namespace {
 
 using namespace porytiles2;
 
+// TODO: these paths are hardcoded all over the place
 // Paths relative to project root
 const std::filesystem::path tileset_anims_c_rel_path = std::filesystem::path{"src"} / "tileset_anims.c";
 const std::filesystem::path tileset_anims_h_rel_path = std::filesystem::path{"include"} / "tileset_anims.h";
 // Note: "include/" is omitted because pokeemerald's makefile adds "include" to the include path
-const std::string porytiles_generated_include_base = "porytiles_generated/tilesets";
+const std::filesystem::path porytiles_generated_include_base =
+    std::filesystem::path{"porytiles_generated"} / "tilesets";
 
 /**
  * @brief Generates the include directive string for a tileset.
@@ -39,7 +41,8 @@ const std::string porytiles_generated_include_base = "porytiles_generated/tilese
  */
 [[nodiscard]] std::string generate_include_directive(const std::string &snake_dir)
 {
-    return fmt::format("#include \"{}/{}/generated_anim_code.h\"", porytiles_generated_include_base, snake_dir);
+    return fmt::format(
+        "#include \"{}/{}/generated_anim_code.h\"", porytiles_generated_include_base.string(), snake_dir);
 }
 
 /**
