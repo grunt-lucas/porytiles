@@ -15,7 +15,7 @@ void AnimTileMatcher::register_animation(
         panic("animation must have at least one frame");
     }
 
-    const AnimationFrame<Rgba32> &key_frame = animation.key_frame();
+    const AnimFrame<Rgba32> &key_frame = animation.key_frame();
     const auto &tiles = key_frame.tiles();
 
     for (std::size_t i = 0; i < tiles.size(); ++i) {

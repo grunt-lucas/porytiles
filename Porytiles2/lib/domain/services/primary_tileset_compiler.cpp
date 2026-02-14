@@ -851,7 +851,7 @@ ChainableResult<ColorIndexMap<Rgba32>> CompilerTask::pipeline_helper_build_color
 ChainableResult<AnimKeyframeData>
 CompilerTask::pipeline_helper_build_keyframe_data(const std::string &anim_name, const Animation<Rgba32> &anim) const
 {
-    const AnimationFrame<Rgba32> &composite_frame = anim.composite_frame(extrinsic_transparency_);
+    const AnimFrame<Rgba32> &composite_frame = anim.composite_frame(extrinsic_transparency_);
     const std::size_t tile_count = composite_frame.tiles().size();
 
     AnimKeyframeData result;
@@ -1046,7 +1046,7 @@ void CompilerTask::pipeline_helper_compile_animations()
         const std::size_t tile_offset = maybe_tile_offset.value();
 
         // 2. Compute composite frame for per-subtile palette selection
-        const AnimationFrame<Rgba32> composite = source_anim.composite_frame(extrinsic_transparency_.value());
+        const AnimFrame<Rgba32> composite = source_anim.composite_frame(extrinsic_transparency_.value());
         const std::size_t tile_count = composite.tile_count();
 
         // 3. Build per-subtile palette indices (same logic as registration step)
@@ -1083,7 +1083,7 @@ void CompilerTask::pipeline_helper_compile_animations()
             diag_.warning("multi-palette-animation", warning_lines);
         }
 
-        // Build a dynamic palette for embedding in the AnimationFrame
+        // Build a dynamic palette for embedding in the AnimFrame
         const auto &fixed_pal = new_porymap_pals_.at(frame_pal_index);
         Palette<Rgba32> anim_palette{};
         for (std::size_t i = 0; i < fixed_pal.size(); ++i) {
@@ -1108,13 +1108,13 @@ void CompilerTask::pipeline_helper_compile_animations()
                     index_tile_from_color_tile(rgba_tile, pal, extrinsic_transparency_.value()));
             }
 
-            AnimationFrame frame{frame_name, std::move(frame_index_tiles)};
+            AnimFrame frame{frame_name, std::move(frame_index_tiles)};
             frame.palette(anim_palette);
             compiled_anim.put_frame(frame_name, std::move(frame));
         }
 
         // 6. Set params with updated tile_offset/tile_count
-        AnimationParams params = source_anim.params();
+        AnimParams params = source_anim.params();
         params.tile_offset(tile_offset);
         params.tile_count(tile_count);
         compiled_anim.params(std::move(params));
@@ -1153,7 +1153,7 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
         }
 
         const std::size_t tile_offset = maybe_tile_offset.value();
-        const AnimationFrame<Rgba32> composite = source_anim.composite_frame(extrinsic_transparency_.value());
+        const AnimFrame<Rgba32> composite = source_anim.composite_frame(extrinsic_transparency_.value());
         const std::size_t tile_count = composite.tile_count();
 
         for (std::size_t subtile_idx = 0; subtile_idx < tile_count; ++subtile_idx) {

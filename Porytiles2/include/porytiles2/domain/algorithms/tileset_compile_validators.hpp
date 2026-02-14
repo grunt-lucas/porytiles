@@ -640,7 +640,7 @@ inline void report_color_counts(
 
     // Lambda to avoid duplicating logic
     auto validate_anim_frame = [&services, &hit_error, &extrinsic_transparency](
-                                   const std::string &anim_name, const AnimationFrame<Rgba32> &frame) -> void {
+                                   const std::string &anim_name, const AnimFrame<Rgba32> &frame) -> void {
         const auto &frame_tiles = frame.tiles();
 
         // Loop over each internal frame tile
@@ -680,7 +680,7 @@ inline void report_color_counts(
             const auto &key_frame = anim.key_frame();
             validate_anim_frame(anim_name, key_frame);
         }
-        for (const AnimationFrame<Rgba32> &frame : anim.frames() | std::views::values) {
+        for (const AnimFrame<Rgba32> &frame : anim.frames() | std::views::values) {
             validate_anim_frame(anim_name, frame);
         }
     }
@@ -875,7 +875,7 @@ inline void report_color_counts(
     }
 
     auto validate_anim_frame = [&services, &hit_error, &extrinsic_transparency](
-                                   const std::string &anim_name, const AnimationFrame<Rgba32> &frame) -> void {
+                                   const std::string &anim_name, const AnimFrame<Rgba32> &frame) -> void {
         const auto &frame_tiles = frame.tiles();
         // Iterate over each internal tile
         for (std::size_t internal_tile_index = 0; internal_tile_index < frame_tiles.size(); ++internal_tile_index) {
@@ -922,7 +922,7 @@ inline void report_color_counts(
             const auto &key_frame = anim.key_frame();
             validate_anim_frame(anim_name, key_frame);
         }
-        for (const AnimationFrame<Rgba32> &frame : anim.frames() | std::views::values) {
+        for (const AnimFrame<Rgba32> &frame : anim.frames() | std::views::values) {
             validate_anim_frame(anim_name, frame);
         }
     }
@@ -1020,7 +1020,7 @@ inline void report_color_counts(
 
     // Count colors in the input anims
     auto validate_anim_frame = [&services, &hit_first_violation, &color_counts, &count_max, &extrinsic_transparency](
-                                   const std::string &anim_name, const AnimationFrame<Rgba32> &frame) -> void {
+                                   const std::string &anim_name, const AnimFrame<Rgba32> &frame) -> void {
         const auto &frame_tiles = frame.tiles();
         // Loop over each internal frame tile
         for (std::size_t internal_tile_index = 0; internal_tile_index < frame_tiles.size(); ++internal_tile_index) {
@@ -1067,7 +1067,7 @@ inline void report_color_counts(
             const auto &key_frame = anim.key_frame();
             validate_anim_frame(anim_name, key_frame);
         }
-        for (const AnimationFrame<Rgba32> &frame : anim.frames() | std::views::values) {
+        for (const AnimFrame<Rgba32> &frame : anim.frames() | std::views::values) {
             validate_anim_frame(anim_name, frame);
         }
     }

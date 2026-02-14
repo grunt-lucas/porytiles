@@ -17,7 +17,7 @@ using namespace porytiles2;
     const std::string &tileset_name,
     const std::filesystem::path &tileset_path_from_project_root,
     const DynamicCasedName &anim_name,
-    const AnimationParams &params)
+    const AnimParams &params)
 {
     std::ostringstream out;
 
@@ -44,7 +44,7 @@ using namespace porytiles2;
 }
 
 [[nodiscard]] std::string
-generate_frame_array(const std::string &tileset_name, const DynamicCasedName &anim_name, const AnimationParams &params)
+generate_frame_array(const std::string &tileset_name, const DynamicCasedName &anim_name, const AnimParams &params)
 {
     std::ostringstream out;
 
@@ -73,8 +73,8 @@ generate_frame_array(const std::string &tileset_name, const DynamicCasedName &an
     return out.str();
 }
 
-[[nodiscard]] std::string generate_queue_function(
-    const std::string &tileset_name, const DynamicCasedName &anim_name, const AnimationParams &params)
+[[nodiscard]] std::string
+generate_queue_function(const std::string &tileset_name, const DynamicCasedName &anim_name, const AnimParams &params)
 {
     std::ostringstream out;
 
@@ -98,7 +98,7 @@ generate_frame_array(const std::string &tileset_name, const DynamicCasedName &an
 }
 
 [[nodiscard]] std::string
-generate_driver_function(const std::string &tileset_name, const std::map<DynamicCasedName, AnimationParams> &animations)
+generate_driver_function(const std::string &tileset_name, const std::map<DynamicCasedName, AnimParams> &animations)
 {
     std::ostringstream out;
 
@@ -108,14 +108,14 @@ generate_driver_function(const std::string &tileset_name, const std::map<Dynamic
     out << "{\n";
 
     // Group animations by their frame_factor
-    std::map<std::size_t, std::vector<std::pair<DynamicCasedName, AnimationParams>>> by_frame_factor;
+    std::map<std::size_t, std::vector<std::pair<DynamicCasedName, AnimParams>>> by_frame_factor;
     for (const auto &[anim_name, params] : animations) {
         by_frame_factor[params.frame_factor()].emplace_back(anim_name, params);
     }
 
     for (const auto &[frame_factor, anims] : by_frame_factor) {
         // Group by frame_offset within each frame_factor
-        std::map<std::size_t, std::vector<std::pair<DynamicCasedName, AnimationParams>>> by_offset;
+        std::map<std::size_t, std::vector<std::pair<DynamicCasedName, AnimParams>>> by_offset;
         for (const auto &[anim_name, params] : anims) {
             by_offset[params.frame_offset()].emplace_back(anim_name, params);
         }
@@ -143,7 +143,7 @@ generate_driver_function(const std::string &tileset_name, const std::map<Dynamic
 }
 
 [[nodiscard]] std::string generate_init_function(
-    const std::string &tileset_name, const std::map<DynamicCasedName, AnimationParams> &animations, bool is_primary)
+    const std::string &tileset_name, const std::map<DynamicCasedName, AnimParams> &animations, bool is_primary)
 {
     std::ostringstream out;
 
@@ -179,7 +179,7 @@ namespace porytiles2 {
 ChainableResult<std::string> AnimCodeGenerator::generate(
     const std::string &tileset_name,
     const std::filesystem::path &tileset_path_from_project_root,
-    const std::map<DynamicCasedName, AnimationParams> &animations,
+    const std::map<DynamicCasedName, AnimParams> &animations,
     bool is_primary) const
 {
     if (animations.empty()) {

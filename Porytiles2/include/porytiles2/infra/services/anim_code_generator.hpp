@@ -4,7 +4,7 @@
 #include <map>
 #include <string>
 
-#include "porytiles2/domain/models/animation_params.hpp"
+#include "porytiles2/domain/models/anim_params.hpp"
 #include "porytiles2/utilities/dynamic_cased_name.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
@@ -53,7 +53,7 @@ class AnimCodeGenerator {
     [[nodiscard]] ChainableResult<std::string> generate(
         const std::string &tileset_name,
         const std::filesystem::path &tileset_path_from_project_root,
-        const std::map<DynamicCasedName, AnimationParams> &animations,
+        const std::map<DynamicCasedName, AnimParams> &animations,
         bool is_primary) const;
 };
 

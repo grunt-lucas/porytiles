@@ -15,7 +15,7 @@
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
-#include "porytiles2/infra/algorithms/animation_frame_loader.hpp"
+#include "porytiles2/infra/algorithms/anim_frame_loader.hpp"
 #include "porytiles2/infra/algorithms/porymap_artifact_parsers.hpp"
 #include "porytiles2/utilities/dynamic_cased_name.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"

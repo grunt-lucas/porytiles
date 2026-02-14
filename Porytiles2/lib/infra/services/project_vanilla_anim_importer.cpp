@@ -2,7 +2,7 @@
 
 #include <vector>
 
-#include "porytiles2/infra/algorithms/animation_frame_loader.hpp"
+#include "porytiles2/infra/algorithms/anim_frame_loader.hpp"
 #include "porytiles2/infra/services/anim_code_parser.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
@@ -85,7 +85,7 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
                 FormatParam{tileset_anims_path, Style::bold}},
             anim_params_result};
     }
-    std::map<DynamicCasedName, AnimationParams> anim_params_map = std::move(anim_params_result).value();
+    std::map<DynamicCasedName, AnimParams> anim_params_map = std::move(anim_params_result).value();
 
     if (anim_params_map.empty()) {
         // No animations found in callback chain

@@ -6,9 +6,9 @@
 
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
+#include "porytiles2/domain/models/anim_frame.hpp"
+#include "porytiles2/domain/models/anim_params.hpp"
 #include "porytiles2/domain/models/animation.hpp"
-#include "porytiles2/domain/models/animation_frame.hpp"
-#include "porytiles2/domain/models/animation_params.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
@@ -118,7 +118,7 @@ Animation<IndexPixel> create_test_animation(
     const std::vector<PixelTile<IndexPixel>> &frame_tiles,
     const Palette<Rgba32, pal::max_size> &pal)
 {
-    AnimationParams params;
+    AnimParams params;
     params.tile_offset(tile_offset);
     params.tile_count(tile_count);
     params.frame_names({DynamicCasedName{"0"}});
@@ -132,7 +132,7 @@ Animation<IndexPixel> create_test_animation(
         frame_pal.add(pal.at(i));
     }
 
-    AnimationFrame<IndexPixel> frame{"0", frame_tiles};
+    AnimFrame<IndexPixel> frame{"0", frame_tiles};
     frame.palette(frame_pal);
     anim.put_frame("0", std::move(frame));
 

@@ -20,7 +20,7 @@ inline constexpr std::size_t default_counter_max = 256;
  * @brief Configuration parameters for a single tileset animation.
  *
  * @details
- * AnimationParams stores the configuration data needed to generate and interpret animation code for a tileset. These
+ * AnimParams stores the configuration data needed to generate and interpret animation code for a tileset. These
  * parameters control how animation frames are selected and where animation tiles are located in VRAM.
  *
  * The parameters map directly to the generated C code patterns:
@@ -32,9 +32,9 @@ inline constexpr std::size_t default_counter_max = 256;
  * - tile_count: The number of tiles per animation frame
  * - counter_max: The maximum timer value before wrapping (typically 256)
  */
-class AnimationParams {
+class AnimParams {
   public:
-    AnimationParams() = default;
+    AnimParams() = default;
 
     /**
      * @brief Returns the structured name for this animation, preserving case format information.

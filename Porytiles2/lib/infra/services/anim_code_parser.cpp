@@ -6,8 +6,8 @@
 #include <set>
 #include <string>
 
+#include "porytiles2/domain/models/anim_params.hpp"
 #include "porytiles2/domain/models/animation.hpp"
-#include "porytiles2/domain/models/animation_params.hpp"
 #include "porytiles2/utilities/c_parser/c_parser_facade.hpp"
 #include "porytiles2/utilities/c_parser/function_call_info.hpp"
 #include "porytiles2/utilities/c_parser/token.hpp"
@@ -646,28 +646,28 @@ struct ParsedFunctions {
 }
 
 /**
- * @brief Step 6: Matches discovered animations with frame arrays and builds the final AnimationParams map.
+ * @brief Step 6: Matches discovered animations with frame arrays and builds the final AnimParams map.
  *
  * @details
  * For each discovered animation, finds the matching frame pointer array, extracts frame names and order, and
- * constructs an AnimationParams. Returns an error if a frame array cannot be found for any discovered animation.
+ * constructs an AnimParams. Returns an error if a frame array cannot be found for any discovered animation.
  *
  * @param discovered_anims Map of PascalCase animation name to discovered animation data
  * @param frame_arrays Vector of parsed frame pointer array declarations
  * @param pascal_case_tileset The tileset name in PascalCase
  * @param porytiles_managed Whether this uses the PorytilesManaged_ prefix
- * @return Map of DynamicCasedName to AnimationParams, or error if frame array not found
+ * @return Map of DynamicCasedName to AnimParams, or error if frame array not found
  */
-[[nodiscard]] ChainableResult<std::map<DynamicCasedName, AnimationParams>> step_6_build_animation_params(
+[[nodiscard]] ChainableResult<std::map<DynamicCasedName, AnimParams>> step_6_build_animation_params(
     const std::map<std::string, DiscoveredAnimData> &discovered_anims,
     const std::vector<ArrayDeclaration> &frame_arrays,
     const std::string &pascal_case_tileset,
     bool porytiles_managed)
 {
-    std::map<DynamicCasedName, AnimationParams> result;
+    std::map<DynamicCasedName, AnimParams> result;
 
     for (const auto &[pascal_name, anim_data] : discovered_anims) {
-        AnimationParams params;
+        AnimParams params;
         params.tile_offset(anim_data.tile_offset);
         params.tile_count(anim_data.tile_count);
         params.frame_factor(anim_data.frame_factor);
@@ -725,7 +725,7 @@ struct ParsedFunctions {
 
 namespace porytiles2 {
 
-ChainableResult<std::map<DynamicCasedName, AnimationParams>> AnimCodeParser::parse_from_callback(
+ChainableResult<std::map<DynamicCasedName, AnimParams>> AnimCodeParser::parse_from_callback(
     const std::filesystem::path &c_file_path,
     const std::string &callback_func_name,
     const std::string &pascal_case_tileset,
@@ -741,7 +741,7 @@ ChainableResult<std::map<DynamicCasedName, AnimationParams>> AnimCodeParser::par
         panic("param pascal_case_tileset = '" + pascal_case_tileset + "', must be pascal case");
     }
 
-    using ResultType = std::map<DynamicCasedName, AnimationParams>;
+    using ResultType = std::map<DynamicCasedName, AnimParams>;
 
     // Step 1: Parse callback function -> find driver function name
     PT_TRY_ASSIGN_PASS_ERR(
@@ -777,7 +777,7 @@ ChainableResult<std::map<DynamicCasedName, AnimationParams>> AnimCodeParser::par
         step_5_parse_frame_arrays(c_parser, pascal_case_tileset, porytiles_managed, c_file_path, format_),
         ResultType);
 
-    // Step 6: Build final AnimationParams map
+    // Step 6: Build final AnimParams map
     return step_6_build_animation_params(discovered_anims, frame_arrays, pascal_case_tileset, porytiles_managed);
 }
 

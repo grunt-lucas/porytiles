@@ -1,7 +1,7 @@
 #pragma once
 
 /**
- * @file animation_frame_loader.hpp
+ * @file anim_frame_loader.hpp
  *
  * @brief Shared helper for loading animation frames from PNG files.
  *
@@ -15,19 +15,19 @@
  * 1. Loading the PNG file via the provided loader
  * 2. Calculating width_tiles/height_tiles from image dimensions
  * 3. Extracting tiles from the image via extract_tiles_from_image()
- * 4. Creating an AnimationFrame with the extracted tiles
+ * 4. Creating an AnimFrame with the extracted tiles
  * 5. Setting the palette on the frame if the image has one
  *
  * Each caller is responsible for:
  * - Adding the frame to their Animation/component data structure
- * - Updating AnimationParams with dimensions (typically from first frame)
+ * - Updating AnimParams with dimensions (typically from first frame)
  */
 
 #include <filesystem>
 #include <string>
 
 #include "porytiles2/domain/algorithms/tile_extractors.hpp"
-#include "porytiles2/domain/models/animation_frame.hpp"
+#include "porytiles2/domain/models/anim_frame.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
@@ -40,15 +40,15 @@ namespace porytiles2 {
  * @brief Result of loading an animation frame from a PNG file.
  *
  * @details
- * Contains the loaded AnimationFrame along with the frame dimensions in tiles. The dimensions are calculated from the
- * source image and should be used to update AnimationParams (typically only from the first frame, since all frames in
+ * Contains the loaded AnimFrame along with the frame dimensions in tiles. The dimensions are calculated from the
+ * source image and should be used to update AnimParams (typically only from the first frame, since all frames in
  * an animation must have the same dimensions).
  *
  * @tparam PixelType The pixel type for the frame tiles (Rgba32 or IndexPixel)
  */
 template <SupportsTransparency PixelType>
 struct FrameLoadResult {
-    AnimationFrame<PixelType> frame;
+    AnimFrame<PixelType> frame;
     std::size_t width_tiles;
     std::size_t height_tiles;
 };
@@ -62,7 +62,7 @@ struct FrameLoadResult {
  * 1. Loading the PNG via the provided loader
  * 2. Calculating frame dimensions in tiles (width_tiles, height_tiles)
  * 3. Extracting tiles from the image in row-major order
- * 4. Creating an AnimationFrame with the specified name and extracted tiles
+ * 4. Creating an AnimFrame with the specified name and extracted tiles
  * 5. Copying the image's palette to the frame if present
  *
  * The function is parameterized by pixel type and loader type, allowing it to work with both:
@@ -76,7 +76,7 @@ struct FrameLoadResult {
  * @param loader The PNG image loader instance to use
  * @pre PNG file must exist at png_path
  * @pre Image dimensions must be multiples of 8 (tile size)
- * @return FrameLoadResult containing the AnimationFrame and its dimensions, or error if loading fails
+ * @return FrameLoadResult containing the AnimFrame and its dimensions, or error if loading fails
  */
 template <SupportsTransparency PixelType, typename LoaderType>
 [[nodiscard]] ChainableResult<FrameLoadResult<PixelType>> load_animation_frame_from_png(
@@ -99,8 +99,8 @@ template <SupportsTransparency PixelType, typename LoaderType>
     // Step 3: Extract tiles from the image
     std::vector<PixelTile<PixelType>> tiles = extract_tiles_from_image(img);
 
-    // Step 4: Create the AnimationFrame
-    AnimationFrame<PixelType> frame{frame_name, std::move(tiles)};
+    // Step 4: Create the AnimFrame
+    AnimFrame<PixelType> frame{frame_name, std::move(tiles)};
 
     // Step 5: Set palette if the image has one
     if (img.palette().has_value()) {

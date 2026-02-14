@@ -6,8 +6,8 @@
 #include <string>
 #include <vector>
 
-#include "porytiles2/domain/models/animation_frame.hpp"
-#include "porytiles2/domain/models/animation_params.hpp"
+#include "porytiles2/domain/models/anim_frame.hpp"
+#include "porytiles2/domain/models/anim_params.hpp"
 #include "porytiles2/domain/models/supports_transparency.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
@@ -63,9 +63,9 @@ constexpr std::string porytiles_managed_prefix = "PorytilesManaged_";
  * @details
  * Animation represents a full animation definition for a tileset, combining:
  * - A unique name identifying the animation (e.g., "flower", "water", "waterfall")
- * - Configuration parameters (AnimationParams) controlling timing and VRAM placement
+ * - Configuration parameters (AnimParams) controlling timing and VRAM placement
  * - An optional key frame (for Porytiles-format animations)
- * - Frame data (map of AnimationFrame) containing the actual tile pixels
+ * - Frame data (map of AnimFrame) containing the actual tile pixels
  *
  * In addition to the standard frames, there is a special "key frame" that appears in tiles.png. The GBA game engine
  * uses the other frames (stored as separate .4bpp files) to animate by swapping tile data in VRAM at runtime.
@@ -83,19 +83,19 @@ class Animation {
 
     explicit Animation(std::string name) : name_{std::move(name)} {}
 
-    Animation(std::string name, AnimationParams params) : name_{std::move(name)}, params_{std::move(params)} {}
+    Animation(std::string name, AnimParams params) : name_{std::move(name)}, params_{std::move(params)} {}
 
     [[nodiscard]] const std::string &name() const
     {
         return name_;
     }
 
-    [[nodiscard]] const AnimationParams &params() const
+    [[nodiscard]] const AnimParams &params() const
     {
         return params_;
     }
 
-    void params(AnimationParams params)
+    void params(AnimParams params)
     {
         params_ = std::move(params);
     }
@@ -120,7 +120,7 @@ class Animation {
      * @pre has_key_frame() must return true
      * @return Reference to the keyframe
      */
-    [[nodiscard]] const AnimationFrame<PixelType> &key_frame() const
+    [[nodiscard]] const AnimFrame<PixelType> &key_frame() const
     {
         if (!key_frame_.has_value()) {
             panic("key_frame() called on Animation with no key frame set");
@@ -128,22 +128,22 @@ class Animation {
         return *key_frame_;
     }
 
-    void key_frame(AnimationFrame<PixelType> key_frame)
+    void key_frame(AnimFrame<PixelType> key_frame)
     {
         key_frame_ = std::move(key_frame);
     }
 
-    [[nodiscard]] const std::map<std::string, AnimationFrame<PixelType>> &frames() const
+    [[nodiscard]] const std::map<std::string, AnimFrame<PixelType>> &frames() const
     {
         return frames_;
     }
 
-    [[nodiscard]] std::map<std::string, AnimationFrame<PixelType>> &frames()
+    [[nodiscard]] std::map<std::string, AnimFrame<PixelType>> &frames()
     {
         return frames_;
     }
 
-    [[nodiscard]] std::vector<AnimationFrame<PixelType>> frames_values() const
+    [[nodiscard]] std::vector<AnimFrame<PixelType>> frames_values() const
     {
         return frames_ | std::views::values | std::ranges::to<std::vector>();
     }
@@ -180,7 +180,7 @@ class Animation {
      * @pre index must be less than frame_count()
      * @return Reference to the frame at the specified index
      */
-    [[nodiscard]] const AnimationFrame<PixelType> &frame_for_name(const std::string &frame_name) const
+    [[nodiscard]] const AnimFrame<PixelType> &frame_for_name(const std::string &frame_name) const
     {
         if (!frames_.contains(frame_name)) {
             panic("anim '" + name_ + "' has no such frame '" + frame_name + "'");
@@ -194,7 +194,7 @@ class Animation {
      * @param name The frame name
      * @param frame The frame to add
      */
-    void put_frame(const std::string &name, AnimationFrame<PixelType> frame)
+    void put_frame(const std::string &name, AnimFrame<PixelType> frame)
     {
         frames_.emplace(name, std::move(frame));
     }
@@ -204,7 +204,7 @@ class Animation {
      *
      * @details
      * The "composite" frame for an Animation is a special, artificially constructed frame where each constituent
-     * subtile contains all colors across all AnimationFrames (including the key frame, if present) for the given
+     * subtile contains all colors across all AnimFrames (including the key frame, if present) for the given
      * subtile index. This is essential: since animation tiles are dynamic but the palette index is fixed, the palette
      * packer needs to know all possible colors that could appear in a given 8x8 animation tile region at any point in
      * the animation. The composite frame's pixel arrangement is arbitrary and shouldn't be relied upon for meaningful
@@ -219,7 +219,7 @@ class Animation {
      * @post Each composite tile within the frame will have <= 15 unique colors.
      * @return A composite frame for this Animation.
      */
-    [[nodiscard]] AnimationFrame<PixelType> composite_frame(const PixelType &extrinsic_transparency) const
+    [[nodiscard]] AnimFrame<PixelType> composite_frame(const PixelType &extrinsic_transparency) const
         requires requires(const PixelType &p) { p.is_transparent(p); }
     {
         /*
@@ -239,7 +239,7 @@ class Animation {
             panic("composite_frame() called on Animation with no key frame and no frames");
         }
 
-        AnimationFrame<PixelType> composite{"composite"};
+        AnimFrame<PixelType> composite{"composite"};
 
         for (std::size_t tile_idx = 0; tile_idx < tile_count; ++tile_idx) {
             std::set<PixelType> all_colors;
@@ -278,9 +278,9 @@ class Animation {
 
   private:
     std::string name_;
-    AnimationParams params_;
-    std::optional<AnimationFrame<PixelType>> key_frame_;
-    std::map<std::string, AnimationFrame<PixelType>> frames_;
+    AnimParams params_;
+    std::optional<AnimFrame<PixelType>> key_frame_;
+    std::map<std::string, AnimFrame<PixelType>> frames_;
 };
 
 } // namespace porytiles2

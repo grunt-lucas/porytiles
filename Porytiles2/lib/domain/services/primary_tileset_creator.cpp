@@ -4,8 +4,8 @@
 #include <memory>
 #include <vector>
 
+#include "porytiles2/domain/models/anim_frame.hpp"
 #include "porytiles2/domain/models/animation.hpp"
-#include "porytiles2/domain/models/animation_frame.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
@@ -1654,12 +1654,12 @@ PrimaryTilesetCreator::create_sample_porytiles_component(const std::string &tile
     }
 
     // Set up flower animation frames using the conversion helper
-    AnimationFrame flower_key{"key", metatile_array_to_tiles(flower_frame_key)};
-    AnimationFrame flower_center{"center", metatile_array_to_tiles(flower_frame_center)};
-    AnimationFrame flower_right{"right", metatile_array_to_tiles(flower_frame_right)};
-    AnimationFrame flower_left{"left", metatile_array_to_tiles(flower_frame_left)};
+    AnimFrame flower_key{"key", metatile_array_to_tiles(flower_frame_key)};
+    AnimFrame flower_center{"center", metatile_array_to_tiles(flower_frame_center)};
+    AnimFrame flower_right{"right", metatile_array_to_tiles(flower_frame_right)};
+    AnimFrame flower_left{"left", metatile_array_to_tiles(flower_frame_left)};
 
-    AnimationParams flower_params{};
+    AnimParams flower_params{};
     flower_params.frame_names(
         std::vector<DynamicCasedName>{DynamicCasedName{"center"}, DynamicCasedName{"right"}, DynamicCasedName{"left"}});
     flower_params.frame_order(

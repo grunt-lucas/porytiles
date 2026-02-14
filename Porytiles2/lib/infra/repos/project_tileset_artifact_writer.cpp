@@ -421,7 +421,7 @@ ChainableResult<void> write_anim_frame_impl(
     const auto &anim = component.anim_for_name(anim_name);
 
     // Get the appropriate frame
-    const AnimationFrame<PixelType> *frame_ptr = nullptr;
+    const AnimFrame<PixelType> *frame_ptr = nullptr;
     // TODO: don't hardcode "key" here, this whole pattern is bad tbh
     if (frame_name != "key") {
         frame_ptr = &anim.frame_for_name(frame_name);
@@ -718,7 +718,7 @@ ProjectTilesetArtifactWriter::write_porymap_anim_params(const ArtifactKey &dest_
         return {};
     }
 
-    std::map<DynamicCasedName, AnimationParams> anim_params;
+    std::map<DynamicCasedName, AnimParams> anim_params;
     for (const auto &[anim_name, anim] : porymap_anims) {
         anim_params[DynamicCasedName{anim_name}] = anim.params();
     }
@@ -955,7 +955,7 @@ ProjectTilesetArtifactWriter::write_porytiles_anim_params(const ArtifactKey &des
     }
 
     // Extract params from animations
-    std::map<DynamicCasedName, AnimationParams> anim_params;
+    std::map<DynamicCasedName, AnimParams> anim_params;
     for (const auto &[anim_name, anim] : porytiles_anims) {
         anim_params[DynamicCasedName{anim_name}] = anim.params();
     }

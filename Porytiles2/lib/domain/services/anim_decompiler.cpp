@@ -14,7 +14,7 @@
 #include "porytiles2/domain/algorithms/tile_extractors.hpp"
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
-#include "porytiles2/domain/models/animation_frame.hpp"
+#include "porytiles2/domain/models/anim_frame.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
@@ -514,7 +514,7 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
     }
 
     // Set the key frame on the result
-    AnimationFrame key_frame{"key", std::move(key_frame_rgba_tiles)};
+    AnimFrame key_frame{"key", std::move(key_frame_rgba_tiles)};
     result.key_frame(std::move(key_frame));
 
     for (const auto &frame : anim.frames_values()) {
@@ -525,7 +525,7 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
             rgba_tiles.push_back(color_tile_from_index_tile(index_tile, pal, extrinsic_transparency.value()));
         }
 
-        AnimationFrame rgba_frame{frame.frame_name(), std::move(rgba_tiles)};
+        AnimFrame rgba_frame{frame.frame_name(), std::move(rgba_tiles)};
         result.put_frame(frame.frame_name(), std::move(rgba_frame));
     }
 

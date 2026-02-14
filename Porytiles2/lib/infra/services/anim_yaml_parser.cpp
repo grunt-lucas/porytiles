@@ -15,9 +15,9 @@ namespace {
 
 using namespace porytiles2;
 
-AnimationParams parse_animation_params(const std::string &anim_name, const YAML::Node &node)
+AnimParams parse_animation_params(const std::string &anim_name, const YAML::Node &node)
 {
-    AnimationParams params;
+    AnimParams params;
 
     /*
      * TODO: would be nice to warn users here about unknown keys. That way, if they have a simple typo (e.g.
@@ -67,7 +67,7 @@ AnimationParams parse_animation_params(const std::string &anim_name, const YAML:
     return params;
 }
 
-YAML::Node serialize_animation_params(const AnimationParams &params)
+YAML::Node serialize_animation_params(const AnimParams &params)
 {
     YAML::Node node;
 
@@ -112,7 +112,7 @@ namespace porytiles2 {
 
 AnimYamlParser::AnimYamlParser(gsl::not_null<const TextFormatter *> format) : format_{format} {}
 
-ChainableResult<std::map<DynamicCasedName, AnimationParams>>
+ChainableResult<std::map<DynamicCasedName, AnimParams>>
 AnimYamlParser::parse(const std::filesystem::path &yaml_path) const
 {
     if (!std::filesystem::exists(yaml_path)) {
@@ -124,7 +124,7 @@ AnimYamlParser::parse(const std::filesystem::path &yaml_path) const
     try {
         YAML::Node root = YAML::LoadFile(yaml_path.string());
 
-        std::map<DynamicCasedName, AnimationParams> result;
+        std::map<DynamicCasedName, AnimParams> result;
 
         if (!root.IsMap()) {
             FileHighlightPrinter printer{format_};
@@ -242,7 +242,7 @@ AnimYamlParser::parse(const std::filesystem::path &yaml_path) const
 }
 
 ChainableResult<void> AnimYamlParser::write(
-    const std::filesystem::path &yaml_path, const std::map<DynamicCasedName, AnimationParams> &params) const
+    const std::filesystem::path &yaml_path, const std::map<DynamicCasedName, AnimParams> &params) const
 {
     try {
         // Create parent directories if they don't exist

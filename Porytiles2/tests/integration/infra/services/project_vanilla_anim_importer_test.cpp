@@ -43,7 +43,7 @@ TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsDiscoversAllAnimationsFor
     EXPECT_TRUE(animations.contains("waterfall"));
 }
 
-TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsExtractsFlowerAnimationParams)
+TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsExtractsFlowerAnimParams)
 {
     auto result = importer_.import_animations("gTileset_General");
 
@@ -54,7 +54,7 @@ TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsExtractsFlowerAnimationPa
     const auto &flower = animations.at("flower");
     const auto &params = flower.params();
 
-    // Verify AnimationParams from tileset_anims.c parsing
+    // Verify AnimParams from tileset_anims.c parsing
     EXPECT_EQ(params.tile_offset(), 508u);
     EXPECT_EQ(params.tile_count(), 4u);
     EXPECT_EQ(params.frame_factor(), 16u);
@@ -69,7 +69,7 @@ TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsExtractsFlowerAnimationPa
     EXPECT_EQ(frame_order[3], DynamicCasedName{"2"});
 }
 
-TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsExtractsWaterAnimationParams)
+TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsExtractsWaterAnimParams)
 {
     auto result = importer_.import_animations("gTileset_General");
 
@@ -80,7 +80,7 @@ TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsExtractsWaterAnimationPar
     const auto &water = animations.at("water");
     const auto &params = water.params();
 
-    // Verify AnimationParams
+    // Verify AnimParams
     EXPECT_EQ(params.tile_offset(), 432u);
     EXPECT_EQ(params.tile_count(), 30u);
     EXPECT_EQ(params.frame_factor(), 16u);

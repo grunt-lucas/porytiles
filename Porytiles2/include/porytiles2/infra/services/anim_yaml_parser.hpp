@@ -6,7 +6,7 @@
 
 #include "gsl/pointers"
 
-#include "porytiles2/domain/models/animation_params.hpp"
+#include "porytiles2/domain/models/anim_params.hpp"
 #include "porytiles2/utilities/dynamic_cased_name.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
@@ -50,12 +50,12 @@ class AnimYamlParser {
      *
      * @details
      * Reads the YAML file at the specified path and extracts animation parameters for each animation defined. Missing
-     * optional fields use default values from AnimationParams.
+     * optional fields use default values from AnimParams.
      *
      * @param yaml_path Path to the anim.yaml file
-     * @return Map of animation name to AnimationParams, or error if parsing fails
+     * @return Map of animation name to AnimParams, or error if parsing fails
      */
-    [[nodiscard]] ChainableResult<std::map<DynamicCasedName, AnimationParams>>
+    [[nodiscard]] ChainableResult<std::map<DynamicCasedName, AnimParams>>
     parse(const std::filesystem::path &yaml_path) const;
 
     /**
@@ -66,11 +66,11 @@ class AnimYamlParser {
      * existing file at that location.
      *
      * @param yaml_path Path to write the anim.yaml file
-     * @param params Map of animation name to AnimationParams to serialize
+     * @param params Map of animation name to AnimParams to serialize
      * @return Success or error if writing fails
      */
     [[nodiscard]] ChainableResult<void>
-    write(const std::filesystem::path &yaml_path, const std::map<DynamicCasedName, AnimationParams> &params) const;
+    write(const std::filesystem::path &yaml_path, const std::map<DynamicCasedName, AnimParams> &params) const;
 
   private:
     const TextFormatter *format_;
