@@ -2,7 +2,6 @@
 
 #include <format>
 #include <map>
-#include <optional>
 #include <set>
 #include <string>
 
@@ -18,21 +17,42 @@ namespace {
 
 using namespace porytiles2;
 
-constexpr auto anim_parsing_error = "animation-parsing-error";
+// TODO: move this to a diagnostic stencil header
+[[nodiscard]] std::vector<std::string> make_highlighted_details(
+    const SourcePosition &position,
+    const TextFormatter &format,
+    const std::filesystem::path &file_path,
+    const std::string &message)
+{
+    const FileHighlightPrinter printer{&format};
+
+    // Build error details
+    std::vector<std::string> details;
+    details.push_back(std::format("{}:{}:{}: {}", file_path.string(), position.line, position.column, message));
+    details.emplace_back();
+
+    // Add source context if position is valid
+    if (position.line > 0) {
+        auto context = printer.print(file_path, position.line - 1, position.column - 1);
+        details.insert(details.end(), context.begin(), context.end());
+    }
+
+    return details;
+}
 
 /**
- * @brief Extracts the PascalCase animation name from a gTilesetAnims array reference.
+ * @brief Extracts the animation name from a gTilesetAnims array reference as a DynamicCasedName.
  *
  * @details
  * Parses identifiers like "gTilesetAnims_General_Flower" or "gTilesetAnims_PorytilesManaged_General_Flower"
- * to extract the animation name portion ("Flower").
+ * to extract the animation name portion ("Flower") as a @c DynamicCasedName.
  *
  * @param identifier The full identifier name (e.g., from AppendTilesetAnimToBuffer first arg)
  * @param tileset_shorthand The tileset name (e.g., "General")
  * @param porytiles_managed Whether this uses the PorytilesManaged_ prefix
- * @return The animation name in PascalCase, or empty string if not found
+ * @return The animation name as a DynamicCasedName, or an error if the prefix does not match
  */
-[[nodiscard]] std::string extract_anim_name_from_array_ref(
+[[nodiscard]] ChainableResult<DynamicCasedName> extract_anim_name_from_array_ref(
     const std::string &identifier, const std::string &tileset_shorthand, bool porytiles_managed)
 {
     // Build expected prefix: gTilesetAnims_[PorytilesManaged_]TilesetName_
@@ -47,7 +67,8 @@ constexpr auto anim_parsing_error = "animation-parsing-error";
             prefix = anim::s_tileset_anims_prefix + tileset_shorthand + "_";
         }
         if (!identifier.starts_with(prefix)) {
-            return {};
+            return FormattableError{
+                "Could not extract animation name from '{}'.", FormatParam{identifier, Style::bold}};
         }
     }
 
@@ -55,15 +76,15 @@ constexpr auto anim_parsing_error = "animation-parsing-error";
 
     // Remove _Frame suffix if present (for individual frame arrays)
     if (auto frame_pos = remainder.find("_Frame"); frame_pos != std::string::npos) {
-        return remainder.substr(0, frame_pos);
+        return DynamicCasedName::from_c_identifier(remainder.substr(0, frame_pos));
     }
 
     // Remove _VDests suffix if present
     if (auto vdests_pos = remainder.find("_VDests"); vdests_pos != std::string::npos) {
-        return remainder.substr(0, vdests_pos);
+        return DynamicCasedName::from_c_identifier(remainder.substr(0, vdests_pos));
     }
 
-    return remainder;
+    return DynamicCasedName::from_c_identifier(remainder);
 }
 
 /**
@@ -177,9 +198,9 @@ extract_tile_count(const std::vector<Token> &tokens, const TextFormatter &format
  * or: sSecondaryTilesetAnimCallback = <driver_func>
  *
  * @param body_tokens The callback function body tokens
- * @return The driver function name, or empty string if not found
+ * @return The driver function name, or an error if the callback assignment pattern was not found
  */
-[[nodiscard]] std::string find_driver_function_from_callback(const std::vector<Token> &body_tokens)
+[[nodiscard]] ChainableResult<std::string> find_driver_function_from_callback(const std::vector<Token> &body_tokens)
 {
     for (std::size_t i = 0; i + 2 < body_tokens.size(); ++i) {
         if (body_tokens[i].is(TokenType::identifier) &&
@@ -198,7 +219,7 @@ extract_tile_count(const std::vector<Token> &tokens, const TextFormatter &format
             }
         }
     }
-    return {};
+    return FormattableError{"Could not find tileset anim callback assignment in function body."};
 }
 
 /**
@@ -273,9 +294,9 @@ struct DiscoveredAnimData {
  * We need to extract the identifier before the array subscript.
  *
  * @param arg_tokens The tokens of the first argument
- * @return The identifier name, or empty string if not found
+ * @return The identifier name, or an error if no identifier was found in the argument tokens
  */
-[[nodiscard]] std::string extract_array_name_from_first_arg(const std::vector<Token> &arg_tokens)
+[[nodiscard]] ChainableResult<std::string> extract_array_name_from_first_arg(const std::vector<Token> &arg_tokens)
 {
     // Look for an identifier followed by left_bracket
     for (std::size_t i = 0; i + 1 < arg_tokens.size(); ++i) {
@@ -291,30 +312,7 @@ struct DiscoveredAnimData {
         }
     }
 
-    return {};
-}
-
-// TODO: move this to a diagnostic stencil header
-[[nodiscard]] std::vector<std::string> make_highlighted_details(
-    const SourcePosition &position,
-    const TextFormatter &format,
-    const std::filesystem::path &file_path,
-    const std::string &message)
-{
-    const FileHighlightPrinter printer{&format};
-
-    // Build error details
-    std::vector<std::string> details;
-    details.push_back(std::format("{}:{}:{}: {}", file_path.string(), position.line, position.column, message));
-    details.emplace_back();
-
-    // Add source context if position is valid
-    if (position.line > 0) {
-        auto context = printer.print(file_path, position.line - 1, position.column - 1);
-        details.insert(details.end(), context.begin(), context.end());
-    }
-
-    return details;
+    return FormattableError{"No identifier found in first argument of AppendTilesetAnimToBuffer call."};
 }
 
 /**
@@ -337,21 +335,20 @@ struct ParsedFunctions {
  *
  * @details
  * Parses the callback function (e.g., InitTilesetAnim_General) and searches for a driver function assignment
- * (sPrimaryTilesetAnimCallback = ...) in the body. Returns the driver function name if found.
+ * (sPrimaryTilesetAnimCallback = ...) in the body. Returns the driver function name if found, or an empty string if
+ * no callback function exists (no animations to process).
  *
  * @param c_parser The parser facade for the C file
  * @param callback_func_name The callback function name to search for
  * @param c_file_path Path to the C file (for error messages)
  * @param format Text formatter for error message styling
- * @param diag UserDiagnostics for warnings
- * @return The driver function name, or empty string if no animations found (not an error)
+ * @return The driver function name, an empty string if no callback found, or an error
  */
 [[nodiscard]] ChainableResult<std::string> step_1_find_driver_function(
     CParserFacade &c_parser,
     const std::string &callback_func_name,
     const std::filesystem::path &c_file_path,
-    const TextFormatter *format,
-    const UserDiagnostics *diag)
+    const TextFormatter *format)
 {
     auto callback_funcs_result = c_parser.parse_functions(callback_func_name);
     if (!callback_funcs_result.has_value()) {
@@ -367,23 +364,20 @@ struct ParsedFunctions {
     }
 
     if (callback_funcs.size() > 1) {
-        diag->warning(
-            anim_parsing_error,
-            "Found multiple callback functions matching '{}', using first.",
-            FormatParam{callback_func_name, Style::bold});
+        return FormattableError{
+            "Found multiple callback functions matching '{}'.", FormatParam{callback_func_name, Style::bold}};
     }
 
     const auto &callback_func = callback_funcs.front();
-    std::string driver_func_name = find_driver_function_from_callback(callback_func.body_tokens());
-
-    if (driver_func_name.empty()) {
-        diag->warning(
-            anim_parsing_error,
-            "Could not find driver function assignment in '{}'.",
-            FormatParam{callback_func_name, Style::bold});
+    auto driver_func_name_result = find_driver_function_from_callback(callback_func.body_tokens());
+    if (!driver_func_name_result.has_value()) {
+        return ChainableResult<std::string>{
+            FormattableError{
+                "Could not find driver function assignment in '{}'.", FormatParam{callback_func_name, Style::bold}},
+            driver_func_name_result};
     }
 
-    return driver_func_name;
+    return std::move(driver_func_name_result).value();
 }
 
 /**
@@ -397,15 +391,13 @@ struct ParsedFunctions {
  * @param driver_func_name The driver function name to parse
  * @param c_file_path Path to the C file (for error messages)
  * @param format Text formatter for error message styling
- * @param diag UserDiagnostics for warnings
- * @return Timer conditions, or empty vector if none found (not an error)
+ * @return Timer conditions, or an error if the driver function is missing or has no timer conditions
  */
 [[nodiscard]] ChainableResult<std::vector<TimerCondition>> step_2_extract_timer_conditions(
     CParserFacade &c_parser,
     const std::string &driver_func_name,
     const std::filesystem::path &c_file_path,
-    const TextFormatter *format,
-    const UserDiagnostics *diag)
+    const TextFormatter *format)
 {
     auto driver_funcs_result = c_parser.parse_functions(driver_func_name);
     if (!driver_funcs_result.has_value()) {
@@ -419,19 +411,15 @@ struct ParsedFunctions {
 
     const auto &driver_funcs = driver_funcs_result.value();
     if (driver_funcs.empty()) {
-        diag->warning(
-            anim_parsing_error, "Driver function '{}' not found in file.", FormatParam{driver_func_name, Style::bold});
-        return std::vector<TimerCondition>{};
+        return FormattableError{"Driver function '{}' not found in file.", FormatParam{driver_func_name, Style::bold}};
     }
 
     const auto &driver_func = driver_funcs.front();
     std::vector<TimerCondition> timer_conditions = extract_timer_conditions(driver_func.body_tokens());
 
     if (timer_conditions.empty()) {
-        diag->warning(
-            anim_parsing_error,
-            "No timer conditions found in driver function '{}'.",
-            FormatParam{driver_func_name, Style::bold});
+        return FormattableError{
+            "No timer conditions found in driver function '{}'.", FormatParam{driver_func_name, Style::bold}};
     }
 
     return timer_conditions;
@@ -474,35 +462,29 @@ struct ParsedFunctions {
  *
  * @details
  * For each timer condition, looks up the called queue function in the function map, finds
- * @c AppendTilesetAnimToBuffer calls, and extracts animation name, tile offset, and tile count. Individual failures
- * produce warnings rather than errors.
+ * @c AppendTilesetAnimToBuffer calls, and extracts animation name, tile offset, and tile count.
  *
  * @param timer_conditions Timer conditions from the driver function
  * @param func_map Function name to definition pointer map
  * @param pascal_case_tileset The tileset name in PascalCase
  * @param porytiles_managed Whether this uses the PorytilesManaged_ prefix
  * @param format Text formatter for error message styling
- * @param diag UserDiagnostics for warnings
- * @return Map of PascalCase animation name to discovered animation data
+ * @return Map of DynamicCasedName animation name to discovered animation data, or an error
  */
-[[nodiscard]] ChainableResult<std::map<std::string, DiscoveredAnimData>> step_4_extract_animation_data(
+[[nodiscard]] ChainableResult<std::map<DynamicCasedName, DiscoveredAnimData>> step_4_extract_animation_data(
     const std::vector<TimerCondition> &timer_conditions,
     const std::map<std::string, const FunctionDefinition *> &func_map,
     const std::string &pascal_case_tileset,
     bool porytiles_managed,
-    const TextFormatter *format,
-    const UserDiagnostics *diag)
+    const TextFormatter *format)
 {
-    std::map<std::string, DiscoveredAnimData> discovered_anims;
+    std::map<DynamicCasedName, DiscoveredAnimData> discovered_anims;
 
     for (const auto &condition : timer_conditions) {
         auto it = func_map.find(condition.called_func);
         if (it == func_map.end()) {
-            diag->warning(
-                anim_parsing_error,
-                "Queue function '{}' not found in file.",
-                FormatParam{condition.called_func, Style::bold});
-            continue;
+            return FormattableError{
+                "Queue function '{}' not found in file.", FormatParam{condition.called_func, Style::bold}};
         }
 
         const FunctionDefinition *queue_func = it->second;
@@ -511,11 +493,9 @@ struct ParsedFunctions {
         auto append_calls = find_function_calls(queue_func->body_tokens(), "AppendTilesetAnimToBuffer");
 
         if (append_calls.empty()) {
-            diag->warning(
-                anim_parsing_error,
+            return FormattableError{
                 "No AppendTilesetAnimToBuffer calls in queue function '{}'.",
-                FormatParam{condition.called_func, Style::bold});
-            continue;
+                FormatParam{condition.called_func, Style::bold}};
         }
 
         // Process the first AppendTilesetAnimToBuffer call
@@ -523,31 +503,36 @@ struct ParsedFunctions {
         const auto &call = append_calls.front();
 
         if (call.argument_count() < 3) {
-            diag->warning(
-                anim_parsing_error,
+            return FormattableError{
                 "AppendTilesetAnimToBuffer call in '{}' has fewer than 3 arguments.",
-                FormatParam{condition.called_func, Style::bold});
-            continue;
+                FormatParam{condition.called_func, Style::bold}};
         }
 
         // Extract animation name from first argument (e.g., gTilesetAnims_General_Flower[i])
-        std::string array_name = extract_array_name_from_first_arg(call.argument_at(0));
-        std::string anim_name_pascal =
-            extract_anim_name_from_array_ref(array_name, pascal_case_tileset, porytiles_managed);
+        auto array_name_result = extract_array_name_from_first_arg(call.argument_at(0));
+        if (!array_name_result.has_value()) {
+            return ChainableResult<std::map<DynamicCasedName, DiscoveredAnimData>>{
+                FormattableError{
+                    "Failed to parse animation data from queue function '{}'.",
+                    FormatParam{condition.called_func, Style::bold}},
+                array_name_result};
+        }
 
-        if (anim_name_pascal.empty()) {
-            diag->warning(
-                anim_parsing_error,
-                "Could not extract animation name from '{}'.",
-                FormatParam{array_name, Style::bold});
-            continue;
+        auto anim_cased_name =
+            extract_anim_name_from_array_ref(array_name_result.value(), pascal_case_tileset, porytiles_managed);
+        if (!anim_cased_name.has_value()) {
+            return ChainableResult<std::map<DynamicCasedName, DiscoveredAnimData>>{
+                FormattableError{
+                    "Failed to parse animation data from queue function '{}'.",
+                    FormatParam{condition.called_func, Style::bold}},
+                anim_cased_name};
         }
 
         // Extract tile_offset from second argument
         auto tile_offset = extract_tile_offset(call.argument_at(1), *format);
         if (!tile_offset.has_value()) {
-            return ChainableResult<std::map<std::string, DiscoveredAnimData>>{
-                FormattableError{std::vector<std::string>{
+            return ChainableResult<std::map<DynamicCasedName, DiscoveredAnimData>>{
+                FormattableError{std::vector{
                     format->format(
                         "Failed to extract '{}' from second argument of '{}' call in '{}'.",
                         FormatParam{"TILE_OFFSET_4BPP", Style::bold},
@@ -561,8 +546,8 @@ struct ParsedFunctions {
         // Extract tile_count from third argument
         auto tile_count = extract_tile_count(call.argument_at(2), *format);
         if (!tile_count.has_value()) {
-            return ChainableResult<std::map<std::string, DiscoveredAnimData>>{
-                FormattableError{std::vector<std::string>{
+            return ChainableResult<std::map<DynamicCasedName, DiscoveredAnimData>>{
+                FormattableError{std::vector{
                     format->format(
                         "Failed to extract '{}' from third argument of '{}' call in '{}'.",
                         FormatParam{"TILE_SIZE_4BPP", Style::bold},
@@ -590,7 +575,7 @@ struct ParsedFunctions {
         }
 
         // Store discovered animation data
-        discovered_anims[anim_name_pascal] = {
+        discovered_anims[std::move(anim_cased_name).value()] = {
             tile_offset.value(), tile_count.value(), condition.frame_factor, condition.frame_offset};
     }
 
@@ -652,21 +637,21 @@ struct ParsedFunctions {
  * For each discovered animation, finds the matching frame pointer array, extracts frame names and order, and
  * constructs an AnimParams. Returns an error if a frame array cannot be found for any discovered animation.
  *
- * @param discovered_anims Map of PascalCase animation name to discovered animation data
+ * @param discovered_anims Map of DynamicCasedName animation name to discovered animation data
  * @param frame_arrays Vector of parsed frame pointer array declarations
  * @param pascal_case_tileset The tileset name in PascalCase
  * @param porytiles_managed Whether this uses the PorytilesManaged_ prefix
  * @return Map of DynamicCasedName to AnimParams, or error if frame array not found
  */
 [[nodiscard]] ChainableResult<std::map<DynamicCasedName, AnimParams>> step_6_build_animation_params(
-    const std::map<std::string, DiscoveredAnimData> &discovered_anims,
+    const std::map<DynamicCasedName, DiscoveredAnimData> &discovered_anims,
     const std::vector<ArrayDeclaration> &frame_arrays,
     const std::string &pascal_case_tileset,
     bool porytiles_managed)
 {
     std::map<DynamicCasedName, AnimParams> result;
 
-    for (const auto &[pascal_name, anim_data] : discovered_anims) {
+    for (const auto &[cased_name, anim_data] : discovered_anims) {
         AnimParams params;
         params.tile_offset(anim_data.tile_offset);
         params.tile_count(anim_data.tile_count);
@@ -681,11 +666,13 @@ struct ParsedFunctions {
                 continue;
             }
 
-            std::string arr_anim_name =
-                extract_anim_name_from_array_ref(arr.name(), pascal_case_tileset, porytiles_managed);
+            auto arr_anim_name = extract_anim_name_from_array_ref(arr.name(), pascal_case_tileset, porytiles_managed);
+            if (!arr_anim_name.has_value()) {
+                continue;
+            }
 
             // DynamicCasedName canonical equality handles inconsistencies like TVTurnedOn vs TvTurnedOn
-            if (DynamicCasedName{arr_anim_name} == DynamicCasedName{pascal_name}) {
+            if (arr_anim_name.value() == cased_name) {
                 auto frame_order = extract_frame_names(arr.elements());
                 if (!frame_order.empty()) {
                     // Derive unique frame_names from frame_order (preserving first occurrence order)
@@ -704,9 +691,6 @@ struct ParsedFunctions {
                 break;
             }
         }
-
-        // Parse into DynamicCasedName to preserve structural info for lossless format conversion
-        const auto cased_name = DynamicCasedName::from_c_identifier(pascal_name);
 
         if (!found_frames) {
             return FormattableError{
@@ -745,9 +729,7 @@ ChainableResult<std::map<DynamicCasedName, AnimParams>> AnimCodeParser::parse_fr
 
     // Step 1: Parse callback function -> find driver function name
     PT_TRY_ASSIGN_PASS_ERR(
-        driver_func_name,
-        step_1_find_driver_function(c_parser, callback_func_name, c_file_path, format_, diag_),
-        ResultType);
+        driver_func_name, step_1_find_driver_function(c_parser, callback_func_name, c_file_path, format_), ResultType);
     if (driver_func_name.empty()) {
         return ResultType{};
     }
@@ -755,11 +737,8 @@ ChainableResult<std::map<DynamicCasedName, AnimParams>> AnimCodeParser::parse_fr
     // Step 2: Parse driver function -> extract timer conditions
     PT_TRY_ASSIGN_PASS_ERR(
         timer_conditions,
-        step_2_extract_timer_conditions(c_parser, driver_func_name, c_file_path, format_, diag_),
+        step_2_extract_timer_conditions(c_parser, driver_func_name, c_file_path, format_),
         ResultType);
-    if (timer_conditions.empty()) {
-        return ResultType{};
-    }
 
     // Step 3: Parse all functions -> build lookup map
     PT_TRY_ASSIGN_PASS_ERR(parsed_funcs, step_3_build_function_map(c_parser, c_file_path, format_), ResultType);
@@ -768,7 +747,7 @@ ChainableResult<std::map<DynamicCasedName, AnimParams>> AnimCodeParser::parse_fr
     PT_TRY_ASSIGN_PASS_ERR(
         discovered_anims,
         step_4_extract_animation_data(
-            timer_conditions, parsed_funcs.by_name, pascal_case_tileset, porytiles_managed, format_, diag_),
+            timer_conditions, parsed_funcs.by_name, pascal_case_tileset, porytiles_managed, format_),
         ResultType);
 
     // Step 5: Parse frame pointer arrays

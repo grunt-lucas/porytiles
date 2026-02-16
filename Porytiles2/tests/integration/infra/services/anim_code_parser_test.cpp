@@ -436,4 +436,138 @@ TEST_F(AnimCodeParserTest, PreservesCasedNameForPorytilesManaged)
     EXPECT_EQ(anims.at(DynamicCasedName{"land_water_edge"}).cased_name().to_c_identifier(), "LandWaterEdge");
 }
 
+// ── Error condition tests ─────────────────────────────────────────────────────
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenMultipleCallbacksFound)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step1_multiple_callbacks.c",
+        "InitTilesetAnim_General",
+        "General",
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when multiple callback functions match";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenNoCallbackAssignment)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step1_no_callback_assignment.c",
+        "InitTilesetAnim_General",
+        "General",
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when callback has no driver assignment";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenDriverFuncNotFound)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step2_driver_func_not_found.c",
+        "InitTilesetAnim_General",
+        "General",
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when driver function is not defined";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenNoTimerConditions)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step2_no_timer_conditions.c",
+        "InitTilesetAnim_General",
+        "General",
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when driver has no timer conditions";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenQueueFuncNotFound)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step4_queue_func_not_found.c",
+        "InitTilesetAnim_General",
+        "General",
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when queue function is not defined";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenNoAppendCalls)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step4_no_append_calls.c",
+        "InitTilesetAnim_General",
+        "General",
+        false);
+    EXPECT_FALSE(result.has_value())
+        << "Should return error when queue function has no AppendTilesetAnimToBuffer calls";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenFewerThan3Args)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step4_fewer_than_3_args.c",
+        "InitTilesetAnim_General",
+        "General",
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when AppendTilesetAnimToBuffer has fewer than 3 arguments";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenNoIdentifierInFirstArg)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step4_no_identifier_in_first_arg.c",
+        "InitTilesetAnim_General",
+        "General",
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when first argument has no identifier";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenBadAnimNamePrefix)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step4_bad_anim_name_prefix.c",
+        "InitTilesetAnim_General",
+        "General",
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when array name has wrong prefix";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenMissingTileOffset)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step4_missing_tile_offset.c",
+        "InitTilesetAnim_General",
+        "General",
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when TILE_OFFSET_4BPP pattern is missing";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenMissingTileSize)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step4_missing_tile_size.c",
+        "InitTilesetAnim_General",
+        "General",
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when TILE_SIZE_4BPP pattern is missing";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenVDestsMultiAppend)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step4_vdests_multi_append.c",
+        "InitTilesetAnim_General",
+        "General",
+        false);
+    EXPECT_FALSE(result.has_value())
+        << "Should return error when queue function has multiple AppendTilesetAnimToBuffer calls";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenMissingFrameArray)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step6_missing_frame_array.c",
+        "InitTilesetAnim_General",
+        "General",
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when frame array is not found for animation";
+}
+
 } // namespace porytiles2
