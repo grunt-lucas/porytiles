@@ -1000,7 +1000,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
                  * special edge case was hit.
                  */
                 return FormattableError{
-                    "animation '{}' requires {} contiguous tiles but no sufficient space found",
+                    "Animation '{}' requires {} contiguous tiles but no sufficient space found.",
                     FormatParam{anim_name, Style::bold},
                     FormatParam{tile_count, Style::bold}};
             }
@@ -1014,10 +1014,17 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
                 offset = existing_offset.value();
             }
             else {
-                return FormattableError{
-                    "Tiles Edit Mode is '{}': animation '{}' keyframes not found in existing tiles.png.",
-                    FormatParam{"locked", Style::bold},
-                    FormatParam{anim_name, Style::bold}};
+                // TODO: could we improve this error by showing violating tiles?
+                std::vector<std::string> err_msg{};
+                err_msg.emplace_back(format_.format(
+                    "Animation '{}' keyframes not found in existing tiles.png.", FormatParam{anim_name, Style::bold}));
+                err_msg.emplace_back(format_.format(
+                    "Cannot proceed due to '{}' setting '{}'.",
+                    FormatParam{"Tiles Edit Mode", Style::bold},
+                    FormatParam{"locked", Style::bold}));
+                std::ranges::copy(
+                    format_config_note_with_separator(format_, tiles_edit_mode_), std::back_inserter(err_msg));
+                return FormattableError{err_msg};
             }
         }
         else {
