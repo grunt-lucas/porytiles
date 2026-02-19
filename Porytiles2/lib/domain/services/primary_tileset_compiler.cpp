@@ -984,12 +984,21 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
                 existing_offset.has_value()) {
                 offset = existing_offset.value();
             }
+            // If full sequence not found, find sufficient contiguous free space to insert
             else if (const auto free_offset = tiles_workspace_->find_contiguous_transparent_slots(tile_count);
                      free_offset.has_value()) {
                 tiles_workspace_->place_tiles_at(free_offset.value(), keyframe_data.tiles);
                 offset = free_offset.value();
             }
             else {
+                /*
+                 * TODO: This condition branching doesn't handle the possibility that a partial contiguous sequence
+                 * exists, with sufficient free space after to complete the insertion. The match is all-or-nothing.
+                 * Either the full tile sequence must already exist, or there must be contiguous free space large enough
+                 * to insert it. Future versions of Porytiles may want to handle this case more cleanly, either by
+                 * successfully "completing" a partial key frame sequence, or at least notifying the user tha this
+                 * special edge case was hit.
+                 */
                 return FormattableError{
                     "animation '{}' requires {} contiguous tiles but no sufficient space found",
                     FormatParam{anim_name, Style::bold},
@@ -1006,7 +1015,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
             }
             else {
                 return FormattableError{
-                    "Tiles edit_mode is '{}': animation '{}' keyframes not found in existing tiles.png",
+                    "Tiles Edit Mode is '{}': animation '{}' keyframes not found in existing tiles.png.",
                     FormatParam{"locked", Style::bold},
                     FormatParam{anim_name, Style::bold}};
             }

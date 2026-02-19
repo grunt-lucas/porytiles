@@ -63,7 +63,8 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
     }
 
     const std::string callback_func = metadata.callback_func().value();
-    const std::string pascal_tileset = extract_tileset_shorthand(tileset_name);
+    const auto tileset_cased = extract_tileset_cased_name(tileset_name);
+    const std::string pascal_tileset = tileset_cased.to_pascal_case();
 
     // TODO: provide some way for user to configure this?
     // Step 2: Parse animation parameters from tileset_anims.c
@@ -76,7 +77,7 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
 
     AnimCodeParser anim_parser{format_, diag_};
     auto anim_params_result =
-        anim_parser.parse_from_callback(tileset_anims_path, callback_func, pascal_tileset, /*porytiles_managed=*/false);
+        anim_parser.parse_from_callback(tileset_anims_path, callback_func, tileset_cased, /*porytiles_managed=*/false);
     if (!anim_params_result.has_value()) {
         return ChainableResult<std::map<std::string, Animation<IndexPixel>>>{
             FormattableError{

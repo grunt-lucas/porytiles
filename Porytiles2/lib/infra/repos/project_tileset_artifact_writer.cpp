@@ -17,11 +17,11 @@
 #include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
-#include "porytiles2/utilities/dynamic_cased_name.hpp"
 #include "porytiles2/utilities/filesystem_utils.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/result/error.hpp"
+#include "porytiles2/utilities/string_utils.hpp"
 #include "porytiles2/xcut/config/config_scope_type.hpp"
 
 namespace {
@@ -744,7 +744,7 @@ ProjectTilesetArtifactWriter::write_porymap_anim_params(const ArtifactKey &dest_
     }
     const std::string bin_path_base = bin_path_result.value();
     const std::filesystem::path tileset_path =
-        std::filesystem::path{bin_path_base} / DynamicCasedName{extract_tileset_shorthand(src.name())}.to_snake_case();
+        std::filesystem::path{bin_path_base} / extract_tileset_cased_name(src.name()).to_snake_case();
 
     auto code_result = anim_code_generator_->generate(src.name(), tileset_path, anim_params, is_primary);
     if (!code_result.has_value()) {

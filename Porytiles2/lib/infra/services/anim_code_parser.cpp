@@ -712,18 +712,12 @@ namespace porytiles2 {
 ChainableResult<std::map<DynamicCasedName, AnimParams>> AnimCodeParser::parse_from_callback(
     const std::filesystem::path &c_file_path,
     const std::string &callback_func_name,
-    const std::string &pascal_case_tileset,
+    const DynamicCasedName &tileset_cased_name,
     bool porytiles_managed) const
 {
-    /*
-     * TODO: refactor pascal_case_tileset and callback_func_name params to be a DynamicCasedName.
-     */
-
     CParserFacade c_parser{c_file_path, format_};
 
-    if (DynamicCasedName{pascal_case_tileset}.to_pascal_case() != pascal_case_tileset) {
-        panic("param pascal_case_tileset = '" + pascal_case_tileset + "', must be pascal case");
-    }
+    const std::string pascal_case_tileset = tileset_cased_name.to_pascal_case();
 
     using ResultType = std::map<DynamicCasedName, AnimParams>;
 

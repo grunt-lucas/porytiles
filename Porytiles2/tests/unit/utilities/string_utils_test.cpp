@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "porytiles2/utilities/dynamic_cased_name.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
 
 using namespace porytiles2;
@@ -148,4 +149,29 @@ TEST_F(StringUtilsTest, TrimPrefix)
     // Case sensitive
     EXPECT_EQ(trim_prefix("Hello_World", "hello_"), "Hello_World");
     EXPECT_EQ(trim_prefix("Hello_World", "Hello_"), "World");
+}
+
+// =====================================================
+// extract_tileset_cased_name tests
+// =====================================================
+
+TEST_F(StringUtilsTest, ExtractTilesetCasedNameWithPrefix)
+{
+    auto result = extract_tileset_cased_name("gTileset_General");
+    EXPECT_EQ(result.to_pascal_case(), "General");
+    EXPECT_EQ(result.to_snake_case(), "general");
+}
+
+TEST_F(StringUtilsTest, ExtractTilesetCasedNameWithoutPrefix)
+{
+    auto result = extract_tileset_cased_name("General");
+    EXPECT_EQ(result.to_pascal_case(), "General");
+    EXPECT_EQ(result.to_snake_case(), "general");
+}
+
+TEST_F(StringUtilsTest, ExtractTilesetCasedNameCompound)
+{
+    auto result = extract_tileset_cased_name("gTileset_PetalburgCity");
+    EXPECT_EQ(result.to_pascal_case(), "PetalburgCity");
+    EXPECT_EQ(result.to_snake_case(), "petalburg_city");
 }

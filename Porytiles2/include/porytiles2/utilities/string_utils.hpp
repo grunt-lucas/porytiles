@@ -22,6 +22,7 @@
 #include <regex>
 #include <string>
 
+#include "porytiles2/utilities/dynamic_cased_name.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 
 namespace porytiles2 {
@@ -423,6 +424,27 @@ template <typename T>
         return tileset_name.substr(prefix.size());
     }
     return tileset_name;
+}
+
+/**
+ * @brief Extracts the tileset short name and wraps it in a DynamicCasedName.
+ *
+ * @details
+ * Removes the "gTileset_" prefix from a tileset name if present, then constructs a DynamicCasedName from the
+ * resulting shorthand. This combines @c extract_tileset_shorthand() and @c DynamicCasedName construction into a
+ * single convenience function, which is the most common usage pattern across the codebase.
+ *
+ * @param tileset_name The full tileset name (e.g., "gTileset_General")
+ * @return A DynamicCasedName wrapping the short name (e.g., DynamicCasedName{"General"})
+ *
+ * @par Examples
+ * - `"gTileset_General"` → `DynamicCasedName{"General"}`
+ * - `"gTileset_Petalburg"` → `DynamicCasedName{"Petalburg"}`
+ * - `"General"` → `DynamicCasedName{"General"}` (no prefix, unchanged)
+ */
+[[nodiscard]] inline DynamicCasedName extract_tileset_cased_name(const std::string &tileset_name)
+{
+    return DynamicCasedName{extract_tileset_shorthand(tileset_name)};
 }
 
 } // namespace porytiles2

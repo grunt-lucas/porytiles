@@ -236,11 +236,11 @@ ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKe
     }
 
     // Setup callback info, use Porytiles-managed callback regardless of metadata
-    const std::string tileset_shorthand = extract_tileset_shorthand(dest.name());
-    const std::string callback_func = "InitTilesetAnim_PorytilesManaged_" + tileset_shorthand;
+    const auto tileset_cased = extract_tileset_cased_name(dest.name());
+    const std::string callback_func = "InitTilesetAnim_PorytilesManaged_" + tileset_cased.to_pascal_case();
 
     // Parse C code for animation params
-    auto params_result = anim_code_parser_->parse_from_callback(params_path, callback_func, tileset_shorthand, true);
+    auto params_result = anim_code_parser_->parse_from_callback(params_path, callback_func, tileset_cased, true);
 
     if (!params_result.has_value()) {
         return ChainableResult<void>{

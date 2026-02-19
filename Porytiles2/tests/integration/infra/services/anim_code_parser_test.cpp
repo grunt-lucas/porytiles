@@ -24,7 +24,7 @@ TEST_F(AnimCodeParserTest, DiscoversAnimsInPokeemeraldGeneralGeneratedHeader)
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/pokeemerald_general_generated_anim_code.h",
         callback_func,
-        "General",
+        DynamicCasedName{"General"},
         true);
 
     ASSERT_TRUE(result.has_value()) << "Parsing should succeed";
@@ -48,7 +48,7 @@ TEST_F(AnimCodeParserTest, ExtractsAnimParamsFromPokeemeraldGeneralGeneratedHead
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/pokeemerald_general_generated_anim_code.h",
         callback_func,
-        "General",
+        DynamicCasedName{"General"},
         true);
 
     ASSERT_TRUE(result.has_value());
@@ -133,7 +133,10 @@ TEST_F(AnimCodeParserTest, DiscoversAnimsInCustom1GeneratedHeader)
     const std::string callback_func = "InitTilesetAnim_" + anim::porytiles_managed_prefix + "Custom1";
 
     auto result = parser_.parse_from_callback(
-        "Resources/Tests/integration/shared/anim/custom1_generated_anim_code.h", callback_func, "Custom1", true);
+        "Resources/Tests/integration/shared/anim/custom1_generated_anim_code.h",
+        callback_func,
+        DynamicCasedName{"Custom1"},
+        true);
 
     ASSERT_TRUE(result.has_value()) << "Parsing should succeed";
     const auto &anims = result.value();
@@ -150,7 +153,10 @@ TEST_F(AnimCodeParserTest, ExtractsAnimParamsFromCustom1GeneratedHeader)
     const std::string callback_func = "InitTilesetAnim_" + anim::porytiles_managed_prefix + "Custom1";
 
     auto result = parser_.parse_from_callback(
-        "Resources/Tests/integration/shared/anim/custom1_generated_anim_code.h", callback_func, "Custom1", true);
+        "Resources/Tests/integration/shared/anim/custom1_generated_anim_code.h",
+        callback_func,
+        DynamicCasedName{"Custom1"},
+        true);
 
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
@@ -186,7 +192,8 @@ TEST_F(AnimCodeParserTest, ExtractsAnimParamsFromCustom1GeneratedHeader)
 
 TEST_F(AnimCodeParserTest, ReturnsErrorForNonExistentFile)
 {
-    auto result = parser_.parse_from_callback("nonexistent_file.h", "InitTilesetAnim_General", "General", false);
+    auto result = parser_.parse_from_callback(
+        "nonexistent_file.h", "InitTilesetAnim_General", DynamicCasedName{"General"}, false);
 
     EXPECT_FALSE(result.has_value()) << "Should return error for non-existent file";
 }
@@ -197,7 +204,7 @@ TEST_F(AnimCodeParserTest, DiscoversAnimsInPokeemeraldTilesetAnimsC)
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/pokeemerald_tileset_anims.c",
         "InitTilesetAnim_General",
-        "General",
+        DynamicCasedName{"General"},
         false);
 
     ASSERT_TRUE(result.has_value()) << "Parsing should succeed";
@@ -219,7 +226,7 @@ TEST_F(AnimCodeParserTest, ExtractsAnimParamsInPokeemeraldTilesetAnimsC)
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/pokeemerald_tileset_anims.c",
         "InitTilesetAnim_General",
-        "General",
+        DynamicCasedName{"General"},
         false);
 
     ASSERT_TRUE(result.has_value());
@@ -302,7 +309,7 @@ TEST_F(AnimCodeParserTest, ReturnsEmptyForNonExistentCallback)
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/pokeemerald_tileset_anims.c",
         "InitTilesetAnim_NonExistent",
-        "NonExistent",
+        DynamicCasedName{"NonExistent"},
         false);
 
     ASSERT_TRUE(result.has_value()) << "Parsing should succeed even with no matches";
@@ -314,7 +321,7 @@ TEST_F(AnimCodeParserTest, DiscoversAnimsInPokefireredTilesetAnimsC)
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/pokefirered_tileset_anims.c",
         "InitTilesetAnim_General",
-        "General",
+        DynamicCasedName{"General"},
         false);
 
     ASSERT_TRUE(result.has_value()) << "Parsing should succeed";
@@ -332,7 +339,7 @@ TEST_F(AnimCodeParserTest, ExtractsAnimParamsInPokefireredTilesetAnimsC)
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/pokefirered_tileset_anims.c",
         "InitTilesetAnim_General",
-        "General",
+        DynamicCasedName{"General"},
         false);
 
     ASSERT_TRUE(result.has_value());
@@ -384,7 +391,7 @@ TEST_F(AnimCodeParserTest, PreservesCasedNameForSimpleNames)
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/pokeemerald_tileset_anims.c",
         "InitTilesetAnim_General",
-        "General",
+        DynamicCasedName{"General"},
         false);
 
     ASSERT_TRUE(result.has_value());
@@ -400,7 +407,7 @@ TEST_F(AnimCodeParserTest, PreservesCasedNameForCompoundNames)
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/pokefirered_tileset_anims.c",
         "InitTilesetAnim_General",
-        "General",
+        DynamicCasedName{"General"},
         false);
 
     ASSERT_TRUE(result.has_value());
@@ -423,7 +430,7 @@ TEST_F(AnimCodeParserTest, PreservesCasedNameForPorytilesManaged)
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/pokeemerald_general_generated_anim_code.h",
         callback_func,
-        "General",
+        DynamicCasedName{"General"},
         true);
 
     ASSERT_TRUE(result.has_value());
@@ -443,7 +450,7 @@ TEST_F(AnimCodeParserTest, ReturnsErrorWhenMultipleCallbacksFound)
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/errors/error_step1_multiple_callbacks.c",
         "InitTilesetAnim_General",
-        "General",
+        DynamicCasedName{"General"},
         false);
     EXPECT_FALSE(result.has_value()) << "Should return error when multiple callback functions match";
 }
@@ -453,7 +460,7 @@ TEST_F(AnimCodeParserTest, ReturnsErrorWhenNoCallbackAssignment)
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/errors/error_step1_no_callback_assignment.c",
         "InitTilesetAnim_General",
-        "General",
+        DynamicCasedName{"General"},
         false);
     EXPECT_FALSE(result.has_value()) << "Should return error when callback has no driver assignment";
 }
@@ -463,7 +470,7 @@ TEST_F(AnimCodeParserTest, ReturnsErrorWhenDriverFuncNotFound)
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/errors/error_step2_driver_func_not_found.c",
         "InitTilesetAnim_General",
-        "General",
+        DynamicCasedName{"General"},
         false);
     EXPECT_FALSE(result.has_value()) << "Should return error when driver function is not defined";
 }
@@ -473,7 +480,7 @@ TEST_F(AnimCodeParserTest, ReturnsErrorWhenNoTimerConditions)
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/errors/error_step2_no_timer_conditions.c",
         "InitTilesetAnim_General",
-        "General",
+        DynamicCasedName{"General"},
         false);
     EXPECT_FALSE(result.has_value()) << "Should return error when driver has no timer conditions";
 }
@@ -483,7 +490,7 @@ TEST_F(AnimCodeParserTest, ReturnsErrorWhenQueueFuncNotFound)
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/errors/error_step4_queue_func_not_found.c",
         "InitTilesetAnim_General",
-        "General",
+        DynamicCasedName{"General"},
         false);
     EXPECT_FALSE(result.has_value()) << "Should return error when queue function is not defined";
 }
@@ -493,7 +500,7 @@ TEST_F(AnimCodeParserTest, ReturnsErrorWhenNoAppendCalls)
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/errors/error_step4_no_append_calls.c",
         "InitTilesetAnim_General",
-        "General",
+        DynamicCasedName{"General"},
         false);
     EXPECT_FALSE(result.has_value())
         << "Should return error when queue function has no AppendTilesetAnimToBuffer calls";
@@ -504,7 +511,7 @@ TEST_F(AnimCodeParserTest, ReturnsErrorWhenFewerThan3Args)
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/errors/error_step4_fewer_than_3_args.c",
         "InitTilesetAnim_General",
-        "General",
+        DynamicCasedName{"General"},
         false);
     EXPECT_FALSE(result.has_value()) << "Should return error when AppendTilesetAnimToBuffer has fewer than 3 arguments";
 }
@@ -514,7 +521,7 @@ TEST_F(AnimCodeParserTest, ReturnsErrorWhenNoIdentifierInFirstArg)
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/errors/error_step4_no_identifier_in_first_arg.c",
         "InitTilesetAnim_General",
-        "General",
+        DynamicCasedName{"General"},
         false);
     EXPECT_FALSE(result.has_value()) << "Should return error when first argument has no identifier";
 }
@@ -524,7 +531,7 @@ TEST_F(AnimCodeParserTest, ReturnsErrorWhenBadAnimNamePrefix)
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/errors/error_step4_bad_anim_name_prefix.c",
         "InitTilesetAnim_General",
-        "General",
+        DynamicCasedName{"General"},
         false);
     EXPECT_FALSE(result.has_value()) << "Should return error when array name has wrong prefix";
 }
@@ -534,7 +541,7 @@ TEST_F(AnimCodeParserTest, ReturnsErrorWhenMissingTileOffset)
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/errors/error_step4_missing_tile_offset.c",
         "InitTilesetAnim_General",
-        "General",
+        DynamicCasedName{"General"},
         false);
     EXPECT_FALSE(result.has_value()) << "Should return error when TILE_OFFSET_4BPP pattern is missing";
 }
@@ -544,7 +551,7 @@ TEST_F(AnimCodeParserTest, ReturnsErrorWhenMissingTileSize)
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/errors/error_step4_missing_tile_size.c",
         "InitTilesetAnim_General",
-        "General",
+        DynamicCasedName{"General"},
         false);
     EXPECT_FALSE(result.has_value()) << "Should return error when TILE_SIZE_4BPP pattern is missing";
 }
@@ -554,7 +561,7 @@ TEST_F(AnimCodeParserTest, ReturnsErrorWhenVDestsMultiAppend)
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/errors/error_step4_vdests_multi_append.c",
         "InitTilesetAnim_General",
-        "General",
+        DynamicCasedName{"General"},
         false);
     EXPECT_FALSE(result.has_value())
         << "Should return error when queue function has multiple AppendTilesetAnimToBuffer calls";
@@ -565,7 +572,7 @@ TEST_F(AnimCodeParserTest, ReturnsErrorWhenMissingFrameArray)
     auto result = parser_.parse_from_callback(
         "Resources/Tests/integration/shared/anim/errors/error_step6_missing_frame_array.c",
         "InitTilesetAnim_General",
-        "General",
+        DynamicCasedName{"General"},
         false);
     EXPECT_FALSE(result.has_value()) << "Should return error when frame array is not found for animation";
 }
