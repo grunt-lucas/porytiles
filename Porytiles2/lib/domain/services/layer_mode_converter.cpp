@@ -103,7 +103,7 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(c
             panic("metatile " + std::to_string(i) + " has implied LayerMode::triple, cannot dual_layerize");
         }
 
-        // Infer the layer type for this metatile using magenta as extrinsic transparency
+        // Infer the layer type for this metatile using extrinsic transparency
         const LayerType layer_type = metatile.infer_layer_type(extrinsic_transparency_);
 
         switch (layer_type) {

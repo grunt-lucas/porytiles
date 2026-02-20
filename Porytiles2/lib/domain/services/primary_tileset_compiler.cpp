@@ -406,6 +406,7 @@ ChainableResult<void> CompilerTask::pipeline_step_setup_working_data()
             return std::make_unique<TilesPngWorkspace>(tileset.porymap_component().tiles_png(), size_in_tiles);
         }
         if (tiles_edit_mode == ArtifactEditMode::patch) {
+            // TODO: here, should we compute the size and match the size like above?
             return std::make_unique<TilesPngWorkspace>(tileset.porymap_component().tiles_png(), num_tiles_in_primary);
         }
         if (tiles_edit_mode == ArtifactEditMode::optimize) {
@@ -497,11 +498,13 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
      * could also have a compilation option "force_remove" that forcibly removes unused stuff. This is obviously less
      * safe, since for vanilla primary tilesets, seemingly unused assets may be in use from the secondaries. We can
      * solve this by eventually having code that reads all tileset pairings from layouts.json and computes which primary
-     * assets are truly unused. In fact, we'll need something like this in order to truly implement pals:patch mode,
-     * since palettes have no "unused" sentinel value. And in fact, many of the vanilla '0 0 0' colors are actually used
-     * by secondaries *facepalm* (e.g. see cave tileset). Which means we can't even assume '0 0 0' is unused. Until we
-     * implement this, users can still simulate pals:patch by bringing in all Porymap pals as Porytiles override pals,
-     * wildcarding slots they are OK overwriting, and setting pals:optimize.
+     * assets are truly unused.
+     *
+     * In fact, we'll need something like this in order to truly implement pals:patch mode, since palettes have no
+     * "unused" sentinel value. And in fact, many of the vanilla '0 0 0' colors are actually used by secondaries
+     * *facepalm* (e.g. see cave tileset). Which means we can't even assume '0 0 0' is unused. Until we implement this,
+     * users can still simulate pals:patch by bringing in all Porymap pals as Porytiles override pals, wildcarding slots
+     * they are OK overwriting, and setting pals:optimize.
      */
 
     // No changes here, this is a compilation operation - no writebacks into input assets
@@ -800,7 +803,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
             constexpr auto tag = "palette-packing-result";
             std::vector<std::string> remark_lines;
             remark_lines.emplace_back(
-                format_.format("packed '{}' contents:", FormatParam{pal_filename(i), Style::bold}));
+                format_.format("Palette '{}' packing result:", FormatParam{pal_filename(i), Style::bold}));
             remark_lines.emplace_back();
             std::ranges::copy(pal_printer_.print_rgba_pal(maybe_packed_pal.value()), std::back_inserter(remark_lines));
             diag_.remark(tag, remark_lines);
@@ -1090,9 +1093,10 @@ void CompilerTask::pipeline_helper_compile_animations()
             !std::ranges::all_of(subtile_pal_indices, [&](std::size_t idx) { return idx == frame_pal_index; });
 
         if (uses_multiple_palettes) {
+            // TODO: could we display something more here?
             std::vector<std::string> warning_lines;
             warning_lines.emplace_back(format_.format(
-                "animation '{}' uses multiple palettes across subtiles", FormatParam{anim_name, Style::bold}));
+                "Animation '{}' uses multiple palettes across subtiles.", FormatParam{anim_name, Style::bold}));
             warning_lines.emplace_back(format_.format(
                 "Frame PNGs will be saved using palette '{}' for display purposes.",
                 FormatParam{pal_filename(frame_pal_index), Style::bold}));

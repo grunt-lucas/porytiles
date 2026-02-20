@@ -183,6 +183,15 @@ ChainableResult<std::size_t> find_pal_for_anim_tiles(
     const UserDiagnostics &diag,
     const PalettePrinter &pal_printer)
 {
+    /*
+     * TODO: this is bugged in certain pathological cases. See bug/anim-decompiler branch in my expansion fork. In that
+     * case, we have a scenario where the animation uses more than one pal. However, the metatile scanning method just
+     * picks up a single pal for the anim, since it can only see what actually appeared in the metatiles (e.g. the key
+     * frame). Then, when you run the decompile, any subtiles that used a different pal get distorted. We need to
+     * rethink how this whole thing works a bit more. Probably by just fully supporting multi-palette animations (which
+     * we have to do anyway, since vanilla FireRed general tileset uses them).
+     */
+
     std::set<std::size_t> found_pal_indices{};
 
     // Scan all tiles in the animation range
@@ -396,8 +405,9 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
 
     /*
      * TODO: ANIM: adapt this code so that it computes a separate pal index for each subtile of the key frame.
-     * Technically, advanced users could make animations where different subtiles use different palettes. None of the
-     * vanilla game animations work this way, but it's possible and thus a use-case I want to support.
+     * Technically, advanced users could make animations where different subtiles use different palettes. We already
+     * support this on the compilation side, and FireRed vanilla general tileset makes use of this technique, so we
+     * actually cannot import it until this is solved.
      */
     // Recover the palette index by scanning metatiles for all animation tiles
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -442,6 +452,14 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
      * Check for duplicate key frame tiles using canonical (flip-equivalent) comparison. Detects both:
      * - Cross-range duplicates: animation tile matches a non-animation tile in tiles.png
      * - Intra-animation duplicates: two animation tiles are flip-equivalent to each other
+     */
+    /*
+     * TODO: are we successfully catching INTER-animation duplicates here? I think not. Right now, intra-animation
+     * duplicates are caught, e.g. if 'water' anim has two duplicate key frame tiles. But what if 'water' subtile 0 and
+     * 'ocean' subtile 2 are identical? That's an issue we're not catching here. I suppose in most practical cases we
+     * catch it, since that other anim's key frame is probably present in tiles.png. But it's possible for whatever
+     * reason it's not (e.g. unused anim), and we should probably error out anyway for correctness sake. This is a
+     * lower-priority fix since it's de-facto unlikely to happen in the wild.
      */
     if (has_duplicate_key_frame_tiles(key_frame_index_tiles, existing_canonical_tiles)) {
         switch (key_frame_strategy.value()) {
