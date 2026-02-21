@@ -280,7 +280,7 @@ LayerValue<TilesPalMode> YamlFileProvider::tiles_pal_mode(ConfigScopeType type, 
 }
 
 LayerValue<AnimPalResolutionStrategy>
-YamlFileProvider::anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const
+YamlFileProvider::global_anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
@@ -291,10 +291,28 @@ YamlFileProvider::anim_pal_resolution_strategy(ConfigScopeType type, const std::
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["palette_resolution_strategy"]; },
+        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["global_palette_resolution_strategy"]; },
         parse_anim_pal_resolution_strategy,
-        "tileset.animations.palette_resolution_strategy",
-        "tileset.animations.palette_resolution_strategy");
+        "tileset.animations.global_palette_resolution_strategy",
+        "tileset.animations.global_palette_resolution_strategy");
+}
+
+LayerValue<AnimPalResolutionStrategyOverrides>
+YamlFileProvider::anim_pal_resolution_strategy_overrides(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<AnimPalResolutionStrategyOverrides>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<AnimPalResolutionStrategyOverrides>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["palette_resolution_strategy_overrides"]; },
+        parse_anim_pal_resolution_strategy_overrides,
+        "tileset.animations.palette_resolution_strategy_overrides",
+        "tileset.animations.palette_resolution_strategy_overrides");
 }
 
 LayerValue<AnimKeyFrameResolutionStrategy>

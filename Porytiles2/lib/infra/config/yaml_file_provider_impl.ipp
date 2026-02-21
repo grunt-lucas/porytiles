@@ -11,6 +11,7 @@
 
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
+#include "porytiles2/domain/config/anim_pal_resolution_strategy_overrides.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/packing/models/palette_hint.hpp"
@@ -173,6 +174,18 @@ void validate_yaml_paths(
 
     for (const auto &[path, mark] : paths) {
         if (!valid_yaml_paths.contains(path)) {
+            // Skip children of map-type config values (dynamic keys like animation names)
+            bool is_map_child = false;
+            for (const auto &prefix : valid_yaml_map_prefixes) {
+                if (path.starts_with(prefix + ".")) {
+                    is_map_child = true;
+                    break;
+                }
+            }
+            if (is_map_child) {
+                continue;
+            }
+
             const auto source = make_source_string(format, file_path.string(), mark);
             auto details = make_source_details(format, file_path.string(), mark);
 
@@ -568,6 +581,59 @@ LayerValue<AnimPalResolutionStrategy> parse_anim_pal_resolution_strategy(
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<AnimPalResolutionStrategy>::invalid(error, source, details);
+    }
+}
+
+LayerValue<AnimPalResolutionStrategyOverrides> parse_anim_pal_resolution_strategy_overrides(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<AnimPalResolutionStrategyOverrides>::not_provided();
+    }
+
+    try {
+        const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+
+        if (!node.IsMap()) {
+            const auto error = format->format(
+                "'{}' must be a map of animation names to resolution strategies.", FormatParam{key, Style::bold});
+            return LayerValue<AnimPalResolutionStrategyOverrides>::invalid(error, source, details);
+        }
+
+        AnimPalResolutionStrategyOverrides overrides;
+        for (const auto &kv : node) {
+            const auto anim_name = kv.first.as<std::string>();
+            const auto value_str = kv.second.as<std::string>();
+            const auto strategy_opt = anim_pal_resolution_strategy_from_str(value_str);
+
+            if (!strategy_opt.has_value()) {
+                const auto value_mark = kv.second.Mark();
+                const auto value_source = make_source_string(format, file_path, value_mark);
+                const auto value_details = make_source_details(format, file_path, value_mark);
+                const auto error = format->format(
+                    "'{}' has invalid strategy '{}' for animation '{}'.",
+                    FormatParam{key, Style::bold},
+                    FormatParam{value_str, Style::bold},
+                    FormatParam{anim_name, Style::bold});
+                return LayerValue<AnimPalResolutionStrategyOverrides>::invalid(error, value_source, value_details);
+            }
+
+            overrides[anim_name] = strategy_opt.value();
+        }
+
+        return LayerValue<AnimPalResolutionStrategyOverrides>::valid(std::move(overrides), key, source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error = format->format(
+            "Failed to parse '{}' as animation palette resolution strategy overrides: {}.",
+            FormatParam{key, Style::bold},
+            e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<AnimPalResolutionStrategyOverrides>::invalid(error, source, details);
     }
 }
 

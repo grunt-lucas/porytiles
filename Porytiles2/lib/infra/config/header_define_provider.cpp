@@ -162,10 +162,17 @@ HeaderDefineProvider::tiles_pal_mode(ConfigScopeType /*type*/, const std::string
 }
 
 LayerValue<AnimPalResolutionStrategy>
-HeaderDefineProvider::anim_pal_resolution_strategy(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+HeaderDefineProvider::global_anim_pal_resolution_strategy(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {
     // No header_define specified for this config value
     return LayerValue<AnimPalResolutionStrategy>::not_provided();
+}
+
+LayerValue<AnimPalResolutionStrategyOverrides> HeaderDefineProvider::anim_pal_resolution_strategy_overrides(
+    ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<AnimPalResolutionStrategyOverrides>::not_provided();
 }
 
 LayerValue<AnimKeyFrameResolutionStrategy>

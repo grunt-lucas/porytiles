@@ -92,15 +92,20 @@ tileset:
     # wiring yourself.
     wire_anim_code: true
 
-    # Some vanilla tileset animations aren't actually referenced within the primary tileset
-    # metatiles. E.g. Pokeemerald 'primary/general' tileset, anim 'land_water_edge' tiles are
-    # referenced only from 'secondary/mossdeep'. This means that when we import/decompile the anim,
-    # Porytiles can't immediately tell which palette to use for the Porytiles-component anim frames.
-    # This setting allows the user to configure the resolution strategy. Settings:
-    # - default_palette: Porytiles will use palette 00.pal to save the RGB frame assets. The user will have to fix the colors manually.
-    # - [default] internal_png_palette: The Porymap-component frame PNG probably has an internal palette, so use that. If it doesn't have one, fall back to default_palette setting.
-    # - full_tileset_scan: Scan layouts.json and find all tilesets paired with current tileset, see if an index is present in any. If not, fall back to internal_png_palette setting. And if that doesn't work, fall back to default_palette setting.
-    palette_resolution_strategy: internal_png_palette
+    # Strategy for determining which palette to use when decompiling animation tiles.
+    # The strategy drives palette resolution from the start. Available strategies:
+    # - [default] scan-local-metatiles: Scan local metatile entries to find palette references.
+    # - palette-00 through palette-15: Use the specified palette index directly.
+    # - internal-png-palette: Match frame PNG internal palettes against tileset palettes.
+    # - scan-all-tilesets: Scan layouts config for paired tilesets (not yet implemented).
+    global_palette_resolution_strategy: scan-local-metatiles
+
+    # Per-animation overrides for palette resolution strategy. Each key is an animation name, and
+    # the value is the resolution strategy to use for that specific animation. Animations not listed
+    # here fall back to the global_palette_resolution_strategy above.
+    palette_resolution_strategy_overrides:
+      flower: palette-00
+      water: internal-png-palette
   
   # Set transparency handling for import.
   # Allowed values:

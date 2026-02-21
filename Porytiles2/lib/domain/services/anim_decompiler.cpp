@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <iterator>
 #include <map>
+#include <optional>
 #include <ranges>
 #include <set>
 #include <string>
@@ -171,6 +172,46 @@ using namespace porytiles2;
     return FormattableError{err_msg};
 }
 
+[[nodiscard]] std::optional<std::size_t> extract_pal_index(AnimPalResolutionStrategy strategy)
+{
+    switch (strategy) {
+    case AnimPalResolutionStrategy::palette_00:
+        return 0;
+    case AnimPalResolutionStrategy::palette_01:
+        return 1;
+    case AnimPalResolutionStrategy::palette_02:
+        return 2;
+    case AnimPalResolutionStrategy::palette_03:
+        return 3;
+    case AnimPalResolutionStrategy::palette_04:
+        return 4;
+    case AnimPalResolutionStrategy::palette_05:
+        return 5;
+    case AnimPalResolutionStrategy::palette_06:
+        return 6;
+    case AnimPalResolutionStrategy::palette_07:
+        return 7;
+    case AnimPalResolutionStrategy::palette_08:
+        return 8;
+    case AnimPalResolutionStrategy::palette_09:
+        return 9;
+    case AnimPalResolutionStrategy::palette_10:
+        return 10;
+    case AnimPalResolutionStrategy::palette_11:
+        return 11;
+    case AnimPalResolutionStrategy::palette_12:
+        return 12;
+    case AnimPalResolutionStrategy::palette_13:
+        return 13;
+    case AnimPalResolutionStrategy::palette_14:
+        return 14;
+    case AnimPalResolutionStrategy::palette_15:
+        return 15;
+    default:
+        return std::nullopt;
+    }
+}
+
 ChainableResult<std::size_t> find_pal_for_anim_tiles(
     const std::string &anim_name,
     std::size_t tile_offset,
@@ -192,88 +233,89 @@ ChainableResult<std::size_t> find_pal_for_anim_tiles(
      * we have to do anyway, since vanilla FireRed general tileset uses them).
      */
 
-    std::set<std::size_t> found_pal_indices{};
-
-    // Scan all tiles in the animation range
-    for (std::size_t i = 0; i < tile_count; ++i) {
-        const std::size_t tile_index = tile_offset + i;
-        for (const auto &entry : metatiles_bin) {
-            if (entry.tile_index() == tile_index) {
-                found_pal_indices.insert(entry.pal_index());
-            }
-        }
-    }
-
-    if (found_pal_indices.empty()) {
+    // Check pal_N strategies first — return the palette index immediately
+    const auto explicit_pal = extract_pal_index(strategy.value());
+    if (explicit_pal.has_value()) {
         diag.remark(
             "animation-palette-resolution-strategy",
             {diag.formatter().format(
-                 "Animation '{}' not referenced in metatiles.", FormatParam{anim_name, Style::bold}),
-             "Falling back to palette resolution strategy."});
+                "Animation '{}' using explicit palette '{}'.",
+                FormatParam{anim_name, Style::bold},
+                FormatParam{pal_filename(*explicit_pal), Style::bold})});
         diag.remark_note("animation-palette-resolution-strategy", format_config_note(diag.formatter(), strategy));
+        return *explicit_pal;
+    }
 
-        switch (strategy) {
-        case AnimPalResolutionStrategy::error: {
+    switch (strategy.value()) {
+    case AnimPalResolutionStrategy::scan_local_metatiles: {
+        std::set<std::size_t> found_pal_indices{};
+
+        // Scan all tiles in the animation range
+        for (std::size_t i = 0; i < tile_count; ++i) {
+            const std::size_t tile_index = tile_offset + i;
+            for (const auto &entry : metatiles_bin) {
+                if (entry.tile_index() == tile_index) {
+                    found_pal_indices.insert(entry.pal_index());
+                }
+            }
+        }
+
+        if (found_pal_indices.empty()) {
             std::vector<std::string> err_msg{};
             err_msg.emplace_back(diag.formatter().format(
-                "Animation '{}' tile index range [{},{}] is not referenced in metatiles.",
+                "Animation '{}' tile index range [{},{}] is not referenced in local metatiles.",
                 FormatParam{anim_name, Style::bold},
                 FormatParam{tile_offset, Style::bold},
                 FormatParam{tile_offset + tile_count - 1, Style::bold}));
+            err_msg.emplace_back(
+                "Consider using a different palette resolution strategy (e.g. 'palette-00', "
+                "'internal-png-palette', etc.).");
             std::ranges::copy(
                 format_config_note_with_separator(diag.formatter(), strategy), std::back_inserter(err_msg));
             return FormattableError{err_msg};
         }
 
-        case AnimPalResolutionStrategy::default_pal:
+        if (found_pal_indices.size() > 1) {
             /*
-             * TODO: instead of default_pal, have a strategy for each pal, i.e. pal_0, pal_1, pal_2, etc. Also, it would
-             * be nice if there was a way to configure this strategy PER ANIM.
+             * TODO: ANIM: adapt this code so that it computes a separate pal index for each subtile of the key frame.
+             * While pokeemerald vanilla animations don't hit this case, pokefirered's do, and some users may have
+             * custom animations that work this way. We MUST support this properly.
              */
-            return 0;
-
-        case AnimPalResolutionStrategy::internal_png_pal: {
-            std::vector<std::string> err_msg{};
-            err_msg.emplace_back(diag.formatter().format(
-                "Palette resolution strategy '{}' failed.",
-                FormatParam{to_string(AnimPalResolutionStrategy::internal_png_pal), Style::bold}));
-            std::ranges::copy(
-                format_config_note_with_separator(diag.formatter(), strategy), std::back_inserter(err_msg));
-            PT_TRY_ASSIGN_CHAIN_ERR(
-                match,
-                internal_png_pal_strategy(anim, pals, extrinsic_transparency, diag, pal_printer),
-                err_msg,
-                std::size_t);
-            return match;
-        }
-
-        case AnimPalResolutionStrategy::full_tileset_scan:
-            panic("full_tileset_scan not yet implemented");
-
-        default:
-            panic("unhandled AnimPalResolutionStrategy value");
-        }
-    }
-
-    if (found_pal_indices.size() > 1) {
-        /*
-         * TODO: ANIM: adapt this code so that it computes a separate pal index for each subtile of the key frame.
-         * While pokeemerald vanilla animations don't hit this case, pokefirered's do, and some users may have custom
-         * animations that work this way. We MUST support this properly.
-         */
-        std::string pal_list;
-        for (const auto &pal_idx : found_pal_indices) {
-            if (!pal_list.empty()) {
-                pal_list += ", ";
+            std::string pal_list;
+            for (const auto &pal_idx : found_pal_indices) {
+                if (!pal_list.empty()) {
+                    pal_list += ", ";
+                }
+                pal_list += std::to_string(pal_idx);
             }
-            pal_list += std::to_string(pal_idx);
+            panic(
+                "animation '" + anim_name + "' tiles in range [" + std::to_string(tile_offset) + ", " +
+                std::to_string(tile_offset + (tile_count - 1)) + "] use multiple palette indices: " + pal_list);
         }
-        panic(
-            "animation '" + anim_name + "' tiles in range [" + std::to_string(tile_offset) + ", " +
-            std::to_string(tile_offset + (tile_count - 1)) + "] use multiple palette indices: " + pal_list);
+
+        return *found_pal_indices.begin();
     }
 
-    return *found_pal_indices.begin();
+    case AnimPalResolutionStrategy::internal_png_pal: {
+        std::vector<std::string> err_msg{};
+        err_msg.emplace_back(diag.formatter().format(
+            "Palette resolution strategy '{}' failed.",
+            FormatParam{to_string(AnimPalResolutionStrategy::internal_png_pal), Style::bold}));
+        std::ranges::copy(format_config_note_with_separator(diag.formatter(), strategy), std::back_inserter(err_msg));
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            match,
+            internal_png_pal_strategy(anim, pals, extrinsic_transparency, diag, pal_printer),
+            err_msg,
+            std::size_t);
+        return match;
+    }
+
+    case AnimPalResolutionStrategy::scan_all_tilesets:
+        panic("scan_all_tilesets not yet implemented");
+
+    default:
+        panic("unhandled AnimPalResolutionStrategy value");
+    }
 }
 
 /**

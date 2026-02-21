@@ -116,11 +116,19 @@ LayerValue<TilesPalMode> CliOptionProvider::tiles_pal_mode(
     return parse_tiles_pal_mode(storage_.tiles_pal_mode, "--tiles-pal-mode");
 }
 
-LayerValue<AnimPalResolutionStrategy> CliOptionProvider::anim_pal_resolution_strategy(
+LayerValue<AnimPalResolutionStrategy> CliOptionProvider::global_anim_pal_resolution_strategy(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
-    return parse_anim_pal_resolution_strategy(storage_.anim_pal_resolution_strategy, "--anim-pal-resolution-strategy");
+    return parse_anim_pal_resolution_strategy(
+        storage_.global_anim_pal_resolution_strategy, "--global-anim-pal-resolution-strategy");
+}
+
+LayerValue<AnimPalResolutionStrategyOverrides> CliOptionProvider::anim_pal_resolution_strategy_overrides(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // Skipped for CLI (type too complex)
+    return LayerValue<AnimPalResolutionStrategyOverrides>::not_provided();
 }
 
 LayerValue<AnimKeyFrameResolutionStrategy> CliOptionProvider::anim_key_frame_resolution_strategy(

@@ -4,6 +4,7 @@
 
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
+#include "porytiles2/domain/config/anim_pal_resolution_strategy_overrides.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/config/domain_config_validators.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
@@ -216,9 +217,17 @@ class DomainConfig {
 
     // Public method with cross-field validation only (Tier 3)
     [[nodiscard]] ChainableResult<ConfigValue<AnimPalResolutionStrategy>>
-    anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const
+    global_anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const
     {
-        auto validated_val = anim_pal_resolution_strategy_validated(type, scope);
+        auto validated_val = global_anim_pal_resolution_strategy_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<AnimPalResolutionStrategyOverrides>>
+    anim_pal_resolution_strategy_overrides(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = anim_pal_resolution_strategy_overrides_validated(type, scope);
         return validated_val;
     }
 
@@ -437,15 +446,27 @@ class DomainConfig {
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<AnimPalResolutionStrategy>>
-    anim_pal_resolution_strategy_validated(ConfigScopeType type, const std::string &scope) const
+    global_anim_pal_resolution_strategy_validated(ConfigScopeType type, const std::string &scope) const
     {
-        auto raw_val = anim_pal_resolution_strategy_raw(type, scope);
+        auto raw_val = global_anim_pal_resolution_strategy_raw(type, scope);
         return raw_val;
     }
 
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<AnimPalResolutionStrategy>>
-    anim_pal_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const = 0;
+    global_anim_pal_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<AnimPalResolutionStrategyOverrides>>
+    anim_pal_resolution_strategy_overrides_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = anim_pal_resolution_strategy_overrides_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<AnimPalResolutionStrategyOverrides>>
+    anim_pal_resolution_strategy_overrides_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<AnimKeyFrameResolutionStrategy>>

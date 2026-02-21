@@ -8,6 +8,7 @@
 
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
+#include "porytiles2/domain/config/anim_pal_resolution_strategy_overrides.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/base_game.hpp"
@@ -125,12 +126,23 @@ class MockDomainConfig : public DomainConfig {
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<AnimPalResolutionStrategy>>
-    anim_pal_resolution_strategy_raw(ConfigScopeType, const std::string &) const override
+    global_anim_pal_resolution_strategy_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{
             AnimPalResolutionStrategy::internal_png_pal,
-            "anim_pal_resolution_strategy",
-            "anim_pal_resolution_strategy",
+            "global_anim_pal_resolution_strategy",
+            "global_anim_pal_resolution_strategy",
+            "mock",
+            {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<AnimPalResolutionStrategyOverrides>>
+    anim_pal_resolution_strategy_overrides_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{
+            AnimPalResolutionStrategyOverrides{},
+            "anim_pal_resolution_strategy_overrides",
+            "anim_pal_resolution_strategy_overrides",
             "mock",
             {}};
     }

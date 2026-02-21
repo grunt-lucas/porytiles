@@ -29,7 +29,7 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
         metatiles_key, key_provider_->key_for_metatiles_bin(tileset.name()), "Tileset save failed.", void);
     if (auto result = writer_->write_metatiles_bin(metatiles_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
-        auto failed = FormattableError{"'{}': Save failed.", FormatParam{metatiles_key.key(), Style::bold}};
+        auto failed = FormattableError{"Save failed for '{}'.", FormatParam{metatiles_key.key(), Style::bold}};
         return ChainableResult<void>{failed, result};
     }
 
@@ -37,7 +37,7 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
         attr_key, key_provider_->key_for_metatile_attributes_bin(tileset.name()), "Tileset save failed.", void);
     if (auto result = writer_->write_metatile_attributes_bin(attr_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
-        auto failed = FormattableError{"'{}': Save failed.", FormatParam{attr_key.key(), Style::bold}};
+        auto failed = FormattableError{"Save failed for '{}'.", FormatParam{attr_key.key(), Style::bold}};
         return ChainableResult<void>{failed, result};
     }
 
@@ -45,7 +45,7 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
         tiles_png_key, key_provider_->key_for_tiles_png(tileset.name()), "Tileset save failed.", void);
     if (auto result = writer_->write_tiles_png(tiles_png_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
-        auto failed = FormattableError{"'{}': Save failed.", FormatParam{tiles_png_key.key(), Style::bold}};
+        auto failed = FormattableError{"Save failed for '{}'.", FormatParam{tiles_png_key.key(), Style::bold}};
         return ChainableResult<void>{failed, result};
     }
 
@@ -54,7 +54,7 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
             pal_key, key_provider_->key_for_porymap_pal_n(tileset.name(), i), "Tileset save failed.", void);
         if (auto result = writer_->write_porymap_pal_n(pal_key, tileset, i); !result.has_value()) {
             std::ignore = writer_->rollback();
-            auto failed = FormattableError{"'{}': Save failed.", FormatParam{pal_key.key(), Style::bold}};
+            auto failed = FormattableError{"Save failed for '{}'.", FormatParam{pal_key.key(), Style::bold}};
             return ChainableResult<void>{failed, result};
         }
     }
@@ -70,7 +70,7 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
                     writer_->write_porymap_anim_frame(frame_key, tileset, porymap_anim.name(), frame.frame_name());
                 !result.has_value()) {
                 std::ignore = writer_->rollback();
-                auto failed = FormattableError{"'{}': Save failed.", FormatParam{frame_key.key(), Style::bold}};
+                auto failed = FormattableError{"Save failed for '{}'.", FormatParam{frame_key.key(), Style::bold}};
                 return ChainableResult<void>{failed, result};
             }
         }
@@ -83,7 +83,8 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
         void);
     if (auto result = writer_->write_porymap_anim_params(generated_anim_code_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
-        auto failed = FormattableError{"'{}': Save failed.", FormatParam{generated_anim_code_key.key(), Style::bold}};
+        auto failed =
+            FormattableError{"Save failed for '{}'.", FormatParam{generated_anim_code_key.key(), Style::bold}};
         return ChainableResult<void>{failed, result};
     }
 
@@ -94,7 +95,7 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
         bottom_png_key, key_provider_->key_for_bottom_png(tileset.name()), "Tileset save failed.", void);
     if (auto result = writer_->write_bottom_png(bottom_png_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
-        auto failed = FormattableError{"'{}': Save failed.", FormatParam{bottom_png_key.key(), Style::bold}};
+        auto failed = FormattableError{"Save failed for '{}'.", FormatParam{bottom_png_key.key(), Style::bold}};
         return ChainableResult<void>{failed, result};
     }
 
@@ -102,14 +103,14 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
         middle_png_key, key_provider_->key_for_middle_png(tileset.name()), "Tileset save failed.", void);
     if (auto result = writer_->write_middle_png(middle_png_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
-        auto failed = FormattableError{"'{}': Save failed.", FormatParam{middle_png_key.key(), Style::bold}};
+        auto failed = FormattableError{"Save failed for '{}'.", FormatParam{middle_png_key.key(), Style::bold}};
         return ChainableResult<void>{failed, result};
     }
 
     PT_TRY_ASSIGN_CHAIN_ERR(top_png_key, key_provider_->key_for_top_png(tileset.name()), "Tileset save failed.", void);
     if (auto result = writer_->write_top_png(top_png_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
-        auto failed = FormattableError{"'{}': Save failed.", FormatParam{top_png_key.key(), Style::bold}};
+        auto failed = FormattableError{"Save failed for '{}'.", FormatParam{top_png_key.key(), Style::bold}};
         return ChainableResult<void>{failed, result};
     }
 
@@ -117,7 +118,7 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
         attr_csv_key, key_provider_->key_for_attributes_csv(tileset.name()), "Tileset save failed.", void);
     if (auto result = writer_->write_attributes_csv(attr_csv_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
-        auto failed = FormattableError{"'{}': Save failed.", FormatParam{attr_csv_key.key(), Style::bold}};
+        auto failed = FormattableError{"Save failed for '{}'.", FormatParam{attr_csv_key.key(), Style::bold}};
         return ChainableResult<void>{failed, result};
     }
 
@@ -126,7 +127,7 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
             porytiles_pal_key, key_provider_->key_for_porytiles_pal_n(tileset.name(), i), "Tileset save failed.", void);
         if (auto result = writer_->write_porytiles_pal_n(porytiles_pal_key, tileset, i); !result.has_value()) {
             std::ignore = writer_->rollback();
-            auto failed = FormattableError{"'{}': Save failed.", FormatParam{porytiles_pal_key.key(), Style::bold}};
+            auto failed = FormattableError{"Save failed for '{}'.", FormatParam{porytiles_pal_key.key(), Style::bold}};
             return ChainableResult<void>{failed, result};
         }
     }
@@ -143,7 +144,7 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
                 key_frame_key, tileset, porytiles_anim.name(), porytiles_anim.key_frame().frame_name());
             !result.has_value()) {
             std::ignore = writer_->rollback();
-            auto failed = FormattableError{"'{}': Save failed.", FormatParam{key_frame_key.key(), Style::bold}};
+            auto failed = FormattableError{"Save failed for '{}'.", FormatParam{key_frame_key.key(), Style::bold}};
             return ChainableResult<void>{failed, result};
         }
 
@@ -158,7 +159,7 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
                     writer_->write_porytiles_anim_frame(frame_key, tileset, porytiles_anim.name(), frame.frame_name());
                 !result.has_value()) {
                 std::ignore = writer_->rollback();
-                auto failed = FormattableError{"'{}': Save failed.", FormatParam{frame_key.key(), Style::bold}};
+                auto failed = FormattableError{"Save failed for '{}'.", FormatParam{frame_key.key(), Style::bold}};
                 return ChainableResult<void>{failed, result};
             }
         }
@@ -168,7 +169,7 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
         anim_yaml_key, key_provider_->key_for_porytiles_anim_params(tileset.name()), "Tileset save failed.", void);
     if (auto result = writer_->write_porytiles_anim_params(anim_yaml_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
-        auto failed = FormattableError{"'{}': Save failed.", FormatParam{anim_yaml_key.key(), Style::bold}};
+        auto failed = FormattableError{"Save failed for '{}'.", FormatParam{anim_yaml_key.key(), Style::bold}};
         return ChainableResult<void>{failed, result};
     }
 

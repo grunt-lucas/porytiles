@@ -38,9 +38,10 @@ class PorymapTilesetComponent;
  * The decompiler uses the tileset's palettes to look up the actual RGBA colors for each palette index. Since animation
  * keyframe tiles may use any palette in the tileset, the decompiler requires access to all palettes.
  *
- * The correct palette for each animation tile is recovered by scanning metatile entries (metatiles_bin) to find which
- * palette index is used when referencing the animation tile. If a tile is referenced with multiple different palette
- * indices (ambiguous), the most common one is used.
+ * The correct palette for each animation is determined by the configured @c AnimPalResolutionStrategy, which drives
+ * the behavior from the start (strategy-first). Available strategies include direct palette selection (@c palette_00
+ * through @c palette_15), local metatile scanning (@c scan_local_metatiles), and PNG internal palette matching
+ * (@c internal_png_pal).
  */
 class AnimDecompiler {
   public:
@@ -56,32 +57,31 @@ class AnimDecompiler {
      * @brief Decompiles an IndexPixel animation to Rgba32 format.
      *
      * @details
-     * Converts each tile in each frame of the animation from IndexPixel to Rgba32 using the provided palettes. The
-     * correct palette for each animation tile is recovered by scanning metatile entries to find which palette index
-     * references the animation tiles.
+     * Converts each tile in each frame of the animation from IndexPixel to Rgba32 using the provided palettes.
      *
      * Key frame tiles are extracted from tiles_png at the animation's tile_offset position, decompiled to RGBA using
-     * the same palette as the animation frames, and set on the result animation.
+     * the resolved palette, and set on the result animation.
      *
      * For transparent pixels (index 0), the extrinsic transparency color is used.
      *
-     * If an animation tile is not found in any metatile entry, the behavior depends on the pal_strategy parameter:
-     * - default_pal: Falls back to palette 0
-     * - internal_png_palette: Attempts to match frame PNG internal palettes against tileset palettes
-     * - full_tileset_scan: Not yet implemented (panics)
+     * The palette is determined by the @p pal_strategy parameter (strategy-first):
+     * - @c palette_00 through @c palette_15: Use the specified palette index directly.
+     * - @c scan_local_metatiles: Scan metatile entries to find which palette references the animation tiles. Errors if
+     *   the tiles are not referenced in any metatile.
+     * - @c internal_png_pal: Match frame PNG internal palettes against tileset palettes.
+     * - @c scan_all_tilesets: Not yet implemented.
      *
-     * If multiple palettes reference the same tile (ambiguous), the most common palette index is used.
-     *
-     * If duplicate key frame tiles are detected, the behavior depends on the key_frame_strategy parameter:
-     * - error: Returns an error with details about which tiles are duplicates
-     * - mangle: Modifies duplicate tiles to make them unique and backports changes to tiles.png via porymap_component
+     * If duplicate key frame tiles are detected, the behavior depends on the @p key_frame_strategy parameter:
+     * - @c error: Returns an error with details about which tiles are duplicates.
+     * - @c mangle: Modifies duplicate tiles to make them unique and backports changes to tiles.png via
+     *   @p porymap_component.
      *
      * @param anim The indexed animation to decompile.
      * @param pals Array of palettes to use for color lookup.
      * @param metatiles_bin The metatile entries containing tile and palette references.
      * @param tiles_png The indexed tiles.png image containing key frame tiles.
      * @param extrinsic_transparency The RGBA color representing transparency.
-     * @param pal_strategy The strategy for resolving palette when no metatile reference is found.
+     * @param pal_strategy The strategy for determining which palette to use for the animation tiles.
      * @param key_frame_strategy The strategy for handling duplicate key frame tiles.
      * @param porymap_component The Porymap component to backport tile changes to (may be nullptr to skip backporting).
      * @return The decompiled RGBA animation with key frame and frames populated, or error.

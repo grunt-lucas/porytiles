@@ -55,8 +55,8 @@ const std::filesystem::path src_graphics_rel_path = std::filesystem::path{"src"}
     auto parse_result = parser.parse_struct_initializers("gTileset_");
     if (!parse_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{
-                format->format("{}: failed to parse tileset headers", FormatParam{headers_path.string(), Style::bold})},
+            FormattableError{format->format(
+                "Failed to parse tileset headers from '{}'.", FormatParam{headers_path.string(), Style::bold})},
             parse_result};
     }
 
@@ -89,7 +89,7 @@ const std::filesystem::path src_graphics_rel_path = std::filesystem::path{"src"}
     if (!graphics_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{format->format(
-                "{}: failed to parse graphics INCBINs", FormatParam{graphics_path.string(), Style::bold})},
+                "Failed to parse graphics INCBINs from '{}'.", FormatParam{graphics_path.string(), Style::bold})},
             graphics_result};
     }
 
@@ -105,7 +105,7 @@ const std::filesystem::path src_graphics_rel_path = std::filesystem::path{"src"}
     if (!metatiles_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{format->format(
-                "{}: failed to parse metatiles INCBINs", FormatParam{metatiles_path.string(), Style::bold})},
+                "Failed to parse metatiles INCBINs from '{}'.", FormatParam{metatiles_path.string(), Style::bold})},
             metatiles_result};
     }
 
@@ -121,7 +121,7 @@ const std::filesystem::path src_graphics_rel_path = std::filesystem::path{"src"}
     if (!src_graphics_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{format->format(
-                "{}: failed to parse graphics INCBINs", FormatParam{src_graphics_path.string(), Style::bold})},
+                "Failed to parse graphics INCBINs from '{}'.", FormatParam{src_graphics_path.string(), Style::bold})},
             src_graphics_result};
     }
 
@@ -147,19 +147,19 @@ const std::filesystem::path src_graphics_rel_path = std::filesystem::path{"src"}
         !ensure_result.has_value()) {
         return ChainableResult<std::string>{
             FormattableError{
-                format->format("failed to look up INCBIN path for '{}'", FormatParam{variable_name, Style::bold})},
+                format->format("Failed to look up INCBIN path for '{}'.", FormatParam{variable_name, Style::bold})},
             ensure_result};
     }
 
     const auto it = incbin_vars.find(variable_name);
     if (it == incbin_vars.end()) {
         return FormattableError{
-            format->format("INCBIN variable '{}' not found", FormatParam{variable_name, Style::bold})};
+            format->format("INCBIN variable '{}' not found.", FormatParam{variable_name, Style::bold})};
     }
 
     if (it->second.paths().empty()) {
         return FormattableError{
-            format->format("INCBIN variable '{}' has no paths", FormatParam{variable_name, Style::bold})};
+            format->format("INCBIN variable '{}' has no paths.", FormatParam{variable_name, Style::bold})};
     }
 
     return it->second.paths().front();
@@ -179,14 +179,14 @@ const std::filesystem::path src_graphics_rel_path = std::filesystem::path{"src"}
     if (!ensure_result.has_value()) {
         return ChainableResult<std::vector<std::string>>{
             FormattableError{
-                format->format("failed to look up INCBIN paths for '{}'", FormatParam{variable_name, Style::bold})},
+                format->format("Failed to look up INCBIN paths for '{}'.", FormatParam{variable_name, Style::bold})},
             ensure_result};
     }
 
     auto it = incbin_vars.find(variable_name);
     if (it == incbin_vars.end()) {
         return FormattableError{
-            format->format("INCBIN variable '{}' not found", FormatParam{variable_name, Style::bold})};
+            format->format("INCBIN variable '{}' not found.", FormatParam{variable_name, Style::bold})};
     }
 
     return it->second.paths();
@@ -222,14 +222,14 @@ ProjectTilesetMetadataProvider::metadata_for(const std::string &tileset_name) co
         !ensure_result.has_value()) {
         return ChainableResult<ProjectTilesetMetadata>{
             FormattableError{
-                format_->format("failed to get metadata for tileset '{}'", FormatParam{tileset_name, Style::bold})},
+                format_->format("Failed to get metadata for tileset '{}'.", FormatParam{tileset_name, Style::bold})},
             ensure_result};
     }
 
     auto it = tileset_structs_.find(tileset_name);
     if (it == tileset_structs_.end()) {
         return FormattableError{
-            format_->format("tileset '{}' not found in headers.h", FormatParam{tileset_name, Style::bold})};
+            format_->format("Tileset '{}' not found in headers.h file.", FormatParam{tileset_name, Style::bold})};
     }
 
     const auto &struct_decl = it->second;
@@ -245,19 +245,19 @@ ProjectTilesetMetadataProvider::metadata_for(const std::string &tileset_name) co
 
     if (!tiles_var.has_value()) {
         return FormattableError{
-            format_->format("tileset '{}' missing 'tiles' field", FormatParam{tileset_name, Style::bold})};
+            format_->format("Tileset '{}' missing 'tiles' field.", FormatParam{tileset_name, Style::bold})};
     }
     if (!palettes_var.has_value()) {
         return FormattableError{
-            format_->format("tileset '{}' missing 'palettes' field", FormatParam{tileset_name, Style::bold})};
+            format_->format("Tileset '{}' missing 'palettes' field.", FormatParam{tileset_name, Style::bold})};
     }
     if (!metatiles_var.has_value()) {
         return FormattableError{
-            format_->format("tileset '{}' missing 'metatiles' field", FormatParam{tileset_name, Style::bold})};
+            format_->format("Tileset '{}' missing 'metatiles' field.", FormatParam{tileset_name, Style::bold})};
     }
     if (!metatile_attributes_var.has_value()) {
-        return FormattableError{
-            format_->format("tileset '{}' missing 'metatileAttributes' field", FormatParam{tileset_name, Style::bold})};
+        return FormattableError{format_->format(
+            "Tileset '{}' missing 'metatileAttributes' field.", FormatParam{tileset_name, Style::bold})};
     }
 
     std::optional<std::string> callback_func = std::nullopt;

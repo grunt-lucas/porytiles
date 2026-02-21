@@ -104,11 +104,18 @@ DefaultProvider::tiles_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_u
     return LayerValue<TilesPalMode>::valid(TilesPalMode::true_color, "Tiles Palette Mode", source_info);
 }
 
-LayerValue<AnimPalResolutionStrategy> DefaultProvider::anim_pal_resolution_strategy(
+LayerValue<AnimPalResolutionStrategy> DefaultProvider::global_anim_pal_resolution_strategy(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<AnimPalResolutionStrategy>::valid(
-        AnimPalResolutionStrategy::error, "Animation Palette Resolution Strategy", source_info);
+        AnimPalResolutionStrategy::scan_local_metatiles, "Global Animation Palette Resolution Strategy", source_info);
+}
+
+LayerValue<AnimPalResolutionStrategyOverrides> DefaultProvider::anim_pal_resolution_strategy_overrides(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<AnimPalResolutionStrategyOverrides>::valid(
+        AnimPalResolutionStrategyOverrides{}, "Animation Palette Resolution Strategy Overrides", source_info);
 }
 
 LayerValue<AnimKeyFrameResolutionStrategy> DefaultProvider::anim_key_frame_resolution_strategy(

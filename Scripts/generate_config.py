@@ -34,6 +34,24 @@ def extract_all_yaml_paths(config_values):
     return sorted(paths)
 
 
+def extract_yaml_map_prefixes(config_values):
+    """
+    Extract YAML path prefixes for config entries with yaml_is_map: true.
+
+    These prefixes identify map-type config values whose children are dynamic
+    keys (e.g., animation names) rather than fixed config paths. The YAML path
+    validator uses these to skip dynamic children instead of emitting unknown
+    key warnings.
+
+    Returns a sorted list for deterministic output.
+    """
+    prefixes = set()
+    for config in config_values:
+        if config.get("yaml_is_map", False) and "yaml_path" in config:
+            prefixes.add(config["yaml_path"])
+    return sorted(prefixes)
+
+
 def process_enum_types(schema):
     """
     Process enum_types from schema to compute derived fields and create lookup map.
@@ -182,6 +200,11 @@ def generate_config_files():
     all_yaml_paths = extract_all_yaml_paths(schema["config_values"])
     schema["all_yaml_paths"] = all_yaml_paths
     print(f"Extracted {len(all_yaml_paths)} valid YAML paths")
+
+    # Extract YAML map prefixes for map-type config values
+    yaml_map_prefixes = extract_yaml_map_prefixes(schema["config_values"])
+    schema["yaml_map_prefixes"] = yaml_map_prefixes
+    print(f"Extracted {len(yaml_map_prefixes)} YAML map prefixes")
 
     # Process enum types and create lookup map
     enum_type_map = process_enum_types(schema)

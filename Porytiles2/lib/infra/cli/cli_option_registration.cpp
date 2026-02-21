@@ -111,15 +111,18 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
             "Tiles Palette Mode - The color mode to use when saving the tiles.png artifact.")
         ->type_name("{true-color|greyscale}");
 
-    // Animation Palette Resolution Strategy (enum AnimPalResolutionStrategy, captured as string, parsed by
+    // Global Animation Palette Resolution Strategy (enum AnimPalResolutionStrategy, captured as string, parsed by
     // CliOptionProvider)
     config_group
         ->add_option(
-            "--anim-pal-resolution-strategy",
-            storage.anim_pal_resolution_strategy,
-            "Animation Palette Resolution Strategy - The strategy to use when resolving the palette for an "
-            "unreferenced animation.")
-        ->type_name("{error|default-pal|internal-png-pal|full-tileset-scan}");
+            "--global-anim-pal-resolution-strategy",
+            storage.global_anim_pal_resolution_strategy,
+            "Global Animation Palette Resolution Strategy - The global strategy for determining which palette to use "
+            "when decompiling animation tiles.")
+        ->type_name(
+            "{scan-local-metatiles|palette-00|palette-01|palette-02|palette-03|palette-04|palette-05|palette-06|"
+            "palette-07|palette-08|palette-09|palette-10|palette-11|palette-12|palette-13|palette-14|palette-15|"
+            "internal-png-pal|scan-all-tilesets}");
 
     // Animation Key Frame Resolution Strategy (enum AnimKeyFrameResolutionStrategy, captured as string, parsed by
     // CliOptionProvider)

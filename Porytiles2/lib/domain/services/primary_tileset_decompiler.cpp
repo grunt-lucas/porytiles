@@ -8,23 +8,20 @@
 #include <unordered_set>
 #include <vector>
 
-#include "porytiles2/domain/algorithms/palette_matchers.hpp"
-#include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
+#include "porytiles2/domain/config/anim_pal_resolution_strategy_overrides.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/services/anim_decompiler.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
 #include "porytiles2/domain/services/metatile_decompiler.hpp"
-#include "porytiles2/utilities/functional/transform.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/xcut/config/unwrap_config.hpp"
 
 namespace porytiles2 {
-
 ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(const Tileset &tileset) const
 {
     // Unwrap config values
@@ -34,7 +31,10 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_metatiles_in_primary, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_tiles_in_primary, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_tiles_per_metatile, tileset.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_PTR(config_, anim_pal_resolution_strategy, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(
+        config_, global_anim_pal_resolution_strategy, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(
+        config_, anim_pal_resolution_strategy_overrides, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, anim_key_frame_resolution_strategy, tileset.name(), std::unique_ptr<Tileset>);
 
     LayerModeConverter layer_mode_converter{format_, diag_, tile_printer_, extrinsic_transparency};
@@ -47,10 +47,14 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
         std::format("Failed to triple-layerize Porymap component for tileset '{}'.", tileset.name()),
         std::unique_ptr<Tileset>);
 
-    // Create the new Porymap component early so we can pass it for potential backporting during animation decompilation
-    // If mangle strategy is used, duplicate key frame tiles will be modified and backported to tiles_png
-    // IMPORTANT: This must happen BEFORE metatile decompilation so that mangled tiles are used when decompiling
-    // metatiles
+    /*
+     * Create the new Porymap component early so we can pass it for potential backporting during animation
+     * decompilation. If mangle strategy is used, duplicate key frame tiles will be modified and backported to
+     * tiles.png.
+     *
+     * IMPORTANT: This must happen BEFORE metatile decompilation so that mangled tiles are used when decompiling
+     * metatiles.
+     */
     auto new_porymap_component = std::make_unique<PorymapTilesetComponent>(tileset.porymap_component());
 
     auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>();
@@ -69,17 +73,49 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
         new_porytiles_component->insert_attribute(metatile_id, porymap_attributes[metatile_id]);
     }
 
-    // Decompile animations from Porymap component to Porytiles component
-    // IMPORTANT: This must happen BEFORE metatile decompilation so that any mangled key frame tiles
-    // are present in new_porymap_component->tiles_png() when metatiles are decompiled
+    /*
+     * Decompile animations from Porymap component to Porytiles component.
+     *
+     * IMPORTANT: This must happen BEFORE metatile decompilation so that any mangled key frame tiles are present in
+     * new_porymap_component->tiles_png() when metatiles are decompiled
+     */
     if (const auto &porymap_animations = tileset.porymap_component().anims(); !porymap_animations.empty()) {
         const auto &metatiles_bin = tileset.porymap_component().metatiles_bin();
+        const auto &overrides_map = anim_pal_resolution_strategy_overrides.value();
+        std::unordered_set<std::string> used_override_keys;
 
         for (const auto &index_pixel_anim : porymap_animations | std::views::values) {
+            // Select per-animation override or fall back to global strategy
+            ConfigValue<AnimPalResolutionStrategy> effective_strategy = global_anim_pal_resolution_strategy;
+            if (auto it = overrides_map.find(index_pixel_anim.name()); it != overrides_map.end()) {
+                used_override_keys.insert(index_pixel_anim.name());
+                /*
+                 * TODO: this source_key may not be correct if we ever add other provider handling for Animation Palette
+                 * Resolution Strategy Override, it's hardcoded to the YAML format.
+                 */
+                effective_strategy = ConfigValue<AnimPalResolutionStrategy>{
+                    it->second,
+                    "Animation Palette Resolution Strategy Override (" + index_pixel_anim.name() + ")",
+                    "tileset.animations.palette_resolution_strategy_overrides." + index_pixel_anim.name(),
+                    anim_pal_resolution_strategy_overrides.source(),
+                    anim_pal_resolution_strategy_overrides.source_details()};
+            }
+
+            // Warn about pal resolution overrides that reference non-existent animations
+            for (const auto &key : overrides_map | std::views::keys) {
+                if (!used_override_keys.contains(key)) {
+                    diag_->warning(
+                        "unused-animation-palette-override",
+                        {diag_->formatter().format(
+                            "Animation palette resolution strategy override for '{}' does not match any animation in "
+                            "tileset '{}'.",
+                            FormatParam{key, Style::bold},
+                            FormatParam{tileset.name(), Style::bold})});
+                }
+            }
+
+            // Run animation decompilation
             AnimDecompiler anim_decompiler{diag_, tile_printer_, pal_printer_};
-            // Decompile the IndexPixel animation to Rgba32 format
-            // Palette index is recovered from metatile data by scanning for animation tile references
-            // If duplicate key frame tiles are found, they may be mangled and backported to new_porymap_component
             PT_TRY_ASSIGN_CHAIN_ERR(
                 rgba_anim,
                 anim_decompiler.decompile_animation(
@@ -88,7 +124,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
                     metatiles_bin,
                     new_porymap_component->tiles_png(),
                     extrinsic_transparency,
-                    anim_pal_resolution_strategy,
+                    effective_strategy,
                     anim_key_frame_resolution_strategy,
                     new_porymap_component.get()),
                 diag_->formatter().format(
@@ -114,7 +150,8 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
     PT_TRY_ASSIGN_CHAIN_ERR(
         layer_images,
         metatileizer.demetatileize(metatiles, metatiles_per_row),
-        std::format("Failed to demetatileize metatiles for tileset '{}'.", tileset.name()),
+        format_->format(
+            "Failed to demetatileize metatiles for tileset '{}'.", FormatParam{tileset.name(), Style::bold}),
         std::unique_ptr<Tileset>);
 
     auto &[bottom_image, middle_image, top_image] = layer_images;
