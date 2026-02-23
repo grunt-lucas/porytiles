@@ -72,6 +72,7 @@ struct TileAssignmentResult {
 struct AnimKeyframeData {
     std::vector<CanonicalPixelTile<IndexPixel>> tiles;
     std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+    std::vector<std::size_t> pal_indices;
 };
 
 /**
@@ -645,9 +646,10 @@ TileAssignmentResult CompilerTask::pipeline_helper_assign_tile_via_pal_match(con
     // Check if tile matches a registered animation keyframe
     if (const auto anim_match = anim_tile_matcher_.find_match(CanonicalPixelTile{porytiles_tile});
         anim_match.has_value()) {
-        // Use the animation tile index with computed flip bits
+        // Use the animation tile index with composite-aware palette and computed flip bits
         result.status = TileAssignmentResult::Status::success;
-        result.entry = TilemapEntry{anim_match->tile_index, pal_index, anim_match->h_flip, anim_match->v_flip};
+        result.entry =
+            TilemapEntry{anim_match->tile_index, anim_match->pal_index, anim_match->h_flip, anim_match->v_flip};
         return result;
     }
 
@@ -914,6 +916,7 @@ CompilerTask::pipeline_helper_build_keyframe_data(const std::string &anim_name, 
             index_tile_from_color_tile(key_rgba_tile, matched_pal, extrinsic_transparency_.value());
 
         result.tiles.emplace_back(indexed_key_frame_tile);
+        result.pal_indices.push_back(pal_index);
         // We'll only actually use this vector in patch mode, but compute anyway to simplify code paths
         result.palettes.push_back(&matched_pal);
     }
@@ -958,6 +961,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
     // Phase 2: Build keyframes and place/find tiles for each animation
     // ========================================================================
     std::map<std::string, std::size_t> anim_offsets;
+    std::map<std::string, std::vector<std::size_t>> anim_pal_indices;
     std::size_t current_offset = TilesPngWorkspace::anim_start_offset();
 
     for (const auto &[anim_name, anim] : anims) {
@@ -969,6 +973,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
         PT_TRY_ASSIGN_PASS_ERR(keyframe_data, pipeline_helper_build_keyframe_data(anim_name, anim), void);
 
         const std::size_t tile_count = keyframe_data.tiles.size();
+        anim_pal_indices[anim_name] = keyframe_data.pal_indices;
         std::size_t offset{};
 
         // Mode-specific placement logic
@@ -1041,7 +1046,8 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
     // Phase 3: Register all animations with the matcher
     // ========================================================================
     for (const auto &[anim_name, anim] : anims) {
-        anim_tile_matcher_.register_animation(anim_name, anim, anim_offsets[anim_name], extrinsic_transparency_);
+        anim_tile_matcher_.register_animation(
+            anim_name, anim, anim_offsets.at(anim_name), extrinsic_transparency_, anim_pal_indices.at(anim_name));
     }
 
     return {};

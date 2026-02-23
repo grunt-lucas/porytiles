@@ -3,6 +3,7 @@
 #include <map>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include "porytiles2/domain/models/animation.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
@@ -21,6 +22,7 @@ struct AnimTileMatch {
     std::string anim_name;         ///< Name of the animation this keyframe belongs to
     std::size_t tile_index;        ///< Absolute tile index in tiles.png
     std::size_t keyframe_tile_idx; ///< Index within the keyframe (0, 1, 2, ...)
+    std::size_t pal_index;         ///< Composite-aware palette index for this subtile
     bool h_flip;                   ///< Horizontal flip required to match
     bool v_flip;                   ///< Vertical flip required to match
 };
@@ -64,17 +66,20 @@ class AnimTileMatcher {
      * Extracts all tiles from the animation's keyframe (frame 0) and registers them in the lookup map. Each tile is
      * stored in canonical form along with metadata about its position and the animation it belongs to.
      *
-     * @param anim_name Name of the animation
-     * @param animation The compiled animation with IndexPixel tiles
-     * @param tile_offset The starting tile index in tiles.png for this animation's keyframe
-     * @param extrinsic_transparency The extrinsic transparent color
-     * @pre animation must have at least one frame (the keyframe)
+     * @param anim_name Name of the animation.
+     * @param animation The compiled animation with IndexPixel tiles.
+     * @param tile_offset The starting tile index in tiles.png for this animation's keyframe.
+     * @param extrinsic_transparency The extrinsic transparent color.
+     * @param subtile_pal_indices Composite-aware palette index for each keyframe subtile.
+     * @pre @p animation must have at least one frame (the keyframe).
+     * @pre @p subtile_pal_indices.size() must equal the keyframe tile count.
      */
     void register_animation(
         const std::string &anim_name,
         const Animation<Rgba32> &animation,
         std::size_t tile_offset,
-        const Rgba32 &extrinsic_transparency);
+        const Rgba32 &extrinsic_transparency,
+        const std::vector<std::size_t> &subtile_pal_indices);
 
     /**
      * @brief Attempts to match a tile against registered animation keyframes.
@@ -127,6 +132,7 @@ class AnimTileMatcher {
         std::string anim_name;
         std::size_t tile_index;        // Absolute index in tiles.png
         std::size_t keyframe_tile_idx; // Index within keyframe
+        std::size_t pal_index;         // Composite-aware palette index
         bool h_flip;                   // Flip applied to reach canonical form
         bool v_flip;
     };

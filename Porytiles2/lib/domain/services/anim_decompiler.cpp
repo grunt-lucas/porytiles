@@ -224,15 +224,6 @@ ChainableResult<std::size_t> find_pal_for_anim_tiles(
     const UserDiagnostics &diag,
     const PalettePrinter &pal_printer)
 {
-    /*
-     * TODO: this is bugged in certain pathological cases. See bug/anim-decompiler branch in my expansion fork. In that
-     * case, we have a scenario where the animation uses more than one pal. However, the metatile scanning method just
-     * picks up a single pal for the anim, since it can only see what actually appeared in the metatiles (e.g. the key
-     * frame). Then, when you run the decompile, any subtiles that used a different pal get distorted. We need to
-     * rethink how this whole thing works a bit more. Probably by just fully supporting multi-palette animations (which
-     * we have to do anyway, since vanilla FireRed general tileset uses them).
-     */
-
     // Check pal_N strategies first — return the palette index immediately
     const auto explicit_pal = extract_pal_index(strategy.value());
     if (explicit_pal.has_value()) {
