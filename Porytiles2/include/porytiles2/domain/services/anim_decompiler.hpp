@@ -2,6 +2,7 @@
 
 #include <map>
 #include <optional>
+#include <set>
 #include <span>
 #include <string>
 
@@ -13,6 +14,7 @@
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/palette.hpp"
+#include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
@@ -80,6 +82,8 @@ class AnimDecompiler {
      * @param pals Array of palettes to use for color lookup.
      * @param metatiles_bin The metatile entries containing tile and palette references.
      * @param tiles_png The indexed tiles.png image containing key frame tiles.
+     * @param inter_anim_canonical_tiles Canonical forms of previously-processed animations' key frame tiles, used to
+     *   detect inter-animation duplicates. Pass an empty set when processing the first animation.
      * @param extrinsic_transparency The RGBA color representing transparency.
      * @param pal_strategy The strategy for determining which palette to use for the animation tiles.
      * @param key_frame_strategy The strategy for handling duplicate key frame tiles.
@@ -91,6 +95,7 @@ class AnimDecompiler {
         const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals,
         std::span<const TilemapEntry> metatiles_bin,
         const Image<IndexPixel> &tiles_png,
+        const std::set<PixelTile<IndexPixel>> &inter_anim_canonical_tiles,
         const ConfigValue<Rgba32> &extrinsic_transparency,
         const ConfigValue<AnimPalResolutionStrategy> &pal_strategy,
         const ConfigValue<AnimKeyFrameResolutionStrategy> &key_frame_strategy,

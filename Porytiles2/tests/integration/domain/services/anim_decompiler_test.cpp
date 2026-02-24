@@ -1,6 +1,7 @@
 #include "gtest/gtest.h"
 
 #include <array>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -203,6 +204,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectCrossRangeExactDuplica
         pals_,
         metatiles,
         tiles_png,
+        {},
         make_transparency_config(),
         make_pal_strategy(),
         make_key_frame_strategy(AnimKeyFrameResolutionStrategy::mangle),
@@ -243,6 +245,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectCrossRangeFlipEquivale
         pals_,
         metatiles,
         tiles_png,
+        {},
         make_transparency_config(),
         make_pal_strategy(),
         make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error),
@@ -256,6 +259,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectCrossRangeFlipEquivale
         pals_,
         metatiles,
         tiles_png,
+        {},
         make_transparency_config(),
         make_pal_strategy(),
         make_key_frame_strategy(AnimKeyFrameResolutionStrategy::mangle),
@@ -288,6 +292,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectIntraAnimationFlipEqui
         pals_,
         metatiles,
         tiles_png,
+        {},
         make_transparency_config(),
         make_pal_strategy(),
         make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error),
@@ -301,6 +306,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectIntraAnimationFlipEqui
         pals_,
         metatiles,
         tiles_png,
+        {},
         make_transparency_config(),
         make_pal_strategy(),
         make_key_frame_strategy(AnimKeyFrameResolutionStrategy::mangle),
@@ -331,6 +337,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldNotFalsePositiveWhenNoDuplic
         pals_,
         metatiles,
         tiles_png,
+        {},
         make_transparency_config(),
         make_pal_strategy(),
         make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error),
@@ -362,6 +369,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldHandleMixedCrossRangeAndIntr
         pals_,
         metatiles,
         tiles_png,
+        {},
         make_transparency_config(),
         make_pal_strategy(),
         make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error),
@@ -375,10 +383,230 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldHandleMixedCrossRangeAndIntr
         pals_,
         metatiles,
         tiles_png,
+        {},
         make_transparency_config(),
         make_pal_strategy(),
         make_key_frame_strategy(AnimKeyFrameResolutionStrategy::mangle),
         nullptr);
 
     EXPECT_TRUE(mangle_result.has_value()) << "Mangle strategy should resolve mixed duplicates";
+}
+
+TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimationExactDuplicate)
+{
+    // Two animations share an identical key frame tile
+    const auto shared_tile = create_two_color_tile(1, 2);
+    const auto unique_non_anim = create_two_color_tile(5, 6);
+
+    // tiles.png: tile 0 is non-anim, tile 1 is water's key frame, tile 2 is ocean's key frame (same as water's)
+    const auto tiles_png = build_tiles_png({unique_non_anim, shared_tile, shared_tile});
+
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}, TilemapEntry{2, 0, false, false}};
+
+    // Simulate water's canonical tiles already processed
+    std::set<PixelTile<IndexPixel>> inter_anim_tiles;
+    {
+        const CanonicalPixelTile canonical{shared_tile};
+        const PixelTile<IndexPixel> &base = canonical;
+        inter_anim_tiles.insert(base);
+    }
+
+    // Ocean animation at tile offset 2
+    auto ocean_anim = create_test_animation("ocean", 2, 1, {shared_tile}, palette_);
+
+    AnimDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    // Error strategy should detect the inter-animation duplicate
+    auto error_result = decompiler.decompile_animation(
+        ocean_anim,
+        pals_,
+        metatiles,
+        tiles_png,
+        inter_anim_tiles,
+        make_transparency_config(),
+        make_pal_strategy(),
+        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error),
+        nullptr);
+
+    EXPECT_FALSE(error_result.has_value()) << "Should detect inter-animation exact duplicate";
+
+    // Mangle strategy should resolve it
+    auto mangle_result = decompiler.decompile_animation(
+        ocean_anim,
+        pals_,
+        metatiles,
+        tiles_png,
+        inter_anim_tiles,
+        make_transparency_config(),
+        make_pal_strategy(),
+        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::mangle),
+        nullptr);
+
+    EXPECT_TRUE(mangle_result.has_value()) << "Mangle strategy should resolve inter-animation exact duplicate";
+}
+
+TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimationFlipEquivalentDuplicate)
+{
+    // Water's tile and ocean's tile are flip-equivalent but raw-different
+    const auto water_tile = create_asymmetric_tile(1, 2);
+    const auto ocean_tile = water_tile.flip(true, false);
+    const auto unique_non_anim = create_two_color_tile(5, 6);
+
+    ASSERT_NE(water_tile, ocean_tile);
+    CanonicalPixelTile<IndexPixel> c1{water_tile};
+    CanonicalPixelTile<IndexPixel> c2{ocean_tile};
+    const PixelTile<IndexPixel> &b1 = c1;
+    const PixelTile<IndexPixel> &b2 = c2;
+    ASSERT_EQ(b1, b2) << "Test setup: tiles should be canonically equivalent";
+
+    // tiles.png: tile 0 is non-anim, tile 1 is water's, tile 2 is ocean's
+    const auto tiles_png = build_tiles_png({unique_non_anim, water_tile, ocean_tile});
+
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}, TilemapEntry{2, 0, false, false}};
+
+    // Simulate water's canonical tiles already processed
+    std::set<PixelTile<IndexPixel>> inter_anim_tiles;
+    {
+        const CanonicalPixelTile canonical{water_tile};
+        const PixelTile<IndexPixel> &base = canonical;
+        inter_anim_tiles.insert(base);
+    }
+
+    auto ocean_anim = create_test_animation("ocean", 2, 1, {ocean_tile}, palette_);
+
+    AnimDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    // Error strategy should detect the inter-animation flip-equivalent duplicate
+    auto error_result = decompiler.decompile_animation(
+        ocean_anim,
+        pals_,
+        metatiles,
+        tiles_png,
+        inter_anim_tiles,
+        make_transparency_config(),
+        make_pal_strategy(),
+        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error),
+        nullptr);
+
+    EXPECT_FALSE(error_result.has_value()) << "Should detect inter-animation flip-equivalent duplicate";
+
+    // Mangle strategy should resolve it
+    auto mangle_result = decompiler.decompile_animation(
+        ocean_anim,
+        pals_,
+        metatiles,
+        tiles_png,
+        inter_anim_tiles,
+        make_transparency_config(),
+        make_pal_strategy(),
+        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::mangle),
+        nullptr);
+
+    EXPECT_TRUE(mangle_result.has_value())
+        << "Mangle strategy should resolve inter-animation flip-equivalent duplicate";
+}
+
+TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimDuplicateWhenAnimNotInTilesPng)
+{
+    /*
+     * Critical real-world case: models the land_waters_edge scenario. Water's key frame tiles are NOT present in
+     * tiles.png at all (simulating an animation whose tiles were removed/never appeared in the tileset image). Ocean's
+     * tiles ARE in tiles.png and are identical to water's. Without the inter-animation fix, this duplicate would be
+     * completely missed because existing_canonical_tiles wouldn't contain water's tiles.
+     */
+    const auto water_tile = create_two_color_tile(1, 2);
+    const auto ocean_tile = water_tile; // identical to water's
+    const auto unrelated_tile = create_two_color_tile(3, 4);
+
+    // tiles.png: only contains unrelated_tile and ocean's tile — water's tile is NOT here
+    const auto tiles_png = build_tiles_png({unrelated_tile, ocean_tile});
+
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}};
+
+    // Simulate water's canonical tiles from a previous decompilation
+    std::set<PixelTile<IndexPixel>> inter_anim_tiles;
+    {
+        const CanonicalPixelTile canonical{water_tile};
+        const PixelTile<IndexPixel> &base = canonical;
+        inter_anim_tiles.insert(base);
+    }
+
+    // Ocean animation at tile offset 1
+    auto ocean_anim = create_test_animation("ocean", 1, 1, {ocean_tile}, palette_);
+
+    AnimDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    // Error strategy should correctly detect the inter-animation duplicate
+    auto error_result = decompiler.decompile_animation(
+        ocean_anim,
+        pals_,
+        metatiles,
+        tiles_png,
+        inter_anim_tiles,
+        make_transparency_config(),
+        make_pal_strategy(),
+        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error),
+        nullptr);
+
+    EXPECT_FALSE(error_result.has_value())
+        << "Should detect inter-animation duplicate even when first animation is not in tiles.png";
+
+    // Mangle strategy should also resolve it
+    auto mangle_result = decompiler.decompile_animation(
+        ocean_anim,
+        pals_,
+        metatiles,
+        tiles_png,
+        inter_anim_tiles,
+        make_transparency_config(),
+        make_pal_strategy(),
+        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::mangle),
+        nullptr);
+
+    EXPECT_TRUE(mangle_result.has_value())
+        << "Mangle strategy should resolve inter-animation duplicate when first animation is not in tiles.png";
+}
+
+TEST_F(AnimDecompilerDuplicateDetectionTests, shouldNotMiscategorizeInterAnimAsCrossRange)
+{
+    // Inter-animation duplicate should say "another animation's key frame tile", not "non-animation tile"
+    const auto shared_tile = create_two_color_tile(1, 2);
+    const auto unique_non_anim = create_two_color_tile(5, 6); // completely different from shared_tile
+
+    // tiles.png: tile 0 is non-anim (unique), tile 1 is ocean's key frame
+    const auto tiles_png = build_tiles_png({unique_non_anim, shared_tile});
+
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}};
+
+    // Water's canonical tiles already processed (same as shared_tile)
+    std::set<PixelTile<IndexPixel>> inter_anim_tiles;
+    {
+        const CanonicalPixelTile canonical{shared_tile};
+        const PixelTile<IndexPixel> &base = canonical;
+        inter_anim_tiles.insert(base);
+    }
+
+    auto ocean_anim = create_test_animation("ocean", 1, 1, {shared_tile}, palette_);
+
+    AnimDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto error_result = decompiler.decompile_animation(
+        ocean_anim,
+        pals_,
+        metatiles,
+        tiles_png,
+        inter_anim_tiles,
+        make_transparency_config(),
+        make_pal_strategy(),
+        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error),
+        nullptr);
+
+    ASSERT_FALSE(error_result.has_value()) << "Should detect inter-animation duplicate";
+
+    // Verify the error message mentions "another animation's key frame tile"
+    const std::string error_text = error_result.error().join(*formatter_);
+    EXPECT_TRUE(error_text.find("another animation's key frame tile") != std::string::npos)
+        << "Error should mention 'another animation's key frame tile', got: " << error_text;
+    EXPECT_TRUE(error_text.find("non-animation tile") == std::string::npos)
+        << "Error should NOT mention 'non-animation tile', got: " << error_text;
 }

@@ -310,26 +310,32 @@ ChainableResult<std::size_t> find_pal_for_anim_tiles(
 }
 
 /**
- * @brief Checks whether any key frame tiles are duplicates, considering both cross-range and intra-animation
- * duplicates.
+ * @brief Checks whether any key frame tiles are duplicates, considering cross-range, inter-animation, and
+ * intra-animation duplicates.
  *
  * @details
  * A duplicate is detected if a key frame tile's canonical form matches either:
+ * - An inter-animation tile (another animation's key frame tile)
  * - An external tile (cross-range duplicate: animation tile matches a non-animation tile in tiles.png)
  * - An earlier key frame tile (intra-animation duplicate: two animation tiles are flip-equivalent)
  *
  * @param key_frame_tiles The animation key frame tiles to check
+ * @param inter_anim_canonical_tiles Canonical forms of other animations' key frame tiles
  * @param external_canonical_tiles Canonical forms of all non-animation tiles in tiles.png
  * @return True if any duplicate is found
  */
-bool has_duplicate_key_frame_tiles(
+[[nodiscard]] bool has_duplicate_key_frame_tiles(
     const std::vector<PixelTile<IndexPixel>> &key_frame_tiles,
+    const std::set<PixelTile<IndexPixel>> &inter_anim_canonical_tiles,
     const std::set<PixelTile<IndexPixel>> &external_canonical_tiles)
 {
     std::set<PixelTile<IndexPixel>> seen;
     for (const auto &tile : key_frame_tiles) {
         const CanonicalPixelTile canonical{tile};
         const PixelTile<IndexPixel> &base = canonical;
+        if (inter_anim_canonical_tiles.contains(base)) {
+            return true;
+        }
         if (external_canonical_tiles.contains(base)) {
             return true;
         }
@@ -341,23 +347,30 @@ bool has_duplicate_key_frame_tiles(
 }
 
 struct DuplicateInfo {
+    std::vector<std::size_t> inter_anim_indices;
     std::vector<std::size_t> cross_range_indices;
     std::vector<std::pair<std::size_t, std::size_t>> intra_anim_pairs;
 };
 
 /**
- * @brief Categorizes duplicate key frame tiles into cross-range and intra-animation duplicates.
+ * @brief Categorizes duplicate key frame tiles into inter-animation, cross-range, and intra-animation duplicates.
  *
  * @details
+ * Inter-animation duplicates are key frame tiles whose canonical form matches another animation's key frame tile.
  * Cross-range duplicates are key frame tiles whose canonical form matches an external (non-animation) tile.
  * Intra-animation duplicates are pairs of key frame tiles that are flip-equivalent to each other.
  *
+ * Inter-animation tiles are checked before cross-range tiles so that the more specific category wins when a tile
+ * appears in both sets.
+ *
  * @param key_frame_tiles The animation key frame tiles to categorize
+ * @param inter_anim_canonical_tiles Canonical forms of other animations' key frame tiles
  * @param external_canonical_tiles Canonical forms of all non-animation tiles in tiles.png
- * @return DuplicateInfo with indices of cross-range duplicates and pairs of intra-animation duplicates
+ * @return DuplicateInfo with indices categorized by duplicate type
  */
-DuplicateInfo categorize_duplicate_key_frame_tiles(
+[[nodiscard]] DuplicateInfo categorize_duplicate_key_frame_tiles(
     const std::vector<PixelTile<IndexPixel>> &key_frame_tiles,
+    const std::set<PixelTile<IndexPixel>> &inter_anim_canonical_tiles,
     const std::set<PixelTile<IndexPixel>> &external_canonical_tiles)
 {
     DuplicateInfo info;
@@ -369,7 +382,11 @@ DuplicateInfo categorize_duplicate_key_frame_tiles(
         const CanonicalPixelTile canonical{key_frame_tiles[i]};
         const PixelTile<IndexPixel> &base = canonical;
 
-        if (external_canonical_tiles.contains(base)) {
+        // Check inter-animation before cross-range (more specific category wins)
+        if (inter_anim_canonical_tiles.contains(base)) {
+            info.inter_anim_indices.push_back(i);
+        }
+        else if (external_canonical_tiles.contains(base)) {
             info.cross_range_indices.push_back(i);
         }
 
@@ -424,6 +441,7 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
     const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals,
     std::span<const TilemapEntry> metatiles_bin,
     const Image<IndexPixel> &tiles_png,
+    const std::set<PixelTile<IndexPixel>> &inter_anim_canonical_tiles,
     const ConfigValue<Rgba32> &extrinsic_transparency,
     const ConfigValue<AnimPalResolutionStrategy> &pal_strategy,
     const ConfigValue<AnimKeyFrameResolutionStrategy> &key_frame_strategy,
@@ -466,8 +484,11 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
         extract_tiles_from_image(tiles_png, tile_offset, tile_count);
 
     /*
-     * Build canonical tile set for all tiles in tiles.png OUTSIDE the current animation's key frame range. This is
-     * used both for duplicate detection (cross-range) and to prevent the mangler from producing collisions.
+     * Build canonical tile set for all tiles in tiles.png OUTSIDE the current animation's key frame range, then merge
+     * in inter-animation canonical tiles. The combined set is used by the mangler to avoid producing canonical
+     * collisions with any already-used tile. For duplicate *categorization* (inter-anim vs cross-range), the separate
+     * inter_anim_canonical_tiles parameter is checked first so that tiles appearing in both sets are correctly reported
+     * as inter-animation duplicates rather than cross-range duplicates.
      */
     const std::size_t total_tiles =
         (tiles_png.height() / tile::side_length_pix) * (tiles_png.width() / tile::side_length_pix);
@@ -481,35 +502,36 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
         existing_canonical_tiles.insert(base);
     }
 
+    existing_canonical_tiles.insert(inter_anim_canonical_tiles.begin(), inter_anim_canonical_tiles.end());
+
     /*
-     * Check for duplicate key frame tiles using canonical (flip-equivalent) comparison. Detects both:
+     * Check for duplicate key frame tiles using canonical (flip-equivalent) comparison. Detects:
+     * - Inter-animation duplicates: animation tile matches another animation's key frame tile
      * - Cross-range duplicates: animation tile matches a non-animation tile in tiles.png
      * - Intra-animation duplicates: two animation tiles are flip-equivalent to each other
      */
-    /*
-     * TODO: are we successfully catching INTER-animation duplicates here? I think not. Right now, intra-animation
-     * duplicates are caught, e.g. if 'water' anim has two duplicate key frame tiles. But what if 'water' subtile 0 and
-     * 'ocean' subtile 2 are identical? That's an issue we're not catching here. I suppose in most practical cases we
-     * catch it, since that other anim's key frame is probably present in tiles.png. But it's possible for whatever
-     * reason it's not (e.g. unused anim), and we should probably error out anyway for correctness sake. This is a
-     * lower-priority fix since it's de-facto unlikely to happen in the wild.
-     */
-    if (has_duplicate_key_frame_tiles(key_frame_index_tiles, existing_canonical_tiles)) {
+    if (has_duplicate_key_frame_tiles(key_frame_index_tiles, inter_anim_canonical_tiles, existing_canonical_tiles)) {
         switch (key_frame_strategy.value()) {
         case AnimKeyFrameResolutionStrategy::error: {
-            const auto dup_info = categorize_duplicate_key_frame_tiles(key_frame_index_tiles, existing_canonical_tiles);
+            const auto dup_info = categorize_duplicate_key_frame_tiles(
+                key_frame_index_tiles, inter_anim_canonical_tiles, existing_canonical_tiles);
             std::vector<std::string> err_msg{};
             err_msg.emplace_back(diag_->formatter().format(
                 "Animation '{}' has duplicate key frame tiles (flip-equivalent tiles are considered duplicates):",
                 FormatParam{anim.name(), Style::bold}));
+            for (const auto &idx : dup_info.inter_anim_indices) {
+                err_msg.emplace_back(diag_->formatter().format(
+                    "  - Tile {} is flip-equivalent to another animation's key frame tile.",
+                    FormatParam{idx, Style::bold}));
+            }
             for (const auto &idx : dup_info.cross_range_indices) {
                 err_msg.emplace_back(diag_->formatter().format(
-                    "  - tile {} is flip-equivalent to a non-animation tile in tiles.png",
+                    "  - Tile {} is flip-equivalent to a non-animation tile in tiles.png.",
                     FormatParam{idx, Style::bold}));
             }
             for (const auto &[i, j] : dup_info.intra_anim_pairs) {
                 err_msg.emplace_back(diag_->formatter().format(
-                    "  - tile {} and tile {} are flip-equivalent",
+                    "  - Tile {} and tile {} are flip-equivalent.",
                     FormatParam{i, Style::bold},
                     FormatParam{j, Style::bold}));
             }

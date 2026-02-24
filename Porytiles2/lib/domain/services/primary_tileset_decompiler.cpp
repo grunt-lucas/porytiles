@@ -5,11 +5,16 @@
 #include <iostream>
 #include <memory>
 #include <ranges>
+#include <set>
 #include <unordered_set>
 #include <vector>
 
+#include "porytiles2/domain/algorithms/tile_extractors.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy_overrides.hpp"
+#include "porytiles2/domain/models/canonical_pixel_tile.hpp"
+#include "porytiles2/domain/models/index_pixel.hpp"
+#include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/services/anim_decompiler.hpp"
@@ -84,6 +89,9 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
         const auto &overrides_map = anim_pal_resolution_strategy_overrides.value();
         std::unordered_set<std::string> used_override_keys;
 
+        // Accumulate canonical forms of previously-processed animations' key frame tiles for inter-animation detection
+        std::set<PixelTile<IndexPixel>> inter_anim_canonical_tiles;
+
         for (const auto &index_pixel_anim : porymap_animations | std::views::values) {
             // Select per-animation override or fall back to global strategy
             ConfigValue<AnimPalResolutionStrategy> effective_strategy = global_anim_pal_resolution_strategy;
@@ -123,6 +131,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
                     tileset.porymap_component().pals(),
                     metatiles_bin,
                     new_porymap_component->tiles_png(),
+                    inter_anim_canonical_tiles,
                     extrinsic_transparency,
                     effective_strategy,
                     anim_key_frame_resolution_strategy,
@@ -130,6 +139,23 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
                 diag_->formatter().format(
                     "Failed to decompile animation '{}'.", FormatParam{index_pixel_anim.name(), Style::bold}),
                 std::unique_ptr<Tileset>);
+
+            /*
+             * After successful decompilation, extract canonical tiles from this animation's (potentially mangled) key
+             * frame range in tiles.png and add them to the accumulator for inter-animation duplicate detection.
+             */
+            const std::size_t anim_tile_offset = index_pixel_anim.params().tile_offset();
+            if (anim_tile_offset == 0) {
+                panic("anim '" + index_pixel_anim.name() + "' offset is 0");
+            }
+            const std::size_t anim_tile_count = index_pixel_anim.params().tile_count();
+            const auto anim_tiles =
+                extract_tiles_from_image(new_porymap_component->tiles_png(), anim_tile_offset, anim_tile_count);
+            for (const auto &t : anim_tiles) {
+                const CanonicalPixelTile canonical{t};
+                const PixelTile<IndexPixel> &base = canonical;
+                inter_anim_canonical_tiles.insert(base);
+            }
 
             new_porytiles_component->add_anim(std::move(rgba_anim));
         }
