@@ -79,7 +79,7 @@ class AnimDecompiler {
         const std::string &tileset_name,
         const Animation<IndexPixel> &anim,
         const std::set<PixelTile<IndexPixel>> &inter_anim_canonical_tiles,
-        PorymapTilesetComponent *porymap_component) const;
+        PorymapTilesetComponent &porymap_component) const;
 
   private:
     const DomainConfig *config_;

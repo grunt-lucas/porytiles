@@ -197,7 +197,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectCrossRangeExactDuplica
     AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     // With mangle strategy, it should succeed and produce a mangled tile
-    auto result = decompiler.decompile_animation("test_tileset", anim, {}, &component);
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
 
     ASSERT_TRUE(result.has_value()) << "Decompilation should succeed with mangle strategy";
 
@@ -229,7 +229,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectCrossRangeFlipEquivale
     config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
     AnimDecompiler error_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
-    auto error_result = error_decompiler.decompile_animation("test_tileset", anim, {}, &component);
+    auto error_result = error_decompiler.decompile_animation("test_tileset", anim, {}, component);
 
     EXPECT_FALSE(error_result.has_value()) << "Should detect flip-equivalent cross-range duplicate";
 
@@ -237,7 +237,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectCrossRangeFlipEquivale
     config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
     AnimDecompiler mangle_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
-    auto mangle_result = mangle_decompiler.decompile_animation("test_tileset", anim, {}, &component);
+    auto mangle_result = mangle_decompiler.decompile_animation("test_tileset", anim, {}, component);
 
     EXPECT_TRUE(mangle_result.has_value()) << "Mangle strategy should resolve flip-equivalent cross-range duplicate";
 }
@@ -263,7 +263,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectIntraAnimationFlipEqui
     config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
     AnimDecompiler error_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
-    auto error_result = error_decompiler.decompile_animation("test_tileset", anim, {}, &component);
+    auto error_result = error_decompiler.decompile_animation("test_tileset", anim, {}, component);
 
     EXPECT_FALSE(error_result.has_value()) << "Should detect intra-animation flip-equivalent duplicate";
 
@@ -271,7 +271,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectIntraAnimationFlipEqui
     config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
     AnimDecompiler mangle_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
-    auto mangle_result = mangle_decompiler.decompile_animation("test_tileset", anim, {}, &component);
+    auto mangle_result = mangle_decompiler.decompile_animation("test_tileset", anim, {}, component);
 
     EXPECT_TRUE(mangle_result.has_value())
         << "Mangle strategy should resolve intra-animation flip-equivalent duplicate";
@@ -295,7 +295,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldNotFalsePositiveWhenNoDuplic
     config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
     AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
-    auto result = decompiler.decompile_animation("test_tileset", anim, {}, &component);
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
 
     EXPECT_TRUE(result.has_value()) << "Should not false-positive when no duplicates exist";
 }
@@ -320,7 +320,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldHandleMixedCrossRangeAndIntr
     config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
     AnimDecompiler error_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
-    auto error_result = error_decompiler.decompile_animation("test_tileset", anim, {}, &component);
+    auto error_result = error_decompiler.decompile_animation("test_tileset", anim, {}, component);
 
     EXPECT_FALSE(error_result.has_value()) << "Should detect mixed cross-range and intra-animation duplicates";
 
@@ -328,7 +328,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldHandleMixedCrossRangeAndIntr
     config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
     AnimDecompiler mangle_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
-    auto mangle_result = mangle_decompiler.decompile_animation("test_tileset", anim, {}, &component);
+    auto mangle_result = mangle_decompiler.decompile_animation("test_tileset", anim, {}, component);
 
     EXPECT_TRUE(mangle_result.has_value()) << "Mangle strategy should resolve mixed duplicates";
 }
@@ -360,7 +360,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimationExactDup
     config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
     AnimDecompiler error_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
-    auto error_result = error_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, &component);
+    auto error_result = error_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, component);
 
     EXPECT_FALSE(error_result.has_value()) << "Should detect inter-animation exact duplicate";
 
@@ -368,8 +368,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimationExactDup
     config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
     AnimDecompiler mangle_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
-    auto mangle_result =
-        mangle_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, &component);
+    auto mangle_result = mangle_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, component);
 
     EXPECT_TRUE(mangle_result.has_value()) << "Mangle strategy should resolve inter-animation exact duplicate";
 }
@@ -408,7 +407,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimationFlipEqui
     config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
     AnimDecompiler error_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
-    auto error_result = error_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, &component);
+    auto error_result = error_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, component);
 
     EXPECT_FALSE(error_result.has_value()) << "Should detect inter-animation flip-equivalent duplicate";
 
@@ -416,8 +415,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimationFlipEqui
     config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
     AnimDecompiler mangle_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
-    auto mangle_result =
-        mangle_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, &component);
+    auto mangle_result = mangle_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, component);
 
     EXPECT_TRUE(mangle_result.has_value())
         << "Mangle strategy should resolve inter-animation flip-equivalent duplicate";
@@ -456,7 +454,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimDuplicateWhen
     config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
     AnimDecompiler error_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
-    auto error_result = error_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, &component);
+    auto error_result = error_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, component);
 
     EXPECT_FALSE(error_result.has_value())
         << "Should detect inter-animation duplicate even when first animation is not in tiles.png";
@@ -465,8 +463,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimDuplicateWhen
     config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
     AnimDecompiler mangle_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
-    auto mangle_result =
-        mangle_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, &component);
+    auto mangle_result = mangle_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, component);
 
     EXPECT_TRUE(mangle_result.has_value())
         << "Mangle strategy should resolve inter-animation duplicate when first animation is not in tiles.png";
@@ -497,7 +494,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldNotMiscategorizeInterAnimAsC
     config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
     AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
-    auto error_result = decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, &component);
+    auto error_result = decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, component);
 
     ASSERT_FALSE(error_result.has_value()) << "Should detect inter-animation duplicate";
 

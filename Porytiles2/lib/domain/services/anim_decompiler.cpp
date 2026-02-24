@@ -271,8 +271,9 @@ ChainableResult<std::size_t> find_pal_for_anim_tiles(
         if (found_pal_indices.size() > 1) {
             /*
              * TODO: ANIM: adapt this code so that it computes a separate pal index for each subtile of the key frame.
-             * While pokeemerald vanilla animations don't hit this case, pokefirered's do, and some users may have
-             * custom animations that work this way. We MUST support this properly.
+             * Technically, advanced users could make animations where different subtiles use different palettes. We
+             * already support this on the compilation side, and FireRed vanilla general tileset makes use of this
+             * technique, so we actually cannot import it until this is solved. We MUST support this properly.
              */
             std::string pal_list;
             for (const auto &pal_idx : found_pal_indices) {
@@ -409,9 +410,9 @@ struct DuplicateInfo {
  * @param records The mangle records describing pixel changes
  */
 void backport_mangles_to_tiles_png(
-    PorymapTilesetComponent *component, std::size_t base_tile_offset, const std::set<TileMangleRecord> &records)
+    PorymapTilesetComponent &component, std::size_t base_tile_offset, const std::set<TileMangleRecord> &records)
 {
-    Image<IndexPixel> tiles_img = component->tiles_png();
+    Image<IndexPixel> tiles_img = component.tiles_png();
     constexpr std::size_t tiles_per_row = metatile::metatiles_per_row * metatile::tiles_per_side;
 
     /*
@@ -431,7 +432,7 @@ void backport_mangles_to_tiles_png(
         tiles_img.set(img_row, img_col, record.mangled_pixel);
     }
 
-    component->tiles_png(tiles_img);
+    component.tiles_png(tiles_img);
 }
 
 } // namespace
@@ -442,7 +443,7 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
     const std::string &tileset_name,
     const Animation<IndexPixel> &anim,
     const std::set<PixelTile<IndexPixel>> &inter_anim_canonical_tiles,
-    PorymapTilesetComponent *porymap_component) const
+    PorymapTilesetComponent &porymap_component) const
 {
     // Unwrap config values
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, extrinsic_transparency, tileset_name, Animation<Rgba32>);
@@ -467,9 +468,9 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
     }
 
     // Read data from porymap_component
-    const auto &pals = porymap_component->pals();
-    const auto &metatiles_bin = porymap_component->metatiles_bin();
-    const auto &tiles_png = porymap_component->tiles_png();
+    const auto &pals = porymap_component.pals();
+    const auto &metatiles_bin = porymap_component.metatiles_bin();
+    const auto &tiles_png = porymap_component.tiles_png();
 
     Animation<Rgba32> result{anim.name()};
     result.params(anim.params());
@@ -478,11 +479,30 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
     const std::size_t tile_offset = anim.params().tile_offset();
     const std::size_t tile_count = anim.params().tile_count();
 
+    // Validate tile range before any arithmetic that assumes tile_count > 0
+    if (tile_count == 0) {
+        return FormattableError{
+            std::vector<std::string>{
+                "Animation '{}' has a tile count of '{}'.",
+                "The animation's generated C code may not have been parsed correctly, or the animation defines no "
+                "parameters."},
+            std::vector<std::vector<FormatParam>>{
+                {FormatParam{anim.name(), Style::bold}, FormatParam{tile_count, Style::bold}}, {}}};
+    }
+    if (tile_offset == 0) {
+        return FormattableError{
+            std::vector<std::string>{
+                "Animation '{}' has a tile offset of '{}'.",
+                "Tile 0 in tiles.png is reserved and cannot be an animation tile."},
+            std::vector<std::vector<FormatParam>>{
+                {FormatParam{anim.name(), Style::bold}, FormatParam{tile_offset, Style::bold}}, {}}};
+    }
+
     /*
      * TODO: ANIM: adapt this code so that it computes a separate pal index for each subtile of the key frame.
      * Technically, advanced users could make animations where different subtiles use different palettes. We already
      * support this on the compilation side, and FireRed vanilla general tileset makes use of this technique, so we
-     * actually cannot import it until this is solved.
+     * actually cannot import it until this is solved. We MUST support this properly.
      */
     // Recover the palette index by scanning metatiles for all animation tiles
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -593,7 +613,7 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
             key_frame_index_tiles = std::move(mangle_result.tiles);
 
             // Backport changes to tiles.png
-            if (porymap_component != nullptr && !mangle_result.mangle_records.empty()) {
+            if (!mangle_result.mangle_records.empty()) {
                 backport_mangles_to_tiles_png(porymap_component, tile_offset, mangle_result.mangle_records);
             }
             break;

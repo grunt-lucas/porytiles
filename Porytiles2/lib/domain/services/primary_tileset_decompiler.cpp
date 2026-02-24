@@ -88,7 +88,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
             PT_TRY_ASSIGN_CHAIN_ERR(
                 rgba_anim,
                 anim_decompiler.decompile_animation(
-                    tileset.name(), index_pixel_anim, inter_anim_canonical_tiles, new_porymap_component.get()),
+                    tileset.name(), index_pixel_anim, inter_anim_canonical_tiles, *new_porymap_component),
                 diag_->formatter().format(
                     "Failed to decompile animation '{}'.", FormatParam{index_pixel_anim.name(), Style::bold}),
                 std::unique_ptr<Tileset>);
@@ -99,6 +99,10 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
              */
             const std::size_t anim_tile_offset = index_pixel_anim.params().tile_offset();
             if (anim_tile_offset == 0) {
+                /*
+                 * AnimDecompiler::decompile_animation() validates that tile_offset != 0 before returning success, so
+                 * this branch should be unreachable. Retained as a defensive invariant.
+                 */
                 panic("anim '" + index_pixel_anim.name() + "' offset is 0");
             }
             const std::size_t anim_tile_count = index_pixel_anim.params().tile_count();
