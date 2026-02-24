@@ -1,12 +1,10 @@
 #include "gtest/gtest.h"
 
-#include <array>
 #include <set>
 #include <string>
 #include <vector>
 
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
-#include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/models/anim_frame.hpp"
 #include "porytiles2/domain/models/anim_params.hpp"
 #include "porytiles2/domain/models/animation.hpp"
@@ -15,15 +13,16 @@
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
+#include "porytiles2/domain/models/porymap_tileset_component.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
-#include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/services/anim_decompiler.hpp"
 #include "porytiles2/infra/services/ascii_tile_printer.hpp"
 #include "porytiles2/infra/services/color_palette_printer.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
-#include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/xcut/diagnostics/buffered_user_diagnostics.hpp"
+
+#include "support/mock_domain_config.hpp"
 
 using namespace porytiles2;
 
@@ -35,7 +34,7 @@ namespace {
 Palette<Rgba32, pal::max_size> create_test_palette()
 {
     Palette<Rgba32, pal::max_size> pal;
-    pal.set(0, Rgba32{0, 0, 0, 0});
+    pal.set(0, Rgba32{0, 0, 0, 255});
     pal.set(1, Rgba32{255, 0, 0, 255});
     pal.set(2, Rgba32{0, 255, 0, 255});
     pal.set(3, Rgba32{0, 0, 255, 255});
@@ -140,25 +139,21 @@ Animation<IndexPixel> create_test_animation(
     return anim;
 }
 
-ConfigValue<Rgba32> make_transparency_config()
+/**
+ * @brief Populates a PorymapTilesetComponent with palettes, metatiles, and tiles.png for testing.
+ */
+PorymapTilesetComponent build_porymap_component(
+    const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals,
+    const std::vector<TilemapEntry> &metatiles,
+    const Image<IndexPixel> &tiles_png)
 {
-    return ConfigValue<Rgba32>{Rgba32{0, 0, 0, 0}, "extrinsic-transparency", "extrinsic-transparency", "test", {}};
-}
-
-ConfigValue<AnimPalResolutionStrategy> make_pal_strategy()
-{
-    return ConfigValue<AnimPalResolutionStrategy>{
-        AnimPalResolutionStrategy::internal_png_pal,
-        "anim-pal-resolution-strategy",
-        "anim-pal-resolution-strategy",
-        "test",
-        {}};
-}
-
-ConfigValue<AnimKeyFrameResolutionStrategy> make_key_frame_strategy(AnimKeyFrameResolutionStrategy strat)
-{
-    return ConfigValue<AnimKeyFrameResolutionStrategy>{
-        strat, "anim-key-frame-resolution-strategy", "anim-key-frame-resolution-strategy", "test", {}};
+    PorymapTilesetComponent component;
+    for (std::size_t i = 0; i < pals.size(); ++i) {
+        component.set_pal(i, pals[i]);
+    }
+    component.metatiles_bin(metatiles);
+    component.tiles_png(tiles_png);
+    return component;
 }
 
 } // namespace
@@ -183,6 +178,7 @@ class AnimDecompilerDuplicateDetectionTests : public ::testing::Test {
     std::unique_ptr<ColorPalettePrinter> pal_printer_;
     Palette<Rgba32, pal::max_size> palette_;
     std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> pals_;
+    MockDomainConfig config_;
 };
 
 TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectCrossRangeExactDuplicate)
@@ -195,26 +191,17 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectCrossRangeExactDuplica
     std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}};
 
     auto anim = create_test_animation("test_anim", 1, 1, {shared_tile}, palette_);
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
-    AnimDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
+    config_.anim_key_frame_strategy = AnimKeyFrameResolutionStrategy::mangle;
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     // With mangle strategy, it should succeed and produce a mangled tile
-    auto result = decompiler.decompile_animation(
-        anim,
-        pals_,
-        metatiles,
-        tiles_png,
-        {},
-        make_transparency_config(),
-        make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::mangle),
-        nullptr);
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, &component);
 
     ASSERT_TRUE(result.has_value()) << "Decompilation should succeed with mangle strategy";
 
     // The key frame tile should have been mangled to differ from the external tile
-    const auto &key_tile = result.value().key_frame().tile_at(0);
-    // Convert back to index to compare canonically
     // We just verify decompilation succeeded — the mangler was invoked
 }
 
@@ -236,34 +223,21 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectCrossRangeFlipEquivale
 
     std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}};
     auto anim = create_test_animation("test_anim", 1, 1, {h_flipped_tile}, palette_);
-
-    AnimDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
     // With error strategy, it should fail (duplicate detected)
-    auto error_result = decompiler.decompile_animation(
-        anim,
-        pals_,
-        metatiles,
-        tiles_png,
-        {},
-        make_transparency_config(),
-        make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error),
-        nullptr);
+    config_.anim_key_frame_strategy = AnimKeyFrameResolutionStrategy::error;
+    AnimDecompiler error_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto error_result = error_decompiler.decompile_animation("test_tileset", anim, {}, &component);
 
     EXPECT_FALSE(error_result.has_value()) << "Should detect flip-equivalent cross-range duplicate";
 
     // With mangle strategy, it should succeed
-    auto mangle_result = decompiler.decompile_animation(
-        anim,
-        pals_,
-        metatiles,
-        tiles_png,
-        {},
-        make_transparency_config(),
-        make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::mangle),
-        nullptr);
+    config_.anim_key_frame_strategy = AnimKeyFrameResolutionStrategy::mangle;
+    AnimDecompiler mangle_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto mangle_result = mangle_decompiler.decompile_animation("test_tileset", anim, {}, &component);
 
     EXPECT_TRUE(mangle_result.has_value()) << "Mangle strategy should resolve flip-equivalent cross-range duplicate";
 }
@@ -283,34 +257,21 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectIntraAnimationFlipEqui
     std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}, TilemapEntry{2, 0, false, false}};
 
     auto anim = create_test_animation("test_anim", 1, 2, {asymmetric_tile, h_flipped_tile}, palette_);
-
-    AnimDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
     // Error strategy should detect intra-animation flip-equivalent duplicate
-    auto error_result = decompiler.decompile_animation(
-        anim,
-        pals_,
-        metatiles,
-        tiles_png,
-        {},
-        make_transparency_config(),
-        make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error),
-        nullptr);
+    config_.anim_key_frame_strategy = AnimKeyFrameResolutionStrategy::error;
+    AnimDecompiler error_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto error_result = error_decompiler.decompile_animation("test_tileset", anim, {}, &component);
 
     EXPECT_FALSE(error_result.has_value()) << "Should detect intra-animation flip-equivalent duplicate";
 
     // Mangle strategy should resolve it
-    auto mangle_result = decompiler.decompile_animation(
-        anim,
-        pals_,
-        metatiles,
-        tiles_png,
-        {},
-        make_transparency_config(),
-        make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::mangle),
-        nullptr);
+    config_.anim_key_frame_strategy = AnimKeyFrameResolutionStrategy::mangle;
+    AnimDecompiler mangle_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto mangle_result = mangle_decompiler.decompile_animation("test_tileset", anim, {}, &component);
 
     EXPECT_TRUE(mangle_result.has_value())
         << "Mangle strategy should resolve intra-animation flip-equivalent duplicate";
@@ -328,20 +289,13 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldNotFalsePositiveWhenNoDuplic
     std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}, TilemapEntry{2, 0, false, false}};
 
     auto anim = create_test_animation("test_anim", 1, 2, {tile_b, tile_c}, palette_);
-
-    AnimDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
     // Even with error strategy, should succeed (no duplicates)
-    auto result = decompiler.decompile_animation(
-        anim,
-        pals_,
-        metatiles,
-        tiles_png,
-        {},
-        make_transparency_config(),
-        make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error),
-        nullptr);
+    config_.anim_key_frame_strategy = AnimKeyFrameResolutionStrategy::error;
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, &component);
 
     EXPECT_TRUE(result.has_value()) << "Should not false-positive when no duplicates exist";
 }
@@ -360,34 +314,21 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldHandleMixedCrossRangeAndIntr
     std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}, TilemapEntry{2, 0, false, false}};
 
     auto anim = create_test_animation("test_anim", 1, 2, {tile_b, tile_c}, palette_);
-
-    AnimDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
     // Error strategy should fail
-    auto error_result = decompiler.decompile_animation(
-        anim,
-        pals_,
-        metatiles,
-        tiles_png,
-        {},
-        make_transparency_config(),
-        make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error),
-        nullptr);
+    config_.anim_key_frame_strategy = AnimKeyFrameResolutionStrategy::error;
+    AnimDecompiler error_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto error_result = error_decompiler.decompile_animation("test_tileset", anim, {}, &component);
 
     EXPECT_FALSE(error_result.has_value()) << "Should detect mixed cross-range and intra-animation duplicates";
 
     // Mangle strategy should succeed
-    auto mangle_result = decompiler.decompile_animation(
-        anim,
-        pals_,
-        metatiles,
-        tiles_png,
-        {},
-        make_transparency_config(),
-        make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::mangle),
-        nullptr);
+    config_.anim_key_frame_strategy = AnimKeyFrameResolutionStrategy::mangle;
+    AnimDecompiler mangle_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto mangle_result = mangle_decompiler.decompile_animation("test_tileset", anim, {}, &component);
 
     EXPECT_TRUE(mangle_result.has_value()) << "Mangle strategy should resolve mixed duplicates";
 }
@@ -402,6 +343,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimationExactDup
     const auto tiles_png = build_tiles_png({unique_non_anim, shared_tile, shared_tile});
 
     std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}, TilemapEntry{2, 0, false, false}};
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
     // Simulate water's canonical tiles already processed
     std::set<PixelTile<IndexPixel>> inter_anim_tiles;
@@ -414,33 +356,20 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimationExactDup
     // Ocean animation at tile offset 2
     auto ocean_anim = create_test_animation("ocean", 2, 1, {shared_tile}, palette_);
 
-    AnimDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
-
     // Error strategy should detect the inter-animation duplicate
-    auto error_result = decompiler.decompile_animation(
-        ocean_anim,
-        pals_,
-        metatiles,
-        tiles_png,
-        inter_anim_tiles,
-        make_transparency_config(),
-        make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error),
-        nullptr);
+    config_.anim_key_frame_strategy = AnimKeyFrameResolutionStrategy::error;
+    AnimDecompiler error_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto error_result = error_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, &component);
 
     EXPECT_FALSE(error_result.has_value()) << "Should detect inter-animation exact duplicate";
 
     // Mangle strategy should resolve it
-    auto mangle_result = decompiler.decompile_animation(
-        ocean_anim,
-        pals_,
-        metatiles,
-        tiles_png,
-        inter_anim_tiles,
-        make_transparency_config(),
-        make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::mangle),
-        nullptr);
+    config_.anim_key_frame_strategy = AnimKeyFrameResolutionStrategy::mangle;
+    AnimDecompiler mangle_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto mangle_result =
+        mangle_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, &component);
 
     EXPECT_TRUE(mangle_result.has_value()) << "Mangle strategy should resolve inter-animation exact duplicate";
 }
@@ -463,6 +392,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimationFlipEqui
     const auto tiles_png = build_tiles_png({unique_non_anim, water_tile, ocean_tile});
 
     std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}, TilemapEntry{2, 0, false, false}};
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
     // Simulate water's canonical tiles already processed
     std::set<PixelTile<IndexPixel>> inter_anim_tiles;
@@ -474,33 +404,20 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimationFlipEqui
 
     auto ocean_anim = create_test_animation("ocean", 2, 1, {ocean_tile}, palette_);
 
-    AnimDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
-
     // Error strategy should detect the inter-animation flip-equivalent duplicate
-    auto error_result = decompiler.decompile_animation(
-        ocean_anim,
-        pals_,
-        metatiles,
-        tiles_png,
-        inter_anim_tiles,
-        make_transparency_config(),
-        make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error),
-        nullptr);
+    config_.anim_key_frame_strategy = AnimKeyFrameResolutionStrategy::error;
+    AnimDecompiler error_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto error_result = error_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, &component);
 
     EXPECT_FALSE(error_result.has_value()) << "Should detect inter-animation flip-equivalent duplicate";
 
     // Mangle strategy should resolve it
-    auto mangle_result = decompiler.decompile_animation(
-        ocean_anim,
-        pals_,
-        metatiles,
-        tiles_png,
-        inter_anim_tiles,
-        make_transparency_config(),
-        make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::mangle),
-        nullptr);
+    config_.anim_key_frame_strategy = AnimKeyFrameResolutionStrategy::mangle;
+    AnimDecompiler mangle_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto mangle_result =
+        mangle_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, &component);
 
     EXPECT_TRUE(mangle_result.has_value())
         << "Mangle strategy should resolve inter-animation flip-equivalent duplicate";
@@ -522,6 +439,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimDuplicateWhen
     const auto tiles_png = build_tiles_png({unrelated_tile, ocean_tile});
 
     std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}};
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
     // Simulate water's canonical tiles from a previous decompilation
     std::set<PixelTile<IndexPixel>> inter_anim_tiles;
@@ -534,34 +452,21 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimDuplicateWhen
     // Ocean animation at tile offset 1
     auto ocean_anim = create_test_animation("ocean", 1, 1, {ocean_tile}, palette_);
 
-    AnimDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
-
     // Error strategy should correctly detect the inter-animation duplicate
-    auto error_result = decompiler.decompile_animation(
-        ocean_anim,
-        pals_,
-        metatiles,
-        tiles_png,
-        inter_anim_tiles,
-        make_transparency_config(),
-        make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error),
-        nullptr);
+    config_.anim_key_frame_strategy = AnimKeyFrameResolutionStrategy::error;
+    AnimDecompiler error_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto error_result = error_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, &component);
 
     EXPECT_FALSE(error_result.has_value())
         << "Should detect inter-animation duplicate even when first animation is not in tiles.png";
 
     // Mangle strategy should also resolve it
-    auto mangle_result = decompiler.decompile_animation(
-        ocean_anim,
-        pals_,
-        metatiles,
-        tiles_png,
-        inter_anim_tiles,
-        make_transparency_config(),
-        make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::mangle),
-        nullptr);
+    config_.anim_key_frame_strategy = AnimKeyFrameResolutionStrategy::mangle;
+    AnimDecompiler mangle_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto mangle_result =
+        mangle_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, &component);
 
     EXPECT_TRUE(mangle_result.has_value())
         << "Mangle strategy should resolve inter-animation duplicate when first animation is not in tiles.png";
@@ -577,6 +482,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldNotMiscategorizeInterAnimAsC
     const auto tiles_png = build_tiles_png({unique_non_anim, shared_tile});
 
     std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}};
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
     // Water's canonical tiles already processed (same as shared_tile)
     std::set<PixelTile<IndexPixel>> inter_anim_tiles;
@@ -588,18 +494,10 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldNotMiscategorizeInterAnimAsC
 
     auto ocean_anim = create_test_animation("ocean", 1, 1, {shared_tile}, palette_);
 
-    AnimDecompiler decompiler{diag_.get(), tile_printer_.get(), pal_printer_.get()};
+    config_.anim_key_frame_strategy = AnimKeyFrameResolutionStrategy::error;
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
-    auto error_result = decompiler.decompile_animation(
-        ocean_anim,
-        pals_,
-        metatiles,
-        tiles_png,
-        inter_anim_tiles,
-        make_transparency_config(),
-        make_pal_strategy(),
-        make_key_frame_strategy(AnimKeyFrameResolutionStrategy::error),
-        nullptr);
+    auto error_result = decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, &component);
 
     ASSERT_FALSE(error_result.has_value()) << "Should detect inter-animation duplicate";
 

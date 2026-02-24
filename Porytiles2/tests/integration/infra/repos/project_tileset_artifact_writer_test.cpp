@@ -6,11 +6,6 @@
 #include <string>
 #include <vector>
 
-#include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
-#include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
-#include "porytiles2/domain/config/anim_pal_resolution_strategy_overrides.hpp"
-#include "porytiles2/domain/config/artifact_edit_mode.hpp"
-#include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/base_game.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
@@ -20,7 +15,6 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
-#include "porytiles2/domain/packing/models/palette_hint.hpp"
 #include "porytiles2/domain/services/behavior_map_provider.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
@@ -31,133 +25,13 @@
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
-#include "porytiles2/xcut/config/config_scope_type.hpp"
-#include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/xcut/diagnostics/buffered_user_diagnostics.hpp"
+
+#include "support/mock_domain_config.hpp"
 
 using namespace porytiles2;
 
 namespace {
-
-class MockDomainConfig : public DomainConfig {
-  protected:
-    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_tiles_in_primary_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{std::size_t{512}, "num_tiles_in_primary", "num_tiles_in_primary", "mock", {}};
-    }
-
-    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_tiles_total_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{std::size_t{1024}, "num_tiles_total", "num_tiles_total", "mock", {}};
-    }
-
-    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_metatiles_in_primary_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{std::size_t{512}, "num_metatiles_in_primary", "num_metatiles_in_primary", "mock", {}};
-    }
-
-    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_metatiles_total_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{std::size_t{1024}, "num_metatiles_total", "num_metatiles_total", "mock", {}};
-    }
-
-    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_pals_in_primary_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{std::size_t{6}, "num_pals_in_primary", "num_pals_in_primary", "mock", {}};
-    }
-
-    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_pals_total_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{std::size_t{13}, "num_pals_total", "num_pals_total", "mock", {}};
-    }
-
-    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    max_map_data_size_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{std::size_t{10000}, "max_map_data_size", "max_map_data_size", "mock", {}};
-    }
-
-    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_tiles_per_metatile_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{std::size_t{8}, "num_tiles_per_metatile", "num_tiles_per_metatile", "mock", {}};
-    }
-
-    [[nodiscard]] ChainableResult<ConfigValue<Rgba32>>
-    extrinsic_transparency_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{Rgba32{0, 0, 0, 0}, "extrinsic_transparency", "extrinsic_transparency", "mock", {}};
-    }
-
-    [[nodiscard]] ChainableResult<ConfigValue<ArtifactEditMode>>
-    tiles_edit_mode_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{ArtifactEditMode::optimize, "tiles_edit_mode", "tiles_edit_mode", "mock", {}};
-    }
-
-    [[nodiscard]] ChainableResult<ConfigValue<ArtifactEditMode>>
-    pals_edit_mode_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{ArtifactEditMode::optimize, "pals_edit_mode", "pals_edit_mode", "mock", {}};
-    }
-
-    [[nodiscard]] ChainableResult<ConfigValue<bool>>
-    pal_hints_enabled_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{false, "pal_hints_enabled", "pal_hints_enabled", "mock", {}};
-    }
-
-    [[nodiscard]] ChainableResult<ConfigValue<std::vector<PaletteHint>>>
-    pal_hints_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{std::vector<PaletteHint>{}, "pal_hints", "pal_hints", "mock", {}};
-    }
-
-    [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>>
-    tiles_pal_mode_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{TilesPalMode::true_color, "tiles_pal_mode", "tiles_pal_mode", "mock", {}};
-    }
-
-    [[nodiscard]] ChainableResult<ConfigValue<AnimPalResolutionStrategy>>
-    global_anim_pal_resolution_strategy_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{
-            AnimPalResolutionStrategy::internal_png_pal,
-            "global_anim_pal_resolution_strategy",
-            "global_anim_pal_resolution_strategy",
-            "mock",
-            {}};
-    }
-
-    [[nodiscard]] ChainableResult<ConfigValue<AnimPalResolutionStrategyOverrides>>
-    anim_pal_resolution_strategy_overrides_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{
-            AnimPalResolutionStrategyOverrides{},
-            "anim_pal_resolution_strategy_overrides",
-            "anim_pal_resolution_strategy_overrides",
-            "mock",
-            {}};
-    }
-
-    [[nodiscard]] ChainableResult<ConfigValue<AnimKeyFrameResolutionStrategy>>
-    anim_key_frame_resolution_strategy_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{
-            AnimKeyFrameResolutionStrategy::error,
-            "anim_key_frame_resolution_strategy",
-            "anim_key_frame_resolution_strategy",
-            "mock",
-            {}};
-    }
-};
 
 class MockInfraConfig : public InfraConfig {
   protected:

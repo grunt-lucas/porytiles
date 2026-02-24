@@ -15,6 +15,7 @@
 #include "porytiles2/domain/algorithms/tile_extractors.hpp"
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
+#include "porytiles2/domain/config/anim_pal_resolution_strategy_overrides.hpp"
 #include "porytiles2/domain/models/anim_frame.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/image.hpp"
@@ -26,6 +27,7 @@
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/result/error.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
+#include "porytiles2/xcut/config/unwrap_config.hpp"
 
 namespace {
 
@@ -437,16 +439,38 @@ void backport_mangles_to_tiles_png(
 namespace porytiles2 {
 
 ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
+    const std::string &tileset_name,
     const Animation<IndexPixel> &anim,
-    const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals,
-    std::span<const TilemapEntry> metatiles_bin,
-    const Image<IndexPixel> &tiles_png,
     const std::set<PixelTile<IndexPixel>> &inter_anim_canonical_tiles,
-    const ConfigValue<Rgba32> &extrinsic_transparency,
-    const ConfigValue<AnimPalResolutionStrategy> &pal_strategy,
-    const ConfigValue<AnimKeyFrameResolutionStrategy> &key_frame_strategy,
     PorymapTilesetComponent *porymap_component) const
 {
+    // Unwrap config values
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, extrinsic_transparency, tileset_name, Animation<Rgba32>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, global_anim_pal_resolution_strategy, tileset_name, Animation<Rgba32>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, anim_pal_resolution_strategy_overrides, tileset_name, Animation<Rgba32>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, anim_key_frame_resolution_strategy, tileset_name, Animation<Rgba32>);
+
+    // Resolve per-animation palette strategy override
+    ConfigValue<AnimPalResolutionStrategy> effective_pal_strategy = global_anim_pal_resolution_strategy;
+    const auto &overrides_map = anim_pal_resolution_strategy_overrides.value();
+    if (auto it = overrides_map.find(anim.name()); it != overrides_map.end()) {
+        /*
+         * TODO: this source_key may not be correct if we ever add other provider handling for Animation Palette
+         * Resolution Strategy Override, it's hardcoded to the YAML format.
+         */
+        effective_pal_strategy = ConfigValue<AnimPalResolutionStrategy>{
+            it->second,
+            "Animation Palette Resolution Strategy Override (" + anim.name() + ")",
+            "tileset.animations.palette_resolution_strategy_overrides." + anim.name(),
+            anim_pal_resolution_strategy_overrides.source(),
+            anim_pal_resolution_strategy_overrides.source_details()};
+    }
+
+    // Read data from porymap_component
+    const auto &pals = porymap_component->pals();
+    const auto &metatiles_bin = porymap_component->metatiles_bin();
+    const auto &tiles_png = porymap_component->tiles_png();
+
     Animation<Rgba32> result{anim.name()};
     result.params(anim.params());
 
@@ -468,7 +492,7 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
             tile_offset,
             tile_count,
             metatiles_bin,
-            pal_strategy,
+            effective_pal_strategy,
             anim,
             pals,
             extrinsic_transparency,
@@ -511,7 +535,7 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
      * - Intra-animation duplicates: two animation tiles are flip-equivalent to each other
      */
     if (has_duplicate_key_frame_tiles(key_frame_index_tiles, inter_anim_canonical_tiles, existing_canonical_tiles)) {
-        switch (key_frame_strategy.value()) {
+        switch (anim_key_frame_resolution_strategy.value()) {
         case AnimKeyFrameResolutionStrategy::error: {
             const auto dup_info = categorize_duplicate_key_frame_tiles(
                 key_frame_index_tiles, inter_anim_canonical_tiles, existing_canonical_tiles);
@@ -538,7 +562,8 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
             err_msg.emplace_back("");
             err_msg.emplace_back("Consider using 'mangle' strategy to auto-resolve.");
             std::ranges::copy(
-                format_config_note_with_separator(diag_->formatter(), key_frame_strategy), std::back_inserter(err_msg));
+                format_config_note_with_separator(diag_->formatter(), anim_key_frame_resolution_strategy),
+                std::back_inserter(err_msg));
             return FormattableError{err_msg};
         }
 

@@ -28,6 +28,11 @@ target_link_libraries(Porytiles2IntegrationTests PRIVATE GTest::gtest GTest::gmo
 target_link_libraries(Porytiles2AllTests PRIVATE GTest::gtest GTest::gmock)
 # gtest_discover_tests(Porytiles2UnitTests WORKING_DIRECTORY ${CMAKE_SOURCE_DIR})
 
+# Add test support headers (shared mocks, utilities)
+target_include_directories(Porytiles2UnitTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(Porytiles2IntegrationTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+target_include_directories(Porytiles2AllTests PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
+
 # Link against the Porytiles2 library
 target_link_libraries(Porytiles2UnitTests PRIVATE Porytiles2Lib)
 target_link_libraries(Porytiles2IntegrationTests PRIVATE Porytiles2Lib)

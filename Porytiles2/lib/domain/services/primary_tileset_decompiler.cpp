@@ -6,11 +6,9 @@
 #include <memory>
 #include <ranges>
 #include <set>
-#include <unordered_set>
 #include <vector>
 
 #include "porytiles2/domain/algorithms/tile_extractors.hpp"
-#include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy_overrides.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
@@ -36,11 +34,6 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_metatiles_in_primary, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_tiles_in_primary, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_tiles_per_metatile, tileset.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_PTR(
-        config_, global_anim_pal_resolution_strategy, tileset.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_PTR(
-        config_, anim_pal_resolution_strategy_overrides, tileset.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_PTR(config_, anim_key_frame_resolution_strategy, tileset.name(), std::unique_ptr<Tileset>);
 
     LayerModeConverter layer_mode_converter{format_, diag_, tile_printer_, extrinsic_transparency};
     MetatileDecompiler metatile_decompiler{format_, diag_, tile_printer_, extrinsic_transparency};
@@ -85,57 +78,17 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
      * new_porymap_component->tiles_png() when metatiles are decompiled
      */
     if (const auto &porymap_animations = tileset.porymap_component().anims(); !porymap_animations.empty()) {
-        const auto &metatiles_bin = tileset.porymap_component().metatiles_bin();
-        const auto &overrides_map = anim_pal_resolution_strategy_overrides.value();
-        std::unordered_set<std::string> used_override_keys;
-
         // Accumulate canonical forms of previously-processed animations' key frame tiles for inter-animation detection
         std::set<PixelTile<IndexPixel>> inter_anim_canonical_tiles;
 
+        AnimDecompiler anim_decompiler{config_, diag_, tile_printer_, pal_printer_};
+
         for (const auto &index_pixel_anim : porymap_animations | std::views::values) {
-            // Select per-animation override or fall back to global strategy
-            ConfigValue<AnimPalResolutionStrategy> effective_strategy = global_anim_pal_resolution_strategy;
-            if (auto it = overrides_map.find(index_pixel_anim.name()); it != overrides_map.end()) {
-                used_override_keys.insert(index_pixel_anim.name());
-                /*
-                 * TODO: this source_key may not be correct if we ever add other provider handling for Animation Palette
-                 * Resolution Strategy Override, it's hardcoded to the YAML format.
-                 */
-                effective_strategy = ConfigValue<AnimPalResolutionStrategy>{
-                    it->second,
-                    "Animation Palette Resolution Strategy Override (" + index_pixel_anim.name() + ")",
-                    "tileset.animations.palette_resolution_strategy_overrides." + index_pixel_anim.name(),
-                    anim_pal_resolution_strategy_overrides.source(),
-                    anim_pal_resolution_strategy_overrides.source_details()};
-            }
-
-            // Warn about pal resolution overrides that reference non-existent animations
-            for (const auto &key : overrides_map | std::views::keys) {
-                if (!used_override_keys.contains(key)) {
-                    diag_->warning(
-                        "unused-animation-palette-override",
-                        {diag_->formatter().format(
-                            "Animation palette resolution strategy override for '{}' does not match any animation in "
-                            "tileset '{}'.",
-                            FormatParam{key, Style::bold},
-                            FormatParam{tileset.name(), Style::bold})});
-                }
-            }
-
             // Run animation decompilation
-            AnimDecompiler anim_decompiler{diag_, tile_printer_, pal_printer_};
             PT_TRY_ASSIGN_CHAIN_ERR(
                 rgba_anim,
                 anim_decompiler.decompile_animation(
-                    index_pixel_anim,
-                    tileset.porymap_component().pals(),
-                    metatiles_bin,
-                    new_porymap_component->tiles_png(),
-                    inter_anim_canonical_tiles,
-                    extrinsic_transparency,
-                    effective_strategy,
-                    anim_key_frame_resolution_strategy,
-                    new_porymap_component.get()),
+                    tileset.name(), index_pixel_anim, inter_anim_canonical_tiles, new_porymap_component.get()),
                 diag_->formatter().format(
                     "Failed to decompile animation '{}'.", FormatParam{index_pixel_anim.name(), Style::bold}),
                 std::unique_ptr<Tileset>);
@@ -158,6 +111,21 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
             }
 
             new_porytiles_component->add_anim(std::move(rgba_anim));
+        }
+
+        // Warn about pal resolution overrides that reference non-existent animations (after all animations processed)
+        PT_UNWRAP_TILESET_CONFIG_PTR(
+            config_, anim_pal_resolution_strategy_overrides, tileset.name(), std::unique_ptr<Tileset>);
+        for (const auto &key : anim_pal_resolution_strategy_overrides.value() | std::views::keys) {
+            if (!porymap_animations.contains(key)) {
+                diag_->warning(
+                    "unused-animation-palette-override",
+                    {diag_->formatter().format(
+                        "Animation palette resolution strategy override for '{}' does not match any animation in "
+                        "tileset '{}'.",
+                        FormatParam{key, Style::bold},
+                        FormatParam{tileset.name(), Style::bold})});
+            }
         }
     }
 
