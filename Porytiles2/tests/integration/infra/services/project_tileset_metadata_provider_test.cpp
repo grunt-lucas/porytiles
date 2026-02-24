@@ -4,62 +4,13 @@
 #include <memory>
 #include <string>
 
-#include "porytiles2/infra/config/infra_config.hpp"
 #include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
-#include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/xcut/diagnostics/buffered_user_diagnostics.hpp"
 
+#include "support/mock_infra_config.hpp"
+
 using namespace porytiles2;
-
-namespace {
-
-class MockInfraConfig : public InfraConfig {
-  protected:
-    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
-    tileset_paths_primary_src_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{
-            std::string{"data/tilesets/primary"}, "tileset_paths_primary_src", "tileset_paths_primary_src", "mock", {}};
-    }
-
-    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
-    tileset_paths_primary_bin_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{
-            std::string{"data/tilesets/primary"}, "tileset_paths_primary_bin", "tileset_paths_primary_bin", "mock", {}};
-    }
-
-    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
-    tileset_paths_secondary_src_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{
-            std::string{"data/tilesets/secondary"},
-            "tileset_paths_secondary_src",
-            "tileset_paths_secondary_src",
-            "mock",
-            {}};
-    }
-
-    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
-    tileset_paths_secondary_bin_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{
-            std::string{"data/tilesets/secondary"},
-            "tileset_paths_secondary_bin",
-            "tileset_paths_secondary_bin",
-            "mock",
-            {}};
-    }
-
-    [[nodiscard]] ChainableResult<ConfigValue<bool>>
-    tileset_animations_wire_anim_code_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{true, "tileset_animations_wire_anim_code", "tileset_animations_wire_anim_code", "mock", {}};
-    }
-};
-
-} // namespace
 
 /**
  * @brief Base fixture for ProjectTilesetMetadataProvider tests.

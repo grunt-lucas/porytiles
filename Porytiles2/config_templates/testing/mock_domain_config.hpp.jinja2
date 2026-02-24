@@ -1,0 +1,21 @@
+{% import '_macros.jinja2' as macros %}
+#pragma once
+
+{{ macros.autogen_warning() }}
+
+#include <string>
+#include <vector>
+
+#include "porytiles2/domain/config/domain_config.hpp"
+
+namespace porytiles2 {
+
+class MockDomainConfig : public DomainConfig {
+  public:
+{{ macros.mock_public_fields(config_values, 'domain') }}
+
+  protected:
+{{ macros.mock_raw_methods(config_values, 'domain') }}
+};
+
+} // namespace porytiles2

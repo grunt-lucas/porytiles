@@ -321,6 +321,19 @@ def generate_config_files():
             "infra/cli/cli_completion_data.hpp.jinja2",
             "Porytiles2/include/porytiles2/infra/cli/cli_completion_data.hpp",
         ),
+        # Test mock configs
+        (
+            "testing/mock_domain_config.hpp.jinja2",
+            "Porytiles2/tests/support/mock_domain_config.hpp",
+        ),
+        (
+            "testing/mock_infra_config.hpp.jinja2",
+            "Porytiles2/tests/support/mock_infra_config.hpp",
+        ),
+        (
+            "testing/mock_app_config.hpp.jinja2",
+            "Porytiles2/tests/support/mock_app_config.hpp",
+        ),
     ]
 
     # Generate each file
