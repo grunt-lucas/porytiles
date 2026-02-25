@@ -149,7 +149,8 @@ TEST_F(AnimKeyFrameManglerTests, shouldMangleSimpleDuplicatePair)
     // Verify the mangle record
     const auto &record = *result.value().mangle_records.begin();
     EXPECT_EQ(record.tile_index, 1); // Second tile was mangled
-    EXPECT_NE(record.original_pixel, record.mangled_pixel);
+    ASSERT_FALSE(record.pixel_changes.empty());
+    EXPECT_NE(record.pixel_changes[0].original_pixel, record.pixel_changes[0].mangled_pixel);
 }
 
 TEST_F(AnimKeyFrameManglerTests, shouldMangleMultipleDuplicatesOfSameTile)
@@ -290,7 +291,8 @@ TEST_F(AnimKeyFrameManglerTests, shouldPreservePaletteIndex)
 
     // The mangled pixel should preserve the palette index
     const auto &record = *result.value().mangle_records.begin();
-    EXPECT_EQ(record.mangled_pixel.palette_index(), pal_index);
+    ASSERT_FALSE(record.pixel_changes.empty());
+    EXPECT_EQ(record.pixel_changes[0].mangled_pixel.palette_index(), pal_index);
 }
 
 TEST_F(AnimKeyFrameManglerTests, shouldEmitRemarkWhenMangling)
@@ -348,10 +350,12 @@ TEST_F(AnimKeyFrameManglerTests, shouldMangleSolidColorTile)
 
     // The mangled pixel should use a different color from the palette
     const auto &record = *result.value().mangle_records.begin();
-    EXPECT_NE(record.original_pixel.color_index(), record.mangled_pixel.color_index());
+    ASSERT_FALSE(record.pixel_changes.empty());
+    EXPECT_NE(
+        record.pixel_changes[0].original_pixel.color_index(), record.pixel_changes[0].mangled_pixel.color_index());
 }
 
-TEST_F(AnimKeyFrameManglerTests, shouldHandleTransparentPixels)
+TEST_F(AnimKeyFrameManglerTests, shouldHandleMostlyTransparentTiles)
 {
     // arrange - create tile with transparent pixels (index 0) and two colors
     PixelTile<IndexPixel> tile;
@@ -374,13 +378,42 @@ TEST_F(AnimKeyFrameManglerTests, shouldHandleTransparentPixels)
     const auto result = mangler.mangle_duplicates(
         "test_anim", tiles, make_uniform_pal_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
 
-    // assert
+    // assert - should succeed; the mangler can mangle any pixel (including transparent ones)
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().mangle_records.size(), 1);
+    EXPECT_NE(result.value().tiles[0], result.value().tiles[1]);
+}
 
-    // Mangled pixel should not be at a transparent position
+TEST_F(AnimKeyFrameManglerTests, shouldMangleFullyTransparentTiles)
+{
+    // arrange - all pixels are transparent (color index 0)
+    PixelTile<IndexPixel> tile;
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        tile.set(i, IndexPixel{0});
+    }
+
+    std::vector<PixelTile<IndexPixel>> tiles;
+    tiles.push_back(tile);
+    tiles.push_back(tile); // Duplicate
+
+    std::set<PixelTile<IndexPixel>> existing_tiles;
+
+    AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
+
+    // act
+    const auto result = mangler.mangle_duplicates(
+        "test_anim", tiles, make_uniform_pal_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
+
+    // assert - should succeed by swapping a transparent pixel to a non-transparent color
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(result.value().mangle_records.size(), 1);
+    EXPECT_NE(result.value().tiles[0], result.value().tiles[1]);
+
+    // The mangled pixel should now be non-transparent (swapped from index 0 to some other index)
     const auto &record = *result.value().mangle_records.begin();
-    EXPECT_FALSE(record.original_pixel.is_transparent());
+    ASSERT_FALSE(record.pixel_changes.empty());
+    EXPECT_TRUE(record.pixel_changes[0].original_pixel.is_transparent());
+    EXPECT_FALSE(record.pixel_changes[0].mangled_pixel.is_transparent());
 }
 
 TEST_F(AnimKeyFrameManglerTests, shouldMakeMangledRecordsAccurate)
@@ -404,13 +437,16 @@ TEST_F(AnimKeyFrameManglerTests, shouldMakeMangledRecordsAccurate)
     ASSERT_EQ(result.value().mangle_records.size(), 1);
 
     const auto &record = *result.value().mangle_records.begin();
+    ASSERT_FALSE(record.pixel_changes.empty());
 
     // The record should accurately describe the change
-    // Original pixel at the recorded index should match record.original_pixel
-    EXPECT_EQ(original_tile.at(record.pixel_index), record.original_pixel);
+    for (const auto &change : record.pixel_changes) {
+        // Original pixel at the recorded index should match change.original_pixel
+        EXPECT_EQ(original_tile.at(change.pixel_index), change.original_pixel);
 
-    // Mangled tile at the recorded index should match record.mangled_pixel
-    EXPECT_EQ(result.value().tiles[record.tile_index].at(record.pixel_index), record.mangled_pixel);
+        // Mangled tile at the recorded index should match change.mangled_pixel
+        EXPECT_EQ(result.value().tiles[record.tile_index].at(change.pixel_index), change.mangled_pixel);
+    }
 }
 
 TEST_F(AnimKeyFrameManglerTests, shouldTreatFlipEquivalentTilesAsDuplicates)
@@ -462,4 +498,45 @@ TEST_F(AnimKeyFrameManglerTests, shouldTreatFlipEquivalentTilesAsDuplicates)
     const PixelTile<IndexPixel> &result_base_0 = result_canonical_0;
     const PixelTile<IndexPixel> &result_base_1 = result_canonical_1;
     EXPECT_NE(result_base_0, result_base_1) << "Result tiles should be canonically unique";
+}
+
+TEST_F(AnimKeyFrameManglerTests, shouldMangleManySolidColorDuplicates)
+{
+    // arrange - 20 identical solid-color tiles
+    // A solid tile has 16 unique canonical pixel positions under the 4-fold flip symmetry (64 / 4 = 16).
+    // With only 1 alternative color per pixel, the old algorithm could produce at most 16 unique mangles
+    // and would fail for the 18th+ duplicate. With all alternatives tried, the search space expands to
+    // 16 positions * 14 alternative colors = 224, which is more than sufficient.
+    PixelTile<IndexPixel> tile;
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        tile.set(i, IndexPixel{1}); // All red
+    }
+
+    constexpr std::size_t num_tiles = 20;
+    std::vector<PixelTile<IndexPixel>> tiles;
+    tiles.reserve(num_tiles);
+    for (std::size_t i = 0; i < num_tiles; ++i) {
+        tiles.push_back(tile);
+    }
+
+    std::set<PixelTile<IndexPixel>> existing_tiles;
+
+    AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
+
+    // act
+    const auto result = mangler.mangle_duplicates(
+        "test_anim", tiles, make_uniform_pal_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
+
+    // assert - should succeed with the expanded search space
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(result.value().tiles.size(), num_tiles);
+    EXPECT_EQ(result.value().mangle_records.size(), num_tiles - 1); // All but first need mangling
+
+    // All tiles should be canonically unique
+    std::set<PixelTile<IndexPixel>> canonical_tiles;
+    for (const auto &t : result.value().tiles) {
+        CanonicalPixelTile<IndexPixel> canonical{t};
+        const PixelTile<IndexPixel> &base = canonical;
+        EXPECT_TRUE(canonical_tiles.insert(base).second) << "Found duplicate canonical tile after mangling";
+    }
 }

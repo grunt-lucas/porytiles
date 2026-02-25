@@ -529,11 +529,13 @@ void backport_mangles_to_tiles_png(
         const std::size_t tile_row = global_tile_idx / tiles_per_row;
         const std::size_t tile_col = global_tile_idx % tiles_per_row;
 
-        const auto [pixel_row, pixel_col] = tile::index_to_row_col(record.pixel_index);
-        const std::size_t img_row = tile_row * tile::side_length_pix + pixel_row;
-        const std::size_t img_col = tile_col * tile::side_length_pix + pixel_col;
+        for (const auto &change : record.pixel_changes) {
+            const auto [pixel_row, pixel_col] = tile::index_to_row_col(change.pixel_index);
+            const std::size_t img_row = tile_row * tile::side_length_pix + pixel_row;
+            const std::size_t img_col = tile_col * tile::side_length_pix + pixel_col;
 
-        tiles_img.set(img_row, img_col, record.mangled_pixel);
+            tiles_img.set(img_row, img_col, change.mangled_pixel);
+        }
     }
 
     component.tiles_png(tiles_img);
