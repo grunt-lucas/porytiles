@@ -66,6 +66,12 @@ PixelTile<IndexPixel> create_two_color_tile(std::size_t corner_color, std::size_
     return tile;
 }
 
+std::vector<const Palette<Rgba32, pal::max_size> *>
+make_uniform_pal_ptrs(const Palette<Rgba32, pal::max_size> &pal, std::size_t count)
+{
+    return std::vector<const Palette<Rgba32, pal::max_size> *>(count, &pal);
+}
+
 } // namespace
 
 class AnimKeyFrameManglerTests : public ::testing::Test {
@@ -97,7 +103,8 @@ TEST_F(AnimKeyFrameManglerTests, shouldPassthroughWhenNoDuplicates)
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
-    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, Rgba32{}, existing_tiles);
+    const auto result = mangler.mangle_duplicates(
+        "test_anim", tiles, make_uniform_pal_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -122,7 +129,8 @@ TEST_F(AnimKeyFrameManglerTests, shouldMangleSimpleDuplicatePair)
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
-    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, Rgba32{}, existing_tiles);
+    const auto result = mangler.mangle_duplicates(
+        "test_anim", tiles, make_uniform_pal_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -158,7 +166,8 @@ TEST_F(AnimKeyFrameManglerTests, shouldMangleMultipleDuplicatesOfSameTile)
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
-    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, Rgba32{}, existing_tiles);
+    const auto result = mangler.mangle_duplicates(
+        "test_anim", tiles, make_uniform_pal_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -190,7 +199,8 @@ TEST_F(AnimKeyFrameManglerTests, shouldAvoidDuplicatingExistingTiles)
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
-    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, Rgba32{}, existing_tiles);
+    const auto result = mangler.mangle_duplicates(
+        "test_anim", tiles, make_uniform_pal_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -229,7 +239,8 @@ TEST_F(AnimKeyFrameManglerTests, shouldNotMangleIntoCollisionWithExistingCanonic
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
-    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, Rgba32{}, existing_canonical_tiles);
+    const auto result = mangler.mangle_duplicates(
+        "test_anim", tiles, make_uniform_pal_ptrs(palette_, tiles.size()), Rgba32{}, existing_canonical_tiles);
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -270,7 +281,8 @@ TEST_F(AnimKeyFrameManglerTests, shouldPreservePaletteIndex)
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
-    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, Rgba32{}, existing_tiles);
+    const auto result = mangler.mangle_duplicates(
+        "test_anim", tiles, make_uniform_pal_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -294,7 +306,8 @@ TEST_F(AnimKeyFrameManglerTests, shouldEmitRemarkWhenMangling)
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
-    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, Rgba32{}, existing_tiles);
+    const auto result = mangler.mangle_duplicates(
+        "test_anim", tiles, make_uniform_pal_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -323,7 +336,8 @@ TEST_F(AnimKeyFrameManglerTests, shouldMangleSolidColorTile)
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
-    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, Rgba32{}, existing_tiles);
+    const auto result = mangler.mangle_duplicates(
+        "test_anim", tiles, make_uniform_pal_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
 
     // assert - should SUCCEED by introducing a different palette color
     ASSERT_TRUE(result.has_value());
@@ -357,7 +371,8 @@ TEST_F(AnimKeyFrameManglerTests, shouldHandleTransparentPixels)
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
-    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, Rgba32{}, existing_tiles);
+    const auto result = mangler.mangle_duplicates(
+        "test_anim", tiles, make_uniform_pal_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -381,7 +396,8 @@ TEST_F(AnimKeyFrameManglerTests, shouldMakeMangledRecordsAccurate)
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
-    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, Rgba32{}, existing_tiles);
+    const auto result = mangler.mangle_duplicates(
+        "test_anim", tiles, make_uniform_pal_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -433,7 +449,8 @@ TEST_F(AnimKeyFrameManglerTests, shouldTreatFlipEquivalentTilesAsDuplicates)
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
-    const auto result = mangler.mangle_duplicates("test_anim", tiles, palette_, Rgba32{}, existing_canonical_tiles);
+    const auto result = mangler.mangle_duplicates(
+        "test_anim", tiles, make_uniform_pal_ptrs(palette_, tiles.size()), Rgba32{}, existing_canonical_tiles);
 
     // assert
     ASSERT_TRUE(result.has_value());

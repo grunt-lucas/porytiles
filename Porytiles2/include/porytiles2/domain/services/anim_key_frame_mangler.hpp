@@ -94,15 +94,16 @@ class AnimKeyFrameMangler {
      *
      * @param anim_name Animation name (for diagnostic messages)
      * @param tiles Key frame tiles to process (will be copied and potentially modified)
-     * @param palette The palette used by these tiles (for color similarity calculations)
+     * @param palettes Per-tile palettes for color similarity calculations (one pointer per tile)
      * @param extrinsic_transparency The extrinsic transparency color (for tile color conversion in diagnostics)
      * @param existing_tiles Set of all existing tiles to check uniqueness against
+     * @pre @p palettes size must equal @p tiles size.
      * @return MangleResult containing unique tiles and a record of all modifications, or an error if mangling failed
      */
     [[nodiscard]] ChainableResult<MangleResult> mangle_duplicates(
         const std::string &anim_name,
         std::vector<PixelTile<IndexPixel>> tiles,
-        const Palette<Rgba32, pal::max_size> &palette,
+        const std::vector<const Palette<Rgba32, pal::max_size> *> &palettes,
         const Rgba32 &extrinsic_transparency,
         const std::set<PixelTile<IndexPixel>> &existing_tiles) const;
 

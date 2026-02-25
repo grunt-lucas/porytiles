@@ -237,21 +237,16 @@ AnimKeyFrameMangler::AnimKeyFrameMangler(
 ChainableResult<MangleResult> AnimKeyFrameMangler::mangle_duplicates(
     const std::string &anim_name,
     std::vector<PixelTile<IndexPixel>> tiles,
-    const Palette<Rgba32, pal::max_size> &palette,
+    const std::vector<const Palette<Rgba32, pal::max_size> *> &palettes,
     const Rgba32 &extrinsic_transparency,
     const std::set<PixelTile<IndexPixel>> &existing_canonical_tiles) const
 {
+    if (palettes.size() != tiles.size()) {
+        panic("palettes size " + std::to_string(palettes.size()) + " != tiles size " + std::to_string(tiles.size()));
+    }
+
     MangleResult result;
     result.tiles = std::move(tiles);
-
-    /*
-     * TODO: I think there is *STILL* actually a potential bug with the mangling process. Here, we are tracking
-     * "existing" tiles using the canonical index version. The 'existing_canonical_tiles' variable is set to contain all
-     * the tiles from tiles.png, which is supposed to prevent us from creating a mangled tile that matches one of the
-     * existing tiles.
-     *
-     * TODO: what am I saying here?
-     */
 
     /*
      * Build a set of all canonical tiles we need to be unique against. This includes the input existing_canonical_tiles
@@ -285,13 +280,13 @@ ChainableResult<MangleResult> AnimKeyFrameMangler::mangle_duplicates(
             // Need to mangle this tile
             const PixelTile<IndexPixel> original_tile = current_tile;
             const std::optional<std::pair<PixelTile<IndexPixel>, TileMangleRecord>> mangle_result =
-                try_mangle_tile(current_tile, i, palette, all_canonical_tiles);
+                try_mangle_tile(current_tile, i, *palettes[i], all_canonical_tiles);
 
             if (!mangle_result.has_value()) {
                 // Could not mangle the tile - this is an error
                 std::vector<std::string> err_msg;
                 err_msg.push_back(diag_->formatter().format(
-                    "Failed to mangle duplicate key frame tile {} in animation '{}'",
+                    "Failed to mangle duplicate key frame tile {} in animation '{}'.",
                     FormatParam{i, Style::bold},
                     FormatParam{anim_name, Style::bold}));
                 err_msg.emplace_back();
@@ -317,9 +312,9 @@ ChainableResult<MangleResult> AnimKeyFrameMangler::mangle_duplicates(
                 FormatParam{mangle_result->second.mangled_pixel.index()}));
 
             const PixelTile<Rgba32> original_rgba =
-                color_tile_from_index_tile(original_tile, palette, extrinsic_transparency);
+                color_tile_from_index_tile(original_tile, *palettes[i], extrinsic_transparency);
             const PixelTile<Rgba32> mangled_rgba =
-                color_tile_from_index_tile(current_tile, palette, extrinsic_transparency);
+                color_tile_from_index_tile(current_tile, *palettes[i], extrinsic_transparency);
 
             remark_lines.emplace_back("");
             remark_lines.emplace_back("Original tile:");

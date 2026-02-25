@@ -1104,7 +1104,7 @@ void CompilerTask::pipeline_helper_compile_animations()
             warning_lines.emplace_back(format_.format(
                 "Animation '{}' uses multiple palettes across subtiles.", FormatParam{anim_name, Style::bold}));
             warning_lines.emplace_back(format_.format(
-                "Frame PNGs will be saved using palette '{}' for display purposes.",
+                "Porymap-component frame PNGs will be saved using palette '{}' for display purposes.",
                 FormatParam{pal_filename(frame_pal_index), Style::bold}));
             diag_.warning("multi-palette-animation", warning_lines);
         }

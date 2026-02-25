@@ -1,5 +1,7 @@
 #include "gtest/gtest.h"
 
+#include <array>
+#include <cstdint>
 #include <set>
 #include <string>
 #include <vector>
@@ -504,4 +506,202 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldNotMiscategorizeInterAnimAsC
         << "Error should mention 'another animation's key frame tile', got: " << error_text;
     EXPECT_TRUE(error_text.find("non-animation tile") == std::string::npos)
         << "Error should NOT mention 'non-animation tile', got: " << error_text;
+}
+
+// --- Multi-Palette Animation Decompilation Tests ---
+
+namespace {
+
+/**
+ * @brief Creates a second test palette with distinct colors from the first.
+ */
+Palette<Rgba32, pal::max_size> create_second_test_palette()
+{
+    Palette<Rgba32, pal::max_size> pal;
+    pal.set(0, Rgba32{0, 0, 0, 0});
+    pal.set(1, Rgba32{128, 0, 0, 255});
+    pal.set(2, Rgba32{0, 128, 0, 255});
+    pal.set(3, Rgba32{0, 0, 128, 255});
+    pal.set(4, Rgba32{128, 128, 0, 255});
+    pal.set(5, Rgba32{0, 128, 128, 255});
+    pal.set(6, Rgba32{128, 0, 128, 255});
+    pal.set(7, Rgba32{128, 128, 128, 255});
+    for (std::size_t i = 8; i < 16; ++i) {
+        const auto val = static_cast<std::uint8_t>(i * 8 + 64);
+        pal.set(i, Rgba32{val, val, val, 255});
+    }
+    return pal;
+}
+
+/**
+ * @brief Creates a minimal Animation<IndexPixel> for scan_local_metatiles tests (no internal frame palette needed).
+ */
+Animation<IndexPixel> create_test_animation_no_pal(
+    const std::string &name,
+    std::size_t tile_offset,
+    std::size_t tile_count,
+    const std::vector<PixelTile<IndexPixel>> &frame_tiles)
+{
+    AnimParams params;
+    params.tile_offset(tile_offset);
+    params.tile_count(tile_count);
+    params.frame_names({DynamicCasedName{"0"}});
+    params.frame_order({DynamicCasedName{"0"}});
+
+    Animation<IndexPixel> anim{name, params};
+    AnimFrame<IndexPixel> frame{"0", frame_tiles};
+    anim.put_frame("0", std::move(frame));
+    return anim;
+}
+
+} // namespace
+
+class AnimDecompilerMultiPalTests : public ::testing::Test {
+  protected:
+    void SetUp() override
+    {
+        diag_ = std::make_unique<BufferedUserDiagnostics>();
+        formatter_ = std::make_unique<PlainTextFormatter>();
+        tile_printer_ = std::make_unique<AsciiTilePrinter>(formatter_.get());
+        pal_printer_ = std::make_unique<ColorPalettePrinter>(formatter_.get());
+        palette_0_ = create_test_palette();
+        palette_1_ = create_second_test_palette();
+
+        pals_.fill(Palette<Rgba32, pal::max_size>{});
+        pals_[0] = palette_0_;
+        pals_[1] = palette_1_;
+    }
+
+    std::unique_ptr<BufferedUserDiagnostics> diag_;
+    std::unique_ptr<PlainTextFormatter> formatter_;
+    std::unique_ptr<AsciiTilePrinter> tile_printer_;
+    std::unique_ptr<ColorPalettePrinter> pal_printer_;
+    Palette<Rgba32, pal::max_size> palette_0_;
+    Palette<Rgba32, pal::max_size> palette_1_;
+    std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> pals_;
+    MockDomainConfig config_;
+};
+
+TEST_F(AnimDecompilerMultiPalTests, shouldDecompileMultiPalAnimationWithScanLocalMetatiles)
+{
+    // Two subtiles: tile 1 uses palette 0, tile 2 uses palette 1
+    const auto tile_a = create_two_color_tile(1, 2); // Non-animation tile
+    const auto tile_b = create_two_color_tile(3, 4); // Anim subtile 0
+    const auto tile_c = create_two_color_tile(5, 6); // Anim subtile 1
+
+    const auto tiles_png = build_tiles_png({tile_a, tile_b, tile_c});
+
+    // Metatile entries: tile 1 uses palette 0, tile 2 uses palette 1
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}, TilemapEntry{2, 1, false, false}};
+
+    auto anim = create_test_animation_no_pal("test_anim", 1, 2, {tile_b, tile_c});
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
+
+    config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
+
+    ASSERT_TRUE(result.has_value()) << "Multi-pal decompilation should succeed";
+
+    // Verify key frame has 2 tiles
+    ASSERT_EQ(result.value().key_frame().tiles().size(), 2);
+
+    // Verify subtile 0 was decompiled with palette 0 colors
+    const auto &key_tile_0 = result.value().key_frame().tile_at(0);
+    // Corner pixel (index 0) should be color index 3 from palette 0 = Rgba32{0, 0, 255, 255}
+    EXPECT_EQ(key_tile_0.at(0), palette_0_.at(3));
+
+    // Verify subtile 1 was decompiled with palette 1 colors
+    const auto &key_tile_1 = result.value().key_frame().tile_at(1);
+    // Corner pixel (index 0) should be color index 5 from palette 1 = Rgba32{0, 128, 128, 255}
+    EXPECT_EQ(key_tile_1.at(0), palette_1_.at(5));
+}
+
+TEST_F(AnimDecompilerMultiPalTests, shouldErrorWhenSubtileNotReferencedInMetatiles)
+{
+    // Two subtiles but only tile 1 is referenced in metatiles — tile 2 is unresolved
+    const auto tile_a = create_two_color_tile(1, 2);
+    const auto tile_b = create_two_color_tile(3, 4);
+    const auto tile_c = create_two_color_tile(5, 6);
+
+    const auto tiles_png = build_tiles_png({tile_a, tile_b, tile_c});
+
+    // Only tile 1 referenced — tile 2 will be unresolved
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}};
+
+    auto anim = create_test_animation_no_pal("test_anim", 1, 2, {tile_b, tile_c});
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
+
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
+
+    EXPECT_FALSE(result.has_value()) << "Should error when a subtile is not referenced in local metatiles";
+}
+
+TEST_F(AnimDecompilerMultiPalTests, shouldErrorWhenNoSubtilesReferencedInMetatiles)
+{
+    // No subtiles in the animation range are referenced in metatiles
+    const auto tile_a = create_two_color_tile(1, 2);
+    const auto tile_b = create_two_color_tile(3, 4);
+
+    const auto tiles_png = build_tiles_png({tile_a, tile_b});
+
+    // No metatile references tile 1 at all
+    std::vector<TilemapEntry> metatiles{TilemapEntry{0, 0, false, false}};
+
+    auto anim = create_test_animation_no_pal("test_anim", 1, 1, {tile_b});
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
+
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
+
+    EXPECT_FALSE(result.has_value()) << "Should error when no subtiles are referenced in metatiles";
+}
+
+TEST_F(AnimDecompilerMultiPalTests, shouldErrorWhenSubtileHasConflictingPaletteIndices)
+{
+    // Single-subtile animation, but tile 1 is referenced with two different palette indices
+    const auto tile_a = create_two_color_tile(1, 2);
+    const auto tile_b = create_two_color_tile(3, 4);
+
+    const auto tiles_png = build_tiles_png({tile_a, tile_b});
+
+    // Tile 1 referenced with palette 0 in one metatile and palette 1 in another
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}, TilemapEntry{1, 1, false, false}};
+
+    auto anim = create_test_animation_no_pal("test_anim", 1, 1, {tile_b});
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
+
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
+
+    EXPECT_FALSE(result.has_value()) << "Should error when a subtile has conflicting palette indices";
+}
+
+TEST_F(AnimDecompilerMultiPalTests, shouldMangleMultiPalDuplicateKeyFrameTiles)
+{
+    // Two subtiles using different palettes, but their key frame tiles are exact duplicates
+    const auto shared_tile = create_two_color_tile(1, 2);
+    const auto unique_tile = create_two_color_tile(5, 6);
+
+    // tiles.png: unique non-anim tile, then two identical anim tiles
+    const auto tiles_png = build_tiles_png({unique_tile, shared_tile, shared_tile});
+
+    // Tile 1 uses palette 0, tile 2 uses palette 1
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}, TilemapEntry{2, 1, false, false}};
+
+    auto anim = create_test_animation_no_pal("test_anim", 1, 2, {shared_tile, shared_tile});
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
+
+    config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
+
+    ASSERT_TRUE(result.has_value()) << "Mangle strategy should resolve multi-pal duplicate key frame tiles";
+    ASSERT_EQ(result.value().key_frame().tiles().size(), 2);
 }
