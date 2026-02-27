@@ -19,12 +19,6 @@
   - each of these folders can have subfolders `algorithms`, `models`, `repos`, `services`
 - Make each layer a completely isolated library so that the compiler enforces dependency rules
 
-## Start building animation system
-- change to `anim.json` instead of `anim.yaml`?
-  - even though it's technically a user config file, since Porytiles overwrites it every time, YAML seems unintuitive
-    - Why? Because users might reasonably do things like put comments, and wonder why their comments keep getting clobbered
-  - JSON is better since comments are disallowed by default and syntax is simpler, users won't be confused when their idiosyncrasies get clobbered
-
 ## Implement `LayoutDataProvider`
 Once we complete the `ProjectTilesetArtifactKeyProvider` refactor, create a `LayoutDataProvider` which parses `layouts.json`.
 We can then create a `TilesetPairProvider` that reads the layout data and provides mappings between primary/secondary.

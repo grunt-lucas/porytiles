@@ -100,9 +100,18 @@ tileset:
     # - scan-all-tilesets: Scan layouts config for paired tilesets (not yet implemented).
     global_palette_resolution_strategy: scan-local-metatiles
 
+    # Strategy for determining how to resolve duplicate key frame subtile errors when decompiling an animation.
+    # Available strategies:
+    # - [default] error: error out and display violating duplicate pairs
+    # - warning: warn about violating duplicate pairs and continue decompilation (noting that subsequent compilation will fail if no action is taken)
+    # - manual_override: DEPRECATE THIS, NOT NEEDED ANYMORE, SEE animations_phase2.md
+    # - mangle: run the AnimTileManger to minimally de-dupe tiles
+    key_frame_resolution_strategy: warning
+
     # Per-animation overrides for palette resolution strategy. Each key is an animation name, and
     # the value is the resolution strategy to use for that specific animation. Animations not listed
     # here fall back to the global_palette_resolution_strategy above.
+    # DEPRECATE THIS, NOT NEEDED ANYMORE, SEE animations_phase2.md
     palette_resolution_strategy_overrides:
       flower: palette-00
       water: internal-png-palette

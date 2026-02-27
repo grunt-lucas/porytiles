@@ -53,7 +53,7 @@ set_target_properties(Porytiles1Lib PROPERTIES OUTPUT_NAME "${CANONICAL_LIB_NAME
 target_include_directories(Porytiles1Lib INTERFACE ${PORYTILES1_INCLUDE_DIR} PRIVATE ${PORYTILES1_INCLUDE_DIR}/${CANONICAL_LIB_NAME})
 
 # Find the libpng include dirs located via find_package
-target_include_directories(Porytiles1Lib PUBLIC ${PNG_INCLUDE_DIRS})
+target_include_directories(Porytiles1Lib SYSTEM PUBLIC ${PNG_INCLUDE_DIRS})
 
 # Mark public any includes our interface exposes.
 target_include_directories(Porytiles1Lib PUBLIC ${CMAKE_SOURCE_DIR}/Porytiles1/vendor/png++-0.2.9)
