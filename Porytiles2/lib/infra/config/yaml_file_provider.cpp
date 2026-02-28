@@ -297,26 +297,25 @@ YamlFileProvider::global_anim_pal_resolution_strategy(ConfigScopeType type, cons
         "tileset.animations.global_palette_resolution_strategy");
 }
 
-LayerValue<AnimPalResolutionStrategyOverrides>
-YamlFileProvider::anim_pal_resolution_strategy_overrides(ConfigScopeType type, const std::string &scope) const
+LayerValue<AnimConfigs> YamlFileProvider::anim_configs(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<AnimPalResolutionStrategyOverrides>::invalid(
+        return LayerValue<AnimConfigs>::invalid(
             paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
-    return search_config_files<AnimPalResolutionStrategyOverrides>(
+    return search_config_files<AnimConfigs>(
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["palette_resolution_strategy_overrides"]; },
-        parse_anim_pal_resolution_strategy_overrides,
-        "tileset.animations.palette_resolution_strategy_overrides",
-        "tileset.animations.palette_resolution_strategy_overrides");
+        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["configs"]; },
+        parse_anim_configs,
+        "tileset.animations.configs",
+        "tileset.animations.configs");
 }
 
 LayerValue<AnimKeyFrameResolutionStrategy>
-YamlFileProvider::anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const
+YamlFileProvider::global_anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
@@ -327,10 +326,10 @@ YamlFileProvider::anim_key_frame_resolution_strategy(ConfigScopeType type, const
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["key_frame_resolution_strategy"]; },
+        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["global_key_frame_resolution_strategy"]; },
         parse_anim_key_frame_resolution_strategy,
-        "tileset.animations.key_frame_resolution_strategy",
-        "tileset.animations.key_frame_resolution_strategy");
+        "tileset.animations.global_key_frame_resolution_strategy",
+        "tileset.animations.global_key_frame_resolution_strategy");
 }
 
 LayerValue<bool> YamlFileProvider::verify_checksums(ConfigScopeType type, const std::string &scope) const

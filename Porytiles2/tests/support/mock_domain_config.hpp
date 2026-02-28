@@ -31,8 +31,8 @@ class MockDomainConfig : public DomainConfig {
     std::vector<PaletteHint> pal_hints = std::vector<PaletteHint>{};
     TilesPalMode tiles_pal_mode = TilesPalMode::true_color;
     AnimPalResolutionStrategy global_anim_pal_resolution_strategy = AnimPalResolutionStrategy::scan_local_metatiles;
-    AnimPalResolutionStrategyOverrides anim_pal_resolution_strategy_overrides = AnimPalResolutionStrategyOverrides{};
-    AnimKeyFrameResolutionStrategy anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
+    AnimConfigs anim_configs = AnimConfigs{};
+    AnimKeyFrameResolutionStrategy global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
 
   protected:
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
@@ -132,24 +132,19 @@ class MockDomainConfig : public DomainConfig {
             {}};
     }
 
-    [[nodiscard]] ChainableResult<ConfigValue<AnimPalResolutionStrategyOverrides>>
-    anim_pal_resolution_strategy_overrides_raw(ConfigScopeType, const std::string &) const override
+    [[nodiscard]] ChainableResult<ConfigValue<AnimConfigs>>
+    anim_configs_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{
-            anim_pal_resolution_strategy_overrides,
-            "Animation Palette Resolution Strategy Overrides",
-            "anim_pal_resolution_strategy_overrides",
-            "mock",
-            {}};
+        return ConfigValue{anim_configs, "Animation Configs", "anim_configs", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<AnimKeyFrameResolutionStrategy>>
-    anim_key_frame_resolution_strategy_raw(ConfigScopeType, const std::string &) const override
+    global_anim_key_frame_resolution_strategy_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{
-            anim_key_frame_resolution_strategy,
-            "Animation Key Frame Resolution Strategy",
-            "anim_key_frame_resolution_strategy",
+            global_anim_key_frame_resolution_strategy,
+            "Global Animation Key Frame Resolution Strategy",
+            "global_anim_key_frame_resolution_strategy",
             "mock",
             {}};
     }

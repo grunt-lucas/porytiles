@@ -47,7 +47,7 @@ flower:
 }
 ```
 
-### Refactor `tileset.animations` configuration options to be animation/subtile specific
+### ~~Refactor `tileset.animations` configuration options to be animation/subtile specific~~
 Currently, we only allow users to specify per-animation config for palette resolution strategy:
 ```yaml
 tileset:
@@ -64,7 +64,8 @@ Perhaps a domain layer config class called `AnimConfig` that can be set via the 
 struct AnimConfig
 {
   std::string anim_name;
-  std::vector<std::optional<AnimPalResolutionStrategy>> pal_resolution_strategies;
+  std::optional<AnimPalResolutionStrategy> pal_resolution_strategy{std::nullopt};
+  std::vector<std::optional<AnimPalResolutionStrategy>> per_tile_pal_resolution_strategies;
   FrameLinking linking{FrameLinking::automatic};
 };
 ```
@@ -74,14 +75,15 @@ The new YAML format could look like this, with anim names as keys into a `std::m
 tileset:
   animations:
     global_palette_resolution_strategy: scan-local-metatiles
-    key_frame_resolution_strategy: warning
+    global_key_frame_resolution_strategy: warning
     configs:
       flower:
         frame_linking: automatic
+        palette_resolution_strategy: pal2
         # Array must have same size as frame.subtiles.size()
         # If present, must specify a strategy for each subtile.
         # If user wants default global to be used, specify a "_" to signify std::nullopt.
-        palette_resolution_strategies: [pal0, scan-local-metatiles, _, pal0]
+        per_tile_palette_resolution_strategies: [pal0, scan-local-metatiles, _, pal0]
       water:
         frame_linking: manual
 ```

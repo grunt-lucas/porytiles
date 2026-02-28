@@ -124,14 +124,14 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
             "palette-07|palette-08|palette-09|palette-10|palette-11|palette-12|palette-13|palette-14|palette-15|"
             "internal-png-pal|scan-all-tilesets}");
 
-    // Animation Key Frame Resolution Strategy (enum AnimKeyFrameResolutionStrategy, captured as string, parsed by
-    // CliOptionProvider)
+    // Global Animation Key Frame Resolution Strategy (enum AnimKeyFrameResolutionStrategy, captured as string, parsed
+    // by CliOptionProvider)
     config_group
         ->add_option(
-            "--anim-key-frame-resolution-strategy",
-            storage.anim_key_frame_resolution_strategy,
-            "Animation Key Frame Resolution Strategy - The strategy to use when decompilation encounters duplicate key "
-            "frame subtiles.")
+            "--global-anim-key-frame-resolution-strategy",
+            storage.global_anim_key_frame_resolution_strategy,
+            "Global Animation Key Frame Resolution Strategy - The strategy to use when decompilation encounters "
+            "duplicate key frame subtiles.")
         ->type_name("{error|warning|manual-override|mangle}");
 
     // Verify Checksums (bool with --flag/--no-flag, captured as "true"/"false" string)

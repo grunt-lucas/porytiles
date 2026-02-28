@@ -39,7 +39,7 @@ struct CliOptionStorage {
     std::optional<std::string> pal_hints_enabled;
     std::optional<std::string> tiles_pal_mode;
     std::optional<std::string> global_anim_pal_resolution_strategy;
-    std::optional<std::string> anim_key_frame_resolution_strategy;
+    std::optional<std::string> global_anim_key_frame_resolution_strategy;
     std::optional<std::string> verify_checksums;
     std::optional<std::string> tileset_paths_primary_src;
     std::optional<std::string> tileset_paths_primary_bin;

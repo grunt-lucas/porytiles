@@ -132,16 +132,12 @@ void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, con
         *format_,
         "Global Animation Palette Resolution Strategy",
         global_anim_pal_resolution_strategy_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Animation Configs", anim_configs_provenance_chain(type, scope));
     dump_single_config_value(
         out,
         *format_,
-        "Animation Palette Resolution Strategy Overrides",
-        anim_pal_resolution_strategy_overrides_provenance_chain(type, scope));
-    dump_single_config_value(
-        out,
-        *format_,
-        "Animation Key Frame Resolution Strategy",
-        anim_key_frame_resolution_strategy_provenance_chain(type, scope));
+        "Global Animation Key Frame Resolution Strategy",
+        global_anim_key_frame_resolution_strategy_provenance_chain(type, scope));
     dump_single_config_value(out, *format_, "Verify Checksums", verify_checksums_provenance_chain(type, scope));
     dump_single_config_value(
         out, *format_, "Tileset Paths Primary Source", tileset_paths_primary_src_provenance_chain(type, scope));
@@ -437,29 +433,28 @@ LazyLayeredConfig::global_anim_pal_resolution_strategy_raw(ConfigScopeType type,
         });
 }
 
-ChainableResult<ConfigValue<AnimPalResolutionStrategyOverrides>>
-LazyLayeredConfig::anim_pal_resolution_strategy_overrides_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<AnimConfigs>>
+LazyLayeredConfig::anim_configs_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<AnimPalResolutionStrategyOverrides>(
-        key, "Animation Palette Resolution Strategy Overrides", [&type, &scope](const ConfigProvider &provider) {
-            return provider.anim_pal_resolution_strategy_overrides(type, scope);
-        });
+    return resolve_config_value<AnimConfigs>(key, "Animation Configs", [&type, &scope](const ConfigProvider &provider) {
+        return provider.anim_configs(type, scope);
+    });
 }
 
 ChainableResult<ConfigValue<AnimKeyFrameResolutionStrategy>>
-LazyLayeredConfig::anim_key_frame_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const
+LazyLayeredConfig::global_anim_key_frame_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<AnimKeyFrameResolutionStrategy>(
-        key, "Animation Key Frame Resolution Strategy", [&type, &scope](const ConfigProvider &provider) {
-            return provider.anim_key_frame_resolution_strategy(type, scope);
+        key, "Global Animation Key Frame Resolution Strategy", [&type, &scope](const ConfigProvider &provider) {
+            return provider.global_anim_key_frame_resolution_strategy(type, scope);
         });
 }
 
@@ -647,22 +642,19 @@ LazyLayeredConfig::global_anim_pal_resolution_strategy_provenance_chain(
     });
 }
 
-std::vector<ProvenanceChainLink<AnimPalResolutionStrategyOverrides>>
-LazyLayeredConfig::anim_pal_resolution_strategy_overrides_provenance_chain(
-    ConfigScopeType type, const std::string &scope) const
+std::vector<ProvenanceChainLink<AnimConfigs>>
+LazyLayeredConfig::anim_configs_provenance_chain(ConfigScopeType type, const std::string &scope) const
 {
-    return collect_provenance_chain<AnimPalResolutionStrategyOverrides>(
-        [&type, &scope](const ConfigProvider &provider) {
-            return provider.anim_pal_resolution_strategy_overrides(type, scope);
-        });
+    return collect_provenance_chain<AnimConfigs>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.anim_configs(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<AnimKeyFrameResolutionStrategy>>
-LazyLayeredConfig::anim_key_frame_resolution_strategy_provenance_chain(
+LazyLayeredConfig::global_anim_key_frame_resolution_strategy_provenance_chain(
     ConfigScopeType type, const std::string &scope) const
 {
     return collect_provenance_chain<AnimKeyFrameResolutionStrategy>([&type, &scope](const ConfigProvider &provider) {
-        return provider.anim_key_frame_resolution_strategy(type, scope);
+        return provider.global_anim_key_frame_resolution_strategy(type, scope);
     });
 }
 

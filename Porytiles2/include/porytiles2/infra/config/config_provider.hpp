@@ -2,9 +2,9 @@
 
 #include <string>
 
+#include "porytiles2/domain/config/anim_configs.hpp"
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
-#include "porytiles2/domain/config/anim_pal_resolution_strategy_overrides.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
@@ -86,11 +86,10 @@ class ConfigProvider {
     [[nodiscard]] virtual LayerValue<AnimPalResolutionStrategy>
     global_anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<AnimPalResolutionStrategyOverrides>
-    anim_pal_resolution_strategy_overrides(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<AnimConfigs> anim_configs(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<AnimKeyFrameResolutionStrategy>
-    anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const;
+    global_anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const;
 
     /*
      * App Config

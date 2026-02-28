@@ -124,19 +124,19 @@ LayerValue<AnimPalResolutionStrategy> CliOptionProvider::global_anim_pal_resolut
         storage_.global_anim_pal_resolution_strategy, "--global-anim-pal-resolution-strategy");
 }
 
-LayerValue<AnimPalResolutionStrategyOverrides> CliOptionProvider::anim_pal_resolution_strategy_overrides(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<AnimConfigs>
+CliOptionProvider::anim_configs([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // Skipped for CLI (type too complex)
-    return LayerValue<AnimPalResolutionStrategyOverrides>::not_provided();
+    return LayerValue<AnimConfigs>::not_provided();
 }
 
-LayerValue<AnimKeyFrameResolutionStrategy> CliOptionProvider::anim_key_frame_resolution_strategy(
+LayerValue<AnimKeyFrameResolutionStrategy> CliOptionProvider::global_anim_key_frame_resolution_strategy(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_anim_key_frame_resolution_strategy(
-        storage_.anim_key_frame_resolution_strategy, "--anim-key-frame-resolution-strategy");
+        storage_.global_anim_key_frame_resolution_strategy, "--global-anim-key-frame-resolution-strategy");
 }
 
 LayerValue<bool> CliOptionProvider::verify_checksums(

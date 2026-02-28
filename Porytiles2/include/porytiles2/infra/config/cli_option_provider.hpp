@@ -62,10 +62,9 @@ class CliOptionProvider final : public ConfigProvider {
     tiles_pal_mode(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<AnimPalResolutionStrategy>
     global_anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<AnimPalResolutionStrategyOverrides>
-    anim_pal_resolution_strategy_overrides(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<AnimConfigs> anim_configs(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<AnimKeyFrameResolutionStrategy>
-    anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
+    global_anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
 
     /*
      * App Config

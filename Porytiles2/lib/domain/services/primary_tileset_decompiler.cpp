@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "porytiles2/domain/algorithms/tile_extractors.hpp"
-#include "porytiles2/domain/config/anim_pal_resolution_strategy_overrides.hpp"
+#include "porytiles2/domain/config/anim_configs.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
@@ -117,16 +117,14 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
             new_porytiles_component->add_anim(std::move(rgba_anim));
         }
 
-        // Warn about pal resolution overrides that reference non-existent animations (after all animations processed)
-        PT_UNWRAP_TILESET_CONFIG_PTR(
-            config_, anim_pal_resolution_strategy_overrides, tileset.name(), std::unique_ptr<Tileset>);
-        for (const auto &key : anim_pal_resolution_strategy_overrides.value() | std::views::keys) {
+        // Warn about animation configs that reference non-existent animations (after all animations processed)
+        PT_UNWRAP_TILESET_CONFIG_PTR(config_, anim_configs, tileset.name(), std::unique_ptr<Tileset>);
+        for (const auto &key : anim_configs.value() | std::views::keys) {
             if (!porymap_animations.contains(key)) {
                 diag_->warning(
-                    "unused-animation-palette-override",
+                    "unused-animation-config",
                     {diag_->formatter().format(
-                        "Animation palette resolution strategy override for '{}' does not match any animation in "
-                        "tileset '{}'.",
+                        "Animation config for '{}' does not match any animation in tileset '{}'.",
                         FormatParam{key, Style::bold},
                         FormatParam{tileset.name(), Style::bold})});
             }

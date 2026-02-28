@@ -179,6 +179,22 @@ enum_types:
         fuzzy_names: [ scan-all-tilesets, scan_all_tilesets, scanalltilesets, full-tileset-scan, full_tileset_scan, fulltilesetscan ]
         brief: Scan layouts config and find all tilesets paired with current tileset, see if an index is present in any.
 
+  - cpp_type: FrameLinking
+    header_path: porytiles2/domain/config/frame_linking.hpp
+    brief: Controls how animation frames are linked to metatile entries.
+    details: |
+      In automatic mode, Porytiles generates and uses key.png for frame linking.
+      In manual mode, Porytiles uses explicit overrides specified in anim.json.
+    enum_values:
+      - name: automatic
+        cli_completion_name: automatic
+        fuzzy_names: [ automatic, auto ]
+        brief: Use key.png for frame linking.
+      - name: manual
+        cli_completion_name: manual
+        fuzzy_names: [ manual ]
+        brief: Use manual overrides in anim.json.
+
   - cpp_type: AnimKeyFrameResolutionStrategy
     header_path: porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp
     brief: Strategy for handling duplicate key frame tiles in animation decompilation.
@@ -394,23 +410,23 @@ config_values:
     validators: [ ]
     cross_field_validators: [ ]
 
-  - canonical_name: Animation Palette Resolution Strategy Overrides
-    symbol: anim_pal_resolution_strategy_overrides
-    yaml_path: tileset.animations.palette_resolution_strategy_overrides
-    cli_option: anim-pal-resolution-strategy-overrides
+  - canonical_name: Animation Configs
+    symbol: anim_configs
+    yaml_path: tileset.animations.configs
+    cli_option: anim-configs
     cli_skip: true
     yaml_is_map: true
     layer: domain
-    type: AnimPalResolutionStrategyOverrides
-    parser: parse_anim_pal_resolution_strategy_overrides
-    default_value: "AnimPalResolutionStrategyOverrides{}"
+    type: AnimConfigs
+    parser: parse_anim_configs
+    default_value: "AnimConfigs{}"
     validators: [ ]
     cross_field_validators: [ ]
 
-  - canonical_name: Animation Key Frame Resolution Strategy
-    symbol: anim_key_frame_resolution_strategy
-    yaml_path: tileset.animations.key_frame_resolution_strategy
-    cli_option: anim-key-frame-resolution-strategy
+  - canonical_name: Global Animation Key Frame Resolution Strategy
+    symbol: global_anim_key_frame_resolution_strategy
+    yaml_path: tileset.animations.global_key_frame_resolution_strategy
+    cli_option: global-anim-key-frame-resolution-strategy
     cli_desc: The strategy to use when decompilation encounters duplicate key frame subtiles.
     layer: domain
     type: AnimKeyFrameResolutionStrategy

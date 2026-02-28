@@ -132,9 +132,9 @@ struct CliOptionMeta {
              "scan-all-tilesets"},
             false},
         CliOptionMeta{
-            "anim-key-frame-resolution-strategy",
-            "Animation Key Frame Resolution Strategy - The strategy to use when decompilation encounters duplicate key "
-            "frame subtiles.",
+            "global-anim-key-frame-resolution-strategy",
+            "Global Animation Key Frame Resolution Strategy - The strategy to use when decompilation encounters "
+            "duplicate key frame subtiles.",
             "enum",
             {"error", "warning", "manual-override", "mangle"},
             false},

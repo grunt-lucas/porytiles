@@ -6,6 +6,8 @@
 #include <string>
 #include <vector>
 
+#include "porytiles2/domain/config/anim_config.hpp"
+#include "porytiles2/domain/config/anim_configs.hpp"
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles2/domain/models/anim_frame.hpp"
 #include "porytiles2/domain/models/anim_params.hpp"
@@ -195,7 +197,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectCrossRangeExactDuplica
     auto anim = create_test_animation("test_anim", 1, 1, {shared_tile}, palette_);
     auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
-    config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
     AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     // With mangle strategy, it should succeed and produce a mangled tile
@@ -228,7 +230,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectCrossRangeFlipEquivale
     auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
     // With error strategy, it should fail (duplicate detected)
-    config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
     AnimDecompiler error_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     auto error_result = error_decompiler.decompile_animation("test_tileset", anim, {}, component);
@@ -236,7 +238,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectCrossRangeFlipEquivale
     EXPECT_FALSE(error_result.has_value()) << "Should detect flip-equivalent cross-range duplicate";
 
     // With mangle strategy, it should succeed
-    config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
     AnimDecompiler mangle_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     auto mangle_result = mangle_decompiler.decompile_animation("test_tileset", anim, {}, component);
@@ -262,7 +264,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectIntraAnimationFlipEqui
     auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
     // Error strategy should detect intra-animation flip-equivalent duplicate
-    config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
     AnimDecompiler error_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     auto error_result = error_decompiler.decompile_animation("test_tileset", anim, {}, component);
@@ -270,7 +272,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectIntraAnimationFlipEqui
     EXPECT_FALSE(error_result.has_value()) << "Should detect intra-animation flip-equivalent duplicate";
 
     // Mangle strategy should resolve it
-    config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
     AnimDecompiler mangle_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     auto mangle_result = mangle_decompiler.decompile_animation("test_tileset", anim, {}, component);
@@ -294,7 +296,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldNotFalsePositiveWhenNoDuplic
     auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
     // Even with error strategy, should succeed (no duplicates)
-    config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
     AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
@@ -319,7 +321,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldHandleMixedCrossRangeAndIntr
     auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
     // Error strategy should fail
-    config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
     AnimDecompiler error_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     auto error_result = error_decompiler.decompile_animation("test_tileset", anim, {}, component);
@@ -327,7 +329,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldHandleMixedCrossRangeAndIntr
     EXPECT_FALSE(error_result.has_value()) << "Should detect mixed cross-range and intra-animation duplicates";
 
     // Mangle strategy should succeed
-    config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
     AnimDecompiler mangle_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     auto mangle_result = mangle_decompiler.decompile_animation("test_tileset", anim, {}, component);
@@ -359,7 +361,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimationExactDup
     auto ocean_anim = create_test_animation("ocean", 2, 1, {shared_tile}, palette_);
 
     // Error strategy should detect the inter-animation duplicate
-    config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
     AnimDecompiler error_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     auto error_result = error_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, component);
@@ -367,7 +369,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimationExactDup
     EXPECT_FALSE(error_result.has_value()) << "Should detect inter-animation exact duplicate";
 
     // Mangle strategy should resolve it
-    config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
     AnimDecompiler mangle_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     auto mangle_result = mangle_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, component);
@@ -406,7 +408,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimationFlipEqui
     auto ocean_anim = create_test_animation("ocean", 2, 1, {ocean_tile}, palette_);
 
     // Error strategy should detect the inter-animation flip-equivalent duplicate
-    config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
     AnimDecompiler error_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     auto error_result = error_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, component);
@@ -414,7 +416,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimationFlipEqui
     EXPECT_FALSE(error_result.has_value()) << "Should detect inter-animation flip-equivalent duplicate";
 
     // Mangle strategy should resolve it
-    config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
     AnimDecompiler mangle_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     auto mangle_result = mangle_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, component);
@@ -453,7 +455,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimDuplicateWhen
     auto ocean_anim = create_test_animation("ocean", 1, 1, {ocean_tile}, palette_);
 
     // Error strategy should correctly detect the inter-animation duplicate
-    config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
     AnimDecompiler error_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     auto error_result = error_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, component);
@@ -462,7 +464,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimDuplicateWhen
         << "Should detect inter-animation duplicate even when first animation is not in tiles.png";
 
     // Mangle strategy should also resolve it
-    config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
     AnimDecompiler mangle_decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     auto mangle_result = mangle_decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, component);
@@ -493,7 +495,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldNotMiscategorizeInterAnimAsC
 
     auto ocean_anim = create_test_animation("ocean", 1, 1, {shared_tile}, palette_);
 
-    config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
     AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     auto error_result = decompiler.decompile_animation("test_tileset", ocean_anim, inter_anim_tiles, component);
@@ -597,7 +599,7 @@ TEST_F(AnimDecompilerMultiPalTests, shouldDecompileMultiPalAnimationWithScanLoca
     auto anim = create_test_animation_no_pal("test_anim", 1, 2, {tile_b, tile_c});
     auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
-    config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
     AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
@@ -697,11 +699,292 @@ TEST_F(AnimDecompilerMultiPalTests, shouldMangleMultiPalDuplicateKeyFrameTiles)
     auto anim = create_test_animation_no_pal("test_anim", 1, 2, {shared_tile, shared_tile});
     auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
-    config_.anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
     AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
     auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
 
     ASSERT_TRUE(result.has_value()) << "Mangle strategy should resolve multi-pal duplicate key frame tiles";
     ASSERT_EQ(result.value().key_frame().tiles().size(), 2);
+}
+
+// --- Per-Subtile AnimConfig Strategy Tests ---
+
+TEST_F(AnimDecompilerMultiPalTests, shouldApplyPerSubtileExplicitPalStrategies)
+{
+    // Two subtiles: tile 1 and tile 2. Neither is referenced in metatiles.
+    // Use AnimConfig with explicit palette strategies per subtile.
+    const auto tile_a = create_two_color_tile(1, 2);
+    const auto tile_b = create_two_color_tile(3, 4);
+    const auto tile_c = create_two_color_tile(5, 6);
+
+    const auto tiles_png = build_tiles_png({tile_a, tile_b, tile_c});
+
+    // No metatile references tiles 1 or 2
+    std::vector<TilemapEntry> metatiles{TilemapEntry{0, 0, false, false}};
+
+    auto anim = create_test_animation_no_pal("test_anim", 1, 2, {tile_b, tile_c});
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
+
+    // Set up per-subtile strategies: subtile 0 -> palette_00, subtile 1 -> palette_01
+    AnimConfig anim_cfg;
+    anim_cfg.anim_name = "test_anim";
+    anim_cfg.per_tile_pal_resolution_strategies = {
+        AnimPalResolutionStrategy::palette_00, AnimPalResolutionStrategy::palette_01};
+    config_.anim_configs["test_anim"] = std::move(anim_cfg);
+
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
+
+    ASSERT_TRUE(result.has_value()) << "Per-subtile explicit strategies should succeed";
+    ASSERT_EQ(result.value().key_frame().tiles().size(), 2);
+
+    // Verify subtile 0 was decompiled with palette 0 colors
+    const auto &key_tile_0 = result.value().key_frame().tile_at(0);
+    EXPECT_EQ(key_tile_0.at(0), palette_0_.at(3));
+
+    // Verify subtile 1 was decompiled with palette 1 colors
+    const auto &key_tile_1 = result.value().key_frame().tile_at(1);
+    EXPECT_EQ(key_tile_1.at(0), palette_1_.at(5));
+}
+
+TEST_F(AnimDecompilerMultiPalTests, shouldFallBackToGlobalWhenAnimNotInConfigs)
+{
+    // Animation is not in the configs map at all — should use global strategy
+    const auto tile_a = create_two_color_tile(1, 2);
+    const auto tile_b = create_two_color_tile(3, 4);
+
+    const auto tiles_png = build_tiles_png({tile_a, tile_b});
+
+    // Tile 1 referenced with palette 0
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}};
+
+    auto anim = create_test_animation_no_pal("test_anim", 1, 1, {tile_b});
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
+
+    // anim_configs is empty — should use global (scan_local_metatiles)
+    config_.anim_configs = AnimConfigs{};
+
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
+
+    ASSERT_TRUE(result.has_value()) << "Should fall back to global when anim not in configs";
+}
+
+TEST_F(AnimDecompilerMultiPalTests, shouldFallBackToGlobalForNulloptEntries)
+{
+    // AnimConfig exists with per_tile_pal_resolution_strategies containing a nullopt entry (underscore).
+    // The nullopt subtile should fall back to the effective default (global, since no per-anim strategy is set).
+    const auto tile_a = create_two_color_tile(1, 2);
+    const auto tile_b = create_two_color_tile(3, 4);
+    const auto tile_c = create_two_color_tile(5, 6);
+
+    const auto tiles_png = build_tiles_png({tile_a, tile_b, tile_c});
+
+    // Tile 2 referenced with palette 1 in metatiles (for the global scan to work)
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}, TilemapEntry{2, 1, false, false}};
+
+    auto anim = create_test_animation_no_pal("test_anim", 1, 2, {tile_b, tile_c});
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
+
+    // subtile 0 -> explicit palette_00, subtile 1 -> nullopt (falls back to global scan_local_metatiles)
+    AnimConfig anim_cfg;
+    anim_cfg.anim_name = "test_anim";
+    anim_cfg.per_tile_pal_resolution_strategies = {AnimPalResolutionStrategy::palette_00, std::nullopt};
+    config_.anim_configs["test_anim"] = std::move(anim_cfg);
+
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
+
+    ASSERT_TRUE(result.has_value()) << "Nullopt entries should fall back to global strategy";
+    ASSERT_EQ(result.value().key_frame().tiles().size(), 2);
+
+    // Verify subtile 0 was decompiled with palette 0 colors (explicit)
+    const auto &key_tile_0 = result.value().key_frame().tile_at(0);
+    EXPECT_EQ(key_tile_0.at(0), palette_0_.at(3));
+
+    // Verify subtile 1 was decompiled with palette 1 colors (from metatile scan)
+    const auto &key_tile_1 = result.value().key_frame().tile_at(1);
+    EXPECT_EQ(key_tile_1.at(0), palette_1_.at(5));
+}
+
+TEST_F(AnimDecompilerMultiPalTests, shouldErrorWhenPalResolutionStrategiesSizeMismatch)
+{
+    // AnimConfig has 1 strategy entry but animation has 2 subtiles — should error
+    const auto tile_a = create_two_color_tile(1, 2);
+    const auto tile_b = create_two_color_tile(3, 4);
+    const auto tile_c = create_two_color_tile(5, 6);
+
+    const auto tiles_png = build_tiles_png({tile_a, tile_b, tile_c});
+
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}, TilemapEntry{2, 1, false, false}};
+
+    auto anim = create_test_animation_no_pal("test_anim", 1, 2, {tile_b, tile_c});
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
+
+    // Wrong number of strategies — should cause a hard error
+    AnimConfig anim_cfg;
+    anim_cfg.anim_name = "test_anim";
+    anim_cfg.per_tile_pal_resolution_strategies = {AnimPalResolutionStrategy::palette_00};
+    config_.anim_configs["test_anim"] = std::move(anim_cfg);
+
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
+
+    EXPECT_FALSE(result.has_value()) << "Should error when per_tile_pal_resolution_strategies size != tile_count";
+}
+
+TEST_F(AnimDecompilerMultiPalTests, shouldHandleMixedScanAndExplicitPerSubtile)
+{
+    // Mixed strategies: subtile 0 uses scan_local_metatiles, subtile 1 uses explicit palette_01
+    const auto tile_a = create_two_color_tile(1, 2);
+    const auto tile_b = create_two_color_tile(3, 4);
+    const auto tile_c = create_two_color_tile(5, 6);
+
+    const auto tiles_png = build_tiles_png({tile_a, tile_b, tile_c});
+
+    // Tile 1 referenced with palette 0 (for scan to find), tile 2 not referenced
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}};
+
+    auto anim = create_test_animation_no_pal("test_anim", 1, 2, {tile_b, tile_c});
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
+
+    // subtile 0 -> scan_local_metatiles, subtile 1 -> explicit palette_01
+    AnimConfig anim_cfg;
+    anim_cfg.anim_name = "test_anim";
+    anim_cfg.per_tile_pal_resolution_strategies = {
+        AnimPalResolutionStrategy::scan_local_metatiles, AnimPalResolutionStrategy::palette_01};
+    config_.anim_configs["test_anim"] = std::move(anim_cfg);
+
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
+
+    ASSERT_TRUE(result.has_value()) << "Mixed scan + explicit strategies should succeed";
+    ASSERT_EQ(result.value().key_frame().tiles().size(), 2);
+
+    // Verify subtile 0 was decompiled with palette 0 colors (from scan)
+    const auto &key_tile_0 = result.value().key_frame().tile_at(0);
+    EXPECT_EQ(key_tile_0.at(0), palette_0_.at(3));
+
+    // Verify subtile 1 was decompiled with palette 1 colors (explicit)
+    const auto &key_tile_1 = result.value().key_frame().tile_at(1);
+    EXPECT_EQ(key_tile_1.at(0), palette_1_.at(5));
+}
+
+// --- Per-Anim Strategy (Middle Tier) Tests ---
+
+TEST_F(AnimDecompilerMultiPalTests, shouldApplyPerAnimStrategy)
+{
+    // AnimConfig has pal_resolution_strategy = palette_01 and no per-tile list.
+    // All subtiles should use palette 1.
+    const auto tile_a = create_two_color_tile(1, 2);
+    const auto tile_b = create_two_color_tile(3, 4);
+    const auto tile_c = create_two_color_tile(5, 6);
+
+    const auto tiles_png = build_tiles_png({tile_a, tile_b, tile_c});
+
+    // No metatile references tiles 1 or 2
+    std::vector<TilemapEntry> metatiles{TilemapEntry{0, 0, false, false}};
+
+    auto anim = create_test_animation_no_pal("test_anim", 1, 2, {tile_b, tile_c});
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
+
+    AnimConfig anim_cfg;
+    anim_cfg.anim_name = "test_anim";
+    anim_cfg.pal_resolution_strategy = AnimPalResolutionStrategy::palette_01;
+    config_.anim_configs["test_anim"] = std::move(anim_cfg);
+
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
+
+    ASSERT_TRUE(result.has_value()) << "Per-anim strategy should apply to all subtiles";
+    ASSERT_EQ(result.value().key_frame().tiles().size(), 2);
+
+    // Both subtiles should use palette 1
+    const auto &key_tile_0 = result.value().key_frame().tile_at(0);
+    EXPECT_EQ(key_tile_0.at(0), palette_1_.at(3));
+
+    const auto &key_tile_1 = result.value().key_frame().tile_at(1);
+    EXPECT_EQ(key_tile_1.at(0), palette_1_.at(5));
+}
+
+TEST_F(AnimDecompilerMultiPalTests, shouldOverridePerAnimWithPerTile)
+{
+    // AnimConfig has pal_resolution_strategy = palette_01 and per-tile [palette_00, _].
+    // Subtile 0 should use palette 0 (per-tile override), subtile 1 should use palette 1 (per-anim fallback).
+    const auto tile_a = create_two_color_tile(1, 2);
+    const auto tile_b = create_two_color_tile(3, 4);
+    const auto tile_c = create_two_color_tile(5, 6);
+
+    const auto tiles_png = build_tiles_png({tile_a, tile_b, tile_c});
+
+    // No metatile references tiles 1 or 2
+    std::vector<TilemapEntry> metatiles{TilemapEntry{0, 0, false, false}};
+
+    auto anim = create_test_animation_no_pal("test_anim", 1, 2, {tile_b, tile_c});
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
+
+    AnimConfig anim_cfg;
+    anim_cfg.anim_name = "test_anim";
+    anim_cfg.pal_resolution_strategy = AnimPalResolutionStrategy::palette_01;
+    anim_cfg.per_tile_pal_resolution_strategies = {AnimPalResolutionStrategy::palette_00, std::nullopt};
+    config_.anim_configs["test_anim"] = std::move(anim_cfg);
+
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
+
+    ASSERT_TRUE(result.has_value()) << "Per-tile should override per-anim for explicit entries";
+    ASSERT_EQ(result.value().key_frame().tiles().size(), 2);
+
+    // Subtile 0: per-tile palette_00
+    const auto &key_tile_0 = result.value().key_frame().tile_at(0);
+    EXPECT_EQ(key_tile_0.at(0), palette_0_.at(3));
+
+    // Subtile 1: per-anim palette_01 (nullopt in per-tile falls to per-anim)
+    const auto &key_tile_1 = result.value().key_frame().tile_at(1);
+    EXPECT_EQ(key_tile_1.at(0), palette_1_.at(5));
+}
+
+TEST_F(AnimDecompilerMultiPalTests, shouldFallBackFromPerTileNulloptToPerAnimThenGlobal)
+{
+    // AnimConfig has pal_resolution_strategy = palette_01 and per-tile [_, _].
+    // Both subtiles have nullopt in per-tile, so they should use per-anim (palette_01), NOT global.
+    const auto tile_a = create_two_color_tile(1, 2);
+    const auto tile_b = create_two_color_tile(3, 4);
+    const auto tile_c = create_two_color_tile(5, 6);
+
+    const auto tiles_png = build_tiles_png({tile_a, tile_b, tile_c});
+
+    // Tile 1 referenced with palette 0 in metatiles (global scan would find pal 0, but per-anim should win)
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}, TilemapEntry{2, 0, false, false}};
+
+    auto anim = create_test_animation_no_pal("test_anim", 1, 2, {tile_b, tile_c});
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
+
+    AnimConfig anim_cfg;
+    anim_cfg.anim_name = "test_anim";
+    anim_cfg.pal_resolution_strategy = AnimPalResolutionStrategy::palette_01;
+    anim_cfg.per_tile_pal_resolution_strategies = {std::nullopt, std::nullopt};
+    config_.anim_configs["test_anim"] = std::move(anim_cfg);
+
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
+
+    ASSERT_TRUE(result.has_value()) << "Nullopt per-tile entries should fall to per-anim, not global";
+    ASSERT_EQ(result.value().key_frame().tiles().size(), 2);
+
+    // Both subtiles should use palette 1 (per-anim), not palette 0 (which global scan would find)
+    const auto &key_tile_0 = result.value().key_frame().tile_at(0);
+    EXPECT_EQ(key_tile_0.at(0), palette_1_.at(3));
+
+    const auto &key_tile_1 = result.value().key_frame().tile_at(1);
+    EXPECT_EQ(key_tile_1.at(0), palette_1_.at(5));
 }

@@ -99,13 +99,13 @@ LayerValue<AnimPalResolutionStrategy> ConfigProvider::global_anim_pal_resolution
     return LayerValue<AnimPalResolutionStrategy>::not_provided();
 }
 
-LayerValue<AnimPalResolutionStrategyOverrides> ConfigProvider::anim_pal_resolution_strategy_overrides(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<AnimConfigs>
+ConfigProvider::anim_configs([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<AnimPalResolutionStrategyOverrides>::not_provided();
+    return LayerValue<AnimConfigs>::not_provided();
 }
 
-LayerValue<AnimKeyFrameResolutionStrategy> ConfigProvider::anim_key_frame_resolution_strategy(
+LayerValue<AnimKeyFrameResolutionStrategy> ConfigProvider::global_anim_key_frame_resolution_strategy(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<AnimKeyFrameResolutionStrategy>::not_provided();

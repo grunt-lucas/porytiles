@@ -104,17 +104,32 @@ tileset:
     # Available strategies:
     # - [default] error: error out and display violating duplicate pairs
     # - warning: warn about violating duplicate pairs and continue decompilation (noting that subsequent compilation will fail if no action is taken)
-    # - manual_override: DEPRECATE THIS, NOT NEEDED ANYMORE, SEE animations_phase2.md
-    # - mangle: run the AnimTileManger to minimally de-dupe tiles
-    key_frame_resolution_strategy: warning
+    # - mangle: run the AnimTileMangler to minimally de-dupe tiles
+    global_key_frame_resolution_strategy: warning
 
-    # Per-animation overrides for palette resolution strategy. Each key is an animation name, and
-    # the value is the resolution strategy to use for that specific animation. Animations not listed
-    # here fall back to the global_palette_resolution_strategy above.
-    # DEPRECATE THIS, NOT NEEDED ANYMORE, SEE animations_phase2.md
-    palette_resolution_strategy_overrides:
-      flower: palette-00
-      water: internal-png-palette
+    # Per-animation configuration. Each key is an animation name.
+    # Animations not listed here fall back to global settings.
+    #
+    # Palette resolution follows a three-tier cascade (most specific wins):
+    #   1. per_tile_palette_resolution_strategies[i] — per-subtile override
+    #   2. palette_resolution_strategy — per-animation default
+    #   3. global_palette_resolution_strategy — global fallback
+    configs:
+      flower:
+        # How frames are linked to metatile entries.
+        # - automatic: use key.png for frame linking (default)
+        # - manual: use explicit overrides in anim.json
+        frame_linking: automatic
+        # Per-animation palette resolution strategy (middle tier).
+        # Applied to all subtiles that don't have a per-tile override.
+        palette_resolution_strategy: pal0
+        # Per-subtile palette resolution strategies. Must have exactly one entry per subtile.
+        # Use "_" to fall back to palette_resolution_strategy (or global if not set).
+        per_tile_palette_resolution_strategies: [_, scan-local-metatiles, _, _]
+      water:
+        frame_linking: manual
+        # Per-animation strategy only — all subtiles use internal-png-palette
+        palette_resolution_strategy: internal-png-palette
   
   # Set transparency handling for import.
   # Allowed values:

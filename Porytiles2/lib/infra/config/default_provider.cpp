@@ -111,18 +111,17 @@ LayerValue<AnimPalResolutionStrategy> DefaultProvider::global_anim_pal_resolutio
         AnimPalResolutionStrategy::scan_local_metatiles, "Global Animation Palette Resolution Strategy", source_info);
 }
 
-LayerValue<AnimPalResolutionStrategyOverrides> DefaultProvider::anim_pal_resolution_strategy_overrides(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<AnimConfigs>
+DefaultProvider::anim_configs([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<AnimPalResolutionStrategyOverrides>::valid(
-        AnimPalResolutionStrategyOverrides{}, "Animation Palette Resolution Strategy Overrides", source_info);
+    return LayerValue<AnimConfigs>::valid(AnimConfigs{}, "Animation Configs", source_info);
 }
 
-LayerValue<AnimKeyFrameResolutionStrategy> DefaultProvider::anim_key_frame_resolution_strategy(
+LayerValue<AnimKeyFrameResolutionStrategy> DefaultProvider::global_anim_key_frame_resolution_strategy(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<AnimKeyFrameResolutionStrategy>::valid(
-        AnimKeyFrameResolutionStrategy::error, "Animation Key Frame Resolution Strategy", source_info);
+        AnimKeyFrameResolutionStrategy::error, "Global Animation Key Frame Resolution Strategy", source_info);
 }
 
 LayerValue<bool> DefaultProvider::verify_checksums(
