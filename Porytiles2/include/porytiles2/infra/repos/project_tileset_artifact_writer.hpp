@@ -53,8 +53,8 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
           base_game_{base_game}, format_{format}, diag_{diag}, png_rgba_saver_{png_rgba_saver},
           png_indexed_saver_{png_indexed_saver}, pal_saver_{pal_saver}, anim_json_parser_{anim_json_parser},
           anim_code_generator_{anim_code_generator}, behavior_map_{behavior_map}, terrain_map_{terrain_map},
-          encounter_map_{encounter_map}, metadata_provider_{project_root, format, diag},
-          metadata_writer_{project_root, format}
+          encounter_map_{encounter_map}, metadata_provider_{project_root_, format, diag},
+          metadata_writer_{project_root_, format}
     {
     }
 
