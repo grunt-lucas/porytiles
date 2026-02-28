@@ -15,7 +15,7 @@ TODO
 ## Mini-Projects
 The following is a step-by-step list of mini-projects that will solve for the issues identified in the sections above.
 
-### Change `anim.yaml` to `anim.json`
+### ~~Change `anim.yaml` to `anim.json`~~
 Since Porytiles overwrites it every time, YAML seems unintuitive. Why?
 Because users might reasonably do things like put comments,
 and wonder why their comments keep getting clobbered.

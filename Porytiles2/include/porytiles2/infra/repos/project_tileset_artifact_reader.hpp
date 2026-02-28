@@ -9,7 +9,7 @@
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_reader.hpp"
 #include "porytiles2/infra/services/anim_code_parser.hpp"
-#include "porytiles2/infra/services/anim_yaml_parser.hpp"
+#include "porytiles2/infra/services/anim_json_parser.hpp"
 #include "porytiles2/infra/services/attributes_csv_loader.hpp"
 #include "porytiles2/infra/services/file_pal_loader.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
@@ -35,12 +35,12 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
         gsl::not_null<const PngIndexedImageLoader *> png_indexed_loader,
         gsl::not_null<const FilePalLoader *> pal_loader,
         gsl::not_null<const AttributesCsvLoader *> attributes_csv_loader,
-        gsl::not_null<const AnimYamlParser *> anim_yaml_parser,
+        gsl::not_null<const AnimJsonParser *> anim_json_parser,
         gsl::not_null<const AnimCodeParser *> anim_code_parser,
         gsl::not_null<const ProjectTilesetMetadataProvider *> metadata_provider)
         : project_root_{std::move(project_root)}, base_game_{base_game}, png_rgba_loader_{png_rgba_loader},
           png_indexed_loader_{png_indexed_loader}, pal_loader_{pal_loader},
-          attributes_csv_loader_{attributes_csv_loader}, anim_yaml_parser_{anim_yaml_parser},
+          attributes_csv_loader_{attributes_csv_loader}, anim_json_parser_{anim_json_parser},
           anim_code_parser_{anim_code_parser}, metadata_provider_{metadata_provider}
     {
     }
@@ -92,7 +92,7 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
     const PngIndexedImageLoader *png_indexed_loader_;
     const FilePalLoader *pal_loader_;
     const AttributesCsvLoader *attributes_csv_loader_;
-    const AnimYamlParser *anim_yaml_parser_;
+    const AnimJsonParser *anim_json_parser_;
     const AnimCodeParser *anim_code_parser_;
     const ProjectTilesetMetadataProvider *metadata_provider_;
 };

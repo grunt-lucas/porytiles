@@ -360,12 +360,12 @@ class TilesetArtifactKeyProvider {
         }
 
         PT_TRY_ASSIGN_CHAIN_ERR(
-            anim_yaml_key,
+            anim_json_key,
             key_for_porytiles_anim_params(tileset_name),
             "Failed to get Porytiles artifact keys.",
             std::vector<ArtifactKey>);
-        if (artifact_exists(anim_yaml_key)) {
-            result.push_back(anim_yaml_key);
+        if (artifact_exists(anim_json_key)) {
+            result.push_back(anim_json_key);
         }
 
         return result;

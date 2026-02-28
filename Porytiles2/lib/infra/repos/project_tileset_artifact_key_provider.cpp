@@ -28,7 +28,7 @@ const std::filesystem::path top_png{"top.png"};
 const std::filesystem::path attributes_csv{"attributes.csv"};
 const std::filesystem::path porytiles_pals{"palettes"};
 const std::filesystem::path porymap_pals{"palettes"};
-const std::filesystem::path anim_yaml{"anim.yaml"};
+const std::filesystem::path anim_json{"anim.json"};
 const std::filesystem::path metatiles_bin{"metatiles.bin"};
 const std::filesystem::path attrs_bin{"metatile_attributes.bin"};
 const std::filesystem::path tiles_png{"tiles.png"};
@@ -329,7 +329,7 @@ ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_params(const std::stri
     auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
     const std::string snake_tileset_dir = extract_tileset_cased_name(tileset_name).to_snake_case();
     std::filesystem::path path =
-        std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_src / anim_dir / anim_yaml;
+        std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_src / anim_dir / anim_json;
 
     return ArtifactKey{path.string()};
 }

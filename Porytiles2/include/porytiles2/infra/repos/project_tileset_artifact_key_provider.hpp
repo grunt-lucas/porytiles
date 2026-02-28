@@ -94,15 +94,15 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
         const std::string &tileset_name, const std::string &anim_name, const std::string &frame_name) const override;
 
     /**
-     * @brief Returns the key for the anim.yaml file (Porytiles animation configuration).
+     * @brief Returns the key for the anim.json file (Porytiles animation configuration).
      *
      * @details
-     * The anim.yaml file stores animation parameters for the Porytiles component. It defines frame sequences, timing
+     * The anim.json file stores animation parameters for the Porytiles component. It defines frame sequences, timing
      * parameters, and other configuration for each animation in the tileset. For Porytiles animations, the anim
      * parameters store is the source of truth for animation names, frame sequences, timing, and other parameters.
      *
      * @param tileset_name The name of the tileset
-     * @return Key for the anim.yaml file
+     * @return Key for the anim.json file
      */
     [[nodiscard]] ChainableResult<ArtifactKey>
     key_for_porytiles_anim_params(const std::string &tileset_name) const override;

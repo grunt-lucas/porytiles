@@ -18,7 +18,7 @@
 #include "porytiles2/domain/services/behavior_map_provider.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_writer.hpp"
 #include "porytiles2/infra/services/anim_code_generator.hpp"
-#include "porytiles2/infra/services/anim_yaml_parser.hpp"
+#include "porytiles2/infra/services/anim_json_parser.hpp"
 #include "porytiles2/infra/services/file_pal_saver.hpp"
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
@@ -131,7 +131,7 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
         png_rgba_saver_ = std::make_unique<MockPngRgbaImageSaver>();
         png_indexed_saver_ = std::make_unique<MockPngIndexedImageSaver>();
         pal_saver_ = std::make_unique<MockFilePalSaver>();
-        anim_yaml_parser_ = std::make_unique<AnimYamlParser>(formatter_.get());
+        anim_json_parser_ = std::make_unique<AnimJsonParser>(formatter_.get());
         anim_code_generator_ = std::make_unique<AnimCodeGenerator>();
         behavior_map_ = std::make_unique<MockBehaviorMapProvider>();
 
@@ -148,7 +148,7 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
             png_rgba_saver_.get(),
             png_indexed_saver_.get(),
             pal_saver_.get(),
-            anim_yaml_parser_.get(),
+            anim_json_parser_.get(),
             anim_code_generator_.get(),
             behavior_map_.get());
     }
@@ -195,7 +195,7 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
     std::unique_ptr<MockPngRgbaImageSaver> png_rgba_saver_;
     std::unique_ptr<MockPngIndexedImageSaver> png_indexed_saver_;
     std::unique_ptr<MockFilePalSaver> pal_saver_;
-    std::unique_ptr<AnimYamlParser> anim_yaml_parser_;
+    std::unique_ptr<AnimJsonParser> anim_json_parser_;
     std::unique_ptr<AnimCodeGenerator> anim_code_generator_;
     std::unique_ptr<MockBehaviorMapProvider> behavior_map_;
     std::unique_ptr<ProjectTilesetArtifactWriter> writer_;

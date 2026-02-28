@@ -13,7 +13,7 @@
 #include "porytiles2/domain/services/terrain_type_map_provider.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
 #include "porytiles2/infra/services/anim_code_generator.hpp"
-#include "porytiles2/infra/services/anim_yaml_parser.hpp"
+#include "porytiles2/infra/services/anim_json_parser.hpp"
 #include "porytiles2/infra/services/file_pal_saver.hpp"
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
@@ -44,14 +44,14 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
         gsl::not_null<PngRgbaImageSaver *> png_rgba_saver,
         gsl::not_null<PngIndexedImageSaver *> png_indexed_saver,
         gsl::not_null<FilePalSaver *> pal_saver,
-        gsl::not_null<const AnimYamlParser *> anim_yaml_parser,
+        gsl::not_null<const AnimJsonParser *> anim_json_parser,
         gsl::not_null<const AnimCodeGenerator *> anim_code_generator,
         gsl::not_null<const BehaviorMapProvider *> behavior_map,
         const TerrainTypeMapProvider *terrain_map = nullptr,
         const EncounterTypeMapProvider *encounter_map = nullptr)
         : domain_config_{domain_config}, infra_config_{infra_config}, project_root_{std::move(project_root)},
           base_game_{base_game}, format_{format}, diag_{diag}, png_rgba_saver_{png_rgba_saver},
-          png_indexed_saver_{png_indexed_saver}, pal_saver_{pal_saver}, anim_yaml_parser_{anim_yaml_parser},
+          png_indexed_saver_{png_indexed_saver}, pal_saver_{pal_saver}, anim_json_parser_{anim_json_parser},
           anim_code_generator_{anim_code_generator}, behavior_map_{behavior_map}, terrain_map_{terrain_map},
           encounter_map_{encounter_map}, metadata_provider_{project_root, format, diag},
           metadata_writer_{project_root, format}
@@ -132,7 +132,7 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
     PngRgbaImageSaver *png_rgba_saver_;
     PngIndexedImageSaver *png_indexed_saver_;
     FilePalSaver *pal_saver_;
-    const AnimYamlParser *anim_yaml_parser_;
+    const AnimJsonParser *anim_json_parser_;
     const AnimCodeGenerator *anim_code_generator_;
     const BehaviorMapProvider *behavior_map_;
     const TerrainTypeMapProvider *terrain_map_;

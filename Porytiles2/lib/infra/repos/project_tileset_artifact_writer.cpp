@@ -947,9 +947,9 @@ ProjectTilesetArtifactWriter::write_porytiles_anim_params(const ArtifactKey &des
     const auto &porytiles_anims = src.porytiles_component().anims();
     if (porytiles_anims.empty()) {
         /*
-         * Unlike in write_porymap_anim_params, we don't need to delete anything here. That's because anim.yaml is
+         * Unlike in write_porymap_anim_params, we don't need to delete anything here. That's because anim.json is
          * within porytiles_src dir, which is written using an atomic move. If the new porytiles_src dir doesn't contain
-         * an anim.yaml, the old one will get wiped by the commit() call.
+         * an anim.json, the old one will get wiped by the commit() call.
          */
         return {};
     }
@@ -967,7 +967,7 @@ ProjectTilesetArtifactWriter::write_porytiles_anim_params(const ArtifactKey &des
         "Failed to compute transaction dest path.",
         void);
 
-    return anim_yaml_parser_->write(transaction_dest_path, anim_params);
+    return anim_json_parser_->write(transaction_dest_path, anim_params);
 }
 
 } // namespace porytiles2

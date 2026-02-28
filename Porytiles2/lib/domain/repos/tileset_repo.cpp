@@ -166,10 +166,10 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     }
 
     PT_TRY_ASSIGN_CHAIN_ERR(
-        anim_yaml_key, key_provider_->key_for_porytiles_anim_params(tileset.name()), "Tileset save failed.", void);
-    if (auto result = writer_->write_porytiles_anim_params(anim_yaml_key, tileset); !result.has_value()) {
+        anim_json_key, key_provider_->key_for_porytiles_anim_params(tileset.name()), "Tileset save failed.", void);
+    if (auto result = writer_->write_porytiles_anim_params(anim_json_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
-        auto failed = FormattableError{"Save failed for '{}'.", FormatParam{anim_yaml_key.key(), Style::bold}};
+        auto failed = FormattableError{"Save failed for '{}'.", FormatParam{anim_json_key.key(), Style::bold}};
         return ChainableResult<void>{failed, result};
     }
 

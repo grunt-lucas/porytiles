@@ -106,7 +106,7 @@ class CompileTilesetCommand final : public Command {
         PngIndexedImageSaver png_indexed_saver{};
         JascPalLoader jasc_loader{text_formatter};
         JascPalSaver jasc_saver{text_formatter};
-        AnimYamlParser anim_yaml_parser{text_formatter};
+        AnimJsonParser anim_json_parser{text_formatter};
         AnimCodeParser anim_code_parser{text_formatter, diag.get()};
         AnimCodeGenerator anim_code_generator{};
 
@@ -165,7 +165,7 @@ class CompileTilesetCommand final : public Command {
             &png_indexed_loader,
             &jasc_loader,
             &attributes_csv_loader,
-            &anim_yaml_parser,
+            &anim_json_parser,
             &anim_code_parser,
             &metadata_provider};
         ProjectTilesetArtifactWriter artifact_writer{
@@ -178,7 +178,7 @@ class CompileTilesetCommand final : public Command {
             &png_rgba_saver,
             &png_indexed_saver,
             &jasc_saver,
-            &anim_yaml_parser,
+            &anim_json_parser,
             &anim_code_generator,
             &behavior_map_provider,
             terrain_provider.get(),

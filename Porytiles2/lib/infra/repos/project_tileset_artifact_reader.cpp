@@ -330,9 +330,9 @@ ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const Artifact
     const ArtifactKey &key_frame_key,
     const std::vector<std::pair<std::string, ArtifactKey>> &frame_keys) const
 {
-    // Parse anim.yaml to get params for this animation
+    // Parse anim.json to get params for this animation
     // Keys are relative to project_root_, so prepend for file I/O
-    auto params_result = anim_yaml_parser_->parse((project_root_ / params_key.key()).string());
+    auto params_result = anim_json_parser_->parse((project_root_ / params_key.key()).string());
     if (!params_result.has_value()) {
         return ChainableResult<void>{
             FormattableError{
