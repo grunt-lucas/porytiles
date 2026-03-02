@@ -183,18 +183,20 @@ struct AnimOverrideEntry {
 ```
 
 #### `FrameLinking::automatic` mode
-Automatic frame linking means we'll try to generate key.png when decompiling,
-and try to use key frame linking when compiling.
+This is the default setting.
 
-This is the default, and the current Porytiles behavior.
-
-If user specifies `FrameLinking::automatic` for an animation but also provides manual overrides,
+If user specifies `FrameLinking::automatic` for an animation but also provides manual overrides in `anim.json`,
 we should generate a warning and then ignore them.
 
-#### `FrameLinking::manual` mode
-If `AnimConfig` for this animation specifies `FrameLinking::manual`,
-use these hardcoded entries.
+##### Compilation Notes
+No changes from current Porytiles behavior.
+Current behavior is already `automatic` mode.
 
+##### Decompilation Notes
+No changes from current Porytiles behavior.
+Current behavior is already `automatic` mode.
+
+#### `FrameLinking::manual` mode
 It should be pretty easy to modify the compiler logic slightly to do this.
 Then we just emit the TilemapEntry based on what the user is asking for here.
 We'll need to modify the `AnimParams` class to contain a set of manual overrides.
@@ -214,12 +216,27 @@ otherwise it carries on.
 Likewise, if user specifies `FrameLinking::manual` for an animation but also provides a `key.png`,
 we should warn the user and then ignore it.
 
+##### Compilation Notes
+If `AnimConfig` for this animation specifies `FrameLinking::manual`,
+use the `"overrides"` entries in `anim.json`.
+If none were provided, throw an error.
+
+##### Decompilation Notes
+
 #### `FrameLinking::hybrid` mode
 Same as `FrameLinking::automatic`,
 except after doing regular `key.png`-based assignment,
 do another pass that applies any manual overrides that are present.
 
 No need to implement this yet. Just include a branch for it that panics with "TODO: implement" message.
+
+#### Config Updates
+Add a global `FrameLinking` setting, e.g.:
+```yaml
+tileset:
+  animations:
+    global_frame_linking: manual
+```
 
 ### Solve the "multiple palettes for a single frame subtile" issue
 `AnimDecompiler` has this branch and note:
