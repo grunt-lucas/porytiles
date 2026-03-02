@@ -42,7 +42,7 @@ flower:
     "frame_order": ["center", "right", "center", "left"],
     "frame_factor": 8,
     "frame_offset": 2,
-    "counter_max": 256
+    "counter_max": 256 // this is sPrimaryTilesetAnimCounter
   }
 }
 ```
@@ -103,47 +103,105 @@ they'll either need to:
 This is fine. They can always run `dump-tileset-config` before importing to ensure the config looks correct.
 
 ### Support manual animation overrides in `anim.json`
-Example:
+The goal is to provide users an alternative to `key.png`-based animation linking.
+
+#### Example `anim.json` file with overrides
 ```json
 {
   "flower": {
-    "frames": ["center", "right", "left"],
-    "frame_order": ["center", "right", "center", "left"],
+    "frames": [
+      "center",
+      "right",
+      "left"
+    ],
+    "frame_order": [
+      "center",
+      "right",
+      "center",
+      "left"
+    ],
     "frame_factor": 8,
     "frame_offset": 2,
-    "counter_max": 256, // this is sPrimaryTilesetAnimCounter
+    "counter_max": 256,
+    // Overrides are an array of objects that connect a layer PNG location to a tilemap entry.
+    // This effectively bypasses the need to do key.png matching.
     "overrides": [
       {
+        // This is the canonical ordering for these fields, use nohlman::ordered_json to preserve
         "id": 22,
         "layer": "bottom",
         "subtile": "northwest",
-        "hflip": true,
-        "vflip": true,
         // This value is internal to the animation's frame, so it's relative within tiles.png.
         // To compute absolute position of tile, do tile_offset_ + frame_subtile, where tile_offset_
         // is this animation's offset within tiles.png (defined in AnimParams).
-        "frame_subtile": 0
+        "frame_subtile": 0,
+        "pal_index": 2,
+        "hflip": true,
+        "vflip": true
       },
       {
         "id": 22,
         "layer": "bottom",
         "subtile": "northeast",
+        "frame_subtile": 1,
+        "pal_index": 0,
         "hflip": true,
-        "vflip": true,
-        "frame_subtile": 1
+        "vflip": true
       }
     ]
   }
 }
 ```
+
+```c++
+/**
+ * @brief A manual override that maps a specific metatile entry to an animation subtile.
+ *
+ * @details
+ * When using manual frame linking, users explicitly declare which metatile entries reference which animation subtiles.
+ * Each override entry specifies the metatile position (id, layer, subtile), flip flags, palette index, and which
+ * subtile within the animation frame to use.
+ *
+ * All fields are required when specifying overrides in anim.json.
+ */
+struct AnimOverrideEntry {
+    /// The metatile ID this override applies to (corresponds to JSON "id" field).
+    std::size_t metatile_id;
+    /// The layer within the metatile (bottom, middle, or top).
+    metatile::Layer layer;
+    /// The subtile position within the layer (northwest, northeast, southwest, southeast).
+    metatile::Subtile subtile;
+    /// Zero-based index into the animation's tile range (tile_offset + frame_subtile = actual tile index).
+    std::size_t frame_subtile;
+    /// The palette index to use for this tile.
+    std::size_t pal_index;
+    /// Whether the tile is horizontally flipped.
+    bool h_flip;
+    /// Whether the tile is vertically flipped.
+    bool v_flip;
+};
+```
+
+#### `FrameLinking::automatic` mode
+Automatic frame linking means we'll try to generate key.png when decompiling,
+and try to use key frame linking when compiling.
+
+This is the default, and the current Porytiles behavior.
+
+If user specifies `FrameLinking::automatic` for an animation but also provides manual overrides,
+we should generate a warning and then ignore them.
+
+#### `FrameLinking::manual` mode
 If `AnimConfig` for this animation specifies `FrameLinking::manual`,
 use these hardcoded entries.
+
 It should be pretty easy to modify the compiler logic slightly to do this.
 Then we just emit the TilemapEntry based on what the user is asking for here.
 We'll need to modify the `AnimParams` class to contain a set of manual overrides.
-
-Automatic frame linking means we'll try to generate key.png when decompiling,
-and try to use key frame linking when compiling. This is the default.
+We should keep the animation registration in place,
+so that we can support `tiles-edit-mode: optimize`.
+That way, each animation has a fixed allocated offset within `tiles.png`,
+and the `frame_subtile` field of the override indexes into that range.
 
 Manual frame linking means we'll write "overrides" to anim.json when decompiling,
 and use those overrides when creating metatiles (effectively ignoring key frame entirely).
@@ -153,21 +211,15 @@ After making this change, `key.png` becomes optional.
 Porytiles will error if it's not present and `FrameLinking::automatic` is set,
 otherwise it carries on.
 
-If user specifies `FrameLinking::automatic` for an animation but also provides manual overrides, should we:
-- throw an error?
-- warn the user and then ignore them?
-- use them anyway, applying them *before* we try linking via key frame?
-- use them anyway, applying them *after* (and possibly overwriting) key frame links?
+Likewise, if user specifies `FrameLinking::manual` for an animation but also provides a `key.png`,
+we should warn the user and then ignore it.
 
-Likewise, if user specifies `FrameLinking::manual` for an animation but also provides a `key.png`, should we:
-- throw an error?
-- warn the user and then ignore it?
-- use it anyway, applying it *before* we write the manual overrides?
-- use them anyway, applying it *after* (and possibly overwriting) the manual overrides?
+#### `FrameLinking::hybrid` mode
+Same as `FrameLinking::automatic`,
+except after doing regular `key.png`-based assignment,
+do another pass that applies any manual overrides that are present.
 
-It's worth thinking through this.
-Which behavior makes the most sense?
-Or should it be configurable?
+No need to implement this yet. Just include a branch for it that panics with "TODO: implement" message.
 
 ### Solve the "multiple palettes for a single frame subtile" issue
 `AnimDecompiler` has this branch and note:
