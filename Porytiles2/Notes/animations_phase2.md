@@ -191,6 +191,7 @@ we should generate a warning and then ignore them.
 ##### Compilation Notes
 No changes from current Porytiles behavior.
 Current behavior is already `automatic` mode.
+Error if `key.png` isn't present.
 
 ##### Decompilation Notes
 No changes from current Porytiles behavior.
@@ -199,29 +200,23 @@ Current behavior is already `automatic` mode.
 #### `FrameLinking::manual` mode
 It should be pretty easy to modify the compiler logic slightly to do this.
 Then we just emit the TilemapEntry based on what the user is asking for here.
-We'll need to modify the `AnimParams` class to contain a set of manual overrides.
+We'll need to modify the `AnimParams` class to contain a vector of `AnimOverrideEntry`.
 We should keep the animation registration in place,
 so that we can support `tiles-edit-mode: optimize`.
 That way, each animation has a fixed allocated offset within `tiles.png`,
 and the `frame_subtile` field of the override indexes into that range.
 
-Manual frame linking means we'll write "overrides" to anim.json when decompiling,
-and use those overrides when creating metatiles (effectively ignoring key frame entirely).
-Config values related to the automatic linking system will be effectively ignored.
-
-After making this change, `key.png` becomes optional.
-Porytiles will error if it's not present and `FrameLinking::automatic` is set,
-otherwise it carries on.
-
-Likewise, if user specifies `FrameLinking::manual` for an animation but also provides a `key.png`,
-we should warn the user and then ignore it.
-
 ##### Compilation Notes
 If `AnimConfig` for this animation specifies `FrameLinking::manual`,
 use the `"overrides"` entries in `anim.json`.
 If none were provided, throw an error.
+If `key.png` is present, generate a warning that it will be ignored.
+
 
 ##### Decompilation Notes
+Manual frame linking means we'll write "overrides" to anim.json when decompiling,
+and use those overrides when creating metatiles (effectively ignoring key frame entirely).
+Config values related to the automatic linking system will be effectively ignored.
 
 #### `FrameLinking::hybrid` mode
 Same as `FrameLinking::automatic`,
@@ -231,7 +226,7 @@ do another pass that applies any manual overrides that are present.
 No need to implement this yet. Just include a branch for it that panics with "TODO: implement" message.
 
 #### Config Updates
-Add a global `FrameLinking` setting, e.g.:
+Add a global `FrameLinking` setting to mirror the other global fallbacks, i.e.:
 ```yaml
 tileset:
   animations:
@@ -266,9 +261,9 @@ For animations that hit this case, the main issues are:
 2. Palette alignment: you don't hit this if you import and keep pals:locked (pals already aligned), but we don't have a clean way to support this use-case for net-new tilesets
 
 I think the cleanest way forward is to simply keep this as an error condition.
-Users can then import by specifying `frame_linking: manual`,
-which will pull links directly from metatiles and skip past the code that throws the error.
-This will work for both the import and net-new case, but it's not as clean as supporting natively.
+Users can then import by specifying `frame_linking: manual`
+along with another config option that skips the code that throws this error.
+We'll figure out exactly how to do this later.
 
 ### TODO: How to handle VDests system? See Evergrande/Mauville city flowers, Route104 windy water, etc
 ```c++
