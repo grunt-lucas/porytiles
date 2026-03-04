@@ -212,6 +212,10 @@ use the `"overrides"` entries in `anim.json`.
 If none were provided, throw an error.
 If `key.png` is present, generate a warning that it will be ignored.
 
+The regular frames can be compiled as normal using palette matching,
+choosing the first matching palette to resolve the RGBA tiles into indexed tiles.
+The user is responsible for ensuring that the overrides reference the correct palette
+so that the in-game assets look correct.
 
 ##### Decompilation Notes
 Manual frame linking means we'll write "overrides" to anim.json when decompiling,
