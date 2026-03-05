@@ -218,7 +218,7 @@ The user is responsible for ensuring that the overrides reference the correct pa
 so that the in-game assets look correct.
 
 ##### Decompilation Notes
-Manual frame linking means we'll write "overrides" to anim.json when decompiling,
+Manual frame linking means we'll write "overrides" to `anim.json` when decompiling,
 and use those overrides when creating metatiles (effectively ignoring key frame entirely).
 Config values related to the automatic linking system will be effectively ignored.
 
