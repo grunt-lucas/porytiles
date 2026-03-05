@@ -219,8 +219,12 @@ so that the in-game assets look correct.
 
 ##### Decompilation Notes
 Manual frame linking means we'll write "overrides" to `anim.json` when decompiling,
-and use those overrides when creating metatiles (effectively ignoring key frame entirely).
-Config values related to the automatic linking system will be effectively ignored.
+which we can figure out by looking at the compiled metatile entries.
+
+In order to decompile the actual animation frames, use the same layered strategy that currently exists.
+You can still error out if a frame subtile is referenced in the metatiles with two different palettes.
+We'll solve that problem later.
+But, since now you don't need to generate a key frame, that simplifies things a bit.
 
 #### `FrameLinking::hybrid` mode
 Same as `FrameLinking::automatic`,
