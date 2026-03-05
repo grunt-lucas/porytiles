@@ -132,7 +132,7 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
             storage.global_anim_key_frame_resolution_strategy,
             "Global Animation Key Frame Resolution Strategy - The strategy to use when decompilation encounters "
             "duplicate key frame subtiles.")
-        ->type_name("{error|warning|manual-override|mangle}");
+        ->type_name("{error|warning|mangle}");
 
     // Verify Checksums (bool with --flag/--no-flag, captured as "true"/"false" string)
     config_group->add_flag(

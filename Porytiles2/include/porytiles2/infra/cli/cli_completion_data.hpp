@@ -136,7 +136,7 @@ struct CliOptionMeta {
             "Global Animation Key Frame Resolution Strategy - The strategy to use when decompilation encounters "
             "duplicate key frame subtiles.",
             "enum",
-            {"error", "warning", "manual-override", "mangle"},
+            {"error", "warning", "mangle"},
             false},
         CliOptionMeta{
             "verify-checksums",

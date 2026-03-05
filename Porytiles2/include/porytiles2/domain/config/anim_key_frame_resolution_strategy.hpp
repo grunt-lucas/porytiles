@@ -37,10 +37,6 @@ enum class AnimKeyFrameResolutionStrategy {
      */
     warning,
     /**
-     * @brief Emit a manual override configuration for this animation.
-     */
-    manual_override,
-    /**
      * @brief Mangle duplicate tiles to make them unique, then backport changes to tiles.png.
      */
     mangle
@@ -71,9 +67,6 @@ anim_key_frame_resolution_strategy_from_str(const std::string &str)
     if (str == "warning") {
         return std::optional{AnimKeyFrameResolutionStrategy::warning};
     }
-    if (str == "manual_override") {
-        return std::optional{AnimKeyFrameResolutionStrategy::manual_override};
-    }
     if (str == "mangle") {
         return std::optional{AnimKeyFrameResolutionStrategy::mangle};
     }
@@ -96,16 +89,6 @@ anim_key_frame_resolution_strategy_from_str(const std::string &str)
     }
     if (lower_str == "warn") {
         return std::optional{AnimKeyFrameResolutionStrategy::warning};
-    }
-    // Fuzzy names for manual_override
-    if (lower_str == "manual_override") {
-        return std::optional{AnimKeyFrameResolutionStrategy::manual_override};
-    }
-    if (lower_str == "manual-override") {
-        return std::optional{AnimKeyFrameResolutionStrategy::manual_override};
-    }
-    if (lower_str == "manualoverride") {
-        return std::optional{AnimKeyFrameResolutionStrategy::manual_override};
     }
     // Fuzzy names for mangle
     if (lower_str == "mangle") {
@@ -132,8 +115,6 @@ anim_key_frame_resolution_strategy_from_str(const std::string &str)
         return "error";
     case AnimKeyFrameResolutionStrategy::warning:
         return "warning";
-    case AnimKeyFrameResolutionStrategy::manual_override:
-        return "manual_override";
     case AnimKeyFrameResolutionStrategy::mangle:
         return "mangle";
     }

@@ -768,10 +768,6 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
             panic("warning not yet implemented");
         }
 
-        case AnimKeyFrameResolutionStrategy::manual_override: {
-            panic("manual_override not yet implemented");
-        }
-
         case AnimKeyFrameResolutionStrategy::mangle: {
             AnimKeyFrameMangler mangler{diag_, tile_printer_};
             PT_TRY_ASSIGN_CHAIN_ERR(

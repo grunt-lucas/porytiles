@@ -211,10 +211,6 @@ enum_types:
         cli_completion_name: warning
         fuzzy_names: [ warning, warn ]
         brief: Emit a warning and continue decompilation.
-      - name: manual_override
-        cli_completion_name: manual-override
-        fuzzy_names: [ manual_override, manual-override, manualoverride ]
-        brief: Emit a manual override configuration for this animation.
       - name: mangle
         cli_completion_name: mangle
         fuzzy_names: [ mangle ]
