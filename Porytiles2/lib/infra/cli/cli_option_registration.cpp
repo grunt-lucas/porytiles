@@ -115,7 +115,7 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
     // CliOptionProvider)
     config_group
         ->add_option(
-            "--global-anim-pal-resolution-strategy",
+            "--anim-pal-resolution-strategy",
             storage.global_anim_pal_resolution_strategy,
             "Global Animation Palette Resolution Strategy - The global strategy for determining which palette to use "
             "when decompiling animation tiles.")
@@ -128,11 +128,19 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
     // by CliOptionProvider)
     config_group
         ->add_option(
-            "--global-anim-key-frame-resolution-strategy",
+            "--anim-key-frame-resolution-strategy",
             storage.global_anim_key_frame_resolution_strategy,
             "Global Animation Key Frame Resolution Strategy - The strategy to use when decompilation encounters "
             "duplicate key frame subtiles.")
         ->type_name("{error|warning|mangle}");
+
+    // Global Frame Linking (enum FrameLinking, captured as string, parsed by CliOptionProvider)
+    config_group
+        ->add_option(
+            "--frame-linking",
+            storage.global_frame_linking,
+            "Global Frame Linking - The global default frame linking mode for animations.")
+        ->type_name("{automatic|manual|hybrid}");
 
     // Verify Checksums (bool with --flag/--no-flag, captured as "true"/"false" string)
     config_group->add_flag(

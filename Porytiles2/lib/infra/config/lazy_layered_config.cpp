@@ -138,6 +138,7 @@ void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, con
         *format_,
         "Global Animation Key Frame Resolution Strategy",
         global_anim_key_frame_resolution_strategy_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Global Frame Linking", global_frame_linking_provenance_chain(type, scope));
     dump_single_config_value(out, *format_, "Verify Checksums", verify_checksums_provenance_chain(type, scope));
     dump_single_config_value(
         out, *format_, "Tileset Paths Primary Source", tileset_paths_primary_src_provenance_chain(type, scope));
@@ -458,6 +459,19 @@ LazyLayeredConfig::global_anim_key_frame_resolution_strategy_raw(ConfigScopeType
         });
 }
 
+ChainableResult<ConfigValue<FrameLinking>>
+LazyLayeredConfig::global_frame_linking_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<FrameLinking>(
+        key, "Global Frame Linking", [&type, &scope](const ConfigProvider &provider) {
+            return provider.global_frame_linking(type, scope);
+        });
+}
+
 ChainableResult<ConfigValue<bool>>
 LazyLayeredConfig::verify_checksums_raw(ConfigScopeType type, const std::string &scope) const
 {
@@ -656,6 +670,13 @@ LazyLayeredConfig::global_anim_key_frame_resolution_strategy_provenance_chain(
     return collect_provenance_chain<AnimKeyFrameResolutionStrategy>([&type, &scope](const ConfigProvider &provider) {
         return provider.global_anim_key_frame_resolution_strategy(type, scope);
     });
+}
+
+std::vector<ProvenanceChainLink<FrameLinking>>
+LazyLayeredConfig::global_frame_linking_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<FrameLinking>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.global_frame_linking(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<bool>>

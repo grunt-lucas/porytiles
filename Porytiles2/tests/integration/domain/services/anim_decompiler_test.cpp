@@ -988,3 +988,79 @@ TEST_F(AnimDecompilerMultiPalTests, shouldFallBackFromPerTileNulloptToPerAnimThe
     const auto &key_tile_1 = result.value().key_frame().tile_at(1);
     EXPECT_EQ(key_tile_1.at(0), palette_1_.at(5));
 }
+
+// ── Per-animation key_frame_resolution_strategy cascade tests ──────────────────
+
+class AnimDecompilerKeyFrameStrategyTests : public AnimDecompilerDuplicateDetectionTests {};
+
+TEST_F(AnimDecompilerKeyFrameStrategyTests, perAnimMangleOverridesGlobalError)
+{
+    // Global is error, but per-anim override is mangle — decompilation should succeed
+    const auto shared_tile = create_two_color_tile(1, 2);
+    const auto tiles_png = build_tiles_png({shared_tile, shared_tile});
+
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}};
+
+    auto anim = create_test_animation("test_anim", 1, 1, {shared_tile}, palette_);
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
+
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
+    AnimConfig anim_cfg;
+    anim_cfg.anim_name = "test_anim";
+    anim_cfg.key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
+    config_.anim_configs["test_anim"] = std::move(anim_cfg);
+
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
+
+    EXPECT_TRUE(result.has_value()) << "Per-anim mangle should override global error";
+}
+
+TEST_F(AnimDecompilerKeyFrameStrategyTests, perAnimErrorOverridesGlobalMangle)
+{
+    // Global is mangle, but per-anim override is error — decompilation should fail
+    const auto shared_tile = create_two_color_tile(1, 2);
+    const auto tiles_png = build_tiles_png({shared_tile, shared_tile});
+
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}};
+
+    auto anim = create_test_animation("test_anim", 1, 1, {shared_tile}, palette_);
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
+
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
+    AnimConfig anim_cfg;
+    anim_cfg.anim_name = "test_anim";
+    anim_cfg.key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
+    config_.anim_configs["test_anim"] = std::move(anim_cfg);
+
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
+
+    EXPECT_FALSE(result.has_value()) << "Per-anim error should override global mangle";
+}
+
+TEST_F(AnimDecompilerKeyFrameStrategyTests, nulloptPerAnimFallsBackToGlobal)
+{
+    // Per-anim key_frame_resolution_strategy is nullopt — should fall back to global mangle
+    const auto shared_tile = create_two_color_tile(1, 2);
+    const auto tiles_png = build_tiles_png({shared_tile, shared_tile});
+
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}};
+
+    auto anim = create_test_animation("test_anim", 1, 1, {shared_tile}, palette_);
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
+
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
+    AnimConfig anim_cfg;
+    anim_cfg.anim_name = "test_anim";
+    // key_frame_resolution_strategy left as std::nullopt (default)
+    config_.anim_configs["test_anim"] = std::move(anim_cfg);
+
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
+
+    EXPECT_TRUE(result.has_value()) << "Nullopt per-anim should fall back to global mangle";
+}

@@ -121,7 +121,7 @@ LayerValue<AnimPalResolutionStrategy> CliOptionProvider::global_anim_pal_resolut
 {
     // All types use parse functions for uniform error handling
     return parse_anim_pal_resolution_strategy(
-        storage_.global_anim_pal_resolution_strategy, "--global-anim-pal-resolution-strategy");
+        storage_.global_anim_pal_resolution_strategy, "--anim-pal-resolution-strategy");
 }
 
 LayerValue<AnimConfigs>
@@ -136,7 +136,14 @@ LayerValue<AnimKeyFrameResolutionStrategy> CliOptionProvider::global_anim_key_fr
 {
     // All types use parse functions for uniform error handling
     return parse_anim_key_frame_resolution_strategy(
-        storage_.global_anim_key_frame_resolution_strategy, "--global-anim-key-frame-resolution-strategy");
+        storage_.global_anim_key_frame_resolution_strategy, "--anim-key-frame-resolution-strategy");
+}
+
+LayerValue<FrameLinking> CliOptionProvider::global_frame_linking(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_frame_linking(storage_.global_frame_linking, "--frame-linking");
 }
 
 LayerValue<bool> CliOptionProvider::verify_checksums(

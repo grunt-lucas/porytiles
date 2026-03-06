@@ -133,19 +133,21 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     }
 
     for (const auto &porytiles_anim : tileset.porytiles_component().anims() | std::views::values) {
-        // Save key frame
-        PT_TRY_ASSIGN_CHAIN_ERR(
-            key_frame_key,
-            key_provider_->key_for_porytiles_anim_frame(
-                tileset.name(), porytiles_anim.name(), porytiles_anim.key_frame().frame_name()),
-            "Tileset save failed.",
-            void);
-        if (auto result = writer_->write_porytiles_anim_frame(
-                key_frame_key, tileset, porytiles_anim.name(), porytiles_anim.key_frame().frame_name());
-            !result.has_value()) {
-            std::ignore = writer_->rollback();
-            auto failed = FormattableError{"Save failed for '{}'.", FormatParam{key_frame_key.key(), Style::bold}};
-            return ChainableResult<void>{failed, result};
+        // Save key frame (only present for automatic/hybrid frame linking)
+        if (porytiles_anim.has_key_frame()) {
+            PT_TRY_ASSIGN_CHAIN_ERR(
+                key_frame_key,
+                key_provider_->key_for_porytiles_anim_frame(
+                    tileset.name(), porytiles_anim.name(), porytiles_anim.key_frame().frame_name()),
+                "Tileset save failed.",
+                void);
+            if (auto result = writer_->write_porytiles_anim_frame(
+                    key_frame_key, tileset, porytiles_anim.name(), porytiles_anim.key_frame().frame_name());
+                !result.has_value()) {
+                std::ignore = writer_->rollback();
+                auto failed = FormattableError{"Save failed for '{}'.", FormatParam{key_frame_key.key(), Style::bold}};
+                return ChainableResult<void>{failed, result};
+            }
         }
 
         // Save regular frames

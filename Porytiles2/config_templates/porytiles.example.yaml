@@ -98,39 +98,47 @@ tileset:
     # - palette-00 through palette-15: Use the specified palette index directly.
     # - internal-png-palette: Match frame PNG internal palettes against tileset palettes.
     # - scan-all-tilesets: Scan layouts config for paired tilesets (not yet implemented).
-    global_palette_resolution_strategy: scan-local-metatiles
+    palette_resolution_strategy: scan-local-metatiles
 
     # Strategy for determining how to resolve duplicate key frame subtile errors when decompiling an animation.
     # Available strategies:
     # - [default] error: error out and display violating duplicate pairs
     # - warning: warn about violating duplicate pairs and continue decompilation (noting that subsequent compilation will fail if no action is taken)
     # - mangle: run the AnimTileMangler to minimally de-dupe tiles
-    global_key_frame_resolution_strategy: warning
+    key_frame_resolution_strategy: warning
+
+    # Default frame linking mode for animations.
+    # Per-animation overrides can override this. Available modes:
+    # - [default] automatic: use key.png for frame linking
+    # - manual: use explicit overrides in anim.json
+    frame_linking: automatic
 
     # Per-animation configuration. Each key is an animation name.
-    # Animations not listed here fall back to global settings.
+    # Animations not listed here fall back to the settings above.
     #
     # Palette resolution follows a three-tier cascade (most specific wins):
     #   1. per_tile_palette_resolution_strategies[i] — per-subtile override
     #   2. palette_resolution_strategy — per-animation default
-    #   3. global_palette_resolution_strategy — global fallback
-    configs:
+    #   3. palette_resolution_strategy (above) — global fallback
+    per-animation-overrides:
       flower:
         # How frames are linked to metatile entries.
         # - automatic: use key.png for frame linking (default)
         # - manual: use explicit overrides in anim.json
         frame_linking: automatic
+
+        # Per-animation key frame resolution strategy override.
+        # If set, overrides the global anim_key_frame_resolution_strategy for this animation.
+        key_frame_resolution_strategy: mangle
+
         # Per-animation palette resolution strategy (middle tier).
         # Applied to all subtiles that don't have a per-tile override.
         palette_resolution_strategy: pal0
+
         # Per-subtile palette resolution strategies. Must have exactly one entry per subtile.
         # Use "_" to fall back to palette_resolution_strategy (or global if not set).
-        per_tile_palette_resolution_strategies: [_, scan-local-metatiles, _, _]
-      water:
-        frame_linking: manual
-        # Per-animation strategy only — all subtiles use internal-png-palette
-        palette_resolution_strategy: internal-png-palette
-  
+        per_tile_palette_resolution_strategies: [ _, scan-local-metatiles, _, _ ]
+
   # Set transparency handling for import.
   # Allowed values:
   # - alpha: all transparent tiles are set to alpha=0

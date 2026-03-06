@@ -194,6 +194,10 @@ enum_types:
         cli_completion_name: manual
         fuzzy_names: [ manual ]
         brief: Use manual overrides in anim.json.
+      - name: hybrid
+        cli_completion_name: hybrid
+        fuzzy_names: [ hybrid ]
+        brief: Automatic key.png linking plus manual override pass (not yet implemented).
 
   - cpp_type: AnimKeyFrameResolutionStrategy
     header_path: porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp
@@ -396,8 +400,8 @@ config_values:
 
   - canonical_name: Global Animation Palette Resolution Strategy
     symbol: global_anim_pal_resolution_strategy
-    yaml_path: tileset.animations.global_palette_resolution_strategy
-    cli_option: global-anim-pal-resolution-strategy
+    yaml_path: tileset.animations.palette_resolution_strategy
+    cli_option: anim-pal-resolution-strategy
     cli_desc: The global strategy for determining which palette to use when decompiling animation tiles.
     layer: domain
     type: AnimPalResolutionStrategy
@@ -408,7 +412,7 @@ config_values:
 
   - canonical_name: Animation Configs
     symbol: anim_configs
-    yaml_path: tileset.animations.configs
+    yaml_path: tileset.animations.per-animation-overrides
     cli_option: anim-configs
     cli_skip: true
     yaml_is_map: true
@@ -421,13 +425,25 @@ config_values:
 
   - canonical_name: Global Animation Key Frame Resolution Strategy
     symbol: global_anim_key_frame_resolution_strategy
-    yaml_path: tileset.animations.global_key_frame_resolution_strategy
-    cli_option: global-anim-key-frame-resolution-strategy
+    yaml_path: tileset.animations.key_frame_resolution_strategy
+    cli_option: anim-key-frame-resolution-strategy
     cli_desc: The strategy to use when decompilation encounters duplicate key frame subtiles.
     layer: domain
     type: AnimKeyFrameResolutionStrategy
     parser: parse_anim_key_frame_resolution_strategy
     default_value: "AnimKeyFrameResolutionStrategy::error"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Global Frame Linking
+    symbol: global_frame_linking
+    yaml_path: tileset.animations.frame_linking
+    cli_option: frame-linking
+    cli_desc: The global default frame linking mode for animations.
+    layer: domain
+    type: FrameLinking
+    parser: parse_frame_linking
+    default_value: "FrameLinking::automatic"
     validators: [ ]
     cross_field_validators: [ ]
 

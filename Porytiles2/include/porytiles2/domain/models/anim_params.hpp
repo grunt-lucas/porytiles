@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "porytiles2/domain/models/anim_override_entry.hpp"
 #include "porytiles2/utilities/dynamic_cased_name.hpp"
 
 namespace porytiles2 {
@@ -241,6 +242,25 @@ class AnimParams {
         counter_max_ = value;
     }
 
+    /**
+     * @brief Returns the manual override entries for this animation.
+     *
+     * @details
+     * When using @c FrameLinking::manual mode, these entries explicitly map metatile positions to animation subtiles,
+     * bypassing key.png-based frame linking. Empty when using automatic mode.
+     *
+     * @return Reference to the override entries vector
+     */
+    [[nodiscard]] const std::vector<AnimOverrideEntry> &overrides() const
+    {
+        return overrides_;
+    }
+
+    void overrides(std::vector<AnimOverrideEntry> value)
+    {
+        overrides_ = std::move(value);
+    }
+
   private:
     DynamicCasedName cased_name_;
     std::size_t frame_factor_{anim::default_frame_factor};
@@ -252,6 +272,7 @@ class AnimParams {
     std::size_t width_tiles_{0};
     std::size_t height_tiles_{0};
     std::size_t counter_max_{anim::default_counter_max};
+    std::vector<AnimOverrideEntry> overrides_;
 };
 
 } // namespace porytiles2

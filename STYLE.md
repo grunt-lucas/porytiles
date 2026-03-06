@@ -227,3 +227,28 @@ int main() {
     return 0;
 }
 ```
+
+## Preferred Idioms
+
+### Container Membership Checks
+
+Since we target C++23, prefer `contains` over the `find`/`end` iterator pattern for
+associative containers (`std::map`, `std::unordered_map`, `std::set`, etc.):
+
+```c++
+// CORRECT — C++20/23 style:
+if (my_map.contains(key)) {
+    const auto &val = my_map.at(key);
+    // ...
+}
+
+// AVOID — pre-C++20 style:
+if (auto it = my_map.find(key); it != my_map.end()) {
+    const auto &val = it->second;
+    // ...
+}
+```
+
+**Exception**: If you need the iterator for purposes beyond just accessing the value
+(e.g., erasing, modifying in-place, or iterating from that position), the `find` pattern
+is still appropriate.

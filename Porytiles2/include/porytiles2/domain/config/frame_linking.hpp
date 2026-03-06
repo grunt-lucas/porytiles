@@ -34,7 +34,11 @@ enum class FrameLinking {
     /**
      * @brief Use manual overrides in anim.json.
      */
-    manual
+    manual,
+    /**
+     * @brief Automatic key.png linking plus manual override pass (not yet implemented).
+     */
+    hybrid
 };
 
 /**
@@ -61,6 +65,9 @@ enum class FrameLinking {
     if (str == "manual") {
         return std::optional{FrameLinking::manual};
     }
+    if (str == "hybrid") {
+        return std::optional{FrameLinking::hybrid};
+    }
 
     // Phase 2: Case-insensitive fuzzy match
     std::string lower_str = str;
@@ -77,6 +84,10 @@ enum class FrameLinking {
     // Fuzzy names for manual
     if (lower_str == "manual") {
         return std::optional{FrameLinking::manual};
+    }
+    // Fuzzy names for hybrid
+    if (lower_str == "hybrid") {
+        return std::optional{FrameLinking::hybrid};
     }
 
     return std::nullopt;
@@ -99,6 +110,8 @@ enum class FrameLinking {
         return "automatic";
     case FrameLinking::manual:
         return "manual";
+    case FrameLinking::hybrid:
+        return "hybrid";
     }
     panic("unhandled FrameLinking value");
 }

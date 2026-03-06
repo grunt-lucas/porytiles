@@ -14,7 +14,9 @@
 #include "porytiles2/domain/algorithms/tile_converters.hpp"
 #include "porytiles2/domain/algorithms/tile_extractors.hpp"
 #include "porytiles2/domain/algorithms/tileset_compile_validators.hpp"
+#include "porytiles2/domain/config/anim_configs.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
+#include "porytiles2/domain/config/frame_linking.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/canonical_shape_tile.hpp"
@@ -128,6 +130,7 @@ class CompilerTask {
     [[nodiscard]] ChainableResult<AnimKeyframeData>
     pipeline_helper_build_keyframe_data(const std::string &anim_name, const Animation<Rgba32> &anim) const;
     void pipeline_helper_compile_animations();
+    void pipeline_helper_apply_manual_overrides();
 
     // Pipeline helpers - true_color mode
     void pipeline_helper_apply_true_color_to_tiles_png();
@@ -162,6 +165,8 @@ class CompilerTask {
     ConfigValue<ArtifactEditMode> tiles_edit_mode_;
     ConfigValue<ArtifactEditMode> pals_edit_mode_;
     ConfigValue<TilesPalMode> tiles_pal_mode_;
+    ConfigValue<FrameLinking> global_frame_linking_;
+    ConfigValue<AnimConfigs> anim_configs_;
 
     // Intermediate state - Porytiles
     std::vector<Metatile<Rgba32>> porytiles_metatiles_{};
@@ -209,6 +214,8 @@ ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
     PT_UNWRAP_TILESET_CONFIG_REF(config_, tiles_edit_mode, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, pals_edit_mode, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, tiles_pal_mode, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, global_frame_linking, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, anim_configs, tileset_.name(), std::unique_ptr<Tileset>);
 
     extrinsic_transparency_ = extrinsic_transparency;
     num_pals_in_primary_ = num_pals_in_primary;
@@ -221,6 +228,8 @@ ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
     tiles_edit_mode_ = tiles_edit_mode;
     pals_edit_mode_ = pals_edit_mode;
     tiles_pal_mode_ = tiles_pal_mode;
+    global_frame_linking_ = global_frame_linking;
+    anim_configs_ = anim_configs;
 
     // Execute subtasks
     PT_TRY_CALL_PASS_ERR(pipeline_step_process_porytiles_input(), std::unique_ptr<Tileset>);
@@ -511,6 +520,12 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
     // No changes here, this is a compilation operation - no writebacks into input assets
     auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>(tileset_.porytiles_component());
 
+    // Compile animations from Porytiles format to Porymap format
+    pipeline_helper_compile_animations();
+
+    // Apply manual animation overrides to metatiles_bin (must happen before dual-layerization)
+    pipeline_helper_apply_manual_overrides();
+
     /*
      * If user is requesting dual-layer, use the input Porytiles-format metatiles to infer the LayerType for each
      * metatile and remove the relevant tilemap entries. Here, we assume that the Porytiles metatiles have already been
@@ -565,9 +580,6 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
     for (std::size_t i = 0; i < pal::num_pals; i++) {
         new_porymap_component_->set_pal(i, new_porymap_pals_[i]);
     }
-
-    // Compile animations from Porytiles format to Porymap format
-    pipeline_helper_compile_animations();
 
     // Apply true_color palette encoding to tiles.png if configured
     if (tiles_pal_mode_ == TilesPalMode::true_color) {
@@ -993,9 +1005,8 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
                 offset = existing_offset.value();
             }
             // If full sequence not found, find sufficient contiguous free space to insert
-            else if (
-                const auto free_offset = tiles_workspace_->find_contiguous_transparent_slots(tile_count);
-                free_offset.has_value()) {
+            else if (const auto free_offset = tiles_workspace_->find_contiguous_transparent_slots(tile_count);
+                     free_offset.has_value()) {
                 tiles_workspace_->place_tiles_at(free_offset.value(), keyframe_data.tiles);
                 offset = free_offset.value();
             }
@@ -1148,6 +1159,77 @@ void CompilerTask::pipeline_helper_compile_animations()
 
         // 7. Add to output component (key_frame left as std::nullopt)
         new_porymap_component_->add_anim(std::move(compiled_anim));
+    }
+}
+
+void CompilerTask::pipeline_helper_apply_manual_overrides()
+{
+    const auto &source_anims = tileset_.porytiles_component().anims();
+    if (source_anims.empty()) {
+        return;
+    }
+
+    const auto &configs_map = anim_configs_.value();
+
+    for (const auto &[anim_name, source_anim] : source_anims) {
+        // Resolve effective FrameLinking for this animation
+        FrameLinking effective_linking = global_frame_linking_.value();
+        if (auto it = configs_map.find(anim_name); it != configs_map.end()) {
+            effective_linking = it->second.linking;
+        }
+
+        const auto &overrides = source_anim.params().overrides();
+
+        switch (effective_linking) {
+        case FrameLinking::automatic: {
+            if (!overrides.empty()) {
+                std::vector<std::string> warning_lines;
+                warning_lines.emplace_back(format_.format(
+                    "Animation '{}' has frame_linking 'automatic' but overrides are present in anim.json.",
+                    FormatParam{anim_name, Style::bold}));
+                warning_lines.emplace_back("The overrides will be ignored.");
+                diag_.warning("automatic-mode-overrides-ignored", warning_lines);
+            }
+            break;
+        }
+
+        case FrameLinking::manual: {
+            if (overrides.empty()) {
+                panic(
+                    "animation '" + anim_name +
+                    "' has frame_linking 'manual' but no overrides are present in anim.json");
+            }
+
+            // Get the tile_offset for this animation from the matcher
+            auto maybe_tile_offset = anim_tile_matcher_.tile_offset_for(anim_name);
+            if (!maybe_tile_offset.has_value()) {
+                panic("animation '" + anim_name + "' not registered in anim_tile_matcher_");
+            }
+            const std::size_t tile_offset = maybe_tile_offset.value();
+
+            // Apply each override entry to metatiles_bin
+            auto &metatiles_bin = new_porymap_component_->metatiles_bin();
+            for (const auto &entry : overrides) {
+                const std::size_t bin_index =
+                    entry.metatile_id * metatile::entries_per_metatile_triple +
+                    static_cast<std::size_t>(entry.layer) * metatile::tiles_per_metatile_layer +
+                    static_cast<std::size_t>(entry.subtile);
+
+                if (bin_index >= metatiles_bin.size()) {
+                    panic(
+                        "animation '" + anim_name + "' override references metatile_id " +
+                        std::to_string(entry.metatile_id) + " which is out of range");
+                }
+
+                const std::size_t absolute_tile = tile_offset + entry.frame_subtile;
+                metatiles_bin[bin_index] = TilemapEntry{absolute_tile, entry.pal_index, entry.h_flip, entry.v_flip};
+            }
+            break;
+        }
+
+        case FrameLinking::hybrid:
+            panic("TODO: implement hybrid frame linking");
+        }
     }
 }
 

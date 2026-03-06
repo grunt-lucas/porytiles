@@ -33,6 +33,7 @@ class MockDomainConfig : public DomainConfig {
     AnimPalResolutionStrategy global_anim_pal_resolution_strategy = AnimPalResolutionStrategy::scan_local_metatiles;
     AnimConfigs anim_configs = AnimConfigs{};
     AnimKeyFrameResolutionStrategy global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
+    FrameLinking global_frame_linking = FrameLinking::automatic;
 
   protected:
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
@@ -147,6 +148,12 @@ class MockDomainConfig : public DomainConfig {
             "global_anim_key_frame_resolution_strategy",
             "mock",
             {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<FrameLinking>>
+    global_frame_linking_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{global_frame_linking, "Global Frame Linking", "global_frame_linking", "mock", {}};
     }
 };
 

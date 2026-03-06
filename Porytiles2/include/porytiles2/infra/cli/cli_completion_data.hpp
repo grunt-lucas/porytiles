@@ -107,7 +107,7 @@ struct CliOptionMeta {
             {"true-color", "greyscale"},
             false},
         CliOptionMeta{
-            "global-anim-pal-resolution-strategy",
+            "anim-pal-resolution-strategy",
             "Global Animation Palette Resolution Strategy - The global strategy for determining which palette to use "
             "when decompiling animation tiles.",
             "enum",
@@ -132,11 +132,17 @@ struct CliOptionMeta {
              "scan-all-tilesets"},
             false},
         CliOptionMeta{
-            "global-anim-key-frame-resolution-strategy",
+            "anim-key-frame-resolution-strategy",
             "Global Animation Key Frame Resolution Strategy - The strategy to use when decompilation encounters "
             "duplicate key frame subtiles.",
             "enum",
             {"error", "warning", "mangle"},
+            false},
+        CliOptionMeta{
+            "frame-linking",
+            "Global Frame Linking - The global default frame linking mode for animations.",
+            "enum",
+            {"automatic", "manual", "hybrid"},
             false},
         CliOptionMeta{
             "verify-checksums",

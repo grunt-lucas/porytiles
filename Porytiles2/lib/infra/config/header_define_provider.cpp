@@ -182,6 +182,13 @@ LayerValue<AnimKeyFrameResolutionStrategy> HeaderDefineProvider::global_anim_key
     return LayerValue<AnimKeyFrameResolutionStrategy>::not_provided();
 }
 
+LayerValue<FrameLinking>
+HeaderDefineProvider::global_frame_linking(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<FrameLinking>::not_provided();
+}
+
 LayerValue<bool> HeaderDefineProvider::verify_checksums(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {
     // No header_define specified for this config value

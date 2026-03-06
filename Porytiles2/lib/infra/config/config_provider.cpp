@@ -111,6 +111,12 @@ LayerValue<AnimKeyFrameResolutionStrategy> ConfigProvider::global_anim_key_frame
     return LayerValue<AnimKeyFrameResolutionStrategy>::not_provided();
 }
 
+LayerValue<FrameLinking> ConfigProvider::global_frame_linking(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<FrameLinking>::not_provided();
+}
+
 LayerValue<bool>
 ConfigProvider::verify_checksums([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

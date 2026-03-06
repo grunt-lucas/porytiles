@@ -16,7 +16,9 @@
 #include "porytiles2/domain/config/anim_configs.hpp"
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
+#include "porytiles2/domain/config/frame_linking.hpp"
 #include "porytiles2/domain/models/anim_frame.hpp"
+#include "porytiles2/domain/models/anim_override_entry.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
@@ -574,6 +576,7 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, global_anim_pal_resolution_strategy, tileset_name, Animation<Rgba32>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, anim_configs, tileset_name, Animation<Rgba32>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, global_anim_key_frame_resolution_strategy, tileset_name, Animation<Rgba32>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, global_frame_linking, tileset_name, Animation<Rgba32>);
 
     // Read data from porymap_component
     const auto &pals = porymap_component.pals();
@@ -616,16 +619,19 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
     per_subtile_strategies.reserve(tile_count);
 
     const auto &configs_map = anim_configs.value();
-    if (auto it = configs_map.find(anim.name()); it != configs_map.end()) {
-        const auto &anim_cfg = it->second;
+    const auto anim_cfg_it = configs_map.find(anim.name());
+    const AnimConfig *anim_cfg_ptr = (anim_cfg_it != configs_map.end()) ? &anim_cfg_it->second : nullptr;
+
+    if (anim_cfg_ptr != nullptr) {
+        const AnimConfig &anim_cfg = *anim_cfg_ptr;
 
         // Determine the "effective default" for this animation: per-anim if set, otherwise global
-        const auto effective_default =
+        const ConfigValue<AnimPalResolutionStrategy> effective_default =
             anim_cfg.pal_resolution_strategy.has_value()
-                ? ConfigValue<AnimPalResolutionStrategy>{
+                ? ConfigValue{
                       *anim_cfg.pal_resolution_strategy,
                       "Animation Config (" + anim.name() + ") per-anim strategy",
-                      "tileset.animations.configs." + anim.name() + ".palette_resolution_strategy",
+                      "tileset.animations.per-animation-overrides." + anim.name() + ".palette_resolution_strategy",
                       anim_configs.source(),
                       anim_configs.source_details()}
                 : global_anim_pal_resolution_strategy;
@@ -645,14 +651,13 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
             }
             for (std::size_t i = 0; i < tile_count; ++i) {
                 if (anim_cfg.per_tile_pal_resolution_strategies[i].has_value()) {
-                    per_subtile_strategies.push_back(
-                        ConfigValue<AnimPalResolutionStrategy>{
-                            *anim_cfg.per_tile_pal_resolution_strategies[i],
-                            "Animation Config (" + anim.name() + ") subtile " + std::to_string(i),
-                            "tileset.animations.configs." + anim.name() + ".per_tile_palette_resolution_strategies[" +
-                                std::to_string(i) + "]",
-                            anim_configs.source(),
-                            anim_configs.source_details()});
+                    per_subtile_strategies.emplace_back(
+                        *anim_cfg.per_tile_pal_resolution_strategies[i],
+                        "Animation Config (" + anim.name() + ") subtile " + std::to_string(i),
+                        "tileset.animations.per-animation-overrides." + anim.name() +
+                            ".per_tile_palette_resolution_strategies[" + std::to_string(i) + "]",
+                        anim_configs.source(),
+                        anim_configs.source_details());
                 }
                 else {
                     per_subtile_strategies.push_back(effective_default);
@@ -672,6 +677,83 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
             per_subtile_strategies.push_back(global_anim_pal_resolution_strategy);
         }
     }
+
+    // Resolve effective FrameLinking for this animation
+    FrameLinking effective_linking = global_frame_linking.value();
+    if (anim_cfg_ptr != nullptr) {
+        effective_linking = anim_cfg_ptr->linking;
+    }
+
+    if (effective_linking == FrameLinking::hybrid) {
+        panic("TODO: implement hybrid frame linking");
+    }
+
+    /*
+     * Manual mode: extract override entries from metatiles_bin and skip key frame generation.
+     * Regular frames are still decompiled using the per-subtile palette resolution cascade.
+     */
+    if (effective_linking == FrameLinking::manual) {
+        std::vector<AnimOverrideEntry> overrides;
+        const std::size_t num_metatiles = metatiles_bin.size() / metatile::entries_per_metatile_triple;
+        for (std::size_t mt_idx = 0; mt_idx < num_metatiles; ++mt_idx) {
+            for (std::size_t local_idx = 0; local_idx < metatile::entries_per_metatile_triple; ++local_idx) {
+                const auto &entry = metatiles_bin[mt_idx * metatile::entries_per_metatile_triple + local_idx];
+                if (entry.tile_index() >= tile_offset && entry.tile_index() < tile_offset + tile_count) {
+                    auto [layer, subtile] = metatile::from_internal_tile_index(local_idx);
+                    overrides.push_back(
+                        AnimOverrideEntry{
+                            mt_idx,
+                            layer,
+                            subtile,
+                            entry.tile_index() - tile_offset,
+                            entry.pal_index(),
+                            entry.h_flip(),
+                            entry.v_flip()});
+                }
+            }
+        }
+
+        AnimParams result_params = anim.params();
+        result_params.overrides(std::move(overrides));
+        result.params(std::move(result_params));
+
+        // Decompile regular frames using per-subtile palette resolution
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            manual_pal_indices,
+            find_pals_for_anim_tiles(
+                anim.name(),
+                tile_offset,
+                tile_count,
+                metatiles_bin,
+                per_subtile_strategies,
+                anim,
+                pals,
+                tiles_png,
+                extrinsic_transparency,
+                *diag_,
+                *pal_printer_,
+                *tile_printer_),
+            diag_->formatter().format(
+                "Failed to find palette for animation '{}'.", FormatParam{anim.name(), Style::bold}),
+            Animation<Rgba32>);
+
+        for (const auto &frame : anim.frames_values()) {
+            std::vector<PixelTile<Rgba32>> rgba_tiles;
+            rgba_tiles.reserve(frame.tiles().size());
+            for (std::size_t i = 0; i < frame.tiles().size(); ++i) {
+                rgba_tiles.push_back(color_tile_from_index_tile(
+                    frame.tiles()[i], pals.at(manual_pal_indices[i]), extrinsic_transparency.value()));
+            }
+            AnimFrame rgba_frame{frame.frame_name(), std::move(rgba_tiles)};
+            result.put_frame(frame.frame_name(), std::move(rgba_frame));
+        }
+
+        return result;
+    }
+
+    // ========================================================================
+    // Automatic mode: use key.png-based frame linking
+    // ========================================================================
 
     // Recover per-subtile palette indices
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -725,13 +807,28 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
     existing_canonical_tiles.insert(inter_anim_canonical_tiles.begin(), inter_anim_canonical_tiles.end());
 
     /*
+     * Compute the effective key frame resolution strategy: per-anim override wins, otherwise global fallback.
+     */
+    const ConfigValue<AnimKeyFrameResolutionStrategy> effective_key_frame_strategy = [&]() {
+        if (anim_cfg_ptr != nullptr && anim_cfg_ptr->key_frame_resolution_strategy.has_value()) {
+            return ConfigValue{
+                *anim_cfg_ptr->key_frame_resolution_strategy,
+                "Animation Config (" + anim.name() + ") key_frame_resolution_strategy",
+                "tileset.animations.per-animation-overrides." + anim.name() + ".key_frame_resolution_strategy",
+                anim_configs.source(),
+                anim_configs.source_details()};
+        }
+        return global_anim_key_frame_resolution_strategy;
+    }();
+
+    /*
      * Check for duplicate key frame tiles using canonical (flip-equivalent) comparison. Detects:
      * - Inter-animation duplicates: animation tile matches another animation's key frame tile
      * - Cross-range duplicates: animation tile matches a non-animation tile in tiles.png
      * - Intra-animation duplicates: two animation tiles are flip-equivalent to each other
      */
     if (has_duplicate_key_frame_tiles(key_frame_index_tiles, inter_anim_canonical_tiles, existing_canonical_tiles)) {
-        switch (global_anim_key_frame_resolution_strategy.value()) {
+        switch (effective_key_frame_strategy.value()) {
         case AnimKeyFrameResolutionStrategy::error: {
             const auto dup_info = categorize_duplicate_key_frame_tiles(
                 key_frame_index_tiles, inter_anim_canonical_tiles, existing_canonical_tiles);
@@ -758,7 +855,7 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
             err_msg.emplace_back("");
             err_msg.emplace_back("Consider using 'mangle' strategy to auto-resolve.");
             std::ranges::copy(
-                format_config_note_with_separator(diag_->formatter(), global_anim_key_frame_resolution_strategy),
+                format_config_note_with_separator(diag_->formatter(), effective_key_frame_strategy),
                 std::back_inserter(err_msg));
             return FormattableError{err_msg};
         }

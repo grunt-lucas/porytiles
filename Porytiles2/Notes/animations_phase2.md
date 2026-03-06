@@ -74,9 +74,9 @@ The new YAML format could look like this, with anim names as keys into a `std::m
 ```yaml
 tileset:
   animations:
-    global_palette_resolution_strategy: scan-local-metatiles
-    global_key_frame_resolution_strategy: warning
-    configs:
+    palette_resolution_strategy: scan-local-metatiles
+    key_frame_resolution_strategy: warning
+    per-animation-overrides:
       flower:
         frame_linking: automatic
         palette_resolution_strategy: pal2
@@ -91,7 +91,6 @@ tileset:
 One TODO: should we allow per subtile `key_frame_resolution_strategy` config?
 It might be nice, if users want to manually mangle one tile but not another.
 But this is probably a very niche case and thus not high priority.
-What we should do though, is rename to `global_key_frame_resolution_strategy` to future-proof ourselves.
 
 **Note**
 I don't think we can reasonable support CLI options for this config map.
@@ -102,7 +101,7 @@ they'll either need to:
 
 This is fine. They can always run `dump-tileset-config` before importing to ensure the config looks correct.
 
-### Support manual animation overrides in `anim.json`
+### ~~Support manual animation overrides in `anim.json`~~
 The goal is to provide users an alternative to `key.png`-based animation linking.
 
 #### Example `anim.json` file with overrides
@@ -238,7 +237,16 @@ Add a global `FrameLinking` setting to mirror the other global fallbacks, i.e.:
 ```yaml
 tileset:
   animations:
-    global_frame_linking: manual
+    frame_linking: manual
+```
+
+Add a per-animation key frame resolution setting:
+```yaml
+tileset:
+  animations:
+    per-animation-overrides:
+      flower:
+        key_frame_resolution_strategy: error
 ```
 
 ### Solve the "multiple palettes for a single frame subtile" issue

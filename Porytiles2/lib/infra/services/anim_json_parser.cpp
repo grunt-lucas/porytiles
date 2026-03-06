@@ -1,6 +1,7 @@
 #include "porytiles2/infra/services/anim_json_parser.hpp"
 
 #include <fstream>
+#include <optional>
 #include <set>
 #include <sstream>
 #include <string>
@@ -10,13 +11,62 @@
 #include "fmt/ranges.h"
 #include "nlohmann/json.hpp"
 
+#include "porytiles2/domain/models/anim_override_entry.hpp"
+#include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/utilities/dynamic_cased_name.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/file_highlight_printer.hpp"
 
 namespace {
 
 using namespace porytiles2;
+
+[[nodiscard]] std::optional<metatile::Layer> layer_from_string(const std::string &str)
+{
+    if (str == "bottom") {
+        return metatile::Layer::bottom;
+    }
+    if (str == "middle") {
+        return metatile::Layer::middle;
+    }
+    if (str == "top") {
+        return metatile::Layer::top;
+    }
+    return std::nullopt;
+}
+
+[[nodiscard]] std::optional<metatile::Subtile> subtile_from_string(const std::string &str)
+{
+    if (str == "northwest") {
+        return metatile::Subtile::northwest;
+    }
+    if (str == "northeast") {
+        return metatile::Subtile::northeast;
+    }
+    if (str == "southwest") {
+        return metatile::Subtile::southwest;
+    }
+    if (str == "southeast") {
+        return metatile::Subtile::southeast;
+    }
+    return std::nullopt;
+}
+
+[[nodiscard]] std::string subtile_to_json_string(metatile::Subtile subtile)
+{
+    switch (subtile) {
+    case metatile::Subtile::northwest:
+        return "northwest";
+    case metatile::Subtile::northeast:
+        return "northeast";
+    case metatile::Subtile::southwest:
+        return "southwest";
+    case metatile::Subtile::southeast:
+        return "southeast";
+    }
+    panic("unhandled Subtile value");
+}
 
 /**
  * @brief Converts a byte offset from a JSON parse error into a zero-based line index.
@@ -123,6 +173,40 @@ AnimParams parse_animation_params(const std::string &anim_name, const nlohmann::
         params.counter_max(node["counter_max"].get<std::size_t>());
     }
 
+    if (node.contains("overrides")) {
+        if (!node["overrides"].is_array()) {
+            panic("anim.json: animation '" + anim_name + "' overrides must be an array");
+        }
+        std::vector<AnimOverrideEntry> overrides;
+        for (const auto &entry_node : node["overrides"]) {
+            AnimOverrideEntry entry{};
+
+            entry.metatile_id = entry_node.at("id").get<std::size_t>();
+
+            const auto layer_str = entry_node.at("layer").get<std::string>();
+            const auto layer_opt = layer_from_string(layer_str);
+            if (!layer_opt.has_value()) {
+                panic("anim.json: animation '" + anim_name + "' override has invalid layer '" + layer_str + "'");
+            }
+            entry.layer = *layer_opt;
+
+            const auto subtile_str = entry_node.at("subtile").get<std::string>();
+            const auto subtile_opt = subtile_from_string(subtile_str);
+            if (!subtile_opt.has_value()) {
+                panic("anim.json: animation '" + anim_name + "' override has invalid subtile '" + subtile_str + "'");
+            }
+            entry.subtile = *subtile_opt;
+
+            entry.frame_subtile = entry_node.at("frame_subtile").get<std::size_t>();
+            entry.pal_index = entry_node.at("pal_index").get<std::size_t>();
+            entry.h_flip = entry_node.at("hflip").get<bool>();
+            entry.v_flip = entry_node.at("vflip").get<bool>();
+
+            overrides.push_back(entry);
+        }
+        params.overrides(std::move(overrides));
+    }
+
     // Note: tile_offset and tile_count are NOT read from anim.json
     // They are computed during compilation and stored in generated_anim_code.h
 
@@ -130,9 +214,9 @@ AnimParams parse_animation_params(const std::string &anim_name, const nlohmann::
     return params;
 }
 
-nlohmann::json serialize_animation_params(const AnimParams &params)
+nlohmann::ordered_json serialize_animation_params(const AnimParams &params)
 {
-    nlohmann::json node;
+    nlohmann::ordered_json node;
 
     // Only write non-default values to keep the file clean
     if (params.frame_factor() != anim::default_frame_factor) {
@@ -144,14 +228,14 @@ nlohmann::json serialize_animation_params(const AnimParams &params)
     }
 
     // Always write frames array since it's the core animation definition
-    nlohmann::json frames_array = nlohmann::json::array();
+    nlohmann::ordered_json frames_array = nlohmann::ordered_json::array();
     for (const auto &frame : params.frame_names()) {
         frames_array.push_back(frame.to_snake_case());
     }
     node["frames"] = frames_array;
 
     // Always write frame_order array since it defines the playback sequence
-    nlohmann::json frame_order_array = nlohmann::json::array();
+    nlohmann::ordered_json frame_order_array = nlohmann::ordered_json::array();
     for (const auto &frame : params.frame_order()) {
         frame_order_array.push_back(frame.to_snake_case());
     }
@@ -159,6 +243,22 @@ nlohmann::json serialize_animation_params(const AnimParams &params)
 
     if (params.counter_max() != anim::default_counter_max) {
         node["counter_max"] = params.counter_max();
+    }
+
+    if (!params.overrides().empty()) {
+        nlohmann::ordered_json overrides_array = nlohmann::ordered_json::array();
+        for (const auto &entry : params.overrides()) {
+            nlohmann::ordered_json obj;
+            obj["id"] = entry.metatile_id;
+            obj["layer"] = metatile::to_string(entry.layer);
+            obj["subtile"] = subtile_to_json_string(entry.subtile);
+            obj["frame_subtile"] = entry.frame_subtile;
+            obj["pal_index"] = entry.pal_index;
+            obj["hflip"] = entry.h_flip;
+            obj["vflip"] = entry.v_flip;
+            overrides_array.push_back(std::move(obj));
+        }
+        node["overrides"] = std::move(overrides_array);
     }
 
     // Note: tile_offset and tile_count are NOT written to anim.json
@@ -313,7 +413,7 @@ ChainableResult<void> AnimJsonParser::write(
             std::filesystem::create_directories(json_path.parent_path());
         }
 
-        nlohmann::json root;
+        nlohmann::ordered_json root;
         for (const auto &[name, anim_params] : params) {
             root[name.to_snake_case()] = serialize_animation_params(anim_params);
         }

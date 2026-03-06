@@ -124,6 +124,12 @@ LayerValue<AnimKeyFrameResolutionStrategy> DefaultProvider::global_anim_key_fram
         AnimKeyFrameResolutionStrategy::error, "Global Animation Key Frame Resolution Strategy", source_info);
 }
 
+LayerValue<FrameLinking> DefaultProvider::global_frame_linking(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<FrameLinking>::valid(FrameLinking::automatic, "Global Frame Linking", source_info);
+}
+
 LayerValue<bool> DefaultProvider::verify_checksums(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
