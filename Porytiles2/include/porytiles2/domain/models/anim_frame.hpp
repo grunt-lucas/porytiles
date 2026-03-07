@@ -15,7 +15,7 @@ namespace porytiles2 {
  * @brief Represents a single frame of an animation, containing tiles and a frame name.
  *
  * @details
- * AnimationFrame holds the pixel data for one frame of an animation. Each frame consists of one or more 8x8 tiles
+ * AnimFrame holds the pixel data for one frame of an animation. Each frame consists of one or more 8x8 tiles
  * arranged in a grid. The frame name typically corresponds to the PNG filename (e.g., "0", "1", "2" for 0.png, 1.png,
  * 2.png).
  *
@@ -31,13 +31,13 @@ namespace porytiles2 {
  * @tparam PixelType The pixel type for tiles; must satisfy SupportsTransparency concept
  */
 template <SupportsTransparency PixelType>
-class AnimationFrame {
+class AnimFrame {
   public:
-    AnimationFrame() = default;
+    AnimFrame() = default;
 
-    explicit AnimationFrame(std::string frame_name) : frame_name_{std::move(frame_name)} {}
+    explicit AnimFrame(std::string frame_name) : frame_name_{std::move(frame_name)} {}
 
-    AnimationFrame(std::string frame_name, std::vector<PixelTile<PixelType>> tiles)
+    AnimFrame(std::string frame_name, std::vector<PixelTile<PixelType>> tiles)
         : frame_name_{std::move(frame_name)}, tiles_{std::move(tiles)}
     {
     }
@@ -111,7 +111,7 @@ class AnimationFrame {
 
   private:
     /*
-     * Note: Frame dimensions (width/height in tiles) are stored in AnimationParams since all frames in an animation
+     * Note: Frame dimensions (width/height in tiles) are stored in AnimParams since all frames in an animation
      * must share the same dimensions.
      */
     std::string frame_name_;

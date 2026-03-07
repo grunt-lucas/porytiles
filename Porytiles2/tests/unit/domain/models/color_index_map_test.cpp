@@ -1,7 +1,7 @@
 #include <gtest/gtest.h>
 
+#include "porytiles2/domain/models/anim_frame.hpp"
 #include "porytiles2/domain/models/animation.hpp"
-#include "porytiles2/domain/models/animation_frame.hpp"
 #include "porytiles2/domain/models/color_index.hpp"
 #include "porytiles2/domain/models/color_index_map.hpp"
 #include "porytiles2/domain/models/palette.hpp"
@@ -488,7 +488,7 @@ TEST(ColorIndexMapTests, AddAnimWithOnlyKeyFrameShouldAddColors)
     key_tile.set(0, Rgba32{255, 0, 0}); // red
     key_tile.set(1, Rgba32{0, 255, 0}); // green
 
-    AnimationFrame<Rgba32> key_frame{"key"};
+    AnimFrame<Rgba32> key_frame{"key"};
     key_frame.add_tile(std::move(key_tile));
     anim.key_frame(std::move(key_frame));
 
@@ -512,11 +512,11 @@ TEST(ColorIndexMapTests, AddAnimWithOnlyRegularFramesShouldAddColors)
     PixelTile<Rgba32> frame1_tile{};
     frame1_tile.set(0, Rgba32{0, 255, 0}); // green
 
-    AnimationFrame<Rgba32> frame0{"0"};
+    AnimFrame<Rgba32> frame0{"0"};
     frame0.add_tile(std::move(frame0_tile));
     anim.put_frame("0", std::move(frame0));
 
-    AnimationFrame<Rgba32> frame1{"1"};
+    AnimFrame<Rgba32> frame1{"1"};
     frame1.add_tile(std::move(frame1_tile));
     anim.put_frame("1", std::move(frame1));
 
@@ -537,21 +537,21 @@ TEST(ColorIndexMapTests, AddAnimWithKeyFrameAndRegularFramesShouldAddAllColors)
     // Key frame with red
     PixelTile<Rgba32> key_tile{};
     key_tile.set(0, Rgba32{255, 0, 0}); // red
-    AnimationFrame<Rgba32> key_frame{"key"};
+    AnimFrame<Rgba32> key_frame{"key"};
     key_frame.add_tile(std::move(key_tile));
     anim.key_frame(std::move(key_frame));
 
     // Frame 0 with green
     PixelTile<Rgba32> frame0_tile{};
     frame0_tile.set(0, Rgba32{0, 255, 0}); // green
-    AnimationFrame<Rgba32> frame0{"0"};
+    AnimFrame<Rgba32> frame0{"0"};
     frame0.add_tile(std::move(frame0_tile));
     anim.put_frame("0", std::move(frame0));
 
     // Frame 1 with blue
     PixelTile<Rgba32> frame1_tile{};
     frame1_tile.set(0, Rgba32{0, 0, 255}); // blue
-    AnimationFrame<Rgba32> frame1{"1"};
+    AnimFrame<Rgba32> frame1{"1"};
     frame1.add_tile(std::move(frame1_tile));
     anim.put_frame("1", std::move(frame1));
 
@@ -573,7 +573,7 @@ TEST(ColorIndexMapTests, AddAnimShouldDeduplicateColorsAcrossFrames)
     PixelTile<Rgba32> key_tile{};
     key_tile.set(0, Rgba32{255, 0, 0}); // red
     key_tile.set(1, Rgba32{0, 255, 0}); // green
-    AnimationFrame<Rgba32> key_frame{"key"};
+    AnimFrame<Rgba32> key_frame{"key"};
     key_frame.add_tile(std::move(key_tile));
     anim.key_frame(std::move(key_frame));
 
@@ -581,14 +581,14 @@ TEST(ColorIndexMapTests, AddAnimShouldDeduplicateColorsAcrossFrames)
     PixelTile<Rgba32> frame0_tile{};
     frame0_tile.set(0, Rgba32{255, 0, 0}); // red (duplicate)
     frame0_tile.set(1, Rgba32{0, 0, 255}); // blue
-    AnimationFrame<Rgba32> frame0{"0"};
+    AnimFrame<Rgba32> frame0{"0"};
     frame0.add_tile(std::move(frame0_tile));
     anim.put_frame("0", std::move(frame0));
 
     // Frame 1 with green (duplicate)
     PixelTile<Rgba32> frame1_tile{};
     frame1_tile.set(0, Rgba32{0, 255, 0}); // green (duplicate)
-    AnimationFrame<Rgba32> frame1{"1"};
+    AnimFrame<Rgba32> frame1{"1"};
     frame1.add_tile(std::move(frame1_tile));
     anim.put_frame("1", std::move(frame1));
 
@@ -607,7 +607,7 @@ TEST(ColorIndexMapTests, AddAnimShouldFilterTransparentColors)
     key_tile.set(0, Rgba32{255, 0, 0});                          // red (non-transparent)
     key_tile.set(1, Rgba32{255, 0, 255});                        // magenta (extrinsically transparent)
     key_tile.set(2, Rgba32{0, 0, 0, Rgba32::alpha_transparent}); // black with alpha=0 (intrinsically transparent)
-    AnimationFrame<Rgba32> key_frame{"key"};
+    AnimFrame<Rgba32> key_frame{"key"};
     key_frame.add_tile(std::move(key_tile));
     anim.key_frame(std::move(key_frame));
 
@@ -631,7 +631,7 @@ TEST(ColorIndexMapTests, AddAnimShouldAddColorsFromAllSubtiles)
     PixelTile<Rgba32> key_tile1{};
     key_tile1.set(0, Rgba32{0, 255, 0}); // green
 
-    AnimationFrame<Rgba32> key_frame{"key"};
+    AnimFrame<Rgba32> key_frame{"key"};
     key_frame.add_tile(std::move(key_tile0));
     key_frame.add_tile(std::move(key_tile1));
     anim.key_frame(std::move(key_frame));
@@ -642,7 +642,7 @@ TEST(ColorIndexMapTests, AddAnimShouldAddColorsFromAllSubtiles)
     PixelTile<Rgba32> frame0_tile1{};
     frame0_tile1.set(0, Rgba32{255, 255, 0}); // yellow
 
-    AnimationFrame<Rgba32> frame0{"0"};
+    AnimFrame<Rgba32> frame0{"0"};
     frame0.add_tile(std::move(frame0_tile0));
     frame0.add_tile(std::move(frame0_tile1));
     anim.put_frame("0", std::move(frame0));
@@ -682,7 +682,7 @@ TEST(ColorIndexMapTests, AddAnimCombinedWithAddTileShouldDeduplicateAcrossBoth)
     PixelTile<Rgba32> key_tile{};
     key_tile.set(0, Rgba32{255, 0, 0}); // red (duplicate)
     key_tile.set(1, Rgba32{0, 255, 0}); // green
-    AnimationFrame<Rgba32> key_frame{"key"};
+    AnimFrame<Rgba32> key_frame{"key"};
     key_frame.add_tile(std::move(key_tile));
     anim.key_frame(std::move(key_frame));
 
@@ -706,7 +706,7 @@ TEST(ColorIndexMapTests, AddAnimCombinedWithAddPalShouldDeduplicateAcrossBoth)
     PixelTile<Rgba32> key_tile{};
     key_tile.set(0, Rgba32{255, 0, 0}); // red (duplicate)
     key_tile.set(1, Rgba32{0, 0, 255}); // blue
-    AnimationFrame<Rgba32> key_frame{"key"};
+    AnimFrame<Rgba32> key_frame{"key"};
     key_frame.add_tile(std::move(key_tile));
     anim.key_frame(std::move(key_frame));
 

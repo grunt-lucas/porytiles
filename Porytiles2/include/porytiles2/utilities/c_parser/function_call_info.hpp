@@ -91,6 +91,39 @@ class FunctionCallInfo {
         return start_index_;
     }
 
+    /**
+     * @brief Reconstructs a human-readable call expression from this function call.
+     *
+     * @details
+     * Joins all argument tokens with commas to produce a string like:
+     * @c AppendTilesetAnimToBuffer(gTilesetAnims_General_Flower[i], TILE_OFFSET_4BPP(508), 4 * TILE_SIZE_4BPP)
+     *
+     * @return A reconstructed call expression string
+     */
+    [[nodiscard]] std::string reconstruct_call_text() const
+    {
+        std::string result = function_name_ + "(";
+        for (std::size_t arg_idx = 0; arg_idx < arguments_.size(); ++arg_idx) {
+            if (arg_idx > 0) {
+                result += ", ";
+            }
+            const auto &arg_tokens = arguments_[arg_idx];
+            for (std::size_t tok_idx = 0; tok_idx < arg_tokens.size(); ++tok_idx) {
+                if (tok_idx > 0) {
+                    bool suppress_space =
+                        arg_tokens[tok_idx - 1].is_any_of(TokenType::left_paren, TokenType::left_bracket) ||
+                        arg_tokens[tok_idx].is_any_of(TokenType::right_paren, TokenType::right_bracket);
+                    if (!suppress_space) {
+                        result += " ";
+                    }
+                }
+                result += arg_tokens[tok_idx].text();
+            }
+        }
+        result += ")";
+        return result;
+    }
+
   private:
     std::string function_name_;
     std::vector<std::vector<Token>> arguments_;

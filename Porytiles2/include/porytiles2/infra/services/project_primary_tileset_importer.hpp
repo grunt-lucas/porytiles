@@ -2,6 +2,7 @@
 
 #include <filesystem>
 
+#include "porytiles2/domain/models/base_game.hpp"
 #include "porytiles2/domain/services/primary_tileset_importer.hpp"
 #include "porytiles2/infra/services/file_pal_loader.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
@@ -29,9 +30,8 @@ namespace porytiles2 {
  * @note This class handles the "discovery chaos" of vanilla pokeemerald projects where asset paths are not
  * standardized. After import, Porytiles places all assets at deterministic paths.
  *
- * @see PrimaryTilesetImporter for the domain-layer base class and import workflow
- * @see ProjectVanillaAnimImporter for the animation import helper used by this class
- * @see project_structure_refactoring_plan.md Section 7 for the full import workflow specification
+ * @see PrimaryTilesetImporter for the domain-layer base class and import workflow.
+ * @see ProjectVanillaAnimImporter for the animation import helper used by this class.
  */
 class ProjectPrimaryTilesetImporter : public PrimaryTilesetImporter {
   public:
@@ -39,6 +39,7 @@ class ProjectPrimaryTilesetImporter : public PrimaryTilesetImporter {
      * @brief Constructs a ProjectPrimaryTilesetImporter with required dependencies.
      *
      * @param project_root Path to the pokeemerald project root directory
+     * @param base_game The detected base game (pokeemerald or pokefirered), used to select the correct attribute parser
      * @param config Domain configuration containing tileset parameters and paths
      * @param format Text formatter for error message styling
      * @param diag User diagnostics for warnings and informational messages
@@ -50,6 +51,7 @@ class ProjectPrimaryTilesetImporter : public PrimaryTilesetImporter {
      */
     explicit ProjectPrimaryTilesetImporter(
         std::filesystem::path project_root,
+        BaseGame base_game,
         gsl::not_null<const DomainConfig *> config,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag,
@@ -58,7 +60,7 @@ class ProjectPrimaryTilesetImporter : public PrimaryTilesetImporter {
         gsl::not_null<const ProjectTilesetMetadataProvider *> metadata_provider,
         gsl::not_null<const PngIndexedImageLoader *> png_loader,
         gsl::not_null<const FilePalLoader *> pal_loader)
-        : project_root_{std::move(project_root)}, config_{config}, format_{format}, diag_{diag},
+        : project_root_{std::move(project_root)}, base_game_{base_game}, config_{config}, format_{format}, diag_{diag},
           tile_printer_{tile_printer}, pal_printer_{pal_printer}, metadata_provider_{metadata_provider},
           png_loader_{png_loader}, pal_loader_{pal_loader}
     {
@@ -85,6 +87,7 @@ class ProjectPrimaryTilesetImporter : public PrimaryTilesetImporter {
 
   private:
     std::filesystem::path project_root_;
+    const BaseGame base_game_;
     const DomainConfig *config_;
     const TextFormatter *format_;
     const UserDiagnostics *diag_;

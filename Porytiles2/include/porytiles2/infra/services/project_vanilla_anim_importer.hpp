@@ -22,7 +22,7 @@ namespace porytiles2 {
  *
  * Workflow:
  * 1. Gets tileset metadata (callback function name) from headers.h
- * 2. Parses tileset_anims.c with AnimCodeParser to get AnimationParams
+ * 2. Parses tileset_anims.c with AnimCodeParser to get AnimParams
  * 3. Parses INCBIN declarations to find PNG frame file paths
  * 4. Loads frame PNG files and extracts IndexPixel tiles
  *

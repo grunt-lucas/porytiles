@@ -280,7 +280,7 @@ LayerValue<TilesPalMode> YamlFileProvider::tiles_pal_mode(ConfigScopeType type, 
 }
 
 LayerValue<AnimPalResolutionStrategy>
-YamlFileProvider::anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const
+YamlFileProvider::global_anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
@@ -298,7 +298,7 @@ YamlFileProvider::anim_pal_resolution_strategy(ConfigScopeType type, const std::
 }
 
 LayerValue<AnimKeyFrameResolutionStrategy>
-YamlFileProvider::anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const
+YamlFileProvider::global_anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
@@ -313,6 +313,40 @@ YamlFileProvider::anim_key_frame_resolution_strategy(ConfigScopeType type, const
         parse_anim_key_frame_resolution_strategy,
         "tileset.animations.key_frame_resolution_strategy",
         "tileset.animations.key_frame_resolution_strategy");
+}
+
+LayerValue<FrameLinking> YamlFileProvider::global_frame_linking(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<FrameLinking>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<FrameLinking>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["frame_linking"]; },
+        parse_frame_linking,
+        "tileset.animations.frame_linking",
+        "tileset.animations.frame_linking");
+}
+
+LayerValue<PerAnimOverrides> YamlFileProvider::per_anim_overrides(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<PerAnimOverrides>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<PerAnimOverrides>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["per-animation-overrides"]; },
+        parse_per_anim_overrides,
+        "tileset.animations.per-animation-overrides",
+        "tileset.animations.per-animation-overrides");
 }
 
 LayerValue<bool> YamlFileProvider::verify_checksums(ConfigScopeType type, const std::string &scope) const

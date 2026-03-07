@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <format>
 #include <optional>
 #include <ostream>
 #include <string>
@@ -32,6 +33,10 @@ enum class AnimKeyFrameResolutionStrategy {
      */
     error,
     /**
+     * @brief Emit a warning and continue decompilation.
+     */
+    warning,
+    /**
      * @brief Mangle duplicate tiles to make them unique, then backport changes to tiles.png.
      */
     mangle
@@ -59,6 +64,9 @@ anim_key_frame_resolution_strategy_from_str(const std::string &str)
     if (str == "error") {
         return std::optional{AnimKeyFrameResolutionStrategy::error};
     }
+    if (str == "warning") {
+        return std::optional{AnimKeyFrameResolutionStrategy::warning};
+    }
     if (str == "mangle") {
         return std::optional{AnimKeyFrameResolutionStrategy::mangle};
     }
@@ -74,6 +82,13 @@ anim_key_frame_resolution_strategy_from_str(const std::string &str)
     }
     if (lower_str == "err") {
         return std::optional{AnimKeyFrameResolutionStrategy::error};
+    }
+    // Fuzzy names for warning
+    if (lower_str == "warning") {
+        return std::optional{AnimKeyFrameResolutionStrategy::warning};
+    }
+    if (lower_str == "warn") {
+        return std::optional{AnimKeyFrameResolutionStrategy::warning};
     }
     // Fuzzy names for mangle
     if (lower_str == "mangle") {
@@ -98,6 +113,8 @@ anim_key_frame_resolution_strategy_from_str(const std::string &str)
     switch (m) {
     case AnimKeyFrameResolutionStrategy::error:
         return "error";
+    case AnimKeyFrameResolutionStrategy::warning:
+        return "warning";
     case AnimKeyFrameResolutionStrategy::mangle:
         return "mangle";
     }
@@ -117,3 +134,16 @@ inline std::ostream &operator<<(std::ostream &os, const AnimKeyFrameResolutionSt
 }
 
 } // namespace porytiles2
+
+template <>
+struct std::formatter<porytiles2::AnimKeyFrameResolutionStrategy> {
+    constexpr auto parse(std::format_parse_context &ctx)
+    {
+        return ctx.begin();
+    }
+
+    auto format(const porytiles2::AnimKeyFrameResolutionStrategy &value, auto &ctx) const
+    {
+        return std::format_to(ctx.out(), "{}", porytiles2::to_string(value));
+    }
+};

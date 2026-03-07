@@ -62,7 +62,7 @@ set(CANONICAL_LIB_NAME "porytiles")
 target_include_directories(Porytiles1LibTests PRIVATE ${PORYTILES1_INCLUDE_DIR}/${CANONICAL_LIB_NAME})
 
 # Find the libpng include dirs located via find_package
-target_include_directories(Porytiles1LibTests PUBLIC ${PNG_INCLUDE_DIRS})
+target_include_directories(Porytiles1LibTests SYSTEM PUBLIC ${PNG_INCLUDE_DIRS})
 
 # png++ library is a header-only C++ wrapper for libpng. Mark it public because
 # our library interface uses types from it.

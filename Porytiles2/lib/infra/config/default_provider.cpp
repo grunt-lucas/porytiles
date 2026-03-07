@@ -104,18 +104,30 @@ DefaultProvider::tiles_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_u
     return LayerValue<TilesPalMode>::valid(TilesPalMode::true_color, "Tiles Palette Mode", source_info);
 }
 
-LayerValue<AnimPalResolutionStrategy> DefaultProvider::anim_pal_resolution_strategy(
+LayerValue<AnimPalResolutionStrategy> DefaultProvider::global_anim_pal_resolution_strategy(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<AnimPalResolutionStrategy>::valid(
-        AnimPalResolutionStrategy::error, "Animation Palette Resolution Strategy", source_info);
+        AnimPalResolutionStrategy::scan_local_metatiles, "Global Animation Palette Resolution Strategy", source_info);
 }
 
-LayerValue<AnimKeyFrameResolutionStrategy> DefaultProvider::anim_key_frame_resolution_strategy(
+LayerValue<AnimKeyFrameResolutionStrategy> DefaultProvider::global_anim_key_frame_resolution_strategy(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<AnimKeyFrameResolutionStrategy>::valid(
-        AnimKeyFrameResolutionStrategy::error, "Animation Key Frame Resolution Strategy", source_info);
+        AnimKeyFrameResolutionStrategy::error, "Global Animation Key Frame Resolution Strategy", source_info);
+}
+
+LayerValue<FrameLinking> DefaultProvider::global_frame_linking(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<FrameLinking>::valid(FrameLinking::automatic, "Global Frame Linking", source_info);
+}
+
+LayerValue<PerAnimOverrides> DefaultProvider::per_anim_overrides(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<PerAnimOverrides>::valid(PerAnimOverrides{}, "Per-Animation Overrides", source_info);
 }
 
 LayerValue<bool> DefaultProvider::verify_checksums(

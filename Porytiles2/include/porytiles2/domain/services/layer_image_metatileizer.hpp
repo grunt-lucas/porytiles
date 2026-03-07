@@ -67,21 +67,21 @@ class LayerImageMetatileizer {
         const auto bottom_tiles_result = tileizer_.tileize(bottom);
         if (!bottom_tiles_result.has_value()) {
             return ChainableResult<std::vector<Metatile<T>>>{
-                FormattableError{"failed to tileize bottom layer"}, bottom_tiles_result};
+                FormattableError{"Failed to tileize bottom layer."}, bottom_tiles_result};
         }
         const auto &bottom_tiles = bottom_tiles_result.value();
 
         const auto middle_tiles_result = tileizer_.tileize(middle);
         if (!middle_tiles_result.has_value()) {
             return ChainableResult<std::vector<Metatile<T>>>{
-                FormattableError{"failed to tileize middle layer"}, middle_tiles_result};
+                FormattableError{"Failed to tileize middle layer."}, middle_tiles_result};
         }
         const auto &middle_tiles = middle_tiles_result.value();
 
         const auto top_tiles_result = tileizer_.tileize(top);
         if (!top_tiles_result.has_value()) {
             return ChainableResult<std::vector<Metatile<T>>>{
-                FormattableError{"failed to tileize top layer"}, top_tiles_result};
+                FormattableError{"Failed to tileize top layer."}, top_tiles_result};
         }
         const auto &top_tiles = top_tiles_result.value();
 
@@ -147,7 +147,7 @@ class LayerImageMetatileizer {
         }
 
         if (metatiles.empty()) {
-            return FormattableError{"input metatiles vector was empty"};
+            return FormattableError{"Input metatiles vector was empty."};
         }
 
         // Compute metatiles_per_col using ceiling division

@@ -9,13 +9,15 @@
 #include <optional>
 
 #include "porytiles2/domain/models/animation.hpp"
+#include "porytiles2/domain/models/base_game.hpp"
 #include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/domain/models/porytiles_tileset_component.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
-#include "porytiles2/infra/algorithms/animation_frame_loader.hpp"
+#include "porytiles2/infra/algorithms/anim_frame_loader.hpp"
 #include "porytiles2/infra/algorithms/porymap_artifact_parsers.hpp"
+#include "porytiles2/utilities/dynamic_cased_name.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
 
@@ -55,9 +57,6 @@ ChainableResult<void> import_layer_png(
     return {};
 }
 
-// NOTE: FireRed metatile attributes parsing is not yet implemented.
-// The format is different from Emerald (4 bytes vs 2 bytes) and requires additional work.
-
 ChainableResult<void> import_porytiles_palette(
     Tileset &dest,
     const ArtifactKey &src_key,
@@ -72,7 +71,7 @@ ChainableResult<void> import_porytiles_palette(
     // Keys are relative to project_root, so prepend for file I/O
     const auto pal_result = loader.load_with_wildcards((project_root / src_key.key()).string());
     if (!pal_result.has_value()) {
-        return ChainableResult<void>{FormattableError{"failed to load palette file"}, pal_result};
+        return ChainableResult<void>{FormattableError{"Failed to load palette file."}, pal_result};
     }
     dest.porytiles_component().set_pal(index, pal_result.value());
 
@@ -174,10 +173,15 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_metatiles_bin(Tileset &
 ChainableResult<void>
 ProjectTilesetArtifactReader::read_metatile_attributes_bin(Tileset &dest, const ArtifactKey &src_key) const
 {
-    // TODO: branch here based on target base game?
     // Keys are relative to project_root_, so prepend for file I/O
-    PT_TRY_ASSIGN_PASS_ERR(attributes, parse_emerald_metatile_attributes(project_root_ / src_key.key()), void);
-    for (auto &attr : attributes) {
+    const auto path = project_root_ / src_key.key();
+    ChainableResult<std::vector<MetatileAttribute>> attributes_result = base_game_ == BaseGame::pokefirered
+                                                                            ? parse_firered_metatile_attributes(path)
+                                                                            : parse_emerald_metatile_attributes(path);
+    if (!attributes_result.has_value()) {
+        return ChainableResult<void>{FormattableError{"Failed to read metatile_attributes.bin."}, attributes_result};
+    }
+    for (auto &attr : attributes_result.value()) {
         dest.porymap_component().push_back_attribute(std::move(attr));
     }
     return {};
@@ -232,23 +236,23 @@ ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKe
     }
 
     // Setup callback info, use Porytiles-managed callback regardless of metadata
-    const std::string tileset_shorthand = extract_tileset_shorthand(dest.name());
-    const std::string callback_func = "InitTilesetAnim_PorytilesManaged_" + tileset_shorthand;
+    const auto tileset_cased = extract_tileset_cased_name(dest.name());
+    const std::string callback_func = "InitTilesetAnim_PorytilesManaged_" + tileset_cased.to_pascal_case();
 
     // Parse C code for animation params
-    auto params_result = anim_code_parser_->parse_from_callback(params_path, callback_func, tileset_shorthand, true);
+    auto params_result = anim_code_parser_->parse_from_callback(params_path, callback_func, tileset_cased, true);
 
     if (!params_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"{}: failed to parse animation code", FormatParam{params_key.key(), Style::bold}},
+            FormattableError{"{}: Failed to parse animation parameters.", FormatParam{params_path, Style::bold}},
             params_result};
     }
 
     // Apply params to the specific animation if found
-    if (params_result.value().contains(anim_name)) {
+    if (params_result.value().contains(DynamicCasedName{anim_name})) {
         auto &anim = dest.porymap_component().anims().at(anim_name);
         auto existing_params = anim.params();
-        auto new_params = params_result.value().at(anim_name);
+        auto new_params = params_result.value().at(DynamicCasedName{anim_name});
 
         // Preserve dimensions from frame import (C code doesn't have this info)
         new_params.width_tiles(existing_params.width_tiles());
@@ -326,21 +330,23 @@ ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const Artifact
     const ArtifactKey &key_frame_key,
     const std::vector<std::pair<std::string, ArtifactKey>> &frame_keys) const
 {
-    // Parse anim.yaml to get params for this animation
+    // Parse anim.json to get params for this animation
     // Keys are relative to project_root_, so prepend for file I/O
-    auto params_result = anim_yaml_parser_->parse((project_root_ / params_key.key()).string());
+    auto params_result = anim_json_parser_->parse((project_root_ / params_key.key()).string());
     if (!params_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"{}: failed to parse anim.yaml", FormatParam{params_key.key(), Style::bold}},
+            FormattableError{
+                "{}: Failed to parse animation parameters.",
+                FormatParam{project_root_ / params_key.key(), Style::bold}},
             params_result};
     }
 
     // Find params for this specific animation
-    auto it = params_result.value().find(anim_name);
+    auto it = params_result.value().find(DynamicCasedName{anim_name});
     if (it == params_result.value().end()) {
         return ChainableResult<void>{FormattableError{
-            "{}: animation '{}' not found in anim.yaml",
-            FormatParam{params_key.key(), Style::bold},
+            "{}: Animation '{}' not found in animation parameters file.",
+            FormatParam{project_root_ / params_key.key(), Style::bold},
             FormatParam{anim_name, Style::bold}}};
     }
 

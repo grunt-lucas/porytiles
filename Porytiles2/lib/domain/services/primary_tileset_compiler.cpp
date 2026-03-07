@@ -1,6 +1,7 @@
 #include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 
 #include <array>
+#include <format>
 #include <iostream>
 #include <memory>
 #include <ranges>
@@ -14,6 +15,8 @@
 #include "porytiles2/domain/algorithms/tile_extractors.hpp"
 #include "porytiles2/domain/algorithms/tileset_compile_validators.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
+#include "porytiles2/domain/config/frame_linking.hpp"
+#include "porytiles2/domain/config/per_anim_overrides.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/canonical_shape_tile.hpp"
@@ -71,6 +74,7 @@ struct TileAssignmentResult {
 struct AnimKeyframeData {
     std::vector<CanonicalPixelTile<IndexPixel>> tiles;
     std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+    std::vector<std::size_t> pal_indices;
 };
 
 /**
@@ -126,6 +130,7 @@ class CompilerTask {
     [[nodiscard]] ChainableResult<AnimKeyframeData>
     pipeline_helper_build_keyframe_data(const std::string &anim_name, const Animation<Rgba32> &anim) const;
     void pipeline_helper_compile_animations();
+    void pipeline_helper_apply_manual_overrides();
 
     // Pipeline helpers - true_color mode
     void pipeline_helper_apply_true_color_to_tiles_png();
@@ -160,6 +165,8 @@ class CompilerTask {
     ConfigValue<ArtifactEditMode> tiles_edit_mode_;
     ConfigValue<ArtifactEditMode> pals_edit_mode_;
     ConfigValue<TilesPalMode> tiles_pal_mode_;
+    ConfigValue<FrameLinking> global_frame_linking_;
+    ConfigValue<PerAnimOverrides> per_anim_overrides_;
 
     // Intermediate state - Porytiles
     std::vector<Metatile<Rgba32>> porytiles_metatiles_{};
@@ -207,6 +214,8 @@ ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
     PT_UNWRAP_TILESET_CONFIG_REF(config_, tiles_edit_mode, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, pals_edit_mode, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, tiles_pal_mode, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, global_frame_linking, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, per_anim_overrides, tileset_.name(), std::unique_ptr<Tileset>);
 
     extrinsic_transparency_ = extrinsic_transparency;
     num_pals_in_primary_ = num_pals_in_primary;
@@ -219,6 +228,8 @@ ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
     tiles_edit_mode_ = tiles_edit_mode;
     pals_edit_mode_ = pals_edit_mode;
     tiles_pal_mode_ = tiles_pal_mode;
+    global_frame_linking_ = global_frame_linking;
+    per_anim_overrides_ = per_anim_overrides;
 
     // Execute subtasks
     PT_TRY_CALL_PASS_ERR(pipeline_step_process_porytiles_input(), std::unique_ptr<Tileset>);
@@ -265,7 +276,7 @@ ChainableResult<void> CompilerTask::pipeline_step_process_porymap_input()
     PT_TRY_ASSIGN_CHAIN_ERR(
         tilemap_entries,
         layer_mode_converter.triple_layerize(tileset_.porymap_component()),
-        "failed to triple-layerize Porymap component for tileset " + tileset_.name(),
+        std::format("Failed to triple-layerize Porymap component for tileset '{}'.", tileset_.name()),
         void);
     porymap_tilemap_entries_ = std::move(tilemap_entries);
 
@@ -273,7 +284,7 @@ ChainableResult<void> CompilerTask::pipeline_step_process_porymap_input()
         metatiles,
         metatile_decompiler.decompile_metatiles(
             porymap_tilemap_entries_, tileset_.porymap_component().tiles_png(), tileset_.porymap_component().pals()),
-        "failed to decompile Porymap component for tileset " + tileset_.name(),
+        std::format("Failed to decompile Porymap component for tileset '{}'.", tileset_.name()),
         void);
     porymap_metatiles_ = std::move(metatiles);
 
@@ -405,6 +416,7 @@ ChainableResult<void> CompilerTask::pipeline_step_setup_working_data()
             return std::make_unique<TilesPngWorkspace>(tileset.porymap_component().tiles_png(), size_in_tiles);
         }
         if (tiles_edit_mode == ArtifactEditMode::patch) {
+            // TODO: here, should we compute the size and match the size like above?
             return std::make_unique<TilesPngWorkspace>(tileset.porymap_component().tiles_png(), num_tiles_in_primary);
         }
         if (tiles_edit_mode == ArtifactEditMode::optimize) {
@@ -496,15 +508,23 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
      * could also have a compilation option "force_remove" that forcibly removes unused stuff. This is obviously less
      * safe, since for vanilla primary tilesets, seemingly unused assets may be in use from the secondaries. We can
      * solve this by eventually having code that reads all tileset pairings from layouts.json and computes which primary
-     * assets are truly unused. In fact, we'll need something like this in order to truly implement pals:patch mode,
-     * since palettes have no "unused" sentinel value. And in fact, many of the vanilla '0 0 0' colors are actually used
-     * by secondaries *facepalm* (e.g. see cave tileset). Which means we can't even assume '0 0 0' is unused. Until we
-     * implement this, users can still simulate pals:patch by bringing in all Porymap pals as Porytiles override pals,
-     * wildcarding slots they are OK overwriting, and setting pals:optimize.
+     * assets are truly unused.
+     *
+     * In fact, we'll need something like this in order to truly implement pals:patch mode, since palettes have no
+     * "unused" sentinel value. And in fact, many of the vanilla '0 0 0' colors are actually used by secondaries
+     * *facepalm* (e.g. see cave tileset). Which means we can't even assume '0 0 0' is unused. Until we implement this,
+     * users can still simulate pals:patch by bringing in all Porymap pals as Porytiles override pals, wildcarding slots
+     * they are OK overwriting, and setting pals:optimize.
      */
 
     // No changes here, this is a compilation operation - no writebacks into input assets
     auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>(tileset_.porytiles_component());
+
+    // Compile animations from Porytiles format to Porymap format
+    pipeline_helper_compile_animations();
+
+    // Apply manual animation overrides to metatiles_bin (must happen before dual-layerization)
+    pipeline_helper_apply_manual_overrides();
 
     /*
      * If user is requesting dual-layer, use the input Porytiles-format metatiles to infer the LayerType for each
@@ -531,13 +551,10 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
         }
         const auto maybe_porytiles_attr = tileset_.porytiles_component().get_attribute(i);
         MetatileAttribute new_attr{};
-        new_attr.layer_type(layer_type);
-
-        // TODO: handle firered/custom stuff here properly
         if (maybe_porytiles_attr.has_value()) {
-            // Copy over attribute from Porytiles component, use inferred layer type.
-            new_attr.behavior(maybe_porytiles_attr.value().behavior());
+            new_attr = maybe_porytiles_attr.value();
         }
+        new_attr.layer_type(layer_type);
         new_porymap_component_->push_back_attribute(new_attr);
     }
 
@@ -563,9 +580,6 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
     for (std::size_t i = 0; i < pal::num_pals; i++) {
         new_porymap_component_->set_pal(i, new_porymap_pals_[i]);
     }
-
-    // Compile animations from Porytiles format to Porymap format
-    pipeline_helper_compile_animations();
 
     // Apply true_color palette encoding to tiles.png if configured
     if (tiles_pal_mode_ == TilesPalMode::true_color) {
@@ -644,9 +658,10 @@ TileAssignmentResult CompilerTask::pipeline_helper_assign_tile_via_pal_match(con
     // Check if tile matches a registered animation keyframe
     if (const auto anim_match = anim_tile_matcher_.find_match(CanonicalPixelTile{porytiles_tile});
         anim_match.has_value()) {
-        // Use the animation tile index with computed flip bits
+        // Use the animation tile index with composite-aware palette and computed flip bits
         result.status = TileAssignmentResult::Status::success;
-        result.entry = TilemapEntry{anim_match->tile_index, pal_index, anim_match->h_flip, anim_match->v_flip};
+        result.entry =
+            TilemapEntry{anim_match->tile_index, anim_match->pal_index, anim_match->h_flip, anim_match->v_flip};
         return result;
     }
 
@@ -711,7 +726,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
     PT_TRY_ASSIGN_CHAIN_ERR(
         color_index_map,
         pipeline_helper_build_color_index_map(pal_hints_.value(), color_count_limit),
-        "failed to build color index map for tileset " + tileset_.name(),
+        std::format("Failed to build color index map for tileset '{}'.", tileset_.name()),
         void);
 
     /*
@@ -746,7 +761,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
     PT_TRY_ASSIGN_CHAIN_ERR(
         pal_packing,
         pal_packer.pack_tiles(packing_params),
-        "failed to pack palettes for tileset " + tileset_.name(),
+        std::format("Failed to pack palettes for tileset '{}'.", tileset_.name()),
         void);
 
     for (std::size_t i = 0; i < pal::num_pals; i++) {
@@ -802,7 +817,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
             constexpr auto tag = "palette-packing-result";
             std::vector<std::string> remark_lines;
             remark_lines.emplace_back(
-                format_.format("packed '{}' contents:", FormatParam{pal_filename(i), Style::bold}));
+                format_.format("Palette '{}' packing result:", FormatParam{pal_filename(i), Style::bold}));
             remark_lines.emplace_back();
             std::ranges::copy(pal_printer_.print_rgba_pal(maybe_packed_pal.value()), std::back_inserter(remark_lines));
             diag_.remark(tag, remark_lines);
@@ -853,7 +868,7 @@ ChainableResult<ColorIndexMap<Rgba32>> CompilerTask::pipeline_helper_build_color
 ChainableResult<AnimKeyframeData>
 CompilerTask::pipeline_helper_build_keyframe_data(const std::string &anim_name, const Animation<Rgba32> &anim) const
 {
-    const AnimationFrame<Rgba32> &composite_frame = anim.composite_frame(extrinsic_transparency_);
+    const AnimFrame<Rgba32> &composite_frame = anim.composite_frame(extrinsic_transparency_);
     const std::size_t tile_count = composite_frame.tiles().size();
 
     AnimKeyframeData result;
@@ -913,6 +928,7 @@ CompilerTask::pipeline_helper_build_keyframe_data(const std::string &anim_name, 
             index_tile_from_color_tile(key_rgba_tile, matched_pal, extrinsic_transparency_.value());
 
         result.tiles.emplace_back(indexed_key_frame_tile);
+        result.pal_indices.push_back(pal_index);
         // We'll only actually use this vector in patch mode, but compute anyway to simplify code paths
         result.palettes.push_back(&matched_pal);
     }
@@ -957,6 +973,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
     // Phase 2: Build keyframes and place/find tiles for each animation
     // ========================================================================
     std::map<std::string, std::size_t> anim_offsets;
+    std::map<std::string, std::vector<std::size_t>> anim_pal_indices;
     std::size_t current_offset = TilesPngWorkspace::anim_start_offset();
 
     for (const auto &[anim_name, anim] : anims) {
@@ -968,6 +985,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
         PT_TRY_ASSIGN_PASS_ERR(keyframe_data, pipeline_helper_build_keyframe_data(anim_name, anim), void);
 
         const std::size_t tile_count = keyframe_data.tiles.size();
+        anim_pal_indices[anim_name] = keyframe_data.pal_indices;
         std::size_t offset{};
 
         // Mode-specific placement logic
@@ -986,14 +1004,23 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
                 existing_offset.has_value()) {
                 offset = existing_offset.value();
             }
+            // If full sequence not found, find sufficient contiguous free space to insert
             else if (const auto free_offset = tiles_workspace_->find_contiguous_transparent_slots(tile_count);
                      free_offset.has_value()) {
                 tiles_workspace_->place_tiles_at(free_offset.value(), keyframe_data.tiles);
                 offset = free_offset.value();
             }
             else {
+                /*
+                 * TODO: This condition branching doesn't handle the possibility that a partial contiguous sequence
+                 * exists, with sufficient free space after to complete the insertion. The match is all-or-nothing.
+                 * Either the full tile sequence must already exist, or there must be contiguous free space large enough
+                 * to insert it. Future versions of Porytiles may want to handle this case more cleanly, either by
+                 * successfully "completing" a partial key frame sequence, or at least notifying the user tha this
+                 * special edge case was hit.
+                 */
                 return FormattableError{
-                    "animation '{}' requires {} contiguous tiles but no sufficient space found",
+                    "Animation '{}' requires {} contiguous tiles but no sufficient space found.",
                     FormatParam{anim_name, Style::bold},
                     FormatParam{tile_count, Style::bold}};
             }
@@ -1001,16 +1028,23 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
         else if (tiles_edit_mode_ == ArtifactEditMode::locked) {
             // In locked mode, keyframes must already exist contiguously
             // Use color-equivalence comparison to handle duplicate palette colors (same fix as patch mode)
-            if (const auto existing_offset = tiles_workspace_->find_existing_contiguous_tiles_by_color(
-                    keyframe_data.tiles, keyframe_data.palettes);
-                existing_offset.has_value()) {
+            const auto existing_offset =
+                tiles_workspace_->find_existing_contiguous_tiles_by_color(keyframe_data.tiles, keyframe_data.palettes);
+            if (existing_offset.has_value()) {
                 offset = existing_offset.value();
             }
             else {
-                return FormattableError{
-                    "Tiles edit_mode is '{}': animation '{}' keyframes not found in existing tiles.png",
-                    FormatParam{"locked", Style::bold},
-                    FormatParam{anim_name, Style::bold}};
+                // TODO: could we improve this error by showing violating tiles?
+                std::vector<std::string> err_msg{};
+                err_msg.emplace_back(format_.format(
+                    "Animation '{}' keyframes not found in existing tiles.png.", FormatParam{anim_name, Style::bold}));
+                err_msg.emplace_back(format_.format(
+                    "Cannot proceed due to '{}' setting '{}'.",
+                    FormatParam{"Tiles Edit Mode", Style::bold},
+                    FormatParam{"locked", Style::bold}));
+                std::ranges::copy(
+                    format_config_note_with_separator(format_, tiles_edit_mode_), std::back_inserter(err_msg));
+                return FormattableError{err_msg};
             }
         }
         else {
@@ -1024,7 +1058,8 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
     // Phase 3: Register all animations with the matcher
     // ========================================================================
     for (const auto &[anim_name, anim] : anims) {
-        anim_tile_matcher_.register_animation(anim_name, anim, anim_offsets[anim_name], extrinsic_transparency_);
+        anim_tile_matcher_.register_animation(
+            anim_name, anim, anim_offsets.at(anim_name), extrinsic_transparency_, anim_pal_indices.at(anim_name));
     }
 
     return {};
@@ -1048,7 +1083,7 @@ void CompilerTask::pipeline_helper_compile_animations()
         const std::size_t tile_offset = maybe_tile_offset.value();
 
         // 2. Compute composite frame for per-subtile palette selection
-        const AnimationFrame<Rgba32> composite = source_anim.composite_frame(extrinsic_transparency_.value());
+        const AnimFrame<Rgba32> composite = source_anim.composite_frame(extrinsic_transparency_.value());
         const std::size_t tile_count = composite.tile_count();
 
         // 3. Build per-subtile palette indices (same logic as registration step)
@@ -1076,16 +1111,17 @@ void CompilerTask::pipeline_helper_compile_animations()
             !std::ranges::all_of(subtile_pal_indices, [&](std::size_t idx) { return idx == frame_pal_index; });
 
         if (uses_multiple_palettes) {
+            // TODO: could we display something more here?
             std::vector<std::string> warning_lines;
             warning_lines.emplace_back(format_.format(
-                "animation '{}' uses multiple palettes across subtiles", FormatParam{anim_name, Style::bold}));
+                "Animation '{}' uses multiple palettes across subtiles.", FormatParam{anim_name, Style::bold}));
             warning_lines.emplace_back(format_.format(
-                "Frame PNGs will be saved using palette '{}' for display purposes.",
+                "Porymap-component frame PNGs will be saved using palette '{}' for display purposes.",
                 FormatParam{pal_filename(frame_pal_index), Style::bold}));
             diag_.warning("multi-palette-animation", warning_lines);
         }
 
-        // Build a dynamic palette for embedding in the AnimationFrame
+        // Build a dynamic palette for embedding in the AnimFrame
         const auto &fixed_pal = new_porymap_pals_.at(frame_pal_index);
         Palette<Rgba32> anim_palette{};
         for (std::size_t i = 0; i < fixed_pal.size(); ++i) {
@@ -1110,19 +1146,90 @@ void CompilerTask::pipeline_helper_compile_animations()
                     index_tile_from_color_tile(rgba_tile, pal, extrinsic_transparency_.value()));
             }
 
-            AnimationFrame frame{frame_name, std::move(frame_index_tiles)};
+            AnimFrame frame{frame_name, std::move(frame_index_tiles)};
             frame.palette(anim_palette);
             compiled_anim.put_frame(frame_name, std::move(frame));
         }
 
         // 6. Set params with updated tile_offset/tile_count
-        AnimationParams params = source_anim.params();
+        AnimParams params = source_anim.params();
         params.tile_offset(tile_offset);
         params.tile_count(tile_count);
         compiled_anim.params(std::move(params));
 
         // 7. Add to output component (key_frame left as std::nullopt)
         new_porymap_component_->add_anim(std::move(compiled_anim));
+    }
+}
+
+void CompilerTask::pipeline_helper_apply_manual_overrides()
+{
+    const auto &source_anims = tileset_.porytiles_component().anims();
+    if (source_anims.empty()) {
+        return;
+    }
+
+    const auto &per_anim_overrides = per_anim_overrides_.value();
+
+    for (const auto &[anim_name, source_anim] : source_anims) {
+        // Resolve effective FrameLinking for this animation
+        FrameLinking effective_linking = global_frame_linking_.value();
+        if (per_anim_overrides.contains(anim_name)) {
+            effective_linking = per_anim_overrides.at(anim_name).linking;
+        }
+
+        const auto &overrides = source_anim.params().overrides();
+
+        switch (effective_linking) {
+        case FrameLinking::automatic: {
+            if (!overrides.empty()) {
+                std::vector<std::string> warning_lines;
+                warning_lines.emplace_back(format_.format(
+                    "Animation '{}' has frame_linking 'automatic' but overrides are present in anim.json.",
+                    FormatParam{anim_name, Style::bold}));
+                warning_lines.emplace_back("The overrides will be ignored.");
+                diag_.warning("automatic-mode-overrides-ignored", warning_lines);
+            }
+            break;
+        }
+
+        case FrameLinking::manual: {
+            if (overrides.empty()) {
+                panic(
+                    "animation '" + anim_name +
+                    "' has frame_linking 'manual' but no overrides are present in anim.json");
+            }
+
+            // Get the tile_offset for this animation from the matcher
+            auto maybe_tile_offset = anim_tile_matcher_.tile_offset_for(anim_name);
+            if (!maybe_tile_offset.has_value()) {
+                panic("animation '" + anim_name + "' not registered in anim_tile_matcher_");
+            }
+            const std::size_t tile_offset = maybe_tile_offset.value();
+
+            // Apply each override entry to metatiles_bin
+            auto &metatiles_bin = new_porymap_component_->metatiles_bin();
+            for (const auto &entry : overrides) {
+                const std::size_t bin_index =
+                    entry.metatile_id * metatile::entries_per_metatile_triple +
+                    static_cast<std::size_t>(entry.layer) * metatile::tiles_per_metatile_layer +
+                    static_cast<std::size_t>(entry.subtile);
+
+                if (bin_index >= metatiles_bin.size()) {
+                    panic(
+                        "animation '" + anim_name + "' override references metatile_id " +
+                        std::to_string(entry.metatile_id) + " which is out of range");
+                }
+
+                const std::size_t absolute_tile = tile_offset + entry.frame_subtile;
+                metatiles_bin[bin_index] = TilemapEntry{absolute_tile, entry.pal_index, entry.h_flip, entry.v_flip};
+            }
+            break;
+        }
+
+        case FrameLinking::hybrid:
+            panic("TODO: implement hybrid frame linking");
+        }
     }
 }
 
@@ -1155,7 +1262,7 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
         }
 
         const std::size_t tile_offset = maybe_tile_offset.value();
-        const AnimationFrame<Rgba32> composite = source_anim.composite_frame(extrinsic_transparency_.value());
+        const AnimFrame<Rgba32> composite = source_anim.composite_frame(extrinsic_transparency_.value());
         const std::size_t tile_count = composite.tile_count();
 
         for (std::size_t subtile_idx = 0; subtile_idx < tile_count; ++subtile_idx) {
@@ -1428,8 +1535,8 @@ void CompilerTask::pipeline_helper_emit_tile_limit_error(std::size_t tile_index,
 
     // Construct note text
     std::vector<std::string> note_text;
-    note_text.push_back(
-        format_.format("tile limit is '{}' due to configuration", FormatParam{num_tiles_in_primary_, Style::bold}));
+    note_text.push_back(format_.format(
+        "tile limit is '{}' due to configuration", FormatParam{num_tiles_in_primary_.value(), Style::bold}));
     note_text.emplace_back();
     std::ranges::copy(num_tiles_in_primary_.prettify(format_), std::back_inserter(note_text));
     diag_.error_note(tag, note_text);

@@ -6,6 +6,7 @@
 #include <vector>
 
 #include "porytiles2/utilities/text/text_formatter.hpp"
+#include "porytiles2/xcut/config/config_override.hpp"
 
 namespace porytiles2 {
 
@@ -153,6 +154,26 @@ class ConfigValue {
     [[nodiscard]] const std::vector<std::string> &source_details() const
     {
         return source_details_;
+    }
+
+    /**
+     * @brief Creates a child ConfigValue from a ConfigOverride, inheriting this value's source provenance.
+     *
+     * @details
+     * Used to resolve per-field overrides within aggregate config values. The derived ConfigValue inherits @c source()
+     * and @c source_details() from this (parent) ConfigValue, while taking the value, @c canonical_name, and
+     * @c source_key from the override. This allows provider-specific source metadata set at parse time to flow through
+     * to the consumer without hardcoding provider formats.
+     *
+     * @tparam U The type of the override value (may differ from @c T)
+     * @param override The config override containing the value and per-field source metadata
+     * @pre @p override must have a value (@c override.has_value() is @c true).
+     * @return A new ConfigValue wrapping the override's value with combined provenance
+     */
+    template <typename U>
+    [[nodiscard]] ConfigValue<U> derive(const ConfigOverride<U> &override) const
+    {
+        return ConfigValue<U>{*override, override.canonical_name, override.source_key, source(), source_details()};
     }
 
     /**

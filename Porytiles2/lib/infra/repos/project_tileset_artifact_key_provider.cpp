@@ -6,6 +6,7 @@
 #include <string>
 
 #include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
+#include "porytiles2/utilities/dynamic_cased_name.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
 #include "porytiles2/xcut/config/unwrap_config.hpp"
@@ -27,7 +28,7 @@ const std::filesystem::path top_png{"top.png"};
 const std::filesystem::path attributes_csv{"attributes.csv"};
 const std::filesystem::path porytiles_pals{"palettes"};
 const std::filesystem::path porymap_pals{"palettes"};
-const std::filesystem::path anim_yaml{"anim.yaml"};
+const std::filesystem::path anim_json{"anim.json"};
 const std::filesystem::path metatiles_bin{"metatiles.bin"};
 const std::filesystem::path attrs_bin{"metatile_attributes.bin"};
 const std::filesystem::path tiles_png{"tiles.png"};
@@ -58,12 +59,13 @@ const std::filesystem::path tiles_png{"tiles.png"};
             continue;
         }
         const std::string dir_name = entry.path().filename().string();
-        if (to_snake_case(dir_name) != dir_name) {
+        const auto expected_snake = DynamicCasedName{dir_name}.to_snake_case();
+        if (expected_snake != dir_name) {
             return ChainableResult<std::set<std::string>>{FormattableError{format->format(
                 "{} directory name '{}' must be snake_case (expected '{}')",
                 FormatParam{artifact_type, Style::bold},
                 FormatParam{dir_name, Style::bold},
-                FormatParam{to_snake_case(dir_name), Style::bold})}};
+                FormatParam{expected_snake, Style::bold})}};
         }
         result.insert(dir_name);
     }
@@ -100,12 +102,13 @@ scan_png_files(const std::filesystem::path &dir_path, const std::string &artifac
             continue;
         }
         const std::string stem = path.stem().string();
-        if (to_snake_case(stem) != stem) {
+        const auto expected_snake = DynamicCasedName{stem}.to_snake_case();
+        if (expected_snake != stem) {
             return ChainableResult<std::set<std::string>>{FormattableError{format->format(
                 "{} file name '{}' must be snake_case (expected '{}.png')",
                 FormatParam{artifact_type, Style::bold},
                 FormatParam{path.filename().string(), Style::bold},
-                FormatParam{to_snake_case(stem), Style::bold})}};
+                FormatParam{expected_snake, Style::bold})}};
         }
         result.insert(stem);
     }
@@ -129,7 +132,7 @@ ProjectTilesetArtifactKeyProvider::key_for_metatiles_bin(const std::string &tile
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
     auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
-    const std::string snake_tileset_dir = to_snake_case(extract_tileset_shorthand(tileset_name));
+    const std::string snake_tileset_dir = extract_tileset_cased_name(tileset_name).to_snake_case();
     std::filesystem::path path =
         std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_bin / metatiles_bin;
 
@@ -146,7 +149,7 @@ ProjectTilesetArtifactKeyProvider::key_for_metatile_attributes_bin(const std::st
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
     auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
-    const std::string snake_tileset_dir = to_snake_case(extract_tileset_shorthand(tileset_name));
+    const std::string snake_tileset_dir = extract_tileset_cased_name(tileset_name).to_snake_case();
     std::filesystem::path path =
         std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_bin / attrs_bin;
 
@@ -162,7 +165,7 @@ ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_tiles_pn
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
     auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
-    const std::string snake_tileset_dir = to_snake_case(extract_tileset_shorthand(tileset_name));
+    const std::string snake_tileset_dir = extract_tileset_cased_name(tileset_name).to_snake_case();
     std::filesystem::path path =
         std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_bin / tiles_png;
 
@@ -179,7 +182,7 @@ ProjectTilesetArtifactKeyProvider::key_for_porymap_pal_n(const std::string &tile
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
     auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
-    const std::string snake_tileset_dir = to_snake_case(extract_tileset_shorthand(tileset_name));
+    const std::string snake_tileset_dir = extract_tileset_cased_name(tileset_name).to_snake_case();
     std::filesystem::path path = std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_bin /
                                  porymap_pals / pal_filename(index);
 
@@ -196,7 +199,7 @@ ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_porymap_
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
     auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
-    const std::string snake_tileset_dir = to_snake_case(extract_tileset_shorthand(tileset_name));
+    const std::string snake_tileset_dir = extract_tileset_cased_name(tileset_name).to_snake_case();
     std::filesystem::path path = std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_bin /
                                  anim_dir / anim_name / (frame_name + std::string{".png"});
 
@@ -206,7 +209,7 @@ ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_porymap_
 ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_params(const std::string &tileset_name) const
 {
-    const std::string snake_tileset_dir = to_snake_case(extract_tileset_shorthand(tileset_name));
+    const std::string snake_tileset_dir = extract_tileset_cased_name(tileset_name).to_snake_case();
     std::filesystem::path path = porytiles_generated_include / snake_tileset_dir / generated_anim_code_header;
     return ArtifactKey{path.string()};
 }
@@ -224,7 +227,7 @@ ProjectTilesetArtifactKeyProvider::key_for_bottom_png(const std::string &tileset
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
     auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
-    const std::string snake_tileset_dir = to_snake_case(extract_tileset_shorthand(tileset_name));
+    const std::string snake_tileset_dir = extract_tileset_cased_name(tileset_name).to_snake_case();
     std::filesystem::path path =
         std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_src / bottom_png;
 
@@ -241,7 +244,7 @@ ProjectTilesetArtifactKeyProvider::key_for_middle_png(const std::string &tileset
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
     auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
-    const std::string snake_tileset_dir = to_snake_case(extract_tileset_shorthand(tileset_name));
+    const std::string snake_tileset_dir = extract_tileset_cased_name(tileset_name).to_snake_case();
     std::filesystem::path path =
         std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_src / middle_png;
 
@@ -257,7 +260,7 @@ ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_top_png(
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
     auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
-    const std::string snake_tileset_dir = to_snake_case(extract_tileset_shorthand(tileset_name));
+    const std::string snake_tileset_dir = extract_tileset_cased_name(tileset_name).to_snake_case();
     std::filesystem::path path = std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_src / top_png;
 
     return ArtifactKey{path.string()};
@@ -273,7 +276,7 @@ ProjectTilesetArtifactKeyProvider::key_for_attributes_csv(const std::string &til
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
     auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
-    const std::string snake_tileset_dir = to_snake_case(extract_tileset_shorthand(tileset_name));
+    const std::string snake_tileset_dir = extract_tileset_cased_name(tileset_name).to_snake_case();
     std::filesystem::path path =
         std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_src / attributes_csv;
 
@@ -290,7 +293,7 @@ ProjectTilesetArtifactKeyProvider::key_for_porytiles_pal_n(const std::string &ti
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
     auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
-    const std::string snake_tileset_dir = to_snake_case(extract_tileset_shorthand(tileset_name));
+    const std::string snake_tileset_dir = extract_tileset_cased_name(tileset_name).to_snake_case();
     std::filesystem::path path = std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_src /
                                  porytiles_pals / pal_filename(index);
 
@@ -307,7 +310,7 @@ ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_porytile
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
     auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
-    const std::string snake_tileset_dir = to_snake_case(extract_tileset_shorthand(tileset_name));
+    const std::string snake_tileset_dir = extract_tileset_cased_name(tileset_name).to_snake_case();
     std::filesystem::path path = std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_src /
                                  anim_dir / anim_name / (frame_name + std::string{".png"});
 
@@ -324,9 +327,9 @@ ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_params(const std::stri
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, ArtifactKey);
     auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
-    const std::string snake_tileset_dir = to_snake_case(extract_tileset_shorthand(tileset_name));
+    const std::string snake_tileset_dir = extract_tileset_cased_name(tileset_name).to_snake_case();
     std::filesystem::path path =
-        std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_src / anim_dir / anim_yaml;
+        std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_src / anim_dir / anim_json;
 
     return ArtifactKey{path.string()};
 }
@@ -345,7 +348,7 @@ ProjectTilesetArtifactKeyProvider::discover_porymap_anims(const std::string &til
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, std::set<std::string>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, std::set<std::string>);
     auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
-    const std::string snake_tileset_dir = to_snake_case(extract_tileset_shorthand(tileset_name));
+    const std::string snake_tileset_dir = extract_tileset_cased_name(tileset_name).to_snake_case();
 
     const std::filesystem::path anim_path =
         project_root_ / std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_bin / anim_dir;
@@ -360,7 +363,7 @@ ChainableResult<std::set<std::string>> ProjectTilesetArtifactKeyProvider::discov
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, std::set<std::string>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, std::set<std::string>);
     auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
-    const std::string snake_tileset_dir = to_snake_case(extract_tileset_shorthand(tileset_name));
+    const std::string snake_tileset_dir = extract_tileset_cased_name(tileset_name).to_snake_case();
 
     const std::filesystem::path frame_dir = project_root_ / std::filesystem::path{base_path.value()} /
                                             snake_tileset_dir / porytiles_bin / anim_dir / anim_name;
@@ -375,7 +378,7 @@ ProjectTilesetArtifactKeyProvider::discover_porytiles_anims(const std::string &t
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_src, tileset_name, std::set<std::string>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_src, tileset_name, std::set<std::string>);
     auto base_path = is_secondary ? tileset_paths_secondary_src : tileset_paths_primary_src;
-    const std::string snake_tileset_dir = to_snake_case(extract_tileset_shorthand(tileset_name));
+    const std::string snake_tileset_dir = extract_tileset_cased_name(tileset_name).to_snake_case();
 
     const std::filesystem::path anim_path =
         project_root_ / std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_src / anim_dir;
@@ -390,7 +393,7 @@ ChainableResult<std::set<std::string>> ProjectTilesetArtifactKeyProvider::discov
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_src, tileset_name, std::set<std::string>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_src, tileset_name, std::set<std::string>);
     auto base_path = is_secondary ? tileset_paths_secondary_src : tileset_paths_primary_src;
-    const std::string snake_tileset_dir = to_snake_case(extract_tileset_shorthand(tileset_name));
+    const std::string snake_tileset_dir = extract_tileset_cased_name(tileset_name).to_snake_case();
 
     const std::filesystem::path frame_dir = project_root_ / std::filesystem::path{base_path.value()} /
                                             snake_tileset_dir / porytiles_src / anim_dir / anim_name;

@@ -6,6 +6,7 @@
 
 #include "porytiles2/domain/models/animation.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
+#include "porytiles2/utilities/dynamic_cased_name.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/buffered_user_diagnostics.hpp"
 
@@ -42,7 +43,7 @@ TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsDiscoversAllAnimationsFor
     EXPECT_TRUE(animations.contains("waterfall"));
 }
 
-TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsExtractsFlowerAnimationParams)
+TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsExtractsFlowerAnimParams)
 {
     auto result = importer_.import_animations("gTileset_General");
 
@@ -53,7 +54,7 @@ TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsExtractsFlowerAnimationPa
     const auto &flower = animations.at("flower");
     const auto &params = flower.params();
 
-    // Verify AnimationParams from tileset_anims.c parsing
+    // Verify AnimParams from tileset_anims.c parsing
     EXPECT_EQ(params.tile_offset(), 508u);
     EXPECT_EQ(params.tile_count(), 4u);
     EXPECT_EQ(params.frame_factor(), 16u);
@@ -62,13 +63,13 @@ TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsExtractsFlowerAnimationPa
     // Verify frame order (0, 1, 0, 2)
     const auto &frame_order = params.frame_order();
     ASSERT_EQ(frame_order.size(), 4u);
-    EXPECT_EQ(frame_order[0], "0");
-    EXPECT_EQ(frame_order[1], "1");
-    EXPECT_EQ(frame_order[2], "0");
-    EXPECT_EQ(frame_order[3], "2");
+    EXPECT_EQ(frame_order[0], DynamicCasedName{"0"});
+    EXPECT_EQ(frame_order[1], DynamicCasedName{"1"});
+    EXPECT_EQ(frame_order[2], DynamicCasedName{"0"});
+    EXPECT_EQ(frame_order[3], DynamicCasedName{"2"});
 }
 
-TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsExtractsWaterAnimationParams)
+TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsExtractsWaterAnimParams)
 {
     auto result = importer_.import_animations("gTileset_General");
 
@@ -79,7 +80,7 @@ TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsExtractsWaterAnimationPar
     const auto &water = animations.at("water");
     const auto &params = water.params();
 
-    // Verify AnimationParams
+    // Verify AnimParams
     EXPECT_EQ(params.tile_offset(), 432u);
     EXPECT_EQ(params.tile_count(), 30u);
     EXPECT_EQ(params.frame_factor(), 16u);
@@ -89,7 +90,7 @@ TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsExtractsWaterAnimationPar
     const auto &frame_order = params.frame_order();
     ASSERT_EQ(frame_order.size(), 8u);
     for (std::size_t i = 0; i < 8; ++i) {
-        EXPECT_EQ(frame_order[i], std::to_string(i));
+        EXPECT_EQ(frame_order[i], DynamicCasedName{std::to_string(i)});
     }
 }
 

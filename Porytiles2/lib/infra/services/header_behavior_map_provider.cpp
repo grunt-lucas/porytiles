@@ -82,7 +82,7 @@ ChainableResult<void> HeaderBehaviorMapProvider::try_add_behavior_entry(const En
         const auto &orig_pos = name_to_position_.at(name);
         return make_duplicate_error(
             format_->format(
-                "{}:{}:{}: duplicate behavior name '{}'",
+                "{}:{}:{}: duplicate behavior name '{}'.",
                 FormatParam{header_path_, Style::bold},
                 new_pos.line,
                 new_pos.column,
@@ -102,7 +102,7 @@ ChainableResult<void> HeaderBehaviorMapProvider::try_add_behavior_entry(const En
         const auto &orig_pos = value_to_position_.at(value);
         return make_duplicate_error(
             format_->format(
-                "{}:{}:{}: duplicate behavior value '{}': both '{}' and '{}' have this value",
+                "{}:{}:{}: duplicate behavior value '{}': both '{}' and '{}' have this value.",
                 FormatParam{header_path_, Style::bold},
                 new_pos.line,
                 new_pos.column,
@@ -133,7 +133,7 @@ ChainableResult<std::uint16_t> HeaderBehaviorMapProvider::lookup(const std::stri
 {
     if (!behavior_name.starts_with("MB_")) {
         return FormattableError{
-            "invalid behavior name '{}': expected prefix '{}'",
+            "Invalid behavior name '{}': expected prefix '{}'.",
             FormatParam{behavior_name, Style::bold},
             FormatParam{"MB_", Style::bold}};
     }
@@ -141,13 +141,13 @@ ChainableResult<std::uint16_t> HeaderBehaviorMapProvider::lookup(const std::stri
     auto load_result = ensure_loaded();
     if (!load_result.has_value()) {
         return ChainableResult<std::uint16_t>{
-            FormattableError{"metatile behavior provider lookup failed"}, load_result};
+            FormattableError{"Metatile behavior provider lookup failed."}, load_result};
     }
 
     const auto it = name_to_value_.find(behavior_name);
     if (it == name_to_value_.end()) {
         return FormattableError{
-            "behavior '{}' not found in '{}'",
+            "Behavior '{}' not found in '{}'.",
             FormatParam{behavior_name, Style::bold},
             FormatParam{header_path_.string(), Style::bold}};
     }
@@ -158,13 +158,13 @@ ChainableResult<std::string> HeaderBehaviorMapProvider::lookup(std::uint16_t beh
 {
     auto load_result = ensure_loaded();
     if (!load_result.has_value()) {
-        return ChainableResult<std::string>{FormattableError{"metatile behavior provider lookup failed"}, load_result};
+        return ChainableResult<std::string>{FormattableError{"Metatile behavior provider lookup failed."}, load_result};
     }
 
     const auto it = value_to_name_.find(behavior_value);
     if (it == value_to_name_.end()) {
         return FormattableError{
-            "unknown behavior value '{}' not found in '{}'",
+            "Unknown behavior value '{}' not found in '{}'.",
             FormatParam{behavior_value, Style::bold},
             FormatParam{header_path_.string(), Style::bold}};
     }
@@ -175,7 +175,7 @@ ChainableResult<void> HeaderBehaviorMapProvider::ensure_loaded() const
 {
     if (loaded_) {
         if (load_failed_) {
-            return FormattableError{"behavior header file previously failed to load"};
+            return FormattableError{"Behavior header file previously failed to load."};
         }
         return {};
     }
@@ -219,7 +219,7 @@ ChainableResult<void> HeaderBehaviorMapProvider::ensure_loaded() const
     if (name_to_value_.empty()) {
         load_failed_ = true;
         return FormattableError{
-            "{}: no behavior definitions exist in file", FormatParam{header_path_.string(), Style::bold}};
+            "{}: no behavior definitions exist in file.", FormatParam{header_path_.string(), Style::bold}};
     }
 
     return {};

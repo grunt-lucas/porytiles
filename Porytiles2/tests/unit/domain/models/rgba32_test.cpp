@@ -4,6 +4,8 @@
 
 #include "porytiles2/domain/models/rgba32.hpp"
 
+static_assert(std::formattable<porytiles2::Rgba32, char>, "Rgba32 must satisfy std::formattable");
+
 using namespace porytiles2;
 
 TEST(Rgba32Tests, ToJascStrShouldWork)
@@ -23,11 +25,12 @@ TEST(Rgba32Tests, EqualsIgnoringAlphaShouldWork)
     EXPECT_FALSE(rgba3.equals_ignoring_alpha(rgba4));
 }
 
-TEST(Rgba32Tests, StdFormatFormattingShouldUseJasc)
+TEST(Rgba32Tests, StdFormatFormattingShouldUseToString)
 {
     constexpr Rgba32 rgba1{127, 12, 222};
     const auto formatted = std::format("{}", rgba1);
-    EXPECT_EQ(formatted, "127 12 222");
+    // Formatter uses porytiles2::to_string() for consistent formatting across codebase
+    EXPECT_EQ(formatted, "[127, 12, 222, 255]");
 }
 
 TEST(Rgba32Tests, OperatorEqualsShouldConsiderAlpha)

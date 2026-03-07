@@ -32,7 +32,8 @@ ChainableResult<std::set<std::string>> ProjectTilesetNameProvider::all_tileset_n
     auto parse_result = parser.parse_struct_variables("gTileset_");
     if (!parse_result.has_value()) {
         return ChainableResult<std::set<std::string>>{
-            FormattableError{"{}: failed to extract tileset names", FormatParam{tileset_header_full_path, Style::bold}},
+            FormattableError{
+                "'{}': Failed to extract tileset names.", FormatParam{tileset_header_full_path, Style::bold}},
             parse_result};
     }
 

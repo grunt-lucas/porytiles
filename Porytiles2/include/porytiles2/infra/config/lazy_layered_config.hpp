@@ -4,6 +4,7 @@
 #include <functional>
 #include <map>
 #include <memory>
+#include <ostream>
 #include <unordered_map>
 #include <vector>
 
@@ -130,10 +131,16 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     tiles_pal_mode_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<AnimPalResolutionStrategy>>
-    anim_pal_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const override;
+    global_anim_pal_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<AnimKeyFrameResolutionStrategy>>
-    anim_key_frame_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const override;
+    global_anim_key_frame_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] ChainableResult<ConfigValue<FrameLinking>>
+    global_frame_linking_raw(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] ChainableResult<ConfigValue<PerAnimOverrides>>
+    per_anim_overrides_raw(ConfigScopeType type, const std::string &scope) const override;
 
     /*
      * App Config Raw Methods (Tier 1)
@@ -376,7 +383,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     tiles_pal_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
     /**
-     * @brief Gets the full provenance chain for anim_pal_resolution_strategy.
+     * @brief Gets the full provenance chain for global_anim_pal_resolution_strategy.
      *
      * @details
      * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
@@ -388,10 +395,10 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      * @return Vector of ProvenanceChainLink entries, one per provider
      */
     [[nodiscard]] std::vector<ProvenanceChainLink<AnimPalResolutionStrategy>>
-    anim_pal_resolution_strategy_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+    global_anim_pal_resolution_strategy_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
     /**
-     * @brief Gets the full provenance chain for anim_key_frame_resolution_strategy.
+     * @brief Gets the full provenance chain for global_anim_key_frame_resolution_strategy.
      *
      * @details
      * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
@@ -403,7 +410,37 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      * @return Vector of ProvenanceChainLink entries, one per provider
      */
     [[nodiscard]] std::vector<ProvenanceChainLink<AnimKeyFrameResolutionStrategy>>
-    anim_key_frame_resolution_strategy_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+    global_anim_key_frame_resolution_strategy_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for global_frame_linking.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<FrameLinking>>
+    global_frame_linking_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for per_anim_overrides.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<PerAnimOverrides>>
+    per_anim_overrides_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
     /**
      * @brief Gets the full provenance chain for verify_checksums.
@@ -494,6 +531,20 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      */
     [[nodiscard]] std::vector<ProvenanceChainLink<bool>>
     tileset_animations_wire_anim_code_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Dumps the full provenance chain for all config values to an output stream.
+     *
+     * @details
+     * Queries every provider for every config value and prints what each provider would return. This is useful for
+     * debugging configuration issues, e.g. understanding why a particular value was chosen or which provider is
+     * supplying it.
+     *
+     * @param out The output stream to write the dump to
+     * @param type The config scope type
+     * @param scope The scope identifier (e.g. tileset name)
+     */
+    void dump_config(std::ostream &out, ConfigScopeType type, const std::string &scope) const;
 
   private:
     std::unique_ptr<TextFormatter> owned_format_; // Optional owned formatter (when using default ctor)

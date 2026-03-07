@@ -78,12 +78,12 @@ class TilesetArtifactReader {
      * @brief Reads a complete Porytiles animation (params + frames) into the Porytiles component.
      *
      * @details
-     * Parses animation parameters from anim.yaml for the specified animation, loads all frame images,
+     * Parses animation parameters from anim.json for the specified animation, loads all frame images,
      * and constructs a complete Animation in the Porytiles component.
      *
      * @param dest The Tileset object to populate
      * @param anim_name The name of the animation to load
-     * @param params_key Key to the anim.yaml file
+     * @param params_key Key to the anim.json file
      * @param key_frame_key Key to the key frame
      * @param frame_keys Ordered list of (frame_name, artifact_key) pairs for each unique frame
      * @return Empty ChainableResult on success, otherwise an error chain

@@ -68,6 +68,17 @@ class ParserTests : public ::testing::Test {
         return parser.parse_struct_variables();
     }
 
+    [[nodiscard]] ChainableResult<std::vector<IncbinDeclaration>> parse_incbin_arrays(const std::string &source)
+    {
+        Lexer lexer{&formatter_, source};
+        auto tokens_result = lexer.lex();
+        if (!tokens_result.has_value()) {
+            return ChainableResult<std::vector<IncbinDeclaration>>{tokens_result};
+        }
+        Parser parser{&formatter_, std::move(tokens_result).value()};
+        return parser.parse_incbin_arrays();
+    }
+
     template <typename T>
     [[nodiscard]] std::string get_all_error_text(const ChainableResult<T> &result)
     {
@@ -729,6 +740,52 @@ TEST_F(ParserTests, ParsePointerArrayWithTrailingComma)
     ASSERT_TRUE(result.has_value());
     ASSERT_EQ(result.value().size(), 1);
     EXPECT_EQ(result.value()[0].elements().size(), 2);
+}
+
+TEST_F(ParserTests, ParseStaticPointerArray)
+{
+    auto result = parse_pointer_arrays("static const u16 *const arr[] = { elem1 };");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].name(), "arr");
+    ASSERT_EQ(result.value()[0].elements().size(), 1);
+    EXPECT_EQ(result.value()[0].elements()[0], "elem1");
+}
+
+TEST_F(ParserTests, ParseStaticPointerArrayWithoutConst)
+{
+    auto result = parse_pointer_arrays("static u16 *const arr[] = { elem1 };");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].name(), "arr");
+}
+
+// ============================================================================
+// INCBIN Array Parsing Tests
+// ============================================================================
+
+TEST_F(ParserTests, ParseSimpleIncbinArray)
+{
+    auto result = parse_incbin_arrays(
+        R"(const u32 gTilesetTiles_General[] = INCBIN_U32("data/tilesets/primary/general/tiles.4bpp");)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].variable_name(), "gTilesetTiles_General");
+    EXPECT_EQ(result.value()[0].macro_name(), "INCBIN_U32");
+    ASSERT_EQ(result.value()[0].paths().size(), 1);
+    EXPECT_EQ(result.value()[0].paths()[0], "data/tilesets/primary/general/tiles.4bpp");
+}
+
+TEST_F(ParserTests, ParseStaticIncbinArray)
+{
+    auto result = parse_incbin_arrays(
+        R"(static const u16 sTilesetAnims_General_Flower_Frame0[] = INCBIN_U16("data/tilesets/primary/general/anim/flower/0.4bpp");)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].variable_name(), "sTilesetAnims_General_Flower_Frame0");
+    EXPECT_EQ(result.value()[0].macro_name(), "INCBIN_U16");
+    ASSERT_EQ(result.value()[0].paths().size(), 1);
+    EXPECT_EQ(result.value()[0].paths()[0], "data/tilesets/primary/general/anim/flower/0.4bpp");
 }
 
 // ============================================================================

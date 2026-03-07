@@ -1,18 +1,7 @@
 # Tasks
 
 ## Refactor and finish TilesetRepo and project impl
-- Make PLA files a first class type in Porymap component (need a domain type for PLA)
-- `TilesetRepo::write` should do a clean wipe of the current tileset folder before writing new artifacts?
-  - See various TODOs about stale artifacts and "possibly incomplete" components
-  - Switch to the original "atomic move" idea
-  - Or figure out how to "delete" irrelevant assets, maybe we can move them to a .bak directory or something
-    - It should be easy, the only assets we need to actually delete are anims
-    - we can figure out which ones should exist by looking at the "target component" of the operation and also the ArtifactEditMode
-    - (will need to think through how anim handling will work in locked, patch, optimize)
-- Project Impl
-  - Finish handling for attributes.csv
-    - attribute importing
-    - firered format attributes
+- Make .pla files a first class type in Porymap component (need a domain type for .pla)
 - JSON Impl
   - Start working on a JSON impl that can read/write tilesets from a standardized JSON format 
 
@@ -29,12 +18,6 @@
   - break it up into `config`, `core`, `tileset`, `layout`, `packing`
   - each of these folders can have subfolders `algorithms`, `models`, `repos`, `services`
 - Make each layer a completely isolated library so that the compiler enforces dependency rules
-
-## Start building animation system
-- See initial attempt in 2/anim1
-- change to `anim.json` instead of `anim.yaml`
-  - even though it's technical a user config file, since Porytiles overwrites it every time, it's unintuitive for users
-  - JSON is better since comments are disallowed by default and syntax is simpler, users won't be confused when their idiosyncrasies get clobbered
 
 ## Implement `LayoutDataProvider`
 Once we complete the `ProjectTilesetArtifactKeyProvider` refactor, create a `LayoutDataProvider` which parses `layouts.json`.
@@ -235,20 +218,6 @@ JSON example:
 }
 ```
 
-## Implement `dump-tileset-config` command
-Dump the full source chain of a tileset config value to the console.
-
-This command will be really useful for debugging purposes,
-allowing users to inspect the full source chain of a config value.
-
-### CLI Invocation
-```sh
-porytiles2 dump-tileset-config MyPrimaryTileset num_tiles_in_primary
-```
-
-### Outputs
-The full source chain of the supplied config value.
-
 ## Implement `find-tileset-color` command
 Given a color, print all locations of that color in a tileset.
 
@@ -270,16 +239,16 @@ Limit the output to 10 metatiles, configurable.
 ## Identify unit/integration testing gaps and fill them in
 
 ## Miscellaneous Cleanup
-- Palette hints should be validated entirely within the config system, remove validation from the PaletteValidator
 - Can I use std::span in more places?
 - Fix up `Scripts` directory
   - we should split it up by `Porytiles1` and `Porytiles2` for better usability
 - Provide a configuration that allows users to request ascii-only output
   - e.g. in the file highlighting, the → would become ->
-- Consider storing a global `artifact_checksums.json` instead of per-tileset
-  - all paths are relative to project root anyway
 - Figure out how to cleanup tileset name handling
   - We have code to scrub `gTileset_` prefixes littered all over the place
   - some logic needs full tileset name, other logic needs scrubbed name, it's a mess
+  - Right now, we require users to type full name, e.g. `gTileset_SecretBase`
+    - Could we create a little helper that tries to decode fuzzed names:
+    - e.g. `gTileset_SecretBase`, `secret_base`, `SecretBase`, `secretBase` all would compile the same tileset
 
 ## Clean up TODOs in codebase: `rg -e TODO Porytiles2/`

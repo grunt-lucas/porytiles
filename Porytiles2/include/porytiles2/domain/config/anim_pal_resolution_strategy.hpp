@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <cctype>
+#include <format>
 #include <optional>
 #include <ostream>
 #include <string>
@@ -18,22 +19,84 @@
 namespace porytiles2 {
 
 /**
- * @brief Strategy for resolving animation frame palette mismatches.
+ * @brief Strategy for determining which palette to use when decompiling animation tiles.
  *
  * @details
- * When processing animation frames, it's possible for frame palettes to not match the expected
- * tileset palette. This enum determines how to handle such cases during compilation.
+ * When decompiling animation tiles, the decompiler needs to know which tileset palette to use for
+ * converting indexed pixels to RGBA. This enum determines the strategy used to find that palette.
+ * The strategy is applied directly — it drives the palette resolution from the start, rather than
+ * being a fallback.
  *
  */
 enum class AnimPalResolutionStrategy {
     /**
-     * @brief Disallow palette resolution fallback and error out.
+     * @brief Scan local tileset metatile entries to find palette references for the animation tiles.
      */
-    error,
+    scan_local_metatiles,
     /**
-     * @brief Use palette 00.pal.
+     * @brief Use palette 00 directly.
      */
-    default_pal,
+    palette_00,
+    /**
+     * @brief Use palette 01 directly.
+     */
+    palette_01,
+    /**
+     * @brief Use palette 02 directly.
+     */
+    palette_02,
+    /**
+     * @brief Use palette 03 directly.
+     */
+    palette_03,
+    /**
+     * @brief Use palette 04 directly.
+     */
+    palette_04,
+    /**
+     * @brief Use palette 05 directly.
+     */
+    palette_05,
+    /**
+     * @brief Use palette 06 directly.
+     */
+    palette_06,
+    /**
+     * @brief Use palette 07 directly.
+     */
+    palette_07,
+    /**
+     * @brief Use palette 08 directly.
+     */
+    palette_08,
+    /**
+     * @brief Use palette 09 directly.
+     */
+    palette_09,
+    /**
+     * @brief Use palette 10 directly.
+     */
+    palette_10,
+    /**
+     * @brief Use palette 11 directly.
+     */
+    palette_11,
+    /**
+     * @brief Use palette 12 directly.
+     */
+    palette_12,
+    /**
+     * @brief Use palette 13 directly.
+     */
+    palette_13,
+    /**
+     * @brief Use palette 14 directly.
+     */
+    palette_14,
+    /**
+     * @brief Use palette 15 directly.
+     */
+    palette_15,
     /**
      * @brief Use the Porymap-component frame PNG internal palette, if present.
      */
@@ -41,7 +104,7 @@ enum class AnimPalResolutionStrategy {
     /**
      * @brief Scan layouts config and find all tilesets paired with current tileset, see if an index is present in any.
      */
-    full_tileset_scan
+    scan_all_tilesets
 };
 
 /**
@@ -63,17 +126,62 @@ enum class AnimPalResolutionStrategy {
 anim_pal_resolution_strategy_from_str(const std::string &str)
 {
     // Phase 1: Exact match against C++ constant names
-    if (str == "error") {
-        return std::optional{AnimPalResolutionStrategy::error};
+    if (str == "scan_local_metatiles") {
+        return std::optional{AnimPalResolutionStrategy::scan_local_metatiles};
     }
-    if (str == "default_pal") {
-        return std::optional{AnimPalResolutionStrategy::default_pal};
+    if (str == "palette_00") {
+        return std::optional{AnimPalResolutionStrategy::palette_00};
+    }
+    if (str == "palette_01") {
+        return std::optional{AnimPalResolutionStrategy::palette_01};
+    }
+    if (str == "palette_02") {
+        return std::optional{AnimPalResolutionStrategy::palette_02};
+    }
+    if (str == "palette_03") {
+        return std::optional{AnimPalResolutionStrategy::palette_03};
+    }
+    if (str == "palette_04") {
+        return std::optional{AnimPalResolutionStrategy::palette_04};
+    }
+    if (str == "palette_05") {
+        return std::optional{AnimPalResolutionStrategy::palette_05};
+    }
+    if (str == "palette_06") {
+        return std::optional{AnimPalResolutionStrategy::palette_06};
+    }
+    if (str == "palette_07") {
+        return std::optional{AnimPalResolutionStrategy::palette_07};
+    }
+    if (str == "palette_08") {
+        return std::optional{AnimPalResolutionStrategy::palette_08};
+    }
+    if (str == "palette_09") {
+        return std::optional{AnimPalResolutionStrategy::palette_09};
+    }
+    if (str == "palette_10") {
+        return std::optional{AnimPalResolutionStrategy::palette_10};
+    }
+    if (str == "palette_11") {
+        return std::optional{AnimPalResolutionStrategy::palette_11};
+    }
+    if (str == "palette_12") {
+        return std::optional{AnimPalResolutionStrategy::palette_12};
+    }
+    if (str == "palette_13") {
+        return std::optional{AnimPalResolutionStrategy::palette_13};
+    }
+    if (str == "palette_14") {
+        return std::optional{AnimPalResolutionStrategy::palette_14};
+    }
+    if (str == "palette_15") {
+        return std::optional{AnimPalResolutionStrategy::palette_15};
     }
     if (str == "internal_png_pal") {
         return std::optional{AnimPalResolutionStrategy::internal_png_pal};
     }
-    if (str == "full_tileset_scan") {
-        return std::optional{AnimPalResolutionStrategy::full_tileset_scan};
+    if (str == "scan_all_tilesets") {
+        return std::optional{AnimPalResolutionStrategy::scan_all_tilesets};
     }
 
     // Phase 2: Case-insensitive fuzzy match
@@ -81,28 +189,409 @@ anim_pal_resolution_strategy_from_str(const std::string &str)
     std::ranges::transform(
         lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
-    // Fuzzy names for error
-    if (lower_str == "error") {
-        return std::optional{AnimPalResolutionStrategy::error};
+    // Fuzzy names for scan_local_metatiles
+    if (lower_str == "scan-local-metatiles") {
+        return std::optional{AnimPalResolutionStrategy::scan_local_metatiles};
     }
-    if (lower_str == "err") {
-        return std::optional{AnimPalResolutionStrategy::error};
+    if (lower_str == "scan_local_metatiles") {
+        return std::optional{AnimPalResolutionStrategy::scan_local_metatiles};
     }
-    // Fuzzy names for default_pal
-    if (lower_str == "default-palette") {
-        return std::optional{AnimPalResolutionStrategy::default_pal};
+    if (lower_str == "scanlocalmetatiles") {
+        return std::optional{AnimPalResolutionStrategy::scan_local_metatiles};
     }
-    if (lower_str == "default-pal") {
-        return std::optional{AnimPalResolutionStrategy::default_pal};
+    // Fuzzy names for palette_00
+    if (lower_str == "palette-00") {
+        return std::optional{AnimPalResolutionStrategy::palette_00};
     }
-    if (lower_str == "default_palette") {
-        return std::optional{AnimPalResolutionStrategy::default_pal};
+    if (lower_str == "palette_00") {
+        return std::optional{AnimPalResolutionStrategy::palette_00};
     }
-    if (lower_str == "default_pal") {
-        return std::optional{AnimPalResolutionStrategy::default_pal};
+    if (lower_str == "palette00") {
+        return std::optional{AnimPalResolutionStrategy::palette_00};
     }
-    if (lower_str == "default") {
-        return std::optional{AnimPalResolutionStrategy::default_pal};
+    if (lower_str == "pal-0") {
+        return std::optional{AnimPalResolutionStrategy::palette_00};
+    }
+    if (lower_str == "pal_0") {
+        return std::optional{AnimPalResolutionStrategy::palette_00};
+    }
+    if (lower_str == "pal0") {
+        return std::optional{AnimPalResolutionStrategy::palette_00};
+    }
+    if (lower_str == "palette-0") {
+        return std::optional{AnimPalResolutionStrategy::palette_00};
+    }
+    if (lower_str == "palette_0") {
+        return std::optional{AnimPalResolutionStrategy::palette_00};
+    }
+    if (lower_str == "palette0") {
+        return std::optional{AnimPalResolutionStrategy::palette_00};
+    }
+    // Fuzzy names for palette_01
+    if (lower_str == "palette-01") {
+        return std::optional{AnimPalResolutionStrategy::palette_01};
+    }
+    if (lower_str == "palette_01") {
+        return std::optional{AnimPalResolutionStrategy::palette_01};
+    }
+    if (lower_str == "palette01") {
+        return std::optional{AnimPalResolutionStrategy::palette_01};
+    }
+    if (lower_str == "pal-1") {
+        return std::optional{AnimPalResolutionStrategy::palette_01};
+    }
+    if (lower_str == "pal_1") {
+        return std::optional{AnimPalResolutionStrategy::palette_01};
+    }
+    if (lower_str == "pal1") {
+        return std::optional{AnimPalResolutionStrategy::palette_01};
+    }
+    if (lower_str == "palette-1") {
+        return std::optional{AnimPalResolutionStrategy::palette_01};
+    }
+    if (lower_str == "palette_1") {
+        return std::optional{AnimPalResolutionStrategy::palette_01};
+    }
+    if (lower_str == "palette1") {
+        return std::optional{AnimPalResolutionStrategy::palette_01};
+    }
+    // Fuzzy names for palette_02
+    if (lower_str == "palette-02") {
+        return std::optional{AnimPalResolutionStrategy::palette_02};
+    }
+    if (lower_str == "palette_02") {
+        return std::optional{AnimPalResolutionStrategy::palette_02};
+    }
+    if (lower_str == "palette02") {
+        return std::optional{AnimPalResolutionStrategy::palette_02};
+    }
+    if (lower_str == "pal-2") {
+        return std::optional{AnimPalResolutionStrategy::palette_02};
+    }
+    if (lower_str == "pal_2") {
+        return std::optional{AnimPalResolutionStrategy::palette_02};
+    }
+    if (lower_str == "pal2") {
+        return std::optional{AnimPalResolutionStrategy::palette_02};
+    }
+    if (lower_str == "palette-2") {
+        return std::optional{AnimPalResolutionStrategy::palette_02};
+    }
+    if (lower_str == "palette_2") {
+        return std::optional{AnimPalResolutionStrategy::palette_02};
+    }
+    if (lower_str == "palette2") {
+        return std::optional{AnimPalResolutionStrategy::palette_02};
+    }
+    // Fuzzy names for palette_03
+    if (lower_str == "palette-03") {
+        return std::optional{AnimPalResolutionStrategy::palette_03};
+    }
+    if (lower_str == "palette_03") {
+        return std::optional{AnimPalResolutionStrategy::palette_03};
+    }
+    if (lower_str == "palette03") {
+        return std::optional{AnimPalResolutionStrategy::palette_03};
+    }
+    if (lower_str == "pal-3") {
+        return std::optional{AnimPalResolutionStrategy::palette_03};
+    }
+    if (lower_str == "pal_3") {
+        return std::optional{AnimPalResolutionStrategy::palette_03};
+    }
+    if (lower_str == "pal3") {
+        return std::optional{AnimPalResolutionStrategy::palette_03};
+    }
+    if (lower_str == "palette-3") {
+        return std::optional{AnimPalResolutionStrategy::palette_03};
+    }
+    if (lower_str == "palette_3") {
+        return std::optional{AnimPalResolutionStrategy::palette_03};
+    }
+    if (lower_str == "palette3") {
+        return std::optional{AnimPalResolutionStrategy::palette_03};
+    }
+    // Fuzzy names for palette_04
+    if (lower_str == "palette-04") {
+        return std::optional{AnimPalResolutionStrategy::palette_04};
+    }
+    if (lower_str == "palette_04") {
+        return std::optional{AnimPalResolutionStrategy::palette_04};
+    }
+    if (lower_str == "palette04") {
+        return std::optional{AnimPalResolutionStrategy::palette_04};
+    }
+    if (lower_str == "pal-4") {
+        return std::optional{AnimPalResolutionStrategy::palette_04};
+    }
+    if (lower_str == "pal_4") {
+        return std::optional{AnimPalResolutionStrategy::palette_04};
+    }
+    if (lower_str == "pal4") {
+        return std::optional{AnimPalResolutionStrategy::palette_04};
+    }
+    if (lower_str == "palette-4") {
+        return std::optional{AnimPalResolutionStrategy::palette_04};
+    }
+    if (lower_str == "palette_4") {
+        return std::optional{AnimPalResolutionStrategy::palette_04};
+    }
+    if (lower_str == "palette4") {
+        return std::optional{AnimPalResolutionStrategy::palette_04};
+    }
+    // Fuzzy names for palette_05
+    if (lower_str == "palette-05") {
+        return std::optional{AnimPalResolutionStrategy::palette_05};
+    }
+    if (lower_str == "palette_05") {
+        return std::optional{AnimPalResolutionStrategy::palette_05};
+    }
+    if (lower_str == "palette05") {
+        return std::optional{AnimPalResolutionStrategy::palette_05};
+    }
+    if (lower_str == "pal-5") {
+        return std::optional{AnimPalResolutionStrategy::palette_05};
+    }
+    if (lower_str == "pal_5") {
+        return std::optional{AnimPalResolutionStrategy::palette_05};
+    }
+    if (lower_str == "pal5") {
+        return std::optional{AnimPalResolutionStrategy::palette_05};
+    }
+    if (lower_str == "palette-5") {
+        return std::optional{AnimPalResolutionStrategy::palette_05};
+    }
+    if (lower_str == "palette_5") {
+        return std::optional{AnimPalResolutionStrategy::palette_05};
+    }
+    if (lower_str == "palette5") {
+        return std::optional{AnimPalResolutionStrategy::palette_05};
+    }
+    // Fuzzy names for palette_06
+    if (lower_str == "palette-06") {
+        return std::optional{AnimPalResolutionStrategy::palette_06};
+    }
+    if (lower_str == "palette_06") {
+        return std::optional{AnimPalResolutionStrategy::palette_06};
+    }
+    if (lower_str == "palette06") {
+        return std::optional{AnimPalResolutionStrategy::palette_06};
+    }
+    if (lower_str == "pal-6") {
+        return std::optional{AnimPalResolutionStrategy::palette_06};
+    }
+    if (lower_str == "pal_6") {
+        return std::optional{AnimPalResolutionStrategy::palette_06};
+    }
+    if (lower_str == "pal6") {
+        return std::optional{AnimPalResolutionStrategy::palette_06};
+    }
+    if (lower_str == "palette-6") {
+        return std::optional{AnimPalResolutionStrategy::palette_06};
+    }
+    if (lower_str == "palette_6") {
+        return std::optional{AnimPalResolutionStrategy::palette_06};
+    }
+    if (lower_str == "palette6") {
+        return std::optional{AnimPalResolutionStrategy::palette_06};
+    }
+    // Fuzzy names for palette_07
+    if (lower_str == "palette-07") {
+        return std::optional{AnimPalResolutionStrategy::palette_07};
+    }
+    if (lower_str == "palette_07") {
+        return std::optional{AnimPalResolutionStrategy::palette_07};
+    }
+    if (lower_str == "palette07") {
+        return std::optional{AnimPalResolutionStrategy::palette_07};
+    }
+    if (lower_str == "pal-7") {
+        return std::optional{AnimPalResolutionStrategy::palette_07};
+    }
+    if (lower_str == "pal_7") {
+        return std::optional{AnimPalResolutionStrategy::palette_07};
+    }
+    if (lower_str == "pal7") {
+        return std::optional{AnimPalResolutionStrategy::palette_07};
+    }
+    if (lower_str == "palette-7") {
+        return std::optional{AnimPalResolutionStrategy::palette_07};
+    }
+    if (lower_str == "palette_7") {
+        return std::optional{AnimPalResolutionStrategy::palette_07};
+    }
+    if (lower_str == "palette7") {
+        return std::optional{AnimPalResolutionStrategy::palette_07};
+    }
+    // Fuzzy names for palette_08
+    if (lower_str == "palette-08") {
+        return std::optional{AnimPalResolutionStrategy::palette_08};
+    }
+    if (lower_str == "palette_08") {
+        return std::optional{AnimPalResolutionStrategy::palette_08};
+    }
+    if (lower_str == "palette08") {
+        return std::optional{AnimPalResolutionStrategy::palette_08};
+    }
+    if (lower_str == "pal-8") {
+        return std::optional{AnimPalResolutionStrategy::palette_08};
+    }
+    if (lower_str == "pal_8") {
+        return std::optional{AnimPalResolutionStrategy::palette_08};
+    }
+    if (lower_str == "pal8") {
+        return std::optional{AnimPalResolutionStrategy::palette_08};
+    }
+    if (lower_str == "palette-8") {
+        return std::optional{AnimPalResolutionStrategy::palette_08};
+    }
+    if (lower_str == "palette_8") {
+        return std::optional{AnimPalResolutionStrategy::palette_08};
+    }
+    if (lower_str == "palette8") {
+        return std::optional{AnimPalResolutionStrategy::palette_08};
+    }
+    // Fuzzy names for palette_09
+    if (lower_str == "palette-09") {
+        return std::optional{AnimPalResolutionStrategy::palette_09};
+    }
+    if (lower_str == "palette_09") {
+        return std::optional{AnimPalResolutionStrategy::palette_09};
+    }
+    if (lower_str == "palette09") {
+        return std::optional{AnimPalResolutionStrategy::palette_09};
+    }
+    if (lower_str == "pal-9") {
+        return std::optional{AnimPalResolutionStrategy::palette_09};
+    }
+    if (lower_str == "pal_9") {
+        return std::optional{AnimPalResolutionStrategy::palette_09};
+    }
+    if (lower_str == "pal9") {
+        return std::optional{AnimPalResolutionStrategy::palette_09};
+    }
+    if (lower_str == "palette-9") {
+        return std::optional{AnimPalResolutionStrategy::palette_09};
+    }
+    if (lower_str == "palette_9") {
+        return std::optional{AnimPalResolutionStrategy::palette_09};
+    }
+    if (lower_str == "palette9") {
+        return std::optional{AnimPalResolutionStrategy::palette_09};
+    }
+    // Fuzzy names for palette_10
+    if (lower_str == "palette-10") {
+        return std::optional{AnimPalResolutionStrategy::palette_10};
+    }
+    if (lower_str == "palette_10") {
+        return std::optional{AnimPalResolutionStrategy::palette_10};
+    }
+    if (lower_str == "palette10") {
+        return std::optional{AnimPalResolutionStrategy::palette_10};
+    }
+    if (lower_str == "pal-10") {
+        return std::optional{AnimPalResolutionStrategy::palette_10};
+    }
+    if (lower_str == "pal_10") {
+        return std::optional{AnimPalResolutionStrategy::palette_10};
+    }
+    if (lower_str == "pal10") {
+        return std::optional{AnimPalResolutionStrategy::palette_10};
+    }
+    // Fuzzy names for palette_11
+    if (lower_str == "palette-11") {
+        return std::optional{AnimPalResolutionStrategy::palette_11};
+    }
+    if (lower_str == "palette_11") {
+        return std::optional{AnimPalResolutionStrategy::palette_11};
+    }
+    if (lower_str == "palette11") {
+        return std::optional{AnimPalResolutionStrategy::palette_11};
+    }
+    if (lower_str == "pal-11") {
+        return std::optional{AnimPalResolutionStrategy::palette_11};
+    }
+    if (lower_str == "pal_11") {
+        return std::optional{AnimPalResolutionStrategy::palette_11};
+    }
+    if (lower_str == "pal11") {
+        return std::optional{AnimPalResolutionStrategy::palette_11};
+    }
+    // Fuzzy names for palette_12
+    if (lower_str == "palette-12") {
+        return std::optional{AnimPalResolutionStrategy::palette_12};
+    }
+    if (lower_str == "palette_12") {
+        return std::optional{AnimPalResolutionStrategy::palette_12};
+    }
+    if (lower_str == "palette12") {
+        return std::optional{AnimPalResolutionStrategy::palette_12};
+    }
+    if (lower_str == "pal-12") {
+        return std::optional{AnimPalResolutionStrategy::palette_12};
+    }
+    if (lower_str == "pal_12") {
+        return std::optional{AnimPalResolutionStrategy::palette_12};
+    }
+    if (lower_str == "pal12") {
+        return std::optional{AnimPalResolutionStrategy::palette_12};
+    }
+    // Fuzzy names for palette_13
+    if (lower_str == "palette-13") {
+        return std::optional{AnimPalResolutionStrategy::palette_13};
+    }
+    if (lower_str == "palette_13") {
+        return std::optional{AnimPalResolutionStrategy::palette_13};
+    }
+    if (lower_str == "palette13") {
+        return std::optional{AnimPalResolutionStrategy::palette_13};
+    }
+    if (lower_str == "pal-13") {
+        return std::optional{AnimPalResolutionStrategy::palette_13};
+    }
+    if (lower_str == "pal_13") {
+        return std::optional{AnimPalResolutionStrategy::palette_13};
+    }
+    if (lower_str == "pal13") {
+        return std::optional{AnimPalResolutionStrategy::palette_13};
+    }
+    // Fuzzy names for palette_14
+    if (lower_str == "palette-14") {
+        return std::optional{AnimPalResolutionStrategy::palette_14};
+    }
+    if (lower_str == "palette_14") {
+        return std::optional{AnimPalResolutionStrategy::palette_14};
+    }
+    if (lower_str == "palette14") {
+        return std::optional{AnimPalResolutionStrategy::palette_14};
+    }
+    if (lower_str == "pal-14") {
+        return std::optional{AnimPalResolutionStrategy::palette_14};
+    }
+    if (lower_str == "pal_14") {
+        return std::optional{AnimPalResolutionStrategy::palette_14};
+    }
+    if (lower_str == "pal14") {
+        return std::optional{AnimPalResolutionStrategy::palette_14};
+    }
+    // Fuzzy names for palette_15
+    if (lower_str == "palette-15") {
+        return std::optional{AnimPalResolutionStrategy::palette_15};
+    }
+    if (lower_str == "palette_15") {
+        return std::optional{AnimPalResolutionStrategy::palette_15};
+    }
+    if (lower_str == "palette15") {
+        return std::optional{AnimPalResolutionStrategy::palette_15};
+    }
+    if (lower_str == "pal-15") {
+        return std::optional{AnimPalResolutionStrategy::palette_15};
+    }
+    if (lower_str == "pal_15") {
+        return std::optional{AnimPalResolutionStrategy::palette_15};
+    }
+    if (lower_str == "pal15") {
+        return std::optional{AnimPalResolutionStrategy::palette_15};
     }
     // Fuzzy names for internal_png_pal
     if (lower_str == "internal-png-palette") {
@@ -117,15 +606,27 @@ anim_pal_resolution_strategy_from_str(const std::string &str)
     if (lower_str == "internal_png_pal") {
         return std::optional{AnimPalResolutionStrategy::internal_png_pal};
     }
-    // Fuzzy names for full_tileset_scan
+    if (lower_str == "internalpngpal") {
+        return std::optional{AnimPalResolutionStrategy::internal_png_pal};
+    }
+    // Fuzzy names for scan_all_tilesets
+    if (lower_str == "scan-all-tilesets") {
+        return std::optional{AnimPalResolutionStrategy::scan_all_tilesets};
+    }
+    if (lower_str == "scan_all_tilesets") {
+        return std::optional{AnimPalResolutionStrategy::scan_all_tilesets};
+    }
+    if (lower_str == "scanalltilesets") {
+        return std::optional{AnimPalResolutionStrategy::scan_all_tilesets};
+    }
     if (lower_str == "full-tileset-scan") {
-        return std::optional{AnimPalResolutionStrategy::full_tileset_scan};
+        return std::optional{AnimPalResolutionStrategy::scan_all_tilesets};
     }
     if (lower_str == "full_tileset_scan") {
-        return std::optional{AnimPalResolutionStrategy::full_tileset_scan};
+        return std::optional{AnimPalResolutionStrategy::scan_all_tilesets};
     }
-    if (lower_str == "fulltilesetscans") {
-        return std::optional{AnimPalResolutionStrategy::full_tileset_scan};
+    if (lower_str == "fulltilesetscan") {
+        return std::optional{AnimPalResolutionStrategy::scan_all_tilesets};
     }
 
     return std::nullopt;
@@ -144,14 +645,44 @@ anim_pal_resolution_strategy_from_str(const std::string &str)
 [[nodiscard]] inline std::string to_string(const AnimPalResolutionStrategy m)
 {
     switch (m) {
-    case AnimPalResolutionStrategy::error:
-        return "error";
-    case AnimPalResolutionStrategy::default_pal:
-        return "default_pal";
+    case AnimPalResolutionStrategy::scan_local_metatiles:
+        return "scan_local_metatiles";
+    case AnimPalResolutionStrategy::palette_00:
+        return "palette_00";
+    case AnimPalResolutionStrategy::palette_01:
+        return "palette_01";
+    case AnimPalResolutionStrategy::palette_02:
+        return "palette_02";
+    case AnimPalResolutionStrategy::palette_03:
+        return "palette_03";
+    case AnimPalResolutionStrategy::palette_04:
+        return "palette_04";
+    case AnimPalResolutionStrategy::palette_05:
+        return "palette_05";
+    case AnimPalResolutionStrategy::palette_06:
+        return "palette_06";
+    case AnimPalResolutionStrategy::palette_07:
+        return "palette_07";
+    case AnimPalResolutionStrategy::palette_08:
+        return "palette_08";
+    case AnimPalResolutionStrategy::palette_09:
+        return "palette_09";
+    case AnimPalResolutionStrategy::palette_10:
+        return "palette_10";
+    case AnimPalResolutionStrategy::palette_11:
+        return "palette_11";
+    case AnimPalResolutionStrategy::palette_12:
+        return "palette_12";
+    case AnimPalResolutionStrategy::palette_13:
+        return "palette_13";
+    case AnimPalResolutionStrategy::palette_14:
+        return "palette_14";
+    case AnimPalResolutionStrategy::palette_15:
+        return "palette_15";
     case AnimPalResolutionStrategy::internal_png_pal:
         return "internal_png_pal";
-    case AnimPalResolutionStrategy::full_tileset_scan:
-        return "full_tileset_scan";
+    case AnimPalResolutionStrategy::scan_all_tilesets:
+        return "scan_all_tilesets";
     }
     panic("unhandled AnimPalResolutionStrategy value");
 }
@@ -169,3 +700,16 @@ inline std::ostream &operator<<(std::ostream &os, const AnimPalResolutionStrateg
 }
 
 } // namespace porytiles2
+
+template <>
+struct std::formatter<porytiles2::AnimPalResolutionStrategy> {
+    constexpr auto parse(std::format_parse_context &ctx)
+    {
+        return ctx.begin();
+    }
+
+    auto format(const porytiles2::AnimPalResolutionStrategy &value, auto &ctx) const
+    {
+        return std::format_to(ctx.out(), "{}", porytiles2::to_string(value));
+    }
+};

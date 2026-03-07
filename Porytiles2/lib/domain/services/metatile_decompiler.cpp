@@ -31,7 +31,7 @@ ChainableResult<std::vector<Metatile<Rgba32>>> MetatileDecompiler::decompile_met
 
     ImageTileizer<IndexPixel> tileizer{};
     PT_TRY_ASSIGN_CHAIN_ERR(
-        tiles, tileizer.tileize(tiles_png), "failed to tileize tiles.png", std::vector<Metatile<Rgba32>>);
+        tiles, tileizer.tileize(tiles_png), "Failed to tileize tiles.png.", std::vector<Metatile<Rgba32>>);
 
     // Process metatiles in groups of 12 entries
     for (std::size_t metatile_idx = 0; metatile_idx < entries.size() / metatile::entries_per_metatile_triple;

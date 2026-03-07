@@ -19,21 +19,33 @@
 namespace porytiles2 {
 
 /**
- * @brief Record of a single pixel modification made during tile mangling.
+ * @brief A single pixel modification within a tile.
  *
  * @details
- * When a tile is mangled to make it unique, this struct records the exact change made: which tile was modified, which
- * pixel within that tile was changed, and the original vs. new pixel values. This information is needed to backport the
- * change to the tiles.png image.
- *
- * Each TileMangleRecord targets a distinct tile_index — no two records share the same tile_index.
- * This invariant is guaranteed by mangle_duplicates, which visits each tile at most once.
+ * Records which pixel was changed and the before/after values. Multiple PixelMangleChange entries can exist per tile
+ * when multi-pixel mangling is required (e.g., for solid-color tiles where single-pixel swaps are insufficient).
  */
-struct TileMangleRecord {
-    std::size_t tile_index{};  ///< Which tile in the key frame (0-based index, unique across records)
+struct PixelMangleChange {
     std::size_t pixel_index{}; ///< Which pixel in the tile (0-63, linear index)
     IndexPixel original_pixel; ///< The pixel value before mangling
     IndexPixel mangled_pixel;  ///< The pixel value after mangling
+};
+
+/**
+ * @brief Record of all pixel modifications made to a single tile during mangling.
+ *
+ * @details
+ * When a tile is mangled to make it unique, this struct records the exact changes made: which tile was modified and
+ * which pixels were changed. This information is needed to backport the changes to the tiles.png image.
+ *
+ * Each TileMangleRecord targets a distinct tile_index — no two records share the same tile_index.
+ * This invariant is guaranteed by mangle_duplicates, which visits each tile at most once.
+ * A record contains one or more pixel changes (single-pixel mangles are most common, but multi-pixel
+ * mangles are used as a fallback when single-pixel swaps are insufficient).
+ */
+struct TileMangleRecord {
+    std::size_t tile_index{}; ///< Which tile in the key frame (0-based index, unique across records)
+    std::vector<PixelMangleChange> pixel_changes; ///< One or more pixel modifications applied to this tile
 
     /// @brief Orders records by tile_index, enabling storage in std::set to enforce the non-overlapping invariant.
     [[nodiscard]] friend auto operator<=>(const TileMangleRecord &lhs, const TileMangleRecord &rhs)
@@ -94,15 +106,16 @@ class AnimKeyFrameMangler {
      *
      * @param anim_name Animation name (for diagnostic messages)
      * @param tiles Key frame tiles to process (will be copied and potentially modified)
-     * @param palette The palette used by these tiles (for color similarity calculations)
+     * @param palettes Per-tile palettes for color similarity calculations (one pointer per tile)
      * @param extrinsic_transparency The extrinsic transparency color (for tile color conversion in diagnostics)
      * @param existing_tiles Set of all existing tiles to check uniqueness against
+     * @pre @p palettes size must equal @p tiles size.
      * @return MangleResult containing unique tiles and a record of all modifications, or an error if mangling failed
      */
     [[nodiscard]] ChainableResult<MangleResult> mangle_duplicates(
         const std::string &anim_name,
         std::vector<PixelTile<IndexPixel>> tiles,
-        const Palette<Rgba32, pal::max_size> &palette,
+        const std::vector<const Palette<Rgba32, pal::max_size> *> &palettes,
         const Rgba32 &extrinsic_transparency,
         const std::set<PixelTile<IndexPixel>> &existing_tiles) const;
 

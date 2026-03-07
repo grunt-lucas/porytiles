@@ -3,6 +3,7 @@
 #include <gtest/gtest.h>
 
 #include "porytiles2/domain/models/animation.hpp"
+#include "porytiles2/utilities/dynamic_cased_name.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/buffered_user_diagnostics.hpp"
 
@@ -15,254 +16,565 @@ class AnimCodeParserTest : public ::testing::Test {
     AnimCodeParser parser_{&formatter_, &diag_};
 };
 
-// =============================================================================
-// Generated Header Format Tests (Porytiles-managed)
-// =============================================================================
-
-TEST_F(AnimCodeParserTest, ParseFromCallbackDiscoversAllAnimationsInGeneratedHeader)
+TEST_F(AnimCodeParserTest, DiscoversAnimsInPokeemeraldGeneralGeneratedHeader)
 {
     // The callback for Porytiles-managed tilesets: InitTilesetAnim_PorytilesManaged_General
     const std::string callback_func = "InitTilesetAnim_" + anim::porytiles_managed_prefix + "General";
 
     auto result = parser_.parse_from_callback(
-        "Resources/Tests/integration/shared/anim/generated_anim_code.h", callback_func, "General", true);
+        "Resources/Tests/integration/shared/anim/pokeemerald_general_generated_anim_code.h",
+        callback_func,
+        DynamicCasedName{"General"},
+        true);
 
     ASSERT_TRUE(result.has_value()) << "Parsing should succeed";
     const auto &anims = result.value();
 
-    // Should discover all 5 animations without needing to provide expected_anim_names
+    // Should discover all 5 animations
     EXPECT_EQ(anims.size(), 5u)
         << "Should discover 5 animations (flower, land_water_edge, sand_water_edge, water, waterfall)";
 
-    EXPECT_TRUE(anims.contains("flower"));
-    EXPECT_TRUE(anims.contains("land_water_edge"));
-    EXPECT_TRUE(anims.contains("sand_water_edge"));
-    EXPECT_TRUE(anims.contains("water"));
-    EXPECT_TRUE(anims.contains("waterfall"));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"flower"}));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"land_water_edge"}));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"sand_water_edge"}));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"water"}));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"waterfall"}));
 }
 
-TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsFlowerAnimationParamsFromGeneratedHeader)
+TEST_F(AnimCodeParserTest, ExtractsAnimParamsFromPokeemeraldGeneralGeneratedHeader)
 {
     const std::string callback_func = "InitTilesetAnim_" + anim::porytiles_managed_prefix + "General";
 
     auto result = parser_.parse_from_callback(
-        "Resources/Tests/integration/shared/anim/generated_anim_code.h", callback_func, "General", true);
+        "Resources/Tests/integration/shared/anim/pokeemerald_general_generated_anim_code.h",
+        callback_func,
+        DynamicCasedName{"General"},
+        true);
 
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
 
-    // Find flower animation (should be keyed as "flower" in snake_case)
-    ASSERT_TRUE(anims.contains("flower")) << "Should contain 'flower' animation";
-    const auto &flower = anims.at("flower");
-
-    // Verify tile_offset from TILE_OFFSET_4BPP(508)
+    // Find flower animation
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"flower"})) << "Should contain 'flower' animation";
+    const auto &flower = anims.at(DynamicCasedName{"flower"});
+    EXPECT_EQ(flower.cased_name().canonical(), "flower");
     EXPECT_EQ(flower.tile_offset(), 508u);
-
-    // Verify tile_count from 4 * TILE_SIZE_4BPP
     EXPECT_EQ(flower.tile_count(), 4u);
-
-    // Verify frame_factor and frame_offset from timer % 16 == 0
     EXPECT_EQ(flower.frame_factor(), 16u);
     EXPECT_EQ(flower.frame_offset(), 0u);
+    const auto &flower_frames = flower.frame_order();
+    ASSERT_EQ(flower_frames.size(), 4u);
+    EXPECT_EQ(flower_frames[0], DynamicCasedName{"0"});
+    EXPECT_EQ(flower_frames[1], DynamicCasedName{"1"});
+    EXPECT_EQ(flower_frames[2], DynamicCasedName{"0"});
+    EXPECT_EQ(flower_frames[3], DynamicCasedName{"2"});
 
-    // Verify frames from pointer array [Frame0, Frame1, Frame0, Frame2]
-    const auto &frames = flower.frame_order();
-    ASSERT_EQ(frames.size(), 4u);
-    EXPECT_EQ(frames[0], "0");
-    EXPECT_EQ(frames[1], "1");
-    EXPECT_EQ(frames[2], "0");
-    EXPECT_EQ(frames[3], "2");
-}
-
-TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsLandWaterEdgeAnimationParamsFromGeneratedHeader)
-{
-    const std::string callback_func = "InitTilesetAnim_" + anim::porytiles_managed_prefix + "General";
-
-    auto result = parser_.parse_from_callback(
-        "Resources/Tests/integration/shared/anim/generated_anim_code.h", callback_func, "General", true);
-
-    ASSERT_TRUE(result.has_value());
-    const auto &anims = result.value();
-
-    ASSERT_TRUE(anims.contains("land_water_edge")) << "Should contain 'land_water_edge' animation";
-    const auto &land_water_edge = anims.at("land_water_edge");
-
-    // Verify tile_offset from TILE_OFFSET_4BPP(480)
+    // Find land_water_edge animation
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"land_water_edge"})) << "Should contain 'land_water_edge' animation";
+    const auto &land_water_edge = anims.at(DynamicCasedName{"land_water_edge"});
     EXPECT_EQ(land_water_edge.tile_offset(), 480u);
-
-    // Verify tile_count from 10 * TILE_SIZE_4BPP
     EXPECT_EQ(land_water_edge.tile_count(), 10u);
-
-    // Verify frame_factor and frame_offset from timer % 16 == 4
     EXPECT_EQ(land_water_edge.frame_factor(), 16u);
     EXPECT_EQ(land_water_edge.frame_offset(), 4u);
-
-    // Verify frames from pointer array (4 frames for vanilla land_water_edge)
-    const auto &frames = land_water_edge.frame_order();
-    ASSERT_EQ(frames.size(), 4u);
+    const auto &land_water_edge_frames = land_water_edge.frame_order();
+    ASSERT_EQ(land_water_edge_frames.size(), 4u);
     for (std::size_t i = 0; i < 4; ++i) {
-        EXPECT_EQ(frames[i], std::to_string(i));
+        EXPECT_EQ(land_water_edge_frames[i], DynamicCasedName{std::to_string(i)});
+    }
+
+    // Find sand_water_edge animation
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"sand_water_edge"})) << "Should contain 'sand_water_edge' animation";
+    const auto &sand_water_edge = anims.at(DynamicCasedName{"sand_water_edge"});
+    EXPECT_EQ(sand_water_edge.tile_offset(), 464u);
+    EXPECT_EQ(sand_water_edge.tile_count(), 10u);
+    EXPECT_EQ(sand_water_edge.frame_factor(), 16u);
+    EXPECT_EQ(sand_water_edge.frame_offset(), 2u);
+    const auto &sand_water_edge_frames = sand_water_edge.frame_order();
+    ASSERT_EQ(sand_water_edge_frames.size(), 8u);
+    EXPECT_EQ(sand_water_edge_frames[0], DynamicCasedName{"0"});
+    EXPECT_EQ(sand_water_edge_frames[1], DynamicCasedName{"1"});
+    EXPECT_EQ(sand_water_edge_frames[2], DynamicCasedName{"2"});
+    EXPECT_EQ(sand_water_edge_frames[3], DynamicCasedName{"3"});
+    EXPECT_EQ(sand_water_edge_frames[4], DynamicCasedName{"4"});
+    EXPECT_EQ(sand_water_edge_frames[5], DynamicCasedName{"5"});
+    EXPECT_EQ(sand_water_edge_frames[6], DynamicCasedName{"6"});
+    EXPECT_EQ(sand_water_edge_frames[7], DynamicCasedName{"0"});
+
+    // Find water animation
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"water"})) << "Should contain 'water' animation";
+    const auto &water = anims.at(DynamicCasedName{"water"});
+    EXPECT_EQ(water.tile_offset(), 432u);
+    EXPECT_EQ(water.tile_count(), 30u);
+    EXPECT_EQ(water.frame_factor(), 16u);
+    EXPECT_EQ(water.frame_offset(), 1u);
+    const auto &water_frames = water.frame_order();
+    ASSERT_EQ(water_frames.size(), 8u);
+    for (std::size_t i = 0; i < 8; ++i) {
+        EXPECT_EQ(water_frames[i], DynamicCasedName{std::to_string(i)});
+    }
+
+    // Find waterfall animation
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"waterfall"})) << "Should contain 'waterfall' animation";
+    const auto &waterfall = anims.at(DynamicCasedName{"waterfall"});
+    EXPECT_EQ(waterfall.tile_offset(), 496u);
+    EXPECT_EQ(waterfall.tile_count(), 6u);
+    EXPECT_EQ(waterfall.frame_factor(), 16u);
+    EXPECT_EQ(waterfall.frame_offset(), 3u);
+    const auto &waterfall_frames = waterfall.frame_order();
+    ASSERT_EQ(waterfall_frames.size(), 4u);
+    for (std::size_t i = 0; i < 4; ++i) {
+        EXPECT_EQ(waterfall_frames[i], DynamicCasedName{std::to_string(i)});
     }
 }
 
-TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsWaterAnimationParamsFromGeneratedHeader)
+TEST_F(AnimCodeParserTest, DiscoversAnimsInCustom1GeneratedHeader)
 {
-    const std::string callback_func = "InitTilesetAnim_" + anim::porytiles_managed_prefix + "General";
+    // The callback for Porytiles-managed tilesets: InitTilesetAnim_PorytilesManaged_General
+    const std::string callback_func = "InitTilesetAnim_" + anim::porytiles_managed_prefix + "Custom1";
 
     auto result = parser_.parse_from_callback(
-        "Resources/Tests/integration/shared/anim/generated_anim_code.h", callback_func, "General", true);
+        "Resources/Tests/integration/shared/anim/custom1_generated_anim_code.h",
+        callback_func,
+        DynamicCasedName{"Custom1"},
+        true);
+
+    ASSERT_TRUE(result.has_value()) << "Parsing should succeed";
+    const auto &anims = result.value();
+
+    // Should discover all 2 animations
+    EXPECT_EQ(anims.size(), 2u) << "Should discover 2 animations (flower, tv_turned_on)";
+
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"flower"}));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"tv_turned_on"}));
+}
+
+TEST_F(AnimCodeParserTest, ExtractsAnimParamsFromCustom1GeneratedHeader)
+{
+    const std::string callback_func = "InitTilesetAnim_" + anim::porytiles_managed_prefix + "Custom1";
+
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/custom1_generated_anim_code.h",
+        callback_func,
+        DynamicCasedName{"Custom1"},
+        true);
 
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
 
-    // Find water animation (should be keyed as "water" in snake_case)
-    ASSERT_TRUE(anims.contains("water")) << "Should contain 'water' animation";
-    const auto &water = anims.at("water");
+    // Find flower animation
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"flower"})) << "Should contain 'flower' animation";
+    const auto &flower = anims.at(DynamicCasedName{"flower"});
+    EXPECT_EQ(flower.cased_name().canonical(), "flower");
+    EXPECT_EQ(flower.tile_offset(), 22);
+    EXPECT_EQ(flower.tile_count(), 4u);
+    EXPECT_EQ(flower.frame_factor(), 8u);
+    EXPECT_EQ(flower.frame_offset(), 0u);
+    const auto &flower_frames = flower.frame_order();
+    ASSERT_EQ(flower_frames.size(), 4u);
+    EXPECT_EQ(flower_frames[0], DynamicCasedName{"FooBar"});
+    EXPECT_EQ(flower_frames[1], DynamicCasedName{"BazBat"});
+    EXPECT_EQ(flower_frames[2], DynamicCasedName{"CatMat"});
+    EXPECT_EQ(flower_frames[3], DynamicCasedName{"BazBat"});
 
-    // Verify tile_offset from TILE_OFFSET_4BPP(432)
-    EXPECT_EQ(water.tile_offset(), 432u);
-
-    // Verify tile_count from 30 * TILE_SIZE_4BPP
-    EXPECT_EQ(water.tile_count(), 30u);
-
-    // Verify frame_factor and frame_offset from timer % 16 == 1
-    EXPECT_EQ(water.frame_factor(), 16u);
-    EXPECT_EQ(water.frame_offset(), 1u);
-
-    // Verify frames from pointer array
-    const auto &frames = water.frame_order();
-    ASSERT_EQ(frames.size(), 8u);
-    EXPECT_EQ(frames[0], "0");
-    EXPECT_EQ(frames[1], "1");
-    EXPECT_EQ(frames[2], "2");
-    EXPECT_EQ(frames[3], "3");
-    EXPECT_EQ(frames[4], "4");
-    EXPECT_EQ(frames[5], "5");
-    EXPECT_EQ(frames[6], "6");
-    EXPECT_EQ(frames[7], "7");
+    // Find tv_turned_on animation
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"tv_turned_on"})) << "Should contain 'flower' animation";
+    const auto &tv_turned_on = anims.at(DynamicCasedName{"tv_turned_on"});
+    EXPECT_EQ(tv_turned_on.cased_name().canonical(), "tvturnedon");
+    EXPECT_EQ(tv_turned_on.tile_offset(), 351);
+    EXPECT_EQ(tv_turned_on.tile_count(), 8u);
+    EXPECT_EQ(tv_turned_on.frame_factor(), 16u);
+    EXPECT_EQ(tv_turned_on.frame_offset(), 1u);
+    const auto &tv_turned_on_frames = tv_turned_on.frame_order();
+    ASSERT_EQ(tv_turned_on_frames.size(), 2u);
+    EXPECT_EQ(tv_turned_on_frames[0], DynamicCasedName{"Zero"});
+    EXPECT_EQ(tv_turned_on_frames[1], DynamicCasedName{"1"});
 }
 
-TEST_F(AnimCodeParserTest, ParseFromCallbackReturnsErrorForNonExistentFile)
+TEST_F(AnimCodeParserTest, ReturnsErrorForNonExistentFile)
 {
-    auto result = parser_.parse_from_callback("nonexistent_file.h", "InitTilesetAnim_General", "General", false);
+    auto result = parser_.parse_from_callback(
+        "nonexistent_file.h", "InitTilesetAnim_General", DynamicCasedName{"General"}, false);
 
     EXPECT_FALSE(result.has_value()) << "Should return error for non-existent file";
 }
 
-// =============================================================================
-// Vanilla Format Tests
-// =============================================================================
-
-TEST_F(AnimCodeParserTest, ParseFromCallbackDiscoversAnimationsInVanillaFile)
+TEST_F(AnimCodeParserTest, DiscoversAnimsInPokeemeraldTilesetAnimsC)
 {
     // The callback for vanilla tilesets: InitTilesetAnim_General
     auto result = parser_.parse_from_callback(
-        "Resources/Tests/integration/shared/anim/tileset_anims.c", "InitTilesetAnim_General", "General", false);
+        "Resources/Tests/integration/shared/anim/pokeemerald_tileset_anims.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
 
     ASSERT_TRUE(result.has_value()) << "Parsing should succeed";
     const auto &anims = result.value();
 
-    // Should discover at least Flower and Water for General tileset
-    EXPECT_GE(anims.size(), 2u);
-    EXPECT_TRUE(anims.contains("flower"));
-    EXPECT_TRUE(anims.contains("water"));
+    // Should discover all 5 animations
+    EXPECT_EQ(anims.size(), 5u)
+        << "Should discover 5 animations (flower, land_water_edge, sand_water_edge, water, waterfall)";
+
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"flower"}));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"land_water_edge"}));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"sand_water_edge"}));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"water"}));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"waterfall"}));
 }
 
-TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsFlowerAnimationParamsFromVanilla)
+TEST_F(AnimCodeParserTest, ExtractsAnimParamsInPokeemeraldTilesetAnimsC)
 {
     auto result = parser_.parse_from_callback(
-        "Resources/Tests/integration/shared/anim/tileset_anims.c", "InitTilesetAnim_General", "General", false);
+        "Resources/Tests/integration/shared/anim/pokeemerald_tileset_anims.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
 
     ASSERT_TRUE(result.has_value());
     const auto &anims = result.value();
 
-    ASSERT_TRUE(anims.contains("flower")) << "Should contain 'flower' animation";
-    const auto &flower = anims.at("flower");
-
-    // Verify tile_offset from TILE_OFFSET_4BPP(508)
+    // Find flower animation
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"flower"})) << "Should contain 'flower' animation";
+    const auto &flower = anims.at(DynamicCasedName{"flower"});
     EXPECT_EQ(flower.tile_offset(), 508u);
-
-    // Verify tile_count from 4 * TILE_SIZE_4BPP
     EXPECT_EQ(flower.tile_count(), 4u);
-
-    // Verify frame_factor and frame_offset from timer % 16 == 0
     EXPECT_EQ(flower.frame_factor(), 16u);
     EXPECT_EQ(flower.frame_offset(), 0u);
+    const auto &flower_frames = flower.frame_order();
+    ASSERT_EQ(flower_frames.size(), 4u);
+    EXPECT_EQ(flower_frames[0], DynamicCasedName{"0"});
+    EXPECT_EQ(flower_frames[1], DynamicCasedName{"1"});
+    EXPECT_EQ(flower_frames[2], DynamicCasedName{"0"});
+    EXPECT_EQ(flower_frames[3], DynamicCasedName{"2"});
 
-    // Verify frames from pointer array
-    const auto &frames = flower.frame_order();
-    ASSERT_EQ(frames.size(), 4u);
-    EXPECT_EQ(frames[0], "0");
-    EXPECT_EQ(frames[1], "1");
-    EXPECT_EQ(frames[2], "0");
-    EXPECT_EQ(frames[3], "2");
-}
-
-TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsLandWaterEdgeAnimationParamsFromVanilla)
-{
-    auto result = parser_.parse_from_callback(
-        "Resources/Tests/integration/shared/anim/tileset_anims.c", "InitTilesetAnim_General", "General", false);
-
-    ASSERT_TRUE(result.has_value());
-    const auto &anims = result.value();
-
-    ASSERT_TRUE(anims.contains("land_water_edge")) << "Should contain 'land_water_edge' animation";
-    const auto &land_water_edge = anims.at("land_water_edge");
-
-    // Verify tile_offset from TILE_OFFSET_4BPP(480)
+    // Find land_water_edge animation
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"land_water_edge"})) << "Should contain 'land_water_edge' animation";
+    const auto &land_water_edge = anims.at(DynamicCasedName{"land_water_edge"});
     EXPECT_EQ(land_water_edge.tile_offset(), 480u);
-
-    // Verify tile_count from 10 * TILE_SIZE_4BPP
     EXPECT_EQ(land_water_edge.tile_count(), 10u);
-
-    // Verify frame_factor and frame_offset from timer % 16 == 4
     EXPECT_EQ(land_water_edge.frame_factor(), 16u);
     EXPECT_EQ(land_water_edge.frame_offset(), 4u);
-
-    // Verify frames from pointer array (4 frames for vanilla land_water_edge)
-    const auto &frames = land_water_edge.frame_order();
-    ASSERT_EQ(frames.size(), 4u);
+    const auto &land_water_edge_frames = land_water_edge.frame_order();
+    ASSERT_EQ(land_water_edge_frames.size(), 4u);
     for (std::size_t i = 0; i < 4; ++i) {
-        EXPECT_EQ(frames[i], std::to_string(i));
+        EXPECT_EQ(land_water_edge_frames[i], DynamicCasedName{std::to_string(i)});
     }
-}
 
-TEST_F(AnimCodeParserTest, ParseFromCallbackExtractsWaterAnimationParamsFromVanilla)
-{
-    auto result = parser_.parse_from_callback(
-        "Resources/Tests/integration/shared/anim/tileset_anims.c", "InitTilesetAnim_General", "General", false);
+    // Find sand_water_edge animation
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"sand_water_edge"})) << "Should contain 'sand_water_edge' animation";
+    const auto &sand_water_edge = anims.at(DynamicCasedName{"sand_water_edge"});
+    EXPECT_EQ(sand_water_edge.tile_offset(), 464u);
+    EXPECT_EQ(sand_water_edge.tile_count(), 10u);
+    EXPECT_EQ(sand_water_edge.frame_factor(), 16u);
+    EXPECT_EQ(sand_water_edge.frame_offset(), 2u);
+    const auto &sand_water_edge_frames = sand_water_edge.frame_order();
+    ASSERT_EQ(sand_water_edge_frames.size(), 8u);
+    EXPECT_EQ(sand_water_edge_frames[0], DynamicCasedName{"0"});
+    EXPECT_EQ(sand_water_edge_frames[1], DynamicCasedName{"1"});
+    EXPECT_EQ(sand_water_edge_frames[2], DynamicCasedName{"2"});
+    EXPECT_EQ(sand_water_edge_frames[3], DynamicCasedName{"3"});
+    EXPECT_EQ(sand_water_edge_frames[4], DynamicCasedName{"4"});
+    EXPECT_EQ(sand_water_edge_frames[5], DynamicCasedName{"5"});
+    EXPECT_EQ(sand_water_edge_frames[6], DynamicCasedName{"6"});
+    EXPECT_EQ(sand_water_edge_frames[7], DynamicCasedName{"0"});
 
-    ASSERT_TRUE(result.has_value());
-    const auto &anims = result.value();
-
-    ASSERT_TRUE(anims.contains("water")) << "Should contain 'water' animation";
-    const auto &water = anims.at("water");
-
-    // Verify tile_offset from TILE_OFFSET_4BPP(432)
+    // Find water animation
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"water"})) << "Should contain 'water' animation";
+    const auto &water = anims.at(DynamicCasedName{"water"});
     EXPECT_EQ(water.tile_offset(), 432u);
-
-    // Verify tile_count from 30 * TILE_SIZE_4BPP
     EXPECT_EQ(water.tile_count(), 30u);
-
-    // Verify frame_factor and frame_offset from timer % 16 == 1
     EXPECT_EQ(water.frame_factor(), 16u);
     EXPECT_EQ(water.frame_offset(), 1u);
-
-    // Verify frames from pointer array (8 frames for vanilla water)
-    const auto &frames = water.frame_order();
-    ASSERT_EQ(frames.size(), 8u);
+    const auto &water_frames = water.frame_order();
+    ASSERT_EQ(water_frames.size(), 8u);
     for (std::size_t i = 0; i < 8; ++i) {
-        EXPECT_EQ(frames[i], std::to_string(i));
+        EXPECT_EQ(water_frames[i], DynamicCasedName{std::to_string(i)});
+    }
+
+    // Find waterfall animation
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"waterfall"})) << "Should contain 'waterfall' animation";
+    const auto &waterfall = anims.at(DynamicCasedName{"waterfall"});
+    EXPECT_EQ(waterfall.tile_offset(), 496u);
+    EXPECT_EQ(waterfall.tile_count(), 6u);
+    EXPECT_EQ(waterfall.frame_factor(), 16u);
+    EXPECT_EQ(waterfall.frame_offset(), 3u);
+    const auto &waterfall_frames = waterfall.frame_order();
+    ASSERT_EQ(waterfall_frames.size(), 4u);
+    for (std::size_t i = 0; i < 4; ++i) {
+        EXPECT_EQ(waterfall_frames[i], DynamicCasedName{std::to_string(i)});
     }
 }
 
-TEST_F(AnimCodeParserTest, ParseFromCallbackReturnsEmptyForNonExistentCallback)
+TEST_F(AnimCodeParserTest, ReturnsEmptyForNonExistentCallback)
 {
     auto result = parser_.parse_from_callback(
-        "Resources/Tests/integration/shared/anim/tileset_anims.c", "InitTilesetAnim_NonExistent", "NonExistent", false);
+        "Resources/Tests/integration/shared/anim/pokeemerald_tileset_anims.c",
+        "InitTilesetAnim_NonExistent",
+        DynamicCasedName{"NonExistent"},
+        false);
 
     ASSERT_TRUE(result.has_value()) << "Parsing should succeed even with no matches";
     EXPECT_TRUE(result.value().empty()) << "Should return empty map for unknown tileset callback";
+}
+
+TEST_F(AnimCodeParserTest, DiscoversAnimsInPokefireredTilesetAnimsC)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/pokefirered_tileset_anims.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
+
+    ASSERT_TRUE(result.has_value()) << "Parsing should succeed";
+    const auto &anims = result.value();
+
+    EXPECT_EQ(anims.size(), 3u)
+        << "Should discover 3 animations (sand_waters_edge, water_current_landwatersedge, flower)";
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"flower"}));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"sand_waters_edge"}));
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"water_current_land_waters_edge"}));
+}
+
+TEST_F(AnimCodeParserTest, ExtractsAnimParamsInPokefireredTilesetAnimsC)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/pokefirered_tileset_anims.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
+
+    ASSERT_TRUE(result.has_value());
+    const auto &anims = result.value();
+
+    // Find flower animation
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"flower"})) << "Should contain 'flower' animation";
+    const auto &flower = anims.at(DynamicCasedName{"flower"});
+    EXPECT_EQ(flower.tile_offset(), 508u);
+    EXPECT_EQ(flower.tile_count(), 4u);
+    EXPECT_EQ(flower.frame_factor(), 16u);
+    EXPECT_EQ(flower.frame_offset(), 2u);
+    const auto &flower_frames = flower.frame_order();
+    ASSERT_EQ(flower_frames.size(), 5u);
+    for (std::size_t i = 0; i < 5; ++i) {
+        EXPECT_EQ(flower_frames[i], DynamicCasedName{std::to_string(i)});
+    }
+
+    // Find sand_waters_edge animation
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"sand_waters_edge"})) << "Should contain 'sand_waters_edge' animation";
+    const auto &sand_waters_edge = anims.at(DynamicCasedName{"sand_waters_edge"});
+    EXPECT_EQ(sand_waters_edge.tile_offset(), 464u);
+    EXPECT_EQ(sand_waters_edge.tile_count(), 18u);
+    EXPECT_EQ(sand_waters_edge.frame_factor(), 8u);
+    EXPECT_EQ(sand_waters_edge.frame_offset(), 0u);
+    const auto &sand_waters_edge_frames = sand_waters_edge.frame_order();
+    ASSERT_EQ(sand_waters_edge_frames.size(), 8u);
+    for (std::size_t i = 0; i < 8; ++i) {
+        EXPECT_EQ(sand_waters_edge_frames[i], DynamicCasedName{std::to_string(i)});
+    }
+
+    // Find water_current_land_waters_edge animation
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"water_current_land_waters_edge"}))
+        << "Should contain 'water_current_land_waters_edge' animation";
+    const auto &water_current_land_waters_edge = anims.at(DynamicCasedName{"water_current_land_waters_edge"});
+    EXPECT_EQ(water_current_land_waters_edge.tile_offset(), 416u);
+    EXPECT_EQ(water_current_land_waters_edge.tile_count(), 48u);
+    EXPECT_EQ(water_current_land_waters_edge.frame_factor(), 16u);
+    EXPECT_EQ(water_current_land_waters_edge.frame_offset(), 1u);
+    const auto &water_current_land_waters_edge_frames = water_current_land_waters_edge.frame_order();
+    ASSERT_EQ(water_current_land_waters_edge_frames.size(), 8u);
+    for (std::size_t i = 0; i < 8; ++i) {
+        EXPECT_EQ(water_current_land_waters_edge_frames[i], DynamicCasedName{std::to_string(i)});
+    }
+}
+
+TEST_F(AnimCodeParserTest, PreservesCasedNameForSimpleNames)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/pokeemerald_tileset_anims.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
+
+    ASSERT_TRUE(result.has_value());
+    const auto &anims = result.value();
+
+    // Simple PascalCase names should losslessly round-trip via DynamicCasedName
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"flower"}));
+    EXPECT_EQ(anims.at(DynamicCasedName{"flower"}).cased_name().to_c_identifier(), "Flower");
+}
+
+TEST_F(AnimCodeParserTest, PreservesCasedNameForCompoundNames)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/pokefirered_tileset_anims.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
+
+    ASSERT_TRUE(result.has_value());
+    const auto &anims = result.value();
+
+    // Compound PascalCase names must be preserved for frame variable lookup via to_c_identifier()
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"sand_waters_edge"}));
+    EXPECT_EQ(anims.at(DynamicCasedName{"sand_waters_edge"}).cased_name().to_c_identifier(), "SandWatersEdge");
+
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"water_current_land_waters_edge"}));
+    EXPECT_EQ(
+        anims.at(DynamicCasedName{"water_current_land_waters_edge"}).cased_name().to_c_identifier(),
+        "Water_Current_LandWatersEdge");
+}
+
+TEST_F(AnimCodeParserTest, PreservesCasedNameForPorytilesManaged)
+{
+    const std::string callback_func = "InitTilesetAnim_" + anim::porytiles_managed_prefix + "General";
+
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/pokeemerald_general_generated_anim_code.h",
+        callback_func,
+        DynamicCasedName{"General"},
+        true);
+
+    ASSERT_TRUE(result.has_value());
+    const auto &anims = result.value();
+
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"flower"}));
+    EXPECT_EQ(anims.at(DynamicCasedName{"flower"}).cased_name().to_c_identifier(), "Flower");
+
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"land_water_edge"}));
+    EXPECT_EQ(anims.at(DynamicCasedName{"land_water_edge"}).cased_name().to_c_identifier(), "LandWaterEdge");
+}
+
+// ── Error condition tests ─────────────────────────────────────────────────────
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenMultipleCallbacksFound)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step1_multiple_callbacks.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when multiple callback functions match";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenNoCallbackAssignment)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step1_no_callback_assignment.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when callback has no driver assignment";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenDriverFuncNotFound)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step2_driver_func_not_found.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when driver function is not defined";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenNoTimerConditions)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step2_no_timer_conditions.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when driver has no timer conditions";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenQueueFuncNotFound)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step4_queue_func_not_found.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when queue function is not defined";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenNoAppendCalls)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step4_no_append_calls.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
+    EXPECT_FALSE(result.has_value())
+        << "Should return error when queue function has no AppendTilesetAnimToBuffer calls";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenFewerThan3Args)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step4_fewer_than_3_args.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when AppendTilesetAnimToBuffer has fewer than 3 arguments";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenNoIdentifierInFirstArg)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step4_no_identifier_in_first_arg.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when first argument has no identifier";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenBadAnimNamePrefix)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step4_bad_anim_name_prefix.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when array name has wrong prefix";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenMissingTileOffset)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step4_missing_tile_offset.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when TILE_OFFSET_4BPP pattern is missing";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenMissingTileSize)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step4_missing_tile_size.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when TILE_SIZE_4BPP pattern is missing";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenVDestsMultiAppend)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step4_vdests_multi_append.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
+    EXPECT_FALSE(result.has_value())
+        << "Should return error when queue function has multiple AppendTilesetAnimToBuffer calls";
+}
+
+TEST_F(AnimCodeParserTest, ReturnsErrorWhenMissingFrameArray)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/errors/error_step6_missing_frame_array.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when frame array is not found for animation";
 }
 
 } // namespace porytiles2

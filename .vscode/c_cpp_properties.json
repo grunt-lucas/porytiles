@@ -13,7 +13,6 @@
         "${workspaceFolder}/vscode-build/_deps/fmt-src/include/**",
         "${workspaceFolder}/vscode-build/_deps/cli11_proj-src/include/**",
         "${workspaceFolder}/vscode-build/_deps/gsl-src/include/**",
-        "${workspaceFolder}/vscode-build/_deps/cimg-src/**",
         "${workspaceFolder}/vscode-build/_deps/googletest-src/googletest/include/**",
         "${workspaceFolder}/vscode-build/_deps/pngpp-src/include/**",
         "${workspaceFolder}/vscode-build/_deps/json-src/include/**",

@@ -114,10 +114,16 @@ class YamlFileProvider final : public ConfigProvider {
     tiles_pal_mode(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<AnimPalResolutionStrategy>
-    anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
+    global_anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<AnimKeyFrameResolutionStrategy>
-    anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
+    global_anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] LayerValue<FrameLinking>
+    global_frame_linking(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] LayerValue<PerAnimOverrides>
+    per_anim_overrides(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<bool> verify_checksums(ConfigScopeType type, const std::string &scope) const override;
 

@@ -12,6 +12,7 @@
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
+#include "porytiles2/domain/config/frame_linking.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/infra/config/layer_value.hpp"
@@ -314,6 +315,35 @@ parse_anim_key_frame_resolution_strategy(const std::optional<std::string> &raw_v
 
     const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
     return LayerValue<AnimKeyFrameResolutionStrategy>::invalid(error, option_name);
+}
+
+/**
+ * @brief Parses a FrameLinking value from a CLI option string.
+ *
+ * @details
+ * Returns LayerValue::not_provided() if raw_value is std::nullopt.
+ * Returns LayerValue::invalid() for unrecognized values.
+ *
+ * @param raw_value The raw string value from CLI, or std::nullopt if not provided
+ * @param option_name The CLI option name for error messages
+ * @return LayerValue with parsed value, invalid error, or not_provided status
+ */
+LayerValue<FrameLinking>
+parse_frame_linking(const std::optional<std::string> &raw_value, const std::string &option_name)
+{
+    if (!raw_value.has_value()) {
+        return LayerValue<FrameLinking>::not_provided();
+    }
+
+    const auto &str = raw_value.value();
+    const auto result = frame_linking_from_str(str);
+
+    if (result.has_value()) {
+        return LayerValue<FrameLinking>::valid(result.value(), option_name, "CLI");
+    }
+
+    const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
+    return LayerValue<FrameLinking>::invalid(error, option_name);
 }
 
 } // namespace

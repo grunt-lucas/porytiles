@@ -7,11 +7,11 @@
 #include <vector>
 
 // Next, include project libraries with quotes
-#include "fmt/format.h"
 #include "gsl/pointers"
+#include "yaml-cpp/yaml.h"
 
 // Finally, include other Porytiles headers with quotes
-#include "porytiles2/domain/Foo.hpp"
+#include "porytiles2/domain/foo.hpp"
 
 // Notice that between each include group, we place an extra newline
 
@@ -70,6 +70,12 @@ class MyClass {
 
 // cpp file implementations
 int MyClass::compute_something(int accum_value) const {
+    /*
+     * For extended multi-line code comments,
+     * prefer the slash-star style like so.
+     */
+    // Single line comments can use the two-slash style.
+
     // local variable names are snake_case
     int my_local = 1;
     return my_local + my_val_ + accum_value;
@@ -87,7 +93,8 @@ int MyClass::compute_something(int accum_value) const {
  * @brief A basic class for for modeling foos.
  *
  * @details
- * The Foo class assumes that your foos are all like bars, but different.
+ * The Foo class assumes that your foos are all like bars, but different. Notice that the comment goes all the way to
+ * the column limit of 120 before wrapping.
  *
  * @tparam T The type parameter for the foo
  * @invariant Some note would go here
@@ -147,6 +154,70 @@ class Foo {
 };
 ```
 
+## std::formatter Specializations
+
+When adding `std::formatter<T>` specializations for custom types, the `format()` method
+**MUST** use `auto &ctx` — not `std::format_context &ctx`:
+
+```c++
+// CORRECT — works with std::formattable concept on all compilers:
+auto format(const MyType &val, auto &ctx) const
+
+// BROKEN on Apple Clang / libc++ — std::formattable<MyType, char> evaluates to false:
+auto format(const MyType &val, std::format_context &ctx) const
+```
+
+This is due to a libc++ implementation issue (LLVM #66466) where the std::formattable concept
+tests against an internal context type, not std::format_context directly.
+
+All formatters should delegate to the type's porytiles2::to_string() overload for consistency:
+
+```c++
+template <>
+struct std::formatter<porytiles2::MyType> {
+    constexpr auto parse(std::format_parse_context &ctx)
+    {
+        return ctx.begin();
+    }
+
+    auto format(const porytiles2::MyType &value, auto &ctx) const
+    {
+        return std::format_to(ctx.out(), "{}", porytiles2::to_string(value));
+    }
+};
+```
+
+## Error and Diagnostic Message Style
+
+All user-facing error and diagnostic messages (in `FormattableError`, `PT_TRY_ASSIGN_CHAIN_ERR`,
+`diag_->warning()`, `diag_->error()`, etc.) must follow these rules:
+
+1. **Capital first letter** — the message must start with an uppercase letter
+2. **Ends with a period `.`** — every message must end with a period
+3. **Single quotes and `Style::bold`** around highlightable items (file names, tileset names, keys):
+   `FormatParam{tileset_name, Style::bold}` with `'{}'` in the format string
+4. **List headers ending with `:`** are acceptable (e.g. `"To resolve:"`, `"Changes present in Porymap assets:"`)
+5. **Empty strings** used as separators are fine
+6. **Bullet-point sub-items** in multi-line error lists follow their own style
+
+```c++
+// CORRECT:
+FormattableError{"Tileset '{}' does not exist.", FormatParam{tileset_name, Style::bold}};
+FormattableError{"Failed to read metatile_attributes.bin."};
+FormattableError{"Failed to open file for writing: '{}'.", FormatParam{path, Style::bold}};
+
+// WRONG — lowercase start:
+FormattableError{"tileset save failed"};
+
+// WRONG — missing period:
+FormattableError{"Failed to read metatile_attributes.bin"};
+
+// WRONG — raw string concatenation instead of FormatParam:
+FormattableError{"failed to pack palettes for tileset " + tileset_.name()};
+// Should be:
+FormattableError{"Failed to pack palettes for tileset '{}'.", FormatParam{tileset_.name(), Style::bold}};
+```
+
 Note about markdown code blocks: when writing multiline C++ code blocks,
 use "c++" after the triple backticks. E.g.,
 ```c++
@@ -156,3 +227,28 @@ int main() {
     return 0;
 }
 ```
+
+## Preferred Idioms
+
+### Container Membership Checks
+
+Since we target C++23, prefer `contains` over the `find`/`end` iterator pattern for
+associative containers (`std::map`, `std::unordered_map`, `std::set`, etc.):
+
+```c++
+// CORRECT — C++20/23 style:
+if (my_map.contains(key)) {
+    const auto &val = my_map.at(key);
+    // ...
+}
+
+// AVOID — pre-C++20 style:
+if (auto it = my_map.find(key); it != my_map.end()) {
+    const auto &val = it->second;
+    // ...
+}
+```
+
+**Exception**: If you need the iterator for purposes beyond just accessing the value
+(e.g., erasing, modifying in-place, or iterating from that position), the `find` pattern
+is still appropriate.

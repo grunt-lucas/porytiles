@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <format>
 #include <ostream>
 #include <string>
 #include <vector>
@@ -83,3 +84,29 @@ inline std::ostream &operator<<(std::ostream &os, const PaletteHint &hint)
 }
 
 } // namespace porytiles2
+
+template <>
+struct std::formatter<porytiles2::PaletteHint> {
+    constexpr auto parse(std::format_parse_context &ctx)
+    {
+        return ctx.begin();
+    }
+
+    auto format(const porytiles2::PaletteHint &value, auto &ctx) const
+    {
+        return std::format_to(ctx.out(), "{}", porytiles2::to_string(value));
+    }
+};
+
+template <>
+struct std::formatter<std::vector<porytiles2::PaletteHint>> {
+    constexpr auto parse(std::format_parse_context &ctx)
+    {
+        return ctx.begin();
+    }
+
+    auto format(const std::vector<porytiles2::PaletteHint> &value, auto &ctx) const
+    {
+        return std::format_to(ctx.out(), "{}", porytiles2::to_string(value));
+    }
+};

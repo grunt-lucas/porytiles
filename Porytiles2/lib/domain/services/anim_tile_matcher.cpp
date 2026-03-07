@@ -9,14 +9,18 @@ void AnimTileMatcher::register_animation(
     const std::string &anim_name,
     const Animation<Rgba32> &animation,
     std::size_t tile_offset,
-    const Rgba32 &extrinsic_transparency)
+    const Rgba32 &extrinsic_transparency,
+    const std::vector<std::size_t> &subtile_pal_indices)
 {
     if (animation.frames().empty()) {
         panic("animation must have at least one frame");
     }
 
-    const AnimationFrame<Rgba32> &key_frame = animation.key_frame();
+    const AnimFrame<Rgba32> &key_frame = animation.key_frame();
     const auto &tiles = key_frame.tiles();
+
+    assert_or_panic(
+        subtile_pal_indices.size() == tiles.size(), "subtile_pal_indices.size() must equal keyframe tile count");
 
     for (std::size_t i = 0; i < tiles.size(); ++i) {
         const PixelTile<Rgba32> &tile = tiles[i];
@@ -42,6 +46,7 @@ void AnimTileMatcher::register_animation(
             anim_name,
             absolute_index,
             i,
+            subtile_pal_indices[i],
             canonical.h_flip(),
             canonical.v_flip(),
         };
@@ -74,6 +79,7 @@ std::optional<AnimTileMatch> AnimTileMatcher::find_match(const CanonicalPixelTil
         info.anim_name,
         info.tile_index,
         info.keyframe_tile_idx,
+        info.pal_index,
         effective_h_flip,
         effective_v_flip,
     };

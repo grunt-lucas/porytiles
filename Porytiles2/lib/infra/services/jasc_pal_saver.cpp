@@ -12,7 +12,7 @@ JascPalSaver::save(const Palette<Rgba32, pal::max_size> &pal, const std::filesys
     // Open in binary so "\r\n" are explicitly written as CRLF on all platforms
     std::ofstream stream{path, std::ios::binary};
     if (!stream.is_open()) {
-        return FormattableError{"{}: failed to open for writing", FormatParam{path.string(), Style::bold}};
+        return FormattableError{"'{}': Failed to open for writing.", FormatParam{path.string(), Style::bold}};
     }
 
     // TODO: \r\n or \n should be configurable
@@ -31,7 +31,7 @@ JascPalSaver::save(const Palette<Rgba32, pal::max_size> &pal, const std::filesys
     }
 
     if (stream.fail()) {
-        return FormattableError{"{}: failed to write", FormatParam{path.string(), Style::bold}};
+        return FormattableError{"'{}': Failed to write.", FormatParam{path.string(), Style::bold}};
     }
 
     return {};

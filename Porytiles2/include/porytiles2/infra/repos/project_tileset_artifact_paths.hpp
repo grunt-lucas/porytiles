@@ -1,31 +1,9 @@
 #pragma once
 
 #include <filesystem>
-#include <map>
-#include <string>
 #include <vector>
 
 namespace porytiles2 {
-
-/**
- * @brief Maps animation names to their ordered frame file paths.
- *
- * @details
- * AnimationFramePaths stores the resolved filesystem paths for animation frame files
- * discovered from INCBIN declarations in tileset_anims.c or generated_anim_code.h.
- *
- * Key: Animation name in snake_case (e.g., "flower", "water", "sand_water_edge")
- * Value: Ordered vector of frame paths where index corresponds to frame number
- *
- * Example structure:
- * @code
- * {
- *   "flower": ["data/tilesets/.../anim/flower/0.4bpp", "data/tilesets/.../anim/flower/1.4bpp"],
- *   "water": ["data/tilesets/.../anim/water/0.4bpp", ..., "data/tilesets/.../anim/water/7.4bpp"]
- * }
- * @endcode
- */
-using AnimationFramePaths = std::map<std::string, std::vector<std::filesystem::path>>;
 
 /**
  * @brief Represents resolved filesystem paths for tileset artifacts from INCBIN declarations.
@@ -62,17 +40,14 @@ class ProjectTilesetArtifactPaths {
      * @param palette_paths Paths to palette files (e.g., [.../palettes/00.gbapal, ...])
      * @param metatiles_path Path to metatiles file (e.g., "data/tilesets/primary/general/metatiles.bin")
      * @param metatile_attributes_path Path to attributes file (e.g., ".../metatile_attributes.bin")
-     * @param animation_frame_paths Animation frame paths grouped by animation name (optional, may be empty)
      */
     ProjectTilesetArtifactPaths(
         std::filesystem::path tiles_path,
         std::vector<std::filesystem::path> palette_paths,
         std::filesystem::path metatiles_path,
-        std::filesystem::path metatile_attributes_path,
-        AnimationFramePaths animation_frame_paths = {})
+        std::filesystem::path metatile_attributes_path)
         : tiles_path_{std::move(tiles_path)}, palette_paths_{std::move(palette_paths)},
-          metatiles_path_{std::move(metatiles_path)}, metatile_attributes_path_{std::move(metatile_attributes_path)},
-          animation_frame_paths_{std::move(animation_frame_paths)}
+          metatiles_path_{std::move(metatiles_path)}, metatile_attributes_path_{std::move(metatile_attributes_path)}
     {
     }
 
@@ -116,36 +91,11 @@ class ProjectTilesetArtifactPaths {
         return metatile_attributes_path_;
     }
 
-    /**
-     * @brief Returns animation frame paths grouped by animation name.
-     *
-     * @details
-     * Returns the discovered animation frame paths from INCBIN declarations. May be empty if the tileset has no
-     * animations or if animation discovery was not performed.
-     *
-     * @return Map of animation names to ordered frame paths
-     */
-    [[nodiscard]] const AnimationFramePaths &animation_frame_paths() const
-    {
-        return animation_frame_paths_;
-    }
-
-    /**
-     * @brief Checks if animation frame paths have been discovered.
-     *
-     * @return true if animation_frame_paths_ is not empty
-     */
-    [[nodiscard]] bool has_animation_frame_paths() const
-    {
-        return !animation_frame_paths_.empty();
-    }
-
   private:
     std::filesystem::path tiles_path_;
     std::vector<std::filesystem::path> palette_paths_;
     std::filesystem::path metatiles_path_;
     std::filesystem::path metatile_attributes_path_;
-    AnimationFramePaths animation_frame_paths_;
 };
 
 } // namespace porytiles2

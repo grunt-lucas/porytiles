@@ -8,37 +8,115 @@
 #include "porytiles2/infra/config/lazy_layered_config.hpp"
 
 #include <any>
+#include <format>
 #include <functional>
+#include <ostream>
 #include <ranges>
 #include <stdexcept>
 #include <string>
 
+#include "porytiles2/domain/algorithms/diagnostic_stencils.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/utilities/source_locations.hpp"
+#include "porytiles2/xcut/config/config_scope_type.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
-#include "porytiles2/utilities/string_utils.hpp"
 
 namespace porytiles2 {
 
 {{ macros.autogen_warning() }}
 
+namespace {
+
+template <typename T>
+void dump_single_config_value(
+    std::ostream &out, const TextFormatter &format, const std::string &canonical_name,
+    const std::vector<ProvenanceChainLink<T>> &chain)
+{
+    // Section header: bold config name with faint separator
+    out << format.style(canonical_name, Style::bold) << "\n";
+    out << format.style(std::string(canonical_name.size(), '-'), Style::faint) << "\n";
+
+    // Find the winning link (first valid or invalid) for resolved value display
+    const ProvenanceChainLink<T> *winning_link = nullptr;
+    for (const auto &link : chain) {
+        if (link.layer_value.state == ValidationState::valid ||
+            link.layer_value.state == ValidationState::invalid) {
+            winning_link = &link;
+            break;
+        }
+    }
+
+    // Display resolved value using format_config_note, or an error/missing message
+    if (winning_link != nullptr && winning_link->layer_value.state == ValidationState::valid) {
+        ConfigValue<T> config_value{
+            winning_link->layer_value.value.value(),
+            canonical_name,
+            winning_link->layer_value.source_key,
+            winning_link->layer_value.source_info,
+            winning_link->layer_value.source_details};
+        auto note_lines = format_config_note(format, config_value);
+        for (const auto &line : note_lines) {
+            out << "  " << line << "\n";
+        }
+    }
+    else if (winning_link != nullptr && winning_link->layer_value.state == ValidationState::invalid) {
+        out << "  " << format.style("INVALID: " + winning_link->layer_value.error_message, Style::red) << "\n";
+    }
+    else {
+        out << "  " << format.style("(no value found)", Style::faint) << "\n";
+    }
+
+    // Provider chain
+    out << "\n  " << format.style("Provider Chain:", Style::faint) << "\n";
+    for (const auto &link : chain) {
+        switch (link.layer_value.state) {
+        case ValidationState::valid:
+            if (&link == winning_link) {
+                out << "    " << format.style("✓", Style::green) << " " << link.provider_name;
+                out << " = " << format.style(std::format("{}", link.layer_value.value.value()), Style::green);
+            }
+            else {
+                out << "    " << format.style("○", Style::faint) << " "
+                    << format.style(link.provider_name + " = " + std::format("{}", link.layer_value.value.value()),
+                                    Style::faint);
+            }
+            break;
+        case ValidationState::invalid:
+            out << "    " << format.style("✗", Style::red) << " " << link.provider_name;
+            out << " " << format.style("INVALID", Style::red);
+            break;
+        case ValidationState::not_provided:
+            out << "    " << format.style("○", Style::faint) << " "
+                << format.style(link.provider_name + " (not provided)", Style::faint);
+            break;
+        }
+        out << "\n";
+    }
+    out << "\n";
+}
+
+} // anonymous namespace
+
+void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, const std::string &scope) const
+{
+    const std::string header_str = "Configuration dump for {} '{}'";
+    auto type_str = to_string(type);
+    std::string header = std::vformat(header_str, std::make_format_args(type_str, scope));
+    out << format_->format(
+        header_str,
+        FormatParam{to_string(type), Style::bold},
+        FormatParam{scope, Style::bold | Style::cyan}) << "\n";
+    out << format_->style(std::string(header.size(), '='), Style::faint) << "\n\n";
+{% for value in config_values %}
+    dump_single_config_value(out, *format_, "{{ value.canonical_name }}", {{ value.symbol }}_provenance_chain(type, scope));
+{% endfor %}
+}
+
 template <typename T>
 ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
     const std::string &cache_key, const std::string &canonical_name, std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const
 {
-    /*
-     * WARNING! HACK ALERT! WARNING!
-     * DO NOT DELETE THESE USING STATEMENTS.
-     *
-     * We need to declare these here so that the to_string call below can resolve to either the std:: version or one of
-     * our custom versions automagically. Both are needed because:
-     * - std::to_string handles numeric types (size_t, bool, etc.)
-     * - porytiles2::to_string handles custom types (Rgba32, std::string, std::vector<T>, etc.)
-     */
-    using std::to_string;
-    using porytiles2::to_string;
-
     // Check if already cached
     if (cache_.contains(cache_key)) {
         T cached_value{};
@@ -83,7 +161,7 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
         if (layer_value.state == ValidationState::valid) {
             T resolved_value = layer_value.value.value();
             cache_[cache_key] = resolved_value;
-            cache_value_strings_[cache_key] = to_string(resolved_value);
+            cache_value_strings_[cache_key] = std::format("{}", resolved_value);
             source_key_[cache_key] = layer_value.source_key;
             std::string source = format_->format("{}", layer_value.source_info);
             source_[cache_key] = source;

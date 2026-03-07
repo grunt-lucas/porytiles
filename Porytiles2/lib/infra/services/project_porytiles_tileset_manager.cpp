@@ -64,7 +64,7 @@ ChainableResult<TilesetManifest> ProjectPorytilesTilesetManager::read(const std:
     const auto input_path = artifacts_file(project_root_, tileset_name);
 
     if (!std::filesystem::exists(input_path)) {
-        return FormattableError{"{}: file not found", FormatParam{input_path.string(), Style::bold}};
+        return FormattableError{"'{}': File not found.", FormatParam{input_path.string(), Style::bold}};
     }
 
     std::ifstream file{input_path};
@@ -211,7 +211,7 @@ ProjectPorytilesTilesetManager::wire_anim_code(const std::string &tileset_name, 
 
     if (!should_wire) {
         std::vector<std::string> remark_text;
-        remark_text.emplace_back("Config 'tileset.animations.wire_anim_code' is false, removing any existing wiring");
+        remark_text.emplace_back("Config 'tileset.animations.wire_anim_code' is false, removing any existing wiring.");
         remark_text.emplace_back("");
         std::ranges::copy(should_wire.prettify(diag_->formatter()), std::back_inserter(remark_text));
         diag_->remark("wire-tileset-animation", remark_text);

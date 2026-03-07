@@ -1,15 +1,18 @@
 #include "porytiles2/infra/config/lazy_layered_config.hpp"
 
 #include <any>
+#include <format>
 #include <functional>
+#include <ostream>
 #include <ranges>
 #include <stdexcept>
 #include <string>
 
+#include "porytiles2/domain/algorithms/diagnostic_stencils.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/source_locations.hpp"
-#include "porytiles2/utilities/string_utils.hpp"
+#include "porytiles2/xcut/config/config_scope_type.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
 
 namespace porytiles2 {
@@ -21,24 +24,144 @@ namespace porytiles2 {
  *   uv run Scripts/generate_config.py
  */
 
+namespace {
+
+template <typename T>
+void dump_single_config_value(
+    std::ostream &out,
+    const TextFormatter &format,
+    const std::string &canonical_name,
+    const std::vector<ProvenanceChainLink<T>> &chain)
+{
+    // Section header: bold config name with faint separator
+    out << format.style(canonical_name, Style::bold) << "\n";
+    out << format.style(std::string(canonical_name.size(), '-'), Style::faint) << "\n";
+
+    // Find the winning link (first valid or invalid) for resolved value display
+    const ProvenanceChainLink<T> *winning_link = nullptr;
+    for (const auto &link : chain) {
+        if (link.layer_value.state == ValidationState::valid || link.layer_value.state == ValidationState::invalid) {
+            winning_link = &link;
+            break;
+        }
+    }
+
+    // Display resolved value using format_config_note, or an error/missing message
+    if (winning_link != nullptr && winning_link->layer_value.state == ValidationState::valid) {
+        ConfigValue<T> config_value{
+            winning_link->layer_value.value.value(),
+            canonical_name,
+            winning_link->layer_value.source_key,
+            winning_link->layer_value.source_info,
+            winning_link->layer_value.source_details};
+        auto note_lines = format_config_note(format, config_value);
+        for (const auto &line : note_lines) {
+            out << "  " << line << "\n";
+        }
+    }
+    else if (winning_link != nullptr && winning_link->layer_value.state == ValidationState::invalid) {
+        out << "  " << format.style("INVALID: " + winning_link->layer_value.error_message, Style::red) << "\n";
+    }
+    else {
+        out << "  " << format.style("(no value found)", Style::faint) << "\n";
+    }
+
+    // Provider chain
+    out << "\n  " << format.style("Provider Chain:", Style::faint) << "\n";
+    for (const auto &link : chain) {
+        switch (link.layer_value.state) {
+        case ValidationState::valid:
+            if (&link == winning_link) {
+                out << "    " << format.style("✓", Style::green) << " " << link.provider_name;
+                out << " = " << format.style(std::format("{}", link.layer_value.value.value()), Style::green);
+            }
+            else {
+                out << "    " << format.style("○", Style::faint) << " "
+                    << format.style(
+                           link.provider_name + " = " + std::format("{}", link.layer_value.value.value()),
+                           Style::faint);
+            }
+            break;
+        case ValidationState::invalid:
+            out << "    " << format.style("✗", Style::red) << " " << link.provider_name;
+            out << " " << format.style("INVALID", Style::red);
+            break;
+        case ValidationState::not_provided:
+            out << "    " << format.style("○", Style::faint) << " "
+                << format.style(link.provider_name + " (not provided)", Style::faint);
+            break;
+        }
+        out << "\n";
+    }
+    out << "\n";
+}
+
+} // anonymous namespace
+
+void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, const std::string &scope) const
+{
+    const std::string header_str = "Configuration dump for {} '{}'";
+    auto type_str = to_string(type);
+    std::string header = std::vformat(header_str, std::make_format_args(type_str, scope));
+    out << format_->format(
+               header_str, FormatParam{to_string(type), Style::bold}, FormatParam{scope, Style::bold | Style::cyan})
+        << "\n";
+    out << format_->style(std::string(header.size(), '='), Style::faint) << "\n\n";
+    dump_single_config_value(
+        out, *format_, "Number Of Tiles In Primary", num_tiles_in_primary_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Number Of Tiles Total", num_tiles_total_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Number Of Metatiles In Primary", num_metatiles_in_primary_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Number Of Metatiles Total", num_metatiles_total_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Number Of Palettes In Primary", num_pals_in_primary_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Number Of Palettes Total", num_pals_total_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Max Map Data Size", max_map_data_size_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Number Of Tiles Per Metatile", num_tiles_per_metatile_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Extrinsic Transparency", extrinsic_transparency_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Tiles Edit Mode", tiles_edit_mode_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Palettes Edit Mode", pals_edit_mode_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Palette Hints Enabled", pal_hints_enabled_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Palette Hints", pal_hints_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Tiles Palette Mode", tiles_pal_mode_provenance_chain(type, scope));
+    dump_single_config_value(
+        out,
+        *format_,
+        "Global Animation Palette Resolution Strategy",
+        global_anim_pal_resolution_strategy_provenance_chain(type, scope));
+    dump_single_config_value(
+        out,
+        *format_,
+        "Global Animation Key Frame Resolution Strategy",
+        global_anim_key_frame_resolution_strategy_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Global Frame Linking", global_frame_linking_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Per-Animation Overrides", per_anim_overrides_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Verify Checksums", verify_checksums_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Tileset Paths Primary Source", tileset_paths_primary_src_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Tileset Paths Primary Bin", tileset_paths_primary_bin_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Tileset Paths Secondary Source", tileset_paths_secondary_src_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Tileset Paths Secondary Bin", tileset_paths_secondary_bin_provenance_chain(type, scope));
+    dump_single_config_value(
+        out,
+        *format_,
+        "Tileset Animations Wire Anim Code",
+        tileset_animations_wire_anim_code_provenance_chain(type, scope));
+}
+
 template <typename T>
 ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
     const std::string &cache_key,
     const std::string &canonical_name,
     std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const
 {
-    /*
-     * WARNING! HACK ALERT! WARNING!
-     * DO NOT DELETE THESE USING STATEMENTS.
-     *
-     * We need to declare these here so that the to_string call below can resolve to either the std:: version or one of
-     * our custom versions automagically. Both are needed because:
-     * - std::to_string handles numeric types (size_t, bool, etc.)
-     * - porytiles2::to_string handles custom types (Rgba32, std::string, std::vector<T>, etc.)
-     */
-    using porytiles2::to_string;
-    using std::to_string;
-
     // Check if already cached
     if (cache_.contains(cache_key)) {
         T cached_value{};
@@ -84,7 +207,7 @@ ChainableResult<ConfigValue<T>> LazyLayeredConfig::resolve_config_value(
         if (layer_value.state == ValidationState::valid) {
             T resolved_value = layer_value.value.value();
             cache_[cache_key] = resolved_value;
-            cache_value_strings_[cache_key] = to_string(resolved_value);
+            cache_value_strings_[cache_key] = std::format("{}", resolved_value);
             source_key_[cache_key] = layer_value.source_key;
             std::string source = format_->format("{}", layer_value.source_info);
             source_[cache_key] = source;
@@ -300,28 +423,54 @@ LazyLayeredConfig::tiles_pal_mode_raw(ConfigScopeType type, const std::string &s
 }
 
 ChainableResult<ConfigValue<AnimPalResolutionStrategy>>
-LazyLayeredConfig::anim_pal_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const
+LazyLayeredConfig::global_anim_pal_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<AnimPalResolutionStrategy>(
-        key, "Animation Palette Resolution Strategy", [&type, &scope](const ConfigProvider &provider) {
-            return provider.anim_pal_resolution_strategy(type, scope);
+        key, "Global Animation Palette Resolution Strategy", [&type, &scope](const ConfigProvider &provider) {
+            return provider.global_anim_pal_resolution_strategy(type, scope);
         });
 }
 
 ChainableResult<ConfigValue<AnimKeyFrameResolutionStrategy>>
-LazyLayeredConfig::anim_key_frame_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const
+LazyLayeredConfig::global_anim_key_frame_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<AnimKeyFrameResolutionStrategy>(
-        key, "Animation Key Frame Resolution Strategy", [&type, &scope](const ConfigProvider &provider) {
-            return provider.anim_key_frame_resolution_strategy(type, scope);
+        key, "Global Animation Key Frame Resolution Strategy", [&type, &scope](const ConfigProvider &provider) {
+            return provider.global_anim_key_frame_resolution_strategy(type, scope);
+        });
+}
+
+ChainableResult<ConfigValue<FrameLinking>>
+LazyLayeredConfig::global_frame_linking_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<FrameLinking>(
+        key, "Global Frame Linking", [&type, &scope](const ConfigProvider &provider) {
+            return provider.global_frame_linking(type, scope);
+        });
+}
+
+ChainableResult<ConfigValue<PerAnimOverrides>>
+LazyLayeredConfig::per_anim_overrides_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<PerAnimOverrides>(
+        key, "Per-Animation Overrides", [&type, &scope](const ConfigProvider &provider) {
+            return provider.per_anim_overrides(type, scope);
         });
 }
 
@@ -501,19 +650,35 @@ LazyLayeredConfig::tiles_pal_mode_provenance_chain(ConfigScopeType type, const s
 }
 
 std::vector<ProvenanceChainLink<AnimPalResolutionStrategy>>
-LazyLayeredConfig::anim_pal_resolution_strategy_provenance_chain(ConfigScopeType type, const std::string &scope) const
+LazyLayeredConfig::global_anim_pal_resolution_strategy_provenance_chain(
+    ConfigScopeType type, const std::string &scope) const
 {
-    return collect_provenance_chain<AnimPalResolutionStrategy>(
-        [&type, &scope](const ConfigProvider &provider) { return provider.anim_pal_resolution_strategy(type, scope); });
+    return collect_provenance_chain<AnimPalResolutionStrategy>([&type, &scope](const ConfigProvider &provider) {
+        return provider.global_anim_pal_resolution_strategy(type, scope);
+    });
 }
 
 std::vector<ProvenanceChainLink<AnimKeyFrameResolutionStrategy>>
-LazyLayeredConfig::anim_key_frame_resolution_strategy_provenance_chain(
+LazyLayeredConfig::global_anim_key_frame_resolution_strategy_provenance_chain(
     ConfigScopeType type, const std::string &scope) const
 {
     return collect_provenance_chain<AnimKeyFrameResolutionStrategy>([&type, &scope](const ConfigProvider &provider) {
-        return provider.anim_key_frame_resolution_strategy(type, scope);
+        return provider.global_anim_key_frame_resolution_strategy(type, scope);
     });
+}
+
+std::vector<ProvenanceChainLink<FrameLinking>>
+LazyLayeredConfig::global_frame_linking_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<FrameLinking>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.global_frame_linking(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<PerAnimOverrides>>
+LazyLayeredConfig::per_anim_overrides_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<PerAnimOverrides>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.per_anim_overrides(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<bool>>

@@ -93,16 +93,28 @@ ConfigProvider::tiles_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_un
     return LayerValue<TilesPalMode>::not_provided();
 }
 
-LayerValue<AnimPalResolutionStrategy> ConfigProvider::anim_pal_resolution_strategy(
+LayerValue<AnimPalResolutionStrategy> ConfigProvider::global_anim_pal_resolution_strategy(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<AnimPalResolutionStrategy>::not_provided();
 }
 
-LayerValue<AnimKeyFrameResolutionStrategy> ConfigProvider::anim_key_frame_resolution_strategy(
+LayerValue<AnimKeyFrameResolutionStrategy> ConfigProvider::global_anim_key_frame_resolution_strategy(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<AnimKeyFrameResolutionStrategy>::not_provided();
+}
+
+LayerValue<FrameLinking> ConfigProvider::global_frame_linking(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<FrameLinking>::not_provided();
+}
+
+LayerValue<PerAnimOverrides> ConfigProvider::per_anim_overrides(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<PerAnimOverrides>::not_provided();
 }
 
 LayerValue<bool>

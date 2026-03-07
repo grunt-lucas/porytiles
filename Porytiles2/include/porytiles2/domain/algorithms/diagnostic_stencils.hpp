@@ -6,6 +6,7 @@
 
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/models/palette.hpp"
+#include "porytiles2/domain/services/palette_printer.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"

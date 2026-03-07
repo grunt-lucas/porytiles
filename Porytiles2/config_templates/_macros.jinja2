@@ -92,3 +92,35 @@
 {% macro yaml_path(path) -%}
 {% set path_parts = path.split('.') %}{% for part in path_parts %}["{{ part }}"]{% endfor %}
 {%- endmacro %}
+
+{#
+  Macro for generating public fields in mock config classes
+
+  Parameters:
+    - config_values: List of all config values from schema
+    - layer: The layer name to filter by ('domain', 'app', 'infra')
+#}
+{% macro mock_public_fields(config_values, layer) -%}
+{% for value in config_values if value.layer == layer %}
+    {{ value.type }} {{ value.symbol }} = {{ value.default_value }};
+{% endfor %}
+{%- endmacro %}
+
+{#
+  Macro for generating protected _raw method overrides in mock config classes
+
+  Parameters:
+    - config_values: List of all config values from schema
+    - layer: The layer name to filter by ('domain', 'app', 'infra')
+#}
+{% macro mock_raw_methods(config_values, layer) -%}
+{% for value in config_values if value.layer == layer %}
+
+    [[nodiscard]] ChainableResult<ConfigValue<{{ value.type }}>>
+    {{ value.symbol }}_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{
+            {{ value.symbol }}, "{{ value.canonical_name }}", "{{ value.symbol }}", "mock", {}};
+    }
+{% endfor %}
+{%- endmacro %}

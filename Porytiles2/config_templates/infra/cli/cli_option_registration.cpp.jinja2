@@ -38,28 +38,28 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
             }
             // count == 0 means neither flag was provided, leave optional empty
         },
-        "{{ value.cli_desc | default(value.canonical_name) }}");
+        "{{ value.canonical_name }}{% if value.cli_desc %} - {{ value.cli_desc }}{% endif %}");
 
 {% elif value.type == 'std::size_t' %}
     // {{ value.canonical_name }} (std::size_t, captured as string, parsed by CliOptionProvider)
     config_group->add_option(
         "--{{ value.cli_option }}",
         storage.{{ value.symbol }},
-        "{{ value.cli_desc | default(value.canonical_name) }}");
+        "{{ value.canonical_name }}{% if value.cli_desc %} - {{ value.cli_desc }}{% endif %}");
 
 {% elif value.type == 'std::string' %}
     // {{ value.canonical_name }} (std::string)
     config_group->add_option(
         "--{{ value.cli_option }}",
         storage.{{ value.symbol }},
-        "{{ value.cli_desc | default(value.canonical_name) }}");
+        "{{ value.canonical_name }}{% if value.cli_desc %} - {{ value.cli_desc }}{% endif %}");
 
 {% elif value.type == 'Rgba32' %}
     // {{ value.canonical_name }} (Rgba32, captured as string, parsed by CliOptionProvider)
     config_group->add_option(
         "--{{ value.cli_option }}",
         storage.{{ value.symbol }},
-        "{{ value.cli_desc | default(value.canonical_name) }} (format: R,G,B or R,G,B,A, values 0-255)")
+        "{{ value.canonical_name }}{% if value.cli_desc %} - {{ value.cli_desc }}{% endif %} (format: R,G,B or R,G,B,A, values 0-255)")
         ->type_name("R,G,B[,A]");
 
 {% elif value.type in enum_type_map %}
@@ -68,7 +68,7 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
     config_group->add_option(
         "--{{ value.cli_option }}",
         storage.{{ value.symbol }},
-        "{{ value.cli_desc | default(value.canonical_name) }}")
+        "{{ value.canonical_name }}{% if value.cli_desc %} - {{ value.cli_desc }}{% endif %}")
         ->type_name("{{ enum_info.cli_type_name }}");
 
 {% else %}

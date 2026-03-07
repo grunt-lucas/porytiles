@@ -95,27 +95,109 @@ enum_types:
 
   - cpp_type: AnimPalResolutionStrategy
     header_path: porytiles2/domain/config/anim_pal_resolution_strategy.hpp
-    brief: Strategy for resolving animation frame palette mismatches.
+    brief: Strategy for determining which palette to use when decompiling animation tiles.
     details: |
-      When processing animation frames, it's possible for frame palettes to not match the expected
-      tileset palette. This enum determines how to handle such cases during compilation.
+      When decompiling animation tiles, the decompiler needs to know which tileset palette to use for
+      converting indexed pixels to RGBA. This enum determines the strategy used to find that palette.
+      The strategy is applied directly — it drives the palette resolution from the start, rather than
+      being a fallback.
     enum_values:
-      - name: error
-        cli_completion_name: error
-        fuzzy_names: [ error, err ]
-        brief: Disallow palette resolution fallback and error out.
-      - name: default_pal
-        cli_completion_name: default-palette
-        fuzzy_names: [ default-palette, default-pal, default_palette, default_pal, default ]
-        brief: Use palette 00.pal.
+      - name: scan_local_metatiles
+        cli_completion_name: scan-local-metatiles
+        fuzzy_names: [ scan-local-metatiles, scan_local_metatiles, scanlocalmetatiles ]
+        brief: Scan local tileset metatile entries to find palette references for the animation tiles.
+      - name: palette_00
+        cli_completion_name: palette-00
+        fuzzy_names: [ palette-00, palette_00, palette00, pal-0, pal_0, pal0, palette-0, palette_0, palette0 ]
+        brief: Use palette 00 directly.
+      - name: palette_01
+        cli_completion_name: palette-01
+        fuzzy_names: [ palette-01, palette_01, palette01, pal-1, pal_1, pal1, palette-1, palette_1, palette1 ]
+        brief: Use palette 01 directly.
+      - name: palette_02
+        cli_completion_name: palette-02
+        fuzzy_names: [ palette-02, palette_02, palette02, pal-2, pal_2, pal2, palette-2, palette_2, palette2 ]
+        brief: Use palette 02 directly.
+      - name: palette_03
+        cli_completion_name: palette-03
+        fuzzy_names: [ palette-03, palette_03, palette03, pal-3, pal_3, pal3, palette-3, palette_3, palette3 ]
+        brief: Use palette 03 directly.
+      - name: palette_04
+        cli_completion_name: palette-04
+        fuzzy_names: [ palette-04, palette_04, palette04, pal-4, pal_4, pal4, palette-4, palette_4, palette4 ]
+        brief: Use palette 04 directly.
+      - name: palette_05
+        cli_completion_name: palette-05
+        fuzzy_names: [ palette-05, palette_05, palette05, pal-5, pal_5, pal5, palette-5, palette_5, palette5 ]
+        brief: Use palette 05 directly.
+      - name: palette_06
+        cli_completion_name: palette-06
+        fuzzy_names: [ palette-06, palette_06, palette06, pal-6, pal_6, pal6, palette-6, palette_6, palette6 ]
+        brief: Use palette 06 directly.
+      - name: palette_07
+        cli_completion_name: palette-07
+        fuzzy_names: [ palette-07, palette_07, palette07, pal-7, pal_7, pal7, palette-7, palette_7, palette7 ]
+        brief: Use palette 07 directly.
+      - name: palette_08
+        cli_completion_name: palette-08
+        fuzzy_names: [ palette-08, palette_08, palette08, pal-8, pal_8, pal8, palette-8, palette_8, palette8 ]
+        brief: Use palette 08 directly.
+      - name: palette_09
+        cli_completion_name: palette-09
+        fuzzy_names: [ palette-09, palette_09, palette09, pal-9, pal_9, pal9, palette-9, palette_9, palette9 ]
+        brief: Use palette 09 directly.
+      - name: palette_10
+        cli_completion_name: palette-10
+        fuzzy_names: [ palette-10, palette_10, palette10, pal-10, pal_10, pal10 ]
+        brief: Use palette 10 directly.
+      - name: palette_11
+        cli_completion_name: palette-11
+        fuzzy_names: [ palette-11, palette_11, palette11, pal-11, pal_11, pal11 ]
+        brief: Use palette 11 directly.
+      - name: palette_12
+        cli_completion_name: palette-12
+        fuzzy_names: [ palette-12, palette_12, palette12, pal-12, pal_12, pal12 ]
+        brief: Use palette 12 directly.
+      - name: palette_13
+        cli_completion_name: palette-13
+        fuzzy_names: [ palette-13, palette_13, palette13, pal-13, pal_13, pal13 ]
+        brief: Use palette 13 directly.
+      - name: palette_14
+        cli_completion_name: palette-14
+        fuzzy_names: [ palette-14, palette_14, palette14, pal-14, pal_14, pal14 ]
+        brief: Use palette 14 directly.
+      - name: palette_15
+        cli_completion_name: palette-15
+        fuzzy_names: [ palette-15, palette_15, palette15, pal-15, pal_15, pal15 ]
+        brief: Use palette 15 directly.
       - name: internal_png_pal
         cli_completion_name: internal-png-palette
-        fuzzy_names: [ internal-png-palette, internal_png_palette, internal-png-pal, internal_png_pal ]
+        fuzzy_names: [ internal-png-palette, internal_png_palette, internal-png-pal, internal_png_pal, internalpngpal ]
         brief: Use the Porymap-component frame PNG internal palette, if present.
-      - name: full_tileset_scan
-        cli_completion_name: full-tileset-scan
-        fuzzy_names: [ full-tileset-scan, full_tileset_scan, fulltilesetscans ]
+      - name: scan_all_tilesets
+        cli_completion_name: scan-all-tilesets
+        fuzzy_names: [ scan-all-tilesets, scan_all_tilesets, scanalltilesets, full-tileset-scan, full_tileset_scan, fulltilesetscan ]
         brief: Scan layouts config and find all tilesets paired with current tileset, see if an index is present in any.
+
+  - cpp_type: FrameLinking
+    header_path: porytiles2/domain/config/frame_linking.hpp
+    brief: Controls how animation frames are linked to metatile entries.
+    details: |
+      In automatic mode, Porytiles generates and uses key.png for frame linking.
+      In manual mode, Porytiles uses explicit overrides specified in anim.json.
+    enum_values:
+      - name: automatic
+        cli_completion_name: automatic
+        fuzzy_names: [ automatic, auto ]
+        brief: Use key.png for frame linking.
+      - name: manual
+        cli_completion_name: manual
+        fuzzy_names: [ manual ]
+        brief: Use manual overrides in anim.json.
+      - name: hybrid
+        cli_completion_name: hybrid
+        fuzzy_names: [ hybrid ]
+        brief: Automatic key.png linking plus manual override pass (not yet implemented).
 
   - cpp_type: AnimKeyFrameResolutionStrategy
     header_path: porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp
@@ -129,6 +211,10 @@ enum_types:
         cli_completion_name: error
         fuzzy_names: [ error, err ]
         brief: Emit a formatted error and fail decompilation.
+      - name: warning
+        cli_completion_name: warning
+        fuzzy_names: [ warning, warn ]
+        brief: Emit a warning and continue decompilation.
       - name: mangle
         cli_completion_name: mangle
         fuzzy_names: [ mangle ]
@@ -312,20 +398,20 @@ config_values:
     validators: [ ]
     cross_field_validators: [ ]
 
-  - canonical_name: Animation Palette Resolution Strategy
-    symbol: anim_pal_resolution_strategy
+  - canonical_name: Global Animation Palette Resolution Strategy
+    symbol: global_anim_pal_resolution_strategy
     yaml_path: tileset.animations.palette_resolution_strategy
     cli_option: anim-pal-resolution-strategy
-    cli_desc: The strategy to use when resolving the palette for an unreferenced animation.
+    cli_desc: The global strategy for determining which palette to use when decompiling animation tiles.
     layer: domain
     type: AnimPalResolutionStrategy
     parser: parse_anim_pal_resolution_strategy
-    default_value: "AnimPalResolutionStrategy::error"
+    default_value: "AnimPalResolutionStrategy::scan_local_metatiles"
     validators: [ ]
     cross_field_validators: [ ]
 
-  - canonical_name: Animation Key Frame Resolution Strategy
-    symbol: anim_key_frame_resolution_strategy
+  - canonical_name: Global Animation Key Frame Resolution Strategy
+    symbol: global_anim_key_frame_resolution_strategy
     yaml_path: tileset.animations.key_frame_resolution_strategy
     cli_option: anim-key-frame-resolution-strategy
     cli_desc: The strategy to use when decompilation encounters duplicate key frame subtiles.
@@ -333,6 +419,31 @@ config_values:
     type: AnimKeyFrameResolutionStrategy
     parser: parse_anim_key_frame_resolution_strategy
     default_value: "AnimKeyFrameResolutionStrategy::error"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Global Frame Linking
+    symbol: global_frame_linking
+    yaml_path: tileset.animations.frame_linking
+    cli_option: frame-linking
+    cli_desc: The global default frame linking mode for animations.
+    layer: domain
+    type: FrameLinking
+    parser: parse_frame_linking
+    default_value: "FrameLinking::automatic"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Per-Animation Overrides
+    symbol: per_anim_overrides
+    yaml_path: tileset.animations.per-animation-overrides
+    cli_option: per-anim-overrides
+    cli_skip: true
+    yaml_is_map: true
+    layer: domain
+    type: PerAnimOverrides
+    parser: parse_per_anim_overrides
+    default_value: "PerAnimOverrides{}"
     validators: [ ]
     cross_field_validators: [ ]
 

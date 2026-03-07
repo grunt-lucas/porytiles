@@ -18,11 +18,13 @@ namespace {
 
 using namespace porytiles2;
 
+// TODO: these paths are hardcoded all over the place
 // Paths relative to project root
 const std::filesystem::path tileset_anims_c_rel_path = std::filesystem::path{"src"} / "tileset_anims.c";
 const std::filesystem::path tileset_anims_h_rel_path = std::filesystem::path{"include"} / "tileset_anims.h";
 // Note: "include/" is omitted because pokeemerald's makefile adds "include" to the include path
-const std::string porytiles_generated_include_base = "porytiles_generated/tilesets";
+const std::filesystem::path porytiles_generated_include_base =
+    std::filesystem::path{"porytiles_generated"} / "tilesets";
 
 /**
  * @brief Generates the include directive string for a tileset.
@@ -38,7 +40,8 @@ const std::string porytiles_generated_include_base = "porytiles_generated/tilese
  */
 [[nodiscard]] std::string generate_include_directive(const std::string &snake_dir)
 {
-    return fmt::format("#include \"{}/{}/generated_anim_code.h\"", porytiles_generated_include_base, snake_dir);
+    return fmt::format(
+        "#include \"{}/{}/generated_anim_code.h\"", porytiles_generated_include_base.string(), snake_dir);
 }
 
 /**
@@ -168,7 +171,7 @@ read_file_lines(const std::filesystem::path &path, const UserDiagnostics *diag)
     std::ifstream in{path};
     if (!in.is_open()) {
         return FormattableError{
-            diag->formatter().format("{}: failed to open for reading", FormatParam{path.string(), Style::bold})};
+            diag->formatter().format("{}: Failed to open for reading.", FormatParam{path.string(), Style::bold})};
     }
 
     std::vector<std::string> lines;
@@ -188,7 +191,7 @@ write_file_lines(const std::filesystem::path &path, const std::vector<std::strin
     std::ofstream out{path};
     if (!out.is_open()) {
         return FormattableError{
-            diag->formatter().format("{}: failed to open for writing", FormatParam{path.string(), Style::bold})};
+            diag->formatter().format("{}: Failed to open for writing.", FormatParam{path.string(), Style::bold})};
     }
 
     for (const auto &line : lines) {
@@ -198,7 +201,7 @@ write_file_lines(const std::filesystem::path &path, const std::vector<std::strin
 
     if (out.fail()) {
         return FormattableError{
-            diag->formatter().format("{}: failed to write file", FormatParam{path.string(), Style::bold})};
+            diag->formatter().format("{}: Failed to write file.", FormatParam{path.string(), Style::bold})};
     }
 
     return {};
@@ -223,19 +226,21 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
     constexpr std::string_view tileset_prefix = "gTileset_";
     if (!tileset_name.starts_with(tileset_prefix)) {
         return FormattableError{diagnostics_->formatter().format(
-            "tileset name '{}' does not start with 'gTileset_'", FormatParam{tileset_name, Style::bold})};
+            "Tileset name '{}' does not start with 'gTileset_'.", FormatParam{tileset_name, Style::bold})};
     }
 
     // Step 2: Extract shorthand and convert to snake_case for directory name
-    const std::string shorthand = extract_tileset_shorthand(tileset_name);
-    const std::string snake_dir = to_snake_case(shorthand);
+    const auto tileset_cased = extract_tileset_cased_name(tileset_name);
+    const std::string shorthand = tileset_cased.to_pascal_case();
+    const std::string snake_dir = tileset_cased.to_snake_case();
 
     // Step 3: Read .c file
     const auto anims_c_path = project_root_ / tileset_anims_c_rel_path;
     auto c_lines_result = read_file_lines(anims_c_path, diagnostics_);
     if (!c_lines_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"failed to read tileset_anims.c for tileset '{}'", FormatParam{tileset_name, Style::bold}},
+            FormattableError{
+                "Failed to read tileset_anims.c for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
             c_lines_result};
     }
     auto c_lines = std::move(c_lines_result.value());
@@ -245,7 +250,8 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
     auto h_lines_result = read_file_lines(anims_h_path, diagnostics_);
     if (!h_lines_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"failed to read tileset_anims.h for tileset '{}'", FormatParam{tileset_name, Style::bold}},
+            FormattableError{
+                "Failed to read tileset_anims.h for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
             h_lines_result};
     }
     auto h_lines = std::move(h_lines_result.value());
@@ -257,7 +263,7 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
     if (include_exists && declaration_exists) {
         diagnostics_->remark(
             "wire-tileset-animation",
-            "anim include and declaration for '{}' already exist, skipping wire operation",
+            "Animation include and declaration for '{}' already exist, skipping wire operation.",
             FormatParam{tileset_name, Style::bold});
         return {};
     }
@@ -278,7 +284,7 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
         const auto endif_index = find_endif_guard(h_lines);
         if (!endif_index.has_value()) {
             return FormattableError{diagnostics_->formatter().format(
-                "failed to find #endif guard in tileset_anims.h for tileset '{}'",
+                "Failed to find #endif guard in tileset_anims.h for tileset '{}'.",
                 FormatParam{tileset_name, Style::bold})};
         }
 
@@ -324,19 +330,21 @@ ProjectTilesetAnimsModifier::remove_include_for_tileset(const std::string &tiles
     constexpr std::string_view tileset_prefix = "gTileset_";
     if (!tileset_name.starts_with(tileset_prefix)) {
         return FormattableError{diagnostics_->formatter().format(
-            "tileset name '{}' does not start with 'gTileset_'", FormatParam{tileset_name, Style::bold})};
+            "Tileset name '{}' does not start with 'gTileset_'.", FormatParam{tileset_name, Style::bold})};
     }
 
     // Step 2: Extract shorthand and convert to snake_case for directory name
-    const std::string shorthand = extract_tileset_shorthand(tileset_name);
-    const std::string snake_dir = to_snake_case(shorthand);
+    const auto tileset_cased = extract_tileset_cased_name(tileset_name);
+    const std::string shorthand = tileset_cased.to_pascal_case();
+    const std::string snake_dir = tileset_cased.to_snake_case();
 
     // Step 3: Read .c file
     const auto anims_c_path = project_root_ / tileset_anims_c_rel_path;
     auto c_lines_result = read_file_lines(anims_c_path, diagnostics_);
     if (!c_lines_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"failed to read tileset_anims.c for tileset '{}'", FormatParam{tileset_name, Style::bold}},
+            FormattableError{
+                "Failed to read tileset_anims.c for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
             c_lines_result};
     }
     auto c_lines = std::move(c_lines_result.value());
@@ -346,7 +354,8 @@ ProjectTilesetAnimsModifier::remove_include_for_tileset(const std::string &tiles
     auto h_lines_result = read_file_lines(anims_h_path, diagnostics_);
     if (!h_lines_result.has_value()) {
         return ChainableResult<void>{
-            FormattableError{"failed to read tileset_anims.h for tileset '{}'", FormatParam{tileset_name, Style::bold}},
+            FormattableError{
+                "Failed to read tileset_anims.h for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
             h_lines_result};
     }
     auto h_lines = std::move(h_lines_result.value());
@@ -358,7 +367,7 @@ ProjectTilesetAnimsModifier::remove_include_for_tileset(const std::string &tiles
     if (!include_index.has_value() && !decl_index.has_value()) {
         diagnostics_->remark(
             "wire-tileset-animation",
-            "anim include and declaration for '{}' not found, skipping remove operation",
+            "Animation include and declaration for '{}' not found, skipping remove operation.",
             FormatParam{tileset_name, Style::bold});
         return {};
     }

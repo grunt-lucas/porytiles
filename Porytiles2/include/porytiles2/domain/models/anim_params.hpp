@@ -4,6 +4,9 @@
 #include <string>
 #include <vector>
 
+#include "porytiles2/domain/models/anim_override_entry.hpp"
+#include "porytiles2/utilities/dynamic_cased_name.hpp"
+
 namespace porytiles2 {
 
 namespace anim {
@@ -18,7 +21,7 @@ inline constexpr std::size_t default_counter_max = 256;
  * @brief Configuration parameters for a single tileset animation.
  *
  * @details
- * AnimationParams stores the configuration data needed to generate and interpret animation code for a tileset. These
+ * AnimParams stores the configuration data needed to generate and interpret animation code for a tileset. These
  * parameters control how animation frames are selected and where animation tiles are located in VRAM.
  *
  * The parameters map directly to the generated C code patterns:
@@ -30,9 +33,33 @@ inline constexpr std::size_t default_counter_max = 256;
  * - tile_count: The number of tiles per animation frame
  * - counter_max: The maximum timer value before wrapping (typically 256)
  */
-class AnimationParams {
+class AnimParams {
   public:
-    AnimationParams() = default;
+    AnimParams() = default;
+
+    /**
+     * @brief Returns the structured name for this animation, preserving case format information.
+     *
+     * @details
+     * When parsing animation code (vanilla or Porytiles-managed), the animation name is extracted from C identifiers
+     * like `QueueAnimTiles_General_Water_Current_LandWatersEdge`. The segment after the tileset prefix (e.g.,
+     * `"Water_Current_LandWatersEdge"`) is parsed into a @c DynamicCasedName that preserves the two-level segment/word
+     * structure. This enables lossless conversion to any output format: @c to_snake_case() for map keys,
+     * @c to_c_identifier() for frame variable name reconstruction, @c to_pascal_case() for flattened identifiers.
+     *
+     * Replaces the former @c vanilla_identifier_ field, which stored the original C identifier as a plain string.
+     *
+     * @return The structured name, or an empty DynamicCasedName if not set
+     */
+    [[nodiscard]] const DynamicCasedName &cased_name() const
+    {
+        return cased_name_;
+    }
+
+    void cased_name(DynamicCasedName value)
+    {
+        cased_name_ = std::move(value);
+    }
 
     /**
      * @brief Returns the frame factor (modulus divisor for timer).
@@ -80,14 +107,17 @@ class AnimationParams {
      * C code. For example, ["center", "left", "right"] means center.png is Frame0, left.png is Frame1, right.png is
      * Frame2. Frame names can be arbitrary strings (not just numbers).
      *
+     * Each entry is a @c DynamicCasedName so that downstream code can convert losslessly to any case format
+     * (snake_case for file paths, PascalCase for C identifiers) without re-parsing.
+     *
      * @return Reference to the unique frame names vector
      */
-    [[nodiscard]] const std::vector<std::string> &frame_names() const
+    [[nodiscard]] const std::vector<DynamicCasedName> &frame_names() const
     {
         return frame_names_;
     }
 
-    void frame_names(std::vector<std::string> value)
+    void frame_names(std::vector<DynamicCasedName> value)
     {
         frame_names_ = std::move(value);
     }
@@ -100,14 +130,17 @@ class AnimationParams {
      * For example, ["center", "right", "center", "left"] means play center, then right, then center, then left.
      * Frames can repeat in the sequence to create complex animation patterns.
      *
+     * Each entry is a @c DynamicCasedName so that downstream code can convert losslessly to any case format
+     * without re-parsing.
+     *
      * @return Reference to the frame order vector
      */
-    [[nodiscard]] const std::vector<std::string> &frame_order() const
+    [[nodiscard]] const std::vector<DynamicCasedName> &frame_order() const
     {
         return frame_order_;
     }
 
-    void frame_order(std::vector<std::string> value)
+    void frame_order(std::vector<DynamicCasedName> value)
     {
         frame_order_ = std::move(value);
     }
@@ -209,16 +242,37 @@ class AnimationParams {
         counter_max_ = value;
     }
 
+    /**
+     * @brief Returns the manual override entries for this animation.
+     *
+     * @details
+     * When using @c FrameLinking::manual mode, these entries explicitly map metatile positions to animation subtiles,
+     * bypassing key.png-based frame linking. Empty when using automatic mode.
+     *
+     * @return Reference to the override entries vector
+     */
+    [[nodiscard]] const std::vector<AnimOverrideEntry> &overrides() const
+    {
+        return overrides_;
+    }
+
+    void overrides(std::vector<AnimOverrideEntry> value)
+    {
+        overrides_ = std::move(value);
+    }
+
   private:
+    DynamicCasedName cased_name_;
     std::size_t frame_factor_{anim::default_frame_factor};
     std::size_t frame_offset_{anim::default_frame_offset};
-    std::vector<std::string> frame_names_{"0"};
-    std::vector<std::string> frame_order_{"0"};
+    std::vector<DynamicCasedName> frame_names_{DynamicCasedName{"0"}};
+    std::vector<DynamicCasedName> frame_order_{DynamicCasedName{"0"}};
     std::size_t tile_offset_{0};
     std::size_t tile_count_{0};
     std::size_t width_tiles_{0};
     std::size_t height_tiles_{0};
     std::size_t counter_max_{anim::default_counter_max};
+    std::vector<AnimOverrideEntry> overrides_;
 };
 
 } // namespace porytiles2

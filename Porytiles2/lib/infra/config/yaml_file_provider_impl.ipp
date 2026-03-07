@@ -12,6 +12,8 @@
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
+#include "porytiles2/domain/config/frame_linking.hpp"
+#include "porytiles2/domain/config/per_anim_overrides.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/packing/models/palette_hint.hpp"
 #include "porytiles2/infra/config/config_provider.hpp"
@@ -173,6 +175,18 @@ void validate_yaml_paths(
 
     for (const auto &[path, mark] : paths) {
         if (!valid_yaml_paths.contains(path)) {
+            // Skip children of map-type config values (dynamic keys like animation names)
+            bool is_map_child = false;
+            for (const auto &prefix : valid_yaml_map_prefixes) {
+                if (path.starts_with(prefix + ".")) {
+                    is_map_child = true;
+                    break;
+                }
+            }
+            if (is_map_child) {
+                continue;
+            }
+
             const auto source = make_source_string(format, file_path.string(), mark);
             auto details = make_source_details(format, file_path.string(), mark);
 
@@ -571,6 +585,164 @@ LayerValue<AnimPalResolutionStrategy> parse_anim_pal_resolution_strategy(
     }
 }
 
+LayerValue<PerAnimOverrides> parse_per_anim_overrides(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<PerAnimOverrides>::not_provided();
+    }
+
+    try {
+        const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+
+        if (!node.IsMap()) {
+            const auto error = format->format(
+                "'{}' must be a map of animation names to config objects.", FormatParam{key, Style::bold});
+            return LayerValue<PerAnimOverrides>::invalid(error, source, details);
+        }
+
+        PerAnimOverrides configs;
+        for (const auto &kv : node) {
+            const auto anim_name = kv.first.as<std::string>();
+            const auto &anim_node = kv.second;
+
+            PerAnimOverride anim_config;
+            anim_config.anim_name = anim_name;
+
+            if (!anim_node.IsMap()) {
+                const auto anim_mark = kv.first.Mark();
+                const auto anim_source = make_source_string(format, file_path, anim_mark);
+                const auto anim_details = make_source_details(format, file_path, anim_mark);
+                const auto error = format->format(
+                    "'{}' animation '{}' must be a map.",
+                    FormatParam{key, Style::bold},
+                    FormatParam{anim_name, Style::bold});
+                return LayerValue<PerAnimOverrides>::invalid(error, anim_source, anim_details);
+            }
+
+            // Parse frame_linking (optional)
+            if (anim_node["frame_linking"].IsDefined()) {
+                const auto linking_str = anim_node["frame_linking"].as<std::string>();
+                const auto linking_opt = frame_linking_from_str(linking_str);
+                if (!linking_opt.has_value()) {
+                    const auto linking_mark = anim_node["frame_linking"].Mark();
+                    const auto linking_source = make_source_string(format, file_path, linking_mark);
+                    const auto linking_details = make_source_details(format, file_path, linking_mark);
+                    const auto error = format->format(
+                        "'{}' animation '{}' has invalid frame_linking value '{}'.",
+                        FormatParam{key, Style::bold},
+                        FormatParam{anim_name, Style::bold},
+                        FormatParam{linking_str, Style::bold});
+                    return LayerValue<PerAnimOverrides>::invalid(error, linking_source, linking_details);
+                }
+                anim_config.linking = linking_opt.value();
+            }
+
+            // Parse palette_resolution_strategy (optional scalar — per-anim middle tier)
+            if (anim_node["palette_resolution_strategy"].IsDefined()) {
+                const auto &strategy_node = anim_node["palette_resolution_strategy"];
+                const auto strategy_str = strategy_node.as<std::string>();
+                const auto strategy_opt = anim_pal_resolution_strategy_from_str(strategy_str);
+                if (!strategy_opt.has_value()) {
+                    const auto strategy_mark = strategy_node.Mark();
+                    const auto strategy_source = make_source_string(format, file_path, strategy_mark);
+                    const auto strategy_details = make_source_details(format, file_path, strategy_mark);
+                    const auto error = format->format(
+                        "'{}' animation '{}' palette_resolution_strategy has invalid value '{}'.",
+                        FormatParam{key, Style::bold},
+                        FormatParam{anim_name, Style::bold},
+                        FormatParam{strategy_str, Style::bold});
+                    return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
+                }
+                anim_config.pal_resolution_strategy = ConfigOverride{
+                    strategy_opt.value(),
+                    key + "." + anim_name + ".palette_resolution_strategy",
+                    "Animation Config (" + anim_name + ") per-anim strategy"};
+            }
+
+            // Parse key_frame_resolution_strategy (optional scalar — per-anim override)
+            if (anim_node["key_frame_resolution_strategy"].IsDefined()) {
+                const auto &strategy_node = anim_node["key_frame_resolution_strategy"];
+                const auto strategy_str = strategy_node.as<std::string>();
+                const auto strategy_opt = anim_key_frame_resolution_strategy_from_str(strategy_str);
+                if (!strategy_opt.has_value()) {
+                    const auto strategy_mark = strategy_node.Mark();
+                    const auto strategy_source = make_source_string(format, file_path, strategy_mark);
+                    const auto strategy_details = make_source_details(format, file_path, strategy_mark);
+                    const auto error = format->format(
+                        "'{}' animation '{}' key_frame_resolution_strategy has invalid value '{}'.",
+                        FormatParam{key, Style::bold},
+                        FormatParam{anim_name, Style::bold},
+                        FormatParam{strategy_str, Style::bold});
+                    return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
+                }
+                anim_config.key_frame_resolution_strategy = ConfigOverride{
+                    strategy_opt.value(),
+                    key + "." + anim_name + ".key_frame_resolution_strategy",
+                    "Animation Config (" + anim_name + ") key_frame_resolution_strategy"};
+            }
+
+            // Parse per_tile_palette_resolution_strategies (optional sequence — per-tile most specific tier)
+            if (anim_node["per_tile_palette_resolution_strategies"].IsDefined()) {
+                const auto &strategies_node = anim_node["per_tile_palette_resolution_strategies"];
+                if (!strategies_node.IsSequence()) {
+                    const auto strategies_mark = strategies_node.Mark();
+                    const auto strategies_source = make_source_string(format, file_path, strategies_mark);
+                    const auto strategies_details = make_source_details(format, file_path, strategies_mark);
+                    const auto error = format->format(
+                        "'{}' animation '{}' per_tile_palette_resolution_strategies must be a sequence.",
+                        FormatParam{key, Style::bold},
+                        FormatParam{anim_name, Style::bold});
+                    return LayerValue<PerAnimOverrides>::invalid(error, strategies_source, strategies_details);
+                }
+
+                for (std::size_t i = 0; i < strategies_node.size(); ++i) {
+                    const auto strategy_str = strategies_node[i].as<std::string>();
+                    if (strategy_str == "_") {
+                        anim_config.per_tile_pal_resolution_strategies.emplace_back();
+                    }
+                    else {
+                        const auto strategy_opt = anim_pal_resolution_strategy_from_str(strategy_str);
+                        if (!strategy_opt.has_value()) {
+                            const auto strategy_mark = strategies_node[i].Mark();
+                            const auto strategy_source = make_source_string(format, file_path, strategy_mark);
+                            const auto strategy_details = make_source_details(format, file_path, strategy_mark);
+                            const auto error = format->format(
+                                "'{}' animation '{}' per_tile_palette_resolution_strategies[{}] has invalid value "
+                                "'{}'.",
+                                FormatParam{key, Style::bold},
+                                FormatParam{anim_name, Style::bold},
+                                FormatParam{i, Style::bold},
+                                FormatParam{strategy_str, Style::bold});
+                            return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
+                        }
+                        anim_config.per_tile_pal_resolution_strategies.push_back(
+                            ConfigOverride{
+                                strategy_opt.value(),
+                                key + "." + anim_name + ".per_tile_palette_resolution_strategies[" + std::to_string(i) +
+                                    "]",
+                                "Animation Config (" + anim_name + ") subtile " + std::to_string(i)});
+                    }
+                }
+            }
+
+            configs[anim_name] = std::move(anim_config);
+        }
+
+        return LayerValue<PerAnimOverrides>::valid(std::move(configs), key, source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error =
+            format->format("Failed to parse '{}' as animation configs: {}.", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<PerAnimOverrides>::invalid(error, source, details);
+    }
+}
+
 LayerValue<AnimKeyFrameResolutionStrategy> parse_anim_key_frame_resolution_strategy(
     const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
@@ -587,7 +759,7 @@ LayerValue<AnimKeyFrameResolutionStrategy> parse_anim_key_frame_resolution_strat
 
         if (!mode_opt.has_value()) {
             const auto error = format->format(
-                "'{}' has invalid value '{}'", FormatParam{key, Style::bold}, FormatParam{node_value, Style::bold});
+                "'{}' has invalid value '{}'.", FormatParam{key, Style::bold}, FormatParam{node_value, Style::bold});
             return LayerValue<AnimKeyFrameResolutionStrategy>::invalid(error, source, details);
         }
 
@@ -596,10 +768,42 @@ LayerValue<AnimKeyFrameResolutionStrategy> parse_anim_key_frame_resolution_strat
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
         const auto error = format->format(
-            "Failed to parse '{}' as AnimKeyFrameResolutionStrategy: {}", FormatParam{key, Style::bold}, e.what());
+            "Failed to parse '{}' as AnimKeyFrameResolutionStrategy: {}.", FormatParam{key, Style::bold}, e.what());
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<AnimKeyFrameResolutionStrategy>::invalid(error, source, details);
+    }
+}
+
+LayerValue<FrameLinking> parse_frame_linking(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<FrameLinking>::not_provided();
+    }
+
+    try {
+        const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        const auto node_value = node.as<std::string>();
+        const auto mode_opt = frame_linking_from_str(node_value);
+
+        if (!mode_opt.has_value()) {
+            const auto error = format->format(
+                "'{}' has invalid value '{}'.", FormatParam{key, Style::bold}, FormatParam{node_value, Style::bold});
+            return LayerValue<FrameLinking>::invalid(error, source, details);
+        }
+
+        return LayerValue<FrameLinking>::valid(mode_opt.value(), key, source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error =
+            format->format("Failed to parse '{}' as FrameLinking: {}.", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<FrameLinking>::invalid(error, source, details);
     }
 }
 

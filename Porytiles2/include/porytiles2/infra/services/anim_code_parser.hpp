@@ -6,7 +6,8 @@
 
 #include "gsl/pointers"
 
-#include "porytiles2/domain/models/animation_params.hpp"
+#include "porytiles2/domain/models/anim_params.hpp"
+#include "porytiles2/utilities/dynamic_cased_name.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
@@ -17,7 +18,7 @@ namespace porytiles2 {
  * @brief Parses C code to extract tileset animation parameters using callback chain discovery.
  *
  * @details
- * AnimCodeParser extracts AnimationParams from C source files by following the callback chain rather than relying on
+ * AnimCodeParser extracts AnimParams from C source files by following the callback chain rather than relying on
  * hardcoded function prefixes. The discovery process works as follows:
  *
  * 1. **Callback function** (e.g., `InitTilesetAnim_General`): Contains assignment to the driver callback pointer
@@ -72,15 +73,14 @@ class AnimCodeParser {
      *
      * @param c_file_path Path to the C file containing animation code (tileset_anims.c or generated_anim_code.h)
      * @param callback_func_name The callback function name from the tileset struct (e.g., "InitTilesetAnim_General")
-     * @param pascal_case_tileset The tileset name without prefix (e.g., "General" from "gTileset_General")
+     * @param tileset_cased_name The tileset name as a DynamicCasedName (e.g., DynamicCasedName{"General"})
      * @param porytiles_managed True if this is a Porytiles-managed tileset (uses "PorytilesManaged_" prefix)
-     * @pre The pascal_case_tileset param must be in valid PascalCase
      * @return Map of animation names (snake_case) to their parsed parameters, or error
      */
-    [[nodiscard]] ChainableResult<std::map<std::string, AnimationParams>> parse_from_callback(
+    [[nodiscard]] ChainableResult<std::map<DynamicCasedName, AnimParams>> parse_from_callback(
         const std::filesystem::path &c_file_path,
         const std::string &callback_func_name,
-        const std::string &pascal_case_tileset,
+        const DynamicCasedName &tileset_cased_name,
         bool porytiles_managed) const;
 
   private:

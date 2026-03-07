@@ -1,8 +1,8 @@
 #pragma once
 
 #include <cstdint>
+#include <format>
 #include <functional>
-#include <sstream>
 #include <string>
 #include <type_traits>
 #include <utility>
@@ -441,18 +441,18 @@ class FormatParam {
      * @brief Constructs a FormatParam by converting a value to string.
      *
      * @details
-     * Creates a FormatParam by converting the given value to a string using stream insertion. This constructor is
-     * constrained to accept only types that support operator<<, excluding std::string to avoid ambiguity with the
-     * existing string constructor.
+     * Creates a FormatParam by converting the given value to a string using @c std::format.
+     * This constructor is constrained to accept types that satisfy @c std::formattable<T, char>,
+     * excluding @c std::string to avoid ambiguity with the existing string constructor.
      *
-     * @tparam T The type of the value (must support stream insertion)
+     * @tparam T The type of the value (must satisfy @c std::formattable<T, char>)
      * @param value The value to convert to string
      */
     template <typename T>
         requires(
             !std::is_same_v<std::decay_t<T>, std::string> && !std::is_same_v<std::decay_t<T>, FormatParam> &&
-            requires(std::ostringstream os, T val) { os << val; })
-    FormatParam(T &&value) : FormatParam(to_string_impl(std::forward<T>(value)))
+            std::formattable<std::decay_t<T>, char>)
+    FormatParam(T &&value) : FormatParam(resolve_string(std::forward<T>(value)))
     {
     }
 
@@ -460,18 +460,18 @@ class FormatParam {
      * @brief Constructs a FormatParam by converting a value to styled string.
      *
      * @details
-     * Creates a FormatParam by converting the given value to a string using stream insertion, with the specified
-     * styling attributes applied.
+     * Creates a FormatParam by converting the given value to a string using @c std::format,
+     * with the specified styling attributes applied.
      *
-     * @tparam T The type of the value (must support stream insertion)
+     * @tparam T The type of the value (must satisfy @c std::formattable<T, char>)
      * @param value The value to convert to string
      * @param styles The styling attributes to apply to the text
      */
     template <typename T>
         requires(
             !std::is_same_v<std::decay_t<T>, std::string> && !std::is_same_v<std::decay_t<T>, FormatParam> &&
-            requires(std::ostringstream os, T val) { os << val; })
-    explicit FormatParam(T &&value, Style styles) : FormatParam(to_string_impl(std::forward<T>(value)), styles)
+            std::formattable<std::decay_t<T>, char>)
+    explicit FormatParam(T &&value, Style styles) : FormatParam(resolve_string(std::forward<T>(value)), styles)
     {
     }
 
@@ -489,12 +489,21 @@ class FormatParam {
     std::string text_; ///< The text content to be formatted
     Style styles_;     ///< The styling attributes to apply to the text
 
+    /**
+     * @brief Resolves a value to its string representation via @c std::format.
+     *
+     * @details
+     * To add formatting support for a new type, provide a @c std::formatter<T> specialization
+     * that delegates to the type's @c porytiles2::to_string() overload.
+     *
+     * @tparam T The type of value to convert (must satisfy @c std::formattable<T, char>)
+     * @param value The value to convert to string
+     * @return String representation of the value
+     */
     template <typename T>
-    static std::string to_string_impl(T &&value)
+    static std::string resolve_string(T &&value)
     {
-        std::ostringstream oss;
-        oss << std::forward<T>(value);
-        return oss.str();
+        return std::format("{}", std::forward<T>(value));
     }
 };
 

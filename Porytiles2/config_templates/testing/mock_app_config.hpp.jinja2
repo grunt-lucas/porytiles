@@ -1,0 +1,20 @@
+{% import '_macros.jinja2' as macros %}
+#pragma once
+
+{{ macros.autogen_warning() }}
+
+#include <string>
+
+#include "porytiles2/app/config/app_config.hpp"
+
+namespace porytiles2 {
+
+class MockAppConfig : public AppConfig {
+  public:
+{{ macros.mock_public_fields(config_values, 'app') }}
+
+  protected:
+{{ macros.mock_raw_methods(config_values, 'app') }}
+};
+
+} // namespace porytiles2
