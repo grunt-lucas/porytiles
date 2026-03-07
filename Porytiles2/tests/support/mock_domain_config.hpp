@@ -31,9 +31,9 @@ class MockDomainConfig : public DomainConfig {
     std::vector<PaletteHint> pal_hints = std::vector<PaletteHint>{};
     TilesPalMode tiles_pal_mode = TilesPalMode::true_color;
     AnimPalResolutionStrategy global_anim_pal_resolution_strategy = AnimPalResolutionStrategy::scan_local_metatiles;
-    AnimConfigs anim_configs = AnimConfigs{};
     AnimKeyFrameResolutionStrategy global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
     FrameLinking global_frame_linking = FrameLinking::automatic;
+    PerAnimOverrides per_anim_overrides = PerAnimOverrides{};
 
   protected:
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
@@ -133,12 +133,6 @@ class MockDomainConfig : public DomainConfig {
             {}};
     }
 
-    [[nodiscard]] ChainableResult<ConfigValue<AnimConfigs>>
-    anim_configs_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{anim_configs, "Animation Configs", "anim_configs", "mock", {}};
-    }
-
     [[nodiscard]] ChainableResult<ConfigValue<AnimKeyFrameResolutionStrategy>>
     global_anim_key_frame_resolution_strategy_raw(ConfigScopeType, const std::string &) const override
     {
@@ -154,6 +148,12 @@ class MockDomainConfig : public DomainConfig {
     global_frame_linking_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{global_frame_linking, "Global Frame Linking", "global_frame_linking", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<PerAnimOverrides>>
+    per_anim_overrides_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{per_anim_overrides, "Per-Animation Overrides", "per_anim_overrides", "mock", {}};
     }
 };
 

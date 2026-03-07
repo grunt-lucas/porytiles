@@ -410,19 +410,6 @@ config_values:
     validators: [ ]
     cross_field_validators: [ ]
 
-  - canonical_name: Animation Configs
-    symbol: anim_configs
-    yaml_path: tileset.animations.per-animation-overrides
-    cli_option: anim-configs
-    cli_skip: true
-    yaml_is_map: true
-    layer: domain
-    type: AnimConfigs
-    parser: parse_anim_configs
-    default_value: "AnimConfigs{}"
-    validators: [ ]
-    cross_field_validators: [ ]
-
   - canonical_name: Global Animation Key Frame Resolution Strategy
     symbol: global_anim_key_frame_resolution_strategy
     yaml_path: tileset.animations.key_frame_resolution_strategy
@@ -444,6 +431,19 @@ config_values:
     type: FrameLinking
     parser: parse_frame_linking
     default_value: "FrameLinking::automatic"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Per-Animation Overrides
+    symbol: per_anim_overrides
+    yaml_path: tileset.animations.per-animation-overrides
+    cli_option: per-anim-overrides
+    cli_skip: true
+    yaml_is_map: true
+    layer: domain
+    type: PerAnimOverrides
+    parser: parse_per_anim_overrides
+    default_value: "PerAnimOverrides{}"
     validators: [ ]
     cross_field_validators: [ ]
 

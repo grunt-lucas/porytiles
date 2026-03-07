@@ -132,13 +132,14 @@ void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, con
         *format_,
         "Global Animation Palette Resolution Strategy",
         global_anim_pal_resolution_strategy_provenance_chain(type, scope));
-    dump_single_config_value(out, *format_, "Animation Configs", anim_configs_provenance_chain(type, scope));
     dump_single_config_value(
         out,
         *format_,
         "Global Animation Key Frame Resolution Strategy",
         global_anim_key_frame_resolution_strategy_provenance_chain(type, scope));
     dump_single_config_value(out, *format_, "Global Frame Linking", global_frame_linking_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Per-Animation Overrides", per_anim_overrides_provenance_chain(type, scope));
     dump_single_config_value(out, *format_, "Verify Checksums", verify_checksums_provenance_chain(type, scope));
     dump_single_config_value(
         out, *format_, "Tileset Paths Primary Source", tileset_paths_primary_src_provenance_chain(type, scope));
@@ -434,18 +435,6 @@ LazyLayeredConfig::global_anim_pal_resolution_strategy_raw(ConfigScopeType type,
         });
 }
 
-ChainableResult<ConfigValue<AnimConfigs>>
-LazyLayeredConfig::anim_configs_raw(ConfigScopeType type, const std::string &scope) const
-{
-    const auto name = extract_function_name();
-    // Strip the _raw suffix from the function name for cache key
-    const auto base_name = name.substr(0, name.size() - 4);
-    const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<AnimConfigs>(key, "Animation Configs", [&type, &scope](const ConfigProvider &provider) {
-        return provider.anim_configs(type, scope);
-    });
-}
-
 ChainableResult<ConfigValue<AnimKeyFrameResolutionStrategy>>
 LazyLayeredConfig::global_anim_key_frame_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const
 {
@@ -469,6 +458,19 @@ LazyLayeredConfig::global_frame_linking_raw(ConfigScopeType type, const std::str
     return resolve_config_value<FrameLinking>(
         key, "Global Frame Linking", [&type, &scope](const ConfigProvider &provider) {
             return provider.global_frame_linking(type, scope);
+        });
+}
+
+ChainableResult<ConfigValue<PerAnimOverrides>>
+LazyLayeredConfig::per_anim_overrides_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<PerAnimOverrides>(
+        key, "Per-Animation Overrides", [&type, &scope](const ConfigProvider &provider) {
+            return provider.per_anim_overrides(type, scope);
         });
 }
 
@@ -656,13 +658,6 @@ LazyLayeredConfig::global_anim_pal_resolution_strategy_provenance_chain(
     });
 }
 
-std::vector<ProvenanceChainLink<AnimConfigs>>
-LazyLayeredConfig::anim_configs_provenance_chain(ConfigScopeType type, const std::string &scope) const
-{
-    return collect_provenance_chain<AnimConfigs>(
-        [&type, &scope](const ConfigProvider &provider) { return provider.anim_configs(type, scope); });
-}
-
 std::vector<ProvenanceChainLink<AnimKeyFrameResolutionStrategy>>
 LazyLayeredConfig::global_anim_key_frame_resolution_strategy_provenance_chain(
     ConfigScopeType type, const std::string &scope) const
@@ -677,6 +672,13 @@ LazyLayeredConfig::global_frame_linking_provenance_chain(ConfigScopeType type, c
 {
     return collect_provenance_chain<FrameLinking>(
         [&type, &scope](const ConfigProvider &provider) { return provider.global_frame_linking(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<PerAnimOverrides>>
+LazyLayeredConfig::per_anim_overrides_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<PerAnimOverrides>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.per_anim_overrides(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<bool>>

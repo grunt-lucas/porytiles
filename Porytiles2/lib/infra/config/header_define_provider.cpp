@@ -168,13 +168,6 @@ HeaderDefineProvider::global_anim_pal_resolution_strategy(ConfigScopeType /*type
     return LayerValue<AnimPalResolutionStrategy>::not_provided();
 }
 
-LayerValue<AnimConfigs>
-HeaderDefineProvider::anim_configs(ConfigScopeType /*type*/, const std::string & /*scope*/) const
-{
-    // No header_define specified for this config value
-    return LayerValue<AnimConfigs>::not_provided();
-}
-
 LayerValue<AnimKeyFrameResolutionStrategy> HeaderDefineProvider::global_anim_key_frame_resolution_strategy(
     ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {
@@ -187,6 +180,13 @@ HeaderDefineProvider::global_frame_linking(ConfigScopeType /*type*/, const std::
 {
     // No header_define specified for this config value
     return LayerValue<FrameLinking>::not_provided();
+}
+
+LayerValue<PerAnimOverrides>
+HeaderDefineProvider::per_anim_overrides(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<PerAnimOverrides>::not_provided();
 }
 
 LayerValue<bool> HeaderDefineProvider::verify_checksums(ConfigScopeType /*type*/, const std::string & /*scope*/) const

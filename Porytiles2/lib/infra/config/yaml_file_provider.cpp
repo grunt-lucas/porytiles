@@ -297,23 +297,6 @@ YamlFileProvider::global_anim_pal_resolution_strategy(ConfigScopeType type, cons
         "tileset.animations.palette_resolution_strategy");
 }
 
-LayerValue<AnimConfigs> YamlFileProvider::anim_configs(ConfigScopeType type, const std::string &scope) const
-{
-    auto paths_result = get_config_path_chain(project_root_, type, scope);
-    if (!paths_result.has_value()) {
-        return LayerValue<AnimConfigs>::invalid(
-            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
-    }
-    return search_config_files<AnimConfigs>(
-        format_,
-        paths_result.value(),
-        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["per-animation-overrides"]; },
-        parse_anim_configs,
-        "tileset.animations.per-animation-overrides",
-        "tileset.animations.per-animation-overrides");
-}
-
 LayerValue<AnimKeyFrameResolutionStrategy>
 YamlFileProvider::global_anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const
 {
@@ -347,6 +330,23 @@ LayerValue<FrameLinking> YamlFileProvider::global_frame_linking(ConfigScopeType 
         parse_frame_linking,
         "tileset.animations.frame_linking",
         "tileset.animations.frame_linking");
+}
+
+LayerValue<PerAnimOverrides> YamlFileProvider::per_anim_overrides(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<PerAnimOverrides>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<PerAnimOverrides>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["per-animation-overrides"]; },
+        parse_per_anim_overrides,
+        "tileset.animations.per-animation-overrides",
+        "tileset.animations.per-animation-overrides");
 }
 
 LayerValue<bool> YamlFileProvider::verify_checksums(ConfigScopeType type, const std::string &scope) const

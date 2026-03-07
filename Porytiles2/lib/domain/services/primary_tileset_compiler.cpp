@@ -14,9 +14,9 @@
 #include "porytiles2/domain/algorithms/tile_converters.hpp"
 #include "porytiles2/domain/algorithms/tile_extractors.hpp"
 #include "porytiles2/domain/algorithms/tileset_compile_validators.hpp"
-#include "porytiles2/domain/config/anim_configs.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/config/frame_linking.hpp"
+#include "porytiles2/domain/config/per_anim_overrides.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/canonical_shape_tile.hpp"
@@ -166,7 +166,7 @@ class CompilerTask {
     ConfigValue<ArtifactEditMode> pals_edit_mode_;
     ConfigValue<TilesPalMode> tiles_pal_mode_;
     ConfigValue<FrameLinking> global_frame_linking_;
-    ConfigValue<AnimConfigs> anim_configs_;
+    ConfigValue<PerAnimOverrides> per_anim_overrides_;
 
     // Intermediate state - Porytiles
     std::vector<Metatile<Rgba32>> porytiles_metatiles_{};
@@ -215,7 +215,7 @@ ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
     PT_UNWRAP_TILESET_CONFIG_REF(config_, pals_edit_mode, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, tiles_pal_mode, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, global_frame_linking, tileset_.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_REF(config_, anim_configs, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, per_anim_overrides, tileset_.name(), std::unique_ptr<Tileset>);
 
     extrinsic_transparency_ = extrinsic_transparency;
     num_pals_in_primary_ = num_pals_in_primary;
@@ -229,7 +229,7 @@ ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
     pals_edit_mode_ = pals_edit_mode;
     tiles_pal_mode_ = tiles_pal_mode;
     global_frame_linking_ = global_frame_linking;
-    anim_configs_ = anim_configs;
+    per_anim_overrides_ = per_anim_overrides;
 
     // Execute subtasks
     PT_TRY_CALL_PASS_ERR(pipeline_step_process_porytiles_input(), std::unique_ptr<Tileset>);
@@ -1169,13 +1169,13 @@ void CompilerTask::pipeline_helper_apply_manual_overrides()
         return;
     }
 
-    const auto &configs_map = anim_configs_.value();
+    const auto &per_anim_overrides = per_anim_overrides_.value();
 
     for (const auto &[anim_name, source_anim] : source_anims) {
         // Resolve effective FrameLinking for this animation
         FrameLinking effective_linking = global_frame_linking_.value();
-        if (auto it = configs_map.find(anim_name); it != configs_map.end()) {
-            effective_linking = it->second.linking;
+        if (per_anim_overrides.contains(anim_name)) {
+            effective_linking = per_anim_overrides.at(anim_name).linking;
         }
 
         const auto &overrides = source_anim.params().overrides();

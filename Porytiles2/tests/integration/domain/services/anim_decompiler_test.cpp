@@ -6,9 +6,9 @@
 #include <string>
 #include <vector>
 
-#include "porytiles2/domain/config/anim_config.hpp"
-#include "porytiles2/domain/config/anim_configs.hpp"
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
+#include "porytiles2/domain/config/per_anim_override.hpp"
+#include "porytiles2/domain/config/per_anim_overrides.hpp"
 #include "porytiles2/domain/models/anim_frame.hpp"
 #include "porytiles2/domain/models/anim_params.hpp"
 #include "porytiles2/domain/models/animation.hpp"
@@ -727,11 +727,11 @@ TEST_F(AnimDecompilerMultiPalTests, shouldApplyPerSubtileExplicitPalStrategies)
     auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
     // Set up per-subtile strategies: subtile 0 -> palette_00, subtile 1 -> palette_01
-    AnimConfig anim_cfg;
+    PerAnimOverride anim_cfg;
     anim_cfg.anim_name = "test_anim";
     anim_cfg.per_tile_pal_resolution_strategies = {
         AnimPalResolutionStrategy::palette_00, AnimPalResolutionStrategy::palette_01};
-    config_.anim_configs["test_anim"] = std::move(anim_cfg);
+    config_.per_anim_overrides["test_anim"] = std::move(anim_cfg);
 
     AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
@@ -764,7 +764,7 @@ TEST_F(AnimDecompilerMultiPalTests, shouldFallBackToGlobalWhenAnimNotInConfigs)
     auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
     // anim_configs is empty — should use global (scan_local_metatiles)
-    config_.anim_configs = AnimConfigs{};
+    config_.per_anim_overrides = PerAnimOverrides{};
 
     AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
@@ -790,10 +790,10 @@ TEST_F(AnimDecompilerMultiPalTests, shouldFallBackToGlobalForNulloptEntries)
     auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
     // subtile 0 -> explicit palette_00, subtile 1 -> nullopt (falls back to global scan_local_metatiles)
-    AnimConfig anim_cfg;
+    PerAnimOverride anim_cfg;
     anim_cfg.anim_name = "test_anim";
     anim_cfg.per_tile_pal_resolution_strategies = {AnimPalResolutionStrategy::palette_00, std::nullopt};
-    config_.anim_configs["test_anim"] = std::move(anim_cfg);
+    config_.per_anim_overrides["test_anim"] = std::move(anim_cfg);
 
     AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
@@ -826,10 +826,10 @@ TEST_F(AnimDecompilerMultiPalTests, shouldErrorWhenPalResolutionStrategiesSizeMi
     auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
     // Wrong number of strategies — should cause a hard error
-    AnimConfig anim_cfg;
+    PerAnimOverride anim_cfg;
     anim_cfg.anim_name = "test_anim";
     anim_cfg.per_tile_pal_resolution_strategies = {AnimPalResolutionStrategy::palette_00};
-    config_.anim_configs["test_anim"] = std::move(anim_cfg);
+    config_.per_anim_overrides["test_anim"] = std::move(anim_cfg);
 
     AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
@@ -854,11 +854,11 @@ TEST_F(AnimDecompilerMultiPalTests, shouldHandleMixedScanAndExplicitPerSubtile)
     auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
     // subtile 0 -> scan_local_metatiles, subtile 1 -> explicit palette_01
-    AnimConfig anim_cfg;
+    PerAnimOverride anim_cfg;
     anim_cfg.anim_name = "test_anim";
     anim_cfg.per_tile_pal_resolution_strategies = {
         AnimPalResolutionStrategy::scan_local_metatiles, AnimPalResolutionStrategy::palette_01};
-    config_.anim_configs["test_anim"] = std::move(anim_cfg);
+    config_.per_anim_overrides["test_anim"] = std::move(anim_cfg);
 
     AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
@@ -894,10 +894,10 @@ TEST_F(AnimDecompilerMultiPalTests, shouldApplyPerAnimStrategy)
     auto anim = create_test_animation_no_pal("test_anim", 1, 2, {tile_b, tile_c});
     auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
-    AnimConfig anim_cfg;
+    PerAnimOverride anim_cfg;
     anim_cfg.anim_name = "test_anim";
     anim_cfg.pal_resolution_strategy = AnimPalResolutionStrategy::palette_01;
-    config_.anim_configs["test_anim"] = std::move(anim_cfg);
+    config_.per_anim_overrides["test_anim"] = std::move(anim_cfg);
 
     AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
@@ -930,11 +930,11 @@ TEST_F(AnimDecompilerMultiPalTests, shouldOverridePerAnimWithPerTile)
     auto anim = create_test_animation_no_pal("test_anim", 1, 2, {tile_b, tile_c});
     auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
-    AnimConfig anim_cfg;
+    PerAnimOverride anim_cfg;
     anim_cfg.anim_name = "test_anim";
     anim_cfg.pal_resolution_strategy = AnimPalResolutionStrategy::palette_01;
     anim_cfg.per_tile_pal_resolution_strategies = {AnimPalResolutionStrategy::palette_00, std::nullopt};
-    config_.anim_configs["test_anim"] = std::move(anim_cfg);
+    config_.per_anim_overrides["test_anim"] = std::move(anim_cfg);
 
     AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
@@ -968,11 +968,11 @@ TEST_F(AnimDecompilerMultiPalTests, shouldFallBackFromPerTileNulloptToPerAnimThe
     auto anim = create_test_animation_no_pal("test_anim", 1, 2, {tile_b, tile_c});
     auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
-    AnimConfig anim_cfg;
+    PerAnimOverride anim_cfg;
     anim_cfg.anim_name = "test_anim";
     anim_cfg.pal_resolution_strategy = AnimPalResolutionStrategy::palette_01;
     anim_cfg.per_tile_pal_resolution_strategies = {std::nullopt, std::nullopt};
-    config_.anim_configs["test_anim"] = std::move(anim_cfg);
+    config_.per_anim_overrides["test_anim"] = std::move(anim_cfg);
 
     AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
@@ -1005,10 +1005,10 @@ TEST_F(AnimDecompilerKeyFrameStrategyTests, perAnimMangleOverridesGlobalError)
     auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
     config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
-    AnimConfig anim_cfg;
+    PerAnimOverride anim_cfg;
     anim_cfg.anim_name = "test_anim";
     anim_cfg.key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
-    config_.anim_configs["test_anim"] = std::move(anim_cfg);
+    config_.per_anim_overrides["test_anim"] = std::move(anim_cfg);
 
     AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
@@ -1029,10 +1029,10 @@ TEST_F(AnimDecompilerKeyFrameStrategyTests, perAnimErrorOverridesGlobalMangle)
     auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
     config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
-    AnimConfig anim_cfg;
+    PerAnimOverride anim_cfg;
     anim_cfg.anim_name = "test_anim";
     anim_cfg.key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
-    config_.anim_configs["test_anim"] = std::move(anim_cfg);
+    config_.per_anim_overrides["test_anim"] = std::move(anim_cfg);
 
     AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 
@@ -1053,10 +1053,10 @@ TEST_F(AnimDecompilerKeyFrameStrategyTests, nulloptPerAnimFallsBackToGlobal)
     auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
     config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
-    AnimConfig anim_cfg;
+    PerAnimOverride anim_cfg;
     anim_cfg.anim_name = "test_anim";
     // key_frame_resolution_strategy left as std::nullopt (default)
-    config_.anim_configs["test_anim"] = std::move(anim_cfg);
+    config_.per_anim_overrides["test_anim"] = std::move(anim_cfg);
 
     AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
 

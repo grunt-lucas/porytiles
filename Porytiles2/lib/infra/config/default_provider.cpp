@@ -111,12 +111,6 @@ LayerValue<AnimPalResolutionStrategy> DefaultProvider::global_anim_pal_resolutio
         AnimPalResolutionStrategy::scan_local_metatiles, "Global Animation Palette Resolution Strategy", source_info);
 }
 
-LayerValue<AnimConfigs>
-DefaultProvider::anim_configs([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    return LayerValue<AnimConfigs>::valid(AnimConfigs{}, "Animation Configs", source_info);
-}
-
 LayerValue<AnimKeyFrameResolutionStrategy> DefaultProvider::global_anim_key_frame_resolution_strategy(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
@@ -128,6 +122,12 @@ LayerValue<FrameLinking> DefaultProvider::global_frame_linking(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<FrameLinking>::valid(FrameLinking::automatic, "Global Frame Linking", source_info);
+}
+
+LayerValue<PerAnimOverrides> DefaultProvider::per_anim_overrides(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<PerAnimOverrides>::valid(PerAnimOverrides{}, "Per-Animation Overrides", source_info);
 }
 
 LayerValue<bool> DefaultProvider::verify_checksums(

@@ -9,7 +9,7 @@
 #include <vector>
 
 #include "porytiles2/domain/algorithms/tile_extractors.hpp"
-#include "porytiles2/domain/config/anim_configs.hpp"
+#include "porytiles2/domain/config/per_anim_overrides.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
@@ -117,9 +117,9 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
             new_porytiles_component->add_anim(std::move(rgba_anim));
         }
 
-        // Warn about animation configs that reference non-existent animations (after all animations processed)
-        PT_UNWRAP_TILESET_CONFIG_PTR(config_, anim_configs, tileset.name(), std::unique_ptr<Tileset>);
-        for (const auto &key : anim_configs.value() | std::views::keys) {
+        // Warn about per anim overrides that reference non-existent animations (after all animations processed)
+        PT_UNWRAP_TILESET_CONFIG_PTR(config_, per_anim_overrides, tileset.name(), std::unique_ptr<Tileset>);
+        for (const auto &key : per_anim_overrides.value() | std::views::keys) {
             if (!porymap_animations.contains(key)) {
                 diag_->warning(
                     "unused-animation-config",

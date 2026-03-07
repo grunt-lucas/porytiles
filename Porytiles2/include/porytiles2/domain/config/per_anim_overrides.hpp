@@ -5,7 +5,7 @@
 #include <string>
 #include <unordered_map>
 
-#include "porytiles2/domain/config/anim_config.hpp"
+#include "porytiles2/domain/config/per_anim_override.hpp"
 
 namespace porytiles2 {
 
@@ -13,14 +13,14 @@ namespace porytiles2 {
  * @brief Per-animation configuration map.
  *
  * @details
- * Maps animation names to their @c AnimConfig entries. When an animation's name is present in this map, the mapped
+ * Maps animation names to their @c PerAnimOverride entries. When an animation's name is present in this map, the mapped
  * configuration is used instead of (or merged with) the global defaults. Animations not listed in the map fall back
  * entirely to the global settings.
  */
-using AnimConfigs = std::unordered_map<std::string, AnimConfig>;
+using PerAnimOverrides = std::unordered_map<std::string, PerAnimOverride>;
 
 /**
- * @brief Converts an AnimConfigs map to a human-readable string.
+ * @brief Converts an PerAnimOverride map to a human-readable string.
  *
  * @details
  * Produces a brace-enclosed, comma-separated list of animation names. An empty map produces "{}".
@@ -28,7 +28,7 @@ using AnimConfigs = std::unordered_map<std::string, AnimConfig>;
  * @param configs The configs map to convert
  * @return A string representation of the map
  */
-[[nodiscard]] inline std::string to_string(const AnimConfigs &configs)
+[[nodiscard]] inline std::string to_string(const PerAnimOverrides &configs)
 {
     if (configs.empty()) {
         return "{}";
@@ -55,7 +55,7 @@ using AnimConfigs = std::unordered_map<std::string, AnimConfig>;
  * @param configs The configs map to output
  * @return Reference to the output stream
  */
-inline std::ostream &operator<<(std::ostream &os, const AnimConfigs &configs)
+inline std::ostream &operator<<(std::ostream &os, const PerAnimOverrides &configs)
 {
     return os << to_string(configs);
 }
@@ -63,13 +63,13 @@ inline std::ostream &operator<<(std::ostream &os, const AnimConfigs &configs)
 } // namespace porytiles2
 
 template <>
-struct std::formatter<porytiles2::AnimConfigs> {
+struct std::formatter<porytiles2::PerAnimOverrides> {
     constexpr auto parse(std::format_parse_context &ctx)
     {
         return ctx.begin();
     }
 
-    auto format(const porytiles2::AnimConfigs &value, auto &ctx) const
+    auto format(const porytiles2::PerAnimOverrides &value, auto &ctx) const
     {
         return std::format_to(ctx.out(), "{}", porytiles2::to_string(value));
     }
