@@ -348,12 +348,11 @@ void TilesPngWorkspace::place_anim_tile(std::size_t reserved_index, const Canoni
     // Place the tile at the absolute index
     tiles_[absolute_index] = tile;
 
-    // Add to canonical_forms_ map for deduplication support
-    if (tile.is_transparent()) {
-        panic("illegal transparent key frame tile");
+    // Add to canonical_forms_ map for deduplication support (skip transparent tiles)
+    if (!tile.is_transparent()) {
+        const PixelTile<IndexPixel> &base_tile = tile;
+        canonical_forms_[base_tile].push_back(absolute_index);
     }
-    const PixelTile<IndexPixel> &base_tile = tile;
-    canonical_forms_[base_tile].push_back(absolute_index);
 }
 
 std::optional<std::size_t> TilesPngWorkspace::find_contiguous_transparent_slots(std::size_t count) const

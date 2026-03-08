@@ -19,6 +19,11 @@
   - each of these folders can have subfolders `algorithms`, `models`, `repos`, `services`
 - Make each layer a completely isolated library so that the compiler enforces dependency rules
 
+## Validation Refactor
+- Move compilation (and decompilation) validation into a completely separate class that runs first
+  - That way, compiler/decompiler can just panic on failed preconditions, codepaths are simpler
+- Add validation for 
+
 ## Implement `LayoutDataProvider`
 Once we complete the `ProjectTilesetArtifactKeyProvider` refactor, create a `LayoutDataProvider` which parses `layouts.json`.
 We can then create a `TilesetPairProvider` that reads the layout data and provides mappings between primary/secondary.

@@ -890,8 +890,17 @@ CompilerTask::pipeline_helper_build_keyframe_data(const std::string &anim_name, 
         const PixelTile<Rgba32> &composite_rgba_tile = composite_frame.tile_at(tile_idx);
         const PixelTile<Rgba32> &representative_tile = representative_frame.tile_at(tile_idx);
 
+        /*
+         * Transparent representative tiles are valid for animations without a key frame. They just produce a
+         * transparent IndexPixel tile with palette index 0. For key frame animations, validate_anim_frames() catches
+         * transparent tiles before we get here.
+         */
         if (representative_tile.is_transparent(extrinsic_transparency_.value())) {
-            panic("illegal transparent key frame tile");
+            PixelTile<IndexPixel> transparent_tile{IndexPixel{0}};
+            result.tiles.emplace_back(transparent_tile);
+            result.pal_indices.push_back(0);
+            result.palettes.push_back(&new_porymap_pals_.at(0));
+            continue;
         }
 
         // Match tile to palette using composite frame to guarantee correct palette selection

@@ -1293,9 +1293,10 @@ inline void report_color_counts(
  * @details
  * Performs three validation checks on animation frames:
  *
- * 1. **Transparent key frame check (fail-fast)**: Key frame tiles cannot be fully transparent, as this would make them
- *    indistinguishable from the actual transparent tile at runtime. If any key frame tile is fully transparent, the
- *    function returns immediately with an error.
+ * 1. **Transparent key frame check**: Key frame tiles cannot be fully transparent, as this would make them
+ *    indistinguishable from the actual transparent tile (tile 0) at runtime, preventing Porytiles from correctly
+ *    indexing into animations from the layer sheet. All violations are collected before returning an error. This check
+ *    only applies to animations with a key frame (key.png); animations without a key frame are skipped.
  *
  * 2. **Duplicate key frame check (error)**: The same tile content cannot appear as a key frame in multiple positions
  *    across all animations. Each key frame tile must be unique so the game engine can properly identify which animation
@@ -1365,7 +1366,10 @@ inline void report_color_counts(
     /*
      * Validation 1: Ensure no animation key frame tile is fully transparent.
      *
-     * Key frames cannot be transparent, since that would make them indistinguishable from the actual transparent tile.
+     * Key frames are used to index into animations from the layer sheet. If a key frame tile were transparent,
+     * Porytiles couldn't distinguish it from the default transparent tile (tile 0). This restriction only applies to
+     * actual key frames (key.png), not to representative frames used as fallbacks when no key frame is present.
+     *
      * We collect all violations before failing so the user can see all problematic tiles at once.
      */
     for (const auto &[anim_name, anim] : anims) {
@@ -1396,7 +1400,7 @@ inline void report_color_counts(
                     "transparent-key-frame",
                     std::vector<std::string>{
                         "Key frame tiles cannot be fully transparent because they would be",
-                        "indistinguishable from the actual transparent tile at runtime."});
+                        "indistinguishable from the actual transparent tile on the layer PNGs."});
             }
         }
     }
