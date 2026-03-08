@@ -315,6 +315,24 @@ YamlFileProvider::global_anim_key_frame_resolution_strategy(ConfigScopeType type
         "tileset.animations.key_frame_resolution_strategy");
 }
 
+LayerValue<AnimMultiPalSubtileResolutionStrategy> YamlFileProvider::global_anim_multi_pal_subtile_resolution_strategy(
+    ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<AnimMultiPalSubtileResolutionStrategy>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["multi_palette_subtile_resolution_strategy"]; },
+        parse_anim_multi_pal_subtile_resolution_strategy,
+        "tileset.animations.multi_palette_subtile_resolution_strategy",
+        "tileset.animations.multi_palette_subtile_resolution_strategy");
+}
+
 LayerValue<FrameLinking> YamlFileProvider::global_frame_linking(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);

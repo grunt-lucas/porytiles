@@ -35,6 +35,7 @@ inline const std::unordered_set<std::string> valid_yaml_paths = {
     "tileset.animations",
     "tileset.animations.frame_linking",
     "tileset.animations.key_frame_resolution_strategy",
+    "tileset.animations.multi_palette_subtile_resolution_strategy",
     "tileset.animations.palette_resolution_strategy",
     "tileset.animations.per-animation-overrides",
     "tileset.animations.wire_anim_code",

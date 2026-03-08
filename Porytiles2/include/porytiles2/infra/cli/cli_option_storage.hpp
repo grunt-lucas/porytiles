@@ -40,6 +40,7 @@ struct CliOptionStorage {
     std::optional<std::string> tiles_pal_mode;
     std::optional<std::string> global_anim_pal_resolution_strategy;
     std::optional<std::string> global_anim_key_frame_resolution_strategy;
+    std::optional<std::string> global_anim_multi_pal_subtile_resolution_strategy;
     std::optional<std::string> global_frame_linking;
     std::optional<std::string> verify_checksums;
     std::optional<std::string> tileset_paths_primary_src;

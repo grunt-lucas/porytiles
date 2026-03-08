@@ -10,6 +10,7 @@
 #include "yaml-cpp/yaml.h"
 
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
+#include "porytiles2/domain/config/anim_multi_pal_subtile_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/config/frame_linking.hpp"
@@ -684,6 +685,28 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                     "Animation Config (" + anim_name + ") key_frame_resolution_strategy"};
             }
 
+            // Parse multi_palette_subtile_resolution_strategy (optional scalar — per-anim override)
+            if (anim_node["multi_palette_subtile_resolution_strategy"].IsDefined()) {
+                const auto &strategy_node = anim_node["multi_palette_subtile_resolution_strategy"];
+                const auto strategy_str = strategy_node.as<std::string>();
+                const auto strategy_opt = anim_multi_pal_subtile_resolution_strategy_from_str(strategy_str);
+                if (!strategy_opt.has_value()) {
+                    const auto strategy_mark = strategy_node.Mark();
+                    const auto strategy_source = make_source_string(format, file_path, strategy_mark);
+                    const auto strategy_details = make_source_details(format, file_path, strategy_mark);
+                    const auto error = format->format(
+                        "'{}' animation '{}' multi_palette_subtile_resolution_strategy has invalid value '{}'.",
+                        FormatParam{key, Style::bold},
+                        FormatParam{anim_name, Style::bold},
+                        FormatParam{strategy_str, Style::bold});
+                    return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
+                }
+                anim_config.multi_pal_subtile_resolution_strategy = ConfigOverride{
+                    strategy_opt.value(),
+                    key + "." + anim_name + ".multi_palette_subtile_resolution_strategy",
+                    "Animation Config (" + anim_name + ") multi_palette_subtile_resolution_strategy"};
+            }
+
             // Parse per_tile_palette_resolution_strategies (optional sequence — per-tile most specific tier)
             if (anim_node["per_tile_palette_resolution_strategies"].IsDefined()) {
                 const auto &strategies_node = anim_node["per_tile_palette_resolution_strategies"];
@@ -772,6 +795,40 @@ LayerValue<AnimKeyFrameResolutionStrategy> parse_anim_key_frame_resolution_strat
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<AnimKeyFrameResolutionStrategy>::invalid(error, source, details);
+    }
+}
+
+LayerValue<AnimMultiPalSubtileResolutionStrategy> parse_anim_multi_pal_subtile_resolution_strategy(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::not_provided();
+    }
+
+    try {
+        const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        const auto node_value = node.as<std::string>();
+        const auto mode_opt = anim_multi_pal_subtile_resolution_strategy_from_str(node_value);
+
+        if (!mode_opt.has_value()) {
+            const auto error = format->format(
+                "'{}' has invalid value '{}'.", FormatParam{key, Style::bold}, FormatParam{node_value, Style::bold});
+            return LayerValue<AnimMultiPalSubtileResolutionStrategy>::invalid(error, source, details);
+        }
+
+        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::valid(mode_opt.value(), key, source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error = format->format(
+            "Failed to parse '{}' as AnimMultiPalSubtileResolutionStrategy: {}.",
+            FormatParam{key, Style::bold},
+            e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::invalid(error, source, details);
     }
 }
 

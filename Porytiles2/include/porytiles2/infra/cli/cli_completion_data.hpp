@@ -139,6 +139,13 @@ struct CliOptionMeta {
             {"error", "warning", "mangle"},
             false},
         CliOptionMeta{
+            "anim-multi-pal-subtile-resolution-strategy",
+            "Global Animation Multi-Pal Subtile Resolution Strategy - The strategy for handling animation subtiles "
+            "referenced with multiple palettes.",
+            "enum",
+            {"error", "warning", "split"},
+            false},
+        CliOptionMeta{
             "frame-linking",
             "Global Frame Linking - The global default frame linking mode for animations.",
             "enum",

@@ -105,6 +105,12 @@ LayerValue<AnimKeyFrameResolutionStrategy> ConfigProvider::global_anim_key_frame
     return LayerValue<AnimKeyFrameResolutionStrategy>::not_provided();
 }
 
+LayerValue<AnimMultiPalSubtileResolutionStrategy> ConfigProvider::global_anim_multi_pal_subtile_resolution_strategy(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<AnimMultiPalSubtileResolutionStrategy>::not_provided();
+}
+
 LayerValue<FrameLinking> ConfigProvider::global_frame_linking(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

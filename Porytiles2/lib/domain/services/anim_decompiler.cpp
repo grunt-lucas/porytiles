@@ -14,6 +14,7 @@
 #include "porytiles2/domain/algorithms/tile_converters.hpp"
 #include "porytiles2/domain/algorithms/tile_extractors.hpp"
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
+#include "porytiles2/domain/config/anim_multi_pal_subtile_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/config/frame_linking.hpp"
 #include "porytiles2/domain/config/per_anim_overrides.hpp"
@@ -245,6 +246,7 @@ using namespace porytiles2;
     std::size_t tile_index,
     std::span<const TilemapEntry> metatiles_bin,
     const ConfigValue<AnimPalResolutionStrategy> &strategy,
+    const ConfigValue<AnimMultiPalSubtileResolutionStrategy> &multi_pal_strategy,
     const Animation<IndexPixel> &anim,
     const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals,
     const Image<IndexPixel> &tiles_png,
@@ -298,11 +300,7 @@ using namespace porytiles2;
              * A single tile index can be referenced by multiple metatile entries with different palette indices.
              * This is valid GBA behavior — the hardware selects palette per metatile entry, not per tile.
              *
-             * TODO: ANIM: a more sophisticated approach could support multi-palette variants per subtile. For now,
-             * we treat this as an error because picking one palette arbitrarily would produce incorrect RGBA output
-             * in the layer PNGs, breaking recompilation (the other palette version would be lost).
-             *
-             * We need to figure out a better way to handle this.
+             * The multi_pal_strategy config determines how to handle this case.
              */
             std::string pal_list;
             for (const auto &pal_idx : found_for_subtile) {
@@ -312,34 +310,74 @@ using namespace porytiles2;
                 pal_list += pal_filename(pal_idx);
             }
 
-            std::vector<std::string> err_msg;
-            err_msg.push_back(diag.formatter().format(
-                "Animation '{}' subtile {} at tile index '{}' is referenced with multiple palettes: {}.",
-                FormatParam{anim_name, Style::bold},
-                FormatParam{subtile_index, Style::bold},
-                FormatParam{tile_index, Style::bold},
-                FormatParam{pal_list, Style::bold}));
-            err_msg.emplace_back(
-                "Picking one palette arbitrarily would produce incorrect RGBA output in the layer PNGs.");
-
-            const PixelTile<IndexPixel> index_tile = extract_single_tile(tiles_png, tile_index);
-            err_msg.emplace_back("");
-            for (const auto &pal_idx : found_for_subtile) {
-                const PixelTile<Rgba32> rgba_tile =
-                    color_tile_from_index_tile(index_tile, pals.at(pal_idx), extrinsic_transparency.value());
+            switch (multi_pal_strategy.value()) {
+            case AnimMultiPalSubtileResolutionStrategy::error: {
+                std::vector<std::string> err_msg;
                 err_msg.push_back(diag.formatter().format(
-                    "Tile under palette '{}':", FormatParam{pal_filename(pal_idx), Style::bold}));
-                std::ranges::copy(
-                    tile_printer.print_tile(rgba_tile, extrinsic_transparency.value()), std::back_inserter(err_msg));
-            }
+                    "Animation '{}' subtile {} at tile index '{}' is referenced with multiple palettes: {}.",
+                    FormatParam{anim_name, Style::bold},
+                    FormatParam{subtile_index, Style::bold},
+                    FormatParam{tile_index, Style::bold},
+                    FormatParam{pal_list, Style::bold}));
+                err_msg.emplace_back(
+                    "Picking one palette arbitrarily would produce incorrect RGBA output in the layer PNGs.");
 
-            err_msg.emplace_back("");
-            err_msg.emplace_back(
-                "Consider using an explicit palette resolution strategy (e.g. 'palette-00') to resolve the "
-                "ambiguity.");
-            std::ranges::copy(
-                format_config_note_with_separator(diag.formatter(), strategy), std::back_inserter(err_msg));
-            return FormattableError{err_msg};
+                const PixelTile<IndexPixel> index_tile = extract_single_tile(tiles_png, tile_index);
+                err_msg.emplace_back("");
+                for (const auto &pal_idx : found_for_subtile) {
+                    const PixelTile<Rgba32> rgba_tile =
+                        color_tile_from_index_tile(index_tile, pals.at(pal_idx), extrinsic_transparency.value());
+                    err_msg.push_back(diag.formatter().format(
+                        "Tile under palette '{}':", FormatParam{pal_filename(pal_idx), Style::bold}));
+                    std::ranges::copy(
+                        tile_printer.print_tile(rgba_tile, extrinsic_transparency.value()),
+                        std::back_inserter(err_msg));
+                }
+
+                err_msg.emplace_back("");
+                err_msg.emplace_back(
+                    "Consider using an explicit palette resolution strategy (e.g. 'palette-00') to resolve the "
+                    "ambiguity.");
+                std::ranges::copy(
+                    format_config_note_with_separator(diag.formatter(), strategy), std::back_inserter(err_msg));
+                return FormattableError{err_msg};
+            }
+            case AnimMultiPalSubtileResolutionStrategy::warning: {
+                const std::size_t chosen_pal = *found_for_subtile.begin();
+
+                std::vector<std::string> warn_msg;
+                warn_msg.push_back(diag.formatter().format(
+                    "Animation '{}' subtile {} at tile index '{}' is referenced with multiple palettes: {}.",
+                    FormatParam{anim_name, Style::bold},
+                    FormatParam{subtile_index, Style::bold},
+                    FormatParam{tile_index, Style::bold},
+                    FormatParam{pal_list, Style::bold}));
+                warn_msg.push_back(diag.formatter().format(
+                    "Using palette '{}'. Set 'frame_linking: manual' to handle palette assignment via overrides.",
+                    FormatParam{pal_filename(chosen_pal), Style::bold}));
+
+                const PixelTile<IndexPixel> warn_index_tile = extract_single_tile(tiles_png, tile_index);
+                warn_msg.emplace_back("");
+                for (const auto &pal_idx : found_for_subtile) {
+                    const PixelTile<Rgba32> rgba_tile =
+                        color_tile_from_index_tile(warn_index_tile, pals.at(pal_idx), extrinsic_transparency.value());
+                    warn_msg.push_back(diag.formatter().format(
+                        "Tile under palette '{}':", FormatParam{pal_filename(pal_idx), Style::bold}));
+                    std::ranges::copy(
+                        tile_printer.print_tile(rgba_tile, extrinsic_transparency.value()),
+                        std::back_inserter(warn_msg));
+                }
+
+                std::ranges::copy(
+                    format_config_note_with_separator(diag.formatter(), multi_pal_strategy),
+                    std::back_inserter(warn_msg));
+                diag.warning("animation-multi-pal-subtile", warn_msg);
+
+                return chosen_pal;
+            }
+            case AnimMultiPalSubtileResolutionStrategy::split:
+                return FormattableError{"The 'split' mode for multi-pal subtile resolution is not yet implemented."};
+            }
         }
 
         return *found_for_subtile.begin();
@@ -377,6 +415,7 @@ using namespace porytiles2;
     std::size_t tile_count,
     std::span<const TilemapEntry> metatiles_bin,
     const std::vector<ConfigValue<AnimPalResolutionStrategy>> &per_subtile_strategies,
+    const ConfigValue<AnimMultiPalSubtileResolutionStrategy> &multi_pal_strategy,
     const Animation<IndexPixel> &anim,
     const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals,
     const Image<IndexPixel> &tiles_png,
@@ -404,6 +443,7 @@ using namespace porytiles2;
                 tile_index,
                 metatiles_bin,
                 per_subtile_strategies[i],
+                multi_pal_strategy,
                 anim,
                 pals,
                 tiles_png,
@@ -586,6 +626,8 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, global_anim_pal_resolution_strategy, tileset_name, Animation<Rgba32>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, per_anim_overrides, tileset_name, Animation<Rgba32>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, global_anim_key_frame_resolution_strategy, tileset_name, Animation<Rgba32>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(
+        config_, global_anim_multi_pal_subtile_resolution_strategy, tileset_name, Animation<Rgba32>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, global_frame_linking, tileset_name, Animation<Rgba32>);
 
     // Read data from porymap_component
@@ -677,6 +719,14 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
         }
     }
 
+    /*
+     * Compute the effective multi-pal subtile resolution strategy: per-anim override wins, otherwise global fallback.
+     */
+    const ConfigValue<AnimMultiPalSubtileResolutionStrategy> effective_multi_pal_strategy =
+        (anim_cfg_ptr != nullptr && anim_cfg_ptr->multi_pal_subtile_resolution_strategy.has_value())
+            ? per_anim_overrides.derive(anim_cfg_ptr->multi_pal_subtile_resolution_strategy)
+            : global_anim_multi_pal_subtile_resolution_strategy;
+
     // Resolve effective FrameLinking for this animation
     FrameLinking effective_linking = global_frame_linking.value();
     if (anim_cfg_ptr != nullptr) {
@@ -725,6 +775,7 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
                 tile_count,
                 metatiles_bin,
                 per_subtile_strategies,
+                effective_multi_pal_strategy,
                 anim,
                 pals,
                 tiles_png,
@@ -763,6 +814,7 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
             tile_count,
             metatiles_bin,
             per_subtile_strategies,
+            effective_multi_pal_strategy,
             anim,
             pals,
             tiles_png,

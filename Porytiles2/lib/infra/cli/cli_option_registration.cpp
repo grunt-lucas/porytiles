@@ -134,6 +134,16 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
             "duplicate key frame subtiles.")
         ->type_name("{error|warning|mangle}");
 
+    // Global Animation Multi-Pal Subtile Resolution Strategy (enum AnimMultiPalSubtileResolutionStrategy, captured as
+    // string, parsed by CliOptionProvider)
+    config_group
+        ->add_option(
+            "--anim-multi-pal-subtile-resolution-strategy",
+            storage.global_anim_multi_pal_subtile_resolution_strategy,
+            "Global Animation Multi-Pal Subtile Resolution Strategy - The strategy for handling animation subtiles "
+            "referenced with multiple palettes.")
+        ->type_name("{error|warning|split}");
+
     // Global Frame Linking (enum FrameLinking, captured as string, parsed by CliOptionProvider)
     config_group
         ->add_option(

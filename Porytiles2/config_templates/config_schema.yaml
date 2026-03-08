@@ -220,6 +220,29 @@ enum_types:
         fuzzy_names: [ mangle ]
         brief: Mangle duplicate tiles to make them unique, then backport changes to tiles.png.
 
+  - cpp_type: AnimMultiPalSubtileResolutionStrategy
+    header_path: porytiles2/domain/config/anim_multi_pal_subtile_resolution_strategy.hpp
+    brief: Strategy for handling animation subtiles referenced with multiple palettes.
+    details: |
+      When decompiling animations using the scan_local_metatiles strategy, a single tile index
+      can be referenced by multiple metatile entries with different palette indices. This is valid
+      GBA behavior (the hardware selects palette per metatile entry, not per tile), but Porytiles
+      cannot represent multiple palette variants in a single RGBA layer PNG. This enum determines
+      how to handle such cases.
+    enum_values:
+      - name: error
+        cli_completion_name: error
+        fuzzy_names: [ error, err ]
+        brief: Emit a formatted error and fail decompilation.
+      - name: warning
+        cli_completion_name: warning
+        fuzzy_names: [ warning, warn ]
+        brief: Emit a warning and continue decompilation using the lowest palette index.
+      - name: split
+        cli_completion_name: split
+        fuzzy_names: [ split ]
+        brief: Split the animation into separate animations for each palette variant (not yet implemented).
+
 config_values:
   # Domain Layer Configuration Values
   - canonical_name: Number Of Tiles In Primary
@@ -419,6 +442,18 @@ config_values:
     type: AnimKeyFrameResolutionStrategy
     parser: parse_anim_key_frame_resolution_strategy
     default_value: "AnimKeyFrameResolutionStrategy::error"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Global Animation Multi-Pal Subtile Resolution Strategy
+    symbol: global_anim_multi_pal_subtile_resolution_strategy
+    yaml_path: tileset.animations.multi_palette_subtile_resolution_strategy
+    cli_option: anim-multi-pal-subtile-resolution-strategy
+    cli_desc: The strategy for handling animation subtiles referenced with multiple palettes.
+    layer: domain
+    type: AnimMultiPalSubtileResolutionStrategy
+    parser: parse_anim_multi_pal_subtile_resolution_strategy
+    default_value: "AnimMultiPalSubtileResolutionStrategy::error"
     validators: [ ]
     cross_field_validators: [ ]
 

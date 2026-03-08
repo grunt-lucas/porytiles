@@ -132,6 +132,14 @@ LayerValue<AnimKeyFrameResolutionStrategy> CliOptionProvider::global_anim_key_fr
         storage_.global_anim_key_frame_resolution_strategy, "--anim-key-frame-resolution-strategy");
 }
 
+LayerValue<AnimMultiPalSubtileResolutionStrategy> CliOptionProvider::global_anim_multi_pal_subtile_resolution_strategy(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_anim_multi_pal_subtile_resolution_strategy(
+        storage_.global_anim_multi_pal_subtile_resolution_strategy, "--anim-multi-pal-subtile-resolution-strategy");
+}
+
 LayerValue<FrameLinking> CliOptionProvider::global_frame_linking(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

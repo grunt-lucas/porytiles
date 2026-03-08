@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
+#include "porytiles2/domain/config/anim_multi_pal_subtile_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/config/frame_linking.hpp"
@@ -315,6 +316,35 @@ parse_anim_key_frame_resolution_strategy(const std::optional<std::string> &raw_v
 
     const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
     return LayerValue<AnimKeyFrameResolutionStrategy>::invalid(error, option_name);
+}
+
+/**
+ * @brief Parses an AnimMultiPalSubtileResolutionStrategy value from a CLI option string.
+ *
+ * @details
+ * Uses the unified anim_multi_pal_subtile_resolution_strategy_from_str() which provides fuzzy matching.
+ * Returns LayerValue::invalid() for unrecognized values.
+ *
+ * @param raw_value The raw string value from CLI, or std::nullopt if not provided
+ * @param option_name The CLI option name for error messages
+ * @return LayerValue with parsed value, invalid error, or not_provided status
+ */
+LayerValue<AnimMultiPalSubtileResolutionStrategy> parse_anim_multi_pal_subtile_resolution_strategy(
+    const std::optional<std::string> &raw_value, const std::string &option_name)
+{
+    if (!raw_value.has_value()) {
+        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::not_provided();
+    }
+
+    const auto &str = raw_value.value();
+    const auto result = anim_multi_pal_subtile_resolution_strategy_from_str(str);
+
+    if (result.has_value()) {
+        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::valid(result.value(), option_name, "CLI");
+    }
+
+    const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
+    return LayerValue<AnimMultiPalSubtileResolutionStrategy>::invalid(error, option_name);
 }
 
 /**
