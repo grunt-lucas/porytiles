@@ -294,6 +294,16 @@ using namespace porytiles2;
         }
 
         if (found_for_subtile.size() > 1) {
+            /*
+             * A single tile index can be referenced by multiple metatile entries with different palette indices.
+             * This is valid GBA behavior — the hardware selects palette per metatile entry, not per tile.
+             *
+             * TODO: ANIM: a more sophisticated approach could support multi-palette variants per subtile. For now,
+             * we treat this as an error because picking one palette arbitrarily would produce incorrect RGBA output
+             * in the layer PNGs, breaking recompilation (the other palette version would be lost).
+             *
+             * We need to figure out a better way to handle this.
+             */
             std::string pal_list;
             for (const auto &pal_idx : found_for_subtile) {
                 if (!pal_list.empty()) {
