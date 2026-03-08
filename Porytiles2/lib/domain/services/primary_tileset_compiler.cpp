@@ -875,11 +875,22 @@ CompilerTask::pipeline_helper_build_keyframe_data(const std::string &anim_name, 
     result.tiles.reserve(tile_count);
     result.palettes.reserve(tile_count);
 
+    /*
+     * For automatic/hybrid mode, we use the key frame tiles. For manual mode (no key frame),
+     * we use the first regular frame's tiles as the representative tiles to place in tiles.png.
+     *
+     * TODO: frames() is a std::map<std::string, ...>, so begin() yields the lexicographically first key. This works
+     * for single-digit frame names ("0", "1", ...) but would break for 10+ frames ("10" sorts before "2"). Consider
+     * using params().frame_names()[0] to look up the intended first frame instead.
+     */
+    const AnimFrame<Rgba32> &representative_frame =
+        anim.has_key_frame() ? anim.key_frame() : anim.frames().begin()->second;
+
     for (std::size_t tile_idx = 0; tile_idx < tile_count; ++tile_idx) {
         const PixelTile<Rgba32> &composite_rgba_tile = composite_frame.tile_at(tile_idx);
-        const PixelTile<Rgba32> &key_rgba_tile = anim.key_frame().tile_at(tile_idx);
+        const PixelTile<Rgba32> &representative_tile = representative_frame.tile_at(tile_idx);
 
-        if (key_rgba_tile.is_transparent(extrinsic_transparency_.value())) {
+        if (representative_tile.is_transparent(extrinsic_transparency_.value())) {
             panic("illegal transparent key frame tile");
         }
 
@@ -925,7 +936,7 @@ CompilerTask::pipeline_helper_build_keyframe_data(const std::string &anim_name, 
         const std::size_t pal_index = matches.at(0).pal_index;
         const auto &matched_pal = new_porymap_pals_.at(pal_index);
         const PixelTile<IndexPixel> indexed_key_frame_tile =
-            index_tile_from_color_tile(key_rgba_tile, matched_pal, extrinsic_transparency_.value());
+            index_tile_from_color_tile(representative_tile, matched_pal, extrinsic_transparency_.value());
 
         result.tiles.emplace_back(indexed_key_frame_tile);
         result.pal_indices.push_back(pal_index);
@@ -962,8 +973,12 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
     if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
         std::size_t total_keyframe_tiles = 0;
         for (const auto &anim : anims | std::views::values) {
-            if (anim.has_frames()) {
+            if (anim.has_key_frame()) {
                 total_keyframe_tiles += anim.key_frame().tiles().size();
+            }
+            else if (anim.has_frames()) {
+                // TODO: same lexicographic ordering caveat as in pipeline_helper_build_keyframe_data
+                total_keyframe_tiles += anim.frames().begin()->second.tiles().size();
             }
         }
         tiles_workspace_->reserve_anim_slots(total_keyframe_tiles);
@@ -1195,9 +1210,14 @@ void CompilerTask::pipeline_helper_apply_manual_overrides()
 
         case FrameLinking::manual: {
             if (overrides.empty()) {
-                panic(
-                    "animation '" + anim_name +
-                    "' has frame_linking 'manual' but no overrides are present in anim.json");
+                std::vector<std::string> warning_lines;
+                warning_lines.emplace_back(format_.format(
+                    "Animation '{}' has frame_linking '{}' but no overrides are present in anim.json.",
+                    FormatParam{anim_name, Style::bold},
+                    FormatParam{"manual", Style::bold}));
+                warning_lines.emplace_back("Animation tiles will not be linked to any metatiles.");
+                diag_.warning("manual-no-overrides", warning_lines);
+                break;
             }
 
             // Get the tile_offset for this animation from the matcher

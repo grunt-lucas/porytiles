@@ -327,7 +327,7 @@ ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const Artifact
     Tileset &dest,
     const std::string &anim_name,
     const ArtifactKey &params_key,
-    const ArtifactKey &key_frame_key,
+    const std::optional<ArtifactKey> &key_frame_key,
     const std::vector<std::pair<std::string, ArtifactKey>> &frame_keys) const
 {
     // Parse anim.json to get params for this animation
@@ -366,18 +366,20 @@ ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const Artifact
      * anyway.
      */
 
-    // Load key frame using the unified template helper
-    PT_TRY_CALL_PASS_ERR(
-        (import_anim_frame_impl<Rgba32>(
-            dest,
-            key_frame_key,
-            project_root_,
-            anim_name,
-            "key",
-            *png_rgba_loader_,
-            [](Tileset &t) -> PorytilesTilesetComponent & { return t.porytiles_component(); },
-            "Porytiles animation frame")),
-        void);
+    // Load key frame using the unified template helper (only present for automatic/hybrid frame linking)
+    if (key_frame_key.has_value()) {
+        PT_TRY_CALL_PASS_ERR(
+            (import_anim_frame_impl<Rgba32>(
+                dest,
+                key_frame_key.value(),
+                project_root_,
+                anim_name,
+                "key",
+                *png_rgba_loader_,
+                [](Tileset &t) -> PorytilesTilesetComponent & { return t.porytiles_component(); },
+                "Porytiles animation frame")),
+            void);
+    }
 
     // Load remaining frames using the unified template helper
     for (const auto &[frame_name, frame_key] : frame_keys) {

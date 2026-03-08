@@ -16,8 +16,15 @@ void AnimTileMatcher::register_animation(
         panic("animation must have at least one frame");
     }
 
-    const AnimFrame<Rgba32> &key_frame = animation.key_frame();
-    const auto &tiles = key_frame.tiles();
+    /*
+     * Use key frame if available, otherwise fall back to first regular frame (manual mode).
+     * TODO: frames() is a std::map<std::string, ...>, so begin() yields the lexicographically first key. This works
+     * for single-digit frame names ("0", "1", ...) but would break for 10+ frames ("10" sorts before "2"). Consider
+     * using params().frame_names()[0] to look up the intended first frame instead.
+     */
+    const AnimFrame<Rgba32> &representative_frame =
+        animation.has_key_frame() ? animation.key_frame() : animation.frames().begin()->second;
+    const auto &tiles = representative_frame.tiles();
 
     assert_or_panic(
         subtile_pal_indices.size() == tiles.size(), "subtile_pal_indices.size() must equal keyframe tile count");

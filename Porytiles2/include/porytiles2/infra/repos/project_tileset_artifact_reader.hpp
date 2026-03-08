@@ -82,7 +82,7 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
         Tileset &dest,
         const std::string &anim_name,
         const ArtifactKey &params_key,
-        const ArtifactKey &key_frame_key,
+        const std::optional<ArtifactKey> &key_frame_key,
         const std::vector<std::pair<std::string, ArtifactKey>> &frame_keys) const override;
 
   private:
