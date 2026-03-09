@@ -680,6 +680,11 @@ TileAssignmentResult CompilerTask::pipeline_helper_assign_tile_via_pal_match(con
     const auto index_tile = index_tile_from_color_tile(porytiles_tile, matched_pal, extrinsic_transparency_.value());
     const CanonicalPixelTile canonical_index_tile{index_tile};
 
+    // TODO: In locked mode, the AnimTileMatcher may intercept tiles that visually match animation keyframes
+    // but have different tile_index values in the original metatiles.bin. If try_reuse fails for such tiles,
+    // the matcher assigns the animation tile_offset + index instead of the original tile_index. This could
+    // cause incorrect tile assignments in locked mode. Investigate and fix in a subsequent pass.
+
     // Check if tile matches a registered animation keyframe
     if (const auto anim_match = anim_tile_matcher_.find_match(CanonicalPixelTile{porytiles_tile});
         anim_match.has_value()) {
