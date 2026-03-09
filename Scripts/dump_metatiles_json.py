@@ -30,14 +30,17 @@ def parse_metatiles_bin(path):
         sys.exit(1)
 
     entries = []
-    for offset in range(0, len(data), 2):
+    for index, offset in enumerate(range(0, len(data), 2)):
         (entry_bits,) = struct.unpack_from("<H", data, offset)
         entries.append(
             {
-                "tile_index": entry_bits & 0x03FF,
-                "h_flip": bool((entry_bits >> 10) & 0x0001),
-                "v_flip": bool((entry_bits >> 11) & 0x0001),
-                "pal_index": (entry_bits >> 12) & 0x000F,
+                "index": index,
+                "entry": {
+                    "tile_index": entry_bits & 0x03FF,
+                    "h_flip": bool((entry_bits >> 10) & 0x0001),
+                    "v_flip": bool((entry_bits >> 11) & 0x0001),
+                    "pal_index": (entry_bits >> 12) & 0x000F,
+                },
             }
         )
 
