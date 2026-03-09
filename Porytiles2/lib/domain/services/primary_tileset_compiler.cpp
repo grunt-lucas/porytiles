@@ -630,6 +630,17 @@ std::optional<TilemapEntry> CompilerTask::pipeline_helper_try_reuse_porymap_tile
             static_cast<bool>(porymap_tilemap_entry.v_flip() ^ pt_to_pm_vflip)};
     }
 
+    // TODO: debug code block, comment out for now
+    // if (tile_index == 4617) {
+    //     std::vector<std::string> no_match_err{};
+    //     no_match_err.emplace_back(format_.format("{}: no matching tile found", FormatParam{"DEBUG", Style::bold}));
+    //     std::ranges::copy(
+    //         tile_printer_.print_tile(porytiles_tile, extrinsic_transparency_), std::back_inserter(no_match_err));
+    //     std::ranges::copy(
+    //         tile_printer_.print_tile(porymap_tile, extrinsic_transparency_), std::back_inserter(no_match_err));
+    //     diag_.error("DEBUG", no_match_err);
+    // }
+
     // No match found
     return std::nullopt;
 }
@@ -654,6 +665,13 @@ TileAssignmentResult CompilerTask::pipeline_helper_assign_tile_via_pal_match(con
     const auto &matched_pal = new_porymap_pals_.at(pal_index);
     const auto index_tile = index_tile_from_color_tile(porytiles_tile, matched_pal, extrinsic_transparency_.value());
     const CanonicalPixelTile canonical_index_tile{index_tile};
+
+    // Transparent tiles always map to tile index 0 (the reserved transparent tile)
+    if (canonical_index_tile.is_transparent()) {
+        result.status = TileAssignmentResult::Status::success;
+        result.entry = TilemapEntry{0, pal_index, false, false};
+        return result;
+    }
 
     // Check if tile matches a registered animation keyframe
     if (const auto anim_match = anim_tile_matcher_.find_match(CanonicalPixelTile{porytiles_tile});
