@@ -24,6 +24,13 @@
   - That way, compiler/decompiler can just panic on failed preconditions, codepaths are simpler
 - Add validation for 
 
+## Implement diagnostic tag filtering in `StderrStyledUserDiagnostics`
+
+## Config system improvements
+- invalid YAML key should default to error, not warning
+  - but we can provide a config option to downgrade to warning if user desires this behavior
+  - I think it's safer to have it error by default, easy for user to miss the warning and be confused by unexpected behavior because they misspelled a config key
+
 ## Implement `LayoutDataProvider`
 Once we complete the `ProjectTilesetArtifactKeyProvider` refactor, create a `LayoutDataProvider` which parses `layouts.json`.
 We can then create a `TilesetPairProvider` that reads the layout data and provides mappings between primary/secondary.
