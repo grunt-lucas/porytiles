@@ -118,7 +118,7 @@ class CompilerTask {
     // Pipeline helpers - tile matching
     [[nodiscard]] std::optional<TilemapEntry> pipeline_helper_try_reuse_porymap_tile(std::size_t tile_index);
     [[nodiscard]] TileAssignmentResult
-    pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> &porytiles_tile);
+    pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> &porytiles_tile, std::size_t flat_index);
 
     // Pipeline helpers - palette packing
     [[nodiscard]] ChainableResult<void> pipeline_helper_run_pal_packing();
@@ -470,7 +470,7 @@ ChainableResult<void> CompilerTask::pipeline_step_match_tiles_pals()
         }
 
         // Assign via palette matching (shared logic for all modes)
-        const auto tile_assignment_result = pipeline_helper_assign_tile_via_pal_match(porytiles_tile);
+        const auto tile_assignment_result = pipeline_helper_assign_tile_via_pal_match(porytiles_tile, i);
 
         switch (tile_assignment_result.status) {
         case TileAssignmentResult::Status::success:
@@ -659,7 +659,8 @@ std::optional<TilemapEntry> CompilerTask::pipeline_helper_try_reuse_porymap_tile
     return std::nullopt;
 }
 
-TileAssignmentResult CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> &porytiles_tile)
+TileAssignmentResult
+CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> &porytiles_tile, std::size_t flat_index)
 {
     TileAssignmentResult result{};
 
@@ -680,19 +681,28 @@ TileAssignmentResult CompilerTask::pipeline_helper_assign_tile_via_pal_match(con
     const auto index_tile = index_tile_from_color_tile(porytiles_tile, matched_pal, extrinsic_transparency_.value());
     const CanonicalPixelTile canonical_index_tile{index_tile};
 
-    // TODO: In locked mode, the AnimTileMatcher may intercept tiles that visually match animation keyframes
-    // but have different tile_index values in the original metatiles.bin. If try_reuse fails for such tiles,
-    // the matcher assigns the animation tile_offset + index instead of the original tile_index. This could
-    // cause incorrect tile assignments in locked mode. Investigate and fix in a subsequent pass.
+    /*
+     * In non-optimize modes with available original tilemap data, only use the animation matcher if the original
+     * tile_index was within a registered animation range. This prevents false positive interception where a static tile
+     * that visually matches an animation keyframe gets incorrectly mapped to the animation tile_index, causing
+     * unintended animation at runtime.
+     */
+    bool should_check_anim_matcher = true;
+    if (tiles_edit_mode_ != ArtifactEditMode::optimize && flat_index < porymap_tilemap_entries_.size()) {
+        const auto original_tile_index = porymap_tilemap_entries_[flat_index].tile_index();
+        should_check_anim_matcher = anim_tile_matcher_.is_in_animation_range(original_tile_index);
+    }
 
     // Check if tile matches a registered animation keyframe
-    if (const auto anim_match = anim_tile_matcher_.find_match(CanonicalPixelTile{porytiles_tile});
-        anim_match.has_value()) {
-        // Use the animation tile index with composite-aware palette and computed flip bits
-        result.status = TileAssignmentResult::Status::success;
-        result.entry =
-            TilemapEntry{anim_match->tile_index, anim_match->pal_index, anim_match->h_flip, anim_match->v_flip};
-        return result;
+    if (should_check_anim_matcher) {
+        if (const auto anim_match = anim_tile_matcher_.find_match(CanonicalPixelTile{porytiles_tile});
+            anim_match.has_value()) {
+            // Use the animation tile index with composite-aware palette and computed flip bits
+            result.status = TileAssignmentResult::Status::success;
+            result.entry =
+                TilemapEntry{anim_match->tile_index, anim_match->pal_index, anim_match->h_flip, anim_match->v_flip};
+            return result;
+        }
     }
 
     /*

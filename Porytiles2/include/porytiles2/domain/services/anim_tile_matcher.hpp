@@ -120,6 +120,18 @@ class AnimTileMatcher {
     [[nodiscard]] std::optional<std::size_t> tile_count_for(const std::string &anim_name) const;
 
     /**
+     * @brief Checks whether a tile index falls within any registered animation range.
+     *
+     * @details
+     * Iterates over all registered animations and checks if @p tile_index falls within
+     * [tile_offset, tile_offset + tile_count) for any of them.
+     *
+     * @param tile_index The absolute tile index in tiles.png to check.
+     * @return @c true if @p tile_index falls within a registered animation range, @c false otherwise.
+     */
+    [[nodiscard]] bool is_in_animation_range(std::size_t tile_index) const;
+
+    /**
      * @brief Clears all registered animations.
      */
     void clear();

@@ -115,6 +115,16 @@ std::optional<std::size_t> AnimTileMatcher::tile_count_for(const std::string &an
     return it->second.tile_count;
 }
 
+bool AnimTileMatcher::is_in_animation_range(std::size_t tile_index) const
+{
+    for (const auto &[name, reg] : animation_registrations_) {
+        if (tile_index >= reg.tile_offset && tile_index < reg.tile_offset + reg.tile_count) {
+            return true;
+        }
+    }
+    return false;
+}
+
 void AnimTileMatcher::clear()
 {
     lookup_map_.clear();
