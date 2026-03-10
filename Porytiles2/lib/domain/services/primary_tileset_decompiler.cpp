@@ -134,6 +134,9 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
         }
     }
 
+    // Restore original metatiles_bin (line 81 set triple-layer format for AnimDecompiler, but output must match input)
+    new_porymap_component->metatiles_bin(tileset.porymap_component().metatiles_bin());
+
     // Decompile metatiles AFTER animation processing so that any mangled key frame tiles are used
     PT_TRY_ASSIGN_CHAIN_ERR(
         metatiles,

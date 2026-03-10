@@ -621,6 +621,15 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
     const std::set<PixelTile<IndexPixel>> &inter_anim_canonical_tiles,
     PorymapTilesetComponent &porymap_component) const
 {
+    /*
+     * TODO: PorymapTilesetComponent &porymap_component isn't 'const' here because we need to edit tiles.png to support
+     * key frame mangle backporting. However, I don't love this. The calling PrimaryTilesetDecompiler passes
+     * triple-layerized metatile entries into this function via the component, and then restores them after. It works by
+     * accident because the AnimDecompiler doesn't modify metatile tilemap entries. But that's not clear just by looking
+     * at the signature. We should probably break this out so that we can pass const stuff as const, and non-const stuff
+     * as non-const.
+     */
+
     // Unwrap config values
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, extrinsic_transparency, tileset_name, Animation<Rgba32>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, global_anim_pal_resolution_strategy, tileset_name, Animation<Rgba32>);

@@ -11,14 +11,13 @@ fieldmap:
   num_tiles_per_metatile: 8
 
 diagnostics:
-  errors:
-    exclude: [ "*" ]
-    include: # explicitly include only two error messages, include processed after exclude
-      - "layer-mode-violation"
-      - "tile-color-count-violation"
-  warnings: # default settings for warnings, this will include all
+  warnings:
+    exclude: [ ".*" ]
+    include: # explicitly include only two warnings, include processed after exclude
+      - "layer-mode-warning"
+      - "tile-color-count-warning"
   remarks:
-    exclude: [ "*" ] # disable all remarks
+    exclude: [ ".*" ] # disable all remarks
 
 verify_checksums: true
 
