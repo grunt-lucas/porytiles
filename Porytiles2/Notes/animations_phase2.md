@@ -249,7 +249,7 @@ tileset:
         key_frame_resolution_strategy: error
 ```
 
-### Solve the "multiple palettes for a single frame subtile" issue
+### ~~Solve the "multiple palettes for a single frame subtile" issue~~
 `AnimDecompiler` has this branch and note:
 ```c++
 if (found_for_subtile.size() > 1) {
@@ -335,3 +335,6 @@ Spend some time analyzing the VDests stuff to figure out the best way to handle 
 
 ### Figure out how to support BattleDome floor light blending
 The Battle Dome tileset does some fancy stuff. See bottom of `pokeemerald`'s `tileset_anims.c`.
+
+### Implement AnimMultiPalSubtileResolutionStrategy::split mode
+See above.
