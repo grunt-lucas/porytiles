@@ -644,17 +644,6 @@ std::optional<TilemapEntry> CompilerTask::pipeline_helper_try_reuse_porymap_tile
             static_cast<bool>(porymap_tilemap_entry.v_flip() ^ pt_to_pm_vflip)};
     }
 
-    // TODO: debug code block, comment out for now
-    // if (tile_index == 4617) {
-    //     std::vector<std::string> no_match_err{};
-    //     no_match_err.emplace_back(format_.format("{}: no matching tile found", FormatParam{"DEBUG", Style::bold}));
-    //     std::ranges::copy(
-    //         tile_printer_.print_tile(porytiles_tile, extrinsic_transparency_), std::back_inserter(no_match_err));
-    //     std::ranges::copy(
-    //         tile_printer_.print_tile(porymap_tile, extrinsic_transparency_), std::back_inserter(no_match_err));
-    //     diag_.error("DEBUG", no_match_err);
-    // }
-
     // No match found
     return std::nullopt;
 }
