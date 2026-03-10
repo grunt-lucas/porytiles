@@ -361,10 +361,10 @@ LayerValue<PerAnimOverrides> YamlFileProvider::per_anim_overrides(ConfigScopeTyp
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["per-animation-overrides"]; },
+        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["per_animation_overrides"]; },
         parse_per_anim_overrides,
-        "tileset.animations.per-animation-overrides",
-        "tileset.animations.per-animation-overrides");
+        "tileset.animations.per_animation_overrides",
+        "tileset.animations.per_animation_overrides");
 }
 
 LayerValue<bool> YamlFileProvider::verify_checksums(ConfigScopeType type, const std::string &scope) const

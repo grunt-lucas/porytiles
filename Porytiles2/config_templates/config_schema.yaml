@@ -471,7 +471,7 @@ config_values:
 
   - canonical_name: Per-Animation Overrides
     symbol: per_anim_overrides
-    yaml_path: tileset.animations.per-animation-overrides
+    yaml_path: tileset.animations.per_animation_overrides
     cli_option: per-anim-overrides
     cli_skip: true
     yaml_is_map: true

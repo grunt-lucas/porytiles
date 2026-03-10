@@ -37,7 +37,7 @@ inline const std::unordered_set<std::string> valid_yaml_paths = {
     "tileset.animations.key_frame_resolution_strategy",
     "tileset.animations.multi_palette_subtile_resolution_strategy",
     "tileset.animations.palette_resolution_strategy",
-    "tileset.animations.per-animation-overrides",
+    "tileset.animations.per_animation_overrides",
     "tileset.animations.wire_anim_code",
     "tileset.extrinsic_transparency",
     "tileset.palettes",
@@ -69,7 +69,7 @@ inline const std::unordered_set<std::string> valid_yaml_paths = {
  * This is auto-generated from config_schema.yaml - do not edit directly.
  */
 inline const std::unordered_set<std::string> valid_yaml_map_prefixes = {
-    "tileset.animations.per-animation-overrides",
+    "tileset.animations.per_animation_overrides",
 };
 
 } // namespace porytiles2

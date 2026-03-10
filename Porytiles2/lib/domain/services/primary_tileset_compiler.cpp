@@ -456,13 +456,14 @@ ChainableResult<void> CompilerTask::pipeline_step_match_tiles_pals()
         }
 
         /*
-         * Transparent tiles always map to tile index 0 (the reserved transparent tile). If tile 0 transparency is a
-         * pokeemerald convention, why does this come after the pipeline_helper_try_reuse_porymap_tile step? It's
-         * because Porytiles2 design philosophy prioritizes surgical edits where possible. A user could have other
-         * locations in tiles.png marked transparent in addition to tile 0. If one of their metatiles referenced one of
-         * these alternate locations, we don't want to create a diff by forcing the metatile reference to change to tile
-         * 0. Instead, we'll just respect the idiosyncrasy by calling pipeline_helper_try_reuse_porymap_tile and letting
-         * it match there first.
+         * Transparent tiles always map to tile index 0 (the reserved transparent tile).
+         *
+         * If tile 0 transparency is a pokeemerald convention, why does this come after the
+         * pipeline_helper_try_reuse_porymap_tile step for non-tiles-optimize builds? It's because Porytiles2 design
+         * philosophy prioritizes surgical edits where possible. A user could have other locations in tiles.png marked
+         * transparent in addition to tile 0. If one of their metatiles referenced one of these alternate locations, we
+         * don't want to create a diff by forcing the metatile reference to change to tile 0. Instead, we'll just
+         * respect the idiosyncrasy by calling pipeline_helper_try_reuse_porymap_tile and letting it match there first.
          */
         if (porytiles_tile.is_transparent(extrinsic_transparency_.value())) {
             new_porymap_component_->push_back_tilemap_entry(TilemapEntry{0, 0, false, false});
