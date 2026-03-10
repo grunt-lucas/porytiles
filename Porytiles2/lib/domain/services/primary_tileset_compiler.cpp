@@ -791,7 +791,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
     PT_TRY_ASSIGN_CHAIN_ERR(
         pal_packing,
         pal_packer.pack_tiles(packing_params),
-        std::format("Failed to pack palettes for tileset '{}'.", tileset_.name()),
+        format_.format("Failed to pack palettes for tileset '{}'.", FormatParam{tileset_.name(), Style::bold}),
         void);
 
     for (std::size_t i = 0; i < pal::num_pals; i++) {
