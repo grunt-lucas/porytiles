@@ -104,13 +104,38 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
     }
     auto incbin_decls = std::move(incbin_decls_result).value();
 
-    // If no INCBIN declarations found with g prefix, try s prefix (pokefirered/vanilla)
-    if (incbin_decls.empty()) {
+    /*
+     * Check if g-prefix results cover the expected animations from callback parsing. In pokefirered-expansion,
+     * BattleFrontier reuses gTilesetAnims_General_* names for its own shared animations, so the g-prefix may match
+     * INCBIN declarations that belong to a different tileset. If the g-prefix results don't cover the expected
+     * animations, try s-prefix.
+     */
+    auto incbins_cover_expected_anims = [&](const std::string &prefix,
+                                            const std::vector<IncbinDeclaration> &decls) -> bool {
+        for (const auto &params : anim_params_map | std::views::values) {
+            const std::string pascal_anim_name = params.cased_name().to_c_identifier();
+            const std::string first_frame_var = prefix + pascal_tileset + "_" + pascal_anim_name + "_Frame0";
+            bool found = false;
+            for (const auto &decl : decls) {
+                if (decl.variable_name() == first_frame_var) {
+                    found = true;
+                    break;
+                }
+            }
+            if (!found) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    if (incbin_decls.empty() || !incbins_cover_expected_anims("gTilesetAnims_", incbin_decls)) {
         const std::string s_incbin_prefix = "sTilesetAnims_" + pascal_tileset + "_";
         auto s_incbin_decls_result = c_parser.parse_incbin_arrays(s_incbin_prefix);
         if (s_incbin_decls_result.has_value()) {
-            incbin_decls = std::move(s_incbin_decls_result).value();
-            if (!incbin_decls.empty()) {
+            auto s_incbin_decls = std::move(s_incbin_decls_result).value();
+            if (!s_incbin_decls.empty()) {
+                incbin_decls = std::move(s_incbin_decls);
                 detected_anim_prefix = "sTilesetAnims_";
             }
         }

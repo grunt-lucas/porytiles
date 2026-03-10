@@ -548,5 +548,101 @@ TEST_F(CParserFacadeTests, ParseFunctionBodyContainsExpectedTokens)
     EXPECT_TRUE(found_508) << "Expected to find TILE_OFFSET_4BPP(508) in function body";
 }
 
+// ============================================================================
+// INCBIN Array Parsing Tests
+// ============================================================================
+
+TEST_F(CParserFacadeTests, ParseIncbinArraysSinglePathDeclarations)
+{
+    auto temp_path = create_temp_file(R"(
+static const u16 sTilesetAnims_General_Flower_Frame0[] = INCBIN_U16("data/tilesets/primary/general/anim/flower/0.4bpp");
+static const u16 sTilesetAnims_General_Flower_Frame1[] = INCBIN_U16("data/tilesets/primary/general/anim/flower/1.4bpp");
+)");
+    CParserFacade driver{temp_path, &formatter_};
+
+    auto result = driver.parse_incbin_arrays();
+    ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
+
+    const auto &incbins = result.value();
+    ASSERT_EQ(incbins.size(), 2);
+    EXPECT_EQ(incbins[0].variable_name(), "sTilesetAnims_General_Flower_Frame0");
+    EXPECT_EQ(incbins[0].macro_name(), "INCBIN_U16");
+    ASSERT_EQ(incbins[0].paths().size(), 1);
+    EXPECT_EQ(incbins[0].paths()[0], "data/tilesets/primary/general/anim/flower/0.4bpp");
+}
+
+TEST_F(CParserFacadeTests, ParseIncbinArraysWithPrefixFilter)
+{
+    auto temp_path = create_temp_file(R"(
+static const u16 sTilesetAnims_General_Flower_Frame0[] = INCBIN_U16("data/tilesets/primary/general/anim/flower/0.4bpp");
+static const u16 sTilesetAnims_General_Flower_Frame1[] = INCBIN_U16("data/tilesets/primary/general/anim/flower/1.4bpp");
+const u16 gTilesetAnims_BattleFrontier_Flag_Frame0[] = INCBIN_U16("data/tilesets/secondary/battle_frontier/anim/flag/0.4bpp");
+)");
+    CParserFacade driver{temp_path, &formatter_};
+
+    auto s_result = driver.parse_incbin_arrays("sTilesetAnims_General_");
+    ASSERT_TRUE(s_result.has_value()) << get_all_error_text(s_result);
+    EXPECT_EQ(s_result.value().size(), 2);
+
+    auto g_result = driver.parse_incbin_arrays("gTilesetAnims_BattleFrontier_");
+    ASSERT_TRUE(g_result.has_value()) << get_all_error_text(g_result);
+    EXPECT_EQ(g_result.value().size(), 1);
+}
+
+TEST_F(CParserFacadeTests, ParseIncbinArraysMixedPrefixesSameTilesetName)
+{
+    // Reproduces the pokefirered-expansion scenario where BattleFrontier reuses
+    // gTilesetAnims_General_* names for shared animations, while the actual
+    // General tileset uses sTilesetAnims_General_* declarations.
+    auto temp_path = create_temp_file(R"(
+// Actual General tileset animations (s-prefix)
+static const u16 sTilesetAnims_General_Flower_Frame0[] = INCBIN_U16("data/tilesets/primary/general/anim/flower/0.4bpp");
+static const u16 sTilesetAnims_General_Flower_Frame1[] = INCBIN_U16("data/tilesets/primary/general/anim/flower/1.4bpp");
+static const u16 sTilesetAnims_General_Water_Frame0[] = INCBIN_U16("data/tilesets/primary/general/anim/water/0.4bpp");
+
+// BattleFrontier shared animations reusing General_* naming (g-prefix)
+const u16 gTilesetAnims_General_Water_Frame0[] = INCBIN_U16("data/tilesets/primary/battle_frontier_outside/anim/water/0.4bpp");
+const u16 gTilesetAnims_General_Water_Frame1[] = INCBIN_U16("data/tilesets/primary/battle_frontier_outside/anim/water/1.4bpp");
+)");
+    CParserFacade driver{temp_path, &formatter_};
+
+    // g-prefix filter for "General_" should match only the BattleFrontier reused names
+    auto g_result = driver.parse_incbin_arrays("gTilesetAnims_General_");
+    ASSERT_TRUE(g_result.has_value()) << get_all_error_text(g_result);
+    const auto &g_incbins = g_result.value();
+    EXPECT_EQ(g_incbins.size(), 2);
+    // These point to battle_frontier_outside, not general
+    EXPECT_EQ(g_incbins[0].variable_name(), "gTilesetAnims_General_Water_Frame0");
+    EXPECT_NE(g_incbins[0].paths()[0].find("battle_frontier_outside"), std::string::npos);
+
+    // s-prefix filter for "General_" should match the actual General tileset animations
+    auto s_result = driver.parse_incbin_arrays("sTilesetAnims_General_");
+    ASSERT_TRUE(s_result.has_value()) << get_all_error_text(s_result);
+    const auto &s_incbins = s_result.value();
+    EXPECT_EQ(s_incbins.size(), 3);
+    // These point to actual general tileset data
+    EXPECT_EQ(s_incbins[0].variable_name(), "sTilesetAnims_General_Flower_Frame0");
+    EXPECT_NE(s_incbins[0].paths()[0].find("primary/general"), std::string::npos);
+}
+
+TEST_F(CParserFacadeTests, ParseIncbinArraysMultiDimensional)
+{
+    auto temp_path = create_temp_file(R"(
+const u16 gTilesetPalettes_General[][16] = {
+    INCBIN_U16("data/tilesets/primary/general/palettes/00.gbapal"),
+    INCBIN_U16("data/tilesets/primary/general/palettes/01.gbapal"),
+};
+)");
+    CParserFacade driver{temp_path, &formatter_};
+
+    auto result = driver.parse_incbin_arrays();
+    ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
+
+    const auto &incbins = result.value();
+    ASSERT_EQ(incbins.size(), 1);
+    EXPECT_EQ(incbins[0].variable_name(), "gTilesetPalettes_General");
+    EXPECT_EQ(incbins[0].paths().size(), 2);
+}
+
 } // namespace
 } // namespace porytiles2
