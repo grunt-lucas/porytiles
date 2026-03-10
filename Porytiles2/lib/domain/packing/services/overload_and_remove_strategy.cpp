@@ -231,8 +231,7 @@ OverloadAndRemoveStrategy::try_pack(const PackingInput &input, std::optional<std
             // Fallback 1: strict first-fit (no overload)
             bool assigned = false;
             for (std::size_t i = 0; i < output.pals_.size(); ++i) {
-                if (!tile_info.forbidden_palettes.contains(i) &&
-                    output.pals_[i].can_fit(tile_info.tile.color_set())) {
+                if (!tile_info.forbidden_palettes.contains(i) && output.pals_[i].can_fit(tile_info.tile.color_set())) {
                     output.pals_[i].add_tile(tile_info.tile);
                     output.tile_to_pal_[tile_info.tile.id()] = output.pals_[i].hardware_index();
                     assigned = true;

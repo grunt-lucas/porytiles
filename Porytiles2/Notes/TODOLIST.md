@@ -6,9 +6,9 @@
   - Start working on a JSON impl that can read/write tilesets from a standardized JSON format 
 
 ## Palette Packing
-- Implement classic dfs and bfs
 - Implement multiplicity-based dfs and bfs
   - it will basically be BestFusion but with backtracking
+  - Do we need this at this point? Diminishing returns with all these strategies. Most assignment failures are still user-driven, when they provide clearly unassignable assets.
 - Implement a "shotgun approach" strategy that tries different sub-strategies until success
   - the paper has some ideas on which algorithm to use depending on problem set's "multiplicity"
   - let's make the shotgun approach smart based on the character of the input

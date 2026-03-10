@@ -19,7 +19,6 @@
 #include "porytiles2/domain/config/per_anim_overrides.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
-#include "porytiles2/domain/models/canonical_shape_tile.hpp"
 #include "porytiles2/domain/models/color_index_map.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
@@ -27,8 +26,7 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tiles_png_workspace.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
-#include "porytiles2/domain/packing/services/best_fusion_strategy.hpp"
-#include "porytiles2/domain/packing/services/overload_and_remove_strategy.hpp"
+#include "porytiles2/domain/packing/services/backtracking_strategy.hpp"
 #include "porytiles2/domain/packing/services/palette_packer.hpp"
 #include "porytiles2/domain/services/anim_tile_matcher.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
@@ -749,8 +747,8 @@ CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> 
 ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
 {
     /*
-     * Create ColorIndexMap from the Porytiles tiles, Porytiles pals, and palette hints. This validates that we
-     * don't exceed the global color count limit.
+     * Create ColorIndexMap from the Porytiles tiles, Porytiles pals, and palette hints. We already validated earlier
+     * that we don't exceed the global color count limit. So this will panic if there are too many global unique colors.
      */
     const std::size_t color_count_limit = num_pals_in_primary_.value() * (pal::max_size - 1);
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -772,7 +770,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
     //         return CanonicalShapeTile{shape_tile_to_pixel_colors(tile, color_index_map)};
     //     });
 
-    OverloadAndRemoveStrategy packing_strategy{};
+    BacktrackingStrategy packing_strategy{};
     PalettePacker pal_packer{&packing_strategy, &format_, &diag_};
     std::bitset<pal::num_pals> available_pals{0};
     for (std::size_t i = 0; i < num_pals_in_primary_; i++) {
