@@ -15,6 +15,11 @@
 - Implement a "shotgun approach" strategy that tries different sub-strategies until success
   - the paper has some ideas on which algorithm to use depending on problem set's "multiplicity"
   - let's make the shotgun approach smart based on the character of the input
+  - the shotgun approach should use a **threadpool** to run sub-strategies in parallel across multiple cores
+    - feasibility analysis confirmed this is viable: see `Notes/parallel_packing_strategy_analysis.md`
+    - iterations are embarrassingly parallel (stateless strategies, immutable input, no shared mutable state)
+    - cooperative cancellation via `std::atomic<bool>` checked alongside existing `node_cutoff` in DFS/BFS
+    - also opens the door to "best solution" semantics (compare results by quality) instead of first-success
 
 ## Project Structure Refactor
 - Domain layer is getting way too crowded
