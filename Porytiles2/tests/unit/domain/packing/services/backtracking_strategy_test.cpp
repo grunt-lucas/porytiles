@@ -2,6 +2,7 @@
 
 #include <bitset>
 #include <cstddef>
+#include <limits>
 #include <set>
 #include <variant>
 #include <vector>
@@ -13,6 +14,7 @@
 #include "porytiles2/domain/packing/models/prefilled_palette.hpp"
 #include "porytiles2/domain/packing/services/backtracking_strategy.hpp"
 #include "porytiles2/domain/packing/services/packing_strategy.hpp"
+#include "porytiles2/domain/packing/services/search_algorithm.hpp"
 
 using namespace porytiles2;
 
@@ -291,4 +293,67 @@ TEST(BacktrackingStrategyTest, Deterministic)
     ASSERT_TRUE(result2.has_value());
 
     EXPECT_EQ(result1.value().tile_to_pal_, result2.value().tile_to_pal_);
+}
+
+// =============================================================================
+// Test: SingleConfigDfsSucceeds
+// =============================================================================
+
+TEST(BacktrackingStrategyTest, SingleConfigDfsSucceeds)
+{
+    auto tile_a = make_regular_tile(0, {1, 2, 3});
+    auto tile_b = make_regular_tile(1, {2, 3, 4});
+    auto input = make_input({tile_a, tile_b}, all_palettes_available());
+
+    BacktrackingStrategy strategy{SearchAlgorithm::dfs, 1'000'000, std::numeric_limits<std::size_t>::max(), true};
+    auto result = strategy.pack(input);
+
+    ASSERT_TRUE(result.has_value());
+    auto &output = result.value();
+
+    ASSERT_EQ(output.tile_to_pal_.size(), 2u);
+    EXPECT_EQ(output.tile_to_pal_.at(tile_a.id()), output.tile_to_pal_.at(tile_b.id()));
+}
+
+// =============================================================================
+// Test: SingleConfigBfsSucceeds
+// =============================================================================
+
+TEST(BacktrackingStrategyTest, SingleConfigBfsSucceeds)
+{
+    auto tile_a = make_regular_tile(0, {1, 2, 3});
+    auto tile_b = make_regular_tile(1, {2, 3, 4});
+    auto input = make_input({tile_a, tile_b}, all_palettes_available());
+
+    BacktrackingStrategy strategy{SearchAlgorithm::bfs, 1'000'000, std::numeric_limits<std::size_t>::max(), true};
+    auto result = strategy.pack(input);
+
+    ASSERT_TRUE(result.has_value());
+    auto &output = result.value();
+
+    ASSERT_EQ(output.tile_to_pal_.size(), 2u);
+    EXPECT_EQ(output.tile_to_pal_.at(tile_a.id()), output.tile_to_pal_.at(tile_b.id()));
+}
+
+// =============================================================================
+// Test: SingleConfigCutoffTooLow
+// =============================================================================
+
+TEST(BacktrackingStrategyTest, SingleConfigCutoffTooLow)
+{
+    /*
+     * Use the tight packing scenario that requires real backtracking, but with
+     * a very low node cutoff so the single config fails (no preset matrix fallback).
+     */
+    auto tile_a = make_regular_tile(0, {1, 2, 3, 4});
+    auto tile_b = make_regular_tile(1, {3, 4, 5, 6});
+    auto tile_c = make_regular_tile(2, {5, 6, 7, 8});
+    auto tile_d = make_regular_tile(3, {7, 8, 1, 2});
+
+    auto input = make_input({tile_a, tile_b, tile_c, tile_d}, n_palettes_available(2), 6);
+
+    BacktrackingStrategy strategy{SearchAlgorithm::dfs, 1, 1, false};
+    auto result = strategy.pack(input);
+
+    EXPECT_FALSE(result.has_value()) << "Single config with cutoff=1 should fail without preset matrix fallback";
 }

@@ -4,8 +4,10 @@
 #include <array>
 #include <cstddef>
 #include <deque>
+#include <format>
 #include <limits>
 #include <map>
+#include <string>
 #include <unordered_set>
 #include <vector>
 
@@ -26,7 +28,6 @@ namespace {
 // Internal types
 // ============================================================================
 
-enum class SearchAlgorithm { dfs, bfs };
 enum class AssignResult { success, no_solution, cutoff_reached };
 
 struct SearchParams {
@@ -65,10 +66,10 @@ struct BfsStateHash {
 };
 
 // ============================================================================
-// Fallback matrix (48 configurations)
+// Preset matrix (48 configurations)
 // ============================================================================
 
-[[nodiscard]] std::array<SearchParams, 48> build_fallback_matrix()
+[[nodiscard]] std::array<SearchParams, 48> build_preset_matrix()
 {
     std::array<SearchParams, 48> matrix{};
     std::size_t idx = 0;
@@ -481,6 +482,32 @@ build_packing_output(const std::vector<ColorSet> &solution_colors, const SearchC
     return output;
 }
 
+[[nodiscard]] std::string format_search_params_line(const SearchParams &params)
+{
+    std::string branches_str = params.best_branches == std::numeric_limits<std::size_t>::max()
+                                   ? "unlimited"
+                                   : std::to_string(params.best_branches);
+    return std::format(
+        "algorithm={}, node_cutoff={}, best_branches={}, smart_prune={}.",
+        to_string(params.algorithm),
+        params.node_cutoff,
+        branches_str,
+        params.smart_prune ? "true" : "false");
+}
+
+void emit_success_remark(const UserDiagnostics &diag, const SearchParams &params, bool is_preset)
+{
+    std::vector<std::string> lines;
+    if (is_preset) {
+        lines.emplace_back("Backtracking search succeeded with preset config:");
+    }
+    else {
+        lines.emplace_back("Backtracking search succeeded:");
+    }
+    lines.emplace_back(format_search_params_line(params));
+    diag.remark("backtracking-search", lines);
+}
+
 } // namespace
 
 // ============================================================================
@@ -495,28 +522,63 @@ ChainableResult<PackingOutput> BacktrackingStrategy::pack(const PackingInput &in
         return build_empty_output(ctx, input);
     }
 
-    auto matrix = build_fallback_matrix();
+    if (use_preset_matrix_) {
+        auto matrix = build_preset_matrix();
 
-    for (const auto &params : matrix) {
-        std::size_t explored = 0;
+        for (const auto &params : matrix) {
+            std::size_t explored = 0;
 
-        if (params.algorithm == SearchAlgorithm::dfs) {
-            auto colors = ctx.initial_palette_colors;
-            if (assign_depth_first(colors, ctx, params, 0, explored) == AssignResult::success) {
-                return build_packing_output(colors, ctx, input);
+            if (params.algorithm == SearchAlgorithm::dfs) {
+                auto colors = ctx.initial_palette_colors;
+                if (assign_depth_first(colors, ctx, params, 0, explored) == AssignResult::success) {
+                    if (diag_ != nullptr) {
+                        emit_success_remark(*diag_, params, true);
+                    }
+                    return build_packing_output(colors, ctx, input);
+                }
+            }
+            else {
+                std::vector<ColorSet> solution;
+                if (assign_breadth_first(ctx.initial_palette_colors, ctx, params, explored, solution) ==
+                    AssignResult::success) {
+                    if (diag_ != nullptr) {
+                        emit_success_remark(*diag_, params, true);
+                    }
+                    return build_packing_output(solution, ctx, input);
+                }
             }
         }
-        else {
-            std::vector<ColorSet> solution;
-            if (assign_breadth_first(ctx.initial_palette_colors, ctx, params, explored, solution) ==
-                AssignResult::success) {
-                return build_packing_output(solution, ctx, input);
+
+        return FormattableError{
+            "Backtracking strategy failed to find a valid palette assignment after all preset configurations."};
+    }
+
+    // Single-config mode: run one search with the configured parameters
+    SearchParams params{algorithm_, node_cutoff_, best_branches_, smart_prune_};
+    std::size_t explored = 0;
+
+    if (algorithm_ == SearchAlgorithm::dfs) {
+        auto colors = ctx.initial_palette_colors;
+        if (assign_depth_first(colors, ctx, params, 0, explored) == AssignResult::success) {
+            if (diag_ != nullptr) {
+                emit_success_remark(*diag_, params, false);
             }
+            return build_packing_output(colors, ctx, input);
+        }
+    }
+    else {
+        std::vector<ColorSet> solution;
+        if (assign_breadth_first(ctx.initial_palette_colors, ctx, params, explored, solution) ==
+            AssignResult::success) {
+            if (diag_ != nullptr) {
+                emit_success_remark(*diag_, params, false);
+            }
+            return build_packing_output(solution, ctx, input);
         }
     }
 
     return FormattableError{
-        "Backtracking strategy failed to find a valid palette assignment after all configurations."};
+        "Backtracking strategy failed to find a valid palette assignment with the configured parameters."};
 }
 
 } // namespace porytiles2

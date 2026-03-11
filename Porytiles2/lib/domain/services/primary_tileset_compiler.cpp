@@ -770,7 +770,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
     //         return CanonicalShapeTile{shape_tile_to_pixel_colors(tile, color_index_map)};
     //     });
 
-    BacktrackingStrategy packing_strategy{};
+    BacktrackingStrategy packing_strategy{&diag_};
     PalettePacker pal_packer{&packing_strategy, &format_, &diag_};
     std::bitset<pal::num_pals> available_pals{0};
     for (std::size_t i = 0; i < num_pals_in_primary_; i++) {

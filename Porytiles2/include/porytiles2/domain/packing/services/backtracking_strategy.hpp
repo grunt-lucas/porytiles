@@ -1,9 +1,15 @@
 #pragma once
 
+#include <cstddef>
+#include <limits>
 #include <string>
 
+#include "gsl/pointers"
+
 #include "porytiles2/domain/packing/services/packing_strategy.hpp"
+#include "porytiles2/domain/packing/services/search_algorithm.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles2 {
 
@@ -32,18 +38,63 @@ namespace porytiles2 {
  *
  * 2. **DFS in-place mutation with undo.** Porytiles1 copied the entire palette vector for each DFS branch. We save and
  *    restore only the single modified palette, reducing per-node allocation overhead.
+ *
+ * The strategy supports two modes:
+ *
+ * - **Preset matrix mode** (default): Iterates through 48 known-good configurations (varying cutoffs, branch limits,
+ *   and algorithms) until a solution is found. Use this when the input characteristics are unknown.
+ *
+ * - **Single-config mode**: Runs a single search with caller-specified parameters. Use this when you know which
+ *   settings work for your input, or for targeted testing and tuning.
  */
 class BacktrackingStrategy final : public PackingStrategy {
   public:
     BacktrackingStrategy() = default;
 
     /**
+     * @brief Constructs in preset matrix mode with diagnostics support.
+     *
+     * @details
+     * Uses the full 48-configuration preset matrix (default behavior) and emits a remark via the provided diagnostics
+     * when a successful configuration is found.
+     *
+     * @param diag Diagnostics interface for emitting remarks about successful search parameters.
+     */
+    explicit BacktrackingStrategy(gsl::not_null<const UserDiagnostics *> diag) : diag_{diag} {}
+
+    /**
+     * @brief Constructs with explicit search parameters for single-configuration mode.
+     *
+     * @details
+     * When constructed with this constructor, the strategy runs a single search with the provided parameters instead of
+     * iterating through the preset configuration matrix.
+     *
+     * @param algorithm The search algorithm to use (DFS or BFS).
+     * @param node_cutoff Maximum number of nodes to explore before giving up.
+     * @param best_branches Maximum number of candidate branches per node (@c SIZE_MAX for unlimited).
+     * @param smart_prune Whether to cap candidates after the first zero-intersection palette.
+     * @param diag Optional diagnostics interface for emitting remarks about successful search parameters.
+     * @pre @p node_cutoff must be greater than zero.
+     */
+    explicit BacktrackingStrategy(
+        SearchAlgorithm algorithm,
+        std::size_t node_cutoff,
+        std::size_t best_branches,
+        bool smart_prune,
+        const UserDiagnostics *diag = nullptr)
+        : use_preset_matrix_{false}, algorithm_{algorithm}, node_cutoff_{node_cutoff}, best_branches_{best_branches},
+          smart_prune_{smart_prune}, diag_{diag}
+    {
+    }
+
+    /**
      * @brief Packs tiles into palettes using BFS/DFS backtracking search.
      *
      * @details
-     * Tries 48 search configurations (DFS and BFS with varying cutoffs and branch limits) until a valid assignment is
-     * found. The search state is a compact vector of ColorSets (one per palette), and tile-to-palette mappings are
-     * reconstructed after a solution is found.
+     * In preset matrix mode, tries 48 search configurations (DFS and BFS with varying cutoffs and branch limits) until
+     * a valid assignment is found. In single-config mode, runs one search with the configured parameters. The search
+     * state is a compact vector of ColorSets (one per palette), and tile-to-palette mappings are reconstructed after a
+     * solution is found.
      *
      * @param input The packing input containing tiles, hints, fixed slots, and constraints
      * @return A PackingOutput on success, or an error if all configurations fail
@@ -59,6 +110,14 @@ class BacktrackingStrategy final : public PackingStrategy {
     {
         return "Backtracking";
     }
+
+  private:
+    bool use_preset_matrix_ = true;
+    SearchAlgorithm algorithm_ = SearchAlgorithm::dfs;
+    std::size_t node_cutoff_ = 1'000'000;
+    std::size_t best_branches_ = std::numeric_limits<std::size_t>::max();
+    bool smart_prune_ = true;
+    const UserDiagnostics *diag_ = nullptr;
 };
 
 } // namespace porytiles2
