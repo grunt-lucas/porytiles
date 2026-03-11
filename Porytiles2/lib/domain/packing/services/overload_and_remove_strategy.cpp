@@ -1,14 +1,18 @@
 #include "porytiles2/domain/packing/services/overload_and_remove_strategy.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <deque>
+#include <format>
 #include <map>
 #include <optional>
 #include <random>
 #include <set>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "porytiles2/domain/packing/algorithms/packing_initializer.hpp"
 #include "porytiles2/domain/packing/algorithms/packing_metrics.hpp"
@@ -73,34 +77,162 @@ struct TileInfo {
     return best_idx;
 }
 
+// ============================================================================
+// Preset matrix types and construction
+// ============================================================================
+
+struct OarParams {
+    ShuffleStrategy shuffle_strategy;
+    std::size_t max_attempts;
+    std::uint64_t seed;
+};
+
+/**
+ * @brief Builds the 17-entry preset matrix of O&R configurations.
+ *
+ * @details
+ * Configurations escalate from cheapest to most expensive:
+ *   1. single_ffd × 1 attempt (cheapest: one deterministic FFD pass)
+ *   2-5. noisy_ffd × 20 attempts with 4 seeds
+ *   6-9. random × 20 attempts with 4 seeds
+ *   10-13. noisy_ffd × 75 attempts with 4 seeds
+ *   14-17. random × 75 attempts with 4 seeds
+ *
+ * Worst-case total O&R attempts across all 17 entries: 1 + 4×20 + 4×20 + 4×75 + 4×75 = 761.
+ */
+[[nodiscard]] std::array<OarParams, 17> build_preset_matrix()
+{
+    std::array<OarParams, 17> matrix{};
+    std::size_t idx = 0;
+
+    constexpr std::array<std::uint64_t, 4> seeds = {42, 123, 456, 789};
+
+    // Phase 1: single FFD (1 entry)
+    matrix[idx++] = OarParams{ShuffleStrategy::single_ffd, 1, 42};
+
+    // Phase 2: noisy_ffd with 20 attempts (4 entries)
+    for (std::uint64_t seed : seeds) {
+        matrix[idx++] = OarParams{ShuffleStrategy::noisy_ffd, 20, seed};
+    }
+
+    // Phase 3: random with 20 attempts (4 entries)
+    for (std::uint64_t seed : seeds) {
+        matrix[idx++] = OarParams{ShuffleStrategy::random, 20, seed};
+    }
+
+    // Phase 4: noisy_ffd with 75 attempts (4 entries)
+    for (std::uint64_t seed : seeds) {
+        matrix[idx++] = OarParams{ShuffleStrategy::noisy_ffd, 75, seed};
+    }
+
+    // Phase 5: random with 75 attempts (4 entries)
+    for (std::uint64_t seed : seeds) {
+        matrix[idx++] = OarParams{ShuffleStrategy::random, 75, seed};
+    }
+
+    return matrix;
+}
+
+// ============================================================================
+// Remark helpers
+// ============================================================================
+
+[[nodiscard]] std::string format_oar_params_line(const OarParams &params)
+{
+    return std::format(
+        "shuffle_strategy={}, max_attempts={}, seed={}.",
+        to_string(params.shuffle_strategy),
+        params.max_attempts,
+        params.seed);
+}
+
+void emit_success_remark(const UserDiagnostics &diag, const OarParams &params, bool is_preset)
+{
+    std::vector<std::string> lines;
+    if (is_preset) {
+        lines.emplace_back("Overload-and-Remove search succeeded with preset config:");
+    }
+    else {
+        lines.emplace_back("Overload-and-Remove search succeeded:");
+    }
+    lines.emplace_back(format_oar_params_line(params));
+    diag.remark("overload-and-remove-search", lines);
+}
+
 } // namespace
 
 namespace porytiles2 {
 
+// ============================================================================
+// OverloadAndRemoveStrategy::pack
+// ============================================================================
+
 ChainableResult<PackingOutput> OverloadAndRemoveStrategy::pack(const PackingInput &input) const
 {
+    if (use_preset_matrix_) {
+        auto matrix = build_preset_matrix();
+
+        for (const auto &params : matrix) {
+            auto result = run_multi_start(input, params.shuffle_strategy, params.max_attempts, params.seed);
+            if (result.has_value()) {
+                if (diag_ != nullptr) {
+                    emit_success_remark(*diag_, params, true);
+                }
+                return result;
+            }
+        }
+
+        return FormattableError{
+            "Overload-and-Remove strategy failed to find a valid palette assignment after all preset configurations."};
+    }
+
+    // Single-config mode: run one multi-start search with the configured parameters
+    OarParams params{shuffle_strategy_, max_attempts_, seed_};
+    auto result = run_multi_start(input, shuffle_strategy_, max_attempts_, seed_);
+    if (result.has_value()) {
+        if (diag_ != nullptr) {
+            emit_success_remark(*diag_, params, false);
+        }
+        return result;
+    }
+
+    return FormattableError{
+        "Overload-and-Remove strategy failed to find a valid palette assignment with the configured parameters."};
+}
+
+// ============================================================================
+// OverloadAndRemoveStrategy::run_multi_start
+// ============================================================================
+
+ChainableResult<PackingOutput> OverloadAndRemoveStrategy::run_multi_start(
+    const PackingInput &input, ShuffleStrategy shuffle_strategy, std::size_t max_attempts, std::uint64_t seed) const
+{
     // First attempt: FFD ordering (deterministic, theoretically best for bin packing)
-    auto first_result = try_pack(input, std::nullopt);
-    if (first_result.has_value() || shuffle_strategy_ == ShuffleStrategy::single_ffd || max_attempts_ <= 1) {
+    auto first_result = try_pack(input, shuffle_strategy, std::nullopt);
+    if (first_result.has_value() || shuffle_strategy == ShuffleStrategy::single_ffd || max_attempts <= 1) {
         return first_result;
     }
 
-    // Subsequent attempts: orderings determined by shuffle_strategy_ with seeded PRNG
-    std::mt19937_64 seed_generator{seed_};
-    for (std::size_t attempt = 1; attempt < max_attempts_; ++attempt) {
+    // Subsequent attempts: orderings determined by shuffle_strategy with seeded PRNG
+    std::mt19937_64 seed_generator{seed};
+    for (std::size_t attempt = 1; attempt < max_attempts; ++attempt) {
         std::uint64_t shuffle_seed = seed_generator();
-        auto result = try_pack(input, shuffle_seed);
+        auto result = try_pack(input, shuffle_strategy, shuffle_seed);
         if (result.has_value()) {
             return result;
         }
     }
 
     // All attempts failed — return the first attempt's error (most informative)
-    return std::move(first_result);
+    return first_result;
 }
 
-ChainableResult<PackingOutput>
-OverloadAndRemoveStrategy::try_pack(const PackingInput &input, std::optional<std::uint64_t> shuffle_seed) const
+// ============================================================================
+// OverloadAndRemoveStrategy::try_pack
+// ============================================================================
+
+ChainableResult<PackingOutput> OverloadAndRemoveStrategy::try_pack(
+    const PackingInput &input, ShuffleStrategy shuffle_strategy, std::optional<std::uint64_t> shuffle_seed) const
 {
     PackingOutput output;
     PalettePool pal_pool = input.pal_pool_;
@@ -143,7 +275,7 @@ OverloadAndRemoveStrategy::try_pack(const PackingInput &input, std::optional<std
     if (shuffle_seed.has_value()) {
         std::mt19937_64 rng{shuffle_seed.value()};
         std::ranges::shuffle(tile_pool, rng);
-        if (shuffle_strategy_ == ShuffleStrategy::noisy_ffd) {
+        if (shuffle_strategy == ShuffleStrategy::noisy_ffd) {
             // Noisy FFD: shuffle first for random tiebreaking, then stable_sort by color_count descending.
             // This preserves the large-first FFD property while randomly reordering tiles of equal size.
             std::ranges::stable_sort(tile_pool, [](const TileInfo &a, const TileInfo &b) {

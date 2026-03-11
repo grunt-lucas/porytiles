@@ -3,6 +3,7 @@
 #include <bitset>
 #include <cstddef>
 #include <set>
+#include <string>
 #include <vector>
 
 #include "porytiles2/domain/models/color_set.hpp"
@@ -13,6 +14,7 @@
 #include "porytiles2/domain/packing/services/overload_and_remove_strategy.hpp"
 #include "porytiles2/domain/packing/services/packing_strategy.hpp"
 #include "porytiles2/domain/packing/services/shuffle_strategy.hpp"
+#include "porytiles2/xcut/diagnostics/buffered_user_diagnostics.hpp"
 
 using namespace porytiles2;
 
@@ -443,6 +445,172 @@ TEST(OverloadAndRemoveStrategyTest, RandomShuffleStillWorks)
     auto result = strategy.pack(input);
 
     ASSERT_TRUE(result.has_value()) << "Random shuffle multi-start should find a valid packing";
+    auto &output = result.value();
+
+    ASSERT_EQ(output.tile_to_pal_.size(), 4u);
+    for (const auto &tile : {tile_a, tile_b, tile_c, tile_d}) {
+        ASSERT_TRUE(output.tile_to_pal_.contains(tile.id()));
+    }
+}
+
+// =============================================================================
+// Test: PresetMatrixModeSucceeds
+// =============================================================================
+
+TEST(OverloadAndRemoveStrategyTest, PresetMatrixModeSucceeds)
+{
+    auto tile_a = make_regular_tile(0, {1, 2, 3});
+    auto tile_b = make_regular_tile(1, {2, 3, 4});
+    auto input = make_input({tile_a, tile_b}, all_palettes_available());
+
+    // Default-constructed strategy uses preset matrix mode
+    OverloadAndRemoveStrategy strategy{};
+    auto result = strategy.pack(input);
+
+    ASSERT_TRUE(result.has_value());
+    auto &output = result.value();
+
+    ASSERT_EQ(output.tile_to_pal_.size(), 2u);
+    ASSERT_TRUE(output.tile_to_pal_.contains(tile_a.id()));
+    ASSERT_TRUE(output.tile_to_pal_.contains(tile_b.id()));
+}
+
+// =============================================================================
+// Test: PresetMatrixModeEmitsRemark
+// =============================================================================
+
+TEST(OverloadAndRemoveStrategyTest, PresetMatrixModeEmitsRemark)
+{
+    auto tile = make_regular_tile(0, {1, 2, 3});
+    auto input = make_input({tile}, all_palettes_available());
+
+    BufferedUserDiagnostics diag{};
+    OverloadAndRemoveStrategy strategy{&diag};
+    auto result = strategy.pack(input);
+
+    ASSERT_TRUE(result.has_value());
+
+    // Verify remark was emitted with the correct tag
+    const auto &tag_counts = diag.remark_tag_counts();
+    auto it = tag_counts.find("overload-and-remove-search");
+    ASSERT_NE(it, tag_counts.end());
+    EXPECT_EQ(it->second, 1u);
+
+    // Verify the remark contains "preset config"
+    ASSERT_FALSE(diag.remarks().empty());
+    bool found_preset = false;
+    for (const auto &remark_lines : diag.remarks()) {
+        for (const auto &line : remark_lines) {
+            if (line.find("preset config") != std::string::npos) {
+                found_preset = true;
+                break;
+            }
+        }
+    }
+    EXPECT_TRUE(found_preset) << "Remark should mention 'preset config' in preset matrix mode";
+}
+
+// =============================================================================
+// Test: SingleConfigModeSucceeds
+// =============================================================================
+
+TEST(OverloadAndRemoveStrategyTest, SingleConfigModeSucceeds)
+{
+    auto tile_a = make_regular_tile(0, {1, 2, 3, 4});
+    auto tile_b = make_regular_tile(1, {3, 4, 5, 6});
+    auto input = make_input({tile_a, tile_b}, all_palettes_available());
+
+    OverloadAndRemoveStrategy strategy{20, 42, ShuffleStrategy::noisy_ffd};
+    auto result = strategy.pack(input);
+
+    ASSERT_TRUE(result.has_value());
+    auto &output = result.value();
+
+    ASSERT_EQ(output.tile_to_pal_.size(), 2u);
+    ASSERT_TRUE(output.tile_to_pal_.contains(tile_a.id()));
+    ASSERT_TRUE(output.tile_to_pal_.contains(tile_b.id()));
+}
+
+// =============================================================================
+// Test: SingleConfigModeEmitsRemark
+// =============================================================================
+
+TEST(OverloadAndRemoveStrategyTest, SingleConfigModeEmitsRemark)
+{
+    auto tile = make_regular_tile(0, {1, 2, 3});
+    auto input = make_input({tile}, all_palettes_available());
+
+    BufferedUserDiagnostics diag{};
+    OverloadAndRemoveStrategy strategy{20, 42, ShuffleStrategy::noisy_ffd, &diag};
+    auto result = strategy.pack(input);
+
+    ASSERT_TRUE(result.has_value());
+
+    // Verify remark was emitted with the correct tag
+    const auto &tag_counts = diag.remark_tag_counts();
+    auto it = tag_counts.find("overload-and-remove-search");
+    ASSERT_NE(it, tag_counts.end());
+    EXPECT_EQ(it->second, 1u);
+
+    // Verify the remark does NOT contain "preset config"
+    ASSERT_FALSE(diag.remarks().empty());
+    bool found_preset = false;
+    for (const auto &remark_lines : diag.remarks()) {
+        for (const auto &line : remark_lines) {
+            if (line.find("preset config") != std::string::npos) {
+                found_preset = true;
+                break;
+            }
+        }
+    }
+    EXPECT_FALSE(found_preset) << "Remark should NOT mention 'preset config' in single-config mode";
+}
+
+// =============================================================================
+// Test: SingleConfigModeFailsOnHardInput
+// =============================================================================
+
+TEST(OverloadAndRemoveStrategyTest, SingleConfigModeFailsOnHardInput)
+{
+    /*
+     * With single_ffd and only 1 attempt on a tight input, the strategy should fail.
+     * The error message should mention "configured parameters" (not "preset configurations").
+     */
+    auto tile_a = make_regular_tile(0, {1, 2, 3, 4, 5});
+    auto tile_b = make_regular_tile(1, {6, 7, 8, 9, 10});
+
+    // 1 palette, capacity=4 — impossible (first tile alone needs 5 > 4)
+    auto input = make_input({tile_a, tile_b}, n_palettes_available(1), 4);
+
+    OverloadAndRemoveStrategy strategy{1, 42, ShuffleStrategy::single_ffd};
+    auto result = strategy.pack(input);
+
+    EXPECT_FALSE(result.has_value()) << "Single-config mode should fail on impossible input";
+}
+
+// =============================================================================
+// Test: PresetMatrixModeHandlesHardInput
+// =============================================================================
+
+TEST(OverloadAndRemoveStrategyTest, PresetMatrixModeHandlesHardInput)
+{
+    /*
+     * A tight input where FFD alone may fail, but the preset matrix's later configs
+     * (with more attempts and different seeds) should find a solution.
+     */
+    auto tile_a = make_regular_tile(0, {1, 2, 3, 4});
+    auto tile_b = make_regular_tile(1, {3, 4, 5, 6});
+    auto tile_c = make_regular_tile(2, {5, 6, 7, 8});
+    auto tile_d = make_regular_tile(3, {7, 8, 1, 2});
+
+    // 2 palettes, capacity=6 — valid solution exists but requires right ordering
+    auto input = make_input({tile_a, tile_b, tile_c, tile_d}, n_palettes_available(2), 6);
+
+    // Default-constructed strategy uses preset matrix mode
+    OverloadAndRemoveStrategy strategy{};
+    auto result = strategy.pack(input);
+
+    ASSERT_TRUE(result.has_value()) << "Preset matrix mode should find a valid packing on hard input";
     auto &output = result.value();
 
     ASSERT_EQ(output.tile_to_pal_.size(), 4u);
