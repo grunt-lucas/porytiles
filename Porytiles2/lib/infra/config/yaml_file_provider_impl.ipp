@@ -708,10 +708,13 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                         FormatParam{strategy_str, Style::bold});
                     return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
                 }
+                const auto pal_mark = strategy_node.Mark();
                 anim_config.pal_resolution_strategy = ConfigOverride{
                     strategy_opt.value(),
                     key + "." + anim_name + ".palette_resolution_strategy",
-                    "Animation Config (" + anim_name + ") per-anim strategy"};
+                    "Animation Config (" + anim_name + ") per-anim strategy",
+                    make_source_string(format, file_path, pal_mark),
+                    make_source_details(format, file_path, pal_mark)};
             }
 
             // Parse key_frame_resolution_strategy (optional scalar — per-anim override)
@@ -730,10 +733,13 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                         FormatParam{strategy_str, Style::bold});
                     return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
                 }
+                const auto kf_mark = strategy_node.Mark();
                 anim_config.key_frame_resolution_strategy = ConfigOverride{
                     strategy_opt.value(),
                     key + "." + anim_name + ".key_frame_resolution_strategy",
-                    "Animation Config (" + anim_name + ") key_frame_resolution_strategy"};
+                    "Animation Config (" + anim_name + ") key_frame_resolution_strategy",
+                    make_source_string(format, file_path, kf_mark),
+                    make_source_details(format, file_path, kf_mark)};
             }
 
             // Parse multi_palette_subtile_resolution_strategy (optional scalar — per-anim override)
@@ -752,10 +758,13 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                         FormatParam{strategy_str, Style::bold});
                     return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
                 }
+                const auto mps_mark = strategy_node.Mark();
                 anim_config.multi_pal_subtile_resolution_strategy = ConfigOverride{
                     strategy_opt.value(),
                     key + "." + anim_name + ".multi_palette_subtile_resolution_strategy",
-                    "Animation Config (" + anim_name + ") multi_palette_subtile_resolution_strategy"};
+                    "Animation Config (" + anim_name + ") multi_palette_subtile_resolution_strategy",
+                    make_source_string(format, file_path, mps_mark),
+                    make_source_details(format, file_path, mps_mark)};
             }
 
             // Parse per_tile_palette_resolution_strategies (optional sequence — per-tile most specific tier)
@@ -792,12 +801,15 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                                 FormatParam{strategy_str, Style::bold});
                             return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
                         }
+                        const auto tile_mark = strategies_node[i].Mark();
                         anim_config.per_tile_pal_resolution_strategies.push_back(
                             ConfigOverride{
                                 strategy_opt.value(),
                                 key + "." + anim_name + ".per_tile_palette_resolution_strategies[" + std::to_string(i) +
                                     "]",
-                                "Animation Config (" + anim_name + ") subtile " + std::to_string(i)});
+                                "Animation Config (" + anim_name + ") subtile " + std::to_string(i),
+                                make_source_string(format, file_path, tile_mark),
+                                make_source_details(format, file_path, tile_mark)});
                     }
                 }
             }
