@@ -495,6 +495,54 @@ config_values:
     validators: [ ]
     cross_field_validators: [ ]
 
+  - canonical_name: Diagnostic Warnings Exclude
+    symbol: diagnostic_warnings_exclude
+    yaml_path: diagnostics.warnings.exclude
+    cli_option: diagnostic-warnings-exclude
+    cli_desc: Regex patterns for warning tags to exclude.
+    layer: app
+    type: std::vector<std::string>
+    parser: parse_string_vector
+    default_value: "std::vector<std::string>{}"
+    validators: []
+    cross_field_validators: []
+
+  - canonical_name: Diagnostic Warnings Include
+    symbol: diagnostic_warnings_include
+    yaml_path: diagnostics.warnings.include
+    cli_option: diagnostic-warnings-include
+    cli_desc: Regex patterns for warning tags to include (overrides excludes).
+    layer: app
+    type: std::vector<std::string>
+    parser: parse_string_vector
+    default_value: "std::vector<std::string>{}"
+    validators: []
+    cross_field_validators: []
+
+  - canonical_name: Diagnostic Remarks Exclude
+    symbol: diagnostic_remarks_exclude
+    yaml_path: diagnostics.remarks.exclude
+    cli_option: diagnostic-remarks-exclude
+    cli_desc: Regex patterns for remark tags to exclude.
+    layer: app
+    type: std::vector<std::string>
+    parser: parse_string_vector
+    default_value: "std::vector<std::string>{}"
+    validators: []
+    cross_field_validators: []
+
+  - canonical_name: Diagnostic Remarks Include
+    symbol: diagnostic_remarks_include
+    yaml_path: diagnostics.remarks.include
+    cli_option: diagnostic-remarks-include
+    cli_desc: Regex patterns for remark tags to include (overrides excludes).
+    layer: app
+    type: std::vector<std::string>
+    parser: parse_string_vector
+    default_value: "std::vector<std::string>{}"
+    validators: []
+    cross_field_validators: []
+
   # Infrastructure Layer Configuration Values
   - canonical_name: Tileset Paths Primary Source
     symbol: tileset_paths_primary_src

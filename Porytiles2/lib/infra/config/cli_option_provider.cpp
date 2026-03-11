@@ -161,6 +161,34 @@ LayerValue<bool> CliOptionProvider::verify_checksums(
     return parse_bool(storage_.verify_checksums, "--verify-checksums");
 }
 
+LayerValue<std::vector<std::string>> CliOptionProvider::diagnostic_warnings_exclude(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_string_vector(storage_.diagnostic_warnings_exclude, "--diagnostic-warnings-exclude");
+}
+
+LayerValue<std::vector<std::string>> CliOptionProvider::diagnostic_warnings_include(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_string_vector(storage_.diagnostic_warnings_include, "--diagnostic-warnings-include");
+}
+
+LayerValue<std::vector<std::string>> CliOptionProvider::diagnostic_remarks_exclude(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_string_vector(storage_.diagnostic_remarks_exclude, "--diagnostic-remarks-exclude");
+}
+
+LayerValue<std::vector<std::string>> CliOptionProvider::diagnostic_remarks_include(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_string_vector(storage_.diagnostic_remarks_include, "--diagnostic-remarks-include");
+}
+
 LayerValue<std::string> CliOptionProvider::tileset_paths_primary_src(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

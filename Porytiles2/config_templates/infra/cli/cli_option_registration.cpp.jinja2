@@ -40,6 +40,13 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
         },
         "{{ value.canonical_name }}{% if value.cli_desc %} - {{ value.cli_desc }}{% endif %}");
 
+{% elif value.type == 'std::vector<std::string>' %}
+    // {{ value.canonical_name }} (std::vector<std::string>, multi-value)
+    config_group->add_option(
+        "--{{ value.cli_option }}",
+        storage.{{ value.symbol }},
+        "{{ value.canonical_name }}{% if value.cli_desc %} - {{ value.cli_desc }}{% endif %}");
+
 {% elif value.type == 'std::size_t' %}
     // {{ value.canonical_name }} (std::size_t, captured as string, parsed by CliOptionProvider)
     config_group->add_option(

@@ -198,6 +198,33 @@ LayerValue<std::string> parse_string(const std::optional<std::string> &raw_value
 }
 
 // =============================================================================
+// Vector Type Parsers
+// =============================================================================
+
+/**
+ * @brief Parses a std::vector<std::string> from CLI multi-value options.
+ *
+ * @details
+ * CLI11 natively handles populating the vector. This function simply wraps the
+ * result in a LayerValue. An empty vector is treated as "not provided" because
+ * CLI11 leaves the vector empty when the option is not used. This is safe because
+ * the default value for all vector config values is also an empty vector, so
+ * "not provided" and "empty" are semantically equivalent in the current config system.
+ *
+ * @param raw_values The vector populated by CLI11
+ * @param option_name The CLI option name for source info
+ * @return LayerValue with the vector or not_provided status
+ */
+LayerValue<std::vector<std::string>>
+parse_string_vector(const std::vector<std::string> &raw_values, const std::string &option_name)
+{
+    if (raw_values.empty()) {
+        return LayerValue<std::vector<std::string>>::not_provided();
+    }
+    return LayerValue<std::vector<std::string>>::valid(raw_values, option_name, "CLI");
+}
+
+// =============================================================================
 // Enum Type Parsers (fuzzy matching with LayerValue error handling)
 // =============================================================================
 

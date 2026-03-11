@@ -16,12 +16,44 @@ namespace porytiles2 {
 class MockAppConfig : public AppConfig {
   public:
     bool verify_checksums = true;
+    std::vector<std::string> diagnostic_warnings_exclude = std::vector<std::string>{};
+    std::vector<std::string> diagnostic_warnings_include = std::vector<std::string>{};
+    std::vector<std::string> diagnostic_remarks_exclude = std::vector<std::string>{};
+    std::vector<std::string> diagnostic_remarks_include = std::vector<std::string>{};
 
   protected:
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
     verify_checksums_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{verify_checksums, "Verify Checksums", "verify_checksums", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::vector<std::string>>>
+    diagnostic_warnings_exclude_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{
+            diagnostic_warnings_exclude, "Diagnostic Warnings Exclude", "diagnostic_warnings_exclude", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::vector<std::string>>>
+    diagnostic_warnings_include_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{
+            diagnostic_warnings_include, "Diagnostic Warnings Include", "diagnostic_warnings_include", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::vector<std::string>>>
+    diagnostic_remarks_exclude_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{
+            diagnostic_remarks_exclude, "Diagnostic Remarks Exclude", "diagnostic_remarks_exclude", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::vector<std::string>>>
+    diagnostic_remarks_include_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{
+            diagnostic_remarks_include, "Diagnostic Remarks Include", "diagnostic_remarks_include", "mock", {}};
     }
 };
 

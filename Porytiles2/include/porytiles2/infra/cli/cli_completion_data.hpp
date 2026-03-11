@@ -158,6 +158,30 @@ struct CliOptionMeta {
             {},
             true},
         CliOptionMeta{
+            "diagnostic-warnings-exclude",
+            "Diagnostic Warnings Exclude - Regex patterns for warning tags to exclude.",
+            "string_list",
+            {},
+            false},
+        CliOptionMeta{
+            "diagnostic-warnings-include",
+            "Diagnostic Warnings Include - Regex patterns for warning tags to include (overrides excludes).",
+            "string_list",
+            {},
+            false},
+        CliOptionMeta{
+            "diagnostic-remarks-exclude",
+            "Diagnostic Remarks Exclude - Regex patterns for remark tags to exclude.",
+            "string_list",
+            {},
+            false},
+        CliOptionMeta{
+            "diagnostic-remarks-include",
+            "Diagnostic Remarks Include - Regex patterns for remark tags to include (overrides excludes).",
+            "string_list",
+            {},
+            false},
+        CliOptionMeta{
             "tileset-paths-primary-src",
             "Tileset Paths Primary Source - The directory for primary tileset Porytiles component assets.",
             "string",

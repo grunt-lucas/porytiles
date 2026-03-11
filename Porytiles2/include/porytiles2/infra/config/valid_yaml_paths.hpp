@@ -22,6 +22,13 @@ namespace porytiles2 {
  * This is auto-generated from config_schema.yaml - do not edit directly.
  */
 inline const std::unordered_set<std::string> valid_yaml_paths = {
+    "diagnostics",
+    "diagnostics.remarks",
+    "diagnostics.remarks.exclude",
+    "diagnostics.remarks.include",
+    "diagnostics.warnings",
+    "diagnostics.warnings.exclude",
+    "diagnostics.warnings.include",
     "fieldmap",
     "fieldmap.max_map_data_size",
     "fieldmap.num_metatiles_in_primary",

@@ -145,6 +145,34 @@ LayerValue<bool> DefaultProvider::verify_checksums(
     return LayerValue<bool>::valid(true, "Verify Checksums", source_info);
 }
 
+LayerValue<std::vector<std::string>> DefaultProvider::diagnostic_warnings_exclude(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::vector<std::string>>::valid(
+        std::vector<std::string>{}, "Diagnostic Warnings Exclude", source_info);
+}
+
+LayerValue<std::vector<std::string>> DefaultProvider::diagnostic_warnings_include(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::vector<std::string>>::valid(
+        std::vector<std::string>{}, "Diagnostic Warnings Include", source_info);
+}
+
+LayerValue<std::vector<std::string>> DefaultProvider::diagnostic_remarks_exclude(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::vector<std::string>>::valid(
+        std::vector<std::string>{}, "Diagnostic Remarks Exclude", source_info);
+}
+
+LayerValue<std::vector<std::string>> DefaultProvider::diagnostic_remarks_include(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::vector<std::string>>::valid(
+        std::vector<std::string>{}, "Diagnostic Remarks Include", source_info);
+}
+
 LayerValue<std::string> DefaultProvider::tileset_paths_primary_src(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

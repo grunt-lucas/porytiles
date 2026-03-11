@@ -43,6 +43,8 @@
 #include "porytiles2/infra/services/project_tileset_metadata_writer.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/di/components.hpp"
+#include "porytiles2/xcut/diagnostics/diagnostic_tag_filter.hpp"
+#include "porytiles2/xcut/diagnostics/filtered_user_diagnostics.hpp"
 #include "porytiles2/xcut/diagnostics/stderr_styled_user_diagnostics.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
@@ -69,8 +71,8 @@ class CreateTilesetCommand final : public Command {
         fruit::Injector injector{di::get_formatter_component, no_color};
         auto text_formatter = injector.get<TextFormatter *>();
 
-        // Manually create other services (not yet using DI for these)
-        std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter);
+        // Create unfiltered diag for config bootstrapping (so config-loading warnings always show)
+        auto stderr_diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter);
 
         /*
          * TODO: below we're passing hardcoded "include/" for structural project files. At some point we'll want the
@@ -85,11 +87,34 @@ class CreateTilesetCommand final : public Command {
         // Setup layered configuration (CLI options have highest priority)
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
         providers.push_back(std::make_unique<CliOptionProvider>(cli_storage_));
-        providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, diag.get(), project_root));
+        providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, stderr_diag.get(), project_root));
         providers.push_back(
             std::make_unique<HeaderDefineProvider>(project_root, fieldmap_header_root_relative, text_formatter));
         providers.push_back(std::make_unique<DefaultProvider>());
         LazyLayeredConfig config{text_formatter, std::move(providers)};
+
+        // Helper to safely extract filter patterns from config, falling back to empty on error
+        auto get_filter_patterns =
+            [&](ChainableResult<ConfigValue<std::vector<std::string>>> result) -> std::vector<std::string> {
+            if (result.has_value()) {
+                return std::move(result).value().value();
+            }
+            stderr_diag->fatal(result);
+            return {};
+        };
+
+        // Build diagnostic filters from config values
+        DiagnosticTagFilter warning_filter{
+            get_filter_patterns(config.diagnostic_warnings_exclude(ConfigScopeType::tileset, tileset_name_)),
+            get_filter_patterns(config.diagnostic_warnings_include(ConfigScopeType::tileset, tileset_name_))};
+
+        DiagnosticTagFilter remark_filter{
+            get_filter_patterns(config.diagnostic_remarks_exclude(ConfigScopeType::tileset, tileset_name_)),
+            get_filter_patterns(config.diagnostic_remarks_include(ConfigScopeType::tileset, tileset_name_))};
+
+        // Wrap with filter decorator for all subsequent operations
+        auto diag = std::make_unique<FilteredUserDiagnostics>(
+            text_formatter, stderr_diag.get(), std::move(warning_filter), std::move(remark_filter));
 
         std::unique_ptr<TilePrinter> tile_printer = std::make_unique<AsciiTilePrinter>(text_formatter);
         std::unique_ptr<PalettePrinter> pal_printer = std::make_unique<ColorPalettePrinter>(text_formatter);

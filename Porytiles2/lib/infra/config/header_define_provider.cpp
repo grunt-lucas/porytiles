@@ -203,6 +203,34 @@ LayerValue<bool> HeaderDefineProvider::verify_checksums(ConfigScopeType /*type*/
     return LayerValue<bool>::not_provided();
 }
 
+LayerValue<std::vector<std::string>>
+HeaderDefineProvider::diagnostic_warnings_exclude(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<std::vector<std::string>>::not_provided();
+}
+
+LayerValue<std::vector<std::string>>
+HeaderDefineProvider::diagnostic_warnings_include(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<std::vector<std::string>>::not_provided();
+}
+
+LayerValue<std::vector<std::string>>
+HeaderDefineProvider::diagnostic_remarks_exclude(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<std::vector<std::string>>::not_provided();
+}
+
+LayerValue<std::vector<std::string>>
+HeaderDefineProvider::diagnostic_remarks_include(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<std::vector<std::string>>::not_provided();
+}
+
 LayerValue<std::string>
 HeaderDefineProvider::tileset_paths_primary_src(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {

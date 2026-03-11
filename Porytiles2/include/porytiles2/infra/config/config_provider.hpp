@@ -104,6 +104,18 @@ class ConfigProvider {
 
     [[nodiscard]] virtual LayerValue<bool> verify_checksums(ConfigScopeType type, const std::string &scope) const;
 
+    [[nodiscard]] virtual LayerValue<std::vector<std::string>>
+    diagnostic_warnings_exclude(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<std::vector<std::string>>
+    diagnostic_warnings_include(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<std::vector<std::string>>
+    diagnostic_remarks_exclude(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<std::vector<std::string>>
+    diagnostic_remarks_include(ConfigScopeType type, const std::string &scope) const;
+
     /*
      * Infra Config
      */

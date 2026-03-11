@@ -479,6 +479,52 @@ LayerValue<std::vector<PaletteHint>> parse_pal_hints(
 }
 
 /**
+ * @brief Parses a std::vector<std::string> from a YAML sequence node.
+ *
+ * @details
+ * Expects a YAML sequence of strings. Returns LayerValue::not_provided() if the node is undefined.
+ * Returns LayerValue::invalid() if the node is not a sequence.
+ *
+ * @param format The text formatter to use
+ * @param node The YAML node to parse
+ * @param key The configuration key name (for error messages)
+ * @param file_path The YAML file path (for source info)
+ * @return LayerValue containing the parsed vector, error, or not_provided status
+ */
+LayerValue<std::vector<std::string>> parse_string_vector(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<std::vector<std::string>>::not_provided();
+    }
+
+    try {
+        const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+
+        if (!node.IsSequence()) {
+            const auto error = format->format("'{}' must be a sequence of strings.", FormatParam{key, Style::bold});
+            return LayerValue<std::vector<std::string>>::invalid(error, source, details);
+        }
+
+        std::vector<std::string> result;
+        for (std::size_t i = 0; i < node.size(); ++i) {
+            result.push_back(node[i].as<std::string>());
+        }
+        return LayerValue<std::vector<std::string>>::valid(std::move(result), key, source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error =
+            format->format("Failed to parse '{}' as string list: {}.", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<std::vector<std::string>>::invalid(error, source, details);
+    }
+}
+
+/**
  * @brief Attempts to parse a TilesPalMode value from a YAML node.
  *
  * @details

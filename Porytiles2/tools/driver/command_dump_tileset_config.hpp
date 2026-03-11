@@ -44,7 +44,8 @@ class DumpTilesetConfigCommand final : public Command {
         fruit::Injector injector{di::get_formatter_component, no_color};
         auto text_formatter = injector.get<TextFormatter *>();
 
-        std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter);
+        // Create unfiltered diag for config bootstrapping (so config-loading warnings always show)
+        auto stderr_diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter);
 
         std::filesystem::path project_root = project_root_opt_.project_root();
         std::filesystem::path fieldmap_header_root_relative{"include/fieldmap.h"};
@@ -52,7 +53,7 @@ class DumpTilesetConfigCommand final : public Command {
         // Setup layered configuration (CLI options have highest priority)
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
         providers.push_back(std::make_unique<CliOptionProvider>(cli_storage_));
-        providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, diag.get(), project_root));
+        providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, stderr_diag.get(), project_root));
         providers.push_back(
             std::make_unique<HeaderDefineProvider>(project_root, fieldmap_header_root_relative, text_formatter));
         providers.push_back(std::make_unique<DefaultProvider>());

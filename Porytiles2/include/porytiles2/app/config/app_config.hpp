@@ -31,6 +31,38 @@ class AppConfig {
         return validated_val;
     }
 
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<std::vector<std::string>>>
+    diagnostic_warnings_exclude(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = diagnostic_warnings_exclude_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<std::vector<std::string>>>
+    diagnostic_warnings_include(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = diagnostic_warnings_include_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<std::vector<std::string>>>
+    diagnostic_remarks_exclude(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = diagnostic_remarks_exclude_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<std::vector<std::string>>>
+    diagnostic_remarks_include(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = diagnostic_remarks_include_validated(type, scope);
+        return validated_val;
+    }
+
   protected:
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
@@ -43,6 +75,54 @@ class AppConfig {
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
     verify_checksums_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::vector<std::string>>>
+    diagnostic_warnings_exclude_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = diagnostic_warnings_exclude_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::vector<std::string>>>
+    diagnostic_warnings_exclude_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::vector<std::string>>>
+    diagnostic_warnings_include_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = diagnostic_warnings_include_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::vector<std::string>>>
+    diagnostic_warnings_include_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::vector<std::string>>>
+    diagnostic_remarks_exclude_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = diagnostic_remarks_exclude_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::vector<std::string>>>
+    diagnostic_remarks_exclude_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::vector<std::string>>>
+    diagnostic_remarks_include_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = diagnostic_remarks_include_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::vector<std::string>>>
+    diagnostic_remarks_include_raw(ConfigScopeType type, const std::string &scope) const = 0;
 };
 
 } // namespace porytiles2

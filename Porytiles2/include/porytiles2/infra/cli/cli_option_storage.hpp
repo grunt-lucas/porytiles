@@ -2,6 +2,7 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace porytiles2 {
 
@@ -43,6 +44,10 @@ struct CliOptionStorage {
     std::optional<std::string> global_anim_multi_pal_subtile_resolution_strategy;
     std::optional<std::string> global_frame_linking;
     std::optional<std::string> verify_checksums;
+    std::vector<std::string> diagnostic_warnings_exclude;
+    std::vector<std::string> diagnostic_warnings_include;
+    std::vector<std::string> diagnostic_remarks_exclude;
+    std::vector<std::string> diagnostic_remarks_include;
     std::optional<std::string> tileset_paths_primary_src;
     std::optional<std::string> tileset_paths_primary_bin;
     std::optional<std::string> tileset_paths_secondary_src;
