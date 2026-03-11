@@ -28,9 +28,6 @@
 - Add validation for (what was I going to type here? I can't remember...)
 
 ## Config system improvements
-- invalid YAML key should default to error, not warning
-  - but we can provide a config option to downgrade to warning if user desires this behavior
-  - I think it's safer to have it error by default, easy for user to miss the warning and be confused by unexpected behavior because they misspelled a config key
 - find a way to support config "shortcut" CLI options
   - e.g. --disable-warnings as a shortcut for --diagnostic-warnings-exclude='.*'
   - making the option is easy, the tricky part here is cleanly integrating it into our completion system

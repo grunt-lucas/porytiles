@@ -46,6 +46,11 @@ std::string YamlFileProvider::name() const
 {
     return "YamlFileProvider";
 }
+
+bool YamlFileProvider::preload_and_validate(ConfigScopeType type, const std::string &scope) const
+{
+    return preload_and_validate_yaml_files(format_, diagnostics_, project_root_, type, scope);
+}
 {% for value in config_values %}
 
 LayerValue<{{ value.type }}> YamlFileProvider::{{ value.symbol }}(ConfigScopeType type, const std::string &scope) const

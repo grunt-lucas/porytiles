@@ -43,6 +43,11 @@ std::string YamlFileProvider::name() const
     return "YamlFileProvider";
 }
 
+bool YamlFileProvider::preload_and_validate(ConfigScopeType type, const std::string &scope) const
+{
+    return preload_and_validate_yaml_files(format_, diagnostics_, project_root_, type, scope);
+}
+
 LayerValue<std::size_t> YamlFileProvider::num_tiles_in_primary(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);

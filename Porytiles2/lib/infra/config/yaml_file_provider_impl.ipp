@@ -153,24 +153,26 @@ void collect_yaml_paths(
  *
  * @details
  * Walks the YAML document tree and compares each path against the set of valid paths
- * defined in valid_yaml_paths.hpp. For any unknown paths, emits a warning via the
+ * defined in valid_yaml_paths.hpp. For any unknown paths, emits an error via the
  * UserDiagnostics interface with source location and context.
  *
  * @param format Text formatter for styled output
- * @param diagnostics User diagnostics for emitting warnings (may be nullptr)
+ * @param diagnostics User diagnostics for emitting errors (may be nullptr)
  * @param file_path Path to the YAML file being validated
  * @param node The root YAML node to validate
+ * @return @c true if any unknown keys were found, @c false otherwise.
  */
-void validate_yaml_paths(
+[[nodiscard]] bool validate_yaml_paths(
     const TextFormatter *format,
     const UserDiagnostics *diagnostics,
     const std::filesystem::path &file_path,
     const YAML::Node &node)
 {
     if (diagnostics == nullptr) {
-        return;
+        return false;
     }
 
+    bool found_unknown = false;
     std::vector<std::pair<std::string, YAML::Mark>> paths;
     collect_yaml_paths(node, "", paths);
 
@@ -191,20 +193,23 @@ void validate_yaml_paths(
             const auto source = make_source_string(format, file_path.string(), mark);
             auto details = make_source_details(format, file_path.string(), mark);
 
-            std::vector<std::string> warning_lines;
-            warning_lines.push_back(format->format("unknown configuration key '{}'", FormatParam{path, Style::bold}));
-            warning_lines.emplace_back();
-            warning_lines.push_back(format->format("Source: {}", FormatParam{source}));
-            warning_lines.emplace_back();
+            std::vector<std::string> error_lines;
+            error_lines.push_back(format->format("Unknown configuration key '{}'.", FormatParam{path, Style::bold}));
+            error_lines.emplace_back();
+            error_lines.push_back(format->format("Source: {}", FormatParam{source, Style::italic}));
+            error_lines.emplace_back();
             for (auto &detail : details) {
-                warning_lines.push_back(std::move(detail));
+                error_lines.push_back(std::move(detail));
             }
 
-            diagnostics->warning("unknown-config-key", warning_lines);
+            diagnostics->error("unknown-config-key", error_lines);
+            found_unknown = true;
 
             // TODO: add a "did you mean" message that uses levenshtein distance to find closest match
         }
     }
+
+    return found_unknown;
 }
 
 /**
@@ -915,18 +920,20 @@ LayerValue<FrameLinking> parse_frame_linking(
  *
  * @details
  * If the file exists and can be parsed, it is added to the cache and returned. If diagnostics is provided, validates
- * the YAML paths and emits warnings for unknown keys. If the file doesn't exist or cannot be parsed, returns
+ * the YAML paths and emits errors for unknown keys. If the file doesn't exist or cannot be parsed, returns
  * std::nullopt. Uses a static cache shared across all YamlFileProvider instances.
  *
  * @param path The path to the YAML file to load
  * @param format Text formatter for styled output (used for validation)
- * @param diagnostics User diagnostics for emitting warnings (may be nullptr)
+ * @param diagnostics User diagnostics for emitting errors (may be nullptr)
+ * @param out_had_unknown_keys Optional output flag set to @c true if unknown keys were found during validation.
  * @return The loaded YAML node, or std::nullopt if the file doesn't exist or cannot be parsed
  */
 std::optional<YAML::Node> load_yaml_file(
     const std::filesystem::path &path,
     const TextFormatter *format = nullptr,
-    const UserDiagnostics *diagnostics = nullptr)
+    const UserDiagnostics *diagnostics = nullptr,
+    bool *out_had_unknown_keys = nullptr)
 {
     // Check cache first
     const auto cache_it = yaml_cache.find(path);
@@ -955,7 +962,9 @@ std::optional<YAML::Node> load_yaml_file(
 
         // Validate paths if diagnostics is provided
         if (format != nullptr && diagnostics != nullptr) {
-            validate_yaml_paths(format, diagnostics, path, node);
+            if (validate_yaml_paths(format, diagnostics, path, node) && out_had_unknown_keys != nullptr) {
+                *out_had_unknown_keys = true;
+            }
         }
 
         return node;
@@ -1039,6 +1048,41 @@ get_config_path_chain(const std::filesystem::path &project_root, ConfigScopeType
     }
     // Should never reach here
     panic("Invalid ConfigScopeType");
+}
+
+/**
+ * @brief Eagerly loads all YAML config files for a given scope and validates them for unknown keys.
+ *
+ * @details
+ * Forces loading and validation of all YAML config files in the priority chain for the given scope.
+ * If any files contain unknown configuration keys, errors are emitted via the diagnostics interface
+ * and this function returns @c true to indicate the caller should terminate.
+ *
+ * @param format Text formatter for styled output
+ * @param diagnostics User diagnostics for emitting errors
+ * @param project_root The root directory of the project
+ * @param type The configuration scope type
+ * @param scope The scope name (e.g., tileset name)
+ * @return @c true if unknown keys were found (caller should terminate), @c false otherwise.
+ */
+[[nodiscard]] bool preload_and_validate_yaml_files(
+    const TextFormatter *format,
+    const UserDiagnostics *diagnostics,
+    const std::filesystem::path &project_root,
+    ConfigScopeType type,
+    const std::string &scope)
+{
+    auto paths_result = get_config_path_chain(project_root, type, scope);
+    if (!paths_result.has_value()) {
+        return false;
+    }
+
+    bool had_unknown_keys = false;
+    for (const auto &path : paths_result.value()) {
+        load_yaml_file(path, format, diagnostics, &had_unknown_keys);
+    }
+
+    return had_unknown_keys;
 }
 
 /**
