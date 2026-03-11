@@ -32,6 +32,8 @@ class MockDomainConfig : public DomainConfig {
     TilesPalMode tiles_pal_mode = TilesPalMode::true_color;
     AnimPalResolutionStrategy global_anim_pal_resolution_strategy = AnimPalResolutionStrategy::scan_local_metatiles;
     AnimKeyFrameResolutionStrategy global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
+    AnimMultiPalSubtileResolutionStrategy global_anim_multi_pal_subtile_resolution_strategy =
+        AnimMultiPalSubtileResolutionStrategy::error;
     FrameLinking global_frame_linking = FrameLinking::automatic;
     PerAnimOverrides per_anim_overrides = PerAnimOverrides{};
 
@@ -140,6 +142,17 @@ class MockDomainConfig : public DomainConfig {
             global_anim_key_frame_resolution_strategy,
             "Global Animation Key Frame Resolution Strategy",
             "global_anim_key_frame_resolution_strategy",
+            "mock",
+            {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<AnimMultiPalSubtileResolutionStrategy>>
+    global_anim_multi_pal_subtile_resolution_strategy_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{
+            global_anim_multi_pal_subtile_resolution_strategy,
+            "Global Animation Multi-Pal Subtile Resolution Strategy",
+            "global_anim_multi_pal_subtile_resolution_strategy",
             "mock",
             {}};
     }

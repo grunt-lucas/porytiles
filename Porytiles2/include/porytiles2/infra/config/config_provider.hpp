@@ -89,6 +89,9 @@ class ConfigProvider {
     [[nodiscard]] virtual LayerValue<AnimKeyFrameResolutionStrategy>
     global_anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const;
 
+    [[nodiscard]] virtual LayerValue<AnimMultiPalSubtileResolutionStrategy>
+    global_anim_multi_pal_subtile_resolution_strategy(ConfigScopeType type, const std::string &scope) const;
+
     [[nodiscard]] virtual LayerValue<FrameLinking>
     global_frame_linking(ConfigScopeType type, const std::string &scope) const;
 
@@ -100,6 +103,18 @@ class ConfigProvider {
      */
 
     [[nodiscard]] virtual LayerValue<bool> verify_checksums(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<std::vector<std::string>>
+    diagnostic_warnings_exclude(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<std::vector<std::string>>
+    diagnostic_warnings_include(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<std::vector<std::string>>
+    diagnostic_remarks_exclude(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<std::vector<std::string>>
+    diagnostic_remarks_include(ConfigScopeType type, const std::string &scope) const;
 
     /*
      * Infra Config

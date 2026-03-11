@@ -77,6 +77,9 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
      * IMPORTANT: This must happen BEFORE metatile decompilation so that any mangled key frame tiles are present in
      * new_porymap_component->tiles_png() when metatiles are decompiled
      */
+    // Triple-layerize the metatiles for the AnimDecompiler (it uses triple-layer addressing for override extraction)
+    new_porymap_component->metatiles_bin(tilemap_entries);
+
     if (const auto &porymap_animations = tileset.porymap_component().anims(); !porymap_animations.empty()) {
         // Accumulate canonical forms of previously-processed animations' key frame tiles for inter-animation detection
         std::set<PixelTile<IndexPixel>> inter_anim_canonical_tiles;
@@ -130,6 +133,9 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
             }
         }
     }
+
+    // Restore original metatiles_bin (line 81 set triple-layer format for AnimDecompiler, but output must match input)
+    new_porymap_component->metatiles_bin(tileset.porymap_component().metatiles_bin());
 
     // Decompile metatiles AFTER animation processing so that any mangled key frame tiles are used
     PT_TRY_ASSIGN_CHAIN_ERR(

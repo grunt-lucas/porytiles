@@ -11,14 +11,13 @@ fieldmap:
   num_tiles_per_metatile: 8
 
 diagnostics:
-  errors:
-    exclude: [ "*" ]
-    include: # explicitly include only two error messages, include processed after exclude
-      - "layer-mode-violation"
-      - "tile-color-count-violation"
-  warnings: # default settings for warnings, this will include all
+  warnings:
+    exclude: [ ".*" ]
+    include: # explicitly include only two warnings, include processed after exclude
+      - "layer-mode-warning"
+      - "tile-color-count-warning"
   remarks:
-    exclude: [ "*" ] # disable all remarks
+    exclude: [ ".*" ] # disable all remarks
 
 verify_checksums: true
 
@@ -107,6 +106,13 @@ tileset:
     # - mangle: run the AnimTileMangler to minimally de-dupe tiles
     key_frame_resolution_strategy: warning
 
+    # Strategy for handling animation subtiles referenced with multiple palettes.
+    # Available strategies:
+    # - [default] error: error out and display the conflicting palettes
+    # - warning: warn and continue decompilation using the lowest palette index
+    # - split: split the animation into separate animations for each palette variant (not yet implemented)
+    multi_pal_subtile_resolution_strategy: error
+
     # Default frame linking mode for animations.
     # Per-animation overrides can override this. Available modes:
     # - [default] automatic: use key.png for frame linking
@@ -130,6 +136,10 @@ tileset:
         # Per-animation key frame resolution strategy override.
         # If set, overrides the global anim_key_frame_resolution_strategy for this animation.
         key_frame_resolution_strategy: mangle
+
+        # Per-animation multi-pal subtile resolution strategy override.
+        # If set, overrides the global multi_pal_subtile_resolution_strategy for this animation.
+        multi_pal_subtile_resolution_strategy: warning
 
         # Per-animation palette resolution strategy (middle tier).
         # Applied to all subtiles that don't have a per-tile override.

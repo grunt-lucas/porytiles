@@ -2,7 +2,7 @@
   Template for generating cli_option_storage.hpp
 
   This template generates the CliOptionStorage struct that holds std::optional<std::string>
-  for each config value that can be set via CLI. Values with cli_skip: true are excluded.
+  for each config value that can be set via CLI. Values with yaml_only: true are excluded.
 
   All types are stored as raw strings. Type parsing is deferred to CliOptionProvider, which
   can return LayerValue::invalid() for proper error formatting through LazyLayeredConfig.
@@ -13,6 +13,7 @@
 
 #include <optional>
 #include <string>
+#include <vector>
 
 namespace porytiles2 {
 
@@ -31,8 +32,12 @@ namespace porytiles2 {
  * formatting. This ensures uniform error messages across all CLI option types.
  */
 struct CliOptionStorage {
-{% for value in config_values if not value.cli_skip %}
+{% for value in config_values if not value.yaml_only %}
+{% if value.type == 'std::vector<std::string>' %}
+    std::vector<std::string> {{ value.symbol }};
+{% else %}
     std::optional<std::string> {{ value.symbol }};
+{% endif %}
 {% endfor %}
 };
 

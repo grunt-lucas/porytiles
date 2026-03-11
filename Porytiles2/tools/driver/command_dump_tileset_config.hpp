@@ -9,6 +9,8 @@
 #include "CLI/CLI.hpp"
 #include "fruit/fruit.h"
 
+#include "porytiles2/utilities/result/chainable_result.hpp"
+
 #include "porytiles2/infra/cli/cli_option_registration.hpp"
 #include "porytiles2/infra/cli/cli_option_storage.hpp"
 #include "porytiles2/infra/config/cli_option_provider.hpp"
@@ -44,7 +46,8 @@ class DumpTilesetConfigCommand final : public Command {
         fruit::Injector injector{di::get_formatter_component, no_color};
         auto text_formatter = injector.get<TextFormatter *>();
 
-        std::unique_ptr<UserDiagnostics> diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter);
+        // Create unfiltered diag for config bootstrapping (so config-loading warnings always show)
+        auto stderr_diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter);
 
         std::filesystem::path project_root = project_root_opt_.project_root();
         std::filesystem::path fieldmap_header_root_relative{"include/fieldmap.h"};
@@ -52,11 +55,21 @@ class DumpTilesetConfigCommand final : public Command {
         // Setup layered configuration (CLI options have highest priority)
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
         providers.push_back(std::make_unique<CliOptionProvider>(cli_storage_));
-        providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, diag.get(), project_root));
+        auto yaml_provider = std::make_unique<YamlFileProvider>(text_formatter, stderr_diag.get(), project_root);
+        auto *yaml_provider_ptr = yaml_provider.get();
+        providers.push_back(std::move(yaml_provider));
         providers.push_back(
             std::make_unique<HeaderDefineProvider>(project_root, fieldmap_header_root_relative, text_formatter));
         providers.push_back(std::make_unique<DefaultProvider>());
         LazyLayeredConfig config{text_formatter, std::move(providers)};
+
+        // Eagerly validate all YAML config files for unknown keys
+        if (yaml_provider_ptr->preload_and_validate(ConfigScopeType::tileset, tileset_name_)) {
+            const auto validation_err = ChainableResult<void>{FormattableError{
+                "Configuration validation failed for tileset '{}'.", FormatParam{tileset_name_, Style::bold}}};
+            stderr_diag->fatal(validation_err);
+            throw CLI::RuntimeError{1};
+        }
 
         /*
          * TODO: it might be nice to support a --yaml flag that dumps a unified yaml for this config. It could be useful

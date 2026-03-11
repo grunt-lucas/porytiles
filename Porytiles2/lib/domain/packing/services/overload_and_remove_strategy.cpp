@@ -1,14 +1,18 @@
 #include "porytiles2/domain/packing/services/overload_and_remove_strategy.hpp"
 
 #include <algorithm>
+#include <array>
 #include <cstddef>
 #include <cstdint>
 #include <deque>
+#include <format>
 #include <map>
 #include <optional>
 #include <random>
 #include <set>
+#include <string>
 #include <utility>
+#include <vector>
 
 #include "porytiles2/domain/packing/algorithms/packing_initializer.hpp"
 #include "porytiles2/domain/packing/algorithms/packing_metrics.hpp"
@@ -36,10 +40,15 @@ struct TileInfo {
  * measures how well the tile's colors overlap with colors already in the palette.
  * Lower cost means better overlap.
  *
- * @return Index of the best palette, or nullopt if none available or no palette offers overlap benefit
+ * @param info The tile info with forbidden palette set
+ * @param palettes The current set of packed palettes
+ * @param force_assignment When true, returns the lowest-cost non-forbidden palette even if no overlap benefit exists.
+ *     When false (default), returns nullopt if no palette offers overlap benefit, signaling the caller to create a new
+ *     palette.
+ * @return Index of the best palette, or nullopt if none available (or no overlap benefit when not forcing)
  */
-[[nodiscard]] std::optional<std::size_t>
-find_best_palette_excluding_forbidden(const TileInfo &info, const std::vector<PackedPalette> &palettes)
+[[nodiscard]] std::optional<std::size_t> find_best_palette_excluding_forbidden(
+    const TileInfo &info, const std::vector<PackedPalette> &palettes, bool force_assignment = false)
 {
     std::optional<std::size_t> best_idx;
     double best_cost = std::numeric_limits<double>::max();
@@ -58,43 +67,172 @@ find_best_palette_excluding_forbidden(const TileInfo &info, const std::vector<Pa
         }
     }
 
-    // If best cost equals tile size (no overlap benefit), return nullopt to create new palette
-    // This happens when all colors in the tile are new to the palette (each color contributes 1.0)
-    if (best_idx.has_value() && best_cost >= static_cast<double>(info.tile.color_count())) {
+    // If best cost equals tile size (no overlap benefit), return nullopt to create new palette.
+    // This happens when all colors in the tile are new to the palette (each color contributes 1.0).
+    // Skip this check when force_assignment is true — the caller wants a palette regardless.
+    if (!force_assignment && best_idx.has_value() && best_cost >= static_cast<double>(info.tile.color_count())) {
         return std::nullopt;
     }
 
     return best_idx;
 }
 
+// ============================================================================
+// Preset matrix types and construction
+// ============================================================================
+
+struct OarParams {
+    ShuffleStrategy shuffle_strategy;
+    std::size_t max_attempts;
+    std::uint64_t seed;
+};
+
+/**
+ * @brief Builds the 17-entry preset matrix of O&R configurations.
+ *
+ * @details
+ * Configurations escalate from cheapest to most expensive:
+ *   1. single_ffd × 1 attempt (cheapest: one deterministic FFD pass)
+ *   2-5. noisy_ffd × 20 attempts with 4 seeds
+ *   6-9. random × 20 attempts with 4 seeds
+ *   10-13. noisy_ffd × 75 attempts with 4 seeds
+ *   14-17. random × 75 attempts with 4 seeds
+ *
+ * Worst-case total O&R attempts across all 17 entries: 1 + 4×20 + 4×20 + 4×75 + 4×75 = 761.
+ */
+[[nodiscard]] std::array<OarParams, 17> build_preset_matrix()
+{
+    std::array<OarParams, 17> matrix{};
+    std::size_t idx = 0;
+
+    constexpr std::array<std::uint64_t, 4> seeds = {42, 123, 456, 789};
+
+    // Phase 1: single FFD (1 entry)
+    matrix[idx++] = OarParams{ShuffleStrategy::single_ffd, 1, 42};
+
+    // Phase 2: noisy_ffd with 20 attempts (4 entries)
+    for (std::uint64_t seed : seeds) {
+        matrix[idx++] = OarParams{ShuffleStrategy::noisy_ffd, 20, seed};
+    }
+
+    // Phase 3: random with 20 attempts (4 entries)
+    for (std::uint64_t seed : seeds) {
+        matrix[idx++] = OarParams{ShuffleStrategy::random, 20, seed};
+    }
+
+    // Phase 4: noisy_ffd with 75 attempts (4 entries)
+    for (std::uint64_t seed : seeds) {
+        matrix[idx++] = OarParams{ShuffleStrategy::noisy_ffd, 75, seed};
+    }
+
+    // Phase 5: random with 75 attempts (4 entries)
+    for (std::uint64_t seed : seeds) {
+        matrix[idx++] = OarParams{ShuffleStrategy::random, 75, seed};
+    }
+
+    return matrix;
+}
+
+// ============================================================================
+// Remark helpers
+// ============================================================================
+
+[[nodiscard]] std::string format_oar_params_line(const OarParams &params)
+{
+    return std::format(
+        "shuffle_strategy={}, max_attempts={}, seed={}.",
+        to_string(params.shuffle_strategy),
+        params.max_attempts,
+        params.seed);
+}
+
+void emit_success_remark(const UserDiagnostics &diag, const OarParams &params, bool is_preset)
+{
+    std::vector<std::string> lines;
+    if (is_preset) {
+        lines.emplace_back("Overload-and-Remove search succeeded with preset config:");
+    }
+    else {
+        lines.emplace_back("Overload-and-Remove search succeeded:");
+    }
+    lines.emplace_back(format_oar_params_line(params));
+    diag.remark("overload-and-remove-search", lines);
+}
+
 } // namespace
 
 namespace porytiles2 {
 
+// ============================================================================
+// OverloadAndRemoveStrategy::pack
+// ============================================================================
+
 ChainableResult<PackingOutput> OverloadAndRemoveStrategy::pack(const PackingInput &input) const
 {
+    if (use_preset_matrix_) {
+        auto matrix = build_preset_matrix();
+
+        for (const auto &params : matrix) {
+            auto result = run_multi_start(input, params.shuffle_strategy, params.max_attempts, params.seed);
+            if (result.has_value()) {
+                if (diag_ != nullptr) {
+                    emit_success_remark(*diag_, params, true);
+                }
+                return result;
+            }
+        }
+
+        return FormattableError{
+            "Overload-and-Remove strategy failed to find a valid palette assignment after all preset configurations."};
+    }
+
+    // Single-config mode: run one multi-start search with the configured parameters
+    OarParams params{shuffle_strategy_, max_attempts_, seed_};
+    auto result = run_multi_start(input, shuffle_strategy_, max_attempts_, seed_);
+    if (result.has_value()) {
+        if (diag_ != nullptr) {
+            emit_success_remark(*diag_, params, false);
+        }
+        return result;
+    }
+
+    return FormattableError{
+        "Overload-and-Remove strategy failed to find a valid palette assignment with the configured parameters."};
+}
+
+// ============================================================================
+// OverloadAndRemoveStrategy::run_multi_start
+// ============================================================================
+
+ChainableResult<PackingOutput> OverloadAndRemoveStrategy::run_multi_start(
+    const PackingInput &input, ShuffleStrategy shuffle_strategy, std::size_t max_attempts, std::uint64_t seed) const
+{
     // First attempt: FFD ordering (deterministic, theoretically best for bin packing)
-    auto first_result = try_pack(input, std::nullopt);
-    if (first_result.has_value() || shuffle_strategy_ == ShuffleStrategy::single_ffd || max_attempts_ <= 1) {
+    auto first_result = try_pack(input, shuffle_strategy, std::nullopt);
+    if (first_result.has_value() || shuffle_strategy == ShuffleStrategy::single_ffd || max_attempts <= 1) {
         return first_result;
     }
 
-    // Subsequent attempts: orderings determined by shuffle_strategy_ with seeded PRNG
-    std::mt19937_64 seed_generator{seed_};
-    for (std::size_t attempt = 1; attempt < max_attempts_; ++attempt) {
+    // Subsequent attempts: orderings determined by shuffle_strategy with seeded PRNG
+    std::mt19937_64 seed_generator{seed};
+    for (std::size_t attempt = 1; attempt < max_attempts; ++attempt) {
         std::uint64_t shuffle_seed = seed_generator();
-        auto result = try_pack(input, shuffle_seed);
+        auto result = try_pack(input, shuffle_strategy, shuffle_seed);
         if (result.has_value()) {
             return result;
         }
     }
 
     // All attempts failed — return the first attempt's error (most informative)
-    return std::move(first_result);
+    return first_result;
 }
 
-ChainableResult<PackingOutput>
-OverloadAndRemoveStrategy::try_pack(const PackingInput &input, std::optional<std::uint64_t> shuffle_seed) const
+// ============================================================================
+// OverloadAndRemoveStrategy::try_pack
+// ============================================================================
+
+ChainableResult<PackingOutput> OverloadAndRemoveStrategy::try_pack(
+    const PackingInput &input, ShuffleStrategy shuffle_strategy, std::optional<std::uint64_t> shuffle_seed) const
 {
     PackingOutput output;
     PalettePool pal_pool = input.pal_pool_;
@@ -137,7 +275,7 @@ OverloadAndRemoveStrategy::try_pack(const PackingInput &input, std::optional<std
     if (shuffle_seed.has_value()) {
         std::mt19937_64 rng{shuffle_seed.value()};
         std::ranges::shuffle(tile_pool, rng);
-        if (shuffle_strategy_ == ShuffleStrategy::noisy_ffd) {
+        if (shuffle_strategy == ShuffleStrategy::noisy_ffd) {
             // Noisy FFD: shuffle first for random tiebreaking, then stable_sort by color_count descending.
             // This preserves the large-first FFD property while randomly reordering tiles of equal size.
             std::ranges::stable_sort(tile_pool, [](const TileInfo &a, const TileInfo &b) {
@@ -211,26 +349,39 @@ OverloadAndRemoveStrategy::try_pack(const PackingInput &input, std::optional<std
                 output.pals_.emplace_back(pal_pool.checkout(), input.pal_capacity_);
                 output.pals_.back().add_tile(tile_info.tile);
                 output.tile_to_pal_[tile_info.tile.id()] = output.pals_.back().hardware_index();
+                continue;
             }
-            else {
-                // No room - try first-fit as fallback
-                bool assigned = false;
-                for (std::size_t i = 0; i < output.pals_.size(); ++i) {
-                    if (!tile_info.forbidden_palettes.contains(i) &&
-                        output.pals_[i].can_fit(tile_info.tile.color_set())) {
-                        output.pals_[i].add_tile(tile_info.tile);
-                        output.tile_to_pal_[tile_info.tile.id()] = output.pals_[i].hardware_index();
-                        assigned = true;
-                        break;
-                    }
-                }
-                if (!assigned) {
-                    return FormattableError{
-                        "Overload-and-Remove: cannot assign tile - no palette has room - " +
-                        to_string(tile_info.tile.id())};
+
+            /*
+             * Pool exhausted and no palette offers overlap benefit. Try two fallback strategies:
+             *
+             * 1. First-fit with can_fit: fast, no cascading removals. Succeeds when a palette has physical room.
+             * 2. Force-assignment with overload/remove: slower but more capable. Allows the overload/remove mechanism
+             *    to redistribute tiles. Termination guaranteed because forbidden sets grow monotonically.
+             */
+
+            // Fallback 1: strict first-fit (no overload)
+            bool assigned = false;
+            for (std::size_t i = 0; i < output.pals_.size(); ++i) {
+                if (!tile_info.forbidden_palettes.contains(i) && output.pals_[i].can_fit(tile_info.tile.color_set())) {
+                    output.pals_[i].add_tile(tile_info.tile);
+                    output.tile_to_pal_[tile_info.tile.id()] = output.pals_[i].hardware_index();
+                    assigned = true;
+                    break;
                 }
             }
-            continue;
+            if (assigned) {
+                continue;
+            }
+
+            // Fallback 2: force-assign to least-bad palette, let overload/remove handle it
+            maybe_best_idx = find_best_palette_excluding_forbidden(tile_info, output.pals_, true);
+            if (!maybe_best_idx.has_value()) {
+                return FormattableError{
+                    "Overload-and-Remove: cannot assign tile - all palettes forbidden - " +
+                    to_string(tile_info.tile.id())};
+            }
+            // Fall through to add_tile + overload/remove loop below
         }
 
         auto best_idx = maybe_best_idx.value();
@@ -330,27 +481,24 @@ OverloadAndRemoveStrategy::try_pack(const PackingInput &input, std::optional<std
     std::vector<TileInfo> remaining_tile_pool{};
     for (auto &pal : output.pals_) {
         while (pal.color_count() > input.pal_capacity_ && !pal.assigned_tile_ids().empty()) {
-            PackableTile::Id tid = pal.assigned_tile_ids().back();
-            // Skip system tiles from fixed palettes -- these cannot be changed
-            if (std::holds_alternative<PackableTile::PrefilledPaletteId>(tid)) {
-                continue;
-            }
-
-            pal.remove_tile(tid);
-            output.tile_to_pal_.erase(tid);
-
-            // Find the tile's colors
-            for (const auto &hint : input.hints_) {
-                if (hint.id() == tid) {
-                    remaining_tile_pool.emplace_back(hint);
+            // Search from the back for the last removable (non-prefilled) tile
+            const auto &ids = pal.assigned_tile_ids();
+            std::optional<PackableTile::Id> removable_tid;
+            for (auto it = ids.rbegin(); it != ids.rend(); ++it) {
+                if (!std::holds_alternative<PackableTile::PrefilledPaletteId>(*it)) {
+                    removable_tid = *it;
                     break;
                 }
             }
-            for (const auto &tile : input.tiles_) {
-                if (tile.id() == tid) {
-                    remaining_tile_pool.emplace_back(tile);
-                    break;
-                }
+            if (!removable_tid.has_value()) {
+                break; // Only prefilled tiles remain, nothing left to remove
+            }
+
+            pal.remove_tile(removable_tid.value());
+            output.tile_to_pal_.erase(removable_tid.value());
+
+            if (const auto it = tile_colors_map.find(removable_tid.value()); it != tile_colors_map.end()) {
+                remaining_tile_pool.emplace_back(PackableTile{removable_tid.value(), it->second});
             }
         }
     }

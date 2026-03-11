@@ -1293,9 +1293,10 @@ inline void report_color_counts(
  * @details
  * Performs three validation checks on animation frames:
  *
- * 1. **Transparent key frame check (fail-fast)**: Key frame tiles cannot be fully transparent, as this would make them
- *    indistinguishable from the actual transparent tile at runtime. If any key frame tile is fully transparent, the
- *    function returns immediately with an error.
+ * 1. **Transparent key frame check**: Key frame tiles cannot be fully transparent, as this would make them
+ *    indistinguishable from the actual transparent tile (tile 0) at runtime, preventing Porytiles from correctly
+ *    indexing into animations from the layer sheet. All violations are collected before returning an error. This check
+ *    only applies to animations with a key frame (key.png); animations without a key frame are skipped.
  *
  * 2. **Duplicate key frame check (error)**: The same tile content cannot appear as a key frame in multiple positions
  *    across all animations. Each key frame tile must be unique so the game engine can properly identify which animation
@@ -1316,13 +1317,59 @@ inline void report_color_counts(
     const std::map<std::string, Animation<Rgba32>> &anims)
 {
     PT_UNWRAP_TILESET_CONFIG_REF(services.config, extrinsic_transparency, tileset_name, void);
+    PT_UNWRAP_TILESET_CONFIG_REF(services.config, global_frame_linking, tileset_name, void);
+    PT_UNWRAP_TILESET_CONFIG_REF(services.config, per_anim_overrides, tileset_name, void);
 
     bool hit_error = false;
 
     /*
+     * Validation 0: Warn when animations with automatic frame linking are missing a key frame.
+     *
+     * In automatic mode, key.png is used to determine which tiles in tiles.png are animation tiles. Without it,
+     * the first regular frame is used as a representative and animation tiles will not be linked to any metatiles.
+     * This is allowed so users can incrementally build animation assets before committing to linking.
+     */
+    for (const auto &[anim_name, anim] : anims) {
+        bool has_per_anim_override = per_anim_overrides.value().contains(anim_name);
+        FrameLinking effective_linking = global_frame_linking.value();
+        if (has_per_anim_override) {
+            effective_linking = per_anim_overrides.value().at(anim_name).linking;
+        }
+
+        if (effective_linking == FrameLinking::automatic && !anim.has_key_frame()) {
+            std::vector<std::string> warning_lines;
+            warning_lines.emplace_back(services.diag.formatter().format(
+                "Animation '{}' has frame_linking '{}' but no key frame (key.png) was found.",
+                FormatParam{anim_name, Style::bold},
+                FormatParam{"automatic", Style::bold}));
+            warning_lines.emplace_back("Animation tiles will not be linked to any metatiles.");
+            services.diag.warning("missing-key-frame", warning_lines);
+
+            if (has_per_anim_override) {
+                std::vector<std::string> note_lines;
+                note_lines.push_back(services.diag.formatter().format(
+                    "Per-animation override for '{}' sets frame_linking to '{}'.",
+                    FormatParam{anim_name, Style::bold},
+                    FormatParam{"automatic", Style::bold}));
+                note_lines.emplace_back("");
+                std::ranges::copy(
+                    format_config_note(services.diag.formatter(), per_anim_overrides), std::back_inserter(note_lines));
+                services.diag.warning_note("missing-key-frame", note_lines);
+            }
+            else {
+                services.diag.warning_note(
+                    "missing-key-frame", format_config_note(services.diag.formatter(), global_frame_linking));
+            }
+        }
+    }
+
+    /*
      * Validation 1: Ensure no animation key frame tile is fully transparent.
      *
-     * Key frames cannot be transparent, since that would make them indistinguishable from the actual transparent tile.
+     * Key frames are used to index into animations from the layer sheet. If a key frame tile were transparent,
+     * Porytiles couldn't distinguish it from the default transparent tile (tile 0). This restriction only applies to
+     * actual key frames (key.png), not to representative frames used as fallbacks when no key frame is present.
+     *
      * We collect all violations before failing so the user can see all problematic tiles at once.
      */
     for (const auto &[anim_name, anim] : anims) {
@@ -1353,7 +1400,7 @@ inline void report_color_counts(
                     "transparent-key-frame",
                     std::vector<std::string>{
                         "Key frame tiles cannot be fully transparent because they would be",
-                        "indistinguishable from the actual transparent tile at runtime."});
+                        "indistinguishable from the actual transparent tile on the layer PNGs."});
             }
         }
     }

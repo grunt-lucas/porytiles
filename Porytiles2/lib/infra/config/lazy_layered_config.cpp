@@ -137,10 +137,23 @@ void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, con
         *format_,
         "Global Animation Key Frame Resolution Strategy",
         global_anim_key_frame_resolution_strategy_provenance_chain(type, scope));
+    dump_single_config_value(
+        out,
+        *format_,
+        "Global Animation Multi-Pal Subtile Resolution Strategy",
+        global_anim_multi_pal_subtile_resolution_strategy_provenance_chain(type, scope));
     dump_single_config_value(out, *format_, "Global Frame Linking", global_frame_linking_provenance_chain(type, scope));
     dump_single_config_value(
         out, *format_, "Per-Animation Overrides", per_anim_overrides_provenance_chain(type, scope));
     dump_single_config_value(out, *format_, "Verify Checksums", verify_checksums_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Diagnostic Warnings Exclude", diagnostic_warnings_exclude_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Diagnostic Warnings Include", diagnostic_warnings_include_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Diagnostic Remarks Exclude", diagnostic_remarks_exclude_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Diagnostic Remarks Include", diagnostic_remarks_include_provenance_chain(type, scope));
     dump_single_config_value(
         out, *format_, "Tileset Paths Primary Source", tileset_paths_primary_src_provenance_chain(type, scope));
     dump_single_config_value(
@@ -448,6 +461,20 @@ LazyLayeredConfig::global_anim_key_frame_resolution_strategy_raw(ConfigScopeType
         });
 }
 
+ChainableResult<ConfigValue<AnimMultiPalSubtileResolutionStrategy>>
+LazyLayeredConfig::global_anim_multi_pal_subtile_resolution_strategy_raw(
+    ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<AnimMultiPalSubtileResolutionStrategy>(
+        key, "Global Animation Multi-Pal Subtile Resolution Strategy", [&type, &scope](const ConfigProvider &provider) {
+            return provider.global_anim_multi_pal_subtile_resolution_strategy(type, scope);
+        });
+}
+
 ChainableResult<ConfigValue<FrameLinking>>
 LazyLayeredConfig::global_frame_linking_raw(ConfigScopeType type, const std::string &scope) const
 {
@@ -484,6 +511,58 @@ LazyLayeredConfig::verify_checksums_raw(ConfigScopeType type, const std::string 
     return resolve_config_value<bool>(key, "Verify Checksums", [&type, &scope](const ConfigProvider &provider) {
         return provider.verify_checksums(type, scope);
     });
+}
+
+ChainableResult<ConfigValue<std::vector<std::string>>>
+LazyLayeredConfig::diagnostic_warnings_exclude_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<std::vector<std::string>>(
+        key, "Diagnostic Warnings Exclude", [&type, &scope](const ConfigProvider &provider) {
+            return provider.diagnostic_warnings_exclude(type, scope);
+        });
+}
+
+ChainableResult<ConfigValue<std::vector<std::string>>>
+LazyLayeredConfig::diagnostic_warnings_include_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<std::vector<std::string>>(
+        key, "Diagnostic Warnings Include", [&type, &scope](const ConfigProvider &provider) {
+            return provider.diagnostic_warnings_include(type, scope);
+        });
+}
+
+ChainableResult<ConfigValue<std::vector<std::string>>>
+LazyLayeredConfig::diagnostic_remarks_exclude_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<std::vector<std::string>>(
+        key, "Diagnostic Remarks Exclude", [&type, &scope](const ConfigProvider &provider) {
+            return provider.diagnostic_remarks_exclude(type, scope);
+        });
+}
+
+ChainableResult<ConfigValue<std::vector<std::string>>>
+LazyLayeredConfig::diagnostic_remarks_include_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<std::vector<std::string>>(
+        key, "Diagnostic Remarks Include", [&type, &scope](const ConfigProvider &provider) {
+            return provider.diagnostic_remarks_include(type, scope);
+        });
 }
 
 ChainableResult<ConfigValue<std::string>>
@@ -667,6 +746,16 @@ LazyLayeredConfig::global_anim_key_frame_resolution_strategy_provenance_chain(
     });
 }
 
+std::vector<ProvenanceChainLink<AnimMultiPalSubtileResolutionStrategy>>
+LazyLayeredConfig::global_anim_multi_pal_subtile_resolution_strategy_provenance_chain(
+    ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<AnimMultiPalSubtileResolutionStrategy>(
+        [&type, &scope](const ConfigProvider &provider) {
+            return provider.global_anim_multi_pal_subtile_resolution_strategy(type, scope);
+        });
+}
+
 std::vector<ProvenanceChainLink<FrameLinking>>
 LazyLayeredConfig::global_frame_linking_provenance_chain(ConfigScopeType type, const std::string &scope) const
 {
@@ -686,6 +775,34 @@ LazyLayeredConfig::verify_checksums_provenance_chain(ConfigScopeType type, const
 {
     return collect_provenance_chain<bool>(
         [&type, &scope](const ConfigProvider &provider) { return provider.verify_checksums(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::vector<std::string>>>
+LazyLayeredConfig::diagnostic_warnings_exclude_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::vector<std::string>>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.diagnostic_warnings_exclude(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::vector<std::string>>>
+LazyLayeredConfig::diagnostic_warnings_include_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::vector<std::string>>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.diagnostic_warnings_include(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::vector<std::string>>>
+LazyLayeredConfig::diagnostic_remarks_exclude_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::vector<std::string>>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.diagnostic_remarks_exclude(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::vector<std::string>>>
+LazyLayeredConfig::diagnostic_remarks_include_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::vector<std::string>>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.diagnostic_remarks_include(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<std::string>>

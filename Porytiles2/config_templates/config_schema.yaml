@@ -18,6 +18,11 @@
 #     - When absent, templates fall back to using canonical_name
 #     - Use this to provide more user-friendly CLI descriptions without changing canonical_name
 #
+#   yaml_only: (optional, default false) When true, this config value can only be set via YAML
+#     - Excludes from CLI integration and any other non-YAML providers
+#     - Use for complex types that cannot be reasonably expressed on the command line
+#     - Example: std::vector<PaletteHint>, PerAnimOverrides
+#
 #   type: C++ type for the value
 #
 #   parser: Parser function name (e.g., "parse_size_t") - used by all providers
@@ -220,6 +225,29 @@ enum_types:
         fuzzy_names: [ mangle ]
         brief: Mangle duplicate tiles to make them unique, then backport changes to tiles.png.
 
+  - cpp_type: AnimMultiPalSubtileResolutionStrategy
+    header_path: porytiles2/domain/config/anim_multi_pal_subtile_resolution_strategy.hpp
+    brief: Strategy for handling animation subtiles referenced with multiple palettes.
+    details: |
+      When decompiling animations using the scan_local_metatiles strategy, a single tile index
+      can be referenced by multiple metatile entries with different palette indices. This is valid
+      GBA behavior (the hardware selects palette per metatile entry, not per tile), but Porytiles
+      cannot represent multiple palette variants in a single RGBA layer PNG. This enum determines
+      how to handle such cases.
+    enum_values:
+      - name: error
+        cli_completion_name: error
+        fuzzy_names: [ error, err ]
+        brief: Emit a formatted error and fail decompilation.
+      - name: warning
+        cli_completion_name: warning
+        fuzzy_names: [ warning, warn ]
+        brief: Emit a warning and continue decompilation using the lowest palette index.
+      - name: split
+        cli_completion_name: split
+        fuzzy_names: [ split ]
+        brief: Split the animation into separate animations for each palette variant (not yet implemented).
+
 config_values:
   # Domain Layer Configuration Values
   - canonical_name: Number Of Tiles In Primary
@@ -378,7 +406,7 @@ config_values:
     symbol: pal_hints
     yaml_path: tileset.palettes.packing.hints
     cli_option: pal-hints
-    cli_skip: true  # Too complex for CLI (std::vector<PaletteHint>)
+    yaml_only: true  # Too complex for non-YAML providers (std::vector<PaletteHint>)
     layer: domain
     type: std::vector<PaletteHint>
     parser: parse_pal_hints
@@ -422,6 +450,18 @@ config_values:
     validators: [ ]
     cross_field_validators: [ ]
 
+  - canonical_name: Global Animation Multi-Pal Subtile Resolution Strategy
+    symbol: global_anim_multi_pal_subtile_resolution_strategy
+    yaml_path: tileset.animations.multi_palette_subtile_resolution_strategy
+    cli_option: anim-multi-pal-subtile-resolution-strategy
+    cli_desc: The strategy for handling animation subtiles referenced with multiple palettes.
+    layer: domain
+    type: AnimMultiPalSubtileResolutionStrategy
+    parser: parse_anim_multi_pal_subtile_resolution_strategy
+    default_value: "AnimMultiPalSubtileResolutionStrategy::error"
+    validators: [ ]
+    cross_field_validators: [ ]
+
   - canonical_name: Global Frame Linking
     symbol: global_frame_linking
     yaml_path: tileset.animations.frame_linking
@@ -436,9 +476,9 @@ config_values:
 
   - canonical_name: Per-Animation Overrides
     symbol: per_anim_overrides
-    yaml_path: tileset.animations.per-animation-overrides
+    yaml_path: tileset.animations.per_animation_overrides
     cli_option: per-anim-overrides
-    cli_skip: true
+    yaml_only: true
     yaml_is_map: true
     layer: domain
     type: PerAnimOverrides
@@ -459,6 +499,61 @@ config_values:
     default_value: "true"
     validators: [ ]
     cross_field_validators: [ ]
+
+  # TODO : Unlike verify_checksums (consumed by app-layer use cases), the diagnostic filter values below are "meta-config"
+  # — they are only consumed at the composition root (tools/driver/ commands) to wire the FilteredUserDiagnostics
+  # decorator. No Porytiles library code reads them; the library receives a fully-configured UserDiagnostics pointer.
+  #
+  # AppConfig is the least-wrong home (semantically "user-facing tool behavior"), but if more composition-root-only
+  # config values accumulate, consider extracting a dedicated config layer (e.g. "bootstrap" or "tooling"). This aligns
+  # with Seemann's principle that the Composition Root is an "application infrastructure component" (ploeh blog, 2011).
+  - canonical_name: Diagnostic Warnings Exclude
+    symbol: diagnostic_warnings_exclude
+    yaml_path: diagnostics.warnings.exclude
+    cli_option: diagnostic-warnings-exclude
+    cli_desc: Regex patterns for warning tags to exclude.
+    layer: app
+    type: std::vector<std::string>
+    parser: parse_string_vector
+    default_value: "std::vector<std::string>{}"
+    validators: []
+    cross_field_validators: []
+
+  - canonical_name: Diagnostic Warnings Include
+    symbol: diagnostic_warnings_include
+    yaml_path: diagnostics.warnings.include
+    cli_option: diagnostic-warnings-include
+    cli_desc: Regex patterns for warning tags to include (overrides excludes).
+    layer: app
+    type: std::vector<std::string>
+    parser: parse_string_vector
+    default_value: "std::vector<std::string>{}"
+    validators: []
+    cross_field_validators: []
+
+  - canonical_name: Diagnostic Remarks Exclude
+    symbol: diagnostic_remarks_exclude
+    yaml_path: diagnostics.remarks.exclude
+    cli_option: diagnostic-remarks-exclude
+    cli_desc: Regex patterns for remark tags to exclude.
+    layer: app
+    type: std::vector<std::string>
+    parser: parse_string_vector
+    default_value: "std::vector<std::string>{}"
+    validators: []
+    cross_field_validators: []
+
+  - canonical_name: Diagnostic Remarks Include
+    symbol: diagnostic_remarks_include
+    yaml_path: diagnostics.remarks.include
+    cli_option: diagnostic-remarks-include
+    cli_desc: Regex patterns for remark tags to include (overrides excludes).
+    layer: app
+    type: std::vector<std::string>
+    parser: parse_string_vector
+    default_value: "std::vector<std::string>{}"
+    validators: []
+    cross_field_validators: []
 
   # Infrastructure Layer Configuration Values
   - canonical_name: Tileset Paths Primary Source

@@ -3,6 +3,7 @@
 #include <optional>
 #include <string>
 #include <utility>
+#include <vector>
 
 namespace porytiles2 {
 
@@ -24,6 +25,8 @@ struct ConfigOverride {
     std::optional<T> value{std::nullopt};
     std::string source_key;
     std::string canonical_name;
+    std::string source_info;
+    std::vector<std::string> source_details;
 
     ConfigOverride() = default;
 
@@ -59,6 +62,32 @@ struct ConfigOverride {
      */
     ConfigOverride(T val, std::string source_key, std::string canonical_name)
         : value{std::move(val)}, source_key{std::move(source_key)}, canonical_name{std::move(canonical_name)}
+    {
+    }
+
+    /**
+     * @brief Constructs a ConfigOverride with a value, full source metadata, and per-entry source location.
+     *
+     * @details
+     * Used by config providers to set provider-specific source metadata during parsing of map-type config values. The
+     * @p source_info and @p source_details fields allow each entry within a map to carry its own source location, so
+     * that @c ConfigValue::derive() can produce accurately located child values instead of inheriting the parent map's
+     * location.
+     *
+     * @param val The override value
+     * @param source_key The provider-specific identifier (e.g., YAML path, CLI flag)
+     * @param canonical_name Human-readable description of this override
+     * @param source_info Source location string (e.g., "./porytiles.yaml:42")
+     * @param source_details Contextual highlight lines from the source file
+     */
+    ConfigOverride(
+        T val,
+        std::string source_key,
+        std::string canonical_name,
+        std::string source_info,
+        std::vector<std::string> source_details)
+        : value{std::move(val)}, source_key{std::move(source_key)}, canonical_name{std::move(canonical_name)},
+          source_info{std::move(source_info)}, source_details{std::move(source_details)}
     {
     }
 

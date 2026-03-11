@@ -10,6 +10,7 @@
 #include <vector>
 
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
+#include "porytiles2/domain/config/anim_multi_pal_subtile_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/config/frame_linking.hpp"
@@ -197,6 +198,33 @@ LayerValue<std::string> parse_string(const std::optional<std::string> &raw_value
 }
 
 // =============================================================================
+// Vector Type Parsers
+// =============================================================================
+
+/**
+ * @brief Parses a std::vector<std::string> from CLI multi-value options.
+ *
+ * @details
+ * CLI11 natively handles populating the vector. This function simply wraps the
+ * result in a LayerValue. An empty vector is treated as "not provided" because
+ * CLI11 leaves the vector empty when the option is not used. This is safe because
+ * the default value for all vector config values is also an empty vector, so
+ * "not provided" and "empty" are semantically equivalent in the current config system.
+ *
+ * @param raw_values The vector populated by CLI11
+ * @param option_name The CLI option name for source info
+ * @return LayerValue with the vector or not_provided status
+ */
+LayerValue<std::vector<std::string>>
+parse_string_vector(const std::vector<std::string> &raw_values, const std::string &option_name)
+{
+    if (raw_values.empty()) {
+        return LayerValue<std::vector<std::string>>::not_provided();
+    }
+    return LayerValue<std::vector<std::string>>::valid(raw_values, option_name, "CLI");
+}
+
+// =============================================================================
 // Enum Type Parsers (fuzzy matching with LayerValue error handling)
 // =============================================================================
 
@@ -315,6 +343,35 @@ parse_anim_key_frame_resolution_strategy(const std::optional<std::string> &raw_v
 
     const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
     return LayerValue<AnimKeyFrameResolutionStrategy>::invalid(error, option_name);
+}
+
+/**
+ * @brief Parses an AnimMultiPalSubtileResolutionStrategy value from a CLI option string.
+ *
+ * @details
+ * Uses the unified anim_multi_pal_subtile_resolution_strategy_from_str() which provides fuzzy matching.
+ * Returns LayerValue::invalid() for unrecognized values.
+ *
+ * @param raw_value The raw string value from CLI, or std::nullopt if not provided
+ * @param option_name The CLI option name for error messages
+ * @return LayerValue with parsed value, invalid error, or not_provided status
+ */
+LayerValue<AnimMultiPalSubtileResolutionStrategy> parse_anim_multi_pal_subtile_resolution_strategy(
+    const std::optional<std::string> &raw_value, const std::string &option_name)
+{
+    if (!raw_value.has_value()) {
+        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::not_provided();
+    }
+
+    const auto &str = raw_value.value();
+    const auto result = anim_multi_pal_subtile_resolution_strategy_from_str(str);
+
+    if (result.has_value()) {
+        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::valid(result.value(), option_name, "CLI");
+    }
+
+    const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
+    return LayerValue<AnimMultiPalSubtileResolutionStrategy>::invalid(error, option_name);
 }
 
 /**

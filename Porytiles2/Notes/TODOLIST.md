@@ -5,19 +5,37 @@
 - JSON Impl
   - Start working on a JSON impl that can read/write tilesets from a standardized JSON format 
 
+## `pokefirered` import flow broken, `const u16` is incorrect type for FireRed `metatile_attributes.bin` (it should be u32)
+- this should be configurable, we can have something to auto-detect, like the HeaderDefineProvider but for this type
+
 ## Palette Packing
-- Implement classic dfs and bfs
 - Implement multiplicity-based dfs and bfs
   - it will basically be BestFusion but with backtracking
+  - Do we need this at this point? Diminishing returns with all these strategies. Most assignment failures are still user-driven, when they provide clearly unassignable assets.
 - Implement a "shotgun approach" strategy that tries different sub-strategies until success
   - the paper has some ideas on which algorithm to use depending on problem set's "multiplicity"
   - let's make the shotgun approach smart based on the character of the input
+  - the shotgun approach should use a **threadpool** to run sub-strategies in parallel across multiple cores
+    - feasibility analysis confirmed this is viable: see `Notes/parallel_packing_strategy_analysis.md`
+    - iterations are embarrassingly parallel (stateless strategies, immutable input, no shared mutable state)
+    - cooperative cancellation via `std::atomic<bool>` checked alongside existing `node_cutoff` in DFS/BFS
+    - also opens the door to "best solution" semantics (compare results by quality) instead of first-success
 
 ## Project Structure Refactor
 - Domain layer is getting way too crowded
   - break it up into `config`, `core`, `tileset`, `layout`, `packing`
   - each of these folders can have subfolders `algorithms`, `models`, `repos`, `services`
 - Make each layer a completely isolated library so that the compiler enforces dependency rules
+
+## Validation Refactor
+- Move compilation (and decompilation) validation into a completely separate class that runs first
+  - That way, compiler/decompiler can just panic on failed preconditions, codepaths are simpler
+- Add validation for (what was I going to type here? I can't remember...)
+
+## Config system improvements
+- find a way to support config "shortcut" CLI options
+  - e.g. --disable-warnings as a shortcut for --diagnostic-warnings-exclude='.*'
+  - making the option is easy, the tricky part here is cleanly integrating it into our completion system
 
 ## Implement `LayoutDataProvider`
 Once we complete the `ProjectTilesetArtifactKeyProvider` refactor, create a `LayoutDataProvider` which parses `layouts.json`.
@@ -75,16 +93,24 @@ JSON example:
     "entries_count": 24,
     "entries": [
       {
-        "tile_index": 12,
-        "pal_index": 0,
-        "hflip": true,
-        "vflip": false
+        "index": 0,
+        "metatile_id": 0,
+        "entry": {
+          "tile_index": 12,
+          "pal_index": 0,
+          "hflip": true,
+          "vflip": false
+        }
       },
       {
-        "tile_index": 2,
-        "pal_index": 4,
-        "hflip": false,
-        "vflip": false
+        "index": 1,
+        "metatile_id": 0,
+        "entry": {
+          "tile_index": 204,
+          "pal_index": 4,
+          "hflip": false,
+          "vflip": false
+        }
       },
       // ...
     ]
@@ -94,15 +120,14 @@ JSON example:
     "attributes_count": 2,
     "attributes": [
       {
-        "id": 0,
-        "layer_type": "normal",
-        "metatile_behavior": "MB_NORMAL"
+        "metatile_id": 0,
+        "attribute":
+        {
+          "layer_type": "normal",
+          "metatile_behavior": "MB_NORMAL"  
+        }
       },
-      {
-        "id": 1,
-        "layer_type": "split",
-        "metatile_behavior": "MB_OCEAN"
-      }
+      // ...
     ]
   },
   "tiles.png": {

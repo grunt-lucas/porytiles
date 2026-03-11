@@ -19,7 +19,6 @@
 #include "porytiles2/domain/config/per_anim_overrides.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
-#include "porytiles2/domain/models/canonical_shape_tile.hpp"
 #include "porytiles2/domain/models/color_index_map.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
@@ -27,8 +26,7 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tiles_png_workspace.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
-#include "porytiles2/domain/packing/services/best_fusion_strategy.hpp"
-#include "porytiles2/domain/packing/services/overload_and_remove_strategy.hpp"
+#include "porytiles2/domain/packing/services/backtracking_strategy.hpp"
 #include "porytiles2/domain/packing/services/palette_packer.hpp"
 #include "porytiles2/domain/services/anim_tile_matcher.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
@@ -118,7 +116,7 @@ class CompilerTask {
     // Pipeline helpers - tile matching
     [[nodiscard]] std::optional<TilemapEntry> pipeline_helper_try_reuse_porymap_tile(std::size_t tile_index);
     [[nodiscard]] TileAssignmentResult
-    pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> &porytiles_tile);
+    pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> &porytiles_tile, std::size_t flat_index);
 
     // Pipeline helpers - palette packing
     [[nodiscard]] ChainableResult<void> pipeline_helper_run_pal_packing();
@@ -455,8 +453,23 @@ ChainableResult<void> CompilerTask::pipeline_step_match_tiles_pals()
             }
         }
 
+        /*
+         * Transparent tiles always map to tile index 0 (the reserved transparent tile).
+         *
+         * If tile 0 transparency is a pokeemerald convention, why does this come after the
+         * pipeline_helper_try_reuse_porymap_tile step for non-tiles-optimize builds? It's because Porytiles2 design
+         * philosophy prioritizes surgical edits where possible. A user could have other locations in tiles.png marked
+         * transparent in addition to tile 0. If one of their metatiles referenced one of these alternate locations, we
+         * don't want to create a diff by forcing the metatile reference to change to tile 0. Instead, we'll just
+         * respect the idiosyncrasy by calling pipeline_helper_try_reuse_porymap_tile and letting it match there first.
+         */
+        if (porytiles_tile.is_transparent(extrinsic_transparency_.value())) {
+            new_porymap_component_->push_back_tilemap_entry(TilemapEntry{0, 0, false, false});
+            continue;
+        }
+
         // Assign via palette matching (shared logic for all modes)
-        const auto tile_assignment_result = pipeline_helper_assign_tile_via_pal_match(porytiles_tile);
+        const auto tile_assignment_result = pipeline_helper_assign_tile_via_pal_match(porytiles_tile, i);
 
         switch (tile_assignment_result.status) {
         case TileAssignmentResult::Status::success:
@@ -634,7 +647,8 @@ std::optional<TilemapEntry> CompilerTask::pipeline_helper_try_reuse_porymap_tile
     return std::nullopt;
 }
 
-TileAssignmentResult CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> &porytiles_tile)
+TileAssignmentResult
+CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> &porytiles_tile, std::size_t flat_index)
 {
     TileAssignmentResult result{};
 
@@ -655,14 +669,28 @@ TileAssignmentResult CompilerTask::pipeline_helper_assign_tile_via_pal_match(con
     const auto index_tile = index_tile_from_color_tile(porytiles_tile, matched_pal, extrinsic_transparency_.value());
     const CanonicalPixelTile canonical_index_tile{index_tile};
 
+    /*
+     * In non-optimize modes with available original tilemap data, only use the animation matcher if the original
+     * tile_index was within a registered animation range. This prevents false positive interception where a static tile
+     * that visually matches an animation keyframe gets incorrectly mapped to the animation tile_index, causing
+     * unintended animation at runtime.
+     */
+    bool should_check_anim_matcher = true;
+    if (tiles_edit_mode_ != ArtifactEditMode::optimize && flat_index < porymap_tilemap_entries_.size()) {
+        const auto original_tile_index = porymap_tilemap_entries_[flat_index].tile_index();
+        should_check_anim_matcher = anim_tile_matcher_.is_in_animation_range(original_tile_index);
+    }
+
     // Check if tile matches a registered animation keyframe
-    if (const auto anim_match = anim_tile_matcher_.find_match(CanonicalPixelTile{porytiles_tile});
-        anim_match.has_value()) {
-        // Use the animation tile index with composite-aware palette and computed flip bits
-        result.status = TileAssignmentResult::Status::success;
-        result.entry =
-            TilemapEntry{anim_match->tile_index, anim_match->pal_index, anim_match->h_flip, anim_match->v_flip};
-        return result;
+    if (should_check_anim_matcher) {
+        if (const auto anim_match = anim_tile_matcher_.find_match(CanonicalPixelTile{porytiles_tile});
+            anim_match.has_value()) {
+            // Use the animation tile index with composite-aware palette and computed flip bits
+            result.status = TileAssignmentResult::Status::success;
+            result.entry =
+                TilemapEntry{anim_match->tile_index, anim_match->pal_index, anim_match->h_flip, anim_match->v_flip};
+            return result;
+        }
     }
 
     /*
@@ -719,8 +747,8 @@ TileAssignmentResult CompilerTask::pipeline_helper_assign_tile_via_pal_match(con
 ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
 {
     /*
-     * Create ColorIndexMap from the Porytiles tiles, Porytiles pals, and palette hints. This validates that we
-     * don't exceed the global color count limit.
+     * Create ColorIndexMap from the Porytiles tiles, Porytiles pals, and palette hints. We already validated earlier
+     * that we don't exceed the global color count limit. So this will panic if there are too many global unique colors.
      */
     const std::size_t color_count_limit = num_pals_in_primary_.value() * (pal::max_size - 1);
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -742,7 +770,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
     //         return CanonicalShapeTile{shape_tile_to_pixel_colors(tile, color_index_map)};
     //     });
 
-    OverloadAndRemoveStrategy packing_strategy{};
+    BacktrackingStrategy packing_strategy{&diag_};
     PalettePacker pal_packer{&packing_strategy, &format_, &diag_};
     std::bitset<pal::num_pals> available_pals{0};
     for (std::size_t i = 0; i < num_pals_in_primary_; i++) {
@@ -761,7 +789,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
     PT_TRY_ASSIGN_CHAIN_ERR(
         pal_packing,
         pal_packer.pack_tiles(packing_params),
-        std::format("Failed to pack palettes for tileset '{}'.", tileset_.name()),
+        format_.format("Failed to pack palettes for tileset '{}'.", FormatParam{tileset_.name(), Style::bold}),
         void);
 
     for (std::size_t i = 0; i < pal::num_pals; i++) {
@@ -875,12 +903,32 @@ CompilerTask::pipeline_helper_build_keyframe_data(const std::string &anim_name, 
     result.tiles.reserve(tile_count);
     result.palettes.reserve(tile_count);
 
+    /*
+     * For automatic/hybrid mode, we use the key frame tiles. For manual mode (no key frame),
+     * we use the first regular frame's tiles as the representative tiles to place in tiles.png.
+     *
+     * TODO: frames() is a std::map<std::string, ...>, so begin() yields the lexicographically first key. This works
+     * for single-digit frame names ("0", "1", ...) but would break for 10+ frames ("10" sorts before "2"). Consider
+     * using params().frame_names()[0] to look up the intended first frame instead.
+     */
+    const AnimFrame<Rgba32> &representative_frame =
+        anim.has_key_frame() ? anim.key_frame() : anim.frames().begin()->second;
+
     for (std::size_t tile_idx = 0; tile_idx < tile_count; ++tile_idx) {
         const PixelTile<Rgba32> &composite_rgba_tile = composite_frame.tile_at(tile_idx);
-        const PixelTile<Rgba32> &key_rgba_tile = anim.key_frame().tile_at(tile_idx);
+        const PixelTile<Rgba32> &representative_tile = representative_frame.tile_at(tile_idx);
 
-        if (key_rgba_tile.is_transparent(extrinsic_transparency_.value())) {
-            panic("illegal transparent key frame tile");
+        /*
+         * Transparent representative tiles are valid for animations without a key frame. They just produce a
+         * transparent IndexPixel tile with palette index 0. For key frame animations, validate_anim_frames() catches
+         * transparent tiles before we get here.
+         */
+        if (representative_tile.is_transparent(extrinsic_transparency_.value())) {
+            PixelTile<IndexPixel> transparent_tile{IndexPixel{0}};
+            result.tiles.emplace_back(transparent_tile);
+            result.pal_indices.push_back(0);
+            result.palettes.push_back(&new_porymap_pals_.at(0));
+            continue;
         }
 
         // Match tile to palette using composite frame to guarantee correct palette selection
@@ -925,7 +973,7 @@ CompilerTask::pipeline_helper_build_keyframe_data(const std::string &anim_name, 
         const std::size_t pal_index = matches.at(0).pal_index;
         const auto &matched_pal = new_porymap_pals_.at(pal_index);
         const PixelTile<IndexPixel> indexed_key_frame_tile =
-            index_tile_from_color_tile(key_rgba_tile, matched_pal, extrinsic_transparency_.value());
+            index_tile_from_color_tile(representative_tile, matched_pal, extrinsic_transparency_.value());
 
         result.tiles.emplace_back(indexed_key_frame_tile);
         result.pal_indices.push_back(pal_index);
@@ -962,8 +1010,12 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
     if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
         std::size_t total_keyframe_tiles = 0;
         for (const auto &anim : anims | std::views::values) {
-            if (anim.has_frames()) {
+            if (anim.has_key_frame()) {
                 total_keyframe_tiles += anim.key_frame().tiles().size();
+            }
+            else if (anim.has_frames()) {
+                // TODO: same lexicographic ordering caveat as in pipeline_helper_build_keyframe_data
+                total_keyframe_tiles += anim.frames().begin()->second.tiles().size();
             }
         }
         tiles_workspace_->reserve_anim_slots(total_keyframe_tiles);
@@ -1005,8 +1057,9 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
                 offset = existing_offset.value();
             }
             // If full sequence not found, find sufficient contiguous free space to insert
-            else if (const auto free_offset = tiles_workspace_->find_contiguous_transparent_slots(tile_count);
-                     free_offset.has_value()) {
+            else if (
+                const auto free_offset = tiles_workspace_->find_contiguous_transparent_slots(tile_count);
+                free_offset.has_value()) {
                 tiles_workspace_->place_tiles_at(free_offset.value(), keyframe_data.tiles);
                 offset = free_offset.value();
             }
@@ -1195,9 +1248,14 @@ void CompilerTask::pipeline_helper_apply_manual_overrides()
 
         case FrameLinking::manual: {
             if (overrides.empty()) {
-                panic(
-                    "animation '" + anim_name +
-                    "' has frame_linking 'manual' but no overrides are present in anim.json");
+                std::vector<std::string> warning_lines;
+                warning_lines.emplace_back(format_.format(
+                    "Animation '{}' has frame_linking '{}' but no overrides are present in anim.json.",
+                    FormatParam{anim_name, Style::bold},
+                    FormatParam{"manual", Style::bold}));
+                warning_lines.emplace_back("Animation tiles will not be linked to any metatiles.");
+                diag_.warning("manual-no-overrides", warning_lines);
+                break;
             }
 
             // Get the tile_offset for this animation from the matcher

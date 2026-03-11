@@ -105,7 +105,7 @@ LayerValue<bool> CliOptionProvider::pal_hints_enabled(
 LayerValue<std::vector<PaletteHint>>
 CliOptionProvider::pal_hints([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    // Skipped for CLI (type too complex)
+    // Skipped for CLI (yaml_only: type too complex for non-YAML providers)
     return LayerValue<std::vector<PaletteHint>>::not_provided();
 }
 
@@ -132,6 +132,14 @@ LayerValue<AnimKeyFrameResolutionStrategy> CliOptionProvider::global_anim_key_fr
         storage_.global_anim_key_frame_resolution_strategy, "--anim-key-frame-resolution-strategy");
 }
 
+LayerValue<AnimMultiPalSubtileResolutionStrategy> CliOptionProvider::global_anim_multi_pal_subtile_resolution_strategy(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_anim_multi_pal_subtile_resolution_strategy(
+        storage_.global_anim_multi_pal_subtile_resolution_strategy, "--anim-multi-pal-subtile-resolution-strategy");
+}
+
 LayerValue<FrameLinking> CliOptionProvider::global_frame_linking(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
@@ -142,7 +150,7 @@ LayerValue<FrameLinking> CliOptionProvider::global_frame_linking(
 LayerValue<PerAnimOverrides> CliOptionProvider::per_anim_overrides(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    // Skipped for CLI (type too complex)
+    // Skipped for CLI (yaml_only: type too complex for non-YAML providers)
     return LayerValue<PerAnimOverrides>::not_provided();
 }
 
@@ -151,6 +159,34 @@ LayerValue<bool> CliOptionProvider::verify_checksums(
 {
     // All types use parse functions for uniform error handling
     return parse_bool(storage_.verify_checksums, "--verify-checksums");
+}
+
+LayerValue<std::vector<std::string>> CliOptionProvider::diagnostic_warnings_exclude(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_string_vector(storage_.diagnostic_warnings_exclude, "--diagnostic-warnings-exclude");
+}
+
+LayerValue<std::vector<std::string>> CliOptionProvider::diagnostic_warnings_include(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_string_vector(storage_.diagnostic_warnings_include, "--diagnostic-warnings-include");
+}
+
+LayerValue<std::vector<std::string>> CliOptionProvider::diagnostic_remarks_exclude(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_string_vector(storage_.diagnostic_remarks_exclude, "--diagnostic-remarks-exclude");
+}
+
+LayerValue<std::vector<std::string>> CliOptionProvider::diagnostic_remarks_include(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_string_vector(storage_.diagnostic_remarks_include, "--diagnostic-remarks-include");
 }
 
 LayerValue<std::string> CliOptionProvider::tileset_paths_primary_src(

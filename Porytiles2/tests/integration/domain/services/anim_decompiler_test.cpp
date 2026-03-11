@@ -7,6 +7,7 @@
 #include <vector>
 
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
+#include "porytiles2/domain/config/anim_multi_pal_subtile_resolution_strategy.hpp"
 #include "porytiles2/domain/config/per_anim_override.hpp"
 #include "porytiles2/domain/config/per_anim_overrides.hpp"
 #include "porytiles2/domain/models/anim_frame.hpp"
@@ -1063,4 +1064,112 @@ TEST_F(AnimDecompilerKeyFrameStrategyTests, nulloptPerAnimFallsBackToGlobal)
     auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
 
     EXPECT_TRUE(result.has_value()) << "Nullopt per-anim should fall back to global mangle";
+}
+
+// --- AnimMultiPalSubtileResolutionStrategy Tests ---
+
+TEST_F(AnimDecompilerMultiPalTests, shouldWarnAndPickLowestPalWhenMultiPalStrategyIsWarning)
+{
+    // Single-subtile animation, tile 1 referenced with palette 0 and palette 1
+    const auto tile_a = create_two_color_tile(1, 2);
+    const auto tile_b = create_two_color_tile(3, 4);
+
+    const auto tiles_png = build_tiles_png({tile_a, tile_b});
+
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}, TilemapEntry{1, 1, false, false}};
+
+    auto anim = create_test_animation_no_pal("test_anim", 1, 1, {tile_b});
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
+
+    config_.global_anim_multi_pal_subtile_resolution_strategy = AnimMultiPalSubtileResolutionStrategy::warning;
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
+
+    ASSERT_TRUE(result.has_value()) << "Warning strategy should allow decompilation to succeed";
+
+    // Should pick lowest palette index (0)
+    const auto &key_tile = result.value().key_frame().tile_at(0);
+    EXPECT_EQ(key_tile.at(0), palette_0_.at(3));
+
+    // Should have emitted a warning
+    EXPECT_FALSE(diag_->warnings().empty()) << "Should have emitted a warning about multi-pal subtile";
+}
+
+TEST_F(AnimDecompilerMultiPalTests, shouldErrorWhenMultiPalStrategyIsError)
+{
+    // Same scenario but with error strategy (default behavior)
+    const auto tile_a = create_two_color_tile(1, 2);
+    const auto tile_b = create_two_color_tile(3, 4);
+
+    const auto tiles_png = build_tiles_png({tile_a, tile_b});
+
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}, TilemapEntry{1, 1, false, false}};
+
+    auto anim = create_test_animation_no_pal("test_anim", 1, 1, {tile_b});
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
+
+    config_.global_anim_multi_pal_subtile_resolution_strategy = AnimMultiPalSubtileResolutionStrategy::error;
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
+
+    EXPECT_FALSE(result.has_value()) << "Error strategy should fail decompilation";
+}
+
+TEST_F(AnimDecompilerMultiPalTests, shouldApplyPerAnimMultiPalStrategyOverride)
+{
+    // Global = error, per-anim = warning. The per-anim override should win.
+    const auto tile_a = create_two_color_tile(1, 2);
+    const auto tile_b = create_two_color_tile(3, 4);
+
+    const auto tiles_png = build_tiles_png({tile_a, tile_b});
+
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}, TilemapEntry{1, 1, false, false}};
+
+    auto anim = create_test_animation_no_pal("test_anim", 1, 1, {tile_b});
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
+
+    config_.global_anim_multi_pal_subtile_resolution_strategy = AnimMultiPalSubtileResolutionStrategy::error;
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
+
+    PerAnimOverride anim_cfg;
+    anim_cfg.anim_name = "test_anim";
+    anim_cfg.multi_pal_subtile_resolution_strategy = AnimMultiPalSubtileResolutionStrategy::warning;
+    config_.per_anim_overrides["test_anim"] = std::move(anim_cfg);
+
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
+
+    ASSERT_TRUE(result.has_value()) << "Per-anim warning should override global error";
+    EXPECT_FALSE(diag_->warnings().empty()) << "Should have emitted a warning about multi-pal subtile";
+}
+
+TEST_F(AnimDecompilerMultiPalTests, shouldApplyPerAnimMultiPalErrorOverridingGlobalWarning)
+{
+    // Global = warning, per-anim = error. The per-anim override should win and cause a failure.
+    const auto tile_a = create_two_color_tile(1, 2);
+    const auto tile_b = create_two_color_tile(3, 4);
+
+    const auto tiles_png = build_tiles_png({tile_a, tile_b});
+
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}, TilemapEntry{1, 1, false, false}};
+
+    auto anim = create_test_animation_no_pal("test_anim", 1, 1, {tile_b});
+    auto component = build_porymap_component(pals_, metatiles, tiles_png);
+
+    config_.global_anim_multi_pal_subtile_resolution_strategy = AnimMultiPalSubtileResolutionStrategy::warning;
+
+    PerAnimOverride anim_cfg;
+    anim_cfg.anim_name = "test_anim";
+    anim_cfg.multi_pal_subtile_resolution_strategy = AnimMultiPalSubtileResolutionStrategy::error;
+    config_.per_anim_overrides["test_anim"] = std::move(anim_cfg);
+
+    AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
+
+    auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
+
+    EXPECT_FALSE(result.has_value()) << "Per-anim error should override global warning";
 }

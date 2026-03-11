@@ -64,6 +64,8 @@ class CliOptionProvider final : public ConfigProvider {
     global_anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<AnimKeyFrameResolutionStrategy>
     global_anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<AnimMultiPalSubtileResolutionStrategy>
+    global_anim_multi_pal_subtile_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<FrameLinking>
     global_frame_linking(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<PerAnimOverrides>
@@ -73,6 +75,14 @@ class CliOptionProvider final : public ConfigProvider {
      * App Config
      */
     [[nodiscard]] LayerValue<bool> verify_checksums(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::vector<std::string>>
+    diagnostic_warnings_exclude(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::vector<std::string>>
+    diagnostic_warnings_include(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::vector<std::string>>
+    diagnostic_remarks_exclude(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::vector<std::string>>
+    diagnostic_remarks_include(ConfigScopeType type, const std::string &scope) const override;
 
     /*
      * Infra Config

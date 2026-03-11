@@ -131,6 +131,9 @@ class HeaderDefineProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<AnimKeyFrameResolutionStrategy>
     global_anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
 
+    [[nodiscard]] LayerValue<AnimMultiPalSubtileResolutionStrategy>
+    global_anim_multi_pal_subtile_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
+
     [[nodiscard]] LayerValue<FrameLinking>
     global_frame_linking(ConfigScopeType type, const std::string &scope) const override;
 
@@ -138,6 +141,18 @@ class HeaderDefineProvider final : public ConfigProvider {
     per_anim_overrides(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<bool> verify_checksums(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] LayerValue<std::vector<std::string>>
+    diagnostic_warnings_exclude(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] LayerValue<std::vector<std::string>>
+    diagnostic_warnings_include(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] LayerValue<std::vector<std::string>>
+    diagnostic_remarks_exclude(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] LayerValue<std::vector<std::string>>
+    diagnostic_remarks_include(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<std::string>
     tileset_paths_primary_src(ConfigScopeType type, const std::string &scope) const override;

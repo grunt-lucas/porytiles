@@ -173,7 +173,12 @@ class ConfigValue {
     template <typename U>
     [[nodiscard]] ConfigValue<U> derive(const ConfigOverride<U> &override) const
     {
-        return ConfigValue<U>{*override, override.canonical_name, override.source_key, source(), source_details()};
+        return ConfigValue<U>{
+            *override,
+            override.canonical_name,
+            override.source_key,
+            override.source_info.empty() ? source() : override.source_info,
+            override.source_details.empty() ? source_details() : override.source_details};
     }
 
     /**

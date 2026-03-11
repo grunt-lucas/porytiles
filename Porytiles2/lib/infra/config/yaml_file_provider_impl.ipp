@@ -10,6 +10,7 @@
 #include "yaml-cpp/yaml.h"
 
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
+#include "porytiles2/domain/config/anim_multi_pal_subtile_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/config/frame_linking.hpp"
@@ -152,24 +153,26 @@ void collect_yaml_paths(
  *
  * @details
  * Walks the YAML document tree and compares each path against the set of valid paths
- * defined in valid_yaml_paths.hpp. For any unknown paths, emits a warning via the
+ * defined in valid_yaml_paths.hpp. For any unknown paths, emits an error via the
  * UserDiagnostics interface with source location and context.
  *
  * @param format Text formatter for styled output
- * @param diagnostics User diagnostics for emitting warnings (may be nullptr)
+ * @param diagnostics User diagnostics for emitting errors (may be nullptr)
  * @param file_path Path to the YAML file being validated
  * @param node The root YAML node to validate
+ * @return @c true if any unknown keys were found, @c false otherwise.
  */
-void validate_yaml_paths(
+[[nodiscard]] bool validate_yaml_paths(
     const TextFormatter *format,
     const UserDiagnostics *diagnostics,
     const std::filesystem::path &file_path,
     const YAML::Node &node)
 {
     if (diagnostics == nullptr) {
-        return;
+        return false;
     }
 
+    bool found_unknown = false;
     std::vector<std::pair<std::string, YAML::Mark>> paths;
     collect_yaml_paths(node, "", paths);
 
@@ -190,20 +193,23 @@ void validate_yaml_paths(
             const auto source = make_source_string(format, file_path.string(), mark);
             auto details = make_source_details(format, file_path.string(), mark);
 
-            std::vector<std::string> warning_lines;
-            warning_lines.push_back(format->format("unknown configuration key '{}'", FormatParam{path, Style::bold}));
-            warning_lines.emplace_back();
-            warning_lines.push_back(format->format("Source: {}", FormatParam{source}));
-            warning_lines.emplace_back();
+            std::vector<std::string> error_lines;
+            error_lines.push_back(format->format("Unknown configuration key '{}'.", FormatParam{path, Style::bold}));
+            error_lines.emplace_back();
+            error_lines.push_back(format->format("Source: {}", FormatParam{source, Style::italic}));
+            error_lines.emplace_back();
             for (auto &detail : details) {
-                warning_lines.push_back(std::move(detail));
+                error_lines.push_back(std::move(detail));
             }
 
-            diagnostics->warning("unknown-config-key", warning_lines);
+            diagnostics->error("unknown-config-key", error_lines);
+            found_unknown = true;
 
             // TODO: add a "did you mean" message that uses levenshtein distance to find closest match
         }
     }
+
+    return found_unknown;
 }
 
 /**
@@ -478,6 +484,52 @@ LayerValue<std::vector<PaletteHint>> parse_pal_hints(
 }
 
 /**
+ * @brief Parses a std::vector<std::string> from a YAML sequence node.
+ *
+ * @details
+ * Expects a YAML sequence of strings. Returns LayerValue::not_provided() if the node is undefined.
+ * Returns LayerValue::invalid() if the node is not a sequence.
+ *
+ * @param format The text formatter to use
+ * @param node The YAML node to parse
+ * @param key The configuration key name (for error messages)
+ * @param file_path The YAML file path (for source info)
+ * @return LayerValue containing the parsed vector, error, or not_provided status
+ */
+LayerValue<std::vector<std::string>> parse_string_vector(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<std::vector<std::string>>::not_provided();
+    }
+
+    try {
+        const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+
+        if (!node.IsSequence()) {
+            const auto error = format->format("'{}' must be a sequence of strings.", FormatParam{key, Style::bold});
+            return LayerValue<std::vector<std::string>>::invalid(error, source, details);
+        }
+
+        std::vector<std::string> result;
+        for (std::size_t i = 0; i < node.size(); ++i) {
+            result.push_back(node[i].as<std::string>());
+        }
+        return LayerValue<std::vector<std::string>>::valid(std::move(result), key, source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error =
+            format->format("Failed to parse '{}' as string list: {}.", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<std::vector<std::string>>::invalid(error, source, details);
+    }
+}
+
+/**
  * @brief Attempts to parse a TilesPalMode value from a YAML node.
  *
  * @details
@@ -656,10 +708,13 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                         FormatParam{strategy_str, Style::bold});
                     return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
                 }
+                const auto pal_mark = strategy_node.Mark();
                 anim_config.pal_resolution_strategy = ConfigOverride{
                     strategy_opt.value(),
                     key + "." + anim_name + ".palette_resolution_strategy",
-                    "Animation Config (" + anim_name + ") per-anim strategy"};
+                    "Animation Config (" + anim_name + ") per-anim strategy",
+                    make_source_string(format, file_path, pal_mark),
+                    make_source_details(format, file_path, pal_mark)};
             }
 
             // Parse key_frame_resolution_strategy (optional scalar — per-anim override)
@@ -678,10 +733,38 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                         FormatParam{strategy_str, Style::bold});
                     return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
                 }
+                const auto kf_mark = strategy_node.Mark();
                 anim_config.key_frame_resolution_strategy = ConfigOverride{
                     strategy_opt.value(),
                     key + "." + anim_name + ".key_frame_resolution_strategy",
-                    "Animation Config (" + anim_name + ") key_frame_resolution_strategy"};
+                    "Animation Config (" + anim_name + ") key_frame_resolution_strategy",
+                    make_source_string(format, file_path, kf_mark),
+                    make_source_details(format, file_path, kf_mark)};
+            }
+
+            // Parse multi_palette_subtile_resolution_strategy (optional scalar — per-anim override)
+            if (anim_node["multi_palette_subtile_resolution_strategy"].IsDefined()) {
+                const auto &strategy_node = anim_node["multi_palette_subtile_resolution_strategy"];
+                const auto strategy_str = strategy_node.as<std::string>();
+                const auto strategy_opt = anim_multi_pal_subtile_resolution_strategy_from_str(strategy_str);
+                if (!strategy_opt.has_value()) {
+                    const auto strategy_mark = strategy_node.Mark();
+                    const auto strategy_source = make_source_string(format, file_path, strategy_mark);
+                    const auto strategy_details = make_source_details(format, file_path, strategy_mark);
+                    const auto error = format->format(
+                        "'{}' animation '{}' multi_palette_subtile_resolution_strategy has invalid value '{}'.",
+                        FormatParam{key, Style::bold},
+                        FormatParam{anim_name, Style::bold},
+                        FormatParam{strategy_str, Style::bold});
+                    return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
+                }
+                const auto mps_mark = strategy_node.Mark();
+                anim_config.multi_pal_subtile_resolution_strategy = ConfigOverride{
+                    strategy_opt.value(),
+                    key + "." + anim_name + ".multi_palette_subtile_resolution_strategy",
+                    "Animation Config (" + anim_name + ") multi_palette_subtile_resolution_strategy",
+                    make_source_string(format, file_path, mps_mark),
+                    make_source_details(format, file_path, mps_mark)};
             }
 
             // Parse per_tile_palette_resolution_strategies (optional sequence — per-tile most specific tier)
@@ -718,12 +801,15 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                                 FormatParam{strategy_str, Style::bold});
                             return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
                         }
+                        const auto tile_mark = strategies_node[i].Mark();
                         anim_config.per_tile_pal_resolution_strategies.push_back(
                             ConfigOverride{
                                 strategy_opt.value(),
                                 key + "." + anim_name + ".per_tile_palette_resolution_strategies[" + std::to_string(i) +
                                     "]",
-                                "Animation Config (" + anim_name + ") subtile " + std::to_string(i)});
+                                "Animation Config (" + anim_name + ") subtile " + std::to_string(i),
+                                make_source_string(format, file_path, tile_mark),
+                                make_source_details(format, file_path, tile_mark)});
                     }
                 }
             }
@@ -775,6 +861,40 @@ LayerValue<AnimKeyFrameResolutionStrategy> parse_anim_key_frame_resolution_strat
     }
 }
 
+LayerValue<AnimMultiPalSubtileResolutionStrategy> parse_anim_multi_pal_subtile_resolution_strategy(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::not_provided();
+    }
+
+    try {
+        const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        const auto node_value = node.as<std::string>();
+        const auto mode_opt = anim_multi_pal_subtile_resolution_strategy_from_str(node_value);
+
+        if (!mode_opt.has_value()) {
+            const auto error = format->format(
+                "'{}' has invalid value '{}'.", FormatParam{key, Style::bold}, FormatParam{node_value, Style::bold});
+            return LayerValue<AnimMultiPalSubtileResolutionStrategy>::invalid(error, source, details);
+        }
+
+        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::valid(mode_opt.value(), key, source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error = format->format(
+            "Failed to parse '{}' as AnimMultiPalSubtileResolutionStrategy: {}.",
+            FormatParam{key, Style::bold},
+            e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::invalid(error, source, details);
+    }
+}
+
 LayerValue<FrameLinking> parse_frame_linking(
     const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
@@ -812,18 +932,20 @@ LayerValue<FrameLinking> parse_frame_linking(
  *
  * @details
  * If the file exists and can be parsed, it is added to the cache and returned. If diagnostics is provided, validates
- * the YAML paths and emits warnings for unknown keys. If the file doesn't exist or cannot be parsed, returns
+ * the YAML paths and emits errors for unknown keys. If the file doesn't exist or cannot be parsed, returns
  * std::nullopt. Uses a static cache shared across all YamlFileProvider instances.
  *
  * @param path The path to the YAML file to load
  * @param format Text formatter for styled output (used for validation)
- * @param diagnostics User diagnostics for emitting warnings (may be nullptr)
+ * @param diagnostics User diagnostics for emitting errors (may be nullptr)
+ * @param out_had_unknown_keys Optional output flag set to @c true if unknown keys were found during validation.
  * @return The loaded YAML node, or std::nullopt if the file doesn't exist or cannot be parsed
  */
 std::optional<YAML::Node> load_yaml_file(
     const std::filesystem::path &path,
     const TextFormatter *format = nullptr,
-    const UserDiagnostics *diagnostics = nullptr)
+    const UserDiagnostics *diagnostics = nullptr,
+    bool *out_had_unknown_keys = nullptr)
 {
     // Check cache first
     const auto cache_it = yaml_cache.find(path);
@@ -852,7 +974,9 @@ std::optional<YAML::Node> load_yaml_file(
 
         // Validate paths if diagnostics is provided
         if (format != nullptr && diagnostics != nullptr) {
-            validate_yaml_paths(format, diagnostics, path, node);
+            if (validate_yaml_paths(format, diagnostics, path, node) && out_had_unknown_keys != nullptr) {
+                *out_had_unknown_keys = true;
+            }
         }
 
         return node;
@@ -936,6 +1060,41 @@ get_config_path_chain(const std::filesystem::path &project_root, ConfigScopeType
     }
     // Should never reach here
     panic("Invalid ConfigScopeType");
+}
+
+/**
+ * @brief Eagerly loads all YAML config files for a given scope and validates them for unknown keys.
+ *
+ * @details
+ * Forces loading and validation of all YAML config files in the priority chain for the given scope.
+ * If any files contain unknown configuration keys, errors are emitted via the diagnostics interface
+ * and this function returns @c true to indicate the caller should terminate.
+ *
+ * @param format Text formatter for styled output
+ * @param diagnostics User diagnostics for emitting errors
+ * @param project_root The root directory of the project
+ * @param type The configuration scope type
+ * @param scope The scope name (e.g., tileset name)
+ * @return @c true if unknown keys were found (caller should terminate), @c false otherwise.
+ */
+[[nodiscard]] bool preload_and_validate_yaml_files(
+    const TextFormatter *format,
+    const UserDiagnostics *diagnostics,
+    const std::filesystem::path &project_root,
+    ConfigScopeType type,
+    const std::string &scope)
+{
+    auto paths_result = get_config_path_chain(project_root, type, scope);
+    if (!paths_result.has_value()) {
+        return false;
+    }
+
+    bool had_unknown_keys = false;
+    for (const auto &path : paths_result.value()) {
+        load_yaml_file(path, format, diagnostics, &had_unknown_keys);
+    }
+
+    return had_unknown_keys;
 }
 
 /**

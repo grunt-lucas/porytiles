@@ -175,6 +175,14 @@ LayerValue<AnimKeyFrameResolutionStrategy> HeaderDefineProvider::global_anim_key
     return LayerValue<AnimKeyFrameResolutionStrategy>::not_provided();
 }
 
+LayerValue<AnimMultiPalSubtileResolutionStrategy>
+HeaderDefineProvider::global_anim_multi_pal_subtile_resolution_strategy(
+    ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<AnimMultiPalSubtileResolutionStrategy>::not_provided();
+}
+
 LayerValue<FrameLinking>
 HeaderDefineProvider::global_frame_linking(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {
@@ -193,6 +201,34 @@ LayerValue<bool> HeaderDefineProvider::verify_checksums(ConfigScopeType /*type*/
 {
     // No header_define specified for this config value
     return LayerValue<bool>::not_provided();
+}
+
+LayerValue<std::vector<std::string>>
+HeaderDefineProvider::diagnostic_warnings_exclude(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<std::vector<std::string>>::not_provided();
+}
+
+LayerValue<std::vector<std::string>>
+HeaderDefineProvider::diagnostic_warnings_include(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<std::vector<std::string>>::not_provided();
+}
+
+LayerValue<std::vector<std::string>>
+HeaderDefineProvider::diagnostic_remarks_exclude(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<std::vector<std::string>>::not_provided();
+}
+
+LayerValue<std::vector<std::string>>
+HeaderDefineProvider::diagnostic_remarks_include(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<std::vector<std::string>>::not_provided();
 }
 
 LayerValue<std::string>

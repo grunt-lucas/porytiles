@@ -118,6 +118,15 @@ LayerValue<AnimKeyFrameResolutionStrategy> DefaultProvider::global_anim_key_fram
         AnimKeyFrameResolutionStrategy::error, "Global Animation Key Frame Resolution Strategy", source_info);
 }
 
+LayerValue<AnimMultiPalSubtileResolutionStrategy> DefaultProvider::global_anim_multi_pal_subtile_resolution_strategy(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<AnimMultiPalSubtileResolutionStrategy>::valid(
+        AnimMultiPalSubtileResolutionStrategy::error,
+        "Global Animation Multi-Pal Subtile Resolution Strategy",
+        source_info);
+}
+
 LayerValue<FrameLinking> DefaultProvider::global_frame_linking(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
@@ -134,6 +143,34 @@ LayerValue<bool> DefaultProvider::verify_checksums(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<bool>::valid(true, "Verify Checksums", source_info);
+}
+
+LayerValue<std::vector<std::string>> DefaultProvider::diagnostic_warnings_exclude(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::vector<std::string>>::valid(
+        std::vector<std::string>{}, "Diagnostic Warnings Exclude", source_info);
+}
+
+LayerValue<std::vector<std::string>> DefaultProvider::diagnostic_warnings_include(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::vector<std::string>>::valid(
+        std::vector<std::string>{}, "Diagnostic Warnings Include", source_info);
+}
+
+LayerValue<std::vector<std::string>> DefaultProvider::diagnostic_remarks_exclude(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::vector<std::string>>::valid(
+        std::vector<std::string>{}, "Diagnostic Remarks Exclude", source_info);
+}
+
+LayerValue<std::vector<std::string>> DefaultProvider::diagnostic_remarks_include(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::vector<std::string>>::valid(
+        std::vector<std::string>{}, "Diagnostic Remarks Include", source_info);
 }
 
 LayerValue<std::string> DefaultProvider::tileset_paths_primary_src(

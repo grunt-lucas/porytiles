@@ -43,6 +43,11 @@ std::string YamlFileProvider::name() const
     return "YamlFileProvider";
 }
 
+bool YamlFileProvider::preload_and_validate(ConfigScopeType type, const std::string &scope) const
+{
+    return preload_and_validate_yaml_files(format_, diagnostics_, project_root_, type, scope);
+}
+
 LayerValue<std::size_t> YamlFileProvider::num_tiles_in_primary(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
@@ -315,6 +320,24 @@ YamlFileProvider::global_anim_key_frame_resolution_strategy(ConfigScopeType type
         "tileset.animations.key_frame_resolution_strategy");
 }
 
+LayerValue<AnimMultiPalSubtileResolutionStrategy> YamlFileProvider::global_anim_multi_pal_subtile_resolution_strategy(
+    ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<AnimMultiPalSubtileResolutionStrategy>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["multi_palette_subtile_resolution_strategy"]; },
+        parse_anim_multi_pal_subtile_resolution_strategy,
+        "tileset.animations.multi_palette_subtile_resolution_strategy",
+        "tileset.animations.multi_palette_subtile_resolution_strategy");
+}
+
 LayerValue<FrameLinking> YamlFileProvider::global_frame_linking(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
@@ -343,10 +366,10 @@ LayerValue<PerAnimOverrides> YamlFileProvider::per_anim_overrides(ConfigScopeTyp
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["per-animation-overrides"]; },
+        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["per_animation_overrides"]; },
         parse_per_anim_overrides,
-        "tileset.animations.per-animation-overrides",
-        "tileset.animations.per-animation-overrides");
+        "tileset.animations.per_animation_overrides",
+        "tileset.animations.per_animation_overrides");
 }
 
 LayerValue<bool> YamlFileProvider::verify_checksums(ConfigScopeType type, const std::string &scope) const
@@ -363,6 +386,78 @@ LayerValue<bool> YamlFileProvider::verify_checksums(ConfigScopeType type, const 
         parse_bool,
         "verify_checksums",
         "verify_checksums");
+}
+
+LayerValue<std::vector<std::string>>
+YamlFileProvider::diagnostic_warnings_exclude(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::vector<std::string>>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<std::vector<std::string>>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["diagnostics"]["warnings"]["exclude"]; },
+        parse_string_vector,
+        "diagnostics.warnings.exclude",
+        "diagnostics.warnings.exclude");
+}
+
+LayerValue<std::vector<std::string>>
+YamlFileProvider::diagnostic_warnings_include(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::vector<std::string>>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<std::vector<std::string>>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["diagnostics"]["warnings"]["include"]; },
+        parse_string_vector,
+        "diagnostics.warnings.include",
+        "diagnostics.warnings.include");
+}
+
+LayerValue<std::vector<std::string>>
+YamlFileProvider::diagnostic_remarks_exclude(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::vector<std::string>>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<std::vector<std::string>>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["diagnostics"]["remarks"]["exclude"]; },
+        parse_string_vector,
+        "diagnostics.remarks.exclude",
+        "diagnostics.remarks.exclude");
+}
+
+LayerValue<std::vector<std::string>>
+YamlFileProvider::diagnostic_remarks_include(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::vector<std::string>>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<std::vector<std::string>>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["diagnostics"]["remarks"]["include"]; },
+        parse_string_vector,
+        "diagnostics.remarks.include",
+        "diagnostics.remarks.include");
 }
 
 LayerValue<std::string>

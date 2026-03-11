@@ -96,7 +96,7 @@ config_values:
 |-------|-------------|
 | `header_define` | C header `#define` name for `HeaderDefineProvider` (e.g., `NUM_TILES_TOTAL`) |
 | `cli_desc` | Custom CLI help description (falls back to `canonical_name`) |
-| `cli_skip` | Skip CLI integration for complex types (e.g., `std::vector<T>`) |
+| `yaml_only` | Mark config as YAML-only, excluding from CLI and other non-YAML providers (e.g., `std::vector<T>`) |
 
 ### 4. Regenerate Code
 

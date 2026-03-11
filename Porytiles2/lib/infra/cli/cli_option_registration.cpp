@@ -134,6 +134,16 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
             "duplicate key frame subtiles.")
         ->type_name("{error|warning|mangle}");
 
+    // Global Animation Multi-Pal Subtile Resolution Strategy (enum AnimMultiPalSubtileResolutionStrategy, captured as
+    // string, parsed by CliOptionProvider)
+    config_group
+        ->add_option(
+            "--anim-multi-pal-subtile-resolution-strategy",
+            storage.global_anim_multi_pal_subtile_resolution_strategy,
+            "Global Animation Multi-Pal Subtile Resolution Strategy - The strategy for handling animation subtiles "
+            "referenced with multiple palettes.")
+        ->type_name("{error|warning|split}");
+
     // Global Frame Linking (enum FrameLinking, captured as string, parsed by CliOptionProvider)
     config_group
         ->add_option(
@@ -155,6 +165,30 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
             // count == 0 means neither flag was provided, leave optional empty
         },
         "Verify Checksums - Enable or disable artifact checksum verification.");
+
+    // Diagnostic Warnings Exclude (std::vector<std::string>, multi-value)
+    config_group->add_option(
+        "--diagnostic-warnings-exclude",
+        storage.diagnostic_warnings_exclude,
+        "Diagnostic Warnings Exclude - Regex patterns for warning tags to exclude.");
+
+    // Diagnostic Warnings Include (std::vector<std::string>, multi-value)
+    config_group->add_option(
+        "--diagnostic-warnings-include",
+        storage.diagnostic_warnings_include,
+        "Diagnostic Warnings Include - Regex patterns for warning tags to include (overrides excludes).");
+
+    // Diagnostic Remarks Exclude (std::vector<std::string>, multi-value)
+    config_group->add_option(
+        "--diagnostic-remarks-exclude",
+        storage.diagnostic_remarks_exclude,
+        "Diagnostic Remarks Exclude - Regex patterns for remark tags to exclude.");
+
+    // Diagnostic Remarks Include (std::vector<std::string>, multi-value)
+    config_group->add_option(
+        "--diagnostic-remarks-include",
+        storage.diagnostic_remarks_include,
+        "Diagnostic Remarks Include - Regex patterns for remark tags to include (overrides excludes).");
 
     // Tileset Paths Primary Source (std::string)
     config_group->add_option(

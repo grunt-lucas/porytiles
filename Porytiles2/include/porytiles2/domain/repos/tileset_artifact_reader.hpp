@@ -1,6 +1,7 @@
 #pragma once
 
 #include <any>
+#include <optional>
 #include <string>
 #include <utility>
 #include <vector>
@@ -84,7 +85,7 @@ class TilesetArtifactReader {
      * @param dest The Tileset object to populate
      * @param anim_name The name of the animation to load
      * @param params_key Key to the anim.json file
-     * @param key_frame_key Key to the key frame
+     * @param key_frame_key Key to the key frame, or @c std::nullopt for manual frame linking mode
      * @param frame_keys Ordered list of (frame_name, artifact_key) pairs for each unique frame
      * @return Empty ChainableResult on success, otherwise an error chain
      */
@@ -92,7 +93,7 @@ class TilesetArtifactReader {
         Tileset &dest,
         const std::string &anim_name,
         const ArtifactKey &params_key,
-        const ArtifactKey &key_frame_key,
+        const std::optional<ArtifactKey> &key_frame_key,
         const std::vector<std::pair<std::string, ArtifactKey>> &frame_keys) const = 0;
 };
 

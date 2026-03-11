@@ -4,6 +4,7 @@
 #include <vector>
 
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
+#include "porytiles2/domain/config/anim_multi_pal_subtile_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/config/frame_linking.hpp"
 #include "porytiles2/xcut/config/config_override.hpp"
@@ -26,6 +27,10 @@ namespace porytiles2 {
  * Key frame resolution also supports a two-tier cascade: per-anim @c key_frame_resolution_strategy wins, otherwise
  * falls back to @c key_frame_resolution_strategy from DomainConfig.
  *
+ * Multi-palette subtile resolution follows the same two-tier cascade: per-anim
+ * @c multi_pal_subtile_resolution_strategy wins, otherwise falls back to
+ * @c multi_pal_subtile_resolution_strategy from DomainConfig.
+ *
  * Override fields use @c ConfigOverride<T> instead of @c std::optional<T> to carry provider-specific source metadata
  * (source_key, canonical_name) set at parse time, enabling @c ConfigValue::derive() to construct properly attributed
  * child values without hardcoding provider formats.
@@ -35,6 +40,7 @@ struct PerAnimOverride {
     ConfigOverride<AnimPalResolutionStrategy> pal_resolution_strategy;
     std::vector<ConfigOverride<AnimPalResolutionStrategy>> per_tile_pal_resolution_strategies;
     ConfigOverride<AnimKeyFrameResolutionStrategy> key_frame_resolution_strategy;
+    ConfigOverride<AnimMultiPalSubtileResolutionStrategy> multi_pal_subtile_resolution_strategy;
     FrameLinking linking{FrameLinking::automatic};
 };
 

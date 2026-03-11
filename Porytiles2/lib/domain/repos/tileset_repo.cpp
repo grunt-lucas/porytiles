@@ -1,5 +1,6 @@
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 
+#include <optional>
 #include <set>
 #include <string>
 
@@ -417,21 +418,16 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
             std::unique_ptr<Tileset>);
 
         for (const auto &anim_name : porytiles_anims) {
-            // TODO: don't hardcode key here?
+            // Check if key frame exists (only present for automatic/hybrid frame linking)
             PT_TRY_ASSIGN_CHAIN_ERR(
-                key_frame_key,
+                key_frame_key_candidate,
                 key_provider_->key_for_porytiles_anim_frame(tileset->name(), anim_name, "key"),
                 diag_->formatter().format("Failed to load tileset '{}'.", FormatParam{tileset->name(), Style::bold}),
                 std::unique_ptr<Tileset>);
 
-            /*
-             * Here, we check to make sure the key frame is present. If not, we'll throw an error. In the next step,
-             * we'll discover the actually existing frames to pass to the anim reader. Since we already validated that
-             * the key frame is present, we know it will get passed in.
-             */
-            if (!key_provider_->artifact_exists(key_frame_key)) {
-                // TODO: throw error here and continue, like below
-                return FormattableError{missing_required_artifact_msg, FormatParam{key_frame_key.key(), Style::bold}};
+            std::optional<ArtifactKey> key_frame_key{};
+            if (key_provider_->artifact_exists(key_frame_key_candidate)) {
+                key_frame_key = key_frame_key_candidate;
             }
 
             PT_TRY_ASSIGN_CHAIN_ERR(
@@ -444,6 +440,11 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
             std::vector<std::pair<std::string, ArtifactKey>> frame_keys{};
             bool anim_has_missing_frames = false;
             for (const auto &frame_name : frame_names) {
+                // Skip "key" frame in frame_keys since it's handled separately via key_frame_key
+                if (frame_name == "key") {
+                    continue;
+                }
+
                 PT_TRY_ASSIGN_CHAIN_ERR(
                     frame_key,
                     key_provider_->key_for_porytiles_anim_frame(tileset->name(), anim_name, frame_name),

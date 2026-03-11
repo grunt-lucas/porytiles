@@ -249,7 +249,7 @@ tileset:
         key_frame_resolution_strategy: error
 ```
 
-### Solve the "multiple palettes for a single frame subtile" issue
+### ~~Solve the "multiple palettes for a single frame subtile" issue~~
 `AnimDecompiler` has this branch and note:
 ```c++
 if (found_for_subtile.size() > 1) {
@@ -266,22 +266,60 @@ if (found_for_subtile.size() > 1) {
 // ...
 }
 ```
-We need to develop a sound way to handle this case. It gets triggered by FireRed General. Ideas:
-
-1. Create another branching path for first-time imports. If we detect this case, create a separate animation for each palette variant.
-2. Implement support for palette alignment (see borytiles). The problem here is that this isn't always reliable, given the limitations of the pagination problem solver. It also doesn't work cleanly with the key frame system. You'd still have a fundamental ambiguity.
-3. Leave as error condition and force users to resolve manually before importing for the first time.
+We need to develop a sound way to handle this case. It gets triggered by FireRed General.
 
 For animations that hit this case, the main issues are:
 1. Key frame ambiguity (with only one key frame, you can't signal to Porytiles which pal you want)
-2. Palette alignment: you don't hit this if you import and keep pals:locked (pals already aligned), but we don't have a clean way to support this use-case for net-new tilesets
+2. Palette alignment: you don't hit pal alignment issues if you import and keep pals:locked (assuming pals already properly aligned), but we don't have a clean way to support this use-case for net-new tilesets with pals:optimize (without forcing users to supply manual palette overrides)
+
+Here's my idea.
+
+Create another "ResolutionStrategy" enum:
+```c++
+enum class AnimMultiPalSubtileResolutionStrategy {
+    /**
+     * @brief Emit a formatted error and fail decompilation.
+     */
+    error,
+    /**
+     * @brief Emit a warning and continue decompilation.
+     */
+    warning,
+    /**
+     * @brief Split the anim into multiple anims, one for each palette combination.
+     */
+    split
+};
+```
+
+What is `error`?
+This is just the current error condition. It stays as is.
+
+What is `warning`?
+This is the secret sauce.
+If user sets `warning`, then they can resolve this by also setting `FrameLinking::manual`.
+They'll simply see a warning about this case rather than an error.
+Provided palettes are already properly aligned, subsequent `patch` or `locked` builds will work despite the warning.
+
+What is `split`?
+Basically, create another branching path for first-time imports.
+If we detect this case, create a separate animation for each palette variant.
+We'd need to figure out the best way to do this.
+I can imagine pathological cases where it could end up generating a bazillion anim variants.
+
+Note For Future:
+Is it possible to implement support for palette alignment (see borytiles)?
+The problem here is that this isn't always reliable,
+given the limitations of the pagination problem solver.
+It also doesn't work cleanly with the key frame system.
+You'd still have a fundamental ambiguity.
 
 I think the cleanest way forward is to simply keep this as an error condition.
 Users can then import by specifying `frame_linking: manual`
 along with another config option that skips the code that throws this error.
 We'll figure out exactly how to do this later.
 
-### TODO: How to handle VDests system? See Evergrande/Mauville city flowers, Route104 windy water, etc
+### How to handle VDests system? See Evergrande/Mauville city flowers, Route104 windy water, etc
 ```c++
 static void QueueAnimTiles_Rustboro_WindyWater(u16 timer_div, u8 timer_mod) {
     timer_div -= timer_mod;
@@ -295,5 +333,8 @@ The timer div and mod parameters can be specified in the anim params file.
 Everything else in this function is stock.
 Spend some time analyzing the VDests stuff to figure out the best way to handle it.
 
-### TODO: figure out how to support BattleDome floor light blending
+### Figure out how to support BattleDome floor light blending
 The Battle Dome tileset does some fancy stuff. See bottom of `pokeemerald`'s `tileset_anims.c`.
+
+### Implement AnimMultiPalSubtileResolutionStrategy::split mode
+See above.
