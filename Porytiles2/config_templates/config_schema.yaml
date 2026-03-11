@@ -495,6 +495,13 @@ config_values:
     validators: [ ]
     cross_field_validators: [ ]
 
+  # TODO : Unlike verify_checksums (consumed by app-layer use cases), the diagnostic filter values below are "meta-config"
+  # — they are only consumed at the composition root (tools/driver/ commands) to wire the FilteredUserDiagnostics
+  # decorator. No Porytiles library code reads them; the library receives a fully-configured UserDiagnostics pointer.
+  #
+  # AppConfig is the least-wrong home (semantically "user-facing tool behavior"), but if more composition-root-only
+  # config values accumulate, consider extracting a dedicated config layer (e.g. "bootstrap" or "tooling"). This aligns
+  # with Seemann's principle that the Composition Root is an "application infrastructure component" (ploeh blog, 2011).
   - canonical_name: Diagnostic Warnings Exclude
     symbol: diagnostic_warnings_exclude
     yaml_path: diagnostics.warnings.exclude
