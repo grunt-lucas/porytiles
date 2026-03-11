@@ -105,7 +105,7 @@ LayerValue<bool> CliOptionProvider::pal_hints_enabled(
 LayerValue<std::vector<PaletteHint>>
 CliOptionProvider::pal_hints([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    // Skipped for CLI (type too complex)
+    // Skipped for CLI (yaml_only: type too complex for non-YAML providers)
     return LayerValue<std::vector<PaletteHint>>::not_provided();
 }
 
@@ -150,7 +150,7 @@ LayerValue<FrameLinking> CliOptionProvider::global_frame_linking(
 LayerValue<PerAnimOverrides> CliOptionProvider::per_anim_overrides(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    // Skipped for CLI (type too complex)
+    // Skipped for CLI (yaml_only: type too complex for non-YAML providers)
     return LayerValue<PerAnimOverrides>::not_provided();
 }
 

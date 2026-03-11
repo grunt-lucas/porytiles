@@ -34,7 +34,7 @@ struct CliOptionMeta {
 [[nodiscard]] inline std::vector<CliOptionMeta> get_cli_option_metadata()
 {
     return {
-{% for value in config_values if not value.cli_skip %}
+{% for value in config_values if not value.yaml_only %}
 {% if value.type == 'bool' %}
         CliOptionMeta{
             "{{ value.cli_option }}",

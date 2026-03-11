@@ -439,7 +439,7 @@ class CliOptionProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<TilesPalMode>
     tiles_pal_mode(ConfigScopeType type, const std::string &scope) const override;
 
-    // ... one method per config value (except cli_skip: true)
+    // ... one method per config value (except yaml_only: true)
 
   private:
     const CliOptionStorage &storage_;
@@ -727,11 +727,11 @@ class CompileTilesetCommand final : public Command {
 Add CLI-specific metadata fields to each config value:
 
 ```yaml
-cli_skip: false  # Set true to exclude from CLI
+yaml_only: false  # Set true to exclude from CLI and other non-YAML providers
 ```
 
-**Values to mark `cli_skip: true`:**
-- `pal_hints` (`std::vector<PaletteHint>`) - too complex for CLI
+**Values to mark `yaml_only: true`:**
+- `pal_hints` (`std::vector<PaletteHint>`) - too complex for non-YAML providers
 
 ### Phase 2: Code Generation Templates
 
@@ -784,7 +784,7 @@ Add `CompletionCommand` to `main.cpp`.
 Porytiles2/
 ├── config_templates/
 │   ├── _macros.jinja2                          # Existing
-│   ├── config_schema.yaml                      # Modified (add cli_skip)
+│   ├── config_schema.yaml                      # Modified (add yaml_only)
 │   ├── cli_option_storage.hpp.jinja2           # NEW
 │   ├── cli_option_provider.hpp.jinja2          # NEW
 │   ├── cli_option_provider.cpp.jinja2          # NEW
@@ -860,7 +860,7 @@ Porytiles2/
 
 ### Decision 5: Skip Complex Types
 
-**Decision:** Skip `std::vector<PaletteHint>` (set `cli_skip: true`).
+**Decision:** Skip `std::vector<PaletteHint>` (set `yaml_only: true`).
 
 **Rationale:**
 - Too complex to express as a CLI option

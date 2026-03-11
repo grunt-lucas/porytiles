@@ -24,7 +24,7 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
     auto *config_group = app.add_option_group("Config Options", "Override configuration values");
     config_group->footer("");  // Clear inherited footer to prevent duplication in help output
 
-{% for value in config_values if not value.cli_skip %}
+{% for value in config_values if not value.yaml_only %}
 {% if value.type == 'bool' %}
     // {{ value.canonical_name }} (bool with --flag/--no-flag, captured as "true"/"false" string)
     config_group->add_flag(

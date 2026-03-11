@@ -18,6 +18,11 @@
 #     - When absent, templates fall back to using canonical_name
 #     - Use this to provide more user-friendly CLI descriptions without changing canonical_name
 #
+#   yaml_only: (optional, default false) When true, this config value can only be set via YAML
+#     - Excludes from CLI integration and any other non-YAML providers
+#     - Use for complex types that cannot be reasonably expressed on the command line
+#     - Example: std::vector<PaletteHint>, PerAnimOverrides
+#
 #   type: C++ type for the value
 #
 #   parser: Parser function name (e.g., "parse_size_t") - used by all providers
@@ -401,7 +406,7 @@ config_values:
     symbol: pal_hints
     yaml_path: tileset.palettes.packing.hints
     cli_option: pal-hints
-    cli_skip: true  # Too complex for CLI (std::vector<PaletteHint>)
+    yaml_only: true  # Too complex for non-YAML providers (std::vector<PaletteHint>)
     layer: domain
     type: std::vector<PaletteHint>
     parser: parse_pal_hints
@@ -473,7 +478,7 @@ config_values:
     symbol: per_anim_overrides
     yaml_path: tileset.animations.per_animation_overrides
     cli_option: per-anim-overrides
-    cli_skip: true
+    yaml_only: true
     yaml_is_map: true
     layer: domain
     type: PerAnimOverrides
