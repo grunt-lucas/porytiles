@@ -20,6 +20,7 @@
     - iterations are embarrassingly parallel (stateless strategies, immutable input, no shared mutable state)
     - cooperative cancellation via `std::atomic<bool>` checked alongside existing `node_cutoff` in DFS/BFS
     - also opens the door to "best solution" semantics (compare results by quality) instead of first-success
+- Implement feasibility analysis in `Notes/packing_diagnostics_and_feasibility_analysis.md`
 
 ## Project Structure Refactor
 - Domain layer is getting way too crowded
