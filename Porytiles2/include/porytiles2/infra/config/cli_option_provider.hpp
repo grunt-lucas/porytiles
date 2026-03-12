@@ -58,6 +58,10 @@ class CliOptionProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<bool> pal_hints_enabled(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<std::vector<PaletteHint>>
     pal_hints(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<PackingStrategyType>
+    packing_strategy(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<PackingStrategyParams>
+    packing_strategy_params(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<TilesPalMode>
     tiles_pal_mode(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<AnimPalResolutionStrategy>

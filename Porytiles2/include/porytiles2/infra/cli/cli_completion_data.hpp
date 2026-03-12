@@ -90,16 +90,22 @@ struct CliOptionMeta {
             "tiles-edit-mode",
             "Tiles Edit Mode - The allowed edit mode for the tiles.png artifact.",
             "enum",
-            {"locked", "patch", "optimized"},
+            {"locked", "patch", "optimize"},
             false},
         CliOptionMeta{
             "pals-edit-mode",
             "Palettes Edit Mode - The allowed edit mode for the palettes/ artifacts.",
             "enum",
-            {"locked", "patch", "optimized"},
+            {"locked", "patch", "optimize"},
             false},
         CliOptionMeta{
             "pal-hints-enabled", "Palette Hints Enabled - Enable configured palette hints.", "bool", {}, true},
+        CliOptionMeta{
+            "packing-strategy",
+            "Packing Strategy - The palette packing algorithm to use during compilation.",
+            "enum",
+            {"best-fusion", "backtracking", "overload-and-remove"},
+            false},
         CliOptionMeta{
             "tiles-pal-mode",
             "Tiles Palette Mode - The color mode to use when saving the tiles.png artifact.",

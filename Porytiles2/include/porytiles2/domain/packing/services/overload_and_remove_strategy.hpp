@@ -7,8 +7,8 @@
 
 #include "gsl/pointers"
 
+#include "porytiles2/domain/config/shuffle_strategy.hpp"
 #include "porytiles2/domain/packing/services/packing_strategy.hpp"
-#include "porytiles2/domain/packing/services/shuffle_strategy.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 

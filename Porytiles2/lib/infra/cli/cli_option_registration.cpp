@@ -103,6 +103,14 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
         },
         "Palette Hints Enabled - Enable configured palette hints.");
 
+    // Packing Strategy (enum PackingStrategyType, captured as string, parsed by CliOptionProvider)
+    config_group
+        ->add_option(
+            "--packing-strategy",
+            storage.packing_strategy,
+            "Packing Strategy - The palette packing algorithm to use during compilation.")
+        ->type_name("{best-fusion|backtracking|overload-and-remove}");
+
     // Tiles Palette Mode (enum TilesPalMode, captured as string, parsed by CliOptionProvider)
     config_group
         ->add_option(

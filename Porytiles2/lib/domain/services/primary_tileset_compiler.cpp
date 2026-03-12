@@ -16,6 +16,8 @@
 #include "porytiles2/domain/algorithms/tileset_compile_validators.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/config/frame_linking.hpp"
+#include "porytiles2/domain/config/packing_strategy_params.hpp"
+#include "porytiles2/domain/config/packing_strategy_type.hpp"
 #include "porytiles2/domain/config/per_anim_overrides.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
@@ -27,6 +29,8 @@
 #include "porytiles2/domain/models/tiles_png_workspace.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/packing/services/backtracking_strategy.hpp"
+#include "porytiles2/domain/packing/services/best_fusion_strategy.hpp"
+#include "porytiles2/domain/packing/services/overload_and_remove_strategy.hpp"
 #include "porytiles2/domain/packing/services/palette_packer.hpp"
 #include "porytiles2/domain/services/anim_tile_matcher.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
@@ -41,6 +45,52 @@
 namespace {
 
 using namespace porytiles2;
+
+/**
+ * @brief Creates a packing strategy instance based on config settings.
+ *
+ * @details
+ * If the selected strategy's parameter block has any values set, constructs the strategy in single-config mode with the
+ * provided parameters (unset fields fall back to their per-field defaults). Otherwise, constructs the strategy in
+ * preset matrix mode. BestFusionStrategy has no parameters and always uses its parameterless constructor.
+ *
+ * @param strategy_type The selected packing algorithm
+ * @param params Per-strategy parameter blocks
+ * @param diag Diagnostics interface for remarks about successful search parameters
+ * @return A unique_ptr to the configured PackingStrategy
+ */
+[[nodiscard]] std::unique_ptr<PackingStrategy> make_packing_strategy(
+    PackingStrategyType strategy_type, const PackingStrategyParams &params, const UserDiagnostics &diag)
+{
+    switch (strategy_type) {
+    case PackingStrategyType::best_fusion:
+        return std::make_unique<BestFusionStrategy>();
+    case PackingStrategyType::backtracking: {
+        const auto &cfg = params.backtracking;
+        if (!cfg.has_any()) {
+            return std::make_unique<BacktrackingStrategy>(&diag);
+        }
+        return std::make_unique<BacktrackingStrategy>(
+            cfg.search_algorithm.value.value_or(SearchAlgorithm::dfs),
+            cfg.node_cutoff.value.value_or(1'000'000),
+            cfg.best_branches.value.value_or(std::numeric_limits<std::size_t>::max()),
+            cfg.smart_prune.value.value_or(true),
+            &diag);
+    }
+    case PackingStrategyType::overload_and_remove: {
+        const auto &cfg = params.overload_and_remove;
+        if (!cfg.has_any()) {
+            return std::make_unique<OverloadAndRemoveStrategy>(&diag);
+        }
+        return std::make_unique<OverloadAndRemoveStrategy>(
+            cfg.max_attempts.value.value_or(20),
+            cfg.seed.value.value_or(42),
+            cfg.shuffle_strategy.value.value_or(ShuffleStrategy::noisy_ffd),
+            &diag);
+    }
+    }
+    panic("Unhandled PackingStrategyType value.");
+}
 
 /**
  * @brief Result type for tile assignment operations during compilation.
@@ -770,8 +820,10 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
     //         return CanonicalShapeTile{shape_tile_to_pixel_colors(tile, color_index_map)};
     //     });
 
-    BacktrackingStrategy packing_strategy{&diag_};
-    PalettePacker pal_packer{&packing_strategy, &format_, &diag_};
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, packing_strategy, tileset_.name(), void);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, packing_strategy_params, tileset_.name(), void);
+    auto strategy = make_packing_strategy(packing_strategy.value(), packing_strategy_params.value(), diag_);
+    PalettePacker pal_packer{strategy.get(), &format_, &diag_};
     std::bitset<pal::num_pals> available_pals{0};
     for (std::size_t i = 0; i < num_pals_in_primary_; i++) {
         // TODO: support out-of-band primary palettes - see "Primary Palette Fixing" in topic_staging_area.md

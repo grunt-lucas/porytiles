@@ -30,7 +30,7 @@ namespace porytiles2 {
  * Multi-palette subtile resolution follows the same two-tier cascade: per-anim
  * @c multi_pal_subtile_resolution_strategy wins, otherwise falls back to
  * @c multi_pal_subtile_resolution_strategy from DomainConfig.
- * 
+ *
  * Frame linking also follows the same two-tier cascade: per-anim wins, otherwise falls back to the global setting.
  *
  * Override fields use @c ConfigPODField<T> instead of @c std::optional<T> to carry provider-specific source metadata

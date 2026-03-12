@@ -87,6 +87,18 @@ ConfigProvider::pal_hints([[maybe_unused]] ConfigScopeType type, [[maybe_unused]
     return LayerValue<std::vector<PaletteHint>>::not_provided();
 }
 
+LayerValue<PackingStrategyType>
+ConfigProvider::packing_strategy([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<PackingStrategyType>::not_provided();
+}
+
+LayerValue<PackingStrategyParams> ConfigProvider::packing_strategy_params(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<PackingStrategyParams>::not_provided();
+}
+
 LayerValue<TilesPalMode>
 ConfigProvider::tiles_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

@@ -154,6 +154,20 @@ HeaderDefineProvider::pal_hints(ConfigScopeType /*type*/, const std::string & /*
     return LayerValue<std::vector<PaletteHint>>::not_provided();
 }
 
+LayerValue<PackingStrategyType>
+HeaderDefineProvider::packing_strategy(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<PackingStrategyType>::not_provided();
+}
+
+LayerValue<PackingStrategyParams>
+HeaderDefineProvider::packing_strategy_params(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<PackingStrategyParams>::not_provided();
+}
+
 LayerValue<TilesPalMode>
 HeaderDefineProvider::tiles_pal_mode(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {

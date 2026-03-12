@@ -75,9 +75,38 @@ tileset:
     match_candidate_top_n: 1
 
     packing:
-      algorithm: bfs
-      prune: dynamic
+      # Palette packing algorithm.
+      # Allowed values:
+      # - [default] backtracking: DFS/BFS backtracking search
+      # - best-fusion: greedy weighted-cost packing (fast, no retries)
+      # - overload-and-remove: greedy with multi-start retries
+      strategy: backtracking
+
+      # Per-strategy tuning parameters. When omitted or empty, strategies use built-in preset matrix mode.
+      # Only the block matching the selected strategy is consulted at runtime.
+      strategy_params:
+        backtracking:
+          search_algorithm: bfs       # dfs or bfs
+          node_cutoff: 5000           # max nodes to explore before giving up
+          best_branches: 3            # keep top-N branches at each level
+          smart_prune: true           # enable heuristic pruning
+        overload_and_remove:
+          max_attempts: 100           # number of multi-start retries
+          seed: 42                    # RNG seed for reproducibility
+          shuffle_strategy: noisy-ffd # single-ffd, noisy-ffd, or random
+
+      # Enable or disable palette hints. When true, the hints below are fed
+      # into the packing algorithm as virtual tiles to guide color grouping.
       hints_enabled: true
+
+      # Palette hints tell the packer that certain colors should land in the
+      # same hardware palette. Each hint is a named group of RGB colors. The
+      # packer injects these as synthetic tiles before packing, biasing the
+      # algorithm to keep the listed colors together.
+      #
+      # Useful when you know certain colors co-occur on-screen (e.g. foliage
+      # greens) and want to guarantee they share a palette slot, even if the
+      # packer's heuristic wouldn't discover that grouping on its own.
       hints:
         - name: "foliage"
           colors:
@@ -111,7 +140,7 @@ tileset:
     # - [default] error: error out and display the conflicting palettes
     # - warning: warn and continue decompilation using the lowest palette index
     # - split: split the animation into separate animations for each palette variant (not yet implemented)
-    multi_pal_subtile_resolution_strategy: error
+    multi_palette_subtile_resolution_strategy: error
 
     # Default frame linking mode for animations.
     # Per-animation overrides can override this. Available modes:
@@ -126,7 +155,7 @@ tileset:
     #   1. per_tile_palette_resolution_strategies[i] — per-subtile override
     #   2. palette_resolution_strategy — per-animation default
     #   3. palette_resolution_strategy (above) — global fallback
-    per-animation-overrides:
+    per_animation_overrides:
       flower:
         # How frames are linked to metatile entries.
         # - automatic: use key.png for frame linking (default)
@@ -138,8 +167,8 @@ tileset:
         key_frame_resolution_strategy: mangle
 
         # Per-animation multi-pal subtile resolution strategy override.
-        # If set, overrides the global multi_pal_subtile_resolution_strategy for this animation.
-        multi_pal_subtile_resolution_strategy: warning
+        # If set, overrides the global multi_palette_subtile_resolution_strategy for this animation.
+        multi_palette_subtile_resolution_strategy: warning
 
         # Per-animation palette resolution strategy (middle tier).
         # Applied to all subtiles that don't have a per-tile override.

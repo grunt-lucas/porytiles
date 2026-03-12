@@ -126,6 +126,9 @@ void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, con
     dump_single_config_value(out, *format_, "Palettes Edit Mode", pals_edit_mode_provenance_chain(type, scope));
     dump_single_config_value(out, *format_, "Palette Hints Enabled", pal_hints_enabled_provenance_chain(type, scope));
     dump_single_config_value(out, *format_, "Palette Hints", pal_hints_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Packing Strategy", packing_strategy_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Packing Strategy Params", packing_strategy_params_provenance_chain(type, scope));
     dump_single_config_value(out, *format_, "Tiles Palette Mode", tiles_pal_mode_provenance_chain(type, scope));
     dump_single_config_value(
         out,
@@ -419,6 +422,32 @@ LazyLayeredConfig::pal_hints_raw(ConfigScopeType type, const std::string &scope)
     return resolve_config_value<std::vector<PaletteHint>>(
         key, "Palette Hints", [&type, &scope](const ConfigProvider &provider) {
             return provider.pal_hints(type, scope);
+        });
+}
+
+ChainableResult<ConfigValue<PackingStrategyType>>
+LazyLayeredConfig::packing_strategy_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<PackingStrategyType>(
+        key, "Packing Strategy", [&type, &scope](const ConfigProvider &provider) {
+            return provider.packing_strategy(type, scope);
+        });
+}
+
+ChainableResult<ConfigValue<PackingStrategyParams>>
+LazyLayeredConfig::packing_strategy_params_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<PackingStrategyParams>(
+        key, "Packing Strategy Params", [&type, &scope](const ConfigProvider &provider) {
+            return provider.packing_strategy_params(type, scope);
         });
 }
 
@@ -719,6 +748,20 @@ LazyLayeredConfig::pal_hints_provenance_chain(ConfigScopeType type, const std::s
 {
     return collect_provenance_chain<std::vector<PaletteHint>>(
         [&type, &scope](const ConfigProvider &provider) { return provider.pal_hints(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<PackingStrategyType>>
+LazyLayeredConfig::packing_strategy_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<PackingStrategyType>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.packing_strategy(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<PackingStrategyParams>>
+LazyLayeredConfig::packing_strategy_params_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<PackingStrategyParams>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.packing_strategy_params(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<TilesPalMode>>

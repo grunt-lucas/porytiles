@@ -267,6 +267,41 @@ LayerValue<std::vector<PaletteHint>> YamlFileProvider::pal_hints(ConfigScopeType
         "tileset.palettes.packing.hints");
 }
 
+LayerValue<PackingStrategyType> YamlFileProvider::packing_strategy(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<PackingStrategyType>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<PackingStrategyType>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["palettes"]["packing"]["strategy"]; },
+        parse_packing_strategy_type,
+        "tileset.palettes.packing.strategy",
+        "tileset.palettes.packing.strategy");
+}
+
+LayerValue<PackingStrategyParams>
+YamlFileProvider::packing_strategy_params(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<PackingStrategyParams>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<PackingStrategyParams>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["palettes"]["packing"]["strategy_params"]; },
+        parse_packing_strategy_params,
+        "tileset.palettes.packing.strategy_params",
+        "tileset.palettes.packing.strategy_params");
+}
+
 LayerValue<TilesPalMode> YamlFileProvider::tiles_pal_mode(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);

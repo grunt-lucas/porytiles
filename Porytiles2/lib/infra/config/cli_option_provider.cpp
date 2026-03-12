@@ -109,6 +109,20 @@ CliOptionProvider::pal_hints([[maybe_unused]] ConfigScopeType type, [[maybe_unus
     return LayerValue<std::vector<PaletteHint>>::not_provided();
 }
 
+LayerValue<PackingStrategyType> CliOptionProvider::packing_strategy(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_packing_strategy_type(storage_.packing_strategy, "--packing-strategy");
+}
+
+LayerValue<PackingStrategyParams> CliOptionProvider::packing_strategy_params(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // Skipped for CLI (yaml_only: type too complex for non-YAML providers)
+    return LayerValue<PackingStrategyParams>::not_provided();
+}
+
 LayerValue<TilesPalMode> CliOptionProvider::tiles_pal_mode(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

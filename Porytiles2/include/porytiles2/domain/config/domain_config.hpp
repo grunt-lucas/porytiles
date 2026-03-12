@@ -6,6 +6,8 @@
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/config/domain_config_validators.hpp"
+#include "porytiles2/domain/config/packing_strategy_params.hpp"
+#include "porytiles2/domain/config/packing_strategy_type.hpp"
 #include "porytiles2/domain/config/per_anim_overrides.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
@@ -204,6 +206,22 @@ class DomainConfig {
     pal_hints(ConfigScopeType type, const std::string &scope) const
     {
         auto validated_val = pal_hints_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<PackingStrategyType>>
+    packing_strategy(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = packing_strategy_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<PackingStrategyParams>>
+    packing_strategy_params(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = packing_strategy_params_validated(type, scope);
         return validated_val;
     }
 
@@ -447,6 +465,30 @@ class DomainConfig {
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::vector<PaletteHint>>>
     pal_hints_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<PackingStrategyType>>
+    packing_strategy_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = packing_strategy_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<PackingStrategyType>>
+    packing_strategy_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<PackingStrategyParams>>
+    packing_strategy_params_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = packing_strategy_params_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<PackingStrategyParams>>
+    packing_strategy_params_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<TilesPalMode>>
