@@ -39,7 +39,8 @@ using PerAnimOverrides = std::unordered_map<std::string, PerAnimOverride>;
         if (!first) {
             result += ", ";
         }
-        result += key + "={linking=" + to_string(value.linking) + ", pal_strategy=" +
+        result += key + "={linking=" + (value.linking.has_value() ? to_string(*value.linking) : "none") +
+                  ", pal_strategy=" +
                   (value.pal_resolution_strategy.has_value() ? to_string(*value.pal_resolution_strategy) : "none") +
                   ", per_tile_strategies=" + std::to_string(value.per_tile_pal_resolution_strategies.size()) + "}";
         first = false;

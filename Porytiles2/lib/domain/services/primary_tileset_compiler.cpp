@@ -1226,10 +1226,10 @@ void CompilerTask::pipeline_helper_apply_manual_overrides()
 
     for (const auto &[anim_name, source_anim] : source_anims) {
         // Resolve effective FrameLinking for this animation
-        FrameLinking effective_linking = global_frame_linking_.value();
-        if (per_anim_overrides.contains(anim_name)) {
-            effective_linking = per_anim_overrides.at(anim_name).linking;
-        }
+        const ConfigValue<FrameLinking> effective_linking =
+            (per_anim_overrides.contains(anim_name) && per_anim_overrides.at(anim_name).linking.has_value())
+                ? per_anim_overrides_.derive(per_anim_overrides.at(anim_name).linking)
+                : global_frame_linking_;
 
         const auto &overrides = source_anim.params().overrides();
 

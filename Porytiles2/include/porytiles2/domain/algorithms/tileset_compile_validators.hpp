@@ -1331,10 +1331,10 @@ inline void report_color_counts(
      */
     for (const auto &[anim_name, anim] : anims) {
         bool has_per_anim_override = per_anim_overrides.value().contains(anim_name);
-        FrameLinking effective_linking = global_frame_linking.value();
-        if (has_per_anim_override) {
-            effective_linking = per_anim_overrides.value().at(anim_name).linking;
-        }
+        const ConfigValue<FrameLinking> effective_linking =
+            (has_per_anim_override && per_anim_overrides.value().at(anim_name).linking.has_value())
+                ? per_anim_overrides.derive(per_anim_overrides.value().at(anim_name).linking)
+                : global_frame_linking;
 
         if (effective_linking == FrameLinking::automatic && !anim.has_key_frame()) {
             std::vector<std::string> warning_lines;

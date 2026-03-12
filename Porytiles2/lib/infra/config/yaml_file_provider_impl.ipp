@@ -689,7 +689,13 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                         FormatParam{linking_str, Style::bold});
                     return LayerValue<PerAnimOverrides>::invalid(error, linking_source, linking_details);
                 }
-                anim_config.linking = linking_opt.value();
+                const auto fl_mark = anim_node["frame_linking"].Mark();
+                anim_config.linking = ConfigPODField{
+                    linking_opt.value(),
+                    key + "." + anim_name + ".frame_linking",
+                    "Animation Config (" + anim_name + ") frame_linking",
+                    make_source_string(format, file_path, fl_mark),
+                    make_source_details(format, file_path, fl_mark)};
             }
 
             // Parse palette_resolution_strategy (optional scalar — per-anim middle tier)
@@ -709,7 +715,7 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                     return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
                 }
                 const auto pal_mark = strategy_node.Mark();
-                anim_config.pal_resolution_strategy = ConfigOverride{
+                anim_config.pal_resolution_strategy = ConfigPODField{
                     strategy_opt.value(),
                     key + "." + anim_name + ".palette_resolution_strategy",
                     "Animation Config (" + anim_name + ") per-anim strategy",
@@ -734,7 +740,7 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                     return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
                 }
                 const auto kf_mark = strategy_node.Mark();
-                anim_config.key_frame_resolution_strategy = ConfigOverride{
+                anim_config.key_frame_resolution_strategy = ConfigPODField{
                     strategy_opt.value(),
                     key + "." + anim_name + ".key_frame_resolution_strategy",
                     "Animation Config (" + anim_name + ") key_frame_resolution_strategy",
@@ -759,7 +765,7 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                     return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
                 }
                 const auto mps_mark = strategy_node.Mark();
-                anim_config.multi_pal_subtile_resolution_strategy = ConfigOverride{
+                anim_config.multi_pal_subtile_resolution_strategy = ConfigPODField{
                     strategy_opt.value(),
                     key + "." + anim_name + ".multi_palette_subtile_resolution_strategy",
                     "Animation Config (" + anim_name + ") multi_palette_subtile_resolution_strategy",
@@ -803,7 +809,7 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                         }
                         const auto tile_mark = strategies_node[i].Mark();
                         anim_config.per_tile_pal_resolution_strategies.push_back(
-                            ConfigOverride{
+                            ConfigPODField{
                                 strategy_opt.value(),
                                 key + "." + anim_name + ".per_tile_palette_resolution_strategies[" + std::to_string(i) +
                                     "]",
