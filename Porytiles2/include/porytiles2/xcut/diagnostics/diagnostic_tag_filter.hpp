@@ -40,6 +40,11 @@ class DiagnosticTagFilter {
     [[nodiscard]] bool should_show(const std::string &tag) const;
 
   private:
+    /*
+     * TODO: std::regex is notoriously slow in libstdc++/libc++. If should_show() ever lands on a hot path, consider
+     * batch-compiling all patterns into a single alternation (pat1|pat2|pat3) or switching to a faster engine (e.g.
+     * RE2, CTRE). Not a concern today given the low diagnostic count per compilation run.
+     */
     std::vector<std::regex> exclude_regexes_;
     std::vector<std::regex> include_regexes_;
 };
