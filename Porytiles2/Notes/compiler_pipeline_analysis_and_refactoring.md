@@ -2,7 +2,7 @@
 
 ## Context
 
-`primary_tileset_compiler.cpp` contains a `CompilerTask` class (~1600 lines) that compiles
+`primary_tileset_compiler.cpp` contains a `CompilerTask` class (~1720 lines) that compiles
 Porytiles-format tileset assets into Porymap-format output. The logic branches extensively
 on two mode axes: `tiles_edit_mode` (optimize/patch/locked) and `pals_edit_mode`
 (optimize/patch/locked). This document traces the complete pipeline flow broken out by mode,
@@ -55,15 +55,34 @@ then proposes refactoring strategies.
 |          Empty workspace          |  Loaded from existing tiles.png   |  Loaded from existing tiles.png  |
 | Capacity = `num_tiles_in_primary` | Capacity = `num_tiles_in_primary` | Capacity = exact `size_in_tiles` |
 
-#### 4c: Animation Registration (tiles_edit_mode axis)
+#### 4c: Animation Registration (tiles_edit_mode × FrameLinking axes)
 
 All modes share: build keyframe data (palette-match composite tiles, convert to IndexPixel).
+Per-animation effective FrameLinking is resolved from per_anim_overrides or global_frame_linking.
 
-| Phase         |                  tiles:optimize                  |                                                 tiles:patch                                                 |                        tiles:locked                         |
-|---------------|:------------------------------------------------:|:-----------------------------------------------------------------------------------------------------------:|:-----------------------------------------------------------:|
-| **Pre-loop**  |           `reserve_anim_slots(total)`            |                                                      —                                                      |                              —                              |
-| **Placement** | Sequential `place_anim_tile` at reserved offsets | Try `find_existing_contiguous_tiles_by_color` → else `find_contiguous_transparent_slots` + `place_tiles_at` | Must `find_existing_contiguous_tiles_by_color` or **error** |
-| **Post-loop** |        Register all with AnimTileMatcher         |                                      Register all with AnimTileMatcher                                      |              Register all with AnimTileMatcher              |
+**Pre-loop (optimize only):** `reserve_anim_slots(total)` — unchanged.
+
+**Per-animation placement (FrameLinking × tiles_edit_mode):**
+
+**FrameLinking::automatic** (all edit modes use normal tile search/placement):
+- **optimize:** Sequential `place_anim_tile` at reserved offsets
+- **patch:** Try `find_existing_contiguous_tiles_by_color`, else
+  `find_contiguous_transparent_slots` + `place_tiles_at`
+- **locked:** Must `find_existing_contiguous_tiles_by_color` or **error**
+
+**FrameLinking::manual:**
+- **optimize:** Same as automatic — tiles.png still needs keyframes for DMA
+- **patch/locked:** Read `tile_offset` from anim.json — **no tile searching/placement**
+
+Key insight: manual + non-optimize skips tiles.png interaction entirely. The keyframes
+may not be findable via color matching (that's the whole point of manual mode — the user
+specifies tile-to-metatile mappings via overrides). Whatever is at that offset in tiles.png
+gets dynamically overwritten by the game's animation DMA at runtime anyway.
+
+**Post-loop:** Register all animations with AnimTileMatcher (all modes, both FrameLinking).
+
+**Note:** Effective FrameLinking resolution (per_anim_overrides check + global fallback)
+is duplicated identically in `pipeline_helper_apply_manual_overrides` — a DRY violation.
 
 ### Step 5: `pipeline_step_match_tiles_pals()` — Heavy branching
 
@@ -108,15 +127,24 @@ FOR each porytiles tile [i]:
 
 ### Step 6: `pipeline_step_assemble_output()` — Minor branching
 
-| Sub-step                 |           tiles:optimize            |       tiles:locked/patch       |
-|--------------------------|:-----------------------------------:|:------------------------------:|
-| Compile animations       |                Same                 |              Same              |
-| Apply manual overrides   |      Same (FrameLinking-based)      |   Same (FrameLinking-based)    |
-| Dual-layer conversion    | Same (num_tiles_per_metatile-based) |              Same              |
-| Copy metatile attributes |                Same                 |              Same              |
-| **Export tiles.png**     |     `trim_trailing_transparent`     | `include_trailing_transparent` |
-| Copy palettes            |                Same                 |              Same              |
-| True-color encoding      |     Same (tiles_pal_mode-based)     |              Same              |
+| Sub-step                      |           tiles:optimize            |       tiles:locked/patch       |
+|-------------------------------|:-----------------------------------:|:------------------------------:|
+| **Write back tile_offsets**   |                Same                 |              Same              |
+| Compile animations            |                Same                 |              Same              |
+| Apply manual overrides        |      Same (FrameLinking-based)      |   Same (FrameLinking-based)    |
+| Dual-layer conversion         | Same (num_tiles_per_metatile-based) |              Same              |
+| Copy metatile attributes      |                Same                 |              Same              |
+| **Export tiles.png**          |     `trim_trailing_transparent`     | `include_trailing_transparent` |
+| Copy palettes                 |                Same                 |              Same              |
+| True-color encoding           |     Same (tiles_pal_mode-based)     |              Same              |
+
+**New: tile_offset writeback.** After animation registration (step 4c), computed tile offsets
+are stored in `anim_tile_matcher_`. At the start of step 6, these offsets are written back into
+a cloned `PorytilesTilesetComponent`'s anim params so they persist to anim.json on save. This
+creates a new output channel: the compiler now produces both Porymap-format artifacts AND
+updated Porytiles round-trip metadata. The data flows through a shared member variable
+(`anim_tile_matcher_`) bridging steps 4 and 6 — exactly the kind of implicit coupling that
+Suggestion 5 (explicit data flow) would address.
 
 ---
 
@@ -151,6 +179,7 @@ Extract tile-mode branching into a **TilePlacementStrategy** interface:
 ```
 TilePlacementStrategy (interface)
 ├── create_workspace(tileset, capacity) → TilesPngWorkspace
+├── reserve_anim_slots(workspace, total_tiles) → void       [optimize only]
 ├── place_anim_keyframes(workspace, keyframe_data) → offset
 ├── try_reuse_tile(tile_index, ...) → optional<TilemapEntry>
 ├── lookup_tile(canonical_tile, workspace, palette) → optional<size_t>
@@ -167,6 +196,24 @@ LockedTilePlacement
 
 This eliminates ~60% of the if/else branching. The pipeline skeleton stays in CompilerTask
 but delegates to the strategy at each branch point.
+
+**FrameLinking interaction:** The FrameLinking × tiles_edit_mode branching in animation
+registration (step 4c) makes this even more compelling. The pipeline orchestrator would
+handle FrameLinking as a pre-filter:
+- **manual + non-optimize:** Read tile_offset from anim.json directly, bypass strategy
+- **All other cases:** Delegate to `strategy.place_anim_keyframes()`
+
+This keeps FrameLinking routing in the pipeline skeleton (where it belongs — it's about
+*whether* to interact with tiles.png) and tile placement mechanics in the strategy (where
+they belong — *how* to interact with tiles.png). Without strategies, the current code nests
+FrameLinking checks inside tiles_edit_mode checks, creating a 2×3 branch matrix in a single
+function.
+
+**DRY opportunity:** Effective FrameLinking resolution (per_anim_overrides lookup + global
+fallback) is currently duplicated in both `pipeline_helper_register_animations` and
+`pipeline_helper_apply_manual_overrides`. With the strategy pattern or explicit data flow
+(Suggestion 5), effective_linking could be computed once per animation and threaded through
+as part of the working data.
 
 ### Suggestion 3: Strategy Pattern for Palette Setup (Complementary)
 
@@ -214,13 +261,25 @@ Replace the ~20+ shared member variables with explicit return types between pipe
 ProcessedPorytiles  ← step 1
 ProcessedPorymap    ← step 2
 (validation)        ← step 3
-WorkingData         ← step 4 (palettes, workspace, matcher)
+WorkingData         ← step 4 (palettes, workspace, matcher, resolved effective_linkings)
 MatchedTilemap      ← step 5
-OutputTileset       ← step 6
+OutputTileset       ← step 6 (Porymap artifacts + updated Porytiles metadata)
 ```
 
 Each step becomes a quasi-pure function. Benefits: testability, readability, no implicit
 coupling. This is orthogonal to the strategy pattern — they compose well together.
+
+**New motivation from tile_offset writeback:** The compiler now produces two kinds of output:
+Porymap-format artifacts (tiles.png, metatiles.bin, palettes) AND updated Porytiles round-trip
+metadata (anim params with computed tile_offsets). Currently, the tile_offset data flows from
+step 4 → step 6 through the shared `anim_tile_matcher_` member variable. With explicit data
+flow, `WorkingData` would carry the computed offsets, and `OutputTileset` would clearly
+distinguish Porymap artifacts from Porytiles metadata updates.
+
+Additionally, the per-animation effective FrameLinking (resolved from per_anim_overrides +
+global fallback) is computed identically in steps 4c and 6. If `WorkingData` carried a
+`map<string, FrameLinking>` of resolved linkings, both consumers would share a single
+computation — eliminating a DRY violation that currently spans two separate helper functions.
 
 ---
 
@@ -236,3 +295,16 @@ I'd recommend **against** the two-compiler split because the pipeline skeleton i
 shared. The strategy pattern gives the same clarity ("what does optimize mode do at this step?")
 without duplicating orchestration logic. The strategies also make it straightforward to implement
 pals:patch later — just add a new strategy implementation.
+
+**Update (FrameLinking changes):** The pipeline now branches on three axes in some places:
+`tiles_edit_mode`, `pals_edit_mode`, and `FrameLinking`. Animation registration (step 4c) has
+a 2×3 matrix (FrameLinking × tiles_edit_mode), and the FrameLinking resolution pattern is
+duplicated across two helper functions. These changes strengthen the case for both Suggestions
+2 and 5:
+- **Suggestion 2** benefits because the FrameLinking pre-filter (manual+non-optimize bypasses
+  the strategy) gives the pipeline skeleton a clean routing role while strategies handle
+  tiles.png mechanics.
+- **Suggestion 5** benefits because resolved effective_linkings and computed tile_offsets are
+  both working data that currently flow through shared member variables between pipeline steps.
+  Making this explicit would eliminate the DRY violation and clarify the new dual-output nature
+  of the compiler (Porymap artifacts + Porytiles round-trip metadata).

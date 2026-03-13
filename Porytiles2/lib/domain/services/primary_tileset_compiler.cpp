@@ -580,8 +580,16 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
      * they are OK overwriting, and setting pals:optimize.
      */
 
-    // No changes here, this is a compilation operation - no writebacks into input assets
     auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>(tileset_.porytiles_component());
+
+    // Update porytiles component animation params with computed tile offsets
+    for (auto &[anim_name, anim] : new_porytiles_component->anims()) {
+        if (auto maybe_offset = anim_tile_matcher_.tile_offset_for(anim_name); maybe_offset.has_value()) {
+            AnimParams updated_params = anim.params();
+            updated_params.tile_offset(maybe_offset.value());
+            anim.params(std::move(updated_params));
+        }
+    }
 
     // Compile animations from Porytiles format to Porymap format
     pipeline_helper_compile_animations();
@@ -1089,80 +1097,115 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
     std::map<std::string, std::vector<std::size_t>> anim_pal_indices;
     std::size_t current_offset = TilesPngWorkspace::anim_start_offset();
 
+    const auto &per_anim_overrides = per_anim_overrides_.value();
+
     for (const auto &[anim_name, anim] : anims) {
         if (!anim.has_frames()) {
             panic("anim '" + anim_name + "' has no frames");
         }
 
-        // Build keyframe data (common to all modes)
+        // Build keyframe data (common to all modes — needed for pal_indices even if we skip tile placement)
         PT_TRY_ASSIGN_PASS_ERR(keyframe_data, pipeline_helper_build_keyframe_data(anim_name, anim), void);
 
         const std::size_t tile_count = keyframe_data.tiles.size();
         anim_pal_indices[anim_name] = keyframe_data.pal_indices;
         std::size_t offset{};
 
-        // Mode-specific placement logic
-        if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
-            offset = current_offset;
-            for (std::size_t i = 0; i < tile_count; ++i) {
-                const std::size_t reserved_index = current_offset - TilesPngWorkspace::anim_start_offset();
-                tiles_workspace_->place_anim_tile(reserved_index, keyframe_data.tiles[i]);
-                ++current_offset;
-            }
-        }
-        else if (tiles_edit_mode_ == ArtifactEditMode::patch) {
-            // Try to find existing contiguous keyframe sequence using color-equivalence comparison
-            if (const auto existing_offset = tiles_workspace_->find_existing_contiguous_tiles_by_color(
-                    keyframe_data.tiles, keyframe_data.palettes);
-                existing_offset.has_value()) {
-                offset = existing_offset.value();
-            }
-            // If full sequence not found, find sufficient contiguous free space to insert
-            else if (
-                const auto free_offset = tiles_workspace_->find_contiguous_transparent_slots(tile_count);
-                free_offset.has_value()) {
-                tiles_workspace_->place_tiles_at(free_offset.value(), keyframe_data.tiles);
-                offset = free_offset.value();
-            }
-            else {
-                /*
-                 * TODO: This condition branching doesn't handle the possibility that a partial contiguous sequence
-                 * exists, with sufficient free space after to complete the insertion. The match is all-or-nothing.
-                 * Either the full tile sequence must already exist, or there must be contiguous free space large enough
-                 * to insert it. Future versions of Porytiles may want to handle this case more cleanly, either by
-                 * successfully "completing" a partial key frame sequence, or at least notifying the user tha this
-                 * special edge case was hit.
-                 */
+        // Resolve effective FrameLinking for this animation
+        const ConfigValue<FrameLinking> effective_linking =
+            (per_anim_overrides.contains(anim_name) && per_anim_overrides.at(anim_name).linking.has_value())
+                ? per_anim_overrides_.derive(per_anim_overrides.at(anim_name).linking)
+                : global_frame_linking_;
+
+        if (effective_linking == FrameLinking::manual && tiles_edit_mode_ != ArtifactEditMode::optimize) {
+            /*
+             * Manual frame linking in patch/locked mode: use the tile_offset from anim.json directly.
+             * Don't search tiles.png — the keyframes may not be findable via color matching. Whatever
+             * is already at that offset in tiles.png will be dynamically overwritten by the game's
+             * animation DMA code at runtime anyway.
+             */
+            const std::size_t json_offset = anim.params().tile_offset();
+            if (json_offset == 0) {
                 return FormattableError{
-                    "Animation '{}' requires {} contiguous tiles but no sufficient space found.",
+                    "Animation '{}' uses manual frame linking in '{}' mode but has no tile_offset in anim.json.",
                     FormatParam{anim_name, Style::bold},
-                    FormatParam{tile_count, Style::bold}};
+                    FormatParam{to_string(tiles_edit_mode_.value()), Style::bold}};
             }
-        }
-        else if (tiles_edit_mode_ == ArtifactEditMode::locked) {
-            // In locked mode, keyframes must already exist contiguously
-            // Use color-equivalence comparison to handle duplicate palette colors (same fix as patch mode)
-            const auto existing_offset =
-                tiles_workspace_->find_existing_contiguous_tiles_by_color(keyframe_data.tiles, keyframe_data.palettes);
-            if (existing_offset.has_value()) {
-                offset = existing_offset.value();
+            if (json_offset + tile_count > tiles_workspace_->capacity()) {
+                return FormattableError{
+                    "Animation '{}' tile_offset '{}' + tile_count '{}' exceeds tiles.png capacity '{}'.",
+                    FormatParam{anim_name, Style::bold},
+                    FormatParam{json_offset, Style::bold},
+                    FormatParam{tile_count, Style::bold},
+                    FormatParam{tiles_workspace_->capacity(), Style::bold}};
             }
-            else {
-                // TODO: could we improve this error by showing violating tiles?
-                std::vector<std::string> err_msg{};
-                err_msg.emplace_back(format_.format(
-                    "Animation '{}' keyframes not found in existing tiles.png.", FormatParam{anim_name, Style::bold}));
-                err_msg.emplace_back(format_.format(
-                    "Cannot proceed due to '{}' setting '{}'.",
-                    FormatParam{"Tiles Edit Mode", Style::bold},
-                    FormatParam{"locked", Style::bold}));
-                std::ranges::copy(
-                    format_config_note_with_separator(format_, tiles_edit_mode_), std::back_inserter(err_msg));
-                return FormattableError{err_msg};
-            }
+            offset = json_offset;
         }
         else {
-            panic("unexpected tiles_edit_mode");
+            // Automatic mode (all edit modes) OR manual mode with optimize
+            if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
+                offset = current_offset;
+                for (std::size_t i = 0; i < tile_count; ++i) {
+                    const std::size_t reserved_index = current_offset - TilesPngWorkspace::anim_start_offset();
+                    tiles_workspace_->place_anim_tile(reserved_index, keyframe_data.tiles[i]);
+                    ++current_offset;
+                }
+            }
+            else if (tiles_edit_mode_ == ArtifactEditMode::patch) {
+                // Try to find existing contiguous keyframe sequence using color-equivalence comparison
+                if (const auto existing_offset = tiles_workspace_->find_existing_contiguous_tiles_by_color(
+                        keyframe_data.tiles, keyframe_data.palettes);
+                    existing_offset.has_value()) {
+                    offset = existing_offset.value();
+                }
+                // If full sequence not found, find sufficient contiguous free space to insert
+                else if (
+                    const auto free_offset = tiles_workspace_->find_contiguous_transparent_slots(tile_count);
+                    free_offset.has_value()) {
+                    tiles_workspace_->place_tiles_at(free_offset.value(), keyframe_data.tiles);
+                    offset = free_offset.value();
+                }
+                else {
+                    /*
+                     * TODO: This condition branching doesn't handle the possibility that a partial contiguous sequence
+                     * exists, with sufficient free space after to complete the insertion. The match is all-or-nothing.
+                     * Either the full tile sequence must already exist, or there must be contiguous free space large
+                     * enough to insert it. Future versions of Porytiles may want to handle this case more cleanly,
+                     * either by successfully "completing" a partial key frame sequence, or at least notifying the user
+                     * that this special edge case was hit.
+                     */
+                    return FormattableError{
+                        "Animation '{}' requires {} contiguous tiles but no sufficient space found.",
+                        FormatParam{anim_name, Style::bold},
+                        FormatParam{tile_count, Style::bold}};
+                }
+            }
+            else if (tiles_edit_mode_ == ArtifactEditMode::locked) {
+                // In locked mode, keyframes must already exist contiguously
+                // Use color-equivalence comparison to handle duplicate palette colors (same fix as patch mode)
+                const auto existing_offset = tiles_workspace_->find_existing_contiguous_tiles_by_color(
+                    keyframe_data.tiles, keyframe_data.palettes);
+                if (existing_offset.has_value()) {
+                    offset = existing_offset.value();
+                }
+                else {
+                    // TODO: could we improve this error by showing violating tiles?
+                    std::vector<std::string> err_msg{};
+                    err_msg.emplace_back(format_.format(
+                        "Animation '{}' keyframes not found in existing tiles.png.",
+                        FormatParam{anim_name, Style::bold}));
+                    err_msg.emplace_back(format_.format(
+                        "Cannot proceed due to '{}' setting '{}'.",
+                        FormatParam{"Tiles Edit Mode", Style::bold},
+                        FormatParam{"locked", Style::bold}));
+                    std::ranges::copy(
+                        format_config_note_with_separator(format_, tiles_edit_mode_), std::back_inserter(err_msg));
+                    return FormattableError{err_msg};
+                }
+            }
+            else {
+                panic("unexpected tiles_edit_mode");
+            }
         }
 
         anim_offsets[anim_name] = offset;
