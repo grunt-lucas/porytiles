@@ -1,5 +1,9 @@
 # Tasks
 
+## Bugs
+- `pokefirered general` can't be compiled in locked tiles mode when `flower` anim set to `manual` frame linking
+  - this is because `pipeline_helper_register_animations` doesn't respect frame linking, it always tries to match even in `manual` frame linking mode
+
 ## Refactor and finish TilesetRepo and project impl
 - Make .pla files a first class type in Porymap component (need a domain type for .pla)
 - JSON Impl

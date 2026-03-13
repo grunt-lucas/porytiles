@@ -983,7 +983,16 @@ CompilerTask::pipeline_helper_build_keyframe_data(const std::string &anim_name, 
             continue;
         }
 
-        // Match tile to palette using composite frame to guarantee correct palette selection
+        /*
+         * Match tile to palette using composite frame to guarantee correct palette selection. As we have seen, some
+         * animations, like FireRed General's water_current_landwatersedge, have animated tiles that different palettes
+         * in different tilemap entries. Here, we're only selecting the first matching pal. It will be up to the user to
+         * ensure that the other pals are aligned such that the IndexTile we generate from this step will work for every
+         * palette the animation uses.
+         *
+         * Eventually, when we support tileset.tiles.sharing configuration, we might want to make this approach more
+         * sophisticated.
+         */
         std::vector<PaletteMatchResult<Rgba32>> matches =
             match_or_best(composite_rgba_tile, new_porymap_pals_, extrinsic_transparency_.value(), 1);
 
@@ -1339,6 +1348,9 @@ void CompilerTask::pipeline_helper_apply_manual_overrides()
 
         case FrameLinking::hybrid:
             panic("TODO: implement hybrid frame linking");
+
+        default:
+            panic("unhandled value for FrameLinking");
         }
     }
 }
