@@ -231,6 +231,13 @@ LayerValue<std::string> CliOptionProvider::tileset_paths_secondary_bin(
     return parse_string(storage_.tileset_paths_secondary_bin, "--tileset-paths-secondary-bin");
 }
 
+LayerValue<std::size_t> CliOptionProvider::metatile_attr_size(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_size_t(storage_.metatile_attr_size, "--metatile-attr-size");
+}
+
 LayerValue<bool> CliOptionProvider::tileset_animations_wire_anim_code(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

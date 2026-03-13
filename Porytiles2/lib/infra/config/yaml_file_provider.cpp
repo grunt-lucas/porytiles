@@ -567,6 +567,23 @@ YamlFileProvider::tileset_paths_secondary_bin(ConfigScopeType type, const std::s
         "tileset.paths.secondary.bin");
 }
 
+LayerValue<std::size_t> YamlFileProvider::metatile_attr_size(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::size_t>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<std::size_t>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["fieldmap"]["metatile_attribute_size"]; },
+        parse_size_t,
+        "fieldmap.metatile_attribute_size",
+        "fieldmap.metatile_attribute_size");
+}
+
 LayerValue<bool>
 YamlFileProvider::tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const
 {

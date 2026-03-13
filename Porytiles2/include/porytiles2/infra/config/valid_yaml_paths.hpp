@@ -31,6 +31,7 @@ inline const std::unordered_set<std::string> valid_yaml_paths = {
     "diagnostics.warnings.include",
     "fieldmap",
     "fieldmap.max_map_data_size",
+    "fieldmap.metatile_attribute_size",
     "fieldmap.num_metatiles_in_primary",
     "fieldmap.num_metatiles_total",
     "fieldmap.num_pals_in_primary",

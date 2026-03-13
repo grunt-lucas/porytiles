@@ -19,6 +19,7 @@ class MockInfraConfig : public InfraConfig {
     std::string tileset_paths_primary_bin = "data/tilesets/primary";
     std::string tileset_paths_secondary_src = "data/tilesets/secondary";
     std::string tileset_paths_secondary_bin = "data/tilesets/secondary";
+    std::size_t metatile_attr_size = 2;
     bool tileset_animations_wire_anim_code = true;
 
   protected:
@@ -48,6 +49,12 @@ class MockInfraConfig : public InfraConfig {
     {
         return ConfigValue{
             tileset_paths_secondary_bin, "Tileset Paths Secondary Bin", "tileset_paths_secondary_bin", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    metatile_attr_size_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{metatile_attr_size, "Metatile Attribute Size", "metatile_attr_size", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<bool>>

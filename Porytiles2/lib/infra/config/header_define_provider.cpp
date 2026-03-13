@@ -273,6 +273,13 @@ HeaderDefineProvider::tileset_paths_secondary_bin(ConfigScopeType /*type*/, cons
     return LayerValue<std::string>::not_provided();
 }
 
+LayerValue<std::size_t>
+HeaderDefineProvider::metatile_attr_size(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<std::size_t>::not_provided();
+}
+
 LayerValue<bool>
 HeaderDefineProvider::tileset_animations_wire_anim_code(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {

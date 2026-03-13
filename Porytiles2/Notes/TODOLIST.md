@@ -7,9 +7,6 @@
 - JSON Impl
   - Start working on a JSON impl that can read/write tilesets from a standardized JSON format 
 
-## `pokefirered` import flow broken, `const u16` is incorrect type for FireRed `metatile_attributes.bin` (it should be u32)
-- this should be configurable, we can have something to auto-detect, like the HeaderDefineProvider but for this type
-
 ## Palette Packing
 - Implement multiplicity-based dfs and bfs
   - it will basically be BestFusion but with backtracking

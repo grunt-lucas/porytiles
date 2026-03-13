@@ -689,6 +689,18 @@ config_values:
     validators: [ ]
     cross_field_validators: [ ]
 
+  - canonical_name: Metatile Attribute Size
+    symbol: metatile_attr_size
+    yaml_path: fieldmap.metatile_attribute_size
+    cli_option: metatile-attr-size
+    cli_desc: The size in bytes of each metatile attribute entry (2 for Emerald/Ruby, 4 for FireRed).
+    layer: infra
+    type: std::size_t
+    parser: parse_size_t
+    default_value: "2"
+    validators: [ size_t_val_two_or_four ]
+    cross_field_validators: [ ]
+
   - canonical_name: Tileset Animations Wire Anim Code
     symbol: tileset_animations_wire_anim_code
     yaml_path: tileset.animations.wire_anim_code
