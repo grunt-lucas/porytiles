@@ -1,0 +1,3 @@
+Checks: 'cert-*,bugprone-*'
+HeaderFilterRegex: 'porytiles2/.*'
+FormatStyle: file

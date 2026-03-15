@@ -265,8 +265,6 @@ Limit the output to 10 metatiles, configurable.
 
 ## Miscellaneous Cleanup
 - Can I use std::span in more places?
-- Fix up `Scripts` directory
-  - we should split it up by `Porytiles1` and `Porytiles2` for better usability
 - Provide a configuration that allows users to request ascii-only output
   - e.g. in the file highlighting, the → would become ->
 - Figure out how to cleanup tileset name handling

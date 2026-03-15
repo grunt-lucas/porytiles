@@ -43,7 +43,7 @@ echo "Exit code: $?"
 
 Always run the format script after making changes:
 ```bash
-./Scripts/format.sh 2> /dev/null
+uv run Scripts/format.py
 ```
 
 ## Project Structure Notes

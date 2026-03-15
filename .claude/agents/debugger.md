@@ -70,6 +70,6 @@ If the bug can be isolated, write a minimal test case in `Porytiles2/tests/` to 
 
 ## After Fixing
 
-1. Run format script: `./Scripts/format.sh 2> /dev/null`
+1. Run format script: `uv run Scripts/format.py`
 2. Run all tests: `./clion-build-debug/Porytiles2/tests/Porytiles2AllTests > /tmp/test_output.log 2>&1`
 3. Verify the fix doesn't introduce regressions
