@@ -20,6 +20,17 @@ namespace {
 constexpr Rgba32 grass_bulk{112, 192, 160};
 constexpr Rgba32 grass_light{160, 224, 192};
 constexpr Rgba32 grass_dark{56, 192, 128};
+constexpr Rgba32 flower_petal{255, 197, 148};
+constexpr Rgba32 flower_core{205, 65, 82};
+constexpr Rgba32 flower_shadow{24, 164, 106};
+constexpr Rgba32 flower_outline_light{57, 139, 49};
+constexpr Rgba32 flower_outline_dark{57, 82, 0};
+constexpr Rgba32 flower_leaf{131, 197, 98};
+constexpr Rgba32 roof_shared_grey_light{148, 164, 180};
+constexpr Rgba32 roof_shared_grey_medium{123, 123, 131};
+constexpr Rgba32 roof_shared_grey_dark{90, 90, 115};
+constexpr Rgba32 roof_center_bulk{255, 205, 139};
+constexpr Rgba32 roof_mart_bulk{156, 213, 255};
 
 constexpr std::array grass_layer{
     // Row 0
@@ -326,12 +337,310 @@ constexpr std::array grass_layer{
         grass_bulk,
         grass_bulk}};
 
-constexpr Rgba32 flower_petal{255, 197, 148};
-constexpr Rgba32 flower_core{205, 65, 82};
-constexpr Rgba32 flower_shadow{24, 164, 106};
-constexpr Rgba32 flower_outline_light{57, 139, 49};
-constexpr Rgba32 flower_outline_dark{57, 82, 0};
-constexpr Rgba32 flower_leaf{131, 197, 98};
+constexpr std::array tall_grass_layer{
+    // Row 0
+    std::array{
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        flower_shadow,
+        flower_shadow,
+        grass_bulk,
+        grass_bulk},
+
+    // Row 1
+    std::array{
+        grass_bulk,
+        grass_bulk,
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        flower_shadow,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        flower_shadow,
+        flower_shadow,
+        grass_light,
+        grass_light,
+        flower_shadow,
+        grass_bulk},
+
+    // Row 2
+    std::array{
+        grass_bulk,
+        grass_bulk,
+        flower_shadow,
+        grass_light,
+        grass_light,
+        grass_bulk,
+        flower_outline_dark,
+        grass_bulk,
+        grass_bulk,
+        flower_shadow,
+        grass_light,
+        grass_light,
+        grass_light,
+        flower_shadow,
+        grass_bulk,
+        grass_bulk},
+
+    // Row 3
+    std::array{
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        flower_outline_dark,
+        grass_bulk,
+        grass_bulk,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        grass_bulk,
+        grass_bulk,
+        grass_light,
+        flower_outline_dark,
+        flower_shadow,
+        grass_bulk,
+        grass_bulk},
+
+    // Row 4
+    std::array{
+        grass_bulk,
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow,
+        grass_bulk},
+
+    // Row 5
+    std::array{
+        flower_shadow,
+        grass_light,
+        grass_light,
+        grass_bulk,
+        flower_shadow,
+        flower_outline_dark,
+        flower_shadow,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        flower_shadow,
+        grass_light,
+        grass_light,
+        grass_light,
+        flower_outline_dark},
+
+    // Row 6
+    std::array{
+        flower_shadow,
+        flower_shadow,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_outline_dark,
+        grass_bulk,
+        grass_bulk,
+        grass_light,
+        grass_light,
+        flower_outline_dark,
+        grass_bulk},
+
+    // Row 7
+    std::array{
+        grass_bulk,
+        flower_outline_dark,
+        grass_bulk,
+        grass_bulk,
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_outline_dark,
+        flower_shadow,
+        grass_bulk,
+        grass_light,
+        flower_shadow,
+        grass_bulk,
+        grass_bulk},
+
+    // Row 8
+    std::array{
+        grass_bulk,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow,
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        grass_bulk},
+
+    // Row 9
+    std::array{
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow},
+
+    // Row 10
+    std::array{
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        grass_bulk,
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow,
+        grass_bulk,
+        grass_bulk,
+        flower_outline_dark,
+        grass_bulk},
+
+    // Row 11
+    std::array{
+        grass_bulk,
+        flower_outline_dark,
+        grass_light,
+        grass_bulk,
+        grass_bulk,
+        flower_shadow,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        flower_shadow,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        flower_outline_dark},
+
+    // Row 12
+    std::array{
+        grass_bulk,
+        flower_shadow,
+        grass_bulk,
+        grass_light,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        grass_bulk,
+        grass_bulk,
+        flower_shadow,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow},
+
+    // Row 13
+    std::array{
+        grass_bulk,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_outline_dark,
+        grass_bulk,
+        flower_shadow,
+        grass_bulk,
+        grass_bulk,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow},
+
+    // Row 14
+    std::array{
+        grass_bulk,
+        grass_bulk,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        grass_bulk,
+        flower_outline_dark,
+        flower_shadow,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow,
+        grass_bulk},
+
+    // Row 15
+    std::array{
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        flower_outline_dark,
+        flower_outline_dark,
+        flower_shadow,
+        flower_shadow,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk,
+        grass_bulk}};
 
 constexpr std::array flower_frame_key{
     // Row 0
@@ -1249,311 +1558,6 @@ constexpr std::array flower_frame_left{
         grass_bulk,
         flower_shadow,
         flower_shadow,
-        grass_bulk,
-        grass_bulk}};
-
-constexpr std::array tall_grass_layer{
-    // Row 0
-    std::array{
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        flower_shadow,
-        flower_shadow,
-        grass_bulk,
-        grass_bulk},
-
-    // Row 1
-    std::array{
-        grass_bulk,
-        grass_bulk,
-        flower_shadow,
-        flower_shadow,
-        flower_outline_dark,
-        flower_shadow,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        flower_shadow,
-        flower_shadow,
-        grass_light,
-        grass_light,
-        flower_shadow,
-        grass_bulk},
-
-    // Row 2
-    std::array{
-        grass_bulk,
-        grass_bulk,
-        flower_shadow,
-        grass_light,
-        grass_light,
-        grass_bulk,
-        flower_outline_dark,
-        grass_bulk,
-        grass_bulk,
-        flower_shadow,
-        grass_light,
-        grass_light,
-        grass_light,
-        flower_shadow,
-        grass_bulk,
-        grass_bulk},
-
-    // Row 3
-    std::array{
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        flower_outline_dark,
-        grass_bulk,
-        grass_bulk,
-        flower_shadow,
-        flower_outline_dark,
-        flower_outline_dark,
-        grass_bulk,
-        grass_bulk,
-        grass_light,
-        flower_outline_dark,
-        flower_shadow,
-        grass_bulk,
-        grass_bulk},
-
-    // Row 4
-    std::array{
-        grass_bulk,
-        flower_shadow,
-        flower_shadow,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_shadow,
-        flower_shadow,
-        flower_shadow,
-        flower_outline_dark,
-        flower_shadow,
-        flower_shadow,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_shadow,
-        flower_shadow,
-        grass_bulk},
-
-    // Row 5
-    std::array{
-        flower_shadow,
-        grass_light,
-        grass_light,
-        grass_bulk,
-        flower_shadow,
-        flower_outline_dark,
-        flower_shadow,
-        flower_outline_dark,
-        flower_shadow,
-        flower_shadow,
-        flower_outline_dark,
-        flower_shadow,
-        grass_light,
-        grass_light,
-        grass_light,
-        flower_outline_dark},
-
-    // Row 6
-    std::array{
-        flower_shadow,
-        flower_shadow,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        flower_shadow,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_shadow,
-        flower_outline_dark,
-        grass_bulk,
-        grass_bulk,
-        grass_light,
-        grass_light,
-        flower_outline_dark,
-        grass_bulk},
-
-    // Row 7
-    std::array{
-        grass_bulk,
-        flower_outline_dark,
-        grass_bulk,
-        grass_bulk,
-        flower_shadow,
-        flower_shadow,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_shadow,
-        flower_outline_dark,
-        flower_shadow,
-        grass_bulk,
-        grass_light,
-        flower_shadow,
-        grass_bulk,
-        grass_bulk},
-
-    // Row 8
-    std::array{
-        grass_bulk,
-        flower_shadow,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_shadow,
-        flower_shadow,
-        flower_shadow,
-        flower_shadow,
-        flower_outline_dark,
-        flower_shadow,
-        flower_shadow,
-        flower_shadow,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_shadow,
-        grass_bulk},
-
-    // Row 9
-    std::array{
-        flower_shadow,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_shadow,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_shadow,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_shadow,
-        flower_shadow},
-
-    // Row 10
-    std::array{
-        flower_shadow,
-        flower_shadow,
-        flower_outline_dark,
-        grass_bulk,
-        flower_shadow,
-        flower_shadow,
-        flower_outline_dark,
-        flower_shadow,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_shadow,
-        flower_shadow,
-        grass_bulk,
-        grass_bulk,
-        flower_outline_dark,
-        grass_bulk},
-
-    // Row 11
-    std::array{
-        grass_bulk,
-        flower_outline_dark,
-        grass_light,
-        grass_bulk,
-        grass_bulk,
-        flower_shadow,
-        flower_outline_dark,
-        flower_shadow,
-        flower_shadow,
-        flower_outline_dark,
-        flower_shadow,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        flower_outline_dark},
-
-    // Row 12
-    std::array{
-        grass_bulk,
-        flower_shadow,
-        grass_bulk,
-        grass_light,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_shadow,
-        grass_bulk,
-        grass_bulk,
-        flower_shadow,
-        flower_outline_dark,
-        flower_shadow,
-        flower_shadow,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_shadow},
-
-    // Row 13
-    std::array{
-        grass_bulk,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_outline_dark,
-        grass_bulk,
-        flower_shadow,
-        grass_bulk,
-        grass_bulk,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_shadow,
-        flower_shadow},
-
-    // Row 14
-    std::array{
-        grass_bulk,
-        grass_bulk,
-        flower_shadow,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_shadow,
-        flower_outline_dark,
-        flower_outline_dark,
-        grass_bulk,
-        flower_outline_dark,
-        flower_shadow,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_shadow,
-        flower_shadow,
-        grass_bulk},
-
-    // Row 15
-    std::array{
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        flower_outline_dark,
-        flower_outline_dark,
-        flower_shadow,
-        flower_shadow,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
         grass_bulk,
         grass_bulk}};
 

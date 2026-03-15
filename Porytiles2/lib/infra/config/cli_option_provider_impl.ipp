@@ -15,6 +15,8 @@
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/config/frame_linking.hpp"
 #include "porytiles2/domain/config/packing_strategy_type.hpp"
+#include "porytiles2/domain/config/tile_sharing_alignment.hpp"
+#include "porytiles2/domain/config/tile_sharing_packing.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/infra/config/layer_value.hpp"
@@ -405,16 +407,63 @@ parse_frame_linking(const std::optional<std::string> &raw_value, const std::stri
 }
 
 /**
- * @brief Parses a PackingStrategyType value from a CLI option string.
+ * @brief Parses a TileSharingPacking value from a CLI option string.
  *
  * @details
- * Uses the unified packing_strategy_type_from_str() which provides fuzzy matching.
+ * Uses the unified tile_sharing_packing_from_str() which provides fuzzy matching.
  * Returns LayerValue::invalid() for unrecognized values.
  *
  * @param raw_value The raw string value from CLI, or std::nullopt if not provided
  * @param option_name The CLI option name for error messages
  * @return LayerValue with parsed value, invalid error, or not_provided status
  */
+LayerValue<TileSharingPacking>
+parse_tile_sharing_packing(const std::optional<std::string> &raw_value, const std::string &option_name)
+{
+    if (!raw_value.has_value()) {
+        return LayerValue<TileSharingPacking>::not_provided();
+    }
+
+    const auto &str = raw_value.value();
+    const auto result = tile_sharing_packing_from_str(str);
+
+    if (result.has_value()) {
+        return LayerValue<TileSharingPacking>::valid(result.value(), option_name, "CLI");
+    }
+
+    const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
+    return LayerValue<TileSharingPacking>::invalid(error, option_name);
+}
+
+/**
+ * @brief Parses a TileSharingAlignment value from a CLI option string.
+ *
+ * @details
+ * Uses the unified tile_sharing_alignment_from_str() which provides fuzzy matching.
+ * Returns LayerValue::invalid() for unrecognized values.
+ *
+ * @param raw_value The raw string value from CLI, or std::nullopt if not provided
+ * @param option_name The CLI option name for error messages
+ * @return LayerValue with parsed value, invalid error, or not_provided status
+ */
+LayerValue<TileSharingAlignment>
+parse_tile_sharing_alignment(const std::optional<std::string> &raw_value, const std::string &option_name)
+{
+    if (!raw_value.has_value()) {
+        return LayerValue<TileSharingAlignment>::not_provided();
+    }
+
+    const auto &str = raw_value.value();
+    const auto result = tile_sharing_alignment_from_str(str);
+
+    if (result.has_value()) {
+        return LayerValue<TileSharingAlignment>::valid(result.value(), option_name, "CLI");
+    }
+
+    const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
+    return LayerValue<TileSharingAlignment>::invalid(error, option_name);
+}
+
 LayerValue<PackingStrategyType>
 parse_packing_strategy_type(const std::optional<std::string> &raw_value, const std::string &option_name)
 {

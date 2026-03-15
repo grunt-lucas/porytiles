@@ -302,6 +302,42 @@ YamlFileProvider::packing_strategy_params(ConfigScopeType type, const std::strin
         "tileset.palettes.packing.strategy_params");
 }
 
+LayerValue<TileSharingPacking>
+YamlFileProvider::tile_sharing_packing(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<TileSharingPacking>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<TileSharingPacking>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["tiles"]["sharing"]["packing"]; },
+        parse_tile_sharing_packing,
+        "tileset.tiles.sharing.packing",
+        "tileset.tiles.sharing.packing");
+}
+
+LayerValue<TileSharingAlignment>
+YamlFileProvider::tile_sharing_alignment(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<TileSharingAlignment>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<TileSharingAlignment>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["tiles"]["sharing"]["alignment"]; },
+        parse_tile_sharing_alignment,
+        "tileset.tiles.sharing.alignment",
+        "tileset.tiles.sharing.alignment");
+}
+
 LayerValue<TilesPalMode> YamlFileProvider::tiles_pal_mode(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);

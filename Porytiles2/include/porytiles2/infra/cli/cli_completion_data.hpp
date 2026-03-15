@@ -107,6 +107,18 @@ struct CliOptionMeta {
             {"best-fusion", "backtracking", "overload-and-remove"},
             false},
         CliOptionMeta{
+            "tile-sharing-packing",
+            "Tile Sharing Packing - Controls whether palette packing considers tile sharing.",
+            "enum",
+            {"off", "biased", "optimal"},
+            false},
+        CliOptionMeta{
+            "tile-sharing-alignment",
+            "Tile Sharing Alignment - Controls palette slot alignment strategy for tile sharing.",
+            "enum",
+            {"off", "greedy", "optimal"},
+            false},
+        CliOptionMeta{
             "tiles-pal-mode",
             "Tiles Palette Mode - The color mode to use when saving the tiles.png artifact.",
             "enum",

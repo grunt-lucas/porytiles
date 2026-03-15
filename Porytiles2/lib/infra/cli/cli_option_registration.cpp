@@ -111,6 +111,22 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
             "Packing Strategy - The palette packing algorithm to use during compilation.")
         ->type_name("{best-fusion|backtracking|overload-and-remove}");
 
+    // Tile Sharing Packing (enum TileSharingPacking, captured as string, parsed by CliOptionProvider)
+    config_group
+        ->add_option(
+            "--tile-sharing-packing",
+            storage.tile_sharing_packing,
+            "Tile Sharing Packing - Controls whether palette packing considers tile sharing.")
+        ->type_name("{off|biased|optimal}");
+
+    // Tile Sharing Alignment (enum TileSharingAlignment, captured as string, parsed by CliOptionProvider)
+    config_group
+        ->add_option(
+            "--tile-sharing-alignment",
+            storage.tile_sharing_alignment,
+            "Tile Sharing Alignment - Controls palette slot alignment strategy for tile sharing.")
+        ->type_name("{off|greedy|optimal}");
+
     // Tiles Palette Mode (enum TilesPalMode, captured as string, parsed by CliOptionProvider)
     config_group
         ->add_option(

@@ -252,3 +252,25 @@ if (auto it = my_map.find(key); it != my_map.end()) {
 **Exception**: If you need the iterator for purposes beyond just accessing the value
 (e.g., erasing, modifying in-place, or iterating from that position), the `find` pattern
 is still appropriate.
+
+### Bounds-Checked Element Access
+
+Prefer `.at()` over `operator[]` for element access on `std::vector`, `std::array`,
+`std::deque`, and other sequence containers:
+
+```c++
+// CORRECT — bounds-checked, throws std::out_of_range on OOB:
+const auto &val = my_vec.at(i);
+my_array.at(hw) = some_value;
+
+// AVOID — undefined behavior on OOB (silent corruption, crashes, nonsensical values):
+const auto &val = my_vec[i];
+my_array[hw] = some_value;
+```
+
+`operator[]` is UB on out-of-bounds access, which can silently corrupt memory or produce
+nonsensical values rather than crashing at the point of error. `.at()` gives a clear
+`std::out_of_range` exception, making bugs immediately visible and debuggable.
+
+**Exception**: `operator[]` is fine for `std::map`/`std::unordered_map` when you
+intentionally want insertion-on-missing-key semantics.

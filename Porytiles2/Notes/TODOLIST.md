@@ -21,6 +21,17 @@
     - also opens the door to "best solution" semantics (compare results by quality) instead of first-success
 - Implement feasibility analysis in `Notes/packing_diagnostics_and_feasibility_analysis.md`
 
+## Multi-palette animations with FrameLinking::automatic
+Multi-palette animations (e.g., pokefirered general water with different blue hues) will be supported by having
+users provide multiple color variants within a single animation definition. These variants are natural
+shape group candidates (same shape, different colors) and will use the existing shape group + alignment
+constraint infrastructure.
+
+**Why:** Pokefirered's General tileset has animations where different metatiles reference the same anim
+tile range with different palettes to achieve different color hues. Currently users must handle this
+with `FrameLinking::manual` and palette overrides to guarantee palette alignment.
+Automatic support would use tile sharing to align palettes and then be able to detect exploit opportunities.
+
 ## Project Structure Refactor
 - Domain layer is getting way too crowded
   - break it up into `config`, `core`, `tileset`, `layout`, `packing`

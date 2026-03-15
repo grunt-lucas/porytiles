@@ -1,6 +1,7 @@
 #pragma once
 
 #include <bitset>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -9,6 +10,7 @@
 #include "porytiles2/domain/packing/models/packed_palette.hpp"
 #include "porytiles2/domain/packing/models/palette_pool.hpp"
 #include "porytiles2/domain/packing/models/prefilled_palette.hpp"
+#include "porytiles2/domain/packing/models/shape_group_metadata.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
 namespace porytiles2 {
@@ -65,6 +67,19 @@ struct PackingInput {
      * GBA hardware palettes have 16 slots, but slot 0 is transparency, leaving 15 usable color slots. Default is 15.
      */
     std::size_t pal_capacity_ = pal::max_size - 1;
+
+    /**
+     * @brief Optional shape group metadata for sharing-aware packing.
+     *
+     * @details
+     * When present, strategies should prefer placing shape group siblings in different palettes to maximize tile
+     * sharing opportunities. Each strategy applies sharing awareness differently:
+     * - BestFusion/O&R: adds a cost penalty when a candidate palette contains a sibling.
+     * - Backtracking: sorts sibling-containing palettes lower in the candidate list.
+     *
+     * When @c std::nullopt, strategy behavior is identical to non-sharing-aware packing.
+     */
+    std::optional<ShapeGroupMetadata> shape_group_metadata_{};
 };
 
 /**

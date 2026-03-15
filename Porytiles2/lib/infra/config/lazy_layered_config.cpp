@@ -129,6 +129,9 @@ void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, con
     dump_single_config_value(out, *format_, "Packing Strategy", packing_strategy_provenance_chain(type, scope));
     dump_single_config_value(
         out, *format_, "Packing Strategy Params", packing_strategy_params_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Tile Sharing Packing", tile_sharing_packing_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Tile Sharing Alignment", tile_sharing_alignment_provenance_chain(type, scope));
     dump_single_config_value(out, *format_, "Tiles Palette Mode", tiles_pal_mode_provenance_chain(type, scope));
     dump_single_config_value(
         out,
@@ -450,6 +453,32 @@ LazyLayeredConfig::packing_strategy_params_raw(ConfigScopeType type, const std::
     return resolve_config_value<PackingStrategyParams>(
         key, "Packing Strategy Params", [&type, &scope](const ConfigProvider &provider) {
             return provider.packing_strategy_params(type, scope);
+        });
+}
+
+ChainableResult<ConfigValue<TileSharingPacking>>
+LazyLayeredConfig::tile_sharing_packing_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<TileSharingPacking>(
+        key, "Tile Sharing Packing", [&type, &scope](const ConfigProvider &provider) {
+            return provider.tile_sharing_packing(type, scope);
+        });
+}
+
+ChainableResult<ConfigValue<TileSharingAlignment>>
+LazyLayeredConfig::tile_sharing_alignment_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<TileSharingAlignment>(
+        key, "Tile Sharing Alignment", [&type, &scope](const ConfigProvider &provider) {
+            return provider.tile_sharing_alignment(type, scope);
         });
 }
 
@@ -777,6 +806,20 @@ LazyLayeredConfig::packing_strategy_params_provenance_chain(ConfigScopeType type
 {
     return collect_provenance_chain<PackingStrategyParams>(
         [&type, &scope](const ConfigProvider &provider) { return provider.packing_strategy_params(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<TileSharingPacking>>
+LazyLayeredConfig::tile_sharing_packing_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<TileSharingPacking>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.tile_sharing_packing(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<TileSharingAlignment>>
+LazyLayeredConfig::tile_sharing_alignment_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<TileSharingAlignment>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.tile_sharing_alignment(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<TilesPalMode>>

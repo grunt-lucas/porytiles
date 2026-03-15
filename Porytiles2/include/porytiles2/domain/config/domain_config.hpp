@@ -9,6 +9,8 @@
 #include "porytiles2/domain/config/packing_strategy_params.hpp"
 #include "porytiles2/domain/config/packing_strategy_type.hpp"
 #include "porytiles2/domain/config/per_anim_overrides.hpp"
+#include "porytiles2/domain/config/tile_sharing_alignment.hpp"
+#include "porytiles2/domain/config/tile_sharing_packing.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/packing/models/palette_hint.hpp"
@@ -222,6 +224,22 @@ class DomainConfig {
     packing_strategy_params(ConfigScopeType type, const std::string &scope) const
     {
         auto validated_val = packing_strategy_params_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<TileSharingPacking>>
+    tile_sharing_packing(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = tile_sharing_packing_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<TileSharingAlignment>>
+    tile_sharing_alignment(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = tile_sharing_alignment_validated(type, scope);
         return validated_val;
     }
 
@@ -489,6 +507,30 @@ class DomainConfig {
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<PackingStrategyParams>>
     packing_strategy_params_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<TileSharingPacking>>
+    tile_sharing_packing_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = tile_sharing_packing_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<TileSharingPacking>>
+    tile_sharing_packing_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<TileSharingAlignment>>
+    tile_sharing_alignment_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = tile_sharing_alignment_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<TileSharingAlignment>>
+    tile_sharing_alignment_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<TilesPalMode>>

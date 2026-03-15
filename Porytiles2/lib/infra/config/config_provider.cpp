@@ -99,6 +99,18 @@ LayerValue<PackingStrategyParams> ConfigProvider::packing_strategy_params(
     return LayerValue<PackingStrategyParams>::not_provided();
 }
 
+LayerValue<TileSharingPacking> ConfigProvider::tile_sharing_packing(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<TileSharingPacking>::not_provided();
+}
+
+LayerValue<TileSharingAlignment> ConfigProvider::tile_sharing_alignment(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<TileSharingAlignment>::not_provided();
+}
+
 LayerValue<TilesPalMode>
 ConfigProvider::tiles_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

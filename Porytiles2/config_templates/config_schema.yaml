@@ -225,6 +225,48 @@ enum_types:
         fuzzy_names: [ mangle ]
         brief: Mangle duplicate tiles to make them unique, then backport changes to tiles.png.
 
+  - cpp_type: TileSharingPacking
+    header_path: porytiles2/domain/config/tile_sharing_packing.hpp
+    brief: Controls whether palette packing considers tile sharing shape group membership.
+    details: |
+      When set to off, the packer ignores shape groups entirely. When biased,
+      a soft cost penalty steers shape group siblings toward different palettes. When
+      optimal, co-placing siblings is rejected outright (not yet implemented).
+    enum_values:
+      - name: "off"
+        cli_completion_name: "off"
+        fuzzy_names: [ "off" ]
+        brief: Packing ignores shape group membership (default).
+      - name: biased
+        cli_completion_name: biased
+        fuzzy_names: [ biased ]
+        brief: Soft penalty steers shape group siblings toward different palettes.
+      - name: optimal
+        cli_completion_name: optimal
+        fuzzy_names: [ optimal ]
+        brief: Hard constraint rejecting sibling co-placement (not yet implemented).
+
+  - cpp_type: TileSharingAlignment
+    header_path: porytiles2/domain/config/tile_sharing_alignment.hpp
+    brief: Controls palette slot alignment strategy for tile sharing deduplication.
+    details: |
+      When set to off, palettes are filled sequentially with no sharing attempt.
+      When greedy, indirect links align palette slot indices for color-isomorphic
+      tiles. When optimal, a CSP-based solver finds globally optimal alignment (not yet implemented).
+    enum_values:
+      - name: "off"
+        cli_completion_name: "off"
+        fuzzy_names: [ "off" ]
+        brief: Pure sequential fill with no sharing alignment (default).
+      - name: greedy
+        cli_completion_name: greedy
+        fuzzy_names: [ greedy ]
+        brief: Best-effort alignment via indirect link resolution.
+      - name: optimal
+        cli_completion_name: optimal
+        fuzzy_names: [ optimal ]
+        brief: CSP-based globally optimal alignment (not yet implemented).
+
   - cpp_type: PackingStrategyType
     header_path: porytiles2/domain/config/packing_strategy_type.hpp
     brief: Selects the palette packing algorithm to use during tileset compilation.
@@ -496,6 +538,30 @@ config_values:
     type: PackingStrategyParams
     parser: parse_packing_strategy_params
     default_value: "PackingStrategyParams{}"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Tile Sharing Packing
+    symbol: tile_sharing_packing
+    yaml_path: tileset.tiles.sharing.packing
+    cli_option: tile-sharing-packing
+    cli_desc: Controls whether palette packing considers tile sharing.
+    layer: domain
+    type: TileSharingPacking
+    parser: parse_tile_sharing_packing
+    default_value: "TileSharingPacking::off"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Tile Sharing Alignment
+    symbol: tile_sharing_alignment
+    yaml_path: tileset.tiles.sharing.alignment
+    cli_option: tile-sharing-alignment
+    cli_desc: Controls palette slot alignment strategy for tile sharing.
+    layer: domain
+    type: TileSharingAlignment
+    parser: parse_tile_sharing_alignment
+    default_value: "TileSharingAlignment::off"
     validators: [ ]
     cross_field_validators: [ ]
 

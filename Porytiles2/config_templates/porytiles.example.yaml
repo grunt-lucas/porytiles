@@ -51,18 +51,23 @@ tileset:
     # - greyscale: greyscale palette mapped to index values: [0, 15] -> [[255,255,255], [0,0,0]]
     palette_mode: true-color
 
-    # Set tile sharing optimization mode
-    # Allowed values:
-    # - [default] manual: no automatic optimization, use Porytiles palettes (and/or tiles.override.png) to force shared tiles [default]
-    # - opportunistic:
-    #     - greedily pack palettes
-    #     - exploit any tile-sharing opportunities during final palette construction
-    #     - may not find all possible optimizations
-    # - aggressive:
-    #     - actively look for tile sharing opportunities while packing palettes
-    #     - allow for some backoff to save compilation
-    # - optimal: fail compilation if any color-isomorphic tiles can't be shared
-    sharing: manual
+    # Tile sharing configuration: palette slot alignment for color-isomorphic tiles.
+    # When two palettes have corresponding colors at the same slot indices, a single
+    # tile can render with either palette (e.g., red vs blue building).
+    sharing:
+      # Packing: controls whether the packer considers shape group membership.
+      # Allowed values:
+      # - [default] off: packing ignores shape group membership
+      # - biased: soft penalty steers shape group siblings toward different palettes
+      # - optimal: hard constraint rejecting sibling co-placement (not yet implemented)
+      packing: off
+
+      # Alignment: controls palette slot alignment strategy for tile sharing deduplication.
+      # Allowed values:
+      # - [default] off: pure sequential fill with no sharing alignment
+      # - greedy: best-effort alignment via indirect link resolution
+      # - optimal: CSP-based globally optimal alignment (not yet implemented)
+      alignment: off
 
   palettes:
     # Set edit mode for the palette artifacts.

@@ -168,6 +168,20 @@ HeaderDefineProvider::packing_strategy_params(ConfigScopeType /*type*/, const st
     return LayerValue<PackingStrategyParams>::not_provided();
 }
 
+LayerValue<TileSharingPacking>
+HeaderDefineProvider::tile_sharing_packing(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<TileSharingPacking>::not_provided();
+}
+
+LayerValue<TileSharingAlignment>
+HeaderDefineProvider::tile_sharing_alignment(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<TileSharingAlignment>::not_provided();
+}
+
 LayerValue<TilesPalMode>
 HeaderDefineProvider::tiles_pal_mode(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {

@@ -110,6 +110,18 @@ LayerValue<PackingStrategyParams> DefaultProvider::packing_strategy_params(
     return LayerValue<PackingStrategyParams>::valid(PackingStrategyParams{}, "Packing Strategy Params", source_info);
 }
 
+LayerValue<TileSharingPacking> DefaultProvider::tile_sharing_packing(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<TileSharingPacking>::valid(TileSharingPacking::off, "Tile Sharing Packing", source_info);
+}
+
+LayerValue<TileSharingAlignment> DefaultProvider::tile_sharing_alignment(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<TileSharingAlignment>::valid(TileSharingAlignment::off, "Tile Sharing Alignment", source_info);
+}
+
 LayerValue<TilesPalMode>
 DefaultProvider::tiles_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

@@ -4,6 +4,7 @@
 
 #include "porytiles2/domain/packing/algorithms/packing_initializer.hpp"
 #include "porytiles2/domain/packing/algorithms/packing_metrics.hpp"
+#include "porytiles2/domain/packing/algorithms/sharing_metrics.hpp"
 #include "porytiles2/domain/packing/models/packable_tile.hpp"
 
 namespace {
@@ -18,10 +19,16 @@ using namespace porytiles2;
  * measures how well the tile's colors overlap with colors already in the palette.
  * Lower cost means better overlap.
  *
+ * When sharing metadata is provided, palettes that already contain a sibling from the same shape
+ * group receive a cost penalty to steer siblings into different palettes.
+ *
+ * @param tile The tile to place
+ * @param palettes The current set of packed palettes
+ * @param metadata Optional shape group metadata for sharing-aware cost adjustment (nullptr to disable)
  * @return Index of the best palette, or nullopt if a new palette should be created
  */
-[[nodiscard]] std::optional<std::size_t>
-find_best_palette(const PackableTile &tile, const std::vector<PackedPalette> &palettes)
+[[nodiscard]] std::optional<std::size_t> find_best_palette(
+    const PackableTile &tile, const std::vector<PackedPalette> &palettes, const ShapeGroupMetadata *metadata)
 {
     std::optional<std::size_t> best_idx;
     double best_cost = std::numeric_limits<double>::max();
@@ -36,6 +43,11 @@ find_best_palette(const PackableTile &tile, const std::vector<PackedPalette> &pa
 
         // Use fast metric function with cached color counts - O(colors) instead of O(tiles × colors)
         double cost = compute_weighted_cost_in_palette_fast(tile.color_set(), pal);
+
+        // Add sharing penalty to deprioritize palettes that already contain a shape group sibling
+        if (metadata != nullptr) {
+            cost += compute_sharing_penalty(tile, pal, *metadata);
+        }
 
         if (cost < best_cost) {
             best_cost = cost;
@@ -69,11 +81,15 @@ ChainableResult<PackingOutput> BestFusionStrategy::pack(const PackingInput &inpu
         output.pals_.emplace_back(pal_pool.checkout(), input.pal_capacity_);
     }
 
+    // Extract shape group metadata pointer (nullptr when not sharing-aware)
+    const ShapeGroupMetadata *metadata =
+        input.shape_group_metadata_.has_value() ? &input.shape_group_metadata_.value() : nullptr;
+
     // Helper to assign a tile
     // Note: palette-local cost computation now uses cached color counts in PackedPalette,
     // eliminating the need for a separate tile_colors_map
-    auto assign_tile = [&output](const PackableTile &tile) -> bool {
-        const auto maybe_best_idx = find_best_palette(tile, output.pals_);
+    auto assign_tile = [&output, metadata](const PackableTile &tile) -> bool {
+        const auto maybe_best_idx = find_best_palette(tile, output.pals_, metadata);
 
         if (maybe_best_idx.has_value()) {
             // Add to existing palette
@@ -91,7 +107,8 @@ ChainableResult<PackingOutput> BestFusionStrategy::pack(const PackingInput &inpu
             }
         }
 
-        // Try to find ANY palette that can fit (even without good overlap)
+        // Try to find ANY palette that can fit (even without good overlap).
+        // Sibling avoidance is intentionally not applied here — packing success takes priority over sharing.
         for (std::size_t i = 0; i < output.pals_.size(); ++i) {
             if (output.pals_[i].can_fit(tile.color_set())) {
                 output.pals_[i].add_tile(tile);

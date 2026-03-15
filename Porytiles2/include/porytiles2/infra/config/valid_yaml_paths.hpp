@@ -65,6 +65,9 @@ inline const std::unordered_set<std::string> valid_yaml_paths = {
     "tileset.tiles",
     "tileset.tiles.edit_mode",
     "tileset.tiles.palette_mode",
+    "tileset.tiles.sharing",
+    "tileset.tiles.sharing.alignment",
+    "tileset.tiles.sharing.packing",
     "verify_checksums",
 };
 
