@@ -7,7 +7,7 @@
 #include "porytiles2/domain/config/anim_multi_pal_subtile_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/config/frame_linking.hpp"
-#include "porytiles2/xcut/config/config_override.hpp"
+#include "porytiles2/xcut/config/config_pod_field.hpp"
 
 namespace porytiles2 {
 
@@ -31,17 +31,19 @@ namespace porytiles2 {
  * @c multi_pal_subtile_resolution_strategy wins, otherwise falls back to
  * @c multi_pal_subtile_resolution_strategy from DomainConfig.
  *
- * Override fields use @c ConfigOverride<T> instead of @c std::optional<T> to carry provider-specific source metadata
+ * Frame linking also follows the same two-tier cascade: per-anim wins, otherwise falls back to the global setting.
+ *
+ * Override fields use @c ConfigPODField<T> instead of @c std::optional<T> to carry provider-specific source metadata
  * (source_key, canonical_name) set at parse time, enabling @c ConfigValue::derive() to construct properly attributed
  * child values without hardcoding provider formats.
  */
 struct PerAnimOverride {
     std::string anim_name;
-    ConfigOverride<AnimPalResolutionStrategy> pal_resolution_strategy;
-    std::vector<ConfigOverride<AnimPalResolutionStrategy>> per_tile_pal_resolution_strategies;
-    ConfigOverride<AnimKeyFrameResolutionStrategy> key_frame_resolution_strategy;
-    ConfigOverride<AnimMultiPalSubtileResolutionStrategy> multi_pal_subtile_resolution_strategy;
-    FrameLinking linking{FrameLinking::automatic};
+    ConfigPODField<AnimPalResolutionStrategy> pal_resolution_strategy;
+    std::vector<ConfigPODField<AnimPalResolutionStrategy>> per_tile_pal_resolution_strategies;
+    ConfigPODField<AnimKeyFrameResolutionStrategy> key_frame_resolution_strategy;
+    ConfigPODField<AnimMultiPalSubtileResolutionStrategy> multi_pal_subtile_resolution_strategy;
+    ConfigPODField<FrameLinking> linking;
 };
 
 } // namespace porytiles2

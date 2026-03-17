@@ -5,6 +5,8 @@
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
+#include "porytiles2/domain/config/packing_strategy_params.hpp"
+#include "porytiles2/domain/config/packing_strategy_type.hpp"
 #include "porytiles2/domain/config/per_anim_overrides.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
@@ -81,6 +83,12 @@ class ConfigProvider {
     [[nodiscard]] virtual LayerValue<std::vector<PaletteHint>>
     pal_hints(ConfigScopeType type, const std::string &scope) const;
 
+    [[nodiscard]] virtual LayerValue<PackingStrategyType>
+    packing_strategy(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<PackingStrategyParams>
+    packing_strategy_params(ConfigScopeType type, const std::string &scope) const;
+
     [[nodiscard]] virtual LayerValue<TilesPalMode> tiles_pal_mode(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<AnimPalResolutionStrategy>
@@ -127,6 +135,8 @@ class ConfigProvider {
     tileset_paths_secondary_src(ConfigScopeType type, const std::string &scope) const;
     [[nodiscard]] virtual LayerValue<std::string>
     tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::size_t>
+    metatile_attr_size(ConfigScopeType type, const std::string &scope) const;
     [[nodiscard]] virtual LayerValue<bool>
     tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const;
 };

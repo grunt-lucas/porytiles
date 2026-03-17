@@ -7,6 +7,7 @@
 #include <variant>
 #include <vector>
 
+#include "porytiles2/domain/config/search_algorithm.hpp"
 #include "porytiles2/domain/models/color_set.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/packing/models/packable_tile.hpp"
@@ -14,7 +15,6 @@
 #include "porytiles2/domain/packing/models/prefilled_palette.hpp"
 #include "porytiles2/domain/packing/services/backtracking_strategy.hpp"
 #include "porytiles2/domain/packing/services/packing_strategy.hpp"
-#include "porytiles2/domain/packing/services/search_algorithm.hpp"
 
 using namespace porytiles2;
 

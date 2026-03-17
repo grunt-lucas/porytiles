@@ -7,10 +7,13 @@ Jinja2 templates. It is designed to be run either manually or automatically by
 CMake during the build process.
 """
 
+import argparse
+import re
 import sys
+from pathlib import Path
+
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
-from pathlib import Path
 
 
 def extract_all_yaml_paths(config_values):
@@ -92,7 +95,7 @@ def process_enum_types(schema):
 def generate_config_files():
     """Main generation function."""
     # Determine project root (script is in Scripts/)
-    project_root = Path(__file__).parent.parent
+    project_root = Path(__file__).resolve().parent.parent
     print(f"Project root: {project_root}")
 
     # Load schema from Porytiles2/config_templates/
@@ -223,8 +226,6 @@ def generate_config_files():
     # Custom filter to convert PascalCase to snake_case
     def pascal_to_snake(value):
         """Convert PascalCase to snake_case (e.g., ArtifactEditMode -> artifact_edit_mode)."""
-        import re
-        # Insert underscore before each capital letter and convert to lowercase
         s1 = re.sub('(.)([A-Z][a-z]+)', r'\1_\2', value)
         return re.sub('([a-z0-9])([A-Z])', r'\1_\2', s1).lower()
 
@@ -375,6 +376,11 @@ def generate_config_files():
 
 
 if __name__ == "__main__":
+    parser = argparse.ArgumentParser(
+        description="Generate configuration code from YAML schema and Jinja2 templates."
+    )
+    parser.parse_args()
+
     try:
         generate_config_files()
     except Exception as e:

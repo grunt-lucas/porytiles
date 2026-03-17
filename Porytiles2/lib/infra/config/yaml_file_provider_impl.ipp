@@ -14,6 +14,8 @@
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/config/frame_linking.hpp"
+#include "porytiles2/domain/config/packing_strategy_params.hpp"
+#include "porytiles2/domain/config/packing_strategy_type.hpp"
 #include "porytiles2/domain/config/per_anim_overrides.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/packing/models/palette_hint.hpp"
@@ -689,7 +691,13 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                         FormatParam{linking_str, Style::bold});
                     return LayerValue<PerAnimOverrides>::invalid(error, linking_source, linking_details);
                 }
-                anim_config.linking = linking_opt.value();
+                const auto fl_mark = anim_node["frame_linking"].Mark();
+                anim_config.linking = ConfigPODField{
+                    linking_opt.value(),
+                    key + "." + anim_name + ".frame_linking",
+                    "Animation Config (" + anim_name + ") frame_linking",
+                    make_source_string(format, file_path, fl_mark),
+                    make_source_details(format, file_path, fl_mark)};
             }
 
             // Parse palette_resolution_strategy (optional scalar — per-anim middle tier)
@@ -709,7 +717,7 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                     return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
                 }
                 const auto pal_mark = strategy_node.Mark();
-                anim_config.pal_resolution_strategy = ConfigOverride{
+                anim_config.pal_resolution_strategy = ConfigPODField{
                     strategy_opt.value(),
                     key + "." + anim_name + ".palette_resolution_strategy",
                     "Animation Config (" + anim_name + ") per-anim strategy",
@@ -734,7 +742,7 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                     return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
                 }
                 const auto kf_mark = strategy_node.Mark();
-                anim_config.key_frame_resolution_strategy = ConfigOverride{
+                anim_config.key_frame_resolution_strategy = ConfigPODField{
                     strategy_opt.value(),
                     key + "." + anim_name + ".key_frame_resolution_strategy",
                     "Animation Config (" + anim_name + ") key_frame_resolution_strategy",
@@ -759,7 +767,7 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                     return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
                 }
                 const auto mps_mark = strategy_node.Mark();
-                anim_config.multi_pal_subtile_resolution_strategy = ConfigOverride{
+                anim_config.multi_pal_subtile_resolution_strategy = ConfigPODField{
                     strategy_opt.value(),
                     key + "." + anim_name + ".multi_palette_subtile_resolution_strategy",
                     "Animation Config (" + anim_name + ") multi_palette_subtile_resolution_strategy",
@@ -803,7 +811,7 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                         }
                         const auto tile_mark = strategies_node[i].Mark();
                         anim_config.per_tile_pal_resolution_strategies.push_back(
-                            ConfigOverride{
+                            ConfigPODField{
                                 strategy_opt.value(),
                                 key + "." + anim_name + ".per_tile_palette_resolution_strategies[" + std::to_string(i) +
                                     "]",
@@ -924,6 +932,201 @@ LayerValue<FrameLinking> parse_frame_linking(
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<FrameLinking>::invalid(error, source, details);
+    }
+}
+
+LayerValue<PackingStrategyType> parse_packing_strategy_type(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<PackingStrategyType>::not_provided();
+    }
+
+    try {
+        const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        const auto node_value = node.as<std::string>();
+        const auto mode_opt = packing_strategy_type_from_str(node_value);
+
+        if (!mode_opt.has_value()) {
+            const auto error = format->format(
+                "'{}' has invalid value '{}'.", FormatParam{key, Style::bold}, FormatParam{node_value, Style::bold});
+            return LayerValue<PackingStrategyType>::invalid(error, source, details);
+        }
+
+        return LayerValue<PackingStrategyType>::valid(mode_opt.value(), key, source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error =
+            format->format("Failed to parse '{}' as PackingStrategyType: {}.", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<PackingStrategyType>::invalid(error, source, details);
+    }
+}
+
+LayerValue<PackingStrategyParams> parse_packing_strategy_params(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<PackingStrategyParams>::not_provided();
+    }
+
+    try {
+        const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+
+        if (!node.IsMap()) {
+            const auto error = format->format(
+                "'{}' must be a map of strategy names to parameter objects.", FormatParam{key, Style::bold});
+            return LayerValue<PackingStrategyParams>::invalid(error, source, details);
+        }
+
+        PackingStrategyParams params;
+
+        // Parse backtracking sub-map
+        if (node["backtracking"].IsDefined()) {
+            const auto &bt_node = node["backtracking"];
+            if (!bt_node.IsMap()) {
+                const auto bt_mark = bt_node.Mark();
+                const auto bt_source = make_source_string(format, file_path, bt_mark);
+                const auto bt_details = make_source_details(format, file_path, bt_mark);
+                const auto error = format->format("'{}' backtracking must be a map.", FormatParam{key, Style::bold});
+                return LayerValue<PackingStrategyParams>::invalid(error, bt_source, bt_details);
+            }
+
+            if (bt_node["search_algorithm"].IsDefined()) {
+                const auto &sa_node = bt_node["search_algorithm"];
+                const auto sa_str = sa_node.as<std::string>();
+                const auto sa_opt = search_algorithm_from_str(sa_str);
+                if (!sa_opt.has_value()) {
+                    const auto sa_mark = sa_node.Mark();
+                    const auto sa_source = make_source_string(format, file_path, sa_mark);
+                    const auto sa_details = make_source_details(format, file_path, sa_mark);
+                    const auto error = format->format(
+                        "'{}' backtracking search_algorithm has invalid value '{}'.",
+                        FormatParam{key, Style::bold},
+                        FormatParam{sa_str, Style::bold});
+                    return LayerValue<PackingStrategyParams>::invalid(error, sa_source, sa_details);
+                }
+                const auto sa_mark = sa_node.Mark();
+                params.backtracking.search_algorithm = ConfigPODField{
+                    sa_opt.value(),
+                    key + ".backtracking.search_algorithm",
+                    "Packing Strategy Params (backtracking) search_algorithm",
+                    make_source_string(format, file_path, sa_mark),
+                    make_source_details(format, file_path, sa_mark)};
+            }
+
+            if (bt_node["node_cutoff"].IsDefined()) {
+                const auto &nc_node = bt_node["node_cutoff"];
+                const auto nc_val = nc_node.as<std::size_t>();
+                const auto nc_mark = nc_node.Mark();
+                params.backtracking.node_cutoff = ConfigPODField{
+                    nc_val,
+                    key + ".backtracking.node_cutoff",
+                    "Packing Strategy Params (backtracking) node_cutoff",
+                    make_source_string(format, file_path, nc_mark),
+                    make_source_details(format, file_path, nc_mark)};
+            }
+
+            if (bt_node["best_branches"].IsDefined()) {
+                const auto &bb_node = bt_node["best_branches"];
+                const auto bb_val = bb_node.as<std::size_t>();
+                const auto bb_mark = bb_node.Mark();
+                params.backtracking.best_branches = ConfigPODField{
+                    bb_val,
+                    key + ".backtracking.best_branches",
+                    "Packing Strategy Params (backtracking) best_branches",
+                    make_source_string(format, file_path, bb_mark),
+                    make_source_details(format, file_path, bb_mark)};
+            }
+
+            if (bt_node["smart_prune"].IsDefined()) {
+                const auto &sp_node = bt_node["smart_prune"];
+                const auto sp_val = sp_node.as<bool>();
+                const auto sp_mark = sp_node.Mark();
+                params.backtracking.smart_prune = ConfigPODField{
+                    sp_val,
+                    key + ".backtracking.smart_prune",
+                    "Packing Strategy Params (backtracking) smart_prune",
+                    make_source_string(format, file_path, sp_mark),
+                    make_source_details(format, file_path, sp_mark)};
+            }
+        }
+
+        // Parse overload_and_remove sub-map
+        if (node["overload_and_remove"].IsDefined()) {
+            const auto &oar_node = node["overload_and_remove"];
+            if (!oar_node.IsMap()) {
+                const auto oar_mark = oar_node.Mark();
+                const auto oar_source = make_source_string(format, file_path, oar_mark);
+                const auto oar_details = make_source_details(format, file_path, oar_mark);
+                const auto error =
+                    format->format("'{}' overload_and_remove must be a map.", FormatParam{key, Style::bold});
+                return LayerValue<PackingStrategyParams>::invalid(error, oar_source, oar_details);
+            }
+
+            if (oar_node["max_attempts"].IsDefined()) {
+                const auto &ma_node = oar_node["max_attempts"];
+                const auto ma_val = ma_node.as<std::size_t>();
+                const auto ma_mark = ma_node.Mark();
+                params.overload_and_remove.max_attempts = ConfigPODField{
+                    ma_val,
+                    key + ".overload_and_remove.max_attempts",
+                    "Packing Strategy Params (overload_and_remove) max_attempts",
+                    make_source_string(format, file_path, ma_mark),
+                    make_source_details(format, file_path, ma_mark)};
+            }
+
+            if (oar_node["seed"].IsDefined()) {
+                const auto &seed_node = oar_node["seed"];
+                const auto seed_val = seed_node.as<std::uint64_t>();
+                const auto seed_mark = seed_node.Mark();
+                params.overload_and_remove.seed = ConfigPODField{
+                    seed_val,
+                    key + ".overload_and_remove.seed",
+                    "Packing Strategy Params (overload_and_remove) seed",
+                    make_source_string(format, file_path, seed_mark),
+                    make_source_details(format, file_path, seed_mark)};
+            }
+
+            if (oar_node["shuffle_strategy"].IsDefined()) {
+                const auto &ss_node = oar_node["shuffle_strategy"];
+                const auto ss_str = ss_node.as<std::string>();
+                const auto ss_opt = shuffle_strategy_from_str(ss_str);
+                if (!ss_opt.has_value()) {
+                    const auto ss_mark = ss_node.Mark();
+                    const auto ss_source = make_source_string(format, file_path, ss_mark);
+                    const auto ss_details = make_source_details(format, file_path, ss_mark);
+                    const auto error = format->format(
+                        "'{}' overload_and_remove shuffle_strategy has invalid value '{}'.",
+                        FormatParam{key, Style::bold},
+                        FormatParam{ss_str, Style::bold});
+                    return LayerValue<PackingStrategyParams>::invalid(error, ss_source, ss_details);
+                }
+                const auto ss_mark = ss_node.Mark();
+                params.overload_and_remove.shuffle_strategy = ConfigPODField{
+                    ss_opt.value(),
+                    key + ".overload_and_remove.shuffle_strategy",
+                    "Packing Strategy Params (overload_and_remove) shuffle_strategy",
+                    make_source_string(format, file_path, ss_mark),
+                    make_source_details(format, file_path, ss_mark)};
+            }
+        }
+
+        return LayerValue<PackingStrategyParams>::valid(std::move(params), key, source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error = format->format(
+            "Failed to parse '{}' as packing strategy params: {}.", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<PackingStrategyParams>::invalid(error, source, details);
     }
 }
 

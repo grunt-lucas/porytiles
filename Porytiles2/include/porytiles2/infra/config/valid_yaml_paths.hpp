@@ -31,6 +31,7 @@ inline const std::unordered_set<std::string> valid_yaml_paths = {
     "diagnostics.warnings.include",
     "fieldmap",
     "fieldmap.max_map_data_size",
+    "fieldmap.metatile_attribute_size",
     "fieldmap.num_metatiles_in_primary",
     "fieldmap.num_metatiles_total",
     "fieldmap.num_pals_in_primary",
@@ -52,6 +53,8 @@ inline const std::unordered_set<std::string> valid_yaml_paths = {
     "tileset.palettes.packing",
     "tileset.palettes.packing.hints",
     "tileset.palettes.packing.hints_enabled",
+    "tileset.palettes.packing.strategy",
+    "tileset.palettes.packing.strategy_params",
     "tileset.paths",
     "tileset.paths.primary",
     "tileset.paths.primary.bin",
@@ -77,6 +80,7 @@ inline const std::unordered_set<std::string> valid_yaml_paths = {
  */
 inline const std::unordered_set<std::string> valid_yaml_map_prefixes = {
     "tileset.animations.per_animation_overrides",
+    "tileset.palettes.packing.strategy_params",
 };
 
 } // namespace porytiles2

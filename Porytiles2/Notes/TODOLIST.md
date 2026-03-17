@@ -1,12 +1,11 @@
 # Tasks
 
+## Bugs
+
 ## Refactor and finish TilesetRepo and project impl
 - Make .pla files a first class type in Porymap component (need a domain type for .pla)
 - JSON Impl
   - Start working on a JSON impl that can read/write tilesets from a standardized JSON format 
-
-## `pokefirered` import flow broken, `const u16` is incorrect type for FireRed `metatile_attributes.bin` (it should be u32)
-- this should be configurable, we can have something to auto-detect, like the HeaderDefineProvider but for this type
 
 ## Palette Packing
 - Implement multiplicity-based dfs and bfs
@@ -20,6 +19,7 @@
     - iterations are embarrassingly parallel (stateless strategies, immutable input, no shared mutable state)
     - cooperative cancellation via `std::atomic<bool>` checked alongside existing `node_cutoff` in DFS/BFS
     - also opens the door to "best solution" semantics (compare results by quality) instead of first-success
+- Implement feasibility analysis in `Notes/packing_diagnostics_and_feasibility_analysis.md`
 
 ## Project Structure Refactor
 - Domain layer is getting way too crowded
@@ -265,8 +265,6 @@ Limit the output to 10 metatiles, configurable.
 
 ## Miscellaneous Cleanup
 - Can I use std::span in more places?
-- Fix up `Scripts` directory
-  - we should split it up by `Porytiles1` and `Porytiles2` for better usability
 - Provide a configuration that allows users to request ascii-only output
   - e.g. in the file highlighting, the → would become ->
 - Figure out how to cleanup tileset name handling

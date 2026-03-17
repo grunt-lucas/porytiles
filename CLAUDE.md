@@ -43,17 +43,31 @@ Use these agents for complex tasks in their domains.
 
 Uses CMake 3.20+ with C++23.
 
-**CRITICAL**: Build directories are `clion-build-debug` or `vscode-build` (NEVER `build`).
+**CRITICAL**: Build directory is `porytiles-build-debug` (NEVER `build`).
 
 Quick reference:
 ```bash
-./Scripts/format.sh 2> /dev/null  # Format code
-cmake --build clion-build-debug -j7 > /tmp/build.log 2>&1  # Build (check exit code)
-cmake --install clion-build-debug --prefix ~/.local        # Install to ~/.local/bin
-./clion-build-debug/Porytiles2/tests/Porytiles2AllTests > /tmp/test.log 2>&1  # Test
+uv run Scripts/format.py          # Format code
+cmake --build porytiles-build-debug -j7 > /tmp/build.log 2>&1  # Build (check exit code)
+cmake --install porytiles-build-debug --prefix ~/.local        # Install to ~/.local/bin
+./porytiles-build-debug/Porytiles2/tests/Porytiles2AllTests > /tmp/test.log 2>&1  # Test
 ```
 
 **After building, always install the executable to make it available for testing.**
+
+## Code Coverage
+
+Uses LLVM source-based coverage via `Scripts/coverage.py`. Build directory: `porytiles-build-coverage`.
+
+```bash
+uv run Scripts/coverage.py build                    # Configure, build, run tests, merge profile data
+uv run Scripts/coverage.py report                   # Summary report to stdout
+uv run Scripts/coverage.py report --html /tmp/cov   # HTML report
+uv run Scripts/coverage.py show Porytiles2/lib/domain/foo.cpp  # Line-by-line for specific files
+uv run Scripts/coverage.py clean                    # Remove coverage build dir
+```
+
+When writing tests for new features, check coverage to ensure new code paths are exercised.
 
 ## Testing with pokeemerald-expansion
 

@@ -14,6 +14,7 @@
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/config/frame_linking.hpp"
+#include "porytiles2/domain/config/packing_strategy_type.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/infra/config/layer_value.hpp"
@@ -401,6 +402,35 @@ parse_frame_linking(const std::optional<std::string> &raw_value, const std::stri
 
     const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
     return LayerValue<FrameLinking>::invalid(error, option_name);
+}
+
+/**
+ * @brief Parses a PackingStrategyType value from a CLI option string.
+ *
+ * @details
+ * Uses the unified packing_strategy_type_from_str() which provides fuzzy matching.
+ * Returns LayerValue::invalid() for unrecognized values.
+ *
+ * @param raw_value The raw string value from CLI, or std::nullopt if not provided
+ * @param option_name The CLI option name for error messages
+ * @return LayerValue with parsed value, invalid error, or not_provided status
+ */
+LayerValue<PackingStrategyType>
+parse_packing_strategy_type(const std::optional<std::string> &raw_value, const std::string &option_name)
+{
+    if (!raw_value.has_value()) {
+        return LayerValue<PackingStrategyType>::not_provided();
+    }
+
+    const auto &str = raw_value.value();
+    const auto result = packing_strategy_type_from_str(str);
+
+    if (result.has_value()) {
+        return LayerValue<PackingStrategyType>::valid(result.value(), option_name, "CLI");
+    }
+
+    const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
+    return LayerValue<PackingStrategyType>::invalid(error, option_name);
 }
 
 } // namespace

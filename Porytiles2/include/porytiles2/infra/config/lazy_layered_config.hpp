@@ -127,6 +127,12 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     [[nodiscard]] ChainableResult<ConfigValue<std::vector<PaletteHint>>>
     pal_hints_raw(ConfigScopeType type, const std::string &scope) const override;
 
+    [[nodiscard]] ChainableResult<ConfigValue<PackingStrategyType>>
+    packing_strategy_raw(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] ChainableResult<ConfigValue<PackingStrategyParams>>
+    packing_strategy_params_raw(ConfigScopeType type, const std::string &scope) const override;
+
     [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>>
     tiles_pal_mode_raw(ConfigScopeType type, const std::string &scope) const override;
 
@@ -178,6 +184,8 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     tileset_paths_secondary_src_raw(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] ChainableResult<ConfigValue<std::string>>
     tileset_paths_secondary_bin_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    metatile_attr_size_raw(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
     tileset_animations_wire_anim_code_raw(ConfigScopeType type, const std::string &scope) const override;
 
@@ -382,6 +390,36 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      */
     [[nodiscard]] std::vector<ProvenanceChainLink<std::vector<PaletteHint>>>
     pal_hints_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for packing_strategy.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<PackingStrategyType>>
+    packing_strategy_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for packing_strategy_params.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<PackingStrategyParams>>
+    packing_strategy_params_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
     /**
      * @brief Gets the full provenance chain for tiles_pal_mode.
@@ -608,6 +646,21 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      */
     [[nodiscard]] std::vector<ProvenanceChainLink<std::string>>
     tileset_paths_secondary_bin_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for metatile_attr_size.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<std::size_t>>
+    metatile_attr_size_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
     /**
      * @brief Gets the full provenance chain for tileset_animations_wire_anim_code.

@@ -6,7 +6,7 @@
 #include <vector>
 
 #include "porytiles2/utilities/text/text_formatter.hpp"
-#include "porytiles2/xcut/config/config_override.hpp"
+#include "porytiles2/xcut/config/config_pod_field.hpp"
 
 namespace porytiles2 {
 
@@ -157,7 +157,7 @@ class ConfigValue {
     }
 
     /**
-     * @brief Creates a child ConfigValue from a ConfigOverride, inheriting this value's source provenance.
+     * @brief Creates a child ConfigValue from a ConfigPODField, inheriting this value's source provenance.
      *
      * @details
      * Used to resolve per-field overrides within aggregate config values. The derived ConfigValue inherits @c source()
@@ -171,7 +171,7 @@ class ConfigValue {
      * @return A new ConfigValue wrapping the override's value with combined provenance
      */
     template <typename U>
-    [[nodiscard]] ConfigValue<U> derive(const ConfigOverride<U> &override) const
+    [[nodiscard]] ConfigValue<U> derive(const ConfigPODField<U> &override) const
     {
         return ConfigValue<U>{
             *override,

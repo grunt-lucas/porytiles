@@ -107,8 +107,8 @@ uv run Scripts/generate_config.py
 ### 5. Build and Test
 
 ```bash
-cmake --build clion-build-debug -j7 > /tmp/build.log 2>&1
-./clion-build-debug/Porytiles2/tests/Porytiles2AllTests > /tmp/test.log 2>&1
+cmake --build porytiles-build-debug -j7 > /tmp/build.log 2>&1
+./porytiles-build-debug/Porytiles2/tests/Porytiles2AllTests > /tmp/test.log 2>&1
 ```
 
 ## How to Add an Enum-Based Config Value
@@ -162,7 +162,7 @@ config_values:
 
 ```bash
 uv run Scripts/generate_config.py
-cmake --build clion-build-debug -j7 > /tmp/build.log 2>&1
+cmake --build porytiles-build-debug -j7 > /tmp/build.log 2>&1
 ```
 
 The generator will create:

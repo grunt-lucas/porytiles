@@ -20,6 +20,7 @@
 #include "porytiles2/infra/config/default_provider.hpp"
 #include "porytiles2/infra/config/header_define_provider.hpp"
 #include "porytiles2/infra/config/lazy_layered_config.hpp"
+#include "porytiles2/infra/config/metatiles_header_provider.hpp"
 #include "porytiles2/infra/config/yaml_file_provider.hpp"
 #include "porytiles2/infra/repos/project_artifact_checksum_provider.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
@@ -97,6 +98,7 @@ class CompileTilesetCommand final : public Command {
         providers.push_back(std::move(yaml_provider));
         providers.push_back(
             std::make_unique<HeaderDefineProvider>(project_root, fieldmap_header_root_relative, text_formatter));
+        providers.push_back(std::make_unique<MetatilesHeaderProvider>(project_root, text_formatter));
         providers.push_back(std::make_unique<DefaultProvider>());
         LazyLayeredConfig config{text_formatter, std::move(providers)};
 

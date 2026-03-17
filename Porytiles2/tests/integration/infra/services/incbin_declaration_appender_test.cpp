@@ -106,7 +106,7 @@ class IncbinDeclarationAppenderTest_VanillaStock : public IncbinDeclarationAppen
 
 TEST_F(IncbinDeclarationAppenderTest_VanillaStock, AppendsMetatilesDeclarations)
 {
-    auto result = appender_->append_metatiles_declarations("gTileset_General", "data/tilesets/primary");
+    auto result = appender_->append_metatiles_declarations("gTileset_General", "data/tilesets/primary", 2);
     ASSERT_TRUE(result.has_value()) << "append_metatiles_declarations failed";
 
     const std::string content = read_file_contents(metatiles_path());
@@ -153,7 +153,7 @@ TEST_F(IncbinDeclarationAppenderTest_VanillaStock, PreservesExistingContent)
     ASSERT_FALSE(original_content.empty()) << "Original metatiles.h is empty";
 
     // Append new declarations
-    auto result = appender_->append_metatiles_declarations("gTileset_General", "data/tilesets/primary");
+    auto result = appender_->append_metatiles_declarations("gTileset_General", "data/tilesets/primary", 2);
     ASSERT_TRUE(result.has_value()) << "append_metatiles_declarations failed";
 
     const std::string new_content = read_file_contents(metatiles_path());
@@ -167,7 +167,7 @@ TEST_F(IncbinDeclarationAppenderTest_VanillaStock, PreservesExistingContent)
 TEST_F(IncbinDeclarationAppenderTest_VanillaStock, RemovesDeclarations)
 {
     // First append
-    auto append_result = appender_->append_metatiles_declarations("gTileset_General", "data/tilesets/primary");
+    auto append_result = appender_->append_metatiles_declarations("gTileset_General", "data/tilesets/primary", 2);
     ASSERT_TRUE(append_result.has_value()) << "append_metatiles_declarations failed";
 
     // Verify declarations were added
@@ -192,14 +192,14 @@ TEST_F(IncbinDeclarationAppenderTest_VanillaStock, RemovesDeclarations)
 
 TEST_F(IncbinDeclarationAppenderTest_VanillaStock, RejectsInvalidTilesetName)
 {
-    auto result = appender_->append_metatiles_declarations("InvalidTileset", "data/tilesets/primary");
+    auto result = appender_->append_metatiles_declarations("InvalidTileset", "data/tilesets/primary", 2);
     EXPECT_FALSE(result.has_value()) << "Should reject tileset name not starting with gTileset_";
 }
 
 TEST_F(IncbinDeclarationAppenderTest_VanillaStock, GeneratesCorrectSnakeCasePath)
 {
     // Use a tileset with PascalCase shorthand to test snake_case conversion
-    auto result = appender_->append_metatiles_declarations("gTileset_BattleFrontier", "data/tilesets/secondary");
+    auto result = appender_->append_metatiles_declarations("gTileset_BattleFrontier", "data/tilesets/secondary", 2);
     ASSERT_TRUE(result.has_value()) << "append_metatiles_declarations failed";
 
     const std::string content = read_file_contents(metatiles_path());
@@ -207,4 +207,30 @@ TEST_F(IncbinDeclarationAppenderTest_VanillaStock, GeneratesCorrectSnakeCasePath
     // Verify the path uses snake_case
     EXPECT_NE(content.find("data/tilesets/secondary/battle_frontier/porytiles_bin/metatiles.bin"), std::string::npos)
         << "snake_case path conversion not working correctly";
+}
+
+TEST_F(IncbinDeclarationAppenderTest_VanillaStock, AppendsMetatilesDeclarationsWithU16AttrSize)
+{
+    auto result = appender_->append_metatiles_declarations("gTileset_General", "data/tilesets/primary", 2);
+    ASSERT_TRUE(result.has_value()) << "append_metatiles_declarations failed";
+
+    const std::string content = read_file_contents(metatiles_path());
+
+    // Verify u16 type and INCBIN_U16 macro for attr size 2
+    EXPECT_NE(content.find("const u16 gMetatileAttributes_PorytilesManaged_General"), std::string::npos)
+        << "const u16 attribute declaration not found";
+    EXPECT_NE(content.find("INCBIN_U16"), std::string::npos) << "INCBIN_U16 not found for attr size 2";
+}
+
+TEST_F(IncbinDeclarationAppenderTest_VanillaStock, AppendsMetatilesDeclarationsWithU32AttrSize)
+{
+    auto result = appender_->append_metatiles_declarations("gTileset_General", "data/tilesets/primary", 4);
+    ASSERT_TRUE(result.has_value()) << "append_metatiles_declarations failed";
+
+    const std::string content = read_file_contents(metatiles_path());
+
+    // Verify u32 type and INCBIN_U32 macro for attr size 4
+    EXPECT_NE(content.find("const u32 gMetatileAttributes_PorytilesManaged_General"), std::string::npos)
+        << "const u32 attribute declaration not found for attr size 4";
+    EXPECT_NE(content.find("INCBIN_U32"), std::string::npos) << "INCBIN_U32 not found for attr size 4";
 }

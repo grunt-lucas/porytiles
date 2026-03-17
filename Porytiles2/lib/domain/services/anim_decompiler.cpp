@@ -633,11 +633,11 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
     // Unwrap config values
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, extrinsic_transparency, tileset_name, Animation<Rgba32>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, global_anim_pal_resolution_strategy, tileset_name, Animation<Rgba32>);
-    PT_UNWRAP_TILESET_CONFIG_PTR(config_, per_anim_overrides, tileset_name, Animation<Rgba32>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, global_anim_key_frame_resolution_strategy, tileset_name, Animation<Rgba32>);
     PT_UNWRAP_TILESET_CONFIG_PTR(
         config_, global_anim_multi_pal_subtile_resolution_strategy, tileset_name, Animation<Rgba32>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, global_frame_linking, tileset_name, Animation<Rgba32>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, per_anim_overrides, tileset_name, Animation<Rgba32>);
 
     // Read data from porymap_component
     const auto &pals = porymap_component.pals();
@@ -737,10 +737,9 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
             : global_anim_multi_pal_subtile_resolution_strategy;
 
     // Resolve effective FrameLinking for this animation
-    FrameLinking effective_linking = global_frame_linking.value();
-    if (anim_cfg_ptr != nullptr) {
-        effective_linking = anim_cfg_ptr->linking;
-    }
+    const ConfigValue<FrameLinking> effective_linking = (anim_cfg_ptr != nullptr && anim_cfg_ptr->linking.has_value())
+                                                            ? per_anim_overrides.derive(anim_cfg_ptr->linking)
+                                                            : global_frame_linking;
 
     if (effective_linking == FrameLinking::hybrid) {
         panic("TODO: implement hybrid frame linking");

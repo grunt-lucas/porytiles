@@ -109,6 +109,20 @@ CliOptionProvider::pal_hints([[maybe_unused]] ConfigScopeType type, [[maybe_unus
     return LayerValue<std::vector<PaletteHint>>::not_provided();
 }
 
+LayerValue<PackingStrategyType> CliOptionProvider::packing_strategy(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_packing_strategy_type(storage_.packing_strategy, "--packing-strategy");
+}
+
+LayerValue<PackingStrategyParams> CliOptionProvider::packing_strategy_params(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // Skipped for CLI (yaml_only: type too complex for non-YAML providers)
+    return LayerValue<PackingStrategyParams>::not_provided();
+}
+
 LayerValue<TilesPalMode> CliOptionProvider::tiles_pal_mode(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
@@ -215,6 +229,13 @@ LayerValue<std::string> CliOptionProvider::tileset_paths_secondary_bin(
 {
     // All types use parse functions for uniform error handling
     return parse_string(storage_.tileset_paths_secondary_bin, "--tileset-paths-secondary-bin");
+}
+
+LayerValue<std::size_t> CliOptionProvider::metatile_attr_size(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_size_t(storage_.metatile_attr_size, "--metatile-attr-size");
 }
 
 LayerValue<bool> CliOptionProvider::tileset_animations_wire_anim_code(

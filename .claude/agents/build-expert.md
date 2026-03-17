@@ -10,7 +10,7 @@ You are an expert C++ build engineer specializing in CMake and the Porytiles til
 ## Project Build Configuration
 
 - **Build System**: CMake 3.20+ with C++23 standard
-- **Build Directories**: Use `clion-build-debug` or `vscode-build` (NEVER use a directory called `build`)
+- **Build Directories**: Use `porytiles-build-debug` (NEVER use a directory called `build`)
 - **Dependencies**: zlib and libpng static libraries, GoogleTest for testing
 - **Compilers**: Both GCC and Clang are supported - code must not be compiler-specific
 
@@ -18,13 +18,13 @@ You are an expert C++ build engineer specializing in CMake and the Porytiles til
 
 ```bash
 # Configure debug build
-cmake -B clion-build-debug -DCMAKE_BUILD_TYPE=Debug
+cmake -B porytiles-build-debug -DCMAKE_BUILD_TYPE=Debug
 
 # Configure with coverage
 cmake -B clion-build-coverage -DCMAKE_BUILD_TYPE=Debug -DCMAKE_CXX_FLAGS="-fcoverage-mapping -fprofile-instr-generate"
 
 # Build project (send output to /tmp to preserve context)
-cmake --build clion-build-debug -j7 > /tmp/build.log 2>&1
+cmake --build porytiles-build-debug -j7 > /tmp/build.log 2>&1
 echo "Exit code: $?"
 ```
 
@@ -43,7 +43,7 @@ echo "Exit code: $?"
 
 Always run the format script after making changes:
 ```bash
-./Scripts/format.sh 2> /dev/null
+uv run Scripts/format.py
 ```
 
 ## Project Structure Notes

@@ -88,15 +88,27 @@ generate_tiles_declaration(const std::string &shorthand, const std::string &bin_
 }
 
 /**
- * @brief Generates metatile attributes INCBIN declaration string
+ * @brief Generates metatile attributes INCBIN declaration string.
+ *
+ * @details
+ * Selects the C type and INCBIN macro based on metatile_attr_size:
+ * - 2 → const u16 / INCBIN_U16
+ * - 4 → const u32 / INCBIN_U32
  */
 [[nodiscard]] std::string generate_attributes_declaration(
-    const std::string &shorthand, const std::string &bin_path_base, const std::string &snake_dir)
+    const std::string &shorthand,
+    const std::string &bin_path_base,
+    const std::string &snake_dir,
+    std::size_t metatile_attr_size)
 {
+    const std::string c_type = (metatile_attr_size == 4) ? "u32" : "u16";
+    const std::string incbin_macro = (metatile_attr_size == 4) ? "INCBIN_U32" : "INCBIN_U16";
     return fmt::format(
-        "const u16 gMetatileAttributes_{}{}[] = INCBIN_U16(\"{}/{}/porytiles_bin/metatile_attributes.bin\");",
+        "const {} gMetatileAttributes_{}{}[] = {}(\"{}/{}/porytiles_bin/metatile_attributes.bin\");",
+        c_type,
         porytiles_managed_suffix,
         shorthand,
+        incbin_macro,
         bin_path_base,
         snake_dir);
 }
@@ -233,7 +245,7 @@ ChainableResult<void> IncbinDeclarationAppender::append_graphics_declarations(
 }
 
 ChainableResult<void> IncbinDeclarationAppender::append_metatiles_declarations(
-    const std::string &tileset_name, const std::string &bin_path_base) const
+    const std::string &tileset_name, const std::string &bin_path_base, std::size_t metatile_attr_size) const
 {
     const std::string shorthand = extract_shorthand(tileset_name);
     if (shorthand.empty()) {
@@ -255,7 +267,8 @@ ChainableResult<void> IncbinDeclarationAppender::append_metatiles_declarations(
 
     // Generate declarations
     const std::string metatiles_decl = generate_metatiles_declaration(shorthand, bin_path_base, snake_dir);
-    const std::string attributes_decl = generate_attributes_declaration(shorthand, bin_path_base, snake_dir);
+    const std::string attributes_decl =
+        generate_attributes_declaration(shorthand, bin_path_base, snake_dir, metatile_attr_size);
 
     // Find position and append
     const std::size_t pos = find_append_position(lines);

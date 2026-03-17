@@ -103,6 +103,14 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
         },
         "Palette Hints Enabled - Enable configured palette hints.");
 
+    // Packing Strategy (enum PackingStrategyType, captured as string, parsed by CliOptionProvider)
+    config_group
+        ->add_option(
+            "--packing-strategy",
+            storage.packing_strategy,
+            "Packing Strategy - The palette packing algorithm to use during compilation.")
+        ->type_name("{best-fusion|backtracking|overload-and-remove}");
+
     // Tiles Palette Mode (enum TilesPalMode, captured as string, parsed by CliOptionProvider)
     config_group
         ->add_option(
@@ -213,6 +221,13 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
         "--tileset-paths-secondary-bin",
         storage.tileset_paths_secondary_bin,
         "Tileset Paths Secondary Bin - The directory for secondary tileset Porymap component assets.");
+
+    // Metatile Attribute Size (std::size_t, captured as string, parsed by CliOptionProvider)
+    config_group->add_option(
+        "--metatile-attr-size",
+        storage.metatile_attr_size,
+        "Metatile Attribute Size - The size in bytes of each metatile attribute entry (2 for Emerald/Ruby, 4 for "
+        "FireRed).");
 
     // Tileset Animations Wire Anim Code (bool with --flag/--no-flag, captured as "true"/"false" string)
     config_group->add_flag(

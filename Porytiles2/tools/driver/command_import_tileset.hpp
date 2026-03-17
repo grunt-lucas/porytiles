@@ -19,6 +19,7 @@
 #include "porytiles2/infra/config/default_provider.hpp"
 #include "porytiles2/infra/config/header_define_provider.hpp"
 #include "porytiles2/infra/config/lazy_layered_config.hpp"
+#include "porytiles2/infra/config/metatiles_header_provider.hpp"
 #include "porytiles2/infra/config/yaml_file_provider.hpp"
 #include "porytiles2/infra/repos/project_artifact_checksum_provider.hpp"
 #include "porytiles2/infra/repos/project_tileset_artifact_key_provider.hpp"
@@ -96,6 +97,7 @@ class ImportTilesetCommand final : public Command {
         providers.push_back(std::move(yaml_provider));
         providers.push_back(
             std::make_unique<HeaderDefineProvider>(project_root, fieldmap_header_root_relative, text_formatter));
+        providers.push_back(std::make_unique<MetatilesHeaderProvider>(project_root, text_formatter));
         providers.push_back(std::make_unique<DefaultProvider>());
         LazyLayeredConfig config{text_formatter, std::move(providers)};
 
@@ -104,6 +106,13 @@ class ImportTilesetCommand final : public Command {
             const auto validation_err = ChainableResult<void>{FormattableError{
                 "Configuration validation failed for tileset '{}'.", FormatParam{tileset_name_, Style::bold}}};
             stderr_diag->fatal(validation_err);
+            throw CLI::RuntimeError{1};
+        }
+
+        // Eagerly validate metatile-attr-size to fail fast before any file I/O
+        auto attr_size_check = config.metatile_attr_size(ConfigScopeType::tileset, tileset_name_);
+        if (!attr_size_check.has_value()) {
+            stderr_diag->fatal(attr_size_check);
             throw CLI::RuntimeError{1};
         }
 

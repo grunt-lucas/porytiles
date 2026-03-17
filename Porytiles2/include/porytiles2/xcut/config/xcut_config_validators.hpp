@@ -86,6 +86,37 @@ size_t_val_greater_than_zero(const ConfigValue<std::size_t> &val)
 }
 
 /**
+ * @brief Validates that a size_t config value is either 2 or 4.
+ *
+ * @param val The config value to validate
+ * @return ChainableResult containing either the original value or a FormattableError if validation fails
+ * @post If successful, the returned value is guaranteed to be either 2 or 4
+ */
+[[nodiscard]] inline ChainableResult<ConfigValue<std::size_t>>
+size_t_val_two_or_four(const ConfigValue<std::size_t> &val)
+{
+    if (val != 2 && val != 4) {
+        std::vector<std::string> err_text{};
+        std::vector<std::vector<FormatParam>> params{};
+
+        err_text.emplace_back("'{}' must be either '{}' or '{}'.");
+        params.emplace_back(
+            std::vector{
+                FormatParam{val.canonical_name(), Style::bold},
+                FormatParam{"2", Style::bold},
+                FormatParam{"4", Style::bold}});
+        err_text.emplace_back("");
+        params.emplace_back();
+
+        auto [format_text, format_params] = val.format_data();
+        std::ranges::copy(format_text, std::back_inserter(err_text));
+        std::ranges::copy(format_params, std::back_inserter(params));
+        return FormattableError{err_text, params};
+    }
+    return val;
+}
+
+/**
  * @brief Validates that a size_t config value is either 8 or 12.
  *
  * @param val The config value to validate

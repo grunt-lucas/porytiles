@@ -1,0 +1,11 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<project version="4">
+  <component name="CMakeSharedSettings">
+    <configurations>
+      <configuration PROFILE_NAME="PorytilesDebug" ENABLED="true" GENERATION_DIR="porytiles-build-debug" CONFIG_NAME="Debug" />
+      <configuration PROFILE_NAME="PorytilesDebugGCC" ENABLED="false" GENERATION_DIR="porytiles-build-gcc-debug" CONFIG_NAME="Debug" TOOLCHAIN_NAME="gcc15" GENERATION_OPTIONS="-DCMAKE_CXX_FLAGS=&quot;-stdlib=libstdc++ -I/opt/homebrew/opt/gcc/include/c++/15 -L/opt/homebrew/opt/gcc/lib/gcc/15&quot; -DCMAKE_OSX_SYSROOT=&quot;&quot;" />
+      <configuration PROFILE_NAME="PorytilesCoverage" ENABLED="false" GENERATION_DIR="porytiles-build-coverage" CONFIG_NAME="Debug" GENERATION_OPTIONS="-DCMAKE_CXX_FLAGS=&quot;-fcoverage-mapping -fprofile-instr-generate&quot; -DCMAKE_C_FLAGS=&quot;-fcoverage-mapping -fprofile-instr-generate&quot;" />
+      <configuration PROFILE_NAME="PorytilesRelease" ENABLED="false" GENERATION_DIR="porytiles-build-release" CONFIG_NAME="Release" />
+    </configurations>
+  </component>
+</project>

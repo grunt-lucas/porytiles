@@ -81,7 +81,7 @@ enum_types:
         fuzzy_names: [ patch ]
         brief: Artifacts can be freely edited in "open" slots during compilation.
       - name: optimize
-        cli_completion_name: optimized
+        cli_completion_name: optimize
         fuzzy_names: [ optimize ]
         brief: The Porytiles1 behavior; artifact is cleared and packed optimally.
 
@@ -224,6 +224,66 @@ enum_types:
         cli_completion_name: mangle
         fuzzy_names: [ mangle ]
         brief: Mangle duplicate tiles to make them unique, then backport changes to tiles.png.
+
+  - cpp_type: PackingStrategyType
+    header_path: porytiles2/domain/config/packing_strategy_type.hpp
+    brief: Selects the palette packing algorithm to use during tileset compilation.
+    details: |
+      Controls which algorithm is used to assign tiles to palettes. Each strategy offers different
+      trade-offs between speed, solution quality, and configurability. Backtracking is the default
+      and handles the widest range of inputs. Best Fusion is fast but may fail on hard instances.
+      Overload-And-Remove uses multi-start retries to escape local optima.
+    enum_values:
+      - name: best_fusion
+        cli_completion_name: best-fusion
+        fuzzy_names: [ best-fusion, best_fusion, bestfusion ]
+        brief: Greedy weighted-cost packing (fast, no retries).
+      - name: backtracking
+        cli_completion_name: backtracking
+        fuzzy_names: [ backtracking ]
+        brief: DFS/BFS backtracking search (default).
+      - name: overload_and_remove
+        cli_completion_name: overload-and-remove
+        fuzzy_names: [ overload-and-remove, overload_and_remove, overloadandremove ]
+        brief: Greedy with overload-and-remove multi-start retries.
+
+  - cpp_type: SearchAlgorithm
+    header_path: porytiles2/domain/config/search_algorithm.hpp
+    brief: Search algorithm used by BacktrackingStrategy.
+    details: |
+      Controls whether the backtracking search explores the solution space using depth-first or breadth-first traversal.
+      DFS uses in-place mutation with undo for memory efficiency, while BFS uses visited-state deduplication and a
+      dual-queue heuristic.
+    enum_values:
+      - name: dfs
+        cli_completion_name: dfs
+        fuzzy_names: [ dfs, depth-first, depth_first, depthfirst ]
+        brief: Depth-first search with in-place mutation and undo.
+      - name: bfs
+        cli_completion_name: bfs
+        fuzzy_names: [ bfs, breadth-first, breadth_first, breadthfirst ]
+        brief: Breadth-first search with dual-queue heuristic and visited-state deduplication.
+
+  - cpp_type: ShuffleStrategy
+    header_path: porytiles2/domain/config/shuffle_strategy.hpp
+    brief: Controls how tile orderings are generated during multi-start packing.
+    details: |
+      The packing algorithm can attempt multiple tile orderings to find a valid solution. This enum
+      controls the strategy used to generate those orderings after the initial FFD (First Fit Decreasing)
+      attempt.
+    enum_values:
+      - name: single_ffd
+        cli_completion_name: single-ffd
+        fuzzy_names: [ single-ffd, single_ffd, singleffd ]
+        brief: One FFD attempt only, no multi-start retries.
+      - name: noisy_ffd
+        cli_completion_name: noisy-ffd
+        fuzzy_names: [ noisy-ffd, noisy_ffd, noisyffd ]
+        brief: FFD first, then perturbed FFD orderings that preserve the large-first property.
+      - name: random
+        cli_completion_name: random
+        fuzzy_names: [ random ]
+        brief: FFD first, then fully random shuffles (original behavior).
 
   - cpp_type: AnimMultiPalSubtileResolutionStrategy
     header_path: porytiles2/domain/config/anim_multi_pal_subtile_resolution_strategy.hpp
@@ -411,6 +471,31 @@ config_values:
     type: std::vector<PaletteHint>
     parser: parse_pal_hints
     default_value: "std::vector<PaletteHint>{}"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Packing Strategy
+    symbol: packing_strategy
+    yaml_path: tileset.palettes.packing.strategy
+    cli_option: packing-strategy
+    cli_desc: The palette packing algorithm to use during compilation.
+    layer: domain
+    type: PackingStrategyType
+    parser: parse_packing_strategy_type
+    default_value: "PackingStrategyType::backtracking"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Packing Strategy Params
+    symbol: packing_strategy_params
+    yaml_path: tileset.palettes.packing.strategy_params
+    cli_option: packing-strategy-params
+    yaml_only: true
+    yaml_is_map: true
+    layer: domain
+    type: PackingStrategyParams
+    parser: parse_packing_strategy_params
+    default_value: "PackingStrategyParams{}"
     validators: [ ]
     cross_field_validators: [ ]
 
@@ -602,6 +687,18 @@ config_values:
     parser: parse_string
     default_value: '"data/tilesets/secondary"'
     validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Metatile Attribute Size
+    symbol: metatile_attr_size
+    yaml_path: fieldmap.metatile_attribute_size
+    cli_option: metatile-attr-size
+    cli_desc: The size in bytes of each metatile attribute entry (2 for Emerald/Ruby, 4 for FireRed).
+    layer: infra
+    type: std::size_t
+    parser: parse_size_t
+    default_value: "2"
+    validators: [ size_t_val_two_or_four ]
     cross_field_validators: [ ]
 
   - canonical_name: Tileset Animations Wire Anim Code

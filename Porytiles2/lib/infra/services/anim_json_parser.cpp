@@ -207,8 +207,9 @@ AnimParams parse_animation_params(const std::string &anim_name, const nlohmann::
         params.overrides(std::move(overrides));
     }
 
-    // Note: tile_offset and tile_count are NOT read from anim.json
-    // They are computed during compilation and stored in generated_anim_code.h
+    if (node.contains("tile_offset")) {
+        params.tile_offset(node["tile_offset"].get<std::size_t>());
+    }
 
     params.cased_name(DynamicCasedName{anim_name});
     return params;
@@ -245,6 +246,10 @@ nlohmann::ordered_json serialize_animation_params(const AnimParams &params)
         node["counter_max"] = params.counter_max();
     }
 
+    if (params.tile_offset() != 0) {
+        node["tile_offset"] = params.tile_offset();
+    }
+
     if (!params.overrides().empty()) {
         nlohmann::ordered_json overrides_array = nlohmann::ordered_json::array();
         for (const auto &entry : params.overrides()) {
@@ -260,9 +265,6 @@ nlohmann::ordered_json serialize_animation_params(const AnimParams &params)
         }
         node["overrides"] = std::move(overrides_array);
     }
-
-    // Note: tile_offset and tile_count are NOT written to anim.json
-    // They are stored in generated_anim_code.h
 
     return node;
 }

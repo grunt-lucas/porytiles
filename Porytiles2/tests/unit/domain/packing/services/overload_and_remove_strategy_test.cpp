@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "porytiles2/domain/config/shuffle_strategy.hpp"
 #include "porytiles2/domain/models/color_set.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/packing/models/packable_tile.hpp"
@@ -13,7 +14,6 @@
 #include "porytiles2/domain/packing/models/prefilled_palette.hpp"
 #include "porytiles2/domain/packing/services/overload_and_remove_strategy.hpp"
 #include "porytiles2/domain/packing/services/packing_strategy.hpp"
-#include "porytiles2/domain/packing/services/shuffle_strategy.hpp"
 #include "porytiles2/xcut/diagnostics/buffered_user_diagnostics.hpp"
 
 using namespace porytiles2;

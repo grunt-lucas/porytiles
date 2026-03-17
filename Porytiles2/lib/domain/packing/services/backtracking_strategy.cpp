@@ -74,6 +74,12 @@ struct BfsStateHash {
     std::array<SearchParams, 48> matrix{};
     std::size_t idx = 0;
 
+    /*
+     * TODO: it turns out that after making the search space improvements to DFS/BFS, we often find a solution with
+     * values as low as 50-100k. We should probably add more cutoffs here in the lower bounds. Eventually, it might be
+     * nice to have quicker cutoff points if we implement the multi-threaded approach, since perhaps we can start
+     * searching for "better" solutions and not just "a" solution.
+     */
     constexpr std::array<std::size_t, 4> cutoffs = {1'000'000, 2'000'000, 4'000'000, 8'000'000};
 
     for (std::size_t cutoff : cutoffs) {

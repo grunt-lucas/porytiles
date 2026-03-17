@@ -29,6 +29,8 @@ class MockDomainConfig : public DomainConfig {
     ArtifactEditMode pals_edit_mode = ArtifactEditMode::optimize;
     bool pal_hints_enabled = true;
     std::vector<PaletteHint> pal_hints = std::vector<PaletteHint>{};
+    PackingStrategyType packing_strategy = PackingStrategyType::backtracking;
+    PackingStrategyParams packing_strategy_params = PackingStrategyParams{};
     TilesPalMode tiles_pal_mode = TilesPalMode::true_color;
     AnimPalResolutionStrategy global_anim_pal_resolution_strategy = AnimPalResolutionStrategy::scan_local_metatiles;
     AnimKeyFrameResolutionStrategy global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
@@ -116,6 +118,18 @@ class MockDomainConfig : public DomainConfig {
     pal_hints_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{pal_hints, "Palette Hints", "pal_hints", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<PackingStrategyType>>
+    packing_strategy_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{packing_strategy, "Packing Strategy", "packing_strategy", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<PackingStrategyParams>>
+    packing_strategy_params_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{packing_strategy_params, "Packing Strategy Params", "packing_strategy_params", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>>
