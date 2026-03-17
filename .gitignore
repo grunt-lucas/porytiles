@@ -2,17 +2,16 @@
 .vscode/*
 !.vscode/c_cpp_properties.json
 !.vscode/launch.json
-.idea
+.idea/*
+!.idea/cmake.xml
 .DS_Store
 .claude/settings.local.json
 
 # Build artifacts and executables
 build/**
-vscode-build/**
-clion-build-*/**
+porytiles-build-*/**
 
-# Doxygen
-# Ignore the build artifacts. They change frequently.
+# Doxygen: ignore the build artifacts. They change frequently.
 Documentation/html/**
 Documentation/latex/**
 

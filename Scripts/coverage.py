@@ -3,17 +3,17 @@
 Code coverage tooling for Porytiles2 using LLVM coverage instruments.
 
 Usage:
-    uv run Scripts/coverage.py build                                    # Configure + build + run tests
-    uv run Scripts/coverage.py build --build-dir vscode-build-coverage  # Custom build dir
-    uv run Scripts/coverage.py show file1.cpp                           # Line-by-line coverage
-    uv run Scripts/coverage.py report                                   # Summary report
-    uv run Scripts/coverage.py report --html /tmp/cov                   # HTML report
-    uv run Scripts/coverage.py clean                                    # Remove coverage build dir
+    uv run Scripts/coverage.py build                                       # Configure + build + run tests
+    uv run Scripts/coverage.py build --build-dir porytiles-build-coverage  # Custom build dir
+    uv run Scripts/coverage.py show file1.cpp                              # Line-by-line coverage
+    uv run Scripts/coverage.py report                                      # Summary report
+    uv run Scripts/coverage.py report --html /tmp/cov                      # HTML report
+    uv run Scripts/coverage.py clean                                       # Remove coverage build dir
 """
 
 # The `build` subcommand handles CMake configuration automatically. For manual setup, the equivalent command is:
 #
-#   cmake -B clion-build-coverage -DCMAKE_BUILD_TYPE=Debug \
+#   cmake -B porytiles-build-coverage -DCMAKE_BUILD_TYPE=Debug \
 #     -DCMAKE_CXX_FLAGS="-fcoverage-mapping -fprofile-instr-generate" \
 #     -DCMAKE_C_FLAGS="-fcoverage-mapping -fprofile-instr-generate"
 
@@ -25,7 +25,12 @@ import subprocess
 import sys
 from pathlib import Path
 
-DEFAULT_BUILD_DIR = "clion-build-coverage"
+DEFAULT_BUILD_DIR = "porytiles-build-coverage"
+
+
+def ignore_deps_flag(build_path):
+    """Return --ignore-filename-regex flag to exclude CMake dependency sources."""
+    return f"--ignore-filename-regex=.*{build_path.name}/_deps/.*"
 
 
 def resolve_llvm_tool(tool_name):
@@ -117,7 +122,8 @@ def cmd_show(project_root, build_dir, files):
     file_args = " ".join(str(f) for f in files)
     show_cmd = (
         f"{resolve_llvm_tool('llvm-cov')} show {test_binary}"
-        f" -instr-profile={profdata} {file_args}"
+        f" -instr-profile={profdata}"
+        f" {ignore_deps_flag(build_path)} {file_args}"
     )
     run_cmd(show_cmd, description="Showing coverage", shell=True)
 
@@ -133,6 +139,7 @@ def cmd_report(project_root, build_dir, html_dir=None):
         report_cmd = (
             f"{resolve_llvm_tool('llvm-cov')} show {test_binary}"
             f" -instr-profile={profdata}"
+            f" {ignore_deps_flag(build_path)}"
             f" -format=html -output-dir={html_path}"
         )
         run_cmd(report_cmd, description=f"Generating HTML report -> {html_path}", shell=True)
@@ -141,6 +148,7 @@ def cmd_report(project_root, build_dir, html_dir=None):
         report_cmd = (
             f"{resolve_llvm_tool('llvm-cov')} report {test_binary}"
             f" -instr-profile={profdata}"
+            f" {ignore_deps_flag(build_path)}"
         )
         run_cmd(report_cmd, description="Coverage report", shell=True)
 

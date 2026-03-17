@@ -5,7 +5,7 @@ Run clang-tidy on Porytiles2 C++ source files.
 Usage:
     uv run Scripts/tidy.py                                  # All Porytiles2 .cpp files
     uv run Scripts/tidy.py file1.cpp file2.cpp              # Specific files
-    uv run Scripts/tidy.py --build-dir clion-build-debug    # Override build dir
+    uv run Scripts/tidy.py --build-dir porytiles-build-debug    # Override build dir
     uv run Scripts/tidy.py --fix                            # Apply auto-fixes
 """
 
@@ -44,8 +44,8 @@ def main():
         help="Specific .cpp files to check. If omitted, checks all Porytiles2 translation units."
     )
     parser.add_argument(
-        "--build-dir", default="clion-build-debug",
-        help="Build directory containing compile_commands.json (default: clion-build-debug)."
+        "--build-dir", default="porytiles-build-debug",
+        help="Build directory containing compile_commands.json (default: porytiles-build-debug)."
     )
     parser.add_argument(
         "--fix", action="store_true",

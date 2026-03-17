@@ -43,21 +43,21 @@ Use these agents for complex tasks in their domains.
 
 Uses CMake 3.20+ with C++23.
 
-**CRITICAL**: Build directories are `clion-build-debug` or `vscode-build` (NEVER `build`).
+**CRITICAL**: Build directory is `porytiles-build-debug` (NEVER `build`).
 
 Quick reference:
 ```bash
 uv run Scripts/format.py          # Format code
-cmake --build clion-build-debug -j7 > /tmp/build.log 2>&1  # Build (check exit code)
-cmake --install clion-build-debug --prefix ~/.local        # Install to ~/.local/bin
-./clion-build-debug/Porytiles2/tests/Porytiles2AllTests > /tmp/test.log 2>&1  # Test
+cmake --build porytiles-build-debug -j7 > /tmp/build.log 2>&1  # Build (check exit code)
+cmake --install porytiles-build-debug --prefix ~/.local        # Install to ~/.local/bin
+./porytiles-build-debug/Porytiles2/tests/Porytiles2AllTests > /tmp/test.log 2>&1  # Test
 ```
 
 **After building, always install the executable to make it available for testing.**
 
 ## Code Coverage
 
-Uses LLVM source-based coverage via `Scripts/coverage.py`. Build directory: `clion-build-coverage`.
+Uses LLVM source-based coverage via `Scripts/coverage.py`. Build directory: `porytiles-build-coverage`.
 
 ```bash
 uv run Scripts/coverage.py build                    # Configure, build, run tests, merge profile data
