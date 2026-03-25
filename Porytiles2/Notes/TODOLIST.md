@@ -4,8 +4,12 @@
 
 ## Refactor and finish TilesetRepo and project impl
 - Make .pla files a first class type in Porymap component (need a domain type for .pla)
+- Create domain-layer interfaces for key files, each with different implementations
+  - e.g. MetatileLoader interface, ProjectBinMetatileLoader reads standard `metatiles.bin` file, ProjectJsonMetatileLoader reads our custom json format, etc
+  - this will easily enable the JSON impl below
+  - could this simplify pokeemerald vs firered handling? i don't like this logic peppering the domain layer. we could detect in composition root and pass in correct impl
 - JSON Impl
-  - Start working on a JSON impl that can read/write tilesets from a standardized JSON format 
+  - Start working on a JSON impl that can read/write tilesets from a standardized JSON format
 
 ## Palette Packing
 - Implement multiplicity-based dfs and bfs
@@ -15,11 +19,11 @@
   - the paper has some ideas on which algorithm to use depending on problem set's "multiplicity"
   - let's make the shotgun approach smart based on the character of the input
   - the shotgun approach should use a **threadpool** to run sub-strategies in parallel across multiple cores
-    - feasibility analysis confirmed this is viable: see `Notes/parallel_packing_strategy_analysis.md`
+    - analysis confirmed this is viable: see `Notes/parallel_packing_strategy_analysis.md`
     - iterations are embarrassingly parallel (stateless strategies, immutable input, no shared mutable state)
     - cooperative cancellation via `std::atomic<bool>` checked alongside existing `node_cutoff` in DFS/BFS
     - also opens the door to "best solution" semantics (compare results by quality) instead of first-success
-- Implement feasibility analysis in `Notes/packing_diagnostics_and_feasibility_analysis.md`
+- Implement feasibility analysis in `Notes/packing_diagnostics_and_feasibility_analysis.md` for significantly better user diagnostics
 
 ## Tile Sharing
 - explore why we only seem to hit prefilled source conflicts (how to trigger prefilled destination conflicts?)
@@ -29,6 +33,9 @@
   - user could then say `--exclude-sharing=123,456` and see if excluding some groups helps others share easier
 - build out more extensive tests
 - final review pass for diagnostic messages
+- implement tile-sharing-packing:optimal (see `Notes/tile_sharing_optimality_analysis.md`)
+- implement tile-sharing-alignment:optimal (see `Notes/tile_sharing_optimality_analysis.md`)
+- long term: implement the `Joint Backtracking Approach` outlined in `Notes/tile_sharing_optimality_analysis.md` for fully optimal solution
 
 ## Multi-palette animations with FrameLinking::automatic
 Multi-palette animations (e.g., pokefirered general water with different blue hues) will be supported by having
