@@ -21,6 +21,15 @@
     - also opens the door to "best solution" semantics (compare results by quality) instead of first-success
 - Implement feasibility analysis in `Notes/packing_diagnostics_and_feasibility_analysis.md`
 
+## Tile Sharing
+- explore why we only seem to hit prefilled source conflicts (how to trigger prefilled destination conflicts?)
+- explore how shared color conflicts work in practice: sometimes tiles that look like they should be shareable hit this
+- provide some way for users to "exclude" certain groups from sharing
+  - need some kind of unique, deterministic ID for a sharable group
+  - user could then say `--exclude-sharing=123,456` and see if excluding some groups helps others share easier
+- build out more extensive tests
+- final review pass for diagnostic messages
+
 ## Multi-palette animations with FrameLinking::automatic
 Multi-palette animations (e.g., pokefirered general water with different blue hues) will be supported by having
 users provide multiple color variants within a single animation definition. These variants are natural
