@@ -953,7 +953,7 @@ void emit_sharing_summary(
                                 continue;
                             }
                             remark_lines.emplace_back(format.format(
-                                "      Palette '{}' slot '{}': color '{}' blocked by locked color '{}'.",
+                                "      '{}' slot '{}': color '{}' blocked by locked color '{}'.",
                                 FormatParam{pal_filename(detail.palette_index), Style::bold},
                                 FormatParam{detail.target_slot, Style::bold},
                                 FormatParam{detail.blocked_color, Style::bold},
@@ -976,7 +976,7 @@ void emit_sharing_summary(
                                 continue;
                             }
                             remark_lines.emplace_back(format.format(
-                                "      Palette '{}': prefilled color '{}' could not be linked to color '{}' in "
+                                "      '{}': prefilled color '{}' could not be linked to color '{}' in "
                                 "palette '{}'.",
                                 FormatParam{pal_filename(detail.source_pal_index), Style::bold},
                                 FormatParam{detail.source_color, Style::bold},
@@ -1062,8 +1062,7 @@ void emit_palette_diagnostics(
         if (maybe_packed_pal.has_value()) {
             constexpr auto pal_tag = "palette-packing-result";
             std::vector<std::string> remark_lines;
-            remark_lines.emplace_back(
-                format.format("Palette '{}' packing result:", FormatParam{pal_filename(i), Style::bold}));
+            remark_lines.emplace_back(format.format("'{}' packing result:", FormatParam{pal_filename(i), Style::bold}));
             remark_lines.emplace_back();
             std::ranges::copy(pal_printer.print_rgba_pal(maybe_packed_pal.value()), std::back_inserter(remark_lines));
             diag.remark(pal_tag, remark_lines);

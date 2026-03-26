@@ -144,15 +144,31 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
                     .source_pal_index = link.source_pal,
                     .source_color = link.source_color});
         }
-        else if (std::holds_alternative<AbsolutePosition>(position) && failure_counts != nullptr) {
-            // Link dropped: source color is prefilled (locked) — Phase 1 set it to AbsolutePosition
-            failure_counts->prefilled_source_conflict_details.push_back(
-                PrefilledSourceConflictDetail{
-                    .source_group_index = link.source_group_index,
-                    .source_pal_index = link.source_pal,
-                    .source_color = link.source_color,
-                    .ref_pal_index = link.ref_pal,
-                    .ref_color = link.ref_color});
+        else if (std::holds_alternative<AbsolutePosition>(position)) {
+            // Link dropped: source color is prefilled (locked) — Phase 1 set it to AbsolutePosition.
+            // However, if the ref color in the ref palette is also AbsolutePosition at the same slot,
+            // alignment is naturally satisfied — no conflict to report.
+            bool naturally_aligned = false;
+            const auto source_slot = std::get<AbsolutePosition>(position).slot;
+            if (states.at(link.ref_pal).has_value()) {
+                const auto &ref_state = states.at(link.ref_pal).value();
+                if (ref_state.color_positions.contains(link.ref_color)) {
+                    const auto &ref_position = ref_state.color_positions.at(link.ref_color);
+                    if (std::holds_alternative<AbsolutePosition>(ref_position) &&
+                        std::get<AbsolutePosition>(ref_position).slot == source_slot) {
+                        naturally_aligned = true;
+                    }
+                }
+            }
+            if (!naturally_aligned && failure_counts != nullptr) {
+                failure_counts->prefilled_source_conflict_details.push_back(
+                    PrefilledSourceConflictDetail{
+                        .source_group_index = link.source_group_index,
+                        .source_pal_index = link.source_pal,
+                        .source_color = link.source_color,
+                        .ref_pal_index = link.ref_pal,
+                        .ref_color = link.ref_color});
+            }
         }
     }
 
@@ -325,7 +341,7 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
     }
 
     /*
-     * === Phase 4.5: Fallback — assign free slots to unresolved Indirect colors ===
+     * === Phase 5: Fallback — assign free slots to unresolved Indirect colors ===
      *
      * Phase 4 may leave colors in IndirectPosition if resolution failed (broken chain, prefilled destination conflict,
      * or no free slot for eviction). These colors still need placement in the final palette, so assign them sequential
@@ -368,7 +384,7 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
         }
     }
 
-    // === Phase 5: Build final palettes from resolved positions ===
+    // === Phase 6: Build final palettes from resolved positions ===
     std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> result{};
 
     for (const auto &state_opt : states) {

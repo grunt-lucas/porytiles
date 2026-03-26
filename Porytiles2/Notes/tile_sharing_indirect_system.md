@@ -445,7 +445,15 @@ Two best-effort skip conditions:
   stays wherever sequential fill would have put it.
 - **Broken chain**: Reference color not found or not yet resolved. Skipped silently.
 
-### Phase 5 — Build Final Palettes
+### Phase 5 — Fallback Fill for Unresolved Indirects
+
+Phase 4 may leave colors in `IndirectPosition` if resolution failed (broken chain,
+prefilled destination conflict, or no free slot for eviction). These colors still need
+placement in the final palette, so assign them sequential free slots — identical to
+Phase 3's logic but targeting `IndirectPosition` instead of `UndeterminedPosition`.
+This ensures all colors get placed even if Indirect alignment fails.
+
+### Phase 6 — Build Final Palettes
 
 Straightforward materialization — place every `AbsolutePosition` color at its
 resolved slot:

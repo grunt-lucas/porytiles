@@ -290,11 +290,84 @@ TEST(PaletteBuilderTests, PrefilledSourceColor_LinkDropped_CounterIncremented)
     EXPECT_EQ(result.at(1).value().at(2), green);
 }
 
+TEST(PaletteBuilderTests, PrefilledSourceColor_NaturallyAligned_NoConflictRecorded)
+{
+    // Both source (blue, pal 1) and ref (red, pal 0) are prefilled at slot 4.
+    // Link: blue→red. Since both are AbsolutePosition at the same slot, alignment is
+    // naturally satisfied — no prefilled source conflict should be recorded.
+    auto color_map = make_color_map({red, blue});
+
+    // Palette 0 has red
+    PackedPalette packed0{0};
+    {
+        ColorSet cs;
+        cs.set(color_map.index_at_color(red).value());
+        PackableTile tile{PackableTile::RegularId{0}, cs};
+        packed0.add_tile(tile);
+    }
+
+    // Palette 1 has blue
+    PackedPalette packed1{1};
+    {
+        ColorSet cs;
+        cs.set(color_map.index_at_color(blue).value());
+        PackableTile tile{PackableTile::RegularId{1}, cs};
+        packed1.add_tile(tile);
+    }
+
+    std::vector<PackedPalette> packed_pals = {packed0, packed1};
+
+    // Prefilled: red locked at slot 4 in palette 0, blue locked at slot 4 in palette 1
+    std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> prefilled_pals{};
+    {
+        Palette<Rgba32, pal::max_size> prefilled0{};
+        prefilled0.set(0, transparent);
+        prefilled0.set(4, red);
+        prefilled_pals.at(0) = prefilled0;
+    }
+    {
+        Palette<Rgba32, pal::max_size> prefilled1{};
+        prefilled1.set(0, transparent);
+        prefilled1.set(4, blue);
+        prefilled_pals.at(1) = prefilled1;
+    }
+
+    // Link: blue in pal 1 follows red in pal 0
+    std::vector<IndirectLink> links = {
+        IndirectLink{
+            .source_pal = 1,
+            .source_color = blue,
+            .ref_pal = 0,
+            .ref_color = red,
+            .source_group_index = 0,
+        },
+    };
+
+    AlignmentFailureCounts fc{};
+    auto result = build_all_output_palettes(packed_pals, prefilled_pals, color_map, transparent, links, &fc);
+
+    // No conflicts should be recorded — alignment is naturally satisfied
+    EXPECT_EQ(fc.prefilled_source_conflict_details.size(), 0u);
+    EXPECT_EQ(fc.first_writer_wins_details.size(), 0u);
+    EXPECT_EQ(fc.prefilled_destination_conflict_details.size(), 0u);
+    EXPECT_EQ(fc.broken_chain_details.size(), 0u);
+    EXPECT_EQ(fc.no_free_slot_details.size(), 0u);
+    EXPECT_EQ(fc.total(), 0u);
+
+    // Red should be at slot 4 in palette 0
+    ASSERT_TRUE(result.at(0).has_value());
+    EXPECT_EQ(result.at(0).value().at(4), red);
+
+    // Blue should be at slot 4 in palette 1
+    ASSERT_TRUE(result.at(1).has_value());
+    EXPECT_EQ(result.at(1).value().at(4), blue);
+}
+
 TEST(PaletteBuilderTests, PrefilledDestinationConflict_CounterIncremented_FallbackPlacement)
 {
     // blue in pal 1 links to red in pal 0 (shape group 0). Red gets slot 1 via sequential fill.
     // Green is prefilled at slot 1 in pal 1, so resolving blue → slot 1 hits a destination conflict.
-    // Phase 4.5 fallback should assign blue to the next free slot (slot 2).
+    // Phase 5 fallback should assign blue to the next free slot (slot 2).
     auto color_map = make_color_map({red, blue, green});
 
     // Palette 0 has red (no prefilled)
