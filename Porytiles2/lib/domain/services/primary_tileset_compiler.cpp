@@ -228,6 +228,7 @@ class CompilerTask {
     std::vector<PixelTile<Rgba32>> porymap_pixel_rgba_{};
     std::vector<CanonicalPixelTile<Rgba32>> porymap_canonical_pixel_rgba_{};
     std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> new_porymap_pals_{};
+    std::map<std::size_t, std::size_t> tile_to_pal_{};
 
     // Working data
     std::unique_ptr<PorymapTilesetComponent> new_porymap_component_{};
@@ -711,19 +712,31 @@ CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> 
 {
     TileAssignmentResult result{};
 
+    /*
+     * Use the packer's authoritative palette assignment when available (optimize mode). This ensures tile sharing
+     * alignment is respected — the packer and alignment system chose specific palettes for each tile, and re-deriving
+     * via match_or_best could pick a different palette that breaks sharing slot alignment.
+     *
+     * Falls back to match_or_best for tiles not in the packer's assignments (e.g., locked/patch modes, or tiles
+     * excluded from packing like animation keyframes).
+     */
     // TODO: top_n matches should be configurable
-    // TODO: what if multiple pals match?
-    std::vector<PaletteMatchResult<Rgba32>> matches =
-        match_or_best(porytiles_tile, new_porymap_pals_, extrinsic_transparency_.value(), 1);
+    std::size_t pal_index;
+    if (tile_to_pal_.contains(flat_index)) {
+        pal_index = tile_to_pal_.at(flat_index);
+    }
+    else {
+        std::vector<PaletteMatchResult<Rgba32>> matches =
+            match_or_best(porytiles_tile, new_porymap_pals_, extrinsic_transparency_.value(), 1);
 
-    // No covering palette found
-    if (!matches.at(0).is_covered) {
-        result.status = TileAssignmentResult::Status::no_covering_pal;
-        result.match_results = std::move(matches);
-        return result;
+        if (!matches.at(0).is_covered) {
+            result.status = TileAssignmentResult::Status::no_covering_pal;
+            result.match_results = std::move(matches);
+            return result;
+        }
+        pal_index = matches.at(0).pal_index;
     }
 
-    const auto pal_index = matches.at(0).pal_index;
     const auto &matched_pal = new_porymap_pals_.at(pal_index);
     const auto index_tile = index_tile_from_color_tile(porytiles_tile, matched_pal, extrinsic_transparency_.value());
     const CanonicalPixelTile canonical_index_tile{index_tile};
@@ -843,6 +856,8 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
         pal_packer.pack_tiles(packing_params),
         format_.format("Failed to pack palettes for tileset '{}'.", FormatParam{tileset_.name(), Style::bold}),
         void);
+
+    tile_to_pal_ = std::move(pal_packing.tile_to_pal_);
 
     for (std::size_t i = 0; i < pal::num_pals; i++) {
         if (const auto &maybe_packed_pal = pal_packing.pals_.at(i); maybe_packed_pal.has_value()) {

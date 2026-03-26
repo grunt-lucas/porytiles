@@ -33,6 +33,7 @@
   - user could then say `--exclude-sharing=123,456` and see if excluding some groups helps others share easier
 - build out more extensive tests
 - final review pass for diagnostic messages
+- clean up tile_to_pal_ construction: handle the other cases more cleanly?
 - implement tile-sharing-packing:optimal (see `Notes/tile_sharing_optimality_analysis.md`)
 - implement tile-sharing-alignment:optimal (see `Notes/tile_sharing_optimality_analysis.md`)
 - long term: implement the `Joint Backtracking Approach` outlined in `Notes/tile_sharing_optimality_analysis.md` for fully optimal solution
