@@ -324,6 +324,50 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
         }
     }
 
+    /*
+     * === Phase 4.5: Fallback — assign free slots to unresolved Indirect colors ===
+     *
+     * Phase 4 may leave colors in IndirectPosition if resolution failed (broken chain, prefilled destination conflict,
+     * or no free slot for eviction). These colors still need placement in the final palette, so assign them sequential
+     * free slots — identical to Phase 3's logic but targeting IndirectPosition instead of UndeterminedPosition.
+     */
+    for (auto &state_opt : states) {
+        if (!state_opt.has_value()) {
+            continue;
+        }
+        auto &state = state_opt.value();
+
+        // Collect slots already used by Absolute positions
+        std::set<std::size_t> used_slots;
+        used_slots.insert(0); // Slot 0 is always reserved
+        for (const auto &[color, position] : state.color_positions) {
+            if (std::holds_alternative<AbsolutePosition>(position)) {
+                used_slots.insert(std::get<AbsolutePosition>(position).slot);
+            }
+        }
+
+        // Assign next free slot to each remaining Indirect color
+        std::size_t next_slot = 1;
+        for (auto &[color, position] : state.color_positions) {
+            if (!std::holds_alternative<IndirectPosition>(position)) {
+                continue;
+            }
+            while (next_slot < pal::max_size && used_slots.contains(next_slot)) {
+                ++next_slot;
+            }
+            if (next_slot < pal::max_size) {
+                position = AbsolutePosition{next_slot};
+                used_slots.insert(next_slot);
+                ++next_slot;
+            }
+            else {
+                panic(
+                    "ran out of palette slots during Indirect fallback fill for palette " +
+                    std::to_string(state.hw_index));
+            }
+        }
+    }
+
     // === Phase 5: Build final palettes from resolved positions ===
     std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> result{};
 

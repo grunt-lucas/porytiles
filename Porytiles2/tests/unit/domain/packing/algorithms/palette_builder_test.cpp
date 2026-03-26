@@ -290,6 +290,81 @@ TEST(PaletteBuilderTests, PrefilledSourceColor_LinkDropped_CounterIncremented)
     EXPECT_EQ(result.at(1).value().at(2), green);
 }
 
+TEST(PaletteBuilderTests, PrefilledDestinationConflict_CounterIncremented_FallbackPlacement)
+{
+    // blue in pal 1 links to red in pal 0 (shape group 0). Red gets slot 1 via sequential fill.
+    // Green is prefilled at slot 1 in pal 1, so resolving blue → slot 1 hits a destination conflict.
+    // Phase 4.5 fallback should assign blue to the next free slot (slot 2).
+    auto color_map = make_color_map({red, blue, green});
+
+    // Palette 0 has red (no prefilled)
+    PackedPalette packed0{0};
+    {
+        ColorSet cs;
+        cs.set(color_map.index_at_color(red).value());
+        PackableTile tile{PackableTile::RegularId{0}, cs};
+        packed0.add_tile(tile);
+    }
+
+    // Palette 1 has blue (green is prefilled, not packed)
+    PackedPalette packed1{1};
+    {
+        ColorSet cs;
+        cs.set(color_map.index_at_color(blue).value());
+        PackableTile tile{PackableTile::RegularId{1}, cs};
+        packed1.add_tile(tile);
+    }
+
+    std::vector<PackedPalette> packed_pals = {packed0, packed1};
+
+    // Prefilled: green locked at slot 1 in palette 1
+    Palette<Rgba32, pal::max_size> prefilled{};
+    prefilled.set(0, transparent);
+    prefilled.set(1, green);
+    std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> prefilled_pals{};
+    prefilled_pals.at(1) = prefilled;
+
+    // Link: blue in pal 1 follows red in pal 0
+    std::vector<IndirectLink> links = {
+        IndirectLink{
+            .source_pal = 1,
+            .source_color = blue,
+            .ref_pal = 0,
+            .ref_color = red,
+            .source_group_index = 0,
+        },
+    };
+
+    AlignmentFailureCounts fc{};
+    auto result = build_all_output_palettes(packed_pals, prefilled_pals, color_map, transparent, links, &fc);
+
+    // Exactly one prefilled destination conflict should be recorded
+    ASSERT_EQ(fc.prefilled_destination_conflict_details.size(), 1u);
+    EXPECT_EQ(fc.prefilled_destination_conflict_details.at(0).source_group_index, 0u);
+    EXPECT_EQ(fc.prefilled_destination_conflict_details.at(0).palette_index, 1u);
+    EXPECT_EQ(fc.prefilled_destination_conflict_details.at(0).target_slot, 1u);
+    EXPECT_EQ(fc.prefilled_destination_conflict_details.at(0).blocked_color, blue);
+    EXPECT_EQ(fc.prefilled_destination_conflict_details.at(0).locked_color, green);
+
+    // All other detail vectors should remain empty
+    EXPECT_EQ(fc.prefilled_source_conflict_details.size(), 0u);
+    EXPECT_EQ(fc.first_writer_wins_details.size(), 0u);
+    EXPECT_EQ(fc.broken_chain_details.size(), 0u);
+    EXPECT_EQ(fc.no_free_slot_details.size(), 0u);
+
+    // Total should be exactly 1
+    EXPECT_EQ(fc.total(), 1u);
+
+    // Palette 0: red at slot 1 (sequential fill, unaffected)
+    ASSERT_TRUE(result.at(0).has_value());
+    EXPECT_EQ(result.at(0).value().at(1), red);
+
+    // Palette 1: green preserved at prefilled slot 1, blue placed at fallback slot 2
+    ASSERT_TRUE(result.at(1).has_value());
+    EXPECT_EQ(result.at(1).value().at(1), green);
+    EXPECT_EQ(result.at(1).value().at(2), blue);
+}
+
 TEST(PaletteBuilderTests, EmptyPackedPals_ReturnsAllNullopt)
 {
     auto color_map = make_color_map({red});

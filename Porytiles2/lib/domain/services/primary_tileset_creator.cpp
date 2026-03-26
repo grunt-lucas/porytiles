@@ -2283,7 +2283,9 @@ PrimaryTilesetCreator::create_sample_porytiles_component(const std::string &tile
     set_grass_at(middle, 1);
     set_flower_key_frame_at(middle, 2);
     set_tall_grass_at(middle, 3);
+    set_grass_at(bottom, 4);
     set_roof_center_at(middle, 4);
+    set_grass_at(bottom, 5);
     set_roof_mart_at(middle, 5);
 
     component->bottom(bottom);
@@ -2307,9 +2309,9 @@ PrimaryTilesetCreator::create_sample_porytiles_component(const std::string &tile
 
     AnimParams flower_params{};
     flower_params.frame_names(
-        std::vector<DynamicCasedName>{DynamicCasedName{"center"}, DynamicCasedName{"right"}, DynamicCasedName{"left"}});
+        std::vector{DynamicCasedName{"center"}, DynamicCasedName{"right"}, DynamicCasedName{"left"}});
     flower_params.frame_order(
-        std::vector<DynamicCasedName>{
+        std::vector{
             DynamicCasedName{"center"},
             DynamicCasedName{"right"},
             DynamicCasedName{"center"},
