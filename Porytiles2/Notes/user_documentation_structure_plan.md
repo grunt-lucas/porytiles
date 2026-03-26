@@ -2,9 +2,11 @@
 
 ## Context
 
-Porytiles v2 is approaching a state where user documentation is needed. The existing `porytiles-user-docs` repo has one complete page (`tile-sharing.md`) and three placeholders. This plan defines the full documentation structure: 14 pages organized into 4 sections, covering everything from GBA background to CLI reference.
+Porytiles v2 is approaching a state where user documentation is needed. The existing `porytiles-user-docs` repo has one complete page (`tile-sharing.md`) and three placeholders. This plan defines the full documentation structure: 14 pages organized into 5 sections, covering everything from GBA background to CLI reference.
 
 The docs use **Sphinx + Read the Docs theme + MyST parser** (markdown files). The existing `tile-sharing.md` sets the tone: clear prose, concrete examples with ASCII diagrams, accessible to users who may be new to GBA tilesets.
+
+This structure follows the [Diataxis framework](https://diataxis.fr/): explanation (Background), tutorials (Getting Started), how-to guides (How-to Guides), and reference (Reference). The "Topics" section covers deep-dive explanation+reference hybrid pages for Porytiles subsystems that are too complex for pure reference but too detailed for pure explanation.
 
 ---
 
@@ -31,10 +33,14 @@ The docs use **Sphinx + Read the Docs theme + MyST parser** (markdown files). Th
 
 .. toctree::
    :maxdepth: 2
-   :caption: Guides
+   :caption: How-to Guides
 
    compile-decompile-workflow
-   metatile-attributes
+
+.. toctree::
+   :maxdepth: 2
+   :caption: Topics
+
    palette-packing
    tile-sharing
    animations
@@ -44,13 +50,14 @@ The docs use **Sphinx + Read the Docs theme + MyST parser** (markdown files). Th
    :maxdepth: 2
    :caption: Reference
 
+   metatile-attributes
    configuration
    cli-reference
 ```
 
 ### Files to delete
 - `docsrc/getting-started.md` (placeholder, replaced by `installation.md`)
-- `docsrc/guide.md` (placeholder, replaced by guide pages)
+- `docsrc/guide.md` (placeholder, replaced by how-to guides and topic pages)
 - `docsrc/reference.md` (placeholder, replaced by `configuration.md` + `cli-reference.md`)
 
 ### Files to preserve
@@ -159,9 +166,11 @@ Tutorial for bringing pre-existing tilesets under Porytiles management:
 
 ---
 
-### Section 3: Guides
+### Section 3: How-to Guides
 
 #### 7. `compile-decompile-workflow.md` — The Compile/Decompile Workflow
+
+**Diataxis type: How-to guide.** Task-oriented, assumes competence, focused on the daily workflow.
 
 The daily-use workflow guide (assumes user already has ≥1 managed tileset):
 - The daily loop: edit Porytiles assets → compile → view in Porymap; or edit in Porymap → decompile back
@@ -177,24 +186,13 @@ The daily-use workflow guide (assumes user already has ≥1 managed tileset):
 
 ---
 
-#### 8. `metatile-attributes.md` — Metatile Attributes
+### Section 4: Topics
 
-Reference-style guide for `attributes.csv`:
-- File format: columns, delimiters, row ordering
-- Behavior field: metatile behaviors, `metatile_behaviors.h` defines
-- Layer type / layer mode
-- Encounter type (FireRed only)
-- Terrain type (FireRed only)
-- Attribute size: 2 bytes (Emerald/Ruby) vs 4 bytes (FireRed)
-- How attributes map to metatile indices
-- Common behaviors table
-- future support for completely customizable attributes
+These pages cover Porytiles subsystems that require both conceptual explanation and detailed reference material. Each page is structured in two parts: **explanation prose first** (what it is, how it works, when to use it), followed by a clearly marked **reference section** (exact parameters, modes, formats). This hybrid structure is a pragmatic choice — splitting each into separate explanation and reference pages would fragment tightly coupled content.
 
-**Cross-references:** → `gba-decomp-tileset-system.md` for metatile basics, → `configuration.md` for `metatile-attr-size`
+#### 8. `palette-packing.md` — Palette Packing
 
----
-
-#### 9. `palette-packing.md` — Palette Packing
+**Diataxis type: Explanation + Reference hybrid.** Structured as explanation first, reference second.
 
 Deep guide structured as "basics first, tuning later":
 - What palette packing is: assigning tiles to hardware palettes under the 15-color constraint
@@ -212,13 +210,15 @@ Deep guide structured as "basics first, tuning later":
 
 ---
 
-#### 10. `tile-sharing.md` — Tile Sharing (EXISTING, PRESERVED)
+#### 9. `tile-sharing.md` — Tile Sharing (EXISTING, PRESERVED)
 
 Already complete at ~384 lines. No content changes needed. May add cross-reference links to `palette-packing.md`, `configuration.md`, and `diagnostics.md` later.
 
 ---
 
-#### 11. `animations.md` — Animations
+#### 10. `animations.md` — Animations
+
+**Diataxis type: Explanation + Reference hybrid.** Structured as explanation first, reference second.
 
 The most complex subsystem — needs significant depth:
 - What tile animations are on the GBA: frame sequences swapping tile data at runtime
@@ -235,7 +235,9 @@ The most complex subsystem — needs significant depth:
 
 ---
 
-#### 12. `diagnostics.md` — Understanding Diagnostics
+#### 11. `diagnostics.md` — Understanding Diagnostics
+
+**Diataxis type: Explanation + Reference hybrid.** Structured as explanation first, reference second.
 
 How to read and control Porytiles output:
 - Four severity levels: remarks, warnings, errors, fatal
@@ -250,7 +252,26 @@ How to read and control Porytiles output:
 
 ---
 
-### Section 4: Reference
+### Section 5: Reference
+
+#### 12. `metatile-attributes.md` — Metatile Attributes Reference
+
+**Diataxis type: Reference.** Information-oriented, organized by the structure of the data format.
+
+Reference for `attributes.csv`:
+- File format: columns, delimiters, row ordering
+- Behavior field: metatile behaviors, `metatile_behaviors.h` defines
+- Layer type / layer mode
+- Encounter type (FireRed only)
+- Terrain type (FireRed only)
+- Attribute size: 2 bytes (Emerald/Ruby) vs 4 bytes (FireRed)
+- How attributes map to metatile indices
+- Common behaviors table
+- future support for completely customizable attributes
+
+**Cross-references:** → `gba-decomp-tileset-system.md` for metatile basics, → `configuration.md` for `metatile-attr-size`
+
+---
 
 #### 13. `configuration.md` — Configuration Reference
 
@@ -298,29 +319,29 @@ Each command gets a usage example and links to its guide page.
 
 ## Page Summary
 
-| #  | File                               | Section         | Status              |
-|----|------------------------------------|-----------------|---------------------|
-| 1  | `gba-decomp-tileset-system.md`     | Background      | New                 |
-| 2  | `manual-tileset-insertion.md`      | Background      | New                 |
-| 3  | `porytiles-concepts.md`            | Background      | New                 |
-| 4  | `installation.md`                  | Getting Started | New                 |
-| 5  | `creating-your-first-tileset.md`   | Getting Started | New                 |
-| 6  | `importing-an-existing-tileset.md` | Getting Started | New                 |
-| 7  | `compile-decompile-workflow.md`    | Guides          | New                 |
-| 8  | `metatile-attributes.md`           | Guides          | New                 |
-| 9  | `palette-packing.md`               | Guides          | New                 |
-| 10 | `tile-sharing.md`                  | Guides          | Existing (preserve) |
-| 11 | `animations.md`                    | Guides          | New                 |
-| 12 | `diagnostics.md`                   | Guides          | New                 |
-| 13 | `configuration.md`                 | Reference       | New                 |
-| 14 | `cli-reference.md`                 | Reference       | New                 |
+| #  | File                               | Section         | Diataxis Type              | Status              |
+|----|------------------------------------|-----------------|----------------------------|---------------------|
+| 1  | `gba-decomp-tileset-system.md`     | Background      | Explanation                | New                 |
+| 2  | `manual-tileset-insertion.md`      | Background      | Explanation                | New                 |
+| 3  | `porytiles-concepts.md`            | Background      | Explanation                | New                 |
+| 4  | `installation.md`                  | Getting Started | Tutorial (prerequisite)    | New                 |
+| 5  | `creating-your-first-tileset.md`   | Getting Started | Tutorial                   | New                 |
+| 6  | `importing-an-existing-tileset.md` | Getting Started | Tutorial                   | New                 |
+| 7  | `compile-decompile-workflow.md`    | How-to Guides   | How-to guide               | New                 |
+| 8  | `palette-packing.md`              | Topics          | Explanation + Reference    | New                 |
+| 9  | `tile-sharing.md`                  | Topics          | Explanation + Reference    | Existing (preserve) |
+| 10 | `animations.md`                    | Topics          | Explanation + Reference    | New                 |
+| 11 | `diagnostics.md`                   | Topics          | Explanation + Reference    | New                 |
+| 12 | `metatile-attributes.md`           | Reference       | Reference                  | New                 |
+| 13 | `configuration.md`                 | Reference       | Reference                  | New                 |
+| 14 | `cli-reference.md`                 | Reference       | Reference                  | New                 |
 
 ## Implementation Approach
 
-This is a **documentation structure plan only** — actual content writing will happen page-by-page. Implementation order should follow the toctree order (background → getting started → guides → reference) since later pages reference earlier ones.
+This is a **documentation structure plan only** — actual content writing will happen page-by-page. Implementation order should follow the toctree order (background → getting started → how-to guides → topics → reference) since later pages reference earlier ones.
 
 ### Step 1: Restructure the toctree
-- Update `docsrc/index.rst` with the 4-section toctree above
+- Update `docsrc/index.rst` with the 5-section toctree above
 - Delete the 3 placeholder files (`getting-started.md`, `guide.md`, `reference.md`)
 - Create stub files for all 13 new pages (title + brief description placeholder)
 - Verify the Sphinx build succeeds with stubs
