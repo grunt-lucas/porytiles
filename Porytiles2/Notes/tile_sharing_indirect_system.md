@@ -93,6 +93,7 @@ struct AbsolutePosition {                      // Locked to a specific slot
 struct IndirectPosition {                      // "My slot is wherever ref_color is in ref_pal"
     std::size_t ref_pal_index;
     Rgba32 ref_color;
+    std::size_t source_group_index;           // Shape group origin (for diagnostics)
 };
 ```
 
@@ -116,28 +117,29 @@ base palettes."*
 
 ## The Orchestration Flow
 
-The full flow lives in `palette_packer.cpp` (see the comment block in the packer's
-`pack_tiles()` method):
+The full flow lives in `palette_packer.cpp`'s `pack_tiles()` method. The method uses
+step-numbered comments for the packing pipeline and phase-numbered comments for the
+three-phase sharing diagnostics. When `tile_sharing_alignment_` is set to `greedy`,
+the Indirect link system activates:
+
+### Pre-packing: Shape Group Metadata (Biased Mode Only)
+
+When `tile_sharing_packing_` is `biased`, shape groups are computed **before** the
+initial pack call so the packing strategy receives sharing-aware metadata:
 
 ```c++
-/*
- * The Indirect approach replaces the old two-pass absolute-slot constraint system:
- *  - Step 1: Build base palettes (sequential fill, no links) — needed for
- *            match_or_best matching
- *  - Step 2: Generate Indirect links (color-to-color references, not absolute
- *            slot targets)
- *  - Step 3: Build final palettes with Indirect links applied
- *  - Step 4: Build sharing diagnostics against final palettes (verified alignment)
- *
- * Key architectural insight: Indirect links reference colors, not slots. When
- * the final palettes are built, sequential fill may place non-shared colors at
- * different slots than the base palettes — but this doesn't matter because
- * Indirect links say "my slot is wherever that color ends up," and that color
- * gets a stable Absolute position during the final palette's own sequential fill.
- */
+if (params.tile_sharing_packing_ == TileSharingPacking::biased) {
+    combined_for_biased = build_combined_tiles(params, anim_keyframe_tiles);
+    shape_groups_for_biased = analyze_shape_groups(combined_for_biased.tiles, params.extrinsic_transparency_);
+
+    if (!shape_groups_for_biased.empty()) {
+        auto metadata = build_shape_group_metadata(shape_groups_for_biased, combined_for_biased.index_to_id);
+        packing_input.shape_group_metadata_ = std::move(metadata);
+    }
+}
 ```
 
-### Step 1: Build Base Palettes
+### Step 1: Build Base Palettes (Greedy Alignment Only)
 
 (`palette_packer.cpp` — the `build_all_output_palettes` call with empty links)
 
@@ -151,19 +153,21 @@ auto base_pals = build_all_output_palettes(
 ```
 
 These are "draft" palettes — colors land wherever sequential fill puts them. We need
-them so `match_or_best()` can determine which tile ended up in which palette.
+them so the conflict-minimization heuristic in the link builder can look up each
+ShapeMask's slot position in the reference member's base palette.
 
-### Step 2: Generate IndirectLinks
+### Step 2: Generate IndirectLinks (Greedy Alignment Only)
 
 (`palette_packer.cpp`)
 
 ```c++
 indirect_links = build_indirect_links(
-    shape_groups, combined.tiles, base_pals,
-    params.prefilled_pals_, params.extrinsic_transparency_);
+    shape_groups, tile_pal_assignments, base_pals, params.prefilled_pals_);
 ```
 
-See the [IndirectLink Generation](#indirectlink-generation) section below for details.
+The `tile_pal_assignments` map is built from the authoritative packing output — it maps
+each tile index to its hardware palette index. See the
+[IndirectLink Generation](#indirectlink-generation) section below for details.
 
 ### Step 3: Build Final Palettes
 
@@ -175,22 +179,29 @@ auto final_pals = build_all_output_palettes(
     params.prefilled_pals_,
     params.color_map_,
     params.extrinsic_transparency_,
-    indirect_links);  // <-- this time with links!
+    indirect_links,
+    !indirect_links.empty() ? &failure_counts : nullptr);
 ```
 
-Same function as Step 1, but with non-empty `indirect_links`. This runs the full
-five-phase algorithm described below.
+Same function as Step 1, but with non-empty `indirect_links` (or empty links when
+alignment is `off`). This runs the full six-phase algorithm described below.
 
-### Step 4: Build Sharing Diagnostics
+### Step 4: Sharing Diagnostics (Three-Phase Pipeline)
 
 (`palette_packer.cpp`)
 
-Builds `SharingResult` objects by verifying each shape group's members against the
-**final** palettes. For each member, it indexes the tile against its matched final
-palette and canonicalizes the result. Members whose canonical indexed tiles match the
-reference member's are confirmed as sharing-aligned and added to the result. Groups
-with 2+ verified members spanning 2+ palettes are recorded in
-`packing.sharing_results_`.
+Sharing diagnostics always run regardless of alignment config, using appropriate
+caveats in the output.
+
+- **Diagnostic Phase 1** — Detect sharing opportunities: identifies shape groups with
+  potential for tile sharing.
+- **Diagnostic Phase 2** — Compute partition groups: groups shape group members by
+  their assigned palette to determine which members ended up in different palettes.
+- **Diagnostic Phase 3** — Verify sharing alignment: checks each shape group's members
+  against the **final** palettes via `verify_sharing_alignment()`. For each member, it
+  indexes the tile against its matched final palette and canonicalizes the result.
+  Members whose canonical indexed tiles match the reference member's are confirmed as
+  sharing-aligned.
 
 ## IndirectLink Generation
 
@@ -200,18 +211,18 @@ For each shape group:
 
 ### 1. Resolve Each Member's Palette
 
+Each member's palette is determined from `tile_pal_assignments` — a map built from the
+authoritative packing output that maps each tile index to its hardware palette index.
+This is more reliable than re-matching against base palettes because it uses the actual
+packing decisions.
+
 ```c++
 for (std::size_t m = 0; m < group.members.size(); ++m) {
     const auto &member = group.members.at(m);
-    const auto &tile = tiles.at(member.tile_index);
-
-    auto matches = match_or_best(tile, flat_pals, extrinsic, 1);
-
-    if (matches.empty() || !matches.at(0).is_covered) {
-        continue;  // tile doesn't fully match any palette — skip
+    if (!tile_pal_assignments.contains(member.tile_index)) {
+        continue;  // tile wasn't packed — skip
     }
-
-    std::size_t hw_index = flat_to_hw_index.at(matches.at(0).pal_index);
+    std::size_t hw_index = tile_pal_assignments.at(member.tile_index);
     resolved.push_back(ResolvedMember{m, hw_index, member.colors});
 }
 ```
@@ -288,7 +299,7 @@ for (const auto &[mask, other_color] : other.colors) {
 The correspondence is through the `ShapeMask`: same mask key → same pixel region →
 colors must share a slot index.
 
-## The Five-Phase Palette Builder
+## The Six-Phase Palette Builder
 
 (`domain/packing/algorithms/palette_builder.cpp`)
 
@@ -326,7 +337,7 @@ for (const auto &link : indirect_links) {
     auto &position = state.color_positions.at(link.source_color);
     // First-writer-wins: only set Indirect on Undetermined positions (prevents cycles)
     if (std::holds_alternative<UndeterminedPosition>(position)) {
-        position = IndirectPosition{link.ref_pal, link.ref_color};
+        position = IndirectPosition{link.ref_pal, link.ref_color, link.source_group_index};
     }
 }
 ```
@@ -469,20 +480,34 @@ for (const auto &[color, position] : state.color_positions) {
 }
 ```
 
-## Aggressive vs. Opportunistic Mode
+## Configuration: Packing and Alignment Modes
 
-Both modes use the same Indirect link pipeline. The difference is **before packing**:
+Tile sharing is controlled by two independent config enums:
 
-- **Opportunistic**: Pack tiles normally, then analyze shape groups and apply Indirect
-  links post-hoc. Whatever sharing opportunities fall out naturally get aligned.
+**`TileSharingPacking`** (`domain/config/tile_sharing_packing.hpp`): Controls whether
+the packing strategy is shape-group-aware.
 
-- **Aggressive**: Before packing, compute `ShapeGroupMetadata` mapping tiles to their
+- **`off`** (default): Packing ignores shape group membership entirely.
+- **`biased`**: Before packing, compute `ShapeGroupMetadata` mapping tiles to their
   shape groups. The packing strategy (backtracking, etc.) uses this metadata to
   **penalize placing sibling tiles in the same palette**, maximizing the chance that
   shape group members end up in different palettes — creating more sharing
   opportunities for the Indirect system to capitalize on.
+- **`optimal`**: Not yet implemented. Would reject sibling co-placement outright.
 
-Both converge at the same link-building and diagnostic flow in `palette_packer.cpp`.
+**`TileSharingAlignment`** (`domain/config/tile_sharing_alignment.hpp`): Controls
+palette slot alignment for sharing deduplication.
+
+- **`off`** (default): Pure sequential fill with no sharing alignment.
+- **`greedy`**: Build Indirect links and apply the six-phase palette builder to align
+  palette slot indices for color-isomorphic tiles.
+- **`optimal`**: Not yet implemented. Would use a CSP-based solver for globally optimal
+  alignment.
+
+Both dimensions are independent — you can use `biased` packing with `off` alignment
+(shape-aware packing without slot alignment), or `off` packing with `greedy` alignment
+(post-hoc alignment on whatever the normal packer produces). Both converge at the same
+link-building and diagnostic flow in `palette_packer.cpp`.
 
 ## Key Design Insight
 
