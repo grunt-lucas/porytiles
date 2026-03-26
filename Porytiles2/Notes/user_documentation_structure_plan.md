@@ -17,7 +17,7 @@ The docs use **Sphinx + Read the Docs theme + MyST parser** (markdown files). Th
    :maxdepth: 2
    :caption: Background
 
-   gba-tileset-system
+   gba-decomp-tileset-system
    manual-tileset-insertion
    porytiles-concepts
 
@@ -62,15 +62,18 @@ The docs use **Sphinx + Read the Docs theme + MyST parser** (markdown files). Th
 
 ### Section 1: Background
 
-#### 1. `gba-tileset-system.md` — How the GBA Tileset System Works
+#### 1. `gba-decomp-tileset-system.md` — How the GBA + Gen III Decomp Tileset System Works
 
-Covers GBA hardware fundamentals for users new to tilesets:
+Covers GBA hardware + Gen III decomp fundamentals for users new to tilesets:
 - 8x8 tiles, 4bpp indexed color, palette slots 0–15 with slot 0 as transparency
-- Metatiles: 16x16 or 24x24 composites of 8x8 subtiles; tilemap entries (tile index + palette index + flip flags)
+- Metatiles: 16x16 composites of 8x8 subtiles (2x2 tiles); tilemap entries (tile index + palette index + flip flags)
+- Metatile dual vs triple layer concept
 - Primary vs secondary tilesets: tile count limits, palette allocation (primary gets palettes 0–5, secondary gets 6–12 in default emerald)
 - The `fieldmap.h` constants and what they control at a high level
 - Artifact files: `tiles.png`, `palettes/*.pal`, `metatiles.bin`, `metatile_attributes.bin`
-- How Porymap fits in as the visual editor vs Porytiles as the compiler
+- How Porymap fits in as the visual editor with some overlapping features
+  - Porytiles + Porymap together are a "super suite" of tools and are truly complementary
+  - Porytiles is designed with this in mind, assumes you are using both tools in a complementary way
 
 **Cross-references:** → `configuration.md` for fieldmap constants, → `metatile-attributes.md` for attribute details
 
@@ -81,15 +84,16 @@ Covers GBA hardware fundamentals for users new to tilesets:
 Standalone page covering the manual (non-Porytiles) tileset creation process. This is **not just historical** — manual insertion is still needed for certain edge-case optimizations Porytiles can't handle.
 
 - Tools involved: TilemapStudio, Aseprite, Porymap, text editor
+- Creating a new tileset via Porymap
 - Creating indexed `tiles.png` manually: converting RGBA to 4bpp indexed, arranging 8x8 tiles
 - Building JASC-format `.pal` files by hand
-- Writing `metatiles.bin`: how metatile entries encode tile index, palette, flip flags
-- Writing `metatile_attributes.bin` for behaviors
-- Registering the tileset in the decomp project (`tileset.c/h` headers)
-- Pain points: re-indexing when palettes change, manual palette slot assignment, error-prone binary editing
+- `metatiles.bin`: how metatile entries encode tile index, palette, flip flags
+- `metatile_attributes.bin` for behaviors
+- How to edit `metatiles.bin` and `metatile_attributes.bin` via Porymap (binary editing is not necessary)
+- Pain points: re-indexing when palettes change, manual palette slot assignment, tedious metatile painting
 - When manual is still the right choice (specific optimizations, edge cases Porytiles doesn't cover)
 
-**Cross-references:** → `gba-tileset-system.md` for terminology, → `creating-your-first-tileset.md` for the Porytiles alternative
+**Cross-references:** → `gba-decomp-tileset-system.md` for terminology, → `creating-your-first-tileset.md` for the Porytiles alternative
 
 ---
 
@@ -106,7 +110,7 @@ Bridges GBA background → hands-on tutorials. Introduces Porytiles-specific con
 - **Checksum verification**: anti-clobber protection
 - **Supported base games**: pokeruby (limited), pokefirered (full, terrain/encounter types), pokeemerald, pokeemerald-expansion
 
-**Cross-references:** → `gba-tileset-system.md` for GBA terms, → `configuration.md` for setting extrinsic transparency and edit modes
+**Cross-references:** → `gba-decomp-tileset-system.md` for GBA terms, → `configuration.md` for setting extrinsic transparency and edit modes
 
 ---
 
@@ -136,7 +140,7 @@ The primary tutorial — step-by-step walkthrough for new users:
 - Running `porytiles2 compile-tileset gTileset_MyTileset` and viewing in Porymap
 - Common first-time errors and how to fix them
 
-**Cross-references:** → `gba-tileset-system.md` for "what is a metatile", → `metatile-attributes.md` for attributes, → `configuration.md` for customization
+**Cross-references:** → `gba-decomp-tileset-system.md` for "what is a metatile", → `metatile-attributes.md` for attributes, → `configuration.md` for customization
 
 ---
 
@@ -148,7 +152,7 @@ Tutorial for bringing pre-existing tilesets under Porytiles management:
 - What happens: Porytiles reads Porymap artifacts, decompiles to RGBA layers + `attributes.csv`, creates manifest
 - Verifying the import: re-compile and diff, or visual inspection in Porymap
 - Import transparency options (`import_transparency`: alpha, extrinsic, mixed)
-- Limitations: pokeruby import not supported
+- Limitations: pokeruby import not currently supported
 - Brief note on importing animation-bearing tilesets (→ animations page)
 
 **Cross-references:** → `porytiles-concepts.md` for managed vs unmanaged, → `compile-decompile-workflow.md` for ongoing workflow, → `animations.md` for animation import
@@ -184,8 +188,9 @@ Reference-style guide for `attributes.csv`:
 - Attribute size: 2 bytes (Emerald/Ruby) vs 4 bytes (FireRed)
 - How attributes map to metatile indices
 - Common behaviors table
+- future support for completely customizable attributes
 
-**Cross-references:** → `gba-tileset-system.md` for metatile basics, → `configuration.md` for `metatile-attr-size`
+**Cross-references:** → `gba-decomp-tileset-system.md` for metatile basics, → `configuration.md` for `metatile-attr-size`
 
 ---
 
@@ -200,6 +205,7 @@ Deep guide structured as "basics first, tuning later":
   - overload_and_remove: `max_attempts`, `seed`, `shuffle_strategy`
 - Palette hints: what they are, YAML syntax, when they help
 - `pal_hints_enabled` toggle
+- How to troubleshoot, common failure causes
 - Relationship to tile sharing packing modes
 
 **Cross-references:** → `tile-sharing.md`, → `configuration.md` for YAML syntax, → `diagnostics.md` for packing diagnostics
@@ -294,7 +300,7 @@ Each command gets a usage example and links to its guide page.
 
 | #  | File                               | Section         | Status              |
 |----|------------------------------------|-----------------|---------------------|
-| 1  | `gba-tileset-system.md`            | Background      | New                 |
+| 1  | `gba-decomp-tileset-system.md`     | Background      | New                 |
 | 2  | `manual-tileset-insertion.md`      | Background      | New                 |
 | 3  | `porytiles-concepts.md`            | Background      | New                 |
 | 4  | `installation.md`                  | Getting Started | New                 |
