@@ -24,6 +24,16 @@ namespace {
 using namespace porytiles2;
 
 /**
+ * @brief Creates a FormatParam for an Rgba32 color displayed as "R, G, B" with bold true-color ANSI styling.
+ */
+FormatParam color_param(const Rgba32 &color)
+{
+    auto text =
+        std::to_string(color.red()) + ", " + std::to_string(color.green()) + ", " + std::to_string(color.blue());
+    return FormatParam{std::move(text), rgb_fg_style(color.red(), color.green(), color.blue()) | Style::bold};
+}
+
+/**
  * @brief Result of extracting colors from a palette, tracking both unique colors and occupied slots.
  */
 struct ColorSetWithOccupancy {
@@ -234,8 +244,6 @@ struct PartitionGroup {
  */
 struct PartialAlignmentInfo {
     std::size_t group_id;
-    std::size_t verified_count;
-    std::size_t matching_count;
     std::size_t dropped_color_version_count;
 };
 
@@ -268,7 +276,6 @@ struct Phase3GroupResult {
     std::size_t shape_group_index;
     bool is_partial;
     std::size_t dropped_color_version_count;
-    std::size_t verified_count;
     std::size_t matching_count;
     std::map<std::size_t, std::vector<std::size_t>> members_by_pal;
 };
@@ -549,9 +556,7 @@ void populate_tile_to_pal(PalettePacking &packing, const PackingOutput &output)
             const bool is_partial = dropped_color_version_count > 0;
             if (is_partial) {
                 ++result.partially_aligned_count;
-                result.partial_alignment_infos.push_back(
-                    PartialAlignmentInfo{
-                        sg_index, verified.size(), result_members.size(), dropped_color_version_count});
+                result.partial_alignment_infos.push_back(PartialAlignmentInfo{sg_index, dropped_color_version_count});
             }
             else {
                 ++result.fully_aligned_count;
@@ -567,7 +572,6 @@ void populate_tile_to_pal(PalettePacking &packing, const PackingOutput &output)
                     sg_index,
                     is_partial,
                     dropped_color_version_count,
-                    verified.size(),
                     result_members.size(),
                     std::move(members_by_pal)});
         }
@@ -780,10 +784,8 @@ void emit_phase3_diagnostics(
             remark_lines.emplace_back("--------");
             remark_lines.emplace_back("");
             remark_lines.emplace_back(format.format(
-                "'{}' color version(s) (of '{}' verified members) diverged from the reference and were "
-                "dropped.",
-                FormatParam{group.dropped_color_version_count, Style::bold},
-                FormatParam{group.verified_count, Style::bold}));
+                "'{}' color version(s) diverged from the reference and were dropped.",
+                FormatParam{group.dropped_color_version_count, Style::bold}));
         }
 
         if (params.tile_sharing_alignment_ == TileSharingAlignment::off) {
@@ -860,10 +862,8 @@ void emit_sharing_summary(
         remark_lines.emplace_back("Partially aligned groups:");
         for (const auto &info : phase3.partial_alignment_infos) {
             remark_lines.emplace_back(format.format(
-                "  Group '{}': '{}' of '{}' verified member(s) aligned, '{}' color version(s) dropped.",
+                "  Group '{}': '{}' color version(s) dropped.",
                 FormatParam{info.group_id, Style::bold},
-                FormatParam{info.matching_count, Style::bold},
-                FormatParam{info.verified_count, Style::bold},
                 FormatParam{info.dropped_color_version_count, Style::bold}));
         }
         remark_lines.emplace_back("");
@@ -960,8 +960,8 @@ void emit_sharing_summary(
                                 "      '{}' slot '{}': color '{}' blocked by locked color '{}'.",
                                 FormatParam{pal_filename(detail.palette_index), Style::bold},
                                 FormatParam{detail.target_slot, Style::bold},
-                                FormatParam{detail.blocked_color, Style::bold},
-                                FormatParam{detail.locked_color, Style::bold}));
+                                color_param(detail.blocked_color),
+                                color_param(detail.locked_color)));
                         }
                     }
                     if (group_no_free > 0) {
@@ -978,12 +978,12 @@ void emit_sharing_summary(
                             remark_lines.emplace_back(format.format(
                                 "      '{}': color '{}' linked to '{}' by group '{}',",
                                 FormatParam{pal_filename(detail.source_pal_index), Style::bold},
-                                FormatParam{detail.source_color, Style::bold},
+                                color_param(detail.source_color),
                                 FormatParam{pal_filename(detail.winning_ref_pal_index), Style::bold},
                                 FormatParam{detail.winning_group_index, Style::bold}));
                             remark_lines.emplace_back(format.format(
                                 "        this group wanted ref color '{}' in '{}'.",
-                                FormatParam{detail.losing_ref_color, Style::bold},
+                                color_param(detail.losing_ref_color),
                                 FormatParam{pal_filename(detail.losing_ref_pal_index), Style::bold}));
                         }
                     }
@@ -998,8 +998,8 @@ void emit_sharing_summary(
                                 "      '{}': prefilled color '{}' could not be linked to color '{}' in "
                                 "palette '{}'.",
                                 FormatParam{pal_filename(detail.source_pal_index), Style::bold},
-                                FormatParam{detail.source_color, Style::bold},
-                                FormatParam{detail.ref_color, Style::bold},
+                                color_param(detail.source_color),
+                                color_param(detail.ref_color),
                                 FormatParam{pal_filename(detail.ref_pal_index), Style::bold}));
                         }
                     }
@@ -1014,9 +1014,9 @@ void emit_sharing_summary(
                                 "      '{}': color '{}' ended at slot '{}', but ref color '{}' in '{}' is at "
                                 "slot '{}'.",
                                 FormatParam{pal_filename(detail.source_pal_index), Style::bold},
-                                FormatParam{detail.source_color, Style::bold},
+                                color_param(detail.source_color),
                                 FormatParam{detail.source_final_slot, Style::bold},
-                                FormatParam{detail.ref_color, Style::bold},
+                                color_param(detail.ref_color),
                                 FormatParam{pal_filename(detail.ref_pal_index), Style::bold},
                                 FormatParam{detail.ref_final_slot, Style::bold}));
                         }
