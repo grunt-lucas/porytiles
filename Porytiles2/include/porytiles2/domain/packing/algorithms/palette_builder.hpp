@@ -73,6 +73,24 @@ struct NoFreeSlotDetail {
 };
 
 /**
+ * @brief Detail record for a post-resolution slot mismatch.
+ *
+ * @details
+ * Captured after Phase 5 when an IndirectLink's source color and reference color end up at different final slots,
+ * despite the link being successfully applied in Phase 2 and resolved in Phase 4. This occurs when Phase 4 eviction
+ * (either intra-palette or cross-palette) displaces a color from its resolved target slot after resolution.
+ */
+struct PostResolutionMismatchDetail {
+    std::size_t source_group_index;
+    std::size_t source_pal_index;
+    Rgba32 source_color;
+    std::size_t source_final_slot;
+    std::size_t ref_pal_index;
+    Rgba32 ref_color;
+    std::size_t ref_final_slot;
+};
+
+/**
  * @brief Detail record for a single first-writer-wins conflict during Indirect link application.
  *
  * @details
@@ -109,12 +127,13 @@ struct AlignmentFailureCounts {
     std::vector<PrefilledSourceConflictDetail> prefilled_source_conflict_details;
     std::vector<NoFreeSlotDetail> no_free_slot_details;
     std::vector<FirstWriterWinsDetail> first_writer_wins_details;
+    std::vector<PostResolutionMismatchDetail> post_resolution_mismatch_details;
 
     [[nodiscard]] std::size_t total() const
     {
         return broken_chain_details.size() + prefilled_destination_conflict_details.size() +
                prefilled_source_conflict_details.size() + no_free_slot_details.size() +
-               first_writer_wins_details.size();
+               first_writer_wins_details.size() + post_resolution_mismatch_details.size();
     }
 };
 

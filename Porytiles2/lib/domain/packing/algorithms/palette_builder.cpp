@@ -120,6 +120,16 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
         states.at(hw) = std::move(state);
     }
 
+    // Track successfully applied indirect links for post-resolution verification
+    struct AppliedIndirect {
+        std::size_t source_pal;
+        Rgba32 source_color;
+        std::size_t ref_pal;
+        Rgba32 ref_color;
+        std::size_t source_group_index;
+    };
+    std::vector<AppliedIndirect> applied_indirects;
+
     // === Phase 2: Apply Indirect links ===
     for (const auto &link : indirect_links) {
         if (!states.at(link.source_pal).has_value()) {
@@ -135,11 +145,17 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
         // First-writer-wins: only set Indirect on Undetermined positions (prevents cycles)
         if (std::holds_alternative<UndeterminedPosition>(position)) {
             position = IndirectPosition{link.ref_pal, link.ref_color, link.source_group_index};
+            // Don't record here — Phase 4 will record if resolution succeeds
         }
         else if (std::holds_alternative<IndirectPosition>(position)) {
             const auto &existing = std::get<IndirectPosition>(position);
             // Compatible: same reference — no actual conflict
             if (existing.ref_pal_index == link.ref_pal && existing.ref_color == link.ref_color) {
+                // The existing IndirectPosition already satisfies this link — record for post-verification
+                // (Phase 4 will only record the winning group, so compatible groups need recording here)
+                applied_indirects.push_back(
+                    AppliedIndirect{
+                        link.source_pal, link.source_color, link.ref_pal, link.ref_color, link.source_group_index});
                 continue;
             }
             if (failure_counts != nullptr) {
@@ -247,6 +263,8 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
             Rgba32 color;
             std::size_t target_slot;
             std::size_t source_group_index;
+            std::size_t ref_pal_index;
+            Rgba32 ref_color;
         };
         std::vector<IndirectResolution> resolutions;
 
@@ -292,11 +310,17 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
                 continue;
             }
 
-            resolutions.push_back(IndirectResolution{color, resolved.value(), indirect_pos.source_group_index});
+            resolutions.push_back(
+                IndirectResolution{
+                    color,
+                    resolved.value(),
+                    indirect_pos.source_group_index,
+                    indirect_pos.ref_pal_index,
+                    indirect_pos.ref_color});
         }
 
         // Apply resolutions with eviction
-        for (const auto &[indirect_color, target_slot, source_group_index] : resolutions) {
+        for (const auto &[indirect_color, target_slot, source_group_index, res_ref_pal, res_ref_color] : resolutions) {
             // Check if the target slot is occupied by a sequential-fill color
             Rgba32 evicted_color{};
             bool needs_eviction = false;
@@ -348,6 +372,10 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
 
             // Place the Indirect color at the target slot
             state.color_positions.at(indirect_color) = AbsolutePosition{target_slot};
+
+            // Record successfully resolved link for post-resolution verification
+            applied_indirects.push_back(
+                AppliedIndirect{pal_index, indirect_color, res_ref_pal, res_ref_color, source_group_index});
         }
     }
 
@@ -391,6 +419,45 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
                 panic(
                     "ran out of palette slots during Indirect fallback fill for palette " +
                     std::to_string(state.hw_index));
+            }
+        }
+    }
+
+    // === Post-resolution verification: detect eviction displacement ===
+    if (failure_counts != nullptr) {
+        for (const auto &ai : applied_indirects) {
+            if (!states.at(ai.source_pal).has_value() || !states.at(ai.ref_pal).has_value()) {
+                continue;
+            }
+            const auto &source_state = states.at(ai.source_pal).value();
+            const auto &ref_state = states.at(ai.ref_pal).value();
+
+            if (!source_state.color_positions.contains(ai.source_color) ||
+                !ref_state.color_positions.contains(ai.ref_color)) {
+                continue;
+            }
+
+            const auto &source_pos = source_state.color_positions.at(ai.source_color);
+            const auto &ref_pos = ref_state.color_positions.at(ai.ref_color);
+
+            if (!std::holds_alternative<AbsolutePosition>(source_pos) ||
+                !std::holds_alternative<AbsolutePosition>(ref_pos)) {
+                continue;
+            }
+
+            const auto source_slot = std::get<AbsolutePosition>(source_pos).slot;
+            const auto ref_slot = std::get<AbsolutePosition>(ref_pos).slot;
+
+            if (source_slot != ref_slot) {
+                failure_counts->post_resolution_mismatch_details.push_back(
+                    PostResolutionMismatchDetail{
+                        .source_group_index = ai.source_group_index,
+                        .source_pal_index = ai.source_pal,
+                        .source_color = ai.source_color,
+                        .source_final_slot = source_slot,
+                        .ref_pal_index = ai.ref_pal,
+                        .ref_color = ai.ref_color,
+                        .ref_final_slot = ref_slot});
             }
         }
     }

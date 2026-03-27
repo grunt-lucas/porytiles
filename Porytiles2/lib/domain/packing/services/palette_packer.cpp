@@ -934,8 +934,12 @@ void emit_sharing_summary(
                     fc.no_free_slot_details, [&](const auto &d) { return d.source_group_index == group_id; });
                 const auto group_fww = std::ranges::count_if(
                     fc.first_writer_wins_details, [&](const auto &d) { return d.source_group_index == group_id; });
-                const auto group_total =
-                    group_broken + group_prefilled_dest + group_prefilled_src + group_no_free + group_fww;
+                const auto group_mismatch =
+                    std::ranges::count_if(fc.post_resolution_mismatch_details, [&](const auto &d) {
+                        return d.source_group_index == group_id;
+                    });
+                const auto group_total = group_broken + group_prefilled_dest + group_prefilled_src + group_no_free +
+                                         group_fww + group_mismatch;
 
                 if (group_total > 0) {
                     remark_lines.emplace_back(
@@ -999,6 +1003,24 @@ void emit_sharing_summary(
                                 FormatParam{pal_filename(detail.ref_pal_index), Style::bold}));
                         }
                     }
+                    if (group_mismatch > 0) {
+                        remark_lines.emplace_back(format.format(
+                            "    Post-resolution slot mismatch: '{}'.", FormatParam{group_mismatch, Style::bold}));
+                        for (const auto &detail : fc.post_resolution_mismatch_details) {
+                            if (detail.source_group_index != group_id) {
+                                continue;
+                            }
+                            remark_lines.emplace_back(format.format(
+                                "      '{}': color '{}' ended at slot '{}', but ref color '{}' in '{}' is at "
+                                "slot '{}'.",
+                                FormatParam{pal_filename(detail.source_pal_index), Style::bold},
+                                FormatParam{detail.source_color, Style::bold},
+                                FormatParam{detail.source_final_slot, Style::bold},
+                                FormatParam{detail.ref_color, Style::bold},
+                                FormatParam{pal_filename(detail.ref_pal_index), Style::bold},
+                                FormatParam{detail.ref_final_slot, Style::bold}));
+                        }
+                    }
                 }
             }
         }
@@ -1056,6 +1078,15 @@ void emit_sharing_summary(
                 remark_lines.emplace_back(
                     "This is expected with greedy alignment. The 'optimal' alignment (not yet implemented) "
                     "would resolve these globally.");
+            }
+            if (!fc.post_resolution_mismatch_details.empty()) {
+                remark_lines.emplace_back(format.format(
+                    "'{}' post-resolution slot mismatch(es): colors were displaced by eviction after successful "
+                    "resolution.",
+                    FormatParam{fc.post_resolution_mismatch_details.size(), Style::bold}));
+                remark_lines.emplace_back(
+                    "This occurs when multiple groups compete for the same palette slots. "
+                    "The 'optimal' alignment (not yet implemented) would resolve these globally.");
             }
         }
         remark_lines.emplace_back();
