@@ -967,6 +967,21 @@ void emit_sharing_summary(
                     if (group_fww > 0) {
                         remark_lines.emplace_back(
                             format.format("    Shared color conflict: '{}'.", FormatParam{group_fww, Style::bold}));
+                        for (const auto &detail : fc.first_writer_wins_details) {
+                            if (detail.source_group_index != group_id) {
+                                continue;
+                            }
+                            remark_lines.emplace_back(format.format(
+                                "      '{}': color '{}' linked to '{}' by group '{}',",
+                                FormatParam{pal_filename(detail.source_pal_index), Style::bold},
+                                FormatParam{detail.source_color, Style::bold},
+                                FormatParam{pal_filename(detail.winning_ref_pal_index), Style::bold},
+                                FormatParam{detail.winning_group_index, Style::bold}));
+                            remark_lines.emplace_back(format.format(
+                                "        this group wanted ref color '{}' in '{}'.",
+                                FormatParam{detail.losing_ref_color, Style::bold},
+                                FormatParam{pal_filename(detail.losing_ref_pal_index), Style::bold}));
+                        }
                     }
                     if (group_prefilled_src > 0) {
                         remark_lines.emplace_back(format.format(
@@ -1033,6 +1048,14 @@ void emit_sharing_summary(
                     "'{}' color(s) could not be placed due to full palettes. Reducing unique colors per metatile "
                     "may help.",
                     FormatParam{fc.no_free_slot_details.size(), Style::bold}));
+            }
+            if (!fc.first_writer_wins_details.empty()) {
+                remark_lines.emplace_back(format.format(
+                    "'{}' shared color conflict(s): multiple shape groups competed for the same color's link.",
+                    FormatParam{fc.first_writer_wins_details.size(), Style::bold}));
+                remark_lines.emplace_back(
+                    "This is expected with greedy alignment. The 'optimal' alignment (not yet implemented) "
+                    "would resolve these globally.");
             }
         }
         remark_lines.emplace_back();

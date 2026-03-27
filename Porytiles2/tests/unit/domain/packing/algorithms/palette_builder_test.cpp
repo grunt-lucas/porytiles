@@ -438,6 +438,146 @@ TEST(PaletteBuilderTests, PrefilledDestinationConflict_CounterIncremented_Fallba
     EXPECT_EQ(result.at(1).value().at(2), blue);
 }
 
+TEST(PaletteBuilderTests, CompatibleFWW_NoFalsePositive)
+{
+    // Two IndirectLinks target the same color (red in pal 0) with identical ref_pal/ref_color (blue in pal 1).
+    // The existing IndirectPosition already satisfies both groups — no conflict should be recorded.
+    auto color_map = make_color_map({red, blue});
+
+    PackedPalette packed0{0};
+    {
+        ColorSet cs;
+        cs.set(color_map.index_at_color(red).value());
+        PackableTile tile{PackableTile::RegularId{0}, cs};
+        packed0.add_tile(tile);
+    }
+
+    PackedPalette packed1{1};
+    {
+        ColorSet cs;
+        cs.set(color_map.index_at_color(blue).value());
+        PackableTile tile{PackableTile::RegularId{1}, cs};
+        packed1.add_tile(tile);
+    }
+
+    std::vector<PackedPalette> packed_pals = {packed0, packed1};
+    std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> prefilled_pals{};
+
+    // Two links from different groups, both linking red in pal 0 to blue in pal 1
+    std::vector<IndirectLink> links = {
+        IndirectLink{
+            .source_pal = 0,
+            .source_color = red,
+            .ref_pal = 1,
+            .ref_color = blue,
+            .source_group_index = 0,
+        },
+        IndirectLink{
+            .source_pal = 0,
+            .source_color = red,
+            .ref_pal = 1,
+            .ref_color = blue,
+            .source_group_index = 1,
+        },
+    };
+
+    AlignmentFailureCounts fc{};
+    auto result = build_all_output_palettes(packed_pals, prefilled_pals, color_map, transparent, links, &fc);
+
+    // Compatible links — no conflict
+    EXPECT_EQ(fc.first_writer_wins_details.size(), 0u);
+    EXPECT_EQ(fc.total(), 0u);
+
+    // Red in pal 0 should follow blue in pal 1 (Indirect alignment)
+    ASSERT_TRUE(result.at(0).has_value());
+    ASSERT_TRUE(result.at(1).has_value());
+    EXPECT_EQ(result.at(0).value().at(1), red);
+    EXPECT_EQ(result.at(1).value().at(1), blue);
+}
+
+TEST(PaletteBuilderTests, GenuineFWW_EnrichedDetail)
+{
+    // Two IndirectLinks target the same color (red in pal 0) with DIFFERENT references.
+    // Group 0 links red→blue in pal 1, group 1 links red→green in pal 2.
+    // Group 0 wins, group 1's link is dropped. Detail should capture both sides.
+    auto color_map = make_color_map({red, blue, green});
+
+    PackedPalette packed0{0};
+    {
+        ColorSet cs;
+        cs.set(color_map.index_at_color(red).value());
+        PackableTile tile{PackableTile::RegularId{0}, cs};
+        packed0.add_tile(tile);
+    }
+
+    PackedPalette packed1{1};
+    {
+        ColorSet cs;
+        cs.set(color_map.index_at_color(blue).value());
+        PackableTile tile{PackableTile::RegularId{1}, cs};
+        packed1.add_tile(tile);
+    }
+
+    PackedPalette packed2{2};
+    {
+        ColorSet cs;
+        cs.set(color_map.index_at_color(green).value());
+        PackableTile tile{PackableTile::RegularId{2}, cs};
+        packed2.add_tile(tile);
+    }
+
+    std::vector<PackedPalette> packed_pals = {packed0, packed1, packed2};
+    std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> prefilled_pals{};
+
+    // Group 0 links red in pal 0 → blue in pal 1 (wins)
+    // Group 1 links red in pal 0 → green in pal 2 (loses)
+    std::vector<IndirectLink> links = {
+        IndirectLink{
+            .source_pal = 0,
+            .source_color = red,
+            .ref_pal = 1,
+            .ref_color = blue,
+            .source_group_index = 0,
+        },
+        IndirectLink{
+            .source_pal = 0,
+            .source_color = red,
+            .ref_pal = 2,
+            .ref_color = green,
+            .source_group_index = 1,
+        },
+    };
+
+    AlignmentFailureCounts fc{};
+    auto result = build_all_output_palettes(packed_pals, prefilled_pals, color_map, transparent, links, &fc);
+
+    // Exactly one genuine FWW conflict
+    ASSERT_EQ(fc.first_writer_wins_details.size(), 1u);
+    const auto &detail = fc.first_writer_wins_details.at(0);
+
+    // Losing group
+    EXPECT_EQ(detail.source_group_index, 1u);
+    EXPECT_EQ(detail.source_pal_index, 0u);
+    EXPECT_EQ(detail.source_color, red);
+
+    // Winning side
+    EXPECT_EQ(detail.winning_group_index, 0u);
+    EXPECT_EQ(detail.winning_ref_pal_index, 1u);
+    EXPECT_EQ(detail.winning_ref_color, blue);
+
+    // Losing side's wanted reference
+    EXPECT_EQ(detail.losing_ref_pal_index, 2u);
+    EXPECT_EQ(detail.losing_ref_color, green);
+
+    // Other failure types should be empty
+    EXPECT_EQ(fc.prefilled_source_conflict_details.size(), 0u);
+    EXPECT_EQ(fc.prefilled_destination_conflict_details.size(), 0u);
+    EXPECT_EQ(fc.broken_chain_details.size(), 0u);
+    EXPECT_EQ(fc.no_free_slot_details.size(), 0u);
+
+    EXPECT_EQ(fc.total(), 1u);
+}
+
 TEST(PaletteBuilderTests, EmptyPackedPals_ReturnsAllNullopt)
 {
     auto color_map = make_color_map({red});

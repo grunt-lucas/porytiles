@@ -136,13 +136,24 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
         if (std::holds_alternative<UndeterminedPosition>(position)) {
             position = IndirectPosition{link.ref_pal, link.ref_color, link.source_group_index};
         }
-        else if (std::holds_alternative<IndirectPosition>(position) && failure_counts != nullptr) {
-            // Link silently dropped: another shape group already claimed this color's IndirectPosition
-            failure_counts->first_writer_wins_details.push_back(
-                FirstWriterWinsDetail{
-                    .source_group_index = link.source_group_index,
-                    .source_pal_index = link.source_pal,
-                    .source_color = link.source_color});
+        else if (std::holds_alternative<IndirectPosition>(position)) {
+            const auto &existing = std::get<IndirectPosition>(position);
+            // Compatible: same reference — no actual conflict
+            if (existing.ref_pal_index == link.ref_pal && existing.ref_color == link.ref_color) {
+                continue;
+            }
+            if (failure_counts != nullptr) {
+                failure_counts->first_writer_wins_details.push_back(
+                    FirstWriterWinsDetail{
+                        .source_group_index = link.source_group_index,
+                        .source_pal_index = link.source_pal,
+                        .source_color = link.source_color,
+                        .winning_group_index = existing.source_group_index,
+                        .winning_ref_pal_index = existing.ref_pal_index,
+                        .winning_ref_color = existing.ref_color,
+                        .losing_ref_pal_index = link.ref_pal,
+                        .losing_ref_color = link.ref_color});
+            }
         }
         else if (std::holds_alternative<AbsolutePosition>(position)) {
             // Link dropped: source color is prefilled (locked) — Phase 1 set it to AbsolutePosition.

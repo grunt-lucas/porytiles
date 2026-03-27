@@ -77,12 +77,21 @@ struct NoFreeSlotDetail {
  *
  * @details
  * Captured in Phase 2 when an IndirectLink targets a source color that already has an IndirectPosition from a previous
- * link. The second link is silently dropped.
+ * link with a *different* reference. The second link is silently dropped. Compatible links (same @c ref_pal and
+ * @c ref_color as the existing IndirectPosition) are detected and skipped without recording a failure.
+ *
+ * Records both sides of the conflict: the winning group's reference (already applied) and the losing group's wanted
+ * reference (dropped).
  */
 struct FirstWriterWinsDetail {
     std::size_t source_group_index;
     std::size_t source_pal_index;
     Rgba32 source_color;
+    std::size_t winning_group_index;
+    std::size_t winning_ref_pal_index;
+    Rgba32 winning_ref_color;
+    std::size_t losing_ref_pal_index;
+    Rgba32 losing_ref_color;
 };
 
 /**
