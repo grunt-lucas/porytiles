@@ -57,9 +57,12 @@ class CanonicalShapeTile : public ShapeTile<PixelType> {
      * base ShapeTile data. The flip flags that transform this canonical form back to the input tile are stored in
      * h_flip_ and v_flip_.
      *
-     * The lexicographic comparison is performed using ShapeTile::compare_shape_only, which compares ONLY the shape
-     * masks (geometry) and ignores pixel values. This means two tiles with identical shapes but different color
-     * assignments will canonicalize to the same shape structure (though their pixel values will differ).
+     * The lexicographic comparison uses a two-phase approach: first, ShapeTile::compare_shape_only compares ONLY
+     * shape masks (geometry), ignoring pixel values. If the shape comparison produces a tie (which occurs with
+     * shapes that are symmetric under one or more flips), the full ShapeTile comparison (including pixel values)
+     * is used as a tiebreaker. This ensures that two tiles which are flips of each other with identical colors
+     * will select the same canonical form and produce identical color maps — critical for correct color version
+     * deduplication in shape group analysis.
      *
      * @param tile The input ShapeTile to canonicalize
      */
@@ -71,9 +74,22 @@ class CanonicalShapeTile : public ShapeTile<PixelType> {
             bool h_flip;
             bool v_flip;
 
+            /*
+             * Two-phase strict weak ordering: shape first, then full map as tiebreaker. The shape-only phase
+             * ensures non-symmetric shapes always select the geometrically minimal flip. The full-map fallback
+             * handles symmetric shapes (where all flip variants have identical key sets) by also considering
+             * color values — this guarantees that two tiles which are flips of each other with the same colors
+             * will converge on the same canonical form rather than each keeping their own color arrangement.
+             */
             bool operator<(const Candidate &other) const
             {
-                return ShapeTile<PixelType>::compare_shape_only(flipped_tile, other.flipped_tile);
+                if (ShapeTile<PixelType>::compare_shape_only(flipped_tile, other.flipped_tile)) {
+                    return true;
+                }
+                if (ShapeTile<PixelType>::compare_shape_only(other.flipped_tile, flipped_tile)) {
+                    return false;
+                }
+                return flipped_tile < other.flipped_tile;
             }
         };
 

@@ -340,6 +340,43 @@ TEST(CanonicalShapeTileTests, Rgba32SameShapeDifferentColors)
     EXPECT_NE(canonical1, canonical2);
 }
 
+TEST(CanonicalShapeTileTests, SymmetricShapeFlippedSameColorsProduceSameCanonicalColors)
+{
+    // Create a shape symmetric under hflip: left-half mask and right-half mask
+    // where mask_left.flip(h) == mask_right
+    ShapeMask mask_left;
+    ShapeMask mask_right;
+    for (int row = 0; row < 8; ++row) {
+        for (int col = 0; col < 4; ++col) {
+            mask_left.set(row, col);
+            mask_right.set(row, 7 - col);
+        }
+    }
+
+    // Tile A: left=red, right=blue
+    ShapeTile<Rgba32> tile_a;
+    tile_a.set(mask_left, rgba_red);
+    tile_a.set(mask_right, rgba_blue);
+
+    // Tile B: left=blue, right=red (= A hflipped, same colors)
+    ShapeTile<Rgba32> tile_b;
+    tile_b.set(mask_left, rgba_blue);
+    tile_b.set(mask_right, rgba_red);
+
+    // Verify that B is indeed A's hflip
+    EXPECT_EQ(tile_a.flip(true, false), tile_b);
+
+    CanonicalShapeTile<Rgba32> canonical_a{tile_a};
+    CanonicalShapeTile<Rgba32> canonical_b{tile_b};
+
+    // Both should produce the SAME canonical color map
+    EXPECT_EQ(canonical_a.colors(), canonical_b.colors());
+
+    // The color tiebreaker selects the same canonical form for both, so one tile reaches it via identity and the
+    // other via hflip — their flip flags must be opposite
+    EXPECT_NE(canonical_a.h_flip(), canonical_b.h_flip());
+}
+
 TEST(CanonicalShapeTileTests, FlipFlagsIndicateTransformationToOriginal)
 {
     // Create a distinctive asymmetric tile
