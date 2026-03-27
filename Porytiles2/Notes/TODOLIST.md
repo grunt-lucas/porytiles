@@ -31,6 +31,8 @@
   - need some kind of unique, deterministic ID for a sharable group
   - user could then say `--exclude-sharing=123,456` and see if excluding some groups helps others share easier
 - build out more extensive tests
+- improve tile-sharing.md doc messages for `Broken Chain` and `No Free Slot for Eviction`, the messages are vague
+  - also, make sure Broken Chain is still even a relevant failure, i've never seen it
 - final review pass for diagnostic messages
 - clean up tile_to_pal_ construction: handle the other cases more cleanly?
 - implement tile-sharing-packing:optimal (see `Notes/tile_sharing_optimality_analysis.md`)
