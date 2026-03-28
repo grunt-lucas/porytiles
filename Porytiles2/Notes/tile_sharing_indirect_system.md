@@ -458,8 +458,8 @@ Two best-effort skip conditions:
 
 ### Phase 5 — Fallback Fill for Unresolved Indirects
 
-Phase 4 may leave colors in `IndirectPosition` if resolution failed (broken chain,
-prefilled destination conflict, or no free slot for eviction). These colors still need
+Phase 4 may leave colors in `IndirectPosition` if resolution failed (prefilled
+destination conflict). These colors still need
 placement in the final palette, so assign them sequential free slots — identical to
 Phase 3's logic but targeting `IndirectPosition` instead of `UndeterminedPosition`.
 This ensures all colors get placed even if Indirect alignment fails.

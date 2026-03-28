@@ -1,5 +1,6 @@
 #include "porytiles2/domain/packing/algorithms/palette_builder.hpp"
 
+#include <algorithm>
 #include <map>
 #include <set>
 
@@ -276,15 +277,9 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
             const auto &indirect_pos = std::get<IndirectPosition>(position);
             auto resolved = try_resolve_indirect(indirect_pos, states);
             if (!resolved.has_value()) {
-                // Broken chain — skip this Indirect color (best-effort)
-                if (failure_counts != nullptr) {
-                    failure_counts->broken_chain_details.push_back(
-                        BrokenChainDetail{
-                            .source_group_index = indirect_pos.source_group_index,
-                            .palette_index = pal_index,
-                            .color = color});
-                }
-                continue;
+                panic(
+                    "Indirect chain resolution returned nullopt for color in palette " + std::to_string(pal_index) +
+                    ": internal invariant violated");
             }
 
             // Skip if the target slot is prefilled (can't evict prefilled)
@@ -357,16 +352,10 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
                 if (free_slot < pal::max_size) {
                     state.color_positions.at(evicted_color) = AbsolutePosition{free_slot};
                 }
-                // else: no free slot — eviction impossible, skip this resolution
                 else {
-                    if (failure_counts != nullptr) {
-                        failure_counts->no_free_slot_details.push_back(
-                            NoFreeSlotDetail{
-                                .source_group_index = source_group_index,
-                                .palette_index = pal_index,
-                                .color = indirect_color});
-                    }
-                    continue;
+                    panic(
+                        "no free slot for eviction in palette " + std::to_string(pal_index) +
+                        ": internal invariant violated — Phase 3 guarantees one free slot per Indirect color");
                 }
             }
 
@@ -382,8 +371,8 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
     /*
      * === Phase 5: Fallback — assign free slots to unresolved Indirect colors ===
      *
-     * Phase 4 may leave colors in IndirectPosition if resolution failed (broken chain, prefilled destination conflict,
-     * or no free slot for eviction). These colors still need placement in the final palette, so assign them sequential
+     * Phase 4 may leave colors in IndirectPosition if resolution failed (prefilled destination conflict). These colors
+     * still need placement in the final palette, so assign them sequential
      * free slots — identical to Phase 3's logic but targeting IndirectPosition instead of UndeterminedPosition.
      */
     for (auto &state_opt : states) {
@@ -460,6 +449,20 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
                         .ref_final_slot = ref_slot});
             }
         }
+    }
+
+    // Deduplicate detail records: multiple IndirectLinks for the same color pair (from different group members) can
+    // produce identical detail records. Sort + unique ensures counts and diagnostic output reflect unique failures.
+    if (failure_counts != nullptr) {
+        auto dedup = [](auto &vec) {
+            std::ranges::sort(vec);
+            auto [first, last] = std::ranges::unique(vec);
+            vec.erase(first, last);
+        };
+        dedup(failure_counts->prefilled_destination_conflict_details);
+        dedup(failure_counts->prefilled_source_conflict_details);
+        dedup(failure_counts->first_writer_wins_details);
+        dedup(failure_counts->post_resolution_mismatch_details);
     }
 
     // === Phase 6: Build final palettes from resolved positions ===

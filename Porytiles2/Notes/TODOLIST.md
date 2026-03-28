@@ -27,13 +27,16 @@
 
 ## Tile Sharing
 - improve prefilled conflict messages: perhaps include printouts via PalettePrinter
+- we should error if user asks for tile-sharing-packing:biased/optimal without having backtracking set as packing strategy
 - provide some way for users to "exclude" certain groups from sharing
   - need some kind of unique, deterministic ID for a sharable group
   - user could then say `--exclude-sharing=123,456` and see if excluding some groups helps others share easier
-- build out more extensive tests
-- improve tile-sharing.md doc messages for `Broken Chain` and `No Free Slot for Eviction`, the messages are vague
-  - also, make sure Broken Chain is still even a relevant failure, i've never seen it
+- refactor palette_builder.hpp `build_all_output_palettes` into multiple stages
+- rework remarks:
+  - for palette partition phase, show warnings(?) for groups that were dropped
+  - move failure info from summary into warnings in the alignment phase
 - final review pass for diagnostic messages
+- build out more extensive tests
 - clean up tile_to_pal_ construction: handle the other cases more cleanly?
 - implement tile-sharing-packing:optimal (see `Notes/tile_sharing_optimality_analysis.md`)
 - implement tile-sharing-alignment:optimal (see `Notes/tile_sharing_optimality_analysis.md`)

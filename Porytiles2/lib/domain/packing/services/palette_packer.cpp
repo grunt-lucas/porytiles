@@ -920,8 +920,6 @@ void emit_sharing_summary(
 
             // Show per-group failure details inline (only when alignment is active)
             if (params.tile_sharing_alignment_ != TileSharingAlignment::off) {
-                const auto group_broken = std::ranges::count_if(
-                    fc.broken_chain_details, [&](const auto &d) { return d.source_group_index == group_id; });
                 const auto group_prefilled_dest =
                     std::ranges::count_if(fc.prefilled_destination_conflict_details, [&](const auto &d) {
                         return d.source_group_index == group_id;
@@ -930,24 +928,17 @@ void emit_sharing_summary(
                     std::ranges::count_if(fc.prefilled_source_conflict_details, [&](const auto &d) {
                         return d.source_group_index == group_id;
                     });
-                const auto group_no_free = std::ranges::count_if(
-                    fc.no_free_slot_details, [&](const auto &d) { return d.source_group_index == group_id; });
                 const auto group_fww = std::ranges::count_if(
                     fc.first_writer_wins_details, [&](const auto &d) { return d.source_group_index == group_id; });
                 const auto group_mismatch =
                     std::ranges::count_if(fc.post_resolution_mismatch_details, [&](const auto &d) {
                         return d.source_group_index == group_id;
                     });
-                const auto group_total = group_broken + group_prefilled_dest + group_prefilled_src + group_no_free +
-                                         group_fww + group_mismatch;
+                const auto group_total = group_prefilled_dest + group_prefilled_src + group_fww + group_mismatch;
 
                 if (group_total > 0) {
                     remark_lines.emplace_back(
                         format.format("  '{}' link failure(s) for this group:", FormatParam{group_total, Style::bold}));
-                    if (group_broken > 0) {
-                        remark_lines.emplace_back(
-                            format.format("    Broken chain: '{}'.", FormatParam{group_broken, Style::bold}));
-                    }
                     if (group_prefilled_dest > 0) {
                         remark_lines.emplace_back(format.format(
                             "    Prefilled destination conflict: '{}'.",
@@ -963,10 +954,6 @@ void emit_sharing_summary(
                                 color_param(detail.blocked_color),
                                 color_param(detail.locked_color)));
                         }
-                    }
-                    if (group_no_free > 0) {
-                        remark_lines.emplace_back(format.format(
-                            "    No free slot for eviction: '{}'.", FormatParam{group_no_free, Style::bold}));
                     }
                     if (group_fww > 0) {
                         remark_lines.emplace_back(
@@ -1064,12 +1051,6 @@ void emit_sharing_summary(
                     "Some link source colors are prefilled (locked) in their palettes and could not be "
                     "reassigned.");
                 remark_lines.emplace_back("Rearranging or wildcarding those prefilled slots may improve tile sharing.");
-            }
-            if (!fc.no_free_slot_details.empty()) {
-                remark_lines.emplace_back(format.format(
-                    "'{}' color(s) could not be placed due to full palettes. Reducing unique colors per metatile "
-                    "may help.",
-                    FormatParam{fc.no_free_slot_details.size(), Style::bold}));
             }
             if (!fc.first_writer_wins_details.empty()) {
                 remark_lines.emplace_back(format.format(

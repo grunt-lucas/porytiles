@@ -1,6 +1,7 @@
 #pragma once
 
 #include <array>
+#include <compare>
 #include <cstddef>
 #include <optional>
 #include <vector>
@@ -27,6 +28,9 @@ struct PrefilledDestinationConflictDetail {
     std::size_t target_slot;
     Rgba32 blocked_color;
     Rgba32 locked_color;
+
+    auto operator<=>(const PrefilledDestinationConflictDetail &) const = default;
+    bool operator==(const PrefilledDestinationConflictDetail &) const = default;
 };
 
 /**
@@ -43,33 +47,9 @@ struct PrefilledSourceConflictDetail {
     Rgba32 source_color;
     std::size_t ref_pal_index;
     Rgba32 ref_color;
-};
 
-/**
- * @brief Detail record for a single broken chain failure during Indirect chain resolution.
- *
- * @details
- * Captured in Phase 4 when an Indirect color's chain cannot be resolved — the reference color was not found in the
- * expected palette or the chain hit a dead end. Users can inspect these records to identify which colors and palettes
- * are involved.
- */
-struct BrokenChainDetail {
-    std::size_t source_group_index;
-    std::size_t palette_index;
-    Rgba32 color;
-};
-
-/**
- * @brief Detail record for a single no-free-slot failure during Indirect resolution eviction.
- *
- * @details
- * Captured in Phase 4 when an Indirect color resolves to a slot occupied by a non-prefilled color, but eviction fails
- * because the palette has no remaining free slots.
- */
-struct NoFreeSlotDetail {
-    std::size_t source_group_index;
-    std::size_t palette_index;
-    Rgba32 color;
+    auto operator<=>(const PrefilledSourceConflictDetail &) const = default;
+    bool operator==(const PrefilledSourceConflictDetail &) const = default;
 };
 
 /**
@@ -88,6 +68,9 @@ struct PostResolutionMismatchDetail {
     std::size_t ref_pal_index;
     Rgba32 ref_color;
     std::size_t ref_final_slot;
+
+    auto operator<=>(const PostResolutionMismatchDetail &) const = default;
+    bool operator==(const PostResolutionMismatchDetail &) const = default;
 };
 
 /**
@@ -110,6 +93,9 @@ struct FirstWriterWinsDetail {
     Rgba32 winning_ref_color;
     std::size_t losing_ref_pal_index;
     Rgba32 losing_ref_color;
+
+    auto operator<=>(const FirstWriterWinsDetail &) const = default;
+    bool operator==(const FirstWriterWinsDetail &) const = default;
 };
 
 /**
@@ -122,17 +108,14 @@ struct FirstWriterWinsDetail {
  * align. The @c total() method returns the aggregate failure count across all categories.
  */
 struct AlignmentFailureCounts {
-    std::vector<BrokenChainDetail> broken_chain_details;
     std::vector<PrefilledDestinationConflictDetail> prefilled_destination_conflict_details;
     std::vector<PrefilledSourceConflictDetail> prefilled_source_conflict_details;
-    std::vector<NoFreeSlotDetail> no_free_slot_details;
     std::vector<FirstWriterWinsDetail> first_writer_wins_details;
     std::vector<PostResolutionMismatchDetail> post_resolution_mismatch_details;
 
     [[nodiscard]] std::size_t total() const
     {
-        return broken_chain_details.size() + prefilled_destination_conflict_details.size() +
-               prefilled_source_conflict_details.size() + no_free_slot_details.size() +
+        return prefilled_destination_conflict_details.size() + prefilled_source_conflict_details.size() +
                first_writer_wins_details.size() + post_resolution_mismatch_details.size();
     }
 };
@@ -166,14 +149,15 @@ struct AlignmentFailureCounts {
  *
  * **Phase 4 — Resolve Indirect chains with eviction**: For each Indirect color, follow the chain
  * ref_pal[ref_color] until hitting an Absolute position. Cap at @c pal::num_pals iterations for cycle detection
- * (panic on cycle). Place the color at the resolved slot. If the target slot is occupied by a non-prefilled color,
- * evict the occupant to the next free slot. If the slot conflicts with a prefilled position, skip (best-effort).
- * No-op when @p indirect_links is empty.
+ * (panics on cycle or broken chain — both are internal invariant violations). Place the color at the resolved slot.
+ * If the target slot is occupied by a non-prefilled color, evict the occupant to the next free slot (panics if no
+ * free slot exists — Phase 3 guarantees one free slot per Indirect color). If the slot conflicts with a prefilled
+ * position, skip (best-effort). No-op when @p indirect_links is empty.
  *
  * **Phase 5 — Fallback fill for unresolved Indirects**: Any Indirect colors that failed resolution in Phase 4
- * (broken chain, prefilled destination conflict, or no free slot for eviction) are assigned sequential free slots,
- * identical to Phase 3's logic but targeting IndirectPosition instead of UndeterminedPosition. Ensures all colors
- * get placed even if Indirect alignment fails. No-op when @p indirect_links is empty.
+ * (prefilled destination conflict) are assigned sequential free slots, identical to Phase 3's logic but targeting
+ * IndirectPosition instead of UndeterminedPosition. Ensures all colors get placed even if Indirect alignment fails.
+ * No-op when @p indirect_links is empty.
  *
  * **Phase 6 — Build final palettes**: Materializes all AbsolutePosition colors into Palette<Rgba32> output objects.
  * Places prefilled slots first, then all resolved colors at their Absolute positions.

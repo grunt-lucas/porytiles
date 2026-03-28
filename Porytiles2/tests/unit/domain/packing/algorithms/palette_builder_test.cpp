@@ -279,8 +279,6 @@ TEST(PaletteBuilderTests, PrefilledSourceColor_LinkDropped_CounterIncremented)
     // Other detail vectors should remain empty
     EXPECT_EQ(fc.first_writer_wins_details.size(), 0u);
     EXPECT_EQ(fc.prefilled_destination_conflict_details.size(), 0u);
-    EXPECT_EQ(fc.broken_chain_details.size(), 0u);
-    EXPECT_EQ(fc.no_free_slot_details.size(), 0u);
 
     // Total should include the new counter
     EXPECT_EQ(fc.total(), 1u);
@@ -350,8 +348,7 @@ TEST(PaletteBuilderTests, PrefilledSourceColor_NaturallyAligned_NoConflictRecord
     EXPECT_EQ(fc.prefilled_source_conflict_details.size(), 0u);
     EXPECT_EQ(fc.first_writer_wins_details.size(), 0u);
     EXPECT_EQ(fc.prefilled_destination_conflict_details.size(), 0u);
-    EXPECT_EQ(fc.broken_chain_details.size(), 0u);
-    EXPECT_EQ(fc.no_free_slot_details.size(), 0u);
+
     EXPECT_EQ(fc.total(), 0u);
 
     // Red should be at slot 4 in palette 0
@@ -422,8 +419,6 @@ TEST(PaletteBuilderTests, PrefilledDestinationConflict_CounterIncremented_Fallba
     // All other detail vectors should remain empty
     EXPECT_EQ(fc.prefilled_source_conflict_details.size(), 0u);
     EXPECT_EQ(fc.first_writer_wins_details.size(), 0u);
-    EXPECT_EQ(fc.broken_chain_details.size(), 0u);
-    EXPECT_EQ(fc.no_free_slot_details.size(), 0u);
 
     // Total should be exactly 1
     EXPECT_EQ(fc.total(), 1u);
@@ -572,8 +567,6 @@ TEST(PaletteBuilderTests, GenuineFWW_EnrichedDetail)
     // Other failure types should be empty
     EXPECT_EQ(fc.prefilled_source_conflict_details.size(), 0u);
     EXPECT_EQ(fc.prefilled_destination_conflict_details.size(), 0u);
-    EXPECT_EQ(fc.broken_chain_details.size(), 0u);
-    EXPECT_EQ(fc.no_free_slot_details.size(), 0u);
 
     EXPECT_EQ(fc.total(), 1u);
 }
@@ -706,10 +699,10 @@ TEST(PaletteBuilderTests, CrossPaletteEvictionDisplacement_MismatchDetected)
     EXPECT_EQ(detail.ref_final_slot, 2u);
 
     // Other failure types should be empty
-    EXPECT_EQ(fc.broken_chain_details.size(), 0u);
+
     EXPECT_EQ(fc.prefilled_destination_conflict_details.size(), 0u);
     EXPECT_EQ(fc.prefilled_source_conflict_details.size(), 0u);
-    EXPECT_EQ(fc.no_free_slot_details.size(), 0u);
+
     EXPECT_EQ(fc.first_writer_wins_details.size(), 0u);
 
     // Total should include the mismatch
