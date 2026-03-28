@@ -118,14 +118,18 @@ base palettes."*
 ## The Orchestration Flow
 
 The full flow lives in `palette_packer.cpp`'s `pack_tiles()` method. The method uses
-step-numbered comments for the packing pipeline and phase-numbered comments for the
-three-phase sharing diagnostics. When `tile_sharing_alignment_` is set to `greedy`,
-the Indirect link system activates:
+**step-numbered comments** for the packing pipeline and **phase-numbered comments** for
+the three-phase sharing diagnostics. When `tile_sharing_alignment_` is set to `greedy`,
+the Indirect link system activates.
 
-### Pre-packing: Shape Group Metadata (Biased Mode Only)
+### Steps 1–4: Input Conversion and Packing
 
-When `tile_sharing_packing_` is `biased`, shape groups are computed **before** the
-initial pack call so the packing strategy receives sharing-aware metadata:
+- **Steps 1–3** (`build_packing_inputs()`): Convert regular tiles and animations to
+  `PackableTile` vectors, convert hint palettes, and convert prefilled palettes to
+  `PrefilledPalette` constraints.
+- **Pre-packing (biased mode only)**: When `tile_sharing_packing_` is `biased`, shape
+  groups are computed **before** the pack call so the strategy receives sharing-aware
+  metadata:
 
 ```c++
 if (params.tile_sharing_packing_ == TileSharingPacking::biased) {
@@ -139,41 +143,55 @@ if (params.tile_sharing_packing_ == TileSharingPacking::biased) {
 }
 ```
 
-### Step 1: Build Base Palettes (Greedy Alignment Only)
+- **Step 4**: Call `strategy_->pack(packing_input)` to execute the low-level packing
+  strategy.
 
-(`palette_packer.cpp` — the `build_all_output_palettes` call with empty links)
+### Step 5a: Tile-to-Palette Assignment
 
-```c++
-auto base_pals = build_all_output_palettes(
-    packing_output.pals_,
-    params.prefilled_pals_,
-    params.color_map_,
-    params.extrinsic_transparency_,
-    {} /* empty links */);
-```
+`populate_tile_to_pal()` extracts tile→palette mappings from `PackingOutput`. Only
+`RegularId` tiles are recorded in the final output; `AnimId`, `HintId`, and prefilled
+entries are skipped.
 
-These are "draft" palettes — colors land wherever sequential fill puts them. We need
-them so the conflict-minimization heuristic in the link builder can look up each
-ShapeMask's slot position in the reference member's base palette.
+### Step 5b: Shape Groups, Diagnostics, and Indirect Link Pipeline
 
-### Step 2: Generate IndirectLinks (Greedy Alignment Only)
+Shape groups are always computed for diagnostics (reusing pre-pack results when packing
+is biased). The three diagnostic phases and indirect link generation all live within
+this step:
 
-(`palette_packer.cpp`)
+**Diagnostic Phase 1** — Detect sharing opportunities: identifies shape groups with
+potential for tile sharing.
 
-```c++
-indirect_links = build_indirect_links(
-    shape_groups, tile_pal_assignments, base_pals, params.prefilled_pals_);
-```
+**Diagnostic Phase 2** — Compute partition groups: filters shape groups to "eligible"
+ones (2+ members in 2+ distinct palettes after packing).
+
+**Build Indirect Links (Greedy Alignment Only)**:
 
 The `tile_pal_assignments` map is built from the authoritative packing output — it maps
-each tile index to its hardware palette index. See the
-[IndirectLink Generation](#indirectlink-generation) section below for details.
-
-### Step 3: Build Final Palettes
-
-(`palette_packer.cpp`)
+each combined tile index to its hardware palette index. When `greedy` alignment is
+active and shape groups exist, base palettes are built first, then links are generated:
 
 ```c++
+if (params.tile_sharing_alignment_ == TileSharingAlignment::greedy && !shape_groups.empty()) {
+    auto base_pals = build_all_output_palettes(
+        packing_output.pals_,
+        params.prefilled_pals_,
+        params.color_map_,
+        params.extrinsic_transparency_,
+        {} /* empty links */);
+
+    indirect_links = build_indirect_links(
+        shape_groups, tile_pal_assignments, base_pals, params.prefilled_pals_);
+}
+```
+
+The base palettes are "draft" palettes — colors land wherever sequential fill puts
+them. They exist so the conflict-minimization heuristic in the link builder can look up
+each ShapeMask's slot position in the reference member's base palette.
+
+**Build Final Palettes**:
+
+```c++
+AlignmentFailureCounts failure_counts{};
 auto final_pals = build_all_output_palettes(
     packing_output.pals_,
     params.prefilled_pals_,
@@ -183,25 +201,22 @@ auto final_pals = build_all_output_palettes(
     !indirect_links.empty() ? &failure_counts : nullptr);
 ```
 
-Same function as Step 1, but with non-empty `indirect_links` (or empty links when
-alignment is `off`). This runs the full six-phase algorithm described below.
+Same function as the base palette build, but with non-empty `indirect_links` (or empty
+links when alignment is `off`). When links are present, the optional
+`AlignmentFailureCounts` pointer enables failure detail recording. This runs the full
+six-phase algorithm described in the
+[Six-Phase Palette Builder](#the-six-phase-palette-builder) section below.
 
-### Step 4: Sharing Diagnostics (Three-Phase Pipeline)
+**Diagnostic Phase 3** — Verify sharing alignment: checks each eligible shape group's
+members against the **final** palettes via `verify_sharing_alignment()`. For each
+member, it indexes the tile against its assigned final palette and canonicalizes the
+result. Members whose canonical indexed tiles match the reference member's are confirmed
+as sharing-aligned. Groups are categorized as fully aligned, partially aligned (some
+members diverged), or unaligned.
 
-(`palette_packer.cpp`)
-
-Sharing diagnostics always run regardless of alignment config, using appropriate
-caveats in the output.
-
-- **Diagnostic Phase 1** — Detect sharing opportunities: identifies shape groups with
-  potential for tile sharing.
-- **Diagnostic Phase 2** — Compute partition groups: groups shape group members by
-  their assigned palette to determine which members ended up in different palettes.
-- **Diagnostic Phase 3** — Verify sharing alignment: checks each shape group's members
-  against the **final** palettes via `verify_sharing_alignment()`. For each member, it
-  indexes the tile against its matched final palette and canonicalizes the result.
-  Members whose canonical indexed tiles match the reference member's are confirmed as
-  sharing-aligned.
+**Sharing Summary** — Emitted only when `biased` packing or `greedy` alignment is
+active. Includes detected → eligible → aligned breakdown, per-group failure details, and
+aggregate failure counts by category.
 
 ## IndirectLink Generation
 
@@ -299,12 +314,68 @@ for (const auto &[mask, other_color] : other.colors) {
 The correspondence is through the `ShapeMask`: same mask key → same pixel region →
 colors must share a slot index.
 
+## Alignment Failure Tracking
+
+(`domain/packing/algorithms/palette_builder.hpp`)
+
+The six-phase palette builder optionally populates an `AlignmentFailureCounts` struct
+that records exactly why alignment failed for specific colors. This enables the sharing
+summary to provide actionable diagnostics.
+
+```c++
+struct AlignmentFailureCounts {
+    std::vector<PrefilledDestinationConflictDetail> prefilled_destination_conflict_details;
+    std::vector<PrefilledSourceConflictDetail> prefilled_source_conflict_details;
+    std::vector<FirstWriterWinsDetail> first_writer_wins_details;
+    std::vector<PostResolutionMismatchDetail> post_resolution_mismatch_details;
+
+    [[nodiscard]] std::size_t total() const;
+};
+```
+
+The four failure types:
+
+- **`PrefilledDestinationConflictDetail`** (Phase 4): An Indirect color resolved to a
+  slot that is prefilled (locked) in its own palette. The color cannot be placed at the
+  target slot, so alignment fails for that link. Records the blocked color, the locked
+  color occupying the slot, and the target slot index.
+
+- **`PrefilledSourceConflictDetail`** (Phase 2): The source color of an IndirectLink is
+  itself prefilled (locked to an `AbsolutePosition` in Phase 1). The link cannot
+  override a hardware-locked position. However, if the reference color is also prefilled
+  at the **same** slot, alignment is naturally satisfied and no failure is recorded.
+
+- **`FirstWriterWinsDetail`** (Phase 2): Two shape groups both try to set Indirect
+  links on the same source color with **incompatible** references (different ref_pal or
+  ref_color). The first link wins; the second is dropped. Records both the winning and
+  losing reference info.
+
+- **`PostResolutionMismatchDetail`** (post-Phase 5): After all phases complete, a
+  successfully applied Indirect link's source and reference colors ended up at
+  **different** final slots. This can happen when a later eviction displaces a
+  previously placed color. Records both final slot values for diagnosis.
+
 ## The Six-Phase Palette Builder
 
 (`domain/packing/algorithms/palette_builder.cpp`)
 
 This is the heart of the system. It takes packed palettes + IndirectLinks and
-produces final palettes with sharing alignment.
+produces final palettes with sharing alignment. The full signature:
+
+```c++
+[[nodiscard]] std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals>
+build_all_output_palettes(
+    const std::vector<PackedPalette> &packed_pals,
+    const std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> &prefilled_pals,
+    const ColorIndexMap<Rgba32> &color_map,
+    const Rgba32 &default_slot_zero,
+    const std::vector<IndirectLink> &indirect_links,
+    AlignmentFailureCounts *failure_counts = nullptr);
+```
+
+The optional `failure_counts` pointer enables detailed failure recording when non-null.
+An internal `AppliedIndirect` struct tracks which links were successfully applied, used
+later for post-resolution verification.
 
 ### Phase 1 — Initialize Position Maps
 
@@ -328,22 +399,55 @@ After Phase 1, every color is either `AbsolutePosition` (prefilled) or
 
 ### Phase 2 — Apply Indirect Links
 
-For each IndirectLink, convert the source color from `Undetermined` to
-`IndirectPosition`:
+For each IndirectLink, attempt to convert the source color to `IndirectPosition`. The
+source color's current state determines the outcome — there are three branches:
 
 ```c++
 for (const auto &link : indirect_links) {
-    // ...
     auto &position = state.color_positions.at(link.source_color);
-    // First-writer-wins: only set Indirect on Undetermined positions (prevents cycles)
+
     if (std::holds_alternative<UndeterminedPosition>(position)) {
+        // Normal case: set to Indirect
         position = IndirectPosition{link.ref_pal, link.ref_color, link.source_group_index};
+    }
+    else if (std::holds_alternative<IndirectPosition>(position)) {
+        const auto &existing = std::get<IndirectPosition>(position);
+        if (existing.ref_pal_index == link.ref_pal && existing.ref_color == link.ref_color) {
+            // Compatible duplicate: same reference — record for post-verification
+            applied_indirects.push_back(/* ... */);
+        }
+        else {
+            // Incompatible: first writer wins — record FirstWriterWinsDetail failure
+        }
+    }
+    else if (std::holds_alternative<AbsolutePosition>(position)) {
+        // Source is prefilled (locked). Check if ref color is also at the same slot.
+        // If so, alignment is naturally satisfied — no failure recorded.
+        // Otherwise, record PrefilledSourceConflictDetail failure.
     }
 }
 ```
 
-First-writer-wins is the cycle prevention mechanism. If two shape groups both try to
-link the same color, only the first link takes effect.
+The three branches handle:
+
+1. **`UndeterminedPosition`** — Normal case. The color becomes `IndirectPosition`,
+   pointing at the reference color in the reference palette.
+
+2. **`IndirectPosition`** (already linked) — Two sub-cases:
+   - **Compatible**: The existing link targets the same ref_pal and ref_color. No
+     conflict — the link is recorded in `applied_indirects` for post-verification.
+   - **Incompatible**: Different reference. First-writer-wins: the existing link stays,
+     the new link is dropped, and a `FirstWriterWinsDetail` failure is recorded.
+
+3. **`AbsolutePosition`** (prefilled) — The source color is hardware-locked from Phase
+   1. The link can't override a prefilled position. However, if the reference color in
+   the reference palette is *also* `AbsolutePosition` at the **same slot**, alignment
+   is naturally satisfied and no failure is recorded. Otherwise, a
+   `PrefilledSourceConflictDetail` failure is recorded.
+
+First-writer-wins is the cycle prevention mechanism. Since the link builder may emit
+links from multiple shape groups targeting the same source color, only the first link
+takes effect.
 
 After Phase 2, colors are in one of three states:
 
@@ -425,11 +529,12 @@ Then, apply resolutions with eviction. If the target slot is occupied by a
 non-prefilled color from sequential fill, evict it:
 
 ```c++
-for (const auto &[indirect_color, target_slot] : resolutions) {
-    // Check if target slot is occupied
+for (const auto &[indirect_color, target_slot, source_group_index, res_ref_pal, res_ref_color] :
+     resolutions) {
+    // Check if the target slot is occupied by a sequential-fill color
     for (auto &[color, position] : state.color_positions) {
         if (color == indirect_color) {
-            continue;  // Don't evict ourselves
+            continue;
         }
         if (std::holds_alternative<AbsolutePosition>(position) &&
             std::get<AbsolutePosition>(position).slot == target_slot &&
@@ -441,20 +546,31 @@ for (const auto &[indirect_color, target_slot] : resolutions) {
     }
 
     if (needs_eviction) {
-        // Move the evicted color to the next free slot
+        // Rebuild all_used set and find next free slot for evicted color
+        // Panics if no free slot is available (invariant: Phase 3 guarantees space)
         state.color_positions.at(evicted_color) = AbsolutePosition{free_slot};
     }
 
     // Place the Indirect color at the target slot
     state.color_positions.at(indirect_color) = AbsolutePosition{target_slot};
+
+    // Record successfully resolved link for post-resolution verification
+    applied_indirects.push_back(
+        AppliedIndirect{pal_index, indirect_color, res_ref_pal, res_ref_color, source_group_index});
 }
 ```
 
-Two best-effort skip conditions:
+There is one skip condition:
 
-- **Prefilled target slot**: Can't evict hardware-locked colors. The Indirect color
-  stays wherever sequential fill would have put it.
-- **Broken chain**: Reference color not found or not yet resolved. Skipped silently.
+- **Prefilled target slot**: Can't evict hardware-locked colors. The Indirect color is
+  left in `IndirectPosition` state (Phase 5 will assign it a fallback slot). A
+  `PrefilledDestinationConflictDetail` failure is recorded, capturing the blocked color
+  and the locked color occupying the slot.
+
+Note: broken chains (where `try_resolve_indirect` returns `nullopt`) are **not** a
+best-effort skip — they trigger a panic. By design, all reference colors have stable
+`AbsolutePosition` assignments from Phase 3, so resolution should never fail. A
+`nullopt` return indicates an internal invariant violation.
 
 ### Phase 5 — Fallback Fill for Unresolved Indirects
 
@@ -464,12 +580,52 @@ placement in the final palette, so assign them sequential free slots — identic
 Phase 3's logic but targeting `IndirectPosition` instead of `UndeterminedPosition`.
 This ensures all colors get placed even if Indirect alignment fails.
 
-### Phase 6 — Build Final Palettes
+### Post-Resolution Verification
 
-Straightforward materialization — place every `AbsolutePosition` color at its
-resolved slot:
+After Phase 5, the builder checks all successfully applied Indirect links to detect
+**eviction displacement** — cases where a later eviction in Phase 4 moved a previously
+placed color, breaking an earlier link's alignment:
 
 ```c++
+for (const auto &ai : applied_indirects) {
+    const auto source_slot = std::get<AbsolutePosition>(source_pos).slot;
+    const auto ref_slot = std::get<AbsolutePosition>(ref_pos).slot;
+
+    if (source_slot != ref_slot) {
+        failure_counts->post_resolution_mismatch_details.push_back(
+            PostResolutionMismatchDetail{/* ... source and ref slots, colors, groups ... */});
+    }
+}
+```
+
+After verification, all four failure detail vectors are **deduplicated** (sorted then
+`std::ranges::unique`) to eliminate duplicate records that can arise when multiple
+IndirectLinks for the same color pair (from different group members) produce identical
+detail entries.
+
+### Phase 6 — Build Final Palettes
+
+Straightforward materialization with three placement passes:
+
+```c++
+// 1. Slot 0: use prefilled value if available, otherwise default_slot_zero
+if (prefilled_ptr != nullptr && !prefilled_ptr->is_wildcard(0)) {
+    output.set(0, prefilled_ptr->at(0));
+}
+else {
+    output.set(0, default_slot_zero);
+}
+
+// 2. Place all prefilled slots (hardware-locked)
+if (prefilled_ptr != nullptr) {
+    for (std::size_t i = 1; i < pal::max_size; ++i) {
+        if (!prefilled_ptr->is_wildcard(i)) {
+            output.set(i, prefilled_ptr->at(i));
+        }
+    }
+}
+
+// 3. Place all Absolute-position colors (skip prefilled — already placed above)
 for (const auto &[color, position] : state.color_positions) {
     if (std::holds_alternative<AbsolutePosition>(position)) {
         const std::size_t slot = std::get<AbsolutePosition>(position).slot;

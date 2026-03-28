@@ -10,16 +10,16 @@ greedy Indirection pipeline, see [tile_sharing_indirect_system.md](tile_sharing_
 
 ## Implementation Status
 
-| Packing     | Alignment | Behavior                               | Status      |
-|-------------|-----------|----------------------------------------|-------------|
-| `off`       | `off`     | No sharing                             | Implemented |
-| `off`       | `greedy`  | Post-pack alignment only               | Implemented |
-| `biased`    | `off`     | Biased packing, no alignment           | Implemented |
-| `biased`    | `greedy`  | Biased packing + greedy alignment      | Implemented |
-| `optimal`   | `optimal` | Hard-constraint packing + CSP alignment| **TODO**    |
-| `optimal`   | `greedy`  | Hard-constraint packing + greedy align | **TODO**    |
-| `biased`    | `optimal` | Soft packing + CSP alignment           | **TODO**    |
-| `off`       | `optimal` | No packing awareness + CSP alignment   | **TODO**    |
+| Packing   | Alignment | Behavior                                | Status      |
+|-----------|-----------|-----------------------------------------|-------------|
+| `off`     | `off`     | No sharing                              | Implemented |
+| `off`     | `greedy`  | Post-pack alignment only                | Implemented |
+| `biased`  | `off`     | Biased packing, no alignment            | Implemented |
+| `biased`  | `greedy`  | Biased packing + greedy alignment       | Implemented |
+| `optimal` | `optimal` | Hard-constraint packing + CSP alignment | **TODO**    |
+| `optimal` | `greedy`  | Hard-constraint packing + greedy align  | **TODO**    |
+| `biased`  | `optimal` | Soft packing + CSP alignment            | **TODO**    |
+| `off`     | `optimal` | No packing awareness + CSP alignment    | **TODO**    |
 
 
 ## Optimal Packing
@@ -313,24 +313,24 @@ fallback rather than the default mode. The implementation order should be:
 
 Files relevant to implementing optimal packing and alignment:
 
-| File | Role |
-|------|------|
-| `Porytiles2/lib/domain/packing/services/palette_packer.cpp` | Orchestration — panic sites at lines 281-286, integration point for both optimal modes |
-| `Porytiles2/include/porytiles2/domain/packing/services/packing_strategy.hpp` | `PackingInput` struct — needs mode signal for optimal vs biased |
-| `Porytiles2/include/porytiles2/domain/packing/services/backtracking_strategy.hpp` | `BacktrackingStrategy` — add hard-reject pruning for optimal packing |
-| `Porytiles2/include/porytiles2/domain/packing/models/shape_group_metadata.hpp` | `ShapeGroupMetadata` — tile-to-group mapping data struct |
-| `Porytiles2/include/porytiles2/domain/packing/algorithms/sharing_metrics.hpp` | `palette_contains_sibling()` free function — used by hard-reject pruning |
-| `Porytiles2/include/porytiles2/domain/packing/algorithms/palette_builder.hpp` | `build_all_output_palettes()` — bypassed by optimal alignment solver |
-| `Porytiles2/include/porytiles2/domain/packing/algorithms/indirect_link_builder.hpp` | `build_indirect_links()` — bypassed by optimal alignment solver |
-| `Porytiles2/include/porytiles2/domain/models/shape_group.hpp` | `ShapeGroup`, `ShapeGroupMember` — input to both solvers |
-| `Porytiles2/include/porytiles2/domain/config/tile_sharing_packing.hpp` | `TileSharingPacking` enum (auto-generated) |
-| `Porytiles2/include/porytiles2/domain/config/tile_sharing_alignment.hpp` | `TileSharingAlignment` enum (auto-generated) |
-| `Porytiles2/lib/domain/services/primary_tileset_compiler.cpp` | Config unwrap — strategy override logic for optimal packing goes here |
+| File                                                                                | Role                                                                                   |
+|-------------------------------------------------------------------------------------|----------------------------------------------------------------------------------------|
+| `Porytiles2/lib/domain/packing/services/palette_packer.cpp`                         | Orchestration — panic sites at lines 281-286, integration point for both optimal modes |
+| `Porytiles2/include/porytiles2/domain/packing/services/packing_strategy.hpp`        | `PackingInput` struct — needs mode signal for optimal vs biased                        |
+| `Porytiles2/include/porytiles2/domain/packing/services/backtracking_strategy.hpp`   | `BacktrackingStrategy` — add hard-reject pruning for optimal packing                   |
+| `Porytiles2/include/porytiles2/domain/packing/models/shape_group_metadata.hpp`      | `ShapeGroupMetadata` — tile-to-group mapping data struct                               |
+| `Porytiles2/include/porytiles2/domain/packing/algorithms/sharing_metrics.hpp`       | `palette_contains_sibling()` free function — used by hard-reject pruning               |
+| `Porytiles2/include/porytiles2/domain/packing/algorithms/palette_builder.hpp`       | `build_all_output_palettes()` — bypassed by optimal alignment solver                   |
+| `Porytiles2/include/porytiles2/domain/packing/algorithms/indirect_link_builder.hpp` | `build_indirect_links()` — bypassed by optimal alignment solver                        |
+| `Porytiles2/include/porytiles2/domain/models/shape_group.hpp`                       | `ShapeGroup`, `ShapeGroupMember` — input to both solvers                               |
+| `Porytiles2/include/porytiles2/domain/config/tile_sharing_packing.hpp`              | `TileSharingPacking` enum (auto-generated)                                             |
+| `Porytiles2/include/porytiles2/domain/config/tile_sharing_alignment.hpp`            | `TileSharingAlignment` enum (auto-generated)                                           |
+| `Porytiles2/lib/domain/services/primary_tileset_compiler.cpp`                       | Config unwrap — strategy override logic for optimal packing goes here                  |
 
 ### New Files to Create
 
-| File | Role |
-|------|------|
-| `Porytiles2/include/porytiles2/utilities/union_find.hpp` | Generic union-find (disjoint-set) data structure |
+| File                                                                                   | Role                                                    |
+|----------------------------------------------------------------------------------------|---------------------------------------------------------|
+| `Porytiles2/include/porytiles2/utilities/union_find.hpp`                               | Generic union-find (disjoint-set) data structure        |
 | `Porytiles2/include/porytiles2/domain/packing/algorithms/optimal_alignment_solver.hpp` | CSP solver: union-find -> conflict graph -> 15-coloring |
-| `Porytiles2/lib/domain/packing/algorithms/optimal_alignment_solver.cpp` | CSP solver implementation |
+| `Porytiles2/lib/domain/packing/algorithms/optimal_alignment_solver.cpp`                | CSP solver implementation                               |

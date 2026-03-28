@@ -1056,18 +1056,14 @@ void emit_sharing_summary(
                 remark_lines.emplace_back(format.format(
                     "'{}' shared color conflict(s): multiple shape groups competed for the same color's link.",
                     FormatParam{fc.first_writer_wins_details.size(), Style::bold}));
-                remark_lines.emplace_back(
-                    "This is expected with greedy alignment. The 'optimal' alignment (not yet implemented) "
-                    "would resolve these globally.");
+                remark_lines.emplace_back("This is expected with greedy alignment.");
             }
             if (!fc.post_resolution_mismatch_details.empty()) {
                 remark_lines.emplace_back(format.format(
                     "'{}' post-resolution slot mismatch(es): colors were displaced by eviction after successful "
                     "resolution.",
                     FormatParam{fc.post_resolution_mismatch_details.size(), Style::bold}));
-                remark_lines.emplace_back(
-                    "This occurs when multiple groups compete for the same palette slots. "
-                    "The 'optimal' alignment (not yet implemented) would resolve these globally.");
+                remark_lines.emplace_back("This occurs when multiple groups compete for the same palette slots.");
             }
         }
         remark_lines.emplace_back();
