@@ -551,7 +551,7 @@ config_values:
     parser: parse_tile_sharing_packing
     default_value: "TileSharingPacking::off"
     validators: [ ]
-    cross_field_validators: [ ]
+    cross_field_validators: [ require_packing_strategy_backtracking:packing_strategy ]
 
   - canonical_name: Tile Sharing Alignment
     symbol: tile_sharing_alignment

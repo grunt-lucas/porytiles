@@ -232,6 +232,18 @@ class DomainConfig {
     tile_sharing_packing(ConfigScopeType type, const std::string &scope) const
     {
         auto validated_val = tile_sharing_packing_validated(type, scope);
+        // Apply cross-field validators
+        if (validated_val.has_value()) {
+            validated_val = require_packing_strategy_backtracking<TileSharingPacking>(
+                validated_val.value(),
+                *this,
+                type,
+                scope,
+                "packing_strategy",
+                [](const DomainConfig &cfg, ConfigScopeType t, const std::string &s) {
+                    return cfg.packing_strategy_validated(t, s);
+                });
+        }
         return validated_val;
     }
 

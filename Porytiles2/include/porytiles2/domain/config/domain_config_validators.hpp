@@ -14,6 +14,8 @@
 #include <string>
 #include <vector>
 
+#include "porytiles2/domain/config/packing_strategy_type.hpp"
+#include "porytiles2/domain/config/tile_sharing_packing.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/config/config_scope_type.hpp"
@@ -48,6 +50,81 @@ namespace porytiles2 {
         std::ranges::copy(format_params, std::back_inserter(params));
         return FormattableError{err_text, params};
     }
+    return val;
+}
+
+/**
+ * @brief Validates that 'biased' or 'optimal' tile sharing packing requires 'backtracking' packing strategy.
+ *
+ * @details
+ * When tile sharing packing is set to @c TileSharingPacking::biased or @c TileSharingPacking::optimal, the packing
+ * strategy must be @c PackingStrategyType::backtracking. If tile sharing packing is @c TileSharingPacking::off, no
+ * constraint is enforced. This is a cross-field validator that fetches the packing strategy from the config interface.
+ *
+ * @tparam T The type of the config value (expected to be TileSharingPacking)
+ * @tparam ConfigInterface The config interface type (e.g., DomainConfig)
+ * @tparam FetchFunc Callable type that fetches the packing strategy config value
+ * @param val The tile sharing packing config value being validated
+ * @param config The config interface to fetch the packing strategy from
+ * @param type The config scope type (tileset or layout)
+ * @param scope The scope name (tileset or layout name)
+ * @param other_field_name The name of the packing strategy field
+ * @param fetch_other Callable that fetches the packing strategy config value
+ * @return ChainableResult containing either the original value or an error
+ */
+template <typename T, typename ConfigInterface, typename FetchFunc>
+[[nodiscard]] ChainableResult<ConfigValue<T>> require_packing_strategy_backtracking(
+    const ConfigValue<T> &val,
+    const ConfigInterface &config,
+    ConfigScopeType type,
+    const std::string &scope,
+    const std::string &other_field_name,
+    FetchFunc fetch_other)
+{
+    if (val.value() == TileSharingPacking::off) {
+        return val;
+    }
+
+    auto other_result = fetch_other(config, type, scope);
+
+    if (!other_result.has_value()) {
+        return other_result.error();
+    }
+
+    const auto &other_val = other_result.value();
+
+    if (other_val.value() != PackingStrategyType::backtracking) {
+        std::vector<std::string> err_text{};
+        std::vector<std::vector<FormatParam>> params{};
+
+        err_text.emplace_back("'{}' set to '{}' requires '{}' to be '{}'.");
+        params.emplace_back(
+            std::vector{
+                FormatParam{val.canonical_name(), Style::bold},
+                FormatParam{to_string(val.value()), Style::bold},
+                FormatParam{other_field_name, Style::bold},
+                FormatParam{to_string(PackingStrategyType::backtracking), Style::bold}});
+        err_text.emplace_back("");
+        params.emplace_back();
+
+        auto [format_text, format_params] = val.format_data();
+        std::ranges::copy(format_text, std::back_inserter(err_text));
+        std::ranges::copy(format_params, std::back_inserter(params));
+
+        err_text.emplace_back("");
+        params.emplace_back();
+        err_text.emplace_back("{}");
+        params.emplace_back(std::vector{FormatParam{"Comparison value:", Style::italic}});
+        err_text.emplace_back("");
+        params.emplace_back();
+
+        auto [other_format_text, other_format_params] = other_val.format_data();
+        std::ranges::copy(other_format_text, std::back_inserter(err_text));
+        std::ranges::copy(other_format_params, std::back_inserter(params));
+
+        return FormattableError{err_text, params};
+    }
+
     return val;
 }
 

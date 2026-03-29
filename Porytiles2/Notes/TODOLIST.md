@@ -27,7 +27,6 @@
 
 ## Tile Sharing
 - improve prefilled conflict messages: perhaps include printouts via PalettePrinter
-- we should error if user asks for tile-sharing-packing:biased/optimal without having backtracking set as packing strategy
 - provide some way for users to "exclude" certain groups from sharing
   - need some kind of unique, deterministic ID for a sharable group
   - user could then say `--exclude-sharing=123,456` and see if excluding some groups helps others share easier
