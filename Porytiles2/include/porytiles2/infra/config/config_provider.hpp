@@ -8,6 +8,8 @@
 #include "porytiles2/domain/config/packing_strategy_params.hpp"
 #include "porytiles2/domain/config/packing_strategy_type.hpp"
 #include "porytiles2/domain/config/per_anim_overrides.hpp"
+#include "porytiles2/domain/config/tile_sharing_alignment.hpp"
+#include "porytiles2/domain/config/tile_sharing_packing.hpp"
 #include "porytiles2/domain/config/tiles_pal_mode.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/packing/models/palette_hint.hpp"
@@ -88,6 +90,12 @@ class ConfigProvider {
 
     [[nodiscard]] virtual LayerValue<PackingStrategyParams>
     packing_strategy_params(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<TileSharingPacking>
+    tile_sharing_packing(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<TileSharingAlignment>
+    tile_sharing_alignment(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<TilesPalMode> tiles_pal_mode(ConfigScopeType type, const std::string &scope) const;
 

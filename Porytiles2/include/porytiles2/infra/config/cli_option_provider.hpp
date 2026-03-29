@@ -62,6 +62,10 @@ class CliOptionProvider final : public ConfigProvider {
     packing_strategy(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<PackingStrategyParams>
     packing_strategy_params(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<TileSharingPacking>
+    tile_sharing_packing(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<TileSharingAlignment>
+    tile_sharing_alignment(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<TilesPalMode>
     tiles_pal_mode(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<AnimPalResolutionStrategy>

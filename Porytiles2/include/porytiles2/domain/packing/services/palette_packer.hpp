@@ -7,14 +7,20 @@
 
 #include "gsl/pointers"
 
+#include "porytiles2/domain/config/tile_sharing_alignment.hpp"
+#include "porytiles2/domain/config/tile_sharing_packing.hpp"
 #include "porytiles2/domain/models/color_index_map.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
+#include "porytiles2/domain/packing/models/color_position.hpp"
 #include "porytiles2/domain/packing/models/palette_hint.hpp"
 #include "porytiles2/domain/packing/services/packing_strategy.hpp"
+#include "porytiles2/domain/services/palette_printer.hpp"
+#include "porytiles2/domain/services/tile_printer.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
+#include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles2 {
@@ -61,6 +67,26 @@ struct PackingParams {
      * @brief Bitset specifying which hardware palettes are available for packing
      */
     std::bitset<pal::num_pals> available_pals_;
+
+    /**
+     * @brief Controls whether the packer considers shape group membership during packing.
+     *
+     * @details
+     * When set to biased, a soft cost penalty steers shape group siblings toward different palettes.
+     * When off (default), the packer ignores shape groups entirely. Wrapped in ConfigValue to carry source
+     * information for diagnostic caveat messages.
+     */
+    ConfigValue<TileSharingPacking> tile_sharing_packing_;
+
+    /**
+     * @brief Controls palette slot alignment strategy for tile sharing deduplication.
+     *
+     * @details
+     * When set to greedy, indirect links align palette slot indices for color-isomorphic tiles.
+     * When off (default), palettes are filled sequentially with no sharing alignment. Wrapped in ConfigValue
+     * to carry source information for diagnostic caveat messages.
+     */
+    ConfigValue<TileSharingAlignment> tile_sharing_alignment_;
 };
 
 /**
@@ -93,7 +119,7 @@ struct PalettePacking {
      */
     std::map<std::size_t, std::size_t> tile_to_pal_;
 
-    // TODO: need an anim_to_palette version once we implement
+    // Multi-palette anim palette mapping will be a separate future feature
 };
 
 /**
@@ -120,12 +146,16 @@ class PalettePacker {
      * @param strategy The packing algorithm to use
      * @param format TextFormatter for building diagnostic output
      * @param diag UserDiagnostics for warnings and errors
+     * @param tile_printer TilePrinter for rendering tile ASCII art in diagnostics
+     * @param pal_printer PalettePrinter for rendering palette diagnostics
      */
     explicit PalettePacker(
         gsl::not_null<const PackingStrategy *> strategy,
         gsl::not_null<const TextFormatter *> format,
-        gsl::not_null<const UserDiagnostics *> diag)
-        : strategy_{strategy}, format_{format}, diag_{diag}
+        gsl::not_null<const UserDiagnostics *> diag,
+        gsl::not_null<const TilePrinter *> tile_printer,
+        gsl::not_null<const PalettePrinter *> pal_printer)
+        : strategy_{strategy}, format_{format}, diag_{diag}, tile_printer_{tile_printer}, pal_printer_{pal_printer}
     {
     }
 
@@ -148,7 +178,7 @@ class PalettePacker {
      * 4. Delegates to packing strategy
      * 5. Converts PackedPalette results back to Palette<Rgba32, pal::max_size>
      *
-     @ @param params The packing input parameters
+     * @param params The packing input parameters
      *
      * @pre All colors in tiles, input_palettes, and hints must exist in color_map
      * @return PalettePacking on success, or an error describing the failure
@@ -159,6 +189,8 @@ class PalettePacker {
     const PackingStrategy *strategy_;
     const TextFormatter *format_;
     const UserDiagnostics *diag_;
+    const TilePrinter *tile_printer_;
+    const PalettePrinter *pal_printer_;
 };
 
 } // namespace porytiles2

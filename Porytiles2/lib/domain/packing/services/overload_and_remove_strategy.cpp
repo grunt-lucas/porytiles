@@ -16,6 +16,7 @@
 
 #include "porytiles2/domain/packing/algorithms/packing_initializer.hpp"
 #include "porytiles2/domain/packing/algorithms/packing_metrics.hpp"
+#include "porytiles2/domain/packing/algorithms/sharing_metrics.hpp"
 #include "porytiles2/domain/packing/models/packable_tile.hpp"
 
 namespace {
@@ -40,15 +41,22 @@ struct TileInfo {
  * measures how well the tile's colors overlap with colors already in the palette.
  * Lower cost means better overlap.
  *
+ * When sharing metadata is provided, palettes that already contain a sibling from the same shape
+ * group receive a cost penalty to steer siblings into different palettes.
+ *
  * @param info The tile info with forbidden palette set
  * @param palettes The current set of packed palettes
  * @param force_assignment When true, returns the lowest-cost non-forbidden palette even if no overlap benefit exists.
  *     When false (default), returns nullopt if no palette offers overlap benefit, signaling the caller to create a new
  *     palette.
+ * @param metadata Optional shape group metadata for sharing-aware cost adjustment (nullptr to disable)
  * @return Index of the best palette, or nullopt if none available (or no overlap benefit when not forcing)
  */
 [[nodiscard]] std::optional<std::size_t> find_best_palette_excluding_forbidden(
-    const TileInfo &info, const std::vector<PackedPalette> &palettes, bool force_assignment = false)
+    const TileInfo &info,
+    const std::vector<PackedPalette> &palettes,
+    bool force_assignment = false,
+    const ShapeGroupMetadata *metadata = nullptr)
 {
     std::optional<std::size_t> best_idx;
     double best_cost = std::numeric_limits<double>::max();
@@ -61,6 +69,12 @@ struct TileInfo {
 
         // Use fast metric function with cached color counts - O(colors) instead of O(tiles × colors)
         double cost = compute_weighted_cost_in_palette_fast(info.tile.color_set(), palettes[i]);
+
+        // Add sharing penalty to deprioritize palettes that already contain a shape group sibling
+        if (metadata != nullptr) {
+            cost += compute_sharing_penalty(info.tile, palettes[i], *metadata);
+        }
+
         if (cost < best_cost) {
             best_cost = cost;
             best_idx = i;
@@ -237,6 +251,10 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::try_pack(
     PackingOutput output;
     PalettePool pal_pool = input.pal_pool_;
 
+    // Extract shape group metadata pointer (nullptr when not sharing-aware)
+    const ShapeGroupMetadata *metadata =
+        input.shape_group_metadata_.has_value() ? &input.shape_group_metadata_.value() : nullptr;
+
     // Initialize output palettes from prefilled palettes
     output.pals_ = initialize_packed_palettes(input.prefilled_pals_, pal_pool, input.pal_capacity_);
 
@@ -341,7 +359,7 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::try_pack(
         tile_pool.pop_front();
 
         // Find best palette excluding forbidden ones (using cached palette color counts)
-        auto maybe_best_idx = find_best_palette_excluding_forbidden(tile_info, output.pals_);
+        auto maybe_best_idx = find_best_palette_excluding_forbidden(tile_info, output.pals_, false, metadata);
 
         if (!maybe_best_idx.has_value()) {
             // Create new palette if possible
@@ -375,7 +393,7 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::try_pack(
             }
 
             // Fallback 2: force-assign to least-bad palette, let overload/remove handle it
-            maybe_best_idx = find_best_palette_excluding_forbidden(tile_info, output.pals_, true);
+            maybe_best_idx = find_best_palette_excluding_forbidden(tile_info, output.pals_, true, metadata);
             if (!maybe_best_idx.has_value()) {
                 return FormattableError{
                     "Overload-and-Remove: cannot assign tile - all palettes forbidden - " +

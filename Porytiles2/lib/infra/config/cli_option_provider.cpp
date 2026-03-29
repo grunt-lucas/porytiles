@@ -123,6 +123,20 @@ LayerValue<PackingStrategyParams> CliOptionProvider::packing_strategy_params(
     return LayerValue<PackingStrategyParams>::not_provided();
 }
 
+LayerValue<TileSharingPacking> CliOptionProvider::tile_sharing_packing(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_tile_sharing_packing(storage_.tile_sharing_packing, "--tile-sharing-packing");
+}
+
+LayerValue<TileSharingAlignment> CliOptionProvider::tile_sharing_alignment(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_tile_sharing_alignment(storage_.tile_sharing_alignment, "--tile-sharing-alignment");
+}
+
 LayerValue<TilesPalMode> CliOptionProvider::tiles_pal_mode(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

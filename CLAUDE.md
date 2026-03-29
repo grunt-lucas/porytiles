@@ -67,7 +67,7 @@ uv run Scripts/coverage.py show Porytiles2/lib/domain/foo.cpp  # Line-by-line fo
 uv run Scripts/coverage.py clean                    # Remove coverage build dir
 ```
 
-When writing tests for new features, check coverage to ensure new code paths are exercised.
+When writing tests for new features or bug fixes, always check coverage to verify new code paths are actually exercised — don't just trust that tests pass. Run `build`, then `report` or `show` for the specific files you changed.
 
 ## Testing with pokeemerald-expansion
 

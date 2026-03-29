@@ -3,8 +3,10 @@
 #include <array>
 #include <format>
 #include <iostream>
+#include <map>
 #include <memory>
 #include <ranges>
+#include <set>
 #include <unordered_map>
 #include <unordered_set>
 #include <vector>
@@ -172,7 +174,6 @@ class CompilerTask {
     [[nodiscard]] ChainableResult<void> pipeline_helper_run_pal_packing();
     [[nodiscard]] ChainableResult<ColorIndexMap<Rgba32>>
     pipeline_helper_build_color_index_map(const std::vector<PaletteHint> &hints, std::size_t color_count_limit) const;
-
     // Pipeline helpers - animation processing
     [[nodiscard]] ChainableResult<void> pipeline_helper_register_animations();
     [[nodiscard]] ChainableResult<AnimKeyframeData>
@@ -227,6 +228,7 @@ class CompilerTask {
     std::vector<PixelTile<Rgba32>> porymap_pixel_rgba_{};
     std::vector<CanonicalPixelTile<Rgba32>> porymap_canonical_pixel_rgba_{};
     std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> new_porymap_pals_{};
+    std::map<std::size_t, std::size_t> tile_to_pal_{};
 
     // Working data
     std::unique_ptr<PorymapTilesetComponent> new_porymap_component_{};
@@ -710,19 +712,31 @@ CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> 
 {
     TileAssignmentResult result{};
 
+    /*
+     * Use the packer's authoritative palette assignment when available (optimize mode). This ensures tile sharing
+     * alignment is respected — the packer and alignment system chose specific palettes for each tile, and re-deriving
+     * via match_or_best could pick a different palette that breaks sharing slot alignment.
+     *
+     * Falls back to match_or_best for tiles not in the packer's assignments (e.g., locked/patch modes, or tiles
+     * excluded from packing like animation keyframes).
+     */
     // TODO: top_n matches should be configurable
-    // TODO: what if multiple pals match?
-    std::vector<PaletteMatchResult<Rgba32>> matches =
-        match_or_best(porytiles_tile, new_porymap_pals_, extrinsic_transparency_.value(), 1);
+    std::size_t pal_index;
+    if (tile_to_pal_.contains(flat_index)) {
+        pal_index = tile_to_pal_.at(flat_index);
+    }
+    else {
+        std::vector<PaletteMatchResult<Rgba32>> matches =
+            match_or_best(porytiles_tile, new_porymap_pals_, extrinsic_transparency_.value(), 1);
 
-    // No covering palette found
-    if (!matches.at(0).is_covered) {
-        result.status = TileAssignmentResult::Status::no_covering_pal;
-        result.match_results = std::move(matches);
-        return result;
+        if (!matches.at(0).is_covered) {
+            result.status = TileAssignmentResult::Status::no_covering_pal;
+            result.match_results = std::move(matches);
+            return result;
+        }
+        pal_index = matches.at(0).pal_index;
     }
 
-    const auto pal_index = matches.at(0).pal_index;
     const auto &matched_pal = new_porymap_pals_.at(pal_index);
     const auto index_tile = index_tile_from_color_tile(porytiles_tile, matched_pal, extrinsic_transparency_.value());
     const CanonicalPixelTile canonical_index_tile{index_tile};
@@ -815,23 +829,12 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
         std::format("Failed to build color index map for tileset '{}'.", tileset_.name()),
         void);
 
-    /*
-     * TODO: create canonical ShapeTile vectors here once we implement 'compile.tiles.sharing:' config option
-     */
-    // std::vector<CanonicalShapeTile<ColorIndex>> porytiles_canonical_color_index_shapes =
-    //     transform(porytiles_pixel_rgba, [&color_index_map, &extrinsic_transparency](const PixelTile<Rgba32>
-    //     &tile) {
-    //         return CanonicalShapeTile{from_pixel_tile(tile, color_index_map, extrinsic_transparency.value())};
-    //     });
-    // std::vector<CanonicalShapeTile<Rgba32>> porytiles_canonical_rgba_shapes = transform(
-    //     porytiles_canonical_color_index_shapes, [&color_index_map](const CanonicalShapeTile<ColorIndex> &tile) {
-    //         return CanonicalShapeTile{shape_tile_to_pixel_colors(tile, color_index_map)};
-    //     });
-
     PT_UNWRAP_TILESET_CONFIG_REF(config_, packing_strategy, tileset_.name(), void);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, packing_strategy_params, tileset_.name(), void);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, tile_sharing_packing, tileset_.name(), void);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, tile_sharing_alignment, tileset_.name(), void);
     auto strategy = make_packing_strategy(packing_strategy.value(), packing_strategy_params.value(), diag_);
-    PalettePacker pal_packer{strategy.get(), &format_, &diag_};
+    PalettePacker pal_packer{strategy.get(), &format_, &diag_, &tile_printer_, &pal_printer_};
     std::bitset<pal::num_pals> available_pals{0};
     for (std::size_t i = 0; i < num_pals_in_primary_; i++) {
         // TODO: support out-of-band primary palettes - see "Primary Palette Fixing" in topic_staging_area.md
@@ -845,12 +848,16 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
     packing_params.prefilled_pals_ = tileset_.porytiles_component().pals();
     packing_params.hints_ = pal_hints_.value();
     packing_params.available_pals_ = available_pals;
+    packing_params.tile_sharing_packing_ = tile_sharing_packing;
+    packing_params.tile_sharing_alignment_ = tile_sharing_alignment;
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         pal_packing,
         pal_packer.pack_tiles(packing_params),
         format_.format("Failed to pack palettes for tileset '{}'.", FormatParam{tileset_.name(), Style::bold}),
         void);
+
+    tile_to_pal_ = std::move(pal_packing.tile_to_pal_);
 
     for (std::size_t i = 0; i < pal::num_pals; i++) {
         if (const auto &maybe_packed_pal = pal_packing.pals_.at(i); maybe_packed_pal.has_value()) {
@@ -895,20 +902,6 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
              * them, let's not clobber anything unnecessarily.
              */
             new_porymap_pals_[i] = tileset_.porymap_component().pal_at(i);
-        }
-    }
-
-    // Emit diagnostic remarks for packed palettes
-    for (std::size_t i = 0; i < pal::num_pals; i++) {
-        const auto &maybe_packed_pal = pal_packing.pals_.at(i);
-        if (maybe_packed_pal.has_value()) {
-            constexpr auto tag = "palette-packing-result";
-            std::vector<std::string> remark_lines;
-            remark_lines.emplace_back(
-                format_.format("Palette '{}' packing result:", FormatParam{pal_filename(i), Style::bold}));
-            remark_lines.emplace_back();
-            std::ranges::copy(pal_printer_.print_rgba_pal(maybe_packed_pal.value()), std::back_inserter(remark_lines));
-            diag_.remark(tag, remark_lines);
         }
     }
 

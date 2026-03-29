@@ -16,6 +16,7 @@
 #include "porytiles2/domain/packing/models/packable_tile.hpp"
 #include "porytiles2/domain/packing/models/packed_palette.hpp"
 #include "porytiles2/domain/packing/models/palette_pool.hpp"
+#include "porytiles2/domain/packing/models/shape_group_metadata.hpp"
 #include "porytiles2/domain/packing/services/packing_strategy.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/result/error.hpp"
@@ -42,6 +43,25 @@ struct SearchContext {
     std::vector<ColorSet> initial_palette_colors;
     std::vector<std::size_t> palette_capacities;
     std::vector<std::size_t> hardware_indices;
+
+    /**
+     * @brief Optional shape group metadata for sharing-aware candidate sorting.
+     *
+     * @details
+     * When non-null, the DFS and BFS algorithms deprioritize candidate palettes that already contain a sibling from the
+     * same shape group. Sibling presence is inferred by checking whether any sibling tile's color set is a subset of
+     * the candidate palette's current color set.
+     */
+    const ShapeGroupMetadata *shape_group_metadata = nullptr;
+
+    /**
+     * @brief Maps each sorted tile index to a list of sibling color sets from the same shape group.
+     *
+     * @details
+     * Populated when shape_group_metadata is non-null. For tile at sorted_tiles[i], sibling_color_sets[i] contains the
+     * color sets of all OTHER members of its shape group. Empty if the tile is not in a shape group or has no siblings.
+     */
+    std::vector<std::vector<ColorSet>> sibling_color_sets;
 };
 
 // ============================================================================
@@ -153,6 +173,37 @@ struct BfsStateHash {
         ctx.hardware_indices.push_back(hw_idx);
     }
 
+    // Populate sharing metadata if available
+    if (input.shape_group_metadata_.has_value()) {
+        ctx.shape_group_metadata = &input.shape_group_metadata_.value();
+
+        // Build sibling color sets for each sorted tile
+        ctx.sibling_color_sets.resize(ctx.sorted_tiles.size());
+        for (std::size_t i = 0; i < ctx.sorted_tiles.size(); ++i) {
+            const auto &tile_id = ctx.sorted_tiles[i].id();
+            auto group_it = ctx.shape_group_metadata->tile_id_to_group.find(tile_id);
+            if (group_it == ctx.shape_group_metadata->tile_id_to_group.end()) {
+                continue;
+            }
+            std::size_t group_idx = group_it->second;
+            const auto &members = ctx.shape_group_metadata->group_members[group_idx];
+
+            // Find sibling color sets from the sorted_tiles vector
+            for (const auto &sibling_id : members) {
+                if (sibling_id == tile_id) {
+                    continue;
+                }
+                // Look up sibling in sorted_tiles to get its color set
+                for (const auto &st : ctx.sorted_tiles) {
+                    if (st.id() == sibling_id) {
+                        ctx.sibling_color_sets[i].push_back(st.color_set());
+                        break;
+                    }
+                }
+            }
+        }
+    }
+
     return ctx;
 }
 
@@ -213,11 +264,12 @@ AssignResult assign_depth_first(
         }
     }
 
-    // Build candidate list: (palette_index, intersection_size, color_set_count)
+    // Build candidate list: (palette_index, intersection_size, color_set_count, has_sibling)
     struct Candidate {
         std::size_t pal_index;
         std::size_t isect_size;
         std::size_t cs_count;
+        bool has_sibling;
     };
     std::vector<Candidate> candidates;
     candidates.reserve(palette_colors.size());
@@ -227,12 +279,32 @@ AssignResult assign_depth_first(
         if (u_size <= ctx.palette_capacities[i]) {
             std::size_t i_size = intersection_size(tile_colors, palette_colors[i]);
             std::size_t c_count = color_set_count(palette_colors[i]);
-            candidates.push_back(Candidate{i, i_size, c_count});
+
+            /*
+             * Heuristic: check if this palette likely contains a sibling by testing whether any sibling's color set
+             * is a subset of the palette's accumulated colors. This is an approximation — false positives are possible
+             * when unrelated tiles contribute the same colors. False positives only cause suboptimal candidate ordering
+             * (deprioritizing a palette unnecessarily), not incorrect packing.
+             */
+            bool sibling = false;
+            if (!ctx.sibling_color_sets.empty() && next_tile_index < ctx.sibling_color_sets.size()) {
+                for (const auto &sibling_cs : ctx.sibling_color_sets[next_tile_index]) {
+                    if (is_subset(sibling_cs, palette_colors[i])) {
+                        sibling = true;
+                        break;
+                    }
+                }
+            }
+
+            candidates.push_back(Candidate{i, i_size, c_count, sibling});
         }
     }
 
-    // Sort: descending by intersection_size, then ascending by color_set_count
+    // Sort: no_sibling < has_sibling, then descending by intersection_size, then ascending by color_set_count
     std::ranges::sort(candidates, [](const Candidate &a, const Candidate &b) {
+        if (a.has_sibling != b.has_sibling) {
+            return !a.has_sibling;
+        }
         if (a.isect_size != b.isect_size) {
             return a.isect_size > b.isect_size;
         }
@@ -353,6 +425,7 @@ AssignResult assign_breadth_first(
             std::size_t pal_index;
             std::size_t isect_size;
             std::size_t cs_count;
+            bool has_sibling;
         };
         std::vector<Candidate> candidates;
         candidates.reserve(current.palette_colors.size());
@@ -362,12 +435,27 @@ AssignResult assign_breadth_first(
             if (u_size <= ctx.palette_capacities[i]) {
                 std::size_t i_size = intersection_size(tile_colors, current.palette_colors[i]);
                 std::size_t c_count = color_set_count(current.palette_colors[i]);
-                candidates.push_back(Candidate{i, i_size, c_count});
+
+                // Check if this palette already contains a sibling
+                bool sibling = false;
+                if (!ctx.sibling_color_sets.empty() && tile_idx < ctx.sibling_color_sets.size()) {
+                    for (const auto &sibling_cs : ctx.sibling_color_sets[tile_idx]) {
+                        if (is_subset(sibling_cs, current.palette_colors[i])) {
+                            sibling = true;
+                            break;
+                        }
+                    }
+                }
+
+                candidates.push_back(Candidate{i, i_size, c_count, sibling});
             }
         }
 
-        // Sort: descending by intersection_size, ascending by color_set_count
+        // Sort: no_sibling < has_sibling, then descending by intersection_size, ascending by color_set_count
         std::sort(candidates.begin(), candidates.end(), [](const Candidate &a, const Candidate &b) {
+            if (a.has_sibling != b.has_sibling) {
+                return !a.has_sibling;
+            }
             if (a.isect_size != b.isect_size) {
                 return a.isect_size > b.isect_size;
             }

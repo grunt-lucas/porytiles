@@ -33,3 +33,7 @@ venv/**
 porytiles-user-docs
 porytiles-dev-docs
 
+# Ignore Gen III decomp projects
+pokeemerald
+pokefirered
+pokeemerald-expansion

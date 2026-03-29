@@ -31,6 +31,8 @@ class MockDomainConfig : public DomainConfig {
     std::vector<PaletteHint> pal_hints = std::vector<PaletteHint>{};
     PackingStrategyType packing_strategy = PackingStrategyType::backtracking;
     PackingStrategyParams packing_strategy_params = PackingStrategyParams{};
+    TileSharingPacking tile_sharing_packing = TileSharingPacking::off;
+    TileSharingAlignment tile_sharing_alignment = TileSharingAlignment::off;
     TilesPalMode tiles_pal_mode = TilesPalMode::true_color;
     AnimPalResolutionStrategy global_anim_pal_resolution_strategy = AnimPalResolutionStrategy::scan_local_metatiles;
     AnimKeyFrameResolutionStrategy global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
@@ -130,6 +132,18 @@ class MockDomainConfig : public DomainConfig {
     packing_strategy_params_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{packing_strategy_params, "Packing Strategy Params", "packing_strategy_params", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<TileSharingPacking>>
+    tile_sharing_packing_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{tile_sharing_packing, "Tile Sharing Packing", "tile_sharing_packing", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<TileSharingAlignment>>
+    tile_sharing_alignment_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{tile_sharing_alignment, "Tile Sharing Alignment", "tile_sharing_alignment", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>>

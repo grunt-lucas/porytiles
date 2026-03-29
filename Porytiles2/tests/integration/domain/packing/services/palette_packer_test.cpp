@@ -11,6 +11,8 @@
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/packing/services/best_fusion_strategy.hpp"
 #include "porytiles2/domain/packing/services/palette_packer.hpp"
+#include "porytiles2/infra/services/ascii_tile_printer.hpp"
+#include "porytiles2/infra/services/color_palette_printer.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/buffered_user_diagnostics.hpp"
 
@@ -147,7 +149,9 @@ TEST(PalettePackerIntegration, EmptyInput_ReturnsEmptyResult)
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
-    PalettePacker packer{&strategy, &formatter, &diag};
+    AsciiTilePrinter tile_printer{&formatter};
+    ColorPalettePrinter pal_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
 
     PackingParams params{};
     params.tiles_ = {};
@@ -168,7 +172,9 @@ TEST(PalettePackerIntegration, SingleTileOneColor_PacksIntoOnePalette)
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
-    PalettePacker packer{&strategy, &formatter, &diag};
+    AsciiTilePrinter tile_printer{&formatter};
+    ColorPalettePrinter pal_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
 
     std::vector<PixelTile<Rgba32>> tiles{make_solid_tile(rgba_red)};
     ColorIndexMap<Rgba32> color_map{};
@@ -204,7 +210,9 @@ TEST(PalettePackerIntegration, SingleTileMaxColors_PacksIntoOnePalette)
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
-    PalettePacker packer{&strategy, &formatter, &diag};
+    AsciiTilePrinter tile_printer{&formatter};
+    ColorPalettePrinter pal_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
 
     // Generate 15 distinct colors (max per palette, excluding transparency slot)
     const auto distinct_colors = generate_distinct_colors(15);
@@ -245,7 +253,9 @@ TEST(PalettePackerIntegration, TwoTilesIdenticalColors_SharePalette)
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
-    PalettePacker packer{&strategy, &formatter, &diag};
+    AsciiTilePrinter tile_printer{&formatter};
+    ColorPalettePrinter pal_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
 
     std::vector<PixelTile<Rgba32>> tiles{
         make_tile_with_colors({rgba_red, rgba_blue}), make_tile_with_colors({rgba_red, rgba_blue})};
@@ -280,7 +290,9 @@ TEST(PalettePackerIntegration, TwoTilesDisjointColorsFitTogether_PacksSuccessful
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
-    PalettePacker packer{&strategy, &formatter, &diag};
+    AsciiTilePrinter tile_printer{&formatter};
+    ColorPalettePrinter pal_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
 
     // Tile A: 7 colors, Tile B: 8 different colors (total 15, fits in one palette)
     const auto colors_a = generate_distinct_colors(7);
@@ -341,7 +353,9 @@ TEST(PalettePackerIntegration, NoAvailablePalettes_Fails)
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
-    PalettePacker packer{&strategy, &formatter, &diag};
+    AsciiTilePrinter tile_printer{&formatter};
+    ColorPalettePrinter pal_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
 
     std::vector<PixelTile<Rgba32>> tiles{make_solid_tile(rgba_red)};
     ColorIndexMap<Rgba32> color_map{};
@@ -367,7 +381,9 @@ TEST(PalettePackerIntegration, AllPalettesNeeded_Success)
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
-    PalettePacker packer{&strategy, &formatter, &diag};
+    AsciiTilePrinter tile_printer{&formatter};
+    ColorPalettePrinter pal_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
 
     // Create 16 tiles, each with 15 unique colors (no overlap)
     std::vector<PixelTile<Rgba32>> tiles{};
@@ -430,7 +446,9 @@ TEST(PalettePackerIntegration, AlmostFullPrefilledPalette_TilesGoElsewhere)
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
-    PalettePacker packer{&strategy, &formatter, &diag};
+    AsciiTilePrinter tile_printer{&formatter};
+    ColorPalettePrinter pal_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
 
     // Generate 13 colors for the prefilled palette (leaves 2 slots available)
     const auto prefilled_colors = generate_distinct_colors(13);
@@ -485,7 +503,9 @@ TEST(PalettePackerIntegration, PartiallyPrefilledPalette_TileCanMerge)
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
-    PalettePacker packer{&strategy, &formatter, &diag};
+    AsciiTilePrinter tile_printer{&formatter};
+    ColorPalettePrinter pal_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
 
     // Prefill palette 0 with 5 colors (partially locked)
     // Colors: red, green, blue, yellow, cyan (slots 1-5)
@@ -551,7 +571,9 @@ TEST(PalettePackerIntegration, OutOfBandPrefilledPalette_PrefilledShouldNotBeUse
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
-    PalettePacker packer{&strategy, &formatter, &diag};
+    AsciiTilePrinter tile_printer{&formatter};
+    ColorPalettePrinter pal_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
 
     // Prefill palette 7 with 5 colors (partially locked)
     // Colors: red, green, blue, yellow, cyan (slots 1-5)
@@ -608,7 +630,9 @@ TEST(PalettePackerIntegration, PrefilledPaletteWithDuplicateColors_CapacityCorre
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
-    PalettePacker packer{&strategy, &formatter, &diag};
+    AsciiTilePrinter tile_printer{&formatter};
+    ColorPalettePrinter pal_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
 
     // Create a prefilled palette with 15 slots filled but only 14 unique colors (1 duplicate).
     // This tests the fix for the bug where duplicate colors caused capacity miscalculation.
@@ -669,7 +693,9 @@ TEST(PalettePackerIntegration, TransparentPixelsIgnored_OnlyNonTransparentPacked
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
-    PalettePacker packer{&strategy, &formatter, &diag};
+    AsciiTilePrinter tile_printer{&formatter};
+    ColorPalettePrinter pal_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
 
     // Create a tile with magenta (transparent) and red pixels
     // Half the tile is magenta, half is red

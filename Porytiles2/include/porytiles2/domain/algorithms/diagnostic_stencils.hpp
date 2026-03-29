@@ -1,12 +1,18 @@
 #pragma once
 
+#include <algorithm>
+#include <map>
 #include <ranges>
 #include <string>
 #include <vector>
 
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
+#include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/palette.hpp"
+#include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/services/palette_printer.hpp"
+#include "porytiles2/domain/services/tile_printer.hpp"
+#include "porytiles2/utilities/string_utils.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
@@ -211,6 +217,152 @@ template <std::size_t N>
         format.format("palette hint '{}': {}:", FormatParam{pal_label, Style::bold}, FormatParam{message}));
     lines.emplace_back();
     std::ranges::copy(pal_printer.print_pal_hint_with_highlights(hint, violating_slots), std::back_inserter(lines));
+    return lines;
+}
+
+/**
+ * @brief Builds note lines showing ASCII art for each color version tile in a sharing group.
+ *
+ * @details
+ * For each color version tile index, emits a "Color version N (metatile header):" line followed by the ASCII art
+ * representation of that tile. Used in Phase 1 and Phase 2 tile sharing diagnostics.
+ *
+ * @param format The TextFormatter for styling
+ * @param tile_printer The TilePrinter for rendering tile ASCII art
+ * @param pixel_tiles The full collection of pixel tiles (indexed by tile index)
+ * @param extrinsic_transparency The extrinsic transparency color
+ * @param color_version_tile_indices Tile indices for each distinct color version
+ * @return Vector of formatted lines showing each color version tile
+ */
+[[nodiscard]] inline std::vector<std::string> build_tile_sharing_color_version_tile_lines(
+    const TextFormatter &format,
+    const TilePrinter &tile_printer,
+    const std::vector<PixelTile<Rgba32>> &pixel_tiles,
+    const Rgba32 &extrinsic_transparency,
+    const std::vector<std::size_t> &color_version_tile_indices)
+{
+    std::vector<std::string> lines;
+    for (std::size_t v = 0; v < color_version_tile_indices.size(); ++v) {
+        const auto tile_index = color_version_tile_indices.at(v);
+        auto [mt_index, layer, subtile] = metatile::from_tile_index(tile_index);
+        lines.emplace_back(format.format(
+            "Color version {} ({}):",
+            FormatParam{v + 1, Style::bold},
+            FormatParam{metatile::message_header(format, mt_index, layer, subtile), Style::bold}));
+        std::ranges::copy(
+            tile_printer.print_tile(pixel_tiles.at(tile_index), extrinsic_transparency), std::back_inserter(lines));
+    }
+    return lines;
+}
+
+/**
+ * @brief Builds truncated tile reference lines, displaying up to 8 entries 2-per-line with ellipsis.
+ *
+ * @details
+ * Formats tile indices as metatile message headers, 2 per line, up to a maximum of 8 displayed entries. If there are
+ * more than 8, appends an "... and N more." line. The caller is responsible for providing any header line — this
+ * function only emits the tile reference listing.
+ *
+ * @param format The TextFormatter for styling
+ * @param tile_indices The tile indices to display
+ * @return Vector of formatted lines listing the tile references
+ */
+[[nodiscard]] inline std::vector<std::string>
+build_truncated_tile_ref_lines(const TextFormatter &format, const std::vector<std::size_t> &tile_indices)
+{
+    constexpr std::size_t max_displayed_refs = 8;
+    constexpr std::size_t refs_per_line = 2;
+
+    std::vector<std::string> lines;
+    const std::size_t display_count = std::min(tile_indices.size(), max_displayed_refs);
+    std::string current_line;
+    std::size_t count_on_line = 0;
+    for (std::size_t i = 0; i < display_count; i++) {
+        if (count_on_line > 0) {
+            current_line += ", ";
+        }
+        auto [mt_index, layer, subtile] = metatile::from_tile_index(tile_indices.at(i));
+        current_line += metatile::message_header(format, mt_index, layer, subtile);
+        count_on_line++;
+        if (count_on_line == refs_per_line) {
+            lines.emplace_back(current_line);
+            current_line.clear();
+            count_on_line = 0;
+        }
+    }
+    if (tile_indices.size() > max_displayed_refs) {
+        if (!current_line.empty()) {
+            lines.emplace_back(current_line);
+            current_line.clear();
+        }
+        lines.emplace_back(
+            format.format("... and {} more.", FormatParam{tile_indices.size() - max_displayed_refs, Style::bold}));
+    }
+    else if (!current_line.empty()) {
+        lines.emplace_back(current_line);
+    }
+    return lines;
+}
+
+/**
+ * @brief Builds per-palette tile reference lines with a header and truncated listing for each palette.
+ *
+ * @details
+ * For each palette in the ordered map, emits a "Palette 'XX.pal': N tilemap entries:" header followed by a truncated
+ * tile reference listing via @c build_truncated_tile_ref_lines(). Uses @c std::map for deterministic ascending
+ * iteration order.
+ *
+ * @param format The TextFormatter for styling
+ * @param members_by_pal Map from palette index to the tile indices assigned to that palette
+ * @return Vector of formatted lines with per-palette groupings
+ */
+[[nodiscard]] inline std::vector<std::string> build_per_palette_tile_ref_lines(
+    const TextFormatter &format, const std::map<std::size_t, std::vector<std::size_t>> &members_by_pal)
+{
+    std::vector<std::string> lines;
+    for (const auto &[pal_index, tile_indices] : members_by_pal) {
+        lines.emplace_back(format.format(
+            "Palette '{}': '{}' tilemap entries:",
+            FormatParam{pal_filename(pal_index), Style::bold},
+            FormatParam{tile_indices.size(), Style::bold}));
+        std::ranges::copy(build_truncated_tile_ref_lines(format, tile_indices), std::back_inserter(lines));
+    }
+    return lines;
+}
+
+/**
+ * @brief Builds note lines showing one representative tile (ASCII art) per palette.
+ *
+ * @details
+ * For each palette in the ordered map, renders the first tile in that palette's member list as ASCII art with a
+ * "Representative shape for palette 'XX.pal' (metatile header):" header. Used in Phase 3 tile sharing diagnostics.
+ *
+ * @param format The TextFormatter for styling
+ * @param tile_printer The TilePrinter for rendering tile ASCII art
+ * @param pixel_tiles The full collection of pixel tiles (indexed by tile index)
+ * @param extrinsic_transparency The extrinsic transparency color
+ * @param members_by_pal Map from palette index to the tile indices assigned to that palette
+ * @return Vector of formatted lines showing one representative tile per palette
+ */
+[[nodiscard]] inline std::vector<std::string> build_representative_tile_per_palette_lines(
+    const TextFormatter &format,
+    const TilePrinter &tile_printer,
+    const std::vector<PixelTile<Rgba32>> &pixel_tiles,
+    const Rgba32 &extrinsic_transparency,
+    const std::map<std::size_t, std::vector<std::size_t>> &members_by_pal)
+{
+    std::vector<std::string> lines;
+    for (const auto &[pal_index, tile_indices] : members_by_pal) {
+        const auto representative_tile_index = tile_indices.front();
+        auto [mt_index, layer, subtile] = metatile::from_tile_index(representative_tile_index);
+        lines.emplace_back(format.format(
+            "Representative shape for palette '{}' ({}):",
+            FormatParam{pal_filename(pal_index), Style::bold},
+            FormatParam{metatile::message_header(format, mt_index, layer, subtile), Style::bold}));
+        std::ranges::copy(
+            tile_printer.print_tile(pixel_tiles.at(representative_tile_index), extrinsic_transparency),
+            std::back_inserter(lines));
+    }
     return lines;
 }
 
