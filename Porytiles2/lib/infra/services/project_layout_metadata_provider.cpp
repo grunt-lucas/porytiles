@@ -8,14 +8,13 @@
 
 #include "nlohmann/json.hpp"
 
+#include "porytiles2/infra/models/project_layout_metadata.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 
 namespace {
 
 using namespace porytiles2;
-
-using CachedLayout = ProjectLayoutMetadataProvider::CachedLayout;
 
 // TODO: don't hardcode this
 const std::filesystem::path layouts_json_rel_path = std::filesystem::path{"data"} / "layouts" / "layouts.json";
@@ -40,7 +39,7 @@ const std::filesystem::path layouts_json_rel_path = std::filesystem::path{"data"
     const std::filesystem::path &project_root,
     bool &layouts_parsed,
     std::string &layouts_table_label,
-    std::vector<CachedLayout> &layout_entries,
+    std::vector<ProjectLayoutMetadata> &layout_entries,
     std::map<std::string, std::size_t> &layout_index,
     const TextFormatter *format)
 {
@@ -85,7 +84,7 @@ const std::filesystem::path layouts_json_rel_path = std::filesystem::path{"data"
     auto table_label = json_data.at("layouts_table_label").get<std::string>();
 
     const auto &layouts_array = json_data.at("layouts");
-    std::vector<CachedLayout> entries;
+    std::vector<ProjectLayoutMetadata> entries;
     std::map<std::string, std::size_t> index;
     entries.reserve(layouts_array.size());
 
@@ -102,7 +101,7 @@ const std::filesystem::path layouts_json_rel_path = std::filesystem::path{"data"
 
             const auto idx = entries.size();
             entries.push_back(
-                CachedLayout{
+                ProjectLayoutMetadata{
                     std::move(id),
                     std::move(name),
                     width,
@@ -112,8 +111,8 @@ const std::filesystem::path layouts_json_rel_path = std::filesystem::path{"data"
                     std::move(border_fp),
                     std::move(blockdata_fp)});
 
-            index.emplace(entries.at(idx).id, idx);
-            index.emplace(entries.at(idx).name, idx);
+            index.emplace(entries.at(idx).id(), idx);
+            index.emplace(entries.at(idx).name(), idx);
         }
         catch (const nlohmann::json::exception &e) {
             return FormattableError{format->format(
@@ -146,31 +145,30 @@ const std::filesystem::path layouts_json_rel_path = std::filesystem::path{"data"
  * @param format Text formatter for styled output
  * @return Pointer to the cached layout entry, or error if not found
  */
-[[nodiscard]] ChainableResult<const CachedLayout *> lookup_layout(
+[[nodiscard]] ChainableResult<const ProjectLayoutMetadata *> lookup_layout(
     const std::string &layout_name_or_id,
     const std::filesystem::path &project_root,
     bool &layouts_parsed,
     std::string &layouts_table_label,
-    std::vector<CachedLayout> &layout_entries,
+    std::vector<ProjectLayoutMetadata> &layout_entries,
     std::map<std::string, std::size_t> &layout_index,
     const TextFormatter *format)
 {
     if (const auto ensure_result = ensure_layouts_parsed(
             project_root, layouts_parsed, layouts_table_label, layout_entries, layout_index, format);
         !ensure_result.has_value()) {
-        return ChainableResult<const CachedLayout *>{
+        return ChainableResult<const ProjectLayoutMetadata *>{
             FormattableError{
                 format->format("Failed to look up layout '{}'.", FormatParam{layout_name_or_id, Style::bold})},
             ensure_result};
     }
 
-    const auto it = layout_index.find(layout_name_or_id);
-    if (it == layout_index.end()) {
+    if (!layout_index.contains(layout_name_or_id)) {
         return FormattableError{
             format->format("Layout '{}' not found in layouts.json.", FormatParam{layout_name_or_id, Style::bold})};
     }
 
-    return &layout_entries.at(it->second);
+    return &layout_entries.at(layout_index.at(layout_name_or_id));
 }
 
 } // namespace
@@ -200,7 +198,7 @@ ChainableResult<std::size_t> ProjectLayoutMetadataProvider::width(const std::str
             layout_index_,
             format_),
         std::size_t);
-    return layout->width;
+    return layout->width();
 }
 
 ChainableResult<std::size_t> ProjectLayoutMetadataProvider::height(const std::string &layout_name_or_id) const
@@ -216,7 +214,7 @@ ChainableResult<std::size_t> ProjectLayoutMetadataProvider::height(const std::st
             layout_index_,
             format_),
         std::size_t);
-    return layout->height;
+    return layout->height();
 }
 
 ChainableResult<std::string> ProjectLayoutMetadataProvider::primary_tileset(const std::string &layout_name_or_id) const
@@ -232,7 +230,7 @@ ChainableResult<std::string> ProjectLayoutMetadataProvider::primary_tileset(cons
             layout_index_,
             format_),
         std::string);
-    return layout->primary_tileset;
+    return layout->primary_tileset();
 }
 
 ChainableResult<std::string>
@@ -249,7 +247,7 @@ ProjectLayoutMetadataProvider::secondary_tileset(const std::string &layout_name_
             layout_index_,
             format_),
         std::string);
-    return layout->secondary_tileset;
+    return layout->secondary_tileset();
 }
 
 ChainableResult<std::string> ProjectLayoutMetadataProvider::layouts_table_label() const
@@ -276,7 +274,7 @@ ProjectLayoutMetadataProvider::border_filepath(const std::string &layout_name_or
             layout_index_,
             format_),
         std::filesystem::path);
-    return project_root_ / layout->border_filepath;
+    return project_root_ / layout->border_filepath();
 }
 
 ChainableResult<std::filesystem::path>
@@ -293,7 +291,7 @@ ProjectLayoutMetadataProvider::blockdata_filepath(const std::string &layout_name
             layout_index_,
             format_),
         std::filesystem::path);
-    return project_root_ / layout->blockdata_filepath;
+    return project_root_ / layout->blockdata_filepath();
 }
 
 } // namespace porytiles2

@@ -10,6 +10,7 @@
 #include "gsl/pointers"
 
 #include "porytiles2/domain/services/layout_metadata_provider.hpp"
+#include "porytiles2/infra/models/project_layout_metadata.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
@@ -27,17 +28,6 @@ namespace porytiles2 {
  */
 class ProjectLayoutMetadataProvider : public LayoutMetadataProvider {
   public:
-    struct CachedLayout {
-        std::string id;
-        std::string name;
-        std::size_t width;
-        std::size_t height;
-        std::string primary_tileset;
-        std::string secondary_tileset;
-        std::filesystem::path border_filepath;
-        std::filesystem::path blockdata_filepath;
-    };
-
     ProjectLayoutMetadataProvider(
         std::filesystem::path project_root,
         gsl::not_null<const TextFormatter *> format,
@@ -94,7 +84,7 @@ class ProjectLayoutMetadataProvider : public LayoutMetadataProvider {
     // Lazy-loaded cache for parsed layout data (mutable for const methods)
     mutable bool layouts_parsed_{false};
     mutable std::string layouts_table_label_;
-    mutable std::vector<CachedLayout> layout_entries_;
+    mutable std::vector<ProjectLayoutMetadata> layout_entries_;
     mutable std::map<std::string, std::size_t> layout_index_;
 };
 
