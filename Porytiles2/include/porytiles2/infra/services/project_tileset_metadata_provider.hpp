@@ -37,6 +37,7 @@ class ProjectTilesetMetadataProvider : public TilesetMetadataProvider {
         : project_root_{std::move(project_root)}, format_{format}, diag_{diag}
     {
     }
+
     [[nodiscard]] bool exists(const std::string &tileset_name) const override;
 
     [[nodiscard]] ChainableResult<bool> is_secondary(const std::string &tileset_name) const override;

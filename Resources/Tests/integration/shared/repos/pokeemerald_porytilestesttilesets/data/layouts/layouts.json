@@ -1,0 +1,45 @@
+{
+  "layouts_table_label": "gMapLayouts",
+  "layouts": [
+    {
+      "id": "LAYOUT_PETALBURG_CITY",
+      "name": "PetalburgCity_Layout",
+      "width": 30,
+      "height": 30,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_Petalburg",
+      "border_filepath": "data/layouts/PetalburgCity/border.bin",
+      "blockdata_filepath": "data/layouts/PetalburgCity/map.bin"
+    },
+    {
+      "id": "LAYOUT_RUSTBORO_CITY",
+      "name": "RustboroCity_Layout",
+      "width": 40,
+      "height": 60,
+      "primary_tileset": "gTileset_General",
+      "secondary_tileset": "gTileset_Rustboro",
+      "border_filepath": "data/layouts/RustboroCity/border.bin",
+      "blockdata_filepath": "data/layouts/RustboroCity/map.bin"
+    },
+    {
+      "id": "LAYOUT_PETALBURG_CITY_POKEMON_CENTER_1F",
+      "name": "PetalburgCity_PokemonCenter_1F_Layout",
+      "width": 11,
+      "height": 8,
+      "primary_tileset": "gTileset_Building",
+      "secondary_tileset": "gTileset_PokemonCenter",
+      "border_filepath": "data/layouts/PetalburgCity_PokemonCenter_1F/border.bin",
+      "blockdata_filepath": "data/layouts/PetalburgCity_PokemonCenter_1F/map.bin"
+    },
+    {
+      "id": "LAYOUT_RUSTBORO_CITY_BIKE_SHOP",
+      "name": "RustboroCity_BikeShop_Layout",
+      "width": 9,
+      "height": 7,
+      "primary_tileset": "gTileset_Building",
+      "secondary_tileset": "gTileset_BikeShop",
+      "border_filepath": "data/layouts/RustboroCity_BikeShop/border.bin",
+      "blockdata_filepath": "data/layouts/RustboroCity_BikeShop/map.bin"
+    }
+  ]
+}

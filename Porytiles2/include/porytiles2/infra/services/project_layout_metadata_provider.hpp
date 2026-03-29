@@ -1,0 +1,101 @@
+#pragma once
+
+#include <cstddef>
+#include <filesystem>
+#include <map>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "gsl/pointers"
+
+#include "porytiles2/domain/services/layout_metadata_provider.hpp"
+#include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/utilities/text/text_formatter.hpp"
+#include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
+
+namespace porytiles2 {
+
+/**
+ * @brief Provides a pokeemerald project filesystem-based implementation for LayoutMetadataProvider.
+ *
+ * @details
+ * This class parses layout definitions from layouts.json to extract metadata such a layout's width/height, primary
+ * tileset, border filepath, etc.
+ *
+ * Layout metadata is lazy-loaded and cached for efficiency.
+ */
+class ProjectLayoutMetadataProvider : public LayoutMetadataProvider {
+  public:
+    struct CachedLayout {
+        std::string id;
+        std::string name;
+        std::size_t width;
+        std::size_t height;
+        std::string primary_tileset;
+        std::string secondary_tileset;
+        std::filesystem::path border_filepath;
+        std::filesystem::path blockdata_filepath;
+    };
+
+    ProjectLayoutMetadataProvider(
+        std::filesystem::path project_root,
+        gsl::not_null<const TextFormatter *> format,
+        gsl::not_null<const UserDiagnostics *> diag)
+        : project_root_{std::move(project_root)}, format_{format}, diag_{diag}
+    {
+    }
+
+    [[nodiscard]] bool exists(const std::string &layout_name_or_id) const override;
+
+    [[nodiscard]] ChainableResult<std::size_t> width(const std::string &layout_name_or_id) const override;
+
+    [[nodiscard]] ChainableResult<std::size_t> height(const std::string &layout_name_or_id) const override;
+
+    [[nodiscard]] ChainableResult<std::string> primary_tileset(const std::string &layout_name_or_id) const override;
+
+    [[nodiscard]] ChainableResult<std::string> secondary_tileset(const std::string &layout_name_or_id) const override;
+
+    /**
+     * @brief Gets the layouts table label symbol.
+     *
+     * @details
+     * Parses layouts.json if not already cached and returns the top-level @c layouts_table_label field.
+     *
+     * @return The layouts table label for the project
+     */
+    [[nodiscard]] ChainableResult<std::string> layouts_table_label() const;
+
+    /**
+     * @brief Resolves border file path for a layout by parsing layouts.json.
+     *
+     * @param layout_name_or_id The name or ID of the layout to check (e.g., "PetalburgCity_Layout" or
+     * "LAYOUT_PETALBURG_CITY")
+     * @pre layout_name_or_id must refer to an existing layout on disk
+     * @return The resolved border filepath for the layout
+     */
+    [[nodiscard]] ChainableResult<std::filesystem::path> border_filepath(const std::string &layout_name_or_id) const;
+
+    /**
+     * @brief Resolves blockdata file path for a layout by parsing layouts.json.
+     *
+     * @param layout_name_or_id The name or ID of the layout to check (e.g., "PetalburgCity_Layout" or
+     * "LAYOUT_PETALBURG_CITY")
+     * @pre layout_name_or_id must refer to an existing layout on disk
+     * @return The resolved blockdata filepath for the layout
+     */
+    [[nodiscard]] ChainableResult<std::filesystem::path> blockdata_filepath(const std::string &layout_name_or_id) const;
+
+  private:
+    std::filesystem::path project_root_;
+    const TextFormatter *format_;
+    const UserDiagnostics *diag_;
+
+    // Lazy-loaded cache for parsed layout data (mutable for const methods)
+    mutable bool layouts_parsed_{false};
+    mutable std::string layouts_table_label_;
+    mutable std::vector<CachedLayout> layout_entries_;
+    mutable std::map<std::string, std::size_t> layout_index_;
+};
+
+} // namespace porytiles2

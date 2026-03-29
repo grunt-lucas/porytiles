@@ -24,7 +24,7 @@ class TilesetMetadataProvider {
     /**
      * @brief Checks whether a tileset exists in the backing store for the given tileset name.
      *
-     * @param tileset_name The name of the tileset to check
+     * @param tileset_name The name of the tileset to check (e.g., "gTileset_General")
      * @return True if the tileset exists in the backing store, false otherwise
      */
     [[nodiscard]] virtual bool exists(const std::string &tileset_name) const = 0;
