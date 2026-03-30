@@ -7,7 +7,7 @@ using namespace porytiles2;
 
 using RgbaImage = Image<Rgba32>;
 
-TEST(ImageTest, DimensionsMethodsShouldWork)
+TEST(ImageTest, Dimensions)
 {
     constexpr std::size_t width = 10;
     constexpr std::size_t height = 20;
@@ -17,7 +17,7 @@ TEST(ImageTest, DimensionsMethodsShouldWork)
     EXPECT_EQ(image.height(), height);
 }
 
-TEST(ImageTest, AtByIndexShouldWork)
+TEST(ImageTest, AtByIndex)
 {
     constexpr std::size_t width = 3;
     constexpr std::size_t height = 2;
@@ -36,7 +36,7 @@ TEST(ImageTest, AtByIndexShouldWork)
     EXPECT_EQ(image.at(5), blue_pixel);
 }
 
-TEST(ImageTest, AtByRowColShouldWork)
+TEST(ImageTest, AtByRowCol)
 {
     constexpr std::size_t width = 3;
     constexpr std::size_t height = 2;
@@ -55,7 +55,7 @@ TEST(ImageTest, AtByRowColShouldWork)
     EXPECT_EQ(image.at(1, 2), blue_pixel);
 }
 
-TEST(ImageTest, SetByIndexShouldWork)
+TEST(ImageTest, SetByIndex)
 {
     constexpr std::size_t width = 4;
     constexpr std::size_t height = 3;
@@ -71,7 +71,7 @@ TEST(ImageTest, SetByIndexShouldWork)
     EXPECT_EQ(image.at(11), magenta_pixel);
 }
 
-TEST(ImageTest, SetByRowColShouldWork)
+TEST(ImageTest, SetByRowCol)
 {
     constexpr std::size_t width = 4;
     constexpr std::size_t height = 3;

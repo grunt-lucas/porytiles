@@ -7,7 +7,7 @@
 
 using namespace porytiles2;
 
-TEST(CanonicalPixelTileTests, ShouldFindCanonicalRepresentation)
+TEST(CanonicalPixelTileTests, FindsCanonicalRepresentation)
 {
     // Create a test tile with a distinctive pattern
     // Pattern:
@@ -49,7 +49,7 @@ TEST(CanonicalPixelTileTests, ShouldFindCanonicalRepresentation)
     EXPECT_EQ(static_cast<const PixelTile<IndexPixel> &>(canonical), expected_tile);
 }
 
-TEST(CanonicalPixelTileTests, ShouldChooseMinimalRepresentation)
+TEST(CanonicalPixelTileTests, ChoosesMinimalRepresentation)
 {
     // Create a tile where we know which flip combination should be minimal
     // We'll create a pattern where the no-flip version is lexicographically smallest
@@ -70,7 +70,7 @@ TEST(CanonicalPixelTileTests, ShouldChooseMinimalRepresentation)
     EXPECT_EQ(IndexPixel{1}, canonical.at(0, 0));
 }
 
-TEST(CanonicalPixelTileTests, ShouldHandleSymmetricTiles)
+TEST(CanonicalPixelTileTests, SymmetricTiles)
 {
     // Create a fully symmetric tile (all same values)
     PixelTile<IndexPixel> tile{};
@@ -90,7 +90,7 @@ TEST(CanonicalPixelTileTests, ShouldHandleSymmetricTiles)
     EXPECT_FALSE(canonical.v_flip());
 }
 
-TEST(CanonicalPixelTileTests, ShouldProduceConsistentResults)
+TEST(CanonicalPixelTileTests, ConsistentResults)
 {
     // Create a test tile
     PixelTile<IndexPixel> tile{};
@@ -108,7 +108,7 @@ TEST(CanonicalPixelTileTests, ShouldProduceConsistentResults)
     EXPECT_EQ(canonical1.v_flip(), canonical2.v_flip());
 }
 
-TEST(CanonicalPixelTileTests, ShouldHandleAllFlipVariations)
+TEST(CanonicalPixelTileTests, AllFlipVariations)
 {
     // Create a test tile
     PixelTile<IndexPixel> tile{};
@@ -142,7 +142,7 @@ TEST(CanonicalPixelTileTests, ShouldHandleAllFlipVariations)
         static_cast<const PixelTile<IndexPixel> &>(canonical_from_hv_flip));
 }
 
-TEST(CanonicalPixelTileTests, ShouldWorkWithRgba32Pixels)
+TEST(CanonicalPixelTileTests, WithRgba32Pixels)
 {
     // Create a test tile with Rgba32 colors
     // Use distinctive colors at each corner

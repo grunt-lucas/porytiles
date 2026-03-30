@@ -17,9 +17,6 @@ namespace {
 
 const std::filesystem::path test_resources_dir = "Resources/Tests/integration/infra/services/attributes_csv";
 
-/**
- * @brief A stub BehaviorMapProvider for testing that returns known values for known behavior names.
- */
 class StubBehaviorMapProvider final : public BehaviorMapProvider {
   public:
     StubBehaviorMapProvider()
@@ -57,9 +54,6 @@ class StubBehaviorMapProvider final : public BehaviorMapProvider {
     std::unordered_map<std::uint16_t, std::string> value_to_name_{};
 };
 
-/**
- * @brief A stub TerrainTypeMapProvider for testing that returns known values for known terrain names.
- */
 class StubTerrainTypeMapProvider final : public TerrainTypeMapProvider {
   public:
     StubTerrainTypeMapProvider()
@@ -96,9 +90,6 @@ class StubTerrainTypeMapProvider final : public TerrainTypeMapProvider {
     std::unordered_map<std::uint8_t, std::string> value_to_name_{};
 };
 
-/**
- * @brief A stub EncounterTypeMapProvider for testing that returns known values for known encounter names.
- */
 class StubEncounterTypeMapProvider final : public EncounterTypeMapProvider {
   public:
     StubEncounterTypeMapProvider()
@@ -145,10 +136,6 @@ class AttributesCsvLoaderTest : public ::testing::Test {
 
 } // namespace
 
-// =============================================================================
-// Valid CSV Tests (Emerald format)
-// =============================================================================
-
 TEST_F(AttributesCsvLoaderTest, LoadValidCsvReturnsCorrectAttributes)
 {
     AttributesCsvLoader loader{&formatter_, &behavior_map_};
@@ -174,10 +161,6 @@ TEST_F(AttributesCsvLoaderTest, LoadValidCsvReturnsCorrectAttributes)
     EXPECT_EQ(attributes.at(2).behavior(), 0x12);
     EXPECT_EQ(attributes.at(2).layer_type(), LayerType::normal);
 }
-
-// =============================================================================
-// Valid CSV Tests (FireRed format)
-// =============================================================================
 
 TEST_F(AttributesCsvLoaderTest, LoadValidFireredCsvReturnsCorrectAttributes)
 {
@@ -225,10 +208,6 @@ TEST_F(AttributesCsvLoaderTest, LoadFireredCsvWithoutBaseGameAutoDetects)
     EXPECT_EQ(attributes.at(1).encounter_type(), 1);
 }
 
-// =============================================================================
-// File Error Tests
-// =============================================================================
-
 TEST_F(AttributesCsvLoaderTest, LoadNonExistentFileReturnsError)
 {
     AttributesCsvLoader loader{&formatter_, &behavior_map_};
@@ -252,10 +231,6 @@ TEST_F(AttributesCsvLoaderTest, LoadEmptyFileReturnsError)
     EXPECT_TRUE(error_text.find("empty") != std::string::npos)
         << "Error should mention file is empty. Got: " << error_text;
 }
-
-// =============================================================================
-// Header Validation Tests
-// =============================================================================
 
 TEST_F(AttributesCsvLoaderTest, LoadInvalidHeaderSingleColumnReturnsError)
 {
@@ -282,10 +257,6 @@ TEST_F(AttributesCsvLoaderTest, LoadInvalidHeaderWrongNamesReturnsError)
     EXPECT_TRUE(error_text.find("id,behavior") != std::string::npos)
         << "Error should show expected format. Got: " << error_text;
 }
-
-// =============================================================================
-// Row Validation Tests
-// =============================================================================
 
 TEST_F(AttributesCsvLoaderTest, LoadInvalidIdNotIntegerReturnsErrorWithContext)
 {
@@ -325,10 +296,6 @@ TEST_F(AttributesCsvLoaderTest, LoadMissingColumnsReturnsErrorWithContext)
         << "Error should mention expected columns. Got: " << error_text;
 }
 
-// =============================================================================
-// Duplicate Detection Tests
-// =============================================================================
-
 TEST_F(AttributesCsvLoaderTest, LoadDuplicateIdReturnsErrorWithBothLocations)
 {
     AttributesCsvLoader loader{&formatter_, &behavior_map_};
@@ -338,26 +305,18 @@ TEST_F(AttributesCsvLoaderTest, LoadDuplicateIdReturnsErrorWithBothLocations)
 
     std::string error_text = result.chain().back()->join(formatter_);
 
-    // Should mention duplicate
     EXPECT_TRUE(error_text.find("duplicate metatile id") != std::string::npos)
         << "Error should mention duplicate metatile id. Got: " << error_text;
 
-    // Should mention the duplicate id value (1)
     EXPECT_TRUE(error_text.find("1") != std::string::npos)
         << "Error should show the duplicate id '1'. Got: " << error_text;
 
-    // Should contain "note:" for original location
     EXPECT_TRUE(error_text.find("note:") != std::string::npos)
         << "Error should contain 'note:' for original location. Got: " << error_text;
 
-    // Should mention "originally defined"
     EXPECT_TRUE(error_text.find("originally defined") != std::string::npos)
         << "Error should mention originally defined. Got: " << error_text;
 }
-
-// =============================================================================
-// Behavior Lookup Tests
-// =============================================================================
 
 TEST_F(AttributesCsvLoaderTest, LoadUnknownBehaviorReturnsErrorWithContext)
 {
@@ -378,10 +337,6 @@ TEST_F(AttributesCsvLoaderTest, LoadUnknownBehaviorReturnsErrorWithContext)
     EXPECT_TRUE(full_error_text.find("MB_DOES_NOT_EXIST") != std::string::npos)
         << "Error should show the unknown behavior name. Got: " << full_error_text;
 }
-
-// =============================================================================
-// FireRed Format / BaseGame Mismatch Tests
-// =============================================================================
 
 TEST_F(AttributesCsvLoaderTest, LoadFireredCsvWithEmeraldBaseGameReturnsError)
 {
@@ -411,10 +366,6 @@ TEST_F(AttributesCsvLoaderTest, LoadEmeraldCsvWithFireredBaseGameReturnsError)
         << "Error should mention base game. Got: " << error_text;
 }
 
-// =============================================================================
-// FireRed Provider Availability Tests
-// =============================================================================
-
 TEST_F(AttributesCsvLoaderTest, LoadFireredCsvWithoutTerrainProviderPanics)
 {
     // FireRed CSV but no terrain provider -- should panic
@@ -430,10 +381,6 @@ TEST_F(AttributesCsvLoaderTest, LoadFireredCsvWithoutEncounterProviderPanics)
 
     EXPECT_DEATH(std::ignore = loader.load(test_resources_dir / "valid_firered.csv"), "encounter type provider");
 }
-
-// =============================================================================
-// FireRed Lookup Error Tests
-// =============================================================================
 
 TEST_F(AttributesCsvLoaderTest, LoadFireredCsvUnknownTerrainTypeReturnsError)
 {
@@ -472,10 +419,6 @@ TEST_F(AttributesCsvLoaderTest, LoadFireredCsvUnknownEncounterTypeReturnsError)
     EXPECT_TRUE(full_error_text.find("TILE_ENCOUNTER_DOES_NOT_EXIST") != std::string::npos)
         << "Error should show the unknown encounter name. Got: " << full_error_text;
 }
-
-// =============================================================================
-// FireRed Row Validation Tests
-// =============================================================================
 
 TEST_F(AttributesCsvLoaderTest, LoadFireredCsvRowTooFewColumnsReturnsError)
 {

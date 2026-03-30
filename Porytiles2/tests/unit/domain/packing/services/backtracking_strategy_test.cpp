@@ -64,10 +64,6 @@ make_input(std::vector<PackableTile> tiles, std::bitset<pal::num_pals> available
 
 } // namespace
 
-// =============================================================================
-// Test: BasicSingleTile
-// =============================================================================
-
 TEST(BacktrackingStrategyTest, BasicSingleTile)
 {
     auto tile = make_regular_tile(0, {1, 2, 3});
@@ -82,10 +78,6 @@ TEST(BacktrackingStrategyTest, BasicSingleTile)
     ASSERT_EQ(output.tile_to_pal_.size(), 1u);
     ASSERT_TRUE(output.tile_to_pal_.contains(tile.id()));
 }
-
-// =============================================================================
-// Test: OverlappingTilesSharePalette
-// =============================================================================
 
 TEST(BacktrackingStrategyTest, OverlappingTilesSharePalette)
 {
@@ -107,10 +99,6 @@ TEST(BacktrackingStrategyTest, OverlappingTilesSharePalette)
     EXPECT_EQ(pal_a, pal_b);
 }
 
-// =============================================================================
-// Test: DisjointTilesUseSeparatePalettes
-// =============================================================================
-
 TEST(BacktrackingStrategyTest, DisjointTilesUseSeparatePalettes)
 {
     auto tile_a = make_regular_tile(0, {1, 2, 3});
@@ -127,10 +115,6 @@ TEST(BacktrackingStrategyTest, DisjointTilesUseSeparatePalettes)
     ASSERT_EQ(output.tile_to_pal_.size(), 2u);
     EXPECT_NE(output.tile_to_pal_.at(tile_a.id()), output.tile_to_pal_.at(tile_b.id()));
 }
-
-// =============================================================================
-// Test: TightPackingRequiresBacktracking
-// =============================================================================
 
 TEST(BacktrackingStrategyTest, TightPackingRequiresBacktracking)
 {
@@ -163,10 +147,6 @@ TEST(BacktrackingStrategyTest, TightPackingRequiresBacktracking)
         ASSERT_TRUE(output.tile_to_pal_.contains(tile.id()));
     }
 }
-
-// =============================================================================
-// Test: PrefilledPalettesRespected
-// =============================================================================
 
 TEST(BacktrackingStrategyTest, PrefilledPalettesRespected)
 {
@@ -206,10 +186,6 @@ TEST(BacktrackingStrategyTest, PrefilledPalettesRespected)
     EXPECT_TRUE(found_prefilled) << "Prefilled palette system tile should be preserved";
 }
 
-// =============================================================================
-// Test: HintTilesProcessed
-// =============================================================================
-
 TEST(BacktrackingStrategyTest, HintTilesProcessed)
 {
     auto hint = PackableTile{PackableTile::HintId{"test_hint"}, make_color_set({1, 2, 3})};
@@ -237,10 +213,6 @@ TEST(BacktrackingStrategyTest, HintTilesProcessed)
     EXPECT_EQ(output.tile_to_pal_.at(hint.id()), output.tile_to_pal_.at(tile.id()));
 }
 
-// =============================================================================
-// Test: EmptyInput
-// =============================================================================
-
 TEST(BacktrackingStrategyTest, EmptyInput)
 {
     auto input = make_input({}, all_palettes_available());
@@ -254,10 +226,6 @@ TEST(BacktrackingStrategyTest, EmptyInput)
     EXPECT_TRUE(output.tile_to_pal_.empty());
 }
 
-// =============================================================================
-// Test: ImpossibleInput
-// =============================================================================
-
 TEST(BacktrackingStrategyTest, ImpossibleInput)
 {
     // Tile needs 5 colors but capacity is only 4
@@ -269,10 +237,6 @@ TEST(BacktrackingStrategyTest, ImpossibleInput)
 
     EXPECT_FALSE(result.has_value());
 }
-
-// =============================================================================
-// Test: Deterministic
-// =============================================================================
 
 TEST(BacktrackingStrategyTest, Deterministic)
 {
@@ -295,10 +259,6 @@ TEST(BacktrackingStrategyTest, Deterministic)
     EXPECT_EQ(result1.value().tile_to_pal_, result2.value().tile_to_pal_);
 }
 
-// =============================================================================
-// Test: SingleConfigDfsSucceeds
-// =============================================================================
-
 TEST(BacktrackingStrategyTest, SingleConfigDfsSucceeds)
 {
     auto tile_a = make_regular_tile(0, {1, 2, 3});
@@ -315,10 +275,6 @@ TEST(BacktrackingStrategyTest, SingleConfigDfsSucceeds)
     EXPECT_EQ(output.tile_to_pal_.at(tile_a.id()), output.tile_to_pal_.at(tile_b.id()));
 }
 
-// =============================================================================
-// Test: SingleConfigBfsSucceeds
-// =============================================================================
-
 TEST(BacktrackingStrategyTest, SingleConfigBfsSucceeds)
 {
     auto tile_a = make_regular_tile(0, {1, 2, 3});
@@ -334,10 +290,6 @@ TEST(BacktrackingStrategyTest, SingleConfigBfsSucceeds)
     ASSERT_EQ(output.tile_to_pal_.size(), 2u);
     EXPECT_EQ(output.tile_to_pal_.at(tile_a.id()), output.tile_to_pal_.at(tile_b.id()));
 }
-
-// =============================================================================
-// Test: SingleConfigCutoffTooLow
-// =============================================================================
 
 TEST(BacktrackingStrategyTest, SingleConfigCutoffTooLow)
 {

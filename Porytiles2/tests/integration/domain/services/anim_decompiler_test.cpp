@@ -33,9 +33,6 @@ using namespace porytiles2;
 
 namespace {
 
-/**
- * @brief Creates a test palette with distinct colors at each index.
- */
 Palette<Rgba32, pal::max_size> create_test_palette()
 {
     Palette<Rgba32, pal::max_size> pal;
@@ -54,9 +51,6 @@ Palette<Rgba32, pal::max_size> create_test_palette()
     return pal;
 }
 
-/**
- * @brief Creates a tile with two colors: one in corners, one everywhere else.
- */
 PixelTile<IndexPixel> create_two_color_tile(std::size_t corner_color, std::size_t other_color)
 {
     PixelTile<IndexPixel> tile;
@@ -70,9 +64,6 @@ PixelTile<IndexPixel> create_two_color_tile(std::size_t corner_color, std::size_
     return tile;
 }
 
-/**
- * @brief Creates an asymmetric tile (left-side pattern) that is NOT symmetric under any flip.
- */
 PixelTile<IndexPixel> create_asymmetric_tile(std::size_t left_color, std::size_t fill_color)
 {
     PixelTile<IndexPixel> tile;
@@ -113,9 +104,6 @@ Image<IndexPixel> build_tiles_png(const std::vector<PixelTile<IndexPixel>> &tile
     return img;
 }
 
-/**
- * @brief Creates a minimal Animation<IndexPixel> with the given params and a single frame.
- */
 Animation<IndexPixel> create_test_animation(
     const std::string &name,
     std::size_t tile_offset,
@@ -144,9 +132,6 @@ Animation<IndexPixel> create_test_animation(
     return anim;
 }
 
-/**
- * @brief Populates a PorymapTilesetComponent with palettes, metatiles, and tiles.png for testing.
- */
 PorymapTilesetComponent build_porymap_component(
     const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals,
     const std::vector<TilemapEntry> &metatiles,
@@ -515,9 +500,6 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldNotMiscategorizeInterAnimAsC
 
 namespace {
 
-/**
- * @brief Creates a second test palette with distinct colors from the first.
- */
 Palette<Rgba32, pal::max_size> create_second_test_palette()
 {
     Palette<Rgba32, pal::max_size> pal;
@@ -536,9 +518,6 @@ Palette<Rgba32, pal::max_size> create_second_test_palette()
     return pal;
 }
 
-/**
- * @brief Creates a minimal Animation<IndexPixel> for scan_local_metatiles tests (no internal frame palette needed).
- */
 Animation<IndexPixel> create_test_animation_no_pal(
     const std::string &name,
     std::size_t tile_offset,
@@ -1089,11 +1068,9 @@ TEST_F(AnimDecompilerMultiPalTests, shouldWarnAndPickLowestPalWhenMultiPalStrate
 
     ASSERT_TRUE(result.has_value()) << "Warning strategy should allow decompilation to succeed";
 
-    // Should pick lowest palette index (0)
     const auto &key_tile = result.value().key_frame().tile_at(0);
     EXPECT_EQ(key_tile.at(0), palette_0_.at(3));
 
-    // Should have emitted a warning
     EXPECT_FALSE(diag_->warnings().empty()) << "Should have emitted a warning about multi-pal subtile";
 }
 

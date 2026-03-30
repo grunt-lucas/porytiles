@@ -102,10 +102,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
              */
             const std::size_t anim_tile_offset = index_pixel_anim.params().tile_offset();
             if (anim_tile_offset == 0) {
-                /*
-                 * AnimDecompiler::decompile_animation() validates that tile_offset != 0 before returning success, so
-                 * this branch should be unreachable. Retained as a defensive invariant.
-                 */
+                // Unreachable.
                 panic("anim '" + index_pixel_anim.name() + "' offset is 0");
             }
             const std::size_t anim_tile_count = index_pixel_anim.params().tile_count();

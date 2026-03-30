@@ -8,7 +8,6 @@ using namespace porytiles2;
 
 class SourceLocationsTest : public ::testing::Test {};
 
-// Helper function to test actual source_location output
 namespace {
 std::string get_current_function_name(const std::source_location location = std::source_location::current())
 {

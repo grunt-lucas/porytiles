@@ -19,9 +19,6 @@ const Rgba32 yellow{255, 255, 0, Rgba32::alpha_opaque};
 const Rgba32 white{255, 255, 255, Rgba32::alpha_opaque};
 const Rgba32 orange{255, 128, 0, Rgba32::alpha_opaque};
 
-/**
- * @brief Helper to build a ColorIndexMap from a set of colors.
- */
 ColorIndexMap<Rgba32> make_color_map(const std::vector<Rgba32> &colors)
 {
     ColorIndexMap<Rgba32> map;
@@ -33,9 +30,6 @@ ColorIndexMap<Rgba32> make_color_map(const std::vector<Rgba32> &colors)
     return map;
 }
 
-/**
- * @brief Helper to create a PackedPalette with specific colors from a color map.
- */
 PackedPalette
 make_packed_pal(std::size_t hw_index, const std::vector<Rgba32> &colors, const ColorIndexMap<Rgba32> &color_map)
 {

@@ -6,7 +6,6 @@
 
 using namespace porytiles2;
 
-// Helper function to create a ShapeMask with a specific pattern
 namespace {
 ShapeMask create_test_mask()
 {
@@ -27,7 +26,6 @@ TEST(ShapeMaskTests, DefaultConstruction)
 {
     ShapeMask tm;
     EXPECT_EQ(tm.rows().size(), 8);
-    // Default constructed mask should have all zeros
     for (const auto &row : tm.rows()) {
         EXPECT_EQ(row, 0);
     }
@@ -282,7 +280,6 @@ TEST(ShapeMaskTests, IsTransparentForDefaultMask)
 {
     ShapeMask tm;
 
-    // Default mask should be fully transparent (all zeros)
     EXPECT_TRUE(tm.is_transparent());
 }
 
@@ -290,7 +287,6 @@ TEST(ShapeMaskTests, IsTransparentForNonEmptyMask)
 {
     ShapeMask tm = create_test_mask();
 
-    // Mask with any bits set should not be transparent
     EXPECT_FALSE(tm.is_transparent());
 }
 

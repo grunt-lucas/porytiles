@@ -27,7 +27,7 @@ PixelTile<Rgba32> make_single_color_tile(const Rgba32 &color)
 
 } // namespace
 
-TEST(ShapeGroupMetadataTests, BuildFromShapeGroups_ShouldMapTileIdsToGroups)
+TEST(ShapeGroupMetadataTests, BuildFromShapeGroupsMapsTileIds)
 {
     auto tile1 = make_single_color_tile(red);
     auto tile2 = make_single_color_tile(blue);
@@ -49,7 +49,7 @@ TEST(ShapeGroupMetadataTests, BuildFromShapeGroups_ShouldMapTileIdsToGroups)
     EXPECT_EQ(metadata.tile_id_to_group.at(PackableTile::RegularId{1}), 0);
 }
 
-TEST(ShapeGroupMetadataTests, BuildFromShapeGroups_ShouldHandleAllRegularIds)
+TEST(ShapeGroupMetadataTests, BuildFromShapeGroupsAllRegularIds)
 {
     auto tile1 = make_single_color_tile(red);
     auto tile2 = make_single_color_tile(blue);
@@ -72,7 +72,7 @@ TEST(ShapeGroupMetadataTests, BuildFromShapeGroups_ShouldHandleAllRegularIds)
     EXPECT_TRUE(metadata.tile_id_to_group.contains(PackableTile::RegularId{2}));
 }
 
-TEST(ShapeGroupMetadataTests, EmptyShapeGroups_ShouldProduceEmptyMetadata)
+TEST(ShapeGroupMetadataTests, EmptyShapeGroupsProducesEmpty)
 {
     std::vector<ShapeGroup<Rgba32>> empty_groups;
     std::vector<PackableTile::Id> empty_ids;
@@ -83,7 +83,7 @@ TEST(ShapeGroupMetadataTests, EmptyShapeGroups_ShouldProduceEmptyMetadata)
     EXPECT_TRUE(metadata.group_members.empty());
 }
 
-TEST(ShapeGroupMetadataTests, MultipleGroups_ShouldMapCorrectly)
+TEST(ShapeGroupMetadataTests, MultipleGroupsMapsCorrectly)
 {
     // Create two independent shape groups
     auto tile_r = make_single_color_tile(red);
@@ -125,7 +125,6 @@ TEST(ShapeGroupMetadataTests, MultipleGroups_ShouldMapCorrectly)
         EXPECT_LT(group_idx, metadata.group_members.size());
     }
 
-    // Each group should have 2+ members
     for (const auto &members : metadata.group_members) {
         EXPECT_GE(members.size(), 2);
     }

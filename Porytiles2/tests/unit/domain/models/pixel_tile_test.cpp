@@ -8,7 +8,7 @@
 
 using namespace porytiles2;
 
-TEST(PixelTileTests, AtAndSetShouldWork)
+TEST(PixelTileTests, AtAndSet)
 {
     PixelTile<IndexPixel> tile{};
 
@@ -27,7 +27,7 @@ TEST(PixelTileTests, AtAndSetShouldWork)
     EXPECT_EQ(31, tile.at(42).index());
 }
 
-TEST(PixelTileTests, IsTransparentShouldUseExtrinsicCorrectly)
+TEST(PixelTileTests, IsTransparentExtrinsic)
 {
     PixelTile<Rgba32> tile{};
 
@@ -39,14 +39,14 @@ TEST(PixelTileTests, IsTransparentShouldUseExtrinsicCorrectly)
     EXPECT_TRUE(tile.is_transparent(rgba_magenta));
 }
 
-TEST(PixelTileTests, IsTransparentShouldUseAlphaCorrectly)
+TEST(PixelTileTests, IsTransparentAlpha)
 {
     // Default-constructed PixelTile<Rgba32> is zeroed, i.e. black and intrinsically transparent
     const PixelTile<Rgba32> tile{};
     EXPECT_TRUE(tile.is_transparent(rgba_magenta));
 }
 
-TEST(PixelTileTests, IsTransparentShouldUseMixedTransparencyCorrectly)
+TEST(PixelTileTests, IsTransparentMixed)
 {
     PixelTile<Rgba32> tile{};
 
@@ -61,7 +61,7 @@ TEST(PixelTileTests, IsTransparentShouldUseMixedTransparencyCorrectly)
     EXPECT_TRUE(tile.is_transparent(rgba_magenta));
 }
 
-TEST(PixelTileTests, EqualsIgnoringTransparencyShouldWorkWithIntrinsicTransparency)
+TEST(PixelTileTests, EqualsIgnoringIntrinsicTransparency)
 {
     PixelTile<IndexPixel> tile1{};
     PixelTile<IndexPixel> tile2{};
@@ -72,12 +72,11 @@ TEST(PixelTileTests, EqualsIgnoringTransparencyShouldWorkWithIntrinsicTransparen
         tile2.set(i, IndexPixel{0}); // same transparent value
     }
 
-    // Both tiles should be considered equal since all pixels are transparent
     EXPECT_TRUE(tile1.equals_ignoring_transparency(tile2));
     EXPECT_TRUE(tile2.equals_ignoring_transparency(tile1));
 }
 
-TEST(PixelTileTests, EqualsIgnoringTransparencyShouldDetectNonTransparentDifferences)
+TEST(PixelTileTests, EqualsIgnoringDetectsNonTransparentDiff)
 {
     PixelTile<IndexPixel> tile1{};
     PixelTile<IndexPixel> tile2{};
@@ -91,12 +90,11 @@ TEST(PixelTileTests, EqualsIgnoringTransparencyShouldDetectNonTransparentDiffere
     // Change one pixel in tile2 to a different non-transparent value
     tile2.set(10, IndexPixel{6});
 
-    // Tiles should not be equal
     EXPECT_FALSE(tile1.equals_ignoring_transparency(tile2));
     EXPECT_FALSE(tile2.equals_ignoring_transparency(tile1));
 }
 
-TEST(PixelTileTests, EqualsIgnoringTransparencyShouldWorkWithMixedTransparentAndNonTransparent)
+TEST(PixelTileTests, EqualsIgnoringMixedTransparency)
 {
     PixelTile<IndexPixel> tile1{};
     PixelTile<IndexPixel> tile2{};
@@ -118,7 +116,7 @@ TEST(PixelTileTests, EqualsIgnoringTransparencyShouldWorkWithMixedTransparentAnd
     EXPECT_TRUE(tile2.equals_ignoring_transparency(tile1));
 }
 
-TEST(PixelTileTests, EqualsIgnoringTransparencyShouldWorkWithExtrinsicTransparency)
+TEST(PixelTileTests, EqualsIgnoringExtrinsicTransparency)
 {
     PixelTile<Rgba32> tile1{};
     PixelTile<Rgba32> tile2{};
@@ -138,7 +136,7 @@ TEST(PixelTileTests, EqualsIgnoringTransparencyShouldWorkWithExtrinsicTransparen
     EXPECT_TRUE(tile2.equals_ignoring_transparency(tile1, rgba_magenta));
 }
 
-TEST(PixelTileTests, EqualsIgnoringTransparencyShouldDetectExtrinsicNonTransparentDifferences)
+TEST(PixelTileTests, EqualsIgnoringDetectsExtrinsicDiff)
 {
     PixelTile<Rgba32> tile1{};
     PixelTile<Rgba32> tile2{};
@@ -152,12 +150,11 @@ TEST(PixelTileTests, EqualsIgnoringTransparencyShouldDetectExtrinsicNonTranspare
     // Change one pixel in tile2
     tile2.set(20, Rgba32{100, 150, 201});
 
-    // Tiles should not be equal
     EXPECT_FALSE(tile1.equals_ignoring_transparency(tile2, rgba_magenta));
     EXPECT_FALSE(tile2.equals_ignoring_transparency(tile1, rgba_magenta));
 }
 
-TEST(PixelTileTests, EqualsIgnoringTransparencyShouldWorkWithMixedExtrinsicTransparency)
+TEST(PixelTileTests, EqualsIgnoringMixedExtrinsicTransparency)
 {
     PixelTile<Rgba32> tile1{};
     PixelTile<Rgba32> tile2{};
@@ -183,7 +180,7 @@ TEST(PixelTileTests, EqualsIgnoringTransparencyShouldWorkWithMixedExtrinsicTrans
     EXPECT_TRUE(tile2.equals_ignoring_transparency(tile1, rgba_magenta));
 }
 
-TEST(PixelTileTests, UniqueNontransparentColorsShouldReturnEmptySetForDefaultTile)
+TEST(PixelTileTests, UniqueColorsEmptyForDefault)
 {
     const PixelTile<IndexPixel> tile{};
 
@@ -193,7 +190,7 @@ TEST(PixelTileTests, UniqueNontransparentColorsShouldReturnEmptySetForDefaultTil
     EXPECT_EQ(0, colors.size());
 }
 
-TEST(PixelTileTests, UniqueNontransparentColorsShouldReturnSingleColorForUniformTile)
+TEST(PixelTileTests, UniqueColorsSingleForUniform)
 {
     PixelTile<IndexPixel> tile{};
 
@@ -208,7 +205,7 @@ TEST(PixelTileTests, UniqueNontransparentColorsShouldReturnSingleColorForUniform
     EXPECT_TRUE(colors.contains(IndexPixel{7}));
 }
 
-TEST(PixelTileTests, UniqueNontransparentColorsShouldReturnMultipleColorsForVariedTile)
+TEST(PixelTileTests, UniqueColorsMultipleForVaried)
 {
     PixelTile<IndexPixel> tile{};
 
@@ -230,7 +227,6 @@ TEST(PixelTileTests, UniqueNontransparentColorsShouldReturnMultipleColorsForVari
 
     const auto colors = tile.unique_nontransparent_colors();
 
-    // Should have exactly 4 unique non-transparent colors
     EXPECT_EQ(4, colors.size());
     EXPECT_TRUE(colors.contains(IndexPixel{1}));
     EXPECT_TRUE(colors.contains(IndexPixel{2}));
@@ -238,7 +234,7 @@ TEST(PixelTileTests, UniqueNontransparentColorsShouldReturnMultipleColorsForVari
     EXPECT_TRUE(colors.contains(IndexPixel{4}));
 }
 
-TEST(PixelTileTests, UniqueNontransparentColorsShouldWorkWithRgba32)
+TEST(PixelTileTests, UniqueColorsWithRgba32)
 {
     PixelTile<Rgba32> tile{};
 
@@ -252,7 +248,6 @@ TEST(PixelTileTests, UniqueNontransparentColorsShouldWorkWithRgba32)
 
     const auto colors = tile.unique_nontransparent_colors(rgba_magenta);
 
-    // Should have 3 unique non-transparent colors: red, green, blue
     // Default black with alpha=0 is filtered out because it's intrinsically transparent
     EXPECT_EQ(3, colors.size());
     EXPECT_TRUE(colors.contains(Rgba32{255, 0, 0}));
@@ -260,7 +255,7 @@ TEST(PixelTileTests, UniqueNontransparentColorsShouldWorkWithRgba32)
     EXPECT_TRUE(colors.contains(Rgba32{0, 0, 255}));
 }
 
-TEST(PixelTileTests, UniqueNontransparentColorsShouldExcludeIntrinsicTransparentIndexPixel)
+TEST(PixelTileTests, UniqueColorsExcludesIntrinsicTransparent)
 {
     PixelTile<IndexPixel> tile{};
 
@@ -276,13 +271,12 @@ TEST(PixelTileTests, UniqueNontransparentColorsShouldExcludeIntrinsicTransparent
 
     const auto colors = tile.unique_nontransparent_colors();
 
-    // Should only include the non-transparent index 5, not the transparent index 0
     EXPECT_EQ(1, colors.size());
     EXPECT_TRUE(colors.contains(IndexPixel{5}));
     EXPECT_FALSE(colors.contains(IndexPixel{0}));
 }
 
-TEST(PixelTileTests, UniqueNontransparentColorsShouldExcludeAllIntrinsicTransparentRgba32Values)
+TEST(PixelTileTests, UniqueColorsExcludesAllIntrinsicRgba32)
 {
     PixelTile<Rgba32> tile{};
 
@@ -301,7 +295,7 @@ TEST(PixelTileTests, UniqueNontransparentColorsShouldExcludeAllIntrinsicTranspar
     EXPECT_EQ(0, colors.size());
 }
 
-TEST(PixelTileTests, UniqueNontransparentColorsShouldExcludeExtrinsicTransparentColors)
+TEST(PixelTileTests, UniqueColorsExcludesExtrinsicTransparent)
 {
     PixelTile<Rgba32> tile{};
 
@@ -314,7 +308,6 @@ TEST(PixelTileTests, UniqueNontransparentColorsShouldExcludeExtrinsicTransparent
 
     const auto colors = tile.unique_nontransparent_colors(rgba_magenta);
 
-    // Should only include the non-transparent color
     // Magenta is excluded (extrinsically transparent)
     // Default black is excluded (intrinsically transparent)
     EXPECT_EQ(1, colors.size());
@@ -323,7 +316,7 @@ TEST(PixelTileTests, UniqueNontransparentColorsShouldExcludeExtrinsicTransparent
     EXPECT_FALSE(colors.contains(Rgba32{}));
 }
 
-TEST(PixelTileTests, UniqueNontransparentColorsShouldExcludeBothIntrinsicAndExtrinsicTransparentColors)
+TEST(PixelTileTests, UniqueColorsExcludesBothTransparent)
 {
     PixelTile<Rgba32> tile{};
 

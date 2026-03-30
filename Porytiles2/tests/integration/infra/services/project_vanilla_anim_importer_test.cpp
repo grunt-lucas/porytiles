@@ -21,10 +21,6 @@ class ProjectVanillaAnimImporterTest : public ::testing::Test {
     ProjectVanillaAnimImporter importer_{std::filesystem::path{kTestProjectRoot}, &formatter_, &diag_};
 };
 
-// =============================================================================
-// General Tileset Animation Import Tests
-// =============================================================================
-
 TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsDiscoversAllAnimationsForGeneralTileset)
 {
     auto result = importer_.import_animations("gTileset_General");
@@ -171,10 +167,6 @@ TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsFrameTilesAreIndexPixel)
     EXPECT_LE(tile.at(0, 0).index(), 15u);
 }
 
-// =============================================================================
-// Tileset Without Animations Tests
-// =============================================================================
-
 TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsReturnsEmptyMapForTilesetWithoutAnimations)
 {
     // Shop tileset has callback = NULL, meaning no animations
@@ -184,20 +176,12 @@ TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsReturnsEmptyMapForTileset
     EXPECT_TRUE(result.value().empty()) << "Shop tileset should have no animations";
 }
 
-// =============================================================================
-// Error Handling Tests
-// =============================================================================
-
 TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsReturnsErrorForNonExistentTileset)
 {
     auto result = importer_.import_animations("NonExistentTileset");
 
     EXPECT_FALSE(result.has_value()) << "Import should fail for non-existent tileset";
 }
-
-// =============================================================================
-// Waterfall Animation Tests
-// =============================================================================
 
 TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsExtractsWaterfallAnimation)
 {
@@ -217,10 +201,6 @@ TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsExtractsWaterfallAnimatio
     // Waterfall has 4 unique frames
     EXPECT_EQ(waterfall.frames_values().size(), 4u);
 }
-
-// =============================================================================
-// Sand Water Edge Animation Tests
-// =============================================================================
 
 TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsExtractsSandWaterEdgeAnimation)
 {

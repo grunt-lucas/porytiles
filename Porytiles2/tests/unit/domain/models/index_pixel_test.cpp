@@ -4,18 +4,14 @@
 
 using namespace porytiles2;
 
-TEST(IndexPixelTests, DefaultConstructedValueShouldBeTransparent)
+TEST(IndexPixelTests, DefaultIsTransparent)
 {
     const IndexPixel default_pixel{};
     EXPECT_TRUE(default_pixel.is_transparent());
     EXPECT_EQ(default_pixel.index(), 0);
 }
 
-// =====================================================================================================================
-// color_index() Tests - Extracts lower 4 bits
-// =====================================================================================================================
-
-TEST(IndexPixelTests, ColorIndexExtractsLower4BitsForStandardValues)
+TEST(IndexPixelTests, ColorIndexStandardValues)
 {
     // For standard 4-bit values (0-15), color_index() should equal index()
     for (std::size_t i = 0; i <= 15; ++i) {
@@ -25,7 +21,7 @@ TEST(IndexPixelTests, ColorIndexExtractsLower4BitsForStandardValues)
     }
 }
 
-TEST(IndexPixelTests, ColorIndexExtractsLower4BitsForTrueColorValues)
+TEST(IndexPixelTests, ColorIndexTrueColorValues)
 {
     // For true-color encoded values, color_index() extracts lower 4 bits
     // Example: 0x23 = palette 2, color 3
@@ -45,11 +41,7 @@ TEST(IndexPixelTests, ColorIndexExtractsLower4BitsForTrueColorValues)
     EXPECT_EQ(pixel_0xFF.color_index(), 15);
 }
 
-// =====================================================================================================================
-// palette_index() Tests - Extracts upper 4 bits
-// =====================================================================================================================
-
-TEST(IndexPixelTests, PaletteIndexExtractsUpper4BitsForStandardValues)
+TEST(IndexPixelTests, PaletteIndexStandardValues)
 {
     // For standard 4-bit values (0-15), palette_index() should be 0
     for (std::size_t i = 0; i <= 15; ++i) {
@@ -58,7 +50,7 @@ TEST(IndexPixelTests, PaletteIndexExtractsUpper4BitsForStandardValues)
     }
 }
 
-TEST(IndexPixelTests, PaletteIndexExtractsUpper4BitsForTrueColorValues)
+TEST(IndexPixelTests, PaletteIndexTrueColorValues)
 {
     // For true-color encoded values, palette_index() extracts upper 4 bits
     // Example: 0x23 = palette 2, color 3
@@ -78,11 +70,7 @@ TEST(IndexPixelTests, PaletteIndexExtractsUpper4BitsForTrueColorValues)
     EXPECT_EQ(pixel_0xFF.palette_index(), 15);
 }
 
-// =====================================================================================================================
-// is_transparent() Tests - Now based on color_index(), not raw index
-// =====================================================================================================================
-
-TEST(IndexPixelTests, IsTransparentChecksColorIndexNotRawValue)
+TEST(IndexPixelTests, IsTransparentColorIndex)
 {
     // Index 0 is transparent
     const IndexPixel pixel_0{0};
@@ -102,7 +90,7 @@ TEST(IndexPixelTests, IsTransparentChecksColorIndexNotRawValue)
     EXPECT_TRUE(pixel_0xF0.is_transparent());
 }
 
-TEST(IndexPixelTests, IsTransparentReturnsFalseForNonZeroColorIndex)
+TEST(IndexPixelTests, IsTransparentNonZero)
 {
     // Index 1 is not transparent
     const IndexPixel pixel_1{1};
@@ -117,11 +105,7 @@ TEST(IndexPixelTests, IsTransparentReturnsFalseForNonZeroColorIndex)
     EXPECT_FALSE(pixel_0x23.is_transparent());
 }
 
-// =====================================================================================================================
-// Round-trip verification
-// =====================================================================================================================
-
-TEST(IndexPixelTests, RoundTripPaletteAndColorIndexReconstructsOriginal)
+TEST(IndexPixelTests, RoundTrip)
 {
     // For any 8-bit value, (palette_index << 4) | color_index should equal index
     for (std::size_t i = 0; i <= 255; ++i) {

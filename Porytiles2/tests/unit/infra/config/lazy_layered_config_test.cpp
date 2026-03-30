@@ -45,7 +45,7 @@ class MockConfigurableProvider final : public ConfigProvider {
     std::string metadata_;
 };
 
-TEST(LazyLayeredConfigTest, OverrideLayeringShouldSelectHighestPriorityValue)
+TEST(LazyLayeredConfigTest, OverrideLayeringSelectsHighestPriority)
 {
     const std::string tileset_name = "test_tileset";
     std::vector<std::unique_ptr<ConfigProvider>> providers;

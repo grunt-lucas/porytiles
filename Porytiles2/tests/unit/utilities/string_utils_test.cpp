@@ -9,10 +9,6 @@ using namespace porytiles2;
 
 class StringUtilsTest : public ::testing::Test {};
 
-// =====================================================
-// to_pascal_case tests
-// =====================================================
-
 TEST_F(StringUtilsTest, ToPascalCase)
 {
     // Empty string
@@ -54,10 +50,6 @@ TEST_F(StringUtilsTest, ToPascalCase)
     // Funky vanilla gTileset_General animation name
     EXPECT_EQ(to_pascal_case("tv_turned_on"), "TvTurnedOn");
 }
-
-// =====================================================
-// to_snake_case tests
-// =====================================================
 
 TEST_F(StringUtilsTest, ToSnakeCase)
 {
@@ -117,10 +109,6 @@ TEST_F(StringUtilsTest, ToSnakeCase)
     EXPECT_EQ(to_snake_case("TvTurnedOn"), "tv_turned_on");
 }
 
-// =====================================================
-// trim_prefix tests
-// =====================================================
-
 TEST_F(StringUtilsTest, TrimPrefix)
 {
     // Empty string and empty prefix
@@ -150,10 +138,6 @@ TEST_F(StringUtilsTest, TrimPrefix)
     EXPECT_EQ(trim_prefix("Hello_World", "hello_"), "Hello_World");
     EXPECT_EQ(trim_prefix("Hello_World", "Hello_"), "World");
 }
-
-// =====================================================
-// extract_tileset_cased_name tests
-// =====================================================
 
 TEST_F(StringUtilsTest, ExtractTilesetCasedNameWithPrefix)
 {

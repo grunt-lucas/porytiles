@@ -27,69 +27,22 @@ class ColorSet {
   public:
     ColorSet() = default;
 
-    /**
-     * @brief Tests whether a bit at the given index is set.
-     *
-     * @details
-     * Returns true if the bit at the specified index is set, false otherwise.
-     *
-     * @param index The index of the bit to test
-     * @return true if the bit is set, false otherwise
-     */
     [[nodiscard]] bool test(ColorIndex index) const;
 
-    /**
-     * @brief Sets a bit at the given index.
-     *
-     * @details
-     * Sets the bit at the specified index to the given value (default true).
-     *
-     * @param index The index of the bit to set
-     * @param value The value to set (true or false)
-     */
     void set(ColorIndex index, bool value = true);
 
-    /**
-     * @brief Resets a bit at the given index to false.
-     *
-     * @details
-     * Clears the bit at the specified index, setting it to false.
-     *
-     * @param index The index of the bit to reset
-     */
     void reset(ColorIndex index);
 
-    /**
-     * @brief Gets the underlying bitset.
-     *
-     * @details
-     * Returns a const reference to the internal bitset representation.
-     *
-     * @return A const reference to the bitset
-     */
     [[nodiscard]] const std::bitset<num_colors> &colors() const
     {
         return colors_;
     }
 
-    /**
-     * @brief Compares two ColorSet objects for equality.
-     *
-     * @details
-     * Returns true if both ColorSet objects have identical bitsets.
-     *
-     * @param other The ColorSet to compare with
-     * @return true if equal, false otherwise
-     */
     [[nodiscard]] bool operator==(const ColorSet &other) const = default;
 
   private:
     std::bitset<num_colors> colors_;
 };
-
-// ============================================================================
-// Free functions for ColorSet operations
-// ============================================================================
 
 /**
  * @brief Computes the union of two ColorSets.

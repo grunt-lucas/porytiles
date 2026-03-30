@@ -306,10 +306,6 @@ struct VerifiedMember {
     std::map<ShapeMask, Rgba32> colors;
 };
 
-// ============================================================================
-// Pipeline stage functions
-// ============================================================================
-
 /**
  * @brief Converts PackingParams inputs into packer-internal forms (Steps 1-3).
  *

@@ -7,11 +7,7 @@
 
 using namespace porytiles2;
 
-// =============================================================================
-// Basic Operations Tests
-// =============================================================================
-
-TEST(ColorSetBasicTests, DefaultConstructorCreatesEmptySet)
+TEST(ColorSetBasicTests, DefaultEmpty)
 {
     ColorSet set{};
     EXPECT_EQ(color_set_count(set), 0);
@@ -41,7 +37,7 @@ TEST(ColorSetBasicTests, SetMultipleColors)
     EXPECT_FALSE(set.test(ColorIndex{50}));
 }
 
-TEST(ColorSetBasicTests, SetWithFalseUnsetsColor)
+TEST(ColorSetBasicTests, SetWithFalse)
 {
     ColorSet set{};
     set.set(ColorIndex{5});
@@ -51,7 +47,7 @@ TEST(ColorSetBasicTests, SetWithFalseUnsetsColor)
     EXPECT_FALSE(set.test(ColorIndex{5}));
 }
 
-TEST(ColorSetBasicTests, ResetUnsetsColor)
+TEST(ColorSetBasicTests, Reset)
 {
     ColorSet set{};
     set.set(ColorIndex{7});
@@ -61,7 +57,7 @@ TEST(ColorSetBasicTests, ResetUnsetsColor)
     EXPECT_FALSE(set.test(ColorIndex{7}));
 }
 
-TEST(ColorSetBasicTests, ResetOnUnsetColorIsNoOp)
+TEST(ColorSetBasicTests, ResetNoOp)
 {
     ColorSet set{};
     EXPECT_FALSE(set.test(ColorIndex{3}));
@@ -69,7 +65,7 @@ TEST(ColorSetBasicTests, ResetOnUnsetColorIsNoOp)
     EXPECT_FALSE(set.test(ColorIndex{3}));
 }
 
-TEST(ColorSetBasicTests, ColorsReturnsUnderlyingBitset)
+TEST(ColorSetBasicTests, ColorsAccessor)
 {
     ColorSet set{};
     set.set(ColorIndex{0});
@@ -81,11 +77,7 @@ TEST(ColorSetBasicTests, ColorsReturnsUnderlyingBitset)
     EXPECT_FALSE(bits.test(2));
 }
 
-// =============================================================================
-// Equality Tests
-// =============================================================================
-
-TEST(ColorSetEqualityTests, EmptySetsAreEqual)
+TEST(ColorSetEqualityTests, EmptyEquality)
 {
     ColorSet a{};
     ColorSet b{};
@@ -93,7 +85,7 @@ TEST(ColorSetEqualityTests, EmptySetsAreEqual)
     EXPECT_EQ(a, b);
 }
 
-TEST(ColorSetEqualityTests, SetsWithSameColorsAreEqual)
+TEST(ColorSetEqualityTests, SameColorsEqual)
 {
     ColorSet a{};
     ColorSet b{};
@@ -109,7 +101,7 @@ TEST(ColorSetEqualityTests, SetsWithSameColorsAreEqual)
     EXPECT_EQ(a, b);
 }
 
-TEST(ColorSetEqualityTests, SetsWithDifferentColorsAreNotEqual)
+TEST(ColorSetEqualityTests, DifferentColorsNotEqual)
 {
     ColorSet a{};
     ColorSet b{};
@@ -120,11 +112,7 @@ TEST(ColorSetEqualityTests, SetsWithDifferentColorsAreNotEqual)
     EXPECT_NE(a, b);
 }
 
-// =============================================================================
-// Union Tests
-// =============================================================================
-
-TEST(ColorSetUnionTests, UnionOfEmptySetsIsEmpty)
+TEST(ColorSetUnionTests, UnionEmpty)
 {
     ColorSet a{};
     ColorSet b{};
@@ -134,7 +122,7 @@ TEST(ColorSetUnionTests, UnionOfEmptySetsIsEmpty)
     EXPECT_EQ(color_set_count(result), 0);
 }
 
-TEST(ColorSetUnionTests, UnionWithEmptySetReturnsSameSet)
+TEST(ColorSetUnionTests, UnionWithEmpty)
 {
     ColorSet a{};
     ColorSet b{};
@@ -208,11 +196,7 @@ TEST(ColorSetUnionTests, UnionIsCommutative)
     EXPECT_EQ(result_ab, result_ba);
 }
 
-// =============================================================================
-// Intersection Tests
-// =============================================================================
-
-TEST(ColorSetIntersectionTests, IntersectionOfEmptySetsIsEmpty)
+TEST(ColorSetIntersectionTests, IntersectionEmpty)
 {
     ColorSet a{};
     ColorSet b{};
@@ -222,7 +206,7 @@ TEST(ColorSetIntersectionTests, IntersectionOfEmptySetsIsEmpty)
     EXPECT_EQ(color_set_count(result), 0);
 }
 
-TEST(ColorSetIntersectionTests, IntersectionWithEmptySetIsEmpty)
+TEST(ColorSetIntersectionTests, IntersectionWithEmpty)
 {
     ColorSet a{};
     ColorSet b{};
@@ -235,7 +219,7 @@ TEST(ColorSetIntersectionTests, IntersectionWithEmptySetIsEmpty)
     EXPECT_EQ(color_set_count(result), 0);
 }
 
-TEST(ColorSetIntersectionTests, IntersectionOfDisjointSetsIsEmpty)
+TEST(ColorSetIntersectionTests, IntersectionDisjoint)
 {
     ColorSet a{};
     ColorSet b{};
@@ -292,7 +276,7 @@ TEST(ColorSetIntersectionTests, IntersectionIsCommutative)
     EXPECT_EQ(result_ab, result_ba);
 }
 
-TEST(ColorSetIntersectionTests, IntersectionOfIdenticalSetsReturnsSameSet)
+TEST(ColorSetIntersectionTests, IntersectionIdentical)
 {
     ColorSet a{};
 
@@ -305,11 +289,7 @@ TEST(ColorSetIntersectionTests, IntersectionOfIdenticalSetsReturnsSameSet)
     EXPECT_EQ(result, a);
 }
 
-// =============================================================================
-// Count Tests
-// =============================================================================
-
-TEST(ColorSetCountTests, EmptySetCountIsZero)
+TEST(ColorSetCountTests, CountEmpty)
 {
     ColorSet set{};
     EXPECT_EQ(color_set_count(set), 0);
@@ -334,7 +314,7 @@ TEST(ColorSetCountTests, CountMultipleColors)
     EXPECT_EQ(color_set_count(set), 5);
 }
 
-TEST(ColorSetCountTests, CountAfterResetDecrements)
+TEST(ColorSetCountTests, CountAfterReset)
 {
     ColorSet set{};
     set.set(ColorIndex{1});
@@ -346,11 +326,7 @@ TEST(ColorSetCountTests, CountAfterResetDecrements)
     EXPECT_EQ(color_set_count(set), 2);
 }
 
-// =============================================================================
-// Subset Tests
-// =============================================================================
-
-TEST(ColorSetSubsetTests, EmptySetIsSubsetOfAnySet)
+TEST(ColorSetSubsetTests, EmptySubsetOfAny)
 {
     ColorSet empty{};
     ColorSet non_empty{};
@@ -361,7 +337,7 @@ TEST(ColorSetSubsetTests, EmptySetIsSubsetOfAnySet)
     EXPECT_TRUE(is_subset(empty, empty));
 }
 
-TEST(ColorSetSubsetTests, SetIsSubsetOfItself)
+TEST(ColorSetSubsetTests, SubsetOfSelf)
 {
     ColorSet set{};
     set.set(ColorIndex{1});
@@ -387,7 +363,7 @@ TEST(ColorSetSubsetTests, ProperSubset)
     EXPECT_FALSE(is_subset(superset, subset));
 }
 
-TEST(ColorSetSubsetTests, DisjointSetsAreNotSubsets)
+TEST(ColorSetSubsetTests, DisjointNotSubset)
 {
     ColorSet a{};
     ColorSet b{};
@@ -402,7 +378,7 @@ TEST(ColorSetSubsetTests, DisjointSetsAreNotSubsets)
     EXPECT_FALSE(is_subset(b, a));
 }
 
-TEST(ColorSetSubsetTests, PartialOverlapIsNotSubset)
+TEST(ColorSetSubsetTests, PartialOverlapNotSubset)
 {
     ColorSet a{};
     ColorSet b{};
@@ -419,7 +395,7 @@ TEST(ColorSetSubsetTests, PartialOverlapIsNotSubset)
     EXPECT_FALSE(is_subset(b, a));
 }
 
-TEST(ColorSetSubsetTests, NonEmptySetIsNotSubsetOfEmpty)
+TEST(ColorSetSubsetTests, NonEmptyNotSubsetOfEmpty)
 {
     ColorSet non_empty{};
     ColorSet empty{};
@@ -428,11 +404,7 @@ TEST(ColorSetSubsetTests, NonEmptySetIsNotSubsetOfEmpty)
     EXPECT_FALSE(is_subset(non_empty, empty));
 }
 
-// =============================================================================
-// Intersection Size Tests
-// =============================================================================
-
-TEST(ColorSetIntersectionSizeTests, IntersectionSizeOfEmptySetsIsZero)
+TEST(ColorSetIntersectionSizeTests, IntersectionSizeEmpty)
 {
     ColorSet a{};
     ColorSet b{};
@@ -440,7 +412,7 @@ TEST(ColorSetIntersectionSizeTests, IntersectionSizeOfEmptySetsIsZero)
     EXPECT_EQ(intersection_size(a, b), 0);
 }
 
-TEST(ColorSetIntersectionSizeTests, IntersectionSizeOfDisjointSetsIsZero)
+TEST(ColorSetIntersectionSizeTests, IntersectionSizeDisjoint)
 {
     ColorSet a{};
     ColorSet b{};
@@ -484,11 +456,7 @@ TEST(ColorSetIntersectionSizeTests, IntersectionSizeIsCommutative)
     EXPECT_EQ(intersection_size(a, b), intersection_size(b, a));
 }
 
-// =============================================================================
-// Union Size Tests
-// =============================================================================
-
-TEST(ColorSetUnionSizeTests, UnionSizeOfEmptySetsIsZero)
+TEST(ColorSetUnionSizeTests, UnionSizeEmpty)
 {
     ColorSet a{};
     ColorSet b{};
@@ -540,11 +508,7 @@ TEST(ColorSetUnionSizeTests, UnionSizeIsCommutative)
     EXPECT_EQ(union_size(a, b), union_size(b, a));
 }
 
-// =============================================================================
-// For Each Color Tests
-// =============================================================================
-
-TEST(ColorSetForEachTests, EmptySetCallsNoFunction)
+TEST(ColorSetForEachTests, ForEachEmpty)
 {
     ColorSet set{};
     int call_count = 0;
@@ -554,7 +518,7 @@ TEST(ColorSetForEachTests, EmptySetCallsNoFunction)
     EXPECT_EQ(call_count, 0);
 }
 
-TEST(ColorSetForEachTests, IteratesOverAllSetColors)
+TEST(ColorSetForEachTests, ForEachAllColors)
 {
     ColorSet set{};
     set.set(ColorIndex{5});
@@ -570,7 +534,7 @@ TEST(ColorSetForEachTests, IteratesOverAllSetColors)
     EXPECT_EQ(visited[2], 15);
 }
 
-TEST(ColorSetForEachTests, IteratesInIndexOrder)
+TEST(ColorSetForEachTests, ForEachIndexOrder)
 {
     ColorSet set{};
     // Insert in non-sorted order
@@ -582,7 +546,6 @@ TEST(ColorSetForEachTests, IteratesInIndexOrder)
     for_each_color(set, [&visited](std::size_t index) { visited.push_back(index); });
 
     ASSERT_EQ(visited.size(), 3);
-    // Should iterate in ascending index order
     EXPECT_EQ(visited[0], 5);
     EXPECT_EQ(visited[1], 50);
     EXPECT_EQ(visited[2], 100);
@@ -601,11 +564,7 @@ TEST(ColorSetForEachTests, AccumulatorPattern)
     EXPECT_EQ(sum, 6); // 1 + 2 + 3
 }
 
-// =============================================================================
-// Hash Tests (for std::unordered_set compatibility)
-// =============================================================================
-
-TEST(ColorSetHashTests, EqualSetsHaveSameHash)
+TEST(ColorSetHashTests, HashEquality)
 {
     ColorSet a{};
     ColorSet b{};
@@ -622,7 +581,7 @@ TEST(ColorSetHashTests, EqualSetsHaveSameHash)
     EXPECT_EQ(hasher(a), hasher(b));
 }
 
-TEST(ColorSetHashTests, CanBeUsedInUnorderedSet)
+TEST(ColorSetHashTests, HashInUnorderedSet)
 {
     std::unordered_set<ColorSet> set_of_sets;
 
@@ -647,7 +606,7 @@ TEST(ColorSetHashTests, CanBeUsedInUnorderedSet)
     EXPECT_TRUE(set_of_sets.contains(b));
 }
 
-TEST(ColorSetHashTests, EmptySetsHaveSameHash)
+TEST(ColorSetHashTests, HashEmpty)
 {
     ColorSet a{};
     ColorSet b{};
@@ -655,10 +614,6 @@ TEST(ColorSetHashTests, EmptySetsHaveSameHash)
     std::hash<ColorSet> hasher;
     EXPECT_EQ(hasher(a), hasher(b));
 }
-
-// =============================================================================
-// Edge Case Tests
-// =============================================================================
 
 TEST(ColorSetEdgeCaseTests, SetAtBoundaryIndex)
 {

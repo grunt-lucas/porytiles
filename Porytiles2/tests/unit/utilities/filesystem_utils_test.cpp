@@ -8,10 +8,6 @@ using namespace porytiles2;
 
 class FilesystemUtilsTest : public ::testing::Test {};
 
-// =====================================================
-// strip_all_extensions tests
-// =====================================================
-
 TEST_F(FilesystemUtilsTest, StripAllExtensions_SingleExtension)
 {
     EXPECT_EQ(strip_all_extensions("tiles.png"), std::filesystem::path{"tiles"});

@@ -40,9 +40,6 @@ class ProjectLayoutMetadataProviderTestBase : public ::testing::Test {
     std::unique_ptr<ProjectLayoutMetadataProvider> layout_provider_;
 };
 
-/**
- * @brief Tests using the pokeemerald_porytilestesttilesets mock project.
- */
 class ProjectLayoutMetadataProviderTest_Fixture1 : public ProjectLayoutMetadataProviderTestBase {
   protected:
     [[nodiscard]] std::filesystem::path project_root_path() const override

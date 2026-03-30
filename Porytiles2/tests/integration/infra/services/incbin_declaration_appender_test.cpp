@@ -13,9 +13,6 @@ using namespace porytiles2;
 
 namespace {
 
-/**
- * @brief Reads the entire contents of a file into a string.
- */
 [[nodiscard]] std::string read_file_contents(const std::filesystem::path &path)
 {
     std::ifstream file{path};
@@ -24,9 +21,6 @@ namespace {
     return buffer.str();
 }
 
-/**
- * @brief Copies a directory recursively.
- */
 void copy_directory(const std::filesystem::path &src, const std::filesystem::path &dst)
 {
     std::filesystem::create_directories(dst);
@@ -93,9 +87,6 @@ class IncbinDeclarationAppenderTestBase : public ::testing::Test {
     std::unique_ptr<IncbinDeclarationAppender> appender_;
 };
 
-/**
- * @brief Tests using the pokeemerald_vanilla_stock mock project.
- */
 class IncbinDeclarationAppenderTest_VanillaStock : public IncbinDeclarationAppenderTestBase {
   protected:
     [[nodiscard]] std::filesystem::path source_project_path() const override

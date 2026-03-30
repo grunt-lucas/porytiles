@@ -809,10 +809,6 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
         return result;
     }
 
-    // ========================================================================
-    // Automatic mode: use key.png-based frame linking
-    // ========================================================================
-
     // Recover per-subtile palette indices
     PT_TRY_ASSIGN_CHAIN_ERR(
         pal_indices,

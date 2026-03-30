@@ -20,7 +20,6 @@ TEST_F(CParserContextTests, MakeErrorWithFilePath)
     auto error = context.make_error({1, 9}, "test error message");
 
     std::string error_text = error.join(formatter_);
-    // Should contain file path, line, column, and message
     EXPECT_NE(error_text.find("test.h:1:9:"), std::string::npos);
     EXPECT_NE(error_text.find("test error message"), std::string::npos);
 }
@@ -33,7 +32,6 @@ TEST_F(CParserContextTests, MakeErrorWithoutFilePath)
     auto error = context.make_error({1, 9}, "test error message");
 
     std::string error_text = error.join(formatter_);
-    // Should contain line:col: format without file path
     EXPECT_NE(error_text.find("1:9:"), std::string::npos);
     EXPECT_NE(error_text.find("test error message"), std::string::npos);
 }
@@ -46,7 +44,6 @@ TEST_F(CParserContextTests, MakeErrorIncludesSourceContext)
     auto error = context.make_error({2, 13}, "some error");
 
     std::string error_text = error.join(formatter_);
-    // Should include surrounding lines
     EXPECT_NE(error_text.find("#define FOO 123"), std::string::npos);
     EXPECT_NE(error_text.find("#define BAR 456"), std::string::npos);
     EXPECT_NE(error_text.find("#define BAZ 789"), std::string::npos);
@@ -72,7 +69,6 @@ TEST_F(CParserContextTests, MakeErrorIncludesCaretIndicator)
     auto error = context.make_error({1, 13}, "unknown identifier");
 
     std::string error_text = error.join(formatter_);
-    // Should include the caret indicator
     EXPECT_NE(error_text.find("^"), std::string::npos);
 }
 
@@ -85,10 +81,8 @@ TEST_F(CParserContextTests, MakeErrorHandlesLineOutOfBounds)
     auto error = context.make_error({5, 1}, "out of bounds error");
 
     std::string error_text = error.join(formatter_);
-    // Should still have the header with position info
     EXPECT_NE(error_text.find("test.h:5:1:"), std::string::npos);
     EXPECT_NE(error_text.find("out of bounds error"), std::string::npos);
-    // But should NOT include source context since line is out of bounds
     EXPECT_EQ(error_text.find("#define FOO"), std::string::npos);
 }
 
@@ -101,9 +95,7 @@ TEST_F(CParserContextTests, MakeErrorHandlesColumnOutOfBounds)
     auto error = context.make_error({1, 50}, "column out of bounds");
 
     std::string error_text = error.join(formatter_);
-    // Should still have header info
     EXPECT_NE(error_text.find("test.h:1:50:"), std::string::npos);
-    // Line should still be included (highlighted without column caret)
     EXPECT_NE(error_text.find("abc"), std::string::npos);
 }
 
@@ -128,7 +120,6 @@ TEST_F(CParserContextTests, MakeErrorHandlesZeroLine)
     auto error = context.make_error({0, 1}, "line zero error");
 
     std::string error_text = error.join(formatter_);
-    // Should have header but no source context
     EXPECT_NE(error_text.find("test.h:0:1:"), std::string::npos);
 }
 

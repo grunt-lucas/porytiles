@@ -40,7 +40,7 @@ Palette<Rgba32, pal::max_size> make_palette(const Rgba32 &slot0, const std::vect
 
 } // namespace
 
-TEST(IndirectLinkBuilderTests, MembersInSamePalette_ShouldGenerateNoLinks)
+TEST(IndirectLinkBuilderTests, SamePaletteNoLinks)
 {
     auto tile1 = make_single_color_tile(red);
     auto tile2 = make_single_color_tile(blue);
@@ -61,7 +61,7 @@ TEST(IndirectLinkBuilderTests, MembersInSamePalette_ShouldGenerateNoLinks)
     EXPECT_TRUE(links.empty());
 }
 
-TEST(IndirectLinkBuilderTests, MembersInDifferentPalettes_ShouldGenerateLinks)
+TEST(IndirectLinkBuilderTests, DifferentPalettesGenerateLinks)
 {
     auto tile1 = make_single_color_tile(red);
     auto tile2 = make_single_color_tile(blue);
@@ -81,7 +81,6 @@ TEST(IndirectLinkBuilderTests, MembersInDifferentPalettes_ShouldGenerateLinks)
 
     auto links = build_indirect_links(shape_groups, tile_pal_assignments, base_pals, prefilled_pals);
 
-    // Should generate one Indirect link: blue in pal 1 follows red in pal 0
     ASSERT_EQ(links.size(), 1);
     EXPECT_EQ(links.at(0).source_pal, 1);
     EXPECT_EQ(links.at(0).source_color, blue);
@@ -89,7 +88,7 @@ TEST(IndirectLinkBuilderTests, MembersInDifferentPalettes_ShouldGenerateLinks)
     EXPECT_EQ(links.at(0).ref_color, red);
 }
 
-TEST(IndirectLinkBuilderTests, PrefilledSlot_ShouldPickBetterReference)
+TEST(IndirectLinkBuilderTests, PrefilledSlotPicksBetterRef)
 {
     auto tile1 = make_single_color_tile(red);
     auto tile2 = make_single_color_tile(blue);
@@ -123,7 +122,7 @@ TEST(IndirectLinkBuilderTests, PrefilledSlot_ShouldPickBetterReference)
     EXPECT_EQ(links.at(0).ref_color, blue);
 }
 
-TEST(IndirectLinkBuilderTests, EmptyShapeGroups_ShouldReturnEmpty)
+TEST(IndirectLinkBuilderTests, EmptyShapeGroupsReturnsEmpty)
 {
     std::vector<ShapeGroup<Rgba32>> empty_groups;
     std::map<std::size_t, std::size_t> tile_pal_assignments;

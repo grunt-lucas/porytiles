@@ -25,10 +25,8 @@ class MockError : public Error {
     std::string msg_;
 };
 
-TEST(UserDiagnosticsTests, FatalShouldFilterOutEmptyFormattableErrors)
+TEST(UserDiagnosticsTests, FatalFiltersEmptyFormattableErrors)
 {
-    // Create a chain with empty errors interspersed with real errors
-    // Start with a real error at the root
     ChainableResult<int> root_result{FormattableError{"root cause error"}};
 
     // Chain with an empty error (passthrough)
@@ -40,23 +38,18 @@ TEST(UserDiagnosticsTests, FatalShouldFilterOutEmptyFormattableErrors)
     BufferedUserDiagnostics diagnostics{};
     diagnostics.fatal(top_result);
 
-    // Should have filtered out the empty error, leaving only 2 errors
-    // proximate: "proximate error"
-    // root: "root cause error"
     EXPECT_EQ(diagnostics.fatal_proximates().size(), 1);
     EXPECT_EQ(diagnostics.fatal_roots().size(), 1);
     EXPECT_EQ(diagnostics.fatal_steps().size(), 0);
 
-    // Verify the content
     ASSERT_FALSE(diagnostics.fatal_proximates()[0].empty());
     EXPECT_NE(diagnostics.fatal_proximates()[0][0].find("proximate error"), std::string::npos);
     ASSERT_FALSE(diagnostics.fatal_roots()[0].empty());
     EXPECT_NE(diagnostics.fatal_roots()[0][0].find("root cause error"), std::string::npos);
 }
 
-TEST(UserDiagnosticsTests, FatalShouldPreserveNonEmptyFormattableErrors)
+TEST(UserDiagnosticsTests, FatalPreservesNonEmptyFormattable)
 {
-    // Create a chain with all non-empty errors
     ChainableResult<int> root_result{FormattableError{"root cause"}};
     ChainableResult<std::string> middle_result{FormattableError{"middle layer"}, root_result};
     ChainableResult<void> top_result{FormattableError{"top layer"}, middle_result};
@@ -64,15 +57,10 @@ TEST(UserDiagnosticsTests, FatalShouldPreserveNonEmptyFormattableErrors)
     BufferedUserDiagnostics diagnostics{};
     diagnostics.fatal(top_result);
 
-    // Should have all 3 errors preserved
-    // proximate: "top layer"
-    // step: "middle layer"
-    // root: "root cause"
     EXPECT_EQ(diagnostics.fatal_proximates().size(), 1);
     EXPECT_EQ(diagnostics.fatal_steps().size(), 1);
     EXPECT_EQ(diagnostics.fatal_roots().size(), 1);
 
-    // Verify the content
     ASSERT_FALSE(diagnostics.fatal_proximates()[0].empty());
     EXPECT_NE(diagnostics.fatal_proximates()[0][0].find("top layer"), std::string::npos);
     ASSERT_FALSE(diagnostics.fatal_steps()[0].empty());
@@ -81,9 +69,8 @@ TEST(UserDiagnosticsTests, FatalShouldPreserveNonEmptyFormattableErrors)
     EXPECT_NE(diagnostics.fatal_roots()[0][0].find("root cause"), std::string::npos);
 }
 
-TEST(UserDiagnosticsTests, FatalShouldHandleMultipleEmptyErrorsInChain)
+TEST(UserDiagnosticsTests, FatalMultipleEmptyErrorsInChain)
 {
-    // Create a longer chain with multiple empty errors
     ChainableResult<int> root_result{FormattableError{"actual root"}};
     ChainableResult<std::string> empty1_result{FormattableError{}, root_result};
     ChainableResult<double> empty2_result{FormattableError{}, empty1_result};
@@ -92,57 +79,48 @@ TEST(UserDiagnosticsTests, FatalShouldHandleMultipleEmptyErrorsInChain)
     BufferedUserDiagnostics diagnostics{};
     diagnostics.fatal(top_result);
 
-    // Should filter out both empty errors, leaving only 2
     EXPECT_EQ(diagnostics.fatal_proximates().size(), 1);
     EXPECT_EQ(diagnostics.fatal_roots().size(), 1);
     EXPECT_EQ(diagnostics.fatal_steps().size(), 0);
 
-    // Verify the content
     ASSERT_FALSE(diagnostics.fatal_proximates()[0].empty());
     EXPECT_NE(diagnostics.fatal_proximates()[0][0].find("actual proximate"), std::string::npos);
     ASSERT_FALSE(diagnostics.fatal_roots()[0].empty());
     EXPECT_NE(diagnostics.fatal_roots()[0][0].find("actual root"), std::string::npos);
 }
 
-TEST(UserDiagnosticsTests, FatalShouldHandleSingleNonEmptyError)
+TEST(UserDiagnosticsTests, FatalSingleNonEmptyError)
 {
-    // Create a simple chain with just one error
     ChainableResult<void> result{FormattableError{"single error"}};
 
     BufferedUserDiagnostics diagnostics{};
     diagnostics.fatal(result);
 
-    // Should have only the proximate error, no root
     EXPECT_EQ(diagnostics.fatal_proximates().size(), 1);
     EXPECT_EQ(diagnostics.fatal_roots().size(), 0);
     EXPECT_EQ(diagnostics.fatal_steps().size(), 0);
 
-    // Verify the content
     ASSERT_FALSE(diagnostics.fatal_proximates()[0].empty());
     EXPECT_NE(diagnostics.fatal_proximates()[0][0].find("single error"), std::string::npos);
 }
 
-TEST(UserDiagnosticsTests, FatalShouldIncludeNonFormattableErrors)
+TEST(UserDiagnosticsTests, FatalIncludesNonFormattable)
 {
-    // Create a chain with a single MockError (non-FormattableError)
     ChainableResult<void, MockError> result{MockError{"custom error message"}};
 
     BufferedUserDiagnostics diagnostics{};
     diagnostics.fatal(result);
 
-    // Should have the MockError as proximate
     EXPECT_EQ(diagnostics.fatal_proximates().size(), 1);
     EXPECT_EQ(diagnostics.fatal_roots().size(), 0);
     EXPECT_EQ(diagnostics.fatal_steps().size(), 0);
 
-    // Verify the MockError appears in output
     ASSERT_FALSE(diagnostics.fatal_proximates()[0].empty());
     EXPECT_NE(diagnostics.fatal_proximates()[0][0].find("custom error message"), std::string::npos);
 }
 
-TEST(UserDiagnosticsTests, FatalShouldHandleMixedFormattableAndNonFormattableErrors)
+TEST(UserDiagnosticsTests, FatalMixedFormattableAndNonFormattable)
 {
-    // Create a chain with both FormattableError and MockError (non-FormattableError)
     ChainableResult<int, MockError> root_result{MockError{"mock root error"}};
     ChainableResult<std::string, FormattableError> middle_result{
         FormattableError{"formattable middle error"}, root_result};
@@ -151,12 +129,10 @@ TEST(UserDiagnosticsTests, FatalShouldHandleMixedFormattableAndNonFormattableErr
     BufferedUserDiagnostics diagnostics{};
     diagnostics.fatal(top_result);
 
-    // Should have all 3 errors preserved
     EXPECT_EQ(diagnostics.fatal_proximates().size(), 1);
     EXPECT_EQ(diagnostics.fatal_steps().size(), 1);
     EXPECT_EQ(diagnostics.fatal_roots().size(), 1);
 
-    // Verify all errors appear in output
     ASSERT_FALSE(diagnostics.fatal_proximates()[0].empty());
     EXPECT_NE(diagnostics.fatal_proximates()[0][0].find("mock proximate error"), std::string::npos);
     ASSERT_FALSE(diagnostics.fatal_steps()[0].empty());
@@ -165,9 +141,8 @@ TEST(UserDiagnosticsTests, FatalShouldHandleMixedFormattableAndNonFormattableErr
     EXPECT_NE(diagnostics.fatal_roots()[0][0].find("mock root error"), std::string::npos);
 }
 
-TEST(UserDiagnosticsTests, FatalShouldFilterEmptyFormattableErrorsButKeepNonFormattableErrors)
+TEST(UserDiagnosticsTests, FatalFiltersEmptyKeepsNonFormattable)
 {
-    // Create a chain with empty FormattableErrors and non-FormattableErrors interspersed
     ChainableResult<int, MockError> root_result{MockError{"mock root"}};
     ChainableResult<std::string, FormattableError> empty1_result{FormattableError{}, root_result};
     ChainableResult<double, MockError> middle_result{MockError{"mock middle"}, empty1_result};
@@ -177,13 +152,10 @@ TEST(UserDiagnosticsTests, FatalShouldFilterEmptyFormattableErrorsButKeepNonForm
     BufferedUserDiagnostics diagnostics{};
     diagnostics.fatal(top_result);
 
-    // Should filter out empty FormattableErrors but keep all MockErrors
-    // Expecting 3 errors: proximate, step, root
     EXPECT_EQ(diagnostics.fatal_proximates().size(), 1);
     EXPECT_EQ(diagnostics.fatal_steps().size(), 1);
     EXPECT_EQ(diagnostics.fatal_roots().size(), 1);
 
-    // Verify all MockErrors appear in output
     ASSERT_FALSE(diagnostics.fatal_proximates()[0].empty());
     EXPECT_NE(diagnostics.fatal_proximates()[0][0].find("mock proximate"), std::string::npos);
     ASSERT_FALSE(diagnostics.fatal_steps()[0].empty());
@@ -192,9 +164,8 @@ TEST(UserDiagnosticsTests, FatalShouldFilterEmptyFormattableErrorsButKeepNonForm
     EXPECT_NE(diagnostics.fatal_roots()[0][0].find("mock root"), std::string::npos);
 }
 
-TEST(UserDiagnosticsTests, FatalShouldHandleChainWithOnlyNonFormattableErrors)
+TEST(UserDiagnosticsTests, FatalChainOnlyNonFormattable)
 {
-    // Create a chain with only MockErrors (no FormattableErrors)
     ChainableResult<int, MockError> root_result{MockError{"non-formattable root"}};
     ChainableResult<std::string, MockError> middle_result{MockError{"non-formattable middle"}, root_result};
     ChainableResult<void, MockError> top_result{MockError{"non-formattable proximate"}, middle_result};
@@ -202,12 +173,10 @@ TEST(UserDiagnosticsTests, FatalShouldHandleChainWithOnlyNonFormattableErrors)
     BufferedUserDiagnostics diagnostics{};
     diagnostics.fatal(top_result);
 
-    // Should preserve all errors with proper categorization
     EXPECT_EQ(diagnostics.fatal_proximates().size(), 1);
     EXPECT_EQ(diagnostics.fatal_steps().size(), 1);
     EXPECT_EQ(diagnostics.fatal_roots().size(), 1);
 
-    // Verify proper categorization
     ASSERT_FALSE(diagnostics.fatal_proximates()[0].empty());
     EXPECT_NE(diagnostics.fatal_proximates()[0][0].find("non-formattable proximate"), std::string::npos);
     ASSERT_FALSE(diagnostics.fatal_steps()[0].empty());

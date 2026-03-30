@@ -154,6 +154,53 @@ class Foo {
 };
 ```
 
+## Doxygen: When to Skip
+
+Omit Doxygen entirely for trivial accessors, mutators, and thin wrappers where
+the signature is self-documenting. Never write a `@brief` that restates the
+function name. If you can't add information beyond what the signature says,
+skip the doc block.
+
+```c++
+// CORRECT: no doc needed, the signature says it all
+[[nodiscard]] int my_val() const { return my_val_; }
+
+// WRONG: tautological doc block
+/**
+ * @brief Gets the value of my_val.
+ */
+[[nodiscard]] int my_val() const { return my_val_; }
+```
+
+## Test Style
+
+```c++
+// Test names: PascalCase, concise. Describe WHAT is tested, not expected behavior.
+// Good:
+TEST(Rgba32Tests, ToJascStr)
+TEST(Rgba32Tests, EqualityIgnoresAlpha)
+TEST(ColorSetTests, UnionOfDisjointSets)
+
+// Bad ("ShouldVerb" pattern, sentence-length names):
+TEST(Rgba32Tests, ToJascStrShouldWork)
+TEST(Rgba32Tests, DefaultConstructedValueShouldBeTransparent)
+TEST(Rgba32Tests, OperatorEqualsAndEqualsIgnoringAlphaShouldDifferBasedOnAlpha)
+
+// No section banners (// ===) in test files. The TEST fixture name groups tests.
+// No Arrange/Act/Assert labels. Whitespace between setup, action, and assertion is enough.
+// No obvious-context comments (e.g., "// Duplicate color"). Comment only when WHY is non-obvious.
+```
+
+## Comment Prose Style
+
+Avoid excessive em dashes. Prefer periods, commas, or parentheses for clause
+separation. Em dashes are fine occasionally but become an obnoxious AI-ism when overused.
+
+Write comments in plain, direct English. Avoid "literary" flourish in code comments.
+
+No box-drawing section banners (`// ====`) etc., in source or test files. Use a plain
+single-line comment if grouping is truly needed.
+
 ## std::formatter Specializations
 
 When adding `std::formatter<T>` specializations for custom types, the `format()` method

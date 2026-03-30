@@ -5,31 +5,31 @@
 
 using namespace porytiles2;
 
-TEST(FormattableErrorTests, DefaultConstructorShouldHaveNoDetails)
+TEST(FormattableErrorTests, DefaultCtorNoDetails)
 {
     FormattableError error{};
     EXPECT_FALSE(error.has_details());
 }
 
-TEST(FormattableErrorTests, EmptyStringConstructorShouldHaveNoDetails)
+TEST(FormattableErrorTests, EmptyStringCtorNoDetails)
 {
     FormattableError error{""};
     EXPECT_FALSE(error.has_details());
 }
 
-TEST(FormattableErrorTests, NonEmptyStringConstructorShouldHaveDetails)
+TEST(FormattableErrorTests, NonEmptyStringCtorHasDetails)
 {
     FormattableError error{"something went wrong"};
     EXPECT_TRUE(error.has_details());
 }
 
-TEST(FormattableErrorTests, FormattedMessageConstructorShouldHaveDetails)
+TEST(FormattableErrorTests, FormattedMsgCtorHasDetails)
 {
     FormattableError error{"error: {}", FormatParam{"test", Style::bold}};
     EXPECT_TRUE(error.has_details());
 }
 
-TEST(FormattableErrorTests, DefaultConstructorShouldReturnEmptyDetails)
+TEST(FormattableErrorTests, DefaultMessage)
 {
     FormattableError error{};
     AnsiStyledTextFormatter formatter{};
@@ -37,7 +37,7 @@ TEST(FormattableErrorTests, DefaultConstructorShouldReturnEmptyDetails)
     EXPECT_TRUE(details.empty());
 }
 
-TEST(FormattableErrorTests, EmptyStringConstructorShouldReturnEmptyDetails)
+TEST(FormattableErrorTests, EmptyStringMessage)
 {
     FormattableError error{""};
     AnsiStyledTextFormatter formatter{};
@@ -45,7 +45,7 @@ TEST(FormattableErrorTests, EmptyStringConstructorShouldReturnEmptyDetails)
     EXPECT_TRUE(details.empty());
 }
 
-TEST(FormattableErrorTests, NonEmptyStringConstructorShouldReturnMessage)
+TEST(FormattableErrorTests, NonEmptyStringMessage)
 {
     FormattableError error{"something went wrong"};
     AnsiStyledTextFormatter formatter{};
@@ -54,7 +54,7 @@ TEST(FormattableErrorTests, NonEmptyStringConstructorShouldReturnMessage)
     EXPECT_EQ(details[0], "something went wrong");
 }
 
-TEST(FormattableErrorTests, CloneShouldPreserveHasDetailsState)
+TEST(FormattableErrorTests, ClonePreservesHasDetails)
 {
     FormattableError empty_error{};
     auto cloned_empty = empty_error.clone();
@@ -69,7 +69,7 @@ TEST(FormattableErrorTests, CloneShouldPreserveHasDetailsState)
     EXPECT_TRUE(cloned_non_empty_formattable->has_details());
 }
 
-TEST(FormattableErrorTests, MultiLineConstructorShouldReturnAllLines)
+TEST(FormattableErrorTests, MultiLineMessage)
 {
     std::vector<std::string> lines{"line 1", "line 2", "line 3"};
     FormattableError error{lines};
@@ -81,28 +81,28 @@ TEST(FormattableErrorTests, MultiLineConstructorShouldReturnAllLines)
     EXPECT_EQ(details[2], "line 3");
 }
 
-TEST(FormattableErrorTests, MultiLineConstructorShouldHaveDetails)
+TEST(FormattableErrorTests, MultiLineCtorHasDetails)
 {
     std::vector<std::string> lines{"line 1", "line 2"};
     FormattableError error{lines};
     EXPECT_TRUE(error.has_details());
 }
 
-TEST(FormattableErrorTests, MultiLineWithEmptyLinesShouldHaveDetailsIfAnyNonEmpty)
+TEST(FormattableErrorTests, MultiLineMixedEmptyHasDetails)
 {
     std::vector<std::string> lines{"", "non-empty", ""};
     FormattableError error{lines};
     EXPECT_TRUE(error.has_details());
 }
 
-TEST(FormattableErrorTests, MultiLineWithAllEmptyLinesShouldNotHaveDetails)
+TEST(FormattableErrorTests, MultiLineAllEmptyNoDetails)
 {
     std::vector<std::string> lines{"", "", ""};
     FormattableError error{lines};
     EXPECT_FALSE(error.has_details());
 }
 
-TEST(FormattableErrorTests, MultiLineWithParamsShouldFormatEachLine)
+TEST(FormattableErrorTests, MultiLineFormatParams)
 {
     std::vector<std::string> lines{"error: {}", "value: {}"};
     std::vector<std::vector<FormatParam>> params{
@@ -118,7 +118,7 @@ TEST(FormattableErrorTests, MultiLineWithParamsShouldFormatEachLine)
     EXPECT_NE(details[1].find("second"), std::string::npos);
 }
 
-TEST(FormattableErrorTests, MultiLineWithFewerParamsThanLinesShouldWorkCorrectly)
+TEST(FormattableErrorTests, MultiLineFewerParams)
 {
     std::vector<std::string> lines{"error: {}", "plain line", "another: {}"};
     std::vector<std::vector<FormatParam>> params{{FormatParam{"first", Style::bold}}};
@@ -131,7 +131,7 @@ TEST(FormattableErrorTests, MultiLineWithFewerParamsThanLinesShouldWorkCorrectly
     EXPECT_EQ(details[2], "another: {}");
 }
 
-TEST(FormattableErrorTests, CloneShouldPreserveMultiLineErrors)
+TEST(FormattableErrorTests, ClonePreservesMultiLine)
 {
     std::vector<std::string> lines{"line 1", "line 2"};
     FormattableError error{lines};
@@ -149,7 +149,7 @@ TEST(FormattableErrorTests, CloneShouldPreserveMultiLineErrors)
 
 // Style Tests - Foreground and Background Color Combinations
 
-TEST(StyleTests, ForegroundOnlyShouldWork)
+TEST(StyleTests, ForegroundOnly)
 {
     const Style fg_red = Style::red;
     EXPECT_TRUE(fg_red.has_fg_color());
@@ -158,7 +158,7 @@ TEST(StyleTests, ForegroundOnlyShouldWork)
     EXPECT_EQ(fg_red.fg_predefined(), PredefinedColor::red);
 }
 
-TEST(StyleTests, BackgroundOnlyShouldWork)
+TEST(StyleTests, BackgroundOnly)
 {
     const Style bg_blue = Style::bg_blue;
     EXPECT_FALSE(bg_blue.has_fg_color());
@@ -167,7 +167,7 @@ TEST(StyleTests, BackgroundOnlyShouldWork)
     EXPECT_EQ(bg_blue.bg_predefined(), PredefinedColor::blue);
 }
 
-TEST(StyleTests, ForegroundAndBackgroundCombinationShouldWork)
+TEST(StyleTests, ForegroundAndBackground)
 {
     const Style combined = Style::red | Style::bg_blue;
     EXPECT_TRUE(combined.has_fg_color());
@@ -178,7 +178,7 @@ TEST(StyleTests, ForegroundAndBackgroundCombinationShouldWork)
     EXPECT_EQ(combined.bg_predefined(), PredefinedColor::blue);
 }
 
-TEST(StyleTests, BoldWithForegroundAndBackgroundShouldWork)
+TEST(StyleTests, BoldWithForegroundAndBackground)
 {
     const Style styled = Style::bold | Style::red | Style::bg_yellow;
     EXPECT_TRUE(styled.has_bold());
@@ -190,7 +190,7 @@ TEST(StyleTests, BoldWithForegroundAndBackgroundShouldWork)
     EXPECT_EQ(styled.bg_predefined(), PredefinedColor::yellow);
 }
 
-TEST(StyleTests, RgbForegroundWithPredefinedBackgroundShouldWork)
+TEST(StyleTests, RgbForegroundPredefinedBackground)
 {
     const Style combined = rgb_fg_style(255, 128, 0) | Style::bg_black;
     EXPECT_TRUE(combined.has_fg_color());
@@ -204,7 +204,7 @@ TEST(StyleTests, RgbForegroundWithPredefinedBackgroundShouldWork)
     EXPECT_EQ(combined.bg_predefined(), PredefinedColor::black);
 }
 
-TEST(StyleTests, PredefinedForegroundWithRgbBackgroundShouldWork)
+TEST(StyleTests, PredefinedForegroundRgbBackground)
 {
     const Style combined = Style::green | rgb_bg_style(64, 64, 64);
     EXPECT_TRUE(combined.has_fg_color());
@@ -218,7 +218,7 @@ TEST(StyleTests, PredefinedForegroundWithRgbBackgroundShouldWork)
     EXPECT_EQ(bg.b, 64);
 }
 
-TEST(StyleTests, RgbForegroundAndRgbBackgroundShouldWork)
+TEST(StyleTests, RgbForegroundAndRgbBackground)
 {
     const Style combined = rgb_fg_style(255, 0, 0) | rgb_bg_style(0, 0, 255);
     EXPECT_TRUE(combined.has_fg_color());
@@ -252,7 +252,7 @@ TEST(StyleTests, RgbStyleAliasCreatesRgbForeground)
 
 // AnsiStyledTextFormatter Tests - Foreground and Background
 
-TEST(AnsiStyledTextFormatterTests, ForegroundOnlyProducesCorrectAnsiCode)
+TEST(AnsiStyledTextFormatterTests, ForegroundOnly)
 {
     AnsiStyledTextFormatter formatter{AnsiColorMode::plain};
     const std::string result = formatter.style("test", Style::red);
@@ -261,7 +261,7 @@ TEST(AnsiStyledTextFormatterTests, ForegroundOnlyProducesCorrectAnsiCode)
     EXPECT_NE(result.find("\033[0m"), std::string::npos); // Reset code
 }
 
-TEST(AnsiStyledTextFormatterTests, BackgroundOnlyProducesCorrectAnsiCode)
+TEST(AnsiStyledTextFormatterTests, BackgroundOnly)
 {
     AnsiStyledTextFormatter formatter{AnsiColorMode::plain};
     const std::string result = formatter.style("test", Style::bg_blue);
@@ -270,7 +270,7 @@ TEST(AnsiStyledTextFormatterTests, BackgroundOnlyProducesCorrectAnsiCode)
     EXPECT_NE(result.find("\033[0m"), std::string::npos); // Reset code
 }
 
-TEST(AnsiStyledTextFormatterTests, ForegroundAndBackgroundProducesBothAnsiCodes)
+TEST(AnsiStyledTextFormatterTests, ForegroundAndBackground)
 {
     AnsiStyledTextFormatter formatter{AnsiColorMode::plain};
     const std::string result = formatter.style("test", Style::red | Style::bg_blue);
@@ -280,7 +280,7 @@ TEST(AnsiStyledTextFormatterTests, ForegroundAndBackgroundProducesBothAnsiCodes)
     EXPECT_NE(result.find("\033[0m"), std::string::npos); // Reset code
 }
 
-TEST(AnsiStyledTextFormatterTests, Rgb24BitForegroundAndBackgroundProducesCorrectCodes)
+TEST(AnsiStyledTextFormatterTests, Rgb24BitForegroundAndBackground)
 {
     AnsiStyledTextFormatter formatter{AnsiColorMode::colors_24_bit};
     const Style combined = rgb_fg_style(255, 128, 0) | rgb_bg_style(64, 64, 64);
@@ -291,7 +291,7 @@ TEST(AnsiStyledTextFormatterTests, Rgb24BitForegroundAndBackgroundProducesCorrec
     EXPECT_NE(result.find("\033[0m"), std::string::npos); // Reset code
 }
 
-TEST(AnsiStyledTextFormatterTests, BoldWithForegroundAndBackgroundProducesAllCodes)
+TEST(AnsiStyledTextFormatterTests, BoldWithForegroundAndBackground)
 {
     AnsiStyledTextFormatter formatter{AnsiColorMode::plain};
     const std::string result = formatter.style("test", Style::bold | Style::green | Style::bg_yellow);

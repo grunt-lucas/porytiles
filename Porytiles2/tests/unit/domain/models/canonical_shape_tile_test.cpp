@@ -9,7 +9,6 @@
 using namespace porytiles2;
 
 namespace {
-// Helper function to create a distinctive diagonal ShapeMask pattern
 ShapeMask create_diagonal_mask()
 {
     ShapeMask mask;
@@ -19,7 +18,6 @@ ShapeMask create_diagonal_mask()
     return mask;
 }
 
-// Helper function to create an L-shaped pattern (distinctive for testing)
 ShapeMask create_l_shape_mask()
 {
     ShapeMask mask;
@@ -34,7 +32,6 @@ ShapeMask create_l_shape_mask()
     return mask;
 }
 
-// Helper function to create a corner pattern
 ShapeMask create_corner_mask()
 {
     ShapeMask mask;
@@ -45,7 +42,7 @@ ShapeMask create_corner_mask()
 }
 } // namespace
 
-TEST(CanonicalShapeTileTests, ShouldFindCanonicalRepresentation)
+TEST(CanonicalShapeTileTests, FindsCanonicalRepresentation)
 {
     // Create a test tile with a distinctive L-shape pattern
     ShapeTile<ColorIndex> tile;
@@ -74,7 +71,7 @@ TEST(CanonicalShapeTileTests, ShouldFindCanonicalRepresentation)
     EXPECT_EQ(static_cast<const ShapeTile<ColorIndex> &>(canonical), expected_tile);
 }
 
-TEST(CanonicalShapeTileTests, ShouldChooseMinimalShapeRepresentation)
+TEST(CanonicalShapeTileTests, ChoosesMinimalRepresentation)
 {
     // Create a tile where we can predict which flip should be minimal by shape
     ShapeTile<ColorIndex> tile;
@@ -100,7 +97,7 @@ TEST(CanonicalShapeTileTests, ShouldChooseMinimalShapeRepresentation)
     EXPECT_TRUE(matches_one);
 }
 
-TEST(CanonicalShapeTileTests, ShouldHandleSymmetricTiles)
+TEST(CanonicalShapeTileTests, SymmetricTiles)
 {
     // Create a fully symmetric tile (all same shape)
     ShapeTile<ColorIndex> tile;
@@ -125,12 +122,11 @@ TEST(CanonicalShapeTileTests, ShouldHandleSymmetricTiles)
     EXPECT_EQ(no_flip, v_flip);
     EXPECT_EQ(no_flip, hv_flip);
 
-    // The canonical form should be one of the flip variants (they're all equal)
     CanonicalShapeTile<ColorIndex> canonical{tile};
     EXPECT_EQ(static_cast<const ShapeTile<ColorIndex> &>(canonical), no_flip);
 }
 
-TEST(CanonicalShapeTileTests, ShouldProduceConsistentResults)
+TEST(CanonicalShapeTileTests, ConsistentResults)
 {
     // Create a test tile
     ShapeTile<ColorIndex> tile;
@@ -147,7 +143,7 @@ TEST(CanonicalShapeTileTests, ShouldProduceConsistentResults)
     EXPECT_EQ(canonical1.v_flip(), canonical2.v_flip());
 }
 
-TEST(CanonicalShapeTileTests, ShouldHandleAllFlipVariations)
+TEST(CanonicalShapeTileTests, AllFlipVariations)
 {
     // Create a test tile with distinctive corners
     ShapeTile<ColorIndex> tile;

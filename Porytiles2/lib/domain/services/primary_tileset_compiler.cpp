@@ -1066,9 +1066,6 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
         return {};
     }
 
-    // ========================================================================
-    // Phase 1: Pre-loop setup (optimize mode only)
-    // ========================================================================
     if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
         std::size_t total_keyframe_tiles = 0;
         for (const auto &anim : anims | std::views::values) {
@@ -1083,9 +1080,6 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
         tiles_workspace_->reserve_anim_slots(total_keyframe_tiles);
     }
 
-    // ========================================================================
-    // Phase 2: Build keyframes and place/find tiles for each animation
-    // ========================================================================
     std::map<std::string, std::size_t> anim_offsets;
     std::map<std::string, std::vector<std::size_t>> anim_pal_indices;
     std::size_t current_offset = TilesPngWorkspace::anim_start_offset();
@@ -1204,9 +1198,6 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
         anim_offsets[anim_name] = offset;
     }
 
-    // ========================================================================
-    // Phase 3: Register all animations with the matcher
-    // ========================================================================
     for (const auto &[anim_name, anim] : anims) {
         anim_tile_matcher_.register_animation(
             anim_name, anim, anim_offsets.at(anim_name), extrinsic_transparency_, anim_pal_indices.at(anim_name));

@@ -17,9 +17,6 @@ using namespace porytiles2;
 
 namespace {
 
-/**
- * @brief Reads the entire contents of a file into a string.
- */
 [[nodiscard]] std::string read_file_contents(const std::filesystem::path &path)
 {
     std::ifstream file{path};
@@ -28,9 +25,6 @@ namespace {
     return buffer.str();
 }
 
-/**
- * @brief Copies a directory recursively.
- */
 void copy_directory(const std::filesystem::path &src, const std::filesystem::path &dst)
 {
     std::filesystem::create_directories(dst);
@@ -47,9 +41,6 @@ void copy_directory(const std::filesystem::path &src, const std::filesystem::pat
     }
 }
 
-/**
- * @brief Counts occurrences of a substring in a string.
- */
 [[nodiscard]] std::size_t count_occurrences(const std::string &haystack, const std::string &needle)
 {
     std::size_t count = 0;
@@ -126,9 +117,6 @@ class TilesetAnimsModifierTestBase : public ::testing::Test {
     std::unique_ptr<ProjectTilesetAnimsModifier> modifier_;
 };
 
-/**
- * @brief Tests using the pokeemerald_vanilla_stock mock project.
- */
 class TilesetAnimsModifierTest_VanillaStock : public TilesetAnimsModifierTestBase {
   protected:
     [[nodiscard]] std::filesystem::path source_project_path() const override
@@ -284,10 +272,6 @@ TEST_F(TilesetAnimsModifierTest_VanillaStock, RemoveIsIdempotent_SkipsMissingInc
     const std::string content = read_file_contents(tileset_anims_path());
     EXPECT_NE(content.find("#include \"global.h\""), std::string::npos) << "File content was corrupted";
 }
-
-// ============================================================================
-// Header file declaration tests
-// ============================================================================
 
 TEST_F(TilesetAnimsModifierTest_VanillaStock, WiresDeclarationToHeaderFile)
 {

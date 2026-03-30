@@ -19,9 +19,6 @@ using namespace porytiles2;
 
 namespace {
 
-/**
- * @brief Creates a test palette with distinct colors at each index.
- */
 Palette<Rgba32, pal::max_size> create_test_palette()
 {
     Palette<Rgba32, pal::max_size> pal;
@@ -49,9 +46,6 @@ Palette<Rgba32, pal::max_size> create_test_palette()
     return pal;
 }
 
-/**
- * @brief Creates a tile with two colors: one in corners, one everywhere else.
- */
 PixelTile<IndexPixel> create_two_color_tile(std::size_t corner_color, std::size_t other_color)
 {
     PixelTile<IndexPixel> tile;

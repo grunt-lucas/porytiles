@@ -27,10 +27,6 @@ namespace {
 
 using namespace porytiles2;
 
-// =============================================================================
-// Primitive Type Parsers (for uniform string storage)
-// =============================================================================
-
 /**
  * @brief Parses a std::size_t from a CLI string option.
  *
@@ -200,10 +196,6 @@ LayerValue<std::string> parse_string(const std::optional<std::string> &raw_value
     return LayerValue<std::string>::valid(raw_value.value(), option_name, "CLI");
 }
 
-// =============================================================================
-// Vector Type Parsers
-// =============================================================================
-
 /**
  * @brief Parses a std::vector<std::string> from CLI multi-value options.
  *
@@ -226,10 +218,6 @@ parse_string_vector(const std::vector<std::string> &raw_values, const std::strin
     }
     return LayerValue<std::vector<std::string>>::valid(raw_values, option_name, "CLI");
 }
-
-// =============================================================================
-// Enum Type Parsers (fuzzy matching with LayerValue error handling)
-// =============================================================================
 
 /**
  * @brief Parses an ArtifactEditMode from a CLI string option.

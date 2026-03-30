@@ -61,7 +61,7 @@ class PngRgbaImageSaverTests : public ::testing::Test {
     std::filesystem::path temp_dir_;
 };
 
-TEST_F(PngRgbaImageSaverTests, SaveToFileShouldFailGracefullyOnInvalidPath)
+TEST_F(PngRgbaImageSaverTests, SaveToInvalidPathFails)
 {
     const auto image = create_test_image(2, 2);
 
@@ -81,7 +81,7 @@ TEST_F(PngRgbaImageSaverTests, SaveToFileShouldFailGracefullyOnInvalidPath)
     EXPECT_TRUE(found);
 }
 
-TEST_F(PngRgbaImageSaverTests, ShouldSaveValidPngFile)
+TEST_F(PngRgbaImageSaverTests, SaveValidPng)
 {
     const auto image = create_test_image(4, 4);
     const auto file_path = get_tmp_path("test_save.png");
@@ -94,7 +94,7 @@ TEST_F(PngRgbaImageSaverTests, ShouldSaveValidPngFile)
     EXPECT_GT(std::filesystem::file_size(file_path), 0);
 }
 
-TEST_F(PngRgbaImageSaverTests, ShouldSaveAndLoadRoundTrip)
+TEST_F(PngRgbaImageSaverTests, SaveAndLoadRoundTrip)
 {
     const auto original_image = create_test_image(8, 6);
     const auto file_path = get_tmp_path("roundtrip_test.png");
@@ -130,7 +130,7 @@ TEST_F(PngRgbaImageSaverTests, ShouldSaveAndLoadRoundTrip)
     }
 }
 
-TEST_F(PngRgbaImageSaverTests, ShouldHandleSmallImages)
+TEST_F(PngRgbaImageSaverTests, SmallImages)
 {
     const auto image = create_test_image(1, 1);
     const auto file_path = get_tmp_path("small_image.png");
@@ -152,7 +152,7 @@ TEST_F(PngRgbaImageSaverTests, ShouldHandleSmallImages)
     EXPECT_EQ(loaded_image.height(), 1);
 }
 
-TEST_F(PngRgbaImageSaverTests, ShouldHandleLargeImages)
+TEST_F(PngRgbaImageSaverTests, LargeImages)
 {
     const auto width = 128;
     const auto height = 320;
@@ -177,7 +177,7 @@ TEST_F(PngRgbaImageSaverTests, ShouldHandleLargeImages)
     EXPECT_EQ(loaded_image.height(), height);
 }
 
-TEST_F(PngRgbaImageSaverTests, ShouldHandleTransparencyCorrectly)
+TEST_F(PngRgbaImageSaverTests, TransparencyHandling)
 {
     Image<Rgba32> image{4, 4};
 
@@ -212,7 +212,7 @@ TEST_F(PngRgbaImageSaverTests, ShouldHandleTransparencyCorrectly)
     }
 }
 
-TEST_F(PngRgbaImageSaverTests, ShouldOverwriteExistingFile)
+TEST_F(PngRgbaImageSaverTests, OverwriteExisting)
 {
     const auto image1 = create_test_image(2, 2);
     const auto image2 = create_test_image(3, 3);
@@ -243,7 +243,7 @@ TEST_F(PngRgbaImageSaverTests, ShouldOverwriteExistingFile)
     EXPECT_EQ(loaded_image.height(), 3);
 }
 
-TEST_F(PngRgbaImageSaverTests, ShouldHandleOpaqueImages)
+TEST_F(PngRgbaImageSaverTests, OpaqueImages)
 {
     Image<Rgba32> image{3, 3};
 

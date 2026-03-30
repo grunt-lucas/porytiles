@@ -25,10 +25,6 @@ namespace porytiles2 {
 
 namespace {
 
-// ============================================================================
-// Internal types
-// ============================================================================
-
 enum class AssignResult { success, no_solution, cutoff_reached };
 
 struct SearchParams {
@@ -64,10 +60,6 @@ struct SearchContext {
     std::vector<std::vector<ColorSet>> sibling_color_sets;
 };
 
-// ============================================================================
-// BFS state types
-// ============================================================================
-
 struct BfsState {
     std::vector<ColorSet> palette_colors;
     std::size_t next_tile_index{};
@@ -84,10 +76,6 @@ struct BfsStateHash {
         return seed;
     }
 };
-
-// ============================================================================
-// Preset matrix (48 configurations)
-// ============================================================================
 
 [[nodiscard]] std::array<SearchParams, 48> build_preset_matrix()
 {
@@ -116,10 +104,6 @@ struct BfsStateHash {
 
     return matrix;
 }
-
-// ============================================================================
-// Search context construction
-// ============================================================================
 
 [[nodiscard]] SearchContext build_search_context(const PackingInput &input)
 {
@@ -206,10 +190,6 @@ struct BfsStateHash {
 
     return ctx;
 }
-
-// ============================================================================
-// DFS algorithm
-// ============================================================================
 
 /*
  * DFS with in-place mutation and undo. Porytiles1 copied the entire palette vector for each branch;
@@ -343,10 +323,6 @@ AssignResult assign_depth_first(
 
     return AssignResult::no_solution;
 }
-
-// ============================================================================
-// BFS algorithm
-// ============================================================================
 
 /*
  * BFS with dual-queue heuristic and visited-state deduplication (matching Porytiles1's approach).
@@ -509,10 +485,6 @@ AssignResult assign_breadth_first(
     return AssignResult::no_solution;
 }
 
-// ============================================================================
-// Output reconstruction
-// ============================================================================
-
 [[nodiscard]] PackingOutput
 build_packing_output(const std::vector<ColorSet> &solution_colors, const SearchContext &ctx, const PackingInput &input)
 {
@@ -603,10 +575,6 @@ void emit_success_remark(const UserDiagnostics &diag, const SearchParams &params
 }
 
 } // namespace
-
-// ============================================================================
-// BacktrackingStrategy::pack
-// ============================================================================
 
 ChainableResult<PackingOutput> BacktrackingStrategy::pack(const PackingInput &input) const
 {
