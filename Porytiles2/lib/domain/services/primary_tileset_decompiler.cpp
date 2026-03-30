@@ -42,8 +42,8 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
     PT_TRY_ASSIGN_CHAIN_ERR(
         tilemap_entries,
         layer_mode_converter.triple_layerize(tileset.porymap_component()),
-        std::format("Failed to triple-layerize Porymap component for tileset '{}'.", tileset.name()),
-        std::unique_ptr<Tileset>);
+        std::unique_ptr<Tileset>,
+        std::format("Failed to triple-layerize Porymap component for tileset '{}'.", tileset.name()));
 
     /*
      * Create the new Porymap component early so we can pass it for potential backporting during animation
@@ -92,9 +92,9 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
                 rgba_anim,
                 anim_decompiler.decompile_animation(
                     tileset.name(), index_pixel_anim, inter_anim_canonical_tiles, *new_porymap_component),
+                std::unique_ptr<Tileset>,
                 diag_->formatter().format(
-                    "Failed to decompile animation '{}'.", FormatParam{index_pixel_anim.name(), Style::bold}),
-                std::unique_ptr<Tileset>);
+                    "Failed to decompile animation '{}'.", FormatParam{index_pixel_anim.name(), Style::bold}));
 
             /*
              * After successful decompilation, extract canonical tiles from this animation's (potentially mangled) key
@@ -139,8 +139,8 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
         metatiles,
         metatile_decompiler.decompile_metatiles(
             tilemap_entries, new_porymap_component->tiles_png(), tileset.porymap_component().pals()),
-        std::format("Failed to decompile Porymap component for tileset '{}'.", tileset.name()),
-        std::unique_ptr<Tileset>);
+        std::unique_ptr<Tileset>,
+        std::format("Failed to decompile Porymap component for tileset '{}'.", tileset.name()));
 
     // Convert metatiles into three layer images
     LayerImageMetatileizer<Rgba32> metatileizer{};
@@ -149,9 +149,9 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
     PT_TRY_ASSIGN_CHAIN_ERR(
         layer_images,
         metatileizer.demetatileize(metatiles, metatiles_per_row),
+        std::unique_ptr<Tileset>,
         format_->format(
-            "Failed to demetatileize metatiles for tileset '{}'.", FormatParam{tileset.name(), Style::bold}),
-        std::unique_ptr<Tileset>);
+            "Failed to demetatileize metatiles for tileset '{}'.", FormatParam{tileset.name(), Style::bold}));
 
     auto &[bottom_image, middle_image, top_image] = layer_images;
 

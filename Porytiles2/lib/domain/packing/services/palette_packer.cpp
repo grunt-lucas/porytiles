@@ -1155,7 +1155,7 @@ ChainableResult<PalettePacking> PalettePacker::pack_tiles(const PackingParams &p
     auto pack_result = strategy_->pack(packing_input);
 
     PT_TRY_ASSIGN_CHAIN_ERR(
-        packing_output, std::move(pack_result), "Low-level palette packing failed.", PalettePacking);
+        packing_output, std::move(pack_result), PalettePacking, "Low-level palette packing failed.");
 
     // Step 5a: Build tile_to_pal from PackingOutput
     PalettePacking packing{};

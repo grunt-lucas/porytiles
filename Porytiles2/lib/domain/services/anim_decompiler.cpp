@@ -395,8 +395,8 @@ using namespace porytiles2;
         PT_TRY_ASSIGN_CHAIN_ERR(
             match,
             internal_png_pal_strategy(anim, pals, extrinsic_transparency, diag, pal_printer),
-            err_msg,
-            std::size_t);
+            std::size_t,
+            err_msg);
         internal_png_pal_cache = match;
         return match;
     }
@@ -452,11 +452,11 @@ using namespace porytiles2;
                 pal_printer,
                 tile_printer,
                 internal_png_pal_cache),
+            std::vector<std::size_t>,
             diag.formatter().format(
                 "Failed to resolve palette for animation '{}' subtile {}.",
                 FormatParam{anim_name, Style::bold},
-                FormatParam{i, Style::bold}),
-            std::vector<std::size_t>);
+                FormatParam{i, Style::bold}));
         per_tile_pals[i] = pal_idx;
     }
 
@@ -791,9 +791,9 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
                 *diag_,
                 *pal_printer_,
                 *tile_printer_),
+            Animation<Rgba32>,
             diag_->formatter().format(
-                "Failed to find palette for animation '{}'.", FormatParam{anim.name(), Style::bold}),
-            Animation<Rgba32>);
+                "Failed to find palette for animation '{}'.", FormatParam{anim.name(), Style::bold}));
 
         for (const auto &frame : anim.frames_values()) {
             std::vector<PixelTile<Rgba32>> rgba_tiles;
@@ -826,8 +826,8 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
             *diag_,
             *pal_printer_,
             *tile_printer_),
-        diag_->formatter().format("Failed to find palette for animation '{}'.", FormatParam{anim.name(), Style::bold}),
-        Animation<Rgba32>);
+        Animation<Rgba32>,
+        diag_->formatter().format("Failed to find palette for animation '{}'.", FormatParam{anim.name(), Style::bold}));
 
     // Build per-tile palette pointer vector for the mangler and conversion
     std::vector<const Palette<Rgba32, pal::max_size> *> pal_ptrs;
@@ -923,10 +923,10 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
                     pal_ptrs,
                     extrinsic_transparency.value(),
                     existing_canonical_tiles),
+                Animation<Rgba32>,
                 diag_->formatter().format(
                     "Failed to mangle duplicate key frame tiles for animation '{}'.",
-                    FormatParam{anim.name(), Style::bold}),
-                Animation<Rgba32>);
+                    FormatParam{anim.name(), Style::bold}));
             key_frame_index_tiles = std::move(mangle_result.tiles);
 
             // Backport changes to tiles.png

@@ -306,8 +306,8 @@ ChainableResult<void> CompilerTask::pipeline_step_process_porytiles_input()
             tileset_.porytiles_component().bottom(),
             tileset_.porytiles_component().middle(),
             tileset_.porytiles_component().top()),
-        "failed to metatileize input layer images for " + tileset_.name(),
-        void);
+        void,
+        "failed to metatileize input layer images for " + tileset_.name());
     porytiles_metatiles_ = std::move(metatiles);
 
     // Decompose Porytiles metatiles and generate canonical versions
@@ -326,16 +326,16 @@ ChainableResult<void> CompilerTask::pipeline_step_process_porymap_input()
     PT_TRY_ASSIGN_CHAIN_ERR(
         tilemap_entries,
         layer_mode_converter.triple_layerize(tileset_.porymap_component()),
-        std::format("Failed to triple-layerize Porymap component for tileset '{}'.", tileset_.name()),
-        void);
+        void,
+        std::format("Failed to triple-layerize Porymap component for tileset '{}'.", tileset_.name()));
     porymap_tilemap_entries_ = std::move(tilemap_entries);
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         metatiles,
         metatile_decompiler.decompile_metatiles(
             porymap_tilemap_entries_, tileset_.porymap_component().tiles_png(), tileset_.porymap_component().pals()),
-        std::format("Failed to decompile Porymap component for tileset '{}'.", tileset_.name()),
-        void);
+        void,
+        std::format("Failed to decompile Porymap component for tileset '{}'.", tileset_.name()));
     porymap_metatiles_ = std::move(metatiles);
 
     /*
@@ -477,7 +477,7 @@ ChainableResult<void> CompilerTask::pipeline_step_setup_working_data()
 
     // Register animations (reserve slots, compile keyframes, register matcher)
     // Must be done before regular tile matching so animation slots are reserved
-    PT_TRY_CALL_CHAIN_ERR(pipeline_helper_register_animations(), "Failed to register animations.", void);
+    PT_TRY_CALL_CHAIN_ERR(pipeline_helper_register_animations(), void, "Failed to register animations.");
 
     // Create new Porymap component for output
     new_porymap_component_ = std::make_unique<PorymapTilesetComponent>();
@@ -826,8 +826,8 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
     PT_TRY_ASSIGN_CHAIN_ERR(
         color_index_map,
         pipeline_helper_build_color_index_map(pal_hints_.value(), color_count_limit),
-        std::format("Failed to build color index map for tileset '{}'.", tileset_.name()),
-        void);
+        void,
+        std::format("Failed to build color index map for tileset '{}'.", tileset_.name()));
 
     PT_UNWRAP_TILESET_CONFIG_REF(config_, packing_strategy, tileset_.name(), void);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, packing_strategy_params, tileset_.name(), void);
@@ -854,8 +854,8 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
     PT_TRY_ASSIGN_CHAIN_ERR(
         pal_packing,
         pal_packer.pack_tiles(packing_params),
-        format_.format("Failed to pack palettes for tileset '{}'.", FormatParam{tileset_.name(), Style::bold}),
-        void);
+        void,
+        format_.format("Failed to pack palettes for tileset '{}'.", FormatParam{tileset_.name(), Style::bold}));
 
     tile_to_pal_ = std::move(pal_packing.tile_to_pal_);
 

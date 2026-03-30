@@ -20,15 +20,15 @@ ProjectPrimaryTilesetImporter::import_porymap_component_from_vanilla(const std::
     PT_TRY_ASSIGN_CHAIN_ERR(
         artifact_paths,
         metadata_provider_->artifact_paths_for(tileset_name),
-        format_->format("Failed to get artifact paths for tileset '{}'.", FormatParam{tileset_name, Style::bold}),
-        std::unique_ptr<PorymapTilesetComponent>);
+        std::unique_ptr<PorymapTilesetComponent>,
+        format_->format("Failed to get artifact paths for tileset '{}'.", FormatParam{tileset_name, Style::bold}));
 
     // Step 2: Parse metatiles.bin
     PT_TRY_ASSIGN_CHAIN_ERR(
         metatile_entries,
         parse_metatiles_bin(project_root_ / artifact_paths.metatiles_path()),
-        "Failed to parse metatiles.bin.",
-        std::unique_ptr<PorymapTilesetComponent>);
+        std::unique_ptr<PorymapTilesetComponent>,
+        "Failed to parse metatiles.bin.");
 
     for (auto &entry : metatile_entries) {
         porymap_component->push_back_tilemap_entry(std::move(entry));
@@ -40,8 +40,8 @@ ProjectPrimaryTilesetImporter::import_porymap_component_from_vanilla(const std::
         base_game_ == BaseGame::pokefirered
             ? parse_firered_metatile_attributes(project_root_ / artifact_paths.metatile_attributes_path())
             : parse_emerald_metatile_attributes(project_root_ / artifact_paths.metatile_attributes_path()),
-        "Failed to parse metatile_attributes.bin.",
-        std::unique_ptr<PorymapTilesetComponent>);
+        std::unique_ptr<PorymapTilesetComponent>,
+        "Failed to parse metatile_attributes.bin.");
 
     for (auto &attr : attributes) {
         porymap_component->push_back_attribute(std::move(attr));
@@ -54,8 +54,8 @@ ProjectPrimaryTilesetImporter::import_porymap_component_from_vanilla(const std::
     PT_TRY_ASSIGN_CHAIN_ERR(
         tiles_image,
         load_indexed_png(project_root_ / tiles_png_path, *png_loader_),
-        "Failed to load tiles.png.",
-        std::unique_ptr<PorymapTilesetComponent>);
+        std::unique_ptr<PorymapTilesetComponent>,
+        "Failed to load tiles.png.");
 
     porymap_component->tiles_png(*tiles_image);
 
@@ -69,8 +69,8 @@ ProjectPrimaryTilesetImporter::import_porymap_component_from_vanilla(const std::
         PT_TRY_ASSIGN_CHAIN_ERR(
             palette,
             load_porymap_palette(project_root_ / pal_path, *pal_loader_),
-            format_->format("Failed to load palette {}.", FormatParam{pal_filename(i), Style::bold}),
-            std::unique_ptr<PorymapTilesetComponent>);
+            std::unique_ptr<PorymapTilesetComponent>,
+            format_->format("Failed to load palette {}.", FormatParam{pal_filename(i), Style::bold}));
 
         porymap_component->set_pal(i, std::move(palette));
     }

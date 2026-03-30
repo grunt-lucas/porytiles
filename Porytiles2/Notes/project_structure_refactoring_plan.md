@@ -1070,15 +1070,15 @@ if (key_provider_->artifact_exists(porytiles_params_key)) {
     PT_TRY_ASSIGN_CHAIN_ERR(
         porytiles_anims,
         key_provider_->discover_porytiles_anims(tileset->name()),
-        "tileset load failed",
-        std::unique_ptr<Tileset>);
+        std::unique_ptr<Tileset>,
+        "tileset load failed");
 
     for (const auto &porytiles_anim_name : porytiles_anims) {
         PT_TRY_ASSIGN_CHAIN_ERR(
             key_frame_key,
             key_provider_->key_for_porytiles_anim_key_frame(tileset->name(), porytiles_anim_name),
-            "tileset load failed",
-            std::unique_ptr<Tileset>);
+            std::unique_ptr<Tileset>,
+            "tileset load failed");
 
         if (!key_provider_->artifact_exists(key_frame_key)) {
             return FormattableError{missing_required_artifact_msg, FormatParam{key_frame_key.key(), Style::bold}};
@@ -1087,16 +1087,16 @@ if (key_provider_->artifact_exists(porytiles_params_key)) {
         PT_TRY_ASSIGN_CHAIN_ERR(
             frames,
             key_provider_->discover_porytiles_anim_frames(tileset->name(), porytiles_anim_name),
-            "tileset load failed",
-            std::unique_ptr<Tileset>);
+            std::unique_ptr<Tileset>,
+            "tileset load failed");
 
         std::vector<ArtifactKey> frames_keys{};
         for (const auto &frame : frames) {
             PT_TRY_ASSIGN_CHAIN_ERR(
                 frame_key,
                 key_provider_->key_for_porytiles_anim_frame(tileset->name(), porytiles_anim_name, frame),
-                "tileset load failed",
-                std::unique_ptr<Tileset>);
+                std::unique_ptr<Tileset>,
+                "tileset load failed");
 
             if (!key_provider_->artifact_exists(frame_key)) {
                 return FormattableError{missing_required_artifact_msg, FormatParam{frame_key.key(), Style::bold}};
@@ -1120,8 +1120,8 @@ for (const auto &porymap_anim : tileset.porymap_component().anims() | std::views
         PT_TRY_ASSIGN_CHAIN_ERR(
             frame_key,
             key_provider_->key_for_porymap_anim_frame(tileset.name(), porymap_anim.name(), frame_name),
-            "tileset save failed",
-            void);
+            void,
+            "tileset save failed");
 
         if (auto result = writer_->write_porymap_anim_frame(
                 frame_key, tileset, porymap_anim.name(), frame_name);

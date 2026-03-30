@@ -209,13 +209,12 @@ ChainableResult<void> IncbinDeclarationAppender::append_graphics_declarations(
     const auto graphics_path = project_root_ / graphics_rel_path;
 
     // Read existing file
-    auto lines_result = read_file_lines(graphics_path, format_);
-    if (!lines_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{"Failed to read graphics.h for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
-            lines_result};
-    }
-    auto lines = std::move(lines_result.value());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        lines,
+        read_file_lines(graphics_path, format_),
+        void,
+        "Failed to read graphics.h for tileset '{}'.",
+        FormatParam(tileset_name, Style::bold));
 
     // Generate declarations
     const std::string tiles_decl = generate_tiles_declaration(shorthand, bin_path_base, snake_dir);
@@ -257,13 +256,12 @@ ChainableResult<void> IncbinDeclarationAppender::append_metatiles_declarations(
     const auto metatiles_path = project_root_ / metatiles_rel_path;
 
     // Read existing file
-    auto lines_result = read_file_lines(metatiles_path, format_);
-    if (!lines_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{"Failed to read metatiles.h for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
-            lines_result};
-    }
-    auto lines = std::move(lines_result.value());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        lines,
+        read_file_lines(metatiles_path, format_),
+        void,
+        "Failed to read metatiles.h for tileset '{}'.",
+        FormatParam(tileset_name, Style::bold));
 
     // Generate declarations
     const std::string metatiles_decl = generate_metatiles_declaration(shorthand, bin_path_base, snake_dir);
@@ -298,13 +296,12 @@ ChainableResult<void> IncbinDeclarationAppender::remove_declarations(const std::
     {
         const auto graphics_path = project_root_ / graphics_rel_path;
 
-        auto lines_result = read_file_lines(graphics_path, format_);
-        if (!lines_result.has_value()) {
-            return ChainableResult<void>{
-                FormattableError{"Failed to read graphics.h for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
-                lines_result};
-        }
-        auto lines = std::move(lines_result.value());
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            lines,
+            read_file_lines(graphics_path, format_),
+            void,
+            "Failed to read graphics.h for tileset '{}'.",
+            FormatParam(tileset_name, Style::bold));
 
         // Remove lines containing PorytilesManaged_{Shorthand}
         // Also handle multi-line palette arrays by tracking brace depth
@@ -342,14 +339,12 @@ ChainableResult<void> IncbinDeclarationAppender::remove_declarations(const std::
     {
         const auto metatiles_path = project_root_ / metatiles_rel_path;
 
-        auto lines_result = read_file_lines(metatiles_path, format_);
-        if (!lines_result.has_value()) {
-            return ChainableResult<void>{
-                FormattableError{
-                    "Failed to read metatiles.h for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
-                lines_result};
-        }
-        auto lines = std::move(lines_result.value());
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            lines,
+            read_file_lines(metatiles_path, format_),
+            void,
+            "Failed to read metatiles.h for tileset '{}'.",
+            FormatParam(tileset_name, Style::bold));
 
         // Remove lines containing PorytilesManaged_{Shorthand}
         std::vector<std::string> filtered_lines;

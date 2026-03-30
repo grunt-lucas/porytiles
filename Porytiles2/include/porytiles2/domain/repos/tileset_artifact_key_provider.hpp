@@ -187,8 +187,8 @@ class TilesetArtifactKeyProvider {
         PT_TRY_ASSIGN_CHAIN_ERR(
             metatiles_key,
             key_for_metatiles_bin(tileset_name),
-            "Failed to get Porymap artifact keys.",
-            std::vector<ArtifactKey>);
+            std::vector<ArtifactKey>,
+            "Failed to get Porymap artifact keys.");
         if (artifact_exists(metatiles_key)) {
             result.push_back(metatiles_key);
         }
@@ -196,8 +196,8 @@ class TilesetArtifactKeyProvider {
         PT_TRY_ASSIGN_CHAIN_ERR(
             attr_key,
             key_for_metatile_attributes_bin(tileset_name),
-            "Failed to get Porymap artifact keys.",
-            std::vector<ArtifactKey>);
+            std::vector<ArtifactKey>,
+            "Failed to get Porymap artifact keys.");
         if (artifact_exists(attr_key)) {
             result.push_back(attr_key);
         }
@@ -205,8 +205,8 @@ class TilesetArtifactKeyProvider {
         PT_TRY_ASSIGN_CHAIN_ERR(
             tiles_png_key,
             key_for_tiles_png(tileset_name),
-            "Failed to get Porymap artifact keys.",
-            std::vector<ArtifactKey>);
+            std::vector<ArtifactKey>,
+            "Failed to get Porymap artifact keys.");
         if (artifact_exists(tiles_png_key)) {
             result.push_back(tiles_png_key);
         }
@@ -216,8 +216,8 @@ class TilesetArtifactKeyProvider {
             PT_TRY_ASSIGN_CHAIN_ERR(
                 pal_key,
                 key_for_porymap_pal_n(tileset_name, i),
-                "Failed to get Porymap artifact keys.",
-                std::vector<ArtifactKey>);
+                std::vector<ArtifactKey>,
+                "Failed to get Porymap artifact keys.");
             if (artifact_exists(pal_key)) {
                 result.push_back(pal_key);
             }
@@ -226,20 +226,20 @@ class TilesetArtifactKeyProvider {
         PT_TRY_ASSIGN_CHAIN_ERR(
             porymap_anims,
             discover_porymap_anims(tileset_name),
-            "Failed to get Porymap artifact keys.",
-            std::vector<ArtifactKey>);
+            std::vector<ArtifactKey>,
+            "Failed to get Porymap artifact keys.");
         for (const auto &anim : porymap_anims) {
             PT_TRY_ASSIGN_CHAIN_ERR(
                 frames,
                 discover_porymap_anim_frames(tileset_name, anim),
-                "Failed to get Porymap artifact keys.",
-                std::vector<ArtifactKey>);
+                std::vector<ArtifactKey>,
+                "Failed to get Porymap artifact keys.");
             for (const auto &frame : frames) {
                 PT_TRY_ASSIGN_CHAIN_ERR(
                     frame_n_key,
                     key_for_porymap_anim_frame(tileset_name, anim, frame),
-                    "Failed to get Porymap artifact keys.",
-                    std::vector<ArtifactKey>);
+                    std::vector<ArtifactKey>,
+                    "Failed to get Porymap artifact keys.");
                 if (artifact_exists(frame_n_key)) {
                     result.push_back(frame_n_key);
                 }
@@ -249,8 +249,8 @@ class TilesetArtifactKeyProvider {
         PT_TRY_ASSIGN_CHAIN_ERR(
             generated_anim_code_key,
             key_for_porymap_anim_params(tileset_name),
-            "Failed to get Porymap artifact keys.",
-            std::vector<ArtifactKey>);
+            std::vector<ArtifactKey>,
+            "Failed to get Porymap artifact keys.");
         if (artifact_exists(generated_anim_code_key)) {
             result.push_back(generated_anim_code_key);
         }
@@ -284,8 +284,8 @@ class TilesetArtifactKeyProvider {
         PT_TRY_ASSIGN_CHAIN_ERR(
             bottom_png_key,
             key_for_bottom_png(tileset_name),
-            "Failed to get Porytiles artifact keys.",
-            std::vector<ArtifactKey>);
+            std::vector<ArtifactKey>,
+            "Failed to get Porytiles artifact keys.");
         if (artifact_exists(bottom_png_key)) {
             result.push_back(bottom_png_key);
         }
@@ -293,8 +293,8 @@ class TilesetArtifactKeyProvider {
         PT_TRY_ASSIGN_CHAIN_ERR(
             middle_png_key,
             key_for_middle_png(tileset_name),
-            "Failed to get Porytiles artifact keys.",
-            std::vector<ArtifactKey>);
+            std::vector<ArtifactKey>,
+            "Failed to get Porytiles artifact keys.");
         if (artifact_exists(middle_png_key)) {
             result.push_back(middle_png_key);
         }
@@ -302,8 +302,8 @@ class TilesetArtifactKeyProvider {
         PT_TRY_ASSIGN_CHAIN_ERR(
             top_png_key,
             key_for_top_png(tileset_name),
-            "Failed to get Porytiles artifact keys.",
-            std::vector<ArtifactKey>);
+            std::vector<ArtifactKey>,
+            "Failed to get Porytiles artifact keys.");
         if (artifact_exists(top_png_key)) {
             result.push_back(top_png_key);
         }
@@ -311,8 +311,8 @@ class TilesetArtifactKeyProvider {
         PT_TRY_ASSIGN_CHAIN_ERR(
             attr_csv_key,
             key_for_attributes_csv(tileset_name),
-            "Failed to get Porytiles artifact keys.",
-            std::vector<ArtifactKey>);
+            std::vector<ArtifactKey>,
+            "Failed to get Porytiles artifact keys.");
         if (artifact_exists(attr_csv_key)) {
             result.push_back(attr_csv_key);
         }
@@ -322,8 +322,8 @@ class TilesetArtifactKeyProvider {
             PT_TRY_ASSIGN_CHAIN_ERR(
                 override_key,
                 key_for_porytiles_pal_n(tileset_name, i),
-                "Failed to get Porytiles artifact keys.",
-                std::vector<ArtifactKey>);
+                std::vector<ArtifactKey>,
+                "Failed to get Porytiles artifact keys.");
             if (artifact_exists(override_key)) {
                 result.push_back(override_key);
             }
@@ -332,27 +332,27 @@ class TilesetArtifactKeyProvider {
         PT_TRY_ASSIGN_CHAIN_ERR(
             porytiles_anims,
             discover_porytiles_anims(tileset_name),
-            "Failed to get Porytiles artifact keys.",
-            std::vector<ArtifactKey>);
+            std::vector<ArtifactKey>,
+            "Failed to get Porytiles artifact keys.");
         for (const auto &anim : porytiles_anims) {
             // TODO: don't hardcode key here
             PT_TRY_ASSIGN_CHAIN_ERR(
                 key_frame_key,
                 key_for_porytiles_anim_frame(tileset_name, anim, "key"),
-                "Tileset load failed.",
-                std::vector<ArtifactKey>);
+                std::vector<ArtifactKey>,
+                "Tileset load failed.");
 
             PT_TRY_ASSIGN_CHAIN_ERR(
                 frames,
                 discover_porytiles_anim_frames(tileset_name, anim),
-                "Failed to get Porytiles artifact keys.",
-                std::vector<ArtifactKey>);
+                std::vector<ArtifactKey>,
+                "Failed to get Porytiles artifact keys.");
             for (const auto &frame : frames) {
                 PT_TRY_ASSIGN_CHAIN_ERR(
                     frame_n_key,
                     key_for_porytiles_anim_frame(tileset_name, anim, frame),
-                    "Failed to get Porytiles artifact keys.",
-                    std::vector<ArtifactKey>);
+                    std::vector<ArtifactKey>,
+                    "Failed to get Porytiles artifact keys.");
                 if (artifact_exists(frame_n_key)) {
                     result.push_back(frame_n_key);
                 }
@@ -362,8 +362,8 @@ class TilesetArtifactKeyProvider {
         PT_TRY_ASSIGN_CHAIN_ERR(
             anim_json_key,
             key_for_porytiles_anim_params(tileset_name),
-            "Failed to get Porytiles artifact keys.",
-            std::vector<ArtifactKey>);
+            std::vector<ArtifactKey>,
+            "Failed to get Porytiles artifact keys.");
         if (artifact_exists(anim_json_key)) {
             result.push_back(anim_json_key);
         }
@@ -388,13 +388,13 @@ class TilesetArtifactKeyProvider {
         PT_TRY_ASSIGN_CHAIN_ERR(
             porytiles_keys,
             get_porytiles_artifact_keys(tileset_name),
-            "Failed to get Porytiles artifact keys.",
-            std::vector<ArtifactKey>);
+            std::vector<ArtifactKey>,
+            "Failed to get Porytiles artifact keys.");
         PT_TRY_ASSIGN_CHAIN_ERR(
             porymap_keys,
             get_porymap_artifact_keys(tileset_name),
-            "Failed to get Porymap artifact keys.",
-            std::vector<ArtifactKey>);
+            std::vector<ArtifactKey>,
+            "Failed to get Porymap artifact keys.");
 
         std::vector<ArtifactKey> result;
         result.reserve(porytiles_keys.size() + porymap_keys.size());

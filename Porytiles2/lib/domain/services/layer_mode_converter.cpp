@@ -14,7 +14,7 @@ namespace porytiles2 {
 ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(const PorymapTilesetComponent &component)
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
-        layer_mode, component.detect_layer_mode(), "Layer mode detection failed.", std::vector<TilemapEntry>);
+        layer_mode, component.detect_layer_mode(), std::vector<TilemapEntry>, "Layer mode detection failed.");
     if (layer_mode == LayerMode::triple) {
         // No-op case
         return component.metatiles_bin();

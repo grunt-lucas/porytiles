@@ -54,15 +54,13 @@ const std::filesystem::path src_graphics_rel_path = std::filesystem::path{"src"}
     const auto headers_path = project_root / headers_rel_path;
     CParserFacade parser{headers_path, format};
 
-    auto parse_result = parser.parse_struct_initializers("gTileset_");
-    if (!parse_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{format->format(
-                "Failed to parse tileset headers from '{}'.", FormatParam{headers_path.string(), Style::bold})},
-            parse_result};
-    }
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        struct_decls,
+        parser.parse_struct_initializers("gTileset_"),
+        void,
+        format->format("Failed to parse tileset headers from '{}'.", FormatParam{headers_path.string(), Style::bold}));
 
-    for (auto &struct_decl : parse_result.value()) {
+    for (auto &struct_decl : struct_decls) {
         const auto &tileset_name = struct_decl.variable_name();
 
         auto is_secondary_opt = struct_decl.field_value("isSecondary");
@@ -128,50 +126,47 @@ const std::filesystem::path src_graphics_rel_path = std::filesystem::path{"src"}
         return {};
     }
 
-    if (const auto ensure_result = ensure_metadata_parsed(project_root, metadata_parsed, tileset_metadata, format);
-        !ensure_result.has_value()) {
-        return ChainableResult<void>{FormattableError{"Failed to resolve artifact paths."}, ensure_result};
-    }
+    PT_TRY_CALL_CHAIN_ERR(
+        ensure_metadata_parsed(project_root, metadata_parsed, tileset_metadata, format),
+        void,
+        "Failed to resolve artifact paths.");
 
     // Parse all INCBIN sources into a local map
     std::map<std::string, IncbinDeclaration> incbin_vars;
 
     const auto graphics_path = project_root / graphics_rel_path;
     CParserFacade graphics_parser{graphics_path, format};
-    auto graphics_result = graphics_parser.parse_incbin_arrays();
-    if (!graphics_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{format->format(
-                "Failed to parse graphics INCBINs from '{}'.", FormatParam{graphics_path.string(), Style::bold})},
-            graphics_result};
-    }
-    for (auto &incbin : graphics_result.value()) {
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        graphics_incbins,
+        graphics_parser.parse_incbin_arrays(),
+        void,
+        format->format(
+            "Failed to parse graphics INCBINs from '{}'.", FormatParam{graphics_path.string(), Style::bold}));
+    for (auto &incbin : graphics_incbins) {
         incbin_vars.emplace(incbin.variable_name(), std::move(incbin));
     }
 
     const auto metatiles_path = project_root / metatiles_rel_path;
     CParserFacade metatiles_parser{metatiles_path, format};
-    auto metatiles_result = metatiles_parser.parse_incbin_arrays();
-    if (!metatiles_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{format->format(
-                "Failed to parse metatiles INCBINs from '{}'.", FormatParam{metatiles_path.string(), Style::bold})},
-            metatiles_result};
-    }
-    for (auto &incbin : metatiles_result.value()) {
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        metatiles_incbins,
+        metatiles_parser.parse_incbin_arrays(),
+        void,
+        format->format(
+            "Failed to parse metatiles INCBINs from '{}'.", FormatParam{metatiles_path.string(), Style::bold}));
+    for (auto &incbin : metatiles_incbins) {
         incbin_vars.emplace(incbin.variable_name(), std::move(incbin));
     }
 
     const auto src_graphics_path = project_root / src_graphics_rel_path;
     CParserFacade src_graphics_parser{src_graphics_path, format};
-    auto src_graphics_result = src_graphics_parser.parse_incbin_arrays();
-    if (!src_graphics_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{format->format(
-                "Failed to parse graphics INCBINs from '{}'.", FormatParam{src_graphics_path.string(), Style::bold})},
-            src_graphics_result};
-    }
-    for (auto &incbin : src_graphics_result.value()) {
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        src_graphics_incbins,
+        src_graphics_parser.parse_incbin_arrays(),
+        void,
+        format->format(
+            "Failed to parse graphics INCBINs from '{}'.", FormatParam{src_graphics_path.string(), Style::bold}));
+    for (auto &incbin : src_graphics_incbins) {
         incbin_vars.emplace(incbin.variable_name(), std::move(incbin));
     }
 
@@ -235,10 +230,10 @@ ChainableResult<bool> ProjectTilesetMetadataProvider::has_animations(const std::
 
 ChainableResult<std::set<std::string>> ProjectTilesetMetadataProvider::tilesets() const
 {
-    if (const auto ensure_result = ensure_metadata_parsed(project_root_, metadata_parsed_, tileset_metadata_, format_);
-        !ensure_result.has_value()) {
-        return ChainableResult<std::set<std::string>>{FormattableError{"Failed to enumerate tilesets."}, ensure_result};
-    }
+    PT_TRY_CALL_CHAIN_ERR(
+        ensure_metadata_parsed(project_root_, metadata_parsed_, tileset_metadata_, format_),
+        std::set<std::string>,
+        "Failed to enumerate tilesets.");
 
     std::set<std::string> names;
     for (const auto &[tileset_name, metadata] : tileset_metadata_) {
@@ -250,13 +245,10 @@ ChainableResult<std::set<std::string>> ProjectTilesetMetadataProvider::tilesets(
 ChainableResult<ProjectTilesetMetadata>
 ProjectTilesetMetadataProvider::metadata_for(const std::string &tileset_name) const
 {
-    if (const auto ensure_result = ensure_metadata_parsed(project_root_, metadata_parsed_, tileset_metadata_, format_);
-        !ensure_result.has_value()) {
-        return ChainableResult<ProjectTilesetMetadata>{
-            FormattableError{
-                format_->format("Failed to get metadata for tileset '{}'.", FormatParam{tileset_name, Style::bold})},
-            ensure_result};
-    }
+    PT_TRY_CALL_CHAIN_ERR(
+        ensure_metadata_parsed(project_root_, metadata_parsed_, tileset_metadata_, format_),
+        ProjectTilesetMetadata,
+        format_->format("Failed to get metadata for tileset '{}'.", FormatParam{tileset_name, Style::bold}));
 
     if (!tileset_metadata_.contains(tileset_name)) {
         return FormattableError{
@@ -269,19 +261,16 @@ ProjectTilesetMetadataProvider::metadata_for(const std::string &tileset_name) co
 ChainableResult<ProjectTilesetArtifactPaths>
 ProjectTilesetMetadataProvider::artifact_paths_for(const std::string &tileset_name) const
 {
-    if (const auto ensure_result = ensure_artifact_paths_parsed(
+    PT_TRY_CALL_CHAIN_ERR(
+        ensure_artifact_paths_parsed(
             project_root_,
             metadata_parsed_,
             tileset_metadata_,
             artifact_paths_parsed_,
             tileset_artifact_paths_,
-            format_);
-        !ensure_result.has_value()) {
-        return ChainableResult<ProjectTilesetArtifactPaths>{
-            FormattableError{format_->format(
-                "Failed to get artifact paths for tileset '{}'.", FormatParam{tileset_name, Style::bold})},
-            ensure_result};
-    }
+            format_),
+        ProjectTilesetArtifactPaths,
+        format_->format("Failed to get artifact paths for tileset '{}'.", FormatParam{tileset_name, Style::bold}));
 
     if (!tileset_artifact_paths_.contains(tileset_name)) {
         return FormattableError{format_->format(

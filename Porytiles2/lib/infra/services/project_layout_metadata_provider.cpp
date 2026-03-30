@@ -256,8 +256,8 @@ ChainableResult<std::set<std::string>> ProjectLayoutMetadataProvider::layout_nam
     PT_TRY_CALL_CHAIN_ERR(
         ensure_layouts_parsed(
             project_root_, layouts_parsed_, layouts_table_label_, layout_entries_, layout_index_, format_),
-        "Failed to enumerate layout names.",
-        std::set<std::string>);
+        std::set<std::string>,
+        "Failed to enumerate layout names.");
 
     std::set<std::string> names;
     for (const auto &entry : layout_entries_) {
@@ -271,8 +271,8 @@ ChainableResult<std::set<std::string>> ProjectLayoutMetadataProvider::layout_ids
     PT_TRY_CALL_CHAIN_ERR(
         ensure_layouts_parsed(
             project_root_, layouts_parsed_, layouts_table_label_, layout_entries_, layout_index_, format_),
-        "Failed to enumerate layout IDs.",
-        std::set<std::string>);
+        std::set<std::string>,
+        "Failed to enumerate layout IDs.");
 
     std::set<std::string> ids;
     for (const auto &entry : layout_entries_) {
@@ -286,8 +286,8 @@ ChainableResult<std::string> ProjectLayoutMetadataProvider::layouts_table_label(
     PT_TRY_CALL_CHAIN_ERR(
         ensure_layouts_parsed(
             project_root_, layouts_parsed_, layouts_table_label_, layout_entries_, layout_index_, format_),
-        "Failed to get layouts table label.",
-        std::string);
+        std::string,
+        "Failed to get layouts table label.");
     return layouts_table_label_;
 }
 
