@@ -1,5 +1,6 @@
 #pragma once
 
+#include <set>
 #include <string>
 
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -67,6 +68,28 @@ class LayoutMetadataProvider {
      */
     [[nodiscard]] virtual ChainableResult<std::string>
     secondary_tileset(const std::string &layout_name_or_id) const = 0;
+
+    /**
+     * @brief Returns all layout names known to this provider.
+     *
+     * @details
+     * Enumerates all layout names available in the backing store. This enables batch operations, validation, and
+     * listing without requiring callers to know layout names in advance.
+     *
+     * @return ChainableResult containing a set of all layout names
+     */
+    [[nodiscard]] virtual ChainableResult<std::set<std::string>> layout_names() const = 0;
+
+    /**
+     * @brief Returns all layout IDs known to this provider.
+     *
+     * @details
+     * Enumerates all layout IDs available in the backing store. This enables batch operations, validation, and listing
+     * without requiring callers to know layout IDs in advance.
+     *
+     * @return ChainableResult containing a set of all layout IDs
+     */
+    [[nodiscard]] virtual ChainableResult<std::set<std::string>> layout_ids() const = 0;
 };
 
 } // namespace porytiles2

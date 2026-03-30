@@ -3,6 +3,7 @@
 #include <filesystem>
 #include <fstream>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -248,6 +249,36 @@ ProjectLayoutMetadataProvider::secondary_tileset(const std::string &layout_name_
             format_),
         std::string);
     return layout->secondary_tileset();
+}
+
+ChainableResult<std::set<std::string>> ProjectLayoutMetadataProvider::layout_names() const
+{
+    PT_TRY_CALL_CHAIN_ERR(
+        ensure_layouts_parsed(
+            project_root_, layouts_parsed_, layouts_table_label_, layout_entries_, layout_index_, format_),
+        "Failed to enumerate layout names.",
+        std::set<std::string>);
+
+    std::set<std::string> names;
+    for (const auto &entry : layout_entries_) {
+        names.insert(entry.name());
+    }
+    return names;
+}
+
+ChainableResult<std::set<std::string>> ProjectLayoutMetadataProvider::layout_ids() const
+{
+    PT_TRY_CALL_CHAIN_ERR(
+        ensure_layouts_parsed(
+            project_root_, layouts_parsed_, layouts_table_label_, layout_entries_, layout_index_, format_),
+        "Failed to enumerate layout IDs.",
+        std::set<std::string>);
+
+    std::set<std::string> ids;
+    for (const auto &entry : layout_entries_) {
+        ids.insert(entry.id());
+    }
+    return ids;
 }
 
 ChainableResult<std::string> ProjectLayoutMetadataProvider::layouts_table_label() const

@@ -3,6 +3,7 @@
 #include <cstddef>
 #include <filesystem>
 #include <map>
+#include <set>
 #include <string>
 #include <utility>
 #include <vector>
@@ -45,6 +46,10 @@ class ProjectLayoutMetadataProvider : public LayoutMetadataProvider {
     [[nodiscard]] ChainableResult<std::string> primary_tileset(const std::string &layout_name_or_id) const override;
 
     [[nodiscard]] ChainableResult<std::string> secondary_tileset(const std::string &layout_name_or_id) const override;
+
+    [[nodiscard]] ChainableResult<std::set<std::string>> layout_names() const override;
+
+    [[nodiscard]] ChainableResult<std::set<std::string>> layout_ids() const override;
 
     /**
      * @brief Gets the layouts table label symbol.

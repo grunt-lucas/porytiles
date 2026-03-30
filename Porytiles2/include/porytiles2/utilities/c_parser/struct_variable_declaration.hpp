@@ -21,7 +21,7 @@ namespace porytiles2 {
  * @endcode
  *
  * The parser extracts the struct type name and variable name. The initializer body contents are not captured as only
- * the variable name is needed for tileset discovery. This is used by ProjectTilesetNameProvider to extract tileset
+ * the variable name is needed for tileset discovery. This is used by ProjectTilesetMetadataProvider to extract tileset
  * names from headers.h files.
  *
  * @invariant struct_type_ is never empty

@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <map>
+#include <set>
 #include <string>
 #include <vector>
 
@@ -230,6 +231,20 @@ ChainableResult<bool> ProjectTilesetMetadataProvider::has_animations(const std::
 {
     PT_TRY_ASSIGN_PASS_ERR(metadata, metadata_for(tileset_name), bool);
     return metadata.has_animations();
+}
+
+ChainableResult<std::set<std::string>> ProjectTilesetMetadataProvider::tilesets() const
+{
+    if (const auto ensure_result = ensure_metadata_parsed(project_root_, metadata_parsed_, tileset_metadata_, format_);
+        !ensure_result.has_value()) {
+        return ChainableResult<std::set<std::string>>{FormattableError{"Failed to enumerate tilesets."}, ensure_result};
+    }
+
+    std::set<std::string> names;
+    for (const auto &[tileset_name, metadata] : tileset_metadata_) {
+        names.insert(tileset_name);
+    }
+    return names;
 }
 
 ChainableResult<ProjectTilesetMetadata>

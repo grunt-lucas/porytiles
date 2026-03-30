@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <map>
+#include <set>
 #include <string>
 #include <utility>
 
@@ -41,6 +42,8 @@ class ProjectTilesetMetadataProvider : public TilesetMetadataProvider {
     [[nodiscard]] ChainableResult<bool> is_secondary(const std::string &tileset_name) const override;
 
     [[nodiscard]] ChainableResult<bool> has_animations(const std::string &tileset_name) const override;
+
+    [[nodiscard]] ChainableResult<std::set<std::string>> tilesets() const override;
 
     /**
      * @brief Retrieves metadata for a specific tileset from the struct cache.

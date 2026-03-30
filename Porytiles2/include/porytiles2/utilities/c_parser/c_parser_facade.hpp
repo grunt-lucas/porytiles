@@ -149,7 +149,7 @@ class CParserFacade {
      * Loads the file (if not already loaded), tokenizes it, and extracts struct variable declarations. Returns a vector
      * of StructVariableDeclaration objects containing the struct type and variable names.
      *
-     * This is used by ProjectTilesetNameProvider to extract tileset names from headers.h files like:
+     * This is used by ProjectTilesetMetadataProvider to extract tileset names from headers.h files like:
      * @code
      * const struct Tileset gTileset_General = {
      *     .isCompressed = TRUE,

@@ -183,7 +183,7 @@ class Parser {
      * [const] struct TYPE IDENTIFIER = { ... } [;]
      * @endcode
      *
-     * This is used by ProjectTilesetNameProvider to extract tileset names from headers.h files like:
+     * This is used by ProjectTilesetMetadataProvider to extract tileset names from headers.h files like:
      * @code
      * const struct Tileset gTileset_General = {
      *     .isCompressed = TRUE,

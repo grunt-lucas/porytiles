@@ -1,5 +1,6 @@
 #pragma once
 
+#include <set>
 #include <string>
 
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -53,6 +54,17 @@ class TilesetMetadataProvider {
      * @return ChainableResult containing true if the tileset has animations, false otherwise
      */
     [[nodiscard]] virtual ChainableResult<bool> has_animations(const std::string &tileset_name) const = 0;
+
+    /**
+     * @brief Returns all tileset names known to this provider.
+     *
+     * @details
+     * Enumerates all tilesets available in the backing store. This enables batch operations, validation, and listing
+     * without requiring callers to know tileset names in advance.
+     *
+     * @return ChainableResult containing a set of all tileset names
+     */
+    [[nodiscard]] virtual ChainableResult<std::set<std::string>> tilesets() const = 0;
 };
 
 } // namespace porytiles2
