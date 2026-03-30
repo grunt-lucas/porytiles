@@ -49,7 +49,7 @@ struct PaletteBuildState {
             current = std::get<IndirectPosition>(ref_position);
         }
         else {
-            // Undetermined — reference palette not yet sequentially filled
+            // Undetermined: reference palette not yet sequentially filled
             return std::nullopt;
         }
     }
@@ -69,7 +69,7 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
     // Build per-palette state indexed by hardware index
     std::array<std::optional<PaletteBuildState>, pal::num_pals> states{};
 
-    // === Phase 1: Initialize position maps ===
+    // Phase 1: Initialize position maps
     for (const PackedPalette &packed_pal : packed_pals) {
         const std::size_t hw = packed_pal.hardware_index();
         if (hw >= pal::num_pals) {
@@ -131,7 +131,7 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
     };
     std::vector<AppliedIndirect> applied_indirects;
 
-    // === Phase 2: Apply Indirect links ===
+    // Phase 2: Apply Indirect links
     for (const auto &link : indirect_links) {
         if (!states.at(link.source_pal).has_value()) {
             continue;
@@ -146,13 +146,13 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
         // First-writer-wins: only set Indirect on Undetermined positions (prevents cycles)
         if (std::holds_alternative<UndeterminedPosition>(position)) {
             position = IndirectPosition{link.ref_pal, link.ref_color, link.source_group_index};
-            // Don't record here — Phase 4 will record if resolution succeeds
+            // Don't record here. Phase 4 will record if resolution succeeds.
         }
         else if (std::holds_alternative<IndirectPosition>(position)) {
             const auto &existing = std::get<IndirectPosition>(position);
-            // Compatible: same reference — no actual conflict
+            // Compatible: same reference, no actual conflict
             if (existing.ref_pal_index == link.ref_pal && existing.ref_color == link.ref_color) {
-                // The existing IndirectPosition already satisfies this link — record for post-verification
+                // The existing IndirectPosition already satisfies this link. Record for post-verification
                 // (Phase 4 will only record the winning group, so compatible groups need recording here)
                 applied_indirects.push_back(
                     AppliedIndirect{
@@ -173,9 +173,9 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
             }
         }
         else if (std::holds_alternative<AbsolutePosition>(position)) {
-            // Link dropped: source color is prefilled (locked) — Phase 1 set it to AbsolutePosition.
+            // Link dropped: source color is prefilled (locked). Phase 1 set it to AbsolutePosition.
             // However, if the ref color in the ref palette is also AbsolutePosition at the same slot,
-            // alignment is naturally satisfied — no conflict to report.
+            // alignment is naturally satisfied, so there is no conflict to report.
             bool naturally_aligned = false;
             const auto source_slot = std::get<AbsolutePosition>(position).slot;
             if (states.at(link.ref_pal).has_value()) {
@@ -203,7 +203,7 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
     /*
      * === Phase 3: Sequential fill ALL palettes (skipping Indirect) ===
      *
-     * Every Undetermined color gets an Absolute slot. Indirect colors are left untouched — they'll be resolved in
+     * Every Undetermined color gets an Absolute slot. Indirect colors are left untouched; they'll be resolved in
      * Phase 4. After this phase, all reference colors (which are Undetermined, not Indirect) have stable Absolute
      * positions, enabling Indirect chain resolution.
      */
@@ -355,7 +355,7 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
                 else {
                     panic(
                         "no free slot for eviction in palette " + std::to_string(pal_index) +
-                        ": internal invariant violated — Phase 3 guarantees one free slot per Indirect color");
+                        ": internal invariant violated. Phase 3 guarantees one free slot per Indirect color.");
                 }
             }
 
@@ -369,11 +369,11 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
     }
 
     /*
-     * === Phase 5: Fallback — assign free slots to unresolved Indirect colors ===
+     * === Phase 5: Fallback, assign free slots to unresolved Indirect colors ===
      *
      * Phase 4 may leave colors in IndirectPosition if resolution failed (prefilled destination conflict). These colors
      * still need placement in the final palette, so assign them sequential
-     * free slots — identical to Phase 3's logic but targeting IndirectPosition instead of UndeterminedPosition.
+     * free slots, identical to Phase 3's logic but targeting IndirectPosition instead of UndeterminedPosition.
      */
     for (auto &state_opt : states) {
         if (!state_opt.has_value()) {
@@ -412,7 +412,7 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
         }
     }
 
-    // === Post-resolution verification: detect eviction displacement ===
+    // Post-resolution verification: detect eviction displacement
     if (failure_counts != nullptr) {
         for (const auto &ai : applied_indirects) {
             if (!states.at(ai.source_pal).has_value() || !states.at(ai.ref_pal).has_value()) {
@@ -465,7 +465,7 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
         dedup(failure_counts->post_resolution_mismatch_details);
     }
 
-    // === Phase 6: Build final palettes from resolved positions ===
+    // Phase 6: Build final palettes from resolved positions
     std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> result{};
 
     for (const auto &state_opt : states) {

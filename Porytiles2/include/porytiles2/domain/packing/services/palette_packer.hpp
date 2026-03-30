@@ -131,12 +131,6 @@ struct PalettePacking {
  *
  * The packer delegates the actual algorithm to a PackingStrategy, allowing different algorithms (Best Fusion,
  * Overload-and-Remove) to be used interchangeably.
- *
- * Key features:
- * - **Hints**: Priority tiles assigned before regular tiles
- * - **Prefilled palettes**: Pre-assigned palette slots (e.g., from primary tileset when compiling secondary, fixed
- * slots for DNS window colors, etc.)
- * - **Strategy pattern**: Pluggable algorithms for different trade-offs
  */
 class PalettePacker {
   public:

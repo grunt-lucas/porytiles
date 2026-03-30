@@ -108,7 +108,7 @@ ChainableResult<PackingOutput> BestFusionStrategy::pack(const PackingInput &inpu
         }
 
         // Try to find ANY palette that can fit (even without good overlap).
-        // Sibling avoidance is intentionally not applied here — packing success takes priority over sharing.
+        // Sibling avoidance is intentionally not applied here. Packing success takes priority over sharing.
         for (std::size_t i = 0; i < output.pals_.size(); ++i) {
             if (output.pals_[i].can_fit(tile.color_set())) {
                 output.pals_[i].add_tile(tile);

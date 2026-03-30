@@ -130,36 +130,36 @@ struct AlignmentFailureCounts {
  * materialize output. The @c TileSharingAlignment::optimal mode will use a separate CSP-based algorithm and will not
  * call this function.
  *
- * The multi-phase approach — sequential fill skipping Indirect colors, then resolving Indirect chains to Absolute
- * positions — is inspired by the Indirection resolution in the @c assign_palettes function from borytiles by
+ * The multi-phase approach (sequential fill skipping Indirect colors, then resolving Indirect chains to Absolute
+ * positions) is inspired by the Indirection resolution in the @c assign_palettes function from borytiles by
  * ishax-kos (https://github.com/ishax-kos/borytiles), specifically its @c compilation.rs module. Porytiles2
  * separates the phases more explicitly and adds eviction logic for slot conflicts with non-prefilled colors.
  *
- * **Phase 1 — Initialize position maps**: For each palette, slot 0 gets its prefilled or default color. Prefilled
+ * **Phase 1: Initialize position maps.** For each palette, slot 0 gets its prefilled or default color. Prefilled
  * non-wildcard slots become AbsolutePosition. Remaining colors from the PackedPalette start as UndeterminedPosition.
  *
- * **Phase 2 — Apply Indirect links**: For each IndirectLink, if the source color is still Undetermined, set it to
+ * **Phase 2: Apply Indirect links.** For each IndirectLink, if the source color is still Undetermined, set it to
  * IndirectPosition{ref_pal, ref_color}. Already-Absolute or already-Indirect colors are skipped (first-writer-wins
  * prevents cycles). No-op when @p indirect_links is empty.
  *
- * **Phase 3 — Sequential fill (skip Indirect)**: For each palette, collect slots already used by Absolute positions.
- * Assign each remaining Undetermined color to the next free slot as Absolute. Indirect colors are skipped — they
+ * **Phase 3: Sequential fill (skip Indirect).** For each palette, collect slots already used by Absolute positions.
+ * Assign each remaining Undetermined color to the next free slot as Absolute. Indirect colors are skipped; they
  * don't compete for slots. After this phase, all reference colors (which are Undetermined, not Indirect) have stable
  * Absolute positions, enabling Indirect chain resolution in Phase 4.
  *
- * **Phase 4 — Resolve Indirect chains with eviction**: For each Indirect color, follow the chain
+ * **Phase 4: Resolve Indirect chains with eviction.** For each Indirect color, follow the chain
  * ref_pal[ref_color] until hitting an Absolute position. Cap at @c pal::num_pals iterations for cycle detection
- * (panics on cycle or broken chain — both are internal invariant violations). Place the color at the resolved slot.
- * If the target slot is occupied by a non-prefilled color, evict the occupant to the next free slot (panics if no
- * free slot exists — Phase 3 guarantees one free slot per Indirect color). If the slot conflicts with a prefilled
+ * (panics on cycle or broken chain, both of which are internal invariant violations). Place the color at the resolved
+ * slot. If the target slot is occupied by a non-prefilled color, evict the occupant to the next free slot (panics if no
+ * free slot exists; Phase 3 guarantees one free slot per Indirect color). If the slot conflicts with a prefilled
  * position, skip (best-effort). No-op when @p indirect_links is empty.
  *
- * **Phase 5 — Fallback fill for unresolved Indirects**: Any Indirect colors that failed resolution in Phase 4
+ * **Phase 5: Fallback fill for unresolved Indirects.** Any Indirect colors that failed resolution in Phase 4
  * (prefilled destination conflict) are assigned sequential free slots, identical to Phase 3's logic but targeting
  * IndirectPosition instead of UndeterminedPosition. Ensures all colors get placed even if Indirect alignment fails.
  * No-op when @p indirect_links is empty.
  *
- * **Phase 6 — Build final palettes**: Materializes all AbsolutePosition colors into Palette<Rgba32> output objects.
+ * **Phase 6: Build final palettes.** Materializes all AbsolutePosition colors into Palette<Rgba32> output objects.
  * Places prefilled slots first, then all resolved colors at their Absolute positions.
  *
  * The sequential fill iteration order matches the existing @c for_each_color + @c color_map path from the old

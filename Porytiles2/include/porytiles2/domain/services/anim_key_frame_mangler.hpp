@@ -38,7 +38,7 @@ struct PixelMangleChange {
  * When a tile is mangled to make it unique, this struct records the exact changes made: which tile was modified and
  * which pixels were changed. This information is needed to backport the changes to the tiles.png image.
  *
- * Each TileMangleRecord targets a distinct tile_index — no two records share the same tile_index.
+ * Each TileMangleRecord targets a distinct tile_index. No two records share the same tile_index.
  * This invariant is guaranteed by mangle_duplicates, which visits each tile at most once.
  * A record contains one or more pixel changes (single-pixel mangles are most common, but multi-pixel
  * mangles are used as a fallback when single-pixel swaps are insufficient).

@@ -111,31 +111,16 @@ class Image {
         pixels_[row * width_ + col] = pixel;
     }
 
-    /**
-     * @brief Gets the width of this image in pixels.
-     *
-     * @return The width of this image in pixels.
-     */
     [[nodiscard]] std::size_t width() const
     {
         return width_;
     }
 
-    /**
-     * @brief Gets the height of this image in pixels.
-     *
-     * @return The height of this image in pixels.
-     */
     [[nodiscard]] std::size_t height() const
     {
         return height_;
     }
 
-    /**
-     * @brief Gets the size of this image in pixels.
-     *
-     * @return The size of this image in pixels.
-     */
     [[nodiscard]] std::size_t size() const
     {
         return pixels_.size();

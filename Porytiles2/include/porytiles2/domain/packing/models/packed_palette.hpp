@@ -41,77 +41,33 @@ class PackedPalette {
         return hardware_index_ <=> other.hardware_index_;
     }
 
-    /**
-     * @brief Gets the palette's hardware index.
-     *
-     * @return The hardware palette index
-     */
     [[nodiscard]] std::size_t hardware_index() const
     {
         return hardware_index_;
     }
 
-    /**
-     * @brief Gets the accumulated color set in this palette.
-     *
-     * @return A const reference to the ColorSet
-     */
     [[nodiscard]] const ColorSet &color_set() const
     {
         return color_set_;
     }
 
-    /**
-     * @brief Gets the list of tile IDs assigned to this palette.
-     *
-     * @return A const reference to the vector of tile IDs (PackableTile::Id variants)
-     */
     [[nodiscard]] const std::vector<PackableTile::Id> &assigned_tile_ids() const
     {
         return assigned_tile_ids_;
     }
 
-    /**
-     * @brief Gets the number of colors currently in this palette.
-     *
-     * @return The number of colors
-     */
     [[nodiscard]] std::size_t color_count() const;
 
-    /**
-     * @brief Gets the multiplicity count for a specific color in this palette.
-     *
-     * @details
-     * Returns the number of tiles in this palette that contain the given color. This is an O(1) operation using the
-     * cached color counts array.
-     *
-     * @param color_idx The color index to query (0-255)
-     * @return The number of tiles containing this color
-     */
     [[nodiscard]] std::size_t color_multiplicity(std::size_t color_idx) const
     {
         return cached_per_color_multiplicity_[color_idx];
     }
 
-    /**
-     * @brief Gets the cached color counts array.
-     *
-     * @details
-     * Returns a reference to the internal array tracking how many tiles contain each color. Useful for computing
-     * weighted metrics efficiently without rebuilding the multiplicity map.
-     *
-     * @return A const reference to the color counts array
-     */
     [[nodiscard]] const std::array<std::size_t, num_colors> &color_counts() const
     {
         return cached_per_color_multiplicity_;
     }
 
-    /**
-     * @brief Gets the number of remaining color slots.
-     *
-     * @return The remaining capacity
-     */
     [[nodiscard]] std::size_t remaining_capacity() const;
 
     /**

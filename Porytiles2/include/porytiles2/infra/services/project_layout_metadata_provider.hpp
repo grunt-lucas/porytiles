@@ -51,14 +51,6 @@ class ProjectLayoutMetadataProvider : public LayoutMetadataProvider {
 
     [[nodiscard]] ChainableResult<std::set<std::string>> layout_ids() const override;
 
-    /**
-     * @brief Gets the layouts table label symbol.
-     *
-     * @details
-     * Parses layouts.json if not already cached and returns the top-level @c layouts_table_label field.
-     *
-     * @return The layouts table label for the project
-     */
     [[nodiscard]] ChainableResult<std::string> layouts_table_label() const;
 
     /**

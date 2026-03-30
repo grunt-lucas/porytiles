@@ -29,14 +29,6 @@ namespace porytiles2 {
  * out both intrinsically transparent pixels (alpha=0) and extrinsically transparent pixels (e.g., magenta for Rgba32).
  * Each unique color that passes the transparency filter is assigned the next available sequential index.
  *
- * Key features:
- * - True bidirectional lookup (color -> index and index -> color)
- * - Sequential index assignment starting from 0
- * - Automatic filtering of transparent pixels during construction
- * - Deduplication of colors across multiple tiles
- * - Efficient lookup via std::map in both directions
- * - Generic support for any pixel type satisfying SupportsTransparency concept
- *
  * @tparam PixelType The pixel color type, must satisfy SupportsTransparency concept
  *
  * Example usage:

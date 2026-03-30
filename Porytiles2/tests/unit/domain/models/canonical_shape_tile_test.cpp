@@ -369,7 +369,7 @@ TEST(CanonicalShapeTileTests, SymmetricShapeFlippedSameColorsProduceSameCanonica
     EXPECT_EQ(canonical_a.colors(), canonical_b.colors());
 
     // The color tiebreaker selects the same canonical form for both, so one tile reaches it via identity and the
-    // other via hflip — their flip flags must be opposite
+    // other via hflip, so their flip flags must be opposite
     EXPECT_NE(canonical_a.h_flip(), canonical_b.h_flip());
 }
 

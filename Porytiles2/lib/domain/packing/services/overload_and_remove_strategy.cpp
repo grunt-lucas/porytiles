@@ -83,7 +83,7 @@ struct TileInfo {
 
     // If best cost equals tile size (no overlap benefit), return nullopt to create new palette.
     // This happens when all colors in the tile are new to the palette (each color contributes 1.0).
-    // Skip this check when force_assignment is true — the caller wants a palette regardless.
+    // Skip this check when force_assignment is true, since the caller wants a palette regardless.
     if (!force_assignment && best_idx.has_value() && best_cost >= static_cast<double>(info.tile.color_count())) {
         return std::nullopt;
     }
@@ -221,7 +221,7 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::run_multi_start(
         }
     }
 
-    // All attempts failed — return the first attempt's error (most informative)
+    // All attempts failed. Return the first attempt's error (most informative).
     return first_result;
 }
 

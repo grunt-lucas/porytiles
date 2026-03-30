@@ -214,7 +214,7 @@ TEST_F(AnimKeyFrameManglerTests, shouldNotMangleIntoCollisionWithExistingCanonic
     const auto original_tile = create_two_color_tile(1, 2); // Red corners, green fill
     std::vector<PixelTile<IndexPixel>> tiles;
     tiles.push_back(original_tile);
-    tiles.push_back(original_tile); // Duplicate — forces a mangle
+    tiles.push_back(original_tile); // Duplicate, forces a mangle
 
     // Create the tile that a naive mangle would produce:
     // The mangler tries pixel 0 first (corner at index 0) and swaps color 1 (red)

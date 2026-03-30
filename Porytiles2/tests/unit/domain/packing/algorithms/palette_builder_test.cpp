@@ -248,7 +248,7 @@ TEST(PaletteBuilderTests, PrefilledSourceColor_LinkDropped_CounterIncremented)
     std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> prefilled_pals{};
     prefilled_pals.at(1) = prefilled;
 
-    // Link: green in pal 1 follows red in pal 0 — but green is prefilled, so this should be dropped
+    // Link: green in pal 1 follows red in pal 0, but green is prefilled, so this should be dropped
     std::vector<IndirectLink> links = {
         IndirectLink{
             .source_pal = 1,
@@ -286,7 +286,7 @@ TEST(PaletteBuilderTests, PrefilledSourceColor_NaturallyAligned_NoConflictRecord
 {
     // Both source (blue, pal 1) and ref (red, pal 0) are prefilled at slot 4.
     // Link: blue→red. Since both are AbsolutePosition at the same slot, alignment is
-    // naturally satisfied — no prefilled source conflict should be recorded.
+    // naturally satisfied. No prefilled source conflict should be recorded.
     auto color_map = make_color_map({red, blue});
 
     // Palette 0 has red
@@ -338,7 +338,7 @@ TEST(PaletteBuilderTests, PrefilledSourceColor_NaturallyAligned_NoConflictRecord
     AlignmentFailureCounts fc{};
     auto result = build_all_output_palettes(packed_pals, prefilled_pals, color_map, transparent, links, &fc);
 
-    // No conflicts should be recorded — alignment is naturally satisfied
+    // No conflicts should be recorded. Alignment is naturally satisfied
     EXPECT_EQ(fc.prefilled_source_conflict_details.size(), 0u);
     EXPECT_EQ(fc.first_writer_wins_details.size(), 0u);
     EXPECT_EQ(fc.prefilled_destination_conflict_details.size(), 0u);
@@ -430,7 +430,7 @@ TEST(PaletteBuilderTests, PrefilledDestinationConflict_CounterIncremented_Fallba
 TEST(PaletteBuilderTests, CompatibleFWW_NoFalsePositive)
 {
     // Two IndirectLinks target the same color (red in pal 0) with identical ref_pal/ref_color (blue in pal 1).
-    // The existing IndirectPosition already satisfies both groups — no conflict should be recorded.
+    // The existing IndirectPosition already satisfies both groups. No conflict should be recorded.
     auto color_map = make_color_map({red, blue});
 
     PackedPalette packed0{0};
@@ -473,7 +473,7 @@ TEST(PaletteBuilderTests, CompatibleFWW_NoFalsePositive)
     AlignmentFailureCounts fc{};
     auto result = build_all_output_palettes(packed_pals, prefilled_pals, color_map, transparent, links, &fc);
 
-    // Compatible links — no conflict
+    // Compatible links, no conflict
     EXPECT_EQ(fc.first_writer_wins_details.size(), 0u);
     EXPECT_EQ(fc.total(), 0u);
 
@@ -751,7 +751,7 @@ TEST(PaletteBuilderTests, NoDisplacement_MismatchEmpty)
     AlignmentFailureCounts fc{};
     build_all_output_palettes(packed_pals, prefilled_pals, color_map, transparent, links, &fc);
 
-    // No mismatches — slots should match perfectly
+    // No mismatches. Slots should match perfectly
     EXPECT_TRUE(fc.post_resolution_mismatch_details.empty());
     EXPECT_EQ(fc.total(), 0u);
 }

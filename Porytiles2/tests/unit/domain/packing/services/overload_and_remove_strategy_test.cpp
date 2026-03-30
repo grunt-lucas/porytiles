@@ -337,14 +337,14 @@ TEST(OverloadAndRemoveStrategyTest, SingleFfdOnlyOneAttempt)
 {
     /*
      * With single_ffd, only one FFD attempt should be made regardless of max_attempts.
-     * If FFD fails, the result should be an error — no retries.
+     * If FFD fails, the result should be an error. No retries.
      */
     auto tile_a = make_regular_tile(0, {1, 2, 3, 4});
     auto tile_b = make_regular_tile(1, {3, 4, 5, 6});
     auto tile_c = make_regular_tile(2, {5, 6, 7, 8});
     auto tile_d = make_regular_tile(3, {7, 8, 1, 2});
 
-    // 2 palettes, capacity=6 — same tight scenario as MultiStartFindsSolution
+    // 2 palettes, capacity=6, same tight scenario as MultiStartFindsSolution
     auto input = make_input({tile_a, tile_b, tile_c, tile_d}, n_palettes_available(2), 6);
 
     // Even though max_attempts=100, single_ffd should only try once
@@ -495,7 +495,7 @@ TEST(OverloadAndRemoveStrategyTest, SingleConfigModeFailsOnHardInput)
     auto tile_a = make_regular_tile(0, {1, 2, 3, 4, 5});
     auto tile_b = make_regular_tile(1, {6, 7, 8, 9, 10});
 
-    // 1 palette, capacity=4 — impossible (first tile alone needs 5 > 4)
+    // 1 palette, capacity=4. Impossible (first tile alone needs 5 > 4)
     auto input = make_input({tile_a, tile_b}, n_palettes_available(1), 4);
 
     OverloadAndRemoveStrategy strategy{1, 42, ShuffleStrategy::single_ffd};
@@ -515,7 +515,7 @@ TEST(OverloadAndRemoveStrategyTest, PresetMatrixModeHandlesHardInput)
     auto tile_c = make_regular_tile(2, {5, 6, 7, 8});
     auto tile_d = make_regular_tile(3, {7, 8, 1, 2});
 
-    // 2 palettes, capacity=6 — valid solution exists but requires right ordering
+    // 2 palettes, capacity=6. Valid solution exists but requires right ordering
     auto input = make_input({tile_a, tile_b, tile_c, tile_d}, n_palettes_available(2), 6);
 
     // Default-constructed strategy uses preset matrix mode

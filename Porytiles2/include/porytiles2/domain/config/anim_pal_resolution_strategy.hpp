@@ -24,7 +24,7 @@ namespace porytiles2 {
  * @details
  * When decompiling animation tiles, the decompiler needs to know which tileset palette to use for
  * converting indexed pixels to RGBA. This enum determines the strategy used to find that palette.
- * The strategy is applied directly — it drives the palette resolution from the start, rather than
+ * The strategy is applied directly. It drives the palette resolution from the start, rather than
  * being a fallback.
  *
  */

@@ -25,30 +25,13 @@ class ArtifactKey {
      */
     explicit ArtifactKey(std::string key) : key_{std::move(key)} {}
 
-    /**
-     * @brief Gets the underlying string value.
-     *
-     * @return The wrapped string value
-     */
     [[nodiscard]] const std::string &key() const
     {
         return key_;
     }
 
-    /**
-     * @brief Equality comparison operator.
-     *
-     * @param other The other ArtifactKey to compare with
-     * @return True if the keys are equal, false otherwise
-     */
     [[nodiscard]] bool operator==(const ArtifactKey &other) const = default;
 
-    /**
-     * @brief Three-way comparison operator for ordered containers.
-     *
-     * @param other The other ArtifactKey to compare with
-     * @return The comparison result (strong ordering)
-     */
     [[nodiscard]] auto operator<=>(const ArtifactKey &other) const = default;
 
   private:
@@ -60,12 +43,6 @@ class ArtifactKey {
 // Hash specialization for std::unordered_map support
 template <>
 struct std::hash<porytiles2::ArtifactKey> {
-    /**
-     * @brief Hash function for ArtifactKey.
-     *
-     * @param key The ArtifactKey to hash
-     * @return Hash value for the key
-     */
     std::size_t operator()(const porytiles2::ArtifactKey &key) const noexcept
     {
         return std::hash<std::string>{}(key.key());

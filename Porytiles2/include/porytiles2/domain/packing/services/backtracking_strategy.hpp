@@ -30,7 +30,7 @@ namespace porytiles2 {
  * Based on Porytiles1's palette_assignment.cpp, with two key improvements:
  *
  * 1. **Authoritative DFS subset shortcut.** When a tile's colors are already a subset of some palette, Porytiles1 had
- *    no general subset shortcut for primary tilesets — it processed the tile as a normal candidate. Our implementation
+ *    no general subset shortcut for primary tilesets. It processed the tile as a normal candidate. Our implementation
  *    detects the subset case and immediately recurses without modification. Critically, the result is returned directly
  *    (no fallthrough to the candidate loop). A non-authoritative version that fell through caused exponential blowup:
  *    the covering palette appeared as the first candidate (union is a no-op), re-exploring the same subtree. At K

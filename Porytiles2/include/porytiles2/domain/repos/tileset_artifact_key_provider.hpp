@@ -57,12 +57,6 @@ class TilesetArtifactKeyProvider {
     [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_porymap_anim_frame(
         const std::string &tileset_name, const std::string &anim_name, const std::string &frame_name) const = 0;
 
-    /**
-     * @brief Returns the key for Porymap animation parameters.
-     *
-     * @param tileset_name The name of the tileset.
-     * @return Key for the Porymap animation parameters.
-     */
     [[nodiscard]] virtual ChainableResult<ArtifactKey>
     key_for_porymap_anim_params(const std::string &tileset_name) const = 0;
 

@@ -62,33 +62,17 @@ class AnimFrame {
         tiles_ = std::move(t);
     }
 
-    /**
-     * @brief Adds a tile to the end of this frame's tile list.
-     *
-     * @param tile The tile to add
-     */
     void add_tile(PixelTile<PixelType> tile)
     {
         tiles_.push_back(std::move(tile));
     }
 
-    /**
-     * @brief Returns the number of tiles in this frame.
-     *
-     * @return The tile count
-     */
     [[nodiscard]] std::size_t tile_count() const
     {
         return tiles_.size();
     }
 
-    /**
-     * @brief Returns the tile at the specified index.
-     *
-     * @param index The tile index
-     * @pre index must be less than tile_count()
-     * @return Reference to the tile at the specified index
-     */
+    // @pre: index must be less than tile_count()
     [[nodiscard]] const PixelTile<PixelType> &tile_at(std::size_t index) const
     {
         return tiles_.at(index);

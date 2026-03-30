@@ -224,8 +224,8 @@ AssignResult assign_depth_first(
      * Authoritative subset shortcut (improvement over Porytiles1).
      *
      * If the tile's colors are already a subset of some palette, the tile is satisfied without adding
-     * any new colors. We recurse immediately and return the result directly — no fallthrough to the
-     * candidate loop.
+     * any new colors. We recurse immediately and return the result directly (no fallthrough to the
+     * candidate loop).
      *
      * Why authoritative? If skipping the tile fails (remaining tiles can't be packed), trying explicit
      * candidate assignments can only make things worse:
@@ -262,7 +262,7 @@ AssignResult assign_depth_first(
 
             /*
              * Heuristic: check if this palette likely contains a sibling by testing whether any sibling's color set
-             * is a subset of the palette's accumulated colors. This is an approximation — false positives are possible
+             * is a subset of the palette's accumulated colors. This is an approximation; false positives are possible
              * when unrelated tiles contribute the same colors. False positives only cause suboptimal candidate ordering
              * (deprioritizing a palette unnecessarily), not incorrect packing.
              */
@@ -334,7 +334,7 @@ AssignResult assign_depth_first(
  *
  * Improvement over Porytiles1: when ALL candidates for a tile have zero intersection (no palette has
  * any color overlap), Porytiles1 routed them to the high queue via a `sawAssignmentWithIntersection`
- * flag that stayed false. We preserve this behavior — zero-intersection candidates only go to the low
+ * flag that stayed false. We preserve this behavior: zero-intersection candidates only go to the low
  * queue after we've seen at least one candidate with overlap. This prevents starvation when a tile
  * has entirely unique colors (common for early tiles assigned to empty palettes).
  */
@@ -510,7 +510,7 @@ build_packing_output(const std::vector<ColorSet> &solution_colors, const SearchC
 
     // Assign each tile to the first palette whose solution colors are a superset
     for (const auto &tile : ctx.sorted_tiles) {
-        // Skip prefilled palette system tiles — they were already added above
+        // Skip prefilled palette system tiles (already added above)
         if (tile.is_prefilled_palette()) {
             continue;
         }

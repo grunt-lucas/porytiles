@@ -56,7 +56,7 @@ shape_tile_from_pixel_tile(const PixelTile<PixelType> &pixel_tile, TransparencyP
  * @brief Analyzes a collection of pixel tiles and groups them by canonical shape for tile sharing analysis.
  *
  * @details
- * This algorithm detects color-isomorphic tiles — tiles that share the same geometric structure (ShapeMask layout)
+ * This algorithm detects color-isomorphic tiles, i.e. tiles that share the same geometric structure (ShapeMask layout)
  * but have different color assignments. These are candidates for tile sharing via palette slot alignment.
  *
  * The shape-based grouping approach is inspired by borytiles by ishax-kos
@@ -72,7 +72,7 @@ shape_tile_from_pixel_tile(const PixelTile<PixelType> &pixel_tile, TransparencyP
  * 4. Within each group, collects members with their color mappings and flip flags
  * 5. Returns only groups with 2+ members that have distinct color assignments
  *
- * Groups where all members have identical colors are excluded — they represent exact duplicates, not sharing
+ * Groups where all members have identical colors are excluded. They represent exact duplicates, not sharing
  * candidates.
  *
  * @tparam PixelType The pixel type, must support extrinsic transparency

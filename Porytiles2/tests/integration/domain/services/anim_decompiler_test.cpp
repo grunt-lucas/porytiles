@@ -192,7 +192,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectCrossRangeExactDuplica
     ASSERT_TRUE(result.has_value()) << "Decompilation should succeed with mangle strategy";
 
     // The key frame tile should have been mangled to differ from the external tile
-    // We just verify decompilation succeeded — the mangler was invoked
+    // We just verify decompilation succeeded. The mangler was invoked
 }
 
 TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectCrossRangeFlipEquivalentDuplicate)
@@ -293,8 +293,8 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldNotFalsePositiveWhenNoDuplic
 TEST_F(AnimDecompilerDuplicateDetectionTests, shouldHandleMixedCrossRangeAndIntraAnimationDuplicates)
 {
     // tile_a: non-animation tile
-    // tile_b: animation tile 0 — exact duplicate of tile_a (cross-range)
-    // tile_c: animation tile 1 — h-flip of tile_b (intra-animation flip-equivalent)
+    // tile_b: animation tile 0, exact duplicate of tile_a (cross-range)
+    // tile_c: animation tile 1, h-flip of tile_b (intra-animation flip-equivalent)
     const auto tile_a = create_asymmetric_tile(1, 2);
     const auto tile_b = tile_a;                   // exact cross-range duplicate
     const auto tile_c = tile_a.flip(true, false); // intra-animation flip-equivalent to tile_b
@@ -423,7 +423,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimDuplicateWhen
     const auto ocean_tile = water_tile; // identical to water's
     const auto unrelated_tile = create_two_color_tile(3, 4);
 
-    // tiles.png: only contains unrelated_tile and ocean's tile — water's tile is NOT here
+    // tiles.png: only contains unrelated_tile and ocean's tile, water's tile is NOT here
     const auto tiles_png = build_tiles_png({unrelated_tile, ocean_tile});
 
     std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}};
@@ -495,8 +495,6 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldNotMiscategorizeInterAnimAsC
     EXPECT_TRUE(error_text.find("non-animation tile") == std::string::npos)
         << "Error should NOT mention 'non-animation tile', got: " << error_text;
 }
-
-// --- Multi-Palette Animation Decompilation Tests ---
 
 namespace {
 
@@ -602,14 +600,14 @@ TEST_F(AnimDecompilerMultiPalTests, shouldDecompileMultiPalAnimationWithScanLoca
 
 TEST_F(AnimDecompilerMultiPalTests, shouldErrorWhenSubtileNotReferencedInMetatiles)
 {
-    // Two subtiles but only tile 1 is referenced in metatiles — tile 2 is unresolved
+    // Two subtiles but only tile 1 is referenced in metatiles. Tile 2 is unresolved
     const auto tile_a = create_two_color_tile(1, 2);
     const auto tile_b = create_two_color_tile(3, 4);
     const auto tile_c = create_two_color_tile(5, 6);
 
     const auto tiles_png = build_tiles_png({tile_a, tile_b, tile_c});
 
-    // Only tile 1 referenced — tile 2 will be unresolved
+    // Only tile 1 referenced. Tile 2 will be unresolved
     std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}};
 
     auto anim = create_test_animation_no_pal("test_anim", 1, 2, {tile_b, tile_c});
@@ -688,8 +686,6 @@ TEST_F(AnimDecompilerMultiPalTests, shouldMangleMultiPalDuplicateKeyFrameTiles)
     ASSERT_EQ(result.value().key_frame().tiles().size(), 2);
 }
 
-// --- Per-Subtile AnimConfig Strategy Tests ---
-
 TEST_F(AnimDecompilerMultiPalTests, shouldApplyPerSubtileExplicitPalStrategies)
 {
     // Two subtiles: tile 1 and tile 2. Neither is referenced in metatiles.
@@ -731,7 +727,7 @@ TEST_F(AnimDecompilerMultiPalTests, shouldApplyPerSubtileExplicitPalStrategies)
 
 TEST_F(AnimDecompilerMultiPalTests, shouldFallBackToGlobalWhenAnimNotInConfigs)
 {
-    // Animation is not in the configs map at all — should use global strategy
+    // Animation is not in the configs map at all, should use global strategy
     const auto tile_a = create_two_color_tile(1, 2);
     const auto tile_b = create_two_color_tile(3, 4);
 
@@ -743,7 +739,7 @@ TEST_F(AnimDecompilerMultiPalTests, shouldFallBackToGlobalWhenAnimNotInConfigs)
     auto anim = create_test_animation_no_pal("test_anim", 1, 1, {tile_b});
     auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
-    // anim_configs is empty — should use global (scan_local_metatiles)
+    // anim_configs is empty, should use global (scan_local_metatiles)
     config_.per_anim_overrides = PerAnimOverrides{};
 
     AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), pal_printer_.get()};
@@ -793,7 +789,7 @@ TEST_F(AnimDecompilerMultiPalTests, shouldFallBackToGlobalForNulloptEntries)
 
 TEST_F(AnimDecompilerMultiPalTests, shouldErrorWhenPalResolutionStrategiesSizeMismatch)
 {
-    // AnimConfig has 1 strategy entry but animation has 2 subtiles — should error
+    // AnimConfig has 1 strategy entry but animation has 2 subtiles, should error
     const auto tile_a = create_two_color_tile(1, 2);
     const auto tile_b = create_two_color_tile(3, 4);
     const auto tile_c = create_two_color_tile(5, 6);
@@ -805,7 +801,7 @@ TEST_F(AnimDecompilerMultiPalTests, shouldErrorWhenPalResolutionStrategiesSizeMi
     auto anim = create_test_animation_no_pal("test_anim", 1, 2, {tile_b, tile_c});
     auto component = build_porymap_component(pals_, metatiles, tiles_png);
 
-    // Wrong number of strategies — should cause a hard error
+    // Wrong number of strategies, should cause a hard error
     PerAnimOverride anim_cfg;
     anim_cfg.anim_name = "test_anim";
     anim_cfg.per_tile_pal_resolution_strategies = {AnimPalResolutionStrategy::palette_00};
@@ -855,8 +851,6 @@ TEST_F(AnimDecompilerMultiPalTests, shouldHandleMixedScanAndExplicitPerSubtile)
     const auto &key_tile_1 = result.value().key_frame().tile_at(1);
     EXPECT_EQ(key_tile_1.at(0), palette_1_.at(5));
 }
-
-// --- Per-Anim Strategy (Middle Tier) Tests ---
 
 TEST_F(AnimDecompilerMultiPalTests, shouldApplyPerAnimStrategy)
 {
@@ -975,7 +969,7 @@ class AnimDecompilerKeyFrameStrategyTests : public AnimDecompilerDuplicateDetect
 
 TEST_F(AnimDecompilerKeyFrameStrategyTests, perAnimMangleOverridesGlobalError)
 {
-    // Global is error, but per-anim override is mangle — decompilation should succeed
+    // Global is error, but per-anim override is mangle. Decompilation should succeed
     const auto shared_tile = create_two_color_tile(1, 2);
     const auto tiles_png = build_tiles_png({shared_tile, shared_tile});
 
@@ -999,7 +993,7 @@ TEST_F(AnimDecompilerKeyFrameStrategyTests, perAnimMangleOverridesGlobalError)
 
 TEST_F(AnimDecompilerKeyFrameStrategyTests, perAnimErrorOverridesGlobalMangle)
 {
-    // Global is mangle, but per-anim override is error — decompilation should fail
+    // Global is mangle, but per-anim override is error. Decompilation should fail
     const auto shared_tile = create_two_color_tile(1, 2);
     const auto tiles_png = build_tiles_png({shared_tile, shared_tile});
 
@@ -1023,7 +1017,7 @@ TEST_F(AnimDecompilerKeyFrameStrategyTests, perAnimErrorOverridesGlobalMangle)
 
 TEST_F(AnimDecompilerKeyFrameStrategyTests, nulloptPerAnimFallsBackToGlobal)
 {
-    // Per-anim key_frame_resolution_strategy is nullopt — should fall back to global mangle
+    // Per-anim key_frame_resolution_strategy is nullopt, should fall back to global mangle
     const auto shared_tile = create_two_color_tile(1, 2);
     const auto tiles_png = build_tiles_png({shared_tile, shared_tile});
 
@@ -1044,8 +1038,6 @@ TEST_F(AnimDecompilerKeyFrameStrategyTests, nulloptPerAnimFallsBackToGlobal)
 
     EXPECT_TRUE(result.has_value()) << "Nullopt per-anim should fall back to global mangle";
 }
-
-// --- AnimMultiPalSubtileResolutionStrategy Tests ---
 
 TEST_F(AnimDecompilerMultiPalTests, shouldWarnAndPickLowestPalWhenMultiPalStrategyIsWarning)
 {

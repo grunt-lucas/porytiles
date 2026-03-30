@@ -32,59 +32,28 @@ class PaletteIndex {
 
     auto operator<=>(const PaletteIndex &) const = default;
 
-    /**
-     * @brief Implicit conversion to const reference of the underlying value.
-     *
-     * @details
-     * Allows ColorIndex to be used transparently where the underlying type is expected.
-     *
-     * @return A const reference to the stored value
-     */
     // NOLINTNEXTLINE
     operator const std::size_t &() const &
     {
         return value_;
     }
 
-    /**
-     * @brief Implicit conversion to rvalue reference of the underlying value.
-     *
-     * @details
-     * Enables move semantics when the ColorIndex is an rvalue.
-     *
-     * @return An rvalue reference to the stored value
-     */
     // NOLINTNEXTLINE
     operator std::size_t &&() &&
     {
         return std::move(value_);
     }
 
-    /**
-     * @brief Gets a const reference to the underlying value.
-     *
-     * @return A const reference to the stored value
-     */
     [[nodiscard]] const std::size_t &value() const &
     {
         return value_;
     }
 
-    /**
-     * @brief Gets an rvalue reference to the underlying value.
-     *
-     * @return An rvalue reference to the stored value
-     */
     [[nodiscard]] std::size_t &&value() &&
     {
         return std::move(value_);
     }
 
-    /**
-     * @brief Returns the underlying index value.
-     *
-     * @return The color index value
-     */
     [[nodiscard]] std::size_t index() const
     {
         return value_;

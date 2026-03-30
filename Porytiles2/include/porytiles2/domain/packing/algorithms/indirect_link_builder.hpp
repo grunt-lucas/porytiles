@@ -37,7 +37,7 @@ namespace porytiles2 {
  * @param shape_groups The analyzed shape groups from ShapeGroupAnalyzer.
  * @param tile_pal_assignments Pre-computed mapping from combined tile index to hardware palette index. Built by the
  *     packer from the authoritative packing assignments, ensuring consistency with eligibility determination.
- * @param base_pals Base palettes built with sequential fill only (no links) — used for slot mapping during reference
+ * @param base_pals Base palettes built with sequential fill only (no links), used for slot mapping during reference
  *     member selection heuristic.
  * @param prefilled_pals The original prefilled input palettes (to detect locked slots during reference selection).
  * @return Vector of IndirectLink instructions, potentially empty if no sharing opportunities exist.

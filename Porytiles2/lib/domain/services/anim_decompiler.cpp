@@ -256,7 +256,7 @@ using namespace porytiles2;
     const TilePrinter &tile_printer,
     std::optional<std::size_t> &internal_png_pal_cache)
 {
-    // Check pal_N strategies first — direct palette index assignment
+    // Check pal_N strategies first: direct palette index assignment
     const auto explicit_pal = extract_pal_index(strategy.value());
     if (explicit_pal.has_value()) {
         diag.remark(
@@ -298,7 +298,7 @@ using namespace porytiles2;
         if (found_for_subtile.size() > 1) {
             /*
              * A single tile index can be referenced by multiple metatile entries with different palette indices.
-             * This is valid GBA behavior — the hardware selects palette per metatile entry, not per tile.
+             * This is valid GBA behavior. The hardware selects palette per metatile entry, not per tile.
              *
              * The multi_pal_strategy config determines how to handle this case.
              */
@@ -672,9 +672,9 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
 
     /*
      * Build per-subtile palette resolution strategies using a three-tier cascade:
-     *   1. Per-tile (per_tile_pal_resolution_strategies[i]) — most specific
-     *   2. Per-anim (pal_resolution_strategy) — middle tier
-     *   3. Global (global_anim_pal_resolution_strategy) — least specific fallback
+     *   1. Per-tile (per_tile_pal_resolution_strategies[i]): most specific
+     *   2. Per-anim (pal_resolution_strategy): middle tier
+     *   3. Global (global_anim_pal_resolution_strategy): least specific fallback
      */
     std::vector<ConfigValue<AnimPalResolutionStrategy>> per_subtile_strategies;
     per_subtile_strategies.reserve(tile_count);
@@ -715,14 +715,14 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
             }
         }
         else {
-            // AnimConfig exists but has no per-tile strategies — use effective default for all subtiles
+            // AnimConfig exists but has no per-tile strategies. Use effective default for all subtiles
             for (std::size_t i = 0; i < tile_count; ++i) {
                 per_subtile_strategies.push_back(effective_default);
             }
         }
     }
     else {
-        // No AnimConfig for this animation — use global for all subtiles
+        // No AnimConfig for this animation. Use global for all subtiles
         for (std::size_t i = 0; i < tile_count; ++i) {
             per_subtile_strategies.push_back(global_anim_pal_resolution_strategy);
         }

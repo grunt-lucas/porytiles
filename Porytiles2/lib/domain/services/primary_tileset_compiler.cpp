@@ -714,7 +714,7 @@ CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> 
 
     /*
      * Use the packer's authoritative palette assignment when available (optimize mode). This ensures tile sharing
-     * alignment is respected — the packer and alignment system chose specific palettes for each tile, and re-deriving
+     * alignment is respected. The packer and alignment system chose specific palettes for each tile, and re-deriving
      * via match_or_best could pick a different palette that breaks sharing slot alignment.
      *
      * Falls back to match_or_best for tiles not in the packer's assignments (e.g., locked/patch modes, or tiles
@@ -1091,7 +1091,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
             panic("anim '" + anim_name + "' has no frames");
         }
 
-        // Build keyframe data (common to all modes — needed for pal_indices even if we skip tile placement)
+        // Build keyframe data (common to all modes, needed for pal_indices even if we skip tile placement)
         PT_TRY_ASSIGN_PASS_ERR(keyframe_data, pipeline_helper_build_keyframe_data(anim_name, anim), void);
 
         const std::size_t tile_count = keyframe_data.tiles.size();
@@ -1107,7 +1107,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
         if (effective_linking == FrameLinking::manual && tiles_edit_mode_ != ArtifactEditMode::optimize) {
             /*
              * Manual frame linking in patch/locked mode: use the tile_offset from anim.json directly.
-             * Don't search tiles.png — the keyframes may not be findable via color matching. Whatever
+             * Don't search tiles.png. The keyframes may not be findable via color matching. Whatever
              * is already at that offset in tiles.png will be dynamically overwritten by the game's
              * animation DMA code at runtime anyway.
              */

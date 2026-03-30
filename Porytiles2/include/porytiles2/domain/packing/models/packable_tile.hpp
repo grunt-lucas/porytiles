@@ -141,88 +141,40 @@ class PackableTile {
      */
     PackableTile(Id id, ColorSet color_set);
 
-    /**
-     * @brief Gets the tile's identifier variant.
-     *
-     * @return A const reference to the Id variant
-     */
     [[nodiscard]] const Id &id() const
     {
         return id_;
     }
 
-    /**
-     * @brief Gets the hint name for hint tiles.
-     *
-     * @pre is_hint() must be true
-     * @return The hint name
-     */
+    // @pre: is_hint() must be true
     [[nodiscard]] const std::string &hint_name() const;
 
-    /**
-     * @brief Gets the prefilled palette index for prefilled palette tiles.
-     *
-     * @pre is_prefilled_palette() must be true
-     * @return The prefilled palette index
-     */
+    // @pre: is_prefilled_palette() must be true
     [[nodiscard]] std::size_t prefilled_index() const;
 
-    /**
-     * @brief Gets the tile index for regular tiles.
-     *
-     * @pre is_regular() must be true
-     * @return The regular tile index
-     */
+    // @pre: is_regular() must be true
     [[nodiscard]] std::size_t regular_index() const;
 
-    /**
-     * @brief Checks if this is a hint tile.
-     *
-     * @return true if the tile was created from a palette hint
-     */
     [[nodiscard]] bool is_hint() const
     {
         return std::holds_alternative<HintId>(id_);
     }
 
-    /**
-     * @brief Checks if this is a prefilled palette tile.
-     *
-     * @return true if the tile was created from a prefilled palette
-     */
     [[nodiscard]] bool is_prefilled_palette() const
     {
         return std::holds_alternative<PrefilledPaletteId>(id_);
     }
 
-    /**
-     * @brief Checks if this is a regular tile.
-     *
-     * @return true if the tile is a regular input tile
-     */
     [[nodiscard]] bool is_regular() const
     {
         return std::holds_alternative<RegularId>(id_);
     }
 
-    /**
-     * @brief Gets the set of colors present in this tile.
-     *
-     * @return A const reference to the ColorSet
-     */
     [[nodiscard]] const ColorSet &color_set() const
     {
         return color_set_;
     }
 
-    /**
-     * @brief Gets the number of colors in this tile.
-     *
-     * @details
-     * This is a convenience method that returns the count of colors in the tile's ColorSet.
-     *
-     * @return The number of colors in the tile
-     */
     [[nodiscard]] std::size_t color_count() const;
 
     /**

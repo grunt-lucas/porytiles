@@ -17,10 +17,10 @@ namespace porytiles2 {
  * other C constructs.
  */
 enum class TokenType : std::uint8_t {
-    // === End of input ===
+    // End of input
     end_of_file,
 
-    // === Preprocessor directives ===
+    // Preprocessor directives
     hash,       // #
     kw_define,  // define
     kw_undef,   // undef (reserved for future)
@@ -35,13 +35,13 @@ enum class TokenType : std::uint8_t {
     kw_pragma,  // pragma (reserved for future)
     kw_enum,    // enum (for enum declarations)
 
-    // === Literals ===
+    // Literals
     identifier,      // variable/macro names
     integer_literal, // decimal, hex, octal, binary integers
     string_literal,  // "..." strings
     char_literal,    // '...' character literals (reserved for future)
 
-    // === Operators ===
+    // Operators
     plus,      // +
     minus,     // -
     star,      // *
@@ -58,7 +58,7 @@ enum class TokenType : std::uint8_t {
     question,  // ? (reserved for future)
     colon,     // : (reserved for future)
 
-    // === Compound operators ===
+    // Compound operators
     less_less,           // <<
     greater_greater,     // >>
     ampersand_ampersand, // && (reserved for future)
@@ -68,7 +68,7 @@ enum class TokenType : std::uint8_t {
     less_equal,          // <= (reserved for future)
     greater_equal,       // >= (reserved for future)
 
-    // === Delimiters ===
+    // Delimiters
     left_paren,    // (
     right_paren,   // )
     left_brace,    // { (reserved for future)
@@ -79,7 +79,7 @@ enum class TokenType : std::uint8_t {
     semicolon,     // ; (reserved for future)
     period,        // . (for designated initializers)
 
-    // === Special ===
+    // Special
     newline, // Significant for preprocessor directives
     unknown, // Unrecognized character
 };
