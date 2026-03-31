@@ -5,7 +5,7 @@
 #include <string>
 
 #include "porytiles2/domain/algorithms/diagnostic_stencils.hpp"
-#include "porytiles2/domain/services/primary_tileset_compiler.hpp"
+#include "porytiles2/domain/services/tileset_compiler.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/config/unwrap_config.hpp"
 

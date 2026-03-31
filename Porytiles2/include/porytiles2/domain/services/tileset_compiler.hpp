@@ -15,11 +15,16 @@
 namespace porytiles2 {
 
 /**
- * @brief Service that compiles a primary Tileset.
+ * @brief Service that compiles a Tileset (primary or secondary).
+ *
+ * @details
+ * For primary compilation, call @c compile() with @p paired_primary set to @c nullptr (the default). For secondary
+ * compilation, pass a pointer to the compiled paired primary Tileset. The compiler uses the paired primary's tiles and
+ * palettes to produce correct global indices in the secondary's metatile references.
  */
-class PrimaryTilesetCompiler {
+class TilesetCompiler {
   public:
-    explicit PrimaryTilesetCompiler(
+    explicit TilesetCompiler(
         gsl::not_null<const DomainConfig *> config,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag,
@@ -29,7 +34,15 @@ class PrimaryTilesetCompiler {
     {
     }
 
-    [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> compile(const Tileset &tileset) const;
+    /**
+     * @brief Compiles the given Tileset, producing a new Tileset with compiled Porymap assets.
+     *
+     * @param tileset The Tileset to compile.
+     * @param paired_primary The compiled paired primary Tileset for secondary compilation, or @c nullptr for primary.
+     * @return A new compiled Tileset on success, or an error chain on failure.
+     */
+    [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>>
+    compile(const Tileset &tileset, const Tileset *paired_primary = nullptr) const;
 
   private:
     const DomainConfig *config_;

@@ -17,7 +17,7 @@ namespace porytiles2 {
  *
  * @details
  * This service creates a sample PorytilesTilesetComponent with some very basic layer art and animations. The
- * resulting component is ready to be compiled by PrimaryTilesetCompiler to produce minimal valid Porymap assets. Unlike
+ * resulting component is ready to be compiled by TilesetCompiler to produce minimal valid Porymap assets. Unlike
  * import workflows that read existing assets, this creates a tileset from nothing.
  *
  * This is a concrete class (not a virtual interface) since all creation logic uses pure domain objects without any

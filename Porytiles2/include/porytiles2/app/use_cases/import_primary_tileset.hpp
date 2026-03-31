@@ -8,9 +8,9 @@
 #include "porytiles2/domain/config/domain_config.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/porytiles_tileset_manager.hpp"
-#include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/domain/services/primary_tileset_decompiler.hpp"
 #include "porytiles2/domain/services/primary_tileset_importer.hpp"
+#include "porytiles2/domain/services/tileset_compiler.hpp"
 #include "porytiles2/domain/services/tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 

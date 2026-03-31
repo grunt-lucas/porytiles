@@ -26,7 +26,7 @@
  * @details
  * This module provides validation functionality for tileset compile job input.
  *
- * @see PrimaryTilesetCompiler Main consumer of the functions defined here.
+ * @see TilesetCompiler Main consumer of the functions defined here.
  */
 
 namespace porytiles2 {
@@ -209,7 +209,7 @@ inline void report_color_counts(
  * @param metatiles The metatiles to validate.
  * @return Empty result on success, or FormattableError describing the violation.
  *
- * @see PrimaryTilesetCompiler Main consumer of this validation function.
+ * @see TilesetCompiler Main consumer of this validation function.
  */
 [[nodiscard]] inline ChainableResult<void> validate_metatile_count(
     const TilesetCompileValidatorServices &services,

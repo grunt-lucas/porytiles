@@ -10,9 +10,9 @@
 #include "porytiles2/app/use_cases/decompile_primary_tileset.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/palette_printer.hpp"
-#include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/domain/services/primary_tileset_decompiler.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
+#include "porytiles2/domain/services/tileset_compiler.hpp"
 #include "porytiles2/infra/cli/cli_option_registration.hpp"
 #include "porytiles2/infra/cli/cli_option_storage.hpp"
 #include "porytiles2/infra/config/cli_option_provider.hpp"
@@ -148,7 +148,7 @@ class DecompileTilesetCommand final : public Command {
 
         // Setup primary importer and compiler
         PrimaryTilesetDecompiler decompiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
-        PrimaryTilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
+        TilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
 
         // Setup behavior map provider
         HeaderBehaviorMapProvider behavior_map_provider{

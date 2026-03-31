@@ -13,11 +13,11 @@ The goal is to generalize the existing primary-only compilation pipeline to hand
 
 ---
 
-## Phase 1: Rename Compiler and Add Paired Primary Parameter
+## ~~Phase 1: Rename Compiler and Add Paired Primary Parameter~~
 
 **Goal**: Rename `PrimaryTilesetCompiler` to `TilesetCompiler`, add optional `paired_primary` parameter. No behavior change — all existing tests pass. No new types needed.
 
-### 1a. Rename `PrimaryTilesetCompiler` → `TilesetCompiler`
+### ~~1a. Rename `PrimaryTilesetCompiler` → `TilesetCompiler`~~
 
 - Rename header: `primary_tileset_compiler.hpp` → `tileset_compiler.hpp`
 - Rename impl: `primary_tileset_compiler.cpp` → `tileset_compiler.cpp`
@@ -54,7 +54,7 @@ Inside `CompilerTask`, store `const Tileset *paired_primary_` and derive everyth
 
 ## Phase 2: Compiler Secondary Logic — Workspace & Palettes
 
-**Goal**: Teach `CompilerTask` to handle secondary compilation via the `CompilationContext`.
+**Goal**: Teach `CompilerTask` to handle secondary compilation via the paired primary tileset pointer.
 
 ### Core idea: "Global index" workspace
 

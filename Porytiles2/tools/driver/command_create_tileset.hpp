@@ -10,9 +10,9 @@
 #include "porytiles2/app/use_cases/create_primary_tileset.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/palette_printer.hpp"
-#include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/domain/services/primary_tileset_creator.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
+#include "porytiles2/domain/services/tileset_compiler.hpp"
 #include "porytiles2/infra/cli/cli_option_registration.hpp"
 #include "porytiles2/infra/cli/cli_option_storage.hpp"
 #include "porytiles2/infra/config/cli_option_provider.hpp"
@@ -216,7 +216,7 @@ class CreateTilesetCommand final : public Command {
 
         // Setup creator and compiler
         PrimaryTilesetCreator creator{&config, &behavior_map_provider};
-        PrimaryTilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
+        TilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
 
         // Create the use case
         CreatePrimaryTileset create_use_case{

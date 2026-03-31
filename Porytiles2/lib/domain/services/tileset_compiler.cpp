@@ -1,4 +1,4 @@
-#include "porytiles2/domain/services/primary_tileset_compiler.hpp"
+#include "porytiles2/domain/services/tileset_compiler.hpp"
 
 #include <array>
 #include <format>
@@ -142,15 +142,16 @@ class CompilerTask {
   public:
     CompilerTask(
         const Tileset &tileset,
+        const Tileset *paired_primary,
         const TextFormatter &format,
         const UserDiagnostics &diag,
         const TilePrinter &tile_printer,
         const PalettePrinter &pal_printer,
         const DomainConfig &config)
-        : tileset_{tileset}, format_{format}, diag_{diag}, tile_printer_{tile_printer}, pal_printer_{pal_printer},
-          config_{config}, extrinsic_transparency_{}, num_pals_in_primary_{}, num_pals_total_{},
-          num_metatiles_in_primary_{}, num_tiles_in_primary_{}, num_tiles_per_metatile_{}, pal_hints_enabled_{},
-          pal_hints_{}
+        : tileset_{tileset}, paired_primary_{paired_primary}, format_{format}, diag_{diag}, tile_printer_{tile_printer},
+          pal_printer_{pal_printer}, config_{config}, extrinsic_transparency_{}, num_pals_in_primary_{},
+          num_pals_total_{}, num_metatiles_in_primary_{}, num_tiles_in_primary_{}, num_tiles_per_metatile_{},
+          pal_hints_enabled_{}, pal_hints_{}
     {
     }
 
@@ -196,6 +197,7 @@ class CompilerTask {
 
     // Dependencies (injected in ctor)
     const Tileset &tileset_;
+    const Tileset *paired_primary_;
     const TextFormatter &format_;
     const UserDiagnostics &diag_;
     const TilePrinter &tile_printer_;
@@ -1695,9 +1697,10 @@ void CompilerTask::pipeline_helper_emit_tile_limit_error(std::size_t tile_index,
 
 namespace porytiles2 {
 
-ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const Tileset &tileset) const
+ChainableResult<std::unique_ptr<Tileset>>
+TilesetCompiler::compile(const Tileset &tileset, const Tileset *paired_primary) const
 {
-    CompilerTask task{tileset, *format_, *diag_, *tile_printer_, *pal_printer_, *config_};
+    CompilerTask task{tileset, paired_primary, *format_, *diag_, *tile_printer_, *pal_printer_, *config_};
     return task.run();
 }
 

@@ -8,8 +8,8 @@
 #include "porytiles2/domain/config/domain_config.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/porytiles_tileset_manager.hpp"
-#include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/domain/services/primary_tileset_creator.hpp"
+#include "porytiles2/domain/services/tileset_compiler.hpp"
 #include "porytiles2/domain/services/tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
@@ -47,7 +47,7 @@ class CreatePrimaryTileset {
      */
     CreatePrimaryTileset(
         gsl::not_null<const PrimaryTilesetCreator *> creator,
-        gsl::not_null<const PrimaryTilesetCompiler *> compiler,
+        gsl::not_null<const TilesetCompiler *> compiler,
         gsl::not_null<const TilesetRepo *> tileset_repo,
         gsl::not_null<const TilesetMetadataProvider *> metadata_provider,
         gsl::not_null<const PorytilesTilesetManager *> tileset_manager,
@@ -76,7 +76,7 @@ class CreatePrimaryTileset {
 
   private:
     const PrimaryTilesetCreator *creator_;
-    const PrimaryTilesetCompiler *compiler_;
+    const TilesetCompiler *compiler_;
     const TilesetRepo *tileset_repo_;
     const TilesetMetadataProvider *metadata_provider_;
     const PorytilesTilesetManager *tileset_manager_;
