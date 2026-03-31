@@ -481,8 +481,7 @@ ChainableResult<void> CompilerTask::pipeline_step_setup_working_data()
          * the end, we don't remove it.
          */
         const auto size_in_tiles = tileset_.porymap_component().tiles_png().size_in_tiles();
-        tiles_workspace_ =
-            std::make_unique<TilesPngWorkspace>(tileset_.porymap_component().tiles_png(), size_in_tiles);
+        tiles_workspace_ = std::make_unique<TilesPngWorkspace>(tileset_.porymap_component().tiles_png(), size_in_tiles);
     }
     else if (tiles_edit_mode_ == ArtifactEditMode::patch) {
         // TODO: here, should we compute the size and match the size like above?
@@ -577,9 +576,9 @@ ChainableResult<void> CompilerTask::pipeline_step_match_tiles_pals()
         case TileAssignmentResult::Status::tile_limit_reached:
             matched_all_tiles = false;
             {
-                const std::size_t user_visible_tile_limit = is_secondary()
-                    ? (num_tiles_total_.value() - num_tiles_in_primary_.value())
-                    : num_tiles_in_primary_.value();
+                const std::size_t user_visible_tile_limit =
+                    is_secondary() ? (num_tiles_total_.value() - num_tiles_in_primary_.value())
+                                   : num_tiles_in_primary_.value();
                 pipeline_helper_emit_tile_limit_error(i, user_visible_tile_limit);
             }
             break;
@@ -622,9 +621,8 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
     for (auto &[anim_name, anim] : new_porytiles_component->anims()) {
         if (auto maybe_offset = anim_tile_matcher_.tile_offset_for(anim_name); maybe_offset.has_value()) {
             AnimParams updated_params = anim.params();
-            const std::size_t local_offset = is_secondary()
-                ? maybe_offset.value() - num_tiles_in_primary_.value()
-                : maybe_offset.value();
+            const std::size_t local_offset =
+                is_secondary() ? maybe_offset.value() - num_tiles_in_primary_.value() : maybe_offset.value();
             updated_params.tile_offset(local_offset);
             anim.params(std::move(updated_params));
         }
@@ -883,7 +881,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
      */
     const std::size_t color_count_limit =
         is_secondary() ? (num_pals_total_.value() - num_pals_in_primary_.value()) * (pal::max_size - 1)
-                        : num_pals_in_primary_.value() * (pal::max_size - 1);
+                       : num_pals_in_primary_.value() * (pal::max_size - 1);
     PT_TRY_ASSIGN_CHAIN_ERR(
         color_index_map,
         pipeline_helper_build_color_index_map(pal_hints_.value(), color_count_limit),
@@ -1303,6 +1301,22 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
             anim_name, anim, anim_offsets.at(anim_name), extrinsic_transparency_, anim_pal_indices.at(anim_name));
     }
 
+    /*
+     * Primary animations are intentionally NOT registered in the matcher for secondary compilation.
+     * When a secondary metatile tile matches a primary animation key frame:
+     * 1. The anim matcher has no match (only secondary anims registered)
+     * 2. The tile falls through to workspace IndexPixel lookup
+     * 3. Primary key frame tiles are pre-loaded in workspace at their correct global indices
+     * 4. first_occurrence_of() returns the correct index -> metatile entry links to the animated VRAM slot
+     *
+     * This works reliably because:
+     * - Optimize mode deduplicates tiles -> only one copy at the animation index
+     * - Primary palettes are locked -> same palette matched -> correct IndexPixel representation
+     *
+     * Once secondary patch/locked modes are added, we'll need to think through this more carefully. Do we need to
+     * register anything in the matcher?
+     */
+
     return {};
 }
 
@@ -1394,9 +1408,7 @@ void CompilerTask::pipeline_helper_compile_animations()
 
         // 6. Set params with updated tile_offset/tile_count
         AnimParams params = source_anim.params();
-        const std::size_t local_offset = is_secondary()
-            ? tile_offset - num_tiles_in_primary_.value()
-            : tile_offset;
+        const std::size_t local_offset = is_secondary() ? tile_offset - num_tiles_in_primary_.value() : tile_offset;
         params.tile_offset(local_offset);
         params.tile_count(tile_count);
         compiled_anim.params(std::move(params));

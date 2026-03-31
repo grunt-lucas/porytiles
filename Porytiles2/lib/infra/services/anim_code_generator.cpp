@@ -84,9 +84,9 @@ generate_frame_array(const std::string &tileset_name, const DynamicCasedName &an
     const std::string func_name =
         std::format("QueueAnimTiles_{}{}_{}", anim::porytiles_managed_prefix, tileset_name, pascal_anim_name);
 
-    const std::string tile_offset_expr = is_primary
-        ? std::format("TILE_OFFSET_4BPP({})", params.tile_offset())
-        : std::format("TILE_OFFSET_4BPP(NUM_TILES_IN_PRIMARY + {})", params.tile_offset());
+    const std::string tile_offset_expr =
+        is_primary ? std::format("TILE_OFFSET_4BPP({})", params.tile_offset())
+                   : std::format("TILE_OFFSET_4BPP(NUM_TILES_IN_PRIMARY + {})", params.tile_offset());
 
     out << std::format("static void {}(u16 timer)\n", func_name);
     out << "{\n";

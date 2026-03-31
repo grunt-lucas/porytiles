@@ -138,11 +138,10 @@ extract_tile_offset(const std::vector<Token> &tokens, const TextFormatter &forma
         }
 
         // Secondary pattern: TILE_OFFSET_4BPP(NUM_TILES_IN_PRIMARY + <integer>)
-        if (i + 5 < tokens.size() && tokens[i].is(TokenType::identifier) &&
-            tokens[i].text() == "TILE_OFFSET_4BPP" && tokens[i + 1].is(TokenType::left_paren) &&
-            tokens[i + 2].is(TokenType::identifier) && tokens[i + 2].text() == "NUM_TILES_IN_PRIMARY" &&
-            tokens[i + 3].is(TokenType::plus) && tokens[i + 4].is(TokenType::integer_literal) &&
-            tokens[i + 5].is(TokenType::right_paren)) {
+        if (i + 5 < tokens.size() && tokens[i].is(TokenType::identifier) && tokens[i].text() == "TILE_OFFSET_4BPP" &&
+            tokens[i + 1].is(TokenType::left_paren) && tokens[i + 2].is(TokenType::identifier) &&
+            tokens[i + 2].text() == "NUM_TILES_IN_PRIMARY" && tokens[i + 3].is(TokenType::plus) &&
+            tokens[i + 4].is(TokenType::integer_literal) && tokens[i + 5].is(TokenType::right_paren)) {
             return tokens[i + 4].int_value();
         }
     }

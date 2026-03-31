@@ -233,9 +233,7 @@ TilesPngWorkspace::TilesPngWorkspace(const Image<IndexPixel> &img, std::size_t c
 }
 
 TilesPngWorkspace TilesPngWorkspace::for_secondary(
-    const Image<IndexPixel> &primary_tiles_png,
-    std::size_t primary_tile_count,
-    std::size_t total_capacity)
+    const Image<IndexPixel> &primary_tiles_png, std::size_t primary_tile_count, std::size_t total_capacity)
 {
     const PlainTextFormatter formatter{};
 

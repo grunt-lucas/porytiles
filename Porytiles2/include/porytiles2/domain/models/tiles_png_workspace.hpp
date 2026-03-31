@@ -160,9 +160,7 @@ class TilesPngWorkspace {
      * @return A workspace with primary tiles pre-loaded and cursor positioned for secondary insertion
      */
     [[nodiscard]] static TilesPngWorkspace for_secondary(
-        const Image<IndexPixel> &primary_tiles_png,
-        std::size_t primary_tile_count,
-        std::size_t total_capacity);
+        const Image<IndexPixel> &primary_tiles_png, std::size_t primary_tile_count, std::size_t total_capacity);
 
     /**
      * @brief Attempts to insert a non-transparent tile into the workspace at the current cursor position.
@@ -344,8 +342,8 @@ class TilesPngWorkspace {
      * animation C code. This method reserves a contiguous block of slots for animation tiles and moves the cursor past
      * the reserved region.
      *
-     * For primary tilesets, @p start_offset is 1 (after the transparent tile 0). For secondary tilesets, @p start_offset
-     * is @c num_tiles_in_primary + 1 (after the secondary transparent tile at @c num_tiles_in_primary).
+     * For primary tilesets, @p start_offset is 1 (after the transparent tile 0). For secondary tilesets, @p
+     * start_offset is @c num_tiles_in_primary + 1 (after the secondary transparent tile at @c num_tiles_in_primary).
      *
      * After calling this method:
      * - Indices @p start_offset through @p start_offset + @p anim_tile_count - 1 (inclusive) are reserved
