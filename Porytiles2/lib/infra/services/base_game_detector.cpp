@@ -22,12 +22,12 @@ ChainableResult<BaseGame> BaseGameDetector::detect() const
      * backslash-continuation lines).
      *
      * Decision tree based on 4 boolean markers:
-     *   METATILE_ATTRIBUTE_BEHAVIOR       → pokefirered (enum-based attributes)
-     *   METATILE_ATTR_BEHAVIOR_MASK       → emerald-family (#define-based)
-     *     + MAPGRID_METATILE_ID_SHIFT     → emerald or expansion
-     *       + swapPalettes               → pokeemerald-expansion
-     *       - swapPalettes               → pokeemerald
-     *     - MAPGRID_METATILE_ID_SHIFT     → pokeruby
+     *   METATILE_ATTRIBUTE_BEHAVIOR       -> pokefirered (enum-based attributes)
+     *   METATILE_ATTR_BEHAVIOR_MASK       -> emerald-family (#define-based)
+     *     + MAPGRID_METATILE_ID_SHIFT     -> emerald or expansion
+     *       + swapPalettes               -> pokeemerald-expansion
+     *       - swapPalettes               -> pokeemerald
+     *     - MAPGRID_METATILE_ID_SHIFT     -> pokeruby
      */
     std::ifstream file{global_fieldmap_path};
     if (!file) {

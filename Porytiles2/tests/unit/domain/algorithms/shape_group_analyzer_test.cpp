@@ -172,7 +172,7 @@ TEST(ShapeTileFromPixelTileTests, ConvertsCorrectly)
     auto tile = make_l_tile(red, blue);
     auto shape_tile = shape_tile_from_pixel_tile(tile, [](const Rgba32 &c) { return c.is_transparent(rgba_magenta); });
 
-    // The L-tile has 2 colors → 2 mask entries
+    // The L-tile has 2 colors -> 2 mask entries
     EXPECT_EQ(shape_tile.colors().size(), 2);
     EXPECT_FALSE(shape_tile.is_transparent());
 }

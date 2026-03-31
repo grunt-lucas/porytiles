@@ -19,10 +19,10 @@ namespace porytiles2 {
  * project targets: pokeemerald, pokefirered, pokeruby, or pokeemerald-expansion. Detection is based on content
  * heuristics within the header file:
  *
- * - @c METATILE_ATTRIBUTE_BEHAVIOR (enum-based) → pokefirered
- * - @c METATILE_ATTR_BEHAVIOR_MASK + @c MAPGRID_METATILE_ID_SHIFT + @c swapPalettes → pokeemerald-expansion
- * - @c METATILE_ATTR_BEHAVIOR_MASK + @c MAPGRID_METATILE_ID_SHIFT → pokeemerald
- * - @c METATILE_ATTR_BEHAVIOR_MASK only → pokeruby
+ * - @c METATILE_ATTRIBUTE_BEHAVIOR (enum-based) -> pokefirered
+ * - @c METATILE_ATTR_BEHAVIOR_MASK + @c MAPGRID_METATILE_ID_SHIFT + @c swapPalettes -> pokeemerald-expansion
+ * - @c METATILE_ATTR_BEHAVIOR_MASK + @c MAPGRID_METATILE_ID_SHIFT -> pokeemerald
+ * - @c METATILE_ATTR_BEHAVIOR_MASK only -> pokeruby
  *
  * Emits a diagnostic remark with tag @c "base-game-detection" on successful detection.
  */

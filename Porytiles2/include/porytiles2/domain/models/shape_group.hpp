@@ -14,7 +14,7 @@ namespace porytiles2 {
  *
  * @details
  * Each member records which input tile it corresponds to (via tile_index), its color assignment (the full
- * ShapeMask → PixelType mapping from its ShapeTile), and the flip flags needed to transform the canonical
+ * ShapeMask -> PixelType mapping from its ShapeTile), and the flip flags needed to transform the canonical
  * shape back to this member's original orientation.
  *
  * @tparam PixelType The pixel type stored for each shape region (e.g., Rgba32)

@@ -62,10 +62,10 @@ namespace porytiles2 {
  * @return A new string with the prefix removed, or the original string if prefix was not present
  *
  * @par Examples
- * - `trim_prefix("hello_world", "hello_")` → `"world"`
- * - `trim_prefix("hello_world", "foo")` → `"hello_world"`
- * - `trim_prefix("hello", "hello")` → `""`
- * - `trim_prefix("hello", "hello_world")` → `"hello"`
+ * - `trim_prefix("hello_world", "hello_")` -> `"world"`
+ * - `trim_prefix("hello_world", "foo")` -> `"hello_world"`
+ * - `trim_prefix("hello", "hello")` -> `""`
+ * - `trim_prefix("hello", "hello_world")` -> `"hello"`
  */
 [[nodiscard]] inline std::string trim_prefix(const std::string &str, const std::string &prefix)
 {
@@ -261,9 +261,9 @@ template <typename T>
  * @return A new string in PascalCase format
  *
  * @par Examples
- * - `"hello_world"` → `"HelloWorld"`
- * - `"foo-bar"` → `"FooBar"`
- * - `"already PascalCase"` → `"AlreadyPascalCase"`
+ * - `"hello_world"` -> `"HelloWorld"`
+ * - `"foo-bar"` -> `"FooBar"`
+ * - `"already PascalCase"` -> `"AlreadyPascalCase"`
  */
 [[nodiscard]] inline std::string to_pascal_case(const std::string &s)
 {
@@ -306,10 +306,10 @@ template <typename T>
  * @return A new string in snake_case format
  *
  * @par Examples
- * - `"HelloWorld"` → `"hello_world"`
- * - `"camelCase"` → `"camel_case"`
- * - `"XMLParser"` → `"xml_parser"`
- * - `"already_snake"` → `"already_snake"`
+ * - `"HelloWorld"` -> `"hello_world"`
+ * - `"camelCase"` -> `"camel_case"`
+ * - `"XMLParser"` -> `"xml_parser"`
+ * - `"already_snake"` -> `"already_snake"`
  */
 [[nodiscard]] inline std::string to_snake_case(const std::string &s)
 {
@@ -372,9 +372,9 @@ template <typename T>
  * @return A new string with all alphabetic characters converted to lowercase
  *
  * @par Examples
- * - `"Hello World"` → `"hello world"`
- * - `"UPPERCASE"` → `"uppercase"`
- * - `"MixedCase123"` → `"mixedcase123"`
+ * - `"Hello World"` -> `"hello world"`
+ * - `"UPPERCASE"` -> `"uppercase"`
+ * - `"MixedCase123"` -> `"mixedcase123"`
  */
 [[nodiscard]] inline std::string to_lower_str(const std::string &input)
 {
@@ -413,9 +413,9 @@ template <typename T>
  * @return The short name (e.g., "General"), or the original string if prefix not present
  *
  * @par Examples
- * - `"gTileset_General"` → `"General"`
- * - `"gTileset_Petalburg"` → `"Petalburg"`
- * - `"General"` → `"General"` (no prefix, unchanged)
+ * - `"gTileset_General"` -> `"General"`
+ * - `"gTileset_Petalburg"` -> `"Petalburg"`
+ * - `"General"` -> `"General"` (no prefix, unchanged)
  */
 [[nodiscard]] inline std::string extract_tileset_shorthand(const std::string &tileset_name)
 {
@@ -438,9 +438,9 @@ template <typename T>
  * @return A DynamicCasedName wrapping the short name (e.g., DynamicCasedName{"General"})
  *
  * @par Examples
- * - `"gTileset_General"` → `DynamicCasedName{"General"}`
- * - `"gTileset_Petalburg"` → `DynamicCasedName{"Petalburg"}`
- * - `"General"` → `DynamicCasedName{"General"}` (no prefix, unchanged)
+ * - `"gTileset_General"` -> `DynamicCasedName{"General"}`
+ * - `"gTileset_Petalburg"` -> `DynamicCasedName{"Petalburg"}`
+ * - `"General"` -> `DynamicCasedName{"General"}` (no prefix, unchanged)
  */
 [[nodiscard]] inline DynamicCasedName extract_tileset_cased_name(const std::string &tileset_name)
 {

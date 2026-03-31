@@ -804,7 +804,7 @@ void emit_phase3_diagnostics(
  * @brief Emits the full tile sharing summary.
  *
  * @details
- * Emits detected → eligible → aligned breakdown, partial listings, unaligned groups with per-group failure details,
+ * Emits detected -> eligible -> aligned breakdown, partial listings, unaligned groups with per-group failure details,
  * aggregate failure summary, and actionable suggestions.
  *
  * @param format TextFormatter for building diagnostic output

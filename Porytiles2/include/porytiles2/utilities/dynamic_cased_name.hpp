@@ -38,10 +38,10 @@ class DynamicCasedName {
      *
      * @details
      * Auto-detection uses the following heuristic:
-     * - Has underscores AND uppercase letters → C identifier format
-     * - Has underscores but no uppercase → snake_case
-     * - No underscores but has uppercase → PascalCase
-     * - No underscores and no uppercase → smoosh_case
+     * - Has underscores AND uppercase letters -> C identifier format
+     * - Has underscores but no uppercase -> snake_case
+     * - No underscores but has uppercase -> PascalCase
+     * - No underscores and no uppercase -> smoosh_case
      *
      * @param input The name string to parse.
      */

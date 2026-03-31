@@ -81,7 +81,7 @@ struct MangleResult {
  * visually similar colors that already exist in the tile, making each tile unique.
  *
  * The mangling algorithm:
- * 1. Finds a pixel to modify (prefers corners → edges → interior for minimal visual impact)
+ * 1. Finds a pixel to modify (prefers corners -> edges -> interior for minimal visual impact)
  * 2. Swaps to a similar color that already exists in the tile (no new colors introduced)
  * 3. Verifies the modified tile is unique against all existing tiles
  * 4. Preserves the palette_index (upper 4 bits) for true-color mode compatibility

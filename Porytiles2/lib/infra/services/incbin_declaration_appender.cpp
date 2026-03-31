@@ -92,8 +92,8 @@ generate_tiles_declaration(const std::string &shorthand, const std::string &bin_
  *
  * @details
  * Selects the C type and INCBIN macro based on metatile_attr_size:
- * - 2 → const u16 / INCBIN_U16
- * - 4 → const u32 / INCBIN_U32
+ * - 2 -> const u16 / INCBIN_U16
+ * - 4 -> const u32 / INCBIN_U32
  */
 [[nodiscard]] std::string generate_attributes_declaration(
     const std::string &shorthand,

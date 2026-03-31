@@ -25,8 +25,8 @@ using namespace porytiles2;
 
 /*
  * Pixel priority order for mangling (least visually impactful first)
- * Corners: (0,0), (0,7), (7,0), (7,7) → indices 0, 7, 56, 63
- * Corners: (0,0), (0,7), (7,0), (7,7) → indices 0, 7, 56, 63
+ * Corners: (0,0), (0,7), (7,0), (7,7) -> indices 0, 7, 56, 63
+ * Corners: (0,0), (0,7), (7,0), (7,7) -> indices 0, 7, 56, 63
  * Top edge: 1-6
  * Left edge: 8, 16, 24, 32, 40, 48
  * Right edge: 15, 23, 31, 39, 47, 55

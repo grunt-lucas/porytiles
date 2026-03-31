@@ -93,7 +93,7 @@ analyze_shape_groups(const std::vector<PixelTile<PixelType>> &tiles, const Pixel
         return ShapeTile<PixelType>::compare_shape_only(a, b);
     };
 
-    // Map canonical shape (by geometry only) → list of members
+    // Map canonical shape (by geometry only) -> list of members
     std::map<ShapeTile<PixelType>, std::vector<ShapeGroupMember<PixelType>>, decltype(shape_only_less)> groups(
         shape_only_less);
 

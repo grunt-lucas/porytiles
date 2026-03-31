@@ -19,10 +19,10 @@ namespace porytiles2 {
  * @details
  * MetatilesHeaderProvider scans `src/data/tilesets/metatiles.h` for `gMetatileAttributes_` declaration lines and
  * infers the attribute byte size from the C type used:
- * - All `const u16` → 2 bytes (pokeemerald / pokeruby)
- * - All `const u32` → 4 bytes (pokefirered)
- * - Mixed types → invalid (error)
- * - No matching lines or missing file → not_provided (fall through to next provider)
+ * - All `const u16` -> 2 bytes (pokeemerald / pokeruby)
+ * - All `const u32` -> 4 bytes (pokefirered)
+ * - Mixed types -> invalid (error)
+ * - No matching lines or missing file -> not_provided (fall through to next provider)
  *
  * The file is read lazily on first access and the result is cached.
  */

@@ -13,7 +13,7 @@ namespace {
  * @details
  * Mirrors the word-boundary logic from to_snake_case() in string_utils.hpp: insert a word break before an uppercase
  * character if the previous character was lowercase, OR if the next character is lowercase (to handle acronyms like
- * "XMLParser" → ["xml", "parser"] and "TVTurnedOn" → ["tv", "turned", "on"]).
+ * "XMLParser" -> ["xml", "parser"] and "TVTurnedOn" -> ["tv", "turned", "on"]).
  *
  * @param token The token to split.
  * @return A vector of lowercase words.
