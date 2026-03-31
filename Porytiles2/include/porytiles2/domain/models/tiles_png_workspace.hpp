@@ -163,6 +163,24 @@ class TilesPngWorkspace {
         const Image<IndexPixel> &primary_tiles_png, std::size_t primary_tile_count, std::size_t total_capacity);
 
     /**
+     * @brief Creates a workspace for standalone secondary compilation with no paired primary.
+     *
+     * @details
+     * Creates a workspace with @p total_capacity tiles, all transparent. Positions 0 through
+     * @p primary_tile_count are reserved (transparent placeholders for primary tile slots).
+     * Position @p primary_tile_count is the secondary transparent tile (vanilla convention).
+     * The cursor is set to @p primary_tile_count + 1, ready for secondary tile insertion.
+     * No tiles are registered in canonical_forms_ since there are no primary tiles to deduplicate against.
+     *
+     * @param primary_tile_count Number of primary tile slots to reserve.
+     * @param total_capacity Total workspace capacity (primary + secondary).
+     * @pre @p primary_tile_count must be less than @p total_capacity.
+     * @return A workspace with transparent primary region and cursor positioned for secondary insertion.
+     */
+    [[nodiscard]] static TilesPngWorkspace
+    for_standalone_secondary(std::size_t primary_tile_count, std::size_t total_capacity);
+
+    /**
      * @brief Attempts to insert a non-transparent tile into the workspace at the current cursor position.
      *
      * @details

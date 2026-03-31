@@ -71,8 +71,9 @@ When writing tests for new features or bug fixes, always check coverage to verif
 
 ## Testing with pokeemerald-expansion
 
-A pokeemerald-expansion testbed project is available at `../pokeemerald-expansion` for testing the installed `porytiles2` executable against a real decomp project.
-You can either `cd` into the testbed project or run `porytiles2` with the `--project-root` set to `../pokeemerald-expansion`.
+A `pokeemerald-expansion` testbed project is available at `./pokeemerald-expansion` for testing the installed `porytiles2` executable against a real decomp project.
+You can either `cd` into the testbed project or run `porytiles2` with the `--project-root` set to `./pokeemerald-expansion`.
+There is also a `pokefirered` testbed at `./pokefirered`, and a `pokeemerald` at `./pokeemerald`.
 
 ## Documentation Repositories
 

@@ -258,13 +258,13 @@ params.tile_offset(local_offset);
 
 ---
 
-## Phase Pre-4: Decouple `is_secondary` from `paired_primary` Pointer
+## ~~Phase Pre-4: Decouple `is_secondary` from `paired_primary` Pointer~~
 
 **Goal**: The current compiler uses `paired_primary_ != nullptr` as the sole signal for secondary compilation. This conflates two independent facts: (1) the tileset is secondary, and (2) a real primary is available. `PrimaryPairingMode::off` needs secondary compilation behavior with no primary -- passing `nullptr` would incorrectly trigger primary compilation logic. A synthetic "blank primary" (Null Object) doesn't work either: zeroed palettes pollute the color index map, causing false matches when secondary tiles contain `Rgba(0,0,0,0)`.
 
 **Change**: Add explicit `bool is_secondary` parameter to `compile()`, decoupling the two concerns.
 
-### Pre-4a. Update `TilesetCompiler::compile()` signature
+### ~~Pre-4a. Update `TilesetCompiler::compile()` signature~~
 
 ```c++
 [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>>
@@ -277,7 +277,7 @@ compile(const Tileset &tileset, bool is_secondary = false, const Tileset *paired
 
 Update all existing call sites to pass `/*is_secondary=*/false` explicitly (or rely on default).
 
-### Pre-4b. Update `CompilerTask` internals
+### ~~Pre-4b. Update `CompilerTask` internals~~
 
 Store both `bool is_secondary_` and `const Tileset *paired_primary_` independently:
 - `is_secondary()` -> returns `is_secondary_` (no longer derived from pointer)

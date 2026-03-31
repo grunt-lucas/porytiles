@@ -101,7 +101,7 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
     // 5. Compile the `Tileset`, generating a new modified `Tileset`.
     PT_TRY_ASSIGN_CHAIN_ERR(
         new_tileset,
-        compiler_->compile(*tileset),
+        compiler_->compile(*tileset, /*is_secondary=*/false),
         void,
         "Compilation job failed for '{}'.",
         FormatParam(tileset_name, Style::bold));

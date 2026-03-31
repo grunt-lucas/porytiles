@@ -51,7 +51,7 @@ ChainableResult<void> CreatePrimaryTileset::create(const std::string &tileset_na
     // 4. Compile (generates minimal valid Porymap assets from the minimal Porytiles component)
     PT_TRY_ASSIGN_CHAIN_ERR(
         compiled_tileset,
-        compiler_->compile(*tileset),
+        compiler_->compile(*tileset, /*is_secondary=*/false),
         void,
         "Compilation failed for '{}'.",
         FormatParam(tileset_name, Style::bold));

@@ -142,16 +142,17 @@ class CompilerTask {
   public:
     CompilerTask(
         const Tileset &tileset,
+        bool is_secondary,
         const Tileset *paired_primary,
         const TextFormatter &format,
         const UserDiagnostics &diag,
         const TilePrinter &tile_printer,
         const PalettePrinter &pal_printer,
         const DomainConfig &config)
-        : tileset_{tileset}, paired_primary_{paired_primary}, format_{format}, diag_{diag}, tile_printer_{tile_printer},
-          pal_printer_{pal_printer}, config_{config}, extrinsic_transparency_{}, num_pals_in_primary_{},
-          num_pals_total_{}, num_metatiles_in_primary_{}, num_tiles_in_primary_{}, num_tiles_per_metatile_{},
-          pal_hints_enabled_{}, pal_hints_{}
+        : tileset_{tileset}, is_secondary_{is_secondary}, paired_primary_{paired_primary}, format_{format}, diag_{diag},
+          tile_printer_{tile_printer}, pal_printer_{pal_printer}, config_{config}, extrinsic_transparency_{},
+          num_pals_in_primary_{}, num_pals_total_{}, num_metatiles_in_primary_{}, num_tiles_in_primary_{},
+          num_tiles_per_metatile_{}, pal_hints_enabled_{}, pal_hints_{}
     {
     }
 
@@ -187,6 +188,11 @@ class CompilerTask {
 
     [[nodiscard]] bool is_secondary() const
     {
+        return is_secondary_;
+    }
+
+    [[nodiscard]] bool has_paired_primary() const
+    {
         return paired_primary_ != nullptr;
     }
 
@@ -202,6 +208,7 @@ class CompilerTask {
 
     // Dependencies (injected in ctor)
     const Tileset &tileset_;
+    bool is_secondary_;
     const Tileset *paired_primary_;
     const TextFormatter &format_;
     const UserDiagnostics &diag_;
@@ -490,10 +497,16 @@ ChainableResult<void> CompilerTask::pipeline_step_setup_working_data()
     }
     else if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
         if (is_secondary()) {
-            tiles_workspace_ = std::make_unique<TilesPngWorkspace>(TilesPngWorkspace::for_secondary(
-                paired_primary_->porymap_component().tiles_png(),
-                num_tiles_in_primary_.value(),
-                num_tiles_total_.value()));
+            if (has_paired_primary()) {
+                tiles_workspace_ = std::make_unique<TilesPngWorkspace>(TilesPngWorkspace::for_secondary(
+                    paired_primary_->porymap_component().tiles_png(),
+                    num_tiles_in_primary_.value(),
+                    num_tiles_total_.value()));
+            }
+            else {
+                tiles_workspace_ = std::make_unique<TilesPngWorkspace>(TilesPngWorkspace::for_standalone_secondary(
+                    num_tiles_in_primary_.value(), num_tiles_total_.value()));
+            }
         }
         else {
             tiles_workspace_ = std::make_unique<TilesPngWorkspace>(num_tiles_in_primary_.value());
@@ -692,9 +705,17 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
 
     // Copy palettes to output
     if (is_secondary()) {
-        // Primary palettes from paired primary
-        for (std::size_t i = 0; i < num_pals_in_primary_.value(); i++) {
-            new_porymap_component_->set_pal(i, paired_primary_->porymap_component().pal_at(i));
+        // Primary palette slots
+        if (has_paired_primary()) {
+            for (std::size_t i = 0; i < num_pals_in_primary_.value(); i++) {
+                new_porymap_component_->set_pal(i, paired_primary_->porymap_component().pal_at(i));
+            }
+        }
+        else {
+            // Standalone secondary: zeroed palettes for primary slots
+            for (std::size_t i = 0; i < num_pals_in_primary_.value(); i++) {
+                new_porymap_component_->set_pal(i, Palette<Rgba32, pal::max_size>{});
+            }
         }
         // Secondary palettes from packing result
         for (std::size_t i = num_pals_in_primary_.value(); i < num_pals_total_.value(); i++) {
@@ -912,10 +933,12 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
     packing_params.color_map_ = color_index_map;
     packing_params.extrinsic_transparency_ = extrinsic_transparency_.value();
     if (is_secondary()) {
-        // Lock primary palettes from the compiled paired primary
         std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> prefilled{};
-        for (std::size_t i = 0; i < num_pals_in_primary_.value(); ++i) {
-            prefilled.at(i) = paired_primary_->porymap_component().pal_at(i);
+        if (has_paired_primary()) {
+            // Lock primary palettes from the compiled paired primary
+            for (std::size_t i = 0; i < num_pals_in_primary_.value(); ++i) {
+                prefilled.at(i) = paired_primary_->porymap_component().pal_at(i);
+            }
         }
         // Carry over secondary Porytiles pal overrides (slots >= num_pals_in_primary)
         for (std::size_t i = num_pals_in_primary_.value(); i < pal::num_pals; ++i) {
@@ -1033,7 +1056,7 @@ ChainableResult<ColorIndexMap<Rgba32>> CompilerTask::pipeline_helper_build_color
      * primary palette. These colors don't count against the secondary color budget, so they're added after the limit
      * check.
      */
-    if (is_secondary()) {
+    if (is_secondary() && has_paired_primary()) {
         for (std::size_t i = 0; i < num_pals_in_primary_.value(); ++i) {
             const auto &primary_pal = paired_primary_->porymap_component().pal_at(i);
             color_index_map.add_pal(primary_pal, extrinsic_transparency_.value());
@@ -1811,9 +1834,9 @@ void CompilerTask::pipeline_helper_emit_tile_limit_error(std::size_t tile_index,
 namespace porytiles2 {
 
 ChainableResult<std::unique_ptr<Tileset>>
-TilesetCompiler::compile(const Tileset &tileset, const Tileset *paired_primary) const
+TilesetCompiler::compile(const Tileset &tileset, bool is_secondary, const Tileset *paired_primary) const
 {
-    CompilerTask task{tileset, paired_primary, *format_, *diag_, *tile_printer_, *pal_printer_, *config_};
+    CompilerTask task{tileset, is_secondary, paired_primary, *format_, *diag_, *tile_printer_, *pal_printer_, *config_};
     return task.run();
 }
 

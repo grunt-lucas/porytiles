@@ -300,6 +300,30 @@ TilesPngWorkspace TilesPngWorkspace::for_secondary(
     return workspace;
 }
 
+TilesPngWorkspace
+TilesPngWorkspace::for_standalone_secondary(std::size_t primary_tile_count, std::size_t total_capacity)
+{
+    const PlainTextFormatter formatter{};
+
+    // Precondition: primary_tile_count must be less than total_capacity
+    if (primary_tile_count >= total_capacity) {
+        const auto msg = formatter.format(
+            "primary_tile_count ({}) must be less than total_capacity ({})", primary_tile_count, total_capacity);
+        panic(msg);
+    }
+
+    // Create empty workspace with total_capacity (all transparent, cursor=1)
+    TilesPngWorkspace workspace{total_capacity};
+
+    // No primary tiles to load or register in canonical_forms_.
+    // Position primary_tile_count stays transparent (vanilla secondary tile 0 convention).
+    workspace.cursor_ = primary_tile_count + 1;
+    workspace.anim_start_offset_ = primary_tile_count + 1;
+    workspace.anim_end_offset_ = primary_tile_count + 1;
+
+    return workspace;
+}
+
 std::size_t TilesPngWorkspace::insert_tile(const CanonicalPixelTile<IndexPixel> &tile)
 {
     // Check if we're at capacity
