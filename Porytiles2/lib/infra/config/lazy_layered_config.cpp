@@ -152,6 +152,9 @@ void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, con
     dump_single_config_value(
         out, *format_, "Per-Animation Overrides", per_anim_overrides_provenance_chain(type, scope));
     dump_single_config_value(out, *format_, "Verify Checksums", verify_checksums_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Primary Pairing Mode", primary_pairing_mode_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Primary Pairing Partners", primary_pairing_partners_provenance_chain(type, scope));
     dump_single_config_value(
         out, *format_, "Diagnostic Warnings Exclude", diagnostic_warnings_exclude_provenance_chain(type, scope));
     dump_single_config_value(
@@ -573,6 +576,32 @@ LazyLayeredConfig::verify_checksums_raw(ConfigScopeType type, const std::string 
     });
 }
 
+ChainableResult<ConfigValue<PrimaryPairingMode>>
+LazyLayeredConfig::primary_pairing_mode_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<PrimaryPairingMode>(
+        key, "Primary Pairing Mode", [&type, &scope](const ConfigProvider &provider) {
+            return provider.primary_pairing_mode(type, scope);
+        });
+}
+
+ChainableResult<ConfigValue<std::vector<std::string>>>
+LazyLayeredConfig::primary_pairing_partners_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<std::vector<std::string>>(
+        key, "Primary Pairing Partners", [&type, &scope](const ConfigProvider &provider) {
+            return provider.primary_pairing_partners(type, scope);
+        });
+}
+
 ChainableResult<ConfigValue<std::vector<std::string>>>
 LazyLayeredConfig::diagnostic_warnings_exclude_raw(ConfigScopeType type, const std::string &scope) const
 {
@@ -876,6 +905,20 @@ LazyLayeredConfig::verify_checksums_provenance_chain(ConfigScopeType type, const
 {
     return collect_provenance_chain<bool>(
         [&type, &scope](const ConfigProvider &provider) { return provider.verify_checksums(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<PrimaryPairingMode>>
+LazyLayeredConfig::primary_pairing_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<PrimaryPairingMode>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.primary_pairing_mode(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::vector<std::string>>>
+LazyLayeredConfig::primary_pairing_partners_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::vector<std::string>>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.primary_pairing_partners(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<std::vector<std::string>>>

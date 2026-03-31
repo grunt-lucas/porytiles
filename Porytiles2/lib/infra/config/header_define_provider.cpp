@@ -231,6 +231,20 @@ LayerValue<bool> HeaderDefineProvider::verify_checksums(ConfigScopeType /*type*/
     return LayerValue<bool>::not_provided();
 }
 
+LayerValue<PrimaryPairingMode>
+HeaderDefineProvider::primary_pairing_mode(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<PrimaryPairingMode>::not_provided();
+}
+
+LayerValue<std::vector<std::string>>
+HeaderDefineProvider::primary_pairing_partners(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<std::vector<std::string>>::not_provided();
+}
+
 LayerValue<std::vector<std::string>>
 HeaderDefineProvider::diagnostic_warnings_exclude(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {

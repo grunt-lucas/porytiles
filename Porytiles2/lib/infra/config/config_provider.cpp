@@ -153,6 +153,18 @@ ConfigProvider::verify_checksums([[maybe_unused]] ConfigScopeType type, [[maybe_
     return LayerValue<bool>::not_provided();
 }
 
+LayerValue<PrimaryPairingMode> ConfigProvider::primary_pairing_mode(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<PrimaryPairingMode>::not_provided();
+}
+
+LayerValue<std::vector<std::string>> ConfigProvider::primary_pairing_partners(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::vector<std::string>>::not_provided();
+}
+
 LayerValue<std::vector<std::string>> ConfigProvider::diagnostic_warnings_exclude(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

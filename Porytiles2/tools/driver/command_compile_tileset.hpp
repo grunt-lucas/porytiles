@@ -9,6 +9,7 @@
 #include "fruit/fruit.h"
 
 #include "porytiles2/app/use_cases/compile_primary_tileset.hpp"
+#include "porytiles2/app/use_cases/compile_secondary_tileset.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/palette_printer.hpp"
@@ -40,6 +41,7 @@
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
+#include "porytiles2/infra/services/project_layout_metadata_provider.hpp"
 #include "porytiles2/infra/services/project_porytiles_tileset_manager.hpp"
 #include "porytiles2/infra/services/project_tileset_anims_modifier.hpp"
 #include "porytiles2/infra/services/project_tileset_metadata_writer.hpp"
@@ -156,6 +158,7 @@ class CompileTilesetCommand final : public Command {
 
         // Setup metadata provider (needed by artifact reader for animation param loading)
         ProjectTilesetMetadataProvider metadata_provider{project_root, text_formatter, diag.get()};
+        ProjectLayoutMetadataProvider layout_metadata_provider{project_root, text_formatter, diag.get()};
 
         // Setup Porytiles tileset manager and its dependencies
         ProjectTilesetMetadataWriter metadata_writer{project_root, text_formatter};
@@ -224,11 +227,39 @@ class CompileTilesetCommand final : public Command {
         TilesetRepo repo{
             &checksum_provider, &metadata_provider, &key_provider, &artifact_reader, &artifact_writer, diag.get()};
 
-        CompilePrimaryTileset compile_use_case{
-            &repo, &compiler, &metadata_provider, &tileset_manager, &config, &config, diag.get()};
+        // Verify the tileset exists in the project before proceeding
+        if (!metadata_provider.exists(tileset_name_)) {
+            const auto not_found_err = ChainableResult<void>{FormattableError{
+                "Tileset '{}' does not exist. Create or import it first.", FormatParam{tileset_name_, Style::bold}}};
+            diag->fatal(not_found_err);
+            throw CLI::RuntimeError{1};
+        }
 
-        // Run the use case
-        auto compile_result = compile_use_case.compile(tileset_name_);
+        // Detect primary vs secondary and dispatch to the correct use case
+        auto is_secondary_result = metadata_provider.is_secondary(tileset_name_);
+        if (!is_secondary_result.has_value()) {
+            diag->fatal(is_secondary_result);
+            throw CLI::RuntimeError{1};
+        }
+
+        ChainableResult<void> compile_result;
+        if (is_secondary_result.value()) {
+            CompileSecondaryTileset compile_use_case{
+                &repo,
+                &compiler,
+                &metadata_provider,
+                &layout_metadata_provider,
+                &tileset_manager,
+                &config,
+                &config,
+                diag.get()};
+            compile_result = compile_use_case.compile(tileset_name_);
+        }
+        else {
+            CompilePrimaryTileset compile_use_case{
+                &repo, &compiler, &metadata_provider, &tileset_manager, &config, &config, diag.get()};
+            compile_result = compile_use_case.compile(tileset_name_);
+        }
         if (!compile_result.has_value()) {
             const auto fail_result = ChainableResult<std::unique_ptr<Tileset>>{
                 FormattableError{"Failed to compile tileset '{}'.", FormatParam{tileset_name_, Style::bold}},

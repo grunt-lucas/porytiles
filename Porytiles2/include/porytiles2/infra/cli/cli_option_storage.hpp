@@ -47,6 +47,8 @@ struct CliOptionStorage {
     std::optional<std::string> global_anim_multi_pal_subtile_resolution_strategy;
     std::optional<std::string> global_frame_linking;
     std::optional<std::string> verify_checksums;
+    std::optional<std::string> primary_pairing_mode;
+    std::vector<std::string> primary_pairing_partners;
     std::vector<std::string> diagnostic_warnings_exclude;
     std::vector<std::string> diagnostic_warnings_include;
     std::vector<std::string> diagnostic_remarks_exclude;

@@ -169,6 +169,19 @@ LayerValue<bool> DefaultProvider::verify_checksums(
     return LayerValue<bool>::valid(true, "Verify Checksums", source_info);
 }
 
+LayerValue<PrimaryPairingMode> DefaultProvider::primary_pairing_mode(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<PrimaryPairingMode>::valid(PrimaryPairingMode::automatic, "Primary Pairing Mode", source_info);
+}
+
+LayerValue<std::vector<std::string>> DefaultProvider::primary_pairing_partners(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::vector<std::string>>::valid(
+        std::vector<std::string>{}, "Primary Pairing Partners", source_info);
+}
+
 LayerValue<std::vector<std::string>> DefaultProvider::diagnostic_warnings_exclude(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

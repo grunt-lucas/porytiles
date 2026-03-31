@@ -9,6 +9,7 @@
 
 #include "yaml-cpp/yaml.h"
 
+#include "porytiles2/app/config/primary_pairing_mode.hpp"
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_multi_pal_subtile_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
@@ -1030,6 +1031,38 @@ LayerValue<PackingStrategyType> parse_packing_strategy_type(
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<PackingStrategyType>::invalid(error, source, details);
+    }
+}
+
+LayerValue<PrimaryPairingMode> parse_primary_pairing_mode(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<PrimaryPairingMode>::not_provided();
+    }
+
+    try {
+        const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        const auto node_value = node.as<std::string>();
+        const auto mode_opt = primary_pairing_mode_from_str(node_value);
+
+        if (!mode_opt.has_value()) {
+            const auto error = format->format(
+                "'{}' has invalid value '{}'.", FormatParam{key, Style::bold}, FormatParam{node_value, Style::bold});
+            return LayerValue<PrimaryPairingMode>::invalid(error, source, details);
+        }
+
+        return LayerValue<PrimaryPairingMode>::valid(mode_opt.value(), key, source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error =
+            format->format("Failed to parse '{}' as PrimaryPairingMode: {}.", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<PrimaryPairingMode>::invalid(error, source, details);
     }
 }
 

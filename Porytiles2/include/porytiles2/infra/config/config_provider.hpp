@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "porytiles2/app/config/primary_pairing_mode.hpp"
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
 #include "porytiles2/domain/config/artifact_edit_mode.hpp"
@@ -119,6 +120,12 @@ class ConfigProvider {
      */
 
     [[nodiscard]] virtual LayerValue<bool> verify_checksums(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<PrimaryPairingMode>
+    primary_pairing_mode(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<std::vector<std::string>>
+    primary_pairing_partners(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<std::vector<std::string>>
     diagnostic_warnings_exclude(ConfigScopeType type, const std::string &scope) const;

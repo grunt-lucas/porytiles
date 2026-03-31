@@ -189,6 +189,20 @@ LayerValue<bool> CliOptionProvider::verify_checksums(
     return parse_bool(storage_.verify_checksums, "--verify-checksums");
 }
 
+LayerValue<PrimaryPairingMode> CliOptionProvider::primary_pairing_mode(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_primary_pairing_mode(storage_.primary_pairing_mode, "--primary-pairing-mode");
+}
+
+LayerValue<std::vector<std::string>> CliOptionProvider::primary_pairing_partners(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_string_vector(storage_.primary_pairing_partners, "--primary-pairing-partners");
+}
+
 LayerValue<std::vector<std::string>> CliOptionProvider::diagnostic_warnings_exclude(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

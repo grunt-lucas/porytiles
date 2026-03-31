@@ -9,6 +9,7 @@
 #include <string>
 #include <vector>
 
+#include "porytiles2/app/config/primary_pairing_mode.hpp"
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_multi_pal_subtile_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
@@ -468,6 +469,24 @@ parse_packing_strategy_type(const std::optional<std::string> &raw_value, const s
 
     const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
     return LayerValue<PackingStrategyType>::invalid(error, option_name);
+}
+
+LayerValue<PrimaryPairingMode>
+parse_primary_pairing_mode(const std::optional<std::string> &raw_value, const std::string &option_name)
+{
+    if (!raw_value.has_value()) {
+        return LayerValue<PrimaryPairingMode>::not_provided();
+    }
+
+    const auto &str = raw_value.value();
+    const auto result = primary_pairing_mode_from_str(str);
+
+    if (result.has_value()) {
+        return LayerValue<PrimaryPairingMode>::valid(result.value(), option_name, "CLI");
+    }
+
+    const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
+    return LayerValue<PrimaryPairingMode>::invalid(error, option_name);
 }
 
 } // namespace

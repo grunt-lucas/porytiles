@@ -300,7 +300,7 @@ The 5 dereference sites and their standalone secondary behavior:
 
 ## Phase 4: Use Cases and CLI
 
-### 4a. New use case: `CompileSecondaryTileset`
+### ~~4a. New use case: `CompileSecondaryTileset`~~
 
 **New files**:
 - `Porytiles2/include/porytiles2/app/use_cases/compile_secondary_tileset.hpp`
@@ -335,7 +335,7 @@ Dependencies: same as `CompilePrimaryTileset` plus `LayoutMetadataProvider` (onl
 
 Similar to `CreatePrimaryTileset` but adds the paired-primary lookup and passes `&primary_tileset` to compiler. Also needs a `SecondaryTilesetCreator` (or generalize `PrimaryTilesetCreator`) to generate starter assets appropriate for secondary tilesets.
 
-### 4c. CLI command dispatch
+### ~~4c. CLI command dispatch~~
 
 **File**: `Porytiles2/tools/driver/command_compile_tileset.hpp`
 

@@ -190,6 +190,20 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
         },
         "Verify Checksums - Enable or disable artifact checksum verification.");
 
+    // Primary Pairing Mode (enum PrimaryPairingMode, captured as string, parsed by CliOptionProvider)
+    config_group
+        ->add_option(
+            "--primary-pairing-mode",
+            storage.primary_pairing_mode,
+            "Primary Pairing Mode - How a secondary tileset resolves its partner primary for compilation.")
+        ->type_name("{off|manual|automatic}");
+
+    // Primary Pairing Partners (std::vector<std::string>, multi-value)
+    config_group->add_option(
+        "--primary-pairing-partners",
+        storage.primary_pairing_partners,
+        "Primary Pairing Partners - Tileset names to use as partner primaries in manual pairing mode.");
+
     // Diagnostic Warnings Exclude (std::vector<std::string>, multi-value)
     config_group->add_option(
         "--diagnostic-warnings-exclude",

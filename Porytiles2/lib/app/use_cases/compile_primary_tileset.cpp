@@ -6,6 +6,7 @@
 
 #include "porytiles2/domain/algorithms/diagnostic_stencils.hpp"
 #include "porytiles2/domain/services/tileset_compiler.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/config/unwrap_config.hpp"
 
@@ -13,10 +14,8 @@ namespace porytiles2 {
 
 ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_name) const
 {
-    // 1. Check if the primary tileset exists and is Porytiles-managed. If not, abort with error.
-    if (!metadata_provider_->exists(tileset_name)) {
-        return FormattableError{"Tileset '{}' does not exist.", FormatParam{tileset_name, Style::bold}};
-    }
+    // 1. Precondition: tileset must exist. Check if it is Porytiles-managed. If not, abort with error.
+    assert_or_panic(metadata_provider_->exists(tileset_name), "precondition violated: tileset must exist");
     if (!tileset_manager_->is_porytiles_managed(tileset_name)) {
         return FormattableError{
             "Tileset '{}' exists but is not Porytiles-managed.", FormatParam{tileset_name, Style::bold}};

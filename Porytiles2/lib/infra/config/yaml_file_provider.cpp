@@ -459,6 +459,42 @@ LayerValue<bool> YamlFileProvider::verify_checksums(ConfigScopeType type, const 
         "verify_checksums");
 }
 
+LayerValue<PrimaryPairingMode>
+YamlFileProvider::primary_pairing_mode(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<PrimaryPairingMode>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<PrimaryPairingMode>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["primary_pairing"]["mode"]; },
+        parse_primary_pairing_mode,
+        "tileset.primary_pairing.mode",
+        "tileset.primary_pairing.mode");
+}
+
+LayerValue<std::vector<std::string>>
+YamlFileProvider::primary_pairing_partners(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::vector<std::string>>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<std::vector<std::string>>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["primary_pairing"]["partners"]; },
+        parse_string_vector,
+        "tileset.primary_pairing.partners",
+        "tileset.primary_pairing.partners");
+}
+
 LayerValue<std::vector<std::string>>
 YamlFileProvider::diagnostic_warnings_exclude(ConfigScopeType type, const std::string &scope) const
 {

@@ -266,6 +266,27 @@ enum_types:
         fuzzy_names: [ optimal ]
         brief: CSP-based globally optimal alignment (not yet implemented).
 
+  - cpp_type: PrimaryPairingMode
+    header_path: porytiles2/app/config/primary_pairing_mode.hpp
+    brief: Controls how a secondary tileset finds its partner primary for compilation.
+    details: |
+      When compiling a secondary tileset, the compiler needs the compiled primary
+      tileset to produce correct global tile indices and palette references.
+      This mode controls how the partner primary is resolved.
+    enum_values:
+      - name: "off"
+        cli_completion_name: "off"
+        fuzzy_names: [ "off", "none", "disabled" ]
+        brief: Skip primary loading entirely. Compile as a standalone secondary.
+      - name: manual
+        cli_completion_name: manual
+        fuzzy_names: [ manual ]
+        brief: Use the partner primary specified via primary_pairing_partners config.
+      - name: automatic
+        cli_completion_name: automatic
+        fuzzy_names: [ automatic, auto ]
+        brief: Scan layout metadata to find the partner primary automatically.
+
   - cpp_type: PackingStrategyType
     header_path: porytiles2/domain/config/packing_strategy_type.hpp
     brief: Selects the palette packing algorithm to use during tileset compilation.
@@ -649,6 +670,30 @@ config_values:
     default_value: "true"
     validators: [ ]
     cross_field_validators: [ ]
+
+  - canonical_name: Primary Pairing Mode
+    symbol: primary_pairing_mode
+    yaml_path: tileset.primary_pairing.mode
+    cli_option: primary-pairing-mode
+    cli_desc: How a secondary tileset resolves its partner primary for compilation.
+    layer: app
+    type: PrimaryPairingMode
+    parser: parse_primary_pairing_mode
+    default_value: "PrimaryPairingMode::automatic"
+    validators: []
+    cross_field_validators: []
+
+  - canonical_name: Primary Pairing Partners
+    symbol: primary_pairing_partners
+    yaml_path: tileset.primary_pairing.partners
+    cli_option: primary-pairing-partners
+    cli_desc: Tileset names to use as partner primaries in manual pairing mode.
+    layer: app
+    type: "std::vector<std::string>"
+    parser: parse_string_vector
+    default_value: "std::vector<std::string>{}"
+    validators: []
+    cross_field_validators: []
 
   # TODO : Unlike verify_checksums (consumed by app-layer use cases), the diagnostic filter values below are "meta-config"
   # — they are only consumed at the composition root (tools/driver/ commands) to wire the FilteredUserDiagnostics

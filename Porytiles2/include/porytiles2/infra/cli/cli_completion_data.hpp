@@ -176,6 +176,18 @@ struct CliOptionMeta {
             {},
             true},
         CliOptionMeta{
+            "primary-pairing-mode",
+            "Primary Pairing Mode - How a secondary tileset resolves its partner primary for compilation.",
+            "enum",
+            {"off", "manual", "automatic"},
+            false},
+        CliOptionMeta{
+            "primary-pairing-partners",
+            "Primary Pairing Partners - Tileset names to use as partner primaries in manual pairing mode.",
+            "string_list",
+            {},
+            false},
+        CliOptionMeta{
             "diagnostic-warnings-exclude",
             "Diagnostic Warnings Exclude - Regex patterns for warning tags to exclude.",
             "string_list",

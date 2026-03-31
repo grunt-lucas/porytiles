@@ -16,6 +16,8 @@ namespace porytiles2 {
 class MockAppConfig : public AppConfig {
   public:
     bool verify_checksums = true;
+    PrimaryPairingMode primary_pairing_mode = PrimaryPairingMode::automatic;
+    std::vector<std::string> primary_pairing_partners = std::vector<std::string>{};
     std::vector<std::string> diagnostic_warnings_exclude = std::vector<std::string>{};
     std::vector<std::string> diagnostic_warnings_include = std::vector<std::string>{};
     std::vector<std::string> diagnostic_remarks_exclude = std::vector<std::string>{};
@@ -26,6 +28,19 @@ class MockAppConfig : public AppConfig {
     verify_checksums_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{verify_checksums, "Verify Checksums", "verify_checksums", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<PrimaryPairingMode>>
+    primary_pairing_mode_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{primary_pairing_mode, "Primary Pairing Mode", "primary_pairing_mode", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::vector<std::string>>>
+    primary_pairing_partners_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{
+            primary_pairing_partners, "Primary Pairing Partners", "primary_pairing_partners", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<std::vector<std::string>>>
