@@ -52,7 +52,7 @@ Inside `CompilerTask`, store `const Tileset *paired_primary_` and derive everyth
 
 ---
 
-## Phase 2: Compiler Secondary Logic — Workspace & Palettes
+## ~~Phase 2: Compiler Secondary Logic — Workspace & Palettes~~
 
 **Goal**: Teach `CompilerTask` to handle secondary compilation via the paired primary tileset pointer.
 
@@ -62,7 +62,7 @@ For secondary compilation, create a workspace of capacity `num_tiles_total` (102
 
 On export, trim the primary prefix — only positions `num_tiles_in_primary`..N become the secondary's `tiles.png`.
 
-### 2a. `TilesPngWorkspace` changes
+### ~~2a. `TilesPngWorkspace` changes~~
 
 New constructor or factory method for secondary initialization:
 
@@ -92,7 +92,7 @@ New export mode for secondary:
     ExportTrimMode trim_mode) const;
 ```
 
-### 2b. Animation slot reservation for secondary
+### ~~2b. Animation slot reservation for secondary~~
 
 **Decision (confirmed)**: Reserve a transparent tile at position `num_tiles_in_primary` for vanilla compatibility. Vanilla secondary tiles.png tile 0 is always transparent. No metatiles reference it explicitly, but we match vanilla convention.
 
@@ -105,7 +105,7 @@ void reserve_anim_slots(std::size_t count, std::size_t start_offset);
 
 The `for_secondary()` factory must initialize position `num_tiles_in_primary` as a transparent tile and set cursor to `num_tiles_in_primary + 1` (or `num_tiles_in_primary` if no anims, then the first inserted tile after transparent).
 
-### 2c. `pipeline_step_setup_working_data()` changes
+### ~~2c. `pipeline_step_setup_working_data()` changes~~
 
 In the **optimize** path:
 
@@ -133,11 +133,11 @@ if (paired_primary_ != nullptr) {
 
 **Locked/patch modes**: Deferred — implement optimize mode first, handle locked/patch secondary as a follow-up. The optimize path is the primary use case and will validate the full architecture.
 
-### 2d. `pipeline_step_match_tiles_pals()` — no changes needed
+### ~~2d. `pipeline_step_match_tiles_pals()` — no changes needed~~
 
 Since the workspace uses global indices, `pipeline_helper_assign_tile_via_pal_match` naturally produces global tile indices in TilemapEntry. A secondary metatile that references a primary tile will find it in the workspace at position < `num_tiles_in_primary` — correct.
 
-### 2e. Tile capacity and error messages
+### ~~2e. Tile capacity and error messages~~
 
 Add a computed field to `CompilerTask`:
 ```c++
@@ -147,7 +147,7 @@ std::size_t tile_capacity_ = paired_primary_ != nullptr
 ```
 Use in `tile_limit_reached` error messages.
 
-### 2f. Export changes in `pipeline_step_assemble_output()`
+### ~~2f. Export changes in `pipeline_step_assemble_output()`~~
 
 Currently: `tiles_workspace_->export_image(flip_mode, trim_mode)`
 
@@ -161,7 +161,7 @@ if (paired_primary_ != nullptr) {
 }
 ```
 
-### 2g. Palette output for secondary
+### ~~2g. Palette output for secondary~~
 
 Currently copies all 16 palettes to output. For secondary, palettes 0..`num_pals_in_primary-1` should be copied from the primary (or left as-is from the existing Porymap component). Palettes `num_pals_in_primary`..`num_pals_total-1` come from packing. Palettes 13-15 are junk/reserved (same as primary).
 

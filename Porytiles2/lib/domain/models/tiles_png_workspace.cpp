@@ -1,5 +1,7 @@
 #include "porytiles2/domain/models/tiles_png_workspace.hpp"
 
+#include <algorithm>
+
 #include "porytiles2/domain/algorithms/tile_converters.hpp"
 #include "porytiles2/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles2/domain/models/metatile.hpp"
@@ -44,38 +46,28 @@ bool tiles_color_equivalent(
 }
 
 /**
- * @brief Helper function to export workspace tiles with optional flip transformations and trimming.
+ * @brief Helper function to export a range of workspace tiles with optional flip transformations.
+ *
+ * @details
+ * Exports tiles from @p start_tile (inclusive) to @p end_tile (exclusive). The output image positions are relative,
+ * so tile at @p start_tile becomes row 0, col 0 in the output image.
  *
  * @param workspace The TilesPngWorkspace to export from
+ * @param start_tile The first tile index to export (inclusive)
+ * @param end_tile The last tile index to export (exclusive)
  * @param flip_mode Controls whether tiles are exported in canonical or original (flipped) form
- * @param trim_mode Controls whether trailing transparent tiles are included or trimmed
  * @return An Image<IndexPixel> in the standard tiles.png format
  */
-Image<IndexPixel>
-export_image_helper(const TilesPngWorkspace &workspace, ExportFlipMode flip_mode, ExportTrimMode trim_mode)
+Image<IndexPixel> export_image_range(
+    const TilesPngWorkspace &workspace, std::size_t start_tile, std::size_t end_tile, ExportFlipMode flip_mode)
 {
     // Standard tiles.png format: 16 tiles per row (128 pixels wide)
     constexpr std::size_t tiles_per_row = metatile::metatiles_per_row * metatile::tiles_per_side;
 
-    // Determine the effective tile count based on export mode
-    std::size_t effective_tile_count = workspace.capacity();
-    if (trim_mode == ExportTrimMode::trim_trailing_transparent) {
-        // Find the last non-transparent tile
-        // Start from capacity-1 and work backwards
-        std::size_t last_non_transparent = 0; // Default to tile 0 (which is always present)
-        for (std::size_t i = workspace.capacity(); i > 0; --i) {
-            const std::size_t idx = i - 1;
-            if (!workspace.tile_at(idx).is_transparent()) {
-                last_non_transparent = idx;
-                break;
-            }
-        }
-        // Include tiles from 0 to last_non_transparent (inclusive)
-        effective_tile_count = last_non_transparent + 1;
-    }
+    const std::size_t tile_count = end_tile - start_tile;
 
     // Calculate number of tile rows needed (ceiling division)
-    const std::size_t tiles_per_col = (effective_tile_count + tiles_per_row - 1) / tiles_per_row;
+    const std::size_t tiles_per_col = (tile_count + tiles_per_row - 1) / tiles_per_row;
 
     // Calculate image dimensions
     const std::size_t image_width = tiles_per_row * tile::side_length_pix;
@@ -85,10 +77,12 @@ export_image_helper(const TilesPngWorkspace &workspace, ExportFlipMode flip_mode
     Image<IndexPixel> img{image_width, image_height};
 
     // Copy each tile's pixels into the image
-    for (std::size_t tile_idx = 0; tile_idx < effective_tile_count; ++tile_idx) {
-        // Calculate tile position in the grid
-        const std::size_t tile_row = tile_idx / tiles_per_row;
-        const std::size_t tile_col = tile_idx % tiles_per_row;
+    for (std::size_t i = 0; i < tile_count; ++i) {
+        const std::size_t tile_idx = start_tile + i;
+
+        // Calculate tile position in the output grid (relative to start_tile)
+        const std::size_t tile_row = i / tiles_per_row;
+        const std::size_t tile_col = i % tiles_per_row;
 
         // Calculate pixel offsets for this tile
         const std::size_t pixel_row_offset = tile_row * tile::side_length_pix;
@@ -98,16 +92,13 @@ export_image_helper(const TilesPngWorkspace &workspace, ExportFlipMode flip_mode
         const auto &canonical_tile = workspace.tile_at(tile_idx);
 
         // Determine which tile form to use
-        // Get base class reference to avoid implicit slicing
         const PixelTile<IndexPixel> &canonical_base = canonical_tile;
 
         PixelTile<IndexPixel> tile_to_export;
         if (flip_mode == ExportFlipMode::original) {
-            // Apply flip transformations to restore original form
             tile_to_export = canonical_base.flip(canonical_tile.h_flip(), canonical_tile.v_flip());
         }
         else {
-            // Use canonical form as-is (explicit base class assignment)
             tile_to_export = canonical_base;
         }
 
@@ -122,6 +113,25 @@ export_image_helper(const TilesPngWorkspace &workspace, ExportFlipMode flip_mode
     }
 
     return img;
+}
+
+/**
+ * @brief Finds the last non-transparent tile index in the workspace, scanning backward from the given end position.
+ *
+ * @param workspace The workspace to scan
+ * @param scan_start The index to start scanning backward from (exclusive)
+ * @param minimum The minimum index to return if all tiles are transparent
+ * @return The index of the last non-transparent tile, or @p minimum if none found
+ */
+std::size_t find_last_non_transparent(const TilesPngWorkspace &workspace, std::size_t scan_start, std::size_t minimum)
+{
+    for (std::size_t i = scan_start; i > minimum; --i) {
+        const std::size_t idx = i - 1;
+        if (!workspace.tile_at(idx).is_transparent()) {
+            return idx;
+        }
+    }
+    return minimum;
 }
 
 } // namespace
@@ -222,6 +232,76 @@ TilesPngWorkspace::TilesPngWorkspace(const Image<IndexPixel> &img, std::size_t c
     advance_cursor_to_next_transparent();
 }
 
+TilesPngWorkspace TilesPngWorkspace::for_secondary(
+    const Image<IndexPixel> &primary_tiles_png,
+    std::size_t primary_tile_count,
+    std::size_t total_capacity)
+{
+    const PlainTextFormatter formatter{};
+
+    // Precondition: primary_tile_count must be less than total_capacity
+    if (primary_tile_count >= total_capacity) {
+        const auto msg = formatter.format(
+            "primary_tile_count ({}) must be less than total_capacity ({})", primary_tile_count, total_capacity);
+        panic(msg);
+    }
+
+    // Precondition: image dimensions are multiples of 8
+    if (primary_tiles_png.width() % tile::side_length_pix != 0 ||
+        primary_tiles_png.height() % tile::side_length_pix != 0) {
+        const auto msg = formatter.format(
+            "Primary tiles.png dimensions must be a multiple of {}, got {}x{}",
+            tile::side_length_pix,
+            primary_tiles_png.width(),
+            primary_tiles_png.height());
+        panic(msg);
+    }
+
+    // Create empty workspace with total_capacity (all transparent, cursor=1)
+    TilesPngWorkspace workspace{total_capacity};
+
+    // Extract tiles from primary image
+    const std::size_t tiles_per_row = primary_tiles_png.width() / tile::side_length_pix;
+    const std::size_t tiles_per_col = primary_tiles_png.height() / tile::side_length_pix;
+    const std::size_t tiles_in_image = tiles_per_row * tiles_per_col;
+    const std::size_t tiles_to_load = std::min(tiles_in_image, primary_tile_count);
+
+    // Load primary tiles into positions 0..tiles_to_load-1
+    for (std::size_t tile_idx = 0; tile_idx < tiles_to_load; ++tile_idx) {
+        const std::size_t tile_row = tile_idx / tiles_per_row;
+        const std::size_t tile_col = tile_idx % tiles_per_row;
+
+        PixelTile<IndexPixel> pixel_tile;
+        const std::size_t pixel_row_offset = tile_row * tile::side_length_pix;
+        const std::size_t pixel_col_offset = tile_col * tile::side_length_pix;
+
+        for (std::size_t pixel_row = 0; pixel_row < tile::side_length_pix; ++pixel_row) {
+            for (std::size_t pixel_col = 0; pixel_col < tile::side_length_pix; ++pixel_col) {
+                const std::size_t src_row = pixel_row_offset + pixel_row;
+                const std::size_t src_col = pixel_col_offset + pixel_col;
+                pixel_tile.set(pixel_row, pixel_col, primary_tiles_png.at(src_row, src_col));
+            }
+        }
+
+        CanonicalPixelTile canonical_tile{pixel_tile};
+        workspace.tiles_.at(tile_idx) = canonical_tile;
+
+        // Register non-transparent primary tiles for deduplication
+        if (!canonical_tile.is_transparent()) {
+            const PixelTile<IndexPixel> &base_tile = canonical_tile;
+            workspace.canonical_forms_[base_tile].push_back(tile_idx);
+        }
+    }
+
+    // Position primary_tile_count stays transparent (vanilla secondary tile 0 convention)
+    // Set cursor and anim_start_offset_ to reflect the secondary workspace's logical state
+    workspace.cursor_ = primary_tile_count + 1;
+    workspace.anim_start_offset_ = primary_tile_count + 1;
+    workspace.anim_end_offset_ = primary_tile_count + 1;
+
+    return workspace;
+}
+
 std::size_t TilesPngWorkspace::insert_tile(const CanonicalPixelTile<IndexPixel> &tile)
 {
     // Check if we're at capacity
@@ -289,7 +369,23 @@ CanonicalPixelTile<IndexPixel> TilesPngWorkspace::tile_at(std::size_t index) con
 
 Image<IndexPixel> TilesPngWorkspace::export_image(ExportFlipMode flip_mode, ExportTrimMode trim_mode) const
 {
-    return export_image_helper(*this, flip_mode, trim_mode);
+    std::size_t end_tile = capacity_;
+    if (trim_mode == ExportTrimMode::trim_trailing_transparent) {
+        end_tile = find_last_non_transparent(*this, capacity_, 0) + 1;
+    }
+    return export_image_range(*this, 0, end_tile, flip_mode);
+}
+
+Image<IndexPixel> TilesPngWorkspace::export_secondary_image(
+    std::size_t primary_tile_count, ExportFlipMode flip_mode, ExportTrimMode trim_mode) const
+{
+    std::size_t end_tile = capacity_;
+    if (trim_mode == ExportTrimMode::trim_trailing_transparent) {
+        const std::size_t last_non_transparent = find_last_non_transparent(*this, capacity_, primary_tile_count);
+        // At minimum, export the secondary transparent tile at primary_tile_count
+        end_tile = std::max(last_non_transparent, primary_tile_count) + 1;
+    }
+    return export_image_range(*this, primary_tile_count, end_tile, flip_mode);
 }
 
 bool TilesPngWorkspace::at_capacity() const
@@ -297,27 +393,32 @@ bool TilesPngWorkspace::at_capacity() const
     return cursor_ == capacity_;
 }
 
-void TilesPngWorkspace::reserve_anim_slots(std::size_t anim_tile_count)
+void TilesPngWorkspace::reserve_anim_slots(std::size_t anim_tile_count, std::size_t start_offset)
 {
     const PlainTextFormatter formatter{};
 
-    // Precondition: must be called before any regular tile insertions
-    // Cursor should be at 1 (initial position after reserved tile 0)
-    if (cursor_ != 1) {
-        panic("reserve_animation_slots must be called before any regular tile insertions");
-    }
-
-    // Precondition: anim_tile_count must fit in the workspace
-    // Need room for: tile 0 (transparent) + anim_tile_count + at least one regular tile
-    if (anim_tile_count >= capacity_ - 1) {
+    // Precondition: cursor must be at start_offset (no regular tiles inserted past that point)
+    if (cursor_ != start_offset) {
         const auto msg = formatter.format(
-            "anim_tile_count ({}) must be less than capacity - 1 ({})", anim_tile_count, capacity_ - 1);
+            "reserve_anim_slots: cursor ({}) must be at start_offset ({}) before reserving animation slots",
+            cursor_,
+            start_offset);
         panic(msg);
     }
 
-    // Animation tiles occupy indices 1 through anim_tile_count (inclusive)
-    // So animation_end_offset_ is anim_tile_count + 1 (first index after animation region)
-    anim_end_offset_ = anim_tile_count + 1;
+    // Precondition: animation region must fit in the workspace (with room for at least one regular tile)
+    if (start_offset + anim_tile_count >= capacity_) {
+        const auto msg = formatter.format(
+            "start_offset ({}) + anim_tile_count ({}) must be less than capacity ({}).",
+            start_offset,
+            anim_tile_count,
+            capacity_);
+        panic(msg);
+    }
+
+    // Store the animation region boundaries
+    anim_start_offset_ = start_offset;
+    anim_end_offset_ = start_offset + anim_tile_count;
 
     // Move cursor past the reserved animation region
     cursor_ = anim_end_offset_;
@@ -328,12 +429,11 @@ void TilesPngWorkspace::place_anim_tile(std::size_t reserved_index, const Canoni
     const PlainTextFormatter formatter{};
 
     // Precondition: animation slots must have been reserved
-    if (anim_end_offset_ <= 1) {
+    if (!has_anim_slots()) {
         panic("place_animation_tile called but no animation slots were reserved");
     }
 
     // reserved_index is 0-based within the reserved region
-    // So absolute index is reserved_index + animation_start_offset() = reserved_index + 1
     const std::size_t absolute_index = reserved_index + anim_start_offset();
 
     // Precondition: reserved_index must be within the reserved region

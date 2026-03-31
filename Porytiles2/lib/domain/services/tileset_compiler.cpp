@@ -185,6 +185,11 @@ class CompilerTask {
     // Pipeline helpers - true_color mode
     void pipeline_helper_apply_true_color_to_tiles_png();
 
+    [[nodiscard]] bool is_secondary() const
+    {
+        return paired_primary_ != nullptr;
+    }
+
     // Pipeline helpers - error emission
     void pipeline_helper_emit_no_matching_tile_error(
         std::size_t tile_index,
@@ -210,6 +215,7 @@ class CompilerTask {
     ConfigValue<std::size_t> num_pals_total_;
     ConfigValue<std::size_t> num_metatiles_in_primary_;
     ConfigValue<std::size_t> num_tiles_in_primary_;
+    ConfigValue<std::size_t> num_tiles_total_;
     ConfigValue<std::size_t> num_tiles_per_metatile_;
     ConfigValue<bool> pal_hints_enabled_;
     ConfigValue<std::vector<PaletteHint>> pal_hints_;
@@ -260,6 +266,7 @@ ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
     PT_UNWRAP_TILESET_CONFIG_REF(config_, num_pals_total, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, num_metatiles_in_primary, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, num_tiles_in_primary, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, num_tiles_total, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, num_tiles_per_metatile, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, pal_hints_enabled, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, pal_hints, tileset_.name(), std::unique_ptr<Tileset>);
@@ -274,6 +281,7 @@ ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
     num_pals_total_ = num_pals_total;
     num_metatiles_in_primary_ = num_metatiles_in_primary;
     num_tiles_in_primary_ = num_tiles_in_primary;
+    num_tiles_total_ = num_tiles_total;
     num_tiles_per_metatile_ = num_tiles_per_metatile;
     pal_hints_enabled_ = pal_hints_enabled;
     pal_hints_ = pal_hints;
@@ -364,7 +372,8 @@ ChainableResult<void> CompilerTask::pipeline_step_validate_input()
      */
 
     // Run metatile count validation
-    PT_TRY_CALL_PASS_ERR(validate_metatile_count(services, tileset_.name(), false, porytiles_metatiles_), void);
+    PT_TRY_CALL_PASS_ERR(
+        validate_metatile_count(services, tileset_.name(), is_secondary(), porytiles_metatiles_), void);
 
     if (pals_edit_mode_ != ArtifactEditMode::optimize) {
         // Validate Porymap pals if user is asking for pals:locked or pals:patch
@@ -412,7 +421,7 @@ ChainableResult<void> CompilerTask::pipeline_step_validate_input()
         validate_global_color_count(
             services,
             tileset_.name(),
-            false,
+            is_secondary(),
             porytiles_metatiles_,
             tileset_.porytiles_component().anims(),
             tileset_.porytiles_component().pals(),
@@ -439,6 +448,14 @@ ChainableResult<void> CompilerTask::pipeline_step_validate_input()
 
 ChainableResult<void> CompilerTask::pipeline_step_setup_working_data()
 {
+    // Secondary compilation only supports optimize mode for now (locked/patch deferred)
+    if (is_secondary() && tiles_edit_mode_ != ArtifactEditMode::optimize) {
+        panic("Secondary compilation only supports tiles ArtifactEditMode::optimize (locked/patch deferred).");
+    }
+    if (is_secondary() && pals_edit_mode_ != ArtifactEditMode::optimize) {
+        panic("Secondary compilation only supports pals ArtifactEditMode::optimize (locked/patch deferred).");
+    }
+
     // Create palettes
     if (pals_edit_mode_ == ArtifactEditMode::locked) {
         // Collect all palettes from existing Porymap component
@@ -457,25 +474,35 @@ ChainableResult<void> CompilerTask::pipeline_step_setup_working_data()
     }
 
     // Create tiles workspace
-    tiles_workspace_ = [](ArtifactEditMode tiles_edit_mode, const Tileset &tileset, std::size_t num_tiles_in_primary) {
-        if (tiles_edit_mode == ArtifactEditMode::locked) {
-            /*
-             * When tiles are locked, compute the exact size of tiles.png so we keep it completely unchanged. When we
-             * output, we'll also set ExportTrimMode::include_trailing_transparent so that if there was transparency at
-             * the end, we don't remove it.
-             */
-            const auto size_in_tiles = tileset.porymap_component().tiles_png().size_in_tiles();
-            return std::make_unique<TilesPngWorkspace>(tileset.porymap_component().tiles_png(), size_in_tiles);
+    if (tiles_edit_mode_ == ArtifactEditMode::locked) {
+        /*
+         * When tiles are locked, compute the exact size of tiles.png so we keep it completely unchanged. When we
+         * output, we'll also set ExportTrimMode::include_trailing_transparent so that if there was transparency at
+         * the end, we don't remove it.
+         */
+        const auto size_in_tiles = tileset_.porymap_component().tiles_png().size_in_tiles();
+        tiles_workspace_ =
+            std::make_unique<TilesPngWorkspace>(tileset_.porymap_component().tiles_png(), size_in_tiles);
+    }
+    else if (tiles_edit_mode_ == ArtifactEditMode::patch) {
+        // TODO: here, should we compute the size and match the size like above?
+        tiles_workspace_ = std::make_unique<TilesPngWorkspace>(
+            tileset_.porymap_component().tiles_png(), num_tiles_in_primary_.value());
+    }
+    else if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
+        if (is_secondary()) {
+            tiles_workspace_ = std::make_unique<TilesPngWorkspace>(TilesPngWorkspace::for_secondary(
+                paired_primary_->porymap_component().tiles_png(),
+                num_tiles_in_primary_.value(),
+                num_tiles_total_.value()));
         }
-        if (tiles_edit_mode == ArtifactEditMode::patch) {
-            // TODO: here, should we compute the size and match the size like above?
-            return std::make_unique<TilesPngWorkspace>(tileset.porymap_component().tiles_png(), num_tiles_in_primary);
+        else {
+            tiles_workspace_ = std::make_unique<TilesPngWorkspace>(num_tiles_in_primary_.value());
         }
-        if (tiles_edit_mode == ArtifactEditMode::optimize) {
-            return std::make_unique<TilesPngWorkspace>(num_tiles_in_primary);
-        }
+    }
+    else {
         panic("unexpected tiles_edit_mode");
-    }(tiles_edit_mode_, tileset_, num_tiles_in_primary_.value());
+    }
 
     // Register animations (reserve slots, compile keyframes, register matcher)
     // Must be done before regular tile matching so animation slots are reserved
@@ -549,7 +576,12 @@ ChainableResult<void> CompilerTask::pipeline_step_match_tiles_pals()
 
         case TileAssignmentResult::Status::tile_limit_reached:
             matched_all_tiles = false;
-            pipeline_helper_emit_tile_limit_error(i, tiles_workspace_->capacity());
+            {
+                const std::size_t user_visible_tile_limit = is_secondary()
+                    ? (num_tiles_total_.value() - num_tiles_in_primary_.value())
+                    : num_tiles_in_primary_.value();
+                pipeline_helper_emit_tile_limit_error(i, user_visible_tile_limit);
+            }
             break;
         }
 
@@ -643,17 +675,39 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
          * going to make this configurable, we'll need to check the config value in the matcher functions so we can
          * compute the flip bits correctly.
          */
-        new_porymap_component_->tiles_png(
-            tiles_workspace_->export_image(ExportFlipMode::original, ExportTrimMode::trim_trailing_transparent));
+        if (is_secondary()) {
+            new_porymap_component_->tiles_png(tiles_workspace_->export_secondary_image(
+                num_tiles_in_primary_.value(), ExportFlipMode::original, ExportTrimMode::trim_trailing_transparent));
+        }
+        else {
+            new_porymap_component_->tiles_png(
+                tiles_workspace_->export_image(ExportFlipMode::original, ExportTrimMode::trim_trailing_transparent));
+        }
     }
     else {
         new_porymap_component_->tiles_png(
             tiles_workspace_->export_image(ExportFlipMode::original, ExportTrimMode::include_trailing_transparent));
     }
 
-    // Copy palettes from our processed porymap_pals vector
-    for (std::size_t i = 0; i < pal::num_pals; i++) {
-        new_porymap_component_->set_pal(i, new_porymap_pals_[i]);
+    // Copy palettes to output
+    if (is_secondary()) {
+        // Primary palettes from paired primary
+        for (std::size_t i = 0; i < num_pals_in_primary_.value(); i++) {
+            new_porymap_component_->set_pal(i, paired_primary_->porymap_component().pal_at(i));
+        }
+        // Secondary palettes from packing result
+        for (std::size_t i = num_pals_in_primary_.value(); i < num_pals_total_.value(); i++) {
+            new_porymap_component_->set_pal(i, new_porymap_pals_.at(i));
+        }
+        // Junk/reserved palettes (13-15) from original secondary component
+        for (std::size_t i = num_pals_total_.value(); i < pal::num_pals; i++) {
+            new_porymap_component_->set_pal(i, tileset_.porymap_component().pal_at(i));
+        }
+    }
+    else {
+        for (std::size_t i = 0; i < pal::num_pals; i++) {
+            new_porymap_component_->set_pal(i, new_porymap_pals_.at(i));
+        }
     }
 
     // Apply true_color palette encoding to tiles.png if configured
@@ -824,7 +878,9 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
      * Create ColorIndexMap from the Porytiles tiles, Porytiles pals, and palette hints. We already validated earlier
      * that we don't exceed the global color count limit. So this will panic if there are too many global unique colors.
      */
-    const std::size_t color_count_limit = num_pals_in_primary_.value() * (pal::max_size - 1);
+    const std::size_t color_count_limit =
+        is_secondary() ? (num_pals_total_.value() - num_pals_in_primary_.value()) * (pal::max_size - 1)
+                        : num_pals_in_primary_.value() * (pal::max_size - 1);
     PT_TRY_ASSIGN_CHAIN_ERR(
         color_index_map,
         pipeline_helper_build_color_index_map(pal_hints_.value(), color_count_limit),
@@ -838,16 +894,39 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
     auto strategy = make_packing_strategy(packing_strategy.value(), packing_strategy_params.value(), diag_);
     PalettePacker pal_packer{strategy.get(), &format_, &diag_, &tile_printer_, &pal_printer_};
     std::bitset<pal::num_pals> available_pals{0};
-    for (std::size_t i = 0; i < num_pals_in_primary_; i++) {
-        // TODO: support out-of-band primary palettes - see "Primary Palette Fixing" in topic_staging_area.md
-        available_pals.set(i, true);
+    if (is_secondary()) {
+        for (std::size_t i = num_pals_in_primary_; i < num_pals_total_; i++) {
+            available_pals.set(i, true);
+        }
+    }
+    else {
+        for (std::size_t i = 0; i < num_pals_in_primary_; i++) {
+            // TODO: support out-of-band primary palettes - see "Primary Palette Fixing" in topic_staging_area.md
+            available_pals.set(i, true);
+        }
     }
     PackingParams packing_params{};
     packing_params.tiles_ = porytiles_pixel_rgba_;
     packing_params.anims_ = tileset_.porytiles_component().anims();
     packing_params.color_map_ = color_index_map;
     packing_params.extrinsic_transparency_ = extrinsic_transparency_.value();
-    packing_params.prefilled_pals_ = tileset_.porytiles_component().pals();
+    if (is_secondary()) {
+        // Lock primary palettes from the compiled paired primary
+        std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> prefilled{};
+        for (std::size_t i = 0; i < num_pals_in_primary_.value(); ++i) {
+            prefilled.at(i) = paired_primary_->porymap_component().pal_at(i);
+        }
+        // Carry over secondary Porytiles pal overrides (slots >= num_pals_in_primary)
+        for (std::size_t i = num_pals_in_primary_.value(); i < pal::num_pals; ++i) {
+            if (tileset_.porytiles_component().pal_at(i).has_value()) {
+                prefilled.at(i) = tileset_.porytiles_component().pal_at(i).value();
+            }
+        }
+        packing_params.prefilled_pals_ = prefilled;
+    }
+    else {
+        packing_params.prefilled_pals_ = tileset_.porytiles_component().pals();
+    }
     packing_params.hints_ = pal_hints_.value();
     packing_params.available_pals_ = available_pals;
     packing_params.tile_sharing_packing_ = tile_sharing_packing;
@@ -924,8 +1003,10 @@ ChainableResult<ColorIndexMap<Rgba32>> CompilerTask::pipeline_helper_build_color
         color_index_map.add_anim(anim, extrinsic_transparency_.value());
     }
 
-    // Add Porytiles palettes
-    for (std::size_t pal_index = 0; pal_index < num_pals_in_primary_; ++pal_index) {
+    // Add Porytiles palettes (for secondary, iterate over secondary palette slots)
+    const std::size_t pal_start = is_secondary() ? num_pals_in_primary_.value() : 0;
+    const std::size_t pal_end = is_secondary() ? num_pals_total_.value() : num_pals_in_primary_.value();
+    for (std::size_t pal_index = pal_start; pal_index < pal_end; ++pal_index) {
         const auto &maybe_porytiles_pal = tileset_.porytiles_component().pals().at(pal_index);
         if (!maybe_porytiles_pal.has_value()) {
             continue;
@@ -943,6 +1024,19 @@ ChainableResult<ColorIndexMap<Rgba32>> CompilerTask::pipeline_helper_build_color
         panic(
             "color_index_map.size() > count_limit - this should have already been validated by "
             "pipeline_step_validate_input");
+    }
+
+    /*
+     * For secondary compilation, add primary palette colors to the map. The packer needs these to build ColorSets for
+     * locked primary palettes, enabling secondary tiles that only use primary colors to be correctly assigned to a
+     * primary palette. These colors don't count against the secondary color budget, so they're added after the limit
+     * check.
+     */
+    if (is_secondary()) {
+        for (std::size_t i = 0; i < num_pals_in_primary_.value(); ++i) {
+            const auto &primary_pal = paired_primary_->porymap_component().pal_at(i);
+            color_index_map.add_pal(primary_pal, extrinsic_transparency_.value());
+        }
     }
 
     return color_index_map;
@@ -1079,12 +1173,13 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
                 total_keyframe_tiles += anim.frames().begin()->second.tiles().size();
             }
         }
-        tiles_workspace_->reserve_anim_slots(total_keyframe_tiles);
+        const std::size_t anim_start = is_secondary() ? (num_tiles_in_primary_.value() + 1) : 1;
+        tiles_workspace_->reserve_anim_slots(total_keyframe_tiles, anim_start);
     }
 
     std::map<std::string, std::size_t> anim_offsets;
     std::map<std::string, std::vector<std::size_t>> anim_pal_indices;
-    std::size_t current_offset = TilesPngWorkspace::anim_start_offset();
+    std::size_t current_offset = tiles_workspace_->anim_start_offset();
 
     const auto &per_anim_overrides = per_anim_overrides_.value();
 
@@ -1135,7 +1230,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
             if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
                 offset = current_offset;
                 for (std::size_t i = 0; i < tile_count; ++i) {
-                    const std::size_t reserved_index = current_offset - TilesPngWorkspace::anim_start_offset();
+                    const std::size_t reserved_index = current_offset - tiles_workspace_->anim_start_offset();
                     tiles_workspace_->place_anim_tile(reserved_index, keyframe_data.tiles[i]);
                     ++current_offset;
                 }
