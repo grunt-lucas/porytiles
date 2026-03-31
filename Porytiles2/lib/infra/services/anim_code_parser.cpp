@@ -130,10 +130,20 @@ using namespace porytiles2;
 extract_tile_offset(const std::vector<Token> &tokens, const TextFormatter &format)
 {
     for (std::size_t i = 0; i + 3 < tokens.size(); ++i) {
+        // Primary pattern: TILE_OFFSET_4BPP(<integer>)
         if (tokens[i].is(TokenType::identifier) && tokens[i].text() == "TILE_OFFSET_4BPP" &&
             tokens[i + 1].is(TokenType::left_paren) && tokens[i + 2].is(TokenType::integer_literal) &&
             tokens[i + 3].is(TokenType::right_paren)) {
             return tokens[i + 2].int_value();
+        }
+
+        // Secondary pattern: TILE_OFFSET_4BPP(NUM_TILES_IN_PRIMARY + <integer>)
+        if (i + 5 < tokens.size() && tokens[i].is(TokenType::identifier) &&
+            tokens[i].text() == "TILE_OFFSET_4BPP" && tokens[i + 1].is(TokenType::left_paren) &&
+            tokens[i + 2].is(TokenType::identifier) && tokens[i + 2].text() == "NUM_TILES_IN_PRIMARY" &&
+            tokens[i + 3].is(TokenType::plus) && tokens[i + 4].is(TokenType::integer_literal) &&
+            tokens[i + 5].is(TokenType::right_paren)) {
+            return tokens[i + 4].int_value();
         }
     }
 
@@ -147,8 +157,9 @@ extract_tile_offset(const std::vector<Token> &tokens, const TextFormatter &forma
 
     return FormattableError{std::vector<std::string>{
         format.format(
-            "Expected token pattern containing '{}'.",
-            FormatParam{"TILE_OFFSET_4BPP(<tile_offset_integer>)", Style::bold}),
+            "Expected token pattern containing '{}' or '{}'.",
+            FormatParam{"TILE_OFFSET_4BPP(<integer>)", Style::bold},
+            FormatParam{"TILE_OFFSET_4BPP(NUM_TILES_IN_PRIMARY + <integer>)", Style::bold}),
         format.format("Actual tokens: '{}'.", FormatParam{actual, Style::bold}),
     }};
 }

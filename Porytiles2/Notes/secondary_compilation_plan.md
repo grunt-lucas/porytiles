@@ -174,9 +174,9 @@ The existing logic in `pipeline_helper_run_pal_packing` already handles this if 
 
 ---
 
-## Phase 3: Animation System Changes
+## ~~Phase 3: Animation System Changes~~
 
-### 3a. `AnimCodeGenerator` — secondary offset format
+### ~~3a. `AnimCodeGenerator` — secondary offset format~~
 
 **File**: `Porytiles2/lib/infra/services/anim_code_generator.cpp`
 
@@ -199,7 +199,7 @@ For secondary: local offset = global workspace index - num_tiles_in_primary (e.g
 
 This conversion happens when the compiler stores the offset into AnimParams after registration.
 
-### 3b. `AnimCodeParser` — parse `NUM_TILES_IN_PRIMARY + X` pattern
+### ~~3b. `AnimCodeParser` — parse `NUM_TILES_IN_PRIMARY + X` pattern~~
 
 **File**: `Porytiles2/lib/infra/services/anim_code_parser.cpp`
 
@@ -218,7 +218,7 @@ if (tokens[i+2].is(identifier) && tokens[i+2].text() == "NUM_TILES_IN_PRIMARY" &
 
 Check that the token types `plus` / `TokenType::plus` exist in the lexer. If not, add it. (The C code lexer likely already handles `+` as a token.)
 
-### 3c. Compiler animation registration — global-to-local offset conversion
+### ~~3c. Compiler animation registration — global-to-local offset conversion~~
 
 In `pipeline_helper_register_animations()`, after placing keyframe tiles in the workspace and getting the global workspace index (`tile_offset`), convert to local before storing:
 

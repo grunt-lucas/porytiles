@@ -622,7 +622,10 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
     for (auto &[anim_name, anim] : new_porytiles_component->anims()) {
         if (auto maybe_offset = anim_tile_matcher_.tile_offset_for(anim_name); maybe_offset.has_value()) {
             AnimParams updated_params = anim.params();
-            updated_params.tile_offset(maybe_offset.value());
+            const std::size_t local_offset = is_secondary()
+                ? maybe_offset.value() - num_tiles_in_primary_.value()
+                : maybe_offset.value();
+            updated_params.tile_offset(local_offset);
             anim.params(std::move(updated_params));
         }
     }
@@ -1391,7 +1394,10 @@ void CompilerTask::pipeline_helper_compile_animations()
 
         // 6. Set params with updated tile_offset/tile_count
         AnimParams params = source_anim.params();
-        params.tile_offset(tile_offset);
+        const std::size_t local_offset = is_secondary()
+            ? tile_offset - num_tiles_in_primary_.value()
+            : tile_offset;
+        params.tile_offset(local_offset);
         params.tile_count(tile_count);
         compiled_anim.params(std::move(params));
 
