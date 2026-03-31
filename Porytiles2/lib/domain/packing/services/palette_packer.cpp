@@ -306,10 +306,6 @@ struct VerifiedMember {
     std::map<ShapeMask, Rgba32> colors;
 };
 
-// ============================================================================
-// Pipeline stage functions
-// ============================================================================
-
 /**
  * @brief Converts PackingParams inputs into packer-internal forms (Steps 1-3).
  *
@@ -808,7 +804,7 @@ void emit_phase3_diagnostics(
  * @brief Emits the full tile sharing summary.
  *
  * @details
- * Emits detected → eligible → aligned breakdown, partial listings, unaligned groups with per-group failure details,
+ * Emits detected -> eligible -> aligned breakdown, partial listings, unaligned groups with per-group failure details,
  * aggregate failure summary, and actionable suggestions.
  *
  * @param format TextFormatter for building diagnostic output
@@ -881,7 +877,7 @@ void emit_sharing_summary(
         for (const auto &[group_id, group] : phase3.unaligned_partition_groups) {
             remark_lines.emplace_back();
             remark_lines.emplace_back(format.format(
-                "Unaligned group (group id '{}') — '{}' color version(s):",
+                "Unaligned group (group id '{}'), '{}' color version(s):",
                 FormatParam{group_id, Style::bold},
                 FormatParam{group.color_version_tile_indices.size(), Style::bold}));
             std::ranges::copy(
@@ -1015,7 +1011,7 @@ void emit_sharing_summary(
         // Aggregate failure summary
         remark_lines.emplace_back();
         if (params.tile_sharing_alignment_ == TileSharingAlignment::off) {
-            remark_lines.emplace_back("Alignment is 'off' — no slot alignment was attempted.");
+            remark_lines.emplace_back("Alignment is 'off'. No slot alignment was attempted.");
             remark_lines.emplace_back("Switch to 'greedy' to enable palette slot alignment for eligible groups.");
         }
         else {
@@ -1024,11 +1020,11 @@ void emit_sharing_summary(
                 FormatParam{fc.total(), Style::bold}));
         }
 
-        // Actionable suggestions (skip for off mode — the suggestion is already above)
+        // Actionable suggestions (skip for off mode, the suggestion is already above)
         remark_lines.emplace_back();
         if (phase3.partially_aligned_count > 0) {
             remark_lines.emplace_back(format.format(
-                "Tile sharing is best-effort — '{}' of '{}' eligible group(s) aligned ('{}' fully, '{}' "
+                "Tile sharing is best-effort. '{}' of '{}' eligible group(s) aligned ('{}' fully, '{}' "
                 "partially).",
                 FormatParam{phase3.aligned_count, Style::bold},
                 FormatParam{eligible, Style::bold},
@@ -1037,7 +1033,7 @@ void emit_sharing_summary(
         }
         else {
             remark_lines.emplace_back(format.format(
-                "Tile sharing is best-effort — '{}' of '{}' eligible group(s) aligned.",
+                "Tile sharing is best-effort. '{}' of '{}' eligible group(s) aligned.",
                 FormatParam{phase3.aligned_count, Style::bold},
                 FormatParam{eligible, Style::bold}));
         }
@@ -1159,7 +1155,7 @@ ChainableResult<PalettePacking> PalettePacker::pack_tiles(const PackingParams &p
     auto pack_result = strategy_->pack(packing_input);
 
     PT_TRY_ASSIGN_CHAIN_ERR(
-        packing_output, std::move(pack_result), "Low-level palette packing failed.", PalettePacking);
+        packing_output, std::move(pack_result), PalettePacking, "Low-level palette packing failed.");
 
     // Step 5a: Build tile_to_pal from PackingOutput
     PalettePacking packing{};

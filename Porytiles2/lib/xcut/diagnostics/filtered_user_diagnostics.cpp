@@ -21,7 +21,7 @@ void FilteredUserDiagnostics::remark(const std::string &tag, const std::vector<s
 
 /*
  * TODO: remark_note and warning_note independently re-check the filter, which assumes notes always carry the same tag
- * as their parent diagnostic. This is an implicit invariant — if any code path ever emits warning("tag-A") followed by
+ * as their parent diagnostic. This is an implicit invariant. If any code path ever emits warning("tag-A") followed by
  * warning_note("tag-B"), the note could be shown/hidden independently. A stateful approach (e.g. a "last-shown" flag
  * set by warning/remark that note methods consult) would make the coupling explicit and more robust.
  */

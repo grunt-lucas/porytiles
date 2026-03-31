@@ -306,8 +306,8 @@ ChainableResult<void> CompilerTask::pipeline_step_process_porytiles_input()
             tileset_.porytiles_component().bottom(),
             tileset_.porytiles_component().middle(),
             tileset_.porytiles_component().top()),
-        "failed to metatileize input layer images for " + tileset_.name(),
-        void);
+        void,
+        "failed to metatileize input layer images for " + tileset_.name());
     porytiles_metatiles_ = std::move(metatiles);
 
     // Decompose Porytiles metatiles and generate canonical versions
@@ -326,16 +326,16 @@ ChainableResult<void> CompilerTask::pipeline_step_process_porymap_input()
     PT_TRY_ASSIGN_CHAIN_ERR(
         tilemap_entries,
         layer_mode_converter.triple_layerize(tileset_.porymap_component()),
-        std::format("Failed to triple-layerize Porymap component for tileset '{}'.", tileset_.name()),
-        void);
+        void,
+        std::format("Failed to triple-layerize Porymap component for tileset '{}'.", tileset_.name()));
     porymap_tilemap_entries_ = std::move(tilemap_entries);
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         metatiles,
         metatile_decompiler.decompile_metatiles(
             porymap_tilemap_entries_, tileset_.porymap_component().tiles_png(), tileset_.porymap_component().pals()),
-        std::format("Failed to decompile Porymap component for tileset '{}'.", tileset_.name()),
-        void);
+        void,
+        std::format("Failed to decompile Porymap component for tileset '{}'.", tileset_.name()));
     porymap_metatiles_ = std::move(metatiles);
 
     /*
@@ -477,7 +477,7 @@ ChainableResult<void> CompilerTask::pipeline_step_setup_working_data()
 
     // Register animations (reserve slots, compile keyframes, register matcher)
     // Must be done before regular tile matching so animation slots are reserved
-    PT_TRY_CALL_CHAIN_ERR(pipeline_helper_register_animations(), "Failed to register animations.", void);
+    PT_TRY_CALL_CHAIN_ERR(pipeline_helper_register_animations(), void, "Failed to register animations.");
 
     // Create new Porymap component for output
     new_porymap_component_ = std::make_unique<PorymapTilesetComponent>();
@@ -714,7 +714,7 @@ CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> 
 
     /*
      * Use the packer's authoritative palette assignment when available (optimize mode). This ensures tile sharing
-     * alignment is respected — the packer and alignment system chose specific palettes for each tile, and re-deriving
+     * alignment is respected. The packer and alignment system chose specific palettes for each tile, and re-deriving
      * via match_or_best could pick a different palette that breaks sharing slot alignment.
      *
      * Falls back to match_or_best for tiles not in the packer's assignments (e.g., locked/patch modes, or tiles
@@ -826,8 +826,8 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
     PT_TRY_ASSIGN_CHAIN_ERR(
         color_index_map,
         pipeline_helper_build_color_index_map(pal_hints_.value(), color_count_limit),
-        std::format("Failed to build color index map for tileset '{}'.", tileset_.name()),
-        void);
+        void,
+        std::format("Failed to build color index map for tileset '{}'.", tileset_.name()));
 
     PT_UNWRAP_TILESET_CONFIG_REF(config_, packing_strategy, tileset_.name(), void);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, packing_strategy_params, tileset_.name(), void);
@@ -854,8 +854,8 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
     PT_TRY_ASSIGN_CHAIN_ERR(
         pal_packing,
         pal_packer.pack_tiles(packing_params),
-        format_.format("Failed to pack palettes for tileset '{}'.", FormatParam{tileset_.name(), Style::bold}),
-        void);
+        void,
+        format_.format("Failed to pack palettes for tileset '{}'.", FormatParam{tileset_.name(), Style::bold}));
 
     tile_to_pal_ = std::move(pal_packing.tile_to_pal_);
 
@@ -1066,9 +1066,6 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
         return {};
     }
 
-    // ========================================================================
-    // Phase 1: Pre-loop setup (optimize mode only)
-    // ========================================================================
     if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
         std::size_t total_keyframe_tiles = 0;
         for (const auto &anim : anims | std::views::values) {
@@ -1083,9 +1080,6 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
         tiles_workspace_->reserve_anim_slots(total_keyframe_tiles);
     }
 
-    // ========================================================================
-    // Phase 2: Build keyframes and place/find tiles for each animation
-    // ========================================================================
     std::map<std::string, std::size_t> anim_offsets;
     std::map<std::string, std::vector<std::size_t>> anim_pal_indices;
     std::size_t current_offset = TilesPngWorkspace::anim_start_offset();
@@ -1097,7 +1091,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
             panic("anim '" + anim_name + "' has no frames");
         }
 
-        // Build keyframe data (common to all modes — needed for pal_indices even if we skip tile placement)
+        // Build keyframe data (common to all modes, needed for pal_indices even if we skip tile placement)
         PT_TRY_ASSIGN_PASS_ERR(keyframe_data, pipeline_helper_build_keyframe_data(anim_name, anim), void);
 
         const std::size_t tile_count = keyframe_data.tiles.size();
@@ -1113,7 +1107,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
         if (effective_linking == FrameLinking::manual && tiles_edit_mode_ != ArtifactEditMode::optimize) {
             /*
              * Manual frame linking in patch/locked mode: use the tile_offset from anim.json directly.
-             * Don't search tiles.png — the keyframes may not be findable via color matching. Whatever
+             * Don't search tiles.png. The keyframes may not be findable via color matching. Whatever
              * is already at that offset in tiles.png will be dynamically overwritten by the game's
              * animation DMA code at runtime anyway.
              */
@@ -1204,9 +1198,6 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
         anim_offsets[anim_name] = offset;
     }
 
-    // ========================================================================
-    // Phase 3: Register all animations with the matcher
-    // ========================================================================
     for (const auto &[anim_name, anim] : anims) {
         anim_tile_matcher_.register_animation(
             anim_name, anim, anim_offsets.at(anim_name), extrinsic_transparency_, anim_pal_indices.at(anim_name));

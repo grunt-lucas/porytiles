@@ -25,10 +25,6 @@ namespace porytiles2 {
 
 namespace {
 
-// ============================================================================
-// Internal types
-// ============================================================================
-
 enum class AssignResult { success, no_solution, cutoff_reached };
 
 struct SearchParams {
@@ -64,10 +60,6 @@ struct SearchContext {
     std::vector<std::vector<ColorSet>> sibling_color_sets;
 };
 
-// ============================================================================
-// BFS state types
-// ============================================================================
-
 struct BfsState {
     std::vector<ColorSet> palette_colors;
     std::size_t next_tile_index{};
@@ -84,10 +76,6 @@ struct BfsStateHash {
         return seed;
     }
 };
-
-// ============================================================================
-// Preset matrix (48 configurations)
-// ============================================================================
 
 [[nodiscard]] std::array<SearchParams, 48> build_preset_matrix()
 {
@@ -116,10 +104,6 @@ struct BfsStateHash {
 
     return matrix;
 }
-
-// ============================================================================
-// Search context construction
-// ============================================================================
 
 [[nodiscard]] SearchContext build_search_context(const PackingInput &input)
 {
@@ -207,10 +191,6 @@ struct BfsStateHash {
     return ctx;
 }
 
-// ============================================================================
-// DFS algorithm
-// ============================================================================
-
 /*
  * DFS with in-place mutation and undo. Porytiles1 copied the entire palette vector for each branch;
  * we save and restore only the single modified ColorSet, reducing per-node allocation overhead.
@@ -244,8 +224,8 @@ AssignResult assign_depth_first(
      * Authoritative subset shortcut (improvement over Porytiles1).
      *
      * If the tile's colors are already a subset of some palette, the tile is satisfied without adding
-     * any new colors. We recurse immediately and return the result directly — no fallthrough to the
-     * candidate loop.
+     * any new colors. We recurse immediately and return the result directly (no fallthrough to the
+     * candidate loop).
      *
      * Why authoritative? If skipping the tile fails (remaining tiles can't be packed), trying explicit
      * candidate assignments can only make things worse:
@@ -282,7 +262,7 @@ AssignResult assign_depth_first(
 
             /*
              * Heuristic: check if this palette likely contains a sibling by testing whether any sibling's color set
-             * is a subset of the palette's accumulated colors. This is an approximation — false positives are possible
+             * is a subset of the palette's accumulated colors. This is an approximation; false positives are possible
              * when unrelated tiles contribute the same colors. False positives only cause suboptimal candidate ordering
              * (deprioritizing a palette unnecessarily), not incorrect packing.
              */
@@ -344,10 +324,6 @@ AssignResult assign_depth_first(
     return AssignResult::no_solution;
 }
 
-// ============================================================================
-// BFS algorithm
-// ============================================================================
-
 /*
  * BFS with dual-queue heuristic and visited-state deduplication (matching Porytiles1's approach).
  *
@@ -358,7 +334,7 @@ AssignResult assign_depth_first(
  *
  * Improvement over Porytiles1: when ALL candidates for a tile have zero intersection (no palette has
  * any color overlap), Porytiles1 routed them to the high queue via a `sawAssignmentWithIntersection`
- * flag that stayed false. We preserve this behavior — zero-intersection candidates only go to the low
+ * flag that stayed false. We preserve this behavior: zero-intersection candidates only go to the low
  * queue after we've seen at least one candidate with overlap. This prevents starvation when a tile
  * has entirely unique colors (common for early tiles assigned to empty palettes).
  */
@@ -509,10 +485,6 @@ AssignResult assign_breadth_first(
     return AssignResult::no_solution;
 }
 
-// ============================================================================
-// Output reconstruction
-// ============================================================================
-
 [[nodiscard]] PackingOutput
 build_packing_output(const std::vector<ColorSet> &solution_colors, const SearchContext &ctx, const PackingInput &input)
 {
@@ -538,7 +510,7 @@ build_packing_output(const std::vector<ColorSet> &solution_colors, const SearchC
 
     // Assign each tile to the first palette whose solution colors are a superset
     for (const auto &tile : ctx.sorted_tiles) {
-        // Skip prefilled palette system tiles — they were already added above
+        // Skip prefilled palette system tiles (already added above)
         if (tile.is_prefilled_palette()) {
             continue;
         }
@@ -603,10 +575,6 @@ void emit_success_remark(const UserDiagnostics &diag, const SearchParams &params
 }
 
 } // namespace
-
-// ============================================================================
-// BacktrackingStrategy::pack
-// ============================================================================
 
 ChainableResult<PackingOutput> BacktrackingStrategy::pack(const PackingInput &input) const
 {

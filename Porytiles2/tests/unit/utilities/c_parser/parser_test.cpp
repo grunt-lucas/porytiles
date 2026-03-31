@@ -427,7 +427,6 @@ TEST_F(ParserTests, UnknownIdentifierErrorPosition)
     auto result = parse("#define FOO UNKNOWN_MACRO");
     ASSERT_FALSE(result.has_value());
     std::string error_text = get_all_error_text(result);
-    // Should contain the error message and position info
     EXPECT_NE(error_text.find("unknown identifier 'UNKNOWN_MACRO'"), std::string::npos);
     // Position should be line 1, column 13 (where "UNKNOWN_MACRO" starts)
     EXPECT_NE(error_text.find("1:13:"), std::string::npos);
@@ -462,10 +461,6 @@ TEST_F(ParserTests, ParseRealWorldExample)
     EXPECT_EQ(defines[4].name(), "PALETTE_MASK");
     EXPECT_EQ(defines[4].int_value(), 0x0F);
 }
-
-// ============================================================================
-// Enum Parsing Tests
-// ============================================================================
 
 TEST_F(ParserTests, ParseEmptyEnumReturnsEmptyMembers)
 {
@@ -623,7 +618,6 @@ TEST_F(ParserTests, EnumMissingOpeningBraceErrorPosition)
     auto result = parse_enums("enum FOO;");
     ASSERT_FALSE(result.has_value());
     std::string error_text = get_all_error_text(result);
-    // Should contain the error message
     EXPECT_NE(error_text.find("expected '{' after 'enum'"), std::string::npos);
     // Error should point to the semicolon position (line 1, column 9)
     EXPECT_NE(error_text.find("1:9:"), std::string::npos);
@@ -640,15 +634,10 @@ TEST_F(ParserTests, EnumMissingClosingBraceErrorPosition)
     auto result = parse_enums("enum { A, B");
     ASSERT_FALSE(result.has_value());
     std::string error_text = get_all_error_text(result);
-    // Should contain the error message
     EXPECT_NE(error_text.find("expected '}' to close enum"), std::string::npos);
     // Error should point to EOF on line 1
     EXPECT_NE(error_text.find("1:"), std::string::npos);
 }
-
-// ============================================================================
-// Pointer Array Parsing Tests
-// ============================================================================
 
 TEST_F(ParserTests, ParsePointerArraysEmptyInput)
 {
@@ -760,10 +749,6 @@ TEST_F(ParserTests, ParseStaticPointerArrayWithoutConst)
     EXPECT_EQ(result.value()[0].name(), "arr");
 }
 
-// ============================================================================
-// INCBIN Array Parsing Tests
-// ============================================================================
-
 TEST_F(ParserTests, ParseSimpleIncbinArray)
 {
     auto result = parse_incbin_arrays(
@@ -787,10 +772,6 @@ TEST_F(ParserTests, ParseStaticIncbinArray)
     ASSERT_EQ(result.value()[0].paths().size(), 1);
     EXPECT_EQ(result.value()[0].paths()[0], "data/tilesets/primary/general/anim/flower/0.4bpp");
 }
-
-// ============================================================================
-// Function Definition Parsing Tests
-// ============================================================================
 
 TEST_F(ParserTests, ParseFunctionsEmptyInput)
 {
@@ -876,7 +857,6 @@ static void QueueAnimTiles_Flower(u16 timer) {
     ASSERT_EQ(result.value().size(), 1);
 
     const auto &body = result.value()[0].body_tokens();
-    // Should contain TILE_OFFSET_4BPP identifier
     bool found_tile_offset = false;
     for (const auto &token : body) {
         if (token.is(TokenType::identifier) && token.text() == "TILE_OFFSET_4BPP") {
@@ -918,10 +898,6 @@ static void TilesetAnim_PorytilesManaged_General(u16 timer) {
     EXPECT_EQ(result.value()[0].name(), "QueueAnimTiles_PorytilesManaged_General_Flower");
     EXPECT_EQ(result.value()[1].name(), "TilesetAnim_PorytilesManaged_General");
 }
-
-// ============================================================================
-// Struct Variable Declaration Parsing Tests
-// ============================================================================
 
 TEST_F(ParserTests, ParseStructVariablesEmptyInput)
 {

@@ -83,17 +83,13 @@ struct TileInfo {
 
     // If best cost equals tile size (no overlap benefit), return nullopt to create new palette.
     // This happens when all colors in the tile are new to the palette (each color contributes 1.0).
-    // Skip this check when force_assignment is true — the caller wants a palette regardless.
+    // Skip this check when force_assignment is true, since the caller wants a palette regardless.
     if (!force_assignment && best_idx.has_value() && best_cost >= static_cast<double>(info.tile.color_count())) {
         return std::nullopt;
     }
 
     return best_idx;
 }
-
-// ============================================================================
-// Preset matrix types and construction
-// ============================================================================
 
 struct OarParams {
     ShuffleStrategy shuffle_strategy;
@@ -147,10 +143,6 @@ struct OarParams {
     return matrix;
 }
 
-// ============================================================================
-// Remark helpers
-// ============================================================================
-
 [[nodiscard]] std::string format_oar_params_line(const OarParams &params)
 {
     return std::format(
@@ -176,10 +168,6 @@ void emit_success_remark(const UserDiagnostics &diag, const OarParams &params, b
 } // namespace
 
 namespace porytiles2 {
-
-// ============================================================================
-// OverloadAndRemoveStrategy::pack
-// ============================================================================
 
 ChainableResult<PackingOutput> OverloadAndRemoveStrategy::pack(const PackingInput &input) const
 {
@@ -214,10 +202,6 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::pack(const PackingInpu
         "Overload-and-Remove strategy failed to find a valid palette assignment with the configured parameters."};
 }
 
-// ============================================================================
-// OverloadAndRemoveStrategy::run_multi_start
-// ============================================================================
-
 ChainableResult<PackingOutput> OverloadAndRemoveStrategy::run_multi_start(
     const PackingInput &input, ShuffleStrategy shuffle_strategy, std::size_t max_attempts, std::uint64_t seed) const
 {
@@ -237,13 +221,9 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::run_multi_start(
         }
     }
 
-    // All attempts failed — return the first attempt's error (most informative)
+    // All attempts failed. Return the first attempt's error (most informative).
     return first_result;
 }
-
-// ============================================================================
-// OverloadAndRemoveStrategy::try_pack
-// ============================================================================
 
 ChainableResult<PackingOutput> OverloadAndRemoveStrategy::try_pack(
     const PackingInput &input, ShuffleStrategy shuffle_strategy, std::optional<std::uint64_t> shuffle_seed) const

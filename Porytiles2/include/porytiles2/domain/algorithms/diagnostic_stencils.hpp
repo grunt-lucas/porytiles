@@ -260,7 +260,7 @@ template <std::size_t N>
  *
  * @details
  * Formats tile indices as metatile message headers, 2 per line, up to a maximum of 8 displayed entries. If there are
- * more than 8, appends an "... and N more." line. The caller is responsible for providing any header line — this
+ * more than 8, appends an "... and N more." line. The caller is responsible for providing any header line. This
  * function only emits the tile reference listing.
  *
  * @param format The TextFormatter for styling

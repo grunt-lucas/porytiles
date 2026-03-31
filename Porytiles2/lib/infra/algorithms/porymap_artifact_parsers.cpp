@@ -28,7 +28,7 @@ ChainableResult<std::vector<TilemapEntry>> parse_metatiles_bin(const std::filesy
         const std::uint16_t upper_byte = data_buf.at(byte_index + 1);
         const std::uint16_t entry_bits = (upper_byte << 8) | lower_byte;
 
-        // -------- Metatile BIN Structure --------
+        // Metatile BIN Structure
         // The metatiles.bin file contains a sequence of tilemap entries, which are each two bytes with the following
         // structure:
         //

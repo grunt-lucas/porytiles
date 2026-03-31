@@ -357,15 +357,20 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
  * If the result contains an error, the macro returns from the current function with a ChainableResult containing the
  * original error chain plus the new error message provided.
  *
+ * The variadic args are forwarded directly to the FormattableError constructor, so you can pass a plain string or a
+ * format string with FormatParam arguments. When passing FormatParam inside the macro call, use parentheses instead of
+ * braces to avoid preprocessor comma-splitting: @c FormatParam(name, Style::bold) not @c FormatParam{name,
+ * Style::bold}.
+ *
  * @param var The variable name to assign the unwrapped value to
  * @param expr The expression returning a ChainableResult
- * @param msg The error message to chain if the result contains an error
  * @param return_type The success type of the ChainableResult to return on error
+ * @param ... Arguments forwarded to the FormattableError constructor (format string, optional FormatParams)
  */
-#define PT_TRY_ASSIGN_CHAIN_ERR(var, expr, msg, return_type)                                                           \
+#define PT_TRY_ASSIGN_CHAIN_ERR(var, expr, return_type, ...)                                                           \
     auto var##_result = (expr);                                                                                        \
     if (!var##_result.has_value()) {                                                                                   \
-        return ChainableResult<return_type>{FormattableError{msg}, var##_result};                                      \
+        return ChainableResult<return_type>{FormattableError{__VA_ARGS__}, var##_result};                              \
     }                                                                                                                  \
     auto var = std::move(var##_result).value();
 
@@ -417,15 +422,15 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
     auto var = std::move(var##_result).value();
 
 // Internal implementation detail - do not use directly
-#define PT_DETAIL_TRY_CALL_CHAIN_ERR_EXPAND(expr, msg, return_type, counter)                                           \
+#define PT_DETAIL_TRY_CALL_CHAIN_ERR_EXPAND(expr, return_type, counter, ...)                                           \
     auto pt_try_call_result_##counter = (expr);                                                                        \
     if (!pt_try_call_result_##counter.has_value()) {                                                                   \
-        return ChainableResult<return_type>{FormattableError{msg}, pt_try_call_result_##counter};                      \
+        return ChainableResult<return_type>{FormattableError{__VA_ARGS__}, pt_try_call_result_##counter};              \
     }
 
 // Internal implementation detail - do not use directly
-#define PT_DETAIL_TRY_CALL_CHAIN_ERR_IMPL(expr, msg, return_type, counter)                                             \
-    PT_DETAIL_TRY_CALL_CHAIN_ERR_EXPAND(expr, msg, return_type, counter)
+#define PT_DETAIL_TRY_CALL_CHAIN_ERR_IMPL(expr, return_type, counter, ...)                                             \
+    PT_DETAIL_TRY_CALL_CHAIN_ERR_EXPAND(expr, return_type, counter, __VA_ARGS__)
 
 /**
  * @brief Unwraps a void ChainableResult, chaining a new error message on failure.
@@ -435,17 +440,22 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
  * evaluates the expression, checks if it contains a success value, and either continues execution or returns early
  * with a new error chained to the existing error chain. This is the void equivalent of PT_TRY_ASSIGN_CHAIN_ERR.
  *
- * If the result contains an error, the macro returns from the current function with a ChainableResult<void> containing
- * the original error chain plus the new error message provided.
+ * If the result contains an error, the macro returns from the current function with a ChainableResult containing the
+ * original error chain plus the new error message provided.
+ *
+ * The variadic args are forwarded directly to the FormattableError constructor, so you can pass a plain string or a
+ * format string with FormatParam arguments. When passing FormatParam inside the macro call, use parentheses instead of
+ * braces to avoid preprocessor comma-splitting: @c FormatParam(name, Style::bold) not @c FormatParam{name,
+ * Style::bold}.
  *
  * Uses __COUNTER__ internally to generate unique variable names and avoid naming collisions.
  *
  * @param expr The expression returning a ChainableResult<void, E>
- * @param msg The error message to chain if the result contains an error
  * @param return_type The success type of the ChainableResult to return on error
+ * @param ... Arguments forwarded to the FormattableError constructor (format string, optional FormatParams)
  */
-#define PT_TRY_CALL_CHAIN_ERR(expr, msg, return_type)                                                                  \
-    PT_DETAIL_TRY_CALL_CHAIN_ERR_IMPL(expr, msg, return_type, __COUNTER__)
+#define PT_TRY_CALL_CHAIN_ERR(expr, return_type, ...)                                                                  \
+    PT_DETAIL_TRY_CALL_CHAIN_ERR_IMPL(expr, return_type, __COUNTER__, __VA_ARGS__)
 
 // Internal implementation detail - do not use directly
 #define PT_DETAIL_TRY_CALL_PASS_ERR_EXPAND(expr, return_type, counter)                                                 \

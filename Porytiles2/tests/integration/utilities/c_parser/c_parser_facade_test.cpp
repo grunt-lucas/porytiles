@@ -15,7 +15,6 @@ class CParserFacadeTests : public ::testing::Test {
   protected:
     PlainTextFormatter formatter_;
 
-    // Helper to get path to test resources
     [[nodiscard]] std::filesystem::path test_resource_path(const std::string &relative_path) const
     {
         // Tests are run from the build directory, resources are relative to repo root
@@ -26,7 +25,6 @@ class CParserFacadeTests : public ::testing::Test {
         return repo_root / "Resources" / relative_path;
     }
 
-    // Helper to create a temporary file with content
     [[nodiscard]] std::filesystem::path create_temp_file(const std::string &content)
     {
         std::filesystem::path temp_path = std::filesystem::temp_directory_path() / "porytiles_driver_test.h";
@@ -61,10 +59,6 @@ class CParserFacadeTests : public ::testing::Test {
     std::vector<std::filesystem::path> temp_files_;
 };
 
-// ============================================================================
-// Basic Functionality Tests
-// ============================================================================
-
 TEST_F(CParserFacadeTests, ParseDefinesFromRealFile)
 {
     auto file_path = test_resource_path("Tests/integration/shared/c_parser/metatile_behaviors_define.h");
@@ -77,7 +71,6 @@ TEST_F(CParserFacadeTests, ParseDefinesFromRealFile)
     // File has many defines, check a few key ones
     EXPECT_GT(defines.size(), 200);
 
-    // Check first define
     EXPECT_EQ(defines[0].name(), "GUARD_METATILE_BEHAVIORS_H");
     EXPECT_TRUE(defines[0].is_flag());
 
@@ -110,10 +103,8 @@ TEST_F(CParserFacadeTests, ParseEnumsFromRealFile)
     const auto &enums = enums_result.value();
     ASSERT_GE(enums.size(), 1);
 
-    // Check that we have enum members
     EXPECT_GT(enums[0].members().size(), 0);
 
-    // Check some member values
     EXPECT_EQ(enums[0].members().at(0).name(), "MB_NORMAL");
     EXPECT_EQ(enums[0].members().at(0).int_value(), 0);
 
@@ -134,7 +125,6 @@ TEST_F(CParserFacadeTests, ParseDefinesAndEnumsFromRealFile)
     const auto &defines = defines_result.value();
     EXPECT_GT(defines.size(), 0);
 
-    // Check first few file defines
     EXPECT_EQ(defines.at(0).name(), "GUARD_METATILE_BEHAVIORS_H");
     EXPECT_TRUE(defines.at(0).is_flag());
 
@@ -168,10 +158,8 @@ TEST_F(CParserFacadeTests, ParseDefinesAndEnumsFromRealFile)
     const auto &enums = enums_result.value();
     ASSERT_GE(enums.size(), 1);
 
-    // Check that we have enum members
     EXPECT_GT(enums[0].members().size(), 0);
 
-    // Check some member values
     EXPECT_EQ(enums[0].members().at(0).name(), "MB_NORMAL");
     EXPECT_EQ(enums[0].members().at(0).int_value(), 0);
 
@@ -221,10 +209,6 @@ TEST_F(CParserFacadeTests, ParseEnumsFromTempFile)
     EXPECT_EQ(members[2].int_value(), 11);
 }
 
-// ============================================================================
-// Error Handling Tests
-// ============================================================================
-
 TEST_F(CParserFacadeTests, NonExistentFileReturnsFileNotFoundError)
 {
     CParserFacade driver{"/nonexistent/path/to/file.h", &formatter_};
@@ -260,9 +244,7 @@ TEST_F(CParserFacadeTests, LexerErrorIncludesFileContext)
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = get_all_error_text(result);
-    // Should include file path in error
     EXPECT_NE(error_text.find("porytiles_driver_test.h"), std::string::npos);
-    // Should include the error message
     EXPECT_NE(error_text.find("unterminated string"), std::string::npos);
 }
 
@@ -275,9 +257,7 @@ TEST_F(CParserFacadeTests, ParserErrorIncludesFileContext)
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = get_all_error_text(result);
-    // Should include file path in error
     EXPECT_NE(error_text.find("porytiles_driver_test.h"), std::string::npos);
-    // Should include the error message
     EXPECT_NE(error_text.find("unknown identifier"), std::string::npos);
 }
 
@@ -290,15 +270,9 @@ TEST_F(CParserFacadeTests, EnumParseErrorIncludesFileContext)
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = get_all_error_text(result);
-    // Should include file path in error
     EXPECT_NE(error_text.find("porytiles_driver_test.h"), std::string::npos);
-    // Should include the error message
     EXPECT_NE(error_text.find("expected '{' after 'enum'"), std::string::npos);
 }
-
-// ============================================================================
-// Caching/Reuse Tests
-// ============================================================================
 
 TEST_F(CParserFacadeTests, MultipleParseCallsReuseLoadedFile)
 {
@@ -330,10 +304,6 @@ TEST_F(CParserFacadeTests, ParseDefinesDoesNotResetParserState)
     ASSERT_TRUE(result2.has_value());
     EXPECT_EQ(result2.value().size(), 2);
 }
-
-// ============================================================================
-// Edge Cases
-// ============================================================================
 
 TEST_F(CParserFacadeTests, EmptyFileReturnsEmptyResults)
 {
@@ -378,10 +348,6 @@ enum { C, D };
     EXPECT_EQ(enums_result.value().size(), 2);
 }
 
-// ============================================================================
-// Pointer Array Parsing Tests
-// ============================================================================
-
 TEST_F(CParserFacadeTests, ParsePointerArraysFromGeneratedHeader)
 {
     auto file_path = test_resource_path("Tests/integration/shared/c_parser/generated_anim_code.h");
@@ -391,7 +357,6 @@ TEST_F(CParserFacadeTests, ParsePointerArraysFromGeneratedHeader)
     ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
 
     const auto &arrays = result.value();
-    // Should have 5 frame pointer arrays: Flower, LandWaterEdge, SandWaterEdge, Water, Waterfall
     EXPECT_EQ(arrays.size(), 5);
 
     // Find Flower array
@@ -443,10 +408,6 @@ TEST_F(CParserFacadeTests, ParsePointerArraysNonExistentFileReturnsError)
     EXPECT_NE(error_text.find("file not found"), std::string::npos);
 }
 
-// ============================================================================
-// Function Parsing Tests
-// ============================================================================
-
 TEST_F(CParserFacadeTests, ParseFunctionsFromGeneratedHeader)
 {
     auto file_path = test_resource_path("Tests/integration/shared/c_parser/generated_anim_code.h");
@@ -476,10 +437,8 @@ TEST_F(CParserFacadeTests, ParseFunctionsWithPrefixFilter)
     ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
 
     const auto &functions = result.value();
-    // Should have exactly 5 QueueAnimTiles functions
     EXPECT_EQ(functions.size(), 5);
 
-    // All should have QueueAnimTiles_ prefix
     for (const auto &func : functions) {
         EXPECT_TRUE(func.name().starts_with("QueueAnimTiles_"));
     }
@@ -531,7 +490,6 @@ TEST_F(CParserFacadeTests, ParseFunctionBodyContainsExpectedTokens)
 
     const auto &body = functions[0].body_tokens();
 
-    // Should contain TILE_OFFSET_4BPP identifier
     bool found_tile_offset = false;
     bool found_508 = false;
     for (std::size_t i = 0; i < body.size(); ++i) {
@@ -547,10 +505,6 @@ TEST_F(CParserFacadeTests, ParseFunctionBodyContainsExpectedTokens)
     EXPECT_TRUE(found_tile_offset) << "Expected to find TILE_OFFSET_4BPP in function body";
     EXPECT_TRUE(found_508) << "Expected to find TILE_OFFSET_4BPP(508) in function body";
 }
-
-// ============================================================================
-// INCBIN Array Parsing Tests
-// ============================================================================
 
 TEST_F(CParserFacadeTests, ParseIncbinArraysSinglePathDeclarations)
 {

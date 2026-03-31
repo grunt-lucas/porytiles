@@ -20,12 +20,6 @@ using namespace porytiles2;
  */
 class ProjectTilesetMetadataProviderTestBase : public ::testing::Test {
   protected:
-    /**
-     * @brief Returns the path to the mock pokeemerald project root.
-     *
-     * @details
-     * Override this in derived fixtures to test against different project structures.
-     */
     [[nodiscard]] virtual std::filesystem::path project_root_path() const = 0;
 
     void SetUp() override
@@ -50,9 +44,6 @@ class ProjectTilesetMetadataProviderTestBase : public ::testing::Test {
     std::unique_ptr<ProjectTilesetMetadataProvider> metadata_provider_;
 };
 
-/**
- * @brief Tests using the pokeemerald_porytilestesttilesets mock project.
- */
 class ProjectTilesetMetadataProviderTest_Fixture1 : public ProjectTilesetMetadataProviderTestBase {
   protected:
     [[nodiscard]] std::filesystem::path project_root_path() const override

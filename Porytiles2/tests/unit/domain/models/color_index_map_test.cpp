@@ -10,14 +10,14 @@
 
 using namespace porytiles2;
 
-TEST(ColorIndexMapTests, DefaultConstructedMapShouldBeEmpty)
+TEST(ColorIndexMapTests, DefaultIsEmpty)
 {
     ColorIndexMap<Rgba32> map{};
 
     EXPECT_TRUE(map.empty());
 }
 
-TEST(ColorIndexMapTests, AddTileShouldBuildBidirectionalMapping)
+TEST(ColorIndexMapTests, AddTileBuildsBidirectionalMapping)
 {
     // Create a tile with 3 unique non-transparent colors
     PixelTile<Rgba32> tile{};
@@ -30,11 +30,10 @@ TEST(ColorIndexMapTests, AddTileShouldBuildBidirectionalMapping)
     ColorIndexMap<Rgba32> map{};
     map.add_tile(tile, rgba_magenta);
 
-    // Should have 3 unique colors
     EXPECT_EQ(3, map.size());
 }
 
-TEST(ColorIndexMapTests, ForwardLookupShouldMapColorToIndex)
+TEST(ColorIndexMapTests, ForwardLookupMapsColorToIndex)
 {
     PixelTile<Rgba32> tile{};
     tile.set(0, Rgba32{255, 0, 0}); // red
@@ -44,7 +43,6 @@ TEST(ColorIndexMapTests, ForwardLookupShouldMapColorToIndex)
     ColorIndexMap<Rgba32> map{};
     map.add_tile(tile, rgba_magenta);
 
-    // Each color should have an index
     auto red_index = map.index_at_color(Rgba32{255, 0, 0});
     auto green_index = map.index_at_color(Rgba32{0, 255, 0});
     auto blue_index = map.index_at_color(Rgba32{0, 0, 255});
@@ -58,13 +56,12 @@ TEST(ColorIndexMapTests, ForwardLookupShouldMapColorToIndex)
     EXPECT_LE(green_index.value().index(), 2);
     EXPECT_LE(blue_index.value().index(), 2);
 
-    // All indices should be different
     EXPECT_NE(red_index.value(), green_index.value());
     EXPECT_NE(red_index.value(), blue_index.value());
     EXPECT_NE(green_index.value(), blue_index.value());
 }
 
-TEST(ColorIndexMapTests, ReverseLookupShouldMapIndexToColor)
+TEST(ColorIndexMapTests, ReverseLookupMapsIndexToColor)
 {
     PixelTile<Rgba32> tile{};
     tile.set(0, Rgba32{255, 0, 0}); // red
@@ -74,7 +71,6 @@ TEST(ColorIndexMapTests, ReverseLookupShouldMapIndexToColor)
     ColorIndexMap<Rgba32> map{};
     map.add_tile(tile, rgba_magenta);
 
-    // Each index should have a color
     auto color_at_0 = map.color_at_index(ColorIndex{0});
     auto color_at_1 = map.color_at_index(ColorIndex{1});
     auto color_at_2 = map.color_at_index(ColorIndex{2});
@@ -92,13 +88,12 @@ TEST(ColorIndexMapTests, ReverseLookupShouldMapIndexToColor)
     EXPECT_TRUE(color_at_1.value() == red || color_at_1.value() == green || color_at_1.value() == blue);
     EXPECT_TRUE(color_at_2.value() == red || color_at_2.value() == green || color_at_2.value() == blue);
 
-    // All colors should be different
     EXPECT_NE(color_at_0.value(), color_at_1.value());
     EXPECT_NE(color_at_0.value(), color_at_2.value());
     EXPECT_NE(color_at_1.value(), color_at_2.value());
 }
 
-TEST(ColorIndexMapTests, BidirectionalLookupShouldBeConsistent)
+TEST(ColorIndexMapTests, BidirectionalLookupConsistent)
 {
     PixelTile<Rgba32> tile{};
     tile.set(0, Rgba32{255, 0, 0}); // red
@@ -136,7 +131,7 @@ TEST(ColorIndexMapTests, BidirectionalLookupShouldBeConsistent)
     EXPECT_EQ(blue, color_at_blue_index.value());
 }
 
-TEST(ColorIndexMapTests, LookupNonexistentColorShouldReturnNullopt)
+TEST(ColorIndexMapTests, LookupNonexistentColorReturnsNullopt)
 {
     PixelTile<Rgba32> tile{};
     tile.set(0, Rgba32{255, 0, 0}); // red
@@ -149,7 +144,7 @@ TEST(ColorIndexMapTests, LookupNonexistentColorShouldReturnNullopt)
     EXPECT_FALSE(yellow_index.has_value());
 }
 
-TEST(ColorIndexMapTests, LookupNonexistentIndexShouldReturnNullopt)
+TEST(ColorIndexMapTests, LookupNonexistentIndexReturnsNullopt)
 {
     PixelTile<Rgba32> tile{};
     tile.set(0, Rgba32{255, 0, 0}); // red
@@ -162,7 +157,7 @@ TEST(ColorIndexMapTests, LookupNonexistentIndexShouldReturnNullopt)
     EXPECT_FALSE(color_at_99.has_value());
 }
 
-TEST(ColorIndexMapTests, TransparentColorsShouldBeFiltered)
+TEST(ColorIndexMapTests, TransparentColorsFiltered)
 {
     PixelTile<Rgba32> tile{};
     tile.set(0, Rgba32{255, 0, 0});                          // red (non-transparent)
@@ -172,10 +167,8 @@ TEST(ColorIndexMapTests, TransparentColorsShouldBeFiltered)
     ColorIndexMap<Rgba32> map{};
     map.add_tile(tile, rgba_magenta);
 
-    // Should only have red (index 0)
     EXPECT_EQ(1, map.size());
 
-    // Red should be present
     auto red_index = map.index_at_color(Rgba32{255, 0, 0});
     ASSERT_TRUE(red_index.has_value());
     EXPECT_EQ(0, red_index.value().index());
@@ -201,7 +194,6 @@ TEST(ColorIndexMapTests, DeduplicationAcrossMultipleTiles)
     map.add_tile(tile1, rgba_magenta);
     map.add_tile(tile2, rgba_magenta);
 
-    // Should have 3 unique colors (red, green, blue)
     EXPECT_EQ(3, map.size());
 
     // Green should have only one index
@@ -232,11 +224,7 @@ TEST(ColorIndexMapTests, SequentialIndicesStartAtZero)
     EXPECT_FALSE(map.color_at_index(ColorIndex{3}).has_value());
 }
 
-// ============================================================================
-// add_tile tests
-// ============================================================================
-
-TEST(ColorIndexMapTests, AddTileShouldAddColorsFromTile)
+TEST(ColorIndexMapTests, AddTileAddsColors)
 {
     ColorIndexMap<Rgba32> map{};
 
@@ -251,7 +239,7 @@ TEST(ColorIndexMapTests, AddTileShouldAddColorsFromTile)
     EXPECT_TRUE(map.index_at_color(Rgba32{0, 255, 0}).has_value());
 }
 
-TEST(ColorIndexMapTests, AddTileShouldDeduplicateColors)
+TEST(ColorIndexMapTests, AddTileDeduplicatesColors)
 {
     ColorIndexMap<Rgba32> map{};
 
@@ -268,7 +256,7 @@ TEST(ColorIndexMapTests, AddTileShouldDeduplicateColors)
     EXPECT_EQ(2, map.size()); // red and green, no duplicates
 }
 
-TEST(ColorIndexMapTests, AddTileShouldFilterTransparentColors)
+TEST(ColorIndexMapTests, AddTileFiltersTransparent)
 {
     ColorIndexMap<Rgba32> map{};
 
@@ -284,7 +272,7 @@ TEST(ColorIndexMapTests, AddTileShouldFilterTransparentColors)
     EXPECT_FALSE(map.index_at_color(Rgba32{255, 0, 255}).has_value());
 }
 
-TEST(ColorIndexMapTests, AddTileShouldAssignSequentialIndices)
+TEST(ColorIndexMapTests, AddTileAssignsSequentialIndices)
 {
     ColorIndexMap<Rgba32> map{};
 
@@ -307,11 +295,7 @@ TEST(ColorIndexMapTests, AddTileShouldAssignSequentialIndices)
     EXPECT_EQ(1, green_index.value().index());
 }
 
-// ============================================================================
-// add_pal tests (fixed-size palette)
-// ============================================================================
-
-TEST(ColorIndexMapTests, AddPalFixedSizeShouldAddColorsFromPalette)
+TEST(ColorIndexMapTests, AddPalFixedAddsColors)
 {
     ColorIndexMap<Rgba32> map{};
 
@@ -327,7 +311,7 @@ TEST(ColorIndexMapTests, AddPalFixedSizeShouldAddColorsFromPalette)
     EXPECT_TRUE(map.index_at_color(Rgba32{0, 255, 0}).has_value());
 }
 
-TEST(ColorIndexMapTests, AddPalFixedSizeShouldSkipWildcards)
+TEST(ColorIndexMapTests, AddPalFixedSkipsWildcards)
 {
     ColorIndexMap<Rgba32> map{};
 
@@ -341,7 +325,7 @@ TEST(ColorIndexMapTests, AddPalFixedSizeShouldSkipWildcards)
     EXPECT_EQ(1, map.size()); // only red
 }
 
-TEST(ColorIndexMapTests, AddPalFixedSizeShouldDeduplicateColors)
+TEST(ColorIndexMapTests, AddPalFixedDeduplicates)
 {
     ColorIndexMap<Rgba32> map{};
 
@@ -360,11 +344,7 @@ TEST(ColorIndexMapTests, AddPalFixedSizeShouldDeduplicateColors)
     EXPECT_EQ(2, map.size()); // red and blue
 }
 
-// ============================================================================
-// add_pal tests (dynamic palette)
-// ============================================================================
-
-TEST(ColorIndexMapTests, AddPalDynamicShouldAddColorsFromPalette)
+TEST(ColorIndexMapTests, AddPalDynamicAddsColors)
 {
     ColorIndexMap<Rgba32> map{};
 
@@ -380,7 +360,7 @@ TEST(ColorIndexMapTests, AddPalDynamicShouldAddColorsFromPalette)
     EXPECT_TRUE(map.index_at_color(Rgba32{0, 255, 0}).has_value());
 }
 
-TEST(ColorIndexMapTests, AddPalDynamicShouldSkipWildcards)
+TEST(ColorIndexMapTests, AddPalDynamicSkipsWildcards)
 {
     ColorIndexMap<Rgba32> map{};
 
@@ -395,7 +375,7 @@ TEST(ColorIndexMapTests, AddPalDynamicShouldSkipWildcards)
     EXPECT_EQ(2, map.size()); // red and blue
 }
 
-TEST(ColorIndexMapTests, AddPalDynamicShouldDeduplicateColors)
+TEST(ColorIndexMapTests, AddPalDynamicDeduplicates)
 {
     ColorIndexMap<Rgba32> map{};
 
@@ -414,11 +394,7 @@ TEST(ColorIndexMapTests, AddPalDynamicShouldDeduplicateColors)
     EXPECT_EQ(2, map.size()); // red and blue
 }
 
-// ============================================================================
-// Combined add tests
-// ============================================================================
-
-TEST(ColorIndexMapTests, AddTileAndAddPalShouldDeduplicateAcrossBoth)
+TEST(ColorIndexMapTests, AddTileAndPalDeduplicateAcross)
 {
     ColorIndexMap<Rgba32> map{};
 
@@ -437,7 +413,7 @@ TEST(ColorIndexMapTests, AddTileAndAddPalShouldDeduplicateAcrossBoth)
     EXPECT_EQ(3, map.size()); // red, green, blue
 }
 
-TEST(ColorIndexMapTests, AddMethodsShouldMaintainBidirectionalConsistency)
+TEST(ColorIndexMapTests, AddMethodsMaintainBidirectionalConsistency)
 {
     ColorIndexMap<Rgba32> map{};
 
@@ -473,11 +449,7 @@ TEST(ColorIndexMapTests, AddMethodsShouldMaintainBidirectionalConsistency)
     EXPECT_EQ(green, color_at_green_index.value());
 }
 
-// ============================================================================
-// add_anim tests
-// ============================================================================
-
-TEST(ColorIndexMapTests, AddAnimWithOnlyKeyFrameShouldAddColors)
+TEST(ColorIndexMapTests, AddAnimKeyFrameOnly)
 {
     ColorIndexMap<Rgba32> map{};
 
@@ -499,7 +471,7 @@ TEST(ColorIndexMapTests, AddAnimWithOnlyKeyFrameShouldAddColors)
     EXPECT_TRUE(map.index_at_color(Rgba32{0, 255, 0}).has_value());
 }
 
-TEST(ColorIndexMapTests, AddAnimWithOnlyRegularFramesShouldAddColors)
+TEST(ColorIndexMapTests, AddAnimRegularFramesOnly)
 {
     ColorIndexMap<Rgba32> map{};
 
@@ -527,7 +499,7 @@ TEST(ColorIndexMapTests, AddAnimWithOnlyRegularFramesShouldAddColors)
     EXPECT_TRUE(map.index_at_color(Rgba32{0, 255, 0}).has_value());
 }
 
-TEST(ColorIndexMapTests, AddAnimWithKeyFrameAndRegularFramesShouldAddAllColors)
+TEST(ColorIndexMapTests, AddAnimKeyAndRegularFrames)
 {
     ColorIndexMap<Rgba32> map{};
 
@@ -563,7 +535,7 @@ TEST(ColorIndexMapTests, AddAnimWithKeyFrameAndRegularFramesShouldAddAllColors)
     EXPECT_TRUE(map.index_at_color(Rgba32{0, 0, 255}).has_value()); // blue from frame 1
 }
 
-TEST(ColorIndexMapTests, AddAnimShouldDeduplicateColorsAcrossFrames)
+TEST(ColorIndexMapTests, AddAnimDeduplicatesAcrossFrames)
 {
     ColorIndexMap<Rgba32> map{};
 
@@ -597,7 +569,7 @@ TEST(ColorIndexMapTests, AddAnimShouldDeduplicateColorsAcrossFrames)
     EXPECT_EQ(3, map.size()); // red, green, blue (no duplicates)
 }
 
-TEST(ColorIndexMapTests, AddAnimShouldFilterTransparentColors)
+TEST(ColorIndexMapTests, AddAnimFiltersTransparent)
 {
     ColorIndexMap<Rgba32> map{};
 
@@ -619,7 +591,7 @@ TEST(ColorIndexMapTests, AddAnimShouldFilterTransparentColors)
     EXPECT_FALSE(map.index_at_color(Rgba32{0, 0, 0, Rgba32::alpha_transparent}).has_value());
 }
 
-TEST(ColorIndexMapTests, AddAnimShouldAddColorsFromAllSubtiles)
+TEST(ColorIndexMapTests, AddAnimAllSubtiles)
 {
     ColorIndexMap<Rgba32> map{};
 
@@ -656,7 +628,7 @@ TEST(ColorIndexMapTests, AddAnimShouldAddColorsFromAllSubtiles)
     EXPECT_TRUE(map.index_at_color(Rgba32{255, 255, 0}).has_value());
 }
 
-TEST(ColorIndexMapTests, AddAnimWithEmptyAnimationShouldNotAddColors)
+TEST(ColorIndexMapTests, AddAnimEmptyNoColors)
 {
     ColorIndexMap<Rgba32> map{};
 
@@ -668,7 +640,7 @@ TEST(ColorIndexMapTests, AddAnimWithEmptyAnimationShouldNotAddColors)
     EXPECT_TRUE(map.empty());
 }
 
-TEST(ColorIndexMapTests, AddAnimCombinedWithAddTileShouldDeduplicateAcrossBoth)
+TEST(ColorIndexMapTests, AddAnimAndTileDeduplicateAcross)
 {
     ColorIndexMap<Rgba32> map{};
 
@@ -691,7 +663,7 @@ TEST(ColorIndexMapTests, AddAnimCombinedWithAddTileShouldDeduplicateAcrossBoth)
     EXPECT_EQ(2, map.size()); // red and green
 }
 
-TEST(ColorIndexMapTests, AddAnimCombinedWithAddPalShouldDeduplicateAcrossBoth)
+TEST(ColorIndexMapTests, AddAnimAndPalDeduplicateAcross)
 {
     ColorIndexMap<Rgba32> map{};
 

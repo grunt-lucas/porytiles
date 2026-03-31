@@ -14,7 +14,7 @@ namespace porytiles2 {
  * @details
  * Porytiles deals with tileset names, animation names, and identifiers that come in various case formats (PascalCase,
  * snake_case, smoosh_case, and C identifiers with mixed casing around underscores). Converting between formats using
- * simple string manipulation is lossy — particularly round-trips through snake_case lose information about the original
+ * simple string manipulation is lossy. Particularly, round-trips through snake_case lose information about the original
  * underscore positions vs PascalCase word boundaries.
  *
  * DynamicCasedName solves this by parsing the input into a two-level structure:
@@ -38,10 +38,10 @@ class DynamicCasedName {
      *
      * @details
      * Auto-detection uses the following heuristic:
-     * - Has underscores AND uppercase letters → C identifier format
-     * - Has underscores but no uppercase → snake_case
-     * - No underscores but has uppercase → PascalCase
-     * - No underscores and no uppercase → smoosh_case
+     * - Has underscores AND uppercase letters -> C identifier format
+     * - Has underscores but no uppercase -> snake_case
+     * - No underscores but has uppercase -> PascalCase
+     * - No underscores and no uppercase -> smoosh_case
      *
      * @param input The name string to parse.
      */

@@ -63,7 +63,7 @@ class AnimCodeParser {
      * 1. Parses the callback function (e.g., `InitTilesetAnim_General`) to find the driver function assignment
      * 2. Parses the driver function to find timer conditions and queue function calls
      * 3. For each queue function, finds `AppendTilesetAnimToBuffer` calls and extracts:
-     *    - Animation name from the first argument (e.g., `gTilesetAnims_General_Flower[i]` → "flower")
+     *    - Animation name from the first argument (e.g., `gTilesetAnims_General_Flower[i]` -> "flower")
      *    - tile_offset from the second argument
      *    - tile_count from the third argument
      * 4. Parses frame pointer arrays to get frame sequences

@@ -74,83 +74,31 @@ class ConfigValue {
         return std::move(value_);
     }
 
-    /**
-     * @brief Gets a const reference to the underlying value.
-     *
-     * @return A const reference to the stored value
-     */
     [[nodiscard]] const T &value() const &
     {
         return value_;
     }
 
-    /**
-     * @brief Gets an rvalue reference to the underlying value.
-     *
-     * @return An rvalue reference to the stored value
-     */
     [[nodiscard]] T &&value() &&
     {
         return std::move(value_);
     }
 
-    /**
-     * @brief Gets the canonical (human-readable) name of this configuration value.
-     *
-     * @details
-     * The canonical name is the human-readable display name from the schema, such as:
-     * - "Number Of Tiles In Primary"
-     * - "Extrinsic Transparency"
-     *
-     * @return A const reference to the canonical name string
-     */
     [[nodiscard]] const std::string &canonical_name() const
     {
         return canonical_name_;
     }
 
-    /**
-     * @brief Gets the provider-specific key/identifier for this configuration value.
-     *
-     * @details
-     * The source key is the identifier used by the provider that supplied the value, such as:
-     * - "--num-tiles-per-metatile" (CLI option from CliOptionProvider)
-     * - "fieldmap.num_tiles_in_primary" (YAML path from YamlFileProvider)
-     * - "NUM_TILES_IN_PRIMARY" (header define from HeaderDefineProvider)
-     * - "Number Of Tiles In Primary" (canonical name from DefaultProvider)
-     *
-     * @return A const reference to the source key string
-     */
     [[nodiscard]] const std::string &source_key() const
     {
         return source_key_;
     }
 
-    /**
-     * @brief Gets the source information for this configuration value.
-     *
-     * @details
-     * The source string describes where this value originated, such as:
-     * - "default value"
-     * - "./porytiles.yaml:12"
-     * - "$PORYTILES_FIELDMAP_NUM_TILES_PRIMARY"
-     *
-     * @return A const reference to the source string
-     */
     [[nodiscard]] const std::string &source() const
     {
         return source_;
     }
 
-    /**
-     * @brief Gets the source details for this configuration value.
-     *
-     * @details
-     * The source details supplement the source string with additional context. For example, the YAML file provider may
-     * use the details string to supplement the file name and line number with a contextual view of the YAML file.
-     *
-     * @return A const reference to the source details vector
-     */
     [[nodiscard]] const std::vector<std::string> &source_details() const
     {
         return source_details_;

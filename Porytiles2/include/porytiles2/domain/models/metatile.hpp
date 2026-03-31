@@ -290,10 +290,10 @@ class Metatile {
      * Determines which layers (bottom, middle, top) are active for rendering based on content:
      * - Triple-layer mode always returns LayerType::normal
      * - For dual-layer mode, determines the layer type based on which layers have content:
-     *   - Bottom only → covered
-     *   - Bottom + middle → covered
-     *   - Bottom + top → split
-     *   - All other combinations → normal
+     *   - Bottom only -> covered
+     *   - Bottom + middle -> covered
+     *   - Bottom + top -> split
+     *   - All other combinations -> normal
      *
      * @return The inferred LayerType
      */
@@ -310,10 +310,10 @@ class Metatile {
      * Determines which layers (bottom, middle, top) are active for rendering based on content:
      * - Triple-layer mode always returns LayerType::normal
      * - For dual-layer mode, determines the layer type based on which layers have content:
-     *   - Bottom only → covered
-     *   - Bottom + middle → covered
-     *   - Bottom + top → split
-     *   - All other combinations → normal
+     *   - Bottom only -> covered
+     *   - Bottom + middle -> covered
+     *   - Bottom + top -> split
+     *   - All other combinations -> normal
      *
      * @param extrinsic The extrinsic transparency value to check each pixel against
      * @return The inferred LayerType

@@ -6,7 +6,7 @@
 
 #include "CLI/CLI.hpp"
 
-#include "porytiles2/infra/repos/project_tileset_name_provider.hpp"
+#include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/text/plain_text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/null_user_diagnostics.hpp"
 
@@ -61,8 +61,8 @@ class ListTilesetsCommand final : public Command {
         NullUserDiagnostics diag{&formatter};
 
         // Get all tileset names from the project
-        ProjectTilesetNameProvider provider{project_path, &formatter, &diag};
-        auto result = provider.all_tileset_names();
+        ProjectTilesetMetadataProvider provider{project_path, &formatter, &diag};
+        auto result = provider.tilesets();
 
         if (!result.has_value()) {
             // Silent exit - no output on errors
@@ -117,14 +117,14 @@ class ListTilesetsCommand final : public Command {
      *
      * @param project_root The project root path.
      * @param tileset_name The name of the tileset (e.g., "gTileset_General"). Must be a valid
-     *        tileset name from ProjectTilesetNameProvider (no path separators or traversal sequences).
+     *        tileset name from ProjectTilesetMetadataProvider (no path separators or traversal sequences).
      * @return True if the tileset is managed by Porytiles.
      */
     [[nodiscard]] static bool
     is_managed_tileset(const std::filesystem::path &project_root, const std::string &tileset_name)
     {
         // Security: Validate tileset_name doesn't contain path traversal sequences.
-        // Tileset names from ProjectTilesetNameProvider should be safe, but validate anyway.
+        // Tileset names from ProjectTilesetMetadataProvider should be safe, but validate anyway.
         if (tileset_name.empty() || tileset_name.find('/') != std::string::npos ||
             tileset_name.find('\\') != std::string::npos || tileset_name.find("..") != std::string::npos) {
             return false;

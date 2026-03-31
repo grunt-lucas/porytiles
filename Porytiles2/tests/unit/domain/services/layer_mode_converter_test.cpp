@@ -15,13 +15,11 @@ using namespace porytiles2;
 
 namespace {
 
-// Helper function to create a non-transparent TilemapEntry for testing
 TilemapEntry create_test_entry(std::size_t tile_index, std::size_t pal_index = 0)
 {
     return TilemapEntry{tile_index, pal_index, false, false};
 }
 
-// Helper function to create a dual-layer component with one metatile
 PorymapTilesetComponent create_dual_layer_component_single_metatile(LayerType layer_type)
 {
     PorymapTilesetComponent component;
@@ -37,7 +35,6 @@ PorymapTilesetComponent create_dual_layer_component_single_metatile(LayerType la
     return component;
 }
 
-// Helper function to create a triple-layer component with one metatile
 PorymapTilesetComponent create_triple_layer_component_single_metatile(LayerType layer_type)
 {
     PorymapTilesetComponent component;
@@ -53,7 +50,6 @@ PorymapTilesetComponent create_triple_layer_component_single_metatile(LayerType 
     return component;
 }
 
-// Helper function to create a non-transparent RGBA tile
 PixelTile<Rgba32> create_nontransparent_rgba_tile()
 {
     PixelTile<Rgba32> tile{};
@@ -64,8 +60,6 @@ PixelTile<Rgba32> create_nontransparent_rgba_tile()
     return tile;
 }
 
-// Helper function to create a Metatile<Rgba32> with specified LayerType
-// Uses magenta as extrinsic transparency (matches the converter's behavior)
 Metatile<Rgba32> create_metatile_with_layer_type(LayerType layer_type)
 {
     Metatile<Rgba32> metatile{};
@@ -121,7 +115,6 @@ TEST_F(LayerModeConverterTests, TripleLayerizeNoOpForTripleLayerComponent)
     ASSERT_TRUE(result.has_value());
     const auto &entries = result.value();
 
-    // Should return the same entries
     EXPECT_EQ(entries.size(), metatile::entries_per_metatile_triple);
 }
 
@@ -138,12 +131,10 @@ TEST_F(LayerModeConverterTests, TripleLayerizeNormalLayerTypeInsertsTransparentA
     // Should have 12 entries total (4 transparent + 8 original)
     ASSERT_EQ(entries.size(), metatile::entries_per_metatile_triple);
 
-    // First 4 entries should be transparent
     for (std::size_t i = 0; i < 4; ++i) {
         EXPECT_TRUE(entries[i].is_transparent()) << "Entry at index " << i << " should be transparent";
     }
 
-    // Next 8 entries should be the original entries (tile indices 1-8)
     for (std::size_t i = 4; i < 12; ++i) {
         EXPECT_EQ(entries[i].tile_index(), i - 3) << "Entry at index " << i << " should have tile_index " << (i - 3);
     }
@@ -162,12 +153,10 @@ TEST_F(LayerModeConverterTests, TripleLayerizeCoveredLayerTypeInsertsTransparent
     // Should have 12 entries total (8 original + 4 transparent)
     ASSERT_EQ(entries.size(), metatile::entries_per_metatile_triple);
 
-    // First 8 entries should be the original entries (tile indices 1-8)
     for (std::size_t i = 0; i < 8; ++i) {
         EXPECT_EQ(entries[i].tile_index(), i + 1) << "Entry at index " << i << " should have tile_index " << (i + 1);
     }
 
-    // Last 4 entries should be transparent
     for (std::size_t i = 8; i < 12; ++i) {
         EXPECT_TRUE(entries[i].is_transparent()) << "Entry at index " << i << " should be transparent";
     }
@@ -186,17 +175,14 @@ TEST_F(LayerModeConverterTests, TripleLayerizeSplitLayerTypeInsertsTransparentIn
     // Should have 12 entries total (4 original + 4 transparent + 4 original)
     ASSERT_EQ(entries.size(), metatile::entries_per_metatile_triple);
 
-    // First 4 entries should be the first half of original entries (tile indices 1-4)
     for (std::size_t i = 0; i < 4; ++i) {
         EXPECT_EQ(entries[i].tile_index(), i + 1) << "Entry at index " << i << " should have tile_index " << (i + 1);
     }
 
-    // Middle 4 entries should be transparent
     for (std::size_t i = 4; i < 8; ++i) {
         EXPECT_TRUE(entries[i].is_transparent()) << "Entry at index " << i << " should be transparent";
     }
 
-    // Last 4 entries should be the second half of original entries (tile indices 5-8)
     for (std::size_t i = 8; i < 12; ++i) {
         EXPECT_EQ(entries[i].tile_index(), i - 3) << "Entry at index " << i << " should have tile_index " << (i - 3);
     }
@@ -298,7 +284,6 @@ TEST_F(LayerModeConverterTests, TripleLayerizePreservesFlipFlags)
     ASSERT_TRUE(result.has_value());
     const auto &entries = result.value();
 
-    // Verify that flip flags are preserved
     for (std::size_t i = 0; i < 8; ++i) {
         bool expected_hflip = ((i + 1) % 2 == 0);
         bool expected_vflip = ((i + 1) % 3 == 0);
@@ -306,8 +291,6 @@ TEST_F(LayerModeConverterTests, TripleLayerizePreservesFlipFlags)
         EXPECT_EQ(entries[i].v_flip(), expected_vflip) << "vflip mismatch at index " << i;
     }
 }
-
-// ===== dual_layerize tests =====
 
 TEST_F(LayerModeConverterTests, DualLayerizeNormalLayerTypeRemovesTransparentFromStart)
 {
@@ -447,8 +430,6 @@ TEST_F(LayerModeConverterTests, DualLayerizeMultipleMetatilesWithDifferentLayerT
         EXPECT_EQ(dual_entries[i].tile_index(), i + 1);
     }
 }
-
-// ===== Round-trip tests =====
 
 TEST_F(LayerModeConverterTests, RoundTripNormalLayerType)
 {

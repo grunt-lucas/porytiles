@@ -13,7 +13,7 @@ using namespace porytiles2;
 
 // TODO: reorganize test assets
 
-TEST(PngRgbaImageLoaderTests, LoadFromFileShouldFailGracefullyOnBadFile)
+TEST(PngRgbaImageLoaderTests, LoadFromBadFileFails)
 {
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
@@ -26,7 +26,7 @@ TEST(PngRgbaImageLoaderTests, LoadFromFileShouldFailGracefullyOnBadFile)
     EXPECT_TRUE(result2.error().type() == ImageLoadError::Type::other_load_error);
 }
 
-TEST(PngRgbaImageLoaderTests, ShouldLoadValidPngFile)
+TEST(PngRgbaImageLoaderTests, LoadValidPng)
 {
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
@@ -39,7 +39,7 @@ TEST(PngRgbaImageLoaderTests, ShouldLoadValidPngFile)
     EXPECT_GT(image.height(), 0);
 }
 
-TEST(PngRgbaImageLoaderTests, ShouldLoadRgbImageWithOpaqueAlpha)
+TEST(PngRgbaImageLoaderTests, LoadRgbWithOpaqueAlpha)
 {
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
@@ -68,7 +68,7 @@ TEST(PngRgbaImageLoaderTests, ShouldLoadRgbImageWithOpaqueAlpha)
     EXPECT_TRUE(has_opaque_pixels);
 }
 
-TEST(PngRgbaImageLoaderTests, ShouldLoadImageDimensionsCorrectly)
+TEST(PngRgbaImageLoaderTests, LoadImageDimensions)
 {
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
@@ -86,7 +86,7 @@ TEST(PngRgbaImageLoaderTests, ShouldLoadImageDimensionsCorrectly)
     EXPECT_NO_THROW(std::ignore = image.at(image.height() - 1, image.width() - 1));
 }
 
-TEST(PngRgbaImageLoaderTests, ShouldLoadPixelDataCorrectly)
+TEST(PngRgbaImageLoaderTests, LoadPixelData)
 {
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
@@ -119,7 +119,7 @@ TEST(PngRgbaImageLoaderTests, ShouldLoadPixelDataCorrectly)
     }
 }
 
-TEST(PngRgbaImageLoaderTests, ShouldHandleMultipleImageFormats)
+TEST(PngRgbaImageLoaderTests, MultipleImageFormats)
 {
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
@@ -141,7 +141,7 @@ TEST(PngRgbaImageLoaderTests, ShouldHandleMultipleImageFormats)
     }
 }
 
-TEST(PngRgbaImageLoaderTests, ShouldCorrectlyHandleAlphaChannels)
+TEST(PngRgbaImageLoaderTests, AlphaChannels)
 {
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
@@ -173,7 +173,7 @@ TEST(PngRgbaImageLoaderTests, ShouldCorrectlyHandleAlphaChannels)
     }
 }
 
-TEST(PngRgbaImageLoaderTests, ShouldHandleSmallImages)
+TEST(PngRgbaImageLoaderTests, SmallImages)
 {
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 
@@ -196,7 +196,7 @@ TEST(PngRgbaImageLoaderTests, ShouldHandleSmallImages)
     }
 }
 
-TEST(PngRgbaImageLoaderTests, ShouldConsistentlyLoadSameFile)
+TEST(PngRgbaImageLoaderTests, ConsistentLoadSameFile)
 {
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();
 

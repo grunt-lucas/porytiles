@@ -44,7 +44,7 @@ class AnimJsonParserOverrideTest : public ::testing::Test {
     std::unique_ptr<AnimJsonParser> parser_;
 };
 
-TEST_F(AnimJsonParserOverrideTest, ShouldParseOverridesFromJson)
+TEST_F(AnimJsonParserOverrideTest, ParseOverridesFromJson)
 {
     const auto json_path = kTestDir / "anim.json";
     write_json_file(json_path, R"({
@@ -103,7 +103,7 @@ TEST_F(AnimJsonParserOverrideTest, ShouldParseOverridesFromJson)
     EXPECT_TRUE(overrides[1].v_flip);
 }
 
-TEST_F(AnimJsonParserOverrideTest, ShouldParseEmptyOverridesArray)
+TEST_F(AnimJsonParserOverrideTest, ParseEmptyOverrides)
 {
     const auto json_path = kTestDir / "anim.json";
     write_json_file(json_path, R"({
@@ -121,7 +121,7 @@ TEST_F(AnimJsonParserOverrideTest, ShouldParseEmptyOverridesArray)
     EXPECT_TRUE(flower_params.overrides().empty());
 }
 
-TEST_F(AnimJsonParserOverrideTest, ShouldParseAnimationWithoutOverrides)
+TEST_F(AnimJsonParserOverrideTest, ParseAnimationWithoutOverrides)
 {
     const auto json_path = kTestDir / "anim.json";
     write_json_file(json_path, R"({
@@ -139,7 +139,7 @@ TEST_F(AnimJsonParserOverrideTest, ShouldParseAnimationWithoutOverrides)
     EXPECT_TRUE(flower_params.overrides().empty());
 }
 
-TEST_F(AnimJsonParserOverrideTest, ShouldParseAllLayerValues)
+TEST_F(AnimJsonParserOverrideTest, ParseAllLayerValues)
 {
     const auto json_path = kTestDir / "anim.json";
     write_json_file(json_path, R"({
@@ -163,7 +163,7 @@ TEST_F(AnimJsonParserOverrideTest, ShouldParseAllLayerValues)
     EXPECT_EQ(overrides[2].layer, metatile::Layer::top);
 }
 
-TEST_F(AnimJsonParserOverrideTest, ShouldParseAllSubtileValues)
+TEST_F(AnimJsonParserOverrideTest, ParseAllSubtileValues)
 {
     const auto json_path = kTestDir / "anim.json";
     write_json_file(json_path, R"({
@@ -189,7 +189,7 @@ TEST_F(AnimJsonParserOverrideTest, ShouldParseAllSubtileValues)
     EXPECT_EQ(overrides[3].subtile, metatile::Subtile::southeast);
 }
 
-TEST_F(AnimJsonParserOverrideTest, ShouldRoundTripOverrides)
+TEST_F(AnimJsonParserOverrideTest, RoundTripOverrides)
 {
     // Build params with overrides
     AnimParams params;
@@ -254,7 +254,7 @@ TEST_F(AnimJsonParserOverrideTest, ShouldRoundTripOverrides)
     EXPECT_TRUE(read_overrides[1].v_flip);
 }
 
-TEST_F(AnimJsonParserOverrideTest, ShouldNotWriteOverridesWhenEmpty)
+TEST_F(AnimJsonParserOverrideTest, NoOverridesWhenEmpty)
 {
     AnimParams params;
     params.cased_name(DynamicCasedName{"flower"});
@@ -274,7 +274,7 @@ TEST_F(AnimJsonParserOverrideTest, ShouldNotWriteOverridesWhenEmpty)
     EXPECT_EQ(content.find("overrides"), std::string::npos);
 }
 
-TEST_F(AnimJsonParserOverrideTest, ShouldWriteOverrideFieldsInCanonicalOrder)
+TEST_F(AnimJsonParserOverrideTest, OverrideFieldsInCanonicalOrder)
 {
     AnimParams params;
     params.cased_name(DynamicCasedName{"water"});

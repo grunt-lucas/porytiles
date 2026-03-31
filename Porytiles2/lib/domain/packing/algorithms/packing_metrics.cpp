@@ -4,10 +4,6 @@
 
 namespace porytiles2 {
 
-// ============================================================================
-// GLOBAL MULTIPLICITY FUNCTIONS
-// ============================================================================
-
 std::map<std::size_t, std::size_t>
 build_global_multiplicity_map(const std::vector<PackableTile> &tiles, const std::vector<PackableTile> &hints)
 {
@@ -45,10 +41,6 @@ double compute_average_multiplicity(const std::vector<PackableTile> &tiles, cons
     // Average multiplicity = Card(T) / |A|
     return static_cast<double>(cardinality) / static_cast<double>(num_colors);
 }
-
-// ============================================================================
-// PALETTE-LOCAL MULTIPLICITY FUNCTIONS
-// ============================================================================
 
 std::map<std::size_t, std::size_t> build_palette_local_multiplicity(
     const PackedPalette &palette, const std::map<PackableTile::Id, ColorSet> &tile_colors_map)
@@ -105,10 +97,6 @@ compute_palette_local_efficiency(const ColorSet &tile_colors, const std::map<std
 
     return 1.0 - (weighted_cost / static_cast<double>(color_count));
 }
-
-// ============================================================================
-// FAST METRIC FUNCTIONS (using PackedPalette's cached color counts)
-// ============================================================================
 
 double compute_weighted_cost_in_palette_fast(const ColorSet &tile_colors, const PackedPalette &palette)
 {

@@ -216,7 +216,7 @@ template <SupportsTransparency ColorType, std::size_t N = 0>
  * @post The returned vector is non-empty and exhibits coverage homogeneity: all PaletteMatchResult elements
  * possess identical is_covered values. This property enables deterministic match classification via examination of any
  * single element, conventionally the first: `results.at(0).is_covered`. The function partitions the result space into
- * two mutually exclusive sets—complete matches (is_covered = true) or partial matches (is_covered = false)—never
+ * two mutually exclusive sets (complete matches (is_covered = true) or partial matches (is_covered = false)), never
  * returning a heterogeneous mixture.
  */
 template <SupportsTransparency ColorType, typename PaletteContainer>

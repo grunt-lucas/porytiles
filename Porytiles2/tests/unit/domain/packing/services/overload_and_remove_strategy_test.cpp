@@ -20,9 +20,6 @@ using namespace porytiles2;
 
 namespace {
 
-/**
- * @brief Creates a ColorSet containing the specified color indices.
- */
 [[nodiscard]] ColorSet make_color_set(const std::vector<std::size_t> &indices)
 {
     ColorSet cs;
@@ -32,17 +29,11 @@ namespace {
     return cs;
 }
 
-/**
- * @brief Creates a PackableTile with a RegularId and the specified color indices.
- */
 [[nodiscard]] PackableTile make_regular_tile(std::size_t tile_index, const std::vector<std::size_t> &color_indices)
 {
     return PackableTile{PackableTile::RegularId{tile_index}, make_color_set(color_indices)};
 }
 
-/**
- * @brief Returns a bitset with all 16 palette slots marked as available.
- */
 [[nodiscard]] std::bitset<pal::num_pals> all_palettes_available()
 {
     std::bitset<pal::num_pals> bits;
@@ -50,9 +41,6 @@ namespace {
     return bits;
 }
 
-/**
- * @brief Returns a bitset with only the specified number of palettes available (starting from index 0).
- */
 [[nodiscard]] std::bitset<pal::num_pals> n_palettes_available(std::size_t n)
 {
     std::bitset<pal::num_pals> bits;
@@ -62,9 +50,6 @@ namespace {
     return bits;
 }
 
-/**
- * @brief Builds a minimal PackingInput with the given tiles, palette availability, and capacity.
- */
 [[nodiscard]] PackingInput
 make_input(std::vector<PackableTile> tiles, std::bitset<pal::num_pals> available_pals, std::size_t capacity = 15)
 {
@@ -78,10 +63,6 @@ make_input(std::vector<PackableTile> tiles, std::bitset<pal::num_pals> available
 }
 
 } // namespace
-
-// =============================================================================
-// Test: BasicSingleTile
-// =============================================================================
 
 TEST(OverloadAndRemoveStrategyTest, BasicSingleTile)
 {
@@ -99,10 +80,6 @@ TEST(OverloadAndRemoveStrategyTest, BasicSingleTile)
     ASSERT_TRUE(output.tile_to_pal_.contains(tile.id()));
 }
 
-// =============================================================================
-// Test: TwoDisjointTiles
-// =============================================================================
-
 TEST(OverloadAndRemoveStrategyTest, TwoDisjointTilesUseSeparatePalettesWhenCapacityForces)
 {
     // Two tiles with completely disjoint colors, capacity=3 each fits exactly
@@ -118,14 +95,9 @@ TEST(OverloadAndRemoveStrategyTest, TwoDisjointTilesUseSeparatePalettesWhenCapac
 
     ASSERT_EQ(output.tile_to_pal_.size(), 2u);
 
-    // Both tiles should be assigned
     ASSERT_TRUE(output.tile_to_pal_.contains(tile_a.id()));
     ASSERT_TRUE(output.tile_to_pal_.contains(tile_b.id()));
 }
-
-// =============================================================================
-// Test: TwoOverlappingTiles
-// =============================================================================
 
 TEST(OverloadAndRemoveStrategyTest, TwoOverlappingTilesSharePalette)
 {
@@ -148,10 +120,6 @@ TEST(OverloadAndRemoveStrategyTest, TwoOverlappingTilesSharePalette)
     std::size_t pal_b = output.tile_to_pal_.at(tile_b.id());
     EXPECT_EQ(pal_a, pal_b);
 }
-
-// =============================================================================
-// Test: EqualEfficiencyTiebreaker
-// =============================================================================
 
 TEST(OverloadAndRemoveStrategyTest, EqualEfficiencyTiebreakerResolvesOverload)
 {
@@ -186,10 +154,6 @@ TEST(OverloadAndRemoveStrategyTest, EqualEfficiencyTiebreakerResolvesOverload)
     // They must be in different palettes since they can't fit together
     EXPECT_NE(output.tile_to_pal_.at(tile_a.id()), output.tile_to_pal_.at(tile_b.id()));
 }
-
-// =============================================================================
-// Test: MultiStartFindsSolution
-// =============================================================================
 
 TEST(OverloadAndRemoveStrategyTest, MultiStartFindsSolutionWhenFFDFails)
 {
@@ -240,10 +204,6 @@ TEST(OverloadAndRemoveStrategyTest, MultiStartFindsSolutionWhenFFDFails)
     }
 }
 
-// =============================================================================
-// Test: PrefilledTilesNeverRemoved
-// =============================================================================
-
 TEST(OverloadAndRemoveStrategyTest, PrefilledTilesNeverRemoved)
 {
     // Create a prefilled palette with colors {1, 2, 3} at index 0
@@ -285,10 +245,6 @@ TEST(OverloadAndRemoveStrategyTest, PrefilledTilesNeverRemoved)
     EXPECT_TRUE(found_prefilled) << "Prefilled palette system tile should never be removed";
 }
 
-// =============================================================================
-// Test: DeterministicWithSameSeed
-// =============================================================================
-
 TEST(OverloadAndRemoveStrategyTest, DeterministicWithSameSeed)
 {
     auto tile_a = make_regular_tile(0, {1, 2, 3, 4});
@@ -311,10 +267,6 @@ TEST(OverloadAndRemoveStrategyTest, DeterministicWithSameSeed)
     EXPECT_EQ(result1.value().tile_to_pal_, result2.value().tile_to_pal_);
 }
 
-// =============================================================================
-// Test: GracefulFailure
-// =============================================================================
-
 TEST(OverloadAndRemoveStrategyTest, GracefulFailureOnUnsolvableInstance)
 {
     // 2 tiles, each with 5 unique colors, but only 1 palette with capacity=4
@@ -330,10 +282,6 @@ TEST(OverloadAndRemoveStrategyTest, GracefulFailureOnUnsolvableInstance)
     // Should fail gracefully with an error (tile_a alone needs 5 > 4 capacity)
     EXPECT_FALSE(result.has_value());
 }
-
-// =============================================================================
-// Test: NoisyFfdMaintainsLargeFirst
-// =============================================================================
 
 TEST(OverloadAndRemoveStrategyTest, NoisyFfdMaintainsLargeFirst)
 {
@@ -363,10 +311,6 @@ TEST(OverloadAndRemoveStrategyTest, NoisyFfdMaintainsLargeFirst)
     }
 }
 
-// =============================================================================
-// Test: NoisyFfdDeterministicWithSameSeed
-// =============================================================================
-
 TEST(OverloadAndRemoveStrategyTest, NoisyFfdDeterministicWithSameSeed)
 {
     auto tile_a = make_regular_tile(0, {1, 2, 3, 4});
@@ -389,22 +333,18 @@ TEST(OverloadAndRemoveStrategyTest, NoisyFfdDeterministicWithSameSeed)
     EXPECT_EQ(result1.value().tile_to_pal_, result2.value().tile_to_pal_);
 }
 
-// =============================================================================
-// Test: SingleFfdOnlyOneAttempt
-// =============================================================================
-
 TEST(OverloadAndRemoveStrategyTest, SingleFfdOnlyOneAttempt)
 {
     /*
      * With single_ffd, only one FFD attempt should be made regardless of max_attempts.
-     * If FFD fails, the result should be an error — no retries.
+     * If FFD fails, the result should be an error. No retries.
      */
     auto tile_a = make_regular_tile(0, {1, 2, 3, 4});
     auto tile_b = make_regular_tile(1, {3, 4, 5, 6});
     auto tile_c = make_regular_tile(2, {5, 6, 7, 8});
     auto tile_d = make_regular_tile(3, {7, 8, 1, 2});
 
-    // 2 palettes, capacity=6 — same tight scenario as MultiStartFindsSolution
+    // 2 palettes, capacity=6, same tight scenario as MultiStartFindsSolution
     auto input = make_input({tile_a, tile_b, tile_c, tile_d}, n_palettes_available(2), 6);
 
     // Even though max_attempts=100, single_ffd should only try once
@@ -423,10 +363,6 @@ TEST(OverloadAndRemoveStrategyTest, SingleFfdOnlyOneAttempt)
         EXPECT_EQ(result.value().tile_to_pal_, single_result.value().tile_to_pal_);
     }
 }
-
-// =============================================================================
-// Test: RandomShuffleStillWorks
-// =============================================================================
 
 TEST(OverloadAndRemoveStrategyTest, RandomShuffleStillWorks)
 {
@@ -453,10 +389,6 @@ TEST(OverloadAndRemoveStrategyTest, RandomShuffleStillWorks)
     }
 }
 
-// =============================================================================
-// Test: PresetMatrixModeSucceeds
-// =============================================================================
-
 TEST(OverloadAndRemoveStrategyTest, PresetMatrixModeSucceeds)
 {
     auto tile_a = make_regular_tile(0, {1, 2, 3});
@@ -474,10 +406,6 @@ TEST(OverloadAndRemoveStrategyTest, PresetMatrixModeSucceeds)
     ASSERT_TRUE(output.tile_to_pal_.contains(tile_a.id()));
     ASSERT_TRUE(output.tile_to_pal_.contains(tile_b.id()));
 }
-
-// =============================================================================
-// Test: PresetMatrixModeEmitsRemark
-// =============================================================================
 
 TEST(OverloadAndRemoveStrategyTest, PresetMatrixModeEmitsRemark)
 {
@@ -510,10 +438,6 @@ TEST(OverloadAndRemoveStrategyTest, PresetMatrixModeEmitsRemark)
     EXPECT_TRUE(found_preset) << "Remark should mention 'preset config' in preset matrix mode";
 }
 
-// =============================================================================
-// Test: SingleConfigModeSucceeds
-// =============================================================================
-
 TEST(OverloadAndRemoveStrategyTest, SingleConfigModeSucceeds)
 {
     auto tile_a = make_regular_tile(0, {1, 2, 3, 4});
@@ -530,10 +454,6 @@ TEST(OverloadAndRemoveStrategyTest, SingleConfigModeSucceeds)
     ASSERT_TRUE(output.tile_to_pal_.contains(tile_a.id()));
     ASSERT_TRUE(output.tile_to_pal_.contains(tile_b.id()));
 }
-
-// =============================================================================
-// Test: SingleConfigModeEmitsRemark
-// =============================================================================
 
 TEST(OverloadAndRemoveStrategyTest, SingleConfigModeEmitsRemark)
 {
@@ -566,10 +486,6 @@ TEST(OverloadAndRemoveStrategyTest, SingleConfigModeEmitsRemark)
     EXPECT_FALSE(found_preset) << "Remark should NOT mention 'preset config' in single-config mode";
 }
 
-// =============================================================================
-// Test: SingleConfigModeFailsOnHardInput
-// =============================================================================
-
 TEST(OverloadAndRemoveStrategyTest, SingleConfigModeFailsOnHardInput)
 {
     /*
@@ -579,7 +495,7 @@ TEST(OverloadAndRemoveStrategyTest, SingleConfigModeFailsOnHardInput)
     auto tile_a = make_regular_tile(0, {1, 2, 3, 4, 5});
     auto tile_b = make_regular_tile(1, {6, 7, 8, 9, 10});
 
-    // 1 palette, capacity=4 — impossible (first tile alone needs 5 > 4)
+    // 1 palette, capacity=4. Impossible (first tile alone needs 5 > 4)
     auto input = make_input({tile_a, tile_b}, n_palettes_available(1), 4);
 
     OverloadAndRemoveStrategy strategy{1, 42, ShuffleStrategy::single_ffd};
@@ -587,10 +503,6 @@ TEST(OverloadAndRemoveStrategyTest, SingleConfigModeFailsOnHardInput)
 
     EXPECT_FALSE(result.has_value()) << "Single-config mode should fail on impossible input";
 }
-
-// =============================================================================
-// Test: PresetMatrixModeHandlesHardInput
-// =============================================================================
 
 TEST(OverloadAndRemoveStrategyTest, PresetMatrixModeHandlesHardInput)
 {
@@ -603,7 +515,7 @@ TEST(OverloadAndRemoveStrategyTest, PresetMatrixModeHandlesHardInput)
     auto tile_c = make_regular_tile(2, {5, 6, 7, 8});
     auto tile_d = make_regular_tile(3, {7, 8, 1, 2});
 
-    // 2 palettes, capacity=6 — valid solution exists but requires right ordering
+    // 2 palettes, capacity=6. Valid solution exists but requires right ordering
     auto input = make_input({tile_a, tile_b, tile_c, tile_d}, n_palettes_available(2), 6);
 
     // Default-constructed strategy uses preset matrix mode

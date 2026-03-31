@@ -13,10 +13,6 @@ using namespace porytiles2;
 
 class DynamicCasedNameTest : public ::testing::Test {};
 
-// =====================================================
-// Construction from each format
-// =====================================================
-
 TEST_F(DynamicCasedNameTest, FromSnakeCase)
 {
     auto name = DynamicCasedName::from_snake_case("my_tileset");
@@ -69,10 +65,6 @@ TEST_F(DynamicCasedNameTest, FromSnakeCaseSingleWord)
     EXPECT_EQ(name.segments()[0], std::vector<std::string>{"general"});
 }
 
-// =====================================================
-// Auto-detection
-// =====================================================
-
 TEST_F(DynamicCasedNameTest, AutoDetectSnakeCase)
 {
     DynamicCasedName name{"my_tileset"};
@@ -103,10 +95,6 @@ TEST_F(DynamicCasedNameTest, AutoDetectFlatCase)
     ASSERT_EQ(name.segments().size(), 1);
     EXPECT_EQ(name.segments()[0], std::vector<std::string>{"sandwatersedge"});
 }
-
-// =====================================================
-// Output formats
-// =====================================================
 
 TEST_F(DynamicCasedNameTest, OutputFromSnakeCase)
 {
@@ -144,10 +132,6 @@ TEST_F(DynamicCasedNameTest, OutputFromFlatCase)
     EXPECT_EQ(name.to_flat_case(), "sandwatersedge");
 }
 
-// =====================================================
-// Round-trip preservation
-// =====================================================
-
 TEST_F(DynamicCasedNameTest, RoundTripSnakeCase)
 {
     std::string input = "water_current_land_waters_edge";
@@ -184,10 +168,6 @@ TEST_F(DynamicCasedNameTest, RoundTripPascalCaseXML)
     EXPECT_EQ(DynamicCasedName::from_pascal_case(input).to_pascal_case(), "XmlParser");
 }
 
-// =====================================================
-// Equality across formats
-// =====================================================
-
 TEST_F(DynamicCasedNameTest, EqualityAcrossFormats)
 {
     auto from_snake = DynamicCasedName::from_snake_case("water_current");
@@ -209,10 +189,6 @@ TEST_F(DynamicCasedNameTest, InequalityDifferentNames)
     auto name2 = DynamicCasedName::from_snake_case("land_waters_edge");
     EXPECT_NE(name1, name2);
 }
-
-// =====================================================
-// Ordering and hash
-// =====================================================
 
 TEST_F(DynamicCasedNameTest, OrderingWithSpaceship)
 {
@@ -258,10 +234,6 @@ TEST_F(DynamicCasedNameTest, HashConsistency)
     std::hash<DynamicCasedName> hasher;
     EXPECT_EQ(hasher(from_snake), hasher(from_pascal));
 }
-
-// =====================================================
-// Edge cases
-// =====================================================
 
 TEST_F(DynamicCasedNameTest, EmptyString)
 {
@@ -349,10 +321,6 @@ TEST_F(DynamicCasedNameTest, HTTPSConnection)
     EXPECT_EQ(name.to_snake_case(), "https_connection");
 }
 
-// =====================================================
-// Real-world names
-// =====================================================
-
 TEST_F(DynamicCasedNameTest, RealWorldGeneral)
 {
     DynamicCasedName name{"General"};
@@ -401,10 +369,6 @@ TEST_F(DynamicCasedNameTest, RealWorldTVTurnedOnVsTvTurnedOn)
     EXPECT_EQ(tv_upper, tv_lower);
     EXPECT_EQ(tv_upper.canonical(), "tvturnedon");
 }
-
-// =====================================================
-// Formatter, to_string, operator<<
-// =====================================================
 
 TEST_F(DynamicCasedNameTest, ToStringFunction)
 {

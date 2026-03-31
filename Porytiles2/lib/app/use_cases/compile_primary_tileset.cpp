@@ -23,14 +23,11 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
     }
 
     // 2. Load the tileset into a `Tileset` aggregate.
-    auto maybe_tileset = tileset_repo_->load(tileset_name);
-    if (!maybe_tileset.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{
-                diag_->formatter().format("Failed to load tileset '{}'.", FormatParam{tileset_name, Style::bold})},
-            maybe_tileset};
-    }
-    const auto tileset = std::move(maybe_tileset.value());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tileset,
+        tileset_repo_->load(tileset_name),
+        void,
+        diag_->formatter().format("Failed to load tileset '{}'.", FormatParam(tileset_name, Style::bold)));
 
     PT_UNWRAP_TILESET_CONFIG_PTR(app_config_, verify_checksums, tileset_name, void);
     if (!tileset_repo_->checksum_provider().cached_checksums_exist(tileset_name) && verify_checksums) {
@@ -55,8 +52,8 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
             PT_TRY_ASSIGN_CHAIN_ERR(
                 porymap_keys,
                 tileset_repo_->key_provider().get_porymap_artifact_keys(tileset_name),
-                "Failed to get Porymap artifact keys.",
-                void);
+                void,
+                "Failed to get Porymap artifact keys.");
             const auto mismatched_keys =
                 tileset_repo_->checksum_provider().find_unsynced_tileset_artifacts(tileset_name, porymap_keys);
             if (!mismatched_keys.empty()) {
@@ -90,8 +87,8 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
         PT_TRY_ASSIGN_CHAIN_ERR(
             porytiles_keys,
             tileset_repo_->key_provider().get_porytiles_artifact_keys(tileset_name),
-            "Failed to get Porytiles artifact keys.",
-            void);
+            void,
+            "Failed to get Porytiles artifact keys.");
         if (tileset_repo_->checksum_provider().all_checksums_tileset_match(tileset_name, porytiles_keys)) {
             diag_->warning(
                 "nothing-to-do",
@@ -102,39 +99,36 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
     }
 
     // 5. Compile the `Tileset`, generating a new modified `Tileset`.
-    auto maybe_compiled_tileset = compiler_->compile(*tileset);
-    if (!maybe_compiled_tileset.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{"Compilation job failed for '{}'.", FormatParam{tileset_name, Style::bold}},
-            maybe_compiled_tileset};
-    }
-    const auto new_tileset = std::move(maybe_compiled_tileset.value());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        new_tileset,
+        compiler_->compile(*tileset),
+        void,
+        "Compilation job failed for '{}'.",
+        FormatParam(tileset_name, Style::bold));
 
     // 6. Persist the `Tileset` (which also caches the checksums).
-    if (const auto save_result = tileset_repo_->save(*new_tileset); !save_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{"Tileset save job failed for '{}'.", FormatParam{tileset_name, Style::bold}}, save_result};
-    }
+    PT_TRY_CALL_CHAIN_ERR(
+        tileset_repo_->save(*new_tileset),
+        void,
+        "Tileset save job failed for '{}'.",
+        FormatParam(tileset_name, Style::bold));
 
     // 7. Handle animation code wiring
     if (!new_tileset->porymap_component().anims().empty()) {
         // Tileset has animations - wire the generated code
-        auto wire_result = tileset_manager_->wire_anim_code(tileset_name, /*is_secondary=*/false);
-        if (!wire_result.has_value()) {
-            return ChainableResult<void>{
-                FormattableError{"Failed to wire animation code for '{}'.", FormatParam{tileset_name, Style::bold}},
-                wire_result};
-        }
+        PT_TRY_CALL_CHAIN_ERR(
+            tileset_manager_->wire_anim_code(tileset_name, /*is_secondary=*/false),
+            void,
+            "Failed to wire animation code for '{}'.",
+            FormatParam(tileset_name, Style::bold));
     }
     else {
         // Tileset has no animations - remove any stale wiring
-        auto remove_result = tileset_manager_->remove_wired_anim_code(tileset_name, /*is_secondary=*/false);
-        if (!remove_result.has_value()) {
-            return ChainableResult<void>{
-                FormattableError{
-                    "Failed to remove wired animation code for '{}'.", FormatParam{tileset_name, Style::bold}},
-                remove_result};
-        }
+        PT_TRY_CALL_CHAIN_ERR(
+            tileset_manager_->remove_wired_anim_code(tileset_name, /*is_secondary=*/false),
+            void,
+            "Failed to remove wired animation code for '{}'.",
+            FormatParam(tileset_name, Style::bold));
     }
 
     return {};

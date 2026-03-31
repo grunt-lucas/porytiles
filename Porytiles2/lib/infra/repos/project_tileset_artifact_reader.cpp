@@ -69,11 +69,12 @@ ChainableResult<void> import_porytiles_palette(
     }
 
     // Keys are relative to project_root, so prepend for file I/O
-    const auto pal_result = loader.load_with_wildcards((project_root / src_key.key()).string());
-    if (!pal_result.has_value()) {
-        return ChainableResult<void>{FormattableError{"Failed to load palette file."}, pal_result};
-    }
-    dest.porytiles_component().set_pal(index, pal_result.value());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        palette,
+        loader.load_with_wildcards((project_root / src_key.key()).string()),
+        void,
+        "Failed to load palette file.");
+    dest.porytiles_component().set_pal(index, palette);
 
     return {};
 }
@@ -112,17 +113,13 @@ ChainableResult<void> import_anim_frame_impl(
 {
     // Use shared helper to load PNG and extract tiles
     const auto png_path = project_root / src_key.key();
-    auto frame_load_result = load_animation_frame_from_png<PixelType>(png_path, frame_name, loader);
-    if (!frame_load_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{
-                "{}: failed to load {}",
-                FormatParam{src_key.key(), Style::bold},
-                FormatParam{std::string{error_context}}},
-            frame_load_result};
-    }
-
-    auto &load_result = frame_load_result.value();
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        load_result,
+        load_animation_frame_from_png<PixelType>(png_path, frame_name, loader),
+        void,
+        "{}: failed to load {}",
+        FormatParam(src_key.key(), Style::bold),
+        FormatParam(std::string(error_context)));
 
     // Get or create the animation in the component
     auto &component = component_getter(dest);
@@ -175,13 +172,13 @@ ProjectTilesetArtifactReader::read_metatile_attributes_bin(Tileset &dest, const 
 {
     // Keys are relative to project_root_, so prepend for file I/O
     const auto path = project_root_ / src_key.key();
-    ChainableResult<std::vector<MetatileAttribute>> attributes_result = base_game_ == BaseGame::pokefirered
-                                                                            ? parse_firered_metatile_attributes(path)
-                                                                            : parse_emerald_metatile_attributes(path);
-    if (!attributes_result.has_value()) {
-        return ChainableResult<void>{FormattableError{"Failed to read metatile_attributes.bin."}, attributes_result};
-    }
-    for (auto &attr : attributes_result.value()) {
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        attributes,
+        base_game_ == BaseGame::pokefirered ? parse_firered_metatile_attributes(path)
+                                            : parse_emerald_metatile_attributes(path),
+        void,
+        "Failed to read metatile_attributes.bin.");
+    for (auto &attr : attributes) {
         dest.porymap_component().push_back_attribute(std::move(attr));
     }
     return {};
@@ -240,19 +237,18 @@ ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKe
     const std::string callback_func = "InitTilesetAnim_PorytilesManaged_" + tileset_cased.to_pascal_case();
 
     // Parse C code for animation params
-    auto params_result = anim_code_parser_->parse_from_callback(params_path, callback_func, tileset_cased, true);
-
-    if (!params_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{"{}: Failed to parse animation parameters.", FormatParam{params_path, Style::bold}},
-            params_result};
-    }
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        parsed_params,
+        anim_code_parser_->parse_from_callback(params_path, callback_func, tileset_cased, true),
+        void,
+        "{}: Failed to parse animation parameters.",
+        FormatParam(params_path, Style::bold));
 
     // Apply params to the specific animation if found
-    if (params_result.value().contains(DynamicCasedName{anim_name})) {
+    if (parsed_params.contains(DynamicCasedName{anim_name})) {
         auto &anim = dest.porymap_component().anims().at(anim_name);
         auto existing_params = anim.params();
-        auto new_params = params_result.value().at(DynamicCasedName{anim_name});
+        auto new_params = parsed_params.at(DynamicCasedName{anim_name});
 
         // Preserve dimensions from frame import (C code doesn't have this info)
         new_params.width_tiles(existing_params.width_tiles());
@@ -332,18 +328,16 @@ ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const Artifact
 {
     // Parse anim.json to get params for this animation
     // Keys are relative to project_root_, so prepend for file I/O
-    auto params_result = anim_json_parser_->parse((project_root_ / params_key.key()).string());
-    if (!params_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{
-                "{}: Failed to parse animation parameters.",
-                FormatParam{project_root_ / params_key.key(), Style::bold}},
-            params_result};
-    }
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        parsed_anim_params,
+        anim_json_parser_->parse((project_root_ / params_key.key()).string()),
+        void,
+        "{}: Failed to parse animation parameters.",
+        FormatParam(project_root_ / params_key.key(), Style::bold));
 
     // Find params for this specific animation
-    auto it = params_result.value().find(DynamicCasedName{anim_name});
-    if (it == params_result.value().end()) {
+    auto it = parsed_anim_params.find(DynamicCasedName{anim_name});
+    if (it == parsed_anim_params.end()) {
         return ChainableResult<void>{FormattableError{
             "{}: Animation '{}' not found in animation parameters file.",
             FormatParam{project_root_ / params_key.key(), Style::bold},

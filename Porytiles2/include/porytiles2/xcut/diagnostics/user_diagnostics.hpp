@@ -439,7 +439,7 @@ class UserDiagnostics {
             filtered_chain.push_back(err.get());
         }
 
-        // If all errors were blank FormattableErrors (defensive, shouldn't happen), panic
+        // Unreachable.
         if (filtered_chain.empty()) {
             panic("filtered error chain was empty, there should always be at least one FormattableError with details");
         }

@@ -214,10 +214,7 @@ ChainableResult<void> save_firered_metatile_attributes_bin(
 ChainableResult<void>
 save_palette(const Palette<Rgba32, pal::max_size> &pal, const std::filesystem::path &path, const FilePalSaver &saver)
 {
-    const auto save_result = saver.save(pal, path);
-    if (!save_result.has_value()) {
-        return ChainableResult<void>{FormattableError{std::format("'{}': Failed to save.", path.c_str())}, save_result};
-    }
+    PT_TRY_CALL_CHAIN_ERR(saver.save(pal, path), void, "'{}': Failed to save.", FormatParam(path.c_str()));
     return {};
 }
 
@@ -450,8 +447,8 @@ ChainableResult<void> write_anim_frame_impl(
         transaction_dest_path,
         compute_transaction_dest_path(
             transaction_root, project_root, dest_key, staged_directories, staged_special_files),
-        "Failed to compute transaction dest path.",
-        void);
+        void,
+        "Failed to compute transaction dest path.");
 
     // Save using provided save function
     return save_func(img, transaction_dest_path);
@@ -631,8 +628,8 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_metatiles_bin(const Ar
         transaction_dest_path,
         compute_transaction_dest_path(
             transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
-        "Failed to compute transaction dest path.",
-        void);
+        void,
+        "Failed to compute transaction dest path.");
     return save_metatiles_bin(src.porymap_component().metatiles_bin(), transaction_dest_path);
 }
 
@@ -643,8 +640,8 @@ ProjectTilesetArtifactWriter::write_metatile_attributes_bin(const ArtifactKey &d
         transaction_dest_path,
         compute_transaction_dest_path(
             transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
-        "Failed to compute transaction dest path.",
-        void);
+        void,
+        "Failed to compute transaction dest path.");
     if (base_game_ == BaseGame::pokefirered) {
         return save_firered_metatile_attributes_bin(
             src.porymap_component().metatile_attributes_bin(), transaction_dest_path);
@@ -659,13 +656,13 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_tiles_png(const Artifa
         transaction_dest_path,
         compute_transaction_dest_path(
             transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
-        "Failed to compute transaction dest path.",
-        void);
+        void,
+        "Failed to compute transaction dest path.");
     PT_TRY_ASSIGN_CHAIN_ERR(
         tiles_pal_mode_config,
         domain_config_->tiles_pal_mode(ConfigScopeType::tileset, src.name()),
-        "Failed to get tiles_pal_mode config.",
-        void);
+        void,
+        "Failed to get tiles_pal_mode config.");
     return save_tiles_png(
         *png_indexed_saver_, src.porymap_component().tiles_png(), transaction_dest_path, tiles_pal_mode_config.value());
 }
@@ -677,8 +674,8 @@ ProjectTilesetArtifactWriter::write_porymap_pal_n(const ArtifactKey &dest_key, c
         transaction_dest_path,
         compute_transaction_dest_path(
             transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
-        "Failed to compute transaction dest path.",
-        void);
+        void,
+        "Failed to compute transaction dest path.");
     return save_palette(src.porymap_component().pal_at(index), transaction_dest_path, *pal_saver_);
 }
 
@@ -688,8 +685,8 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
     PT_TRY_ASSIGN_CHAIN_ERR(
         tiles_pal_mode_config,
         domain_config_->tiles_pal_mode(ConfigScopeType::tileset, src.name()),
-        "Failed to get tiles_pal_mode config.",
-        void);
+        void,
+        "Failed to get tiles_pal_mode config.");
     return write_anim_frame_impl<IndexPixel>(
         dest_key,
         src,
@@ -724,48 +721,45 @@ ProjectTilesetArtifactWriter::write_porymap_anim_params(const ArtifactKey &dest_
     }
 
     // Determine primary/secondary from metadata
-    auto is_secondary_result = metadata_provider_.is_secondary(src.name());
-    if (!is_secondary_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{
-                "Failed to determine primary/secondary status for '{}'.", FormatParam{src.name(), Style::bold}},
-            is_secondary_result};
-    }
-    const bool is_primary = !is_secondary_result.value();
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        is_secondary,
+        metadata_provider_.is_secondary(src.name()),
+        void,
+        "Failed to determine primary/secondary status for '{}'.",
+        FormatParam(src.name(), Style::bold));
+    const bool is_primary = !is_secondary;
 
     // Read tileset bin path from config based on primary/secondary status
-    auto bin_path_result = is_primary
-                               ? infra_config_->tileset_paths_primary_bin(ConfigScopeType::tileset, src.name())
-                               : infra_config_->tileset_paths_secondary_bin(ConfigScopeType::tileset, src.name());
-    if (!bin_path_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{"Failed to get tileset bin path config for '{}'.", FormatParam{src.name(), Style::bold}},
-            bin_path_result};
-    }
-    const std::string bin_path_base = bin_path_result.value();
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        bin_path_base,
+        is_primary ? infra_config_->tileset_paths_primary_bin(ConfigScopeType::tileset, src.name())
+                   : infra_config_->tileset_paths_secondary_bin(ConfigScopeType::tileset, src.name()),
+        void,
+        "Failed to get tileset bin path config for '{}'.",
+        FormatParam(src.name(), Style::bold));
     const std::filesystem::path tileset_path =
-        std::filesystem::path{bin_path_base} / extract_tileset_cased_name(src.name()).to_snake_case();
+        std::filesystem::path{bin_path_base.value()} / extract_tileset_cased_name(src.name()).to_snake_case();
 
-    auto code_result = anim_code_generator_->generate(src.name(), tileset_path, anim_params, is_primary);
-    if (!code_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{"Failed to generate animation code for '{}'.", FormatParam{src.name(), Style::bold}},
-            code_result};
-    }
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        generated_code,
+        anim_code_generator_->generate(src.name(), tileset_path, anim_params, is_primary),
+        void,
+        "Failed to generate animation code for '{}'.",
+        FormatParam(src.name(), Style::bold));
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
         compute_transaction_dest_path(
             transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
-        "Failed to compute transaction dest path.",
-        void);
+        void,
+        "Failed to compute transaction dest path.");
 
     std::ofstream out{transaction_dest_path};
     if (!out.is_open()) {
         return FormattableError{
             "Failed to open file for writing: '{}'.", FormatParam{transaction_dest_path.string(), Style::bold}};
     }
-    out << code_result.value();
+    out << generated_code;
     out.flush();
 
     return {};
@@ -780,8 +774,8 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_bottom_png(const Artif
         transaction_dest_path,
         compute_transaction_dest_path(
             transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
-        "Failed to compute transaction dest path.",
-        void);
+        void,
+        "Failed to compute transaction dest path.");
     return save_layer_png(*png_rgba_saver_, src.porytiles_component().bottom(), transaction_dest_path);
 }
 
@@ -791,8 +785,8 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_middle_png(const Artif
         transaction_dest_path,
         compute_transaction_dest_path(
             transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
-        "Failed to compute transaction dest path.",
-        void);
+        void,
+        "Failed to compute transaction dest path.");
     return save_layer_png(*png_rgba_saver_, src.porytiles_component().middle(), transaction_dest_path);
 }
 
@@ -802,8 +796,8 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_top_png(const Artifact
         transaction_dest_path,
         compute_transaction_dest_path(
             transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
-        "Failed to compute transaction dest path.",
-        void);
+        void,
+        "Failed to compute transaction dest path.");
     return save_layer_png(*png_rgba_saver_, src.porytiles_component().top(), transaction_dest_path);
 }
 
@@ -839,8 +833,8 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
         transaction_dest_path,
         compute_transaction_dest_path(
             transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
-        "Failed to compute transaction dest path.",
-        void);
+        void,
+        "Failed to compute transaction dest path.");
 
     std::ofstream out{transaction_dest_path};
     if (!out.is_open()) {
@@ -872,18 +866,18 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
             PT_TRY_ASSIGN_CHAIN_ERR(
                 behavior_name,
                 behavior_map_->lookup(attribute.behavior()),
-                std::format("Failed to lookup behavior name for metatile {}.", metatile_id),
-                void);
+                void,
+                std::format("Failed to lookup behavior name for metatile {}.", metatile_id));
             PT_TRY_ASSIGN_CHAIN_ERR(
                 terrain_name,
                 terrain_map_->lookup(attribute.terrain()),
-                std::format("Failed to lookup terrain type name for metatile {}.", metatile_id),
-                void);
+                void,
+                std::format("Failed to lookup terrain type name for metatile {}.", metatile_id));
             PT_TRY_ASSIGN_CHAIN_ERR(
                 encounter_name,
                 encounter_map_->lookup(attribute.encounter_type()),
-                std::format("Failed to lookup encounter type name for metatile {}.", metatile_id),
-                void);
+                void,
+                std::format("Failed to lookup encounter type name for metatile {}.", metatile_id));
             out << metatile_id << "," << behavior_name << "," << terrain_name << "," << encounter_name << "\n";
         }
         else {
@@ -894,8 +888,8 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
             PT_TRY_ASSIGN_CHAIN_ERR(
                 behavior_name,
                 behavior_map_->lookup(attribute.behavior()),
-                std::format("Failed to lookup behavior name for metatile {}.", metatile_id),
-                void);
+                void,
+                std::format("Failed to lookup behavior name for metatile {}.", metatile_id));
             out << metatile_id << "," << behavior_name << "\n";
         }
     }
@@ -912,8 +906,8 @@ ProjectTilesetArtifactWriter::write_porytiles_pal_n(const ArtifactKey &dest_key,
             transaction_dest_path,
             compute_transaction_dest_path(
                 transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
-            "Failed to compute transaction dest path.",
-            void);
+            void,
+            "Failed to compute transaction dest path.");
 
         return save_palette(src.porytiles_component().pal_at(index).value(), transaction_dest_path, *pal_saver_);
     }
@@ -964,8 +958,8 @@ ProjectTilesetArtifactWriter::write_porytiles_anim_params(const ArtifactKey &des
         transaction_dest_path,
         compute_transaction_dest_path(
             transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
-        "Failed to compute transaction dest path.",
-        void);
+        void,
+        "Failed to compute transaction dest path.");
 
     return anim_json_parser_->write(transaction_dest_path, anim_params);
 }

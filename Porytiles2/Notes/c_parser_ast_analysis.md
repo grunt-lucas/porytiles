@@ -61,7 +61,7 @@ Adopt **tree-sitter-c** for statement/expression parsing while keeping the curre
 |----------|---------------|-------------|
 | HeaderBehaviorMapProvider | `parse_defines()`, `parse_enums()` | ✅ Simple |
 | ProjectTilesetMetadataProvider | `parse_struct_initializers()` | ✅ Simple |
-| ProjectTilesetNameProvider | `parse_struct_variables()` | ✅ Simple |
+| ProjectTilesetMetadataProvider | `parse_struct_variables()` | ✅ Simple |
 | **AnimCodeParser** | Manual token pattern matching | ❌ 8+ helper functions |
 
 **Key Insight:** Only AnimCodeParser suffers because it needs to understand function bodies (statements and expressions), not just declarations.

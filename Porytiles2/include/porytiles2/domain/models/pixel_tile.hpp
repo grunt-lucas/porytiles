@@ -67,13 +67,6 @@ inline constexpr std::size_t size_pix = side_length_pix * side_length_pix;
  * pixel types like IndexPixel that have built-in transparency) and extrinsic level (for pixel types like Rgba32
  * where transparency is determined by comparison with a reference value).
  *
- * Key features:
- * - Direct indexed access via at() methods supporting both linear and 2D coordinate access
- * - Boundary-checked access with panic on out-of-bounds indices
- * - Flipping operations that create new tiles with transformed pixel positions
- * - Transparency checking with overloads for both intrinsic and extrinsic transparency
- * - Full equality and comparison support via defaulted spaceship operator
- *
  * @invariant Default-constructed PixelTile is transparent (satisfies SupportsTransparency design invariant). That is,
  * `PixelTile<PixelType>{}` produces a tile where all pixels are default-constructed (and thus transparent, assuming
  * PixelType itself satisfies the invariant).

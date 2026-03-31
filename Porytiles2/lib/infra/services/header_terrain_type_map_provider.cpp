@@ -178,7 +178,7 @@ ChainableResult<void> HeaderTerrainTypeMapProvider::ensure_loaded() const
     // Create and store CParserFacade for rich error formatting with source context
     driver_ = std::make_unique<CParserFacade>(header_path_, format_);
 
-    // Only parse enum declarations — terrain type constants are defined as enum members in global.fieldmap.h.
+    // Only parse enum declarations. Terrain type constants are defined as enum members in global.fieldmap.h.
     // We intentionally skip parse_defines() because the header may contain complex #define expressions
     // (e.g., referencing enum constants) that the CParserFacade cannot evaluate.
     auto enums_result = driver_->parse_enums();

@@ -50,17 +50,15 @@ ChainableResult<void> ProjectTilesetMetadataWriter::update_fields(
 
     // Parse the file to locate the tileset struct
     CParserFacade parser{headers_path, format_};
-    auto parse_result = parser.parse_struct_initializers("gTileset_");
-    if (!parse_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{format_->format(
-                "{}: failed to parse tileset headers", FormatParam{headers_path.string(), Style::bold})},
-            parse_result};
-    }
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        struct_decls,
+        parser.parse_struct_initializers("gTileset_"),
+        void,
+        format_->format("{}: failed to parse tileset headers", FormatParam{headers_path.string(), Style::bold}));
 
     // Find the target tileset struct by exact name match
     const StructInitializerDeclaration *target_struct = nullptr;
-    for (const auto &struct_decl : parse_result.value()) {
+    for (const auto &struct_decl : struct_decls) {
         if (struct_decl.variable_name() == tileset_name) {
             target_struct = &struct_decl;
             break;
@@ -162,16 +160,14 @@ ProjectTilesetMetadataWriter::create_tileset_struct(const std::string &tileset_n
 
     // First, verify the tileset doesn't already exist
     CParserFacade parser{headers_path, format_};
-    auto parse_result = parser.parse_struct_initializers("gTileset_");
-    if (!parse_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{format_->format(
-                "{}: failed to parse tileset headers", FormatParam{headers_path.string(), Style::bold})},
-            parse_result};
-    }
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        struct_decls,
+        parser.parse_struct_initializers("gTileset_"),
+        void,
+        format_->format("{}: failed to parse tileset headers", FormatParam{headers_path.string(), Style::bold}));
 
     // Check if tileset already exists
-    for (const auto &struct_decl : parse_result.value()) {
+    for (const auto &struct_decl : struct_decls) {
         if (struct_decl.variable_name() == tileset_name) {
             return FormattableError{
                 format_->format("tileset '{}' already exists in headers.h", FormatParam{tileset_name, Style::bold})};

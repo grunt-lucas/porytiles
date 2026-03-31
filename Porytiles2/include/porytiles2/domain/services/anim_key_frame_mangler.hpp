@@ -38,7 +38,7 @@ struct PixelMangleChange {
  * When a tile is mangled to make it unique, this struct records the exact changes made: which tile was modified and
  * which pixels were changed. This information is needed to backport the changes to the tiles.png image.
  *
- * Each TileMangleRecord targets a distinct tile_index — no two records share the same tile_index.
+ * Each TileMangleRecord targets a distinct tile_index. No two records share the same tile_index.
  * This invariant is guaranteed by mangle_duplicates, which visits each tile at most once.
  * A record contains one or more pixel changes (single-pixel mangles are most common, but multi-pixel
  * mangles are used as a fallback when single-pixel swaps are insufficient).
@@ -81,7 +81,7 @@ struct MangleResult {
  * visually similar colors that already exist in the tile, making each tile unique.
  *
  * The mangling algorithm:
- * 1. Finds a pixel to modify (prefers corners → edges → interior for minimal visual impact)
+ * 1. Finds a pixel to modify (prefers corners -> edges -> interior for minimal visual impact)
  * 2. Swaps to a similar color that already exists in the tile (no new colors introduced)
  * 3. Verifies the modified tile is unique against all existing tiles
  * 4. Preserves the palette_index (upper 4 bits) for true-color mode compatibility

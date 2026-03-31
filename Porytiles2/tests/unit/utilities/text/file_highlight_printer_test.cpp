@@ -17,10 +17,6 @@ class FileHighlightPrinterTest : public ::testing::Test {
     std::vector<std::string> sample_lines_{"line 0", "line 1", "line 2", "line 3", "line 4"};
 };
 
-// =============================================================================
-// Tests for print(lines, line_indices_to_highlight, window_size)
-// =============================================================================
-
 TEST_F(FileHighlightPrinterTest, EmptyLinesReturnsEmptyResult)
 {
     std::vector<std::string> empty_lines;
@@ -51,7 +47,6 @@ TEST_F(FileHighlightPrinterTest, HighlightedLineHasArrowPrefix)
 {
     auto result = printer_.print(sample_lines_, std::vector<std::size_t>{2}, 3);
 
-    // Line 2 (index 1 in result) should have arrow prefix
     ASSERT_GE(result.size(), 2);
     EXPECT_NE(result[1].find("➞"), std::string::npos);
 
@@ -75,7 +70,6 @@ TEST_F(FileHighlightPrinterTest, MultipleHighlightedLines)
 {
     auto result = printer_.print(sample_lines_, std::vector<std::size_t>{1, 3}, 5);
 
-    // Both highlighted lines should have arrows
     std::size_t arrow_count = 0;
     for (const auto &line : result) {
         if (line.find("➞") != std::string::npos) {
@@ -102,13 +96,8 @@ TEST_F(FileHighlightPrinterTest, WindowAtEndOfFile)
     // Highlighting line 4 (last) with window 3 should show lines 3, 4, 5
     ASSERT_GE(result.size(), 1);
 
-    // Last line in result should contain "line 4"
     EXPECT_NE(result.back().find("line 4"), std::string::npos);
 }
-
-// =============================================================================
-// Tests for print(lines, line_index_to_highlight, col_to_highlight, window_size)
-// =============================================================================
 
 TEST_F(FileHighlightPrinterTest, ColumnHighlightEmptyLinesReturnsEmptyResult)
 {
@@ -123,7 +112,6 @@ TEST_F(FileHighlightPrinterTest, ColumnHighlightIncludesCaretIndicator)
     std::vector<std::string> lines{"abcdef"};
     auto result = printer_.print(lines, 0, 3, 3);
 
-    // Should have 2 lines: the highlighted line and the caret indicator
     ASSERT_EQ(result.size(), 2);
     EXPECT_NE(result[1].find("^"), std::string::npos);
 }

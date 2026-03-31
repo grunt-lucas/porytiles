@@ -8,13 +8,13 @@ static_assert(std::formattable<porytiles2::Rgba32, char>, "Rgba32 must satisfy s
 
 using namespace porytiles2;
 
-TEST(Rgba32Tests, ToJascStrShouldWork)
+TEST(Rgba32Tests, ToJascStr)
 {
     constexpr Rgba32 rgba1{127, 12, 222};
     EXPECT_EQ(rgba1.to_jasc_str(), "127 12 222");
 }
 
-TEST(Rgba32Tests, EqualsIgnoringAlphaShouldWork)
+TEST(Rgba32Tests, EqualsIgnoringAlpha)
 {
     constexpr Rgba32 rgba1{127, 12, 222, Rgba32::alpha_opaque};
     constexpr Rgba32 rgba2{127, 12, 222, Rgba32::alpha_transparent};
@@ -25,7 +25,7 @@ TEST(Rgba32Tests, EqualsIgnoringAlphaShouldWork)
     EXPECT_FALSE(rgba3.equals_ignoring_alpha(rgba4));
 }
 
-TEST(Rgba32Tests, StdFormatFormattingShouldUseToString)
+TEST(Rgba32Tests, StdFormatUsesToString)
 {
     constexpr Rgba32 rgba1{127, 12, 222};
     const auto formatted = std::format("{}", rgba1);
@@ -33,7 +33,7 @@ TEST(Rgba32Tests, StdFormatFormattingShouldUseToString)
     EXPECT_EQ(formatted, "[127, 12, 222, 255]");
 }
 
-TEST(Rgba32Tests, OperatorEqualsShouldConsiderAlpha)
+TEST(Rgba32Tests, EqualityConsidersAlpha)
 {
     constexpr Rgba32 rgba1{127, 12, 222, Rgba32::alpha_opaque};
     constexpr Rgba32 rgba2{127, 12, 222, Rgba32::alpha_transparent};
@@ -44,7 +44,7 @@ TEST(Rgba32Tests, OperatorEqualsShouldConsiderAlpha)
     EXPECT_TRUE(rgba3 == rgba4);
 }
 
-TEST(Rgba32Tests, OperatorEqualsAndEqualsIgnoringAlphaShouldDifferBasedOnAlpha)
+TEST(Rgba32Tests, EqualityVsIgnoringAlpha)
 {
     constexpr Rgba32 rgba1{100, 50, 200, Rgba32::alpha_opaque};
     constexpr Rgba32 rgba2{100, 50, 200, Rgba32::alpha_transparent};
@@ -56,7 +56,7 @@ TEST(Rgba32Tests, OperatorEqualsAndEqualsIgnoringAlphaShouldDifferBasedOnAlpha)
     EXPECT_TRUE(rgba1.equals_ignoring_alpha(rgba2));
 }
 
-TEST(Rgba32Tests, DefaultConstructedValueShouldBeTransparent)
+TEST(Rgba32Tests, DefaultIsTransparent)
 {
     const Rgba32 default_rgba{};
     const Rgba32 transparent_ref{0, 0, 0, Rgba32::alpha_transparent};

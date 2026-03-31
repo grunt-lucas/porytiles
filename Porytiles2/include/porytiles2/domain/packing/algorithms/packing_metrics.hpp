@@ -50,10 +50,6 @@
 
 namespace porytiles2 {
 
-// ============================================================================
-// GLOBAL MULTIPLICITY FUNCTIONS
-// ============================================================================
-
 /**
  * @brief Builds a GLOBAL multiplicity map from all input tiles.
  *
@@ -110,10 +106,6 @@ build_global_multiplicity_map(const std::vector<PackableTile> &tiles, const std:
  */
 [[nodiscard]] double
 compute_average_multiplicity(const std::vector<PackableTile> &tiles, const std::vector<PackableTile> &hints);
-
-// ============================================================================
-// PALETTE-LOCAL MULTIPLICITY FUNCTIONS
-// ============================================================================
 
 /**
  * @brief Builds a PALETTE-LOCAL multiplicity map for a specific palette.
@@ -197,10 +189,6 @@ compute_average_multiplicity(const std::vector<PackableTile> &tiles, const std::
  */
 [[nodiscard]] double
 compute_palette_local_efficiency(const ColorSet &tile_colors, const std::map<std::size_t, std::size_t> &local_mult);
-
-// ============================================================================
-// FAST METRIC FUNCTIONS (using PackedPalette's cached color counts)
-// ============================================================================
 
 /**
  * @brief Computes the weighted cost of placing a tile in a palette using cached counts.

@@ -36,9 +36,6 @@ PixelTile<Rgba32> make_l_tile(const Rgba32 &color1, const Rgba32 &color2)
     return tile;
 }
 
-/**
- * @brief Creates a simple pixel tile with a single-color block pattern.
- */
 PixelTile<Rgba32> make_block_tile(const Rgba32 &color, std::size_t size = 4)
 {
     PixelTile<Rgba32> tile{transparent};
@@ -52,7 +49,7 @@ PixelTile<Rgba32> make_block_tile(const Rgba32 &color, std::size_t size = 4)
 
 } // namespace
 
-TEST(ShapeGroupAnalyzerTests, TwoTilesSameShapeDifferentColors_ShouldGroupTogether)
+TEST(ShapeGroupAnalyzerTests, TwoTilesSameShapeDifferentColors)
 {
     auto tile1 = make_l_tile(red, blue);
     auto tile2 = make_l_tile(green, yellow);
@@ -66,7 +63,7 @@ TEST(ShapeGroupAnalyzerTests, TwoTilesSameShapeDifferentColors_ShouldGroupTogeth
     EXPECT_EQ(groups[0].members[1].tile_index, 1);
 }
 
-TEST(ShapeGroupAnalyzerTests, TwoTilesDifferentShapes_ShouldNotGroup)
+TEST(ShapeGroupAnalyzerTests, TwoTilesDifferentShapes)
 {
     auto tile1 = make_l_tile(red, blue);
     auto tile2 = make_block_tile(green);
@@ -77,7 +74,7 @@ TEST(ShapeGroupAnalyzerTests, TwoTilesDifferentShapes_ShouldNotGroup)
     EXPECT_TRUE(groups.empty());
 }
 
-TEST(ShapeGroupAnalyzerTests, TwoTilesSameShapeSameColors_ShouldNotGroup)
+TEST(ShapeGroupAnalyzerTests, TwoTilesSameShapeSameColors)
 {
     auto tile1 = make_l_tile(red, blue);
     auto tile2 = make_l_tile(red, blue);
@@ -89,7 +86,7 @@ TEST(ShapeGroupAnalyzerTests, TwoTilesSameShapeSameColors_ShouldNotGroup)
     EXPECT_TRUE(groups.empty());
 }
 
-TEST(ShapeGroupAnalyzerTests, SingleTile_ShouldNotGroup)
+TEST(ShapeGroupAnalyzerTests, SingleTile)
 {
     auto tile1 = make_l_tile(red, blue);
 
@@ -99,7 +96,7 @@ TEST(ShapeGroupAnalyzerTests, SingleTile_ShouldNotGroup)
     EXPECT_TRUE(groups.empty());
 }
 
-TEST(ShapeGroupAnalyzerTests, FlippedVariantsSameShape_ShouldGroupTogether)
+TEST(ShapeGroupAnalyzerTests, FlippedVariantsSameShape)
 {
     auto tile1 = make_l_tile(red, blue);
     // Create a horizontally flipped version with different colors
@@ -128,7 +125,7 @@ TEST(ShapeGroupAnalyzerTests, FlippedVariantsSameShape_ShouldGroupTogether)
     EXPECT_EQ(groups[0].members.size(), 2);
 }
 
-TEST(ShapeGroupAnalyzerTests, TransparentTile_ShouldBeSkipped)
+TEST(ShapeGroupAnalyzerTests, TransparentTileSkipped)
 {
     PixelTile<Rgba32> transparent_tile{transparent};
     auto tile1 = make_l_tile(red, blue);
@@ -139,7 +136,7 @@ TEST(ShapeGroupAnalyzerTests, TransparentTile_ShouldBeSkipped)
     EXPECT_TRUE(groups.empty());
 }
 
-TEST(ShapeGroupAnalyzerTests, ThreeTilesSameShapeDifferentColors_ShouldGroupAll)
+TEST(ShapeGroupAnalyzerTests, ThreeTilesSameShapeDifferentColors)
 {
     auto tile1 = make_l_tile(red, blue);
     auto tile2 = make_l_tile(green, yellow);
@@ -152,7 +149,7 @@ TEST(ShapeGroupAnalyzerTests, ThreeTilesSameShapeDifferentColors_ShouldGroupAll)
     EXPECT_EQ(groups[0].members.size(), 3);
 }
 
-TEST(ShapeGroupAnalyzerTests, MultipleDistinctShapeGroups_ShouldFormSeparateGroups)
+TEST(ShapeGroupAnalyzerTests, MultipleDistinctShapeGroups)
 {
     // L-shape group with 2 color variants
     auto l_tile1 = make_l_tile(red, blue);
@@ -170,17 +167,17 @@ TEST(ShapeGroupAnalyzerTests, MultipleDistinctShapeGroups_ShouldFormSeparateGrou
     EXPECT_EQ(groups[1].members.size(), 2);
 }
 
-TEST(ShapeTileFromPixelTileTests, ShouldConvertCorrectly)
+TEST(ShapeTileFromPixelTileTests, ConvertsCorrectly)
 {
     auto tile = make_l_tile(red, blue);
     auto shape_tile = shape_tile_from_pixel_tile(tile, [](const Rgba32 &c) { return c.is_transparent(rgba_magenta); });
 
-    // The L-tile has 2 colors → 2 mask entries
+    // The L-tile has 2 colors -> 2 mask entries
     EXPECT_EQ(shape_tile.colors().size(), 2);
     EXPECT_FALSE(shape_tile.is_transparent());
 }
 
-TEST(ShapeTileFromPixelTileTests, TransparentTile_ShouldBeTransparent)
+TEST(ShapeTileFromPixelTileTests, TransparentTileIsTransparent)
 {
     PixelTile<Rgba32> tile{transparent};
     auto shape_tile = shape_tile_from_pixel_tile(tile, [](const Rgba32 &c) { return c.is_transparent(rgba_magenta); });

@@ -68,14 +68,6 @@ Automatic support would use tile sharing to align palettes and then be able to d
   - e.g. --disable-warnings as a shortcut for --diagnostic-warnings-exclude='.*'
   - making the option is easy, the tricky part here is cleanly integrating it into our completion system
 
-## Implement `LayoutDataProvider`
-Once we complete the `ProjectTilesetArtifactKeyProvider` refactor, create a `LayoutDataProvider` which parses `layouts.json`.
-We can then create a `TilesetPairProvider` that reads the layout data and provides mappings between primary/secondary.
-```c++
-std::set<std::string> paired_tilesets = pair_provider.get_paired_tilesets("gTileset_General");
-// paired_tilesets: std::set{"gTileset_Petalburg", "gTileset_Slateport", ...}
-```
-
 ## Start working on secondary tileset compilation
 
 ## Design and Implement `verify-tileset` command

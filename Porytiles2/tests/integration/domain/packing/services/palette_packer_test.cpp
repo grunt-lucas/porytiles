@@ -20,12 +20,6 @@ using namespace porytiles2;
 
 namespace {
 
-/**
- * @brief Creates an 8x8 pixel tile filled entirely with a single color.
- *
- * @param color The color to fill the tile with
- * @return A PixelTile<Rgba32> with all 64 pixels set to the specified color
- */
 [[nodiscard]] PixelTile<Rgba32> make_solid_tile(Rgba32 color)
 {
     std::array<Rgba32, tile::size_pix> pixels{};
@@ -52,9 +46,6 @@ namespace {
     return PixelTile<Rgba32>{pixels};
 }
 
-/**
- * @brief Returns a bitset with all 16 palette slots marked as available.
- */
 [[nodiscard]] std::bitset<pal::num_pals> all_palettes_available()
 {
     std::bitset<pal::num_pals> available{};
@@ -62,13 +53,6 @@ namespace {
     return available;
 }
 
-/**
- * @brief Returns a bitset with only the specified palette indices marked as available.
- *
- * @tparam Indices Variadic pack of integral types
- * @param indices The palette indices to mark as available
- * @return A bitset with only the specified bits set
- */
 template <typename... Indices>
 [[nodiscard]] std::bitset<pal::num_pals> set_palettes_available(Indices... indices)
 {
@@ -77,13 +61,6 @@ template <typename... Indices>
     return available;
 }
 
-/**
- * @brief Collects all non-wildcard, non-transparency colors from a palette into a set.
- *
- * @param pal The palette to extract colors from
- * @param transparency The transparency color to exclude
- * @return A set of all non-transparent colors in the palette
- */
 [[nodiscard]] std::set<Rgba32> collect_palette_colors(const Palette<Rgba32, pal::max_size> &pal, Rgba32 transparency)
 {
     std::set<Rgba32> colors{};
@@ -98,16 +75,6 @@ template <typename... Indices>
     return colors;
 }
 
-/**
- * @brief Generates a vector of N distinct colors for testing.
- *
- * @details
- * Creates colors by varying RGB values to ensure distinctness. The generated colors
- * will not match rgba_magenta (the typical transparency color).
- *
- * @param count The number of distinct colors to generate
- * @return A vector of distinct Rgba32 colors
- */
 [[nodiscard]] std::vector<Rgba32> generate_distinct_colors(std::size_t count)
 {
     std::vector<Rgba32> colors{};
@@ -139,10 +106,6 @@ template <typename... Indices>
 }
 
 } // namespace
-
-// =============================================================================
-// Simple Setup Tests
-// =============================================================================
 
 TEST(PalettePackerIntegration, EmptyInput_ReturnsEmptyResult)
 {
@@ -344,10 +307,6 @@ TEST(PalettePackerIntegration, TwoTilesDisjointColorsFitTogether_PacksSuccessful
     EXPECT_EQ(all_packed_colors.size(), 15);
 }
 
-// =============================================================================
-// Edge Case Tests
-// =============================================================================
-
 TEST(PalettePackerIntegration, NoAvailablePalettes_Fails)
 {
     PlainTextFormatter formatter{};
@@ -436,10 +395,6 @@ TEST(PalettePackerIntegration, AllPalettesNeeded_Success)
     // All 16 palettes should be used (since colors don't overlap)
     EXPECT_EQ(used_palettes.size(), 16);
 }
-
-// =============================================================================
-// Prefilled Palette Tests
-// =============================================================================
 
 TEST(PalettePackerIntegration, AlmostFullPrefilledPalette_TilesGoElsewhere)
 {
@@ -566,7 +521,7 @@ TEST(PalettePackerIntegration, PartiallyPrefilledPalette_TileCanMerge)
     EXPECT_TRUE(colors.contains(rgba_lime));
 }
 
-TEST(PalettePackerIntegration, OutOfBandPrefilledPalette_PrefilledShouldNotBeUsed)
+TEST(PalettePackerIntegration, OutOfBandPrefilledPaletteNotUsed)
 {
     PlainTextFormatter formatter{};
     BufferedUserDiagnostics diag{};
@@ -683,10 +638,6 @@ TEST(PalettePackerIntegration, PrefilledPaletteWithDuplicateColors_CapacityCorre
     EXPECT_NE(assigned_pal, 0)
         << "Tile should NOT be assigned to palette 0 (no available slots due to duplicates occupying all 15 slots)";
 }
-
-// =============================================================================
-// Transparency Handling Tests
-// =============================================================================
 
 TEST(PalettePackerIntegration, TransparentPixelsIgnored_OnlyNonTransparentPacked)
 {

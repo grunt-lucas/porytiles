@@ -17,10 +17,6 @@ void ColorSet::reset(ColorIndex index)
     colors_.reset(index.index());
 }
 
-// ============================================================================
-// Free function implementations
-// ============================================================================
-
 ColorSet color_set_union(const ColorSet &a, const ColorSet &b)
 {
     ColorSet result;

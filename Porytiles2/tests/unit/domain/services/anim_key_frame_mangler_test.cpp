@@ -19,9 +19,6 @@ using namespace porytiles2;
 
 namespace {
 
-/**
- * @brief Creates a test palette with distinct colors at each index.
- */
 Palette<Rgba32, pal::max_size> create_test_palette()
 {
     Palette<Rgba32, pal::max_size> pal;
@@ -49,9 +46,6 @@ Palette<Rgba32, pal::max_size> create_test_palette()
     return pal;
 }
 
-/**
- * @brief Creates a tile with two colors: one in corners, one everywhere else.
- */
 PixelTile<IndexPixel> create_two_color_tile(std::size_t corner_color, std::size_t other_color)
 {
     PixelTile<IndexPixel> tile;
@@ -220,7 +214,7 @@ TEST_F(AnimKeyFrameManglerTests, shouldNotMangleIntoCollisionWithExistingCanonic
     const auto original_tile = create_two_color_tile(1, 2); // Red corners, green fill
     std::vector<PixelTile<IndexPixel>> tiles;
     tiles.push_back(original_tile);
-    tiles.push_back(original_tile); // Duplicate — forces a mangle
+    tiles.push_back(original_tile); // Duplicate, forces a mangle
 
     // Create the tile that a naive mangle would produce:
     // The mangler tries pixel 0 first (corner at index 0) and swaps color 1 (red)

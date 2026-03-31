@@ -32,7 +32,7 @@ void AnimTileMatcher::register_animation(
     for (std::size_t i = 0; i < tiles.size(); ++i) {
         const PixelTile<Rgba32> &tile = tiles[i];
 
-        // Skip transparent tiles — they don't need to be matched.
+        // Skip transparent tiles. They don't need to be matched.
         // Transparent tiles are valid for animations without a key frame (manual linking).
         // For key frame animations, validate_anim_frames() catches transparent tiles earlier.
         if (tile.is_transparent(extrinsic_transparency)) {
@@ -46,7 +46,7 @@ void AnimTileMatcher::register_animation(
         const PixelTile<Rgba32> &base_tile = canonical;
         if (lookup_map_.contains(base_tile)) {
             // For key frame animations, validate_anim_frames() catches duplicates before we get here.
-            // For non-key-frame animations, duplicate tiles across animations are valid — skip registration
+            // For non-key-frame animations, duplicate tiles across animations are valid. Skip registration
             // and let the first registration win.
             continue;
         }

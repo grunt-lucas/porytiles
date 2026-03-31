@@ -9,17 +9,13 @@
 
 using namespace porytiles2;
 
-// =============================================================================
-// Dynamic Palette (N=0) Tests
-// =============================================================================
-
-TEST(PaletteDynamicTests, DefaultConstructorCreatesEmptyPalette)
+TEST(PaletteDynamicTests, DefaultEmpty)
 {
     Palette<Rgba32> pal{};
     EXPECT_EQ(pal.size(), 0);
 }
 
-TEST(PaletteDynamicTests, VectorConstructorCreatesPaletteWithColors)
+TEST(PaletteDynamicTests, VectorConstructor)
 {
     std::vector<Rgba32> colors{Rgba32{255, 0, 0, 255}, Rgba32{0, 255, 0, 255}, Rgba32{0, 0, 255, 255}};
     Palette<Rgba32> pal{colors};
@@ -30,7 +26,7 @@ TEST(PaletteDynamicTests, VectorConstructorCreatesPaletteWithColors)
     EXPECT_EQ(pal.at(2), Rgba32(0, 0, 255, 255));
 }
 
-TEST(PaletteDynamicTests, FillConstructorCreates16Copies)
+TEST(PaletteDynamicTests, FillConstructor)
 {
     Rgba32 color{128, 128, 128, 255};
     Palette<Rgba32> pal{color};
@@ -52,7 +48,7 @@ TEST(PaletteDynamicTests, AddAppendsColor)
     EXPECT_EQ(pal.at(1), Rgba32(0, 255, 0, 255));
 }
 
-TEST(PaletteDynamicTests, AddWildcardAppendsWildcardSlot)
+TEST(PaletteDynamicTests, AddWildcard)
 {
     Palette<Rgba32> pal{};
     pal.add(Rgba32{255, 0, 0, 255});
@@ -65,7 +61,7 @@ TEST(PaletteDynamicTests, AddWildcardAppendsWildcardSlot)
     EXPECT_FALSE(pal.is_wildcard(2));
 }
 
-TEST(PaletteDynamicTests, SizeReturnsVectorSize)
+TEST(PaletteDynamicTests, Size)
 {
     Palette<Rgba32> pal{};
     EXPECT_EQ(pal.size(), 0);
@@ -78,11 +74,7 @@ TEST(PaletteDynamicTests, SizeReturnsVectorSize)
     EXPECT_EQ(pal.size(), 3);
 }
 
-// =============================================================================
-// Fixed-Size Palette (N>0) Tests
-// =============================================================================
-
-TEST(PaletteFixedTests, DefaultConstructorCreatesAllWildcards)
+TEST(PaletteFixedTests, DefaultAllWildcards)
 {
     Palette<Rgba32, 16> pal{};
 
@@ -92,7 +84,7 @@ TEST(PaletteFixedTests, DefaultConstructorCreatesAllWildcards)
     }
 }
 
-TEST(PaletteFixedTests, ArrayConstructorCreatesPaletteWithColors)
+TEST(PaletteFixedTests, ArrayConstructor)
 {
     std::array<Rgba32, 4> colors{
         Rgba32{255, 0, 0, 255}, Rgba32{0, 255, 0, 255}, Rgba32{0, 0, 255, 255}, Rgba32{255, 255, 0, 255}};
@@ -105,7 +97,7 @@ TEST(PaletteFixedTests, ArrayConstructorCreatesPaletteWithColors)
     EXPECT_EQ(pal.at(3), Rgba32(255, 255, 0, 255));
 }
 
-TEST(PaletteFixedTests, FillConstructorFillsAllSlots)
+TEST(PaletteFixedTests, FillConstructor)
 {
     Rgba32 color{64, 64, 64, 255};
     Palette<Rgba32, 8> pal{color};
@@ -117,7 +109,7 @@ TEST(PaletteFixedTests, FillConstructorFillsAllSlots)
     }
 }
 
-TEST(PaletteFixedTests, SizeReturnsN)
+TEST(PaletteFixedTests, Size)
 {
     Palette<Rgba32, 4> pal4{};
     Palette<Rgba32, 16> pal16{};
@@ -128,11 +120,7 @@ TEST(PaletteFixedTests, SizeReturnsN)
     EXPECT_EQ(pal32.size(), 32);
 }
 
-// =============================================================================
-// Common Functionality Tests (Both Variants)
-// =============================================================================
-
-TEST(PaletteCommonTests, SetReplacesColorAtIndex)
+TEST(PaletteCommonTests, Set)
 {
     Palette<Rgba32> dynamic_pal{};
     dynamic_pal.add(Rgba32{0, 0, 0, 255});
@@ -145,7 +133,7 @@ TEST(PaletteCommonTests, SetReplacesColorAtIndex)
     EXPECT_EQ(fixed_pal.at(2), Rgba32(0, 255, 0, 255));
 }
 
-TEST(PaletteCommonTests, SetWildcardMarksSlotAsWildcard)
+TEST(PaletteCommonTests, SetWildcard)
 {
     Palette<Rgba32> dynamic_pal{};
     dynamic_pal.add(Rgba32{255, 0, 0, 255});
@@ -160,7 +148,7 @@ TEST(PaletteCommonTests, SetWildcardMarksSlotAsWildcard)
     EXPECT_TRUE(fixed_pal.is_wildcard(2));
 }
 
-TEST(PaletteCommonTests, AtReturnsColorAtIndex)
+TEST(PaletteCommonTests, At)
 {
     Palette<Rgba32> dynamic_pal{};
     dynamic_pal.add(Rgba32{10, 20, 30, 255});
@@ -174,7 +162,7 @@ TEST(PaletteCommonTests, AtReturnsColorAtIndex)
     EXPECT_EQ(fixed_pal.at(1), Rgba32(100, 110, 120, 255));
 }
 
-TEST(PaletteCommonTests, AtOptionalReturnsOptionalColor)
+TEST(PaletteCommonTests, AtOptional)
 {
     Palette<Rgba32> pal{};
     pal.add(Rgba32{255, 0, 0, 255});
@@ -188,7 +176,7 @@ TEST(PaletteCommonTests, AtOptionalReturnsOptionalColor)
     EXPECT_FALSE(opt1.has_value());
 }
 
-TEST(PaletteCommonTests, SlotZeroColorReturnsSlot0)
+TEST(PaletteCommonTests, SlotZeroColor)
 {
     Palette<Rgba32> dynamic_pal{};
     dynamic_pal.add(Rgba32{123, 45, 67, 255});
@@ -200,11 +188,7 @@ TEST(PaletteCommonTests, SlotZeroColorReturnsSlot0)
     EXPECT_EQ(fixed_pal.slot_zero_color(), Rgba32(89, 10, 11, 255));
 }
 
-// =============================================================================
-// Wildcard Query Tests
-// =============================================================================
-
-TEST(PaletteWildcardTests, IsWildcardReturnsTrueForWildcardSlots)
+TEST(PaletteWildcardTests, IsWildcard)
 {
     Palette<Rgba32> pal{};
     pal.add(Rgba32{0, 0, 0, 255});
@@ -216,7 +200,7 @@ TEST(PaletteWildcardTests, IsWildcardReturnsTrueForWildcardSlots)
     EXPECT_FALSE(pal.is_wildcard(2));
 }
 
-TEST(PaletteWildcardTests, HasAnyWildcardsReturnsTrueIfAnyWildcardsExist)
+TEST(PaletteWildcardTests, HasAnyWildcards)
 {
     Palette<Rgba32> pal_no_wildcards{};
     pal_no_wildcards.add(Rgba32{0, 0, 0, 255});
@@ -229,29 +213,25 @@ TEST(PaletteWildcardTests, HasAnyWildcardsReturnsTrueIfAnyWildcardsExist)
     EXPECT_TRUE(pal_with_wildcard.has_any_wildcards());
 }
 
-TEST(PaletteWildcardTests, HasAnyWildcardsOnFixedDefaultConstruction)
+TEST(PaletteWildcardTests, HasAnyWildcardsFixedDefault)
 {
     Palette<Rgba32, 4> pal{};
     EXPECT_TRUE(pal.has_any_wildcards());
 }
 
-TEST(PaletteWildcardTests, HasAnyWildcardsOnFixedFilledPalette)
+TEST(PaletteWildcardTests, HasAnyWildcardsFixedFilled)
 {
     Palette<Rgba32, 4> pal{Rgba32{0, 0, 0, 255}};
     EXPECT_FALSE(pal.has_any_wildcards());
 }
 
-TEST(PaletteWildcardTests, EmptyDynamicPaletteHasNoWildcards)
+TEST(PaletteWildcardTests, EmptyDynamicNoWildcards)
 {
     Palette<Rgba32> pal{};
     EXPECT_FALSE(pal.has_any_wildcards());
 }
 
-// =============================================================================
-// Map Generation Tests
-// =============================================================================
-
-TEST(PaletteMapTests, ColorToIndexMapSkipsSlot0AndWildcards)
+TEST(PaletteMapTests, ColorToIndexMap)
 {
     Palette<Rgba32> pal{};
     pal.add(Rgba32{0, 0, 0, 255});   // slot 0 - skipped
@@ -267,7 +247,7 @@ TEST(PaletteMapTests, ColorToIndexMapSkipsSlot0AndWildcards)
     EXPECT_EQ(map.count(Rgba32{0, 0, 0, 255}), 0); // slot 0 excluded
 }
 
-TEST(PaletteMapTests, IndexToColorMapSkipsSlot0AndWildcards)
+TEST(PaletteMapTests, IndexToColorMap)
 {
     Palette<Rgba32> pal{};
     pal.add(Rgba32{0, 0, 0, 255});   // slot 0 - skipped
@@ -301,11 +281,7 @@ TEST(PaletteMapTests, MapsOnFixedPaletteWithWildcards)
     EXPECT_EQ(index_map.at(PaletteIndex{3}), Rgba32(200, 200, 200, 255));
 }
 
-// =============================================================================
-// Death Tests (Panic Conditions)
-// =============================================================================
-
-TEST(PaletteDeathTests, AtPanicsOnWildcardSlot)
+TEST(PaletteDeathTests, AtPanicsWildcard)
 {
     Palette<Rgba32> pal{};
     pal.add_wildcard();
@@ -313,7 +289,7 @@ TEST(PaletteDeathTests, AtPanicsOnWildcardSlot)
     EXPECT_DEATH(std::ignore = pal.at(0), "wildcard");
 }
 
-TEST(PaletteDeathTests, AtPanicsOnOutOfBoundsIndex)
+TEST(PaletteDeathTests, AtPanicsOutOfBounds)
 {
     Palette<Rgba32> pal{};
     pal.add(Rgba32{0, 0, 0, 255});
@@ -322,7 +298,7 @@ TEST(PaletteDeathTests, AtPanicsOnOutOfBoundsIndex)
     EXPECT_DEATH(std::ignore = pal.at(100), ">=");
 }
 
-TEST(PaletteDeathTests, AtOptionalPanicsOnOutOfBoundsIndex)
+TEST(PaletteDeathTests, AtOptionalPanicsOutOfBounds)
 {
     Palette<Rgba32> pal{};
     pal.add(Rgba32{0, 0, 0, 255});
@@ -330,21 +306,21 @@ TEST(PaletteDeathTests, AtOptionalPanicsOnOutOfBoundsIndex)
     EXPECT_DEATH(std::ignore = pal.at_optional(1), ">=");
 }
 
-TEST(PaletteDeathTests, SlotZeroColorPanicsIfSlot0IsWildcard)
+TEST(PaletteDeathTests, SlotZeroColorPanicsWildcard)
 {
     Palette<Rgba32, 4> pal{}; // all wildcards
 
     EXPECT_DEATH(std::ignore = pal.slot_zero_color(), "wildcard");
 }
 
-TEST(PaletteDeathTests, SlotZeroColorPanicsOnEmptyPalette)
+TEST(PaletteDeathTests, SlotZeroColorPanicsEmpty)
 {
     Palette<Rgba32> pal{};
 
     EXPECT_DEATH(std::ignore = pal.slot_zero_color(), "zero size");
 }
 
-TEST(PaletteDeathTests, SetPanicsOnOutOfBoundsIndex)
+TEST(PaletteDeathTests, SetPanicsOutOfBounds)
 {
     Palette<Rgba32> pal{};
     pal.add(Rgba32{0, 0, 0, 255});
@@ -352,7 +328,7 @@ TEST(PaletteDeathTests, SetPanicsOnOutOfBoundsIndex)
     EXPECT_DEATH(pal.set(1, Rgba32{255, 255, 255, 255}), ">=");
 }
 
-TEST(PaletteDeathTests, SetWildcardPanicsOnOutOfBoundsIndex)
+TEST(PaletteDeathTests, SetWildcardPanicsOutOfBounds)
 {
     Palette<Rgba32> pal{};
     pal.add(Rgba32{0, 0, 0, 255});
@@ -360,7 +336,7 @@ TEST(PaletteDeathTests, SetWildcardPanicsOnOutOfBoundsIndex)
     EXPECT_DEATH(pal.set_wildcard(1), ">=");
 }
 
-TEST(PaletteDeathTests, IsWildcardPanicsOnOutOfBoundsIndex)
+TEST(PaletteDeathTests, IsWildcardPanicsOutOfBounds)
 {
     Palette<Rgba32> pal{};
     pal.add(Rgba32{0, 0, 0, 255});

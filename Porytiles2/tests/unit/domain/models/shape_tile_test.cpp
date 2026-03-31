@@ -8,7 +8,6 @@
 using namespace porytiles2;
 
 namespace {
-// Helper function to create a diagonal ShapeMask pattern
 ShapeMask create_diagonal_mask()
 {
     ShapeMask mask;
@@ -18,7 +17,6 @@ ShapeMask create_diagonal_mask()
     return mask;
 }
 
-// Helper function to create a horizontal bar ShapeMask pattern
 ShapeMask create_horizontal_bar_mask()
 {
     ShapeMask mask;
@@ -28,7 +26,6 @@ ShapeMask create_horizontal_bar_mask()
     return mask;
 }
 
-// Helper function to create a vertical bar ShapeMask pattern
 ShapeMask create_vertical_bar_mask()
 {
     ShapeMask mask;

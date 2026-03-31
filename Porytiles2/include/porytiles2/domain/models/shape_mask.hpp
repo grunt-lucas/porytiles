@@ -107,14 +107,6 @@ class ShapeMask {
      */
     [[nodiscard]] bool is_transparent() const;
 
-    /**
-     * @brief Returns the raw row data.
-     *
-     * @details
-     * Returns a const reference to the internal array of 8 bytes representing the tile rows.
-     *
-     * @return A const reference to the rows array
-     */
     [[nodiscard]] const std::array<uint8_t, 8> &rows() const
     {
         return rows_;

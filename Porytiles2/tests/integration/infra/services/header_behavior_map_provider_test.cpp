@@ -20,10 +20,6 @@ class HeaderBehaviorMapProviderTest : public ::testing::Test {
 
 } // namespace
 
-// =============================================================================
-// Define Format Tests
-// =============================================================================
-
 TEST_F(HeaderBehaviorMapProviderTest, DefineFormatParsesHexValues)
 {
     HeaderBehaviorMapProvider provider{test_resources_dir / "metatile_behaviors_define.h", &formatter_, &diag_};
@@ -75,10 +71,6 @@ TEST_F(HeaderBehaviorMapProviderTest, DefineFormatHandlesAbridgedFile)
     auto deep_water = provider.lookup("MB_DEEP_WATER");
     EXPECT_FALSE(deep_water.has_value());
 }
-
-// =============================================================================
-// Enum Format Tests
-// =============================================================================
 
 TEST_F(HeaderBehaviorMapProviderTest, EnumFormatParsesCounterBasedValues)
 {
@@ -135,10 +127,6 @@ TEST_F(HeaderBehaviorMapProviderTest, EnumFormatParsesHigherIndexValues)
     EXPECT_EQ(muddy_slope.value(), 208); // 0xD0 in hex equivalent position
 }
 
-// =============================================================================
-// Edge Cases
-// =============================================================================
-
 TEST_F(HeaderBehaviorMapProviderTest, NonExistentFileReturnsErrorOnLookup)
 {
     HeaderBehaviorMapProvider provider{test_resources_dir / "does_not_exist.h", &formatter_, &diag_};
@@ -169,10 +157,6 @@ TEST_F(HeaderBehaviorMapProviderTest, EmptyFileReturnsErrorOnLookup)
     auto result = provider.lookup("MB_NORMAL");
     EXPECT_FALSE(result.has_value());
 }
-
-// =============================================================================
-// Reverse Lookup Tests (value -> name)
-// =============================================================================
 
 TEST_F(HeaderBehaviorMapProviderTest, ReverseLookupDefineFormat)
 {
@@ -257,10 +241,6 @@ TEST_F(HeaderBehaviorMapProviderTest, BidirectionalLookupIsConsistent)
     EXPECT_EQ(name.value(), "MB_TALL_GRASS");
 }
 
-// =============================================================================
-// Duplicate Detection Tests with Rich Error Messages
-// =============================================================================
-
 TEST_F(HeaderBehaviorMapProviderTest, DuplicateNameReturnsErrorWithSourceLocations)
 {
     HeaderBehaviorMapProvider provider{test_resources_dir / "metatile_behaviors_duplicate_name.h", &formatter_, &diag_};
@@ -273,15 +253,12 @@ TEST_F(HeaderBehaviorMapProviderTest, DuplicateNameReturnsErrorWithSourceLocatio
     ASSERT_FALSE(result.chain().empty());
     std::string error_text = result.chain().back()->join(formatter_);
 
-    // Should mention "duplicate behavior name"
     EXPECT_TRUE(error_text.find("duplicate behavior name") != std::string::npos)
         << "Error should mention 'duplicate behavior name'. Got: " << error_text;
 
-    // Should mention the duplicate name
     EXPECT_TRUE(error_text.find("MB_TALL_GRASS") != std::string::npos)
         << "Error should mention the duplicate name 'MB_TALL_GRASS'. Got: " << error_text;
 
-    // Should contain "note:" for original location
     EXPECT_TRUE(error_text.find("note:") != std::string::npos)
         << "Error should contain 'note:' for original location. Got: " << error_text;
 }
@@ -299,17 +276,14 @@ TEST_F(HeaderBehaviorMapProviderTest, DuplicateValueReturnsErrorWithSourceLocati
     ASSERT_FALSE(result.chain().empty());
     std::string error_text = result.chain().back()->join(formatter_);
 
-    // Should mention "duplicate behavior value"
     EXPECT_TRUE(error_text.find("duplicate behavior value") != std::string::npos)
         << "Error should mention 'duplicate behavior value'. Got: " << error_text;
 
-    // Should mention both names that share the same value
     EXPECT_TRUE(error_text.find("MB_TALL_GRASS") != std::string::npos)
         << "Error should mention 'MB_TALL_GRASS'. Got: " << error_text;
     EXPECT_TRUE(error_text.find("MB_GRASS_TALL") != std::string::npos)
         << "Error should mention 'MB_GRASS_TALL'. Got: " << error_text;
 
-    // Should contain "note:" for original location
     EXPECT_TRUE(error_text.find("note:") != std::string::npos)
         << "Error should contain 'note:' for original location. Got: " << error_text;
 }

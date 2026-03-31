@@ -71,62 +71,28 @@ class PrefilledPalette {
         return hardware_index_ <=> other.hardware_index_;
     }
 
-    /**
-     * @brief Gets the palette's hardware index.
-     *
-     * @return The hardware index
-     */
     [[nodiscard]] std::size_t hardware_index() const
     {
         return hardware_index_;
     }
 
-    /**
-     * @brief Gets the fixed colors in this palette.
-     *
-     * @return A const reference to the fixed ColorSet
-     */
     [[nodiscard]] const ColorSet &fixed_colors() const
     {
         return fixed_colors_;
     }
 
-    /**
-     * @brief Gets the number of fixed colors.
-     *
-     * @return The count of fixed colors
-     */
     [[nodiscard]] std::size_t fixed_color_count() const;
 
-    /**
-     * @brief Gets the number of occupied slots in the original prefilled palette.
-     *
-     * @details
-     * This may differ from fixed_color_count() if the prefilled palette contains duplicate colors. The occupied_slots
-     * value reflects how many physical slots are taken in the hardware palette.
-     *
-     * @return The number of occupied slots
-     */
     [[nodiscard]] std::size_t occupied_slots() const
     {
         return occupied_slots_;
     }
 
-    /**
-     * @brief Gets the number of slots available for the packer to fill.
-     *
-     * @return The available capacity (0 if fully locked)
-     */
     [[nodiscard]] std::size_t available_capacity() const
     {
         return available_capacity_;
     }
 
-    /**
-     * @brief Checks if this palette is fully locked.
-     *
-     * @return true if no slots are available for packing, false otherwise
-     */
     [[nodiscard]] bool is_fully_locked() const
     {
         return available_capacity_ == 0;

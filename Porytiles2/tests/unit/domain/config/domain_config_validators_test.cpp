@@ -23,8 +23,6 @@ class DomainConfigValidatorTest : public ::testing::Test {
     MockDomainConfig config_;
 };
 
-// --- Pass cases ---
-
 TEST_F(DomainConfigValidatorTest, OffWithAnyStrategyPasses)
 {
     config_.tile_sharing_packing = TileSharingPacking::off;
@@ -64,8 +62,6 @@ TEST_F(DomainConfigValidatorTest, OptimalWithBacktrackingPasses)
     ASSERT_TRUE(result.has_value());
     EXPECT_EQ(result.value().value(), TileSharingPacking::optimal);
 }
-
-// --- Fail cases ---
 
 TEST_F(DomainConfigValidatorTest, BiasedWithBestFusionFails)
 {

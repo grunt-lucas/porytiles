@@ -4,7 +4,7 @@
 
 using namespace porytiles2;
 
-TEST(TilemapEntryTests, DefaultConstructedValueShouldBeTransparent)
+TEST(TilemapEntryTests, DefaultIsTransparent)
 {
     const TilemapEntry default_entry{};
     EXPECT_TRUE(default_entry.is_transparent());

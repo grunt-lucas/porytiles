@@ -25,8 +25,8 @@ using namespace porytiles2;
 
 /*
  * Pixel priority order for mangling (least visually impactful first)
- * Corners: (0,0), (0,7), (7,0), (7,7) → indices 0, 7, 56, 63
- * Corners: (0,0), (0,7), (7,0), (7,7) → indices 0, 7, 56, 63
+ * Corners: (0,0), (0,7), (7,0), (7,7) -> indices 0, 7, 56, 63
+ * Corners: (0,0), (0,7), (7,0), (7,7) -> indices 0, 7, 56, 63
  * Top edge: 1-6
  * Left edge: 8, 16, 24, 32, 40, 48
  * Right edge: 15, 23, 31, 39, 47, 55
@@ -214,7 +214,7 @@ std::optional<std::pair<PixelTile<IndexPixel>, TileMangleRecord>> try_mangle_til
     const Palette<Rgba32, pal::max_size> &palette,
     const std::set<PixelTile<IndexPixel>> &all_existing_canonical_tiles)
 {
-    // Phase 1: single-pixel swaps (preferred — minimal visual impact)
+    // Phase 1: single-pixel swaps (preferred, minimal visual impact)
     for (std::size_t pixel_index : pixel_priority_order) {
         const IndexPixel original_pixel = tile.at(pixel_index);
 

@@ -11,7 +11,6 @@ class LexerTests : public ::testing::Test {
   protected:
     PlainTextFormatter formatter_;
 
-    // Helper to get all error text from a ChainableResult error chain
     template <typename T>
     std::string get_all_error_text(const ChainableResult<T> &result)
     {

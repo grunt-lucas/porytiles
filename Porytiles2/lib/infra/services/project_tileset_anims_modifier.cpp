@@ -236,25 +236,21 @@ ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset
 
     // Step 3: Read .c file
     const auto anims_c_path = project_root_ / tileset_anims_c_rel_path;
-    auto c_lines_result = read_file_lines(anims_c_path, diagnostics_);
-    if (!c_lines_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{
-                "Failed to read tileset_anims.c for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
-            c_lines_result};
-    }
-    auto c_lines = std::move(c_lines_result.value());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        c_lines,
+        read_file_lines(anims_c_path, diagnostics_),
+        void,
+        "Failed to read tileset_anims.c for tileset '{}'.",
+        FormatParam(tileset_name, Style::bold));
 
     // Step 4: Read .h file
     const auto anims_h_path = project_root_ / tileset_anims_h_rel_path;
-    auto h_lines_result = read_file_lines(anims_h_path, diagnostics_);
-    if (!h_lines_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{
-                "Failed to read tileset_anims.h for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
-            h_lines_result};
-    }
-    auto h_lines = std::move(h_lines_result.value());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        h_lines,
+        read_file_lines(anims_h_path, diagnostics_),
+        void,
+        "Failed to read tileset_anims.h for tileset '{}'.",
+        FormatParam(tileset_name, Style::bold));
 
     // Step 5: Check idempotency for .c file - warn and skip if already present
     const bool include_exists = find_existing_include(c_lines, snake_dir).has_value();
@@ -340,25 +336,21 @@ ProjectTilesetAnimsModifier::remove_include_for_tileset(const std::string &tiles
 
     // Step 3: Read .c file
     const auto anims_c_path = project_root_ / tileset_anims_c_rel_path;
-    auto c_lines_result = read_file_lines(anims_c_path, diagnostics_);
-    if (!c_lines_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{
-                "Failed to read tileset_anims.c for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
-            c_lines_result};
-    }
-    auto c_lines = std::move(c_lines_result.value());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        c_lines,
+        read_file_lines(anims_c_path, diagnostics_),
+        void,
+        "Failed to read tileset_anims.c for tileset '{}'.",
+        FormatParam(tileset_name, Style::bold));
 
     // Step 4: Read .h file
     const auto anims_h_path = project_root_ / tileset_anims_h_rel_path;
-    auto h_lines_result = read_file_lines(anims_h_path, diagnostics_);
-    if (!h_lines_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{
-                "Failed to read tileset_anims.h for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
-            h_lines_result};
-    }
-    auto h_lines = std::move(h_lines_result.value());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        h_lines,
+        read_file_lines(anims_h_path, diagnostics_),
+        void,
+        "Failed to read tileset_anims.h for tileset '{}'.",
+        FormatParam(tileset_name, Style::bold));
 
     // Step 5: Check if anything exists to remove
     const auto include_index = find_existing_include(c_lines, snake_dir);

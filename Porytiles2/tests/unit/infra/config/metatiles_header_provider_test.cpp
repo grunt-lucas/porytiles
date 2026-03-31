@@ -14,9 +14,6 @@ using namespace porytiles2;
 
 namespace {
 
-/**
- * @brief Helper to create a temp directory with a metatiles.h containing the given content.
- */
 std::filesystem::path create_test_project(const std::string &test_name, const std::string &metatiles_content)
 {
     const auto temp_dir =

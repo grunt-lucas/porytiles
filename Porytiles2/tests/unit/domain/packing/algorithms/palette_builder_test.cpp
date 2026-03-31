@@ -19,9 +19,6 @@ const Rgba32 yellow{255, 255, 0, Rgba32::alpha_opaque};
 const Rgba32 white{255, 255, 255, Rgba32::alpha_opaque};
 const Rgba32 orange{255, 128, 0, Rgba32::alpha_opaque};
 
-/**
- * @brief Helper to build a ColorIndexMap from a set of colors.
- */
 ColorIndexMap<Rgba32> make_color_map(const std::vector<Rgba32> &colors)
 {
     ColorIndexMap<Rgba32> map;
@@ -33,9 +30,6 @@ ColorIndexMap<Rgba32> make_color_map(const std::vector<Rgba32> &colors)
     return map;
 }
 
-/**
- * @brief Helper to create a PackedPalette with specific colors from a color map.
- */
 PackedPalette
 make_packed_pal(std::size_t hw_index, const std::vector<Rgba32> &colors, const ColorIndexMap<Rgba32> &color_map)
 {
@@ -129,9 +123,9 @@ TEST(PaletteBuilderTests, SimpleIndirectLink_ColorsAligned)
     const auto &pal0 = result.at(0).value();
     const auto &pal1 = result.at(1).value();
 
-    // Red in pal 0 gets sequential fill → slot 1
+    // Red in pal 0 gets sequential fill -> slot 1
     EXPECT_EQ(pal0.at(1), red);
-    // Blue in pal 1 should follow red → also slot 1
+    // Blue in pal 1 should follow red -> also slot 1
     EXPECT_EQ(pal1.at(1), blue);
 }
 
@@ -200,7 +194,7 @@ TEST(PaletteBuilderTests, IndirectLinkConflictWithPrefilled_Skipped)
     std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> prefilled_pals{};
     prefilled_pals.at(1) = prefilled;
 
-    // Link: blue in pal 1 follows red in pal 0 → red gets slot 1 → blue wants slot 1 but it's prefilled
+    // Link: blue in pal 1 follows red in pal 0 -> red gets slot 1 -> blue wants slot 1 but it's prefilled
     std::vector<IndirectLink> links = {
         IndirectLink{
             .source_pal = 1,
@@ -254,7 +248,7 @@ TEST(PaletteBuilderTests, PrefilledSourceColor_LinkDropped_CounterIncremented)
     std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> prefilled_pals{};
     prefilled_pals.at(1) = prefilled;
 
-    // Link: green in pal 1 follows red in pal 0 — but green is prefilled, so this should be dropped
+    // Link: green in pal 1 follows red in pal 0, but green is prefilled, so this should be dropped
     std::vector<IndirectLink> links = {
         IndirectLink{
             .source_pal = 1,
@@ -291,8 +285,8 @@ TEST(PaletteBuilderTests, PrefilledSourceColor_LinkDropped_CounterIncremented)
 TEST(PaletteBuilderTests, PrefilledSourceColor_NaturallyAligned_NoConflictRecorded)
 {
     // Both source (blue, pal 1) and ref (red, pal 0) are prefilled at slot 4.
-    // Link: blue→red. Since both are AbsolutePosition at the same slot, alignment is
-    // naturally satisfied — no prefilled source conflict should be recorded.
+    // Link: blue->red. Since both are AbsolutePosition at the same slot, alignment is
+    // naturally satisfied. No prefilled source conflict should be recorded.
     auto color_map = make_color_map({red, blue});
 
     // Palette 0 has red
@@ -344,7 +338,7 @@ TEST(PaletteBuilderTests, PrefilledSourceColor_NaturallyAligned_NoConflictRecord
     AlignmentFailureCounts fc{};
     auto result = build_all_output_palettes(packed_pals, prefilled_pals, color_map, transparent, links, &fc);
 
-    // No conflicts should be recorded — alignment is naturally satisfied
+    // No conflicts should be recorded. Alignment is naturally satisfied
     EXPECT_EQ(fc.prefilled_source_conflict_details.size(), 0u);
     EXPECT_EQ(fc.first_writer_wins_details.size(), 0u);
     EXPECT_EQ(fc.prefilled_destination_conflict_details.size(), 0u);
@@ -363,7 +357,7 @@ TEST(PaletteBuilderTests, PrefilledSourceColor_NaturallyAligned_NoConflictRecord
 TEST(PaletteBuilderTests, PrefilledDestinationConflict_CounterIncremented_FallbackPlacement)
 {
     // blue in pal 1 links to red in pal 0 (shape group 0). Red gets slot 1 via sequential fill.
-    // Green is prefilled at slot 1 in pal 1, so resolving blue → slot 1 hits a destination conflict.
+    // Green is prefilled at slot 1 in pal 1, so resolving blue -> slot 1 hits a destination conflict.
     // Phase 5 fallback should assign blue to the next free slot (slot 2).
     auto color_map = make_color_map({red, blue, green});
 
@@ -436,7 +430,7 @@ TEST(PaletteBuilderTests, PrefilledDestinationConflict_CounterIncremented_Fallba
 TEST(PaletteBuilderTests, CompatibleFWW_NoFalsePositive)
 {
     // Two IndirectLinks target the same color (red in pal 0) with identical ref_pal/ref_color (blue in pal 1).
-    // The existing IndirectPosition already satisfies both groups — no conflict should be recorded.
+    // The existing IndirectPosition already satisfies both groups. No conflict should be recorded.
     auto color_map = make_color_map({red, blue});
 
     PackedPalette packed0{0};
@@ -479,7 +473,7 @@ TEST(PaletteBuilderTests, CompatibleFWW_NoFalsePositive)
     AlignmentFailureCounts fc{};
     auto result = build_all_output_palettes(packed_pals, prefilled_pals, color_map, transparent, links, &fc);
 
-    // Compatible links — no conflict
+    // Compatible links, no conflict
     EXPECT_EQ(fc.first_writer_wins_details.size(), 0u);
     EXPECT_EQ(fc.total(), 0u);
 
@@ -493,7 +487,7 @@ TEST(PaletteBuilderTests, CompatibleFWW_NoFalsePositive)
 TEST(PaletteBuilderTests, GenuineFWW_EnrichedDetail)
 {
     // Two IndirectLinks target the same color (red in pal 0) with DIFFERENT references.
-    // Group 0 links red→blue in pal 1, group 1 links red→green in pal 2.
+    // Group 0 links red->blue in pal 1, group 1 links red->green in pal 2.
     // Group 0 wins, group 1's link is dropped. Detail should capture both sides.
     auto color_map = make_color_map({red, blue, green});
 
@@ -524,8 +518,8 @@ TEST(PaletteBuilderTests, GenuineFWW_EnrichedDetail)
     std::vector<PackedPalette> packed_pals = {packed0, packed1, packed2};
     std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> prefilled_pals{};
 
-    // Group 0 links red in pal 0 → blue in pal 1 (wins)
-    // Group 1 links red in pal 0 → green in pal 2 (loses)
+    // Group 0 links red in pal 0 -> blue in pal 1 (wins)
+    // Group 1 links red in pal 0 -> green in pal 2 (loses)
     std::vector<IndirectLink> links = {
         IndirectLink{
             .source_pal = 0,
@@ -580,20 +574,20 @@ TEST(PaletteBuilderTests, CrossPaletteEvictionDisplacement_MismatchDetected)
      * Phase 3 fills sequentially: pal 0 gets B at some slot, pal 1 gets C at some slot.
      * Phase 4 processes pal 0 first: A resolves to C's slot in pal 1. Then processes pal 1:
      * D resolves to B's slot in pal 0, potentially evicting C from its original slot.
-     * After Phase 5, A's slot may no longer match C's final slot → mismatch detected.
+     * After Phase 5, A's slot may no longer match C's final slot -> mismatch detected.
      *
      * We use 4 colors: red, blue, green, yellow. Pal 0 has {red, blue}, pal 1 has {green, yellow}.
-     * Link: red in pal 0 → green in pal 1 (group 0). yellow in pal 1 → blue in pal 0 (group 1).
+     * Link: red in pal 0 -> green in pal 1 (group 0). yellow in pal 1 -> blue in pal 0 (group 1).
      *
-     * Phase 3: pal 0 fills blue→slot1, red stays Indirect. pal 1 fills green→slot1, yellow stays Indirect.
-     * Phase 4 pal 0: red resolves to green's slot (1). Slot 1 in pal 0 is occupied by blue → evict blue to slot 2.
+     * Phase 3: pal 0 fills blue->slot1, red stays Indirect. pal 1 fills green->slot1, yellow stays Indirect.
+     * Phase 4 pal 0: red resolves to green's slot (1). Slot 1 in pal 0 is occupied by blue -> evict blue to slot 2.
      *   Now pal 0: red@1, blue@2.
      * Phase 4 pal 1: yellow resolves to blue's slot. blue is now at slot 2 in pal 0.
-     *   yellow wants slot 2 in pal 1. Slot 2 is free → yellow@2. green stays @1.
+     *   yellow wants slot 2 in pal 1. Slot 2 is free -> yellow@2. green stays @1.
      *   Result: pal 1: green@1, yellow@2.
      *
-     * Final check: red@1 in pal0, green@1 in pal1 → match (OK).
-     *              yellow@2 in pal1, blue@2 in pal0 → match (OK).
+     * Final check: red@1 in pal0, green@1 in pal1 -> match (OK).
+     *              yellow@2 in pal1, blue@2 in pal0 -> match (OK).
      *
      * Hmm, this scenario actually works. Let me construct one that actually causes displacement.
      * The key is that Phase 4 processes palettes sequentially, so pal 0's resolution reads pal 1's
@@ -603,25 +597,25 @@ TEST(PaletteBuilderTests, CrossPaletteEvictionDisplacement_MismatchDetected)
      * that pal 0 already resolved against.
      *
      * Setup: 5 colors. Pal 0 has {red}. Pal 1 has {blue, green, yellow}.
-     * Link: red in pal 0 → blue in pal 1 (group 0). green in pal 1 → yellow in pal 2 (group 1).
+     * Link: red in pal 0 -> blue in pal 1 (group 0). green in pal 1 -> yellow in pal 2 (group 1).
      * Pal 2 has {yellow, orange}.
      *
      * Actually, let me think about this more carefully. The simplest eviction displacement:
      * - Pal 0 has {red}, pal 1 has {blue, green}.
      * - Pal 2 has {yellow}.
-     * - Link: red in pal 0 → blue in pal 1 (group 0).
-     * - Link: green in pal 1 → yellow in pal 2 (group 1).
+     * - Link: red in pal 0 -> blue in pal 1 (group 0).
+     * - Link: green in pal 1 -> yellow in pal 2 (group 1).
      * - Phase 3: pal 1 has no Undetermined colors (both are Indirect... wait, no).
      *
      * Let me try: both blue and green are in pal 1. blue is Undetermined (reference for red).
      * green has a link to yellow in pal 2. yellow is also in pal 2 as Undetermined.
      *
-     * Phase 3: pal 1 fills blue → slot 1 (Undetermined). green is Indirect, skipped.
-     *          pal 2 fills yellow → slot 1 (Undetermined).
-     * Phase 4 pal 0: red resolves via blue in pal 1 → blue is at slot 1 → red placed at slot 1 in pal 0.
-     * Phase 4 pal 1: green resolves via yellow in pal 2 → yellow at slot 1 → green wants slot 1 in pal 1.
-     *          Slot 1 is occupied by blue → evict blue to slot 2. green@1, blue@2.
-     * Post-check: red@1 in pal 0, blue now @2 in pal 1 → MISMATCH!
+     * Phase 3: pal 1 fills blue -> slot 1 (Undetermined). green is Indirect, skipped.
+     *          pal 2 fills yellow -> slot 1 (Undetermined).
+     * Phase 4 pal 0: red resolves via blue in pal 1 -> blue is at slot 1 -> red placed at slot 1 in pal 0.
+     * Phase 4 pal 1: green resolves via yellow in pal 2 -> yellow at slot 1 -> green wants slot 1 in pal 1.
+     *          Slot 1 is occupied by blue -> evict blue to slot 2. green@1, blue@2.
+     * Post-check: red@1 in pal 0, blue now @2 in pal 1 -> MISMATCH!
      */
     const Rgba32 cyan{0, 255, 255, Rgba32::alpha_opaque};
 
@@ -658,8 +652,8 @@ TEST(PaletteBuilderTests, CrossPaletteEvictionDisplacement_MismatchDetected)
     std::vector<PackedPalette> packed_pals = {packed0, packed1, packed2};
     std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> prefilled_pals{};
 
-    // Group 0: red in pal 0 → blue in pal 1
-    // Group 1: green in pal 1 → yellow in pal 2
+    // Group 0: red in pal 0 -> blue in pal 1
+    // Group 1: green in pal 1 -> yellow in pal 2
     std::vector<IndirectLink> links = {
         IndirectLink{
             .source_pal = 0,
@@ -680,12 +674,12 @@ TEST(PaletteBuilderTests, CrossPaletteEvictionDisplacement_MismatchDetected)
     AlignmentFailureCounts fc{};
     auto result = build_all_output_palettes(packed_pals, prefilled_pals, color_map, transparent, links, &fc);
 
-    // Phase 3: pal 1 fills blue → slot 1 (Undetermined). green is Indirect.
-    //          pal 2 fills yellow → slot 1.
-    // Phase 4 pal 0: red resolves to blue's slot 1 → red@1 in pal 0.
-    // Phase 4 pal 1: green resolves to yellow's slot 1 → green wants slot 1 in pal 1.
-    //          blue at slot 1 → evict blue to slot 2. Now: green@1, blue@2.
-    // Post-check: red@1 in pal 0, blue@2 in pal 1 → MISMATCH for group 0.
+    // Phase 3: pal 1 fills blue -> slot 1 (Undetermined). green is Indirect.
+    //          pal 2 fills yellow -> slot 1.
+    // Phase 4 pal 0: red resolves to blue's slot 1 -> red@1 in pal 0.
+    // Phase 4 pal 1: green resolves to yellow's slot 1 -> green wants slot 1 in pal 1.
+    //          blue at slot 1 -> evict blue to slot 2. Now: green@1, blue@2.
+    // Post-check: red@1 in pal 0, blue@2 in pal 1 -> MISMATCH for group 0.
 
     // There should be exactly one post-resolution mismatch
     ASSERT_EQ(fc.post_resolution_mismatch_details.size(), 1u);
@@ -722,7 +716,7 @@ TEST(PaletteBuilderTests, CrossPaletteEvictionDisplacement_MismatchDetected)
 TEST(PaletteBuilderTests, NoDisplacement_MismatchEmpty)
 {
     // Normal case: Indirect link resolves correctly and no eviction occurs.
-    // red in pal 0 → blue in pal 1. No other Indirect colors in pal 1 to cause eviction.
+    // red in pal 0 -> blue in pal 1. No other Indirect colors in pal 1 to cause eviction.
     auto color_map = make_color_map({red, blue});
 
     PackedPalette packed0{0};
@@ -757,7 +751,7 @@ TEST(PaletteBuilderTests, NoDisplacement_MismatchEmpty)
     AlignmentFailureCounts fc{};
     build_all_output_palettes(packed_pals, prefilled_pals, color_map, transparent, links, &fc);
 
-    // No mismatches — slots should match perfectly
+    // No mismatches. Slots should match perfectly
     EXPECT_TRUE(fc.post_resolution_mismatch_details.empty());
     EXPECT_EQ(fc.total(), 0u);
 }

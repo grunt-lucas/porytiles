@@ -29,21 +29,11 @@ class PaletteHint {
      */
     PaletteHint(std::string name, Palette<Rgba32> pal) : name_{std::move(name)}, pal_{std::move(pal)} {}
 
-    /**
-     * @brief Gets the name of this palette hint.
-     *
-     * @return A const reference to the name
-     */
     [[nodiscard]] const std::string &name() const
     {
         return name_;
     }
 
-    /**
-     * @brief Gets the palette of this palette hint.
-     *
-     * @return A const reference to the palette
-     */
     [[nodiscard]] const Palette<Rgba32> &pal() const
     {
         return pal_;

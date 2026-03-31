@@ -657,29 +657,30 @@ Evaluates an expression returning `ChainableResult<T>`. On error, returns early 
 `FormattableError` chained onto the existing error chain.
 
 ```c++
-// Signature: PT_TRY_ASSIGN_CHAIN_ERR(var, expr, msg, return_type)
+// Signature: PT_TRY_ASSIGN_CHAIN_ERR(var, expr, return_type, ...)
+// The variadic args are forwarded to FormattableError(...).
 
 // Simple string message
 PT_TRY_ASSIGN_CHAIN_ERR(
     metatiles_key,
     key_provider_->key_for_metatiles_bin(tileset.name()),
-    "Tileset save failed.",
-    void);
+    void,
+    "Tileset save failed.");
 // `metatiles_key` now holds the unwrapped value
 
-// Formatted string message
+// FormatParam message (use parens, not braces, inside macro calls)
 PT_TRY_ASSIGN_CHAIN_ERR(
     metatiles_key,
     key_provider_->key_for_metatiles_bin(tileset->name()),
-    diag_->formatter().format("Failed to load tileset '{}'.", FormatParam{tileset->name(), Style::bold}),
-    std::unique_ptr<Tileset>);
+    std::unique_ptr<Tileset>,
+    "Failed to load tileset '{}'.", FormatParam(tileset->name(), Style::bold));
 
 // Vector of strings message (built inline)
 PT_TRY_ASSIGN_CHAIN_ERR(
     match,
     internal_png_pal_strategy(anim, pals, extrinsic_transparency, diag, pal_printer),
-    err_msg,     // a pre-built std::vector<std::string>
-    std::size_t);
+    std::size_t,
+    err_msg);     // a pre-built std::vector<std::string>
 ```
 
 > _From `tileset_repo.cpp:28`, `tileset_repo.cpp:219`, `anim_decompiler.cpp:236`._
@@ -709,11 +710,20 @@ For `ChainableResult<void>` expressions. Same as `PT_TRY_ASSIGN_CHAIN_ERR` but n
 assignment.
 
 ```c++
-// Signature: PT_TRY_CALL_CHAIN_ERR(expr, msg, return_type)
+// Signature: PT_TRY_CALL_CHAIN_ERR(expr, return_type, ...)
+// The variadic args are forwarded to FormattableError(...).
+
+// Simple string message
 PT_TRY_CALL_CHAIN_ERR(
     pipeline_helper_register_animations(),
-    "Failed to register animations.",
-    void);
+    void,
+    "Failed to register animations.");
+
+// FormatParam message (use parens, not braces, inside macro calls)
+PT_TRY_CALL_CHAIN_ERR(
+    tileset_repo_->save(*compiled_tileset),
+    void,
+    "Failed to save tileset '{}'.", FormatParam(tileset_name, Style::bold));
 ```
 
 > _From `primary_tileset_compiler.cpp:419`._

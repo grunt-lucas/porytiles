@@ -19,14 +19,12 @@ ChainableResult<void> CreatePrimaryTileset::create(const std::string &tileset_na
     }
 
     // 2. Create a default PorytilesTilesetComponent via PrimaryTilesetCreator
-    auto porytiles_component_result = creator_->create_sample_porytiles_component(tileset_name);
-    if (!porytiles_component_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{
-                "Failed to create Porytiles source assets for '{}'.", FormatParam{tileset_name, Style::bold}},
-            porytiles_component_result};
-    }
-    auto porytiles_component = std::move(porytiles_component_result.value());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        porytiles_component,
+        creator_->create_sample_porytiles_component(tileset_name),
+        void,
+        "Failed to create Porytiles source assets for '{}'.",
+        FormatParam(tileset_name, Style::bold));
 
     // 3. Create blank PorymapTilesetComponent and wrap in Tileset
     auto porymap_component = std::make_unique<PorymapTilesetComponent>();
@@ -51,48 +49,44 @@ ChainableResult<void> CreatePrimaryTileset::create(const std::string &tileset_na
      * settings like tileset.paths.primary from the user should absolutely be respected.
      */
     // 4. Compile (generates minimal valid Porymap assets from the minimal Porytiles component)
-    auto compile_result = compiler_->compile(*tileset);
-    if (!compile_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{"Compilation failed for '{}'.", FormatParam{tileset_name, Style::bold}}, compile_result};
-    }
-    auto compiled_tileset = std::move(compile_result.value());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        compiled_tileset,
+        compiler_->compile(*tileset),
+        void,
+        "Compilation failed for '{}'.",
+        FormatParam(tileset_name, Style::bold));
 
     // 5. Persist managed state for the new tileset
     // This creates the headers.h entry and tileset-manifest.json BEFORE saving assets
-    auto persist_result = tileset_manager_->persist_managed_new(tileset_name);
-    if (!persist_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{"Failed to persist managed state for '{}'.", FormatParam{tileset_name, Style::bold}},
-            persist_result};
-    }
+    PT_TRY_CALL_CHAIN_ERR(
+        tileset_manager_->persist_managed_new(tileset_name),
+        void,
+        "Failed to persist managed state for '{}'.",
+        FormatParam(tileset_name, Style::bold));
 
     // 6. Save via TilesetRepo (writes all Porymap artifacts)
-    auto save_result = tileset_repo_->save(*compiled_tileset);
-    if (!save_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{"Failed to save tileset '{}'.", FormatParam{tileset_name, Style::bold}}, save_result};
-    }
+    PT_TRY_CALL_CHAIN_ERR(
+        tileset_repo_->save(*compiled_tileset),
+        void,
+        "Failed to save tileset '{}'.",
+        FormatParam(tileset_name, Style::bold));
 
     // 7. Handle animation code wiring
     if (!compiled_tileset->porymap_component().anims().empty()) {
         // Tileset has animations - wire the generated code
-        auto wire_result = tileset_manager_->wire_anim_code(tileset_name, /*is_secondary=*/false);
-        if (!wire_result.has_value()) {
-            return ChainableResult<void>{
-                FormattableError{"Failed to wire animation code for '{}'.", FormatParam{tileset_name, Style::bold}},
-                wire_result};
-        }
+        PT_TRY_CALL_CHAIN_ERR(
+            tileset_manager_->wire_anim_code(tileset_name, /*is_secondary=*/false),
+            void,
+            "Failed to wire animation code for '{}'.",
+            FormatParam(tileset_name, Style::bold));
     }
     else {
         // Tileset has no animations - remove any stale wiring
-        auto remove_result = tileset_manager_->remove_wired_anim_code(tileset_name, /*is_secondary=*/false);
-        if (!remove_result.has_value()) {
-            return ChainableResult<void>{
-                FormattableError{
-                    "Failed to remove wired animation code for '{}'.", FormatParam{tileset_name, Style::bold}},
-                remove_result};
-        }
+        PT_TRY_CALL_CHAIN_ERR(
+            tileset_manager_->remove_wired_anim_code(tileset_name, /*is_secondary=*/false),
+            void,
+            "Failed to remove wired animation code for '{}'.",
+            FormatParam(tileset_name, Style::bold));
     }
 
     return {};

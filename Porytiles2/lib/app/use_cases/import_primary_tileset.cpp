@@ -25,25 +25,23 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
     }
 
     // Step 2: Call the importer service to bring in the PorymapTilesetComponent from vanilla assets
-    auto imported_porymap_component_result = importer_->import_porymap_component_from_vanilla(tileset_name);
-    if (!imported_porymap_component_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{"Import job failed for '{}'.", FormatParam{tileset_name, Style::bold}},
-            imported_porymap_component_result};
-    }
-    auto imported_porymap_component = std::move(imported_porymap_component_result.value());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        imported_porymap_component,
+        importer_->import_porymap_component_from_vanilla(tileset_name),
+        void,
+        "Import job failed for '{}'.",
+        FormatParam(tileset_name, Style::bold));
     auto blank_porytiles_component = std::make_unique<PorytilesTilesetComponent>();
     auto tileset = std::make_unique<Tileset>(
         tileset_name, std::move(blank_porytiles_component), std::move(imported_porymap_component));
 
     // Step 3: Decompile the PorymapTilesetComponent to produce a matching PorytilesTilesetComponent
-    auto decompiled_tileset_result = decompiler_->decompile(*tileset);
-    if (!decompiled_tileset_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{"Decompile job failed for '{}'.", FormatParam{tileset_name, Style::bold}},
-            decompiled_tileset_result};
-    }
-    const auto decompiled_tileset = std::move(decompiled_tileset_result.value());
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        decompiled_tileset,
+        decompiler_->decompile(*tileset),
+        void,
+        "Decompile job failed for '{}'.",
+        FormatParam(tileset_name, Style::bold));
 
     /*
      * TODO: before saving, we should probably perform an aritfact_edit_mode:locked compilation here. That way, Porymap
@@ -52,10 +50,11 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
      */
 
     // Step 4: Save to deterministic paths
-    if (const auto save_result = tileset_repo_->save(*decompiled_tileset); !save_result.has_value()) {
-        return ChainableResult<void>{
-            FormattableError{"Tileset save job failed for '{}'.", FormatParam{tileset_name, Style::bold}}, save_result};
-    }
+    PT_TRY_CALL_CHAIN_ERR(
+        tileset_repo_->save(*decompiled_tileset),
+        void,
+        "Tileset save job failed for '{}'.",
+        FormatParam(tileset_name, Style::bold));
 
     /*
      * Step 5: Confirmed save succeeded, now call PorytilesTilesetManager::persist_existing to persist "managed"
@@ -64,34 +63,29 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
      * state. If it does fail for extraordinary reasons, we present a helpful message to users so they can manually
      * recover.
      */
-    if (const auto persist_state_result = tileset_manager_->persist_managed_existing(tileset_name);
-        !persist_state_result.has_value()) {
-        // TODO: add more details to this error message
-        return ChainableResult<void>{
-            FormattableError{
-                "Failed to persist Porytiles-managed state for '{}'.", FormatParam{tileset_name, Style::bold}},
-            persist_state_result};
-    }
+    // TODO: add more details to this error message
+    PT_TRY_CALL_CHAIN_ERR(
+        tileset_manager_->persist_managed_existing(tileset_name),
+        void,
+        "Failed to persist Porytiles-managed state for '{}'.",
+        FormatParam(tileset_name, Style::bold));
 
     // 6. Handle animation code wiring
     if (!decompiled_tileset->porytiles_component().anims().empty()) {
         // Tileset has animations - wire the generated code
-        auto wire_result = tileset_manager_->wire_anim_code(tileset_name, /*is_secondary=*/false);
-        if (!wire_result.has_value()) {
-            return ChainableResult<void>{
-                FormattableError{"Failed to wire animation code for '{}'.", FormatParam{tileset_name, Style::bold}},
-                wire_result};
-        }
+        PT_TRY_CALL_CHAIN_ERR(
+            tileset_manager_->wire_anim_code(tileset_name, /*is_secondary=*/false),
+            void,
+            "Failed to wire animation code for '{}'.",
+            FormatParam(tileset_name, Style::bold));
     }
     else {
         // Tileset has no animations - remove any stale wiring
-        auto remove_result = tileset_manager_->remove_wired_anim_code(tileset_name, /*is_secondary=*/false);
-        if (!remove_result.has_value()) {
-            return ChainableResult<void>{
-                FormattableError{
-                    "Failed to remove wired animation code for '{}'.", FormatParam{tileset_name, Style::bold}},
-                remove_result};
-        }
+        PT_TRY_CALL_CHAIN_ERR(
+            tileset_manager_->remove_wired_anim_code(tileset_name, /*is_secondary=*/false),
+            void,
+            "Failed to remove wired animation code for '{}'.",
+            FormatParam(tileset_name, Style::bold));
     }
 
     return {};
