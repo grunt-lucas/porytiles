@@ -1,4 +1,4 @@
-#include "porytiles2/domain/services/primary_tileset_creator.hpp"
+#include "porytiles2/domain/services/tileset_creator.hpp"
 
 #include <cstddef>
 #include <memory>
@@ -20,6 +20,9 @@ namespace {
 constexpr Rgba32 grass_bulk{112, 192, 160};
 constexpr Rgba32 grass_light{160, 224, 192};
 constexpr Rgba32 grass_dark{56, 192, 128};
+constexpr Rgba32 mud_bulk{111, 81, 22};
+constexpr Rgba32 mud_light{114, 97, 55};
+constexpr Rgba32 mud_dark{111, 64, 49};
 constexpr Rgba32 flower_petal{255, 197, 148};
 constexpr Rgba32 flower_core{205, 65, 82};
 constexpr Rgba32 flower_shadow{24, 164, 106};
@@ -342,6 +345,311 @@ constexpr std::array grass_layer{
         grass_bulk,
         grass_bulk,
         grass_bulk}};
+
+constexpr std::array mud_layer{
+    // Row 0
+    std::array{
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_dark,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_light,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_dark,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk},
+
+    // Row 1
+    std::array{
+        mud_bulk,
+        mud_bulk,
+        mud_light,
+        mud_light,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_dark},
+
+    // Row 2
+    std::array{
+        mud_bulk,
+        mud_dark,
+        mud_light,
+        mud_light,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk},
+
+    // Row 3
+    std::array{
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_light,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk},
+
+    // Row 4
+    std::array{
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_light,
+        mud_light,
+        mud_bulk,
+        mud_bulk},
+
+    // Row 5
+    std::array{
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_dark,
+        mud_bulk,
+        mud_bulk,
+        mud_light,
+        mud_light,
+        mud_bulk,
+        mud_bulk},
+
+    // Row 6
+    std::array{
+        mud_bulk,
+        mud_light,
+        mud_bulk,
+        mud_bulk,
+        mud_dark,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_dark},
+
+    // Row 7
+    std::array{
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk},
+
+    // Row 8
+    std::array{
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_dark,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_dark,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_light},
+
+    // Row 9
+    std::array{
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_dark,
+        mud_bulk,
+        mud_bulk,
+        mud_light,
+        mud_light,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk},
+
+    // Row 10
+    std::array{
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_dark,
+        mud_light,
+        mud_light,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk},
+
+    // Row 11
+    std::array{
+        mud_bulk,
+        mud_light,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk},
+
+    // Row 12
+    std::array{
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_light,
+        mud_light,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk},
+
+    // Row 13
+    std::array{
+        mud_bulk,
+        mud_dark,
+        mud_bulk,
+        mud_bulk,
+        mud_light,
+        mud_light,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk},
+
+    // Row 14
+    std::array{
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_dark,
+        mud_bulk,
+        mud_light,
+        mud_bulk,
+        mud_bulk,
+        mud_dark,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk},
+
+    // Row 15
+    std::array{
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk,
+        mud_bulk}};
 
 constexpr std::array tall_grass_layer{
     // Row 0
@@ -1265,67 +1573,67 @@ constexpr std::array roof_mart_layer{
 constexpr std::array flower_frame_key{
     // Row 0
     std::array{
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk},
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta},
 
     // Row 1
     std::array{
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_light,
-        grass_bulk,
-        grass_bulk},
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta},
 
     // Row 2
     std::array{
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
         flower_outline_light,
         flower_outline_light,
         flower_petal,
         flower_petal,
         flower_outline_light,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk},
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta},
 
     // Row 3
     std::array{
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
         flower_outline_light,
         flower_petal,
         flower_petal,
@@ -1334,15 +1642,15 @@ constexpr std::array flower_frame_key{
         flower_petal,
         flower_petal,
         flower_outline_light,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk},
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta},
 
     // Row 4
     std::array{
-        grass_light,
-        grass_bulk,
+        rgba_magenta,
+        rgba_magenta,
         flower_outline_light,
         flower_outline_dark,
         flower_outline_dark,
@@ -1356,11 +1664,11 @@ constexpr std::array flower_frame_key{
         flower_outline_light,
         flower_outline_light,
         flower_outline_light,
-        grass_bulk},
+        rgba_magenta},
 
     // Row 5
     std::array{
-        grass_bulk,
+        rgba_magenta,
         flower_outline_light,
         flower_leaf,
         flower_leaf,
@@ -1379,7 +1687,7 @@ constexpr std::array flower_frame_key{
 
     // Row 6
     std::array{
-        grass_bulk,
+        rgba_magenta,
         flower_outline_light,
         flower_leaf,
         flower_leaf,
@@ -1398,8 +1706,8 @@ constexpr std::array flower_frame_key{
 
     // Row 7
     std::array{
-        grass_bulk,
-        grass_bulk,
+        rgba_magenta,
+        rgba_magenta,
         flower_outline_light,
         flower_petal,
         flower_petal,
@@ -1451,11 +1759,11 @@ constexpr std::array flower_frame_key{
         flower_outline_dark,
         flower_outline_dark,
         flower_shadow,
-        grass_bulk},
+        rgba_magenta},
 
     // Row 10
     std::array{
-        grass_bulk,
+        rgba_magenta,
         flower_shadow,
         flower_outline_dark,
         flower_petal,
@@ -1470,11 +1778,11 @@ constexpr std::array flower_frame_key{
         flower_outline_dark,
         flower_outline_dark,
         flower_shadow,
-        grass_bulk},
+        rgba_magenta},
 
     // Row 11
     std::array{
-        grass_bulk,
+        rgba_magenta,
         flower_outline_light,
         flower_outline_light,
         flower_outline_dark,
@@ -1489,11 +1797,11 @@ constexpr std::array flower_frame_key{
         flower_outline_light,
         flower_leaf,
         flower_outline_light,
-        grass_bulk},
+        rgba_magenta},
 
     // Row 12
     std::array{
-        grass_bulk,
+        rgba_magenta,
         flower_outline_dark,
         flower_leaf,
         flower_leaf,
@@ -1508,7 +1816,7 @@ constexpr std::array flower_frame_key{
         flower_leaf,
         flower_leaf,
         flower_outline_dark,
-        grass_bulk},
+        rgba_magenta},
 
     // Row 13
     std::array{
@@ -1527,45 +1835,45 @@ constexpr std::array flower_frame_key{
         flower_leaf,
         flower_outline_light,
         flower_outline_dark,
-        grass_bulk},
+        rgba_magenta},
 
     // Row 14
     std::array{
-        grass_bulk,
+        rgba_magenta,
         flower_shadow,
         flower_outline_dark,
         flower_outline_dark,
         flower_shadow,
         flower_shadow,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
         flower_shadow,
         flower_shadow,
         flower_shadow,
         flower_outline_dark,
         flower_outline_dark,
         flower_shadow,
-        grass_bulk},
+        rgba_magenta},
 
     // Row 15
     std::array{
-        grass_bulk,
-        grass_bulk,
+        rgba_magenta,
+        rgba_magenta,
         flower_shadow,
         flower_shadow,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
         flower_shadow,
         flower_shadow,
-        grass_bulk,
-        grass_bulk}};
+        rgba_magenta,
+        rgba_magenta}};
 
 // Frame 0 matches key frame in this case
 constexpr std::array<std::array<Rgba32, metatile::side_length_pix>, metatile::side_length_pix> flower_frame_center =
@@ -1574,68 +1882,68 @@ constexpr std::array<std::array<Rgba32, metatile::side_length_pix>, metatile::si
 constexpr std::array flower_frame_right{
     // Row 0
     std::array{
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk},
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta},
 
     // Row 1
     std::array{
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_light,
-        grass_bulk,
-        grass_bulk},
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta},
 
     // Row 2
     std::array{
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
         flower_outline_light,
         flower_outline_light,
         flower_petal,
         flower_petal,
         flower_outline_light,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk},
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta},
 
     // Row 3
     std::array{
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
         flower_outline_light,
         flower_petal,
         flower_petal,
@@ -1644,14 +1952,14 @@ constexpr std::array flower_frame_right{
         flower_petal,
         flower_petal,
         flower_outline_light,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk},
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta},
 
     // Row 4
     std::array{
-        grass_light,
-        grass_bulk,
+        rgba_magenta,
+        rgba_magenta,
         flower_outline_light,
         flower_outline_dark,
         flower_outline_dark,
@@ -1665,11 +1973,11 @@ constexpr std::array flower_frame_right{
         flower_outline_dark,
         flower_outline_light,
         flower_outline_light,
-        grass_bulk},
+        rgba_magenta},
 
     // Row 5
     std::array{
-        grass_bulk,
+        rgba_magenta,
         flower_outline_light,
         flower_leaf,
         flower_leaf,
@@ -1688,7 +1996,7 @@ constexpr std::array flower_frame_right{
 
     // Row 6
     std::array{
-        grass_bulk,
+        rgba_magenta,
         flower_outline_light,
         flower_leaf,
         flower_leaf,
@@ -1707,7 +2015,7 @@ constexpr std::array flower_frame_right{
 
     // Row 7
     std::array{
-        grass_bulk,
+        rgba_magenta,
         flower_shadow,
         flower_outline_light,
         flower_outline_light,
@@ -1726,7 +2034,7 @@ constexpr std::array flower_frame_right{
 
     // Row 8
     std::array{
-        grass_bulk,
+        rgba_magenta,
         flower_shadow,
         flower_petal,
         flower_petal,
@@ -1745,7 +2053,7 @@ constexpr std::array flower_frame_right{
 
     // Row 9
     std::array{
-        grass_bulk,
+        rgba_magenta,
         flower_shadow,
         flower_petal,
         flower_petal,
@@ -1764,8 +2072,8 @@ constexpr std::array flower_frame_right{
 
     // Row 10
     std::array{
-        grass_bulk,
-        grass_bulk,
+        rgba_magenta,
+        rgba_magenta,
         flower_shadow,
         flower_outline_dark,
         flower_petal,
@@ -1779,12 +2087,12 @@ constexpr std::array flower_frame_right{
         flower_outline_dark,
         flower_outline_dark,
         flower_shadow,
-        grass_bulk},
+        rgba_magenta},
 
     // Row 11
     std::array{
-        grass_bulk,
-        grass_bulk,
+        rgba_magenta,
+        rgba_magenta,
         flower_outline_dark,
         flower_leaf,
         flower_outline_dark,
@@ -1798,11 +2106,11 @@ constexpr std::array flower_frame_right{
         flower_outline_light,
         flower_leaf,
         flower_outline_light,
-        grass_bulk},
+        rgba_magenta},
 
     // Row 12
     std::array{
-        grass_bulk,
+        rgba_magenta,
         flower_outline_light,
         flower_leaf,
         flower_leaf,
@@ -1817,7 +2125,7 @@ constexpr std::array flower_frame_right{
         flower_leaf,
         flower_leaf,
         flower_outline_dark,
-        grass_bulk},
+        rgba_magenta},
 
     // Row 13
     std::array{
@@ -1836,109 +2144,109 @@ constexpr std::array flower_frame_right{
         flower_leaf,
         flower_outline_light,
         flower_outline_dark,
-        grass_bulk},
+        rgba_magenta},
 
     // Row 14
     std::array{
-        grass_bulk,
+        rgba_magenta,
         flower_shadow,
         flower_outline_dark,
         flower_outline_dark,
         flower_shadow,
         flower_shadow,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
         flower_shadow,
         flower_shadow,
         flower_shadow,
         flower_outline_dark,
         flower_outline_dark,
         flower_shadow,
-        grass_bulk},
+        rgba_magenta},
 
     // Row 15
     std::array{
-        grass_bulk,
-        grass_bulk,
+        rgba_magenta,
+        rgba_magenta,
         flower_shadow,
         flower_shadow,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
         flower_shadow,
         flower_shadow,
-        grass_bulk,
-        grass_bulk}};
+        rgba_magenta,
+        rgba_magenta}};
 
 constexpr std::array flower_frame_left{
     // Row 0
     std::array{
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk},
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta},
 
     // Row 1
     std::array{
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_light,
-        grass_bulk,
-        grass_bulk},
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta},
 
     // Row 2
     std::array{
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
         flower_outline_light,
         flower_outline_light,
         flower_petal,
         flower_petal,
         flower_outline_light,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk},
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta},
 
     // Row 3
     std::array{
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
         flower_outline_light,
         flower_petal,
         flower_petal,
@@ -1947,16 +2255,16 @@ constexpr std::array flower_frame_left{
         flower_petal,
         flower_petal,
         flower_outline_light,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk},
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta},
 
     // Row 4
     std::array{
-        grass_light,
-        grass_bulk,
+        rgba_magenta,
+        rgba_magenta,
         flower_outline_light,
         flower_outline_dark,
         flower_petal,
@@ -1966,15 +2274,15 @@ constexpr std::array flower_frame_left{
         flower_petal,
         flower_petal,
         flower_outline_dark,
-        grass_bulk,
+        rgba_magenta,
         flower_outline_light,
         flower_outline_light,
         flower_outline_light,
-        grass_bulk},
+        rgba_magenta},
 
     // Row 5
     std::array{
-        grass_bulk,
+        rgba_magenta,
         flower_outline_light,
         flower_leaf,
         flower_leaf,
@@ -1993,7 +2301,7 @@ constexpr std::array flower_frame_left{
 
     // Row 6
     std::array{
-        grass_bulk,
+        rgba_magenta,
         flower_outline_light,
         flower_leaf,
         flower_leaf,
@@ -2065,7 +2373,7 @@ constexpr std::array flower_frame_left{
         flower_outline_dark,
         flower_shadow,
         flower_shadow,
-        grass_bulk},
+        rgba_magenta},
 
     // Row 10
     std::array{
@@ -2084,11 +2392,11 @@ constexpr std::array flower_frame_left{
         flower_outline_light,
         flower_outline_dark,
         flower_shadow,
-        grass_bulk},
+        rgba_magenta},
 
     // Row 11
     std::array{
-        grass_bulk,
+        rgba_magenta,
         flower_outline_dark,
         flower_outline_light,
         flower_outline_dark,
@@ -2103,11 +2411,11 @@ constexpr std::array flower_frame_left{
         flower_outline_light,
         flower_leaf,
         flower_outline_light,
-        grass_bulk},
+        rgba_magenta},
 
     // Row 12
     std::array{
-        grass_bulk,
+        rgba_magenta,
         flower_outline_dark,
         flower_leaf,
         flower_leaf,
@@ -2122,7 +2430,7 @@ constexpr std::array flower_frame_left{
         flower_leaf,
         flower_leaf,
         flower_outline_dark,
-        grass_bulk},
+        rgba_magenta},
 
     // Row 13
     std::array{
@@ -2141,45 +2449,45 @@ constexpr std::array flower_frame_left{
         flower_leaf,
         flower_outline_light,
         flower_outline_dark,
-        grass_bulk},
+        rgba_magenta},
 
     // Row 14
     std::array{
-        grass_bulk,
+        rgba_magenta,
         flower_shadow,
         flower_outline_dark,
         flower_outline_dark,
         flower_shadow,
         flower_shadow,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
         flower_shadow,
         flower_shadow,
         flower_shadow,
         flower_outline_dark,
         flower_outline_dark,
         flower_shadow,
-        grass_bulk},
+        rgba_magenta},
 
     // Row 15
     std::array{
-        grass_bulk,
-        grass_bulk,
+        rgba_magenta,
+        rgba_magenta,
         flower_shadow,
         flower_shadow,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
-        grass_bulk,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
         flower_shadow,
         flower_shadow,
-        grass_bulk,
-        grass_bulk}};
+        rgba_magenta,
+        rgba_magenta}};
 
 void set_grass_at(Image<Rgba32> &img, std::size_t metatile_index)
 {
@@ -2191,12 +2499,12 @@ void set_grass_at(Image<Rgba32> &img, std::size_t metatile_index)
     }
 }
 
-void set_flower_key_frame_at(Image<Rgba32> &img, std::size_t metatile_index)
+void set_mud_at(Image<Rgba32> &img, std::size_t metatile_index)
 {
     const std::size_t col_offset = metatile_index * metatile::side_length_pix;
     for (std::size_t row = 0; row < metatile::side_length_pix; ++row) {
         for (std::size_t col = 0; col < metatile::side_length_pix; ++col) {
-            img.set(row, col_offset + col, flower_frame_key[row][col]);
+            img.set(row, col_offset + col, mud_layer[row][col]);
         }
     }
 }
@@ -2227,6 +2535,16 @@ void set_roof_mart_at(Image<Rgba32> &img, std::size_t metatile_index)
     for (std::size_t row = 0; row < metatile::side_length_pix; ++row) {
         for (std::size_t col = 0; col < metatile::side_length_pix; ++col) {
             img.set(row, col_offset + col, roof_mart_layer[row][col]);
+        }
+    }
+}
+
+void set_flower_key_frame_at(Image<Rgba32> &img, std::size_t metatile_index)
+{
+    const std::size_t col_offset = metatile_index * metatile::side_length_pix;
+    for (std::size_t row = 0; row < metatile::side_length_pix; ++row) {
+        for (std::size_t col = 0; col < metatile::side_length_pix; ++col) {
+            img.set(row, col_offset + col, flower_frame_key[row][col]);
         }
     }
 }
@@ -2269,7 +2587,7 @@ void set_roof_mart_at(Image<Rgba32> &img, std::size_t metatile_index)
 } // anonymous namespace
 
 ChainableResult<std::unique_ptr<PorytilesTilesetComponent>>
-PrimaryTilesetCreator::create_sample_porytiles_component(const std::string &tileset_name) const
+TilesetCreator::create_sample_primary_porytiles_component(const std::string &tileset_name) const
 {
     PT_UNWRAP_TILESET_CONFIG_PTR(
         config_, extrinsic_transparency, tileset_name, std::unique_ptr<PorytilesTilesetComponent>);
@@ -2282,6 +2600,7 @@ PrimaryTilesetCreator::create_sample_porytiles_component(const std::string &tile
 
     set_grass_at(middle, 1);
     set_flower_key_frame_at(middle, 2);
+    set_grass_at(bottom, 2);
     set_tall_grass_at(middle, 3);
     set_grass_at(bottom, 4);
     set_roof_center_at(middle, 4);
@@ -2325,6 +2644,25 @@ PrimaryTilesetCreator::create_sample_porytiles_component(const std::string &tile
     flower.put_frame(flower_right.frame_name(), flower_right);
     flower.put_frame(flower_left.frame_name(), flower_left);
     component->add_anim(flower);
+
+    return component;
+}
+
+ChainableResult<std::unique_ptr<PorytilesTilesetComponent>>
+TilesetCreator::create_sample_secondary_porytiles_component(const std::string &tileset_name) const
+{
+    PT_UNWRAP_TILESET_CONFIG_PTR(
+        config_, extrinsic_transparency, tileset_name, std::unique_ptr<PorytilesTilesetComponent>);
+
+    auto component = std::make_unique<PorytilesTilesetComponent>();
+
+    Image<Rgba32> bottom{128, 16, extrinsic_transparency};
+    Image<Rgba32> middle{128, 16, extrinsic_transparency};
+    Image<Rgba32> top{128, 16, extrinsic_transparency};
+
+    set_mud_at(middle, 1);
+    set_mud_at(bottom, 2);
+    set_flower_key_frame_at(middle, 2);
 
     return component;
 }

@@ -8,11 +8,12 @@
 #include "fruit/fruit.h"
 
 #include "porytiles2/app/use_cases/create_primary_tileset.hpp"
+#include "porytiles2/app/use_cases/create_secondary_tileset.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/palette_printer.hpp"
-#include "porytiles2/domain/services/primary_tileset_creator.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
 #include "porytiles2/domain/services/tileset_compiler.hpp"
+#include "porytiles2/domain/services/tileset_creator.hpp"
 #include "porytiles2/infra/cli/cli_option_registration.hpp"
 #include "porytiles2/infra/cli/cli_option_storage.hpp"
 #include "porytiles2/infra/config/cli_option_provider.hpp"
@@ -39,6 +40,7 @@
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
+#include "porytiles2/infra/services/project_layout_metadata_provider.hpp"
 #include "porytiles2/infra/services/project_porytiles_tileset_manager.hpp"
 #include "porytiles2/infra/services/project_tileset_anims_modifier.hpp"
 #include "porytiles2/infra/services/project_tileset_metadata_writer.hpp"
@@ -59,6 +61,7 @@ class CreateTilesetCommand final : public Command {
         CLI::App &cmd = get_app();
         cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to create (e.g., gTileset_MyTileset)")
             ->required();
+        cmd.add_flag("--secondary", secondary_, "Create a secondary tileset instead of a primary.");
         project_root_opt_.RegisterOpt(cmd);
         porytiles2::register_config_options(cmd, cli_storage_);
     }
@@ -215,15 +218,32 @@ class CreateTilesetCommand final : public Command {
             &checksum_provider, &metadata_provider, &key_provider, &artifact_reader, &artifact_writer, diag.get()};
 
         // Setup creator and compiler
-        PrimaryTilesetCreator creator{&config, &behavior_map_provider};
+        TilesetCreator creator{&config, &behavior_map_provider};
         TilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
 
-        // Create the use case
-        CreatePrimaryTileset create_use_case{
-            &creator, &compiler, &repo, &metadata_provider, &tileset_manager, &config, &config, diag.get()};
+        // Setup layout metadata provider (needed for secondary tileset primary pairing)
+        ProjectLayoutMetadataProvider layout_metadata_provider{project_root, text_formatter, diag.get()};
 
-        // Run the use case
-        auto create_result = create_use_case.create(tileset_name_);
+        // Create and run the appropriate use case based on --secondary flag
+        ChainableResult<void> create_result;
+        if (secondary_) {
+            CreateSecondaryTileset create_use_case{
+                &creator,
+                &compiler,
+                &repo,
+                &metadata_provider,
+                &layout_metadata_provider,
+                &tileset_manager,
+                &config,
+                &config,
+                diag.get()};
+            create_result = create_use_case.create(tileset_name_);
+        }
+        else {
+            CreatePrimaryTileset create_use_case{
+                &creator, &compiler, &repo, &metadata_provider, &tileset_manager, &config, &config, diag.get()};
+            create_result = create_use_case.create(tileset_name_);
+        }
         if (!create_result.has_value()) {
             const auto fail_result = ChainableResult<void>{
                 FormattableError{"Failed to create tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
@@ -238,6 +258,7 @@ class CreateTilesetCommand final : public Command {
     static constexpr auto kCommandDesc = "Create a new Porytiles-managed tileset from scratch.";
     static constexpr auto kCommandGroup = "COMMANDS";
     std::string tileset_name_;
+    bool secondary_ = false;
     OptProjectRoot project_root_opt_;
     porytiles2::CliOptionStorage cli_storage_;
 };

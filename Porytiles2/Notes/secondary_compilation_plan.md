@@ -327,13 +327,13 @@ Orchestration:
 
 Dependencies: same as `CompilePrimaryTileset` plus `LayoutMetadataProvider` (only needed for `automatic` mode, but always wired for simplicity).
 
-### 4b. New use case: `CreateSecondaryTileset`
+### ~~4b. New use case: `CreateSecondaryTileset`~~
 
 **New files**:
 - `Porytiles2/include/porytiles2/app/use_cases/create_secondary_tileset.hpp`
 - `Porytiles2/lib/app/use_cases/create_secondary_tileset.cpp`
 
-Similar to `CreatePrimaryTileset` but adds the paired-primary lookup and passes `&primary_tileset` to compiler. Also needs a `SecondaryTilesetCreator` (or generalize `PrimaryTilesetCreator`) to generate starter assets appropriate for secondary tilesets.
+Similar to `CreatePrimaryTileset` but adds the paired-primary lookup and passes `&primary_tileset` to compiler. Uses `TilesetCreator::create_sample_secondary_porytiles_component` to generate starter assets appropriate for secondary tilesets.
 
 ### ~~4c. CLI command dispatch~~
 

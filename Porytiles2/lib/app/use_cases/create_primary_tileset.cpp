@@ -21,7 +21,7 @@ ChainableResult<void> CreatePrimaryTileset::create(const std::string &tileset_na
     // 2. Create a default PorytilesTilesetComponent via PrimaryTilesetCreator
     PT_TRY_ASSIGN_CHAIN_ERR(
         porytiles_component,
-        creator_->create_sample_porytiles_component(tileset_name),
+        creator_->create_sample_primary_porytiles_component(tileset_name),
         void,
         "Failed to create Porytiles source assets for '{}'.",
         FormatParam(tileset_name, Style::bold));
