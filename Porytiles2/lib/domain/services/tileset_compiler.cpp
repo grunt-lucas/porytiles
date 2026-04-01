@@ -1530,6 +1530,10 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
     // indices (e.g., 512+ for secondary). This offset converts absolute to relative for image access.
     const std::size_t tile_index_offset = is_secondary() ? num_tiles_in_primary_.value() : 0;
 
+    // Secondary palettes are stored at absolute indices (e.g., 6-11), but the PNG palette only
+    // covers this tileset's palettes (indices 0-5). This offset converts absolute to relative.
+    const std::size_t pal_index_offset = is_secondary() ? num_pals_in_primary_.value() : 0;
+
     for (const auto &entry : new_porymap_component_->metatiles_bin()) {
         const auto tile_idx = entry.tile_index();
         const auto pal_idx = entry.pal_index();
@@ -1682,11 +1686,12 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
             std::vector<std::string> note_lines;
             note_lines.emplace_back("This tile may be used by a secondary tileset, or it may be completely unused.");
             note_lines.emplace_back(format_.format(
-                "Displaying using '{}' for color resolution.", FormatParam{pal_filename(0), Style::bold}));
+                "Displaying using '{}' for color resolution.",
+                FormatParam{pal_filename(pal_index_offset), Style::bold}));
 
-            // Visualize the tile using palette 0
-            const PixelTile<Rgba32> rgba_tile =
-                color_tile_from_index_tile(index_tile, new_porymap_pals_.at(0), extrinsic_transparency_.value());
+            // Visualize the tile using the first palette for this tileset
+            const PixelTile<Rgba32> rgba_tile = color_tile_from_index_tile(
+                index_tile, new_porymap_pals_.at(pal_index_offset), extrinsic_transparency_.value());
             note_lines.emplace_back();
             std::ranges::copy(
                 tile_printer_.print_tile(rgba_tile, extrinsic_transparency_.value()), std::back_inserter(note_lines));
@@ -1707,18 +1712,20 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
                 const std::size_t col = pixel_col_start + px;
                 const IndexPixel old_pixel = tiles_img.at(row, col);
                 const std::size_t color_idx = old_pixel.color_index();
-                const std::size_t new_index = (pal_idx << 4) | color_idx;
+                const std::size_t new_index = ((pal_idx - pal_index_offset) << 4) | color_idx;
                 tiles_img.set(row, col, IndexPixel{new_index});
             }
         }
     }
 
-    // Phase 5: Build the 8-bit palette for the PNG (num_pals_in_primary * 16 colors)
+    // Phase 5: Build the 8-bit palette for the PNG (this tileset's palettes * 16 colors)
+    const std::size_t num_pals =
+        is_secondary() ? (num_pals_total_.value() - num_pals_in_primary_.value()) : num_pals_in_primary_.value();
     std::vector<Rgba32> true_color_palette;
-    true_color_palette.reserve(num_pals_in_primary_.value() * pal::max_size);
+    true_color_palette.reserve(num_pals * pal::max_size);
 
-    for (std::size_t pal_idx = 0; pal_idx < num_pals_in_primary_.value(); ++pal_idx) {
-        const auto &pal = new_porymap_pals_.at(pal_idx);
+    for (std::size_t i = 0; i < num_pals; ++i) {
+        const auto &pal = new_porymap_pals_.at(i + pal_index_offset);
         for (std::size_t color_idx = 0; color_idx < pal::max_size; ++color_idx) {
             true_color_palette.push_back(pal.at(color_idx));
         }
