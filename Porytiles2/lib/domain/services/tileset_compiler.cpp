@@ -1526,6 +1526,10 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
     std::unordered_map<std::size_t, std::size_t> tile_to_first_pal;
     std::unordered_map<std::size_t, std::set<std::size_t>> tile_to_all_pals;
 
+    // Secondary tiles.png is densely packed from tile 0, but metatile entries reference absolute
+    // indices (e.g., 512+ for secondary). This offset converts absolute to relative for image access.
+    const std::size_t tile_index_offset = is_secondary() ? num_tiles_in_primary_.value() : 0;
+
     for (const auto &entry : new_porymap_component_->metatiles_bin()) {
         const auto tile_idx = entry.tile_index();
         const auto pal_idx = entry.pal_index();
@@ -1569,7 +1573,8 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
 
                 // Extract the tile to check for transparency and for visualization
                 const auto &tiles_img = new_porymap_component_->tiles_png();
-                const PixelTile<IndexPixel> index_tile = extract_single_tile(tiles_img, absolute_tile_idx);
+                const PixelTile<IndexPixel> index_tile =
+                    extract_single_tile(tiles_img, absolute_tile_idx - tile_index_offset);
 
                 // Skip remark for transparent tiles (unused slots)
                 if (index_tile.is_transparent()) {
@@ -1602,11 +1607,12 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
     }
 
     // Phase 3: Emit diagnostic remark for tiles used with multiple palettes
-    for (const auto &[tile_idx, pals] : tile_to_all_pals) {
+    for (const auto &[absolute_tile_idx, pals] : tile_to_all_pals) {
         if (pals.size() > 1) {
             // Extract the tile to check for transparency and for visualization
             const auto &tiles_img = new_porymap_component_->tiles_png();
-            const PixelTile<IndexPixel> index_tile = extract_single_tile(tiles_img, tile_idx);
+            const PixelTile<IndexPixel> index_tile =
+                extract_single_tile(tiles_img, absolute_tile_idx - tile_index_offset);
 
             // Skip remark for transparent tiles (unused slots)
             if (index_tile.is_transparent()) {
@@ -1615,8 +1621,8 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
 
             constexpr auto tag = "true-color-multi-palette-tile";
             std::vector<std::string> remark_lines;
-            remark_lines.emplace_back(
-                format_.format("tile index '{}' is used with multiple palettes", FormatParam{tile_idx, Style::bold}));
+            remark_lines.emplace_back(format_.format(
+                "tile index '{}' is used with multiple palettes", FormatParam{absolute_tile_idx, Style::bold}));
 
             std::string pal_list;
             for (const auto pal : pals) {
@@ -1626,7 +1632,7 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
                 pal_list += pal_filename(pal);
             }
 
-            const std::size_t selected_pal_idx = tile_to_first_pal.at(tile_idx);
+            const std::size_t selected_pal_idx = tile_to_first_pal.at(absolute_tile_idx);
             remark_lines.emplace_back(format_.format(
                 "Palettes used: {}; tiles.png will display using '{}'.",
                 FormatParam{pal_list},
@@ -1655,7 +1661,8 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
     const std::size_t total_tiles = tiles_img.size_in_tiles();
 
     for (std::size_t tile_idx = 1; tile_idx < total_tiles; ++tile_idx) {
-        if (!tile_to_first_pal.contains(tile_idx)) {
+        const std::size_t absolute_tile_idx = tile_idx + tile_index_offset;
+        if (!tile_to_first_pal.contains(absolute_tile_idx)) {
             // Extract the tile to check for transparency
             const PixelTile<IndexPixel> index_tile = extract_single_tile(tiles_img, tile_idx, tiles_per_row);
 
@@ -1668,7 +1675,8 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
             constexpr auto tag = "true-color-unreferenced-tile";
             std::vector<std::string> warning_lines;
             warning_lines.emplace_back(format_.format(
-                "tile index '{}' is not referenced in metatiles or animations", FormatParam{tile_idx, Style::bold}));
+                "tile index '{}' is not referenced in metatiles or animations",
+                FormatParam{absolute_tile_idx, Style::bold}));
             diag_.warning(tag, warning_lines);
 
             std::vector<std::string> note_lines;
@@ -1687,7 +1695,7 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
             continue; // Skip unreferenced tiles (no palette encoding needed)
         }
 
-        const std::size_t pal_idx = tile_to_first_pal.at(tile_idx);
+        const std::size_t pal_idx = tile_to_first_pal.at(absolute_tile_idx);
         const std::size_t tile_row = tile_idx / tiles_per_row;
         const std::size_t tile_col = tile_idx % tiles_per_row;
         const std::size_t pixel_row_start = tile_row * tile::side_length_pix;

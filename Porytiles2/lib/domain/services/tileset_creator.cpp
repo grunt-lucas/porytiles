@@ -2663,6 +2663,7 @@ TilesetCreator::create_sample_secondary_porytiles_component(const std::string &t
     set_mud_at(middle, 1);
     set_mud_at(bottom, 2);
     set_flower_key_frame_at(middle, 2);
+    set_grass_at(middle, 3);
 
     component->bottom(bottom);
     component->middle(middle);
