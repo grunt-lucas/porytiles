@@ -178,6 +178,9 @@ ProjectPorytilesTilesetManager::persist_managed_new(const std::string &tileset_n
         "Failed to create tileset struct in headers.h for '{}'.",
         FormatParam(tileset_name, Style::bold));
 
+    // Invalidate the metadata cache since we just added a new struct to headers.h
+    metadata_provider_->invalidate_metadata_cache();
+
     // Step 2: Write TilesetManifest with imported=false
     constexpr std::uint32_t version = 1;
     write(tileset_name, TilesetManifest::for_created_tileset(version));

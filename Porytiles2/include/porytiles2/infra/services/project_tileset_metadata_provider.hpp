@@ -72,6 +72,16 @@ class ProjectTilesetMetadataProvider : public TilesetMetadataProvider {
     [[nodiscard]] ChainableResult<ProjectTilesetArtifactPaths>
     artifact_paths_for(const std::string &tileset_name) const;
 
+    /**
+     * @brief Invalidates the lazy-loaded metadata and artifact paths caches, forcing a re-parse on next access.
+     *
+     * @details
+     * This is needed when the underlying files (e.g. headers.h) have been modified on disk since the cache was
+     * populated. For example, after creating a new tileset struct, the cache must be invalidated so subsequent
+     * metadata lookups see the newly written struct.
+     */
+    void invalidate_metadata_cache() const;
+
   private:
     std::filesystem::path project_root_;
     const TextFormatter *format_;

@@ -8,8 +8,8 @@
 
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_key_provider.hpp"
+#include "porytiles2/domain/services/tileset_metadata_provider.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
-#include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/text/text_formatter.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
@@ -44,9 +44,10 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
     explicit ProjectTilesetArtifactKeyProvider(
         std::filesystem::path project_root,
         gsl::not_null<const InfraConfig *> config,
+        gsl::not_null<const TilesetMetadataProvider *> metadata_provider,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag)
-        : project_root_{std::move(project_root)}, metadata_provider_{project_root_, format, diag}, config_{config},
+        : project_root_{std::move(project_root)}, metadata_provider_{metadata_provider}, config_{config},
           format_{format}, diag_{diag}
     {
     }
@@ -126,7 +127,7 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
 
   private:
     std::filesystem::path project_root_;
-    ProjectTilesetMetadataProvider metadata_provider_;
+    const TilesetMetadataProvider *metadata_provider_;
     const InfraConfig *config_;
     const TextFormatter *format_;
     const UserDiagnostics *diag_;

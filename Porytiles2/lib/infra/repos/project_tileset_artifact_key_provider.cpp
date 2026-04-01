@@ -5,7 +5,6 @@
 #include <set>
 #include <string>
 
-#include "porytiles2/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/dynamic_cased_name.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
@@ -126,7 +125,11 @@ ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_metatiles_bin(const std::string &tileset_name) const
 {
     // Get primary/secondary status of tileset
-    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        is_secondary,
+        metadata_provider_->is_secondary(tileset_name),
+        ArtifactKey,
+        "Failed to determine primary/secondary status.");
 
     // Get base path from config
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
@@ -143,7 +146,11 @@ ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_metatile_attributes_bin(const std::string &tileset_name) const
 {
     // Get primary/secondary status of tileset
-    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        is_secondary,
+        metadata_provider_->is_secondary(tileset_name),
+        ArtifactKey,
+        "Failed to determine primary/secondary status.");
 
     // Get base path from config
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
@@ -159,7 +166,11 @@ ProjectTilesetArtifactKeyProvider::key_for_metatile_attributes_bin(const std::st
 ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_tiles_png(const std::string &tileset_name) const
 {
     // Get primary/secondary status of tileset
-    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        is_secondary,
+        metadata_provider_->is_secondary(tileset_name),
+        ArtifactKey,
+        "Failed to determine primary/secondary status.");
 
     // Get base path from config
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
@@ -176,7 +187,11 @@ ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_porymap_pal_n(const std::string &tileset_name, std::size_t index) const
 {
     // Get primary/secondary status of tileset
-    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        is_secondary,
+        metadata_provider_->is_secondary(tileset_name),
+        ArtifactKey,
+        "Failed to determine primary/secondary status.");
 
     // Get base path from config
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
@@ -193,7 +208,11 @@ ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_porymap_
     const std::string &tileset_name, const std::string &anim_name, const std::string &frame_name) const
 {
     // Get primary/secondary status of tileset
-    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        is_secondary,
+        metadata_provider_->is_secondary(tileset_name),
+        ArtifactKey,
+        "Failed to determine primary/secondary status.");
 
     // Get base path from config
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
@@ -221,7 +240,11 @@ ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_bottom_png(const std::string &tileset_name) const
 {
     // Get primary/secondary status of tileset
-    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        is_secondary,
+        metadata_provider_->is_secondary(tileset_name),
+        ArtifactKey,
+        "Failed to determine primary/secondary status.");
 
     // Get base path from config
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
@@ -238,7 +261,11 @@ ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_middle_png(const std::string &tileset_name) const
 {
     // Get primary/secondary status of tileset
-    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        is_secondary,
+        metadata_provider_->is_secondary(tileset_name),
+        ArtifactKey,
+        "Failed to determine primary/secondary status.");
 
     // Get base path from config
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
@@ -254,7 +281,11 @@ ProjectTilesetArtifactKeyProvider::key_for_middle_png(const std::string &tileset
 ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_top_png(const std::string &tileset_name) const
 {
     // Get primary/secondary status of tileset
-    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        is_secondary,
+        metadata_provider_->is_secondary(tileset_name),
+        ArtifactKey,
+        "Failed to determine primary/secondary status.");
 
     // Get base path from config
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
@@ -270,7 +301,11 @@ ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_attributes_csv(const std::string &tileset_name) const
 {
     // Get primary/secondary status of tileset
-    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        is_secondary,
+        metadata_provider_->is_secondary(tileset_name),
+        ArtifactKey,
+        "Failed to determine primary/secondary status.");
 
     // Get base path from config
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
@@ -287,7 +322,11 @@ ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_porytiles_pal_n(const std::string &tileset_name, std::size_t index) const
 {
     // Get primary/secondary status of tileset
-    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        is_secondary,
+        metadata_provider_->is_secondary(tileset_name),
+        ArtifactKey,
+        "Failed to determine primary/secondary status.");
 
     // Get base path from config
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
@@ -304,7 +343,11 @@ ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_porytile
     const std::string &tileset_name, const std::string &anim_name, const std::string &frame_name) const
 {
     // Get primary/secondary status of tileset
-    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        is_secondary,
+        metadata_provider_->is_secondary(tileset_name),
+        ArtifactKey,
+        "Failed to determine primary/secondary status.");
 
     // Get base path from config
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
@@ -321,7 +364,11 @@ ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_porytiles_anim_params(const std::string &tileset_name) const
 {
     // Get primary/secondary status of tileset
-    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        is_secondary,
+        metadata_provider_->is_secondary(tileset_name),
+        ArtifactKey,
+        "Failed to determine primary/secondary status.");
 
     // Get base path from config
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, ArtifactKey);
@@ -344,7 +391,11 @@ bool ProjectTilesetArtifactKeyProvider::artifact_exists(const ArtifactKey &key) 
 ChainableResult<std::set<std::string>>
 ProjectTilesetArtifactKeyProvider::discover_porymap_anims(const std::string &tileset_name) const
 {
-    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        is_secondary,
+        metadata_provider_->is_secondary(tileset_name),
+        std::set<std::string>,
+        "Failed to determine primary/secondary status.");
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, std::set<std::string>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, std::set<std::string>);
     auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
@@ -359,7 +410,11 @@ ProjectTilesetArtifactKeyProvider::discover_porymap_anims(const std::string &til
 ChainableResult<std::set<std::string>> ProjectTilesetArtifactKeyProvider::discover_porymap_anim_frames(
     const std::string &tileset_name, const std::string &anim_name) const
 {
-    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        is_secondary,
+        metadata_provider_->is_secondary(tileset_name),
+        std::set<std::string>,
+        "Failed to determine primary/secondary status.");
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_bin, tileset_name, std::set<std::string>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_bin, tileset_name, std::set<std::string>);
     auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
@@ -374,7 +429,11 @@ ChainableResult<std::set<std::string>> ProjectTilesetArtifactKeyProvider::discov
 ChainableResult<std::set<std::string>>
 ProjectTilesetArtifactKeyProvider::discover_porytiles_anims(const std::string &tileset_name) const
 {
-    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        is_secondary,
+        metadata_provider_->is_secondary(tileset_name),
+        std::set<std::string>,
+        "Failed to determine primary/secondary status.");
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_src, tileset_name, std::set<std::string>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_src, tileset_name, std::set<std::string>);
     auto base_path = is_secondary ? tileset_paths_secondary_src : tileset_paths_primary_src;
@@ -389,7 +448,11 @@ ProjectTilesetArtifactKeyProvider::discover_porytiles_anims(const std::string &t
 ChainableResult<std::set<std::string>> ProjectTilesetArtifactKeyProvider::discover_porytiles_anim_frames(
     const std::string &tileset_name, const std::string &anim_name) const
 {
-    const bool is_secondary = metadata_provider_.is_secondary(tileset_name).value();
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        is_secondary,
+        metadata_provider_->is_secondary(tileset_name),
+        std::set<std::string>,
+        "Failed to determine primary/secondary status.");
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_secondary_src, tileset_name, std::set<std::string>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, tileset_paths_primary_src, tileset_name, std::set<std::string>);
     auto base_path = is_secondary ? tileset_paths_secondary_src : tileset_paths_primary_src;

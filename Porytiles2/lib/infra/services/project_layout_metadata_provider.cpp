@@ -325,4 +325,12 @@ ProjectLayoutMetadataProvider::blockdata_filepath(const std::string &layout_name
     return project_root_ / layout->blockdata_filepath();
 }
 
+void ProjectLayoutMetadataProvider::invalidate_metadata_cache() const
+{
+    layouts_parsed_ = false;
+    layouts_table_label_.clear();
+    layout_entries_.clear();
+    layout_index_.clear();
+}
+
 } // namespace porytiles2

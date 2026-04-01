@@ -73,6 +73,16 @@ class ProjectLayoutMetadataProvider : public LayoutMetadataProvider {
      */
     [[nodiscard]] ChainableResult<std::filesystem::path> blockdata_filepath(const std::string &layout_name_or_id) const;
 
+    /**
+     * @brief Invalidates the lazy-loaded layout cache, forcing a re-parse on next access.
+     *
+     * @details
+     * This is needed when the underlying layouts.json file has been modified on disk since the cache was populated.
+     * For example, after creating a new layout entry, the cache must be invalidated so subsequent lookups see the
+     * newly written layout.
+     */
+    void invalidate_metadata_cache() const;
+
   private:
     std::filesystem::path project_root_;
     const TextFormatter *format_;

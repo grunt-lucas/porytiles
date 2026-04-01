@@ -197,7 +197,8 @@ class CompileTilesetCommand final : public Command {
             text_formatter, &behavior_map_provider, base_game, terrain_provider.get(), encounter_provider.get()};
 
         // Setup the tileset repository
-        ProjectTilesetArtifactKeyProvider key_provider{project_root, &config, text_formatter, diag.get()};
+        ProjectTilesetArtifactKeyProvider key_provider{
+            project_root, &config, &metadata_provider, text_formatter, diag.get()};
         ProjectTilesetArtifactReader artifact_reader{
             project_root,
             base_game,

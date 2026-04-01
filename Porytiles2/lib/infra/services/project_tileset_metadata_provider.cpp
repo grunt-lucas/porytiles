@@ -280,4 +280,12 @@ ProjectTilesetMetadataProvider::artifact_paths_for(const std::string &tileset_na
     return tileset_artifact_paths_.at(tileset_name);
 }
 
+void ProjectTilesetMetadataProvider::invalidate_metadata_cache() const
+{
+    metadata_parsed_ = false;
+    tileset_metadata_.clear();
+    artifact_paths_parsed_ = false;
+    tileset_artifact_paths_.clear();
+}
+
 } // namespace porytiles2

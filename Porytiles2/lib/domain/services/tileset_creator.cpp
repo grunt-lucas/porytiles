@@ -2664,6 +2664,10 @@ TilesetCreator::create_sample_secondary_porytiles_component(const std::string &t
     set_mud_at(bottom, 2);
     set_flower_key_frame_at(middle, 2);
 
+    component->bottom(bottom);
+    component->middle(middle);
+    component->top(top);
+
     return component;
 }
 
