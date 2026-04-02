@@ -117,15 +117,27 @@ ChainableResult<std::unique_ptr<Tileset>> resolve_partner_primary(
     }
 
     if (!metadata_provider->exists(partner_name)) {
-        return FormattableError{
+        std::vector<std::string> err_msg{};
+        err_msg.emplace_back(diag->formatter().format(
             "Resolved partner primary '{}' for secondary '{}' does not exist.",
             FormatParam{partner_name, Style::bold},
-            FormatParam{tileset_name, Style::bold}};
+            FormatParam{tileset_name, Style::bold}));
+        err_msg.emplace_back("Create it first or pair with a different tileset.");
+        std::ranges::copy(
+            format_config_note_with_separator(diag->formatter(), pairing_mode), std::back_inserter(err_msg));
+        std::ranges::copy(format_config_note_with_separator(diag->formatter(), partners), std::back_inserter(err_msg));
+        return FormattableError{err_msg};
     }
     if (!tileset_manager->is_porytiles_managed(partner_name)) {
-        return FormattableError{
+        std::vector<std::string> err_msg{};
+        err_msg.emplace_back(diag->formatter().format(
             "Secondary compilation requires a Porytiles-managed primary, but '{}' is not Porytiles-managed.",
-            FormatParam{partner_name, Style::bold}};
+            FormatParam{partner_name, Style::bold}));
+        err_msg.emplace_back("Import it first or pair with a different tileset.");
+        std::ranges::copy(
+            format_config_note_with_separator(diag->formatter(), pairing_mode), std::back_inserter(err_msg));
+        std::ranges::copy(format_config_note_with_separator(diag->formatter(), partners), std::back_inserter(err_msg));
+        return FormattableError{err_msg};
     }
 
     constexpr auto tag = "resolve-partner-primary";

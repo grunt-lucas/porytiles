@@ -105,7 +105,7 @@ Tileset create_test_tileset(const std::string &name)
     }
 
     for (int i = 0; i < 16; i++) {
-        porymap_component->set_pal(i, Palette<Rgba32, pal::max_size>{});
+        porymap_component->set_pal(i, Palette<Rgba32, pal::max_size>{Rgba32{0, 0, 0, Rgba32::alpha_opaque}});
     }
 
     // TODO: this test is flaky, once our tileset reader/writer account for num_tiles_per_metatile, we'll need to come

@@ -714,7 +714,8 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
         else {
             // Standalone secondary: zeroed palettes for primary slots
             for (std::size_t i = 0; i < num_pals_in_primary_.value(); i++) {
-                new_porymap_component_->set_pal(i, Palette<Rgba32, pal::max_size>{});
+                new_porymap_component_->set_pal(
+                    i, Palette<Rgba32, pal::max_size>{Rgba32{0, 0, 0, Rgba32::alpha_opaque}});
             }
         }
         // Secondary palettes from packing result

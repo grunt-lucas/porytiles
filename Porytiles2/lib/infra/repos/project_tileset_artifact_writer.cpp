@@ -676,7 +676,11 @@ ProjectTilesetArtifactWriter::write_porymap_pal_n(const ArtifactKey &dest_key, c
             transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
         void,
         "Failed to compute transaction dest path.");
-    return save_palette(src.porymap_component().pal_at(index), transaction_dest_path, *pal_saver_);
+    const auto &pal = src.porymap_component().pal_at(index);
+    if (pal.has_any_wildcards()) {
+        panic("attempted to save a Porymap palette containing wildcards");
+    }
+    return save_palette(pal, transaction_dest_path, *pal_saver_);
 }
 
 ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
