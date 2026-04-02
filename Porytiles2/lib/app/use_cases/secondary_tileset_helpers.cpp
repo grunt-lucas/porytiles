@@ -5,6 +5,7 @@
 #include <set>
 #include <string>
 
+#include "porytiles2/domain/algorithms/diagnostic_stencils.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 
@@ -12,8 +13,8 @@ namespace porytiles2 {
 
 ChainableResult<std::unique_ptr<Tileset>> resolve_partner_primary(
     const std::string &tileset_name,
-    PrimaryPairingMode pairing_mode,
-    const std::vector<std::string> &partners,
+    const ConfigValue<PrimaryPairingMode> &pairing_mode,
+    const ConfigValue<std::vector<std::string>> &partners,
     const TilesetRepo *tileset_repo,
     const TilesetMetadataProvider *metadata_provider,
     const LayoutMetadataProvider *layout_metadata_provider,
@@ -22,34 +23,51 @@ ChainableResult<std::unique_ptr<Tileset>> resolve_partner_primary(
 {
     std::string partner_name{};
 
-    switch (pairing_mode) {
+    switch (pairing_mode.value()) {
     case PrimaryPairingMode::off: {
-        if (!partners.empty()) {
+        if (!partners.value().empty()) {
             diag->warning(
                 "pairing-partners-ignored",
-                "Primary pairing mode is 'off' but '{}' has non-empty pairing partners list. Partners will be ignored.",
-                FormatParam{tileset_name, Style::bold});
+                std::vector<std::string>{
+                    diag->formatter().format(
+                        "Primary pairing mode is 'off' but '{}' has non-empty pairing partners list.",
+                        FormatParam{tileset_name, Style::bold}),
+                    "Partners will be ignored."});
         }
         return std::unique_ptr<Tileset>{nullptr};
     }
 
     case PrimaryPairingMode::manual: {
-        if (partners.empty()) {
-            return FormattableError{
+        if (partners.value().empty()) {
+            std::vector<std::string> err_msg{};
+            err_msg.emplace_back(diag->formatter().format(
                 "Primary pairing mode is 'manual' but no partner primaries configured for '{}'.",
-                FormatParam{tileset_name, Style::bold}};
+                FormatParam{tileset_name, Style::bold}));
+            std::ranges::copy(
+                format_config_note_with_separator(diag->formatter(), pairing_mode), std::back_inserter(err_msg));
+            std::ranges::copy(
+                format_config_note_with_separator(diag->formatter(), partners), std::back_inserter(err_msg));
+            return FormattableError{err_msg};
         }
-        partner_name = partners.at(0);
+        partner_name = partners.value().at(0);
         break;
     }
 
     case PrimaryPairingMode::automatic: {
-        if (!partners.empty()) {
+        if (!partners.value().empty()) {
+            constexpr auto warn_tag = "pairing-partners-ignored";
             diag->warning(
-                "pairing-partners-ignored",
-                "Primary pairing mode is 'automatic' but '{}' has non-empty pairing partners list. Partners will be "
-                "ignored.",
-                FormatParam{tileset_name, Style::bold});
+                warn_tag,
+                std::vector<std::string>{
+                    diag->formatter().format(
+                        "Primary pairing mode is 'automatic' but '{}' has non-empty pairing partners list.",
+                        FormatParam{tileset_name, Style::bold}),
+                    "Partners will be ignored."});
+            std::vector<std::string> note_lines{};
+            std::ranges::copy(format_config_note(diag->formatter(), pairing_mode), std::back_inserter(note_lines));
+            std::ranges::copy(
+                format_config_note_with_separator(diag->formatter(), partners), std::back_inserter(note_lines));
+            diag->warning_note(warn_tag, note_lines);
         }
 
         PT_TRY_ASSIGN_CHAIN_ERR(
@@ -80,11 +98,17 @@ ChainableResult<std::unique_ptr<Tileset>> resolve_partner_primary(
 
         if (found_primaries.size() > 1) {
             // TODO: eventually support multiple distinct primaries
-            diag->warning(
-                "multiple-partner-primaries",
-                "Multiple distinct partner primaries found for '{}'. Using first found: '{}'.",
-                FormatParam{tileset_name, Style::bold},
-                FormatParam{*found_primaries.begin(), Style::bold});
+            std::vector<std::string> warn_lines{};
+            warn_lines.push_back(diag->formatter().format(
+                "Multiple distinct partner primaries found for '{}' via layout data.",
+                FormatParam{tileset_name, Style::bold}));
+            warn_lines.push_back(diag->formatter().format(
+                "Using first found: '{}'.", FormatParam{*found_primaries.begin(), Style::bold}));
+            warn_lines.emplace_back("Other partners:");
+            for (const auto &name : found_primaries | std::views::drop(1)) {
+                warn_lines.push_back(diag->formatter().format("  '{}'", FormatParam{name, Style::bold}));
+            }
+            diag->warning("multiple-partner-primaries", warn_lines);
         }
 
         partner_name = *found_primaries.begin();
@@ -103,6 +127,17 @@ ChainableResult<std::unique_ptr<Tileset>> resolve_partner_primary(
             "Secondary compilation requires a Porytiles-managed primary, but '{}' is not Porytiles-managed.",
             FormatParam{partner_name, Style::bold}};
     }
+
+    constexpr auto tag = "resolve-partner-primary";
+    diag->remark(
+        tag,
+        "Resolved partner primary '{}' for secondary '{}'.",
+        FormatParam{partner_name, Style::bold},
+        FormatParam{tileset_name, Style::bold});
+    std::vector<std::string> note_lines{};
+    std::ranges::copy(format_config_note(diag->formatter(), pairing_mode), std::back_inserter(note_lines));
+    std::ranges::copy(format_config_note_with_separator(diag->formatter(), partners), std::back_inserter(note_lines));
+    diag->remark_note(tag, note_lines);
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         primary_tileset,

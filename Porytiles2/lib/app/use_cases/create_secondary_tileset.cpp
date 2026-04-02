@@ -28,8 +28,8 @@ ChainableResult<void> CreateSecondaryTileset::create(const std::string &tileset_
         paired_primary,
         resolve_partner_primary(
             tileset_name,
-            primary_pairing_mode.value(),
-            primary_pairing_partners.value(),
+            primary_pairing_mode,
+            primary_pairing_partners,
             tileset_repo_,
             metadata_provider_,
             layout_metadata_provider_,

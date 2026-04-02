@@ -10,6 +10,7 @@
 #include "porytiles2/domain/services/porytiles_tileset_manager.hpp"
 #include "porytiles2/domain/services/tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/xcut/config/config_value.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles2 {
@@ -29,8 +30,8 @@ class TilesetRepo;
  * After resolution, validates that the partner primary exists and is Porytiles-managed, then loads and returns it.
  *
  * @param tileset_name The name of the secondary tileset being compiled or created.
- * @param pairing_mode The configured primary pairing mode.
- * @param partners The configured list of partner primary tileset names.
+ * @param pairing_mode The configured primary pairing mode, wrapped with source provenance.
+ * @param partners The configured list of partner primary tileset names, wrapped with source provenance.
  * @param tileset_repo Repository for loading tileset data.
  * @param metadata_provider Provider for checking tileset existence.
  * @param layout_metadata_provider Provider for scanning project layouts (used in automatic mode).
@@ -40,8 +41,8 @@ class TilesetRepo;
  */
 [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> resolve_partner_primary(
     const std::string &tileset_name,
-    PrimaryPairingMode pairing_mode,
-    const std::vector<std::string> &partners,
+    const ConfigValue<PrimaryPairingMode> &pairing_mode,
+    const ConfigValue<std::vector<std::string>> &partners,
     const TilesetRepo *tileset_repo,
     const TilesetMetadataProvider *metadata_provider,
     const LayoutMetadataProvider *layout_metadata_provider,
