@@ -277,7 +277,14 @@ TilesPngWorkspace TilesPngWorkspace::for_secondary(
             for (std::size_t pixel_col = 0; pixel_col < tile::side_length_pix; ++pixel_col) {
                 const std::size_t src_row = pixel_row_offset + pixel_row;
                 const std::size_t src_col = pixel_col_offset + pixel_col;
-                pixel_tile.set(pixel_row, pixel_col, primary_tiles_png.at(src_row, src_col));
+                /*
+                 * Strip true-color encoding (upper nibble = palette index) to get raw color indices. Primary tiles.png
+                 * stores pixels as (pal << 4 | color), but index_tile_from_color_tile() produces raw color indices
+                 * (0-15). Using color_index() here ensures workspace tiles match what index_tile_from_color_tile()
+                 * produces, enabling first_occurrence_of() deduplication.
+                 */
+                const IndexPixel true_color_pixel = primary_tiles_png.at(src_row, src_col);
+                pixel_tile.set(pixel_row, pixel_col, IndexPixel{true_color_pixel.color_index()});
             }
         }
 

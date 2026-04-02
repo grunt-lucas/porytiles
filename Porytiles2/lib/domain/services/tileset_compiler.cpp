@@ -917,6 +917,14 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
     PalettePacker pal_packer{strategy.get(), &format_, &diag_, &tile_printer_, &pal_printer_};
     std::bitset<pal::num_pals> available_pals{0};
     if (is_secondary()) {
+        if (has_paired_primary()) {
+            // Enable primary palette slots so the packer can assign tiles whose colors are a subset
+            // of a locked primary palette. Primary palettes are fully locked via prefilled_pals_, so
+            // the packer cannot add new colors -- it can only assign tiles to them.
+            for (std::size_t i = 0; i < num_pals_in_primary_; i++) {
+                available_pals.set(i, true);
+            }
+        }
         for (std::size_t i = num_pals_in_primary_; i < num_pals_total_; i++) {
             available_pals.set(i, true);
         }
