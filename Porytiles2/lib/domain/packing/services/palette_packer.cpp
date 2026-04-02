@@ -631,13 +631,11 @@ void emit_phase1_diagnostics(
             FormatParam{shape_group_index, Style::bold},
             FormatParam{color_version_tile_indices.size(), Style::bold},
             FormatParam{all_tile_indices.size(), Style::bold}));
-        std::ranges::copy(
-            build_tile_sharing_color_version_tile_lines(
-                format, tile_printer, tiles, extrinsic, color_version_tile_indices),
-            std::back_inserter(remark_lines));
+        remark_lines.append_range(build_tile_sharing_color_version_tile_lines(
+            format, tile_printer, tiles, extrinsic, color_version_tile_indices));
         remark_lines.emplace_back(
             format.format("All tilemap entries ('{}' total):", FormatParam{all_tile_indices.size(), Style::bold}));
-        std::ranges::copy(build_truncated_tile_ref_lines(format, all_tile_indices), std::back_inserter(remark_lines));
+        remark_lines.append_range(build_truncated_tile_ref_lines(format, all_tile_indices));
         diag.remark(phase1_tag, remark_lines);
     }
 
@@ -690,15 +688,9 @@ void emit_phase2_diagnostics(
             members_by_pal[member.pal_index].push_back(member.tile_index);
         }
 
-        std::ranges::copy(
-            build_tile_sharing_color_version_tile_lines(
-                format,
-                tile_printer,
-                params.tiles_,
-                params.extrinsic_transparency_,
-                partition.color_version_tile_indices),
-            std::back_inserter(remark_lines));
-        std::ranges::copy(build_per_palette_tile_ref_lines(format, members_by_pal), std::back_inserter(remark_lines));
+        remark_lines.append_range(build_tile_sharing_color_version_tile_lines(
+            format, tile_printer, params.tiles_, params.extrinsic_transparency_, partition.color_version_tile_indices));
+        remark_lines.append_range(build_per_palette_tile_ref_lines(format, members_by_pal));
 
         if (params.tile_sharing_packing_ == TileSharingPacking::off) {
             remark_lines.emplace_back("");
@@ -709,8 +701,7 @@ void emit_phase2_diagnostics(
                 "Packing '{}' does not actively separate shape-group siblings across palettes.",
                 FormatParam{to_string(params.tile_sharing_packing_.value()), Style::bold}));
             remark_lines.emplace_back("");
-            std::ranges::copy(
-                format_config_note(format, params.tile_sharing_packing_), std::back_inserter(remark_lines));
+            remark_lines.append_range(format_config_note(format, params.tile_sharing_packing_));
         }
         diag.remark(phase2_tag, remark_lines);
     }
@@ -769,11 +760,9 @@ void emit_phase3_diagnostics(
                 FormatParam{group.members_by_pal.size(), Style::bold},
                 FormatParam{group.matching_count, Style::bold}));
         }
-        std::ranges::copy(
-            build_representative_tile_per_palette_lines(format, tile_printer, tiles, extrinsic, group.members_by_pal),
-            std::back_inserter(remark_lines));
-        std::ranges::copy(
-            build_per_palette_tile_ref_lines(format, group.members_by_pal), std::back_inserter(remark_lines));
+        remark_lines.append_range(
+            build_representative_tile_per_palette_lines(format, tile_printer, tiles, extrinsic, group.members_by_pal));
+        remark_lines.append_range(build_per_palette_tile_ref_lines(format, group.members_by_pal));
 
         if (group.is_partial) {
             remark_lines.emplace_back("");
@@ -793,8 +782,7 @@ void emit_phase3_diagnostics(
                 "Alignment '{}' does not actively align palette slots for tile sharing.",
                 FormatParam{to_string(params.tile_sharing_alignment_.value()), Style::bold}));
             remark_lines.emplace_back("");
-            std::ranges::copy(
-                format_config_note(format, params.tile_sharing_alignment_), std::back_inserter(remark_lines));
+            remark_lines.append_range(format_config_note(format, params.tile_sharing_alignment_));
         }
         diag.remark(phase3_tag, remark_lines);
     }
@@ -880,14 +868,8 @@ void emit_sharing_summary(
                 "Unaligned group (group id '{}'), '{}' color version(s):",
                 FormatParam{group_id, Style::bold},
                 FormatParam{group.color_version_tile_indices.size(), Style::bold}));
-            std::ranges::copy(
-                build_tile_sharing_color_version_tile_lines(
-                    format,
-                    tile_printer,
-                    params.tiles_,
-                    params.extrinsic_transparency_,
-                    group.color_version_tile_indices),
-                std::back_inserter(remark_lines));
+            remark_lines.append_range(build_tile_sharing_color_version_tile_lines(
+                format, tile_printer, params.tiles_, params.extrinsic_transparency_, group.color_version_tile_indices));
 
             // Show palette assignments for each color version
             for (std::size_t v = 0; v < group.color_version_tile_indices.size(); ++v) {
@@ -1091,7 +1073,7 @@ void emit_palette_diagnostics(
             std::vector<std::string> remark_lines;
             remark_lines.emplace_back(format.format("'{}' packing result:", FormatParam{pal_filename(i), Style::bold}));
             remark_lines.emplace_back();
-            std::ranges::copy(pal_printer.print_rgba_pal(maybe_packed_pal.value()), std::back_inserter(remark_lines));
+            remark_lines.append_range(pal_printer.print_rgba_pal(maybe_packed_pal.value()));
             diag.remark(pal_tag, remark_lines);
         }
     }
@@ -1122,7 +1104,7 @@ ChainableResult<PalettePacking> PalettePacker::pack_tiles(const PackingParams &p
             "Tile sharing packing '{}' is not yet implemented.",
             FormatParam{to_string(TileSharingPacking::optimal), Style::bold}));
         err_lines.emplace_back("");
-        std::ranges::copy(format_config_note(*format_, params.tile_sharing_packing_), std::back_inserter(err_lines));
+        err_lines.append_range(format_config_note(*format_, params.tile_sharing_packing_));
         return ChainableResult<PalettePacking>{FormattableError{std::move(err_lines)}};
     }
     if (params.tile_sharing_alignment_ == TileSharingAlignment::optimal) {
@@ -1131,7 +1113,7 @@ ChainableResult<PalettePacking> PalettePacker::pack_tiles(const PackingParams &p
             "Tile sharing alignment '{}' is not yet implemented.",
             FormatParam{to_string(TileSharingAlignment::optimal), Style::bold}));
         err_lines.emplace_back("");
-        std::ranges::copy(format_config_note(*format_, params.tile_sharing_alignment_), std::back_inserter(err_lines));
+        err_lines.append_range(format_config_note(*format_, params.tile_sharing_alignment_));
         return ChainableResult<PalettePacking>{FormattableError{std::move(err_lines)}};
     }
 

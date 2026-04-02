@@ -185,7 +185,7 @@ LayerValue<T> search_header_define(
         std::vector<std::string> details_err_msg{};
         for (const auto &err : result.chain()) {
             if (const auto &details = err->details(*format); !details.empty()) {
-                std::ranges::copy(err->details(*format), std::back_inserter(details_err_msg));
+                details_err_msg.append_range(err->details(*format));
                 details_err_msg.emplace_back();
             }
         }

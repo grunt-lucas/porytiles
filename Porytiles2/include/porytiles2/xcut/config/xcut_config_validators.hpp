@@ -78,8 +78,8 @@ size_t_val_greater_than_zero(const ConfigValue<std::size_t> &val)
         params.emplace_back();
 
         auto [format_text, format_params] = val.format_data();
-        std::ranges::copy(format_text, std::back_inserter(err_text));
-        std::ranges::copy(format_params, std::back_inserter(params));
+        err_text.append_range(format_text);
+        params.append_range(format_params);
         return FormattableError{err_text, params};
     }
     return val;
@@ -109,8 +109,8 @@ size_t_val_two_or_four(const ConfigValue<std::size_t> &val)
         params.emplace_back();
 
         auto [format_text, format_params] = val.format_data();
-        std::ranges::copy(format_text, std::back_inserter(err_text));
-        std::ranges::copy(format_params, std::back_inserter(params));
+        err_text.append_range(format_text);
+        params.append_range(format_params);
         return FormattableError{err_text, params};
     }
     return val;
@@ -140,8 +140,8 @@ size_t_val_eight_or_twelve(const ConfigValue<std::size_t> &val)
         params.emplace_back();
 
         auto [format_text, format_params] = val.format_data();
-        std::ranges::copy(format_text, std::back_inserter(err_text));
-        std::ranges::copy(format_params, std::back_inserter(params));
+        err_text.append_range(format_text);
+        params.append_range(format_params);
         return FormattableError{err_text, params};
     }
     return val;
@@ -207,8 +207,8 @@ template <typename T, typename ConfigInterface, typename FetchFunc, typename Com
         params.emplace_back();
 
         auto [format_text, format_params] = val.format_data();
-        std::ranges::copy(format_text, std::back_inserter(err_text));
-        std::ranges::copy(format_params, std::back_inserter(params));
+        err_text.append_range(format_text);
+        params.append_range(format_params);
 
         err_text.emplace_back("");
         params.emplace_back();
@@ -218,8 +218,8 @@ template <typename T, typename ConfigInterface, typename FetchFunc, typename Com
         params.emplace_back();
 
         auto [other_format_text, other_format_params] = other_val.format_data();
-        std::ranges::copy(other_format_text, std::back_inserter(err_text));
-        std::ranges::copy(other_format_params, std::back_inserter(params));
+        err_text.append_range(other_format_text);
+        params.append_range(other_format_params);
 
         return FormattableError{err_text, params};
     }

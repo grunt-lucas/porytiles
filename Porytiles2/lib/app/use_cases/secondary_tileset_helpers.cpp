@@ -43,10 +43,8 @@ ChainableResult<std::unique_ptr<Tileset>> resolve_partner_primary(
             err_msg.emplace_back(diag->formatter().format(
                 "Primary pairing mode is 'manual' but no partner primaries configured for '{}'.",
                 FormatParam{tileset_name, Style::bold}));
-            std::ranges::copy(
-                format_config_note_with_separator(diag->formatter(), pairing_mode), std::back_inserter(err_msg));
-            std::ranges::copy(
-                format_config_note_with_separator(diag->formatter(), partners), std::back_inserter(err_msg));
+            err_msg.append_range(format_config_note_with_separator(diag->formatter(), pairing_mode));
+            err_msg.append_range(format_config_note_with_separator(diag->formatter(), partners));
             return FormattableError{err_msg};
         }
         partner_name = partners.value().at(0);
@@ -64,9 +62,8 @@ ChainableResult<std::unique_ptr<Tileset>> resolve_partner_primary(
                         FormatParam{tileset_name, Style::bold}),
                     "Partners will be ignored."});
             std::vector<std::string> note_lines{};
-            std::ranges::copy(format_config_note(diag->formatter(), pairing_mode), std::back_inserter(note_lines));
-            std::ranges::copy(
-                format_config_note_with_separator(diag->formatter(), partners), std::back_inserter(note_lines));
+            note_lines.append_range(format_config_note(diag->formatter(), pairing_mode));
+            note_lines.append_range(format_config_note_with_separator(diag->formatter(), partners));
             diag->warning_note(warn_tag, note_lines);
         }
 
@@ -123,9 +120,8 @@ ChainableResult<std::unique_ptr<Tileset>> resolve_partner_primary(
             FormatParam{partner_name, Style::bold},
             FormatParam{tileset_name, Style::bold}));
         err_msg.emplace_back("Create it first or pair with a different tileset.");
-        std::ranges::copy(
-            format_config_note_with_separator(diag->formatter(), pairing_mode), std::back_inserter(err_msg));
-        std::ranges::copy(format_config_note_with_separator(diag->formatter(), partners), std::back_inserter(err_msg));
+        err_msg.append_range(format_config_note_with_separator(diag->formatter(), pairing_mode));
+        err_msg.append_range(format_config_note_with_separator(diag->formatter(), partners));
         return FormattableError{err_msg};
     }
     if (!tileset_manager->is_porytiles_managed(partner_name)) {
@@ -134,9 +130,8 @@ ChainableResult<std::unique_ptr<Tileset>> resolve_partner_primary(
             "Secondary compilation requires a Porytiles-managed primary, but '{}' is not Porytiles-managed.",
             FormatParam{partner_name, Style::bold}));
         err_msg.emplace_back("Import it first or pair with a different tileset.");
-        std::ranges::copy(
-            format_config_note_with_separator(diag->formatter(), pairing_mode), std::back_inserter(err_msg));
-        std::ranges::copy(format_config_note_with_separator(diag->formatter(), partners), std::back_inserter(err_msg));
+        err_msg.append_range(format_config_note_with_separator(diag->formatter(), pairing_mode));
+        err_msg.append_range(format_config_note_with_separator(diag->formatter(), partners));
         return FormattableError{err_msg};
     }
 
@@ -147,8 +142,8 @@ ChainableResult<std::unique_ptr<Tileset>> resolve_partner_primary(
         FormatParam{partner_name, Style::bold},
         FormatParam{tileset_name, Style::bold});
     std::vector<std::string> note_lines{};
-    std::ranges::copy(format_config_note(diag->formatter(), pairing_mode), std::back_inserter(note_lines));
-    std::ranges::copy(format_config_note_with_separator(diag->formatter(), partners), std::back_inserter(note_lines));
+    note_lines.append_range(format_config_note(diag->formatter(), pairing_mode));
+    note_lines.append_range(format_config_note_with_separator(diag->formatter(), partners));
     diag->remark_note(tag, note_lines);
 
     PT_TRY_ASSIGN_CHAIN_ERR(

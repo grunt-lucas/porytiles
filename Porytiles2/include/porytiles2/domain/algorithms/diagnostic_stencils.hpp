@@ -41,7 +41,7 @@ template <typename T>
         FormatParam{config.canonical_name(), Style::bold},
         FormatParam{config.value(), Style::bold}));
     lines.emplace_back("");
-    std::ranges::copy(config.prettify(format), std::back_inserter(lines));
+    lines.append_range(config.prettify(format));
     return lines;
 }
 
@@ -66,7 +66,7 @@ format_config_note_with_separator(const TextFormatter &format, const ConfigValue
     lines.emplace_back("");
     lines.emplace_back("--------");
     lines.emplace_back("");
-    std::ranges::copy(format_config_note(format, config), std::back_inserter(lines));
+    lines.append_range(format_config_note(format, config));
     return lines;
 }
 
@@ -104,7 +104,7 @@ format_config_note_with_separator(const TextFormatter &format, const ConfigValue
         FormatParam{(pal::max_size - 1), Style::bold},
         FormatParam{color_count_limit, Style::bold}));
     lines.emplace_back("");
-    std::ranges::copy(format_config_note(format, num_pals), std::back_inserter(lines));
+    lines.append_range(format_config_note(format, num_pals));
     return lines;
 }
 
@@ -142,7 +142,7 @@ template <std::size_t N>
     lines.emplace_back(
         format.format("Porymap palette '{}': {}:", FormatParam{pal_label, Style::bold}, FormatParam{message}));
     lines.emplace_back();
-    std::ranges::copy(pal_printer.print_rgba_pal_with_highlights(pal, violating_slots), std::back_inserter(lines));
+    lines.append_range(pal_printer.print_rgba_pal_with_highlights(pal, violating_slots));
     return lines;
 }
 
@@ -180,7 +180,7 @@ template <std::size_t N>
     lines.emplace_back(
         format.format("Porytiles palette '{}': {}:", FormatParam{pal_label, Style::bold}, FormatParam{message}));
     lines.emplace_back();
-    std::ranges::copy(pal_printer.print_rgba_pal_with_highlights(pal, violating_slots), std::back_inserter(lines));
+    lines.append_range(pal_printer.print_rgba_pal_with_highlights(pal, violating_slots));
     return lines;
 }
 
@@ -216,7 +216,7 @@ template <std::size_t N>
     lines.emplace_back(
         format.format("palette hint '{}': {}:", FormatParam{pal_label, Style::bold}, FormatParam{message}));
     lines.emplace_back();
-    std::ranges::copy(pal_printer.print_pal_hint_with_highlights(hint, violating_slots), std::back_inserter(lines));
+    lines.append_range(pal_printer.print_pal_hint_with_highlights(hint, violating_slots));
     return lines;
 }
 
@@ -249,8 +249,7 @@ template <std::size_t N>
             "Color version {} ({}):",
             FormatParam{v + 1, Style::bold},
             FormatParam{metatile::message_header(format, mt_index, layer, subtile), Style::bold}));
-        std::ranges::copy(
-            tile_printer.print_tile(pixel_tiles.at(tile_index), extrinsic_transparency), std::back_inserter(lines));
+        lines.append_range(tile_printer.print_tile(pixel_tiles.at(tile_index), extrinsic_transparency));
     }
     return lines;
 }
@@ -325,7 +324,7 @@ build_truncated_tile_ref_lines(const TextFormatter &format, const std::vector<st
             "Palette '{}': '{}' tilemap entries:",
             FormatParam{pal_filename(pal_index), Style::bold},
             FormatParam{tile_indices.size(), Style::bold}));
-        std::ranges::copy(build_truncated_tile_ref_lines(format, tile_indices), std::back_inserter(lines));
+        lines.append_range(build_truncated_tile_ref_lines(format, tile_indices));
     }
     return lines;
 }
@@ -359,9 +358,7 @@ build_truncated_tile_ref_lines(const TextFormatter &format, const std::vector<st
             "Representative shape for palette '{}' ({}):",
             FormatParam{pal_filename(pal_index), Style::bold},
             FormatParam{metatile::message_header(format, mt_index, layer, subtile), Style::bold}));
-        std::ranges::copy(
-            tile_printer.print_tile(pixel_tiles.at(representative_tile_index), extrinsic_transparency),
-            std::back_inserter(lines));
+        lines.append_range(tile_printer.print_tile(pixel_tiles.at(representative_tile_index), extrinsic_transparency));
     }
     return lines;
 }

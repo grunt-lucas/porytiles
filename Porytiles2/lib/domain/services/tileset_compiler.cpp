@@ -1315,8 +1315,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
                         "Cannot proceed due to '{}' setting '{}'.",
                         FormatParam{"Tiles Edit Mode", Style::bold},
                         FormatParam{"locked", Style::bold}));
-                    std::ranges::copy(
-                        format_config_note_with_separator(format_, tiles_edit_mode_), std::back_inserter(err_msg));
+                    err_msg.append_range(format_config_note_with_separator(format_, tiles_edit_mode_));
                     return FormattableError{err_msg};
                 }
             }
@@ -1610,9 +1609,7 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
                 const PixelTile<Rgba32> rgba_tile = color_tile_from_index_tile(
                     index_tile, new_porymap_pals_.at(matched_pal_idx), extrinsic_transparency_.value());
                 remark_lines.emplace_back();
-                std::ranges::copy(
-                    tile_printer_.print_tile(rgba_tile, extrinsic_transparency_.value()),
-                    std::back_inserter(remark_lines));
+                remark_lines.append_range(tile_printer_.print_tile(rgba_tile, extrinsic_transparency_.value()));
 
                 diag_.remark(tag, remark_lines);
             }
@@ -1658,9 +1655,7 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
                     format_.format("{} resolution:", FormatParam{pal_filename(pal_idx), Style::bold}));
                 const PixelTile<Rgba32> rgba_tile = color_tile_from_index_tile(
                     index_tile, new_porymap_pals_.at(pal_idx), extrinsic_transparency_.value());
-                std::ranges::copy(
-                    tile_printer_.print_tile(rgba_tile, extrinsic_transparency_.value()),
-                    std::back_inserter(remark_lines));
+                remark_lines.append_range(tile_printer_.print_tile(rgba_tile, extrinsic_transparency_.value()));
             }
 
             diag_.remark(tag, remark_lines);
@@ -1702,8 +1697,7 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
             const PixelTile<Rgba32> rgba_tile = color_tile_from_index_tile(
                 index_tile, new_porymap_pals_.at(pal_index_offset), extrinsic_transparency_.value());
             note_lines.emplace_back();
-            std::ranges::copy(
-                tile_printer_.print_tile(rgba_tile, extrinsic_transparency_.value()), std::back_inserter(note_lines));
+            note_lines.append_range(tile_printer_.print_tile(rgba_tile, extrinsic_transparency_.value()));
 
             diag_.warning_note(tag, note_lines);
             continue; // Skip unreferenced tiles (no palette encoding needed)
@@ -1758,23 +1752,20 @@ void CompilerTask::pipeline_helper_emit_no_matching_tile_error(
     no_match_err.emplace_back(format_.format(
         "{}: no matching tile found",
         FormatParam{metatile::message_header(format_, metatile_index, layer, subtile), Style::bold}));
-    std::ranges::copy(
-        tile_printer_.print_metatile_tile_highlight(
-            porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_),
-        std::back_inserter(no_match_err));
+    no_match_err.append_range(tile_printer_.print_metatile_tile_highlight(
+        porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_));
     diag_.error(tag, no_match_err);
 
     // Print note showing the palette that matched
     std::vector<std::string> pal_note{};
     pal_note.emplace_back(format_.format("matched palette '{}':", FormatParam{pal_filename(pal_index), Style::bold}));
-    std::ranges::copy(pal_printer_.print_rgba_pal(matched_pal), std::back_inserter(pal_note));
+    pal_note.append_range(pal_printer_.print_rgba_pal(matched_pal));
     diag_.error_note(tag, pal_note);
 
     // Print note showing the generated IndexPixel tile
     std::vector<std::string> tile_note{};
     tile_note.emplace_back("generated index tile:");
-    std::ranges::copy(
-        tile_printer_.print_tile(index_tile, extrinsic_transparency_.value()), std::back_inserter(tile_note));
+    tile_note.append_range(tile_printer_.print_tile(index_tile, extrinsic_transparency_.value()));
     diag_.error_note(tag, tile_note);
 }
 
@@ -1789,10 +1780,8 @@ void CompilerTask::pipeline_helper_emit_no_matching_pal_error(
     no_match_err.emplace_back(format_.format(
         "{}: no matching palette found",
         FormatParam{metatile::message_header(format_, metatile_index, layer, subtile), Style::bold}));
-    std::ranges::copy(
-        tile_printer_.print_metatile_tile_highlight(
-            porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_),
-        std::back_inserter(no_match_err));
+    no_match_err.append_range(tile_printer_.print_metatile_tile_highlight(
+        porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_));
     diag_.error(tag, no_match_err);
 
     // Emit a long note showing the top N closest matches
@@ -1807,21 +1796,17 @@ void CompilerTask::pipeline_helper_emit_no_matching_pal_error(
         }
         closest_n_note.push_back(
             format_.format("Palette match candidate: {}", FormatParam{pal_filename(match.pal_index), Style::bold}));
-        std::ranges::copy(
-            pal_printer_.print_rgba_palette_covered_missing(
-                new_porymap_pals_.at(match.pal_index), match.covered_colors, match.missing_colors),
-            std::back_inserter(closest_n_note));
+        closest_n_note.append_range(pal_printer_.print_rgba_palette_covered_missing(
+            new_porymap_pals_.at(match.pal_index), match.covered_colors, match.missing_colors));
         closest_n_note.emplace_back();
         closest_n_note.push_back(
             format_.format("Uncovered pixels with {}:", FormatParam{pal_filename(match.pal_index), Style::bold}));
-        std::ranges::copy(
-            tile_printer_.print_metatile_pixel_highlights(
-                porytiles_metatiles_.at(metatile_index),
-                layer,
-                subtile,
-                match.uncovered_pixel_indices,
-                extrinsic_transparency_),
-            std::back_inserter(closest_n_note));
+        closest_n_note.append_range(tile_printer_.print_metatile_pixel_highlights(
+            porytiles_metatiles_.at(metatile_index),
+            layer,
+            subtile,
+            match.uncovered_pixel_indices,
+            extrinsic_transparency_));
         match_index++;
     }
     diag_.error_note(tag, closest_n_note);
@@ -1838,10 +1823,8 @@ void CompilerTask::pipeline_helper_emit_tile_limit_error(std::size_t tile_index,
         "{}: hit limit of '{}' unique tiles",
         FormatParam{metatile::message_header(format_, metatile_index, layer, subtile), Style::bold},
         FormatParam{tile_limit, Style::bold}));
-    std::ranges::copy(
-        tile_printer_.print_metatile_tile_highlight(
-            porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_),
-        std::back_inserter(tile_limit_error));
+    tile_limit_error.append_range(tile_printer_.print_metatile_tile_highlight(
+        porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_));
     diag_.error(tag, tile_limit_error);
 
     // Construct note text
@@ -1849,7 +1832,7 @@ void CompilerTask::pipeline_helper_emit_tile_limit_error(std::size_t tile_index,
     note_text.push_back(format_.format(
         "tile limit is '{}' due to configuration", FormatParam{num_tiles_in_primary_.value(), Style::bold}));
     note_text.emplace_back();
-    std::ranges::copy(num_tiles_in_primary_.prettify(format_), std::back_inserter(note_text));
+    note_text.append_range(num_tiles_in_primary_.prettify(format_));
     diag_.error_note(tag, note_text);
 }
 

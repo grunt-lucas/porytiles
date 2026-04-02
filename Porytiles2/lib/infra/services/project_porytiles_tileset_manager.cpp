@@ -2,7 +2,6 @@
 
 #include <filesystem>
 #include <fstream>
-#include <ranges>
 #include <string_view>
 
 #include "nlohmann/json.hpp"
@@ -226,7 +225,7 @@ ProjectPorytilesTilesetManager::wire_anim_code(const std::string &tileset_name, 
         std::vector<std::string> remark_text;
         remark_text.emplace_back("Config 'tileset.animations.wire_anim_code' is false, removing any existing wiring.");
         remark_text.emplace_back("");
-        std::ranges::copy(should_wire.prettify(diag_->formatter()), std::back_inserter(remark_text));
+        remark_text.append_range(should_wire.prettify(diag_->formatter()));
         diag_->remark("wire-tileset-animation", remark_text);
         return remove_wired_anim_code(tileset_name, is_secondary);
     }

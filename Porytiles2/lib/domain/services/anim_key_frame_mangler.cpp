@@ -395,12 +395,10 @@ ChainableResult<MangleResult> AnimKeyFrameMangler::mangle_duplicates(
 
             remark_lines.emplace_back("");
             remark_lines.emplace_back("Original tile:");
-            std::ranges::copy(
-                tile_printer_->print_tile(original_rgba, extrinsic_transparency), std::back_inserter(remark_lines));
+            remark_lines.append_range(tile_printer_->print_tile(original_rgba, extrinsic_transparency));
 
             remark_lines.emplace_back("Mangled tile:");
-            std::ranges::copy(
-                tile_printer_->print_tile(mangled_rgba, extrinsic_transparency), std::back_inserter(remark_lines));
+            remark_lines.append_range(tile_printer_->print_tile(mangled_rgba, extrinsic_transparency));
 
             diag_->remark("anim-key-frame-mangle", remark_lines);
         }

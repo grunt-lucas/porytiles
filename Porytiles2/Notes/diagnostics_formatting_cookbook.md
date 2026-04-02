@@ -570,7 +570,7 @@ std::vector<std::string> note_text;
 note_text.push_back(
     services.diag.formatter().format("Metatile limit is '{}'.", FormatParam{metatile_limit, Style::bold}));
 note_text.emplace_back("");
-std::ranges::copy(format_config_note(services.diag.formatter(), limit_cfg), std::back_inserter(note_text));
+note_text.append_range(format_config_note(services.diag.formatter(), limit_cfg));
 services.diag.error_note(tag, note_text);
 ```
 

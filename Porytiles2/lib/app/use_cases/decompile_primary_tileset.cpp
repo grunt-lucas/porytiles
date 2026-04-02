@@ -1,7 +1,6 @@
 #include "porytiles2/app/use_cases/decompile_primary_tileset.hpp"
 
 #include <memory>
-#include <ranges>
 #include <string>
 
 #include "porytiles2/domain/algorithms/diagnostic_stencils.hpp"
@@ -37,8 +36,7 @@ ChainableResult<void> DecompilePrimaryTileset::decompile(const std::string &tile
             "Expected to find file '{}'.",
             FormatParam{"porytiles/tilesets/" + tileset_name + "/tileset.cache.json", Style::bold}));
         err_msg.emplace_back("Checksum verification requested via configuration.");
-        std::ranges::copy(
-            format_config_note_with_separator(diag_->formatter(), verify_checksums), std::back_inserter(err_msg));
+        err_msg.append_range(format_config_note_with_separator(diag_->formatter(), verify_checksums));
 
         return ChainableResult<void>{FormattableError{err_msg}};
     }
@@ -75,9 +73,7 @@ ChainableResult<void> DecompilePrimaryTileset::decompile(const std::string &tile
                     "  - {} delete '{}' cache file.",
                     FormatParam{"OR", Style::bold},
                     FormatParam{"porytiles/tilesets/" + tileset_name + "/tileset.cache.json", Style::bold}));
-                std::ranges::copy(
-                    format_config_note_with_separator(diag_->formatter(), verify_checksums),
-                    std::back_inserter(err_msg));
+                err_msg.append_range(format_config_note_with_separator(diag_->formatter(), verify_checksums));
                 return ChainableResult<void>{FormattableError{err_msg}};
             }
         }

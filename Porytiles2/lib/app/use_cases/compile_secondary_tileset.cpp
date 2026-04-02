@@ -1,7 +1,6 @@
 #include "porytiles2/app/use_cases/compile_secondary_tileset.hpp"
 
 #include <memory>
-#include <ranges>
 #include <string>
 
 #include "porytiles2/app/use_cases/secondary_tileset_helpers.hpp"
@@ -60,8 +59,7 @@ ChainableResult<void> CompileSecondaryTileset::compile(const std::string &tilese
             "Expected to find file '{}'.",
             FormatParam{"porytiles/tilesets/" + tileset_name + "/tileset.cache.json", Style::bold}));
         err_msg.emplace_back("Checksum verification requested via configuration.");
-        std::ranges::copy(
-            format_config_note_with_separator(diag_->formatter(), verify_checksums), std::back_inserter(err_msg));
+        err_msg.append_range(format_config_note_with_separator(diag_->formatter(), verify_checksums));
 
         return ChainableResult<void>{FormattableError{err_msg}};
     }
@@ -95,9 +93,7 @@ ChainableResult<void> CompileSecondaryTileset::compile(const std::string &tilese
                     "  - {} delete '{}' cache file.",
                     FormatParam{"OR", Style::bold},
                     FormatParam{"porytiles/tilesets/" + tileset_name + "/tileset.cache.json", Style::bold}));
-                std::ranges::copy(
-                    format_config_note_with_separator(diag_->formatter(), verify_checksums),
-                    std::back_inserter(err_msg));
+                err_msg.append_range(format_config_note_with_separator(diag_->formatter(), verify_checksums));
                 return ChainableResult<void>{FormattableError{err_msg}};
             }
         }
