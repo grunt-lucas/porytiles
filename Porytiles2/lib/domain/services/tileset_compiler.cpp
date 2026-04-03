@@ -1619,6 +1619,11 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
     // Phase 3: Emit diagnostic remark for tiles used with multiple palettes
     for (const auto &[absolute_tile_idx, pals] : tile_to_all_pals) {
         if (pals.size() > 1) {
+            // Primary tiles are not in this tileset's tiles.png, skip
+            if (absolute_tile_idx < tile_index_offset) {
+                continue;
+            }
+
             // Extract the tile to check for transparency and for visualization
             const auto &tiles_img = new_porymap_component_->tiles_png();
             const PixelTile<IndexPixel> index_tile =
