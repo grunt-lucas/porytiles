@@ -34,12 +34,16 @@ constexpr Rgba32 roof_shared_grey_medium{123, 123, 131};
 constexpr Rgba32 roof_shared_grey_dark{90, 90, 115};
 constexpr Rgba32 roof_center_bulk{255, 205, 139};
 constexpr Rgba32 roof_mart_bulk{156, 213, 255};
+constexpr Rgba32 roof_alternate_bulk{234, 140, 243};
 constexpr Rgba32 roof_center_light{238, 148, 115};
 constexpr Rgba32 roof_mart_light{115, 189, 246};
+constexpr Rgba32 roof_alternate_light{222, 80, 231};
 constexpr Rgba32 roof_center_medium{222, 106, 98};
 constexpr Rgba32 roof_mart_medium{98, 164, 222};
+constexpr Rgba32 roof_alternate_medium{152, 32, 238};
 constexpr Rgba32 roof_center_dark{205, 82, 74};
 constexpr Rgba32 roof_mart_dark{74, 131, 197};
+constexpr Rgba32 roof_alternate_dark{95, 22, 243};
 
 constexpr std::array grass_layer{
     // Row 0
@@ -1570,6 +1574,313 @@ constexpr std::array roof_mart_layer{
     },
 };
 
+constexpr std::array roof_alternate_layer{
+    // Row 0
+    std::array{
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+    },
+    // Row 1
+    std::array{
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+    },
+    // Row 2
+    std::array{
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        roof_shared_grey_light,
+        roof_shared_grey_medium,
+        roof_shared_grey_medium,
+        roof_shared_grey_light,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+    },
+    // Row 3
+    std::array{
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        roof_shared_grey_medium,
+        roof_alternate_medium,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_medium,
+        roof_shared_grey_medium,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+    },
+    // Row 4
+    std::array{
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        roof_shared_grey_dark,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_shared_grey_dark,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+    },
+    // Row 5
+    std::array{
+        rgba_magenta,
+        rgba_magenta,
+        roof_shared_grey_dark,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_light,
+        roof_alternate_light,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_shared_grey_dark,
+        rgba_magenta,
+        rgba_magenta,
+    },
+    // Row 6
+    std::array{
+        rgba_magenta,
+        roof_shared_grey_dark,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_light,
+        roof_alternate_light,
+        roof_alternate_light,
+        roof_alternate_light,
+        roof_alternate_light,
+        roof_alternate_light,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_shared_grey_dark,
+        rgba_magenta,
+    },
+    // Row 7
+    std::array{
+        roof_shared_grey_dark,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_medium,
+        roof_alternate_medium,
+        roof_alternate_dark,
+        roof_alternate_dark,
+        roof_alternate_light,
+        roof_alternate_light,
+        roof_alternate_dark,
+        roof_alternate_dark,
+        roof_alternate_medium,
+        roof_alternate_medium,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_shared_grey_dark,
+    },
+    // Row 8
+    std::array{
+        roof_shared_grey_dark,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_medium,
+        roof_alternate_medium,
+        roof_alternate_dark,
+        roof_alternate_dark,
+        roof_alternate_light,
+        roof_alternate_light,
+        roof_alternate_dark,
+        roof_alternate_dark,
+        roof_alternate_medium,
+        roof_alternate_medium,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_shared_grey_dark,
+    },
+    // Row 9
+    std::array{
+        rgba_magenta,
+        roof_shared_grey_dark,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_light,
+        roof_alternate_light,
+        roof_alternate_light,
+        roof_alternate_light,
+        roof_alternate_light,
+        roof_alternate_light,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_shared_grey_dark,
+        rgba_magenta,
+    },
+    // Row 10
+    std::array{
+        rgba_magenta,
+        rgba_magenta,
+        roof_shared_grey_dark,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_light,
+        roof_alternate_light,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_shared_grey_dark,
+        rgba_magenta,
+        rgba_magenta,
+    },
+    // Row 11
+    std::array{
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        roof_shared_grey_dark,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_shared_grey_dark,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+    },
+    // Row 12
+    std::array{
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        roof_shared_grey_medium,
+        roof_alternate_medium,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_bulk,
+        roof_alternate_medium,
+        roof_shared_grey_medium,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+    },
+    // Row 13
+    std::array{
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        roof_shared_grey_light,
+        roof_shared_grey_medium,
+        roof_shared_grey_medium,
+        roof_shared_grey_light,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+    },
+    // Row 14
+    std::array{
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+    },
+    // Row 15
+    std::array{
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+        rgba_magenta,
+    },
+};
+
 constexpr std::array flower_frame_key{
     // Row 0
     std::array{
@@ -2539,6 +2850,16 @@ void set_roof_mart_at(Image<Rgba32> &img, std::size_t metatile_index)
     }
 }
 
+void set_roof_alternate_at(Image<Rgba32> &img, std::size_t metatile_index)
+{
+    const std::size_t col_offset = metatile_index * metatile::side_length_pix;
+    for (std::size_t row = 0; row < metatile::side_length_pix; ++row) {
+        for (std::size_t col = 0; col < metatile::side_length_pix; ++col) {
+            img.set(row, col_offset + col, roof_alternate_layer[row][col]);
+        }
+    }
+}
+
 void set_flower_key_frame_at(Image<Rgba32> &img, std::size_t metatile_index)
 {
     const std::size_t col_offset = metatile_index * metatile::side_length_pix;
@@ -2663,7 +2984,8 @@ TilesetCreator::create_sample_secondary_porytiles_component(const std::string &t
     set_mud_at(middle, 1);
     set_mud_at(bottom, 2);
     set_flower_key_frame_at(middle, 2);
-    set_grass_at(middle, 3);
+    set_grass_at(bottom, 3);
+    set_roof_alternate_at(middle, 3);
 
     component->bottom(bottom);
     component->middle(middle);
