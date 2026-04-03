@@ -35,6 +35,7 @@
 #include "porytiles2/domain/packing/services/overload_and_remove_strategy.hpp"
 #include "porytiles2/domain/packing/services/palette_packer.hpp"
 #include "porytiles2/domain/services/anim_tile_matcher.hpp"
+#include "porytiles2/domain/services/image_tileizer.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
 #include "porytiles2/domain/services/metatile_decompiler.hpp"
@@ -964,6 +965,44 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
     packing_params.available_pals_ = available_pals;
     packing_params.tile_sharing_packing_ = tile_sharing_packing;
     packing_params.tile_sharing_alignment_ = tile_sharing_alignment;
+
+    // Reconstruct RGBA tiles from the paired primary's compiled data for cross-tileset shape group analysis
+    if (is_secondary() && has_paired_primary()) {
+        const auto &primary_porymap = paired_primary_->porymap_component();
+        ImageTileizer<IndexPixel> tileizer{};
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            primary_indexed_tiles,
+            tileizer.tileize(primary_porymap.tiles_png()),
+            void,
+            "Failed to tileize paired primary's tiles.png for cross-tileset shape group analysis.");
+
+        // Dedup on (tile_index, pal_index) ignoring flips. Shape group analysis canonicalizes
+        // orientations, so different flip variants of the same tile produce the same canonical form.
+        std::set<std::pair<std::size_t, std::size_t>> seen_tile_pal_pairs;
+
+        for (const auto &entry : primary_porymap.metatiles_bin()) {
+            if (entry.tile_index() == 0) {
+                continue;
+            }
+            auto key = std::make_pair(entry.tile_index(), entry.pal_index());
+            if (seen_tile_pal_pairs.contains(key)) {
+                continue;
+            }
+            seen_tile_pal_pairs.insert(key);
+
+            if (entry.tile_index() >= primary_indexed_tiles.size()) {
+                continue;
+            }
+            const auto &index_tile = primary_indexed_tiles.at(entry.tile_index());
+            auto flipped_tile = index_tile.flip(entry.h_flip(), entry.v_flip());
+            auto rgba_tile = color_tile_from_index_tile(
+                flipped_tile, primary_porymap.pal_at(entry.pal_index()), extrinsic_transparency_.value());
+            if (rgba_tile.is_transparent(extrinsic_transparency_.value())) {
+                continue;
+            }
+            packing_params.primary_tiles_.emplace_back(std::move(rgba_tile), entry.pal_index());
+        }
+    }
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         pal_packing,

@@ -12,7 +12,16 @@ ShapeGroupMetadata build_shape_group_metadata(
         member_ids.reserve(group.members.size());
 
         for (const auto &member : group.members) {
-            member_ids.push_back(combined_index_to_id.at(member.tile_index));
+            const auto &id = combined_index_to_id.at(member.tile_index);
+            // Primary tiles are never packed, so they don't need biased packing metadata
+            if (std::holds_alternative<PackableTile::PrimaryTileId>(id)) {
+                continue;
+            }
+            member_ids.push_back(id);
+        }
+
+        if (member_ids.empty()) {
+            continue;
         }
 
         std::size_t group_index = metadata.group_members.size();

@@ -4,6 +4,7 @@
 #include <map>
 #include <ranges>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
@@ -255,6 +256,43 @@ template <std::size_t N>
 }
 
 /**
+ * @brief Builds note lines showing ASCII art for each primary tile color version in a sharing group.
+ *
+ * @details
+ * For each primary tile color version entry, emits a "Color version N (primary tile T, palette 'XX.pal'):" line
+ * followed by the ASCII art representation of that tile. The version numbering continues after the secondary color
+ * versions via @p version_offset.
+ *
+ * @param format The TextFormatter for styling
+ * @param tile_printer The TilePrinter for rendering tile ASCII art
+ * @param primary_tiles The primary tiles collection (each entry is a pixel tile + palette index pair)
+ * @param extrinsic_transparency The extrinsic transparency color
+ * @param primary_color_version_entries Pairs of (tile_index, pal_index) for each distinct primary color version
+ * @param version_offset The number of secondary color versions already displayed (for numbering continuation)
+ * @return Vector of formatted lines showing each primary color version tile
+ */
+[[nodiscard]] inline std::vector<std::string> build_primary_tile_color_version_lines(
+    const TextFormatter &format,
+    const TilePrinter &tile_printer,
+    const std::vector<std::pair<PixelTile<Rgba32>, std::size_t>> &primary_tiles,
+    const Rgba32 &extrinsic_transparency,
+    const std::vector<std::pair<std::size_t, std::size_t>> &primary_color_version_entries,
+    std::size_t version_offset)
+{
+    std::vector<std::string> lines;
+    for (std::size_t v = 0; v < primary_color_version_entries.size(); ++v) {
+        const auto &[tile_index, pal_index] = primary_color_version_entries.at(v);
+        lines.emplace_back(format.format(
+            "Color version {} (primary tile {}, palette '{}'):",
+            FormatParam{version_offset + v + 1, Style::bold},
+            FormatParam{tile_index, Style::bold},
+            FormatParam{pal_filename(pal_index), Style::bold}));
+        lines.append_range(tile_printer.print_tile(primary_tiles.at(tile_index).first, extrinsic_transparency));
+    }
+    return lines;
+}
+
+/**
  * @brief Builds truncated tile reference lines, displaying up to 8 entries 2-per-line with ellipsis.
  *
  * @details
@@ -359,6 +397,41 @@ build_truncated_tile_ref_lines(const TextFormatter &format, const std::vector<st
             FormatParam{pal_filename(pal_index), Style::bold},
             FormatParam{metatile::message_header(format, mt_index, layer, subtile), Style::bold}));
         lines.append_range(tile_printer.print_tile(pixel_tiles.at(representative_tile_index), extrinsic_transparency));
+    }
+    return lines;
+}
+
+/**
+ * @brief Builds note lines showing one representative primary tile (ASCII art) per palette.
+ *
+ * @details
+ * For each palette in the ordered map, renders the first primary tile in that palette's member list as ASCII art with a
+ * "Representative shape for palette 'XX.pal' (primary tile N):" header. Used in Phase 3 tile sharing diagnostics for
+ * cross-tileset members.
+ *
+ * @param format The TextFormatter for styling
+ * @param tile_printer The TilePrinter for rendering tile ASCII art
+ * @param primary_tiles The primary tiles collection (each entry is a pixel tile + palette index pair)
+ * @param extrinsic_transparency The extrinsic transparency color
+ * @param primary_members_by_pal Map from palette index to the primary tile indices assigned to that palette
+ * @return Vector of formatted lines showing one representative primary tile per palette
+ */
+[[nodiscard]] inline std::vector<std::string> build_primary_representative_tile_per_palette_lines(
+    const TextFormatter &format,
+    const TilePrinter &tile_printer,
+    const std::vector<std::pair<PixelTile<Rgba32>, std::size_t>> &primary_tiles,
+    const Rgba32 &extrinsic_transparency,
+    const std::map<std::size_t, std::vector<std::size_t>> &primary_members_by_pal)
+{
+    std::vector<std::string> lines;
+    for (const auto &[pal_index, tile_indices] : primary_members_by_pal) {
+        const auto representative_tile_index = tile_indices.front();
+        lines.emplace_back(format.format(
+            "Representative shape for palette '{}' (primary tile {}):",
+            FormatParam{pal_filename(pal_index), Style::bold},
+            FormatParam{representative_tile_index, Style::bold}));
+        lines.append_range(
+            tile_printer.print_tile(primary_tiles.at(representative_tile_index).first, extrinsic_transparency));
     }
     return lines;
 }

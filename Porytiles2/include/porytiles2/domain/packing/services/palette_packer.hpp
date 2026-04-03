@@ -3,6 +3,7 @@
 #include <array>
 #include <map>
 #include <optional>
+#include <utility>
 #include <vector>
 
 #include "gsl/pointers"
@@ -67,6 +68,16 @@ struct PackingParams {
      * @brief Bitset specifying which hardware palettes are available for packing
      */
     std::bitset<pal::num_pals> available_pals_;
+
+    /**
+     * @brief Reconstructed RGBA tiles from a compiled primary tileset for cross-tileset shape group analysis.
+     *
+     * @details
+     * Each entry is a (pixel tile, hw palette index) pair. These tiles participate in shape group analysis to detect
+     * cross-tileset sharing opportunities, but are never packed by the packer (their palette assignments are fixed).
+     * Empty for primary compilation or standalone secondary compilation without a paired primary.
+     */
+    std::vector<std::pair<PixelTile<Rgba32>, std::size_t>> primary_tiles_;
 
     /**
      * @brief Controls whether the packer considers shape group membership during packing.

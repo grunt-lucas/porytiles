@@ -18,11 +18,14 @@ namespace porytiles2 {
  * the set of colors present in that tile, enabling the palette packer to track which tiles have been assigned to which
  * palettes.
  *
- * Three types of tiles are supported:
+ * Several types of tiles are supported:
  * - HintId: Tiles created from \link PaletteHint PaletteHints\endlink, identified by a string name
  * - PrefilledPaletteId: Tiles created from \link PrefilledPalette PrefilledPalettes\endlink, identified by palette
  * index
  * - RegularId: Regular input tiles, identified by tile index
+ * - AnimId: Tiles created from animations, identified by name and subtile index
+ * - PrimaryTileId: Tiles reconstructed from a compiled primary tileset for cross-tileset shape group analysis,
+ * identified by tile index and known palette assignment
  *
  * PackableTiles are sortable with the following order:
  * 1. Hint tiles (lexicographic by name)
@@ -90,12 +93,26 @@ class PackableTile {
     };
 
     /**
+     * @brief Identifies a tile reconstructed from a compiled primary tileset.
+     *
+     * @details
+     * Primary tiles participate in shape group analysis for cross-tileset tile sharing but are never packed by the
+     * packer. Their palette assignment is fixed and embedded in @c pal_index.
+     */
+    struct PrimaryTileId {
+        std::size_t tile_index;
+        std::size_t pal_index;
+        [[nodiscard]] auto operator<=>(const PrimaryTileId &) const = default;
+        [[nodiscard]] bool operator==(const PrimaryTileId &) const = default;
+    };
+
+    /**
      * @brief Variant type for tile identification.
      *
      * @details
-     * The order of alternatives determines sorting: HintId < PrefilledPaletteId < RegularId.
+     * The order of alternatives determines sorting: HintId < PrefilledPaletteId < RegularId < AnimId < PrimaryTileId.
      */
-    using Id = std::variant<HintId, PrefilledPaletteId, RegularId, AnimId>;
+    using Id = std::variant<HintId, PrefilledPaletteId, RegularId, AnimId, PrimaryTileId>;
 
     /**
      * @brief Constructs a PackableTile from a palette hint.
@@ -128,6 +145,14 @@ class PackableTile {
      * @param color_set The set of colors present in this tile
      */
     PackableTile(AnimId id, ColorSet color_set);
+
+    /**
+     * @brief Constructs a PackableTile from a reconstructed primary tile.
+     *
+     * @param id The primary tile identifier
+     * @param color_set The set of colors present in this tile
+     */
+    PackableTile(PrimaryTileId id, ColorSet color_set);
 
     /**
      * @brief Constructs a PackableTile from an Id variant.
@@ -225,6 +250,10 @@ inline std::string to_string(const PackableTile::Id &id)
             else if constexpr (std::is_same_v<T, PackableTile::AnimId>) {
                 return "Anim(" + value.name + ", " + std::to_string(value.subtile_index) + ")";
             }
+            else if constexpr (std::is_same_v<T, PackableTile::PrimaryTileId>) {
+                return "Primary(tile=" + std::to_string(value.tile_index) + ", pal=" + std::to_string(value.pal_index) +
+                       ")";
+            }
             else {
                 static_assert(sizeof(T) == 0, "Unhandled PackableTile::Id variant alternative");
                 panic("Unhandled PackableTile::Id variant alternative");
@@ -268,6 +297,16 @@ struct std::hash<porytiles2::PackableTile::AnimId> {
         // fractional part scaled to 32 bits, and the bit shifts spread bits to avoid collisions
         std::size_t seed = std::hash<std::string>{}(id.name);
         seed ^= std::hash<std::size_t>{}(id.subtile_index) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        return seed;
+    }
+};
+
+template <>
+struct std::hash<porytiles2::PackableTile::PrimaryTileId> {
+    std::size_t operator()(const porytiles2::PackableTile::PrimaryTileId &id) const noexcept
+    {
+        std::size_t seed = std::hash<std::size_t>{}(id.tile_index);
+        seed ^= std::hash<std::size_t>{}(id.pal_index) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
         return seed;
     }
 };
