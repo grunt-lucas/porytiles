@@ -1597,7 +1597,7 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
                 constexpr auto tag = "true-color-anim-only-tile";
                 std::vector<std::string> remark_lines;
                 remark_lines.emplace_back(format_.format(
-                    "tile index '{}' (animation '{}', subtile '{}') is not referenced in metatiles",
+                    "Tile index '{}' (animation '{}', subtile '{}') is not referenced in metatiles.",
                     FormatParam{absolute_tile_idx, Style::bold},
                     FormatParam{anim_name, Style::bold},
                     FormatParam{subtile_idx, Style::bold}));
@@ -1637,7 +1637,7 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
             constexpr auto tag = "true-color-multi-palette-tile";
             std::vector<std::string> remark_lines;
             remark_lines.emplace_back(format_.format(
-                "tile index '{}' is used with multiple palettes", FormatParam{absolute_tile_idx, Style::bold}));
+                "Tile index '{}' is used with multiple palettes.", FormatParam{absolute_tile_idx, Style::bold}));
 
             std::string pal_list;
             for (const auto pal : pals) {
@@ -1679,32 +1679,30 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
             // Extract the tile to check for transparency
             const PixelTile<IndexPixel> index_tile = extract_single_tile(tiles_img, tile_idx, tiles_per_row);
 
-            // Skip warning for transparent tiles (unused slots) - user already knows they're unused
+            // Skip remark for transparent tiles (unused slots) - user already knows they're unused
             if (index_tile.is_transparent()) {
                 continue;
             }
 
-            // Emit warning for unreferenced non-transparent tiles
+            // Emit remark for unreferenced non-transparent tiles
             constexpr auto tag = "true-color-unreferenced-tile";
-            std::vector<std::string> warning_lines;
-            warning_lines.emplace_back(format_.format(
-                "tile index '{}' is not referenced in metatiles or animations",
+            std::vector<std::string> remark_lines;
+            remark_lines.emplace_back(format_.format(
+                "Tile index '{}' is not referenced in metatiles or animations.",
                 FormatParam{absolute_tile_idx, Style::bold}));
-            diag_.warning(tag, warning_lines);
 
-            std::vector<std::string> note_lines;
-            note_lines.emplace_back("This tile may be used by a secondary tileset, or it may be completely unused.");
-            note_lines.emplace_back(format_.format(
+            remark_lines.emplace_back("This tile may be used by a secondary tileset, or it may be completely unused.");
+            remark_lines.emplace_back(format_.format(
                 "Displaying using '{}' for color resolution.",
                 FormatParam{pal_filename(pal_index_offset), Style::bold}));
 
             // Visualize the tile using the first palette for this tileset
             const PixelTile<Rgba32> rgba_tile = color_tile_from_index_tile(
                 index_tile, new_porymap_pals_.at(pal_index_offset), extrinsic_transparency_.value());
-            note_lines.emplace_back();
-            note_lines.append_range(tile_printer_.print_tile(rgba_tile, extrinsic_transparency_.value()));
+            remark_lines.emplace_back();
+            remark_lines.append_range(tile_printer_.print_tile(rgba_tile, extrinsic_transparency_.value()));
 
-            diag_.warning_note(tag, note_lines);
+            diag_.remark(tag, remark_lines);
             continue; // Skip unreferenced tiles (no palette encoding needed)
         }
 
