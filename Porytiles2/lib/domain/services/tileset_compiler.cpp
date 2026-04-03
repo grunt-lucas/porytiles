@@ -383,9 +383,11 @@ ChainableResult<void> CompilerTask::pipeline_step_validate_input()
     PT_TRY_CALL_PASS_ERR(
         validate_metatile_count(services, tileset_.name(), is_secondary(), porytiles_metatiles_), void);
 
+    std::size_t pal_start = is_secondary() ? num_pals_in_primary_.value() : 0;
+
     if (pals_edit_mode_ != ArtifactEditMode::optimize) {
         // Validate Porymap pals if user is asking for pals:locked or pals:patch
-        for (std::size_t pal_index = 0; pal_index < tileset_.porymap_component().pals().size(); ++pal_index) {
+        for (std::size_t pal_index = pal_start; pal_index < tileset_.porymap_component().pals().size(); ++pal_index) {
             PT_TRY_CALL_PASS_ERR(
                 validate_porymap_pal(
                     services, tileset_.name(), tileset_.porymap_component().pals().at(pal_index), pal_index),
@@ -393,9 +395,22 @@ ChainableResult<void> CompilerTask::pipeline_step_validate_input()
         }
     }
 
-    // Validate Porytiles pals
-    // TODO: this loop should respect num_pals_in_primary setting
-    for (std::size_t pal_index = 0; pal_index < tileset_.porytiles_component().pals().size(); ++pal_index) {
+    // TODO: we may want to allow secondary tilesets to override primary palette slots in the future
+    // Fail fast if secondary tileset defines an override palette in a primary slot
+    if (is_secondary()) {
+        for (std::size_t pal_index = 0; pal_index < num_pals_in_primary_.value(); ++pal_index) {
+            if (pal_index < tileset_.porytiles_component().pals().size() &&
+                tileset_.porytiles_component().pals().at(pal_index).has_value()) {
+                return FormattableError{
+                    "Secondary tileset '{}' defines a Porytiles override palette in primary slot '{}'.",
+                    FormatParam{tileset_.name(), Style::bold},
+                    FormatParam{pal_filename(pal_index), Style::bold}};
+            }
+        }
+    }
+
+    // Validate Porytiles pals (skip primary slots for secondary)
+    for (std::size_t pal_index = pal_start; pal_index < tileset_.porytiles_component().pals().size(); ++pal_index) {
         if (tileset_.porytiles_component().pals().at(pal_index).has_value()) {
             PT_TRY_CALL_PASS_ERR(
                 validate_porytiles_pal(
@@ -1871,10 +1886,16 @@ void CompilerTask::pipeline_helper_emit_tile_limit_error(std::size_t tile_index,
 
     // Construct note text
     std::vector<std::string> note_text;
-    note_text.push_back(format_.format(
-        "tile limit is '{}' due to configuration", FormatParam{num_tiles_in_primary_.value(), Style::bold}));
-    note_text.emplace_back();
-    note_text.append_range(num_tiles_in_primary_.prettify(format_));
+    if (is_secondary()) {
+        note_text.append_range(
+            build_subtraction_limit_lines(format_, "Tile limit", tile_limit, num_tiles_total_, num_tiles_in_primary_));
+    }
+    else {
+        note_text.push_back(
+            format_.format("Tile limit is '{}' due to configuration.", FormatParam{tile_limit, Style::bold}));
+        note_text.emplace_back();
+        note_text.append_range(format_config_note(format_, num_tiles_in_primary_));
+    }
     diag_.error_note(tag, note_text);
 }
 

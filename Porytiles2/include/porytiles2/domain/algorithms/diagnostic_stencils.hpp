@@ -110,6 +110,49 @@ format_config_note_with_separator(const TextFormatter &format, const ConfigValue
 }
 
 /**
+ * @brief Builds note lines explaining a derived limit computed as total minus primary.
+ *
+ * @details
+ * Used in secondary tileset diagnostics where a limit is derived by subtracting a primary config value from a total
+ * config value (e.g. metatile limit = num_metatiles_total - num_metatiles_in_primary). The output shows the computed
+ * limit, the subtraction formula with both config canonical names and values, and prettified config notes for both
+ * source config values separated by a visual divider.
+ *
+ * @param format The TextFormatter for styling
+ * @param label A human-readable label for the limit (e.g. "Metatile limit")
+ * @param computed_limit The derived limit value (total - primary)
+ * @param total_cfg The ConfigValue for the total count
+ * @param primary_cfg The ConfigValue for the primary count
+ * @return Vector of formatted lines describing the subtraction-based limit
+ */
+[[nodiscard]] inline std::vector<std::string> build_subtraction_limit_lines(
+    const TextFormatter &format,
+    std::string_view label,
+    std::size_t computed_limit,
+    const ConfigValue<std::size_t> &total_cfg,
+    const ConfigValue<std::size_t> &primary_cfg)
+{
+    std::vector<std::string> lines;
+    lines.push_back(
+        format.format("{} is '{}'.", FormatParam{label, Style::bold}, FormatParam{computed_limit, Style::bold}));
+    lines.emplace_back("");
+    lines.push_back(format.format("{} definition:", FormatParam{label, Style::bold}));
+    lines.push_back(format.format(
+        "{} - {}:",
+        FormatParam{total_cfg.canonical_name(), Style::bold | Style::yellow},
+        FormatParam{primary_cfg.canonical_name(), Style::bold | Style::yellow}));
+    lines.push_back(format.format(
+        "{} - {} = {}",
+        FormatParam{total_cfg.value(), Style::bold},
+        FormatParam{primary_cfg.value(), Style::bold},
+        FormatParam{computed_limit, Style::bold}));
+    lines.emplace_back("");
+    lines.append_range(format_config_note(format, total_cfg));
+    lines.append_range(format_config_note_with_separator(format, primary_cfg));
+    return lines;
+}
+
+/**
  * @brief Builds note lines displaying a Porymap palette with highlighted violating slots.
  *
  * @details

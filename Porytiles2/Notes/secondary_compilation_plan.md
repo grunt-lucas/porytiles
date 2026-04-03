@@ -347,7 +347,7 @@ Same pattern for `command_create_tileset.hpp`.
 
 Both commands need `ProjectLayoutMetadataProvider` setup added to their dependency wiring.
 
-### 4d. Secondary-specific validations
+### ~~4d. Secondary-specific validations~~
 
 New validations for secondary compilation (in `pipeline_step_validate_input` or use case layer):
 
@@ -406,10 +406,19 @@ Add an optional `primary_references` top-level key to secondary tilesets' anim.j
 
 ```json
 {
-  "water": {
-    "frame_factor": 8,
-    "frames": ["0", "1"],
-    "key": "key"
+  "red_flower": {
+    "frames": [
+      "center",
+      "right",
+      "left"
+    ],
+    "frame_order": [
+      "center",
+      "right",
+      "center",
+      "left"
+    ],
+    "tile_offset": 1
   },
   "primary_references": {
     "flower": {

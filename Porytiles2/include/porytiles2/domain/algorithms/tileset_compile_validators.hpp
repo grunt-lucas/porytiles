@@ -199,9 +199,9 @@ inline void report_color_counts(
  *
  * @details
  * Checks that the number of input metatiles does not exceed the configured limit for the tileset type. For primary
- * tilesets, this checks against `num_metatiles_in_primary`. For secondary tilesets, this checks against
- * `num_metatiles_total`. If validation fails, emits an error diagnostic with the actual count and limit, along with a
- * note showing the relevant configuration source.
+ * tilesets, this checks against @c num_metatiles_in_primary. For secondary tilesets, this checks against
+ * @c num_metatiles_total - @c num_metatiles_in_primary. If validation fails, emits an error diagnostic with the actual
+ * count and limit, along with a note showing the relevant configuration source(s).
  *
  * @param services Common services parameter store.
  * @param tileset_name The name of the tileset being validated (used for config lookup).
@@ -220,8 +220,8 @@ inline void report_color_counts(
     PT_UNWRAP_TILESET_CONFIG_REF(services.config, num_metatiles_in_primary, tileset_name, void);
     PT_UNWRAP_TILESET_CONFIG_REF(services.config, num_metatiles_total, tileset_name, void);
 
-    ConfigValue<std::size_t> limit_cfg = is_secondary ? num_metatiles_total : num_metatiles_in_primary;
-    std::size_t metatile_limit = limit_cfg.value();
+    std::size_t metatile_limit = is_secondary ? (num_metatiles_total.value() - num_metatiles_in_primary.value())
+                                              : num_metatiles_in_primary.value();
 
     if (metatiles.size() > metatile_limit) {
         services.diag.error(
@@ -231,10 +231,20 @@ inline void report_color_counts(
             FormatParam{tileset_name, Style::bold});
 
         std::vector<std::string> note_text;
-        note_text.push_back(
-            services.diag.formatter().format("Metatile limit is '{}'.", FormatParam{metatile_limit, Style::bold}));
-        note_text.emplace_back("");
-        note_text.append_range(format_config_note(services.diag.formatter(), limit_cfg));
+        if (is_secondary) {
+            note_text.append_range(build_subtraction_limit_lines(
+                services.diag.formatter(),
+                "Metatile limit",
+                metatile_limit,
+                num_metatiles_total,
+                num_metatiles_in_primary));
+        }
+        else {
+            note_text.push_back(
+                services.diag.formatter().format("Metatile limit is '{}'.", FormatParam{metatile_limit, Style::bold}));
+            note_text.emplace_back("");
+            note_text.append_range(format_config_note(services.diag.formatter(), num_metatiles_in_primary));
+        }
         services.diag.error_note("metatile-limit-exceeded", note_text);
 
         return FormattableError{
