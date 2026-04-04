@@ -40,6 +40,7 @@ class MockDomainConfig : public DomainConfig {
         AnimMultiPalSubtileResolutionStrategy::error;
     FrameLinking global_frame_linking = FrameLinking::automatic;
     PerAnimOverrides per_anim_overrides = PerAnimOverrides{};
+    bool cross_tileset_anim_linking = true;
 
   protected:
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
@@ -195,6 +196,13 @@ class MockDomainConfig : public DomainConfig {
     per_anim_overrides_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{per_anim_overrides, "Per-Animation Overrides", "per_anim_overrides", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    cross_tileset_anim_linking_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{
+            cross_tileset_anim_linking, "Cross-Tileset Animation Linking", "cross_tileset_anim_linking", "mock", {}};
     }
 };
 

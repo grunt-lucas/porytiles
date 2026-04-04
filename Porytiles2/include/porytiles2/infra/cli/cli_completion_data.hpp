@@ -170,6 +170,13 @@ struct CliOptionMeta {
             {"automatic", "manual", "hybrid"},
             false},
         CliOptionMeta{
+            "cross-tileset-anim-linking",
+            "Cross-Tileset Animation Linking - Enable automatic matching of secondary tiles against primary animation "
+            "key frames.",
+            "bool",
+            {},
+            true},
+        CliOptionMeta{
             "verify-checksums",
             "Verify Checksums - Enable or disable artifact checksum verification.",
             "bool",

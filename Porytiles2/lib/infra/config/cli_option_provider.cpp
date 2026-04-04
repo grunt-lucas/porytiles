@@ -182,6 +182,13 @@ LayerValue<PerAnimOverrides> CliOptionProvider::per_anim_overrides(
     return LayerValue<PerAnimOverrides>::not_provided();
 }
 
+LayerValue<bool> CliOptionProvider::cross_tileset_anim_linking(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_bool(storage_.cross_tileset_anim_linking, "--cross-tileset-anim-linking");
+}
+
 LayerValue<bool> CliOptionProvider::verify_checksums(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

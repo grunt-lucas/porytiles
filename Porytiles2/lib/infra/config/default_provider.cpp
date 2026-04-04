@@ -163,6 +163,12 @@ LayerValue<PerAnimOverrides> DefaultProvider::per_anim_overrides(
     return LayerValue<PerAnimOverrides>::valid(PerAnimOverrides{}, "Per-Animation Overrides", source_info);
 }
 
+LayerValue<bool> DefaultProvider::cross_tileset_anim_linking(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<bool>::valid(true, "Cross-Tileset Animation Linking", source_info);
+}
+
 LayerValue<bool> DefaultProvider::verify_checksums(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

@@ -658,6 +658,18 @@ config_values:
     validators: [ ]
     cross_field_validators: [ ]
 
+  - canonical_name: Cross-Tileset Animation Linking
+    symbol: cross_tileset_anim_linking
+    yaml_path: tileset.animations.cross_tileset_linking
+    cli_option: cross-tileset-anim-linking
+    cli_desc: Enable automatic matching of secondary tiles against primary animation key frames.
+    layer: domain
+    type: bool
+    parser: parse_bool
+    default_value: "true"
+    validators: [ ]
+    cross_field_validators: [ ]
+
   # Application Layer Configuration Values
   - canonical_name: Verify Checksums
     symbol: verify_checksums

@@ -147,6 +147,12 @@ LayerValue<PerAnimOverrides> ConfigProvider::per_anim_overrides(
     return LayerValue<PerAnimOverrides>::not_provided();
 }
 
+LayerValue<bool> ConfigProvider::cross_tileset_anim_linking(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<bool>::not_provided();
+}
+
 LayerValue<bool>
 ConfigProvider::verify_checksums([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

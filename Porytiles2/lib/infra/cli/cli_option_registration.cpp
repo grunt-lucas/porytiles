@@ -176,6 +176,21 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
             "Global Frame Linking - The global default frame linking mode for animations.")
         ->type_name("{automatic|manual|hybrid}");
 
+    // Cross-Tileset Animation Linking (bool with --flag/--no-flag, captured as "true"/"false" string)
+    config_group->add_flag(
+        "--cross-tileset-anim-linking,!--no-cross-tileset-anim-linking",
+        [&storage](std::int64_t count) {
+            if (count > 0) {
+                storage.cross_tileset_anim_linking = "true";
+            }
+            else if (count < 0) {
+                storage.cross_tileset_anim_linking = "false";
+            }
+            // count == 0 means neither flag was provided, leave optional empty
+        },
+        "Cross-Tileset Animation Linking - Enable automatic matching of secondary tiles against primary animation key "
+        "frames.");
+
     // Verify Checksums (bool with --flag/--no-flag, captured as "true"/"false" string)
     config_group->add_flag(
         "--verify-checksums,!--no-verify-checksums",

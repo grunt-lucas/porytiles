@@ -443,6 +443,22 @@ LayerValue<PerAnimOverrides> YamlFileProvider::per_anim_overrides(ConfigScopeTyp
         "tileset.animations.per_animation_overrides");
 }
 
+LayerValue<bool> YamlFileProvider::cross_tileset_anim_linking(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<bool>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<bool>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["cross_tileset_linking"]; },
+        parse_bool,
+        "tileset.animations.cross_tileset_linking",
+        "tileset.animations.cross_tileset_linking");
+}
+
 LayerValue<bool> YamlFileProvider::verify_checksums(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);

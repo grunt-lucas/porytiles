@@ -151,6 +151,8 @@ void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, con
     dump_single_config_value(out, *format_, "Global Frame Linking", global_frame_linking_provenance_chain(type, scope));
     dump_single_config_value(
         out, *format_, "Per-Animation Overrides", per_anim_overrides_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Cross-Tileset Animation Linking", cross_tileset_anim_linking_provenance_chain(type, scope));
     dump_single_config_value(out, *format_, "Verify Checksums", verify_checksums_provenance_chain(type, scope));
     dump_single_config_value(out, *format_, "Primary Pairing Mode", primary_pairing_mode_provenance_chain(type, scope));
     dump_single_config_value(
@@ -565,6 +567,19 @@ LazyLayeredConfig::per_anim_overrides_raw(ConfigScopeType type, const std::strin
 }
 
 ChainableResult<ConfigValue<bool>>
+LazyLayeredConfig::cross_tileset_anim_linking_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<bool>(
+        key, "Cross-Tileset Animation Linking", [&type, &scope](const ConfigProvider &provider) {
+            return provider.cross_tileset_anim_linking(type, scope);
+        });
+}
+
+ChainableResult<ConfigValue<bool>>
 LazyLayeredConfig::verify_checksums_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
@@ -898,6 +913,13 @@ LazyLayeredConfig::per_anim_overrides_provenance_chain(ConfigScopeType type, con
 {
     return collect_provenance_chain<PerAnimOverrides>(
         [&type, &scope](const ConfigProvider &provider) { return provider.per_anim_overrides(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<bool>>
+LazyLayeredConfig::cross_tileset_anim_linking_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<bool>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.cross_tileset_anim_linking(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<bool>>

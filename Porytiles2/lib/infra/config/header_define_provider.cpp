@@ -225,6 +225,13 @@ HeaderDefineProvider::per_anim_overrides(ConfigScopeType /*type*/, const std::st
     return LayerValue<PerAnimOverrides>::not_provided();
 }
 
+LayerValue<bool>
+HeaderDefineProvider::cross_tileset_anim_linking(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<bool>::not_provided();
+}
+
 LayerValue<bool> HeaderDefineProvider::verify_checksums(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {
     // No header_define specified for this config value
