@@ -393,4 +393,29 @@ ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const Artifact
     return {};
 }
 
+[[nodiscard]] ChainableResult<void>
+ProjectTilesetArtifactReader::read_porytiles_primary_anim_references(Tileset &dest, const ArtifactKey &params_key) const
+{
+    const auto json_path = project_root_ / params_key.key();
+
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        parsed_refs,
+        anim_json_parser_->parse_primary_references(json_path),
+        void,
+        "{}: Failed to parse primary animation references.",
+        FormatParam(json_path, Style::bold));
+
+    if (parsed_refs.empty()) {
+        return {};
+    }
+
+    std::map<std::string, std::vector<AnimOverrideEntry>> converted;
+    for (auto &[cased_name, entries] : parsed_refs) {
+        converted[cased_name.to_snake_case()] = std::move(entries);
+    }
+
+    dest.porytiles_component().primary_anim_overrides(std::move(converted));
+    return {};
+}
+
 } // namespace porytiles2

@@ -85,6 +85,9 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
         const std::optional<ArtifactKey> &key_frame_key,
         const std::vector<std::pair<std::string, ArtifactKey>> &frame_keys) const override;
 
+    [[nodiscard]] ChainableResult<void>
+    read_porytiles_primary_anim_references(Tileset &dest, const ArtifactKey &params_key) const override;
+
   private:
     const std::filesystem::path project_root_;
     const BaseGame base_game_;

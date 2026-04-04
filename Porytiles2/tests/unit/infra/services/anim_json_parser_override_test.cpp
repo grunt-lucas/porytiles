@@ -321,4 +321,216 @@ TEST_F(AnimJsonParserOverrideTest, OverrideFieldsInCanonicalOrder)
     EXPECT_LT(pos_hflip, pos_vflip);
 }
 
+TEST_F(AnimJsonParserOverrideTest, ParsePrimaryReferences)
+{
+    const auto json_path = kTestDir / "anim.json";
+    write_json_file(json_path, R"({
+  "primary_references": {
+    "water": {
+      "overrides": [
+        {
+          "id": 3,
+          "layer": "bottom",
+          "subtile": "northwest",
+          "frame_subtile": 0,
+          "pal_index": 1,
+          "hflip": false,
+          "vflip": true
+        },
+        {
+          "id": 7,
+          "layer": "top",
+          "subtile": "southeast",
+          "frame_subtile": 2,
+          "pal_index": 3,
+          "hflip": true,
+          "vflip": false
+        }
+      ]
+    }
+  }
+})");
+
+    auto result = parser_->parse_primary_references(json_path);
+    ASSERT_TRUE(result.has_value());
+
+    const auto &refs = result.value();
+    ASSERT_EQ(refs.size(), 1);
+    ASSERT_TRUE(refs.contains(DynamicCasedName{"water"}));
+
+    const auto &entries = refs.at(DynamicCasedName{"water"});
+    ASSERT_EQ(entries.size(), 2);
+
+    EXPECT_EQ(entries.at(0).metatile_id, 3);
+    EXPECT_EQ(entries.at(0).layer, metatile::Layer::bottom);
+    EXPECT_EQ(entries.at(0).subtile, metatile::Subtile::northwest);
+    EXPECT_EQ(entries.at(0).frame_subtile, 0);
+    EXPECT_EQ(entries.at(0).pal_index, 1);
+    EXPECT_FALSE(entries.at(0).h_flip);
+    EXPECT_TRUE(entries.at(0).v_flip);
+
+    EXPECT_EQ(entries.at(1).metatile_id, 7);
+    EXPECT_EQ(entries.at(1).layer, metatile::Layer::top);
+    EXPECT_EQ(entries.at(1).subtile, metatile::Subtile::southeast);
+    EXPECT_EQ(entries.at(1).frame_subtile, 2);
+    EXPECT_EQ(entries.at(1).pal_index, 3);
+    EXPECT_TRUE(entries.at(1).h_flip);
+    EXPECT_FALSE(entries.at(1).v_flip);
+}
+
+TEST_F(AnimJsonParserOverrideTest, ParsePrimaryReferencesAbsent)
+{
+    const auto json_path = kTestDir / "anim.json";
+    write_json_file(json_path, R"({
+  "flower": {
+    "frames": ["0", "1"]
+  }
+})");
+
+    auto result = parser_->parse_primary_references(json_path);
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(result.value().empty());
+}
+
+TEST_F(AnimJsonParserOverrideTest, ParsePrimaryReferencesCoexistWithAnimations)
+{
+    const auto json_path = kTestDir / "anim.json";
+    write_json_file(json_path, R"({
+  "flower": {
+    "frame_factor": 8,
+    "frames": ["0", "1"]
+  },
+  "primary_references": {
+    "water": {
+      "overrides": [
+        { "id": 1, "layer": "bottom", "subtile": "northwest", "frame_subtile": 0, "pal_index": 0, "hflip": false, "vflip": false }
+      ]
+    }
+  }
+})");
+
+    // parse() should skip primary_references
+    auto parse_result = parser_->parse(json_path);
+    ASSERT_TRUE(parse_result.has_value());
+    ASSERT_EQ(parse_result.value().size(), 1);
+    ASSERT_TRUE(parse_result.value().contains(DynamicCasedName{"flower"}));
+    EXPECT_FALSE(parse_result.value().contains(DynamicCasedName{"primary_references"}));
+
+    // parse_primary_references() should find the primary_references section
+    auto refs_result = parser_->parse_primary_references(json_path);
+    ASSERT_TRUE(refs_result.has_value());
+    ASSERT_EQ(refs_result.value().size(), 1);
+    ASSERT_TRUE(refs_result.value().contains(DynamicCasedName{"water"}));
+}
+
+TEST_F(AnimJsonParserOverrideTest, PrimaryReferencesNotTreatedAsAnimation)
+{
+    const auto json_path = kTestDir / "anim.json";
+    write_json_file(json_path, R"({
+  "primary_references": {
+    "water": {
+      "overrides": [
+        { "id": 1, "layer": "bottom", "subtile": "northwest", "frame_subtile": 0, "pal_index": 0, "hflip": false, "vflip": false }
+      ]
+    }
+  }
+})");
+
+    auto result = parser_->parse(json_path);
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(result.value().empty());
+}
+
+TEST_F(AnimJsonParserOverrideTest, RoundTripPrimaryReferences)
+{
+    // Build params with a regular animation
+    AnimParams flower_params;
+    flower_params.cased_name(DynamicCasedName{"flower"});
+    flower_params.frame_names({DynamicCasedName{"0"}, DynamicCasedName{"1"}});
+    flower_params.frame_order({DynamicCasedName{"0"}, DynamicCasedName{"1"}});
+
+    std::map<DynamicCasedName, AnimParams> params_map;
+    params_map.insert({DynamicCasedName{"flower"}, std::move(flower_params)});
+
+    // Build primary references
+    std::map<DynamicCasedName, std::vector<AnimOverrideEntry>> primary_refs;
+    primary_refs[DynamicCasedName{"water"}] = {
+        AnimOverrideEntry{
+            .metatile_id = 3,
+            .layer = metatile::Layer::bottom,
+            .subtile = metatile::Subtile::northwest,
+            .frame_subtile = 0,
+            .pal_index = 1,
+            .h_flip = false,
+            .v_flip = true},
+        AnimOverrideEntry{
+            .metatile_id = 7,
+            .layer = metatile::Layer::top,
+            .subtile = metatile::Subtile::southeast,
+            .frame_subtile = 2,
+            .pal_index = 3,
+            .h_flip = true,
+            .v_flip = false}};
+
+    // Write
+    const auto json_path = kTestDir / "round_trip_primary_refs.json";
+    auto write_result = parser_->write(json_path, params_map, primary_refs);
+    ASSERT_TRUE(write_result.has_value());
+
+    // Read back primary references
+    auto refs_result = parser_->parse_primary_references(json_path);
+    ASSERT_TRUE(refs_result.has_value());
+
+    const auto &read_refs = refs_result.value();
+    ASSERT_EQ(read_refs.size(), 1);
+    ASSERT_TRUE(read_refs.contains(DynamicCasedName{"water"}));
+
+    const auto &read_entries = read_refs.at(DynamicCasedName{"water"});
+    ASSERT_EQ(read_entries.size(), 2);
+
+    EXPECT_EQ(read_entries.at(0).metatile_id, 3);
+    EXPECT_EQ(read_entries.at(0).layer, metatile::Layer::bottom);
+    EXPECT_EQ(read_entries.at(0).subtile, metatile::Subtile::northwest);
+    EXPECT_EQ(read_entries.at(0).frame_subtile, 0);
+    EXPECT_EQ(read_entries.at(0).pal_index, 1);
+    EXPECT_FALSE(read_entries.at(0).h_flip);
+    EXPECT_TRUE(read_entries.at(0).v_flip);
+
+    EXPECT_EQ(read_entries.at(1).metatile_id, 7);
+    EXPECT_EQ(read_entries.at(1).layer, metatile::Layer::top);
+    EXPECT_EQ(read_entries.at(1).subtile, metatile::Subtile::southeast);
+    EXPECT_EQ(read_entries.at(1).frame_subtile, 2);
+    EXPECT_EQ(read_entries.at(1).pal_index, 3);
+    EXPECT_TRUE(read_entries.at(1).h_flip);
+    EXPECT_FALSE(read_entries.at(1).v_flip);
+
+    // Verify regular animations also survived
+    auto anim_result = parser_->parse(json_path);
+    ASSERT_TRUE(anim_result.has_value());
+    ASSERT_EQ(anim_result.value().size(), 1);
+    ASSERT_TRUE(anim_result.value().contains(DynamicCasedName{"flower"}));
+}
+
+TEST_F(AnimJsonParserOverrideTest, PrimaryReferencesOmittedWhenEmpty)
+{
+    AnimParams params;
+    params.cased_name(DynamicCasedName{"flower"});
+    params.frame_names({DynamicCasedName{"0"}});
+    params.frame_order({DynamicCasedName{"0"}});
+
+    std::map<DynamicCasedName, AnimParams> params_map;
+    params_map.insert({DynamicCasedName{"flower"}, std::move(params)});
+
+    // Write with empty primary_references
+    const auto json_path = kTestDir / "no_primary_refs.json";
+    std::map<DynamicCasedName, std::vector<AnimOverrideEntry>> empty_refs;
+    auto write_result = parser_->write(json_path, params_map, empty_refs);
+    ASSERT_TRUE(write_result.has_value());
+
+    // Verify "primary_references" key is absent from JSON
+    std::ifstream in{json_path};
+    std::string content((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
+    EXPECT_EQ(content.find("primary_references"), std::string::npos);
+}
+
 } // namespace

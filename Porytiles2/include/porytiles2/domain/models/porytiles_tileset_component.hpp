@@ -5,6 +5,7 @@
 #include <string>
 #include <vector>
 
+#include "porytiles2/domain/models/anim_override_entry.hpp"
 #include "porytiles2/domain/models/animation.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/metatile.hpp"
@@ -103,6 +104,16 @@ class PorytilesTilesetComponent {
         return anims_;
     }
 
+    [[nodiscard]] const std::map<std::string, std::vector<AnimOverrideEntry>> &primary_anim_overrides() const
+    {
+        return primary_anim_overrides_;
+    }
+
+    void primary_anim_overrides(std::map<std::string, std::vector<AnimOverrideEntry>> overrides)
+    {
+        primary_anim_overrides_ = std::move(overrides);
+    }
+
   private:
     Image<Rgba32> bottom_;
     Image<Rgba32> middle_;
@@ -110,6 +121,7 @@ class PorytilesTilesetComponent {
     std::map<std::size_t, MetatileAttribute> metatile_attributes_;
     std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> pals_;
     std::map<std::string, Animation<Rgba32>> anims_;
+    std::map<std::string, std::vector<AnimOverrideEntry>> primary_anim_overrides_;
 };
 
 } // namespace porytiles2

@@ -465,6 +465,12 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
                 "Failed to load Porytiles animation '{}'.",
                 FormatParam(anim_name, Style::bold));
         }
+
+        // Load primary animation references from same anim.json (validated at compile time)
+        PT_TRY_CALL_CHAIN_ERR(
+            reader_->read_porytiles_primary_anim_references(*tileset, porytiles_params_key),
+            std::unique_ptr<Tileset>,
+            "Failed to load primary animation references.");
     }
 
     if (fail_at_exit) {

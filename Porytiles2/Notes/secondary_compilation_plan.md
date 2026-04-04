@@ -298,7 +298,7 @@ The 5 dereference sites and their standalone secondary behavior:
 
 ---
 
-## Phase 4: Use Cases and CLI
+## ~~Phase 4: Use Cases and CLI~~
 
 ### ~~4a. New use case: `CompileSecondaryTileset`~~
 
@@ -392,7 +392,7 @@ New validations for secondary compilation (in `pipeline_step_validate_input` or 
 
 ---
 
-## Phase 5: Primary Animation References for Secondary Tilesets
+## ~~Phase 5: Primary Animation References for Secondary Tilesets~~
 
 **Goal**: Allow secondary tilesets to manually link metatile entries to primary animation tile ranges.
 
@@ -400,7 +400,7 @@ New validations for secondary compilation (in `pipeline_step_validate_input` or 
 
 When compiling a secondary tileset, metatiles may reference tiles from primary animations (e.g., water, flowers). In `FrameLinking::auto` mode, this works out of the box via workspace tile matching (primary key frame tiles are pre-loaded at their correct global indices). In `FrameLinking::manual` mode, there is no mechanism for users to specify overrides referencing primary animation tiles.
 
-### 5a. anim.json extension: `primary_references`
+### ~~5a. anim.json extension: `primary_references`~~
 
 Add an optional `primary_references` top-level key to secondary tilesets' anim.json. Each entry maps a primary animation name to a list of override entries (same `AnimOverrideEntry` format as existing overrides):
 
@@ -431,7 +431,7 @@ Add an optional `primary_references` top-level key to secondary tilesets' anim.j
 }
 ```
 
-### 5b. Data model: `PorytilesTilesetComponent`
+### ~~5b. Data model: `PorytilesTilesetComponent`~~
 
 **File**: `Porytiles2/include/porytiles2/domain/models/porytiles_tileset_component.hpp`
 
@@ -446,7 +446,7 @@ std::map<DynamicCasedName, std::vector<AnimOverrideEntry>> primary_anim_override
 void primary_anim_overrides(std::map<DynamicCasedName, std::vector<AnimOverrideEntry>> overrides);
 ```
 
-### 5c. Parser: `AnimJsonParser::parse_primary_references()`
+### ~~5c. Parser: `AnimJsonParser::parse_primary_references()`~~
 
 **Files**: `Porytiles2/include/porytiles2/infra/services/anim_json_parser.hpp`, `Porytiles2/lib/infra/services/anim_json_parser.cpp`
 
@@ -459,13 +459,13 @@ parse_primary_references(const std::filesystem::path &json_path) const;
 
 Reads the same anim.json but extracts only the `primary_references` key. Returns empty map if absent. Reuses existing override parsing logic. Also extend `write()` to round-trip `primary_references`.
 
-### 5d. Tileset loading
+### ~~5d. Tileset loading~~
 
 **File**: `Porytiles2/lib/infra/repos/project_tileset_artifact_reader.cpp` (or `tileset_repo.cpp`)
 
 After loading porytiles animations, call `parse_primary_references()` on the same anim.json path and store on `PorytilesTilesetComponent::primary_anim_overrides_`.
 
-### 5e. Compiler: apply primary animation overrides
+### ~~5e. Compiler: apply primary animation overrides~~
 
 **File**: `Porytiles2/lib/domain/services/tileset_compiler.cpp`
 
@@ -490,7 +490,7 @@ for (const auto &[primary_anim_name, overrides] : primary_overrides) {
 }
 ```
 
-### 5f. Validations
+### ~~5f. Validations~~
 
 1. **Primary animation exists**: Error if referenced name not in `paired_primary_->porymap_component().anims()`.
 2. **frame_subtile in bounds**: Error if `entry.frame_subtile >= tile_count`.
@@ -499,13 +499,13 @@ for (const auto &[primary_anim_name, overrides] : primary_overrides) {
 
 ### Files to modify
 
-| File | Change |
-|------|--------|
-| `Porytiles2/include/porytiles2/domain/models/porytiles_tileset_component.hpp` | Add `primary_anim_overrides_` field and accessors |
-| `Porytiles2/include/porytiles2/infra/services/anim_json_parser.hpp` | Add `parse_primary_references()` method |
-| `Porytiles2/lib/infra/services/anim_json_parser.cpp` | Implement `parse_primary_references()`, extend `write()` |
-| `Porytiles2/lib/infra/repos/project_tileset_artifact_reader.cpp` | Call `parse_primary_references()` during anim loading |
-| `Porytiles2/lib/domain/services/tileset_compiler.cpp` | Apply primary overrides in `pipeline_helper_apply_manual_overrides()` |
+| File                                                                          | Change                                                                |
+|-------------------------------------------------------------------------------|-----------------------------------------------------------------------|
+| `Porytiles2/include/porytiles2/domain/models/porytiles_tileset_component.hpp` | Add `primary_anim_overrides_` field and accessors                     |
+| `Porytiles2/include/porytiles2/infra/services/anim_json_parser.hpp`           | Add `parse_primary_references()` method                               |
+| `Porytiles2/lib/infra/services/anim_json_parser.cpp`                          | Implement `parse_primary_references()`, extend `write()`              |
+| `Porytiles2/lib/infra/repos/project_tileset_artifact_reader.cpp`              | Call `parse_primary_references()` during anim loading                 |
+| `Porytiles2/lib/domain/services/tileset_compiler.cpp`                         | Apply primary overrides in `pipeline_helper_apply_manual_overrides()` |
 
 ---
 

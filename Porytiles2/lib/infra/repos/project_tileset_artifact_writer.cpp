@@ -943,7 +943,9 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_anim_frame(
 ProjectTilesetArtifactWriter::write_porytiles_anim_params(const ArtifactKey &dest_key, const Tileset &src)
 {
     const auto &porytiles_anims = src.porytiles_component().anims();
-    if (porytiles_anims.empty()) {
+    const auto &primary_overrides = src.porytiles_component().primary_anim_overrides();
+
+    if (porytiles_anims.empty() && primary_overrides.empty()) {
         /*
          * Unlike in write_porymap_anim_params, we don't need to delete anything here. That's because anim.json is
          * within porytiles_src dir, which is written using an atomic move. If the new porytiles_src dir doesn't contain
@@ -958,6 +960,12 @@ ProjectTilesetArtifactWriter::write_porytiles_anim_params(const ArtifactKey &des
         anim_params[DynamicCasedName{anim_name}] = anim.params();
     }
 
+    // Convert primary_anim_overrides keys from std::string to DynamicCasedName
+    std::map<DynamicCasedName, std::vector<AnimOverrideEntry>> primary_refs;
+    for (const auto &[name, entries] : primary_overrides) {
+        primary_refs[DynamicCasedName{name}] = entries;
+    }
+
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
         compute_transaction_dest_path(
@@ -965,7 +973,7 @@ ProjectTilesetArtifactWriter::write_porytiles_anim_params(const ArtifactKey &des
         void,
         "Failed to compute transaction dest path.");
 
-    return anim_json_parser_->write(transaction_dest_path, anim_params);
+    return anim_json_parser_->write(transaction_dest_path, anim_params, primary_refs);
 }
 
 } // namespace porytiles2

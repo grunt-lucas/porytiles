@@ -1580,6 +1580,79 @@ void CompilerTask::pipeline_helper_apply_manual_overrides()
             panic("unhandled value for FrameLinking");
         }
     }
+
+    // Apply primary animation reference overrides (secondary tilesets only)
+    const auto &primary_refs = tileset_.porytiles_component().primary_anim_overrides();
+
+    if (!primary_refs.empty() && !is_secondary()) {
+        std::vector<std::string> err_lines;
+        err_lines.emplace_back(format_.format(
+            "Primary tilesets cannot have '{}' in anim.json.", FormatParam{"primary_references", Style::bold}));
+        err_lines.emplace_back("Only secondary tilesets may reference primary animation tiles.");
+        diag_.error("primary-references-on-primary", err_lines);
+        return;
+    }
+
+    if (!primary_refs.empty() && is_secondary()) {
+        if (!has_paired_primary()) {
+            std::vector<std::string> err_lines;
+            err_lines.emplace_back(format_.format(
+                "The '{}' section requires a paired primary tileset (pairing mode must not be off).",
+                FormatParam{"primary_references", Style::bold}));
+            diag_.error("primary-references-no-paired-primary", err_lines);
+            return;
+        }
+
+        const auto &primary_anims = paired_primary_->porymap_component().anims();
+        auto &metatiles_bin = new_porymap_component_->metatiles_bin();
+
+        for (const auto &[prim_anim_name, entries] : primary_refs) {
+            if (!primary_anims.contains(prim_anim_name)) {
+                std::vector<std::string> err_lines;
+                err_lines.emplace_back(format_.format(
+                    "Primary animation '{}' referenced in '{}' was not found in the paired primary tileset.",
+                    FormatParam{prim_anim_name, Style::bold},
+                    FormatParam{"primary_references", Style::bold}));
+                diag_.error("primary-references-anim-not-found", err_lines);
+                continue;
+            }
+
+            const auto &prim_anim = primary_anims.at(prim_anim_name);
+            const std::size_t prim_tile_offset = prim_anim.params().tile_offset();
+            const std::size_t prim_tile_count = prim_anim.params().tile_count();
+
+            for (const auto &entry : entries) {
+                if (entry.frame_subtile >= prim_tile_count) {
+                    std::vector<std::string> err_lines;
+                    err_lines.emplace_back(format_.format(
+                        "Primary reference '{}' override has frame_subtile {} but primary animation only has {} tiles.",
+                        FormatParam{prim_anim_name, Style::bold},
+                        FormatParam{entry.frame_subtile},
+                        FormatParam{prim_tile_count}));
+                    diag_.error("primary-references-frame-subtile-oob", err_lines);
+                    continue;
+                }
+
+                const std::size_t bin_index =
+                    entry.metatile_id * metatile::entries_per_metatile_triple +
+                    static_cast<std::size_t>(entry.layer) * metatile::tiles_per_metatile_layer +
+                    static_cast<std::size_t>(entry.subtile);
+
+                if (bin_index >= metatiles_bin.size()) {
+                    std::vector<std::string> err_lines;
+                    err_lines.emplace_back(format_.format(
+                        "Primary reference '{}' override references metatile_id {} which is out of range.",
+                        FormatParam{prim_anim_name, Style::bold},
+                        FormatParam{entry.metatile_id}));
+                    diag_.error("primary-references-metatile-oob", err_lines);
+                    continue;
+                }
+
+                const std::size_t absolute_tile = prim_tile_offset + entry.frame_subtile;
+                metatiles_bin.at(bin_index) = TilemapEntry{absolute_tile, entry.pal_index, entry.h_flip, entry.v_flip};
+            }
+        }
+    }
 }
 
 void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
