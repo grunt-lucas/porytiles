@@ -18,6 +18,14 @@ namespace porytiles2 {
 /**
  * @brief Use case for decompiling a primary Tileset.
  */
+/*
+ * TODO: Secondary tileset decompilation is not yet implemented. When it is, the secondary decompiler must detect
+ * cross-tileset animation references (tilemap entries pointing into a paired primary's animation tile range) and
+ * reconstruct the RGBA key frame tile on the secondary layer sheet at the corresponding position. Decompiling a
+ * secondary against a different primary than it was compiled against will produce incorrect results because the
+ * animation tile offsets are primary-specific. See @c pipeline_helper_register_animations in the compiler for the
+ * mirror-image forward path that produces these cross-tileset links.
+ */
 class DecompilePrimaryTileset {
   public:
     DecompilePrimaryTileset(

@@ -2,6 +2,7 @@
 
 #include <algorithm>
 #include <array>
+#include <compare>
 #include <set>
 #include <string>
 
@@ -150,7 +151,8 @@ class PixelTile {
     [[nodiscard]] bool equals_ignoring_transparency(const PixelTile &other) const
         requires requires(const PixelType &p) { p.is_transparent(); }
     {
-        return equals_ignoring_transparency_impl(other, [](const PixelType &pixel) { return pixel.is_transparent(); });
+        auto pred = [](const PixelType &pixel) { return pixel.is_transparent(); };
+        return equals_ignoring_transparency_impl(other, pred, pred);
     }
 
     /**
@@ -178,8 +180,107 @@ class PixelTile {
     [[nodiscard]] bool equals_ignoring_transparency(const PixelTile &other, const PixelType &extrinsic) const
         requires requires(const PixelType &p) { p.is_transparent(p); }
     {
+        auto pred = [&extrinsic](const PixelType &pixel) { return pixel.is_transparent(extrinsic); };
+        return equals_ignoring_transparency_impl(other, pred, pred);
+    }
+
+    /**
+     * @brief Compares this PixelTile with another, treating transparent pixels as equal, using independent extrinsic
+     * transparency values for each tile.
+     *
+     * @details
+     * This overload generalizes @c equals_ignoring_transparency(other, extrinsic) to the case where the two tiles
+     * were authored or compiled under different extrinsic transparency settings. Each tile's pixels are checked
+     * against that tile's own extrinsic value: @p extrinsic is applied to the pixels of @c *this, while @p
+     * other_extrinsic is applied to the pixels of @p other. Two pixels are considered equal if:
+     * - The pixel in @c *this is transparent under @p extrinsic AND the corresponding pixel in @p other is
+     *   transparent under @p other_extrinsic, OR
+     * - Neither is transparent (each under its respective extrinsic) and the pixels compare equal via operator==.
+     *
+     * This is useful when matching tiles across tilesets that do not share a single canonical transparent color. For
+     * example, a secondary tileset compiled with magenta as its extrinsic transparent color may still need to match
+     * tiles authored against a primary tileset that used a different extrinsic transparent color.
+     *
+     * This overload is only available for pixel types that support extrinsic transparency (e.g., Rgba32).
+     *
+     * @param other The PixelTile to compare against
+     * @param extrinsic The extrinsic transparency value applied to pixels of @c *this
+     * @param other_extrinsic The extrinsic transparency value applied to pixels of @p other
+     * @return True if the tiles are equivalent under transparency-ignoring semantics, false otherwise
+     */
+    [[nodiscard]] bool equals_ignoring_transparency( // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+        const PixelTile &other, const PixelType &extrinsic, const PixelType &other_extrinsic) const
+        requires requires(const PixelType &p) { p.is_transparent(p); }
+    {
         return equals_ignoring_transparency_impl(
-            other, [&extrinsic](const PixelType &pixel) { return pixel.is_transparent(extrinsic); });
+            other,
+            [&extrinsic](const PixelType &pixel) { return pixel.is_transparent(extrinsic); },
+            [&other_extrinsic](const PixelType &pixel) { return pixel.is_transparent(other_extrinsic); });
+    }
+
+    /**
+     * @brief Strict weak ordering that treats transparent pixels under each side's own ET as equivalent.
+     *
+     * @details
+     * Performs a pairwise pixel comparison between @p a and @p b, where each side is classified using its own
+     * extrinsic transparency value (@p a_et for @p a, @p b_et for @p b):
+     * - Both transparent (under their respective ETs): equivalent, continue.
+     * - One transparent, one opaque: the transparent side sorts less.
+     * - Both opaque: raw @c operator<=>.
+     *
+     * This is the strict-weak-ordering analog of
+     * @c equals_ignoring_transparency(other, self_et, other_et). Intended for use as a std::map / std::set comparator
+     * where entries have heterogeneous extrinsic transparency values. In particular, the cross-tileset animation
+     * lookup map in @c AnimTileMatcher registers primary and secondary animation key frame tiles that may have been
+     * compiled under different extrinsic transparency values.
+     *
+     * @note Return type is @c std::weak_ordering, not @c std::strong_ordering. There are two distinct concepts in
+     * play that both contain the word "weak":
+     *
+     *   1. "Strict weak ordering" as a property of the C++ @c Compare concept: a binary relation whose "equivalent"
+     *      equivalence class is defined by @c !less(a,b) @c && @c !less(b,a). This describes what kind of relation a
+     *      comparator must be.
+     *
+     *   2. @c std::weak_ordering as a comparison category type: the return type of a three-way comparison function
+     *      indicating that elements comparing equivalent are not necessarily substitutable.
+     *
+     * Our comparator satisfies (1) — it IS a strict weak ordering — and because elements that are equivalent under
+     * this relation are NOT substitutable (e.g., a tile whose transparent pixels are magenta and one whose
+     * transparent pixels are cyan compare equivalent for keyframe-matching purposes but have observably different
+     * raw byte data, different associated ETs, and render differently), the appropriate category type for (2) is
+     * @c std::weak_ordering, not @c std::strong_ordering. Returning @c std::strong_ordering would be a false claim
+     * that equivalent tiles are byte-indistinguishable.
+     *
+     * @param a The first PixelTile to compare.
+     * @param a_et The extrinsic transparency applied to pixels of @p a.
+     * @param b The second PixelTile to compare.
+     * @param b_et The extrinsic transparency applied to pixels of @p b.
+     * @return @c std::weak_ordering indicating @p a less-than, equivalent-to, or greater-than @p b under the
+     * cross-ET relation.
+     */
+    [[nodiscard]] static std::weak_ordering cross_et_compare( // NOLINTNEXTLINE(bugprone-easily-swappable-parameters)
+        const PixelTile &a, const PixelType &a_et, const PixelTile &b, const PixelType &b_et)
+        requires requires(const PixelType &p) { p.is_transparent(p); }
+    {
+        for (std::size_t i = 0; i < tile::size_pix; ++i) {
+            const auto &pa = a.pix_.at(i);
+            const auto &pb = b.pix_.at(i);
+            const bool ta = pa.is_transparent(a_et);
+            const bool tb = pb.is_transparent(b_et);
+            if (ta && tb) {
+                continue;
+            }
+            if (ta) {
+                return std::weak_ordering::less;
+            }
+            if (tb) {
+                return std::weak_ordering::greater;
+            }
+            if (const auto cmp = pa <=> pb; cmp != 0) {
+                return cmp;
+            }
+        }
+        return std::weak_ordering::equivalent;
     }
 
     [[nodiscard]] PixelType at(std::size_t i) const
@@ -317,24 +418,30 @@ class PixelTile {
      * @brief Helper method implementing the core transparency-ignoring comparison logic.
      *
      * @details
-     * This private helper contains the common comparison logic shared by both equals_ignoring_transparency() overloads.
-     * It accepts a transparency predicate that determines whether a pixel is transparent, allowing the same
-     * implementation to work with both intrinsic and extrinsic transparency checking.
+     * This private helper contains the common comparison logic shared by all equals_ignoring_transparency() overloads.
+     * It accepts two transparency predicates — one for the pixels of @c *this and one for the pixels of @p other —
+     * allowing each tile to be evaluated against its own transparency rules. This supports both the common case
+     * where a single predicate applies to both tiles (overloads pass the same lambda twice) and the generalized
+     * case where each tile uses a distinct extrinsic transparency value.
      *
-     * @tparam TransparencyPredicate A callable type that takes a PixelType and returns bool
+     * @tparam SelfTransparencyPredicate A callable type that takes a PixelType and returns bool
+     * @tparam OtherTransparencyPredicate A callable type that takes a PixelType and returns bool
      * @param other The PixelTile to compare against
-     * @param is_transparent_pred A predicate function that returns true if a pixel is transparent
+     * @param self_is_transparent_pred Predicate returning true if a pixel of @c *this is transparent
+     * @param other_is_transparent_pred Predicate returning true if a pixel of @p other is transparent
      * @return True if the tiles are equivalent under transparency-ignoring semantics, false otherwise
      */
-    template <typename TransparencyPredicate>
-    [[nodiscard]] bool
-    equals_ignoring_transparency_impl(const PixelTile &other, TransparencyPredicate is_transparent_pred) const
+    template <typename SelfTransparencyPredicate, typename OtherTransparencyPredicate>
+    [[nodiscard]] bool equals_ignoring_transparency_impl(
+        const PixelTile &other,
+        SelfTransparencyPredicate self_is_transparent_pred,
+        OtherTransparencyPredicate other_is_transparent_pred) const
     {
         for (std::size_t i = 0; i < tile::size_pix; ++i) {
             const auto &pixel1 = pix_.at(i);
             const auto &pixel2 = other.pix_.at(i);
 
-            if (is_transparent_pred(pixel1) && is_transparent_pred(pixel2)) {
+            if (self_is_transparent_pred(pixel1) && other_is_transparent_pred(pixel2)) {
                 continue; // Both transparent, consider equal
             }
             if (pixel1 != pixel2) {

@@ -448,14 +448,16 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
  * braces to avoid preprocessor comma-splitting: @c FormatParam(name, Style::bold) not @c FormatParam{name,
  * Style::bold}.
  *
- * Uses __COUNTER__ internally to generate unique variable names and avoid naming collisions.
+ * Uses @c __LINE__ internally to generate unique variable names and avoid naming collisions between multiple
+ * expansions within the same scope. Because the uniqueness token is the source line number, this macro must not be
+ * invoked more than once on the same physical line — doing so would produce colliding local variable names.
  *
  * @param expr The expression returning a ChainableResult<void, E>
  * @param return_type The success type of the ChainableResult to return on error
  * @param ... Arguments forwarded to the FormattableError constructor (format string, optional FormatParams)
  */
 #define PT_TRY_CALL_CHAIN_ERR(expr, return_type, ...)                                                                  \
-    PT_DETAIL_TRY_CALL_CHAIN_ERR_IMPL(expr, return_type, __COUNTER__, __VA_ARGS__)
+    PT_DETAIL_TRY_CALL_CHAIN_ERR_IMPL(expr, return_type, __LINE__, __VA_ARGS__)
 
 // Internal implementation detail - do not use directly
 #define PT_DETAIL_TRY_CALL_PASS_ERR_EXPAND(expr, return_type, counter)                                                 \
@@ -482,12 +484,14 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
  * If the result contains an error, the macro returns from the current function with a new ChainableResult<return_type>
  * containing an empty FormattableError chained to the original error chain.
  *
- * Uses __COUNTER__ internally to generate unique variable names and avoid naming collisions.
+ * Uses @c __LINE__ internally to generate unique variable names and avoid naming collisions between multiple
+ * expansions within the same scope. Because the uniqueness token is the source line number, this macro must not be
+ * invoked more than once on the same physical line — doing so would produce colliding local variable names.
  *
  * @param expr The expression returning a ChainableResult<void, E>
  * @param return_type The success type of the ChainableResult to return on error (differs from expr's success type)
  */
-#define PT_TRY_CALL_PASS_ERR(expr, return_type) PT_DETAIL_TRY_CALL_PASS_ERR_IMPL(expr, return_type, __COUNTER__)
+#define PT_TRY_CALL_PASS_ERR(expr, return_type) PT_DETAIL_TRY_CALL_PASS_ERR_IMPL(expr, return_type, __LINE__)
 
 // Internal implementation detail - do not use directly
 #define PT_DETAIL_TRY_CALL_PASS_SAME_ERR_EXPAND(expr, counter)                                                         \
@@ -512,11 +516,13 @@ class ChainableResult<void, E> : public ChainableResult<detail::Empty, E> {
  * If the result contains an error, the macro returns from the current function with the same error result unchanged,
  * preserving the existing error chain without any modifications.
  *
- * Uses __COUNTER__ internally to generate unique variable names and avoid naming collisions.
+ * Uses @c __LINE__ internally to generate unique variable names and avoid naming collisions between multiple
+ * expansions within the same scope. Because the uniqueness token is the source line number, this macro must not be
+ * invoked more than once on the same physical line — doing so would produce colliding local variable names.
  *
  * @param expr The expression returning a ChainableResult<void, E> with the same type as the outer function's return
  * type
  */
-#define PT_TRY_CALL_PASS_SAME_ERR(expr) PT_DETAIL_TRY_CALL_PASS_SAME_ERR_IMPL(expr, __COUNTER__)
+#define PT_TRY_CALL_PASS_SAME_ERR(expr) PT_DETAIL_TRY_CALL_PASS_SAME_ERR_IMPL(expr, __LINE__)
 
 } // namespace porytiles2

@@ -49,6 +49,58 @@ ChainableResult<void> CompileSecondaryTileset::compile(const std::string &tilese
         void,
         diag_->formatter().format("Failed to load tileset '{}'.", FormatParam(tileset_name, Style::bold)));
 
+    // 4b. Cross-tileset extrinsic transparency mismatch warning.
+    {
+        auto secondary_et_result = domain_config_->extrinsic_transparency(ConfigScopeType::tileset, tileset_name);
+        auto primary_et_result =
+            domain_config_->extrinsic_transparency(ConfigScopeType::tileset, paired_primary->name());
+
+        const auto &secondary_et = secondary_et_result.value();
+        const auto &primary_et = primary_et_result.value();
+        if (secondary_et.value() != primary_et.value()) {
+            /*
+             * TODO: The warning below is based on the current values of extrinsic_transparency in config.yaml /
+             * config.local.yaml, not on the ET the tilesets were actually compiled under. A user who changes a
+             * tileset's ET config without recompiling can land in a silently-stale state that our cross-tileset code
+             * cannot detect.
+             *
+             * The right long-term fix is to include tileset-specific configuration in the verification checksum system,
+             * so that any change to a tileset's config (ET or otherwise) invalidates the compiled artifact's checksum
+             * and puts the tileset into a detectable-stale state. Once that exists, this warning can be upgraded to a
+             * hard error, and the code path becomes "configured ET == compiled ET" by construction rather than by user
+             * discipline.
+             */
+            std::vector<std::string> warn_msg{};
+            warn_msg.emplace_back(diag_->formatter().format(
+                "Secondary tileset '{}' and its paired primary '{}' have different configured "
+                "'extrinsic_transparency' values ('{}' vs '{}').",
+                FormatParam{tileset_name, Style::bold},
+                FormatParam{paired_primary->name(), Style::bold},
+                FormatParam{secondary_et.value().to_jasc_str(), Style::bold},
+                FormatParam{primary_et.value().to_jasc_str(), Style::bold}));
+            warn_msg.emplace_back(
+                "Cross-tileset keyframe matching will use each side's configured value independently.");
+            warn_msg.emplace_back("");
+            warn_msg.emplace_back(
+                "This warning is based on the current domain config, not on the ET each tileset was actually "
+                "compiled under.");
+            warn_msg.emplace_back(
+                "If a tileset was compiled with a different ET and has not been recompiled since, cross-tileset "
+                "matching may produce unexpected results.");
+            warn_msg.emplace_back("Recompile both tilesets if in doubt.");
+            warn_msg.emplace_back("");
+            warn_msg.emplace_back(diagnostic_separator);
+            warn_msg.emplace_back("");
+            warn_msg.append_range(format_config_note(diag_->formatter(), secondary_et));
+            warn_msg.emplace_back("");
+            warn_msg.emplace_back(diagnostic_separator);
+            warn_msg.emplace_back("");
+            warn_msg.append_range(format_config_note(diag_->formatter(), primary_et));
+
+            diag_->warning("cross-tileset-extrinsic-transparency-mismatch", warn_msg);
+        }
+    }
+
     // 5. Checksum verification.
     PT_UNWRAP_TILESET_CONFIG_PTR(app_config_, verify_checksums, tileset_name, void);
     if (!tileset_repo_->checksum_provider().cached_checksums_exist(tileset_name) && verify_checksums) {
@@ -93,6 +145,43 @@ ChainableResult<void> CompileSecondaryTileset::compile(const std::string &tilese
                     "  - {} delete '{}' cache file.",
                     FormatParam{"OR", Style::bold},
                     FormatParam{"porytiles/tilesets/" + tileset_name + "/tileset.cache.json", Style::bold}));
+                err_msg.append_range(format_config_note_with_separator(diag_->formatter(), verify_checksums));
+                return ChainableResult<void>{FormattableError{err_msg}};
+            }
+        }
+
+        /*
+         * Primary-side staleness check. Content-aware, unlike the name-only check in
+         * pipeline_helper_register_animations. If the paired primary's sources have drifted from its cached compile
+         * form, refuse to proceed: cross-tileset matching would operate against a stale compiled primary and silently
+         * produce wrong output. Only runs when the paired primary itself has cached checksums; a primary with no cache
+         * cannot be content-verified here (the user may have compiled it externally).
+         */
+        if (tileset_repo_->checksum_provider().cached_checksums_exist(paired_primary->name())) {
+            PT_TRY_ASSIGN_CHAIN_ERR(
+                primary_porytiles_keys,
+                tileset_repo_->key_provider().get_porytiles_artifact_keys(paired_primary->name()),
+                void,
+                "Failed to get Porytiles artifact keys for paired primary '{}'.",
+                FormatParam(paired_primary->name(), Style::bold));
+            const auto primary_mismatched_keys = tileset_repo_->checksum_provider().find_unsynced_tileset_artifacts(
+                paired_primary->name(), primary_porytiles_keys);
+            if (!primary_mismatched_keys.empty()) {
+                std::vector<std::string> err_msg{};
+                err_msg.emplace_back(diag_->formatter().format(
+                    "Paired primary tileset '{}' has source changes that have not been compiled.",
+                    FormatParam{paired_primary->name(), Style::bold}));
+                err_msg.emplace_back("Changes present in paired primary Porytiles sources:");
+                for (const auto &key : primary_mismatched_keys) {
+                    err_msg.emplace_back(diag_->formatter().format("  {}", FormatParam{key.key(), Style::bold}));
+                }
+                err_msg.emplace_back("");
+                err_msg.emplace_back("Compiling the secondary now would match tiles against a stale compiled primary.");
+                err_msg.emplace_back("To resolve:");
+                err_msg.emplace_back(diag_->formatter().format(
+                    "  - Run '{} {}' to bring the primary's compiled form up to date.",
+                    FormatParam{"compile-tileset", Style::bold},
+                    FormatParam{paired_primary->name(), Style::bold}));
                 err_msg.append_range(format_config_note_with_separator(diag_->formatter(), verify_checksums));
                 return ChainableResult<void>{FormattableError{err_msg}};
             }

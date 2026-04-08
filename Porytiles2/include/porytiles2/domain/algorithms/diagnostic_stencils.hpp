@@ -20,6 +20,8 @@
 
 namespace porytiles2 {
 
+constexpr std::string_view diagnostic_separator = "--------";
+
 /**
  * @brief Format a ConfigValue into diagnostic note lines.
  *
@@ -65,7 +67,7 @@ format_config_note_with_separator(const TextFormatter &format, const ConfigValue
 {
     std::vector<std::string> lines{};
     lines.emplace_back("");
-    lines.emplace_back("--------");
+    lines.emplace_back(diagnostic_separator);
     lines.emplace_back("");
     lines.append_range(format_config_note(format, config));
     return lines;

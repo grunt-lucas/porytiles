@@ -142,6 +142,33 @@ TEST(CanonicalPixelTileTests, AllFlipVariations)
         static_cast<const PixelTile<IndexPixel> &>(canonical_from_hv_flip));
 }
 
+TEST(CanonicalPixelTileTests, EtAwareConstructorCanonicalizesEquivalentlyAcrossEts)
+{
+    // Two logically-equivalent tiles: identical opaque-pixel pattern, but different transparent backgrounds.
+    // Under raw operator<=>, the transparent backgrounds can pull the two tiles onto different canonical
+    // orientations. Under the ET-aware constructor, they must canonicalize to cross-ET-equivalent orientations.
+    PixelTile<Rgba32> magenta_bg{};
+    PixelTile<Rgba32> cyan_bg{};
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        magenta_bg.set(i, rgba_magenta);
+        cyan_bg.set(i, rgba_cyan);
+    }
+    // Asymmetric opaque marker so canonical selection is non-trivial.
+    magenta_bg.set(0, 1, Rgba32{10, 20, 30});
+    cyan_bg.set(0, 1, Rgba32{10, 20, 30});
+
+    CanonicalPixelTile<Rgba32> canonical_magenta{magenta_bg, rgba_magenta};
+    CanonicalPixelTile<Rgba32> canonical_cyan{cyan_bg, rgba_cyan};
+
+    // The two canonical forms must be equivalent under cross-ET comparison with their own ETs.
+    EXPECT_EQ(
+        PixelTile<Rgba32>::cross_et_compare(canonical_magenta, rgba_magenta, canonical_cyan, rgba_cyan),
+        std::weak_ordering::equivalent);
+
+    // Equality relation agrees.
+    EXPECT_TRUE(canonical_magenta.equals_ignoring_transparency(canonical_cyan, rgba_magenta, rgba_cyan));
+}
+
 TEST(CanonicalPixelTileTests, WithRgba32Pixels)
 {
     // Create a test tile with Rgba32 colors
