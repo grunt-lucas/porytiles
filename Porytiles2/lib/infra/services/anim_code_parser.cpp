@@ -368,7 +368,10 @@ struct ParsedFunctions {
             callback_funcs_result};
     }
 
-    const auto &callback_funcs = callback_funcs_result.value();
+    auto &callback_funcs = callback_funcs_result.value();
+    // Narrow from prefix match to exact name match (parse_functions uses starts_with)
+    std::erase_if(
+        callback_funcs, [&](const FunctionDefinition &func) { return func.name() != callback_func_name; });
     if (callback_funcs.empty()) {
         return std::string{};
     }
@@ -419,7 +422,9 @@ struct ParsedFunctions {
             driver_funcs_result};
     }
 
-    const auto &driver_funcs = driver_funcs_result.value();
+    auto &driver_funcs = driver_funcs_result.value();
+    // Narrow from prefix match to exact name match (parse_functions uses starts_with)
+    std::erase_if(driver_funcs, [&](const FunctionDefinition &func) { return func.name() != driver_func_name; });
     if (driver_funcs.empty()) {
         return FormattableError{"Driver function '{}' not found in file.", FormatParam{driver_func_name, Style::bold}};
     }

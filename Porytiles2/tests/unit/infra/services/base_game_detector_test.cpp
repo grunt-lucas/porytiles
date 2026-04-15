@@ -68,6 +68,28 @@ TEST_F(BaseGameDetectorTest, DetectsPokeemeraldExpansion)
     EXPECT_EQ(result.value(), BaseGame::pokeemerald_expansion);
 }
 
+TEST_F(BaseGameDetectorTest, DetectsPokeemeraldExpansionWithFrlgMarkers)
+{
+    {
+        std::ofstream out{test_root_ / "include/global.fieldmap.h"};
+        out << "#ifndef GUARD_GLOBAL_FIELDMAP_H\n";
+        out << "#define GUARD_GLOBAL_FIELDMAP_H\n";
+        out << "#define METATILE_ATTR_BEHAVIOR_MASK 0x00FF\n";
+        out << "#define MAPGRID_METATILE_ID_SHIFT 0\n";
+        out << "void swapPalettes(void);\n";
+        out << "enum {\n";
+        out << "    METATILE_ATTRIBUTE_BEHAVIOR,\n";
+        out << "};\n";
+        out << "#endif\n";
+        out.flush();
+    }
+
+    BaseGameDetector detector{test_root_, &formatter_, &diag_};
+    auto result = detector.detect();
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(result.value(), BaseGame::pokeemerald_expansion);
+}
+
 TEST_F(BaseGameDetectorTest, DetectsPokeemerald)
 {
     {
