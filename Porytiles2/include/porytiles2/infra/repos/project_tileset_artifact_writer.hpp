@@ -39,6 +39,7 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
         gsl::not_null<InfraConfig *> infra_config,
         std::filesystem::path project_root,
         BaseGame base_game,
+        std::size_t metatile_attr_size,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag,
         gsl::not_null<PngRgbaImageSaver *> png_rgba_saver,
@@ -50,10 +51,10 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
         const TerrainTypeMapProvider *terrain_map = nullptr,
         const EncounterTypeMapProvider *encounter_map = nullptr)
         : domain_config_{domain_config}, infra_config_{infra_config}, project_root_{std::move(project_root)},
-          base_game_{base_game}, format_{format}, diag_{diag}, png_rgba_saver_{png_rgba_saver},
-          png_indexed_saver_{png_indexed_saver}, pal_saver_{pal_saver}, anim_json_parser_{anim_json_parser},
-          anim_code_generator_{anim_code_generator}, behavior_map_{behavior_map}, terrain_map_{terrain_map},
-          encounter_map_{encounter_map}, metadata_provider_{project_root_, format, diag},
+          base_game_{base_game}, metatile_attr_size_{metatile_attr_size}, format_{format}, diag_{diag},
+          png_rgba_saver_{png_rgba_saver}, png_indexed_saver_{png_indexed_saver}, pal_saver_{pal_saver},
+          anim_json_parser_{anim_json_parser}, anim_code_generator_{anim_code_generator}, behavior_map_{behavior_map},
+          terrain_map_{terrain_map}, encounter_map_{encounter_map}, metadata_provider_{project_root_, format, diag},
           metadata_writer_{project_root_, format}
     {
     }
@@ -126,6 +127,7 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
     InfraConfig *infra_config_;
     std::filesystem::path project_root_;
     const BaseGame base_game_;
+    const std::size_t metatile_attr_size_;
     std::filesystem::path transaction_root_;
     const TextFormatter *format_;
     const UserDiagnostics *diag_;

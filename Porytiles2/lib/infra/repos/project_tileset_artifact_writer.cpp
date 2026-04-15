@@ -642,7 +642,7 @@ ProjectTilesetArtifactWriter::write_metatile_attributes_bin(const ArtifactKey &d
             transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
         void,
         "Failed to compute transaction dest path.");
-    if (base_game_ == BaseGame::pokefirered) {
+    if (metatile_attr_size_ == attr::bytes_per_attr_firered) {
         return save_firered_metatile_attributes_bin(
             src.porymap_component().metatile_attributes_bin(), transaction_dest_path);
     }

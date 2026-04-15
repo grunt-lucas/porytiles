@@ -370,8 +370,7 @@ struct ParsedFunctions {
 
     auto &callback_funcs = callback_funcs_result.value();
     // Narrow from prefix match to exact name match (parse_functions uses starts_with)
-    std::erase_if(
-        callback_funcs, [&](const FunctionDefinition &func) { return func.name() != callback_func_name; });
+    std::erase_if(callback_funcs, [&](const FunctionDefinition &func) { return func.name() != callback_func_name; });
     if (callback_funcs.empty()) {
         return std::string{};
     }

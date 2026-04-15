@@ -33,14 +33,16 @@ matter for detection disambiguation.
 
 ## The Three Behavioral Dimensions
 
-### 1. Binary Attribute Format -- ALREADY DECOMPOSED
+### 1. Binary Attribute Format -- DONE
 
 - **Config**: `metatile_attr_size` (2 or 4 bytes), in `config_schema.yaml`
 - **Auto-detected**: `MetatilesHeaderProvider` scans `metatiles.h` for `const u16` vs `const u32`
 - **Overridable**: via CLI `--metatile-attr-size` or YAML `fieldmap.metatile_attribute_size`
-- **Action**: Replace `base_game == pokefirered` checks in binary parse/write sites with
-  `metatile_attr_size == 4` checks. This makes binary format follow the actually-detected attribute
-  type rather than the guessed base game.
+- **Completed**: Replaced `base_game == pokefirered` checks in all three binary parse/write sites
+  with `metatile_attr_size == attr::bytes_per_attr_firered`. Removed `BaseGame` dependency from
+  `ProjectPrimaryTilesetImporter` and `ProjectTilesetArtifactReader` entirely. Added
+  `metatile_attr_size` as a resolved constructor parameter to `ProjectTilesetArtifactWriter`
+  (which still needs `BaseGame` for CSV writing).
 
 ### 2. CSV Attribute Schema -- NEEDS DECOMPOSITION
 

@@ -9,7 +9,6 @@
 #include <optional>
 
 #include "porytiles2/domain/models/animation.hpp"
-#include "porytiles2/domain/models/base_game.hpp"
 #include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/domain/models/porytiles_tileset_component.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
@@ -174,8 +173,8 @@ ProjectTilesetArtifactReader::read_metatile_attributes_bin(Tileset &dest, const 
     const auto path = project_root_ / src_key.key();
     PT_TRY_ASSIGN_CHAIN_ERR(
         attributes,
-        base_game_ == BaseGame::pokefirered ? parse_firered_metatile_attributes(path)
-                                            : parse_emerald_metatile_attributes(path),
+        metatile_attr_size_ == attr::bytes_per_attr_firered ? parse_firered_metatile_attributes(path)
+                                                            : parse_emerald_metatile_attributes(path),
         void,
         "Failed to read metatile_attributes.bin.");
     for (auto &attr : attributes) {

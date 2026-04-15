@@ -1,10 +1,9 @@
 #pragma once
 
+#include <cstddef>
 #include <utility>
 
 #include "gsl/pointers"
-
-#include "porytiles2/domain/models/base_game.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
 #include "porytiles2/domain/repos/artifact_key.hpp"
 #include "porytiles2/domain/repos/tileset_artifact_reader.hpp"
@@ -30,7 +29,7 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
   public:
     ProjectTilesetArtifactReader(
         std::filesystem::path project_root,
-        BaseGame base_game,
+        std::size_t metatile_attr_size,
         gsl::not_null<const PngRgbaImageLoader *> png_rgba_loader,
         gsl::not_null<const PngIndexedImageLoader *> png_indexed_loader,
         gsl::not_null<const FilePalLoader *> pal_loader,
@@ -38,8 +37,8 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
         gsl::not_null<const AnimJsonParser *> anim_json_parser,
         gsl::not_null<const AnimCodeParser *> anim_code_parser,
         gsl::not_null<const ProjectTilesetMetadataProvider *> metadata_provider)
-        : project_root_{std::move(project_root)}, base_game_{base_game}, png_rgba_loader_{png_rgba_loader},
-          png_indexed_loader_{png_indexed_loader}, pal_loader_{pal_loader},
+        : project_root_{std::move(project_root)}, metatile_attr_size_{metatile_attr_size},
+          png_rgba_loader_{png_rgba_loader}, png_indexed_loader_{png_indexed_loader}, pal_loader_{pal_loader},
           attributes_csv_loader_{attributes_csv_loader}, anim_json_parser_{anim_json_parser},
           anim_code_parser_{anim_code_parser}, metadata_provider_{metadata_provider}
     {
@@ -90,7 +89,7 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
 
   private:
     const std::filesystem::path project_root_;
-    const BaseGame base_game_;
+    const std::size_t metatile_attr_size_;
     const PngRgbaImageLoader *png_rgba_loader_;
     const PngIndexedImageLoader *png_indexed_loader_;
     const FilePalLoader *pal_loader_;

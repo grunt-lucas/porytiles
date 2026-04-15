@@ -9,6 +9,7 @@
 #include "porytiles2/domain/models/base_game.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
+#include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/porymap_tileset_component.hpp"
 #include "porytiles2/domain/models/porytiles_tileset_component.hpp"
@@ -143,6 +144,7 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
             infra_config_.get(),
             test_root_,
             BaseGame::pokeemerald,
+            attr::bytes_per_attr_emerald,
             formatter_.get(),
             diag_.get(),
             png_rgba_saver_.get(),

@@ -108,6 +108,14 @@ class CreateTilesetCommand final : public Command {
             throw CLI::RuntimeError{1};
         }
 
+        // Eagerly validate metatile-attr-size to fail fast before any file I/O
+        auto attr_size_check = config.metatile_attr_size(ConfigScopeType::tileset, tileset_name_);
+        if (!attr_size_check.has_value()) {
+            stderr_diag->fatal(attr_size_check);
+            throw CLI::RuntimeError{1};
+        }
+        const std::size_t metatile_attr_size = attr_size_check.value().value();
+
         // Helper to safely extract filter patterns from config, falling back to empty on error
         auto get_filter_patterns =
             [&](ChainableResult<ConfigValue<std::vector<std::string>>> result) -> std::vector<std::string> {
@@ -191,7 +199,7 @@ class CreateTilesetCommand final : public Command {
             project_root, &config, &metadata_provider, text_formatter, diag.get()};
         ProjectTilesetArtifactReader artifact_reader{
             project_root,
-            base_game,
+            metatile_attr_size,
             &png_rgba_loader,
             &png_indexed_loader,
             &jasc_loader,
@@ -204,6 +212,7 @@ class CreateTilesetCommand final : public Command {
             &config,
             project_root,
             base_game,
+            metatile_attr_size,
             text_formatter,
             diag.get(),
             &png_rgba_saver,

@@ -115,6 +115,7 @@ class ImportTilesetCommand final : public Command {
             stderr_diag->fatal(attr_size_check);
             throw CLI::RuntimeError{1};
         }
+        const std::size_t metatile_attr_size = attr_size_check.value().value();
 
         // Helper to safely extract filter patterns from config, falling back to empty on error
         auto get_filter_patterns =
@@ -205,7 +206,7 @@ class ImportTilesetCommand final : public Command {
             project_root, &config, &metadata_provider, text_formatter, diag.get()};
         ProjectTilesetArtifactReader artifact_reader{
             project_root,
-            base_game,
+            metatile_attr_size,
             &png_rgba_loader,
             &png_indexed_loader,
             &jasc_loader,
@@ -218,6 +219,7 @@ class ImportTilesetCommand final : public Command {
             &config,
             project_root,
             base_game,
+            metatile_attr_size,
             text_formatter,
             diag.get(),
             &png_rgba_saver,
@@ -234,7 +236,7 @@ class ImportTilesetCommand final : public Command {
 
         ProjectPrimaryTilesetImporter importer{
             project_root,
-            base_game,
+            metatile_attr_size,
             &config,
             text_formatter,
             diag.get(),
