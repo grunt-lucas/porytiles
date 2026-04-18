@@ -247,8 +247,17 @@ class ImportTilesetCommand final : public Command {
             &jasc_loader,
         };
         PrimaryTilesetDecompiler decompiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
+        TilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
         ImportPrimaryTileset import_use_case{
-            &importer, &decompiler, &repo, &metadata_provider, &tileset_manager, &config, &config, diag.get()};
+            &importer,
+            &decompiler,
+            &compiler,
+            &repo,
+            &metadata_provider,
+            &tileset_manager,
+            &config,
+            &config,
+            diag.get()};
 
         // Run the use case
         auto import_result = import_use_case.import(tileset_name_);

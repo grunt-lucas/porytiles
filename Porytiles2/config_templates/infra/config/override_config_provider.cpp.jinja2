@@ -1,0 +1,54 @@
+{#
+  Template for generating override_config_provider.cpp
+
+  This template generates the OverrideConfigProvider implementations. For each config value in
+  config_schema.yaml it emits a setter (storing the value in std::optional<T>) and an override
+  getter (returning LayerValue::valid(...) when both scope matches and optional is engaged, else
+  LayerValue::not_provided()).
+#}
+{% import '_macros.jinja2' as macros %}
+#include "porytiles2/infra/config/override_config_provider.hpp"
+
+#include <string>
+#include <utility>
+
+{{ macros.autogen_warning() }}
+
+namespace porytiles2 {
+
+OverrideConfigProvider::OverrideConfigProvider(
+    ConfigScopeType scope_type, std::string scope, std::string source_info)
+    : scope_type_{scope_type}, scope_{std::move(scope)}, source_info_{std::move(source_info)}
+{
+}
+
+std::string OverrideConfigProvider::name() const
+{
+    return "OverrideConfigProvider(" + source_info_ + ")";
+}
+
+bool OverrideConfigProvider::scope_matches(ConfigScopeType type, const std::string &scope) const
+{
+    return type == scope_type_ && scope == scope_;
+}
+{% for value in config_values %}
+
+void OverrideConfigProvider::set_{{ value.symbol }}({{ value.type }} value)
+{
+    {{ value.symbol }}_override_ = std::move(value);
+}
+{% endfor %}
+{% for value in config_values %}
+
+LayerValue<{{ value.type }}>
+OverrideConfigProvider::{{ value.symbol }}(ConfigScopeType type, const std::string &scope) const
+{
+    if (!scope_matches(type, scope) || !{{ value.symbol }}_override_.has_value()) {
+        return LayerValue<{{ value.type }}>::not_provided();
+    }
+    return LayerValue<{{ value.type }}>::valid(
+        {{ value.symbol }}_override_.value(), "{{ value.symbol }}", source_info_);
+}
+{% endfor %}
+
+} // namespace porytiles2

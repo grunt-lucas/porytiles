@@ -24,6 +24,9 @@ set(GENERATED_CONFIG_FILES
         # DefaultProvider
         ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/infra/config/default_provider.hpp
         ${CMAKE_SOURCE_DIR}/Porytiles2/lib/infra/config/default_provider.cpp
+        # OverrideConfigProvider
+        ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/infra/config/override_config_provider.hpp
+        ${CMAKE_SOURCE_DIR}/Porytiles2/lib/infra/config/override_config_provider.cpp
         # YamlFileProvider
         ${CMAKE_SOURCE_DIR}/Porytiles2/include/porytiles2/infra/config/yaml_file_provider.hpp
         ${CMAKE_SOURCE_DIR}/Porytiles2/lib/infra/config/yaml_file_provider.cpp

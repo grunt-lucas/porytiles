@@ -7,14 +7,19 @@
  *   uv run Scripts/generate_config.py
  */
 
+#include <memory>
 #include <string>
 
 #include "porytiles2/app/config/app_config.hpp"
+#include "porytiles2/infra/config/config_provider.hpp"
 
 namespace porytiles2 {
 
 class MockAppConfig : public AppConfig {
   public:
+    // Stub: mocks do not layer providers.
+    void add_provider(std::unique_ptr<ConfigProvider>) override {}
+
     bool verify_checksums = true;
     PrimaryPairingMode primary_pairing_mode = PrimaryPairingMode::automatic;
     std::vector<std::string> primary_pairing_partners = std::vector<std::string>{};

@@ -4,12 +4,15 @@
 #include <memory>
 #include <string>
 
+#include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/models/animation.hpp"
 #include "porytiles2/domain/models/porymap_tileset_component.hpp"
 #include "porytiles2/domain/models/porytiles_tileset_component.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
+#include "porytiles2/infra/config/override_config_provider.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/xcut/config/config_scope_type.hpp"
 #include "porytiles2/xcut/config/unwrap_config.hpp"
 
 namespace porytiles2 {
@@ -44,20 +47,37 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
         FormatParam(tileset_name, Style::bold));
 
     /*
-     * TODO: before saving, we should probably perform an aritfact_edit_mode:locked compilation here. That way, Porymap
-     * assets completely match their Porytiles counterparts. See note about user config override in
-     * CreatePrimaryTileset.
+     * Step 4: Re-compile the decompiled tileset in locked edit mode. This forces byte-equivalence between the imported
+     * Porymap assets and the Porytiles sources we just decompiled from them, and surfaces any invalid input (e.g. a
+     * palette slot containing the extrinsic transparency color) as a proper diagnostic at import time rather than
+     * deferring the failure to a later compile.
+     *
+     * The override provider forces tiles_edit_mode and pals_edit_mode to 'locked' without touching other user config.
+     * ET is intentionally NOT overridden here: it is a property of the Porymap palettes themselves and the user's
+     * configured value is the right thing to validate against.
      */
+    auto import_override = std::make_unique<OverrideConfigProvider>(
+        ConfigScopeType::tileset, tileset_name, "import-tileset internal locked recompile");
+    import_override->set_tiles_edit_mode(ArtifactEditMode::locked);
+    import_override->set_pals_edit_mode(ArtifactEditMode::locked);
+    domain_config_->add_provider(std::move(import_override));
 
-    // Step 4: Save to deterministic paths
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        compiled_tileset,
+        compiler_->compile(*decompiled_tileset, /*is_secondary=*/false),
+        void,
+        "Internal locked recompile failed for '{}'.",
+        FormatParam(tileset_name, Style::bold));
+
+    // Step 5: Save the compiled tileset so Porymap artifacts round-trip byte-equivalent to the Porytiles source.
     PT_TRY_CALL_CHAIN_ERR(
-        tileset_repo_->save(*decompiled_tileset),
+        tileset_repo_->save(*compiled_tileset),
         void,
         "Tileset save job failed for '{}'.",
         FormatParam(tileset_name, Style::bold));
 
     /*
-     * Step 5: Confirmed save succeeded, now call PorytilesTilesetManager::persist_existing to persist "managed"
+     * Step 6: Confirmed save succeeded, now call PorytilesTilesetManager::persist_existing to persist "managed"
      * state (which in the Project-based impls writes to tileset-manifest.json and updates various project C files).
      * This should never fail for a reasonable cause, so we don't need to worry about rolling back or weird broken
      * state. If it does fail for extraordinary reasons, we present a helpful message to users so they can manually
@@ -70,8 +90,8 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
         "Failed to persist Porytiles-managed state for '{}'.",
         FormatParam(tileset_name, Style::bold));
 
-    // 6. Handle animation code wiring
-    if (!decompiled_tileset->porytiles_component().anims().empty()) {
+    // Step 7: Handle animation code wiring.
+    if (!compiled_tileset->porytiles_component().anims().empty()) {
         // Tileset has animations - wire the generated code
         PT_TRY_CALL_CHAIN_ERR(
             tileset_manager_->wire_anim_code(tileset_name, /*is_secondary=*/false),

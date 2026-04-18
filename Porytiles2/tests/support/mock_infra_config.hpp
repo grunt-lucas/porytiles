@@ -7,14 +7,19 @@
  *   uv run Scripts/generate_config.py
  */
 
+#include <memory>
 #include <string>
 
+#include "porytiles2/infra/config/config_provider.hpp"
 #include "porytiles2/infra/config/infra_config.hpp"
 
 namespace porytiles2 {
 
 class MockInfraConfig : public InfraConfig {
   public:
+    // Stub: mocks do not layer providers.
+    void add_provider(std::unique_ptr<ConfigProvider>) override {}
+
     std::string tileset_paths_primary_src = "data/tilesets/primary";
     std::string tileset_paths_primary_bin = "data/tilesets/primary";
     std::string tileset_paths_secondary_src = "data/tilesets/secondary";

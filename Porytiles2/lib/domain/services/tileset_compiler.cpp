@@ -411,6 +411,25 @@ ChainableResult<void> CompilerTask::pipeline_step_validate_input()
 
     std::size_t pal_start = is_secondary() ? num_pals_in_primary_.value() : 0;
 
+    /*
+     * For secondary compiles, validate the paired primary's Porymap palettes before validating the secondary's own
+     * palettes. The paired primary's palettes are loaded directly into the palette packer as pre-filled slots, so if
+     * they contain the extrinsic transparency color in a non-slot-0 position the packer will panic. Running
+     * validate_porymap_pal here turns that crash into a proper diagnostic scoped to the primary's name. This runs
+     * unconditionally since secondary compilation always consumes the primary's Porymap palettes.
+     */
+    if (is_secondary() && has_paired_primary()) {
+        for (std::size_t pal_index = 0; pal_index < num_pals_in_primary_.value(); ++pal_index) {
+            PT_TRY_CALL_PASS_ERR(
+                validate_porymap_pal(
+                    services,
+                    paired_primary_->name(),
+                    paired_primary_->porymap_component().pal_at(pal_index),
+                    pal_index),
+                void);
+        }
+    }
+
     if (pals_edit_mode_ != ArtifactEditMode::optimize) {
         // Validate Porymap pals if user is asking for pals:locked or pals:patch
         for (std::size_t pal_index = pal_start; pal_index < tileset_.porymap_component().pals().size(); ++pal_index) {

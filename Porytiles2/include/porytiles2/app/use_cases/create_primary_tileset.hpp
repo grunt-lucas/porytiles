@@ -51,7 +51,7 @@ class CreatePrimaryTileset {
         gsl::not_null<const TilesetRepo *> tileset_repo,
         gsl::not_null<const TilesetMetadataProvider *> metadata_provider,
         gsl::not_null<const PorytilesTilesetManager *> tileset_manager,
-        gsl::not_null<const DomainConfig *> domain_config,
+        gsl::not_null<DomainConfig *> domain_config,
         gsl::not_null<const AppConfig *> app_config,
         gsl::not_null<const UserDiagnostics *> diag)
         : creator_{creator}, compiler_{compiler}, tileset_repo_{tileset_repo}, metadata_provider_{metadata_provider},
@@ -80,7 +80,7 @@ class CreatePrimaryTileset {
     const TilesetRepo *tileset_repo_;
     const TilesetMetadataProvider *metadata_provider_;
     const PorytilesTilesetManager *tileset_manager_;
-    const DomainConfig *domain_config_;
+    DomainConfig *domain_config_;
     const AppConfig *app_config_;
     const UserDiagnostics *diag_;
 };

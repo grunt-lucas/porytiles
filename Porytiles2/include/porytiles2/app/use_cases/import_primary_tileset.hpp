@@ -27,13 +27,14 @@ class ImportPrimaryTileset {
     ImportPrimaryTileset(
         gsl::not_null<const PrimaryTilesetImporter *> importer,
         gsl::not_null<const PrimaryTilesetDecompiler *> decompiler,
+        gsl::not_null<const TilesetCompiler *> compiler,
         gsl::not_null<const TilesetRepo *> tileset_repo,
         gsl::not_null<const TilesetMetadataProvider *> metadata_provider,
         gsl::not_null<const PorytilesTilesetManager *> tileset_manager,
-        gsl::not_null<const DomainConfig *> domain_config,
+        gsl::not_null<DomainConfig *> domain_config,
         gsl::not_null<const AppConfig *> app_config,
         gsl::not_null<const UserDiagnostics *> diag)
-        : importer_{importer}, decompiler_{decompiler}, tileset_repo_{tileset_repo},
+        : importer_{importer}, decompiler_{decompiler}, compiler_{compiler}, tileset_repo_{tileset_repo},
           metadata_provider_{metadata_provider}, tileset_manager_{tileset_manager}, domain_config_{domain_config},
           app_config_{app_config}, diag_{diag}
     {
@@ -44,10 +45,11 @@ class ImportPrimaryTileset {
   private:
     const PrimaryTilesetImporter *importer_;
     const PrimaryTilesetDecompiler *decompiler_;
+    const TilesetCompiler *compiler_;
     const TilesetRepo *tileset_repo_;
     const TilesetMetadataProvider *metadata_provider_;
     const PorytilesTilesetManager *tileset_manager_;
-    const DomainConfig *domain_config_;
+    DomainConfig *domain_config_;
     const AppConfig *app_config_;
     const UserDiagnostics *diag_;
 };

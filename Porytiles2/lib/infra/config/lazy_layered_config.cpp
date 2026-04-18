@@ -98,6 +98,16 @@ void dump_single_config_value(
 
 } // anonymous namespace
 
+void LazyLayeredConfig::add_provider(std::unique_ptr<ConfigProvider> provider)
+{
+    providers_.insert(providers_.begin(), std::move(provider));
+    cache_.clear();
+    cache_value_strings_.clear();
+    source_key_.clear();
+    source_.clear();
+    source_details_.clear();
+}
+
 void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, const std::string &scope) const
 {
     const std::string header_str = "Configuration dump for {} '{}'";

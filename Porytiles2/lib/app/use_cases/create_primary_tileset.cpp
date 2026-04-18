@@ -3,9 +3,13 @@
 #include <memory>
 #include <string>
 
+#include "porytiles2/domain/config/artifact_edit_mode.hpp"
 #include "porytiles2/domain/models/porymap_tileset_component.hpp"
+#include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
+#include "porytiles2/infra/config/override_config_provider.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
+#include "porytiles2/xcut/config/config_scope_type.hpp"
 
 namespace porytiles2 {
 
@@ -32,22 +36,19 @@ ChainableResult<void> CreatePrimaryTileset::create(const std::string &tileset_na
         std::make_unique<Tileset>(tileset_name, std::move(porytiles_component), std::move(porymap_component));
 
     /*
-     * TODO: we need to create a way for internal code to override user configuration. E.g., for this recompilation
-     * operation, we want to be able to control a lot of the configuration values like extrinsic_transparency,
-     * artifact_edit_mode, etc. I have a couple of ideas:
-     *
-     * 1. Create a master Config interface with one method: add_provider. Domain, App, InfraConfig all inherit from this
-     * interface. LazyLayeredConfig implements this add_provider method. Then, within this create function, we can
-     * easily just call domain_config->add_provider(override_provider), where OverrideProvider is a new provider type
-     * that will allow us to specify config values we care about, and leave alone ones we want to come from the user.
-     *
-     * 2. We can construct the compiler within the create function instead of injecting it. And then as the DomainConfig
-     * param we provide a MockDomainConfig that's defined locally in an anonymous namespace, that forces the settings we
-     * want. The downside to this is that we don't respect any user settings. We might want to respect some of the user
-     * compilation settings that aren't necessarily relevant to this compilation. I.e., while we must override settings
-     * like extrinsic_transparency, since our created tileset transparency might not match the user global setting, some
-     * settings like tileset.paths.primary from the user should absolutely be respected.
+     * Layer an override provider that forces the domain config values required for the sample-tileset recompile. The
+     * TilesetCreator bakes rgba_magenta into every sample tile as the transparency color, so we must force
+     * extrinsic_transparency to rgba_magenta regardless of the user's configured value. tiles/pals edit mode are
+     * forced to 'optimize' so the compiler generates fresh Porymap artifacts for the blank tileset. User infra
+     * settings (paths, etc.) are left intact because the override only touches the three fields set below.
      */
+    auto create_override = std::make_unique<OverrideConfigProvider>(
+        ConfigScopeType::tileset, tileset_name, "create-tileset internal sample compile");
+    create_override->set_extrinsic_transparency(rgba_magenta);
+    create_override->set_tiles_edit_mode(ArtifactEditMode::optimize);
+    create_override->set_pals_edit_mode(ArtifactEditMode::optimize);
+    domain_config_->add_provider(std::move(create_override));
+
     // 4. Compile (generates minimal valid Porymap assets from the minimal Porytiles component)
     PT_TRY_ASSIGN_CHAIN_ERR(
         compiled_tileset,

@@ -7,15 +7,20 @@
  *   uv run Scripts/generate_config.py
  */
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "porytiles2/domain/config/domain_config.hpp"
+#include "porytiles2/infra/config/config_provider.hpp"
 
 namespace porytiles2 {
 
 class MockDomainConfig : public DomainConfig {
   public:
+    // Stub: mocks do not layer providers.
+    void add_provider(std::unique_ptr<ConfigProvider>) override {}
+
     std::size_t num_tiles_in_primary = 512;
     std::size_t num_tiles_total = 1024;
     std::size_t num_metatiles_in_primary = 512;

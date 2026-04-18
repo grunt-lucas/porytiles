@@ -84,6 +84,20 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     {
     }
 
+    /**
+     * @brief Prepends a @c ConfigProvider to the provider chain at highest priority and invalidates resolution caches.
+     *
+     * @details
+     * Satisfies @c DomainConfig::add_provider, @c AppConfig::add_provider, and @c InfraConfig::add_provider with a
+     * single override, since all three bases declare the same signature. Clearing the caches is required because any
+     * value resolved before this call would otherwise stick and the new provider would not be consulted.
+     *
+     * @param provider The provider to prepend. Must be non-null.
+     * @pre Must not be called concurrently with any config-value resolution. The class is not internally synchronized;
+     *   callers should add all override providers before the config is handed to compilation code.
+     */
+    void add_provider(std::unique_ptr<ConfigProvider> provider) override;
+
   protected:
     /*
      * Domain Config Raw Methods (Tier 1)
