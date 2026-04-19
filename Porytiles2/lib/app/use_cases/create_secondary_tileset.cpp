@@ -6,6 +6,7 @@
 #include "porytiles2/app/use_cases/secondary_tileset_helpers.hpp"
 #include "porytiles2/domain/models/porymap_tileset_component.hpp"
 #include "porytiles2/domain/models/tileset.hpp"
+#include "porytiles2/infra/config/override_config_provider.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/config/unwrap_config.hpp"
 
@@ -51,6 +52,20 @@ ChainableResult<void> CreateSecondaryTileset::create(const std::string &tileset_
     auto porymap_component = std::make_unique<PorymapTilesetComponent>();
     auto tileset =
         std::make_unique<Tileset>(tileset_name, std::move(porytiles_component), std::move(porymap_component));
+
+    /*
+     * Layer an override provider that forces the domain config values required for the sample-tileset recompile. The
+     * TilesetCreator bakes rgba_magenta into every sample tile as the transparency color, so we must force
+     * extrinsic_transparency to rgba_magenta regardless of the user's configured value. tiles/pals edit mode are
+     * forced to 'optimize' so the compiler generates fresh Porymap artifacts for the blank tileset. User infra
+     * settings (paths, etc.) are left intact because the override only touches the three fields set below.
+     */
+    auto create_override = std::make_unique<OverrideConfigProvider>(
+        ConfigScopeType::tileset, tileset_name, "create-tileset internal sample compile");
+    create_override->set_extrinsic_transparency(rgba_magenta);
+    create_override->set_tiles_edit_mode(ArtifactEditMode::optimize);
+    create_override->set_pals_edit_mode(ArtifactEditMode::optimize);
+    domain_config_->add_provider(std::move(create_override));
 
     // 5. Compile (generates minimal valid Porymap assets from the minimal Porytiles component)
     PT_TRY_ASSIGN_CHAIN_ERR(
