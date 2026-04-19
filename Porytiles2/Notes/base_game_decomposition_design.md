@@ -1,8 +1,5 @@
 # Design: Decomposing BaseGame into Independent Config Dimensions
 
-**Date**: 2026-04-15 (revised 2026-04-17)
-**Status**: Design exploration, not yet planned for implementation
-
 ## Problem
 
 The `BaseGame` enum is detected by scanning `include/global.fieldmap.h` for string markers. This is
@@ -32,30 +29,38 @@ matter for detection disambiguation.
 Line numbers drift; function names are stable. Authoritative lookup is
 `grep -rn base_game Porytiles2/`.
 
-| File | Function | What It Controls |
-|------|----------|------------------|
-| `project_primary_tileset_importer.cpp` | `ProjectPrimaryTilesetImporter::import_porymap_component_from_vanilla` | Binary attr parse format (2 vs 4 byte), migrated to `metatile_attr_size` |
-| `project_tileset_artifact_reader.cpp` | `ProjectTilesetArtifactReader::read_metatile_attributes_bin` | Binary attr parse format, migrated |
-| `project_tileset_artifact_writer.cpp` | `ProjectTilesetArtifactWriter::write_metatile_attributes_bin` | Binary attr write format, migrated |
-| `project_tileset_artifact_writer.cpp` | `ProjectTilesetArtifactWriter::write_attributes_csv` | CSV column format and default filtering |
-| `attributes_csv_loader.cpp` | `parse_attributes_csv` (free function) | CSV format validation vs project's `BaseGame` |
-| `command_compile_tileset.hpp` | `CompileTilesetCommand::Run` | Terrain/encounter provider instantiation |
-| `command_create_tileset.hpp` | `CreateTilesetCommand::Run` | Terrain/encounter provider instantiation |
-| `command_decompile_tileset.hpp` | `DecompileTilesetCommand::Run` | Terrain/encounter provider instantiation |
-| `command_import_tileset.hpp` | `ImportTilesetCommand::Run` | Terrain/encounter provider instantiation and pokeruby "not supported" gate |
+| File                                   | Function                                                               | What It Controls                                                                               |
+|----------------------------------------|------------------------------------------------------------------------|------------------------------------------------------------------------------------------------|
+| `project_primary_tileset_importer.cpp` | `ProjectPrimaryTilesetImporter::import_porymap_component_from_vanilla` | Binary attr parse format (2 vs 4 byte), migrated to size detected by `MetatilesHeaderProvider` |
+| `project_tileset_artifact_reader.cpp`  | `ProjectTilesetArtifactReader::read_metatile_attributes_bin`           | Binary attr parse format, migrated                                                             |
+| `project_tileset_artifact_writer.cpp`  | `ProjectTilesetArtifactWriter::write_metatile_attributes_bin`          | Binary attr write format, migrated                                                             |
+| `project_tileset_artifact_writer.cpp`  | `ProjectTilesetArtifactWriter::write_attributes_csv`                   | CSV column format and default filtering                                                        |
+| `attributes_csv_loader.cpp`            | `parse_attributes_csv` (free function)                                 | CSV format validation vs project's `BaseGame`                                                  |
+| `command_compile_tileset.hpp`          | `CompileTilesetCommand::Run`                                           | Terrain/encounter provider instantiation                                                       |
+| `command_create_tileset.hpp`           | `CreateTilesetCommand::Run`                                            | Terrain/encounter provider instantiation                                                       |
+| `command_decompile_tileset.hpp`        | `DecompileTilesetCommand::Run`                                         | Terrain/encounter provider instantiation                                                       |
+| `command_import_tileset.hpp`           | `ImportTilesetCommand::Run`                                            | Terrain/encounter provider instantiation and pokeruby "not supported" gate                     |
 
 ## The Three Behavioral Dimensions
 
 ### 1. Binary Attribute Format -- DONE
 
-- **Config**: `metatile_attr_size` (2 or 4 bytes), in `config_schema.yaml`
-- **Auto-detected**: `MetatilesHeaderProvider` scans `metatiles.h` for `const u16` vs `const u32`
-- **Overridable**: via CLI `--metatile-attr-size` or YAML `fieldmap.metatile_attribute_size`
-- **Completed**: Replaced `base_game == pokefirered` checks in all three binary parse/write sites
-  with `metatile_attr_size == attr::bytes_per_attr_firered`. Removed `BaseGame` dependency from
-  `ProjectPrimaryTilesetImporter` and `ProjectTilesetArtifactReader` entirely. Added
-  `metatile_attr_size` as a resolved constructor parameter to `ProjectTilesetArtifactWriter`
-  (which still needs `BaseGame` for CSV writing).
+- **Invariant**: Total attribute size is authoritative from `MetatilesHeaderProvider`, which scans
+  the element type of `gMetatileAttributes_*` in `metatiles.h` (`const u16` -> 2 bytes,
+  `const u32` -> 4 bytes). There is no user-facing override. The previous `metatile_attr_size`
+  YAML key and the `--metatile-attr-size` CLI flag are **deleted**. Porytiles2 is unreleased, so
+  no migration path is needed.
+- **Schema-load validation**: the schema loader checks that every field mask fits within
+  `detected_attr_bytes * 8` bits and raises a diagnostic if any mask overflows. This catches the
+  "user wrote a mask at bit 30 but metatiles.h says u16" class of error at load time.
+- **No numeric escape hatch**: if `metatiles.h` cannot be parsed (novel formatting, unusual
+  variable names), the user writes a full explicit `metatile_attr_fields:` schema. The schema
+  implies the required bit width through its masks; there is no separate numeric size knob.
+- **Completed refactor**: Replaced `base_game == pokefirered` checks in all three binary
+  parse/write sites with size-driven logic. Removed `BaseGame` dependency from
+  `ProjectPrimaryTilesetImporter` and `ProjectTilesetArtifactReader` entirely. Added the
+  detected attr size as a resolved constructor parameter to `ProjectTilesetArtifactWriter`
+  (which still needs `BaseGame` for CSV writing, pending Dimension 2).
 
 ### 2. CSV Attribute Schema -- NEEDS DECOMPOSITION
 
@@ -175,6 +180,9 @@ Field names are arbitrary. A fork that renames `encounter_type` to `encounter` (
 `terrain_type_2`, or adds a brand-new `building_type` field pointing at its own header)
 works with zero Porytiles source changes.
 
+See also `metatile_attr_field_overrides` for partial overrides that don't require writing the
+full list.
+
 Provider block shape:
 
 - `header`: path to the header file, relative to the project root.
@@ -200,7 +208,7 @@ Offset is derivable from mask: `offset = std::countr_zero(mask)`,
 1. `mask != 0`.
 2. Mask is a single contiguous run of 1-bits (rejects `0xF0F0`).
 3. No two fields have overlapping masks.
-4. Mask fits within `metatile_attr_size * 8` bits.
+4. Mask fits within `detected_attr_bytes * 8` bits (from `MetatilesHeaderProvider`).
 
 Explicit offset only helps for split or interleaved fields. Gen III decomps do not use
 those. Defer until someone asks.
@@ -215,31 +223,168 @@ scans the decomp's own headers and synthesizes the same shape of config a user c
 have written by hand. No hidden "stock pokefirered preset" lives in Porytiles; only
 header scanning driven by documented rules.
 
+##### Partial Override (Field-Level Tweaks)
+
+Porytiles2's `LazyLayeredConfig` resolves each config value atomically through the
+provider chain. It does not merge lists across providers: whichever provider "wins"
+for a given key returns the entire list. That means `metatile_attr_fields:` is
+all-or-nothing. A user who only wants to tweak the `skipped` list on `behavior`
+cannot do so by supplying a partial list and hoping it merges with inference output;
+supplying a list would replace the inferred list entirely.
+
+The ergonomic answer is a **sibling** config key, `metatile_attr_field_overrides:`,
+whose shape is a map of `field_name -> partial_field_spec`. It resolves atomically
+through the same provider chain (so a user can override it in exactly the same way
+as any other config value), and the domain-layer schema loader applies it **after**
+`metatile_attr_fields` has been resolved from either YAML or inference.
+
+Merge rule:
+
+- For each entry in `metatile_attr_field_overrides`, look up the matching baseline
+  field in the resolved `metatile_attr_fields` list by `name`.
+- Keys present in the override replace the baseline values. Keys absent from the
+  override fall through to the baseline.
+- An override entry naming a field that does not exist in the baseline is a hard
+  error at schema load. The user gets a diagnostic that names the missing field
+  and lists the available baseline names; silent creation of new fields would
+  defeat the intent, which is "tweak inference, not supplement it."
+
+Representative example:
+
+```yaml
+# Baseline inferred from global.fieldmap.h. User only tweaks behavior's skipped list
+# and changes the custom_flag field to raw (drops its provider block).
+fieldmap:
+  metatile_attr_field_overrides:
+    behavior:
+      provider:
+        skipped: [MB_INVALID, MB_DEPRECATED]
+    custom_flag:
+      provider: null    # explicit null drops the provider block
+```
+
+Three ergonomic tiers fall out of this:
+
+1. **Pure inference** — zero YAML. Stock decomps hit this path.
+2. **Override-only** — small YAML targeting one or two fields, keeping the rest
+   of inference intact. This is the expected common case for lightly forked projects.
+3. **Full explicit** — the existing `metatile_attr_fields:` path. Users who diverge
+   heavily from stock write the full list and skip inference altogether.
+
+`provider: null` is the escape-hatch syntax for demoting a provider-backed field to
+raw. Without the explicit `null`, omitting `provider:` in an override means "do not
+touch the provider block," not "drop it." This distinction matters: the override
+merge is additive by default, not destructive.
+
 Inference is **rule-based**, not preset-based. The rule set is small, documented, and
-lives next to the provider code. A few illustrative rules:
+lives next to the provider code. Instead of hardcoding names like `BEHAVIOR`,
+`TERRAIN`, and `ENCOUNTER`, inference runs a two-phase cascade driven by what it
+actually finds in `global.fieldmap.h`. That way a fork that invents a new attribute
+enum (e.g. `BIOME`) gets a working schema with zero Porytiles source edits.
 
-- Find `#define METATILE_ATTR_*_MASK` defines in `global.fieldmap.h`. Each becomes a
-  named field whose `mask` is the define's value and whose `name` is derived from the
-  define name (e.g. `METATILE_ATTR_BEHAVIOR_MASK` -> field name `behavior`).
-- If a mask name contains `BEHAVIOR`, assume the enum values live in
-  `include/constants/metatile_behaviors.h` with `prefix: MB_` and `format: either`.
-- If a mask name contains `TERRAIN`, assume a C enum with `prefix: TILE_TERRAIN_`
-  inside `include/global.fieldmap.h` itself and `format: enums_only`.
-- If a mask name contains `ENCOUNTER`, assume a C enum with `prefix: TILE_ENCOUNTER_`
-  inside `include/global.fieldmap.h` and `format: enums_only`.
-- Any mask without a recognized keyword is emitted as a raw field (no provider block).
+##### Phase A -- Field Discovery
 
-When a rule fires but the referenced header or prefix yields no entries, the inference
-provider reports a warning and falls back to a raw field. The user then writes an
-explicit YAML entry to correct the inference. This is the standard escape hatch:
-inference is a convenience layer, explicit YAML wins.
+Scan `include/global.fieldmap.h` and `src/fieldmap.c` for up to three sources,
+reconciling them:
+
+- **Declaration enum** (source 1): an anonymous enum whose members begin with
+  `METATILE_ATTRIBUTE_` in `include/global.fieldmap.h`. Provides field ordering
+  and name suffixes. Present in pokefirered and pokeemerald-expansion, absent
+  in pokeemerald.
+- **Mask defines** (source 2): `#define METATILE_ATTR_*_MASK 0x...` in
+  `include/global.fieldmap.h`. Provides authoritative bit masks. Present in
+  pokeemerald and pokeemerald-expansion, absent in pokefirered.
+- **Mask array in `src/fieldmap.c`** (source 3): an array literally named
+  `sMetatileAttrMasks`, declared in `src/fieldmap.c`, with designated
+  initializers of the form `[METATILE_ATTRIBUTE_<SUFFIX>] = 0x...`. Each
+  initializer becomes the authoritative mask for the field whose suffix matches
+  the enum member. This is the pokefirered-stock source. Forks that renamed the
+  array fall through to explicit YAML.
+
+Reconciliation rules:
+
+1. If only mask defines exist (source 2), each define becomes a field; name
+   suffix comes from the define (`METATILE_ATTR_BEHAVIOR_MASK` -> suffix
+   `BEHAVIOR`). Pokeemerald-stock.
+2. If only the declaration enum exists (source 1) **but the `sMetatileAttrMasks`
+   array in `src/fieldmap.c` is also found (source 3)**, masks come from the
+   array keyed by enum member, field suffixes come from the enum.
+   Pokefirered-stock.
+3. If the declaration enum AND mask defines both exist (sources 1 + 2),
+   reconcile by suffix: a field exists if *either* source names it. Mask comes
+   from the define when available. Declaration-enum ordering wins for
+   field-order display. Pokeemerald-expansion-emerald-side.
+4. If only the declaration enum exists and `sMetatileAttrMasks` is **not**
+   found (or its array name differs), fields are declared but masks are
+   unknown at this step — Phase C handles the diagnostic. Forks of pokefirered
+   that renamed the array.
+5. `_FRLG`-suffixed mask defines are matched to their bare-name counterparts
+   and become **alternates**: a same-named field with a different mask. The
+   per-tileset schema (Phase 4) picks which mask applies. This is how
+   pokeemerald-expansion's dual layout is handled cleanly. Additionally,
+   pokeemerald-expansion-FRLG-side may carry both a declaration enum AND the
+   `sMetatileAttrMasks` array; in that case sources 1 + 3 apply and produce
+   the FRLG-layout alternates naturally. (Whether pokeemerald-expansion-FRLG-side
+   actually ships `sMetatileAttrMasks` under that exact name is a Phase 3
+   implementation verification step, not a design-doc claim.)
+
+##### Phase B -- Provider Classification (per field)
+
+Normalize each field's suffix to uppercase. Then:
+
+1. **`BEHAVIOR`** — hardcoded to the behavior provider:
+   `header: include/constants/metatile_behaviors.h`, `prefix: MB_`,
+   `skipped: [MB_INVALID]`, `format: either`. This is the one special case because
+   its provider lives *outside* `global.fieldmap.h`.
+2. **`LAYER_TYPE`** — skip. Not a `metatile_attr_fields` schema field; see the
+   "Layer Type" section for its dedicated treatment.
+3. **Purely numeric suffix** (e.g. `2`, `3`, `5`, `7`) — raw integer field, no
+   provider block.
+4. **Any other suffix `X`** — grep `global.fieldmap.h` for an anonymous enum whose
+   members match `TILE_{X}_*`. If found, emit a provider block:
+   `header: include/global.fieldmap.h`, `prefix: TILE_{X}_`, `format: enums_only`.
+   If not found, emit a raw integer field.
+
+##### Phase C -- Mask Derivation
+
+- **If Phase A produced a mask from sources 2 or 3**, use it. (Source 2 wins
+  if both are present, but that case should not occur in stock decomps. The
+  source-2 / source-3 conflict-resolution rule lands in the implementation
+  plan, not here.)
+- **If Phase A produced only source 1 (declaration enum, no mask from
+  anywhere)**, inference cannot guess bit widths. Emit a diagnostic pointing
+  the user to either (a) restore the `sMetatileAttrMasks` array under its
+  original name in `src/fieldmap.c`, (b) add `METATILE_ATTR_*_MASK` defines
+  to `global.fieldmap.h`, or (c) supply a `metatile_attr_field_overrides:`
+  entry with an explicit `mask:` per affected field.
+- **Exception**: if the detected total size is 2 bytes AND Phase A produced
+  only `BEHAVIOR` and `LAYER_TYPE` fields, the stock emerald-style layout
+  (`0x00FF` / `0xF000`) is unambiguous — apply it silently.
+
+Alongside `sMetatileAttrMasks`, pokefirered's `src/fieldmap.c` also ships
+`sMetatileAttrShifts[METATILE_ATTRIBUTE_COUNT]`. The shifts are derivable from
+the masks (`std::countr_zero(mask)`), so inference does NOT require parsing the
+shifts array. If the shifts array is present and differs from the computed
+shifts, emit a warning and trust the masks — that combination indicates a
+non-contiguous bit field, which the design already rejects in the
+mask-validation rules ("Mask is a single contiguous run of 1-bits").
+
+The elegance: a fork that adds `METATILE_ATTR_BIOME_MASK` alongside
+`enum { TILE_BIOME_DESERT, TILE_BIOME_FOREST, ... }` gets a working schema with zero
+Porytiles source edits. The `BEHAVIOR` special-case survives only because its header
+is elsewhere; everything else follows the generic suffix-driven rule.
+
+When a rule fires but the referenced header or prefix yields no entries, the
+inference provider reports a warning and falls back to a raw field. The user then
+writes a `metatile_attr_field_overrides:` entry (or a full `metatile_attr_fields:`
+list) to correct the inference. This is the standard escape hatch: inference is a
+convenience layer, explicit YAML wins.
 
 Rule-based inference (rather than a `BaseGame`-style preset) makes failures
-actionable and localizable. If the `TERRAIN` rule does not fire for a particular fork
-(maybe they renamed the constant to `BIOME`), the user overrides exactly that one
-field in YAML rather than having to declare a whole new preset. Adding support for
-a new fork never requires a Porytiles source change, only a rule tweak or a user-level
-config override.
+actionable and localizable. If the suffix-cascade does not fire for a particular
+fork's attribute, the user overrides exactly that one field in YAML rather than
+having to declare a whole new preset. Adding support for a new fork never requires
+a Porytiles source change, only a rule tweak or a user-level config override.
 
 #### Provider Instantiation from the Schema
 
@@ -380,14 +525,33 @@ it.
 
 ## Layer Type
 
-`layer_type` is a **tileset-wide structural property** tied to dual-layer vs triple-layer mode
-(detected via `PorymapTilesetComponent::detect_layer_mode`), not a per-metatile value stored in
-the CSV. CSV load hardcodes `LayerType::normal` inside `parse_attributes_csv`; the real value
-comes from the binary.
+`layer_type` is **not** part of the `metatile_attr_fields` schema. It is a first-class
+structural field backed by the tileset's layer mode (dual vs triple) and the metatile's
+position/role within the tileset. Inference happens inside `layer_mode_converter` and
+`porymap_artifact_parsers`, not through a mask-driven schema field.
 
-**Decision**: keep `layer_type` out of the user-visible schema surface for now. The schema
-describes per-metatile, per-row CSV-addressable fields, and `layer_type` is not one of those.
-Revisit only if users ask for per-metatile layer overrides.
+**Default behavior (no knob set)**: the CSV has no `layer_type` column at all. CSV load treats
+`layer_type` as unset and relies on `layer_mode_converter` to compute the correct value for
+each metatile; CSV write omits the column entirely. This matches today's behavior and the
+common case.
+
+**Opt-in manual override**: a per-tileset boolean config key enables manual CSV-level control.
+Working name: `write_layer_type_column: false` (default `false`). When set to `true`:
+
+- **CSV write** emits an extra `layer_type` column, serializing each metatile's current
+  `layer_type` value (whatever `layer_mode_converter` resolved it to).
+- **CSV load** recognises the column. A filled cell is an explicit override for that row; a
+  blank cell falls back to the normal auto-computed value from `layer_mode_converter`. This
+  gives users a "touch only the rows I care about" workflow without requiring they fill in
+  every row.
+- **Responsibility**: any user editing the CSV with this knob enabled owns those rows'
+  `layer_type` values. There is no uniform "default" to diff against — dual-layer tilesets
+  have a roughly even split across `NORMAL` / `COVERED` / `SPLIT`, so the "emit only if any
+  row differs from the default" heuristic does not apply cleanly.
+
+The knob exists **only** for users who deliberately want per-row control. It is an escape
+hatch; the common path is to leave `write_layer_type_column: false` and trust the inference
+in `layer_mode_converter`.
 
 ## Pokeruby Gate
 
@@ -417,35 +581,35 @@ A simple regex pass will not be enough for derived values or `#ifdef` guards. Th
 approach is a minimal preprocessor that evaluates `#define` chains and tracks active `#ifdef`
 branches, not a flat text scan.
 
+The schema loader also cross-validates derived masks against the detected total attribute size
+from `MetatilesHeaderProvider`. A user (or inference) declaring a mask bit beyond
+`detected_attr_bytes * 8` gets a diagnostic at schema load time rather than a silent runtime
+truncation.
+
+Two packing styles exist in the wild and the inference layer treats them as equivalent because
+the masks are what matter:
+
+- **Pokeemerald-style**: `PACK(data, shift, mask)` / `UNPACK(data, shift, mask)` in `global.h`,
+  with per-field helpers (`PACK_BEHAVIOR`, `UNPACK_BEHAVIOR`) in `global.fieldmap.h`. Mask and
+  shift defines are paired in-source.
+- **Pokefirered-style**: `ExtractMetatileAttribute(u32, u8)` in `src/fieldmap.c` indexing the
+  `sMetatileAttrMasks` / `sMetatileAttrShifts` arrays by enum member.
+
+The inference layer does not parse or recognize the PACK/UNPACK macros or the extraction
+function — those are runtime plumbing. Only the mask sources (enum defines, array initializers)
+are authoritative for schema inference.
+
 ## Open Questions
 
-1. **Per-tileset schema representation**: What does the override look like in porytiles config?
-   Likely an optional `attribute_format` (or `attribute_schema`) field per tileset, falling back
-   to the project-level default when absent. The per-tileset override is needed so expansion
-   projects can tag individual tilesets as FRLG-layout without affecting the rest.
+1. **Per-tileset schema representation**: How do `metatile_attr_fields`,
+   `metatile_attr_field_overrides`, and `write_layer_type_column` compose at the tileset level?
+   Expansion projects can mix emerald-layout and FRLG-layout tilesets in one project, so at
+   least `metatile_attr_fields` (or its `_FRLG` alternate mask selection) needs a per-tileset
+   override story. Open questions inside this one: does `metatile_attr_field_overrides` also
+   take a per-tileset form, or is per-tileset restricted to full-list overrides? Does
+   `write_layer_type_column` live next to it, or one level up in project config?
 
-2. **Config representation for a full explicit schema**: What does a user-authored schema look
-   like in `porytiles.yaml` when auto-detection is not sufficient? Two candidate shapes:
-   - **Named preset**: `attribute_format: emerald` / `firered` / `emerald_expansion_frlg` /
-     `custom`. Clear to users, limited in power.
-   - **Bit-field description**:
-     ```yaml
-     fieldmap:
-       metatile_attribute_fields:
-         - name: behavior
-           mask: 0x00FF
-           provider:
-             header: include/constants/metatile_behaviors.h
-             prefix: MB_
-         - name: custom_flag
-           mask: 0x8000
-           # no provider block -> raw integer column in CSV
-     ```
-     Fully general, verbose. If auto-detection covers >95% of cases, a named-preset escape hatch
-     is probably preferable to a full bit-field DSL. See the "Typed Fields and Provider Mapping"
-     section above for the shape of `provider:`.
-
-3. **Scope of auto-detection**: Auto-detection must cover stock pokeemerald, pokefirered, and
+2. **Scope of auto-detection**: Auto-detection must cover stock pokeemerald, pokefirered, and
    pokeemerald-expansion (both emerald and FRLG sides) without requiring user config.
    Unrecognized projects must supply an explicit schema.
 
@@ -454,13 +618,16 @@ branches, not a flat text scan.
 Phases here are review-chunking units, not compat milestones. Porytiles2 is unreleased; there is
 no need to keep `BaseGame` around for diagnostics or migration.
 
-1. **Phase 1 (done)**: Binary format via `metatile_attr_size`.
-2. **Phase 2**: Field-schema abstraction in the domain. Named fields with bit ranges, a
-   CSV-visibility flag, and an optional `provider:` block (`header` + `prefix` +
-   optional `skipped` / `format`) that is translated into an `EnumSpec` at load time.
-   No hardcoded knowledge of `behavior` / `terrain` / `encounter_type` anywhere.
-   `MetatileAttribute` becomes schema-backed; anonymous `attribute_2/3/5/7` members
-   deleted. Typing lives on the schema, not on the attribute.
+1. **Phase 1 (done)**: Binary format size detection via `MetatilesHeaderProvider`.
+2. **Phase 2**: Field-schema abstraction in the domain. Named fields with bit ranges and an
+   optional `provider:` block (`header` + `prefix` + optional `skipped` / `format`) that is
+   translated into an `EnumSpec` at load time. No hardcoded knowledge of `behavior` /
+   `terrain` / `encounter_type` anywhere. `MetatileAttribute` becomes a schema-backed map of
+   `field_name -> integer bit value`, with anonymous `attribute_2/3/5/7` members deleted.
+   `layer_type` is retained as a first-class member **outside** the field map per the "Layer
+   Type" section. This phase also resolves the TODO comment in
+   `metatile_attribute.hpp` that currently documents pokefirered's mask layout inline — the
+   schema supersedes that comment. Typing lives on the schema, not on the attribute.
 3. **Phase 2.5**: Provider consolidation. Collapse `BehaviorMapProvider`,
    `TerrainTypeMapProvider`, and `EncounterTypeMapProvider` into one `EnumMapProvider`
    domain interface, with one `HeaderEnumMapProvider` infra implementation parameterized
@@ -469,23 +636,33 @@ no need to keep `BaseGame` around for diagnostics or migration.
    "Provider Consolidation" section under "Design Direction" for the shape.
 4. **Phase 3**: Schema inference via a new `MetatileAttributeConfigProvider` that slots into
    the `config_schema.yaml` provider chain as an inference layer below the explicit YAML
-   provider. Implements a documented rule set that maps mask defines in `global.fieldmap.h`
-   (and companion enum headers) to provider blocks. Validate against stock pokeemerald,
-   pokefirered, pokeemerald-expansion (both emerald and FRLG sides). See the "Schema
-   Inference via a Config Provider" section above for the rule shape.
+   provider. Implements the two-phase suffix cascade (Phase A: field discovery,
+   Phase B: provider classification, Phase C: mask derivation) against `global.fieldmap.h`
+   and companion enum headers, **including the `metatile_attr_field_overrides` merge step**
+   that applies partial overrides onto the resolved baseline. Validate against stock
+   pokeemerald, pokefirered, pokeemerald-expansion (both emerald and FRLG sides). See the
+   "Schema Inference via a Config Provider" section above for the rule shape. This includes
+   parsing `sMetatileAttrMasks` in `src/fieldmap.c` (exact-name match) to recover masks
+   for pokefirered-stock when `global.fieldmap.h` has a declaration enum but no mask defines.
 5. **Phase 4**: Per-tileset schema in the project config (both auto-detected and explicit
-   override). This is where the expansion dual-mask problem actually gets resolved.
+   override), and `write_layer_type_column` per-tileset knob. This is where the expansion
+   dual-mask problem actually gets resolved.
 6. **Phase 5**: Drive CSV and provider plumbing from the schema. Remove `BaseGame` from every
    behavioral path.
-   - CSV column set = `{field.name for field in schema if field.csv_visible}`.
+   - CSV column set is derived directly from the schema field list (provider presence
+     determines rendering; there is no separate CSV-visibility flag).
    - CSV cell parse and write look up `field.provider()` in the runtime `ProviderMap`
      (keyed by field name). Provider present means run the cell through it; provider
      absent means treat the cell as a raw integer.
+   - `layer_type` CSV handling is governed by `write_layer_type_column` per the "Layer Type"
+     section, independent of the schema-field loop.
    - Provider instantiation is one pass over schema fields at command startup
      (replacing the `if (base_game == BaseGame::pokefirered)` gate in each command).
 7. **Phase 6**: Delete `BaseGame` enum, `BaseGameDetector`, and `base_game` from configs, CLI,
-   and domain. Delete the pokeruby gate inside `ImportTilesetCommand::Run`. The project emerges
-   with no global "which game" concept.
+   and domain. Delete the `metatile_attr_size` YAML key and the `--metatile-attr-size` CLI
+   flag at the same time (the detected size from `MetatilesHeaderProvider` is authoritative
+   and has no user-facing override). Delete the pokeruby gate inside
+   `ImportTilesetCommand::Run`. The project emerges with no global "which game" concept.
 
 Diagnostic messages that previously said "detected as pokefirered" get reworked to describe the
 schema ("detected 4-byte attributes with behavior / terrain / encounter_type fields").
