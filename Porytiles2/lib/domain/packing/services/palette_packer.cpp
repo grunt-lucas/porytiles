@@ -215,9 +215,9 @@ build_combined_tiles(const PackingParams &params, const std::set<PixelTile<Rgba3
     }
 
     for (std::size_t i = 0; i < params.primary_tiles_.size(); ++i) {
-        const auto &[tile, pal_index] = params.primary_tiles_.at(i);
-        combined.tiles.push_back(tile);
-        combined.index_to_id.push_back(PackableTile::PrimaryTileId{i, pal_index});
+        const auto &primary_ref = params.primary_tiles_.at(i);
+        combined.tiles.push_back(primary_ref.tile);
+        combined.index_to_id.push_back(PackableTile::PrimaryTileId{i, primary_ref.pal_index});
     }
 
     return combined;

@@ -11,6 +11,7 @@
 #include "porytiles2/domain/config/tile_sharing_alignment.hpp"
 #include "porytiles2/domain/config/tile_sharing_packing.hpp"
 #include "porytiles2/domain/models/color_index_map.hpp"
+#include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
 #include "porytiles2/domain/models/rgba32.hpp"
@@ -70,14 +71,32 @@ struct PackingParams {
     std::bitset<pal::num_pals> available_pals_;
 
     /**
+     * @brief A reconstructed RGBA tile from a compiled primary tileset, tagged with its first metatile slot location.
+     *
+     * @details
+     * Each PrimaryTileRef bundles a decoded pixel tile, its hardware palette assignment, and the coordinates of the
+     * first metatile slot (in the paired primary's triple-layerized metatile entries) where this (tile_index,
+     * pal_index) pair was observed. The coordinates are used purely for diagnostic display; they let sharing remarks
+     * reference primary tiles in the same @c "metatile 0x3(3)|middle|northwest(0)" form used for secondary tiles.
+     */
+    struct PrimaryTileRef {
+        PixelTile<Rgba32> tile;
+        std::size_t pal_index;
+        std::size_t metatile_index;
+        metatile::Layer layer;
+        metatile::Subtile subtile;
+    };
+
+    /**
      * @brief Reconstructed RGBA tiles from a compiled primary tileset for cross-tileset shape group analysis.
      *
      * @details
-     * Each entry is a (pixel tile, hw palette index) pair. These tiles participate in shape group analysis to detect
-     * cross-tileset sharing opportunities, but are never packed by the packer (their palette assignments are fixed).
-     * Empty for primary compilation or standalone secondary compilation without a paired primary.
+     * Each entry is a PrimaryTileRef describing a decoded pixel tile and its first metatile slot. These tiles
+     * participate in shape group analysis to detect cross-tileset sharing opportunities, but are never packed by the
+     * packer (their palette assignments are fixed). Empty for primary compilation or standalone secondary compilation
+     * without a paired primary.
      */
-    std::vector<std::pair<PixelTile<Rgba32>, std::size_t>> primary_tiles_;
+    std::vector<PrimaryTileRef> primary_tiles_;
 
     /**
      * @brief Controls whether the packer considers shape group membership during packing.

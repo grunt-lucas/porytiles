@@ -11,6 +11,7 @@
 #include "porytiles2/domain/models/metatile.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/pixel_tile.hpp"
+#include "porytiles2/domain/packing/services/palette_packer.hpp"
 #include "porytiles2/domain/services/palette_printer.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
 #include "porytiles2/utilities/string_utils.hpp"
@@ -292,7 +293,7 @@ template <std::size_t N>
         const auto tile_index = color_version_tile_indices.at(v);
         auto [mt_index, layer, subtile] = metatile::from_tile_index(tile_index);
         lines.emplace_back(format.format(
-            "Color version {} ({}):",
+            "Color version {} (secondary {}):",
             FormatParam{v + 1, Style::bold},
             FormatParam{metatile::message_header(format, mt_index, layer, subtile), Style::bold}));
         lines.append_range(tile_printer.print_tile(pixel_tiles.at(tile_index), extrinsic_transparency));
@@ -304,13 +305,14 @@ template <std::size_t N>
  * @brief Builds note lines showing ASCII art for each primary tile color version in a sharing group.
  *
  * @details
- * For each primary tile color version entry, emits a "Color version N (primary tile T, palette 'XX.pal'):" line
- * followed by the ASCII art representation of that tile. The version numbering continues after the secondary color
- * versions via @p version_offset.
+ * For each primary tile color version entry, emits a "Color version N (primary metatile ..., palette 'XX.pal'):" line
+ * followed by the ASCII art representation of that tile. The primary metatile coordinate identifies the first slot in
+ * the paired primary's triple-layerized metatiles where the underlying (tile, palette) pair was first seen. The
+ * version numbering continues after the secondary color versions via @p version_offset.
  *
  * @param format The TextFormatter for styling
  * @param tile_printer The TilePrinter for rendering tile ASCII art
- * @param primary_tiles The primary tiles collection (each entry is a pixel tile + palette index pair)
+ * @param primary_tiles The primary tiles collection (each entry is a PackingParams::PrimaryTileRef)
  * @param extrinsic_transparency The extrinsic transparency color
  * @param primary_color_version_entries Pairs of (tile_index, pal_index) for each distinct primary color version
  * @param version_offset The number of secondary color versions already displayed (for numbering continuation)
@@ -319,7 +321,7 @@ template <std::size_t N>
 [[nodiscard]] inline std::vector<std::string> build_primary_tile_color_version_lines(
     const TextFormatter &format,
     const TilePrinter &tile_printer,
-    const std::vector<std::pair<PixelTile<Rgba32>, std::size_t>> &primary_tiles,
+    const std::vector<PackingParams::PrimaryTileRef> &primary_tiles,
     const Rgba32 &extrinsic_transparency,
     const std::vector<std::pair<std::size_t, std::size_t>> &primary_color_version_entries,
     std::size_t version_offset)
@@ -327,12 +329,15 @@ template <std::size_t N>
     std::vector<std::string> lines;
     for (std::size_t v = 0; v < primary_color_version_entries.size(); ++v) {
         const auto &[tile_index, pal_index] = primary_color_version_entries.at(v);
+        const auto &primary_ref = primary_tiles.at(tile_index);
         lines.emplace_back(format.format(
-            "Color version {} (primary tile {}, palette '{}'):",
+            "Color version {} (primary {}, palette '{}'):",
             FormatParam{version_offset + v + 1, Style::bold},
-            FormatParam{tile_index, Style::bold},
+            FormatParam{
+                metatile::message_header(format, primary_ref.metatile_index, primary_ref.layer, primary_ref.subtile),
+                Style::bold},
             FormatParam{pal_filename(pal_index), Style::bold}));
-        lines.append_range(tile_printer.print_tile(primary_tiles.at(tile_index).first, extrinsic_transparency));
+        lines.append_range(tile_printer.print_tile(primary_ref.tile, extrinsic_transparency));
     }
     return lines;
 }
@@ -364,7 +369,7 @@ build_truncated_tile_ref_lines(const TextFormatter &format, const std::vector<st
             current_line += ", ";
         }
         auto [mt_index, layer, subtile] = metatile::from_tile_index(tile_indices.at(i));
-        current_line += metatile::message_header(format, mt_index, layer, subtile);
+        current_line += "secondary " + metatile::message_header(format, mt_index, layer, subtile);
         count_on_line++;
         if (count_on_line == refs_per_line) {
             lines.emplace_back(current_line);
@@ -438,7 +443,7 @@ build_truncated_tile_ref_lines(const TextFormatter &format, const std::vector<st
         const auto representative_tile_index = tile_indices.front();
         auto [mt_index, layer, subtile] = metatile::from_tile_index(representative_tile_index);
         lines.emplace_back(format.format(
-            "Representative shape for palette '{}' ({}):",
+            "Representative shape for palette '{}' (secondary {}):",
             FormatParam{pal_filename(pal_index), Style::bold},
             FormatParam{metatile::message_header(format, mt_index, layer, subtile), Style::bold}));
         lines.append_range(tile_printer.print_tile(pixel_tiles.at(representative_tile_index), extrinsic_transparency));
@@ -450,13 +455,14 @@ build_truncated_tile_ref_lines(const TextFormatter &format, const std::vector<st
  * @brief Builds note lines showing one representative primary tile (ASCII art) per palette.
  *
  * @details
- * For each palette in the ordered map, renders the first primary tile in that palette's member list as ASCII art with a
- * "Representative shape for palette 'XX.pal' (primary tile N):" header. Used in Phase 3 tile sharing diagnostics for
- * cross-tileset members.
+ * For each palette in the ordered map, renders the first primary tile in that palette's member list as ASCII art with
+ * a "Representative shape for palette 'XX.pal' (primary metatile ...):" header. The primary metatile coordinate
+ * identifies the first slot in the paired primary's triple-layerized metatiles where the underlying (tile, palette)
+ * pair was first seen. Used in Phase 3 tile sharing diagnostics for cross-tileset members.
  *
  * @param format The TextFormatter for styling
  * @param tile_printer The TilePrinter for rendering tile ASCII art
- * @param primary_tiles The primary tiles collection (each entry is a pixel tile + palette index pair)
+ * @param primary_tiles The primary tiles collection (each entry is a PackingParams::PrimaryTileRef)
  * @param extrinsic_transparency The extrinsic transparency color
  * @param primary_members_by_pal Map from palette index to the primary tile indices assigned to that palette
  * @return Vector of formatted lines showing one representative primary tile per palette
@@ -464,19 +470,21 @@ build_truncated_tile_ref_lines(const TextFormatter &format, const std::vector<st
 [[nodiscard]] inline std::vector<std::string> build_primary_representative_tile_per_palette_lines(
     const TextFormatter &format,
     const TilePrinter &tile_printer,
-    const std::vector<std::pair<PixelTile<Rgba32>, std::size_t>> &primary_tiles,
+    const std::vector<PackingParams::PrimaryTileRef> &primary_tiles,
     const Rgba32 &extrinsic_transparency,
     const std::map<std::size_t, std::vector<std::size_t>> &primary_members_by_pal)
 {
     std::vector<std::string> lines;
     for (const auto &[pal_index, tile_indices] : primary_members_by_pal) {
         const auto representative_tile_index = tile_indices.front();
+        const auto &primary_ref = primary_tiles.at(representative_tile_index);
         lines.emplace_back(format.format(
-            "Representative shape for palette '{}' (primary tile {}):",
+            "Representative shape for palette '{}' (primary {}):",
             FormatParam{pal_filename(pal_index), Style::bold},
-            FormatParam{representative_tile_index, Style::bold}));
-        lines.append_range(
-            tile_printer.print_tile(primary_tiles.at(representative_tile_index).first, extrinsic_transparency));
+            FormatParam{
+                metatile::message_header(format, primary_ref.metatile_index, primary_ref.layer, primary_ref.subtile),
+                Style::bold}));
+        lines.append_range(tile_printer.print_tile(primary_ref.tile, extrinsic_transparency));
     }
     return lines;
 }

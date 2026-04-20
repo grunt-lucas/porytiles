@@ -1122,11 +1122,25 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
             void,
             "Failed to tileize paired primary's tiles.png for cross-tileset shape group analysis.");
 
+        /*
+         * Normalize the paired primary's entries to triple-layer so a flat slot index decodes cleanly via
+         * metatile::from_tile_index. This absorbs the dual-layer per-LayerType layout variations (normal/covered/split)
+         * into canonical bottom/middle/top positioning; the inserted transparent entries are skipped by the existing
+         * tile_index == 0 filter below.
+         */
+        LayerModeConverter layer_mode_converter{&format_, &diag_, &tile_printer_, extrinsic_transparency_.value()};
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            primary_triple_entries,
+            layer_mode_converter.triple_layerize(primary_porymap),
+            void,
+            "Failed to triple-layerize paired primary for cross-tileset shape group analysis.");
+
         // Dedup on (tile_index, pal_index) ignoring flips. Shape group analysis canonicalizes
         // orientations, so different flip variants of the same tile produce the same canonical form.
         std::set<std::pair<std::size_t, std::size_t>> seen_tile_pal_pairs;
 
-        for (const auto &entry : primary_porymap.metatiles_bin()) {
+        for (std::size_t slot = 0; slot < primary_triple_entries.size(); ++slot) {
+            const auto &entry = primary_triple_entries.at(slot);
             if (entry.tile_index() == 0) {
                 continue;
             }
@@ -1146,7 +1160,9 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
             if (rgba_tile.is_transparent(extrinsic_transparency_.value())) {
                 continue;
             }
-            packing_params.primary_tiles_.emplace_back(std::move(rgba_tile), entry.pal_index());
+            auto [mt_index, layer, subtile] = metatile::from_tile_index(slot);
+            packing_params.primary_tiles_.emplace_back(
+                PackingParams::PrimaryTileRef{std::move(rgba_tile), entry.pal_index(), mt_index, layer, subtile});
         }
     }
 
