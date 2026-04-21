@@ -1676,9 +1676,9 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
                             "Primary animation '{}' subtile '{}' (tile_index='{}') resolved via RGBA palette fallback "
                             "to palette '{}'.",
                             FormatParam{prim_anim_name, Style::bold},
-                            FormatParam{i},
-                            FormatParam{abs_tile_index},
-                            FormatParam{matches.at(0).pal_index}));
+                            FormatParam{i, Style::bold},
+                            FormatParam{abs_tile_index, Style::bold},
+                            FormatParam{matches.at(0).pal_index, Style::bold}));
                         remark_lines.emplace_back(
                             "Subtile is not referenced by any primary metatile but its colors match a primary "
                             "palette.");
@@ -1717,8 +1717,8 @@ ChainableResult<void> CompilerTask::pipeline_helper_validate_primary_anim_subtil
 {
     /*
      * Walk each primary animation's key frame subtiles. For every non-transparent subtile, verify its absolute tile
-     * index appears in at least one metatile entry of this primary's compiled tilemap. Unreferenced subtiles are not
-     * fatal: paired secondary compiles can resolve their palette via RGBA fallback matching. However, they are worth
+     * index appears in at least one metatile entry of this primary's tilemap entries. Unreferenced subtiles are not
+     * fatal. Paired secondary compiles can resolve their palette via RGBA fallback matching. However, they are worth
      * warning about since explicit metatile references are the preferred palette resolution path.
      *
      * Animations without a key frame (manual frame linking, no RGBA reference) are skipped: they have no palette to
@@ -1761,13 +1761,16 @@ ChainableResult<void> CompilerTask::pipeline_helper_validate_primary_anim_subtil
             if (!referenced_tile_indices.contains(abs_tile_index)) {
                 std::vector<std::string> warn_lines;
                 warn_lines.emplace_back(format_.format(
-                    "Primary animation '{}' subtile '{}' (tile_index='{}') is not referenced by any metatile.",
+                    "Primary animation '{}' subtile '{}' (tile_index='{}') is not referenced by any metatile:",
                     FormatParam{anim_name, Style::bold},
-                    FormatParam{i},
-                    FormatParam{abs_tile_index}));
+                    FormatParam{i, Style::bold},
+                    FormatParam{abs_tile_index, Style::bold}));
+                warn_lines.append_range(
+                    tile_printer_.print_tile(anim.key_frame().tile_at(i), extrinsic_transparency_.value()));
                 warn_lines.emplace_back(
                     "Palette assignment for this subtile will use RGBA fallback matching during secondary "
                     "compilation.");
+
                 diag_.warning("primary-anim-unreferenced-subtile", warn_lines);
             }
         }
