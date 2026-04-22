@@ -312,17 +312,8 @@ ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
      * across mismatched-ET inputs.
      */
     if (has_paired_primary()) {
-        auto primary_et_result = config_.extrinsic_transparency(ConfigScopeType::tileset, paired_primary_->name());
-        if (!primary_et_result.has_value()) {
-            return ChainableResult<std::unique_ptr<Tileset>>{
-                FormattableError{
-                    "Failed to get config value '{}:{}:{}'.",
-                    FormatParam{"tileset", Style::bold},
-                    FormatParam{paired_primary_->name(), Style::bold},
-                    FormatParam{"extrinsic_transparency", Style::bold}},
-                primary_et_result};
-        }
-        paired_primary_extrinsic_transparency_ = std::move(primary_et_result).value();
+        paired_primary_extrinsic_transparency_ =
+            config_.extrinsic_transparency(ConfigScopeType::tileset, paired_primary_->name()).value();
     }
 
     // Execute subtasks
