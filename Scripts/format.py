@@ -6,9 +6,15 @@ Usage:
     uv run Scripts/format.py                          # Format all Porytiles2 sources
     uv run Scripts/format.py file1.cpp file2.hpp      # Format specific files
     uv run Scripts/format.py --check                  # Dry-run (CI mode), exit 1 if changes needed
+
+Environment:
+    CLANG_FORMAT    Override the clang-format binary (default: "clang-format").
+                    Useful when only versioned binaries are installed,
+                    e.g. CLANG_FORMAT=clang-format-21.
 """
 
 import argparse
+import os
 import subprocess
 import sys
 from pathlib import Path
@@ -59,7 +65,8 @@ def main():
         print("No source files found.")
         return
 
-    cmd = ["clang-format", "-style=file"]
+    clang_format = os.environ.get("CLANG_FORMAT", "clang-format")
+    cmd = [clang_format, "-style=file"]
 
     if args.check:
         cmd.extend(["--dry-run", "--Werror"])

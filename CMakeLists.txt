@@ -30,6 +30,15 @@ set(FETCHCONTENT_QUIET OFF)
 if (CMAKE_CXX_COMPILER_ID MATCHES "Clang")
     add_compile_options(-stdlib=libc++)
     add_link_options(-stdlib=libc++)
+
+    # fmt's format.h (and potentially other deps) calls malloc/free without
+    # including <cstdlib>, relying on transitive includes. Newer libc++
+    # (LLVM 18+) has pruned those transitive paths, so any TU instantiating
+    # fmt's allocator fails to compile. Apple Clang ships an older libc++
+    # snapshot where the transitive includes still exist, which is why this
+    # only bites on Linux/LLVM. Force-include cstdlib globally for C++ TUs
+    # only (cstdlib is a C++ header; C TUs would fail to find it).
+    add_compile_options($<$<COMPILE_LANGUAGE:CXX>:-include> $<$<COMPILE_LANGUAGE:CXX>:cstdlib>)
 endif ()
 
 # Enable compilation warnings
