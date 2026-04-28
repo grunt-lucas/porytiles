@@ -258,20 +258,6 @@ class CompilerTask {
 
 ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
 {
-    /*
-     * TODO: we have a bug. If pals_edit_mode::optimize and tiles_edit_mode::locked, on the first compile pass after
-     * making no changes, it will optimize the pals, but emit identical metatile entries (since the Porytiles and
-     * Porymap metatiles will match). Then it will emit the optimized pals but identical tilemap entries. The tileset
-     * becomes corrupted and subsequent compilations crash out with a bazillion errors.
-     *
-     * Need to think about the right way to fix. Is there a scenario where setting pals::optimize tiles::locked even
-     * makes sense? Instead of adding more tortured logic to the compiler, we could just ban this combo.
-     *
-     * Thinking about it more, I think we need to ban this combo. Tiles as an artifact are fundamentally dependent on
-     * the palettes. If palettes change, tiles have to change. So it doesn't make sense to allow a setting where
-     * palettes are being changed but then the tiles aren't.
-     */
-
     // Unwrap config values
     PT_UNWRAP_TILESET_CONFIG_REF(config_, extrinsic_transparency, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, num_pals_in_primary, tileset_.name(), std::unique_ptr<Tileset>);
@@ -392,6 +378,68 @@ ChainableResult<void> CompilerTask::pipeline_step_validate_input()
     TilesetCompileValidatorServices services{config_, diag_, tile_printer_, pal_printer_};
 
     /*
+     * Reject mode combinations that this compiler does not support before running any content-based validation. This
+     * function is the single source of truth for which compile mode combinations are supported.
+     */
+
+    if (is_secondary() && tiles_edit_mode_ != ArtifactEditMode::optimize) {
+        std::vector<std::string> err_msg{};
+        err_msg.emplace_back(format_.format(
+            "Secondary compilation of tileset '{}' does not yet support tiles edit mode '{}'.",
+            FormatParam{tileset_.name(), Style::bold},
+            FormatParam{to_string(tiles_edit_mode_.value()), Style::bold}));
+        err_msg.emplace_back(format_.format(
+            "For now, only '{}' is supported for secondary tilesets.", FormatParam{"optimize", Style::bold}));
+        err_msg.emplace_back(format_.format(
+            "Support for '{}' and '{}' is planned for a future update.",
+            FormatParam{"locked", Style::bold},
+            FormatParam{"patch", Style::bold}));
+        err_msg.append_range(format_config_note_with_separator(format_, tiles_edit_mode_));
+        return FormattableError{err_msg};
+    }
+
+    if (is_secondary() && pals_edit_mode_ != ArtifactEditMode::optimize) {
+        std::vector<std::string> err_msg{};
+        err_msg.emplace_back(format_.format(
+            "Secondary compilation of tileset '{}' does not yet support pals edit mode '{}'.",
+            FormatParam{tileset_.name(), Style::bold},
+            FormatParam{to_string(pals_edit_mode_.value()), Style::bold}));
+        err_msg.emplace_back(format_.format(
+            "For now, only '{}' is supported for secondary tilesets.", FormatParam{"optimize", Style::bold}));
+        err_msg.emplace_back(format_.format(
+            "Support for '{}' and '{}' is planned for a future update.",
+            FormatParam{"locked", Style::bold},
+            FormatParam{"patch", Style::bold}));
+        err_msg.append_range(format_config_note_with_separator(format_, pals_edit_mode_));
+        return FormattableError{err_msg};
+    }
+
+    if (pals_edit_mode_ == ArtifactEditMode::patch) {
+        std::vector<std::string> err_msg{};
+        err_msg.emplace_back(format_.format(
+            "Tileset '{}' uses pals edit mode '{}', which is not yet implemented.",
+            FormatParam{tileset_.name(), Style::bold},
+            FormatParam{to_string(pals_edit_mode_.value()), Style::bold}));
+        err_msg.append_range(format_config_note_with_separator(format_, pals_edit_mode_));
+        return FormattableError{err_msg};
+    }
+
+    if (pals_edit_mode_ == ArtifactEditMode::optimize && tiles_edit_mode_ == ArtifactEditMode::locked) {
+        std::vector<std::string> err_msg{};
+        err_msg.emplace_back(format_.format(
+            "Tileset '{}' uses palettes edit mode '{}' with tiles edit mode '{}', which is not a valid combination.",
+            FormatParam{tileset_.name(), Style::bold},
+            FormatParam{"optimize", Style::bold},
+            FormatParam{"locked", Style::bold}));
+        err_msg.emplace_back(
+            "Tiles are fundamentally dependent on palettes, so optimizing palettes while keeping "
+            "tiles locked is not coherent.");
+        err_msg.append_range(format_config_note(format_, pals_edit_mode_));
+        err_msg.append_range(format_config_note_with_separator(format_, tiles_edit_mode_));
+        return FormattableError{err_msg};
+    }
+
+    /*
      * TODO: do we want to collate some of these before returning? It would present more errors to user at once. There
      * are pros and cons to this.
      */
@@ -431,7 +479,13 @@ ChainableResult<void> CompilerTask::pipeline_step_validate_input()
         }
     }
 
-    // TODO: we may want to allow secondary tilesets to override primary palette slots in the future
+    /*
+     * TODO: we definitely want to allow secondary tilesets to override primary palette slots in the future. I can think
+     * of an obscure case where a user wants to force Porytiles to assign some secondary metatile to use a primary
+     * tile/pal. They may want to do something clever where they swap primaries out underneath the secondary at runtime
+     * and want to ensure the secondary points to the right slots. In this case, when the user supplies an override for
+     * a primary pal, we send it to the packer, overriding whatever the paired primary tileset had in that pal slot.
+     */
     // Fail fast if secondary tileset defines an override palette in a primary slot
     if (is_secondary()) {
         for (std::size_t pal_index = 0; pal_index < num_pals_in_primary_.value(); ++pal_index) {
@@ -507,23 +561,12 @@ ChainableResult<void> CompilerTask::pipeline_step_validate_input()
 
 ChainableResult<void> CompilerTask::pipeline_step_setup_working_data()
 {
-    // Secondary compilation only supports optimize mode for now (locked/patch deferred)
-    if (is_secondary() && tiles_edit_mode_ != ArtifactEditMode::optimize) {
-        panic("Secondary compilation only supports tiles ArtifactEditMode::optimize (locked/patch deferred).");
-    }
-    if (is_secondary() && pals_edit_mode_ != ArtifactEditMode::optimize) {
-        panic("Secondary compilation only supports pals ArtifactEditMode::optimize (locked/patch deferred).");
-    }
-
     // Create palettes
     if (pals_edit_mode_ == ArtifactEditMode::locked) {
         // Collect all palettes from existing Porymap component
         for (std::size_t i = 0; i < pal::num_pals; i++) {
             new_porymap_pals_[i] = tileset_.porymap_component().pals()[i];
         }
-    }
-    else if (pals_edit_mode_ == ArtifactEditMode::patch) {
-        panic("TODO: implement handling for pals ArtifactEditMode::patch");
     }
     else if (pals_edit_mode_ == ArtifactEditMode::optimize) {
         PT_TRY_CALL_PASS_ERR(pipeline_helper_run_pal_packing(), void);
@@ -580,11 +623,6 @@ ChainableResult<void> CompilerTask::pipeline_step_setup_working_data()
 
 ChainableResult<void> CompilerTask::pipeline_step_match_tiles_pals()
 {
-    // Temporary: pals:patch is not yet supported by underlying service code
-    if (pals_edit_mode_ == ArtifactEditMode::patch) {
-        panic("TODO: implement handling for pals ArtifactEditMode::patch");
-    }
-
     bool matched_all_tiles = true;
     for (std::size_t i = 0; i < porytiles_pixel_rgba_.size(); i++) {
         const auto &porytiles_tile = porytiles_pixel_rgba_[i];

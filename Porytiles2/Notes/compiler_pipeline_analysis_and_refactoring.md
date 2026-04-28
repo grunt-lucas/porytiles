@@ -43,14 +43,34 @@ values, resolves the paired primary's extrinsic transparency if applicable
 - Decompile tilemap entries + tiles.png + pals into a metatile vector
 - Decompose and canonicalize, just like Step 1
 
-### Step 3: `pipeline_step_validate_input()` (line 399) — secondary-aware
+### Step 3: `pipeline_step_validate_input()` — secondary-aware, mode-combo gate
+
+The first thing this step does is reject unsupported mode combinations as
+user-visible `FormattableError`s. This is now the single source of truth for
+which compile mode combinations are supported (matches the matrix in Part 2):
+
+- `is_secondary && tiles_edit_mode != optimize` — temporarily unsupported,
+  worded as "does not yet support ... planned for a future update".
+- `is_secondary && pals_edit_mode != optimize` — same temporary framing.
+- `pals_edit_mode == patch` — "not yet implemented" (unimplemented across
+  primary and secondary alike).
+- `pals_edit_mode == optimize && tiles_edit_mode == locked` — permanently
+  banned ("not a valid combination") because tiles fundamentally depend on
+  palettes; optimizing palettes while keeping tiles locked is incoherent.
+
+Each rejection emits both the offending mode value and a `format_config_note*`
+trace pointing to the source of the setting (CLI flag, YAML key, default).
+The `optimize+locked` combo emits both `tiles_edit_mode_` and `pals_edit_mode_`
+notes since both contribute to the conflict.
+
+After mode-combo rejection, the step runs the content-based validations:
 
 | Check                                                  | primary |        secondary         |
 |--------------------------------------------------------|:-------:|:------------------------:|
 | Validate metatile count                                |   Yes   |   Yes (with secondary-aware limit)   |
-| Validate paired primary's Porymap pals (import-time)   |   No    |   **Yes** (lines 421-430) |
+| Validate paired primary's Porymap pals (import-time)   |   No    |   **Yes**                |
 | Validate this tileset's Porymap pals                   | Yes (pals != optimize) | Yes (pals != optimize, from `pal_start`) |
-| Reject Porytiles overrides in primary pal slots        |   No    |   **Yes** (lines 445-454) |
+| Reject Porytiles overrides in primary pal slots        |   No    |   **Yes**                |
 | Validate Porytiles pals                                |   Yes   |  Yes (from `pal_start`)  |
 | Validate palette hints / alpha / layer mode            |   Yes   |           Yes            |
 | Validate tile / global color count                     |   Yes   |   Yes (secondary-aware)  |
@@ -68,26 +88,22 @@ primary-induced errors with a clear source instead of panicking mid-packing:
    not define a Porytiles override palette in any primary slot. This returns a
    `FormattableError` (not a panic) with the offending slot's filename.
 
-### Step 4: `pipeline_step_setup_working_data()` (line 517) — heavy branching
+### Step 4: `pipeline_step_setup_working_data()` — heavy branching
 
-#### 4a: Secondary panic gates (lines 519-525)
+The previous secondary panic gates and the `pals:patch` panic at this step
+have all been removed. Those combos are now rejected up-front by the
+mode-combo checks at the top of `pipeline_step_validate_input` (Step 3), so
+this step assumes the mode combination is already known-good.
 
-Before any working data is constructed, secondary compilation is rejected for
-any non-optimize mode:
+The trailing `panic("unexpected pals ArtifactEditMode")` at the end of the
+palette-creation chain is retained as a defensive enum-exhaustiveness guard,
+not a mode-combo gate.
 
-```
-if (is_secondary() && tiles_edit_mode_ != optimize) panic(...);
-if (is_secondary() && pals_edit_mode_ != optimize) panic(...);
-```
+#### 4a: Palette creation (pals_edit_mode axis)
 
-These are internal panics today. Suggestion 8 below proposes elevating them to
-user-visible validated errors emitted in Step 3.
-
-#### 4b: Palette creation (pals_edit_mode axis)
-
-|               pals:optimize                |         pals:locked          |    pals:patch     |
-|:------------------------------------------:|:----------------------------:|:-----------------:|
-| Call `pipeline_helper_run_pal_packing()`   | Copy all 16 pals from Porymap | **panic (line 535)** |
+|               pals:optimize                |         pals:locked          |    pals:patch    |
+|:------------------------------------------:|:----------------------------:|:----------------:|
+| Call `pipeline_helper_run_pal_packing()`   | Copy all 16 pals from Porymap | unreachable (rejected in Step 3) |
 
 `pipeline_helper_run_pal_packing()` (line 1045) is now significantly richer:
 
@@ -115,19 +131,20 @@ helper during this refactor; it assembles the color-index map from Porytiles
 tiles, anims, pals, and hints. For secondary compilations it also folds in
 the primary palette colors after the budget check.
 
-#### 4c: TilesPngWorkspace creation (tiles_edit_mode x is_secondary axes)
+#### 4b: TilesPngWorkspace creation (tiles_edit_mode x is_secondary axes)
 
 |    tiles:optimize (primary)    | tiles:optimize (secondary, paired) | tiles:optimize (secondary, standalone) |
 |:------------------------------:|:----------------------------------:|:--------------------------------------:|
 | Empty workspace, capacity = `num_tiles_in_primary` | `TilesPngWorkspace::for_secondary(primary_tiles_png, num_in_primary, num_total)` — primary tiles pre-loaded | `TilesPngWorkspace::for_standalone_secondary(num_in_primary, num_total)` — transparent space reserved for primary range |
 
-Non-optimize (primary only — secondary cannot reach this due to panic gate):
+Non-optimize is primary only — secondary tiles non-optimize is rejected in
+Step 3:
 
 |          tiles:patch           |          tiles:locked           |
 |:------------------------------:|:-------------------------------:|
 | Loaded from existing tiles.png, capacity = `num_tiles_in_primary` | Loaded from existing tiles.png, capacity = exact `size_in_tiles` |
 
-#### 4d: Animation registration (tiles_edit_mode x FrameLinking x is_secondary)
+#### 4c: Animation registration (tiles_edit_mode x FrameLinking x is_secondary)
 
 Done by `pipeline_helper_register_animations()` (line 1380), which calls
 `pipeline_helper_build_keyframe_data()` (line 1280) per animation to assemble
@@ -161,9 +178,11 @@ slots. See Part 2.6 below for the full story.
 **Post-loop:** Register all animations with `AnimTileMatcher` (all modes,
 both FrameLinking values).
 
-### Step 5: `pipeline_step_match_tiles_pals()` (line 590) — heavy branching
+### Step 5: `pipeline_step_match_tiles_pals()` — heavy branching
 
-Pre-check: pals:patch -> panic (line 594, same reason as Step 4).
+The previous `pals:patch` defense-in-depth panic at the top of this step has
+been removed. `pals:patch` is rejected in Step 3, so this step assumes
+`pals_edit_mode_ != patch`.
 
 For each Porytiles tile, in order:
 
@@ -281,38 +300,45 @@ them on `TileAssignmentResult::Status` values.
 
 ## Part 2: Mode Combination Matrix
 
+Cells marked **rejected** are now caught up-front by mode-combo validation in
+`pipeline_step_validate_input` and surface as user-visible
+`FormattableError`s. None of these reach the working-data or matching steps.
+
 ### Primary compilations (is_secondary = false)
 
-|                    |              pals:optimize              |                 pals:locked                 | pals:patch |
-|--------------------|:---------------------------------------:|:-------------------------------------------:|:----------:|
-| **tiles:optimize** |  **Full recompile** (Porytiles1 parity) |   New tiles from scratch, keep existing pals   |    TODO    |
-| **tiles:patch**    |  Fresh pals, insert new tiles into existing  | Keep existing pals, insert new tiles into existing |    TODO    |
-| **tiles:locked**   | **BUGGY** (pals change but tiles can't) |        **Verify mode** (no changes)         |    TODO    |
+|                    |              pals:optimize              |                 pals:locked                 |            pals:patch            |
+|--------------------|:---------------------------------------:|:-------------------------------------------:|:--------------------------------:|
+| **tiles:optimize** |  **Full recompile** (Porytiles1 parity) |   New tiles from scratch, keep existing pals   | rejected (not yet implemented) |
+| **tiles:patch**    |  Fresh pals, insert new tiles into existing  | Keep existing pals, insert new tiles into existing | rejected (not yet implemented) |
+| **tiles:locked**   | rejected (incoherent — tiles depend on pals) |        **Verify mode** (no changes)         | rejected (not yet implemented) |
 
 ### Secondary compilations (is_secondary = true)
 
-Only `optimize + optimize` is reachable today. Everything else panics at the
-Step 4 gate (lines 521, 524):
+Only `optimize + optimize` is reachable today. Non-optimize tiles/pals are
+rejected as "does not yet support ... planned for a future update";
+`pals:patch` is rejected as "not yet implemented" (same as primary).
 
 |                    | pals:optimize | pals:locked | pals:patch |
 |--------------------|:-------------:|:-----------:|:----------:|
-| **tiles:optimize** |  Supported    | panic (524) |   panic    |
-| **tiles:patch**    |  panic (521)  | panic (521) |   panic    |
-| **tiles:locked**   |  panic (521)  | panic (521) |   panic    |
+| **tiles:optimize** |  Supported    | rejected (deferred) | rejected (not yet implemented) |
+| **tiles:patch**    |  rejected (deferred)  | rejected (deferred) | rejected (not yet implemented) |
+| **tiles:locked**   |  rejected (deferred)  | rejected (deferred) | rejected (not yet implemented) |
 
-### Known-bad / invalid combinations
+### Banned / unimplemented combinations
 
-- **pals:optimize + tiles:locked** (primary): if palettes are re-optimized but
-  tiles are locked, the compiler emits identical metatile entries but with new
-  palette assignments, producing tilemap entries that reference palette slots
-  not matching the locked tile data. The `run()` prologue (line 262) has a
-  long TODO explaining why this combo should simply be banned. Tiles
-  fundamentally depend on palettes.
-- **is_secondary + anything except optimize/optimize**: hard panic. These
-  should become user-visible `FormattableError`s emitted in Step 3. See
-  Suggestion 8.
-- **pals:patch**: unimplemented; panics at both Step 4 (line 535) and Step 5
-  (line 594).
+All four are rejected in Step 3 with a `FormattableError`. Each error includes
+a `format_config_note*` trace pointing to the source of the offending setting.
+
+- **pals:optimize + tiles:locked** (primary): permanently banned. Tiles
+  fundamentally depend on palettes, so optimizing palettes while keeping tiles
+  locked is incoherent — it would produce tilemap entries referencing palette
+  slots that don't match the locked tile data, silently corrupting the
+  tileset. Wording: "not a valid combination".
+- **is_secondary + tiles_edit_mode != optimize**: temporary. Wording: "does
+  not yet support ... planned for a future update".
+- **is_secondary + pals_edit_mode != optimize**: temporary. Same framing.
+- **pals_edit_mode == patch**: unimplemented across primary and secondary.
+  Wording: "not yet implemented".
 
 ---
 
@@ -412,11 +438,19 @@ Three remarks and two warnings track this code path:
 
 ## Part 3: Refactoring Suggestions
 
-### Suggestion 1: Ban the Invalid Combo (Quick Win)
+### Suggestion 1: Ban the Invalid Combo (Quick Win) — **DONE**
 
-Add validation at the top of `run()` to reject `pals:optimize + tiles:locked`
-with a clear error message. Reduces the working matrix and removes a known
-corruption vector. Still the lowest-risk, highest-value change.
+Implemented at the top of `pipeline_step_validate_input`. The combo is
+rejected with the wording "not a valid combination" and accompanied by both
+`tiles_edit_mode_` and `pals_edit_mode_` config-note traces. The previous
+long TODO at the top of `run()` describing the silent-corruption symptom has
+been removed since the combo is now unreachable.
+
+Implementation note: the rejection lives in the validation step rather than
+at the very top of `run()`. This wastes a small amount of work in the two
+prior input-processing steps for an obviously-invalid configuration, but
+keeps "what mode combos this compiler supports" in a single named function
+(see Suggestion 8 for the broader rationale).
 
 ### Suggestion 2: Strategy Pattern for Tile Placement (Recommended)
 
@@ -616,32 +650,27 @@ one small class per variant with a uniform `apply(...)` method. Benefits:
 The three-tier pal resolution cascade (per-tile -> per-anim -> global) becomes
 a natural `CompositeResolutionPolicy` that chains single-tier policies.
 
-### Suggestion 8 (NEW): Promote Panics to Validated Errors
+### Suggestion 8 (NEW): Promote Panics to Validated Errors — **DONE**
 
-Several mode combinations currently panic from deep inside the pipeline:
+All four mode-combo gates are now `FormattableError`s emitted up-front by
+`pipeline_step_validate_input` rather than panics from deep in the pipeline:
 
-- `is_secondary + tiles_edit_mode != optimize` (line 521)
-- `is_secondary + pals_edit_mode != optimize` (line 524)
-- `pals_edit_mode == patch` (lines 535 and 594)
-- `pals:optimize + tiles:locked` corruption (effectively; see Suggestion 1)
+- `is_secondary + tiles_edit_mode != optimize` — temporary, "does not yet
+  support ... planned for a future update".
+- `is_secondary + pals_edit_mode != optimize` — same temporary framing.
+- `pals_edit_mode == patch` — "not yet implemented".
+- `pals:optimize + tiles:locked` — permanent, "not a valid combination".
 
-All of these are deterministically known at Step 3. Each should become a
-`FormattableError` emitted during `pipeline_step_validate_input` (or even
-earlier, at config load), following the error style in STYLE.md:
+Each error attaches a `format_config_note*` trace so the user can see exactly
+which CLI flag, YAML key, or default produced the offending setting. The
+panics at the top of `pipeline_step_setup_working_data` and
+`pipeline_step_match_tiles_pals` have been deleted; the trailing
+`panic("unexpected pals ArtifactEditMode")` enum-exhaustiveness guard at the
+end of the palette-creation chain is retained as a defensive guard for future
+enum additions, not as a mode-combo gate.
 
-```c++
-return FormattableError{
-    "Secondary compilation of tileset '{}' does not support "
-    "tiles ArtifactEditMode::{} (only 'optimize' is supported).",
-    FormatParam{tileset_.name(), Style::bold},
-    FormatParam{to_string(tiles_edit_mode_.value()), Style::bold}};
-```
-
-Benefits:
-- Users see a proper diagnostic, not a crash.
-- Validation becomes the single place that describes which combos are
-  supported (matches the matrix in Part 2).
-- Removes panics from the hot compilation path, improving reliability.
+`pipeline_step_validate_input` is now the single source of truth for which
+mode combinations the compiler supports.
 
 ---
 
@@ -649,26 +678,25 @@ Benefits:
 
 **Priority order:**
 
-1. **Ban invalid combos (umbrella task):** Suggestion 1 + Suggestion 8.
-   Trivial edits. Covers `pals:optimize + tiles:locked`, `is_secondary +
-   non-optimize`, and `pals:patch`. Eliminates one known corruption vector
-   and three panic sites in one pass. Also establishes Step 3 as the single
-   source of truth for "what mode combos does this compiler support".
-2. **TilePlacementStrategy (Suggestion 2):** Biggest reduction in branching
+0. **Ban invalid combos (umbrella task) — DONE.** Suggestion 1 + Suggestion 8.
+   `pipeline_step_validate_input` is now the single source of truth for "what
+   mode combos does this compiler support". Eliminated one known corruption
+   vector and three panic sites in one pass.
+1. **TilePlacementStrategy (Suggestion 2):** Biggest reduction in branching
    complexity. Now also subsumes the primary-vs-secondary workspace and
    export divergence.
-3. **PaletteSetupStrategy (Suggestion 3):** Completes the pattern; absorbs
+2. **PaletteSetupStrategy (Suggestion 3):** Completes the pattern; absorbs
    the new cross-tileset packer prefill / color-budget subtraction logic;
    enables a clean future `pals:patch` implementation.
-4. **CompilerDiagnosticsReporter (Suggestion 6):** Independent of the
+3. **CompilerDiagnosticsReporter (Suggestion 6):** Independent of the
    strategy work; removes ~200 LOC from `CompilerTask`. Good candidate to
-   parallelize with (2) and (3).
-5. **Explicit data flow (Suggestion 5):** Longer-term cleanup for
+   parallelize with (1) and (2).
+4. **Explicit data flow (Suggestion 5):** Longer-term cleanup for
    testability. Now more valuable because the compiler has genuinely grown
    three output channels (Porymap artifacts + diagnostics + Porytiles
    round-trip metadata) and per-anim effective FrameLinking is computed
    twice.
-6. **Resolution-Strategy Policy types (Suggestion 7):** Follow-on cleanup
+5. **Resolution-Strategy Policy types (Suggestion 7):** Follow-on cleanup
    after data flow is explicit; each policy becomes easy to inject.
 
 **Primary-vs-secondary split (Suggestion 4):** I'd still recommend *against*
