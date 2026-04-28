@@ -89,6 +89,14 @@ Porytiles has two separate documentation repositories (gitignored in the main re
 
 These are **separate git repositories** cloned into the main porytiles directory. They follow [porymap's documentation pattern](https://github.com/huderlem/porymap) with Sphinx and the Read the Docs theme.
 
+### Legacy Porytiles1 Wiki
+
+- **porytiles.wiki/**: Source for the GitHub Wiki of **legacy Porytiles1** (flat `.md` files: `Home.md`, `_Sidebar.md`, `_Footer.md`, page files like `Compiling-A-Primary-Tileset.md`, etc.)
+  - GitHub: https://github.com/grunt-lucas/porytiles.wiki.git
+  - This is the GitHub Wiki backend repo, not a Sphinx site. Edits here publish to the project's GitHub Wiki tab.
+  - Like the other docs repos, it is a **separate git repository** cloned into the main porytiles directory and is gitignored.
+  - **Per the standing rule, ignore this directory unless explicitly told to work with Porytiles1 content.**
+
 ### Building Documentation
 
 ```bash
