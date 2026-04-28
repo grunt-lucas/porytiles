@@ -1466,8 +1466,9 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
                         offset = existing_offset.value();
                     }
                     // If full sequence not found, find sufficient contiguous free space to insert
-                    else if (const auto free_offset = tiles_workspace_->find_contiguous_transparent_slots(tile_count);
-                             free_offset.has_value()) {
+                    else if (
+                        const auto free_offset = tiles_workspace_->find_contiguous_transparent_slots(tile_count);
+                        free_offset.has_value()) {
                         tiles_workspace_->place_tiles_at(free_offset.value(), keyframe_data.tiles);
                         offset = free_offset.value();
                     }
