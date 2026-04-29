@@ -732,7 +732,12 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
                                                             : global_frame_linking;
 
     if (effective_linking == FrameLinking::hybrid) {
-        panic("TODO: implement hybrid frame linking");
+        std::vector<std::string> err_msg{};
+        err_msg.emplace_back(diag_->formatter().format(
+            "Hybrid frame linking is not yet implemented (animation '{}').", FormatParam{anim.name(), Style::bold}));
+        err_msg.emplace_back("Use 'automatic' or 'manual' frame linking until hybrid support.");
+        err_msg.append_range(format_config_note_with_separator(diag_->formatter(), effective_linking));
+        return FormattableError{err_msg};
     }
 
     /*

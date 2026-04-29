@@ -343,15 +343,6 @@ class TilesPngWorkspace {
      */
     [[nodiscard]] bool at_capacity() const;
 
-    /*
-     * TODO: these methods below work great when tiles are in ArtifactEditMode::optimize. But what about the
-     * ArtifactEditMode::patch case? Here, we might have "fragmentation", i.e. free spaces that are too small to fit the
-     * contiguous key frame. We won't necessarily be able to reserve space at the start of the workspace, since that
-     * space is probably already taken. It's also possible that the tiles we need are already present, this is a patch
-     * build after all. We should provide some kind of functionality that scans the workspace for the requisite free
-     * space and uses it. This means our anim_end_offset_ variable is probably an over-simplification.
-     */
-
     /**
      * @brief Reserves contiguous slots for animation keyframe tiles starting at @p start_offset.
      *

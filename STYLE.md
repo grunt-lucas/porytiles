@@ -86,6 +86,33 @@ int MyClass::compute_something(int accum_value) const {
 // Close a namespace with a closing comment like above
 ```
 
+## Trailing Underscores: Class-Private Members Only
+
+The trailing `_` convention applies **only to class-private member variables**. Public struct fields (record-style data carriers like `LayerValue`, `FrameLoadResult`, `CliOptionStorage`, `PerAnimOverride`, etc.) use plain snake_case with **no trailing underscore**:
+
+```c++
+// CORRECT — public struct fields, no trailing underscore:
+struct LayerValue {
+    std::optional<T> value;
+    std::string source_key;
+    ValidationState state;
+};
+
+// CORRECT — class with private members, trailing underscore:
+class MyClass {
+  private:
+    int my_val_;
+    std::string cool_value_;
+};
+
+// WRONG — public struct field with trailing underscore:
+struct PackingParams {
+    std::vector<PixelTile<Rgba32>> tiles_; // should be `tiles`
+};
+```
+
+If a struct has a constructor and is used in a class-like way (treating its members as private state), prefer making it a `class` with private members rather than a public struct that imitates the private-member convention.
+
 ## Doxygen Comment Style
 ```C++
 // Always use @brief and @details

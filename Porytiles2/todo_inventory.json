@@ -1,0 +1,323 @@
+{
+  "purpose": "Working inventory of TODO comments in the Porytiles2 codebase that are being systematically converted into GitHub issues. Workflow: walk the entries in strict ascending `index` order, propose an issue title/body/label for each, get user approval, file via `gh issue create` (assignee `grunt-lucas`), remove the TODO comment from the source file, then prune the entry from this JSON. The `index` field is the original ordering from the initial scan and is stable across the run; entries already filed have been deleted, so the smallest remaining index is the next entry to process. Issue body style: no `## Section` markdown headers, no semantic line breaks (single-line paragraphs), free-flow prose with bullet lists introduced by lead-ins like `Concretely:` or `Acceptance criteria:`. Per project policy, ignore Porytiles1 entirely; only Porytiles2 TODOs are in scope. When a TODO seems trivial, audit whether its premise still holds against the current codebase before filing (some TODOs are inside dead code, contradict newer conventions, or are subsumed by design docs in Porytiles2/Notes/). Issues filed during the current run so far: #203-#213. To resume, read the first entry in the `TODOs` array and continue from there.",
+  "TODOs": [
+    {
+      "index": 26,
+      "file": "Porytiles2/include/porytiles2/domain/packing/services/palette_packer.hpp",
+      "line": 34,
+      "summary": "Define a required ctor on PalettePacker and delete the default ctor to prevent caller misuse."
+    },
+    {
+      "index": 27,
+      "file": "Porytiles2/include/porytiles2/domain/packing/services/palette_packer.hpp",
+      "line": 36,
+      "summary": "Investigate whether PalettePacker fields can be references or pointers (ownership review)."
+    },
+    {
+      "index": 28,
+      "file": "Porytiles2/include/porytiles2/domain/packing/services/palette_packer.hpp",
+      "line": 141,
+      "summary": "Make the unfilled palette slot value configurable instead of hardcoded."
+    },
+    {
+      "index": 29,
+      "file": "Porytiles2/include/porytiles2/domain/packing/services/packing_strategy.hpp",
+      "line": 28,
+      "summary": "Add a vector for animation tiles to PackingStrategy once anims are implemented."
+    },
+    {
+      "index": 30,
+      "file": "Porytiles2/tests/integration/infra/repos/project_tileset_artifact_writer_test.cpp",
+      "line": 112,
+      "summary": "Test asserts hardcoded 8 attributes; revisit when reader/writer account for num_tiles_per_metatile."
+    },
+    {
+      "index": 31,
+      "file": "Porytiles2/tests/integration/infra/repos/project_tileset_artifact_writer_test.cpp",
+      "line": 424,
+      "summary": "Test asserts file_size == 16; revisit once num_tiles_per_metatile is properly handled."
+    },
+    {
+      "index": 32,
+      "file": "Porytiles2/tests/integration/infra/config/yaml_file_provider_test.cpp",
+      "line": 7,
+      "summary": "Rebuild the YamlFileProvider test class \u2014 it currently has only a placeholder."
+    },
+    {
+      "index": 33,
+      "file": "Porytiles2/tests/integration/infra/config/yaml_file_provider_test.cpp",
+      "line": 10,
+      "summary": "Replace placeholder TEST(YamlFileProviderTest, TODO) which always EXPECT_TRUE(true)."
+    },
+    {
+      "index": 34,
+      "file": "Porytiles2/tests/integration/infra/services/png_rgba_image_loader_test.cpp",
+      "line": 14,
+      "summary": "Reorganize the test assets used by PngRgbaImageLoader tests."
+    },
+    {
+      "index": 36,
+      "file": "Porytiles2/lib/infra/repos/project_tileset_artifact_reader.cpp",
+      "line": 40,
+      "summary": "On file_not_found, reader currently loads a blank image to support 'import' \u2014 instead, separate the import path properly so loader can simply error."
+    },
+    {
+      "index": 37,
+      "file": "Porytiles2/lib/infra/repos/project_tileset_artifact_reader.cpp",
+      "line": 354,
+      "summary": "Logic likely double-loads the key frame; the explicit key_frame_key parameter could be removed since callers are responsible for key-frame existence."
+    },
+    {
+      "index": 38,
+      "file": "Porytiles2/lib/infra/repos/project_tileset_artifact_writer.cpp",
+      "line": 155,
+      "summary": "Verify big-endian correctness for the tilemap-entry uint16 serialization."
+    },
+    {
+      "index": 39,
+      "file": "Porytiles2/lib/infra/repos/project_tileset_artifact_writer.cpp",
+      "line": 173,
+      "summary": "Verify big-endian correctness for the metatile_attributes uint16 serialization."
+    },
+    {
+      "index": 41,
+      "file": "Porytiles2/lib/infra/repos/project_tileset_artifact_writer.cpp",
+      "line": 581,
+      "summary": "Emit a diagnostic when temporary directory cleanup fails."
+    },
+    {
+      "index": 42,
+      "file": "Porytiles2/lib/infra/repos/project_tileset_artifact_writer.cpp",
+      "line": 813,
+      "summary": "Make the default metatile attribute behavior value configurable (currently constexpr 0)."
+    },
+    {
+      "index": 45,
+      "file": "Porytiles2/lib/infra/services/png_indexed_image_loader.cpp",
+      "line": 46,
+      "summary": "Ensure indexed loader produces 4-bit pixels even when input tiles.png is 8-bit truecolor."
+    },
+    {
+      "index": 46,
+      "file": "Porytiles2/lib/infra/services/anim_code_generator.cpp",
+      "line": 196,
+      "summary": "Centralize/refactor the 'gTileset_' prefix handling currently scattered through anim code generation."
+    },
+    {
+      "index": 47,
+      "file": "Porytiles2/lib/infra/services/anim_json_parser.cpp",
+      "line": 186,
+      "summary": "Warn user about unknown JSON keys in anim configs (catches typos like 'farme_factor')."
+    },
+    {
+      "index": 48,
+      "file": "Porytiles2/lib/infra/services/png_indexed_image_saver.cpp",
+      "line": 22,
+      "summary": "Make the output greyscale palette configurable (current matches vanilla; OG porytiles used a different greyscale)."
+    },
+    {
+      "index": 53,
+      "file": "Porytiles2/lib/infra/services/anim_code_parser.cpp",
+      "line": 20,
+      "summary": "Move the make_highlighted_details helper to a diagnostic stencil header."
+    },
+    {
+      "index": 54,
+      "file": "Porytiles2/lib/infra/services/anim_code_parser.cpp",
+      "line": 578,
+      "summary": "Parser doesn't handle the typical VDests case (AppendTilesetAnimToBuffer with gTilesetAnims_..._VDests[timer_mod])."
+    },
+    {
+      "index": 55,
+      "file": "Porytiles2/lib/infra/services/jasc_pal_saver.cpp",
+      "line": 18,
+      "summary": "Make JASC-PAL line ending (\\r\\n vs \\n) configurable."
+    },
+    {
+      "index": 56,
+      "file": "Porytiles2/lib/app/use_cases/secondary_tileset_helpers.cpp",
+      "line": 97,
+      "summary": "Eventually support multiple distinct partner primaries for a secondary."
+    },
+    {
+      "index": 57,
+      "file": "Porytiles2/lib/infra/services/project_vanilla_anim_importer.cpp",
+      "line": 41,
+      "summary": "Refactor the std::map<std::string, Animation<IndexPixel>> key to a DynamicCasedName."
+    },
+    {
+      "index": 59,
+      "file": "Porytiles2/lib/app/use_cases/import_primary_tileset.cpp",
+      "line": 86,
+      "summary": "Add more details to the error message when persist_managed_existing fails."
+    },
+    {
+      "index": 60,
+      "file": "Porytiles2/lib/xcut/di/components.cpp",
+      "line": 17,
+      "summary": "Auto-detect terminal color support (COLORTERM=truecolor \u2192 24-bit, tput colors=256 \u2192 256, else plain) instead of hardcoding colors_256."
+    },
+    {
+      "index": 61,
+      "file": "Porytiles2/lib/app/use_cases/compile_secondary_tileset.cpp",
+      "line": 62,
+      "summary": "Detect stale extrinsic_transparency state across recompiles \u2014 current warning checks current config, not the ET each tileset was compiled under."
+    },
+    {
+      "index": 62,
+      "file": "Porytiles2/lib/xcut/diagnostics/diagnostic_tag_filter.cpp",
+      "line": 11,
+      "summary": "Catch std::regex_error and emit a clear FormattableError diagnostic for malformed user-supplied regex."
+    },
+    {
+      "index": 63,
+      "file": "Porytiles2/lib/xcut/diagnostics/diagnostic_tag_filter.cpp",
+      "line": 27,
+      "summary": "Document grep-like substring semantics of exclude patterns (e.g. 'pal' matches 'palette-overflow', 'principal'); users must anchor with ^/$."
+    },
+    {
+      "index": 64,
+      "file": "Porytiles2/lib/domain/models/porymap_tileset_component.cpp",
+      "line": 70,
+      "summary": "Tailor the 'unexpected tilemap entry count' expectation message to the configured layer type."
+    },
+    {
+      "index": 65,
+      "file": "Porytiles2/lib/utilities/text/ansi_styled_text_formatter.cpp",
+      "line": 139,
+      "summary": "Refactor ANSI styled text formatter to remove duplication between FG and BG color handling."
+    },
+    {
+      "index": 66,
+      "file": "Porytiles2/lib/domain/services/anim_decompiler.cpp",
+      "line": 615,
+      "summary": "AnimDecompiler takes non-const PorymapTilesetComponent& only because of an indirect 'works by accident' coupling \u2014 split signature so const stuff can be const."
+    },
+    {
+      "index": 68,
+      "file": "Porytiles2/lib/domain/services/anim_decompiler.cpp",
+      "line": 900,
+      "summary": "Live panic('warning not yet implemented') for the AnimKeyFrameResolutionStrategy::warning branch."
+    },
+    {
+      "index": 69,
+      "file": "Porytiles2/lib/xcut/diagnostics/filtered_user_diagnostics.cpp",
+      "line": 23,
+      "summary": "remark_note/warning_note re-check the filter independently, implicitly assuming notes share their parent's tag \u2014 make this coupling explicit (stateful 'last-shown' flag)."
+    },
+    {
+      "index": 70,
+      "file": "Porytiles2/lib/domain/models/tiles_png_workspace.cpp",
+      "line": 163,
+      "summary": "Decide and warn user when tile 0 is not transparent (pokeemerald convention) \u2014 surfaced by SecondConstructorShouldLoadValidImage."
+    },
+    {
+      "index": 71,
+      "file": "Porytiles2/lib/domain/services/anim_key_frame_mangler.cpp",
+      "line": 222,
+      "summary": "Reconsider transparency check during mangling \u2014 removed because FireRed General anims have unused transparent tiles in key frames."
+    },
+    {
+      "index": 73,
+      "file": "Porytiles2/lib/domain/services/tileset_compiler.cpp",
+      "line": 443,
+      "summary": "Decide whether to collate validation errors before returning so users see multiple errors at once."
+    },
+    {
+      "index": 74,
+      "file": "Porytiles2/lib/domain/services/tileset_compiler.cpp",
+      "line": 483,
+      "summary": "Allow secondary tilesets to override primary palette slots (use case: hot-swapping primaries at runtime)."
+    },
+    {
+      "index": 75,
+      "file": "Porytiles2/lib/domain/services/tileset_compiler.cpp",
+      "line": 589,
+      "summary": "When constructing the optimize-mode TilesPngWorkspace, consider matching the size like the patch-mode branch above."
+    },
+    {
+      "index": 76,
+      "file": "Porytiles2/lib/domain/services/tileset_compiler.cpp",
+      "line": 715,
+      "summary": "Track tile + palette use and warn the user about unused tiles/colors after patch-mode compilations; consider a force_remove option."
+    },
+    {
+      "index": 77,
+      "file": "Porytiles2/lib/domain/services/tileset_compiler.cpp",
+      "line": 781,
+      "summary": "Copy over PLA files once PLA handling is implemented."
+    },
+    {
+      "index": 78,
+      "file": "Porytiles2/lib/domain/services/tileset_compiler.cpp",
+      "line": 786,
+      "summary": "ExportFlipMode::canonical is bugged in optimize export \u2014 likely tied to flip-bit computation in pipeline_helper_try_reuse_porymap_tile / pipeline_helper_assign_tile_via_pal_match."
+    },
+    {
+      "index": 79,
+      "file": "Porytiles2/lib/domain/services/tileset_compiler.cpp",
+      "line": 901,
+      "summary": "Make top_n closest-match count configurable (currently a hardcoded constant)."
+    },
+    {
+      "index": 80,
+      "file": "Porytiles2/lib/domain/services/tileset_compiler.cpp",
+      "line": 929,
+      "summary": "Subtle stale state: enabling cross_tileset_anim_linking after a non-linking compile in patch/locked mode silently has no effect until an optimize recompile."
+    },
+    {
+      "index": 81,
+      "file": "Porytiles2/lib/domain/services/tileset_compiler.cpp",
+      "line": 995,
+      "summary": "O(primary_anims) per workspace-matched-tile loop in fallthrough check; cannot use AnimTileMatcher::is_in_animation_range() \u2014 document why or find alternative."
+    },
+    {
+      "index": 82,
+      "file": "Porytiles2/lib/domain/services/tileset_compiler.cpp",
+      "line": 1051,
+      "summary": "Pass index_tile or canonical_index_tile based on user setting for the tiles.png output."
+    },
+    {
+      "index": 83,
+      "file": "Porytiles2/lib/domain/services/tileset_compiler.cpp",
+      "line": 1111,
+      "summary": "Support out-of-band primary palettes \u2014 see 'Primary Palette Fixing' in topic_staging_area.md."
+    },
+    {
+      "index": 86,
+      "file": "Porytiles2/lib/domain/services/tileset_compiler.cpp",
+      "line": 1515,
+      "summary": "Patch-mode keyframe placement is all-or-nothing \u2014 doesn't handle a partial contiguous match plus enough trailing free space to complete the insertion."
+    },
+    {
+      "index": 87,
+      "file": "Porytiles2/lib/domain/services/tileset_compiler.cpp",
+      "line": 1537,
+      "summary": "Improve the 'keyframes not found in existing tiles.png' error by displaying the violating tiles."
+    },
+    {
+      "index": 88,
+      "file": "Porytiles2/lib/domain/services/tileset_compiler.cpp",
+      "line": 1857,
+      "summary": "Improve the 'animation uses multiple palettes across subtiles' warning with more displayed context."
+    },
+    {
+      "index": 90,
+      "file": "Porytiles2/lib/domain/services/tileset_compiler.cpp",
+      "line": 2335,
+      "summary": "Substitute configurable top_n for the literal 'N' in the 'closest N match(es)' diagnostic note."
+    },
+    {
+      "index": 91,
+      "file": "Porytiles2/lib/domain/packing/services/backtracking_strategy.cpp",
+      "line": 86,
+      "summary": "After DFS/BFS search-space improvements, add lower-bound iteration cutoffs; longer term, multi-thread for 'better' rather than just 'a' solution."
+    },
+    {
+      "index": 92,
+      "file": "Porytiles2/lib/domain/packing/services/palette_packer.cpp",
+      "line": 1380,
+      "summary": "Output pals are built only from explicitly packed pals; need to handle pals filled via Porytiles pal overrides \u2014 careful design required for PalettePool bitset."
+    }
+  ]
+}

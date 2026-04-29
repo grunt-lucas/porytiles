@@ -14,7 +14,6 @@ namespace {
 
 using namespace porytiles2;
 
-// TODO: this is hardcoded in multiple places
 std::filesystem::path artifacts_file(const std::filesystem::path &project_root, const std::string &tileset_name)
 {
     return project_root / "porytiles" / "tilesets" / tileset_name / "tileset-manifest.json";

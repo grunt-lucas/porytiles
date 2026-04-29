@@ -66,7 +66,6 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
     const auto tileset_cased = extract_tileset_cased_name(tileset_name);
     const std::string pascal_tileset = tileset_cased.to_pascal_case();
 
-    // TODO: provide some way for user to configure this?
     // Step 2: Parse animation parameters from tileset_anims.c
     const auto tileset_anims_path = project_root_ / "src" / "tileset_anims.c";
 

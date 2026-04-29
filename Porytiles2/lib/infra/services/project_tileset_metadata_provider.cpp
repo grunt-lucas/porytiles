@@ -18,11 +18,9 @@ namespace {
 
 using namespace porytiles2;
 
-// TODO: don't hardcode these
 const std::filesystem::path headers_rel_path = std::filesystem::path{"src"} / "data" / "tilesets" / "headers.h";
 
 // Project source file paths for INCBIN parsing
-// TODO: don't hardcode
 const std::filesystem::path graphics_rel_path = std::filesystem::path{"src"} / "data" / "tilesets" / "graphics.h";
 const std::filesystem::path metatiles_rel_path = std::filesystem::path{"src"} / "data" / "tilesets" / "metatiles.h";
 const std::filesystem::path src_graphics_rel_path = std::filesystem::path{"src"} / "graphics.c";

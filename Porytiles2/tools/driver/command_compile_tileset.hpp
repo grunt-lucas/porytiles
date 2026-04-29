@@ -70,10 +70,6 @@ class CompileTilesetCommand final : public Command {
     {
         using namespace porytiles2;
 
-        /*
-         * TODO: once we have more compilation code finished, we should come back and do more dependency injection via
-         * Fruit.
-         */
         // Use Fruit DI to inject TextFormatter based on no_color flag
         const bool no_color = !isatty(STDERR_FILENO); // Disable color when stderr is not a terminal
         fruit::Injector injector{di::get_formatter_component, no_color};
@@ -82,11 +78,6 @@ class CompileTilesetCommand final : public Command {
         // Create unfiltered diag for config bootstrapping (so config-loading warnings always show)
         auto stderr_diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter);
 
-        /*
-         * TODO: below we're passing hardcoded "include/" for structural project files. At some point we'll want the
-         * CLI tool to provide a way for users to change these values, in case:
-         * - they moved fieldmap.h, metatile_behaviors.h, etc to a different location
-         */
         std::filesystem::path project_root = project_root_opt_.project_root();
         std::filesystem::path fieldmap_header_root_relative{"include/fieldmap.h"};
         std::filesystem::path behaviors_header_root_relative{"include/constants/metatile_behaviors.h"};

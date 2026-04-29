@@ -419,7 +419,6 @@ ChainableResult<void> write_anim_frame_impl(
 
     // Get the appropriate frame
     const AnimFrame<PixelType> *frame_ptr = nullptr;
-    // TODO: don't hardcode "key" here, this whole pattern is bad tbh
     if (frame_name != "key") {
         frame_ptr = &anim.frame_for_name(frame_name);
     }

@@ -6,6 +6,12 @@
 
 #include "option.hpp"
 
+// TODO: delete this dead code
+//
+// Nothing in Porytiles2 includes this header. OptGroupFieldmap is never instantiated, so its flags are never
+// registered. The functionality this would have provided is already covered by the layered config system
+// (e.g. TilesPalMode and LazyLayeredConfig).
+
 class OptGroup {
   public:
     virtual ~OptGroup() = default;
@@ -24,8 +30,6 @@ class OptGroupFieldmap final : public OptGroup {
 
   public:
     OptGroupFieldmap()
-        // TODO: 'pokeemerald' base game string should be defined by an enum,
-        // like TilesPalMode
         : base_game_preset_{"pokeemerald"}, tiles_primary_override_{0}, tiles_total_override_{0},
           metatiles_primary_override_{0}, metatiles_total_override_{0}, pals_primary_override_{0},
           pals_total_override_{0}
@@ -39,7 +43,6 @@ class OptGroupFieldmap final : public OptGroup {
 
     void RegisterGroup(CLI::App &app) override
     {
-        // TODO: create a base game validator
         app.add_option("--base-game-preset", base_game_preset_, "Base game preset to use for the tileset.")
             ->group(GroupName())
             ->capture_default_str();

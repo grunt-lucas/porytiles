@@ -1292,7 +1292,6 @@ inline void report_color_counts(
     const std::vector<PaletteHint> &hints,
     const std::optional<std::array<Palette<Rgba32, pal::max_size>, pal::num_pals>> &porymap_pals)
 {
-    // TODO : impl
     return {};
 }
 

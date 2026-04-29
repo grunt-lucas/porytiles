@@ -1319,11 +1319,6 @@ CompilerTask::pipeline_helper_build_keyframe_data(const std::string &anim_name, 
      * For automatic/hybrid mode, we use the key frame tiles. For manual mode (no key frame),
      * we use the first regular frame's tiles as the representative tiles to place in tiles.png.
      */
-    /*
-     * TODO: frames() is a std::map<std::string, ...>, so begin() yields the lexicographically first key. This works
-     * for single-digit frame names ("0", "1", ...) but would break for 10+ frames ("10" sorts before "2"). Consider
-     * using params().frame_names()[0] to look up the intended first frame instead.
-     */
     const AnimFrame<Rgba32> &representative_frame =
         anim.has_key_frame() ? anim.key_frame() : anim.frames().begin()->second;
 
@@ -1430,7 +1425,6 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
                     total_keyframe_tiles += anim.key_frame().tiles().size();
                 }
                 else if (anim.has_frames()) {
-                    // TODO: same lexicographic ordering caveat as in pipeline_helper_build_keyframe_data
                     total_keyframe_tiles += anim.frames().begin()->second.tiles().size();
                 }
             }
@@ -1976,8 +1970,15 @@ void CompilerTask::pipeline_helper_apply_manual_overrides()
             break;
         }
 
-        case FrameLinking::hybrid:
-            panic("TODO: implement hybrid frame linking");
+        case FrameLinking::hybrid: {
+            std::vector<std::string> err_lines;
+            err_lines.emplace_back(format_.format(
+                "Hybrid frame linking is not yet implemented (animation '{}').", FormatParam{anim_name, Style::bold}));
+            err_lines.emplace_back("Use 'automatic' or 'manual' frame linking until hybrid support.");
+            err_lines.append_range(format_config_note_with_separator(format_, effective_linking));
+            diag_.error("hybrid-frame-linking-not-implemented", err_lines);
+            break;
+        }
 
         default:
             panic("unhandled value for FrameLinking");

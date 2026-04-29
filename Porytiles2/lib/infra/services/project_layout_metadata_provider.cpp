@@ -17,7 +17,6 @@ namespace {
 
 using namespace porytiles2;
 
-// TODO: don't hardcode this
 const std::filesystem::path layouts_json_rel_path = std::filesystem::path{"data"} / "layouts" / "layouts.json";
 
 /**

@@ -159,7 +159,6 @@ class Image {
 
   private:
     std::vector<PixelType> pixels_;
-    // TODO: is there a better way to handle this?
     std::optional<std::vector<Rgba32>> palette_;
     std::size_t width_;
     std::size_t height_;

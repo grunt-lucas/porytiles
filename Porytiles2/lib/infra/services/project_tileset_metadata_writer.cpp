@@ -19,7 +19,6 @@ namespace {
 
 using namespace porytiles2;
 
-// TODO: don't hardcode this path
 // Project source file path for headers.h
 const std::filesystem::path headers_rel_path = std::filesystem::path{"src"} / "data" / "tilesets" / "headers.h";
 

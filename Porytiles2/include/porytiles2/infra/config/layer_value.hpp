@@ -35,7 +35,6 @@ enum class ValidationState {
  */
 template <typename T>
 struct LayerValue {
-    // TODO: add _ to end of these field names
     std::optional<T> value;
     std::string source_key;
     std::string source_info;
