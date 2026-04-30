@@ -37,17 +37,12 @@ ChainableResult<void> import_layer_png(
     auto image_result = loader.load_from_file((project_root / src_key.key()).string());
     if (!image_result.has_value()) {
         switch (image_result.error().type()) {
-            // TODO: this shouldn't load a blank image, it should just error. To support the "import" case, we're going
-            // to create a special tileset operation called "import" which is distinct from "load", and which assumes a
-            // Porytiles component is not present.
         case ImageLoadError::Type::file_not_found:
-            layer_img_setter(dest.porytiles_component(), Image<Rgba32>{});
-            return {};
         case ImageLoadError::Type::unsupported_channel_count:
-        case ImageLoadError::Type::other_load_error: {
-            const auto error_msg = std::format("failed to load layer image: {}", src_key.key());
-            return ChainableResult<void>{FormattableError{error_msg}, image_result};
-        }
+        case ImageLoadError::Type::other_load_error:
+            return ChainableResult<void>{
+                FormattableError{"Failed to load layer image '{}'.", FormatParam{src_key.key(), Style::bold}},
+                image_result};
         default:
             panic("unhandled ImageLoadError type");
         }
@@ -349,15 +344,6 @@ ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const Artifact
     // This ensures YAML-specified width_tiles/height_tiles take precedence over auto-detected dimensions
     Animation<Rgba32> anim{anim_name, params};
     dest.porytiles_component().add_anim(std::move(anim));
-
-    /*
-     * TODO: I think this logic technically double loads the key frame. We can probably remove the:
-     *   const ArtifactKey &key_frame_key,
-     * param, since it's the caller's responsibility to make sure the key frame actually exists.
-     *
-     * At some point, if we refactor key frame handling to be a user-selected frame, we'll have to rethink all this
-     * anyway.
-     */
 
     // Load key frame using the unified template helper (only present for automatic/hybrid frame linking)
     if (key_frame_key.has_value()) {

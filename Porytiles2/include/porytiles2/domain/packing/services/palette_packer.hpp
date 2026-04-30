@@ -31,10 +31,6 @@ namespace porytiles2 {
  * @brief The input parameters for a packing operation.
  */
 struct PackingParams {
-    // TODO: create a required ctor so default is deleted, prevent callers from screwing up
-
-    // TODO: could the fields be refs or ptrs?
-
     /**
      * @brief Raw pixel tiles to pack into palettes.
      */
@@ -138,7 +134,6 @@ struct PalettePacking {
      * component will be left untouched. For populated palettes, slot 0 contains the transparency color (preserved from
      * input or defaulted), remaining slots contain packed colors, and unfilled slots contain Rgba32{0, 0, 0}.
      */
-    // TODO: make unfilled slot value configurable
     std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> pals_;
 
     /**
