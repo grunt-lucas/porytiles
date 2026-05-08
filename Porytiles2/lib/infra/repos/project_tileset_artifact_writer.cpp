@@ -152,7 +152,6 @@ ChainableResult<void> save_metatiles_bin(const std::vector<TilemapEntry> &entrie
 {
     std::ofstream out{path};
     for (const auto &entry : entries) {
-        // TODO: does this code work as expected on a big-endian machine?
         const auto tile_value = static_cast<uint16_t>(
             (entry.tile_index() & 0x3ff) | ((entry.h_flip() & 1) << 10) | ((entry.v_flip() & 1) << 11) |
             ((entry.pal_index() & 0xf) << 12));
@@ -170,7 +169,6 @@ ChainableResult<void> save_emerald_metatile_attributes_bin(
     for (const auto &attribute : attributes) {
         const std::uint16_t behavior = attribute.behavior();
         const auto layer_type = static_cast<std::uint8_t>(attribute.layer_type());
-        // TODO: does this code work as expected on a big-endian machine?
         const auto attribute_value = static_cast<std::uint16_t>((behavior & 0xff) | ((layer_type & 0xf) << 12));
         out << static_cast<std::uint8_t>(attribute_value);
         out << static_cast<std::uint8_t>(attribute_value >> 8);
@@ -577,7 +575,6 @@ ChainableResult<void> ProjectTilesetArtifactWriter::commit()
         }
         catch (const std::filesystem::filesystem_error &) {
             // Critical error during restore - best effort cleanup
-            // TODO: emit a diagnostic here?
         }
 
         // Clean up temporary directories
@@ -809,7 +806,6 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
 {
     const auto &attributes = src.porytiles_component().metatile_attributes();
 
-    // TODO : make the default behavior value configurable
     constexpr std::uint16_t default_behavior = 0;
     constexpr std::uint8_t default_terrain = 0;
     constexpr std::uint8_t default_encounter = 0;

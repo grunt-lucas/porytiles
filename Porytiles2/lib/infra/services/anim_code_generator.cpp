@@ -192,9 +192,6 @@ ChainableResult<std::string> AnimCodeGenerator::generate(
 
     std::ostringstream out;
 
-    /*
-     * TODO: fix all this "gTileset_" handling
-     */
     const std::string tileset_name_no_prefix = tileset_name.substr(std::size("gTileset_") - 1);
     const std::string pascal_tileset_name = DynamicCasedName{tileset_name_no_prefix}.to_pascal_case();
 

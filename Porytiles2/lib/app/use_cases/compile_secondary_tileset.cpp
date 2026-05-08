@@ -58,18 +58,6 @@ ChainableResult<void> CompileSecondaryTileset::compile(const std::string &tilese
         const auto &secondary_et = secondary_et_result.value();
         const auto &primary_et = primary_et_result.value();
         if (secondary_et.value() != primary_et.value()) {
-            /*
-             * TODO: The warning below is based on the current values of extrinsic_transparency in config.yaml /
-             * config.local.yaml, not on the ET the tilesets were actually compiled under. A user who changes a
-             * tileset's ET config without recompiling can land in a silently-stale state that our cross-tileset code
-             * cannot detect.
-             *
-             * The right long-term fix is to include tileset-specific configuration in the verification checksum system,
-             * so that any change to a tileset's config (ET or otherwise) invalidates the compiled artifact's checksum
-             * and puts the tileset into a detectable-stale state. Once that exists, this warning can be upgraded to a
-             * hard error, and the code path becomes "configured ET == compiled ET" by construction rather than by user
-             * discipline.
-             */
             std::vector<std::string> warn_msg{};
             warn_msg.emplace_back(diag_->formatter().format(
                 "Secondary tileset '{}' and its paired primary '{}' have different configured "

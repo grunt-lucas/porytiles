@@ -159,13 +159,6 @@ TilesPngWorkspace::TilesPngWorkspace(std::size_t capacity) : cursor_{1}, capacit
 TilesPngWorkspace::TilesPngWorkspace(const Image<IndexPixel> &img, std::size_t capacity)
     : cursor_{1}, capacity_{capacity}
 {
-    /*
-     * TODO: what should we do if tile 0 is not transparent? This is the pokeemerald convention but it's possible we
-     * could run into a tileset in the wild where this is the case. E.g. unit test SecondConstructorShouldLoadValidImage
-     * showcases this. We'd want to warn the user somehow? Maybe we can throw this warning further up the stack in the
-     * application?
-     */
-
     const PlainTextFormatter formatter{};
 
     // Precondition: image dimensions are multiples of 8

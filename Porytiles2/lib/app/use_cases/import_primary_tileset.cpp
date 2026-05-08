@@ -83,7 +83,6 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
      * state. If it does fail for extraordinary reasons, we present a helpful message to users so they can manually
      * recover.
      */
-    // TODO: add more details to this error message
     PT_TRY_CALL_CHAIN_ERR(
         tileset_manager_->persist_managed_existing(tileset_name),
         void,

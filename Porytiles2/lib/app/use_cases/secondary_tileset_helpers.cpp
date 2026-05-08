@@ -94,7 +94,6 @@ ChainableResult<std::unique_ptr<Tileset>> resolve_partner_primary(
         }
 
         if (found_primaries.size() > 1) {
-            // TODO: eventually support multiple distinct primaries
             std::vector<std::string> warn_lines{};
             warn_lines.push_back(diag->formatter().format(
                 "Multiple distinct partner primaries found for '{}' via layout data.",

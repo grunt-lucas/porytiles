@@ -213,6 +213,26 @@ Offset is derivable from mask: `offset = std::countr_zero(mask)`,
 Explicit offset only helps for split or interleaved fields. Gen III decomps do not use
 those. Defer until someone asks.
 
+#### Per-Field CSV Default for Row Omission
+
+Each schema field carries an optional `default:` integer. The CSV writer omits a row
+when every field on that metatile equals its declared default — this is the same
+"don't write rows that match the implicit default" compression the current writer
+applies to `behavior=0` for emerald and to `behavior=0,terrain=0,encounter=0` for
+firered, generalized to the schema. The symmetric reader path (the
+`MetatileAttribute new_attr{}` fill site in `TilesetCompiler` for IDs absent from
+the CSV) reads each field's `default` from the schema rather than relying on
+`MetatileAttribute{}`'s zero value-init.
+
+Default `default:` is `0`, which keeps stock pokeemerald and pokefirered
+behavior identical to today. Forks that add a custom provider-backed field, or that
+operate on a tileset whose most common behavior is not `MB_NORMAL` (e.g. a
+grass-themed outdoor tileset where most metatiles are `MB_TALL_GRASS`), can declare
+a non-zero default and get the same row-omission compression with zero Porytiles
+source edits. Schema-load validates that each `default:` fits within the field's
+mask width and, for provider-backed fields, that the value resolves to a known
+provider entry.
+
 #### Schema Inference via a Config Provider
 
 The attribute schema integrates into the existing `config_schema.yaml` provider chain.

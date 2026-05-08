@@ -3,7 +3,6 @@
 ## Bugs
 
 ## Refactor and finish TilesetRepo and project impl
-- Make .pla files a first class type in Porymap component (need a domain type for .pla)
 - Create domain-layer interfaces for key files, each with different implementations
   - e.g. MetatileLoader interface, ProjectBinMetatileLoader reads standard `metatiles.bin` file, ProjectJsonMetatileLoader reads our custom json format, etc
   - this will easily enable the JSON impl below
@@ -68,7 +67,9 @@ Automatic support would use tile sharing to align palettes and then be able to d
   - e.g. --disable-warnings as a shortcut for --diagnostic-warnings-exclude='.*'
   - making the option is easy, the tricky part here is cleanly integrating it into our completion system
 
-## Start working on secondary tileset compilation
+## Implement secondary tileset decompilation
+
+## Implement secondary tileset import
 
 ## Design and Implement `verify-tileset` command
 - new idea: `diff-tileset`

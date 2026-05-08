@@ -17,7 +17,6 @@ namespace {
 
 using namespace porytiles2;
 
-// TODO: move this to a diagnostic stencil header
 [[nodiscard]] std::vector<std::string> make_highlighted_details(
     const SourcePosition &position,
     const TextFormatter &format,
@@ -572,17 +571,7 @@ struct ParsedFunctions {
                 tile_count};
         }
 
-        // Handle the multi-Append VDests pattern, see pokeemerald QueueAnimTiles_Mauville_Flowers for example
         if (append_calls.size() > 1) {
-            /*
-             * TODO: this doesn't handle the typical VDests case, which instead looks like:
-             *
-             * AppendTilesetAnimToBuffer(gTilesetAnims_Rustboro_WindyWater[timer_div],
-             * gTilesetAnims_Rustboro_WindyWater_VDests[timer_mod], 4 * TILE_SIZE_4BPP);
-             *
-             * This is intrinsically handled by the extract_tile_x functions above. When we eventually support VDests,
-             * we'll need to update all these functions accordingly.
-             */
             return FormattableError{
                 "Queue function '{}' has multiple AppendTilesetAnimToBuffer calls (VDests pattern not yet supported).",
                 FormatParam{condition.called_func, Style::bold}};

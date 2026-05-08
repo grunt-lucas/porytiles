@@ -1376,29 +1376,6 @@ ChainableResult<PalettePacking> PalettePacker::pack_tiles(const PackingParams &p
 
     emit_palette_diagnostics(*format_, *diag_, *pal_printer_, packing.pals_);
 
-    /*
-     * TODO: above, we built output pals from all the pals that got explicitly packed. But what about pals that got
-     * filled via Porytiles pal overrides? We need to think about this very carefully. We'll need to think through how
-     * we populate the bitset for the PalettePool above.
-     *
-     * Here's what I think we should do. PalettePacker should only handle palettes that were explicitly enabled for
-     * packing via PalettePool. Any palette not turned on in PalettePool will get sent back to the caller as a
-     * std::nullopt. The caller can then decide what to do (e.g. fill in with Porytiles override, fill in with default
-     * values, etc).
-     *
-     * Callers MUST explicitly enable all pals they want the packer to access. This means that if the caller is
-     * compiling a secondary set, they should enable bits 0-5 in the available_pals_ bitset in PackingParams, and then
-     * pass the packer the primary palettes via the prefilled_pals_ input param. The prefilled 0-5 will have no
-     * wildcards since they are completely fixed by the primary. The calling code should also probably throw a warning
-     * if the user specified Porytiles overrides for those pals since they will be ignored in favor of the palettes for
-     * paired primary (maybe this can be configurable?). The calling code should also throw a warning when there are
-     * Porytiles overrides that don't correspond to one of the pals enabled for packing. E.g. if we are compiling
-     * primary, so bits 0-5 are set in the PalettePool, but user has supplied 12.pal in the Porytiles palettes, warn
-     * user that they've supplied an out-of-band palette due to configuration. Then say that this palette will still be
-     * copied over and all wildcards will receive default values (or allow user to specify an alternate behavior via
-     * configuration).
-     */
-
     return packing;
 }
 

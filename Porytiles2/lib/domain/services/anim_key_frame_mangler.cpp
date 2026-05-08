@@ -218,16 +218,6 @@ std::optional<std::pair<PixelTile<IndexPixel>, TileMangleRecord>> try_mangle_til
     for (std::size_t pixel_index : pixel_priority_order) {
         const IndexPixel original_pixel = tile.at(pixel_index);
 
-        /*
-         * TODO: we used to have this check here, since it doesn't really make sense to mangle a transparent pixel.
-         * However, FireRed General animations have unused transparent tiles in their key frames, so if we leave this
-         * check here the mangling breaks for those tiles. We might want to consider handling this differently in the
-         * future. For now, allowing mangling of transparent pixels works to solve this edge case.
-         */
-        // if (original_pixel.is_transparent()) {
-        //     continue;
-        // }
-
         const std::vector<std::size_t> alternatives =
             find_alternative_colors_sorted(original_pixel.color_index(), palette);
 

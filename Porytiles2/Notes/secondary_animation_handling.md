@@ -219,10 +219,7 @@ If a user enables `cross_tileset_anim_linking` and recompiles in patch or locked
 were previously assigned to regular workspace slots won't be checked against primary animation key
 frames. The config change silently has no effect until the user recompiles in optimize mode.
 
-There is a TODO in `tileset_compiler.cpp` (near the code above) noting this. The open question is
-whether this warrants a diagnostic ("cross-tileset linking has no effect in patch/locked mode for
-tiles not already in animation ranges") or whether it's inherent to patch/locked semantics and
-needs no special handling.
+Tracked in #247.
 
 #### Gap D: Extrinsic transparency mismatch has undiagnosed failure modes in subtile processing — **PARTIALLY CLOSED**
 
@@ -293,8 +290,7 @@ feature in the compiler, not just cross-tileset linking. A proper fix lives in t
 (e.g. hash a deterministic serialization of the effective config into the tileset cache), and
 would touch every caller of the cache, so it is out of scope for this cross-tileset feature.
 
-Tracked for a separately-scoped follow-up PR. Working title: "hash domain config into artifact
-checksum cache."
+Tracked in #230.
 
 ### Intentional invariants
 

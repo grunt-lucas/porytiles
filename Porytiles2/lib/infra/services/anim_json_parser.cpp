@@ -182,12 +182,6 @@ AnimParams parse_animation_params(const std::string &anim_name, const nlohmann::
 {
     AnimParams params;
 
-    /*
-     * TODO: would be nice to warn users here about unknown keys. That way, if they have a simple typo (e.g.
-     * 'farme_factor' instead of 'frame_factor') they won't be super confused as to why the animation param isn't being
-     * set properly.
-     */
-
     if (node.contains("frame_factor")) {
         params.frame_factor(node["frame_factor"].get<std::size_t>());
     }

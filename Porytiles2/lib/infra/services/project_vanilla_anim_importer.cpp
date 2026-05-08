@@ -37,10 +37,6 @@ namespace porytiles2 {
 ChainableResult<std::map<std::string, Animation<IndexPixel>>>
 ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) const
 {
-    /*
-     * TODO: refactor map key to be a DynamicCasedName.
-     */
-
     std::map<std::string, Animation<IndexPixel>> result;
 
     // Step 1: Get tileset metadata

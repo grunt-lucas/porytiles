@@ -439,11 +439,6 @@ ChainableResult<void> CompilerTask::pipeline_step_validate_input()
         return FormattableError{err_msg};
     }
 
-    /*
-     * TODO: do we want to collate some of these before returning? It would present more errors to user at once. There
-     * are pros and cons to this.
-     */
-
     // Run metatile count validation
     PT_TRY_CALL_PASS_ERR(
         validate_metatile_count(services, tileset_.name(), is_secondary(), porytiles_metatiles_), void);
@@ -479,13 +474,6 @@ ChainableResult<void> CompilerTask::pipeline_step_validate_input()
         }
     }
 
-    /*
-     * TODO: we definitely want to allow secondary tilesets to override primary palette slots in the future. I can think
-     * of an obscure case where a user wants to force Porytiles to assign some secondary metatile to use a primary
-     * tile/pal. They may want to do something clever where they swap primaries out underneath the secondary at runtime
-     * and want to ensure the secondary points to the right slots. In this case, when the user supplies an override for
-     * a primary pal, we send it to the packer, overriding whatever the paired primary tileset had in that pal slot.
-     */
     // Fail fast if secondary tileset defines an override palette in a primary slot
     if (is_secondary()) {
         for (std::size_t pal_index = 0; pal_index < num_pals_in_primary_.value(); ++pal_index) {
@@ -586,7 +574,6 @@ ChainableResult<void> CompilerTask::pipeline_step_setup_working_data()
         tiles_workspace_ = std::make_unique<TilesPngWorkspace>(tileset_.porymap_component().tiles_png(), size_in_tiles);
     }
     else if (tiles_edit_mode_ == ArtifactEditMode::patch) {
-        // TODO: here, should we compute the size and match the size like above?
         tiles_workspace_ = std::make_unique<TilesPngWorkspace>(
             tileset_.porymap_component().tiles_png(), num_tiles_in_primary_.value());
     }
@@ -711,22 +698,6 @@ ChainableResult<void> CompilerTask::pipeline_step_match_tiles_pals()
 
 std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
 {
-    /*
-     * TODO: we should track tile+pal use and warn the user here about any unused tiles or pal colors. This would be
-     * nice for cases where users add some assets and compile with "tiles/pals:patch", but then later decide to remove
-     * the assets. We could warn them these assets are unused so that they can optionally remove to free up space. We
-     * could also have a compilation option "force_remove" that forcibly removes unused stuff. This is obviously less
-     * safe, since for vanilla primary tilesets, seemingly unused assets may be in use from the secondaries. We can
-     * solve this by eventually having code that reads all tileset pairings from layouts.json and computes which primary
-     * assets are truly unused.
-     *
-     * In fact, we'll need something like this in order to truly implement pals:patch mode, since palettes have no
-     * "unused" sentinel value. And in fact, many of the vanilla '0 0 0' colors are actually used by secondaries
-     * *facepalm* (e.g. see cave tileset). Which means we can't even assume '0 0 0' is unused. Until we implement this,
-     * users can still simulate pals:patch by bringing in all Porymap pals as Porytiles override pals, wildcarding slots
-     * they are OK overwriting, and setting pals:optimize.
-     */
-
     auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>(tileset_.porytiles_component());
 
     // Update porytiles component animation params with computed tile offsets
@@ -778,16 +749,8 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
         new_porymap_component_->push_back_attribute(new_attr);
     }
 
-    // TODO: Copy over PLA files once we implement handling
-
     // Export tiles in original form
     if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
-        /*
-         * TODO: why is using ExportFlipMode::canonical here bugged? I think it has to do with how we computed the flip
-         * bits in 'pipeline_helper_try_reuse_porymap_tile' and 'pipeline_helper_assign_tile_via_pal_match'. If we're
-         * going to make this configurable, we'll need to check the config value in the matcher functions so we can
-         * compute the flip bits correctly.
-         */
         if (is_secondary()) {
             new_porymap_component_->tiles_png(tiles_workspace_->export_secondary_image(
                 num_tiles_in_primary_.value(), ExportFlipMode::original, ExportTrimMode::trim_trailing_transparent));
@@ -898,7 +861,6 @@ CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> 
      * Falls back to match_or_best for tiles not in the packer's assignments (e.g., locked/patch modes, or tiles
      * excluded from packing like animation keyframes).
      */
-    // TODO: top_n matches should be configurable
     std::size_t pal_index;
     if (tile_to_pal_.contains(flat_index)) {
         pal_index = tile_to_pal_.at(flat_index);
@@ -924,14 +886,6 @@ CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> 
      * tile_index was within a registered animation range. This prevents false positive interception where a static tile
      * that visually matches an animation keyframe gets incorrectly mapped to the animation tile_index, causing
      * unintended animation at runtime.
-     */
-    /*
-     * TODO: This gate has a subtle interaction with cross-tileset animation linking in secondary compilations. If a
-     * user previously compiled with cross_tileset_anim_linking disabled (so tiles were assigned to regular workspace
-     * slots), then enables cross_tileset_anim_linking and recompiles in patch/locked mode, the matcher will be skipped
-     * for those tiles because their original tile indices aren't in animation ranges. The config change silently has no
-     * effect until the user recompiles in optimize mode. Need to think carefully about whether this should emit a
-     * diagnostic, or whether it's inherent to patch/locked semantics and doesn't need special handling.
      */
     bool should_check_anim_matcher = true;
     if (tiles_edit_mode_ != ArtifactEditMode::optimize && flat_index < porymap_tilemap_entries_.size()) {
@@ -991,18 +945,6 @@ CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> 
          * this catches all workspace-level matches to primary animation ranges.
          */
         if (is_secondary() && has_paired_primary()) {
-            /*
-             * TODO: this loop is O(primary_anims) per workspace-matched tile. It cannot be replaced
-             * with AnimTileMatcher::is_in_animation_range() because:
-             *   1. The fallthrough check runs even when cross_tileset_anim_linking is disabled, in
-             *      which case primary animations are not registered in the matcher at all.
-             *   2. is_in_animation_range() checks both secondary and primary, but the fallthrough
-             *      diagnostic specifically targets primary animation ranges and needs the animation
-             *      name (not just a bool) for the warning message.
-             * A proper optimization needs either a precomputed interval structure over primary
-             * animations, or a new matcher method that returns the animation name for a given tile
-             * index. Not a correctness issue.
-             */
             const auto &primary_porymap_anims = paired_primary_->porymap_component().anims();
             for (const auto &[anim_name, anim] : primary_porymap_anims) {
                 const std::size_t offset = anim.params().tile_offset();
@@ -1048,7 +990,6 @@ CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> 
     // Tile not found - locked mode cannot insert new tiles
     if (tiles_edit_mode_ == ArtifactEditMode::locked) {
         result.status = TileAssignmentResult::Status::tile_not_found;
-        // TODO: pass index_tile or canonical_index_tile depending on user setting for the tiles.png output
         result.index_tile = index_tile;
         result.pal_index = pal_index;
         result.matched_pal = matched_pal;
@@ -1108,7 +1049,6 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
     }
     else {
         for (std::size_t i = 0; i < num_pals_in_primary_; i++) {
-            // TODO: support out-of-band primary palettes - see "Primary Palette Fixing" in topic_staging_area.md
             available_pals.set(i, true);
         }
     }
@@ -1505,14 +1445,6 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
                         offset = free_offset.value();
                     }
                     else {
-                        /*
-                         * TODO: This condition branching doesn't handle the possibility that a partial contiguous
-                         * sequence exists, with sufficient free space after to complete the insertion. The match is
-                         * all-or-nothing. Either the full tile sequence must already exist, or there must be contiguous
-                         * free space large enough to insert it. Future versions of Porytiles may want to handle this
-                         * case more cleanly, either by successfully "completing" a partial key frame sequence, or at
-                         * least notifying the user that this special edge case was hit.
-                         */
                         return FormattableError{
                             "Animation '{}' requires {} contiguous tiles but no sufficient space found.",
                             FormatParam{anim_name, Style::bold},
@@ -1528,7 +1460,6 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
                         offset = existing_offset.value();
                     }
                     else {
-                        // TODO: could we improve this error by showing violating tiles?
                         std::vector<std::string> err_msg{};
                         err_msg.emplace_back(format_.format(
                             "Animation '{}' keyframes not found in existing tiles.png.",
@@ -1848,7 +1779,6 @@ void CompilerTask::pipeline_helper_compile_animations()
             !std::ranges::all_of(subtile_pal_indices, [&](std::size_t idx) { return idx == frame_pal_index; });
 
         if (uses_multiple_palettes) {
-            // TODO: could we display something more here?
             std::vector<std::string> warning_lines;
             warning_lines.emplace_back(format_.format(
                 "Animation '{}' uses multiple palettes across subtiles.", FormatParam{anim_name, Style::bold}));
@@ -2333,7 +2263,6 @@ void CompilerTask::pipeline_helper_emit_no_matching_pal_error(
 
     // Emit a long note showing the top N closest matches
     std::vector<std::string> closest_n_note{};
-    // TODO: substitute configurable top_n for N
     closest_n_note.emplace_back("closest N match(es) with covered colors highlighted:");
     int match_index = 0;
     for (const auto &match : matches) {
