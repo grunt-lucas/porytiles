@@ -707,7 +707,7 @@ config_values:
     validators: []
     cross_field_validators: []
 
-  # TODO : Unlike verify_checksums (consumed by app-layer use cases), the diagnostic filter values below are "meta-config"
+  # Note: Unlike verify_checksums (consumed by app-layer use cases), the diagnostic filter values below are "meta-config"
   # — they are only consumed at the composition root (tools/driver/ commands) to wire the FilteredUserDiagnostics
   # decorator. No Porytiles library code reads them; the library receives a fully-configured UserDiagnostics pointer.
   #

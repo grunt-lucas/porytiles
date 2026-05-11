@@ -57,17 +57,6 @@ LayerValue<std::size_t> parse_size_t(const std::optional<std::string> &raw_value
         return LayerValue<std::size_t>::valid(value, option_name, "CLI");
     }
 
-    /*
-     * TODO: how to make this multiline? It displays like this:
-     *
-     * Invalid value '-200' for '--num-metatiles-in-primary': not a valid integer.
-     *
-     * All on one line. It would be nice to display like this:
-     *
-     * Invalid value '-200' for '--num-metatiles-in-primary':
-     *   - not a valid integer
-     */
-
     if (ec == std::errc::result_out_of_range) {
         const auto error = std::format("Invalid value '{}' for '{}': value out of range.", str, option_name);
         return LayerValue<std::size_t>::invalid(error, option_name);
