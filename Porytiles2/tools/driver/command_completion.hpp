@@ -172,9 +172,13 @@ class CompletionCommand final : public Command {
         std::cout << "    esac\n";
         std::cout << "\n";
 
-        // Options completion
+        // Options completion (include command-specific flags)
         std::cout << "    if [[ ${cur} == -* ]]; then\n";
-        std::cout << "        COMPREPLY=( $(compgen -W \"${config_opts}\" -- ${cur}) )\n";
+        std::cout << "        local extra_opts=\"\"\n";
+        std::cout << "        if [[ \"$subcommand\" == \"create-tileset\" ]]; then\n";
+        std::cout << "            extra_opts=\"--secondary\"\n";
+        std::cout << "        fi\n";
+        std::cout << "        COMPREPLY=( $(compgen -W \"${config_opts} ${extra_opts}\" -- ${cur}) )\n";
         std::cout << "        return 0\n";
         std::cout << "    fi\n";
         std::cout << "\n";
@@ -327,6 +331,7 @@ class CompletionCommand final : public Command {
         std::cout << "                create-tileset)\n";
         std::cout << "                    _arguments \\\n";
         std::cout << "                        $config_opts \\\n";
+        std::cout << "                        '--secondary[Create a secondary tileset instead of a primary]' \\\n";
         std::cout << "                        '1:tileset name:'\n";
         std::cout << "                    ;;\n";
         std::cout << "                list-tilesets)\n";
@@ -451,6 +456,12 @@ class CompletionCommand final : public Command {
                      "'(__porytiles2_complete_tilesets all)'\n";
         std::cout << "complete -c porytiles2 -f -n '__porytiles2_using_subcommand import-tileset' -a "
                      "'(__porytiles2_complete_tilesets unmanaged)'\n";
+        std::cout << "\n";
+
+        // Options for create-tileset subcommand
+        std::cout << "# Options for create-tileset subcommand\n";
+        std::cout << "complete -c porytiles2 -f -n '__porytiles2_using_subcommand create-tileset' -l secondary -d "
+                     "'Create a secondary tileset instead of a primary'\n";
         std::cout << "\n";
 
         // Options for list-tilesets subcommand

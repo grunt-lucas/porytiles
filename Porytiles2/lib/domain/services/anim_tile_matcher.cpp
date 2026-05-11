@@ -1,5 +1,8 @@
 #include "porytiles2/domain/services/anim_tile_matcher.hpp"
 
+#include <algorithm>
+#include <ranges>
+
 #include "porytiles2/domain/models/rgba32.hpp"
 #include "porytiles2/utilities/panic/panic.hpp"
 
@@ -10,24 +13,16 @@ void AnimTileMatcher::register_animation(
     const Animation<Rgba32> &animation,
     std::size_t tile_offset,
     const Rgba32 &extrinsic_transparency,
-    const std::vector<std::size_t> &subtile_pal_indices)
+    bool is_cross_tileset)
 {
     if (animation.frames().empty()) {
         panic("animation must have at least one frame");
     }
 
-    /*
-     * Use key frame if available, otherwise fall back to first regular frame (manual mode).
-     * TODO: frames() is a std::map<std::string, ...>, so begin() yields the lexicographically first key. This works
-     * for single-digit frame names ("0", "1", ...) but would break for 10+ frames ("10" sorts before "2"). Consider
-     * using params().frame_names()[0] to look up the intended first frame instead.
-     */
+    // Use key frame if available, otherwise fall back to first regular frame (manual mode).
     const AnimFrame<Rgba32> &representative_frame =
         animation.has_key_frame() ? animation.key_frame() : animation.frames().begin()->second;
     const auto &tiles = representative_frame.tiles();
-
-    assert_or_panic(
-        subtile_pal_indices.size() == tiles.size(), "subtile_pal_indices.size() must equal keyframe tile count");
 
     for (std::size_t i = 0; i < tiles.size(); ++i) {
         const PixelTile<Rgba32> &tile = tiles[i];
@@ -39,12 +34,13 @@ void AnimTileMatcher::register_animation(
             continue;
         }
 
-        // Canonicalize the tile and track which flips were applied
-        CanonicalPixelTile canonical{tile};
+        // Canonicalize the tile under this entry's ET and track which flips were applied. ET-aware
+        // canonicalization guarantees that tiles with identical opaque-pixel patterns but different transparent
+        // colors land on equivalent orientations under the map's cross-ET comparator.
+        CanonicalPixelTile canonical{tile, extrinsic_transparency};
 
-        // Get the base tile (canonical form) for lookup
-        const PixelTile<Rgba32> &base_tile = canonical;
-        if (lookup_map_.contains(base_tile)) {
+        KeyframeKey key{static_cast<const PixelTile<Rgba32> &>(canonical), extrinsic_transparency};
+        if (lookup_map_.contains(key)) {
             // For key frame animations, validate_anim_frames() catches duplicates before we get here.
             // For non-key-frame animations, duplicate tiles across animations are valid. Skip registration
             // and let the first registration win.
@@ -54,26 +50,30 @@ void AnimTileMatcher::register_animation(
         // Calculate absolute tile index in tiles.png
         const std::size_t absolute_index = tile_offset + i;
 
-        lookup_map_[base_tile] = KeyframeTileInfo{
+        lookup_map_[key] = KeyframeTileInfo{
             anim_name,
             absolute_index,
             i,
-            subtile_pal_indices[i],
             canonical.h_flip(),
             canonical.v_flip(),
+            is_cross_tileset,
         };
     }
 
     total_tiles_ += tiles.size();
-    animation_registrations_[anim_name] = AnimRegistration{tile_offset, tiles.size()};
+
+    if (is_cross_tileset && animation_registrations_.contains(anim_name)) {
+        panic("cross-tileset animation '" + anim_name + "' has the same name as an already-registered animation");
+    }
+    animation_registrations_.try_emplace(anim_name, AnimRegistration{tile_offset, tiles.size()});
 }
 
-std::optional<AnimTileMatch> AnimTileMatcher::find_match(const CanonicalPixelTile<Rgba32> &tile) const
+std::optional<AnimTileMatch>
+AnimTileMatcher::find_match(const CanonicalPixelTile<Rgba32> &tile, const Rgba32 &extrinsic_transparency) const
 {
-    // Get the canonical base tile for lookup
-    const PixelTile<Rgba32> &base_tile = tile;
+    KeyframeKey lookup_key{static_cast<const PixelTile<Rgba32> &>(tile), extrinsic_transparency};
 
-    auto it = lookup_map_.find(base_tile);
+    const auto it = lookup_map_.find(lookup_key);
     if (it == lookup_map_.end()) {
         return std::nullopt;
     }
@@ -84,22 +84,22 @@ std::optional<AnimTileMatch> AnimTileMatcher::find_match(const CanonicalPixelTil
     // The stored flip tells us how the keyframe tile was flipped to reach canonical form
     // The input tile's flip tells us how it was flipped to reach canonical form
     // XOR gives us the flip needed to go from keyframe tile to input tile
-    bool effective_h_flip = info.h_flip != tile.h_flip();
-    bool effective_v_flip = info.v_flip != tile.v_flip();
+    bool effective_h_flip = info.h_flip != tile.h_flip(); // NOLINT
+    bool effective_v_flip = info.v_flip != tile.v_flip(); // NOLINT
 
     return AnimTileMatch{
         info.anim_name,
         info.tile_index,
         info.keyframe_tile_idx,
-        info.pal_index,
         effective_h_flip,
         effective_v_flip,
+        info.is_cross_tileset,
     };
 }
 
 std::optional<std::size_t> AnimTileMatcher::tile_offset_for(const std::string &anim_name) const
 {
-    auto it = animation_registrations_.find(anim_name);
+    const auto it = animation_registrations_.find(anim_name);
     if (it == animation_registrations_.end()) {
         return std::nullopt;
     }
@@ -108,7 +108,7 @@ std::optional<std::size_t> AnimTileMatcher::tile_offset_for(const std::string &a
 
 std::optional<std::size_t> AnimTileMatcher::tile_count_for(const std::string &anim_name) const
 {
-    auto it = animation_registrations_.find(anim_name);
+    const auto it = animation_registrations_.find(anim_name);
     if (it == animation_registrations_.end()) {
         return std::nullopt;
     }
@@ -117,12 +117,9 @@ std::optional<std::size_t> AnimTileMatcher::tile_count_for(const std::string &an
 
 bool AnimTileMatcher::is_in_animation_range(std::size_t tile_index) const
 {
-    for (const auto &[name, reg] : animation_registrations_) {
-        if (tile_index >= reg.tile_offset && tile_index < reg.tile_offset + reg.tile_count) {
-            return true;
-        }
-    }
-    return false;
+    return std::ranges::any_of(animation_registrations_ | std::views::values, [tile_index](const auto &reg) {
+        return tile_index >= reg.tile_offset && tile_index < reg.tile_offset + reg.tile_count;
+    });
 }
 
 void AnimTileMatcher::clear()

@@ -82,6 +82,20 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     {
     }
 
+    /**
+     * @brief Prepends a @c ConfigProvider to the provider chain at highest priority and invalidates resolution caches.
+     *
+     * @details
+     * Satisfies @c DomainConfig::add_provider, @c AppConfig::add_provider, and @c InfraConfig::add_provider with a
+     * single override, since all three bases declare the same signature. Clearing the caches is required because any
+     * value resolved before this call would otherwise stick and the new provider would not be consulted.
+     *
+     * @param provider The provider to prepend. Must be non-null.
+     * @pre Must not be called concurrently with any config-value resolution. The class is not internally synchronized;
+     *   callers should add all override providers before the config is handed to compilation code.
+     */
+    void add_provider(std::unique_ptr<ConfigProvider> provider) override;
+
   protected:
     /*
      * Domain Config Raw Methods (Tier 1)
@@ -158,6 +172,9 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     [[nodiscard]] ChainableResult<ConfigValue<PerAnimOverrides>>
     per_anim_overrides_raw(ConfigScopeType type, const std::string &scope) const override;
 
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    cross_tileset_anim_linking_raw(ConfigScopeType type, const std::string &scope) const override;
+
     /*
      * App Config Raw Methods (Tier 1)
      * Note: _validated methods (Tier 2) are inherited from AppConfig and not overridden
@@ -165,6 +182,12 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
 
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
     verify_checksums_raw(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] ChainableResult<ConfigValue<PrimaryPairingMode>>
+    primary_pairing_mode_raw(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::vector<std::string>>>
+    primary_pairing_partners_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<std::vector<std::string>>>
     diagnostic_warnings_exclude_raw(ConfigScopeType type, const std::string &scope) const override;
@@ -549,6 +572,21 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     per_anim_overrides_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
     /**
+     * @brief Gets the full provenance chain for cross_tileset_anim_linking.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<bool>>
+    cross_tileset_anim_linking_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
      * @brief Gets the full provenance chain for verify_checksums.
      *
      * @details
@@ -562,6 +600,36 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      */
     [[nodiscard]] std::vector<ProvenanceChainLink<bool>>
     verify_checksums_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for primary_pairing_mode.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<PrimaryPairingMode>>
+    primary_pairing_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for primary_pairing_partners.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<std::vector<std::string>>>
+    primary_pairing_partners_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
     /**
      * @brief Gets the full provenance chain for diagnostic_warnings_exclude.

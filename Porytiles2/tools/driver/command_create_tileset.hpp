@@ -8,11 +8,12 @@
 #include "fruit/fruit.h"
 
 #include "porytiles2/app/use_cases/create_primary_tileset.hpp"
+#include "porytiles2/app/use_cases/create_secondary_tileset.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/palette_printer.hpp"
-#include "porytiles2/domain/services/primary_tileset_compiler.hpp"
-#include "porytiles2/domain/services/primary_tileset_creator.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
+#include "porytiles2/domain/services/tileset_compiler.hpp"
+#include "porytiles2/domain/services/tileset_creator.hpp"
 #include "porytiles2/infra/cli/cli_option_registration.hpp"
 #include "porytiles2/infra/cli/cli_option_storage.hpp"
 #include "porytiles2/infra/config/cli_option_provider.hpp"
@@ -39,6 +40,7 @@
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
+#include "porytiles2/infra/services/project_layout_metadata_provider.hpp"
 #include "porytiles2/infra/services/project_porytiles_tileset_manager.hpp"
 #include "porytiles2/infra/services/project_tileset_anims_modifier.hpp"
 #include "porytiles2/infra/services/project_tileset_metadata_writer.hpp"
@@ -59,6 +61,7 @@ class CreateTilesetCommand final : public Command {
         CLI::App &cmd = get_app();
         cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to create (e.g., gTileset_MyTileset)")
             ->required();
+        cmd.add_flag("--secondary", secondary_, "Create a secondary tileset instead of a primary.");
         project_root_opt_.RegisterOpt(cmd);
         porytiles2::register_config_options(cmd, cli_storage_);
     }
@@ -75,11 +78,6 @@ class CreateTilesetCommand final : public Command {
         // Create unfiltered diag for config bootstrapping (so config-loading warnings always show)
         auto stderr_diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter);
 
-        /*
-         * TODO: below we're passing hardcoded "include/" for structural project files. At some point we'll want the
-         * CLI tool to provide a way for users to change these values, in case:
-         * - they moved fieldmap.h, metatile_behaviors.h, etc to a different location
-         */
         std::filesystem::path project_root = project_root_opt_.project_root();
         std::filesystem::path fieldmap_header_root_relative{"include/fieldmap.h"};
         std::filesystem::path behaviors_header_root_relative{"include/constants/metatile_behaviors.h"};
@@ -104,6 +102,14 @@ class CreateTilesetCommand final : public Command {
             stderr_diag->fatal(validation_err);
             throw CLI::RuntimeError{1};
         }
+
+        // Eagerly validate metatile-attr-size to fail fast before any file I/O
+        auto attr_size_check = config.metatile_attr_size(ConfigScopeType::tileset, tileset_name_);
+        if (!attr_size_check.has_value()) {
+            stderr_diag->fatal(attr_size_check);
+            throw CLI::RuntimeError{1};
+        }
+        const std::size_t metatile_attr_size = attr_size_check.value().value();
 
         // Helper to safely extract filter patterns from config, falling back to empty on error
         auto get_filter_patterns =
@@ -184,10 +190,11 @@ class CreateTilesetCommand final : public Command {
             text_formatter, &behavior_map_provider, base_game, terrain_provider.get(), encounter_provider.get()};
 
         // Setup the tileset repository
-        ProjectTilesetArtifactKeyProvider key_provider{project_root, &config, text_formatter, diag.get()};
+        ProjectTilesetArtifactKeyProvider key_provider{
+            project_root, &config, &metadata_provider, text_formatter, diag.get()};
         ProjectTilesetArtifactReader artifact_reader{
             project_root,
-            base_game,
+            metatile_attr_size,
             &png_rgba_loader,
             &png_indexed_loader,
             &jasc_loader,
@@ -200,6 +207,7 @@ class CreateTilesetCommand final : public Command {
             &config,
             project_root,
             base_game,
+            metatile_attr_size,
             text_formatter,
             diag.get(),
             &png_rgba_saver,
@@ -215,15 +223,32 @@ class CreateTilesetCommand final : public Command {
             &checksum_provider, &metadata_provider, &key_provider, &artifact_reader, &artifact_writer, diag.get()};
 
         // Setup creator and compiler
-        PrimaryTilesetCreator creator{&config, &behavior_map_provider};
-        PrimaryTilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
+        TilesetCreator creator{&config, &behavior_map_provider};
+        TilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
 
-        // Create the use case
-        CreatePrimaryTileset create_use_case{
-            &creator, &compiler, &repo, &metadata_provider, &tileset_manager, &config, &config, diag.get()};
+        // Setup layout metadata provider (needed for secondary tileset primary pairing)
+        ProjectLayoutMetadataProvider layout_metadata_provider{project_root, text_formatter, diag.get()};
 
-        // Run the use case
-        auto create_result = create_use_case.create(tileset_name_);
+        // Create and run the appropriate use case based on --secondary flag
+        ChainableResult<void> create_result;
+        if (secondary_) {
+            CreateSecondaryTileset create_use_case{
+                &creator,
+                &compiler,
+                &repo,
+                &metadata_provider,
+                &layout_metadata_provider,
+                &tileset_manager,
+                &config,
+                &config,
+                diag.get()};
+            create_result = create_use_case.create(tileset_name_);
+        }
+        else {
+            CreatePrimaryTileset create_use_case{
+                &creator, &compiler, &repo, &metadata_provider, &tileset_manager, &config, &config, diag.get()};
+            create_result = create_use_case.create(tileset_name_);
+        }
         if (!create_result.has_value()) {
             const auto fail_result = ChainableResult<void>{
                 FormattableError{"Failed to create tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
@@ -238,6 +263,7 @@ class CreateTilesetCommand final : public Command {
     static constexpr auto kCommandDesc = "Create a new Porytiles-managed tileset from scratch.";
     static constexpr auto kCommandGroup = "COMMANDS";
     std::string tileset_name_;
+    bool secondary_ = false;
     OptProjectRoot project_root_opt_;
     porytiles2::CliOptionStorage cli_storage_;
 };

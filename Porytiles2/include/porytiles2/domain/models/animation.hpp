@@ -16,9 +16,6 @@ namespace porytiles2 {
 
 namespace anim {
 
-/*
- * TODO: define these somewhere else, they are infra concerns
- */
 constexpr std::string g_tileset_anims_prefix = "gTilesetAnims_";
 constexpr std::string s_tileset_anims_prefix = "sTilesetAnims_";
 constexpr std::string porytiles_managed_prefix = "PorytilesManaged_";
@@ -223,8 +220,9 @@ class Animation {
         requires requires(const PixelType &p) { p.is_transparent(p); }
     {
         /*
-         * TODO: This method currently only supports extrinsic transparency (Rgba32). Consider extending to support
-         * intrinsic transparency (IndexPixel) if needed in the future.
+         * Note: this method currently only supports extrinsic transparency (Rgba32). If a future caller needs the same
+         * logic for IndexPixel (intrinsic transparency), this would need to be extended — but no caller exists today,
+         * so the function is constrained via the requires-clause to the Rgba32 case.
          */
 
         // Determine tile count from key frame or first regular frame

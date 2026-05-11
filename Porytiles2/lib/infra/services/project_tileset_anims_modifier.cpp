@@ -18,7 +18,6 @@ namespace {
 
 using namespace porytiles2;
 
-// TODO: these paths are hardcoded all over the place
 // Paths relative to project root
 const std::filesystem::path tileset_anims_c_rel_path = std::filesystem::path{"src"} / "tileset_anims.c";
 const std::filesystem::path tileset_anims_h_rel_path = std::filesystem::path{"include"} / "tileset_anims.h";

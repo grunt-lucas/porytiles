@@ -67,7 +67,6 @@ ChainableResult<LayerMode> PorymapTilesetComponent::detect_layer_mode() const
         return LayerMode::dual;
     }
 
-    // TODO: only expectation message associated with configured layer type?
     return FormattableError{
         std::vector<std::string>{
             "unexpected tilemap entry count in metatiles.bin",

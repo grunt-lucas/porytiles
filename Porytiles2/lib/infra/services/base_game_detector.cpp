@@ -22,7 +22,9 @@ ChainableResult<BaseGame> BaseGameDetector::detect() const
      * backslash-continuation lines).
      *
      * Decision tree based on 4 boolean markers:
-     *   METATILE_ATTRIBUTE_BEHAVIOR       -> pokefirered (enum-based attributes)
+     *   METATILE_ATTRIBUTE_BEHAVIOR       -> pokefirered or pokeemerald-expansion (enum-based attributes)
+     *     + METATILE_ATTR_BEHAVIOR_MASK   -> pokeemerald-expansion (has both enum and #define attribute markers)
+     *     - METATILE_ATTR_BEHAVIOR_MASK   -> pokefirered
      *   METATILE_ATTR_BEHAVIOR_MASK       -> emerald-family (#define-based)
      *     + MAPGRID_METATILE_ID_SHIFT     -> emerald or expansion
      *       + swapPalettes               -> pokeemerald-expansion
@@ -60,8 +62,14 @@ ChainableResult<BaseGame> BaseGameDetector::detect() const
     std::string reason;
 
     if (has_metatile_attribute_behavior) {
-        detected = BaseGame::pokefirered;
-        reason = "Found METATILE_ATTRIBUTE_BEHAVIOR";
+        if (has_metatile_attr_behavior_mask) {
+            detected = BaseGame::pokeemerald_expansion;
+            reason = "Found both METATILE_ATTRIBUTE_BEHAVIOR and METATILE_ATTR_BEHAVIOR_MASK";
+        }
+        else {
+            detected = BaseGame::pokefirered;
+            reason = "Found METATILE_ATTRIBUTE_BEHAVIOR";
+        }
     }
     else if (has_metatile_attr_behavior_mask) {
         if (has_mapgrid_metatile_id_shift) {

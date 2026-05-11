@@ -23,14 +23,10 @@ class IndexPixel {
     IndexPixel(std::size_t index) : index_{index}
     {
         /*
-         * Why don't we check this here? Because in true-color output mode, we want to allow up to 8-bit index pixels.
-         * Even though pokeemerald only cares about the lower four bits, the upper four bits contain the pal index which
-         * is what allows us to save a non-greyscale png.
+         * No invariant check on `index_ < pal::max_size` here, because in true-color output mode we accept up to 8-bit
+         * index pixels. Even though pokeemerald only cares about the lower four bits, the upper four bits encode the
+         * pal index, which is what lets us save a non-greyscale png.
          */
-        // TODO: make an IndexPixel4 and IndexPixel8 for really clear domain separation
-        // if (index_ >= pal::max_size) {
-        //     panic("invalid IndexPixel value: " + std::to_string(index_));
-        // }
     }
 
     bool operator==(const IndexPixel &other) const = default;

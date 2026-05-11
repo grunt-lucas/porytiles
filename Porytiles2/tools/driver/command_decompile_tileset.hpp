@@ -10,9 +10,9 @@
 #include "porytiles2/app/use_cases/decompile_primary_tileset.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/palette_printer.hpp"
-#include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/domain/services/primary_tileset_decompiler.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
+#include "porytiles2/domain/services/tileset_compiler.hpp"
 #include "porytiles2/infra/cli/cli_option_registration.hpp"
 #include "porytiles2/infra/cli/cli_option_storage.hpp"
 #include "porytiles2/infra/config/cli_option_provider.hpp"
@@ -67,10 +67,6 @@ class DecompileTilesetCommand final : public Command {
     {
         using namespace porytiles2;
 
-        /*
-         * TODO: once we have more compilation code finished, we should come back and do more dependency injection via
-         * Fruit.
-         */
         // Use Fruit DI to inject TextFormatter based on no_color flag
         const bool no_color = !isatty(STDERR_FILENO); // Disable color when stderr is not a terminal
         fruit::Injector injector{di::get_formatter_component, no_color};
@@ -79,11 +75,6 @@ class DecompileTilesetCommand final : public Command {
         // Create unfiltered diag for config bootstrapping (so config-loading warnings always show)
         auto stderr_diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter);
 
-        /*
-         * TODO: below we're passing hardcoded "include/" for structural project files. At some point we'll want the
-         * CLI tool to provide a way for users to change these values, in case:
-         * - they moved fieldmap.h, metatile_behaviors.h, etc to a different location
-         */
         std::filesystem::path project_root = project_root_opt_.project_root();
         std::filesystem::path fieldmap_header_root_relative{"include/fieldmap.h"};
         std::filesystem::path behaviors_header_root_relative{"include/constants/metatile_behaviors.h"};
@@ -108,6 +99,14 @@ class DecompileTilesetCommand final : public Command {
             stderr_diag->fatal(validation_err);
             throw CLI::RuntimeError{1};
         }
+
+        // Eagerly validate metatile-attr-size to fail fast before any file I/O
+        auto attr_size_check = config.metatile_attr_size(ConfigScopeType::tileset, tileset_name_);
+        if (!attr_size_check.has_value()) {
+            stderr_diag->fatal(attr_size_check);
+            throw CLI::RuntimeError{1};
+        }
+        const std::size_t metatile_attr_size = attr_size_check.value().value();
 
         // Helper to safely extract filter patterns from config, falling back to empty on error
         auto get_filter_patterns =
@@ -148,7 +147,7 @@ class DecompileTilesetCommand final : public Command {
 
         // Setup primary importer and compiler
         PrimaryTilesetDecompiler decompiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
-        PrimaryTilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
+        TilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
 
         // Setup behavior map provider
         HeaderBehaviorMapProvider behavior_map_provider{
@@ -192,10 +191,11 @@ class DecompileTilesetCommand final : public Command {
             text_formatter, &behavior_map_provider, base_game, terrain_provider.get(), encounter_provider.get()};
 
         // Setup the tileset repository
-        ProjectTilesetArtifactKeyProvider key_provider{project_root, &config, text_formatter, diag.get()};
+        ProjectTilesetArtifactKeyProvider key_provider{
+            project_root, &config, &metadata_provider, text_formatter, diag.get()};
         ProjectTilesetArtifactReader artifact_reader{
             project_root,
-            base_game,
+            metatile_attr_size,
             &png_rgba_loader,
             &png_indexed_loader,
             &jasc_loader,
@@ -208,6 +208,7 @@ class DecompileTilesetCommand final : public Command {
             &config,
             project_root,
             base_game,
+            metatile_attr_size,
             text_formatter,
             diag.get(),
             &png_rgba_saver,

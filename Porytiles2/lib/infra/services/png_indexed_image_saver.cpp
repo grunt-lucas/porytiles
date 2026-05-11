@@ -18,11 +18,6 @@ ChainableResult<void> PngIndexedImageSaver::save_to_file(
 {
     using enum TilesPalMode;
 
-    /*
-     * TODO: make this configurable. Current pal has pure white as index 0 and pure black as index 15, which matches
-     * vanilla game tilesets. OG porytiles used a slightly different greyscale pal, with pure black as index 0 and
-     * different step intervals between colors.
-     */
     const auto greyscale_pal = standard_greyscale_pal();
 
     // Bail if given path exists already and isn't a file (i.e. it's a directory)

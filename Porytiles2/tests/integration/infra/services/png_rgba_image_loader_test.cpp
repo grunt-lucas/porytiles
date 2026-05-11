@@ -11,8 +11,6 @@
 
 using namespace porytiles2;
 
-// TODO: reorganize test assets
-
 TEST(PngRgbaImageLoaderTests, LoadFromBadFileFails)
 {
     const std::unique_ptr<PngRgbaImageLoader> loader = std::make_unique<PngRgbaImageLoader>();

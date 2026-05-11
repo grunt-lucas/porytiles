@@ -176,7 +176,7 @@ class ConfigValue {
         if (!source_details().empty()) {
             err_text.emplace_back("");
             params.emplace_back();
-            std::ranges::copy(source_details(), std::back_inserter(err_text));
+            err_text.append_range(source_details());
             for (const auto &_ : source_details()) {
                 params.emplace_back();
             }

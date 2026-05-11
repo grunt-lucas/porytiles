@@ -93,7 +93,8 @@ class ProjectPorytilesTilesetManager : public PorytilesTilesetManager {
 
     [[nodiscard]] ChainableResult<void> persist_managed_existing(const std::string &tileset_name) const override;
 
-    [[nodiscard]] ChainableResult<void> persist_managed_new(const std::string &tileset_name) const override;
+    [[nodiscard]] ChainableResult<void>
+    persist_managed_new(const std::string &tileset_name, bool is_secondary = false) const override;
 
     [[nodiscard]] ChainableResult<void>
     wire_anim_code(const std::string &tileset_name, bool is_secondary) const override;

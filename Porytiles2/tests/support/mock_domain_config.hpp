@@ -7,15 +7,20 @@
  *   uv run Scripts/generate_config.py
  */
 
+#include <memory>
 #include <string>
 #include <vector>
 
 #include "porytiles2/domain/config/domain_config.hpp"
+#include "porytiles2/infra/config/config_provider.hpp"
 
 namespace porytiles2 {
 
 class MockDomainConfig : public DomainConfig {
   public:
+    // Stub: mocks do not layer providers.
+    void add_provider(std::unique_ptr<ConfigProvider>) override {}
+
     std::size_t num_tiles_in_primary = 512;
     std::size_t num_tiles_total = 1024;
     std::size_t num_metatiles_in_primary = 512;
@@ -40,6 +45,7 @@ class MockDomainConfig : public DomainConfig {
         AnimMultiPalSubtileResolutionStrategy::error;
     FrameLinking global_frame_linking = FrameLinking::automatic;
     PerAnimOverrides per_anim_overrides = PerAnimOverrides{};
+    bool cross_tileset_anim_linking = true;
 
   protected:
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
@@ -195,6 +201,13 @@ class MockDomainConfig : public DomainConfig {
     per_anim_overrides_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{per_anim_overrides, "Per-Animation Overrides", "per_anim_overrides", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    cross_tileset_anim_linking_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{
+            cross_tileset_anim_linking, "Cross-Tileset Animation Linking", "cross_tileset_anim_linking", "mock", {}};
     }
 };
 

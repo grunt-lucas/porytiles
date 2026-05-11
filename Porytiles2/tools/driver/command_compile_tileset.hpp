@@ -9,11 +9,12 @@
 #include "fruit/fruit.h"
 
 #include "porytiles2/app/use_cases/compile_primary_tileset.hpp"
+#include "porytiles2/app/use_cases/compile_secondary_tileset.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/palette_printer.hpp"
-#include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/domain/services/tile_printer.hpp"
+#include "porytiles2/domain/services/tileset_compiler.hpp"
 #include "porytiles2/infra/cli/cli_option_registration.hpp"
 #include "porytiles2/infra/cli/cli_option_storage.hpp"
 #include "porytiles2/infra/config/cli_option_provider.hpp"
@@ -40,6 +41,7 @@
 #include "porytiles2/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles2/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles2/infra/services/png_rgba_image_saver.hpp"
+#include "porytiles2/infra/services/project_layout_metadata_provider.hpp"
 #include "porytiles2/infra/services/project_porytiles_tileset_manager.hpp"
 #include "porytiles2/infra/services/project_tileset_anims_modifier.hpp"
 #include "porytiles2/infra/services/project_tileset_metadata_writer.hpp"
@@ -68,10 +70,6 @@ class CompileTilesetCommand final : public Command {
     {
         using namespace porytiles2;
 
-        /*
-         * TODO: once we have more compilation code finished, we should come back and do more dependency injection via
-         * Fruit.
-         */
         // Use Fruit DI to inject TextFormatter based on no_color flag
         const bool no_color = !isatty(STDERR_FILENO); // Disable color when stderr is not a terminal
         fruit::Injector injector{di::get_formatter_component, no_color};
@@ -80,11 +78,6 @@ class CompileTilesetCommand final : public Command {
         // Create unfiltered diag for config bootstrapping (so config-loading warnings always show)
         auto stderr_diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter);
 
-        /*
-         * TODO: below we're passing hardcoded "include/" for structural project files. At some point we'll want the
-         * CLI tool to provide a way for users to change these values, in case:
-         * - they moved fieldmap.h, metatile_behaviors.h, etc to a different location
-         */
         std::filesystem::path project_root = project_root_opt_.project_root();
         std::filesystem::path fieldmap_header_root_relative{"include/fieldmap.h"};
         std::filesystem::path behaviors_header_root_relative{"include/constants/metatile_behaviors.h"};
@@ -109,6 +102,14 @@ class CompileTilesetCommand final : public Command {
             stderr_diag->fatal(validation_err);
             throw CLI::RuntimeError{1};
         }
+
+        // Eagerly validate metatile-attr-size to fail fast before any file I/O
+        auto attr_size_check = config.metatile_attr_size(ConfigScopeType::tileset, tileset_name_);
+        if (!attr_size_check.has_value()) {
+            stderr_diag->fatal(attr_size_check);
+            throw CLI::RuntimeError{1};
+        }
+        const std::size_t metatile_attr_size = attr_size_check.value().value();
 
         // Helper to safely extract filter patterns from config, falling back to empty on error
         auto get_filter_patterns =
@@ -148,7 +149,7 @@ class CompileTilesetCommand final : public Command {
         AnimCodeGenerator anim_code_generator{};
 
         // Setup primary compiler
-        PrimaryTilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
+        TilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
 
         // Setup behavior map provider
         HeaderBehaviorMapProvider behavior_map_provider{
@@ -156,6 +157,7 @@ class CompileTilesetCommand final : public Command {
 
         // Setup metadata provider (needed by artifact reader for animation param loading)
         ProjectTilesetMetadataProvider metadata_provider{project_root, text_formatter, diag.get()};
+        ProjectLayoutMetadataProvider layout_metadata_provider{project_root, text_formatter, diag.get()};
 
         // Setup Porytiles tileset manager and its dependencies
         ProjectTilesetMetadataWriter metadata_writer{project_root, text_formatter};
@@ -194,10 +196,11 @@ class CompileTilesetCommand final : public Command {
             text_formatter, &behavior_map_provider, base_game, terrain_provider.get(), encounter_provider.get()};
 
         // Setup the tileset repository
-        ProjectTilesetArtifactKeyProvider key_provider{project_root, &config, text_formatter, diag.get()};
+        ProjectTilesetArtifactKeyProvider key_provider{
+            project_root, &config, &metadata_provider, text_formatter, diag.get()};
         ProjectTilesetArtifactReader artifact_reader{
             project_root,
-            base_game,
+            metatile_attr_size,
             &png_rgba_loader,
             &png_indexed_loader,
             &jasc_loader,
@@ -210,6 +213,7 @@ class CompileTilesetCommand final : public Command {
             &config,
             project_root,
             base_game,
+            metatile_attr_size,
             text_formatter,
             diag.get(),
             &png_rgba_saver,
@@ -224,11 +228,39 @@ class CompileTilesetCommand final : public Command {
         TilesetRepo repo{
             &checksum_provider, &metadata_provider, &key_provider, &artifact_reader, &artifact_writer, diag.get()};
 
-        CompilePrimaryTileset compile_use_case{
-            &repo, &compiler, &metadata_provider, &tileset_manager, &config, &config, diag.get()};
+        // Verify the tileset exists in the project before proceeding
+        if (!metadata_provider.exists(tileset_name_)) {
+            const auto not_found_err = ChainableResult<void>{FormattableError{
+                "Tileset '{}' does not exist. Create or import it first.", FormatParam{tileset_name_, Style::bold}}};
+            diag->fatal(not_found_err);
+            throw CLI::RuntimeError{1};
+        }
 
-        // Run the use case
-        auto compile_result = compile_use_case.compile(tileset_name_);
+        // Detect primary vs secondary and dispatch to the correct use case
+        auto is_secondary_result = metadata_provider.is_secondary(tileset_name_);
+        if (!is_secondary_result.has_value()) {
+            diag->fatal(is_secondary_result);
+            throw CLI::RuntimeError{1};
+        }
+
+        ChainableResult<void> compile_result;
+        if (is_secondary_result.value()) {
+            CompileSecondaryTileset compile_use_case{
+                &repo,
+                &compiler,
+                &metadata_provider,
+                &layout_metadata_provider,
+                &tileset_manager,
+                &config,
+                &config,
+                diag.get()};
+            compile_result = compile_use_case.compile(tileset_name_);
+        }
+        else {
+            CompilePrimaryTileset compile_use_case{
+                &repo, &compiler, &metadata_provider, &tileset_manager, &config, &config, diag.get()};
+            compile_result = compile_use_case.compile(tileset_name_);
+        }
         if (!compile_result.has_value()) {
             const auto fail_result = ChainableResult<std::unique_ptr<Tileset>>{
                 FormattableError{"Failed to compile tileset '{}'.", FormatParam{tileset_name_, Style::bold}},

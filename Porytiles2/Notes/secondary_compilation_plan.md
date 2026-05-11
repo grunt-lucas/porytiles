@@ -13,11 +13,11 @@ The goal is to generalize the existing primary-only compilation pipeline to hand
 
 ---
 
-## Phase 1: Rename Compiler and Add Paired Primary Parameter
+## ~~Phase 1: Rename Compiler and Add Paired Primary Parameter~~
 
 **Goal**: Rename `PrimaryTilesetCompiler` to `TilesetCompiler`, add optional `paired_primary` parameter. No behavior change — all existing tests pass. No new types needed.
 
-### 1a. Rename `PrimaryTilesetCompiler` → `TilesetCompiler`
+### ~~1a. Rename `PrimaryTilesetCompiler` → `TilesetCompiler`~~
 
 - Rename header: `primary_tileset_compiler.hpp` → `tileset_compiler.hpp`
 - Rename impl: `primary_tileset_compiler.cpp` → `tileset_compiler.cpp`
@@ -52,9 +52,9 @@ Inside `CompilerTask`, store `const Tileset *paired_primary_` and derive everyth
 
 ---
 
-## Phase 2: Compiler Secondary Logic — Workspace & Palettes
+## ~~Phase 2: Compiler Secondary Logic — Workspace & Palettes~~
 
-**Goal**: Teach `CompilerTask` to handle secondary compilation via the `CompilationContext`.
+**Goal**: Teach `CompilerTask` to handle secondary compilation via the paired primary tileset pointer.
 
 ### Core idea: "Global index" workspace
 
@@ -62,7 +62,7 @@ For secondary compilation, create a workspace of capacity `num_tiles_total` (102
 
 On export, trim the primary prefix — only positions `num_tiles_in_primary`..N become the secondary's `tiles.png`.
 
-### 2a. `TilesPngWorkspace` changes
+### ~~2a. `TilesPngWorkspace` changes~~
 
 New constructor or factory method for secondary initialization:
 
@@ -92,7 +92,7 @@ New export mode for secondary:
     ExportTrimMode trim_mode) const;
 ```
 
-### 2b. Animation slot reservation for secondary
+### ~~2b. Animation slot reservation for secondary~~
 
 **Decision (confirmed)**: Reserve a transparent tile at position `num_tiles_in_primary` for vanilla compatibility. Vanilla secondary tiles.png tile 0 is always transparent. No metatiles reference it explicitly, but we match vanilla convention.
 
@@ -105,7 +105,7 @@ void reserve_anim_slots(std::size_t count, std::size_t start_offset);
 
 The `for_secondary()` factory must initialize position `num_tiles_in_primary` as a transparent tile and set cursor to `num_tiles_in_primary + 1` (or `num_tiles_in_primary` if no anims, then the first inserted tile after transparent).
 
-### 2c. `pipeline_step_setup_working_data()` changes
+### ~~2c. `pipeline_step_setup_working_data()` changes~~
 
 In the **optimize** path:
 
@@ -133,11 +133,11 @@ if (paired_primary_ != nullptr) {
 
 **Locked/patch modes**: Deferred — implement optimize mode first, handle locked/patch secondary as a follow-up. The optimize path is the primary use case and will validate the full architecture.
 
-### 2d. `pipeline_step_match_tiles_pals()` — no changes needed
+### ~~2d. `pipeline_step_match_tiles_pals()` — no changes needed~~
 
 Since the workspace uses global indices, `pipeline_helper_assign_tile_via_pal_match` naturally produces global tile indices in TilemapEntry. A secondary metatile that references a primary tile will find it in the workspace at position < `num_tiles_in_primary` — correct.
 
-### 2e. Tile capacity and error messages
+### ~~2e. Tile capacity and error messages~~
 
 Add a computed field to `CompilerTask`:
 ```c++
@@ -147,7 +147,7 @@ std::size_t tile_capacity_ = paired_primary_ != nullptr
 ```
 Use in `tile_limit_reached` error messages.
 
-### 2f. Export changes in `pipeline_step_assemble_output()`
+### ~~2f. Export changes in `pipeline_step_assemble_output()`~~
 
 Currently: `tiles_workspace_->export_image(flip_mode, trim_mode)`
 
@@ -161,7 +161,7 @@ if (paired_primary_ != nullptr) {
 }
 ```
 
-### 2g. Palette output for secondary
+### ~~2g. Palette output for secondary~~
 
 Currently copies all 16 palettes to output. For secondary, palettes 0..`num_pals_in_primary-1` should be copied from the primary (or left as-is from the existing Porymap component). Palettes `num_pals_in_primary`..`num_pals_total-1` come from packing. Palettes 13-15 are junk/reserved (same as primary).
 
@@ -174,9 +174,9 @@ The existing logic in `pipeline_helper_run_pal_packing` already handles this if 
 
 ---
 
-## Phase 3: Animation System Changes
+## ~~Phase 3: Animation System Changes~~
 
-### 3a. `AnimCodeGenerator` — secondary offset format
+### ~~3a. `AnimCodeGenerator` — secondary offset format~~
 
 **File**: `Porytiles2/lib/infra/services/anim_code_generator.cpp`
 
@@ -199,7 +199,7 @@ For secondary: local offset = global workspace index - num_tiles_in_primary (e.g
 
 This conversion happens when the compiler stores the offset into AnimParams after registration.
 
-### 3b. `AnimCodeParser` — parse `NUM_TILES_IN_PRIMARY + X` pattern
+### ~~3b. `AnimCodeParser` — parse `NUM_TILES_IN_PRIMARY + X` pattern~~
 
 **File**: `Porytiles2/lib/infra/services/anim_code_parser.cpp`
 
@@ -218,7 +218,7 @@ if (tokens[i+2].is(identifier) && tokens[i+2].text() == "NUM_TILES_IN_PRIMARY" &
 
 Check that the token types `plus` / `TokenType::plus` exist in the lexer. If not, add it. (The C code lexer likely already handles `+` as a token.)
 
-### 3c. Compiler animation registration — global-to-local offset conversion
+### ~~3c. Compiler animation registration — global-to-local offset conversion~~
 
 In `pipeline_helper_register_animations()`, after placing keyframe tiles in the workspace and getting the global workspace index (`tile_offset`), convert to local before storing:
 
@@ -258,37 +258,84 @@ params.tile_offset(local_offset);
 
 ---
 
-## Phase 4: Use Cases and CLI
+## ~~Phase Pre-4: Decouple `is_secondary` from `paired_primary` Pointer~~
 
-### 4a. New use case: `CompileSecondaryTileset`
+**Goal**: The current compiler uses `paired_primary_ != nullptr` as the sole signal for secondary compilation. This conflates two independent facts: (1) the tileset is secondary, and (2) a real primary is available. `PrimaryPairingMode::off` needs secondary compilation behavior with no primary -- passing `nullptr` would incorrectly trigger primary compilation logic. A synthetic "blank primary" (Null Object) doesn't work either: zeroed palettes pollute the color index map, causing false matches when secondary tiles contain `Rgba(0,0,0,0)`.
+
+**Change**: Add explicit `bool is_secondary` parameter to `compile()`, decoupling the two concerns.
+
+### ~~Pre-4a. Update `TilesetCompiler::compile()` signature~~
+
+```c++
+[[nodiscard]] ChainableResult<std::unique_ptr<Tileset>>
+compile(const Tileset &tileset, bool is_secondary = false, const Tileset *paired_primary = nullptr) const;
+```
+
+- `is_secondary == false` -> primary compilation (existing behavior), `paired_primary` ignored
+- `is_secondary == true, paired_primary != nullptr` -> secondary compilation against a real primary
+- `is_secondary == true, paired_primary == nullptr` -> standalone secondary compilation (no primary)
+
+Update all existing call sites to pass `/*is_secondary=*/false` explicitly (or rely on default).
+
+### ~~Pre-4b. Update `CompilerTask` internals~~
+
+Store both `bool is_secondary_` and `const Tileset *paired_primary_` independently:
+- `is_secondary()` -> returns `is_secondary_` (no longer derived from pointer)
+- New helper: `has_paired_primary()` -> `paired_primary_ != nullptr` (guards all 5 dereference sites)
+
+The 5 dereference sites and their standalone secondary behavior:
+
+1. **Workspace init** (`pipeline_step_setup_working_data`): If `has_paired_primary()`, use `for_secondary()` with real tiles. Else create workspace with capacity `num_tiles_total`, cursor at `num_tiles_in_primary + 1`, positions 0 through `num_tiles_in_primary` filled with transparent tiles. No `canonical_forms_` registrations.
+2. **Palette prefill** (`pipeline_helper_run_pal_packing`): If `has_paired_primary()`, lock primary palettes. Else skip prefill. Still restrict `available_pals` to secondary slots (num_pals_in_primary..num_pals_total-1) in both cases.
+3. **Color index map** (`pipeline_helper_build_color_index_map`): If `has_paired_primary()`, add primary palette colors. Else skip entirely.
+4. **Output palette copy** (`pipeline_step_assemble_output`): If `has_paired_primary()`, copy primary palettes. Else write zeroed palettes to slots 0 through num_pals_in_primary-1.
+5. **Export** (`pipeline_step_assemble_output`): Use `export_secondary_image()` when `is_secondary()` (unchanged, now driven by flag instead of pointer).
+
+### Files to modify
+- `Porytiles2/include/porytiles2/domain/services/tileset_compiler.hpp` -- new `is_secondary` param
+- `Porytiles2/lib/domain/services/tileset_compiler.cpp` -- `CompilerTask` changes + 5 guarded dereference sites
+- `Porytiles2/lib/app/use_cases/compile_primary_tileset.cpp` -- update call site (explicit `false`)
+
+---
+
+## ~~Phase 4: Use Cases and CLI~~
+
+### ~~4a. New use case: `CompileSecondaryTileset`~~
 
 **New files**:
 - `Porytiles2/include/porytiles2/app/use_cases/compile_secondary_tileset.hpp`
 - `Porytiles2/lib/app/use_cases/compile_secondary_tileset.cpp`
 
+**Config-driven primary pairing**: Two new config values control how the secondary finds its partner primary:
+
+- `tileset.primary_pairing.mode` (`PrimaryPairingMode`): `off`, `manual`, `automatic`
+- `tileset.primary_pairing.partners` (`std::vector<std::string>`): tileset names, use `std::vector<std::string>` parser for CLI
+
 Orchestration:
 1. Validate secondary tileset exists and is Porytiles-managed
-2. Find paired primary via `LayoutMetadataProvider`: iterate layouts, find first where `secondary_tileset == this tileset`, get its `primary_tileset`. **Warn** if other layouts pair this secondary with a different primary.
-3. Validate the paired primary is Porytiles-managed (error if not — "Secondary compilation requires a Porytiles-managed primary.")
-4. Load the compiled primary tileset via `TilesetRepo`
-5. Load secondary tileset
-6. Call `compiler_->compile(secondary_tileset, &primary_tileset)`
-8. Save compiled secondary via `TilesetRepo`
-9. Wire animation code (using `is_primary=false`)
+2. Resolve partner primary based on `primary_pairing_mode`:
+   - **`off`**: Skip primary loading entirely. `paired_primary` stays `nullptr`. If `partners` is non-empty, warn that it is ignored in `off` mode.
+   - **`manual`**: Read `primary_pairing_partners` from config. Error if empty ("Manual pairing mode requires at least one partner primary."). Use the first entry as the partner primary (plural list supports eventual multi-primary). Validate partner is Porytiles-managed.
+   - **`automatic`**: Scan layouts via `LayoutMetadataProvider` -- iterate all layouts, find those where `secondary_tileset == this tileset`, collect their `primary_tileset` values. Use the first found primary as the partner. **Warn** if multiple distinct primaries are found across layouts. If `partners` is non-empty, warn that the provided list is ignored in `automatic` mode. Error if no layout pairs this secondary with any primary. Add a TODO comment that eventually we'll support multiple distinct primaries.
+3. If a partner primary was resolved (modes `manual` and `automatic`):
+   - Validate the partner primary is Porytiles-managed (error if not: "Secondary compilation requires a Porytiles-managed primary.")
+   - Load the compiled primary tileset via `TilesetRepo`
+4. Load secondary tileset
+5. Call `compiler_->compile(secondary_tileset, /*is_secondary=*/true, paired_primary_ptr)` -- `nullptr` for `off` mode, `&primary_tileset` otherwise
+6. Save compiled secondary via `TilesetRepo`
+7. Wire animation code (using `is_primary=false`)
 
-**Primary pairing strategy (confirmed)**: Use first found pairing from layouts.json. Warn if inconsistent pairings exist across layouts. Multi-primary support and explicit CLI override (`--partner-primary`) are future work.
+Dependencies: same as `CompilePrimaryTileset` plus `LayoutMetadataProvider` (only needed for `automatic` mode, but always wired for simplicity).
 
-Dependencies: same as `CompilePrimaryTileset` plus `LayoutMetadataProvider`.
-
-### 4b. New use case: `CreateSecondaryTileset`
+### ~~4b. New use case: `CreateSecondaryTileset`~~
 
 **New files**:
 - `Porytiles2/include/porytiles2/app/use_cases/create_secondary_tileset.hpp`
 - `Porytiles2/lib/app/use_cases/create_secondary_tileset.cpp`
 
-Similar to `CreatePrimaryTileset` but adds the paired-primary lookup and passes `&primary_tileset` to compiler. Also needs a `SecondaryTilesetCreator` (or generalize `PrimaryTilesetCreator`) to generate starter assets appropriate for secondary tilesets.
+Similar to `CreatePrimaryTileset` but adds the paired-primary lookup and passes `&primary_tileset` to compiler. Uses `TilesetCreator::create_sample_secondary_porytiles_component` to generate starter assets appropriate for secondary tilesets.
 
-### 4c. CLI command dispatch
+### ~~4c. CLI command dispatch~~
 
 **File**: `Porytiles2/tools/driver/command_compile_tileset.hpp`
 
@@ -300,6 +347,15 @@ Same pattern for `command_create_tileset.hpp`.
 
 Both commands need `ProjectLayoutMetadataProvider` setup added to their dependency wiring.
 
+### ~~4d. Secondary-specific validations~~
+
+New validations for secondary compilation (in `pipeline_step_validate_input` or use case layer):
+
+1. **Primary must be Porytiles-managed** — checked in use case before compilation (step 3 of 4a orchestration)
+2. **Metatile count fits secondary range** — count <= `num_metatiles_total - num_metatiles_in_primary`
+3. **Color count within secondary palette budget** — `(num_pals_total - num_pals_in_primary) * 15` unique colors max
+4. **Global color count** includes primary palette colors for the ColorIndexMap since secondary tiles can reference primary palettes (needed for tile matching)
+
 ### Files to create
 - `Porytiles2/include/porytiles2/app/use_cases/compile_secondary_tileset.hpp`
 - `Porytiles2/lib/app/use_cases/compile_secondary_tileset.cpp`
@@ -310,19 +366,6 @@ Both commands need `ProjectLayoutMetadataProvider` setup added to their dependen
 - `Porytiles2/tools/driver/command_compile_tileset.hpp` — dispatch by is_secondary
 - `Porytiles2/tools/driver/command_create_tileset.hpp` — dispatch by is_secondary
 - `Porytiles2/CMakeLists.txt` — add new source files
-
----
-
-## Phase 5: Validation
-
-New validations for secondary compilation (in `pipeline_step_validate_input` or use case layer):
-
-1. **Primary must be Porytiles-managed** — checked in use case before compilation
-2. **Metatile count fits secondary range** — count <= `num_metatiles_total - num_metatiles_in_primary`
-3. **Color count within secondary palette budget** — `(num_pals_total - num_pals_in_primary) * 15` unique colors max
-4. **Global color count** includes primary palette colors for the ColorIndexMap since secondary tiles can reference primary palettes (needed for tile matching)
-
-### Files to modify
 - `Porytiles2/lib/domain/algorithms/tileset_compile_validators.cpp` — add secondary-aware validators
 - `Porytiles2/lib/domain/services/tileset_compiler.cpp` — call secondary validators when paired_primary_ != nullptr
 
@@ -333,8 +376,8 @@ New validations for secondary compilation (in `pipeline_step_validate_input` or 
 1. **Phase 1** (rename + paired_primary parameter) — zero behavior change, safe refactor
 2. **Phase 2** (workspace + palette changes) — core secondary compilation logic
 3. **Phase 3** (animation system) — code gen/parse + offset conversion
-4. **Phase 4** (use cases + CLI) — wire it all together
-5. **Phase 5** (validation) — can be interleaved with Phase 2-4
+4. **Phase Pre-4** (decouple is_secondary from paired_primary pointer) — enable standalone secondary compilation
+5. **Phase 4** (use cases, CLI, and validation) — wire it all together with secondary-specific validations
 
 ---
 
@@ -349,15 +392,135 @@ New validations for secondary compilation (in `pipeline_step_validate_input` or 
 
 ---
 
+## ~~Phase 5: Primary Animation References for Secondary Tilesets~~
+
+**Goal**: Allow secondary tilesets to manually link metatile entries to primary animation tile ranges.
+
+### Context
+
+When compiling a secondary tileset, metatiles may reference tiles from primary animations (e.g., water, flowers). In `FrameLinking::auto` mode, this works out of the box via workspace tile matching (primary key frame tiles are pre-loaded at their correct global indices). In `FrameLinking::manual` mode, there is no mechanism for users to specify overrides referencing primary animation tiles.
+
+### ~~5a. anim.json extension: `primary_references`~~
+
+Add an optional `primary_references` top-level key to secondary tilesets' anim.json. Each entry maps a primary animation name to a list of override entries (same `AnimOverrideEntry` format as existing overrides):
+
+```json
+{
+  "red_flower": {
+    "frames": [
+      "center",
+      "right",
+      "left"
+    ],
+    "frame_order": [
+      "center",
+      "right",
+      "center",
+      "left"
+    ],
+    "tile_offset": 1
+  },
+  "primary_references": {
+    "flower": {
+      "overrides": [
+        { "id": 5, "layer": "bottom", "subtile": "nw", "frame_subtile": 0, "pal_index": 2, "hflip": false, "vflip": false },
+        { "id": 5, "layer": "bottom", "subtile": "ne", "frame_subtile": 1, "pal_index": 2, "hflip": false, "vflip": false }
+      ]
+    }
+  }
+}
+```
+
+### ~~5b. Data model: `PorytilesTilesetComponent`~~
+
+**File**: `Porytiles2/include/porytiles2/domain/models/porytiles_tileset_component.hpp`
+
+Add a new field and accessors:
+
+```c++
+// Private:
+std::map<DynamicCasedName, std::vector<AnimOverrideEntry>> primary_anim_overrides_;
+
+// Public:
+[[nodiscard]] const std::map<DynamicCasedName, std::vector<AnimOverrideEntry>> &primary_anim_overrides() const;
+void primary_anim_overrides(std::map<DynamicCasedName, std::vector<AnimOverrideEntry>> overrides);
+```
+
+### ~~5c. Parser: `AnimJsonParser::parse_primary_references()`~~
+
+**Files**: `Porytiles2/include/porytiles2/infra/services/anim_json_parser.hpp`, `Porytiles2/lib/infra/services/anim_json_parser.cpp`
+
+Add a new method (additive, existing `parse()` unchanged):
+
+```c++
+[[nodiscard]] ChainableResult<std::map<DynamicCasedName, std::vector<AnimOverrideEntry>>>
+parse_primary_references(const std::filesystem::path &json_path) const;
+```
+
+Reads the same anim.json but extracts only the `primary_references` key. Returns empty map if absent. Reuses existing override parsing logic. Also extend `write()` to round-trip `primary_references`.
+
+### ~~5d. Tileset loading~~
+
+**File**: `Porytiles2/lib/infra/repos/project_tileset_artifact_reader.cpp` (or `tileset_repo.cpp`)
+
+After loading porytiles animations, call `parse_primary_references()` on the same anim.json path and store on `PorytilesTilesetComponent::primary_anim_overrides_`.
+
+### ~~5e. Compiler: apply primary animation overrides~~
+
+**File**: `Porytiles2/lib/domain/services/tileset_compiler.cpp`
+
+In `pipeline_helper_apply_manual_overrides()`, after the existing loop over secondary animations, add:
+
+```c++
+if (!is_secondary()) {
+    if (!tileset_.porytiles_component().primary_anim_overrides().empty()) {
+        // Error: primary tilesets cannot have primary_references
+    }
+    return;
+}
+
+const auto &primary_overrides = tileset_.porytiles_component().primary_anim_overrides();
+const auto &primary_anims = paired_primary_->porymap_component().anims();
+
+for (const auto &[primary_anim_name, overrides] : primary_overrides) {
+    // Validate: primary animation exists in paired_primary
+    // tile_offset from primary AnimParams is LOCAL to primary = GLOBAL offset (primary starts at 0)
+    // For each override: absolute_tile = tile_offset + entry.frame_subtile
+    // Write to metatiles_bin
+}
+```
+
+### ~~5f. Validations~~
+
+1. **Primary animation exists**: Error if referenced name not in `paired_primary_->porymap_component().anims()`.
+2. **frame_subtile in bounds**: Error if `entry.frame_subtile >= tile_count`.
+3. **Primary-only guard**: Error if a primary tileset has `primary_references`.
+4. **Metatile ID in bounds**: Error if `entry.metatile_id` exceeds secondary metatile count.
+
+### Files to modify
+
+| File                                                                          | Change                                                                |
+|-------------------------------------------------------------------------------|-----------------------------------------------------------------------|
+| `Porytiles2/include/porytiles2/domain/models/porytiles_tileset_component.hpp` | Add `primary_anim_overrides_` field and accessors                     |
+| `Porytiles2/include/porytiles2/infra/services/anim_json_parser.hpp`           | Add `parse_primary_references()` method                               |
+| `Porytiles2/lib/infra/services/anim_json_parser.cpp`                          | Implement `parse_primary_references()`, extend `write()`              |
+| `Porytiles2/lib/infra/repos/project_tileset_artifact_reader.cpp`              | Call `parse_primary_references()` during anim loading                 |
+| `Porytiles2/lib/domain/services/tileset_compiler.cpp`                         | Apply primary overrides in `pipeline_helper_apply_manual_overrides()` |
+
+---
+
 ## Resolved Design Decisions
 
 1. **Transparent tile at secondary base**: **Reserve as transparent** at position `num_tiles_in_primary` for vanilla compatibility.
 2. **Locked/patch mode for secondary**: **Deferred** — implement optimize mode first, handle locked/patch as follow-up.
-3. **Primary pairing strategy**: **Use first found** pairing from layouts.json. Warn on inconsistent pairings. Multi-primary support and `--partner-primary` CLI flag are future work.
+3. **Primary pairing strategy**: **Config-driven** via `tileset.primary_pairing.mode` (`off`/`manual`/`automatic`) and `tileset.primary_pairing.partners` (list of tileset names, settable via CLI or YAML). Default is `automatic` (layout.json scan). `manual` uses the provided partners list. `off` compiles with no primary. Partners list is plural to support eventual multi-primary.
+6. **Standalone secondary (off mode)**: Decoupled `is_secondary` flag from `paired_primary` pointer (Phase Pre-4). A Null Object / synthetic blank primary was rejected because zeroed palettes pollute the color index map, causing false matches for secondary tiles containing `Rgba(0,0,0,0)`. Instead, the compiler guards all 5 `paired_primary_` dereference sites with `has_paired_primary()` and provides standalone fallback behavior (transparent workspace, no palette prefill, no color map pollution).
+4. **Primary animation matching (auto mode)**: Works via workspace tile matching in optimize mode. Primary tiles (including animation key frames) are pre-loaded at correct global indices. No explicit registration needed for MVP. See code comment in `pipeline_helper_register_animations()`.
+5. **Primary animation references (manual mode)**: New `primary_references` section in anim.json (Phase 5). Uses same `AnimOverrideEntry` format. Primary tile_offset from `paired_primary_->porymap_component().anims()` is local-to-primary = global (no adjustment needed).
 
 ## Future Work (Out of Scope)
 
-- Multiple partner primary support (see `topic_staging_area.md`)
-- `--partner-primary` CLI flag for explicit override
+- Multiple partner primary compilation (partners list supports multiple entries, but compiler currently uses only the first)
 - Locked/patch mode for secondary compilation
 - Primary Palette Fixing (out-of-band pals, see `topic_staging_area.md`)
+- Register primary animations in `AnimTileMatcher` for robustness when secondary patch/locked modes are added

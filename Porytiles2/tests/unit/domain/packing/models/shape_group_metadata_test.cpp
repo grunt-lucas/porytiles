@@ -129,3 +129,44 @@ TEST(ShapeGroupMetadataTests, MultipleGroupsMapsCorrectly)
         EXPECT_GE(members.size(), 2);
     }
 }
+
+TEST(ShapeGroupMetadataTests, PrimaryTileIdsFilteredFromMetadata)
+{
+    auto tile1 = make_single_color_tile(red);
+    auto tile2 = make_single_color_tile(blue);
+    auto tile3 = make_single_color_tile(green);
+    std::vector<PixelTile<Rgba32>> tiles = {tile1, tile2, tile3};
+
+    auto shape_groups = analyze_shape_groups(tiles, transparent);
+    ASSERT_EQ(shape_groups.size(), 1);
+
+    // Index 0 and 1 are RegularId, index 2 is PrimaryTileId (should be filtered)
+    std::vector<PackableTile::Id> index_to_id = {
+        PackableTile::RegularId{0}, PackableTile::RegularId{1}, PackableTile::PrimaryTileId{0, 3}};
+
+    auto metadata = build_shape_group_metadata(shape_groups, index_to_id);
+
+    EXPECT_EQ(metadata.group_members.size(), 1);
+    EXPECT_EQ(metadata.group_members.at(0).size(), 2);
+    EXPECT_TRUE(metadata.tile_id_to_group.contains(PackableTile::RegularId{0}));
+    EXPECT_TRUE(metadata.tile_id_to_group.contains(PackableTile::RegularId{1}));
+    EXPECT_FALSE(metadata.tile_id_to_group.contains(PackableTile::PrimaryTileId{0, 3}));
+}
+
+TEST(ShapeGroupMetadataTests, AllPrimaryTileIdsProducesEmptyGroup)
+{
+    auto tile1 = make_single_color_tile(red);
+    auto tile2 = make_single_color_tile(blue);
+    std::vector<PixelTile<Rgba32>> tiles = {tile1, tile2};
+
+    auto shape_groups = analyze_shape_groups(tiles, transparent);
+    ASSERT_EQ(shape_groups.size(), 1);
+
+    // Both members are PrimaryTileId — group should be skipped entirely
+    std::vector<PackableTile::Id> index_to_id = {PackableTile::PrimaryTileId{0, 1}, PackableTile::PrimaryTileId{1, 2}};
+
+    auto metadata = build_shape_group_metadata(shape_groups, index_to_id);
+
+    EXPECT_TRUE(metadata.group_members.empty());
+    EXPECT_TRUE(metadata.tile_id_to_group.empty());
+}

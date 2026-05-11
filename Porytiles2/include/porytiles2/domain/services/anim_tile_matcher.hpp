@@ -22,9 +22,9 @@ struct AnimTileMatch {
     std::string anim_name;         ///< Name of the animation this keyframe belongs to
     std::size_t tile_index;        ///< Absolute tile index in tiles.png
     std::size_t keyframe_tile_idx; ///< Index within the keyframe (0, 1, 2, ...)
-    std::size_t pal_index;         ///< Composite-aware palette index for this subtile
     bool h_flip;                   ///< Horizontal flip required to match
     bool v_flip;                   ///< Vertical flip required to match
+    bool is_cross_tileset{false};  ///< True if this match is against a primary animation (cross-tileset linking)
 };
 
 /**
@@ -67,31 +67,35 @@ class AnimTileMatcher {
      * stored in canonical form along with metadata about its position and the animation it belongs to.
      *
      * @param anim_name Name of the animation.
-     * @param animation The compiled animation with IndexPixel tiles.
+     * @param animation The animation with RGBA tiles.
      * @param tile_offset The starting tile index in tiles.png for this animation's keyframe.
      * @param extrinsic_transparency The extrinsic transparent color.
-     * @param subtile_pal_indices Composite-aware palette index for each keyframe subtile.
+     * @param is_cross_tileset Whether this animation is cross-tileset, i.e. from the paired primary
      * @pre @p animation must have at least one frame (the keyframe).
-     * @pre @p subtile_pal_indices.size() must equal the keyframe tile count.
      */
     void register_animation(
         const std::string &anim_name,
         const Animation<Rgba32> &animation,
         std::size_t tile_offset,
         const Rgba32 &extrinsic_transparency,
-        const std::vector<std::size_t> &subtile_pal_indices);
+        bool is_cross_tileset = false);
 
     /**
      * @brief Attempts to match a tile against registered animation keyframes.
      *
      * @details
      * Searches the lookup map for a tile that matches the given canonical tile (considering all flip orientations).
-     * If found, returns match information including the tile index and required flip bits.
+     * The cross-ET comparator on the map compares each candidate under its own registered extrinsic transparency,
+     * so registered entries and the input tile may have been compiled under different ETs and still match when
+     * their opaque-pixel patterns coincide.
      *
-     * @param tile The canonical tile to match
-     * @return Match information if found, std::nullopt otherwise
+     * @param tile The canonical tile to match.
+     * @param extrinsic_transparency The extrinsic transparency value applied to @p tile during the cross-ET lookup.
+     * Typically this is the ET configured for the tileset whose pixel data @p tile was derived from.
+     * @return Match information if found, @c std::nullopt otherwise.
      */
-    [[nodiscard]] std::optional<AnimTileMatch> find_match(const CanonicalPixelTile<Rgba32> &tile) const;
+    [[nodiscard]] std::optional<AnimTileMatch>
+    find_match(const CanonicalPixelTile<Rgba32> &tile, const Rgba32 &extrinsic_transparency) const;
 
     /**
      * @brief Returns the total number of keyframe tiles registered across all animations.
@@ -144,9 +148,9 @@ class AnimTileMatcher {
         std::string anim_name;
         std::size_t tile_index;        // Absolute index in tiles.png
         std::size_t keyframe_tile_idx; // Index within keyframe
-        std::size_t pal_index;         // Composite-aware palette index
         bool h_flip;                   // Flip applied to reach canonical form
         bool v_flip;
+        bool is_cross_tileset;
     };
 
     /**
@@ -157,8 +161,40 @@ class AnimTileMatcher {
         std::size_t tile_count;
     };
 
-    // Map from canonical tile form to keyframe info
-    std::map<PixelTile<Rgba32>, KeyframeTileInfo> lookup_map_;
+    /**
+     * @brief Key type for the cross-ET animation lookup map.
+     *
+     * @details
+     * Carries the canonical pixel data alongside the extrinsic transparency value that was configured for the
+     * tileset this key was registered from. The paired ET is what makes the @c KeyframeKeyCompare comparator able to
+     * classify this entry's pixels independently of any other entry's ET.
+     */
+    struct KeyframeKey {
+        PixelTile<Rgba32> tile;
+        Rgba32 extrinsic_transparency;
+    };
+
+    /**
+     * @brief Strict weak ordering comparator that classifies each side's pixels under its own registered ET.
+     *
+     * @details
+     * Delegates to @c PixelTile<Rgba32>::cross_et_compare, which is the strict-weak-ordering analog of
+     * @c equals_ignoring_transparency with split extrinsic transparency values. This is what lets the map hold
+     * entries from tilesets compiled with different ET values and still find matches when their opaque-pixel
+     * patterns coincide.
+     */
+    struct KeyframeKeyCompare {
+        using is_transparent = void;
+
+        bool operator()(const KeyframeKey &a, const KeyframeKey &b) const
+        {
+            return PixelTile<Rgba32>::cross_et_compare(
+                       a.tile, a.extrinsic_transparency, b.tile, b.extrinsic_transparency) < 0;
+        }
+    };
+
+    // Map from canonical tile form (with its source ET) to keyframe info
+    std::map<KeyframeKey, KeyframeTileInfo, KeyframeKeyCompare> lookup_map_;
     std::size_t total_tiles_{0};
     std::map<std::string, AnimRegistration> animation_registrations_;
 };

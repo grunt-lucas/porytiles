@@ -2,7 +2,6 @@
 
 #include <filesystem>
 #include <fstream>
-#include <ranges>
 #include <string_view>
 
 #include "nlohmann/json.hpp"
@@ -15,7 +14,6 @@ namespace {
 
 using namespace porytiles2;
 
-// TODO: this is hardcoded in multiple places
 std::filesystem::path artifacts_file(const std::filesystem::path &project_root, const std::string &tileset_name)
 {
     return project_root / "porytiles" / "tilesets" / tileset_name / "tileset-manifest.json";
@@ -168,23 +166,28 @@ ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_existing(c
     return metadata_writer_->update_to_porytiles_managed(tileset_name);
 }
 
-ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_new(const std::string &tileset_name) const
+ChainableResult<void>
+ProjectPorytilesTilesetManager::persist_managed_new(const std::string &tileset_name, bool is_secondary) const
 {
     // Step 1: Create tileset struct in headers.h (it doesn't exist yet)
     PT_TRY_CALL_CHAIN_ERR(
-        metadata_writer_->create_tileset_struct(tileset_name, /*is_secondary=*/false),
+        metadata_writer_->create_tileset_struct(tileset_name, is_secondary),
         void,
         "Failed to create tileset struct in headers.h for '{}'.",
         FormatParam(tileset_name, Style::bold));
+
+    // Invalidate the metadata cache since we just added a new struct to headers.h
+    metadata_provider_->invalidate_metadata_cache();
 
     // Step 2: Write TilesetManifest with imported=false
     constexpr std::uint32_t version = 1;
     write(tileset_name, TilesetManifest::for_created_tileset(version));
 
-    // Step 3: Get config values for path computation (new tilesets are always primary)
+    // Step 3: Get config values for path computation
     PT_TRY_ASSIGN_CHAIN_ERR(
         bin_path_base,
-        infra_config_->tileset_paths_primary_bin(ConfigScopeType::tileset, tileset_name),
+        is_secondary ? infra_config_->tileset_paths_secondary_bin(ConfigScopeType::tileset, tileset_name)
+                     : infra_config_->tileset_paths_primary_bin(ConfigScopeType::tileset, tileset_name),
         void,
         "Failed to get tileset bin path config for '{}'.",
         FormatParam(tileset_name, Style::bold));
@@ -221,7 +224,7 @@ ProjectPorytilesTilesetManager::wire_anim_code(const std::string &tileset_name, 
         std::vector<std::string> remark_text;
         remark_text.emplace_back("Config 'tileset.animations.wire_anim_code' is false, removing any existing wiring.");
         remark_text.emplace_back("");
-        std::ranges::copy(should_wire.prettify(diag_->formatter()), std::back_inserter(remark_text));
+        remark_text.append_range(should_wire.prettify(diag_->formatter()));
         diag_->remark("wire-tileset-animation", remark_text);
         return remove_wired_anim_code(tileset_name, is_secondary);
     }

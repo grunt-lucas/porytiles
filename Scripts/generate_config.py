@@ -292,6 +292,15 @@ def generate_config_files():
             "infra/config/header_define_provider.cpp.jinja2",
             "Porytiles2/lib/infra/config/header_define_provider.cpp",
         ),
+        # OverrideConfigProvider
+        (
+            "infra/config/override_config_provider.hpp.jinja2",
+            "Porytiles2/include/porytiles2/infra/config/override_config_provider.hpp",
+        ),
+        (
+            "infra/config/override_config_provider.cpp.jinja2",
+            "Porytiles2/lib/infra/config/override_config_provider.cpp",
+        ),
         # Valid YAML paths for unknown key detection
         (
             "infra/config/valid_yaml_paths.hpp.jinja2",

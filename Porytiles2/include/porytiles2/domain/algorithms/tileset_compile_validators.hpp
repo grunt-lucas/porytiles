@@ -26,7 +26,7 @@
  * @details
  * This module provides validation functionality for tileset compile job input.
  *
- * @see PrimaryTilesetCompiler Main consumer of the functions defined here.
+ * @see TilesetCompiler Main consumer of the functions defined here.
  */
 
 namespace porytiles2 {
@@ -86,7 +86,7 @@ inline void report_validation_error_in_metatile(
         FormatParam{error_message})};
     std::vector highlight = services.tile_printer.print_metatile_pixel_highlight(
         metatile, layer, subtile, row, col, extrinsic_transparency);
-    std::ranges::copy(highlight, std::back_inserter(errors));
+    errors.append_range(highlight);
     services.diag.error(diagnostic_code, errors);
 }
 
@@ -128,7 +128,7 @@ inline void report_validation_error_in_anim(
             Style::bold},
         FormatParam{error_message})};
     std::vector highlight = services.tile_printer.print_tile_pixel_highlight(tile, row, col, extrinsic_transparency);
-    std::ranges::copy(highlight, std::back_inserter(errors));
+    errors.append_range(highlight);
     services.diag.error(diagnostic_code, errors);
 }
 
@@ -165,7 +165,7 @@ inline void report_validation_error_in_anim_tile(
             anim::message_header(services.diag.formatter(), anim_name, frame_name, internal_tile_index), Style::bold},
         FormatParam{error_message})};
     std::vector tile_visual = services.tile_printer.print_tile(tile, extrinsic_transparency);
-    std::ranges::copy(tile_visual, std::back_inserter(errors));
+    errors.append_range(tile_visual);
     services.diag.error(diagnostic_code, errors);
 }
 
@@ -188,7 +188,7 @@ inline void report_color_counts(
     std::vector<std::string> color_lines;
     color_lines.emplace_back("color counts:");
     auto counts = services.pal_printer.print_rgba_pal_counts(color_counts);
-    std::ranges::copy(counts, std::back_inserter(color_lines));
+    color_lines.append_range(counts);
     services.diag.error_note(tag, color_lines);
 }
 
@@ -199,9 +199,9 @@ inline void report_color_counts(
  *
  * @details
  * Checks that the number of input metatiles does not exceed the configured limit for the tileset type. For primary
- * tilesets, this checks against `num_metatiles_in_primary`. For secondary tilesets, this checks against
- * `num_metatiles_total`. If validation fails, emits an error diagnostic with the actual count and limit, along with a
- * note showing the relevant configuration source.
+ * tilesets, this checks against @c num_metatiles_in_primary. For secondary tilesets, this checks against
+ * @c num_metatiles_total - @c num_metatiles_in_primary. If validation fails, emits an error diagnostic with the actual
+ * count and limit, along with a note showing the relevant configuration source(s).
  *
  * @param services Common services parameter store.
  * @param tileset_name The name of the tileset being validated (used for config lookup).
@@ -209,7 +209,7 @@ inline void report_color_counts(
  * @param metatiles The metatiles to validate.
  * @return Empty result on success, or FormattableError describing the violation.
  *
- * @see PrimaryTilesetCompiler Main consumer of this validation function.
+ * @see TilesetCompiler Main consumer of this validation function.
  */
 [[nodiscard]] inline ChainableResult<void> validate_metatile_count(
     const TilesetCompileValidatorServices &services,
@@ -220,8 +220,8 @@ inline void report_color_counts(
     PT_UNWRAP_TILESET_CONFIG_REF(services.config, num_metatiles_in_primary, tileset_name, void);
     PT_UNWRAP_TILESET_CONFIG_REF(services.config, num_metatiles_total, tileset_name, void);
 
-    ConfigValue<std::size_t> limit_cfg = is_secondary ? num_metatiles_total : num_metatiles_in_primary;
-    std::size_t metatile_limit = limit_cfg.value();
+    std::size_t metatile_limit = is_secondary ? (num_metatiles_total.value() - num_metatiles_in_primary.value())
+                                              : num_metatiles_in_primary.value();
 
     if (metatiles.size() > metatile_limit) {
         services.diag.error(
@@ -231,10 +231,20 @@ inline void report_color_counts(
             FormatParam{tileset_name, Style::bold});
 
         std::vector<std::string> note_text;
-        note_text.push_back(
-            services.diag.formatter().format("Metatile limit is '{}'.", FormatParam{metatile_limit, Style::bold}));
-        note_text.emplace_back("");
-        std::ranges::copy(format_config_note(services.diag.formatter(), limit_cfg), std::back_inserter(note_text));
+        if (is_secondary) {
+            note_text.append_range(build_subtraction_limit_lines(
+                services.diag.formatter(),
+                "Metatile limit",
+                metatile_limit,
+                num_metatiles_total,
+                num_metatiles_in_primary));
+        }
+        else {
+            note_text.push_back(
+                services.diag.formatter().format("Metatile limit is '{}'.", FormatParam{metatile_limit, Style::bold}));
+            note_text.emplace_back("");
+            note_text.append_range(format_config_note(services.diag.formatter(), num_metatiles_in_primary));
+        }
         services.diag.error_note("metatile-limit-exceeded", note_text);
 
         return FormattableError{
@@ -766,9 +776,9 @@ inline void report_color_counts(
                     metatile, metatile::Layer::middle, subtile, extrinsic_transparency);
                 std::vector top_highlight = services.tile_printer.print_metatile_tile_highlight(
                     metatile, metatile::Layer::top, subtile, extrinsic_transparency);
-                std::ranges::copy(bottom_highlight, std::back_inserter(errors));
-                std::ranges::copy(middle_highlight, std::back_inserter(errors));
-                std::ranges::copy(top_highlight, std::back_inserter(errors));
+                errors.append_range(bottom_highlight);
+                errors.append_range(middle_highlight);
+                errors.append_range(top_highlight);
                 services.diag.error("layer-mode-violation", errors);
             }
         }
@@ -781,8 +791,7 @@ inline void report_color_counts(
         note_text.push_back(
             services.diag.formatter().format("Implied layer mode is '{}'.", FormatParam{LayerMode::dual, Style::bold}));
         note_text.emplace_back("");
-        std::ranges::copy(
-            format_config_note(services.diag.formatter(), num_tiles_per_metatile), std::back_inserter(note_text));
+        note_text.append_range(format_config_note(services.diag.formatter(), num_tiles_per_metatile));
         note_text.emplace_back("");
         note_text.emplace_back("Consider enabling triple-layer metatiles.");
         note_text.push_back(services.diag.formatter().format(
@@ -1283,7 +1292,6 @@ inline void report_color_counts(
     const std::vector<PaletteHint> &hints,
     const std::optional<std::array<Palette<Rgba32, pal::max_size>, pal::num_pals>> &porymap_pals)
 {
-    // TODO : impl
     return {};
 }
 
@@ -1352,8 +1360,7 @@ inline void report_color_counts(
                     FormatParam{anim_name, Style::bold},
                     FormatParam{"automatic", Style::bold}));
                 note_lines.emplace_back("");
-                std::ranges::copy(
-                    format_config_note(services.diag.formatter(), per_anim_overrides), std::back_inserter(note_lines));
+                note_lines.append_range(format_config_note(services.diag.formatter(), per_anim_overrides));
                 services.diag.warning_note("missing-key-frame", note_lines);
             }
             else {
@@ -1557,7 +1564,7 @@ inline void report_color_counts(
                     "Frame '{}' subtile {}:", FormatParam{key_frame.frame_name(), Style::bold}, FormatParam{tile_idx}));
                 auto key_tile_visual =
                     services.tile_printer.print_tile(key_frame.tile_at(tile_idx), extrinsic_transparency);
-                std::ranges::copy(key_tile_visual, std::back_inserter(frame_tiles_note));
+                frame_tiles_note.append_range(key_tile_visual);
 
                 // Print regular frame tiles
                 for (const auto &[frame_name, frame] : anim.frames()) {
@@ -1566,7 +1573,7 @@ inline void report_color_counts(
                         "Frame '{}' subtile {}:", FormatParam{frame_name, Style::bold}, FormatParam{tile_idx}));
                     auto frame_tile_visual =
                         services.tile_printer.print_tile(frame.tile_at(tile_idx), extrinsic_transparency);
-                    std::ranges::copy(frame_tile_visual, std::back_inserter(frame_tiles_note));
+                    frame_tiles_note.append_range(frame_tile_visual);
                 }
 
                 services.diag.error_note("composite-color-count-violation", frame_tiles_note);

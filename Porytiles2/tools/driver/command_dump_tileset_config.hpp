@@ -73,13 +73,6 @@ class DumpTilesetConfigCommand final : public Command {
             throw CLI::RuntimeError{1};
         }
 
-        /*
-         * TODO: it might be nice to support a --yaml flag that dumps a unified yaml for this config. It could be useful
-         * for users to lock config for a given tileset, e.g.
-         *
-         * porytiles2 dump-tileset-config gTileset_Foo --yaml > porytiles/tilesets/gTileset_Foo/config.local.yaml
-         */
-
         config.dump_config(std::cout, ConfigScopeType::tileset, tileset_name_);
     }
 

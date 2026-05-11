@@ -3,6 +3,7 @@
 #include <algorithm>
 #include <format>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
 #include <vector>
@@ -201,8 +202,8 @@ struct CombinedTiles {
 build_combined_tiles(const PackingParams &params, const std::set<PixelTile<Rgba32>> &anim_keyframe_tiles)
 {
     CombinedTiles combined;
-    combined.tiles.reserve(params.tiles_.size());
-    combined.index_to_id.reserve(params.tiles_.size());
+    combined.tiles.reserve(params.tiles_.size() + params.primary_tiles_.size());
+    combined.index_to_id.reserve(params.tiles_.size() + params.primary_tiles_.size());
 
     for (std::size_t i = 0; i < params.tiles_.size(); ++i) {
         CanonicalPixelTile<Rgba32> canonical{params.tiles_.at(i)};
@@ -211,6 +212,12 @@ build_combined_tiles(const PackingParams &params, const std::set<PixelTile<Rgba3
         }
         combined.tiles.push_back(params.tiles_.at(i));
         combined.index_to_id.push_back(PackableTile::RegularId{i});
+    }
+
+    for (std::size_t i = 0; i < params.primary_tiles_.size(); ++i) {
+        const auto &primary_ref = params.primary_tiles_.at(i);
+        combined.tiles.push_back(primary_ref.tile);
+        combined.index_to_id.push_back(PackableTile::PrimaryTileId{i, primary_ref.pal_index});
     }
 
     return combined;
@@ -222,6 +229,7 @@ build_combined_tiles(const PackingParams &params, const std::set<PixelTile<Rgba3
 struct SharingGroupMember {
     std::size_t tile_index;
     std::size_t pal_index;
+    bool is_primary{false};
 };
 
 /**
@@ -232,7 +240,24 @@ struct SharingGroupMember {
  */
 struct PartitionGroup {
     std::vector<SharingGroupMember> members;
+
+    /**
+     * @brief Tile indices for each distinct color version (secondary tiles only).
+     *
+     * @details
+     * Primary tile members contribute to the seen_colors dedup set but are not added here, since these indices are
+     * used to index into params.tiles_ for diagnostic display. Safe to pass directly to diagnostic helpers.
+     */
     std::vector<std::size_t> color_version_tile_indices;
+
+    /**
+     * @brief Primary tile color version entries (tile_index into primary_tiles_, pal_index).
+     *
+     * @details
+     * Collected during partition group computation for primary tiles that introduce a new color version. Used for
+     * diagnostic display of primary tile art in Phase 1 and Phase 2.
+     */
+    std::vector<std::pair<std::size_t, std::size_t>> primary_color_version_entries;
 };
 
 /**
@@ -278,6 +303,8 @@ struct Phase3GroupResult {
     std::size_t dropped_color_version_count;
     std::size_t matching_count;
     std::map<std::size_t, std::vector<std::size_t>> members_by_pal;
+    bool has_primary_members{false};
+    std::map<std::size_t, std::vector<std::size_t>> primary_members_by_pal;
 };
 
 /**
@@ -304,6 +331,7 @@ struct VerifiedMember {
     std::size_t hw_pal;
     CanonicalPixelTile<IndexPixel> canonical_indexed;
     std::map<ShapeMask, Rgba32> colors;
+    bool is_primary{false};
 };
 
 /**
@@ -387,8 +415,11 @@ void populate_tile_to_pal(PalettePacking &packing, const PackingOutput &output)
                 else if constexpr (std::is_same_v<Id, PackableTile::PrefilledPaletteId>) {
                     // Nothing to do here, we only had these PackableTiles for internal bookkeeping
                 }
+                else if constexpr (std::is_same_v<Id, PackableTile::PrimaryTileId>) {
+                    // Primary tiles are never in the packer's output; no-op for exhaustive visit
+                }
                 else {
-                    panic("unimplemented std::visit branch");
+                    static_assert(sizeof(Id) == 0, "Unhandled PackableTile::Id variant alternative");
                 }
             },
             tile_id);
@@ -422,6 +453,10 @@ void populate_tile_to_pal(PalettePacking &packing, const PackingOutput &output)
                     tile_pal_assignments[member.tile_index] = tile_to_pal.at(regular_index);
                 }
             }
+            else if (std::holds_alternative<PackableTile::PrimaryTileId>(id)) {
+                auto primary_id = std::get<PackableTile::PrimaryTileId>(id);
+                tile_pal_assignments[member.tile_index] = primary_id.pal_index;
+            }
         }
     }
     return tile_pal_assignments;
@@ -451,16 +486,39 @@ void populate_tile_to_pal(PalettePacking &packing, const PackingOutput &output)
         std::vector<SharingGroupMember> members;
         std::set<std::map<ShapeMask, Rgba32>> seen_colors;
         std::vector<std::size_t> color_version_tile_indices;
+        std::vector<std::pair<std::size_t, std::size_t>> primary_color_version_entries;
 
         for (const auto &member : group.members) {
-            auto regular_index = std::get<PackableTile::RegularId>(combined.index_to_id.at(member.tile_index)).index;
-            if (tile_to_pal.contains(regular_index)) {
-                auto pal_index = tile_to_pal.at(regular_index);
-                members.push_back(SharingGroupMember{regular_index, pal_index});
-                distinct_pals_set.insert(pal_index);
+            const auto &id = combined.index_to_id.at(member.tile_index);
+            std::size_t display_index{};
+            std::optional<std::size_t> pal_opt;
+
+            bool is_primary = false;
+            if (std::holds_alternative<PackableTile::RegularId>(id)) {
+                auto regular_index = std::get<PackableTile::RegularId>(id).index;
+                display_index = regular_index;
+                if (tile_to_pal.contains(regular_index)) {
+                    pal_opt = tile_to_pal.at(regular_index);
+                }
+            }
+            else if (std::holds_alternative<PackableTile::PrimaryTileId>(id)) {
+                auto primary_id = std::get<PackableTile::PrimaryTileId>(id);
+                display_index = primary_id.tile_index;
+                pal_opt = primary_id.pal_index;
+                is_primary = true;
+            }
+
+            if (pal_opt.has_value()) {
+                members.push_back(SharingGroupMember{display_index, pal_opt.value(), is_primary});
+                distinct_pals_set.insert(pal_opt.value());
                 if (!seen_colors.contains(member.colors)) {
                     seen_colors.insert(member.colors);
-                    color_version_tile_indices.push_back(regular_index);
+                    if (!is_primary) {
+                        color_version_tile_indices.push_back(display_index);
+                    }
+                    else {
+                        primary_color_version_entries.emplace_back(display_index, pal_opt.value());
+                    }
                 }
             }
         }
@@ -470,6 +528,7 @@ void populate_tile_to_pal(PalettePacking &packing, const PackingOutput &output)
             PartitionGroup partition;
             partition.members = std::move(members);
             partition.color_version_tile_indices = std::move(color_version_tile_indices);
+            partition.primary_color_version_entries = std::move(primary_color_version_entries);
             result.shape_to_partition_index[sg_index] = result.partition_groups.size();
             result.partition_groups.push_back(std::move(partition));
         }
@@ -516,13 +575,25 @@ void populate_tile_to_pal(PalettePacking &packing, const PackingOutput &output)
                 continue;
             }
             const auto &id = combined.index_to_id.at(member.tile_index);
-            const auto regular_index = std::get<PackableTile::RegularId>(id).index;
+            std::size_t display_index{};
+            if (std::holds_alternative<PackableTile::RegularId>(id)) {
+                display_index = std::get<PackableTile::RegularId>(id).index;
+            }
+            else if (std::holds_alternative<PackableTile::PrimaryTileId>(id)) {
+                display_index = std::get<PackableTile::PrimaryTileId>(id).tile_index;
+            }
+            else {
+                continue;
+            }
             std::size_t hw = tile_pal_assignments.at(member.tile_index);
+
+            bool is_primary_member = std::holds_alternative<PackableTile::PrimaryTileId>(id);
 
             const auto &tile = combined.tiles.at(member.tile_index);
             auto indexed_tile = index_tile_from_color_tile(tile, final_pals.at(hw).value(), extrinsic);
             CanonicalPixelTile<IndexPixel> canonical{indexed_tile};
-            verified.push_back(VerifiedMember{regular_index, hw, std::move(canonical), member.colors});
+            verified.push_back(
+                VerifiedMember{display_index, hw, std::move(canonical), member.colors, is_primary_member});
         }
 
         if (verified.size() < 2) {
@@ -541,7 +612,7 @@ void populate_tile_to_pal(PalettePacking &packing, const PackingOutput &output)
                 dropped_color_versions.insert(member.colors);
                 continue;
             }
-            result_members.push_back(SharingGroupMember{member.regular_index, member.hw_pal});
+            result_members.push_back(SharingGroupMember{member.regular_index, member.hw_pal, member.is_primary});
             distinct_pals_set.insert(member.hw_pal);
         }
         const std::size_t dropped_color_version_count = dropped_color_versions.size();
@@ -559,7 +630,14 @@ void populate_tile_to_pal(PalettePacking &packing, const PackingOutput &output)
             }
 
             std::map<std::size_t, std::vector<std::size_t>> members_by_pal;
+            std::map<std::size_t, std::vector<std::size_t>> primary_members_by_pal;
+            bool has_primary = false;
             for (const auto &member : result_members) {
+                if (member.is_primary) {
+                    has_primary = true;
+                    primary_members_by_pal[member.pal_index].push_back(member.tile_index);
+                    continue;
+                }
                 members_by_pal[member.pal_index].push_back(member.tile_index);
             }
 
@@ -569,7 +647,9 @@ void populate_tile_to_pal(PalettePacking &packing, const PackingOutput &output)
                     is_partial,
                     dropped_color_version_count,
                     result_members.size(),
-                    std::move(members_by_pal)});
+                    std::move(members_by_pal),
+                    has_primary,
+                    std::move(primary_members_by_pal)});
         }
     }
 
@@ -590,15 +670,15 @@ void populate_tile_to_pal(PalettePacking &packing, const PackingOutput &output)
  * @brief Emits Phase 1 sharing opportunity diagnostics.
  *
  * @details
- * For each shape group, emits a remark showing detected color versions and all tilemap entries. Emits a summary count.
+ * For each shape group, emits a remark showing detected color versions (including primary tile art) and all tilemap
+ * entries. Emits a summary count.
  *
  * @param format TextFormatter for building diagnostic output
  * @param diag UserDiagnostics for emitting remarks
  * @param tile_printer TilePrinter for rendering tile ASCII art
  * @param shape_groups The shape groups detected
  * @param combined The combined tiles with index-to-id mapping
- * @param tiles The original pixel tiles
- * @param extrinsic The extrinsic transparency color
+ * @param params The packing parameters (for tiles, primary tiles, and extrinsic transparency)
  */
 void emit_phase1_diagnostics(
     const TextFormatter &format,
@@ -606,38 +686,63 @@ void emit_phase1_diagnostics(
     const TilePrinter &tile_printer,
     const std::vector<ShapeGroup<Rgba32>> &shape_groups,
     const CombinedTiles &combined,
-    const std::vector<PixelTile<Rgba32>> &tiles,
-    const Rgba32 &extrinsic)
+    const PackingParams &params)
 {
     for (std::size_t shape_group_index = 0; shape_group_index < shape_groups.size(); ++shape_group_index) {
         const auto &shape_group = shape_groups.at(shape_group_index);
         std::vector<std::size_t> color_version_tile_indices;
         std::vector<std::size_t> all_tile_indices;
+        std::vector<std::pair<std::size_t, std::size_t>> primary_color_version_entries;
         std::set<std::map<ShapeMask, Rgba32>> seen_colors;
         for (const auto &member : shape_group.members) {
-            auto regular_index = std::get<PackableTile::RegularId>(combined.index_to_id.at(member.tile_index)).index;
-            all_tile_indices.push_back(regular_index);
-            if (!seen_colors.contains(member.colors)) {
-                seen_colors.insert(member.colors);
-                color_version_tile_indices.push_back(regular_index);
+            const auto &id = combined.index_to_id.at(member.tile_index);
+            if (std::holds_alternative<PackableTile::RegularId>(id)) {
+                auto regular_index = std::get<PackableTile::RegularId>(id).index;
+                all_tile_indices.push_back(regular_index);
+                if (!seen_colors.contains(member.colors)) {
+                    seen_colors.insert(member.colors);
+                    color_version_tile_indices.push_back(regular_index);
+                }
+            }
+            else if (std::holds_alternative<PackableTile::PrimaryTileId>(id)) {
+                auto primary_id = std::get<PackableTile::PrimaryTileId>(id);
+                if (!seen_colors.contains(member.colors)) {
+                    seen_colors.insert(member.colors);
+                    primary_color_version_entries.emplace_back(primary_id.tile_index, primary_id.pal_index);
+                }
             }
         }
 
+        const auto total_color_versions = color_version_tile_indices.size() + primary_color_version_entries.size();
         auto phase1_tag = std::format("tile-sharing-shareable-tiles-{}", shape_group_index);
 
         std::vector<std::string> remark_lines;
         remark_lines.emplace_back(format.format(
             "Detected sharing opportunity (group id '{}') with '{}' color version(s) across '{}' tilemap entries.",
             FormatParam{shape_group_index, Style::bold},
-            FormatParam{color_version_tile_indices.size(), Style::bold},
+            FormatParam{total_color_versions, Style::bold},
             FormatParam{all_tile_indices.size(), Style::bold}));
-        std::ranges::copy(
-            build_tile_sharing_color_version_tile_lines(
-                format, tile_printer, tiles, extrinsic, color_version_tile_indices),
-            std::back_inserter(remark_lines));
+        if (!primary_color_version_entries.empty()) {
+            remark_lines.emplace_back(format.format(
+                "'{}' color version(s) from paired primary.",
+                FormatParam{primary_color_version_entries.size(), Style::bold}));
+        }
+        if (!color_version_tile_indices.empty()) {
+            remark_lines.append_range(build_tile_sharing_color_version_tile_lines(
+                format, tile_printer, params.tiles_, params.extrinsic_transparency_, color_version_tile_indices));
+        }
+        if (!primary_color_version_entries.empty()) {
+            remark_lines.append_range(build_primary_tile_color_version_lines(
+                format,
+                tile_printer,
+                params.primary_tiles_,
+                params.extrinsic_transparency_,
+                primary_color_version_entries,
+                color_version_tile_indices.size()));
+        }
         remark_lines.emplace_back(
             format.format("All tilemap entries ('{}' total):", FormatParam{all_tile_indices.size(), Style::bold}));
-        std::ranges::copy(build_truncated_tile_ref_lines(format, all_tile_indices), std::back_inserter(remark_lines));
+        remark_lines.append_range(build_truncated_tile_ref_lines(format, all_tile_indices));
         diag.remark(phase1_tag, remark_lines);
     }
 
@@ -677,6 +782,17 @@ void emit_phase2_diagnostics(
 
         auto phase2_tag = std::format("tile-sharing-palette-partition-{}", sg_index);
 
+        // Separate primary and secondary members for diagnostic display
+        bool has_primary_members = false;
+        std::map<std::size_t, std::vector<std::size_t>> members_by_pal;
+        for (const auto &member : partition.members) {
+            if (member.is_primary) {
+                has_primary_members = true;
+                continue;
+            }
+            members_by_pal[member.pal_index].push_back(member.tile_index);
+        }
+
         std::vector<std::string> remark_lines;
         remark_lines.emplace_back(format.format(
             "After palette packing (group id '{}'), '{}' color versions across '{}' tilemap entries eligible for "
@@ -684,21 +800,28 @@ void emit_phase2_diagnostics(
             FormatParam{sg_index, Style::bold},
             FormatParam{partition.color_version_tile_indices.size(), Style::bold},
             FormatParam{partition.members.size(), Style::bold}));
-
-        std::map<std::size_t, std::vector<std::size_t>> members_by_pal;
-        for (const auto &member : partition.members) {
-            members_by_pal[member.pal_index].push_back(member.tile_index);
+        if (has_primary_members) {
+            remark_lines.emplace_back("Includes cross-tileset member(s) from paired primary.");
         }
 
-        std::ranges::copy(
-            build_tile_sharing_color_version_tile_lines(
+        if (!partition.color_version_tile_indices.empty()) {
+            remark_lines.append_range(build_tile_sharing_color_version_tile_lines(
                 format,
                 tile_printer,
                 params.tiles_,
                 params.extrinsic_transparency_,
-                partition.color_version_tile_indices),
-            std::back_inserter(remark_lines));
-        std::ranges::copy(build_per_palette_tile_ref_lines(format, members_by_pal), std::back_inserter(remark_lines));
+                partition.color_version_tile_indices));
+        }
+        if (!partition.primary_color_version_entries.empty()) {
+            remark_lines.append_range(build_primary_tile_color_version_lines(
+                format,
+                tile_printer,
+                params.primary_tiles_,
+                params.extrinsic_transparency_,
+                partition.primary_color_version_entries,
+                partition.color_version_tile_indices.size()));
+        }
+        remark_lines.append_range(build_per_palette_tile_ref_lines(format, members_by_pal));
 
         if (params.tile_sharing_packing_ == TileSharingPacking::off) {
             remark_lines.emplace_back("");
@@ -709,8 +832,7 @@ void emit_phase2_diagnostics(
                 "Packing '{}' does not actively separate shape-group siblings across palettes.",
                 FormatParam{to_string(params.tile_sharing_packing_.value()), Style::bold}));
             remark_lines.emplace_back("");
-            std::ranges::copy(
-                format_config_note(format, params.tile_sharing_packing_), std::back_inserter(remark_lines));
+            remark_lines.append_range(format_config_note(format, params.tile_sharing_packing_));
         }
         diag.remark(phase2_tag, remark_lines);
     }
@@ -727,23 +849,19 @@ void emit_phase2_diagnostics(
  *
  * @details
  * For each aligned group in the Phase3Result, emits a remark showing palette participation, per-palette tile
- * assignments, and caveats for partial alignment or off alignment mode.
+ * assignments (including primary tile representative art), and caveats for partial alignment or off alignment mode.
  *
  * @param format TextFormatter for building diagnostic output
  * @param diag UserDiagnostics for emitting remarks
  * @param tile_printer TilePrinter for rendering tile ASCII art
  * @param phase3 The Phase 3 verification result
- * @param tiles The original pixel tiles
- * @param extrinsic The extrinsic transparency color
- * @param params The packing parameters (for alignment config)
+ * @param params The packing parameters (for tiles, primary tiles, extrinsic transparency, and alignment config)
  */
 void emit_phase3_diagnostics(
     const TextFormatter &format,
     const UserDiagnostics &diag,
     const TilePrinter &tile_printer,
     const Phase3Result &phase3,
-    const std::vector<PixelTile<Rgba32>> &tiles,
-    const Rgba32 &extrinsic,
     const PackingParams &params)
 {
     for (const auto &group : phase3.aligned_groups) {
@@ -769,11 +887,22 @@ void emit_phase3_diagnostics(
                 FormatParam{group.members_by_pal.size(), Style::bold},
                 FormatParam{group.matching_count, Style::bold}));
         }
-        std::ranges::copy(
-            build_representative_tile_per_palette_lines(format, tile_printer, tiles, extrinsic, group.members_by_pal),
-            std::back_inserter(remark_lines));
-        std::ranges::copy(
-            build_per_palette_tile_ref_lines(format, group.members_by_pal), std::back_inserter(remark_lines));
+        if (group.has_primary_members) {
+            remark_lines.emplace_back("Includes cross-tileset member(s) from paired primary.");
+        }
+        if (!group.members_by_pal.empty()) {
+            remark_lines.append_range(build_representative_tile_per_palette_lines(
+                format, tile_printer, params.tiles_, params.extrinsic_transparency_, group.members_by_pal));
+            remark_lines.append_range(build_per_palette_tile_ref_lines(format, group.members_by_pal));
+        }
+        if (!group.primary_members_by_pal.empty()) {
+            remark_lines.append_range(build_primary_representative_tile_per_palette_lines(
+                format,
+                tile_printer,
+                params.primary_tiles_,
+                params.extrinsic_transparency_,
+                group.primary_members_by_pal));
+        }
 
         if (group.is_partial) {
             remark_lines.emplace_back("");
@@ -793,8 +922,7 @@ void emit_phase3_diagnostics(
                 "Alignment '{}' does not actively align palette slots for tile sharing.",
                 FormatParam{to_string(params.tile_sharing_alignment_.value()), Style::bold}));
             remark_lines.emplace_back("");
-            std::ranges::copy(
-                format_config_note(format, params.tile_sharing_alignment_), std::back_inserter(remark_lines));
+            remark_lines.append_range(format_config_note(format, params.tile_sharing_alignment_));
         }
         diag.remark(phase3_tag, remark_lines);
     }
@@ -876,18 +1004,22 @@ void emit_sharing_summary(
 
         for (const auto &[group_id, group] : phase3.unaligned_partition_groups) {
             remark_lines.emplace_back();
+            bool has_primary_in_group = std::ranges::any_of(group.members, [](const auto &m) { return m.is_primary; });
             remark_lines.emplace_back(format.format(
                 "Unaligned group (group id '{}'), '{}' color version(s):",
                 FormatParam{group_id, Style::bold},
                 FormatParam{group.color_version_tile_indices.size(), Style::bold}));
-            std::ranges::copy(
-                build_tile_sharing_color_version_tile_lines(
+            if (has_primary_in_group) {
+                remark_lines.emplace_back("Includes cross-tileset member(s) from paired primary.");
+            }
+            if (!group.color_version_tile_indices.empty()) {
+                remark_lines.append_range(build_tile_sharing_color_version_tile_lines(
                     format,
                     tile_printer,
                     params.tiles_,
                     params.extrinsic_transparency_,
-                    group.color_version_tile_indices),
-                std::back_inserter(remark_lines));
+                    group.color_version_tile_indices));
+            }
 
             // Show palette assignments for each color version
             for (std::size_t v = 0; v < group.color_version_tile_indices.size(); ++v) {
@@ -1091,7 +1223,7 @@ void emit_palette_diagnostics(
             std::vector<std::string> remark_lines;
             remark_lines.emplace_back(format.format("'{}' packing result:", FormatParam{pal_filename(i), Style::bold}));
             remark_lines.emplace_back();
-            std::ranges::copy(pal_printer.print_rgba_pal(maybe_packed_pal.value()), std::back_inserter(remark_lines));
+            remark_lines.append_range(pal_printer.print_rgba_pal(maybe_packed_pal.value()));
             diag.remark(pal_tag, remark_lines);
         }
     }
@@ -1122,7 +1254,7 @@ ChainableResult<PalettePacking> PalettePacker::pack_tiles(const PackingParams &p
             "Tile sharing packing '{}' is not yet implemented.",
             FormatParam{to_string(TileSharingPacking::optimal), Style::bold}));
         err_lines.emplace_back("");
-        std::ranges::copy(format_config_note(*format_, params.tile_sharing_packing_), std::back_inserter(err_lines));
+        err_lines.append_range(format_config_note(*format_, params.tile_sharing_packing_));
         return ChainableResult<PalettePacking>{FormattableError{std::move(err_lines)}};
     }
     if (params.tile_sharing_alignment_ == TileSharingAlignment::optimal) {
@@ -1131,7 +1263,7 @@ ChainableResult<PalettePacking> PalettePacker::pack_tiles(const PackingParams &p
             "Tile sharing alignment '{}' is not yet implemented.",
             FormatParam{to_string(TileSharingAlignment::optimal), Style::bold}));
         err_lines.emplace_back("");
-        std::ranges::copy(format_config_note(*format_, params.tile_sharing_alignment_), std::back_inserter(err_lines));
+        err_lines.append_range(format_config_note(*format_, params.tile_sharing_alignment_));
         return ChainableResult<PalettePacking>{FormattableError{std::move(err_lines)}};
     }
 
@@ -1187,8 +1319,7 @@ ChainableResult<PalettePacking> PalettePacker::pack_tiles(const PackingParams &p
     }
 
     // Phase 1: Detect sharing opportunities and emit diagnostics
-    emit_phase1_diagnostics(
-        *format_, *diag_, *tile_printer_, shape_groups, combined, params.tiles_, params.extrinsic_transparency_);
+    emit_phase1_diagnostics(*format_, *diag_, *tile_printer_, shape_groups, combined, params);
 
     // Phase 2: Compute partition groups and emit diagnostics
     auto phase2 = compute_partition_groups(shape_groups, combined, packing.tile_to_pal_);
@@ -1228,8 +1359,7 @@ ChainableResult<PalettePacking> PalettePacker::pack_tiles(const PackingParams &p
         phase3 = verify_sharing_alignment(
             shape_groups, combined, tile_pal_assignments, phase2, final_pals, params.extrinsic_transparency_);
     }
-    emit_phase3_diagnostics(
-        *format_, *diag_, *tile_printer_, phase3, params.tiles_, params.extrinsic_transparency_, params);
+    emit_phase3_diagnostics(*format_, *diag_, *tile_printer_, phase3, params);
 
     // Tile sharing summary: emit when biased packing or greedy alignment is active
     if (params.tile_sharing_packing_ == TileSharingPacking::biased ||
@@ -1245,29 +1375,6 @@ ChainableResult<PalettePacking> PalettePacker::pack_tiles(const PackingParams &p
     }
 
     emit_palette_diagnostics(*format_, *diag_, *pal_printer_, packing.pals_);
-
-    /*
-     * TODO: above, we built output pals from all the pals that got explicitly packed. But what about pals that got
-     * filled via Porytiles pal overrides? We need to think about this very carefully. We'll need to think through how
-     * we populate the bitset for the PalettePool above.
-     *
-     * Here's what I think we should do. PalettePacker should only handle palettes that were explicitly enabled for
-     * packing via PalettePool. Any palette not turned on in PalettePool will get sent back to the caller as a
-     * std::nullopt. The caller can then decide what to do (e.g. fill in with Porytiles override, fill in with default
-     * values, etc).
-     *
-     * Callers MUST explicitly enable all pals they want the packer to access. This means that if the caller is
-     * compiling a secondary set, they should enable bits 0-5 in the available_pals_ bitset in PackingParams, and then
-     * pass the packer the primary palettes via the prefilled_pals_ input param. The prefilled 0-5 will have no
-     * wildcards since they are completely fixed by the primary. The calling code should also probably throw a warning
-     * if the user specified Porytiles overrides for those pals since they will be ignored in favor of the palettes for
-     * paired primary (maybe this can be configurable?). The calling code should also throw a warning when there are
-     * Porytiles overrides that don't correspond to one of the pals enabled for packing. E.g. if we are compiling
-     * primary, so bits 0-5 are set in the PalettePool, but user has supplied 12.pal in the Porytiles palettes, warn
-     * user that they've supplied an out-of-band palette due to configuration. Then say that this palette will still be
-     * copied over and all wildcards will receive default values (or allow user to specify an alternate behavior via
-     * configuration).
-     */
 
     return packing;
 }

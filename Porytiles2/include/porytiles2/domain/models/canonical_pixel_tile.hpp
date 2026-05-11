@@ -89,6 +89,55 @@ class CanonicalPixelTile : public PixelTile<PixelType> {
     }
 
     /**
+     * @brief Canonicalizes the input tile's orientation under cross-ET strict weak ordering.
+     *
+     * @details
+     * Picks the lex-min orientation among the four flip combinations, using
+     * @c PixelTile<PixelType>::cross_et_compare with @p extrinsic_transparency supplied as both sides of the
+     * comparison. This produces an orientation that is stable across ET values: two tiles whose opaque-pixel
+     * patterns coincide but whose transparent pixels differ by ET will canonicalize to equivalent orientations
+     * (equivalent under @c cross_et_compare), which is the precondition for matching them in ET-aware lookup maps.
+     *
+     * Only enabled for pixel types that support parameterized @c is_transparent (e.g., @c Rgba32). This constructor
+     * exists to support cross-tileset animation matching, where tiles compiled under different extrinsic
+     * transparency values must canonicalize to equivalent orientations so the matcher's cross-ET comparator finds
+     * them equal.
+     *
+     * @param tile The input PixelTile to canonicalize.
+     * @param extrinsic_transparency The extrinsic transparency value to use for cross-ET comparison during
+     * canonicalization (applied to both sides, since we are comparing the tile's own flipped variants).
+     */
+    CanonicalPixelTile(const PixelTile<PixelType> &tile, const PixelType &extrinsic_transparency)
+        requires requires(const PixelType &p) { p.is_transparent(p); }
+        : PixelTile<PixelType>{}
+    {
+        struct Candidate {
+            PixelTile<PixelType> flipped_tile;
+            bool h_flip;
+            bool v_flip;
+        };
+
+        std::array flips = {
+            std::pair{false, false}, std::pair{false, true}, std::pair{true, false}, std::pair{true, true}};
+
+        std::vector<Candidate> candidates;
+        candidates.reserve(4);
+        for (const auto &[h, v] : flips) {
+            candidates.push_back({tile.flip(h, v), h, v});
+        }
+
+        auto min_it = std::min_element(
+            candidates.begin(), candidates.end(), [&extrinsic_transparency](const Candidate &a, const Candidate &b) {
+                return PixelTile<PixelType>::cross_et_compare(
+                           a.flipped_tile, extrinsic_transparency, b.flipped_tile, extrinsic_transparency) < 0;
+            });
+
+        *static_cast<PixelTile<PixelType> *>(this) = min_it->flipped_tile;
+        h_flip_ = min_it->h_flip;
+        v_flip_ = min_it->v_flip;
+    }
+
+    /**
      * @brief Three-way comparison operator that compares all fields in lexicographic order.
      *
      * @details

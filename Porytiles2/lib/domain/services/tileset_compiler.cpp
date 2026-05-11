@@ -1,4 +1,4 @@
-#include "porytiles2/domain/services/primary_tileset_compiler.hpp"
+#include "porytiles2/domain/services/tileset_compiler.hpp"
 
 #include <array>
 #include <format>
@@ -35,6 +35,7 @@
 #include "porytiles2/domain/packing/services/overload_and_remove_strategy.hpp"
 #include "porytiles2/domain/packing/services/palette_packer.hpp"
 #include "porytiles2/domain/services/anim_tile_matcher.hpp"
+#include "porytiles2/domain/services/image_tileizer.hpp"
 #include "porytiles2/domain/services/layer_image_metatileizer.hpp"
 #include "porytiles2/domain/services/layer_mode_converter.hpp"
 #include "porytiles2/domain/services/metatile_decompiler.hpp"
@@ -142,15 +143,17 @@ class CompilerTask {
   public:
     CompilerTask(
         const Tileset &tileset,
+        bool is_secondary,
+        const Tileset *paired_primary,
         const TextFormatter &format,
         const UserDiagnostics &diag,
         const TilePrinter &tile_printer,
         const PalettePrinter &pal_printer,
         const DomainConfig &config)
-        : tileset_{tileset}, format_{format}, diag_{diag}, tile_printer_{tile_printer}, pal_printer_{pal_printer},
-          config_{config}, extrinsic_transparency_{}, num_pals_in_primary_{}, num_pals_total_{},
-          num_metatiles_in_primary_{}, num_tiles_in_primary_{}, num_tiles_per_metatile_{}, pal_hints_enabled_{},
-          pal_hints_{}
+        : tileset_{tileset}, is_secondary_{is_secondary}, paired_primary_{paired_primary}, format_{format}, diag_{diag},
+          tile_printer_{tile_printer}, pal_printer_{pal_printer}, config_{config}, extrinsic_transparency_{},
+          num_pals_in_primary_{}, num_pals_total_{}, num_metatiles_in_primary_{}, num_tiles_in_primary_{},
+          num_tiles_per_metatile_{}, pal_hints_enabled_{}, pal_hints_{}
     {
     }
 
@@ -178,11 +181,22 @@ class CompilerTask {
     [[nodiscard]] ChainableResult<void> pipeline_helper_register_animations();
     [[nodiscard]] ChainableResult<AnimKeyframeData>
     pipeline_helper_build_keyframe_data(const std::string &anim_name, const Animation<Rgba32> &anim) const;
+    [[nodiscard]] ChainableResult<void> pipeline_helper_validate_primary_anim_subtile_coverage() const;
     void pipeline_helper_compile_animations();
     void pipeline_helper_apply_manual_overrides();
 
     // Pipeline helpers - true_color mode
     void pipeline_helper_apply_true_color_to_tiles_png();
+
+    [[nodiscard]] bool is_secondary() const
+    {
+        return is_secondary_;
+    }
+
+    [[nodiscard]] bool has_paired_primary() const
+    {
+        return paired_primary_ != nullptr;
+    }
 
     // Pipeline helpers - error emission
     void pipeline_helper_emit_no_matching_tile_error(
@@ -196,6 +210,8 @@ class CompilerTask {
 
     // Dependencies (injected in ctor)
     const Tileset &tileset_;
+    bool is_secondary_;
+    const Tileset *paired_primary_;
     const TextFormatter &format_;
     const UserDiagnostics &diag_;
     const TilePrinter &tile_printer_;
@@ -204,10 +220,12 @@ class CompilerTask {
 
     // Config values (populated in run())
     ConfigValue<Rgba32> extrinsic_transparency_;
+    ConfigValue<Rgba32> paired_primary_extrinsic_transparency_{};
     ConfigValue<std::size_t> num_pals_in_primary_;
     ConfigValue<std::size_t> num_pals_total_;
     ConfigValue<std::size_t> num_metatiles_in_primary_;
     ConfigValue<std::size_t> num_tiles_in_primary_;
+    ConfigValue<std::size_t> num_tiles_total_;
     ConfigValue<std::size_t> num_tiles_per_metatile_;
     ConfigValue<bool> pal_hints_enabled_;
     ConfigValue<std::vector<PaletteHint>> pal_hints_;
@@ -216,6 +234,7 @@ class CompilerTask {
     ConfigValue<TilesPalMode> tiles_pal_mode_;
     ConfigValue<FrameLinking> global_frame_linking_;
     ConfigValue<PerAnimOverrides> per_anim_overrides_;
+    ConfigValue<bool> cross_tileset_anim_linking_;
 
     // Intermediate state - Porytiles
     std::vector<Metatile<Rgba32>> porytiles_metatiles_{};
@@ -234,30 +253,18 @@ class CompilerTask {
     std::unique_ptr<PorymapTilesetComponent> new_porymap_component_{};
     std::unique_ptr<TilesPngWorkspace> tiles_workspace_{};
     AnimTileMatcher anim_tile_matcher_{};
+    std::map<std::string, std::vector<std::size_t>> anim_pal_indices_{};
 };
 
 ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
 {
-    /*
-     * TODO: we have a bug. If pals_edit_mode::optimize and tiles_edit_mode::locked, on the first compile pass after
-     * making no changes, it will optimize the pals, but emit identical metatile entries (since the Porytiles and
-     * Porymap metatiles will match). Then it will emit the optimized pals but identical tilemap entries. The tileset
-     * becomes corrupted and subsequent compilations crash out with a bazillion errors.
-     *
-     * Need to think about the right way to fix. Is there a scenario where setting pals::optimize tiles::locked even
-     * makes sense? Instead of adding more tortured logic to the compiler, we could just ban this combo.
-     *
-     * Thinking about it more, I think we need to ban this combo. Tiles as an artifact are fundamentally dependent on
-     * the palettes. If palettes change, tiles have to change. So it doesn't make sense to allow a setting where
-     * palettes are being changed but then the tiles aren't.
-     */
-
     // Unwrap config values
     PT_UNWRAP_TILESET_CONFIG_REF(config_, extrinsic_transparency, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, num_pals_in_primary, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, num_pals_total, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, num_metatiles_in_primary, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, num_tiles_in_primary, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, num_tiles_total, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, num_tiles_per_metatile, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, pal_hints_enabled, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, pal_hints, tileset_.name(), std::unique_ptr<Tileset>);
@@ -266,12 +273,14 @@ ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
     PT_UNWRAP_TILESET_CONFIG_REF(config_, tiles_pal_mode, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, global_frame_linking, tileset_.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, per_anim_overrides, tileset_.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_REF(config_, cross_tileset_anim_linking, tileset_.name(), std::unique_ptr<Tileset>);
 
     extrinsic_transparency_ = extrinsic_transparency;
     num_pals_in_primary_ = num_pals_in_primary;
     num_pals_total_ = num_pals_total;
     num_metatiles_in_primary_ = num_metatiles_in_primary;
     num_tiles_in_primary_ = num_tiles_in_primary;
+    num_tiles_total_ = num_tiles_total;
     num_tiles_per_metatile_ = num_tiles_per_metatile;
     pal_hints_enabled_ = pal_hints_enabled;
     pal_hints_ = pal_hints;
@@ -280,6 +289,18 @@ ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
     tiles_pal_mode_ = tiles_pal_mode;
     global_frame_linking_ = global_frame_linking;
     per_anim_overrides_ = per_anim_overrides;
+    cross_tileset_anim_linking_ = cross_tileset_anim_linking;
+
+    /*
+     * Resolve the paired primary's ET if applicable. This is needed for cross-tileset animation linking so that
+     * primary subtiles are classified as transparent/opaque under the primary's own ET rather than the secondary's.
+     * Using each tileset's own ET is what makes the cross-ET comparator on the matcher's lookup map find matches
+     * across mismatched-ET inputs.
+     */
+    if (has_paired_primary()) {
+        paired_primary_extrinsic_transparency_ =
+            config_.extrinsic_transparency(ConfigScopeType::tileset, paired_primary_->name()).value();
+    }
 
     // Execute subtasks
     PT_TRY_CALL_PASS_ERR(pipeline_step_process_porytiles_input(), std::unique_ptr<Tileset>);
@@ -357,16 +378,95 @@ ChainableResult<void> CompilerTask::pipeline_step_validate_input()
     TilesetCompileValidatorServices services{config_, diag_, tile_printer_, pal_printer_};
 
     /*
-     * TODO: do we want to collate some of these before returning? It would present more errors to user at once. There
-     * are pros and cons to this.
+     * Reject mode combinations that this compiler does not support before running any content-based validation. This
+     * function is the single source of truth for which compile mode combinations are supported.
      */
 
+    if (is_secondary() && tiles_edit_mode_ != ArtifactEditMode::optimize) {
+        std::vector<std::string> err_msg{};
+        err_msg.emplace_back(format_.format(
+            "Secondary compilation of tileset '{}' does not yet support tiles edit mode '{}'.",
+            FormatParam{tileset_.name(), Style::bold},
+            FormatParam{to_string(tiles_edit_mode_.value()), Style::bold}));
+        err_msg.emplace_back(format_.format(
+            "For now, only '{}' is supported for secondary tilesets.", FormatParam{"optimize", Style::bold}));
+        err_msg.emplace_back(format_.format(
+            "Support for '{}' and '{}' is planned for a future update.",
+            FormatParam{"locked", Style::bold},
+            FormatParam{"patch", Style::bold}));
+        err_msg.append_range(format_config_note_with_separator(format_, tiles_edit_mode_));
+        return FormattableError{err_msg};
+    }
+
+    if (is_secondary() && pals_edit_mode_ != ArtifactEditMode::optimize) {
+        std::vector<std::string> err_msg{};
+        err_msg.emplace_back(format_.format(
+            "Secondary compilation of tileset '{}' does not yet support pals edit mode '{}'.",
+            FormatParam{tileset_.name(), Style::bold},
+            FormatParam{to_string(pals_edit_mode_.value()), Style::bold}));
+        err_msg.emplace_back(format_.format(
+            "For now, only '{}' is supported for secondary tilesets.", FormatParam{"optimize", Style::bold}));
+        err_msg.emplace_back(format_.format(
+            "Support for '{}' and '{}' is planned for a future update.",
+            FormatParam{"locked", Style::bold},
+            FormatParam{"patch", Style::bold}));
+        err_msg.append_range(format_config_note_with_separator(format_, pals_edit_mode_));
+        return FormattableError{err_msg};
+    }
+
+    if (pals_edit_mode_ == ArtifactEditMode::patch) {
+        std::vector<std::string> err_msg{};
+        err_msg.emplace_back(format_.format(
+            "Tileset '{}' uses pals edit mode '{}', which is not yet implemented.",
+            FormatParam{tileset_.name(), Style::bold},
+            FormatParam{to_string(pals_edit_mode_.value()), Style::bold}));
+        err_msg.append_range(format_config_note_with_separator(format_, pals_edit_mode_));
+        return FormattableError{err_msg};
+    }
+
+    if (pals_edit_mode_ == ArtifactEditMode::optimize && tiles_edit_mode_ == ArtifactEditMode::locked) {
+        std::vector<std::string> err_msg{};
+        err_msg.emplace_back(format_.format(
+            "Tileset '{}' uses palettes edit mode '{}' with tiles edit mode '{}', which is not a valid combination.",
+            FormatParam{tileset_.name(), Style::bold},
+            FormatParam{"optimize", Style::bold},
+            FormatParam{"locked", Style::bold}));
+        err_msg.emplace_back(
+            "Tiles are fundamentally dependent on palettes, so optimizing palettes while keeping "
+            "tiles locked is not coherent.");
+        err_msg.append_range(format_config_note(format_, pals_edit_mode_));
+        err_msg.append_range(format_config_note_with_separator(format_, tiles_edit_mode_));
+        return FormattableError{err_msg};
+    }
+
     // Run metatile count validation
-    PT_TRY_CALL_PASS_ERR(validate_metatile_count(services, tileset_.name(), false, porytiles_metatiles_), void);
+    PT_TRY_CALL_PASS_ERR(
+        validate_metatile_count(services, tileset_.name(), is_secondary(), porytiles_metatiles_), void);
+
+    std::size_t pal_start = is_secondary() ? num_pals_in_primary_.value() : 0;
+
+    /*
+     * For secondary compiles, validate the paired primary's Porymap palettes before validating the secondary's own
+     * palettes. The paired primary's palettes are loaded directly into the palette packer as pre-filled slots, so if
+     * they contain the extrinsic transparency color in a non-slot-0 position the packer will panic. Running
+     * validate_porymap_pal here turns that crash into a proper diagnostic scoped to the primary's name. This runs
+     * unconditionally since secondary compilation always consumes the primary's Porymap palettes.
+     */
+    if (is_secondary() && has_paired_primary()) {
+        for (std::size_t pal_index = 0; pal_index < num_pals_in_primary_.value(); ++pal_index) {
+            PT_TRY_CALL_PASS_ERR(
+                validate_porymap_pal(
+                    services,
+                    paired_primary_->name(),
+                    paired_primary_->porymap_component().pal_at(pal_index),
+                    pal_index),
+                void);
+        }
+    }
 
     if (pals_edit_mode_ != ArtifactEditMode::optimize) {
         // Validate Porymap pals if user is asking for pals:locked or pals:patch
-        for (std::size_t pal_index = 0; pal_index < tileset_.porymap_component().pals().size(); ++pal_index) {
+        for (std::size_t pal_index = pal_start; pal_index < tileset_.porymap_component().pals().size(); ++pal_index) {
             PT_TRY_CALL_PASS_ERR(
                 validate_porymap_pal(
                     services, tileset_.name(), tileset_.porymap_component().pals().at(pal_index), pal_index),
@@ -374,9 +474,21 @@ ChainableResult<void> CompilerTask::pipeline_step_validate_input()
         }
     }
 
-    // Validate Porytiles pals
-    // TODO: this loop should respect num_pals_in_primary setting
-    for (std::size_t pal_index = 0; pal_index < tileset_.porytiles_component().pals().size(); ++pal_index) {
+    // Fail fast if secondary tileset defines an override palette in a primary slot
+    if (is_secondary()) {
+        for (std::size_t pal_index = 0; pal_index < num_pals_in_primary_.value(); ++pal_index) {
+            if (pal_index < tileset_.porytiles_component().pals().size() &&
+                tileset_.porytiles_component().pals().at(pal_index).has_value()) {
+                return FormattableError{
+                    "Secondary tileset '{}' defines a Porytiles override palette in primary slot '{}'.",
+                    FormatParam{tileset_.name(), Style::bold},
+                    FormatParam{pal_filename(pal_index), Style::bold}};
+            }
+        }
+    }
+
+    // Validate Porytiles pals (skip primary slots for secondary)
+    for (std::size_t pal_index = pal_start; pal_index < tileset_.porytiles_component().pals().size(); ++pal_index) {
         if (tileset_.porytiles_component().pals().at(pal_index).has_value()) {
             PT_TRY_CALL_PASS_ERR(
                 validate_porytiles_pal(
@@ -410,7 +522,7 @@ ChainableResult<void> CompilerTask::pipeline_step_validate_input()
         validate_global_color_count(
             services,
             tileset_.name(),
-            false,
+            is_secondary(),
             porytiles_metatiles_,
             tileset_.porytiles_component().anims(),
             tileset_.porytiles_component().pals(),
@@ -444,9 +556,6 @@ ChainableResult<void> CompilerTask::pipeline_step_setup_working_data()
             new_porymap_pals_[i] = tileset_.porymap_component().pals()[i];
         }
     }
-    else if (pals_edit_mode_ == ArtifactEditMode::patch) {
-        panic("TODO: implement handling for pals ArtifactEditMode::patch");
-    }
     else if (pals_edit_mode_ == ArtifactEditMode::optimize) {
         PT_TRY_CALL_PASS_ERR(pipeline_helper_run_pal_packing(), void);
     }
@@ -455,25 +564,39 @@ ChainableResult<void> CompilerTask::pipeline_step_setup_working_data()
     }
 
     // Create tiles workspace
-    tiles_workspace_ = [](ArtifactEditMode tiles_edit_mode, const Tileset &tileset, std::size_t num_tiles_in_primary) {
-        if (tiles_edit_mode == ArtifactEditMode::locked) {
-            /*
-             * When tiles are locked, compute the exact size of tiles.png so we keep it completely unchanged. When we
-             * output, we'll also set ExportTrimMode::include_trailing_transparent so that if there was transparency at
-             * the end, we don't remove it.
-             */
-            const auto size_in_tiles = tileset.porymap_component().tiles_png().size_in_tiles();
-            return std::make_unique<TilesPngWorkspace>(tileset.porymap_component().tiles_png(), size_in_tiles);
+    if (tiles_edit_mode_ == ArtifactEditMode::locked) {
+        /*
+         * When tiles are locked, compute the exact size of tiles.png so we keep it completely unchanged. When we
+         * output, we'll also set ExportTrimMode::include_trailing_transparent so that if there was transparency at
+         * the end, we don't remove it.
+         */
+        const auto size_in_tiles = tileset_.porymap_component().tiles_png().size_in_tiles();
+        tiles_workspace_ = std::make_unique<TilesPngWorkspace>(tileset_.porymap_component().tiles_png(), size_in_tiles);
+    }
+    else if (tiles_edit_mode_ == ArtifactEditMode::patch) {
+        tiles_workspace_ = std::make_unique<TilesPngWorkspace>(
+            tileset_.porymap_component().tiles_png(), num_tiles_in_primary_.value());
+    }
+    else if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
+        if (is_secondary()) {
+            if (has_paired_primary()) {
+                tiles_workspace_ = std::make_unique<TilesPngWorkspace>(TilesPngWorkspace::for_secondary(
+                    paired_primary_->porymap_component().tiles_png(),
+                    num_tiles_in_primary_.value(),
+                    num_tiles_total_.value()));
+            }
+            else {
+                tiles_workspace_ = std::make_unique<TilesPngWorkspace>(TilesPngWorkspace::for_standalone_secondary(
+                    num_tiles_in_primary_.value(), num_tiles_total_.value()));
+            }
         }
-        if (tiles_edit_mode == ArtifactEditMode::patch) {
-            // TODO: here, should we compute the size and match the size like above?
-            return std::make_unique<TilesPngWorkspace>(tileset.porymap_component().tiles_png(), num_tiles_in_primary);
+        else {
+            tiles_workspace_ = std::make_unique<TilesPngWorkspace>(num_tiles_in_primary_.value());
         }
-        if (tiles_edit_mode == ArtifactEditMode::optimize) {
-            return std::make_unique<TilesPngWorkspace>(num_tiles_in_primary);
-        }
+    }
+    else {
         panic("unexpected tiles_edit_mode");
-    }(tiles_edit_mode_, tileset_, num_tiles_in_primary_.value());
+    }
 
     // Register animations (reserve slots, compile keyframes, register matcher)
     // Must be done before regular tile matching so animation slots are reserved
@@ -487,11 +610,6 @@ ChainableResult<void> CompilerTask::pipeline_step_setup_working_data()
 
 ChainableResult<void> CompilerTask::pipeline_step_match_tiles_pals()
 {
-    // Temporary: pals:patch is not yet supported by underlying service code
-    if (pals_edit_mode_ == ArtifactEditMode::patch) {
-        panic("TODO: implement handling for pals ArtifactEditMode::patch");
-    }
-
     bool matched_all_tiles = true;
     for (std::size_t i = 0; i < porytiles_pixel_rgba_.size(); i++) {
         const auto &porytiles_tile = porytiles_pixel_rgba_[i];
@@ -547,7 +665,12 @@ ChainableResult<void> CompilerTask::pipeline_step_match_tiles_pals()
 
         case TileAssignmentResult::Status::tile_limit_reached:
             matched_all_tiles = false;
-            pipeline_helper_emit_tile_limit_error(i, tiles_workspace_->capacity());
+            {
+                const std::size_t user_visible_tile_limit =
+                    is_secondary() ? (num_tiles_total_.value() - num_tiles_in_primary_.value())
+                                   : num_tiles_in_primary_.value();
+                pipeline_helper_emit_tile_limit_error(i, user_visible_tile_limit);
+            }
             break;
         }
 
@@ -561,34 +684,29 @@ ChainableResult<void> CompilerTask::pipeline_step_match_tiles_pals()
         return ChainableResult<void>{FormattableError{"Failed to match all Porytiles tiles."}};
     }
 
+    /*
+     * Catches unreferenced non-transparent animation subtiles at primary compile time, rather than letting the failure
+     * surface from a paired secondary compile with a confusing primary-pointing error. Secondary compiles still keep
+     * the defense-in-depth check in pipeline_helper_register_animations.
+     */
+    if (!is_secondary()) {
+        PT_TRY_CALL_PASS_SAME_ERR(pipeline_helper_validate_primary_anim_subtile_coverage());
+    }
+
     return {};
 }
 
 std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
 {
-    /*
-     * TODO: we should track tile+pal use and warn the user here about any unused tiles or pal colors. This would be
-     * nice for cases where users add some assets and compile with "tiles/pals:patch", but then later decide to remove
-     * the assets. We could warn them these assets are unused so that they can optionally remove to free up space. We
-     * could also have a compilation option "force_remove" that forcibly removes unused stuff. This is obviously less
-     * safe, since for vanilla primary tilesets, seemingly unused assets may be in use from the secondaries. We can
-     * solve this by eventually having code that reads all tileset pairings from layouts.json and computes which primary
-     * assets are truly unused.
-     *
-     * In fact, we'll need something like this in order to truly implement pals:patch mode, since palettes have no
-     * "unused" sentinel value. And in fact, many of the vanilla '0 0 0' colors are actually used by secondaries
-     * *facepalm* (e.g. see cave tileset). Which means we can't even assume '0 0 0' is unused. Until we implement this,
-     * users can still simulate pals:patch by bringing in all Porymap pals as Porytiles override pals, wildcarding slots
-     * they are OK overwriting, and setting pals:optimize.
-     */
-
     auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>(tileset_.porytiles_component());
 
     // Update porytiles component animation params with computed tile offsets
     for (auto &[anim_name, anim] : new_porytiles_component->anims()) {
         if (auto maybe_offset = anim_tile_matcher_.tile_offset_for(anim_name); maybe_offset.has_value()) {
             AnimParams updated_params = anim.params();
-            updated_params.tile_offset(maybe_offset.value());
+            const std::size_t local_offset =
+                is_secondary() ? maybe_offset.value() - num_tiles_in_primary_.value() : maybe_offset.value();
+            updated_params.tile_offset(local_offset);
             anim.params(std::move(updated_params));
         }
     }
@@ -631,27 +749,50 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
         new_porymap_component_->push_back_attribute(new_attr);
     }
 
-    // TODO: Copy over PLA files once we implement handling
-
     // Export tiles in original form
     if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
-        /*
-         * TODO: why is using ExportFlipMode::canonical here bugged? I think it has to do with how we computed the flip
-         * bits in 'pipeline_helper_try_reuse_porymap_tile' and 'pipeline_helper_assign_tile_via_pal_match'. If we're
-         * going to make this configurable, we'll need to check the config value in the matcher functions so we can
-         * compute the flip bits correctly.
-         */
-        new_porymap_component_->tiles_png(
-            tiles_workspace_->export_image(ExportFlipMode::original, ExportTrimMode::trim_trailing_transparent));
+        if (is_secondary()) {
+            new_porymap_component_->tiles_png(tiles_workspace_->export_secondary_image(
+                num_tiles_in_primary_.value(), ExportFlipMode::original, ExportTrimMode::trim_trailing_transparent));
+        }
+        else {
+            new_porymap_component_->tiles_png(
+                tiles_workspace_->export_image(ExportFlipMode::original, ExportTrimMode::trim_trailing_transparent));
+        }
     }
     else {
         new_porymap_component_->tiles_png(
             tiles_workspace_->export_image(ExportFlipMode::original, ExportTrimMode::include_trailing_transparent));
     }
 
-    // Copy palettes from our processed porymap_pals vector
-    for (std::size_t i = 0; i < pal::num_pals; i++) {
-        new_porymap_component_->set_pal(i, new_porymap_pals_[i]);
+    // Copy palettes to output
+    if (is_secondary()) {
+        // Primary palette slots
+        if (has_paired_primary()) {
+            for (std::size_t i = 0; i < num_pals_in_primary_.value(); i++) {
+                new_porymap_component_->set_pal(i, paired_primary_->porymap_component().pal_at(i));
+            }
+        }
+        else {
+            // Standalone secondary: zeroed palettes for primary slots
+            for (std::size_t i = 0; i < num_pals_in_primary_.value(); i++) {
+                new_porymap_component_->set_pal(
+                    i, Palette<Rgba32, pal::max_size>{Rgba32{0, 0, 0, Rgba32::alpha_opaque}});
+            }
+        }
+        // Secondary palettes from packing result
+        for (std::size_t i = num_pals_in_primary_.value(); i < num_pals_total_.value(); i++) {
+            new_porymap_component_->set_pal(i, new_porymap_pals_.at(i));
+        }
+        // Junk/reserved palettes (13-15) from original secondary component
+        for (std::size_t i = num_pals_total_.value(); i < pal::num_pals; i++) {
+            new_porymap_component_->set_pal(i, tileset_.porymap_component().pal_at(i));
+        }
+    }
+    else {
+        for (std::size_t i = 0; i < pal::num_pals; i++) {
+            new_porymap_component_->set_pal(i, new_porymap_pals_.at(i));
+        }
     }
 
     // Apply true_color palette encoding to tiles.png if configured
@@ -720,7 +861,6 @@ CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> 
      * Falls back to match_or_best for tiles not in the packer's assignments (e.g., locked/patch modes, or tiles
      * excluded from packing like animation keyframes).
      */
-    // TODO: top_n matches should be configurable
     std::size_t pal_index;
     if (tile_to_pal_.contains(flat_index)) {
         pal_index = tile_to_pal_.at(flat_index);
@@ -755,12 +895,25 @@ CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> 
 
     // Check if tile matches a registered animation keyframe
     if (should_check_anim_matcher) {
-        if (const auto anim_match = anim_tile_matcher_.find_match(CanonicalPixelTile{porytiles_tile});
+        if (const auto anim_match = anim_tile_matcher_.find_match(
+                CanonicalPixelTile{porytiles_tile, extrinsic_transparency_.value()}, extrinsic_transparency_.value());
             anim_match.has_value()) {
-            // Use the animation tile index with composite-aware palette and computed flip bits
+            if (anim_match->is_cross_tileset) {
+                std::vector<std::string> remark_lines;
+                remark_lines.emplace_back(format_.format(
+                    "Tile at flat index '{}' matched primary animation '{}' subtile '{}'.",
+                    FormatParam{flat_index, Style::bold},
+                    FormatParam{anim_match->anim_name, Style::bold},
+                    FormatParam{anim_match->keyframe_tile_idx, Style::bold}));
+                diag_.remark("cross-tileset-anim-match", remark_lines);
+            }
+            // Use the animation tile index with palette from anim_pal_indices_ and computed flip bits
             result.status = TileAssignmentResult::Status::success;
-            result.entry =
-                TilemapEntry{anim_match->tile_index, anim_match->pal_index, anim_match->h_flip, anim_match->v_flip};
+            result.entry = TilemapEntry{
+                anim_match->tile_index,
+                anim_pal_indices_.at(anim_match->anim_name).at(anim_match->keyframe_tile_idx),
+                anim_match->h_flip,
+                anim_match->v_flip};
             return result;
         }
     }
@@ -782,6 +935,50 @@ CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> 
 
     if (maybe_tile_index.has_value()) {
         const auto workspace_tile_index = maybe_tile_index.value();
+
+        /*
+         * Warn if workspace fallthrough resolved to a primary animation range. When cross-tileset linking is
+         * enabled, the RGBA key frame matcher (above) catches tiles that visually match primary key frames.
+         * This branch catches a different case: tiles that don't match the RGBA key frame pixels but produce
+         * identical IndexPixel data after palette mapping (indexed-pixel coincidence). This happens when two
+         * visually distinct RGBA tiles map to the same palette indices. When cross-tileset linking is disabled,
+         * this catches all workspace-level matches to primary animation ranges.
+         */
+        if (is_secondary() && has_paired_primary()) {
+            const auto &primary_porymap_anims = paired_primary_->porymap_component().anims();
+            for (const auto &[anim_name, anim] : primary_porymap_anims) {
+                const std::size_t offset = anim.params().tile_offset();
+                const std::size_t count = anim.params().tile_count();
+                if (workspace_tile_index >= offset && workspace_tile_index < offset + count) {
+                    std::vector<std::string> warning_lines;
+                    if (cross_tileset_anim_linking_.value()) {
+                        warning_lines.emplace_back(format_.format(
+                            "Tile at flat index '{}' resolved to primary animation '{}' range via workspace lookup "
+                            "(not key frame matching).",
+                            FormatParam{flat_index},
+                            FormatParam{anim_name, Style::bold}));
+                        warning_lines.emplace_back(
+                            "The tile may not visually match the key frame but produces identical indexed pixel data.");
+                        diag_.warning("cross-tileset-anim-fallthrough", warning_lines);
+                    }
+                    else {
+                        warning_lines.emplace_back(format_.format(
+                            "Tile at flat index '{}' resolved to primary animation '{}' range via workspace "
+                            "deduplication, despite '{}' being disabled.",
+                            FormatParam{flat_index},
+                            FormatParam{anim_name, Style::bold},
+                            FormatParam{"cross_tileset_anim_linking", Style::bold}));
+                        warning_lines.emplace_back("This tile will animate at runtime.");
+                        warning_lines.emplace_back(
+                            "To suppress, restructure your tile art to avoid matching primary animation pixels, or "
+                            "enable cross-tileset linking for explicit control.");
+                        diag_.warning("cross-tileset-anim-fallthrough-disabled", warning_lines);
+                    }
+                    break;
+                }
+            }
+        }
+
         const auto workspace_tile = tiles_workspace_->tile_at(workspace_tile_index);
         const bool pt_to_pm_hflip = canonical_index_tile.h_flip() ^ workspace_tile.h_flip();
         const bool pt_to_pm_vflip = canonical_index_tile.v_flip() ^ workspace_tile.v_flip();
@@ -793,7 +990,6 @@ CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> 
     // Tile not found - locked mode cannot insert new tiles
     if (tiles_edit_mode_ == ArtifactEditMode::locked) {
         result.status = TileAssignmentResult::Status::tile_not_found;
-        // TODO: pass index_tile or canonical_index_tile depending on user setting for the tiles.png output
         result.index_tile = index_tile;
         result.pal_index = pal_index;
         result.matched_pal = matched_pal;
@@ -822,7 +1018,9 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
      * Create ColorIndexMap from the Porytiles tiles, Porytiles pals, and palette hints. We already validated earlier
      * that we don't exceed the global color count limit. So this will panic if there are too many global unique colors.
      */
-    const std::size_t color_count_limit = num_pals_in_primary_.value() * (pal::max_size - 1);
+    const std::size_t color_count_limit =
+        is_secondary() ? (num_pals_total_.value() - num_pals_in_primary_.value()) * (pal::max_size - 1)
+                       : num_pals_in_primary_.value() * (pal::max_size - 1);
     PT_TRY_ASSIGN_CHAIN_ERR(
         color_index_map,
         pipeline_helper_build_color_index_map(pal_hints_.value(), color_count_limit),
@@ -836,20 +1034,106 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
     auto strategy = make_packing_strategy(packing_strategy.value(), packing_strategy_params.value(), diag_);
     PalettePacker pal_packer{strategy.get(), &format_, &diag_, &tile_printer_, &pal_printer_};
     std::bitset<pal::num_pals> available_pals{0};
-    for (std::size_t i = 0; i < num_pals_in_primary_; i++) {
-        // TODO: support out-of-band primary palettes - see "Primary Palette Fixing" in topic_staging_area.md
-        available_pals.set(i, true);
+    if (is_secondary()) {
+        if (has_paired_primary()) {
+            // Enable primary palette slots so the packer can assign tiles whose colors are a subset
+            // of a locked primary palette. Primary palettes are fully locked via prefilled_pals_, so
+            // the packer cannot add new colors -- it can only assign tiles to them.
+            for (std::size_t i = 0; i < num_pals_in_primary_; i++) {
+                available_pals.set(i, true);
+            }
+        }
+        for (std::size_t i = num_pals_in_primary_; i < num_pals_total_; i++) {
+            available_pals.set(i, true);
+        }
+    }
+    else {
+        for (std::size_t i = 0; i < num_pals_in_primary_; i++) {
+            available_pals.set(i, true);
+        }
     }
     PackingParams packing_params{};
     packing_params.tiles_ = porytiles_pixel_rgba_;
     packing_params.anims_ = tileset_.porytiles_component().anims();
     packing_params.color_map_ = color_index_map;
     packing_params.extrinsic_transparency_ = extrinsic_transparency_.value();
-    packing_params.prefilled_pals_ = tileset_.porytiles_component().pals();
+    if (is_secondary()) {
+        std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> prefilled{};
+        if (has_paired_primary()) {
+            // Lock primary palettes from the compiled paired primary
+            for (std::size_t i = 0; i < num_pals_in_primary_.value(); ++i) {
+                prefilled.at(i) = paired_primary_->porymap_component().pal_at(i);
+            }
+        }
+        // Carry over secondary Porytiles pal overrides (slots >= num_pals_in_primary)
+        for (std::size_t i = num_pals_in_primary_.value(); i < pal::num_pals; ++i) {
+            if (tileset_.porytiles_component().pal_at(i).has_value()) {
+                prefilled.at(i) = tileset_.porytiles_component().pal_at(i).value();
+            }
+        }
+        packing_params.prefilled_pals_ = prefilled;
+    }
+    else {
+        packing_params.prefilled_pals_ = tileset_.porytiles_component().pals();
+    }
     packing_params.hints_ = pal_hints_.value();
     packing_params.available_pals_ = available_pals;
     packing_params.tile_sharing_packing_ = tile_sharing_packing;
     packing_params.tile_sharing_alignment_ = tile_sharing_alignment;
+
+    // Reconstruct RGBA tiles from the paired primary's compiled data for cross-tileset shape group analysis
+    if (is_secondary() && has_paired_primary()) {
+        const auto &primary_porymap = paired_primary_->porymap_component();
+        ImageTileizer<IndexPixel> tileizer{};
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            primary_indexed_tiles,
+            tileizer.tileize(primary_porymap.tiles_png()),
+            void,
+            "Failed to tileize paired primary's tiles.png for cross-tileset shape group analysis.");
+
+        /*
+         * Normalize the paired primary's entries to triple-layer so a flat slot index decodes cleanly via
+         * metatile::from_tile_index. This absorbs the dual-layer per-LayerType layout variations (normal/covered/split)
+         * into canonical bottom/middle/top positioning; the inserted transparent entries are skipped by the existing
+         * tile_index == 0 filter below.
+         */
+        LayerModeConverter layer_mode_converter{&format_, &diag_, &tile_printer_, extrinsic_transparency_.value()};
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            primary_triple_entries,
+            layer_mode_converter.triple_layerize(primary_porymap),
+            void,
+            "Failed to triple-layerize paired primary for cross-tileset shape group analysis.");
+
+        // Dedup on (tile_index, pal_index) ignoring flips. Shape group analysis canonicalizes
+        // orientations, so different flip variants of the same tile produce the same canonical form.
+        std::set<std::pair<std::size_t, std::size_t>> seen_tile_pal_pairs;
+
+        for (std::size_t slot = 0; slot < primary_triple_entries.size(); ++slot) {
+            const auto &entry = primary_triple_entries.at(slot);
+            if (entry.tile_index() == 0) {
+                continue;
+            }
+            auto key = std::make_pair(entry.tile_index(), entry.pal_index());
+            if (seen_tile_pal_pairs.contains(key)) {
+                continue;
+            }
+            seen_tile_pal_pairs.insert(key);
+
+            if (entry.tile_index() >= primary_indexed_tiles.size()) {
+                continue;
+            }
+            const auto &index_tile = primary_indexed_tiles.at(entry.tile_index());
+            auto flipped_tile = index_tile.flip(entry.h_flip(), entry.v_flip());
+            auto rgba_tile = color_tile_from_index_tile(
+                flipped_tile, primary_porymap.pal_at(entry.pal_index()), extrinsic_transparency_.value());
+            if (rgba_tile.is_transparent(extrinsic_transparency_.value())) {
+                continue;
+            }
+            auto [mt_index, layer, subtile] = metatile::from_tile_index(slot);
+            packing_params.primary_tiles_.emplace_back(
+                PackingParams::PrimaryTileRef{std::move(rgba_tile), entry.pal_index(), mt_index, layer, subtile});
+        }
+    }
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         pal_packing,
@@ -922,8 +1206,10 @@ ChainableResult<ColorIndexMap<Rgba32>> CompilerTask::pipeline_helper_build_color
         color_index_map.add_anim(anim, extrinsic_transparency_.value());
     }
 
-    // Add Porytiles palettes
-    for (std::size_t pal_index = 0; pal_index < num_pals_in_primary_; ++pal_index) {
+    // Add Porytiles palettes (for secondary, iterate over secondary palette slots)
+    const std::size_t pal_start = is_secondary() ? num_pals_in_primary_.value() : 0;
+    const std::size_t pal_end = is_secondary() ? num_pals_total_.value() : num_pals_in_primary_.value();
+    for (std::size_t pal_index = pal_start; pal_index < pal_end; ++pal_index) {
         const auto &maybe_porytiles_pal = tileset_.porytiles_component().pals().at(pal_index);
         if (!maybe_porytiles_pal.has_value()) {
             continue;
@@ -943,6 +1229,19 @@ ChainableResult<ColorIndexMap<Rgba32>> CompilerTask::pipeline_helper_build_color
             "pipeline_step_validate_input");
     }
 
+    /*
+     * For secondary compilation, add primary palette colors to the map. The packer needs these to build ColorSets for
+     * locked primary palettes, enabling secondary tiles that only use primary colors to be correctly assigned to a
+     * primary palette. These colors don't count against the secondary color budget, so they're added after the limit
+     * check.
+     */
+    if (is_secondary() && has_paired_primary()) {
+        for (std::size_t i = 0; i < num_pals_in_primary_.value(); ++i) {
+            const auto &primary_pal = paired_primary_->porymap_component().pal_at(i);
+            color_index_map.add_pal(primary_pal, extrinsic_transparency_.value());
+        }
+    }
+
     return color_index_map;
 }
 
@@ -959,10 +1258,6 @@ CompilerTask::pipeline_helper_build_keyframe_data(const std::string &anim_name, 
     /*
      * For automatic/hybrid mode, we use the key frame tiles. For manual mode (no key frame),
      * we use the first regular frame's tiles as the representative tiles to place in tiles.png.
-     *
-     * TODO: frames() is a std::map<std::string, ...>, so begin() yields the lexicographically first key. This works
-     * for single-digit frame names ("0", "1", ...) but would break for 10+ frames ("10" sorts before "2"). Consider
-     * using params().frame_names()[0] to look up the intended first frame instead.
      */
     const AnimFrame<Rgba32> &representative_frame =
         anim.has_key_frame() ? anim.key_frame() : anim.frames().begin()->second;
@@ -1061,146 +1356,378 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
      */
     const auto &anims = tileset_.porytiles_component().anims();
 
-    // Early exit if no animations
+    if (!anims.empty()) {
+
+        if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
+            std::size_t total_keyframe_tiles = 0;
+            for (const auto &anim : anims | std::views::values) {
+                if (anim.has_key_frame()) {
+                    total_keyframe_tiles += anim.key_frame().tiles().size();
+                }
+                else if (anim.has_frames()) {
+                    total_keyframe_tiles += anim.frames().begin()->second.tiles().size();
+                }
+            }
+            const std::size_t anim_start = is_secondary() ? (num_tiles_in_primary_.value() + 1) : 1;
+            tiles_workspace_->reserve_anim_slots(total_keyframe_tiles, anim_start);
+        }
+
+        std::map<std::string, std::size_t> anim_offsets;
+        std::map<std::string, std::vector<std::size_t>> anim_pal_indices;
+        std::size_t current_offset = tiles_workspace_->anim_start_offset();
+
+        const auto &per_anim_overrides = per_anim_overrides_.value();
+
+        for (const auto &[anim_name, anim] : anims) {
+            if (!anim.has_frames()) {
+                panic("anim '" + anim_name + "' has no frames");
+            }
+
+            // Build keyframe data (common to all modes, needed for pal_indices even if we skip tile placement)
+            PT_TRY_ASSIGN_PASS_ERR(keyframe_data, pipeline_helper_build_keyframe_data(anim_name, anim), void);
+
+            const std::size_t tile_count = keyframe_data.tiles.size();
+            anim_pal_indices[anim_name] = keyframe_data.pal_indices;
+            std::size_t offset{};
+
+            // Resolve effective FrameLinking for this animation
+            const ConfigValue<FrameLinking> effective_linking =
+                (per_anim_overrides.contains(anim_name) && per_anim_overrides.at(anim_name).linking.has_value())
+                    ? per_anim_overrides_.derive(per_anim_overrides.at(anim_name).linking)
+                    : global_frame_linking_;
+
+            if (effective_linking == FrameLinking::manual && tiles_edit_mode_ != ArtifactEditMode::optimize) {
+                /*
+                 * Manual frame linking in patch/locked mode: use the tile_offset from anim.json directly.
+                 * Don't search tiles.png. The keyframes may not be findable via color matching. Whatever
+                 * is already at that offset in tiles.png will be dynamically overwritten by the game's
+                 * animation DMA code at runtime anyway.
+                 */
+                const std::size_t json_offset = anim.params().tile_offset();
+                if (json_offset == 0) {
+                    return FormattableError{
+                        "Animation '{}' uses manual frame linking in '{}' mode but has no tile_offset in anim.json.",
+                        FormatParam{anim_name, Style::bold},
+                        FormatParam{to_string(tiles_edit_mode_.value()), Style::bold}};
+                }
+                if (json_offset + tile_count > tiles_workspace_->capacity()) {
+                    return FormattableError{
+                        "Animation '{}' tile_offset '{}' + tile_count '{}' exceeds tiles.png capacity '{}'.",
+                        FormatParam{anim_name, Style::bold},
+                        FormatParam{json_offset, Style::bold},
+                        FormatParam{tile_count, Style::bold},
+                        FormatParam{tiles_workspace_->capacity(), Style::bold}};
+                }
+                offset = json_offset;
+            }
+            else {
+                // Automatic mode (all edit modes) OR manual mode with optimize
+                if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
+                    offset = current_offset;
+                    for (std::size_t i = 0; i < tile_count; ++i) {
+                        const std::size_t reserved_index = current_offset - tiles_workspace_->anim_start_offset();
+                        tiles_workspace_->place_anim_tile(reserved_index, keyframe_data.tiles[i]);
+                        ++current_offset;
+                    }
+                }
+                else if (tiles_edit_mode_ == ArtifactEditMode::patch) {
+                    // Try to find existing contiguous keyframe sequence using color-equivalence comparison
+                    if (const auto existing_offset = tiles_workspace_->find_existing_contiguous_tiles_by_color(
+                            keyframe_data.tiles, keyframe_data.palettes);
+                        existing_offset.has_value()) {
+                        offset = existing_offset.value();
+                    }
+                    // If full sequence not found, find sufficient contiguous free space to insert
+                    else if (
+                        const auto free_offset = tiles_workspace_->find_contiguous_transparent_slots(tile_count);
+                        free_offset.has_value()) {
+                        tiles_workspace_->place_tiles_at(free_offset.value(), keyframe_data.tiles);
+                        offset = free_offset.value();
+                    }
+                    else {
+                        return FormattableError{
+                            "Animation '{}' requires {} contiguous tiles but no sufficient space found.",
+                            FormatParam{anim_name, Style::bold},
+                            FormatParam{tile_count, Style::bold}};
+                    }
+                }
+                else if (tiles_edit_mode_ == ArtifactEditMode::locked) {
+                    // In locked mode, keyframes must already exist contiguously
+                    // Use color-equivalence comparison to handle duplicate palette colors (same fix as patch mode)
+                    const auto existing_offset = tiles_workspace_->find_existing_contiguous_tiles_by_color(
+                        keyframe_data.tiles, keyframe_data.palettes);
+                    if (existing_offset.has_value()) {
+                        offset = existing_offset.value();
+                    }
+                    else {
+                        std::vector<std::string> err_msg{};
+                        err_msg.emplace_back(format_.format(
+                            "Animation '{}' keyframes not found in existing tiles.png.",
+                            FormatParam{anim_name, Style::bold}));
+                        err_msg.emplace_back(format_.format(
+                            "Cannot proceed due to '{}' setting '{}'.",
+                            FormatParam{"Tiles Edit Mode", Style::bold},
+                            FormatParam{"locked", Style::bold}));
+                        err_msg.append_range(format_config_note_with_separator(format_, tiles_edit_mode_));
+                        return FormattableError{err_msg};
+                    }
+                }
+                else {
+                    panic("unexpected tiles_edit_mode");
+                }
+            }
+
+            anim_offsets[anim_name] = offset;
+        }
+
+        for (const auto &[anim_name, anim] : anims) {
+            anim_pal_indices_[anim_name] = anim_pal_indices.at(anim_name);
+            anim_tile_matcher_.register_animation(
+                anim_name, anim, anim_offsets.at(anim_name), extrinsic_transparency_.value());
+        }
+
+    } // if (!anims.empty())
+
+    // Register primary animations for cross-tileset linking (secondary only)
+    if (is_secondary() && has_paired_primary() && cross_tileset_anim_linking_.value()) {
+        const auto &primary_porytiles_anims = paired_primary_->porytiles_component().anims();
+        const auto &primary_porymap_anims = paired_primary_->porymap_component().anims();
+
+        /*
+         * Build a lookup from tile_index to pal_index using the primary's compiled metatile data.
+         * This is the authoritative source for which palette each primary tile was compiled against.
+         * If multiple metatile entries reference the same tile with different palettes, the first
+         * entry wins (consistent with the first-match convention used in
+         * pipeline_helper_build_keyframe_data).
+         */
+        std::map<std::size_t, std::size_t> primary_tile_pal_map;
+        for (const auto &entry : paired_primary_->porymap_component().metatiles_bin()) {
+            if (entry.tile_index() == 0) {
+                continue;
+            }
+            primary_tile_pal_map.try_emplace(entry.tile_index(), entry.pal_index());
+        }
+
+        // Build primary palette vector once for RGBA fallback matching
+        std::vector<Palette<Rgba32, pal::max_size>> primary_palettes;
+        primary_palettes.reserve(num_pals_in_primary_.value());
+        for (std::size_t i = 0; i < num_pals_in_primary_.value(); ++i) {
+            primary_palettes.push_back(paired_primary_->porymap_component().pal_at(i));
+        }
+
+        // Check for stale compiled data: animations in porymap but removed from porytiles source
+        for (const auto &prim_anim_name : primary_porymap_anims | std::views::keys) {
+            if (!primary_porytiles_anims.contains(prim_anim_name)) {
+                return FormattableError{std::vector<std::string>{
+                    format_.format(
+                        "Primary animation '{}' exists in compiled Porymap data but not in Porytiles source.",
+                        FormatParam{prim_anim_name, Style::bold}),
+                    "The paired primary tileset has uncompiled changes. Recompile it before compiling this "
+                    "secondary."}};
+            }
+        }
+
+        for (const auto &[prim_anim_name, prim_anim] : primary_porytiles_anims) {
+            if (!primary_porymap_anims.contains(prim_anim_name)) {
+                return FormattableError{std::vector<std::string>{
+                    format_.format(
+                        "Primary animation '{}' exists in Porytiles source but not in compiled Porymap data.",
+                        FormatParam{prim_anim_name, Style::bold}),
+                    "The paired primary tileset has uncompiled changes. Recompile it before compiling this "
+                    "secondary."}};
+            }
+            if (!prim_anim.has_key_frame()) {
+                /*
+                 * Manual-mode primary animations have no key frame for RGBA matching. They are still present in the
+                 * workspace and can be linked via fallthrough (which emits its own diagnostic).
+                 */
+                std::vector<std::string> remark_lines;
+                remark_lines.emplace_back(format_.format(
+                    "Primary animation '{}' has no key frame (likely manual frame linking).",
+                    FormatParam{prim_anim_name, Style::bold}));
+                remark_lines.emplace_back("Cross-tileset key frame matching is not possible for this animation.");
+                diag_.remark("cross-tileset-anim-skip-no-keyframe", remark_lines);
+                continue;
+            }
+
+            const auto &prim_porymap_anim = primary_porymap_anims.at(prim_anim_name);
+            const std::size_t prim_tile_offset = prim_porymap_anim.params().tile_offset();
+
+            const std::size_t prim_tile_count = prim_anim.key_frame().tile_count();
+
+            /*
+             * Collision detection is performed before palette index resolution so that the error path does not waste
+             * work on palette lookups. If a user has both a collision and an unreferenced subtile, the collision wins:
+             * collisions indicate an art-side conflict between the primary and secondary that must be resolved before
+             * anything else, while an unreferenced subtile is a data-layout issue downstream of art choices.
+             *
+             * The two loops are independent. Collision detection only reads anim_tile_matcher_;
+             * the palette lookup only reads primary_tile_pal_map.
+             *
+             * Check for cross-tileset key frame collisions. At this point only secondary animations have been
+             * registered in the matcher, so any match is a secondary collision. Each side of the comparison uses its
+             * own ET: primary subtiles are classified under the paired primary's ET and the canonical form is built
+             * under that ET, while the matcher's internal comparator classifies the already-registered secondary
+             * entries under the secondary's ET. This is what lets the comparator find a collision across mismatched-ET
+             * inputs.
+             */
+            for (std::size_t i = 0; i < prim_tile_count; ++i) {
+                if (prim_anim.key_frame().tile_at(i).is_transparent(paired_primary_extrinsic_transparency_.value())) {
+                    continue;
+                }
+                CanonicalPixelTile<Rgba32> canonical{
+                    prim_anim.key_frame().tile_at(i), paired_primary_extrinsic_transparency_.value()};
+                auto match = anim_tile_matcher_.find_match(canonical, paired_primary_extrinsic_transparency_.value());
+                if (match.has_value() && !match->is_cross_tileset) {
+                    return FormattableError{std::vector<std::string>{
+                        format_.format(
+                            "Primary animation '{}' subtile '{}' has identical RGBA data to secondary animation '{}' "
+                            "subtile '{}'.",
+                            FormatParam{prim_anim_name, Style::bold},
+                            FormatParam{i},
+                            FormatParam{match->anim_name, Style::bold},
+                            FormatParam{match->keyframe_tile_idx}),
+                        "Cross-tileset animation linking requires unique key frame subtiles across primary and "
+                        "secondary.",
+                        "Fix the secondary (or primary) animation art so key frame subtiles are visually distinct."}};
+                }
+            }
+
+            /*
+             * Palette resolution cascade for cross-tileset subtiles:
+             * 1. Try metatile lookup (authoritative when subtile is referenced in primary metatiles)
+             * 2. Fall back to RGBA matching against primary palettes (for subtiles only referenced cross-tileset)
+             * Use the composite frame for RGBA matching — it covers all colors across all animation frames.
+             */
+            const AnimFrame<Rgba32> composite =
+                prim_anim.composite_frame(paired_primary_extrinsic_transparency_.value());
+
+            std::vector<std::size_t> subtile_pal_indices;
+            subtile_pal_indices.reserve(prim_tile_count);
+            for (std::size_t i = 0; i < prim_tile_count; ++i) {
+                const std::size_t abs_tile_index = prim_tile_offset + i;
+
+                if (prim_anim.key_frame().tile_at(i).is_transparent(paired_primary_extrinsic_transparency_.value())) {
+                    // Transparent subtiles are skipped during register_animation. Push a dummy value.
+                    subtile_pal_indices.push_back(0);
+                    continue;
+                }
+
+                if (primary_tile_pal_map.contains(abs_tile_index)) {
+                    subtile_pal_indices.push_back(primary_tile_pal_map.at(abs_tile_index));
+                }
+                else {
+                    /*
+                     * Subtile not referenced in any primary metatile. Fall back to RGBA matching the composite tile
+                     * against the primary's compiled palettes.
+                     */
+                    auto matches = match_or_best(
+                        composite.tile_at(i), primary_palettes, paired_primary_extrinsic_transparency_.value(), 1);
+                    if (matches.at(0).is_covered) {
+                        subtile_pal_indices.push_back(matches.at(0).pal_index);
+                        std::vector<std::string> remark_lines;
+                        remark_lines.emplace_back(format_.format(
+                            "Primary animation '{}' subtile '{}' (tile_index='{}') resolved via RGBA palette fallback "
+                            "to palette '{}'.",
+                            FormatParam{prim_anim_name, Style::bold},
+                            FormatParam{i, Style::bold},
+                            FormatParam{abs_tile_index, Style::bold},
+                            FormatParam{matches.at(0).pal_index, Style::bold}));
+                        remark_lines.emplace_back(
+                            "Subtile is not referenced by any primary metatile but its colors match a primary "
+                            "palette.");
+                        diag_.remark("cross-tileset-anim-rgba-fallback", remark_lines);
+                    }
+                    else {
+                        return FormattableError{std::vector<std::string>{
+                            format_.format(
+                                "Primary animation '{}' subtile '{}' (tile_index='{}') is not referenced by any "
+                                "primary "
+                                "metatile entry and its colors do not fully match any primary palette.",
+                                FormatParam{prim_anim_name, Style::bold},
+                                FormatParam{i},
+                                FormatParam{abs_tile_index}),
+                            "Cannot determine the correct palette index for cross-tileset linking.",
+                            "Recompile the primary tileset, or verify that all primary animation subtiles",
+                            "are used in at least one primary metatile."}};
+                    }
+                }
+            }
+
+            anim_pal_indices_[prim_anim_name] = subtile_pal_indices;
+            anim_tile_matcher_.register_animation(
+                prim_anim_name,
+                prim_anim,
+                prim_tile_offset,
+                paired_primary_extrinsic_transparency_.value(),
+                /*is_cross_tileset=*/true);
+        }
+    }
+
+    return {};
+}
+
+ChainableResult<void> CompilerTask::pipeline_helper_validate_primary_anim_subtile_coverage() const
+{
+    /*
+     * Walk each primary animation's key frame subtiles. For every non-transparent subtile, verify its absolute tile
+     * index appears in at least one metatile entry of this primary's tilemap entries. Unreferenced subtiles are not
+     * fatal. Paired secondary compiles can resolve their palette via RGBA fallback matching. However, they are worth
+     * warning about since explicit metatile references are the preferred palette resolution path.
+     *
+     * Animations without a key frame (manual frame linking, no RGBA reference) are skipped: they have no palette to
+     * resolve via metatile lookup.
+     */
+    const auto &anims = tileset_.porytiles_component().anims();
     if (anims.empty()) {
         return {};
     }
 
-    if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
-        std::size_t total_keyframe_tiles = 0;
-        for (const auto &anim : anims | std::views::values) {
-            if (anim.has_key_frame()) {
-                total_keyframe_tiles += anim.key_frame().tiles().size();
-            }
-            else if (anim.has_frames()) {
-                // TODO: same lexicographic ordering caveat as in pipeline_helper_build_keyframe_data
-                total_keyframe_tiles += anim.frames().begin()->second.tiles().size();
-            }
+    /*
+     * Collect tile indices referenced by any metatile entry in this primary's compiled tilemap. Tile 0 is the reserved
+     * transparent tile and is excluded (it carries no palette information).
+     */
+    std::unordered_set<std::size_t> referenced_tile_indices;
+    for (const auto &entry : new_porymap_component_->metatiles_bin()) {
+        if (entry.tile_index() == 0) {
+            continue;
         }
-        tiles_workspace_->reserve_anim_slots(total_keyframe_tiles);
-    }
-
-    std::map<std::string, std::size_t> anim_offsets;
-    std::map<std::string, std::vector<std::size_t>> anim_pal_indices;
-    std::size_t current_offset = TilesPngWorkspace::anim_start_offset();
-
-    const auto &per_anim_overrides = per_anim_overrides_.value();
-
-    for (const auto &[anim_name, anim] : anims) {
-        if (!anim.has_frames()) {
-            panic("anim '" + anim_name + "' has no frames");
-        }
-
-        // Build keyframe data (common to all modes, needed for pal_indices even if we skip tile placement)
-        PT_TRY_ASSIGN_PASS_ERR(keyframe_data, pipeline_helper_build_keyframe_data(anim_name, anim), void);
-
-        const std::size_t tile_count = keyframe_data.tiles.size();
-        anim_pal_indices[anim_name] = keyframe_data.pal_indices;
-        std::size_t offset{};
-
-        // Resolve effective FrameLinking for this animation
-        const ConfigValue<FrameLinking> effective_linking =
-            (per_anim_overrides.contains(anim_name) && per_anim_overrides.at(anim_name).linking.has_value())
-                ? per_anim_overrides_.derive(per_anim_overrides.at(anim_name).linking)
-                : global_frame_linking_;
-
-        if (effective_linking == FrameLinking::manual && tiles_edit_mode_ != ArtifactEditMode::optimize) {
-            /*
-             * Manual frame linking in patch/locked mode: use the tile_offset from anim.json directly.
-             * Don't search tiles.png. The keyframes may not be findable via color matching. Whatever
-             * is already at that offset in tiles.png will be dynamically overwritten by the game's
-             * animation DMA code at runtime anyway.
-             */
-            const std::size_t json_offset = anim.params().tile_offset();
-            if (json_offset == 0) {
-                return FormattableError{
-                    "Animation '{}' uses manual frame linking in '{}' mode but has no tile_offset in anim.json.",
-                    FormatParam{anim_name, Style::bold},
-                    FormatParam{to_string(tiles_edit_mode_.value()), Style::bold}};
-            }
-            if (json_offset + tile_count > tiles_workspace_->capacity()) {
-                return FormattableError{
-                    "Animation '{}' tile_offset '{}' + tile_count '{}' exceeds tiles.png capacity '{}'.",
-                    FormatParam{anim_name, Style::bold},
-                    FormatParam{json_offset, Style::bold},
-                    FormatParam{tile_count, Style::bold},
-                    FormatParam{tiles_workspace_->capacity(), Style::bold}};
-            }
-            offset = json_offset;
-        }
-        else {
-            // Automatic mode (all edit modes) OR manual mode with optimize
-            if (tiles_edit_mode_ == ArtifactEditMode::optimize) {
-                offset = current_offset;
-                for (std::size_t i = 0; i < tile_count; ++i) {
-                    const std::size_t reserved_index = current_offset - TilesPngWorkspace::anim_start_offset();
-                    tiles_workspace_->place_anim_tile(reserved_index, keyframe_data.tiles[i]);
-                    ++current_offset;
-                }
-            }
-            else if (tiles_edit_mode_ == ArtifactEditMode::patch) {
-                // Try to find existing contiguous keyframe sequence using color-equivalence comparison
-                if (const auto existing_offset = tiles_workspace_->find_existing_contiguous_tiles_by_color(
-                        keyframe_data.tiles, keyframe_data.palettes);
-                    existing_offset.has_value()) {
-                    offset = existing_offset.value();
-                }
-                // If full sequence not found, find sufficient contiguous free space to insert
-                else if (
-                    const auto free_offset = tiles_workspace_->find_contiguous_transparent_slots(tile_count);
-                    free_offset.has_value()) {
-                    tiles_workspace_->place_tiles_at(free_offset.value(), keyframe_data.tiles);
-                    offset = free_offset.value();
-                }
-                else {
-                    /*
-                     * TODO: This condition branching doesn't handle the possibility that a partial contiguous sequence
-                     * exists, with sufficient free space after to complete the insertion. The match is all-or-nothing.
-                     * Either the full tile sequence must already exist, or there must be contiguous free space large
-                     * enough to insert it. Future versions of Porytiles may want to handle this case more cleanly,
-                     * either by successfully "completing" a partial key frame sequence, or at least notifying the user
-                     * that this special edge case was hit.
-                     */
-                    return FormattableError{
-                        "Animation '{}' requires {} contiguous tiles but no sufficient space found.",
-                        FormatParam{anim_name, Style::bold},
-                        FormatParam{tile_count, Style::bold}};
-                }
-            }
-            else if (tiles_edit_mode_ == ArtifactEditMode::locked) {
-                // In locked mode, keyframes must already exist contiguously
-                // Use color-equivalence comparison to handle duplicate palette colors (same fix as patch mode)
-                const auto existing_offset = tiles_workspace_->find_existing_contiguous_tiles_by_color(
-                    keyframe_data.tiles, keyframe_data.palettes);
-                if (existing_offset.has_value()) {
-                    offset = existing_offset.value();
-                }
-                else {
-                    // TODO: could we improve this error by showing violating tiles?
-                    std::vector<std::string> err_msg{};
-                    err_msg.emplace_back(format_.format(
-                        "Animation '{}' keyframes not found in existing tiles.png.",
-                        FormatParam{anim_name, Style::bold}));
-                    err_msg.emplace_back(format_.format(
-                        "Cannot proceed due to '{}' setting '{}'.",
-                        FormatParam{"Tiles Edit Mode", Style::bold},
-                        FormatParam{"locked", Style::bold}));
-                    std::ranges::copy(
-                        format_config_note_with_separator(format_, tiles_edit_mode_), std::back_inserter(err_msg));
-                    return FormattableError{err_msg};
-                }
-            }
-            else {
-                panic("unexpected tiles_edit_mode");
-            }
-        }
-
-        anim_offsets[anim_name] = offset;
+        referenced_tile_indices.insert(entry.tile_index());
     }
 
     for (const auto &[anim_name, anim] : anims) {
-        anim_tile_matcher_.register_animation(
-            anim_name, anim, anim_offsets.at(anim_name), extrinsic_transparency_, anim_pal_indices.at(anim_name));
+        if (!anim.has_key_frame()) {
+            continue;
+        }
+
+        auto maybe_tile_offset = anim_tile_matcher_.tile_offset_for(anim_name);
+        if (!maybe_tile_offset.has_value()) {
+            panic("animation '" + anim_name + "' not registered in anim_tile_matcher_");
+        }
+        const std::size_t tile_offset = maybe_tile_offset.value();
+        const std::size_t tile_count = anim.key_frame().tile_count();
+
+        for (std::size_t i = 0; i < tile_count; ++i) {
+            if (anim.key_frame().tile_at(i).is_transparent(extrinsic_transparency_.value())) {
+                continue;
+            }
+            const std::size_t abs_tile_index = tile_offset + i;
+            if (!referenced_tile_indices.contains(abs_tile_index)) {
+                std::vector<std::string> warn_lines;
+                warn_lines.emplace_back(format_.format(
+                    "Primary animation '{}' subtile '{}' (tile_index='{}') is not referenced by any metatile:",
+                    FormatParam{anim_name, Style::bold},
+                    FormatParam{i, Style::bold},
+                    FormatParam{abs_tile_index, Style::bold}));
+                warn_lines.append_range(
+                    tile_printer_.print_tile(anim.key_frame().tile_at(i), extrinsic_transparency_.value()));
+                warn_lines.emplace_back(
+                    "Palette assignment for this subtile will use RGBA fallback matching during secondary "
+                    "compilation.");
+
+                diag_.warning("primary-anim-unreferenced-subtile", warn_lines);
+            }
+        }
     }
 
     return {};
@@ -1252,7 +1779,6 @@ void CompilerTask::pipeline_helper_compile_animations()
             !std::ranges::all_of(subtile_pal_indices, [&](std::size_t idx) { return idx == frame_pal_index; });
 
         if (uses_multiple_palettes) {
-            // TODO: could we display something more here?
             std::vector<std::string> warning_lines;
             warning_lines.emplace_back(format_.format(
                 "Animation '{}' uses multiple palettes across subtiles.", FormatParam{anim_name, Style::bold}));
@@ -1294,7 +1820,8 @@ void CompilerTask::pipeline_helper_compile_animations()
 
         // 6. Set params with updated tile_offset/tile_count
         AnimParams params = source_anim.params();
-        params.tile_offset(tile_offset);
+        const std::size_t local_offset = is_secondary() ? tile_offset - num_tiles_in_primary_.value() : tile_offset;
+        params.tile_offset(local_offset);
         params.tile_count(tile_count);
         compiled_anim.params(std::move(params));
 
@@ -1373,11 +1900,91 @@ void CompilerTask::pipeline_helper_apply_manual_overrides()
             break;
         }
 
-        case FrameLinking::hybrid:
-            panic("TODO: implement hybrid frame linking");
+        case FrameLinking::hybrid: {
+            std::vector<std::string> err_lines;
+            err_lines.emplace_back(format_.format(
+                "Hybrid frame linking is not yet implemented (animation '{}').", FormatParam{anim_name, Style::bold}));
+            err_lines.emplace_back("Use 'automatic' or 'manual' frame linking until hybrid support.");
+            err_lines.append_range(format_config_note_with_separator(format_, effective_linking));
+            diag_.error("hybrid-frame-linking-not-implemented", err_lines);
+            break;
+        }
 
         default:
             panic("unhandled value for FrameLinking");
+        }
+    }
+
+    // Apply primary animation reference overrides (secondary tilesets only)
+    const auto &primary_refs = tileset_.porytiles_component().primary_anim_overrides();
+
+    if (!primary_refs.empty() && !is_secondary()) {
+        std::vector<std::string> err_lines;
+        err_lines.emplace_back(format_.format(
+            "Primary tilesets cannot have '{}' in anim.json.", FormatParam{"primary_references", Style::bold}));
+        err_lines.emplace_back("Only secondary tilesets may reference primary animation tiles.");
+        diag_.error("primary-references-on-primary", err_lines);
+        return;
+    }
+
+    if (!primary_refs.empty() && is_secondary()) {
+        if (!has_paired_primary()) {
+            std::vector<std::string> err_lines;
+            err_lines.emplace_back(format_.format(
+                "The '{}' section requires a paired primary tileset (pairing mode must not be off).",
+                FormatParam{"primary_references", Style::bold}));
+            diag_.error("primary-references-no-paired-primary", err_lines);
+            return;
+        }
+
+        const auto &primary_anims = paired_primary_->porymap_component().anims();
+        auto &metatiles_bin = new_porymap_component_->metatiles_bin();
+
+        for (const auto &[prim_anim_name, entries] : primary_refs) {
+            if (!primary_anims.contains(prim_anim_name)) {
+                std::vector<std::string> err_lines;
+                err_lines.emplace_back(format_.format(
+                    "Primary animation '{}' referenced in '{}' was not found in the paired primary tileset.",
+                    FormatParam{prim_anim_name, Style::bold},
+                    FormatParam{"primary_references", Style::bold}));
+                diag_.error("primary-references-anim-not-found", err_lines);
+                continue;
+            }
+
+            const auto &prim_anim = primary_anims.at(prim_anim_name);
+            const std::size_t prim_tile_offset = prim_anim.params().tile_offset();
+            const std::size_t prim_tile_count = prim_anim.params().tile_count();
+
+            for (const auto &entry : entries) {
+                if (entry.frame_subtile >= prim_tile_count) {
+                    std::vector<std::string> err_lines;
+                    err_lines.emplace_back(format_.format(
+                        "Primary reference '{}' override has frame_subtile {} but primary animation only has {} tiles.",
+                        FormatParam{prim_anim_name, Style::bold},
+                        FormatParam{entry.frame_subtile},
+                        FormatParam{prim_tile_count}));
+                    diag_.error("primary-references-frame-subtile-oob", err_lines);
+                    continue;
+                }
+
+                const std::size_t bin_index =
+                    entry.metatile_id * metatile::entries_per_metatile_triple +
+                    static_cast<std::size_t>(entry.layer) * metatile::tiles_per_metatile_layer +
+                    static_cast<std::size_t>(entry.subtile);
+
+                if (bin_index >= metatiles_bin.size()) {
+                    std::vector<std::string> err_lines;
+                    err_lines.emplace_back(format_.format(
+                        "Primary reference '{}' override references metatile_id {} which is out of range.",
+                        FormatParam{prim_anim_name, Style::bold},
+                        FormatParam{entry.metatile_id}));
+                    diag_.error("primary-references-metatile-oob", err_lines);
+                    continue;
+                }
+
+                const std::size_t absolute_tile = prim_tile_offset + entry.frame_subtile;
+                metatiles_bin.at(bin_index) = TilemapEntry{absolute_tile, entry.pal_index, entry.h_flip, entry.v_flip};
+            }
         }
     }
 }
@@ -1387,6 +1994,19 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
     // Phase 1: Build tile_index -> first_pal_index map from tilemap entries
     std::unordered_map<std::size_t, std::size_t> tile_to_first_pal;
     std::unordered_map<std::size_t, std::set<std::size_t>> tile_to_all_pals;
+
+    // Secondary tiles.png is densely packed from tile 0, but metatile entries reference absolute
+    // indices (e.g., 512+ for secondary). This offset converts absolute to relative for image access.
+    const std::size_t tile_index_offset = is_secondary() ? num_tiles_in_primary_.value() : 0;
+
+    // Secondary palettes are stored at absolute indices (e.g., 6-11), but the PNG palette only
+    // covers this tileset's palettes (indices 0-5). This offset converts absolute to relative.
+    // When a secondary tileset has a paired primary, the packer can assign tiles to primary palettes.
+    // Use offset 0 so the encoding preserves absolute palette indices in the PNG pixel values.
+    const std::size_t pal_index_offset = (is_secondary() && !has_paired_primary()) ? num_pals_in_primary_.value() : 0;
+
+    // For diagnostic display of unreferenced tiles, always use the first palette belonging to this tileset.
+    const std::size_t default_display_pal = is_secondary() ? num_pals_in_primary_.value() : 0;
 
     for (const auto &entry : new_porymap_component_->metatiles_bin()) {
         const auto tile_idx = entry.tile_index();
@@ -1431,7 +2051,8 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
 
                 // Extract the tile to check for transparency and for visualization
                 const auto &tiles_img = new_porymap_component_->tiles_png();
-                const PixelTile<IndexPixel> index_tile = extract_single_tile(tiles_img, absolute_tile_idx);
+                const PixelTile<IndexPixel> index_tile =
+                    extract_single_tile(tiles_img, absolute_tile_idx - tile_index_offset);
 
                 // Skip remark for transparent tiles (unused slots)
                 if (index_tile.is_transparent()) {
@@ -1442,7 +2063,7 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
                 constexpr auto tag = "true-color-anim-only-tile";
                 std::vector<std::string> remark_lines;
                 remark_lines.emplace_back(format_.format(
-                    "tile index '{}' (animation '{}', subtile '{}') is not referenced in metatiles",
+                    "Tile index '{}' (animation '{}', subtile '{}') is not referenced in metatiles.",
                     FormatParam{absolute_tile_idx, Style::bold},
                     FormatParam{anim_name, Style::bold},
                     FormatParam{subtile_idx, Style::bold}));
@@ -1454,9 +2075,7 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
                 const PixelTile<Rgba32> rgba_tile = color_tile_from_index_tile(
                     index_tile, new_porymap_pals_.at(matched_pal_idx), extrinsic_transparency_.value());
                 remark_lines.emplace_back();
-                std::ranges::copy(
-                    tile_printer_.print_tile(rgba_tile, extrinsic_transparency_.value()),
-                    std::back_inserter(remark_lines));
+                remark_lines.append_range(tile_printer_.print_tile(rgba_tile, extrinsic_transparency_.value()));
 
                 diag_.remark(tag, remark_lines);
             }
@@ -1464,11 +2083,17 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
     }
 
     // Phase 3: Emit diagnostic remark for tiles used with multiple palettes
-    for (const auto &[tile_idx, pals] : tile_to_all_pals) {
+    for (const auto &[absolute_tile_idx, pals] : tile_to_all_pals) {
         if (pals.size() > 1) {
+            // Primary tiles are not in this tileset's tiles.png, skip
+            if (absolute_tile_idx < tile_index_offset) {
+                continue;
+            }
+
             // Extract the tile to check for transparency and for visualization
             const auto &tiles_img = new_porymap_component_->tiles_png();
-            const PixelTile<IndexPixel> index_tile = extract_single_tile(tiles_img, tile_idx);
+            const PixelTile<IndexPixel> index_tile =
+                extract_single_tile(tiles_img, absolute_tile_idx - tile_index_offset);
 
             // Skip remark for transparent tiles (unused slots)
             if (index_tile.is_transparent()) {
@@ -1477,8 +2102,8 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
 
             constexpr auto tag = "true-color-multi-palette-tile";
             std::vector<std::string> remark_lines;
-            remark_lines.emplace_back(
-                format_.format("tile index '{}' is used with multiple palettes", FormatParam{tile_idx, Style::bold}));
+            remark_lines.emplace_back(format_.format(
+                "Tile index '{}' is used with multiple palettes.", FormatParam{absolute_tile_idx, Style::bold}));
 
             std::string pal_list;
             for (const auto pal : pals) {
@@ -1488,7 +2113,7 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
                 pal_list += pal_filename(pal);
             }
 
-            const std::size_t selected_pal_idx = tile_to_first_pal.at(tile_idx);
+            const std::size_t selected_pal_idx = tile_to_first_pal.at(absolute_tile_idx);
             remark_lines.emplace_back(format_.format(
                 "Palettes used: {}; tiles.png will display using '{}'.",
                 FormatParam{pal_list},
@@ -1501,9 +2126,7 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
                     format_.format("{} resolution:", FormatParam{pal_filename(pal_idx), Style::bold}));
                 const PixelTile<Rgba32> rgba_tile = color_tile_from_index_tile(
                     index_tile, new_porymap_pals_.at(pal_idx), extrinsic_transparency_.value());
-                std::ranges::copy(
-                    tile_printer_.print_tile(rgba_tile, extrinsic_transparency_.value()),
-                    std::back_inserter(remark_lines));
+                remark_lines.append_range(tile_printer_.print_tile(rgba_tile, extrinsic_transparency_.value()));
             }
 
             diag_.remark(tag, remark_lines);
@@ -1517,39 +2140,39 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
     const std::size_t total_tiles = tiles_img.size_in_tiles();
 
     for (std::size_t tile_idx = 1; tile_idx < total_tiles; ++tile_idx) {
-        if (!tile_to_first_pal.contains(tile_idx)) {
+        const std::size_t absolute_tile_idx = tile_idx + tile_index_offset;
+        if (!tile_to_first_pal.contains(absolute_tile_idx)) {
             // Extract the tile to check for transparency
             const PixelTile<IndexPixel> index_tile = extract_single_tile(tiles_img, tile_idx, tiles_per_row);
 
-            // Skip warning for transparent tiles (unused slots) - user already knows they're unused
+            // Skip remark for transparent tiles (unused slots) - user already knows they're unused
             if (index_tile.is_transparent()) {
                 continue;
             }
 
-            // Emit warning for unreferenced non-transparent tiles
+            // Emit remark for unreferenced non-transparent tiles
             constexpr auto tag = "true-color-unreferenced-tile";
-            std::vector<std::string> warning_lines;
-            warning_lines.emplace_back(format_.format(
-                "tile index '{}' is not referenced in metatiles or animations", FormatParam{tile_idx, Style::bold}));
-            diag_.warning(tag, warning_lines);
+            std::vector<std::string> remark_lines;
+            remark_lines.emplace_back(format_.format(
+                "Tile index '{}' is not referenced in metatiles or animations.",
+                FormatParam{absolute_tile_idx, Style::bold}));
 
-            std::vector<std::string> note_lines;
-            note_lines.emplace_back("This tile may be used by a secondary tileset, or it may be completely unused.");
-            note_lines.emplace_back(format_.format(
-                "Displaying using '{}' for color resolution.", FormatParam{pal_filename(0), Style::bold}));
+            remark_lines.emplace_back("This tile may be used by a secondary tileset, or it may be completely unused.");
+            remark_lines.emplace_back(format_.format(
+                "Displaying using '{}' for color resolution.",
+                FormatParam{pal_filename(default_display_pal), Style::bold}));
 
-            // Visualize the tile using palette 0
-            const PixelTile<Rgba32> rgba_tile =
-                color_tile_from_index_tile(index_tile, new_porymap_pals_.at(0), extrinsic_transparency_.value());
-            note_lines.emplace_back();
-            std::ranges::copy(
-                tile_printer_.print_tile(rgba_tile, extrinsic_transparency_.value()), std::back_inserter(note_lines));
+            // Visualize the tile using the first palette for this tileset
+            const PixelTile<Rgba32> rgba_tile = color_tile_from_index_tile(
+                index_tile, new_porymap_pals_.at(default_display_pal), extrinsic_transparency_.value());
+            remark_lines.emplace_back();
+            remark_lines.append_range(tile_printer_.print_tile(rgba_tile, extrinsic_transparency_.value()));
 
-            diag_.warning_note(tag, note_lines);
+            diag_.remark(tag, remark_lines);
             continue; // Skip unreferenced tiles (no palette encoding needed)
         }
 
-        const std::size_t pal_idx = tile_to_first_pal.at(tile_idx);
+        const std::size_t pal_idx = tile_to_first_pal.at(absolute_tile_idx);
         const std::size_t tile_row = tile_idx / tiles_per_row;
         const std::size_t tile_col = tile_idx % tiles_per_row;
         const std::size_t pixel_row_start = tile_row * tile::side_length_pix;
@@ -1561,18 +2184,28 @@ void CompilerTask::pipeline_helper_apply_true_color_to_tiles_png()
                 const std::size_t col = pixel_col_start + px;
                 const IndexPixel old_pixel = tiles_img.at(row, col);
                 const std::size_t color_idx = old_pixel.color_index();
-                const std::size_t new_index = (pal_idx << 4) | color_idx;
+                const std::size_t new_index = ((pal_idx - pal_index_offset) << 4) | color_idx;
                 tiles_img.set(row, col, IndexPixel{new_index});
             }
         }
     }
 
-    // Phase 5: Build the 8-bit palette for the PNG (num_pals_in_primary * 16 colors)
+    // Phase 5: Build the 8-bit palette for the PNG (this tileset's palettes * 16 colors)
+    std::size_t num_pals;
+    if (!is_secondary()) {
+        num_pals = num_pals_in_primary_.value();
+    }
+    else if (has_paired_primary()) {
+        num_pals = num_pals_total_.value();
+    }
+    else {
+        num_pals = num_pals_total_.value() - num_pals_in_primary_.value();
+    }
     std::vector<Rgba32> true_color_palette;
-    true_color_palette.reserve(num_pals_in_primary_.value() * pal::max_size);
+    true_color_palette.reserve(num_pals * pal::max_size);
 
-    for (std::size_t pal_idx = 0; pal_idx < num_pals_in_primary_.value(); ++pal_idx) {
-        const auto &pal = new_porymap_pals_.at(pal_idx);
+    for (std::size_t i = 0; i < num_pals; ++i) {
+        const auto &pal = new_porymap_pals_.at(i + pal_index_offset);
         for (std::size_t color_idx = 0; color_idx < pal::max_size; ++color_idx) {
             true_color_palette.push_back(pal.at(color_idx));
         }
@@ -1596,23 +2229,20 @@ void CompilerTask::pipeline_helper_emit_no_matching_tile_error(
     no_match_err.emplace_back(format_.format(
         "{}: no matching tile found",
         FormatParam{metatile::message_header(format_, metatile_index, layer, subtile), Style::bold}));
-    std::ranges::copy(
-        tile_printer_.print_metatile_tile_highlight(
-            porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_),
-        std::back_inserter(no_match_err));
+    no_match_err.append_range(tile_printer_.print_metatile_tile_highlight(
+        porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_));
     diag_.error(tag, no_match_err);
 
     // Print note showing the palette that matched
     std::vector<std::string> pal_note{};
     pal_note.emplace_back(format_.format("matched palette '{}':", FormatParam{pal_filename(pal_index), Style::bold}));
-    std::ranges::copy(pal_printer_.print_rgba_pal(matched_pal), std::back_inserter(pal_note));
+    pal_note.append_range(pal_printer_.print_rgba_pal(matched_pal));
     diag_.error_note(tag, pal_note);
 
     // Print note showing the generated IndexPixel tile
     std::vector<std::string> tile_note{};
     tile_note.emplace_back("generated index tile:");
-    std::ranges::copy(
-        tile_printer_.print_tile(index_tile, extrinsic_transparency_.value()), std::back_inserter(tile_note));
+    tile_note.append_range(tile_printer_.print_tile(index_tile, extrinsic_transparency_.value()));
     diag_.error_note(tag, tile_note);
 }
 
@@ -1627,15 +2257,12 @@ void CompilerTask::pipeline_helper_emit_no_matching_pal_error(
     no_match_err.emplace_back(format_.format(
         "{}: no matching palette found",
         FormatParam{metatile::message_header(format_, metatile_index, layer, subtile), Style::bold}));
-    std::ranges::copy(
-        tile_printer_.print_metatile_tile_highlight(
-            porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_),
-        std::back_inserter(no_match_err));
+    no_match_err.append_range(tile_printer_.print_metatile_tile_highlight(
+        porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_));
     diag_.error(tag, no_match_err);
 
     // Emit a long note showing the top N closest matches
     std::vector<std::string> closest_n_note{};
-    // TODO: substitute configurable top_n for N
     closest_n_note.emplace_back("closest N match(es) with covered colors highlighted:");
     int match_index = 0;
     for (const auto &match : matches) {
@@ -1645,21 +2272,17 @@ void CompilerTask::pipeline_helper_emit_no_matching_pal_error(
         }
         closest_n_note.push_back(
             format_.format("Palette match candidate: {}", FormatParam{pal_filename(match.pal_index), Style::bold}));
-        std::ranges::copy(
-            pal_printer_.print_rgba_palette_covered_missing(
-                new_porymap_pals_.at(match.pal_index), match.covered_colors, match.missing_colors),
-            std::back_inserter(closest_n_note));
+        closest_n_note.append_range(pal_printer_.print_rgba_palette_covered_missing(
+            new_porymap_pals_.at(match.pal_index), match.covered_colors, match.missing_colors));
         closest_n_note.emplace_back();
         closest_n_note.push_back(
             format_.format("Uncovered pixels with {}:", FormatParam{pal_filename(match.pal_index), Style::bold}));
-        std::ranges::copy(
-            tile_printer_.print_metatile_pixel_highlights(
-                porytiles_metatiles_.at(metatile_index),
-                layer,
-                subtile,
-                match.uncovered_pixel_indices,
-                extrinsic_transparency_),
-            std::back_inserter(closest_n_note));
+        closest_n_note.append_range(tile_printer_.print_metatile_pixel_highlights(
+            porytiles_metatiles_.at(metatile_index),
+            layer,
+            subtile,
+            match.uncovered_pixel_indices,
+            extrinsic_transparency_));
         match_index++;
     }
     diag_.error_note(tag, closest_n_note);
@@ -1676,18 +2299,22 @@ void CompilerTask::pipeline_helper_emit_tile_limit_error(std::size_t tile_index,
         "{}: hit limit of '{}' unique tiles",
         FormatParam{metatile::message_header(format_, metatile_index, layer, subtile), Style::bold},
         FormatParam{tile_limit, Style::bold}));
-    std::ranges::copy(
-        tile_printer_.print_metatile_tile_highlight(
-            porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_),
-        std::back_inserter(tile_limit_error));
+    tile_limit_error.append_range(tile_printer_.print_metatile_tile_highlight(
+        porytiles_metatiles_.at(metatile_index), layer, subtile, extrinsic_transparency_));
     diag_.error(tag, tile_limit_error);
 
     // Construct note text
     std::vector<std::string> note_text;
-    note_text.push_back(format_.format(
-        "tile limit is '{}' due to configuration", FormatParam{num_tiles_in_primary_.value(), Style::bold}));
-    note_text.emplace_back();
-    std::ranges::copy(num_tiles_in_primary_.prettify(format_), std::back_inserter(note_text));
+    if (is_secondary()) {
+        note_text.append_range(
+            build_subtraction_limit_lines(format_, "Tile limit", tile_limit, num_tiles_total_, num_tiles_in_primary_));
+    }
+    else {
+        note_text.push_back(
+            format_.format("Tile limit is '{}' due to configuration.", FormatParam{tile_limit, Style::bold}));
+        note_text.emplace_back();
+        note_text.append_range(format_config_note(format_, num_tiles_in_primary_));
+    }
     diag_.error_note(tag, note_text);
 }
 
@@ -1695,9 +2322,10 @@ void CompilerTask::pipeline_helper_emit_tile_limit_error(std::size_t tile_index,
 
 namespace porytiles2 {
 
-ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetCompiler::compile(const Tileset &tileset) const
+ChainableResult<std::unique_ptr<Tileset>>
+TilesetCompiler::compile(const Tileset &tileset, bool is_secondary, const Tileset *paired_primary) const
 {
-    CompilerTask task{tileset, *format_, *diag_, *tile_printer_, *pal_printer_, *config_};
+    CompilerTask task{tileset, is_secondary, paired_primary, *format_, *diag_, *tile_printer_, *pal_printer_, *config_};
     return task.run();
 }
 

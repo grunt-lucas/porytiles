@@ -1,11 +1,11 @@
 #include "porytiles2/app/use_cases/compile_primary_tileset.hpp"
 
 #include <memory>
-#include <ranges>
 #include <string>
 
 #include "porytiles2/domain/algorithms/diagnostic_stencils.hpp"
-#include "porytiles2/domain/services/primary_tileset_compiler.hpp"
+#include "porytiles2/domain/services/tileset_compiler.hpp"
+#include "porytiles2/utilities/panic/panic.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/config/unwrap_config.hpp"
 
@@ -13,10 +13,8 @@ namespace porytiles2 {
 
 ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_name) const
 {
-    // 1. Check if the primary tileset exists and is Porytiles-managed. If not, abort with error.
-    if (!metadata_provider_->exists(tileset_name)) {
-        return FormattableError{"Tileset '{}' does not exist.", FormatParam{tileset_name, Style::bold}};
-    }
+    // 1. Precondition: tileset must exist. Check if it is Porytiles-managed. If not, abort with error.
+    assert_or_panic(metadata_provider_->exists(tileset_name), "precondition violated: tileset must exist");
     if (!tileset_manager_->is_porytiles_managed(tileset_name)) {
         return FormattableError{
             "Tileset '{}' exists but is not Porytiles-managed.", FormatParam{tileset_name, Style::bold}};
@@ -38,8 +36,7 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
             "Expected to find file '{}'.",
             FormatParam{"porytiles/tilesets/" + tileset_name + "/tileset.cache.json", Style::bold}));
         err_msg.emplace_back("Checksum verification requested via configuration.");
-        std::ranges::copy(
-            format_config_note_with_separator(diag_->formatter(), verify_checksums), std::back_inserter(err_msg));
+        err_msg.append_range(format_config_note_with_separator(diag_->formatter(), verify_checksums));
 
         return ChainableResult<void>{FormattableError{err_msg}};
     }
@@ -75,9 +72,7 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
                     "  - {} delete '{}' cache file.",
                     FormatParam{"OR", Style::bold},
                     FormatParam{"porytiles/tilesets/" + tileset_name + "/tileset.cache.json", Style::bold}));
-                std::ranges::copy(
-                    format_config_note_with_separator(diag_->formatter(), verify_checksums),
-                    std::back_inserter(err_msg));
+                err_msg.append_range(format_config_note_with_separator(diag_->formatter(), verify_checksums));
                 return ChainableResult<void>{FormattableError{err_msg}};
             }
         }
@@ -101,7 +96,7 @@ ChainableResult<void> CompilePrimaryTileset::compile(const std::string &tileset_
     // 5. Compile the `Tileset`, generating a new modified `Tileset`.
     PT_TRY_ASSIGN_CHAIN_ERR(
         new_tileset,
-        compiler_->compile(*tileset),
+        compiler_->compile(*tileset, /*is_secondary=*/false),
         void,
         "Compilation job failed for '{}'.",
         FormatParam(tileset_name, Style::bold));

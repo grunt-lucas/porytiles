@@ -8,8 +8,8 @@
 #include "porytiles2/domain/config/domain_config.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/porytiles_tileset_manager.hpp"
-#include "porytiles2/domain/services/primary_tileset_compiler.hpp"
 #include "porytiles2/domain/services/primary_tileset_decompiler.hpp"
+#include "porytiles2/domain/services/tileset_compiler.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
 
@@ -23,7 +23,7 @@ class DecompilePrimaryTileset {
     DecompilePrimaryTileset(
         gsl::not_null<const TilesetRepo *> tileset_repo,
         gsl::not_null<const PrimaryTilesetDecompiler *> decompiler,
-        gsl::not_null<const PrimaryTilesetCompiler *> compiler,
+        gsl::not_null<const TilesetCompiler *> compiler,
         gsl::not_null<const TilesetMetadataProvider *> metadata_provider,
         gsl::not_null<const PorytilesTilesetManager *> tileset_manager,
         gsl::not_null<const DomainConfig *> domain_config,
@@ -46,7 +46,7 @@ class DecompilePrimaryTileset {
   private:
     const TilesetRepo *tileset_repo_;
     const PrimaryTilesetDecompiler *decompiler_;
-    const PrimaryTilesetCompiler *compiler_;
+    const TilesetCompiler *compiler_;
     const TilesetMetadataProvider *metadata_provider_;
     const PorytilesTilesetManager *tileset_manager_;
     const DomainConfig *domain_config_;

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include "porytiles2/utilities/result/chainable_result.hpp"
@@ -16,12 +17,26 @@ namespace porytiles2 {
  *   uv run Scripts/generate_config.py
  */
 
+class ConfigProvider; // forward declaration; full type is in infra/config/config_provider.hpp
+
 /**
  * @brief Interface that defines a complete infra layer configuration.
  */
 class InfraConfig {
   public:
     virtual ~InfraConfig() = default;
+
+    /**
+     * @brief Prepends a @c ConfigProvider to the provider chain at highest priority.
+     *
+     * @details
+     * Allows use cases to layer an override provider on top of the user's configuration for operations that run the
+     * compiler on Porytiles's own behalf. Implementations must invalidate any cached value resolutions so that
+     * subsequent reads consult the newly prepended provider.
+     *
+     * @param provider The provider to prepend. Must be non-null.
+     */
+    virtual void add_provider(std::unique_ptr<ConfigProvider> provider) = 0;
 
     // Public method with cross-field validation only (Tier 3)
     [[nodiscard]] ChainableResult<ConfigValue<std::string>>

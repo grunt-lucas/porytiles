@@ -152,7 +152,6 @@ ChainableResult<void> save_metatiles_bin(const std::vector<TilemapEntry> &entrie
 {
     std::ofstream out{path};
     for (const auto &entry : entries) {
-        // TODO: does this code work as expected on a big-endian machine?
         const auto tile_value = static_cast<uint16_t>(
             (entry.tile_index() & 0x3ff) | ((entry.h_flip() & 1) << 10) | ((entry.v_flip() & 1) << 11) |
             ((entry.pal_index() & 0xf) << 12));
@@ -170,7 +169,6 @@ ChainableResult<void> save_emerald_metatile_attributes_bin(
     for (const auto &attribute : attributes) {
         const std::uint16_t behavior = attribute.behavior();
         const auto layer_type = static_cast<std::uint8_t>(attribute.layer_type());
-        // TODO: does this code work as expected on a big-endian machine?
         const auto attribute_value = static_cast<std::uint16_t>((behavior & 0xff) | ((layer_type & 0xf) << 12));
         out << static_cast<std::uint8_t>(attribute_value);
         out << static_cast<std::uint8_t>(attribute_value >> 8);
@@ -419,7 +417,6 @@ ChainableResult<void> write_anim_frame_impl(
 
     // Get the appropriate frame
     const AnimFrame<PixelType> *frame_ptr = nullptr;
-    // TODO: don't hardcode "key" here, this whole pattern is bad tbh
     if (frame_name != "key") {
         frame_ptr = &anim.frame_for_name(frame_name);
     }
@@ -578,7 +575,6 @@ ChainableResult<void> ProjectTilesetArtifactWriter::commit()
         }
         catch (const std::filesystem::filesystem_error &) {
             // Critical error during restore - best effort cleanup
-            // TODO: emit a diagnostic here?
         }
 
         // Clean up temporary directories
@@ -642,7 +638,7 @@ ProjectTilesetArtifactWriter::write_metatile_attributes_bin(const ArtifactKey &d
             transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
         void,
         "Failed to compute transaction dest path.");
-    if (base_game_ == BaseGame::pokefirered) {
+    if (metatile_attr_size_ == attr::bytes_per_attr_firered) {
         return save_firered_metatile_attributes_bin(
             src.porymap_component().metatile_attributes_bin(), transaction_dest_path);
     }
@@ -676,7 +672,11 @@ ProjectTilesetArtifactWriter::write_porymap_pal_n(const ArtifactKey &dest_key, c
             transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
         void,
         "Failed to compute transaction dest path.");
-    return save_palette(src.porymap_component().pal_at(index), transaction_dest_path, *pal_saver_);
+    const auto &pal = src.porymap_component().pal_at(index);
+    if (pal.has_any_wildcards()) {
+        panic("attempted to save a Porymap palette containing wildcards");
+    }
+    return save_palette(pal, transaction_dest_path, *pal_saver_);
 }
 
 ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
@@ -806,7 +806,6 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
 {
     const auto &attributes = src.porytiles_component().metatile_attributes();
 
-    // TODO : make the default behavior value configurable
     constexpr std::uint16_t default_behavior = 0;
     constexpr std::uint8_t default_terrain = 0;
     constexpr std::uint8_t default_encounter = 0;
@@ -939,7 +938,9 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_anim_frame(
 ProjectTilesetArtifactWriter::write_porytiles_anim_params(const ArtifactKey &dest_key, const Tileset &src)
 {
     const auto &porytiles_anims = src.porytiles_component().anims();
-    if (porytiles_anims.empty()) {
+    const auto &primary_overrides = src.porytiles_component().primary_anim_overrides();
+
+    if (porytiles_anims.empty() && primary_overrides.empty()) {
         /*
          * Unlike in write_porymap_anim_params, we don't need to delete anything here. That's because anim.json is
          * within porytiles_src dir, which is written using an atomic move. If the new porytiles_src dir doesn't contain
@@ -954,6 +955,12 @@ ProjectTilesetArtifactWriter::write_porytiles_anim_params(const ArtifactKey &des
         anim_params[DynamicCasedName{anim_name}] = anim.params();
     }
 
+    // Convert primary_anim_overrides keys from std::string to DynamicCasedName
+    std::map<DynamicCasedName, std::vector<AnimOverrideEntry>> primary_refs;
+    for (const auto &[name, entries] : primary_overrides) {
+        primary_refs[DynamicCasedName{name}] = entries;
+    }
+
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
         compute_transaction_dest_path(
@@ -961,7 +968,7 @@ ProjectTilesetArtifactWriter::write_porytiles_anim_params(const ArtifactKey &des
         void,
         "Failed to compute transaction dest path.");
 
-    return anim_json_parser_->write(transaction_dest_path, anim_params);
+    return anim_json_parser_->write(transaction_dest_path, anim_params, primary_refs);
 }
 
 } // namespace porytiles2

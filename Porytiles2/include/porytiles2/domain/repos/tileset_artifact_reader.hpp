@@ -40,20 +40,6 @@ class TilesetArtifactReader {
     [[nodiscard]] virtual ChainableResult<void>
     read_porymap_pal_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const = 0;
 
-    /**
-     * @brief Reads a complete Porymap animation (params + frames) into the Porymap component.
-     *
-     * @details
-     * Parses animation parameters from C code (generated_anim_code.h or tileset_anims.c) for the
-     * specified animation, loads all frame images, and constructs a complete Animation in the
-     * Porymap component.
-     *
-     * @param dest The Tileset object to populate
-     * @param anim_name The name of the animation to load
-     * @param params_key Key to the C code file containing animation parameters
-     * @param frame_keys Ordered list of (frame_name, artifact_key) pairs for each unique frame
-     * @return Empty ChainableResult on success, otherwise an error chain
-     */
     [[nodiscard]] virtual ChainableResult<void> read_porymap_anim(
         Tileset &dest,
         const std::string &anim_name,
@@ -75,26 +61,15 @@ class TilesetArtifactReader {
     [[nodiscard]] virtual ChainableResult<void>
     read_porytiles_pal_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const = 0;
 
-    /**
-     * @brief Reads a complete Porytiles animation (params + frames) into the Porytiles component.
-     *
-     * @details
-     * Parses animation parameters from anim.json for the specified animation, loads all frame images,
-     * and constructs a complete Animation in the Porytiles component.
-     *
-     * @param dest The Tileset object to populate
-     * @param anim_name The name of the animation to load
-     * @param params_key Key to the anim.json file
-     * @param key_frame_key Key to the key frame, or @c std::nullopt for manual frame linking mode
-     * @param frame_keys Ordered list of (frame_name, artifact_key) pairs for each unique frame
-     * @return Empty ChainableResult on success, otherwise an error chain
-     */
     [[nodiscard]] virtual ChainableResult<void> read_porytiles_anim(
         Tileset &dest,
         const std::string &anim_name,
         const ArtifactKey &params_key,
         const std::optional<ArtifactKey> &key_frame_key,
         const std::vector<std::pair<std::string, ArtifactKey>> &frame_keys) const = 0;
+
+    [[nodiscard]] virtual ChainableResult<void>
+    read_porytiles_primary_anim_references(Tileset &dest, const ArtifactKey &params_key) const = 0;
 };
 
 } // namespace porytiles2

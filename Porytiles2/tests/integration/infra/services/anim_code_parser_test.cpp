@@ -438,6 +438,21 @@ TEST_F(AnimCodeParserTest, PreservesCasedNameForPorytilesManaged)
     EXPECT_EQ(anims.at(DynamicCasedName{"land_water_edge"}).cased_name().to_c_identifier(), "LandWaterEdge");
 }
 
+TEST_F(AnimCodeParserTest, FrlgVariantDoesNotCauseAmbiguousMatch)
+{
+    auto result = parser_.parse_from_callback(
+        "Resources/Tests/integration/shared/anim/frlg_variant_prefix_match.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
+
+    ASSERT_TRUE(result.has_value()) << "Parsing should succeed when FRLG variant exists";
+    const auto &anims = result.value();
+
+    EXPECT_EQ(anims.size(), 1u);
+    EXPECT_TRUE(anims.contains(DynamicCasedName{"flower"}));
+}
+
 // ── Error condition tests ─────────────────────────────────────────────────────
 
 TEST_F(AnimCodeParserTest, MultipleCallbacks)

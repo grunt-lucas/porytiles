@@ -17,7 +17,6 @@ namespace {
 
 using namespace porytiles2;
 
-// TODO: move this to a diagnostic stencil header
 [[nodiscard]] std::vector<std::string> make_highlighted_details(
     const SourcePosition &position,
     const TextFormatter &format,
@@ -130,10 +129,19 @@ using namespace porytiles2;
 extract_tile_offset(const std::vector<Token> &tokens, const TextFormatter &format)
 {
     for (std::size_t i = 0; i + 3 < tokens.size(); ++i) {
+        // Primary pattern: TILE_OFFSET_4BPP(<integer>)
         if (tokens[i].is(TokenType::identifier) && tokens[i].text() == "TILE_OFFSET_4BPP" &&
             tokens[i + 1].is(TokenType::left_paren) && tokens[i + 2].is(TokenType::integer_literal) &&
             tokens[i + 3].is(TokenType::right_paren)) {
             return tokens[i + 2].int_value();
+        }
+
+        // Secondary pattern: TILE_OFFSET_4BPP(NUM_TILES_IN_PRIMARY + <integer>)
+        if (i + 5 < tokens.size() && tokens[i].is(TokenType::identifier) && tokens[i].text() == "TILE_OFFSET_4BPP" &&
+            tokens[i + 1].is(TokenType::left_paren) && tokens[i + 2].is(TokenType::identifier) &&
+            tokens[i + 2].text() == "NUM_TILES_IN_PRIMARY" && tokens[i + 3].is(TokenType::plus) &&
+            tokens[i + 4].is(TokenType::integer_literal) && tokens[i + 5].is(TokenType::right_paren)) {
+            return tokens[i + 4].int_value();
         }
     }
 
@@ -147,8 +155,9 @@ extract_tile_offset(const std::vector<Token> &tokens, const TextFormatter &forma
 
     return FormattableError{std::vector<std::string>{
         format.format(
-            "Expected token pattern containing '{}'.",
-            FormatParam{"TILE_OFFSET_4BPP(<tile_offset_integer>)", Style::bold}),
+            "Expected token pattern containing '{}' or '{}'.",
+            FormatParam{"TILE_OFFSET_4BPP(<integer>)", Style::bold},
+            FormatParam{"TILE_OFFSET_4BPP(NUM_TILES_IN_PRIMARY + <integer>)", Style::bold}),
         format.format("Actual tokens: '{}'.", FormatParam{actual, Style::bold}),
     }};
 }
@@ -358,7 +367,9 @@ struct ParsedFunctions {
             callback_funcs_result};
     }
 
-    const auto &callback_funcs = callback_funcs_result.value();
+    auto &callback_funcs = callback_funcs_result.value();
+    // Narrow from prefix match to exact name match (parse_functions uses starts_with)
+    std::erase_if(callback_funcs, [&](const FunctionDefinition &func) { return func.name() != callback_func_name; });
     if (callback_funcs.empty()) {
         return std::string{};
     }
@@ -409,7 +420,9 @@ struct ParsedFunctions {
             driver_funcs_result};
     }
 
-    const auto &driver_funcs = driver_funcs_result.value();
+    auto &driver_funcs = driver_funcs_result.value();
+    // Narrow from prefix match to exact name match (parse_functions uses starts_with)
+    std::erase_if(driver_funcs, [&](const FunctionDefinition &func) { return func.name() != driver_func_name; });
     if (driver_funcs.empty()) {
         return FormattableError{"Driver function '{}' not found in file.", FormatParam{driver_func_name, Style::bold}};
     }
@@ -558,17 +571,7 @@ struct ParsedFunctions {
                 tile_count};
         }
 
-        // Handle the multi-Append VDests pattern, see pokeemerald QueueAnimTiles_Mauville_Flowers for example
         if (append_calls.size() > 1) {
-            /*
-             * TODO: this doesn't handle the typical VDests case, which instead looks like:
-             *
-             * AppendTilesetAnimToBuffer(gTilesetAnims_Rustboro_WindyWater[timer_div],
-             * gTilesetAnims_Rustboro_WindyWater_VDests[timer_mod], 4 * TILE_SIZE_4BPP);
-             *
-             * This is intrinsically handled by the extract_tile_x functions above. When we eventually support VDests,
-             * we'll need to update all these functions accordingly.
-             */
             return FormattableError{
                 "Queue function '{}' has multiple AppendTilesetAnimToBuffer calls (VDests pattern not yet supported).",
                 FormatParam{condition.called_func, Style::bold}};

@@ -3,11 +3,7 @@
 
 #include "porytiles2/infra/config/yaml_file_provider.hpp"
 
-/*
- * TODO: rebuild this test class
- */
-
-TEST(YamlFileProviderTest, TODO)
+TEST(YamlFileProviderTest, PlaceholderTest)
 {
     EXPECT_TRUE(true);
 }

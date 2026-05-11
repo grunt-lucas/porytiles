@@ -32,6 +32,7 @@ venv/**
 # Ignore porytiles docs projects
 porytiles-user-docs
 porytiles-dev-docs
+porytiles.wiki
 
 # Ignore Gen III decomp projects
 pokeemerald

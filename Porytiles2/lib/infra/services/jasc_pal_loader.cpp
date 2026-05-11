@@ -1,6 +1,5 @@
 #include "porytiles2/infra/services/jasc_pal_loader.hpp"
 
-#include <algorithm>
 #include <expected>
 #include <filesystem>
 #include <fstream>
@@ -116,7 +115,7 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
         err_lines.push_back(format.format(
             "{}: file too short, expected at least 3 header lines", FormatParam{path.string(), Style::bold}));
         err_lines.emplace_back();
-        std::ranges::copy(file_printer.print(lines, std::vector<std::size_t>{0}), std::back_inserter(err_lines));
+        err_lines.append_range(file_printer.print(lines, std::vector<std::size_t>{0}));
         return FormattableError{std::move(err_lines)};
     }
 
@@ -131,7 +130,7 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
             FormatParam{"1", Style::bold},
             FormatParam{"JASC-PAL", Style::bold}));
         err_lines.emplace_back();
-        std::ranges::copy(file_printer.print(lines, std::vector<std::size_t>{0}), std::back_inserter(err_lines));
+        err_lines.append_range(file_printer.print(lines, std::vector<std::size_t>{0}));
         return FormattableError{std::move(err_lines)};
     }
 
@@ -144,7 +143,7 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
             FormatParam{"2", Style::bold},
             FormatParam{"0100", Style::bold}));
         err_lines.emplace_back();
-        std::ranges::copy(file_printer.print(lines, std::vector<std::size_t>{1}), std::back_inserter(err_lines));
+        err_lines.append_range(file_printer.print(lines, std::vector<std::size_t>{1}));
         return FormattableError{std::move(err_lines)};
     }
 
@@ -157,7 +156,7 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
             FormatParam{path.string(), Style::bold},
             FormatParam{"3", Style::bold}));
         err_lines.emplace_back();
-        std::ranges::copy(file_printer.print(lines, std::vector<std::size_t>{2}), std::back_inserter(err_lines));
+        err_lines.append_range(file_printer.print(lines, std::vector<std::size_t>{2}));
         return FormattableError{std::move(err_lines)};
     }
     const auto declared_size = declared_size_result.value();
@@ -170,7 +169,7 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
             FormatParam{pal::max_size, Style::bold},
             FormatParam{declared_size, Style::bold}));
         err_lines.emplace_back();
-        std::ranges::copy(file_printer.print(lines, std::vector<std::size_t>{2}), std::back_inserter(err_lines));
+        err_lines.append_range(file_printer.print(lines, std::vector<std::size_t>{2}));
         return FormattableError{std::move(err_lines)};
     }
 
@@ -187,7 +186,7 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
                 FormatParam{path.string(), Style::bold},
                 FormatParam{line_index + 1, Style::bold}));
             err_lines.emplace_back();
-            std::ranges::copy(file_printer.print(lines, std::vector{line_index}), std::back_inserter(err_lines));
+            err_lines.append_range(file_printer.print(lines, std::vector{line_index}));
             return ChainableResult<Palette<Rgba32, pal::max_size>>{
                 FormattableError{std::move(err_lines)}, color_result};
         }
@@ -204,7 +203,7 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
                     FormatParam{path.string(), Style::bold},
                     FormatParam{line_index + 1, Style::bold}));
                 err_lines.emplace_back();
-                std::ranges::copy(file_printer.print(lines, std::vector{line_index}), std::back_inserter(err_lines));
+                err_lines.append_range(file_printer.print(lines, std::vector{line_index}));
                 return FormattableError{std::move(err_lines)};
             }
             pal.set_wildcard(color_index);
@@ -219,7 +218,7 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
             FormatParam{declared_size, Style::bold},
             FormatParam{actual_color_count}));
         err_lines.emplace_back();
-        std::ranges::copy(file_printer.print(lines, std::vector<std::size_t>{2}), std::back_inserter(err_lines));
+        err_lines.append_range(file_printer.print(lines, std::vector<std::size_t>{2}));
         return FormattableError{std::move(err_lines)};
     }
 

@@ -2,7 +2,8 @@
 
 #include <filesystem>
 
-#include "porytiles2/domain/models/base_game.hpp"
+#include <cstddef>
+
 #include "porytiles2/domain/services/primary_tileset_importer.hpp"
 #include "porytiles2/infra/services/file_pal_loader.hpp"
 #include "porytiles2/infra/services/png_indexed_image_loader.hpp"
@@ -39,7 +40,7 @@ class ProjectPrimaryTilesetImporter : public PrimaryTilesetImporter {
      * @brief Constructs a ProjectPrimaryTilesetImporter with required dependencies.
      *
      * @param project_root Path to the pokeemerald project root directory
-     * @param base_game The detected base game (pokeemerald or pokefirered), used to select the correct attribute parser
+     * @param metatile_attr_size Bytes per metatile attribute entry (2 for Emerald-family, 4 for FireRed)
      * @param config Domain configuration containing tileset parameters and paths
      * @param format Text formatter for error message styling
      * @param diag User diagnostics for warnings and informational messages
@@ -51,7 +52,7 @@ class ProjectPrimaryTilesetImporter : public PrimaryTilesetImporter {
      */
     explicit ProjectPrimaryTilesetImporter(
         std::filesystem::path project_root,
-        BaseGame base_game,
+        std::size_t metatile_attr_size,
         gsl::not_null<const DomainConfig *> config,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag,
@@ -60,9 +61,9 @@ class ProjectPrimaryTilesetImporter : public PrimaryTilesetImporter {
         gsl::not_null<const ProjectTilesetMetadataProvider *> metadata_provider,
         gsl::not_null<const PngIndexedImageLoader *> png_loader,
         gsl::not_null<const FilePalLoader *> pal_loader)
-        : project_root_{std::move(project_root)}, base_game_{base_game}, config_{config}, format_{format}, diag_{diag},
-          tile_printer_{tile_printer}, pal_printer_{pal_printer}, metadata_provider_{metadata_provider},
-          png_loader_{png_loader}, pal_loader_{pal_loader}
+        : project_root_{std::move(project_root)}, metatile_attr_size_{metatile_attr_size}, config_{config},
+          format_{format}, diag_{diag}, tile_printer_{tile_printer}, pal_printer_{pal_printer},
+          metadata_provider_{metadata_provider}, png_loader_{png_loader}, pal_loader_{pal_loader}
     {
     }
 
@@ -87,7 +88,7 @@ class ProjectPrimaryTilesetImporter : public PrimaryTilesetImporter {
 
   private:
     std::filesystem::path project_root_;
-    const BaseGame base_game_;
+    const std::size_t metatile_attr_size_;
     const DomainConfig *config_;
     const TextFormatter *format_;
     const UserDiagnostics *diag_;

@@ -163,10 +163,29 @@ LayerValue<PerAnimOverrides> DefaultProvider::per_anim_overrides(
     return LayerValue<PerAnimOverrides>::valid(PerAnimOverrides{}, "Per-Animation Overrides", source_info);
 }
 
+LayerValue<bool> DefaultProvider::cross_tileset_anim_linking(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<bool>::valid(true, "Cross-Tileset Animation Linking", source_info);
+}
+
 LayerValue<bool> DefaultProvider::verify_checksums(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<bool>::valid(true, "Verify Checksums", source_info);
+}
+
+LayerValue<PrimaryPairingMode> DefaultProvider::primary_pairing_mode(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<PrimaryPairingMode>::valid(PrimaryPairingMode::automatic, "Primary Pairing Mode", source_info);
+}
+
+LayerValue<std::vector<std::string>> DefaultProvider::primary_pairing_partners(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::vector<std::string>>::valid(
+        std::vector<std::string>{}, "Primary Pairing Partners", source_info);
 }
 
 LayerValue<std::vector<std::string>> DefaultProvider::diagnostic_warnings_exclude(

@@ -1,5 +1,6 @@
 #pragma once
 
+#include <memory>
 #include <string>
 
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
@@ -28,12 +29,26 @@ namespace porytiles2 {
  *   uv run Scripts/generate_config.py
  */
 
+class ConfigProvider; // forward declaration to avoid domain -> infra dependency
+
 /**
  * @brief Interface that defines a complete domain layer configuration.
  */
 class DomainConfig {
   public:
     virtual ~DomainConfig() = default;
+
+    /**
+     * @brief Prepends a @c ConfigProvider to the provider chain at highest priority.
+     *
+     * @details
+     * Allows use cases to layer an override provider on top of the user's configuration for operations that run the
+     * compiler on Porytiles's own behalf. Implementations must invalidate any cached value resolutions so that
+     * subsequent reads consult the newly prepended provider.
+     *
+     * @param provider The provider to prepend. Must be non-null.
+     */
+    virtual void add_provider(std::unique_ptr<ConfigProvider> provider) = 0;
 
     // Public method with cross-field validation only (Tier 3)
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
@@ -300,6 +315,14 @@ class DomainConfig {
     per_anim_overrides(ConfigScopeType type, const std::string &scope) const
     {
         auto validated_val = per_anim_overrides_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    cross_tileset_anim_linking(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = cross_tileset_anim_linking_validated(type, scope);
         return validated_val;
     }
 
@@ -615,6 +638,18 @@ class DomainConfig {
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<PerAnimOverrides>>
     per_anim_overrides_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
+    cross_tileset_anim_linking_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = cross_tileset_anim_linking_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
+    cross_tileset_anim_linking_raw(ConfigScopeType type, const std::string &scope) const = 0;
 };
 
 } // namespace porytiles2

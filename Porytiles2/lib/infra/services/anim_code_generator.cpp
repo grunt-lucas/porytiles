@@ -73,8 +73,8 @@ generate_frame_array(const std::string &tileset_name, const DynamicCasedName &an
     return out.str();
 }
 
-[[nodiscard]] std::string
-generate_queue_function(const std::string &tileset_name, const DynamicCasedName &anim_name, const AnimParams &params)
+[[nodiscard]] std::string generate_queue_function(
+    const std::string &tileset_name, const DynamicCasedName &anim_name, const AnimParams &params, bool is_primary)
 {
     std::ostringstream out;
 
@@ -84,13 +84,17 @@ generate_queue_function(const std::string &tileset_name, const DynamicCasedName 
     const std::string func_name =
         std::format("QueueAnimTiles_{}{}_{}", anim::porytiles_managed_prefix, tileset_name, pascal_anim_name);
 
+    const std::string tile_offset_expr =
+        is_primary ? std::format("TILE_OFFSET_4BPP({})", params.tile_offset())
+                   : std::format("TILE_OFFSET_4BPP(NUM_TILES_IN_PRIMARY + {})", params.tile_offset());
+
     out << std::format("static void {}(u16 timer)\n", func_name);
     out << "{\n";
     out << std::format("    u16 i = timer % ARRAY_COUNT({});\n", array_name);
     out << std::format(
-        "    AppendTilesetAnimToBuffer({}[i], (u16 *)(BG_VRAM + TILE_OFFSET_4BPP({})), {} * TILE_SIZE_4BPP);\n",
+        "    AppendTilesetAnimToBuffer({}[i], (u16 *)(BG_VRAM + {}), {} * TILE_SIZE_4BPP);\n",
         array_name,
-        params.tile_offset(),
+        tile_offset_expr,
         params.tile_count());
     out << "}\n";
 
@@ -188,9 +192,6 @@ ChainableResult<std::string> AnimCodeGenerator::generate(
 
     std::ostringstream out;
 
-    /*
-     * TODO: fix all this "gTileset_" handling
-     */
     const std::string tileset_name_no_prefix = tileset_name.substr(std::size("gTileset_") - 1);
     const std::string pascal_tileset_name = DynamicCasedName{tileset_name_no_prefix}.to_pascal_case();
 
@@ -236,7 +237,7 @@ ChainableResult<std::string> AnimCodeGenerator::generate(
     out << "// ============================================\n\n";
 
     for (const auto &[anim_name, params] : animations) {
-        out << generate_queue_function(pascal_tileset_name, anim_name, params);
+        out << generate_queue_function(pascal_tileset_name, anim_name, params, is_primary);
         out << "\n";
     }
 

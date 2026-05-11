@@ -17,7 +17,6 @@ namespace {
 
 using namespace porytiles2;
 
-// TODO: don't hardcode this
 const std::filesystem::path layouts_json_rel_path = std::filesystem::path{"data"} / "layouts" / "layouts.json";
 
 /**
@@ -323,6 +322,14 @@ ProjectLayoutMetadataProvider::blockdata_filepath(const std::string &layout_name
             format_),
         std::filesystem::path);
     return project_root_ / layout->blockdata_filepath();
+}
+
+void ProjectLayoutMetadataProvider::invalidate_metadata_cache() const
+{
+    layouts_parsed_ = false;
+    layouts_table_label_.clear();
+    layout_entries_.clear();
+    layout_index_.clear();
 }
 
 } // namespace porytiles2

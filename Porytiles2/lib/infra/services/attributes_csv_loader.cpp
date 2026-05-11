@@ -1,6 +1,5 @@
 #include "porytiles2/infra/services/attributes_csv_loader.hpp"
 
-#include <algorithm>
 #include <filesystem>
 #include <fstream>
 #include <unordered_map>
@@ -40,7 +39,7 @@ ChainableResult<CsvRow> parse_emerald_csv_row(
             FormatParam{line_index + 1, Style::bold},
             FormatParam{columns.size()}));
         err_lines.emplace_back();
-        std::ranges::copy(file_printer.print(all_lines, std::vector{line_index}), std::back_inserter(err_lines));
+        err_lines.append_range(file_printer.print(all_lines, std::vector{line_index}));
         return FormattableError{std::move(err_lines)};
     }
 
@@ -57,7 +56,7 @@ ChainableResult<CsvRow> parse_emerald_csv_row(
             FormatParam{columns[0], Style::bold},
             FormatParam{id_result.error()}));
         err_lines.emplace_back();
-        std::ranges::copy(file_printer.print(all_lines, std::vector{line_index}), std::back_inserter(err_lines));
+        err_lines.append_range(file_printer.print(all_lines, std::vector{line_index}));
         return FormattableError{std::move(err_lines)};
     }
 
@@ -69,7 +68,7 @@ ChainableResult<CsvRow> parse_emerald_csv_row(
             FormatParam{line_index + 1, Style::bold},
             FormatParam{columns[0], Style::bold}));
         err_lines.emplace_back();
-        std::ranges::copy(file_printer.print(all_lines, std::vector{line_index}), std::back_inserter(err_lines));
+        err_lines.append_range(file_printer.print(all_lines, std::vector{line_index}));
         return FormattableError{std::move(err_lines)};
     }
 
@@ -94,7 +93,7 @@ ChainableResult<CsvRow> parse_firered_csv_row(
             FormatParam{line_index + 1, Style::bold},
             FormatParam{columns.size()}));
         err_lines.emplace_back();
-        std::ranges::copy(file_printer.print(all_lines, std::vector{line_index}), std::back_inserter(err_lines));
+        err_lines.append_range(file_printer.print(all_lines, std::vector{line_index}));
         return FormattableError{std::move(err_lines)};
     }
 
@@ -113,7 +112,7 @@ ChainableResult<CsvRow> parse_firered_csv_row(
             FormatParam{columns[0], Style::bold},
             FormatParam{id_result.error()}));
         err_lines.emplace_back();
-        std::ranges::copy(file_printer.print(all_lines, std::vector{line_index}), std::back_inserter(err_lines));
+        err_lines.append_range(file_printer.print(all_lines, std::vector{line_index}));
         return FormattableError{std::move(err_lines)};
     }
 
@@ -125,7 +124,7 @@ ChainableResult<CsvRow> parse_firered_csv_row(
             FormatParam{line_index + 1, Style::bold},
             FormatParam{columns[0], Style::bold}));
         err_lines.emplace_back();
-        std::ranges::copy(file_printer.print(all_lines, std::vector{line_index}), std::back_inserter(err_lines));
+        err_lines.append_range(file_printer.print(all_lines, std::vector{line_index}));
         return FormattableError{std::move(err_lines)};
     }
 
@@ -185,7 +184,7 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
             FormatParam{"1", Style::bold},
             FormatParam{lines[0], Style::bold}));
         err_lines.emplace_back();
-        std::ranges::copy(file_printer.print(lines, std::vector<std::size_t>{0}), std::back_inserter(err_lines));
+        err_lines.append_range(file_printer.print(lines, std::vector<std::size_t>{0}));
         return FormattableError{std::move(err_lines)};
     }
 
@@ -199,7 +198,7 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
                 FormatParam{"1", Style::bold},
                 FormatParam{to_string(base_game.value()), Style::bold}));
             err_lines.emplace_back();
-            std::ranges::copy(file_printer.print(lines, std::vector<std::size_t>{0}), std::back_inserter(err_lines));
+            err_lines.append_range(file_printer.print(lines, std::vector<std::size_t>{0}));
             return FormattableError{std::move(err_lines)};
         }
         if (csv_format == CsvFormat::emerald && base_game.value() == BaseGame::pokefirered) {
@@ -210,7 +209,7 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
                 FormatParam{"1", Style::bold},
                 FormatParam{to_string(base_game.value()), Style::bold}));
             err_lines.emplace_back();
-            std::ranges::copy(file_printer.print(lines, std::vector<std::size_t>{0}), std::back_inserter(err_lines));
+            err_lines.append_range(file_printer.print(lines, std::vector<std::size_t>{0}));
             return FormattableError{std::move(err_lines)};
         }
     }
@@ -261,7 +260,7 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
             err_lines.emplace_back();
 
             // File context for duplicate
-            std::ranges::copy(file_printer.print(lines, std::vector{line_index}), std::back_inserter(err_lines));
+            err_lines.append_range(file_printer.print(lines, std::vector{line_index}));
             err_lines.emplace_back();
 
             // Note about original location
@@ -271,8 +270,7 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
                 FormatParam{original_line_index + 1}));
 
             // File context for original
-            std::ranges::copy(
-                file_printer.print(lines, std::vector{original_line_index}), std::back_inserter(err_lines));
+            err_lines.append_range(file_printer.print(lines, std::vector{original_line_index}));
 
             return FormattableError{std::move(err_lines)};
         }
@@ -287,7 +285,7 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
                 FormatParam{line_index + 1, Style::bold},
                 FormatParam{row.behavior, Style::bold}));
             err_lines.emplace_back();
-            std::ranges::copy(file_printer.print(lines, std::vector{line_index}), std::back_inserter(err_lines));
+            err_lines.append_range(file_printer.print(lines, std::vector{line_index}));
             return ChainableResult<std::map<std::size_t, MetatileAttribute>>{
                 FormattableError{std::move(err_lines)}, behavior_value};
         }
@@ -303,7 +301,7 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
                     FormatParam{line_index + 1, Style::bold},
                     FormatParam{row.terrain_type, Style::bold}));
                 err_lines.emplace_back();
-                std::ranges::copy(file_printer.print(lines, std::vector{line_index}), std::back_inserter(err_lines));
+                err_lines.append_range(file_printer.print(lines, std::vector{line_index}));
                 return ChainableResult<std::map<std::size_t, MetatileAttribute>>{
                     FormattableError{std::move(err_lines)}, terrain_value};
             }
@@ -318,7 +316,7 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
                     FormatParam{line_index + 1, Style::bold},
                     FormatParam{row.encounter_type, Style::bold}));
                 err_lines.emplace_back();
-                std::ranges::copy(file_printer.print(lines, std::vector{line_index}), std::back_inserter(err_lines));
+                err_lines.append_range(file_printer.print(lines, std::vector{line_index}));
                 return ChainableResult<std::map<std::size_t, MetatileAttribute>>{
                     FormattableError{std::move(err_lines)}, encounter_value};
             }

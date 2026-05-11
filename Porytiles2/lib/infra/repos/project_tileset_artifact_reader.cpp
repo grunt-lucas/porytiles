@@ -9,7 +9,6 @@
 #include <optional>
 
 #include "porytiles2/domain/models/animation.hpp"
-#include "porytiles2/domain/models/base_game.hpp"
 #include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/domain/models/porytiles_tileset_component.hpp"
 #include "porytiles2/domain/models/tilemap_entry.hpp"
@@ -38,17 +37,12 @@ ChainableResult<void> import_layer_png(
     auto image_result = loader.load_from_file((project_root / src_key.key()).string());
     if (!image_result.has_value()) {
         switch (image_result.error().type()) {
-            // TODO: this shouldn't load a blank image, it should just error. To support the "import" case, we're going
-            // to create a special tileset operation called "import" which is distinct from "load", and which assumes a
-            // Porytiles component is not present.
         case ImageLoadError::Type::file_not_found:
-            layer_img_setter(dest.porytiles_component(), Image<Rgba32>{});
-            return {};
         case ImageLoadError::Type::unsupported_channel_count:
-        case ImageLoadError::Type::other_load_error: {
-            const auto error_msg = std::format("failed to load layer image: {}", src_key.key());
-            return ChainableResult<void>{FormattableError{error_msg}, image_result};
-        }
+        case ImageLoadError::Type::other_load_error:
+            return ChainableResult<void>{
+                FormattableError{"Failed to load layer image '{}'.", FormatParam{src_key.key(), Style::bold}},
+                image_result};
         default:
             panic("unhandled ImageLoadError type");
         }
@@ -174,8 +168,8 @@ ProjectTilesetArtifactReader::read_metatile_attributes_bin(Tileset &dest, const 
     const auto path = project_root_ / src_key.key();
     PT_TRY_ASSIGN_CHAIN_ERR(
         attributes,
-        base_game_ == BaseGame::pokefirered ? parse_firered_metatile_attributes(path)
-                                            : parse_emerald_metatile_attributes(path),
+        metatile_attr_size_ == attr::bytes_per_attr_firered ? parse_firered_metatile_attributes(path)
+                                                            : parse_emerald_metatile_attributes(path),
         void,
         "Failed to read metatile_attributes.bin.");
     for (auto &attr : attributes) {
@@ -351,15 +345,6 @@ ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const Artifact
     Animation<Rgba32> anim{anim_name, params};
     dest.porytiles_component().add_anim(std::move(anim));
 
-    /*
-     * TODO: I think this logic technically double loads the key frame. We can probably remove the:
-     *   const ArtifactKey &key_frame_key,
-     * param, since it's the caller's responsibility to make sure the key frame actually exists.
-     *
-     * At some point, if we refactor key frame handling to be a user-selected frame, we'll have to rethink all this
-     * anyway.
-     */
-
     // Load key frame using the unified template helper (only present for automatic/hybrid frame linking)
     if (key_frame_key.has_value()) {
         PT_TRY_CALL_PASS_ERR(
@@ -390,6 +375,31 @@ ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const Artifact
             void);
     }
 
+    return {};
+}
+
+[[nodiscard]] ChainableResult<void>
+ProjectTilesetArtifactReader::read_porytiles_primary_anim_references(Tileset &dest, const ArtifactKey &params_key) const
+{
+    const auto json_path = project_root_ / params_key.key();
+
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        parsed_refs,
+        anim_json_parser_->parse_primary_references(json_path),
+        void,
+        "{}: Failed to parse primary animation references.",
+        FormatParam(json_path, Style::bold));
+
+    if (parsed_refs.empty()) {
+        return {};
+    }
+
+    std::map<std::string, std::vector<AnimOverrideEntry>> converted;
+    for (auto &[cased_name, entries] : parsed_refs) {
+        converted[cased_name.to_snake_case()] = std::move(entries);
+    }
+
+    dest.porytiles_component().primary_anim_overrides(std::move(converted));
     return {};
 }
 

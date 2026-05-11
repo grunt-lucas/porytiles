@@ -58,7 +58,8 @@ class PorytilesTilesetManager {
      * @pre tileset_name must not already exist in headers.h
      * @return a ChainableResult indicating success or containing error details
      */
-    [[nodiscard]] virtual ChainableResult<void> persist_managed_new(const std::string &tileset_name) const = 0;
+    [[nodiscard]] virtual ChainableResult<void>
+    persist_managed_new(const std::string &tileset_name, bool is_secondary = false) const = 0;
 
     /**
      * @brief Wires animation code for a tileset that already has its manifest persisted.

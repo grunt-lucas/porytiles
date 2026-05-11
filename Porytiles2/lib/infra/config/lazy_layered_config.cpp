@@ -98,6 +98,16 @@ void dump_single_config_value(
 
 } // anonymous namespace
 
+void LazyLayeredConfig::add_provider(std::unique_ptr<ConfigProvider> provider)
+{
+    providers_.insert(providers_.begin(), std::move(provider));
+    cache_.clear();
+    cache_value_strings_.clear();
+    source_key_.clear();
+    source_.clear();
+    source_details_.clear();
+}
+
 void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, const std::string &scope) const
 {
     const std::string header_str = "Configuration dump for {} '{}'";
@@ -151,7 +161,12 @@ void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, con
     dump_single_config_value(out, *format_, "Global Frame Linking", global_frame_linking_provenance_chain(type, scope));
     dump_single_config_value(
         out, *format_, "Per-Animation Overrides", per_anim_overrides_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Cross-Tileset Animation Linking", cross_tileset_anim_linking_provenance_chain(type, scope));
     dump_single_config_value(out, *format_, "Verify Checksums", verify_checksums_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Primary Pairing Mode", primary_pairing_mode_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Primary Pairing Partners", primary_pairing_partners_provenance_chain(type, scope));
     dump_single_config_value(
         out, *format_, "Diagnostic Warnings Exclude", diagnostic_warnings_exclude_provenance_chain(type, scope));
     dump_single_config_value(
@@ -562,6 +577,19 @@ LazyLayeredConfig::per_anim_overrides_raw(ConfigScopeType type, const std::strin
 }
 
 ChainableResult<ConfigValue<bool>>
+LazyLayeredConfig::cross_tileset_anim_linking_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<bool>(
+        key, "Cross-Tileset Animation Linking", [&type, &scope](const ConfigProvider &provider) {
+            return provider.cross_tileset_anim_linking(type, scope);
+        });
+}
+
+ChainableResult<ConfigValue<bool>>
 LazyLayeredConfig::verify_checksums_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
@@ -571,6 +599,32 @@ LazyLayeredConfig::verify_checksums_raw(ConfigScopeType type, const std::string 
     return resolve_config_value<bool>(key, "Verify Checksums", [&type, &scope](const ConfigProvider &provider) {
         return provider.verify_checksums(type, scope);
     });
+}
+
+ChainableResult<ConfigValue<PrimaryPairingMode>>
+LazyLayeredConfig::primary_pairing_mode_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<PrimaryPairingMode>(
+        key, "Primary Pairing Mode", [&type, &scope](const ConfigProvider &provider) {
+            return provider.primary_pairing_mode(type, scope);
+        });
+}
+
+ChainableResult<ConfigValue<std::vector<std::string>>>
+LazyLayeredConfig::primary_pairing_partners_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<std::vector<std::string>>(
+        key, "Primary Pairing Partners", [&type, &scope](const ConfigProvider &provider) {
+            return provider.primary_pairing_partners(type, scope);
+        });
 }
 
 ChainableResult<ConfigValue<std::vector<std::string>>>
@@ -872,10 +926,31 @@ LazyLayeredConfig::per_anim_overrides_provenance_chain(ConfigScopeType type, con
 }
 
 std::vector<ProvenanceChainLink<bool>>
+LazyLayeredConfig::cross_tileset_anim_linking_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<bool>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.cross_tileset_anim_linking(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<bool>>
 LazyLayeredConfig::verify_checksums_provenance_chain(ConfigScopeType type, const std::string &scope) const
 {
     return collect_provenance_chain<bool>(
         [&type, &scope](const ConfigProvider &provider) { return provider.verify_checksums(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<PrimaryPairingMode>>
+LazyLayeredConfig::primary_pairing_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<PrimaryPairingMode>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.primary_pairing_mode(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::vector<std::string>>>
+LazyLayeredConfig::primary_pairing_partners_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::vector<std::string>>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.primary_pairing_partners(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<std::vector<std::string>>>

@@ -15,6 +15,8 @@ PackableTile::PackableTile(RegularId id, ColorSet color_set) : id_{id}, color_se
 
 PackableTile::PackableTile(AnimId id, ColorSet color_set) : id_{id}, color_set_{std::move(color_set)} {}
 
+PackableTile::PackableTile(PrimaryTileId id, ColorSet color_set) : id_{id}, color_set_{std::move(color_set)} {}
+
 PackableTile::PackableTile(Id id, ColorSet color_set) : id_{std::move(id)}, color_set_{std::move(color_set)} {}
 
 const std::string &PackableTile::hint_name() const

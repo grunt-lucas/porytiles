@@ -180,6 +180,183 @@ TEST(PixelTileTests, EqualsIgnoringMixedExtrinsicTransparency)
     EXPECT_TRUE(tile2.equals_ignoring_transparency(tile1, rgba_magenta));
 }
 
+TEST(PixelTileTests, EqualsIgnoringDistinctExtrinsicsBothTransparent)
+{
+    PixelTile<Rgba32> tile1{};
+    PixelTile<Rgba32> tile2{};
+
+    // tile1 is entirely magenta (extrinsically transparent under magenta).
+    // tile2 is entirely cyan (extrinsically transparent under cyan).
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        tile1.set(i, rgba_magenta);
+        tile2.set(i, rgba_cyan);
+    }
+
+    // Each tile is fully transparent under its own extrinsic, so the split-extrinsic
+    // overload must consider them equal in both directions.
+    EXPECT_TRUE(tile1.equals_ignoring_transparency(tile2, rgba_magenta, rgba_cyan));
+    EXPECT_TRUE(tile2.equals_ignoring_transparency(tile1, rgba_cyan, rgba_magenta));
+
+    // The single-extrinsic overload cannot reach the same conclusion: whichever extrinsic
+    // is chosen, the other tile's pixels look opaque and fail the per-pixel comparison.
+    EXPECT_FALSE(tile1.equals_ignoring_transparency(tile2, rgba_magenta));
+    EXPECT_FALSE(tile1.equals_ignoring_transparency(tile2, rgba_cyan));
+}
+
+TEST(PixelTileTests, EqualsIgnoringDistinctExtrinsicsOpaqueIdentical)
+{
+    PixelTile<Rgba32> tile1{};
+    PixelTile<Rgba32> tile2{};
+
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        tile1.set(i, Rgba32{100, 150, 200});
+        tile2.set(i, Rgba32{100, 150, 200});
+    }
+
+    EXPECT_TRUE(tile1.equals_ignoring_transparency(tile2, rgba_magenta, rgba_cyan));
+    EXPECT_TRUE(tile1.equals_ignoring_transparency(tile2, rgba_cyan, rgba_magenta));
+}
+
+TEST(PixelTileTests, EqualsIgnoringDistinctExtrinsicsDetectsOpaqueDiff)
+{
+    PixelTile<Rgba32> tile1{};
+    PixelTile<Rgba32> tile2{};
+
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        tile1.set(i, Rgba32{100, 150, 200});
+        tile2.set(i, Rgba32{100, 150, 200});
+    }
+
+    tile2.set(20, Rgba32{100, 150, 201});
+
+    EXPECT_FALSE(tile1.equals_ignoring_transparency(tile2, rgba_magenta, rgba_cyan));
+    EXPECT_FALSE(tile2.equals_ignoring_transparency(tile1, rgba_cyan, rgba_magenta));
+}
+
+TEST(PixelTileTests, EqualsIgnoringDistinctExtrinsicsMixed)
+{
+    PixelTile<Rgba32> tile1{};
+    PixelTile<Rgba32> tile2{};
+
+    // Alternate between "each tile transparent under its own extrinsic" positions and
+    // "identical opaque color" positions.
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        if (i % 2 == 0) {
+            tile1.set(i, rgba_magenta);
+            tile2.set(i, rgba_cyan);
+        }
+        else {
+            tile1.set(i, rgba_yellow);
+            tile2.set(i, rgba_yellow);
+        }
+    }
+
+    EXPECT_TRUE(tile1.equals_ignoring_transparency(tile2, rgba_magenta, rgba_cyan));
+    EXPECT_TRUE(tile2.equals_ignoring_transparency(tile1, rgba_cyan, rgba_magenta));
+}
+
+TEST(PixelTileTests, EqualsIgnoringDistinctExtrinsicsFalseWhenSingleTrue)
+{
+    PixelTile<Rgba32> tile1{};
+    PixelTile<Rgba32> tile2{};
+
+    // tile1 is intrinsically transparent everywhere (alpha=0).
+    // tile2 is magenta everywhere (opaque alpha).
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        tile1.set(i, Rgba32{0, 0, 0, Rgba32::alpha_transparent});
+        tile2.set(i, rgba_magenta);
+    }
+
+    // With a single magenta extrinsic, both tiles read as fully transparent -> equal.
+    EXPECT_TRUE(tile1.equals_ignoring_transparency(tile2, rgba_magenta));
+
+    // Split extrinsics force tile2's magenta pixels to be compared under cyan, where
+    // they are no longer extrinsically transparent. The per-pixel comparison then
+    // fails because alpha=0 black is not equal to opaque magenta.
+    EXPECT_FALSE(tile1.equals_ignoring_transparency(tile2, rgba_magenta, rgba_cyan));
+}
+
+TEST(PixelTileTests, CrossEtCompareIsStrictWeakOrdering)
+{
+    // Reflexivity: compare(a, a) under a single ET must be equivalent.
+    PixelTile<Rgba32> tile{};
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        tile.set(i, Rgba32{100, 150, 200});
+    }
+    tile.set(0, rgba_magenta);
+    EXPECT_EQ(
+        PixelTile<Rgba32>::cross_et_compare(tile, rgba_magenta, tile, rgba_magenta), std::weak_ordering::equivalent);
+
+    // Asymmetry: if a < b then b > a.
+    PixelTile<Rgba32> opaque_lo{};
+    PixelTile<Rgba32> opaque_hi{};
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        opaque_lo.set(i, Rgba32{10, 10, 10});
+        opaque_hi.set(i, Rgba32{20, 20, 20});
+    }
+    const auto lo_vs_hi = PixelTile<Rgba32>::cross_et_compare(opaque_lo, rgba_magenta, opaque_hi, rgba_magenta);
+    const auto hi_vs_lo = PixelTile<Rgba32>::cross_et_compare(opaque_hi, rgba_magenta, opaque_lo, rgba_magenta);
+    EXPECT_EQ(lo_vs_hi, std::weak_ordering::less);
+    EXPECT_EQ(hi_vs_lo, std::weak_ordering::greater);
+
+    // Transitivity spot-check: a < b < c implies a < c.
+    PixelTile<Rgba32> mid{};
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        mid.set(i, Rgba32{15, 15, 15});
+    }
+    EXPECT_EQ(
+        PixelTile<Rgba32>::cross_et_compare(opaque_lo, rgba_magenta, mid, rgba_magenta), std::weak_ordering::less);
+    EXPECT_EQ(
+        PixelTile<Rgba32>::cross_et_compare(mid, rgba_magenta, opaque_hi, rgba_magenta), std::weak_ordering::less);
+    EXPECT_EQ(
+        PixelTile<Rgba32>::cross_et_compare(opaque_lo, rgba_magenta, opaque_hi, rgba_magenta),
+        std::weak_ordering::less);
+}
+
+TEST(PixelTileTests, CrossEtCompareEquivalentUnderDifferentEts)
+{
+    // Two tiles with identical opaque-pixel patterns but different transparent colors
+    // must compare equivalent under the split-ET relation.
+    PixelTile<Rgba32> magenta_bg{};
+    PixelTile<Rgba32> cyan_bg{};
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        magenta_bg.set(i, rgba_magenta);
+        cyan_bg.set(i, rgba_cyan);
+    }
+    // Sprinkle identical opaque pixels at the same positions.
+    magenta_bg.set(3, Rgba32{50, 100, 150});
+    cyan_bg.set(3, Rgba32{50, 100, 150});
+    magenta_bg.set(17, Rgba32{200, 10, 20});
+    cyan_bg.set(17, Rgba32{200, 10, 20});
+
+    EXPECT_EQ(
+        PixelTile<Rgba32>::cross_et_compare(magenta_bg, rgba_magenta, cyan_bg, rgba_cyan),
+        std::weak_ordering::equivalent);
+    EXPECT_EQ(
+        PixelTile<Rgba32>::cross_et_compare(cyan_bg, rgba_cyan, magenta_bg, rgba_magenta),
+        std::weak_ordering::equivalent);
+
+    // Sanity check against the equivalent equality relation.
+    EXPECT_TRUE(magenta_bg.equals_ignoring_transparency(cyan_bg, rgba_magenta, rgba_cyan));
+}
+
+TEST(PixelTileTests, CrossEtCompareOrdersByOpaquePixels)
+{
+    // Two tiles that differ only in an opaque pixel compare in a consistent order, even though
+    // their transparent backgrounds are different colors (each classified under its own ET).
+    PixelTile<Rgba32> a{};
+    PixelTile<Rgba32> b{};
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        a.set(i, rgba_magenta);
+        b.set(i, rgba_cyan);
+    }
+    a.set(10, Rgba32{10, 0, 0});
+    b.set(10, Rgba32{20, 0, 0});
+
+    EXPECT_EQ(PixelTile<Rgba32>::cross_et_compare(a, rgba_magenta, b, rgba_cyan), std::weak_ordering::less);
+    EXPECT_EQ(PixelTile<Rgba32>::cross_et_compare(b, rgba_cyan, a, rgba_magenta), std::weak_ordering::greater);
+}
+
 TEST(PixelTileTests, UniqueColorsEmptyForDefault)
 {
     const PixelTile<IndexPixel> tile{};

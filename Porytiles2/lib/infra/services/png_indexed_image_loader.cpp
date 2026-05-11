@@ -43,7 +43,6 @@ PngIndexedImageLoader::load_from_file(const std::filesystem::path &path) const
     for (std::size_t pixel_index = 0; pixel_index < tilesheet_size; pixel_index++) {
         const auto row = pixel_index / tilesheet_width;
         const auto col = pixel_index % tilesheet_width;
-        // TODO: make sure this sets 4-bit pixels only, even if input tiles.png is using true-color (8-bit)
         image->set(pixel_index, IndexPixel{png[row][col]});
     }
 

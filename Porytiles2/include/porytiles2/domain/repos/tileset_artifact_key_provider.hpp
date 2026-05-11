@@ -32,16 +32,6 @@ class TilesetArtifactKeyProvider {
     virtual ~TilesetArtifactKeyProvider() = default;
 
     /*
-     * TODO: fix palette and anim frame reading. Pals have a 2 digit format, e.g.
-     *
-     * 00.pal, 09.pal, 12.pal
-     *
-     * Anim frames have a single digit format, e.g.
-     *
-     * 0.png, 9.png, 12.png
-     */
-
-    /*
      * Porymap artifacts
      */
     [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_metatiles_bin(const std::string &tileset_name) const = 0;
@@ -205,7 +195,6 @@ class TilesetArtifactKeyProvider {
             result.push_back(tiles_png_key);
         }
 
-        // TODO: warn user if we found pals like 1.pal, these won't work they have to be 01.pal
         for (std::size_t i = 0; i < pal::num_pals; i++) {
             PT_TRY_ASSIGN_CHAIN_ERR(
                 pal_key,
@@ -265,14 +254,6 @@ class TilesetArtifactKeyProvider {
     [[nodiscard]] virtual ChainableResult<std::vector<ArtifactKey>>
     get_porytiles_artifact_keys(const std::string &tileset_name) const
     {
-        /*
-         * TODO: it feels like the discovery logic here and in tileset_repo.cpp is duplicated. Is there some way to
-         * massage these two classes so we don't need to duplicate the logic in two places? Perhaps ArtifactKey should
-         * also store a std::variant<TilesetArtifact, LayoutArtifact> as metadata. Then, tileset_repo.cpp could call
-         * get_all_artifact_keys directly. And then search the output for the metadata it needs and throw if essential
-         * items are missing?
-         */
-
         std::vector<ArtifactKey> result;
 
         PT_TRY_ASSIGN_CHAIN_ERR(
@@ -311,7 +292,6 @@ class TilesetArtifactKeyProvider {
             result.push_back(attr_csv_key);
         }
 
-        // TODO: warn user if we found Porytiles pals like 1.pal, these won't work they have to be 01.pal
         for (std::size_t i = 0; i < pal::num_pals; i++) {
             PT_TRY_ASSIGN_CHAIN_ERR(
                 override_key,
@@ -329,7 +309,6 @@ class TilesetArtifactKeyProvider {
             std::vector<ArtifactKey>,
             "Failed to get Porytiles artifact keys.");
         for (const auto &anim : porytiles_anims) {
-            // TODO: don't hardcode key here
             PT_TRY_ASSIGN_CHAIN_ERR(
                 key_frame_key,
                 key_for_porytiles_anim_frame(tileset_name, anim, "key"),

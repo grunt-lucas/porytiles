@@ -15,8 +15,7 @@ JascPalSaver::save(const Palette<Rgba32, pal::max_size> &pal, const std::filesys
         return FormattableError{"'{}': Failed to open for writing.", FormatParam{path.string(), Style::bold}};
     }
 
-    // TODO: \r\n or \n should be configurable
-
+    // JASC-PAL spec uses \r\n, matching vanilla pokeemerald. Could be made configurable if LF output is ever requested.
     stream << "JASC-PAL\r\n";
     stream << "0100\r\n";
     stream << pal.size() << "\r\n";

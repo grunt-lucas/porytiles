@@ -60,7 +60,7 @@ using namespace porytiles2;
             FormatParam{representative_pal.size(), Style::bold},
             FormatParam{pal::max_size, Style::bold}));
         err_msg.emplace_back("");
-        std::ranges::copy(pal_printer.print_rgba_pal(representative_pal), std::back_inserter(err_msg));
+        err_msg.append_range(pal_printer.print_rgba_pal(representative_pal));
         return FormattableError{err_msg};
     }
 
@@ -91,11 +91,9 @@ using namespace porytiles2;
         err_msg.emplace_back("The extrinsic transparency color should only appear in slot 0.");
         err_msg.emplace_back("Either correct the PNG palette or change the extrinsic transparency setting.");
         err_msg.emplace_back("");
-        std::ranges::copy(
-            pal_printer.print_rgba_pal_with_highlights(representative_pal, extrinsic_transparency_slots),
-            std::back_inserter(err_msg));
-        std::ranges::copy(
-            format_config_note_with_separator(diag.formatter(), extrinsic_transparency), std::back_inserter(err_msg));
+        err_msg.append_range(
+            pal_printer.print_rgba_pal_with_highlights(representative_pal, extrinsic_transparency_slots));
+        err_msg.append_range(format_config_note_with_separator(diag.formatter(), extrinsic_transparency));
         return FormattableError{err_msg};
     }
 
@@ -125,10 +123,10 @@ using namespace porytiles2;
             err_msg.emplace_back("");
             err_msg.emplace_back(diag.formatter().format(
                 "Representative frame '{}' palette:", FormatParam{representative_frame.frame_name(), Style::bold}));
-            std::ranges::copy(pal_printer.print_rgba_pal(representative_pal), std::back_inserter(err_msg));
+            err_msg.append_range(pal_printer.print_rgba_pal(representative_pal));
             err_msg.emplace_back("");
             err_msg.emplace_back(diag.formatter().format("Frame '{}' palette:", FormatParam{frame_name, Style::bold}));
-            std::ranges::copy(pal_printer.print_rgba_pal(frame_pal), std::back_inserter(err_msg));
+            err_msg.append_range(pal_printer.print_rgba_pal(frame_pal));
             return FormattableError{err_msg};
         }
     }
@@ -163,7 +161,7 @@ using namespace porytiles2;
                 FormatParam{representative_frame.frame_name(), Style::bold},
                 FormatParam{pal_filename(pal_idx), Style::bold}));
             remark_lines.emplace_back("");
-            std::ranges::copy(pal_printer.print_rgba_pal(tileset_pals[pal_idx]), std::back_inserter(remark_lines));
+            remark_lines.append_range(pal_printer.print_rgba_pal(tileset_pals[pal_idx]));
             diag.remark("animation-palette-resolution-strategy", remark_lines);
             return pal_idx;
         }
@@ -174,7 +172,7 @@ using namespace porytiles2;
         "Failed to find matching palette for internal palette of representative frame '{}'.",
         FormatParam{representative_frame.frame_name(), Style::bold}));
     err_msg.emplace_back("");
-    std::ranges::copy(pal_printer.print_rgba_pal(representative_pal), std::back_inserter(err_msg));
+    err_msg.append_range(pal_printer.print_rgba_pal(representative_pal));
     return FormattableError{err_msg};
 }
 
@@ -290,8 +288,7 @@ using namespace porytiles2;
             err_msg.emplace_back(
                 "Consider using a different palette resolution strategy (e.g. 'palette-00', "
                 "'internal-png-palette', etc.).");
-            std::ranges::copy(
-                format_config_note_with_separator(diag.formatter(), strategy), std::back_inserter(err_msg));
+            err_msg.append_range(format_config_note_with_separator(diag.formatter(), strategy));
             return FormattableError{err_msg};
         }
 
@@ -329,17 +326,14 @@ using namespace porytiles2;
                         color_tile_from_index_tile(index_tile, pals.at(pal_idx), extrinsic_transparency.value());
                     err_msg.push_back(diag.formatter().format(
                         "Tile under palette '{}':", FormatParam{pal_filename(pal_idx), Style::bold}));
-                    std::ranges::copy(
-                        tile_printer.print_tile(rgba_tile, extrinsic_transparency.value()),
-                        std::back_inserter(err_msg));
+                    err_msg.append_range(tile_printer.print_tile(rgba_tile, extrinsic_transparency.value()));
                 }
 
                 err_msg.emplace_back("");
                 err_msg.emplace_back(
                     "Consider using an explicit palette resolution strategy (e.g. 'palette-00') to resolve the "
                     "ambiguity.");
-                std::ranges::copy(
-                    format_config_note_with_separator(diag.formatter(), strategy), std::back_inserter(err_msg));
+                err_msg.append_range(format_config_note_with_separator(diag.formatter(), strategy));
                 return FormattableError{err_msg};
             }
             case AnimMultiPalSubtileResolutionStrategy::warning: {
@@ -363,14 +357,10 @@ using namespace porytiles2;
                         color_tile_from_index_tile(warn_index_tile, pals.at(pal_idx), extrinsic_transparency.value());
                     warn_msg.push_back(diag.formatter().format(
                         "Tile under palette '{}':", FormatParam{pal_filename(pal_idx), Style::bold}));
-                    std::ranges::copy(
-                        tile_printer.print_tile(rgba_tile, extrinsic_transparency.value()),
-                        std::back_inserter(warn_msg));
+                    warn_msg.append_range(tile_printer.print_tile(rgba_tile, extrinsic_transparency.value()));
                 }
 
-                std::ranges::copy(
-                    format_config_note_with_separator(diag.formatter(), multi_pal_strategy),
-                    std::back_inserter(warn_msg));
+                warn_msg.append_range(format_config_note_with_separator(diag.formatter(), multi_pal_strategy));
                 diag.warning("animation-multi-pal-subtile", warn_msg);
 
                 return chosen_pal;
@@ -391,7 +381,7 @@ using namespace porytiles2;
         err_msg.emplace_back(diag.formatter().format(
             "Palette resolution strategy '{}' failed.",
             FormatParam{to_string(AnimPalResolutionStrategy::internal_png_pal), Style::bold}));
-        std::ranges::copy(format_config_note_with_separator(diag.formatter(), strategy), std::back_inserter(err_msg));
+        err_msg.append_range(format_config_note_with_separator(diag.formatter(), strategy));
         PT_TRY_ASSIGN_CHAIN_ERR(
             match,
             internal_png_pal_strategy(anim, pals, extrinsic_transparency, diag, pal_printer),
@@ -621,15 +611,6 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
     const std::set<PixelTile<IndexPixel>> &inter_anim_canonical_tiles,
     PorymapTilesetComponent &porymap_component) const
 {
-    /*
-     * TODO: PorymapTilesetComponent &porymap_component isn't 'const' here because we need to edit tiles.png to support
-     * key frame mangle backporting. However, I don't love this. The calling PrimaryTilesetDecompiler passes
-     * triple-layerized metatile entries into this function via the component, and then restores them after. It works by
-     * accident because the AnimDecompiler doesn't modify metatile tilemap entries. But that's not clear just by looking
-     * at the signature. We should probably break this out so that we can pass const stuff as const, and non-const stuff
-     * as non-const.
-     */
-
     // Unwrap config values
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, extrinsic_transparency, tileset_name, Animation<Rgba32>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, global_anim_pal_resolution_strategy, tileset_name, Animation<Rgba32>);
@@ -742,7 +723,12 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
                                                             : global_frame_linking;
 
     if (effective_linking == FrameLinking::hybrid) {
-        panic("TODO: implement hybrid frame linking");
+        std::vector<std::string> err_msg{};
+        err_msg.emplace_back(diag_->formatter().format(
+            "Hybrid frame linking is not yet implemented (animation '{}').", FormatParam{anim.name(), Style::bold}));
+        err_msg.emplace_back("Use 'automatic' or 'manual' frame linking until hybrid support.");
+        err_msg.append_range(format_config_note_with_separator(diag_->formatter(), effective_linking));
+        return FormattableError{err_msg};
     }
 
     /*
@@ -902,14 +888,11 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
             }
             err_msg.emplace_back("");
             err_msg.emplace_back("Consider using 'mangle' strategy to auto-resolve.");
-            std::ranges::copy(
-                format_config_note_with_separator(diag_->formatter(), effective_key_frame_strategy),
-                std::back_inserter(err_msg));
+            err_msg.append_range(format_config_note_with_separator(diag_->formatter(), effective_key_frame_strategy));
             return FormattableError{err_msg};
         }
 
         case AnimKeyFrameResolutionStrategy::warning: {
-            // TODO: impl
             panic("warning not yet implemented");
         }
 

@@ -8,8 +8,8 @@
 #include "porytiles2/domain/config/domain_config.hpp"
 #include "porytiles2/domain/repos/tileset_repo.hpp"
 #include "porytiles2/domain/services/porytiles_tileset_manager.hpp"
-#include "porytiles2/domain/services/primary_tileset_compiler.hpp"
-#include "porytiles2/domain/services/primary_tileset_creator.hpp"
+#include "porytiles2/domain/services/tileset_compiler.hpp"
+#include "porytiles2/domain/services/tileset_creator.hpp"
 #include "porytiles2/domain/services/tileset_metadata_provider.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/diagnostics/user_diagnostics.hpp"
@@ -25,7 +25,7 @@ namespace porytiles2 {
  *
  * The workflow:
  * 1. Check if tileset already exists (error if so)
- * 2. Create blank PorytilesTilesetComponent via PrimaryTilesetCreator
+ * 2. Create blank PorytilesTilesetComponent via TilesetCreator
  * 3. Create blank PorymapTilesetComponent and wrap in Tileset
  * 4. Compile (generates minimal valid Porymap assets)
  * 5. Save via TilesetRepo
@@ -36,7 +36,7 @@ class CreatePrimaryTileset {
     /**
      * @brief Constructs a CreatePrimaryTileset use case with the given dependencies.
      *
-     * @param creator Service for creating blank PorytilesTilesetComponent
+     * @param creator Service for creating blank primary PorytilesTilesetComponent
      * @param compiler Service for compiling PorytilesTilesetComponent to PorymapTilesetComponent
      * @param tileset_repo Repository for persisting Tileset aggregates
      * @param metadata_provider Provider for checking if tilesets exist
@@ -46,12 +46,12 @@ class CreatePrimaryTileset {
      * @param diag User diagnostics for warnings and errors
      */
     CreatePrimaryTileset(
-        gsl::not_null<const PrimaryTilesetCreator *> creator,
-        gsl::not_null<const PrimaryTilesetCompiler *> compiler,
+        gsl::not_null<const TilesetCreator *> creator,
+        gsl::not_null<const TilesetCompiler *> compiler,
         gsl::not_null<const TilesetRepo *> tileset_repo,
         gsl::not_null<const TilesetMetadataProvider *> metadata_provider,
         gsl::not_null<const PorytilesTilesetManager *> tileset_manager,
-        gsl::not_null<const DomainConfig *> domain_config,
+        gsl::not_null<DomainConfig *> domain_config,
         gsl::not_null<const AppConfig *> app_config,
         gsl::not_null<const UserDiagnostics *> diag)
         : creator_{creator}, compiler_{compiler}, tileset_repo_{tileset_repo}, metadata_provider_{metadata_provider},
@@ -75,12 +75,12 @@ class CreatePrimaryTileset {
     [[nodiscard]] ChainableResult<void> create(const std::string &tileset_name) const;
 
   private:
-    const PrimaryTilesetCreator *creator_;
-    const PrimaryTilesetCompiler *compiler_;
+    const TilesetCreator *creator_;
+    const TilesetCompiler *compiler_;
     const TilesetRepo *tileset_repo_;
     const TilesetMetadataProvider *metadata_provider_;
     const PorytilesTilesetManager *tileset_manager_;
-    const DomainConfig *domain_config_;
+    DomainConfig *domain_config_;
     const AppConfig *app_config_;
     const UserDiagnostics *diag_;
 };

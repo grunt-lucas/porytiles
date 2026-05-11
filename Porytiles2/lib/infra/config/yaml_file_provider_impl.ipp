@@ -9,6 +9,7 @@
 
 #include "yaml-cpp/yaml.h"
 
+#include "porytiles2/app/config/primary_pairing_mode.hpp"
 #include "porytiles2/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_multi_pal_subtile_resolution_strategy.hpp"
 #include "porytiles2/domain/config/anim_pal_resolution_strategy.hpp"
@@ -208,8 +209,6 @@ void collect_yaml_paths(
 
             diagnostics->error("unknown-config-key", error_lines);
             found_unknown = true;
-
-            // TODO: add a "did you mean" message that uses levenshtein distance to find closest match
         }
     }
 
@@ -241,16 +240,6 @@ parse_size_t(const TextFormatter *format, const YAML::Node &node, const std::str
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
-        /*
-         * TODO: how to make this multiline? It displays like this:
-         *
-         * Failed to parse 'fieldmap.num_tile_per_meta' as integer: yaml-cpp: error at line 4, column 29: bad conversion
-         *
-         * All on one line. It would be nice to display like this:
-         *
-         * Failed to parse 'fieldmap.num_tile_per_meta' as integer:
-         *   - yaml-cpp: error at line 4, column 29: bad conversion
-         */
         const auto error =
             format->format("Failed to parse '{}' as integer: {}", FormatParam{key, Style::bold}, e.what());
         const auto source = make_source_string(format, file_path, mark);
@@ -1033,6 +1022,38 @@ LayerValue<PackingStrategyType> parse_packing_strategy_type(
     }
 }
 
+LayerValue<PrimaryPairingMode> parse_primary_pairing_mode(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<PrimaryPairingMode>::not_provided();
+    }
+
+    try {
+        const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        const auto node_value = node.as<std::string>();
+        const auto mode_opt = primary_pairing_mode_from_str(node_value);
+
+        if (!mode_opt.has_value()) {
+            const auto error = format->format(
+                "'{}' has invalid value '{}'.", FormatParam{key, Style::bold}, FormatParam{node_value, Style::bold});
+            return LayerValue<PrimaryPairingMode>::invalid(error, source, details);
+        }
+
+        return LayerValue<PrimaryPairingMode>::valid(mode_opt.value(), key, source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error =
+            format->format("Failed to parse '{}' as PrimaryPairingMode: {}.", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<PrimaryPairingMode>::invalid(error, source, details);
+    }
+}
+
 LayerValue<PackingStrategyParams> parse_packing_strategy_params(
     const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
@@ -1251,11 +1272,6 @@ std::optional<YAML::Node> load_yaml_file(
         return node;
     }
     catch (const YAML::Exception &) {
-        /*
-         * TODO: when we hit this, it just silently fails and is EXTREMELY unintuitive. We need to figure out a way to
-         * loudly fail here with an error message so users can fix their YAML. There is really no point continuing the
-         * operation if the user has supplied a syntactically invalid YAML file.
-         */
         // Failed to parse YAML, return nullopt
         return std::nullopt;
     }
@@ -1281,10 +1297,6 @@ std::optional<YAML::Node> load_yaml_file(
 std::vector<std::filesystem::path>
 get_tileset_config_path_chain(const std::filesystem::path &project_root, const std::string &tileset)
 {
-    /*
-     * TODO: once we add layout support, we'll need a separate method to resolve the config path chain for layouts.
-     */
-
     std::vector<std::filesystem::path> paths;
 
     // Porytiles utility directory root
@@ -1325,7 +1337,7 @@ get_config_path_chain(const std::filesystem::path &project_root, ConfigScopeType
     case ConfigScopeType::tileset:
         return get_tileset_config_path_chain(project_root, scope);
     case ConfigScopeType::layout:
-        panic("TODO: implement layout config path chain resolution");
+        panic("Layout config path chain resolution is not yet implemented.");
     }
     // Should never reach here
     panic("Invalid ConfigScopeType");

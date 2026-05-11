@@ -9,6 +9,7 @@
 #include "porytiles2/domain/models/base_game.hpp"
 #include "porytiles2/domain/models/image.hpp"
 #include "porytiles2/domain/models/index_pixel.hpp"
+#include "porytiles2/domain/models/metatile_attribute.hpp"
 #include "porytiles2/domain/models/palette.hpp"
 #include "porytiles2/domain/models/porymap_tileset_component.hpp"
 #include "porytiles2/domain/models/porytiles_tileset_component.hpp"
@@ -105,12 +106,9 @@ Tileset create_test_tileset(const std::string &name)
     }
 
     for (int i = 0; i < 16; i++) {
-        porymap_component->set_pal(i, Palette<Rgba32, pal::max_size>{});
+        porymap_component->set_pal(i, Palette<Rgba32, pal::max_size>{Rgba32{0, 0, 0, Rgba32::alpha_opaque}});
     }
 
-    // TODO: this test is flaky, once our tileset reader/writer account for num_tiles_per_metatile, we'll need to come
-    // back and update this test. For now, let's just assume we have dual-layer metatiles so there should be 8
-    // attributes
     for (int i = 0; i < 8; i++) {
         porymap_component->push_back_attribute(MetatileAttribute{});
     }
@@ -143,6 +141,7 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
             infra_config_.get(),
             test_root_,
             BaseGame::pokeemerald,
+            attr::bytes_per_attr_emerald,
             formatter_.get(),
             diag_.get(),
             png_rgba_saver_.get(),
@@ -418,8 +417,6 @@ TEST_F(ProjectTilesetArtifactWriterTests, WriteMetatileAttributesBin)
     auto commit_result = writer_->commit();
     ASSERT_TRUE(commit_result.has_value());
     ASSERT_TRUE(std::filesystem::exists(expected_file));
-    // we wrote 8 attributes in create_test_tileset, so size should be 16 bytes
-    // TODO: we'll want to fix this later once we properly handle num_tiles_per_metatile
     ASSERT_EQ(std::filesystem::file_size(expected_file), 16);
 }
 

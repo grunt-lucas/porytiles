@@ -1,7 +1,9 @@
 #pragma once
 
+#include <memory>
 #include <string>
 
+#include "porytiles2/app/config/primary_pairing_mode.hpp"
 #include "porytiles2/utilities/result/chainable_result.hpp"
 #include "porytiles2/xcut/config/config_scope_type.hpp"
 #include "porytiles2/xcut/config/config_value.hpp"
@@ -16,6 +18,8 @@ namespace porytiles2 {
  *   uv run Scripts/generate_config.py
  */
 
+class ConfigProvider; // forward declaration to avoid app -> infra dependency
+
 /**
  * @brief Interface that defines a complete app layer configuration.
  */
@@ -23,11 +27,39 @@ class AppConfig {
   public:
     virtual ~AppConfig() = default;
 
+    /**
+     * @brief Prepends a @c ConfigProvider to the provider chain at highest priority.
+     *
+     * @details
+     * Allows use cases to layer an override provider on top of the user's configuration for operations that run the
+     * compiler on Porytiles's own behalf. Implementations must invalidate any cached value resolutions so that
+     * subsequent reads consult the newly prepended provider.
+     *
+     * @param provider The provider to prepend. Must be non-null.
+     */
+    virtual void add_provider(std::unique_ptr<ConfigProvider> provider) = 0;
+
     // Public method with cross-field validation only (Tier 3)
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
     verify_checksums(ConfigScopeType type, const std::string &scope) const
     {
         auto validated_val = verify_checksums_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<PrimaryPairingMode>>
+    primary_pairing_mode(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = primary_pairing_mode_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<std::vector<std::string>>>
+    primary_pairing_partners(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = primary_pairing_partners_validated(type, scope);
         return validated_val;
     }
 
@@ -75,6 +107,30 @@ class AppConfig {
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
     verify_checksums_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<PrimaryPairingMode>>
+    primary_pairing_mode_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = primary_pairing_mode_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<PrimaryPairingMode>>
+    primary_pairing_mode_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::vector<std::string>>>
+    primary_pairing_partners_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = primary_pairing_partners_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::vector<std::string>>>
+    primary_pairing_partners_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::vector<std::string>>>

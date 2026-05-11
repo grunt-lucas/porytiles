@@ -24,10 +24,6 @@ struct PackingInput {
      */
     std::vector<PackableTile> tiles_{};
 
-    /*
-     * TODO: add vector for anims here once we impl anims
-     */
-
     /**
      * @brief Priority "hint" tiles that can be assigned before regular tiles.
      *

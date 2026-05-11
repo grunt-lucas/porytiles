@@ -77,13 +77,6 @@ enum class ExportTrimMode {
  * the tiles.png output file in the PorymapTilesetComponent of a Tileset. The workspace manages tile deduplication,
  * transparent tile slots, and efficient insertion through cursor-based tracking.
  *
- * Key Features:
- * - Pre-allocated storage: The workspace pre-allocates all tile slots up to capacity with transparent tiles
- * - Tile 0 reservation: Index 0 is always reserved for a transparent tile per pokeemerald tileset conventions
- * - Cursor-based insertion: Tracks the next available transparent slot for O(1) insertion in the common case
- * - Deduplication support: Maintains a mapping of canonical tile forms to their first occurrence indices
- * - Transparent tile rejection: Refuses to insert transparent tiles (except the reserved tile 0)
- *
  * Storage Model:
  * The workspace uses a pre-allocated vector where all slots are initialized with transparent tiles. Non-transparent
  * tiles are inserted by replacing transparent tiles at the cursor position. The cursor always points to the next
@@ -147,6 +140,45 @@ class TilesPngWorkspace {
      * @param capacity The maximum number of tiles this workspace can hold
      */
     explicit TilesPngWorkspace(const Image<IndexPixel> &img, std::size_t capacity);
+
+    /**
+     * @brief Creates a workspace pre-loaded with primary tiles for secondary tileset compilation.
+     *
+     * @details
+     * Constructs a workspace with @p total_capacity tiles. Positions 0 through @p primary_tile_count - 1 are populated
+     * from @p primary_tiles_png. Position @p primary_tile_count is reserved as a transparent tile per vanilla secondary
+     * tileset convention. The cursor is set to @p primary_tile_count + 1, ready for secondary tile insertion.
+     *
+     * Primary tiles are registered in the canonical forms map for deduplication, so secondary tiles that match an
+     * existing primary tile will reuse its global index rather than inserting a duplicate.
+     *
+     * @param primary_tiles_png The compiled primary tileset's tiles.png image
+     * @param primary_tile_count The number of tile slots reserved for primary tiles (e.g. 512)
+     * @param total_capacity The total tile capacity for primary + secondary (e.g. 1024)
+     * @pre @p primary_tiles_png dimensions must be multiples of 8
+     * @pre @p primary_tile_count must be less than @p total_capacity
+     * @return A workspace with primary tiles pre-loaded and cursor positioned for secondary insertion
+     */
+    [[nodiscard]] static TilesPngWorkspace for_secondary(
+        const Image<IndexPixel> &primary_tiles_png, std::size_t primary_tile_count, std::size_t total_capacity);
+
+    /**
+     * @brief Creates a workspace for standalone secondary compilation with no paired primary.
+     *
+     * @details
+     * Creates a workspace with @p total_capacity tiles, all transparent. Positions 0 through
+     * @p primary_tile_count are reserved (transparent placeholders for primary tile slots).
+     * Position @p primary_tile_count is the secondary transparent tile (vanilla convention).
+     * The cursor is set to @p primary_tile_count + 1, ready for secondary tile insertion.
+     * No tiles are registered in canonical_forms_ since there are no primary tiles to deduplicate against.
+     *
+     * @param primary_tile_count Number of primary tile slots to reserve.
+     * @param total_capacity Total workspace capacity (primary + secondary).
+     * @pre @p primary_tile_count must be less than @p total_capacity.
+     * @return A workspace with transparent primary region and cursor positioned for secondary insertion.
+     */
+    [[nodiscard]] static TilesPngWorkspace
+    for_standalone_secondary(std::size_t primary_tile_count, std::size_t total_capacity);
 
     /**
      * @brief Attempts to insert a non-transparent tile into the workspace at the current cursor position.
@@ -276,6 +308,26 @@ class TilesPngWorkspace {
         ExportTrimMode trim_mode = ExportTrimMode::trim_trailing_transparent) const;
 
     /**
+     * @brief Exports only the secondary portion of the workspace (tiles from @p primary_tile_count onward).
+     *
+     * @details
+     * Creates an Image<IndexPixel> containing only the secondary tiles. The tile at position @p primary_tile_count
+     * becomes the first tile (row 0, col 0) in the output image.
+     *
+     * When trimming, if all secondary tiles are transparent, the output will contain at least the secondary transparent
+     * tile at position @p primary_tile_count.
+     *
+     * @param primary_tile_count The number of primary tiles to skip (e.g. 512)
+     * @param flip_mode Controls whether tiles are exported in canonical or original (flipped) form
+     * @param trim_mode Controls whether trailing transparent tiles are included or trimmed
+     * @return An Image<IndexPixel> containing only the secondary tiles in tiles.png format
+     */
+    [[nodiscard]] Image<IndexPixel> export_secondary_image(
+        std::size_t primary_tile_count,
+        ExportFlipMode flip_mode = ExportFlipMode::canonical,
+        ExportTrimMode trim_mode = ExportTrimMode::trim_trailing_transparent) const;
+
+    /**
      * @brief Checks if the workspace has reached capacity and can no longer accept new tile insertions.
      *
      * @details
@@ -291,33 +343,28 @@ class TilesPngWorkspace {
      */
     [[nodiscard]] bool at_capacity() const;
 
-    /*
-     * TODO: these methods below work great when tiles are in ArtifactEditMode::optimize. But what about the
-     * ArtifactEditMode::patch case? Here, we might have "fragmentation", i.e. free spaces that are too small to fit the
-     * contiguous key frame. We won't necessarily be able to reserve space at the start of the workspace, since that
-     * space is probably already taken. It's also possible that the tiles we need are already present, this is a patch
-     * build after all. We should provide some kind of functionality that scans the workspace for the requisite free
-     * space and uses it. This means our anim_end_offset_ variable is probably an over-simplification.
-     */
-
     /**
-     * @brief Reserves contiguous slots for animation keyframe tiles starting at index 1.
+     * @brief Reserves contiguous slots for animation keyframe tiles starting at @p start_offset.
      *
      * @details
-     * Animation tiles are placed at the beginning of tiles.png (after the transparent tile 0) to ensure stable offsets
-     * that can be referenced by the generated animation C code. This method reserves a contiguous block of slots for
-     * animation tiles and moves the cursor past the reserved region.
+     * Animation tiles are placed in a contiguous block to ensure stable offsets that can be referenced by the generated
+     * animation C code. This method reserves a contiguous block of slots for animation tiles and moves the cursor past
+     * the reserved region.
+     *
+     * For primary tilesets, @p start_offset is 1 (after the transparent tile 0). For secondary tilesets, @p
+     * start_offset is @c num_tiles_in_primary + 1 (after the secondary transparent tile at @c num_tiles_in_primary).
      *
      * After calling this method:
-     * - Indices 1 through `anim_tile_count` (inclusive) are reserved for animation tiles
-     * - The cursor is positioned at `anim_tile_count + 1` (first slot after reserved region)
+     * - Indices @p start_offset through @p start_offset + @p anim_tile_count - 1 (inclusive) are reserved
+     * - The cursor is positioned at @p start_offset + @p anim_tile_count (first slot after reserved region)
      * - Regular tile insertions via insert_tile() will not overwrite the reserved region
      *
      * @param anim_tile_count Total number of tiles to reserve for animation keyframes
-     * @pre Must be called before any regular tile insertions via insert_tile()
-     * @pre anim_tile_count must be less than capacity - 1 (leaving room for tile 0 and at least one regular tile)
+     * @param start_offset The starting index for the animation region (default: 1 for primary tilesets)
+     * @pre Cursor must be at @p start_offset (no regular tiles inserted past that point)
+     * @pre @p start_offset + @p anim_tile_count must be less than capacity
      */
-    void reserve_anim_slots(std::size_t anim_tile_count);
+    void reserve_anim_slots(std::size_t anim_tile_count, std::size_t start_offset = 1);
 
     /**
      * @brief Places an animation keyframe tile at a specific reserved index.
@@ -337,17 +384,18 @@ class TilesPngWorkspace {
     void place_anim_tile(std::size_t reserved_index, const CanonicalPixelTile<IndexPixel> &tile);
 
     /**
-     * @brief Returns the starting absolute index for animation tiles (always 1).
+     * @brief Returns the starting absolute index for animation tiles.
      *
      * @details
-     * By convention, animation tiles always start at index 1 (after the transparent tile 0). This static method makes
-     * this convention explicit and provides a named constant for code clarity.
+     * For primary tilesets, animation tiles start at index 1 (after the transparent tile 0). For secondary tilesets,
+     * animation tiles start at @c num_tiles_in_primary + 1 (after the secondary transparent tile). The value is set
+     * by reserve_anim_slots() and defaults to 1.
      *
-     * @return 1 (the animation start index)
+     * @return The animation start index
      */
-    [[nodiscard]] static constexpr std::size_t anim_start_offset()
+    [[nodiscard]] std::size_t anim_start_offset() const
     {
-        return 1;
+        return anim_start_offset_;
     }
 
     /**
@@ -371,7 +419,7 @@ class TilesPngWorkspace {
      */
     [[nodiscard]] bool has_anim_slots() const
     {
-        return anim_end_offset_ > 1;
+        return anim_end_offset_ > anim_start_offset_;
     }
 
     /**
@@ -456,7 +504,8 @@ class TilesPngWorkspace {
     std::map<PixelTile<IndexPixel>, std::vector<std::size_t>> canonical_forms_;
     std::size_t cursor_;
     std::size_t capacity_;
-    std::size_t anim_end_offset_{1}; // First index after anim region (defaults to 1, i.e. no animations)
+    std::size_t anim_start_offset_{1}; // First index in anim region (defaults to 1 for primary tilesets)
+    std::size_t anim_end_offset_{1};   // First index after anim region (defaults to 1, i.e. no animations)
 };
 
 } // namespace porytiles2

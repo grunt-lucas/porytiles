@@ -184,6 +184,22 @@ tileset:
         # Use "_" to fall back to palette_resolution_strategy (or global if not set).
         per_tile_palette_resolution_strategies: [ _, scan-local-metatiles, _, _ ]
 
+  # Primary pairing configuration for secondary tileset compilation.
+  # When compiling a secondary tileset, the compiler needs the compiled primary
+  # tileset to produce correct global tile indices and palette references.
+  primary_pairing:
+    # How the partner primary is resolved.
+    # Allowed values:
+    # - off: skip primary loading entirely, compile as a standalone secondary
+    # - manual: use the partner primaries listed in 'partners' below
+    # - [default] automatic: scan layout metadata to find the partner primary
+    mode: automatic
+
+    # Tileset names to use as partner primaries in manual pairing mode.
+    # Only consulted when mode is 'manual'. Each entry is a tileset struct name.
+    # partners:
+    #   - gTileset_General
+
   # Set transparency handling for import.
   # Allowed values:
   # - alpha: all transparent tiles are set to alpha=0
