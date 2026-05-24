@@ -10,4 +10,17 @@ runs:
         wget https://apt.llvm.org/llvm.sh
         chmod +x llvm.sh
         sudo ./llvm.sh all
+        # llvm.sh installs versioned binaries (clang-<N>, clang++-<N>) but does
+        # not repoint the bare `clang`/`clang++` symlinks. Ubuntu's system clang
+        # (18.x on 24.04) then gets picked up by CC=clang/CXX=clang++, which
+        # fails against the newer libc++ headers shipped alongside llvm.sh's
+        # install. Detect the highest installed clang-<N> and repoint.
+        CLANG_VERSION=$(ls /usr/bin/ | grep -E '^clang-[0-9]+$' | sed 's/clang-//' | sort -n | tail -1)
+        if [[ -z "$CLANG_VERSION" ]]; then
+          echo "ERROR: no clang-<N> binary found after llvm.sh ran" >&2
+          exit 1
+        fi
+        echo "Repointing /usr/bin/clang{,++} to clang-${CLANG_VERSION}."
+        sudo ln -sf /usr/bin/clang-${CLANG_VERSION} /usr/bin/clang
+        sudo ln -sf /usr/bin/clang++-${CLANG_VERSION} /usr/bin/clang++
         clang++ --version
