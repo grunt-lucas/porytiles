@@ -1,6 +1,6 @@
 ```C++
 // First include should always be declaration header, if relevant
-#include "porytiles2/domain/MyClass.hpp"
+#include "porytiles/domain/MyClass.hpp"
 
 // Next, include C++ stdlib headers with angle brackets
 #include <string>
@@ -11,12 +11,12 @@
 #include "yaml-cpp/yaml.h"
 
 // Finally, include other Porytiles headers with quotes
-#include "porytiles2/domain/foo.hpp"
+#include "porytiles/domain/foo.hpp"
 
 // Notice that between each include group, we place an extra newline
 
-// Namespace for all Porytiles2 code should be "porytiles2", never use a child namespace
-namespace porytiles2 {
+// Namespace for all Porytiles code should be "porytiles", never use a child namespace
+namespace porytiles {
 
 // PascalCase for enum class names
 enum class FooBar {
@@ -81,7 +81,7 @@ int MyClass::compute_something(int accum_value) const {
     return my_local + my_val_ + accum_value;
 }
 
-} // namespace porytiles2
+} // namespace porytiles
 
 // Close a namespace with a closing comment like above
 ```
@@ -244,19 +244,19 @@ auto format(const MyType &val, std::format_context &ctx) const
 This is due to a libc++ implementation issue (LLVM #66466) where the std::formattable concept
 tests against an internal context type, not std::format_context directly.
 
-All formatters should delegate to the type's porytiles2::to_string() overload for consistency:
+All formatters should delegate to the type's porytiles::to_string() overload for consistency:
 
 ```c++
 template <>
-struct std::formatter<porytiles2::MyType> {
+struct std::formatter<porytiles::MyType> {
     constexpr auto parse(std::format_parse_context &ctx)
     {
         return ctx.begin();
     }
 
-    auto format(const porytiles2::MyType &value, auto &ctx) const
+    auto format(const porytiles::MyType &value, auto &ctx) const
     {
-        return std::format_to(ctx.out(), "{}", porytiles2::to_string(value));
+        return std::format_to(ctx.out(), "{}", porytiles::to_string(value));
     }
 };
 ```

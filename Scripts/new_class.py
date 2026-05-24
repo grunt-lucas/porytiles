@@ -30,7 +30,7 @@ def create_class_header(class_name, header_path):
 
     content = f"""#pragma once
 
-namespace porytiles2 {{
+namespace porytiles {{
 
 /**
  * @brief Represents a foo.
@@ -46,7 +46,7 @@ private:
     int foo_{{}};
 }};
 
-}} // namespace porytiles2
+}} // namespace porytiles
 """
 
     header_path.mkdir(parents=True, exist_ok=True)
@@ -64,15 +64,15 @@ def create_class_impl(class_name, impl_path, layer_path):
         print(f"file {full_path} already exists")
         return
 
-    content = f"""#include "porytiles2/{layer_path}/{snake_class_name}.hpp"
+    content = f"""#include "porytiles/{layer_path}/{snake_class_name}.hpp"
 
-namespace porytiles2 {{
+namespace porytiles {{
 
 int {class_name}::foo() const {{
     return foo_;
 }}
 
-}} // namespace porytiles2
+}} // namespace porytiles
 """
 
     impl_path.mkdir(parents=True, exist_ok=True)
@@ -92,9 +92,9 @@ def create_class_test(class_name, test_path, layer_path):
 
     content = f"""#include "gtest/gtest.h"
 
-#include "porytiles2/{layer_path}/{snake_class_name}.hpp"
+#include "porytiles/{layer_path}/{snake_class_name}.hpp"
 
-using namespace porytiles2;
+using namespace porytiles;
 
 TEST({class_name}Tests, FooShouldBeZero) {{
     {class_name} foo{{}};
@@ -128,9 +128,9 @@ def main():
 
     class_name = args.class_name
     layer_path = args.layer_path
-    header_path = project_root / "Porytiles2" / "include" / "porytiles2" / layer_path
-    impl_path = project_root / "Porytiles2" / "lib" / layer_path
-    test_path = project_root / "Porytiles2" / "tests" / "unit" / layer_path
+    header_path = project_root / "Porytiles" / "include" / "porytiles" / layer_path
+    impl_path = project_root / "Porytiles" / "lib" / layer_path
+    test_path = project_root / "Porytiles" / "tests" / "unit" / layer_path
 
     if not class_name or not class_name[0].isupper():
         print("Error: Class name should start with an uppercase letter", file=sys.stderr)

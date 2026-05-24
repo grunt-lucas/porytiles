@@ -1,7 +1,7 @@
 [project]
 name = "porytiles-config-gen"
 version = "0.1.0"
-description = "Configuration code generation for Porytiles2"
+description = "Configuration code generation for Porytiles"
 requires-python = ">=3.13"
 dependencies = [
     "Jinja2>=3.1.6",

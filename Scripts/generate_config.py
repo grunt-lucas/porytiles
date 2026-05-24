@@ -98,8 +98,8 @@ def generate_config_files():
     project_root = Path(__file__).resolve().parent.parent
     print(f"Project root: {project_root}")
 
-    # Load schema from Porytiles2/config_templates/
-    schema_path = project_root / "Porytiles2" / "config_templates" / "config_schema.yaml"
+    # Load schema from Porytiles/config_templates/
+    schema_path = project_root / "Porytiles" / "config_templates" / "config_schema.yaml"
     print(f"Loading schema from: {schema_path}")
 
     if not schema_path.exists():
@@ -215,7 +215,7 @@ def generate_config_files():
     print(f"Processed {len(enum_type_map)} enum types")
 
     # Setup Jinja2 environment with new template directory
-    template_dir = project_root / "Porytiles2" / "config_templates"
+    template_dir = project_root / "Porytiles" / "config_templates"
     env = Environment(
         loader=FileSystemLoader(template_dir),
         autoescape=select_autoescape(),
@@ -237,112 +237,112 @@ def generate_config_files():
         # Layer interfaces
         (
             "domain/config/domain_config.hpp.jinja2",
-            "Porytiles2/include/porytiles2/domain/config/domain_config.hpp",
+            "Porytiles/include/porytiles/domain/config/domain_config.hpp",
         ),
         (
             "app/config/app_config.hpp.jinja2",
-            "Porytiles2/include/porytiles2/app/config/app_config.hpp",
+            "Porytiles/include/porytiles/app/config/app_config.hpp",
         ),
         (
             "infra/config/infra_config.hpp.jinja2",
-            "Porytiles2/include/porytiles2/infra/config/infra_config.hpp",
+            "Porytiles/include/porytiles/infra/config/infra_config.hpp",
         ),
         # LazyLayeredConfig
         (
             "infra/config/lazy_layered_config.hpp.jinja2",
-            "Porytiles2/include/porytiles2/infra/config/lazy_layered_config.hpp",
+            "Porytiles/include/porytiles/infra/config/lazy_layered_config.hpp",
         ),
         (
             "infra/config/lazy_layered_config.cpp.jinja2",
-            "Porytiles2/lib/infra/config/lazy_layered_config.cpp",
+            "Porytiles/lib/infra/config/lazy_layered_config.cpp",
         ),
         # ConfigProvider base class
         (
             "infra/config/config_provider.hpp.jinja2",
-            "Porytiles2/include/porytiles2/infra/config/config_provider.hpp",
+            "Porytiles/include/porytiles/infra/config/config_provider.hpp",
         ),
         (
             "infra/config/config_provider.cpp.jinja2",
-            "Porytiles2/lib/infra/config/config_provider.cpp",
+            "Porytiles/lib/infra/config/config_provider.cpp",
         ),
         # DefaultProvider
         (
             "infra/config/default_provider.hpp.jinja2",
-            "Porytiles2/include/porytiles2/infra/config/default_provider.hpp",
+            "Porytiles/include/porytiles/infra/config/default_provider.hpp",
         ),
         (
             "infra/config/default_provider.cpp.jinja2",
-            "Porytiles2/lib/infra/config/default_provider.cpp",
+            "Porytiles/lib/infra/config/default_provider.cpp",
         ),
         # YamlFileProvider
         (
             "infra/config/yaml_file_provider.hpp.jinja2",
-            "Porytiles2/include/porytiles2/infra/config/yaml_file_provider.hpp",
+            "Porytiles/include/porytiles/infra/config/yaml_file_provider.hpp",
         ),
         (
             "infra/config/yaml_file_provider.cpp.jinja2",
-            "Porytiles2/lib/infra/config/yaml_file_provider.cpp",
+            "Porytiles/lib/infra/config/yaml_file_provider.cpp",
         ),
         # HeaderDefineProvider
         (
             "infra/config/header_define_provider.hpp.jinja2",
-            "Porytiles2/include/porytiles2/infra/config/header_define_provider.hpp",
+            "Porytiles/include/porytiles/infra/config/header_define_provider.hpp",
         ),
         (
             "infra/config/header_define_provider.cpp.jinja2",
-            "Porytiles2/lib/infra/config/header_define_provider.cpp",
+            "Porytiles/lib/infra/config/header_define_provider.cpp",
         ),
         # OverrideConfigProvider
         (
             "infra/config/override_config_provider.hpp.jinja2",
-            "Porytiles2/include/porytiles2/infra/config/override_config_provider.hpp",
+            "Porytiles/include/porytiles/infra/config/override_config_provider.hpp",
         ),
         (
             "infra/config/override_config_provider.cpp.jinja2",
-            "Porytiles2/lib/infra/config/override_config_provider.cpp",
+            "Porytiles/lib/infra/config/override_config_provider.cpp",
         ),
         # Valid YAML paths for unknown key detection
         (
             "infra/config/valid_yaml_paths.hpp.jinja2",
-            "Porytiles2/include/porytiles2/infra/config/valid_yaml_paths.hpp",
+            "Porytiles/include/porytiles/infra/config/valid_yaml_paths.hpp",
         ),
         # CLI Option System
         (
             "infra/cli/cli_option_storage.hpp.jinja2",
-            "Porytiles2/include/porytiles2/infra/cli/cli_option_storage.hpp",
+            "Porytiles/include/porytiles/infra/cli/cli_option_storage.hpp",
         ),
         (
             "infra/config/cli_option_provider.hpp.jinja2",
-            "Porytiles2/include/porytiles2/infra/config/cli_option_provider.hpp",
+            "Porytiles/include/porytiles/infra/config/cli_option_provider.hpp",
         ),
         (
             "infra/config/cli_option_provider.cpp.jinja2",
-            "Porytiles2/lib/infra/config/cli_option_provider.cpp",
+            "Porytiles/lib/infra/config/cli_option_provider.cpp",
         ),
         (
             "infra/cli/cli_option_registration.hpp.jinja2",
-            "Porytiles2/include/porytiles2/infra/cli/cli_option_registration.hpp",
+            "Porytiles/include/porytiles/infra/cli/cli_option_registration.hpp",
         ),
         (
             "infra/cli/cli_option_registration.cpp.jinja2",
-            "Porytiles2/lib/infra/cli/cli_option_registration.cpp",
+            "Porytiles/lib/infra/cli/cli_option_registration.cpp",
         ),
         (
             "infra/cli/cli_completion_data.hpp.jinja2",
-            "Porytiles2/include/porytiles2/infra/cli/cli_completion_data.hpp",
+            "Porytiles/include/porytiles/infra/cli/cli_completion_data.hpp",
         ),
         # Test mock configs
         (
             "testing/mock_domain_config.hpp.jinja2",
-            "Porytiles2/tests/support/mock_domain_config.hpp",
+            "Porytiles/tests/support/mock_domain_config.hpp",
         ),
         (
             "testing/mock_infra_config.hpp.jinja2",
-            "Porytiles2/tests/support/mock_infra_config.hpp",
+            "Porytiles/tests/support/mock_infra_config.hpp",
         ),
         (
             "testing/mock_app_config.hpp.jinja2",
-            "Porytiles2/tests/support/mock_app_config.hpp",
+            "Porytiles/tests/support/mock_app_config.hpp",
         ),
     ]
 
@@ -366,7 +366,7 @@ def generate_config_files():
     # Generate enum header files
     enum_template = env.get_template("domain/config/enum_type.hpp.jinja2")
     for enum in schema.get("enum_types", []):
-        output_rel_path = "Porytiles2/include/" + enum["header_path"]
+        output_rel_path = "Porytiles/include/" + enum["header_path"]
         print(f"Generating: {output_rel_path}")
 
         try:

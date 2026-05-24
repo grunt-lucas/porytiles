@@ -1,0 +1,68 @@
+#ifndef PORYTILES_IMPORTER_H
+#define PORYTILES_IMPORTER_H
+
+#include <filesystem>
+#include <png.hpp>
+#include <string>
+#include <unordered_map>
+
+#include "./porytiles_context.h"
+#include "./types.h"
+
+/**
+ * This unwieldy type represents a list of palette slot indexes and the override color for that index.
+ */
+using OverridenPaletteSlots = std::vector<std::pair<std::size_t, porytiles_legacy::BGR15>>;
+
+/**
+ * Utility functions for building core Porytiles types from sanitized input types and data structures. The importer
+ * functions don't handle any file checking or input collation. They expect to receive data as ready-to-use ifstreams,
+ * png::images, and other data structures. The driver is responsible for preparing these types and data structures from
+ * the raw input files.
+ */
+namespace porytiles_legacy {
+
+/**
+ * Build a DecompiledTileset from a single source PNG. This tileset is considered "raw", that is, it has no layering.
+ * The importer will simply scan the PNG tiles left-to-right, top-to-bottom and put them into the DecompiledTileset.
+ */
+DecompiledTileset importTilesFromPng(PorytilesContext &ctx, CompilerMode compilerMode,
+                                     const png::image<png::rgba_pixel> &png);
+
+DecompiledTileset importLayeredTilesFromPngs(PorytilesContext &ctx, CompilerMode compilerMode,
+                                             const std::unordered_map<std::size_t, Attributes> &attributesMap,
+                                             const png::image<png::rgba_pixel> &bottom,
+                                             const png::image<png::rgba_pixel> &middle,
+                                             const png::image<png::rgba_pixel> &top);
+
+void importAnimTiles(PorytilesContext &ctx, CompilerMode compilerMode,
+                     const std::vector<std::vector<AnimationPng<png::rgba_pixel>>> &rawAnims, DecompiledTileset &tiles);
+
+std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
+importMetatileBehaviorHeader(PorytilesContext &ctx, CompilerMode compilerMode, std::ifstream &behaviorFile);
+
+std::pair<std::unordered_map<std::string, std::uint8_t>, std::unordered_map<std::uint8_t, std::string>>
+importMetatileBehaviorHeader(PorytilesContext &ctx, DecompilerMode decompilerMode, std::ifstream &behaviorFile);
+
+std::unordered_map<std::size_t, Attributes>
+importAttributesFromCsv(PorytilesContext &ctx, CompilerMode compilerMode,
+                        const std::unordered_map<std::string, std::uint8_t> &behaviorMap, const std::string &filePath);
+
+std::pair<CompiledTileset, std::unordered_map<std::size_t, Attributes>>
+importCompiledTileset(PorytilesContext &ctx, DecompilerMode mode, std::ifstream &metatiles, std::ifstream &attributes,
+                      const std::unordered_map<std::uint8_t, std::string> &behaviorReverseMap,
+                      const png::image<png::index_pixel> &tilesheetPng,
+                      const std::vector<std::unique_ptr<std::ifstream>> &paletteFiles,
+                      const std::vector<std::string> &paletteFileNames,
+                      const std::vector<std::vector<AnimationPng<png::index_pixel>>> &compiledAnims);
+
+RGBATile importPalettePrimer(PorytilesContext &ctx, CompilerMode compilerMode, std::ifstream &paletteFile,
+                             const std::string &fileName);
+
+std::pair<RGBATile, OverridenPaletteSlots> importPaletteOverride(PorytilesContext &ctx, CompilerMode compilerMode,
+                                                                 std::ifstream &paletteFile,
+                                                                 const std::string &fileName);
+
+} // namespace porytiles_legacy
+
+#endif // PORYTILES_IMPORTER_H

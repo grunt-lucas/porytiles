@@ -2,18 +2,18 @@
     "version": "0.2.0",
     "configurations": [
         {
-            "name": "LLDB - Porytiles2 Driver Debug Command",
+            "name": "LLDB - Porytiles Driver Debug Command",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/porytiles-build-debug/Porytiles2/tools/driver/porytiles2",
-            "args": ["debug-compile-primary", "porytiles2_test_simple"],
+            "program": "${workspaceFolder}/porytiles-build-debug/Porytiles/tools/driver/porytiles",
+            "args": ["debug-compile-primary", "porytiles_test_simple"],
             "cwd": "${workspaceFolder}/../pokeemerald-expansion"
         },
         {
-            "name": "LLDB - Porytiles2AllTests",
+            "name": "LLDB - PorytilesAllTests",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/porytiles-build-debug/Porytiles2/tests/Porytiles2AllTests",
+            "program": "${workspaceFolder}/porytiles-build-debug/Porytiles/tests/PorytilesAllTests",
             "args": [],
             "cwd": "${workspaceFolder}"
         }

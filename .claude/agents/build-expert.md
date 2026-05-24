@@ -48,6 +48,6 @@ uv run Scripts/format.py
 
 ## Project Structure Notes
 
-- **Porytiles1/**: Legacy version - ignore unless explicitly told otherwise
-- **Porytiles2/**: Active development with domain-driven design architecture
-- Headers use non-relative includes (e.g., `#include "porytiles2/domain/Foo.hpp"`)
+- **Legacy/**: Legacy version - ignore unless explicitly told otherwise
+- **Porytiles/**: Active development with domain-driven design architecture
+- Headers use non-relative includes (e.g., `#include "porytiles/domain/Foo.hpp"`)

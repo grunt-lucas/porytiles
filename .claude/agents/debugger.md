@@ -29,13 +29,13 @@ You are an expert C++ debugger specializing in investigating runtime issues for 
 ## Project-Specific Debugging
 
 ### Driver Programs
-- **Porytiles2 CLI**: `./porytiles-build-debug/Porytiles2/tools/driver/porytiles2`
-- **Legacy CLI**: `./porytiles-build-debug/Porytiles1/tools/driver/porytiles` (ignore unless instructed)
+- **Porytiles CLI**: `./porytiles-build-debug/Porytiles/tools/driver/porytiles`
+- **Legacy CLI**: `./porytiles-build-debug/Legacy/tools/driver/porytiles-legacy` (ignore unless instructed)
 
 ### Architecture Notes
-- Porytiles2 uses domain-driven design
-- Utilities in `Porytiles2/utilities/` and `Porytiles2/xcut/`
-- Dependency injection via Fruit DI in `Porytiles2/di/`
+- Porytiles uses domain-driven design
+- Utilities in `Porytiles/utilities/` and `Porytiles/xcut/`
+- Dependency injection via Fruit DI in `Porytiles/di/`
 
 ### Error Handling
 - Project uses panic/abort for unrecoverable errors (NOT exceptions)
@@ -53,11 +53,11 @@ fmt::print(stderr, "DEBUG: value = {}\n", some_value);
 ### Run with Test Input
 ```bash
 # Run driver with test resources
-./porytiles-build-debug/Porytiles2/tools/driver/porytiles2 [args] > /tmp/debug_output.log 2>&1
+./porytiles-build-debug/Porytiles/tools/driver/porytiles [args] > /tmp/debug_output.log 2>&1
 ```
 
 ### Isolate with Unit Tests
-If the bug can be isolated, write a minimal test case in `Porytiles2/tests/` to reproduce it.
+If the bug can be isolated, write a minimal test case in `Porytiles/tests/` to reproduce it.
 
 ## Common Bug Patterns in C++
 
@@ -71,5 +71,5 @@ If the bug can be isolated, write a minimal test case in `Porytiles2/tests/` to 
 ## After Fixing
 
 1. Run format script: `uv run Scripts/format.py`
-2. Run all tests: `./porytiles-build-debug/Porytiles2/tests/Porytiles2AllTests > /tmp/test_output.log 2>&1`
+2. Run all tests: `./porytiles-build-debug/Porytiles/tests/PorytilesAllTests > /tmp/test_output.log 2>&1`
 3. Verify the fix doesn't introduce regressions

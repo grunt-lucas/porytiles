@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Format Porytiles2 C++ source files using clang-format.
+Format Porytiles C++ source files using clang-format.
 
 Usage:
-    uv run Scripts/format.py                          # Format all Porytiles2 sources
+    uv run Scripts/format.py                          # Format all Porytiles sources
     uv run Scripts/format.py file1.cpp file2.hpp      # Format specific files
     uv run Scripts/format.py --check                  # Dry-run (CI mode), exit 1 if changes needed
 
@@ -15,20 +15,43 @@ Environment:
 
 import argparse
 import os
+import shutil
 import subprocess
 import sys
 from pathlib import Path
 
 SOURCE_EXTENSIONS = {"*.cpp", "*.hpp", "*.h", "*.ipp"}
 
+# Highest-supported versions first, so newer installs win when multiple coexist.
+CLANG_FORMAT_VERSION_CANDIDATES = [f"clang-format-{v}" for v in range(25, 17, -1)]
+
 
 def collect_sources(project_root):
-    """Collect all C++ source files under Porytiles2/."""
-    porytiles2_dir = project_root / "Porytiles2"
+    """Collect all C++ source files under Porytiles/."""
+    porytiles_dir = project_root / "Porytiles"
     files = []
     for ext in SOURCE_EXTENSIONS:
-        files.extend(porytiles2_dir.rglob(ext))
+        files.extend(porytiles_dir.rglob(ext))
     return sorted(files)
+
+
+def resolve_clang_format():
+    """Find a usable clang-format binary, preferring CLANG_FORMAT, then plain
+    clang-format, then versioned aliases like clang-format-21."""
+    override = os.environ.get("CLANG_FORMAT")
+    if override:
+        return override
+
+    for candidate in ["clang-format", *CLANG_FORMAT_VERSION_CANDIDATES]:
+        if shutil.which(candidate):
+            return candidate
+
+    print(
+        "Error: Could not find a clang-format binary on PATH. Install clang-format "
+        "or set CLANG_FORMAT to the binary you want to use.",
+        file=sys.stderr,
+    )
+    sys.exit(1)
 
 
 def main():
@@ -39,11 +62,11 @@ def main():
         sys.exit(1)
 
     parser = argparse.ArgumentParser(
-        description="Format Porytiles2 C++ source files using clang-format."
+        description="Format Porytiles C++ source files using clang-format."
     )
     parser.add_argument(
         "files", nargs="*",
-        help="Specific files to format. If omitted, formats all Porytiles2 sources."
+        help="Specific files to format. If omitted, formats all Porytiles sources."
     )
     parser.add_argument(
         "--check", action="store_true",
@@ -65,7 +88,7 @@ def main():
         print("No source files found.")
         return
 
-    clang_format = os.environ.get("CLANG_FORMAT", "clang-format")
+    clang_format = resolve_clang_format()
     cmd = [clang_format, "-style=file"]
 
     if args.check:
