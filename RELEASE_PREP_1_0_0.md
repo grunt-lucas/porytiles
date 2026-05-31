@@ -17,12 +17,12 @@ disagree, the planning doc is authoritative for intent; update this tracker to m
 |-------|-------|--------|
 | 0  | Document the plan in the repo (this file) | ✅ Done |
 | A1 | Legacy include-prefix rename (collision unblocker) | ✅ Done |
-| A2 | Porytiles2 → Porytiles (the big rename) | ✅ Done (local) |
-| A3 | Porytiles1 → Legacy directory rename | ✅ Done (local) |
-| A4 | Scripts, configs, IDE files, docs sweep | ✅ Done (local) |
-| A5 | GitHub Actions hardcoded paths | ✅ Done (local) |
-| A6 | Phase A end-to-end verification | ✅ Done (local) |
-| B  | CHANGELOG infrastructure | ⬜ Not started |
+| A2 | Porytiles2 → Porytiles (the big rename) | ✅ Done |
+| A3 | Porytiles1 → Legacy directory rename | ✅ Done |
+| A4 | Scripts, configs, IDE files, docs sweep | ✅ Done |
+| A5 | GitHub Actions hardcoded paths | ✅ Done |
+| A6 | Phase A end-to-end verification | ✅ Done |
+| B  | CHANGELOG infrastructure | ✅ Done |
 | C  | Versioning system | ⬜ Not started |
 | D  | CI / release pipeline overhaul | ⬜ Not started |
 | E  | Gitflow adoption + 1.0.0 cut | ⬜ Not started |
@@ -340,12 +340,13 @@ End-to-end through `cmake --build` + install + execute is the first validation t
 
 ## Phase B — CHANGELOG infrastructure (parallel with A)
 
-- [ ] **B1** Create `CHANGELOG.md` at repo root (simplified Keep A Changelog skeleton:
-  `## [Unreleased]` + `## [1.0.0] - YYYY-MM-DD`).
-- [ ] **B2** Add `.github/workflows/changelog_check.yml`: trigger on PRs to
-  `develop`/`master`; fail if `CHANGELOG.md` not in diff; skip on `no-changelog` label.
-- [ ] **B3** Document the convention in `CONTRIBUTING.md` (every PR adds an
-  `## [Unreleased]` entry or carries `no-changelog`).
+- [x] **B1** Created `CHANGELOG.md` at repo root: empty `## [Unreleased]` above a catch-all `## [1.0.0] - YYYY-MM-DD` release note. Release-prep work itself is not enumerated as changelog entries per user direction — accumulation begins post-1.0.0 cut.
+- [x] **B2** Added `.github/workflows/changelog_check.yml`: triggers on `pull_request` to `develop` (not `master` — release cuts always touch CHANGELOG by construction); step-level `if:` skips the gate when the PR carries `no-changelog`, leaving job status as success for required-check compatibility; diff check uses `git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q '^CHANGELOG\.md$'`. yaml.safe_load passes.
+- [x] **B3** Added "Changelog" section to `CONTRIBUTING.md` (after "Branch Cleanup", with matching TOC entry) documenting the rule, the `no-changelog` opt-out, and the release-cut migration of `[Unreleased]` to a dated heading. Uses sembr to match the rest of the file.
+
+**Phase B prerequisites for the gate to actually function** (carried forward — do NOT skip before pushing the PR):
+- [x] Created the `no-changelog` label (`#cfd3d7`, "PR is exempt from CHANGELOG.md enforcement") via `gh label create`. Now selectable by contributors on PRs.
+- [ ] The recursive-bootstrap test: B's own PR will be the first run of `Porytiles Changelog Check` — confirm it passes (because the PR touches `CHANGELOG.md` by creating it).
 
 ---
 
