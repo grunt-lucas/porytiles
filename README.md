@@ -81,7 +81,7 @@ Porytiles's build system will search the system library paths for
 `libpng.a` and `libz.a`.
 If you'd like to link those libraries dynamically,
 or if the CMake configuration is having trouble finding them,
-then you'll need to modify `Porytiles1/lib/CMakeLists.txt` appropriately.
+then you'll need to modify `Legacy/lib/CMakeLists.txt` appropriately.
 
 You'll also need `cmake` version `3.20` or greater.
 
@@ -98,11 +98,11 @@ cmake --build .
 You can check that everything is working like this:
 ```
 cd ..
-./build/Porytiles1/tests/Porytiles1Tests
+./build/Legacy/tests/LegacyTests
 ```
 To run the actual tool:
 ```
-./build/Porytiles1/tools/driver/porytiles
+./build/Legacy/tools/driver/porytiles-legacy
 ```
 
 ### Notes For macOS

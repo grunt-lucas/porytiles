@@ -29,10 +29,11 @@ tmp/**
 venv/**
 .venv/**
 
-# Ignore porytiles docs projects
+# Ignore porytiles meta projects
 porytiles-user-docs
 porytiles-dev-docs
 porytiles.wiki
+homebrew-porytiles
 
 # Ignore Gen III decomp projects
 pokeemerald

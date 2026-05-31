@@ -1,12 +1,12 @@
 #!/usr/bin/env python3
 """
-Search for TODO-style comments in Porytiles2 source files.
+Search for TODO-style comments in Porytiles source files.
 
 Usage:
     uv run Scripts/todo.py all                        # All categories
     uv run Scripts/todo.py todo                       # Just TODOs
     uv run Scripts/todo.py fixme|note|feature|tests   # Other categories
-    uv run Scripts/todo.py all --path Porytiles2/lib  # Scope to directory
+    uv run Scripts/todo.py all --path Porytiles/lib  # Scope to directory
     uv run Scripts/todo.py all --count                # Just counts per category
 """
 
@@ -59,7 +59,7 @@ def search_category(name, pattern, path, count_only=False):
 
 def main():
     parser = argparse.ArgumentParser(
-        description="Search for TODO-style comments in Porytiles2 source files."
+        description="Search for TODO-style comments in Porytiles source files."
     )
     parser.add_argument(
         "category",
@@ -68,8 +68,8 @@ def main():
         help="Category to search for (case-insensitive)."
     )
     parser.add_argument(
-        "--path", default="Porytiles2",
-        help="Directory to search in (default: Porytiles2)."
+        "--path", default="Porytiles",
+        help="Directory to search in (default: Porytiles)."
     )
     parser.add_argument(
         "--count", action="store_true",

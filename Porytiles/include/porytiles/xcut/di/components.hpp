@@ -1,0 +1,27 @@
+#pragma once
+
+#include "fruit/fruit.h"
+
+#include "porytiles/utilities/text/text_formatter.hpp"
+
+namespace porytiles::di {
+
+/**
+ * @brief Component that provides TextFormatter based on runtime configuration.
+ *
+ * @details
+ * This component conditionally binds either AnsiStyledTextFormatter or PlainTextFormatter based on the no_color
+ * parameter. This demonstrates runtime conditional injection with Fruit DI.
+ *
+ * Usage:
+ * ```C++
+ * fruit::Injector<TextFormatter> injector(get_formatter_component, false);
+ * auto* formatter = injector.get<TextFormatter*>();
+ * ```
+ *
+ * @param no_color If true, use PlainTextFormatter; otherwise use AnsiStyledTextFormatter
+ * @return Component providing TextFormatter interface
+ */
+fruit::Component<TextFormatter> get_formatter_component(bool no_color);
+
+} // namespace porytiles::di

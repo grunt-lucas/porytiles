@@ -64,6 +64,6 @@ else ()
     add_compile_options(-Wall -Wpedantic)
 endif ()
 
-add_subdirectory(Porytiles1)
-add_subdirectory(Porytiles2)
+add_subdirectory(Legacy)
+add_subdirectory(Porytiles)
 add_subdirectory(Documentation)

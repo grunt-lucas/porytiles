@@ -8,23 +8,23 @@ Porytiles is a C++ overworld tileset compiler for Pokémon Generation III decomp
 
 ## Architecture
 
-The project is organized into two main versions:
-- **Porytiles1**: Legacy version (ignore unless explicitly instructed)
-- **Porytiles2**: Active development with domain-driven design architecture inspired by clang
+The project is organized into two main code trees:
+- **`Legacy/`**: Old codebase, ignore unless explicitly instructed
+- **`Porytiles/`**: Active development with domain-driven design architecture inspired by clang
 
-Key directories in Porytiles2:
+Key directories in `Porytiles/`:
 - `Documentation/` - Documentation source folder
-- `Porytiles2/config_templates/` - Code generation for config system
-- `Porytiles2/include/porytiles2/domain/` - Pure business logic, no I/O dependencies
-- `Porytiles2/include/porytiles2/app/` - User-facing use cases and workflows
-- `Porytiles2/include/porytiles2/infra/` - I/O and external system/library integration
-- `Porytiles2/include/porytiles2/xcut/` - Cross-cutting concerns (errors, diagnostics, config, di, etc)
-- `Porytiles2/include/porytiles2/utilities/` - Generic helpers, zero dependencies
-- `Porytiles2/lib/` - .cpp implementation files
-- `Porytiles2/Notes/` - WIP documentation, feature outlines, refactoring plans, etc
-- `Porytiles2/tests/` - GoogleTest test suites
-- `Porytiles2/scratch/` - My scratch directory, you can ignore this
-- `Porytiles2/tools/` - Tools that use the Porytiles library, currently just the main CLI tool
+- `Porytiles/config_templates/` - Code generation for config system
+- `Porytiles/include/porytiles/domain/` - Pure business logic, no I/O dependencies
+- `Porytiles/include/porytiles/app/` - User-facing use cases and workflows
+- `Porytiles/include/porytiles/infra/` - I/O and external system/library integration
+- `Porytiles/include/porytiles/xcut/` - Cross-cutting concerns (errors, diagnostics, config, di, etc)
+- `Porytiles/include/porytiles/utilities/` - Generic helpers, zero dependencies
+- `Porytiles/lib/` - .cpp implementation files
+- `Porytiles/Notes/` - WIP documentation, feature outlines, refactoring plans, etc
+- `Porytiles/tests/` - GoogleTest test suites
+- `Porytiles/scratch/` - My scratch directory, you can ignore this
+- `Porytiles/tools/` - Tools that use the Porytiles library, currently just the main CLI tool
 - `Resources/` - Test assets and example files
 - `Scripts/` - Utility scripts for the repository (including config system generation)
 
@@ -50,7 +50,7 @@ Quick reference:
 uv run Scripts/format.py          # Format code
 cmake --build porytiles-build-debug -j7 > /tmp/build.log 2>&1  # Build (check exit code)
 cmake --install porytiles-build-debug --prefix ~/.local        # Install to ~/.local/bin
-./porytiles-build-debug/Porytiles2/tests/Porytiles2AllTests > /tmp/test.log 2>&1  # Test
+./porytiles-build-debug/Porytiles/tests/PorytilesAllTests > /tmp/test.log 2>&1  # Test
 ```
 
 **After building, always install the executable to make it available for testing.**
@@ -63,7 +63,7 @@ Uses LLVM source-based coverage via `Scripts/coverage.py`. Build directory: `por
 uv run Scripts/coverage.py build                    # Configure, build, run tests, merge profile data
 uv run Scripts/coverage.py report                   # Summary report to stdout
 uv run Scripts/coverage.py report --html /tmp/cov   # HTML report
-uv run Scripts/coverage.py show Porytiles2/lib/domain/foo.cpp  # Line-by-line for specific files
+uv run Scripts/coverage.py show Porytiles/lib/domain/foo.cpp  # Line-by-line for specific files
 uv run Scripts/coverage.py clean                    # Remove coverage build dir
 ```
 
@@ -71,8 +71,8 @@ When writing tests for new features or bug fixes, always check coverage to verif
 
 ## Testing with pokeemerald-expansion
 
-A `pokeemerald-expansion` testbed project is available at `./pokeemerald-expansion` for testing the installed `porytiles2` executable against a real decomp project.
-You can either `cd` into the testbed project or run `porytiles2` with the `--project-root` set to `./pokeemerald-expansion`.
+A `pokeemerald-expansion` testbed project is available at `./pokeemerald-expansion` for testing the installed `porytiles` executable against a real decomp project.
+You can either `cd` into the testbed project or run `porytiles` with the `--project-root` set to `./pokeemerald-expansion`.
 There is also a `pokefirered` testbed at `./pokefirered`, and a `pokeemerald` at `./pokeemerald`.
 
 ## Documentation Repositories
@@ -89,13 +89,13 @@ Porytiles has two separate documentation repositories (gitignored in the main re
 
 These are **separate git repositories** cloned into the main porytiles directory. They follow [porymap's documentation pattern](https://github.com/huderlem/porymap) with Sphinx and the Read the Docs theme.
 
-### Legacy Porytiles1 Wiki
+### Legacy Wiki
 
-- **porytiles.wiki/**: Source for the GitHub Wiki of **legacy Porytiles1** (flat `.md` files: `Home.md`, `_Sidebar.md`, `_Footer.md`, page files like `Compiling-A-Primary-Tileset.md`, etc.)
+- **porytiles.wiki/**: Source for the GitHub Wiki of the **legacy** Porytiles codebase (flat `.md` files: `Home.md`, `_Sidebar.md`, `_Footer.md`, page files like `Compiling-A-Primary-Tileset.md`, etc.)
   - GitHub: https://github.com/grunt-lucas/porytiles.wiki.git
   - This is the GitHub Wiki backend repo, not a Sphinx site. Edits here publish to the project's GitHub Wiki tab.
   - Like the other docs repos, it is a **separate git repository** cloned into the main porytiles directory and is gitignored.
-  - **Per the standing rule, ignore this directory unless explicitly told to work with Porytiles1 content.**
+  - **Per the standing rule, ignore this directory unless explicitly told to work with legacy content.**
 
 ### Building Documentation
 
@@ -116,7 +116,7 @@ After running `make github`, commit and push the changes in the docs repo to dep
 
 **CRITICAL: Use `uv` for Python script execution!**
 
-Porytiles2 uses [uv](https://docs.astral.sh/uv/) for Python dependency management.
+Porytiles uses [uv](https://docs.astral.sh/uv/) for Python dependency management.
 Install uv if you haven't: https://docs.astral.sh/uv/getting-started/installation/
 
 ```bash
@@ -133,7 +133,7 @@ Follow the style guide in @./STYLE.md
 ## **CRITICAL RULES - DO NOT VIOLATE**
 
 ### Behavioral Rules
-- **Ignore `Porytiles1/`** unless explicitly told to work with those files
+- **Ignore `Legacy/`** unless explicitly told to work with those files
 - **NEVER create mock data or simplified components** unless explicitly told to
 - **NEVER replace existing complex components with simplified versions** - fix the actual problem
 - **ALWAYS find and fix the root cause** of issues instead of creating workarounds
@@ -145,7 +145,7 @@ Follow the style guide in @./STYLE.md
 - Use braced initialization where possible (but avoid when ambiguous constructors exist)
 - **Never** include headers using relative paths
 - Follow const correctness principles
-- Always use namespace `porytiles2`, no child namespaces (unless explicitly instructed)
+- Always use namespace `porytiles`, no child namespaces (unless explicitly instructed)
 - Place private helper functions in **anonymous namespaces in .cpp files**, not in class `private:` sections
 - Code must work on **both GCC and Clang** - no compiler-specific code
 

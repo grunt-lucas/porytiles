@@ -1,9 +1,9 @@
 #!/usr/bin/env python3
 """
-Run clang-tidy on Porytiles2 C++ source files.
+Run clang-tidy on Porytiles C++ source files.
 
 Usage:
-    uv run Scripts/tidy.py                                  # All Porytiles2 .cpp files
+    uv run Scripts/tidy.py                                  # All Porytiles .cpp files
     uv run Scripts/tidy.py file1.cpp file2.cpp              # Specific files
     uv run Scripts/tidy.py --build-dir porytiles-build-debug    # Override build dir
     uv run Scripts/tidy.py --fix                            # Apply auto-fixes
@@ -17,10 +17,10 @@ from pathlib import Path
 
 
 def collect_sources(project_root):
-    """Collect all .cpp translation units from Porytiles2 lib/ and tools/."""
+    """Collect all .cpp translation units from Porytiles lib/ and tools/."""
     dirs = [
-        project_root / "Porytiles2" / "lib",
-        project_root / "Porytiles2" / "tools",
+        project_root / "Porytiles" / "lib",
+        project_root / "Porytiles" / "tools",
     ]
     files = []
     for d in dirs:
@@ -37,11 +37,11 @@ def main():
         sys.exit(1)
 
     parser = argparse.ArgumentParser(
-        description="Run clang-tidy on Porytiles2 C++ source files."
+        description="Run clang-tidy on Porytiles C++ source files."
     )
     parser.add_argument(
         "files", nargs="*",
-        help="Specific .cpp files to check. If omitted, checks all Porytiles2 translation units."
+        help="Specific .cpp files to check. If omitted, checks all Porytiles translation units."
     )
     parser.add_argument(
         "--build-dir", default="porytiles-build-debug",

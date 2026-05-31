@@ -1,6 +1,6 @@
 #!/usr/bin/env python3
 """
-Code coverage tooling for Porytiles2 using LLVM coverage instruments.
+Code coverage tooling for Porytiles using LLVM coverage instruments.
 
 Usage:
     uv run Scripts/coverage.py build                                       # Configure + build + run tests
@@ -73,7 +73,7 @@ def cmd_build(project_root, build_dir):
     ], description="Building with coverage instrumentation")
 
     # 3. Run tests
-    test_binary = build_path / "Porytiles2" / "tests" / "Porytiles2AllTests"
+    test_binary = build_path / "Porytiles" / "tests" / "PorytilesAllTests"
     if not test_binary.exists():
         print(f"Error: Test binary not found at {test_binary}.", file=sys.stderr)
         sys.exit(1)
@@ -99,7 +99,7 @@ def cmd_build(project_root, build_dir):
 def validate_profdata(build_path):
     """Validate that profdata exists and return paths."""
     profdata = build_path / "testcov.profdata"
-    test_binary = build_path / "Porytiles2" / "tests" / "Porytiles2AllTests"
+    test_binary = build_path / "Porytiles" / "tests" / "PorytilesAllTests"
 
     if not profdata.exists():
         print(f"Error: Profile data not found at {profdata}.", file=sys.stderr)
@@ -171,7 +171,7 @@ def main():
         sys.exit(1)
 
     parser = argparse.ArgumentParser(
-        description="Code coverage tooling for Porytiles2 using LLVM coverage instruments."
+        description="Code coverage tooling for Porytiles using LLVM coverage instruments."
     )
     subparsers = parser.add_subparsers(dest="command", required=True)
 

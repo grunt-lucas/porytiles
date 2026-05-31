@@ -6,8 +6,8 @@ runs:
     - name: Run version and test suite
       shell: bash
       run: |
-        ./build/Porytiles1/tools/driver/porytiles --version
-        ./build/Porytiles1/tests/Porytiles1Tests
-        ./build/Porytiles2/tools/driver/porytiles2 --version
-        ./build/Porytiles2/tests/Porytiles2UnitTests
-        ./build/Porytiles2/tests/Porytiles2IntegrationTests
+        ./build/Legacy/tools/driver/porytiles-legacy --version
+        ./build/Legacy/tests/LegacyTests
+        ./build/Porytiles/tools/driver/porytiles --version
+        ./build/Porytiles/tests/PorytilesUnitTests
+        ./build/Porytiles/tests/PorytilesIntegrationTests

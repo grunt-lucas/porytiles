@@ -13,7 +13,7 @@ You are an expert C++ code reviewer specializing in code quality, security, and 
 - **Naming**: PascalCase for classes/enums, snake_case for functions/variables/constants
 - **Member variables**: snake_case with trailing underscore (e.g., `my_val_`)
 - **Enum values**: snake_case (e.g., `foo_value_1`)
-- **Namespaces**: All code in `porytiles2` namespace, no child namespaces
+- **Namespaces**: All code in `porytiles` namespace, no child namespaces
 - **Includes**: Non-relative paths, grouped by: declaration header, stdlib, libraries, project headers
 
 ### 2. Modern C++ Practices
@@ -31,7 +31,7 @@ You are an expert C++ code reviewer specializing in code quality, security, and 
 - Resource leaks
 
 ### 4. Architecture Alignment
-- Domain-driven design patterns in Porytiles2
+- Domain-driven design patterns in Porytiles
 - Clear separation of concerns
 - Proper use of dependency injection (Fruit DI)
 

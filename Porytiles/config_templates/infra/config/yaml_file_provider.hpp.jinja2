@@ -1,0 +1,105 @@
+{#
+  Template for generating yaml_file_provider.hpp
+
+  This template generates the YamlFileProvider class header with override declarations
+  for all configuration values defined in config_schema.yaml.
+#}
+{% import '_macros.jinja2' as macros %}
+#pragma once
+
+#include <filesystem>
+#include <memory>
+#include <string>
+
+#include "gsl/pointers"
+
+#include "porytiles/infra/config/config_provider.hpp"
+#include "porytiles/utilities/text/text_formatter.hpp"
+#include "porytiles/xcut/diagnostics/user_diagnostics.hpp"
+
+namespace porytiles {
+
+{{ macros.autogen_warning() }}
+
+/**
+ * @brief A ConfigProvider implementation that reads configuration values from multiple YAML files with priority.
+ *
+ * @details
+ * YamlFileProvider loads YAML configuration files from multiple locations and provides access to configuration values
+ * defined within them. Config files are searched in priority order:
+ * 1. porytiles/tilesets/{tileset_name}/config.local.yaml (highest priority)
+ * 2. porytiles/tilesets/{tileset_name}/config.yaml
+ * 3. porytiles/config.local.yaml
+ * 4. porytiles/config.yaml (lowest priority)
+ *
+ * Files are loaded lazily and cached for performance. If no config files exist or a key is not found, methods return
+ * LayerValue::not_provided(), allowing graceful fallback to other providers in a layered configuration system.
+ */
+class YamlFileProvider final : public ConfigProvider {
+  public:
+    /**
+     * @brief Constructs a YamlFileProvider that searches for configuration across multiple YAML files.
+     *
+     * @details
+     * This constructor sets up the provider to search for configuration values across multiple config files in priority
+     * order. Config files are loaded lazily when first accessed and cached for subsequent lookups. Unknown YAML keys
+     * will be reported as errors via the diagnostics interface.
+     *
+     * @param format A pointer to the TextFormatter to use
+     * @param diagnostics A pointer to UserDiagnostics for emitting errors about unknown keys
+     * @param project_root The root directory of the project
+     */
+    explicit YamlFileProvider(
+        gsl::not_null<const TextFormatter *> format,
+        const UserDiagnostics *diagnostics,
+        const std::filesystem::path &project_root);
+
+    /**
+     * @brief Constructs a YamlFileProvider with a default PlainTextFormatter.
+     *
+     * @details
+     * This constructor creates an internally owned PlainTextFormatter instance and uses it for formatting. The
+     * YamlFileProvider will search for configuration values across multiple config files in priority order. Config
+     * files are loaded lazily when first accessed and cached for subsequent lookups. Unknown YAML keys will be
+     * reported as errors via the diagnostics interface.
+     *
+     * @param diagnostics A pointer to UserDiagnostics for emitting errors about unknown keys
+     * @param project_root The root directory of the project
+     */
+    explicit YamlFileProvider(
+        const UserDiagnostics *diagnostics,
+        const std::filesystem::path &project_root);
+
+    /**
+     * @brief Gets the name of this config layer.
+     *
+     * @return The name "YamlFileProvider"
+     */
+    [[nodiscard]] std::string name() const override;
+
+    /**
+     * @brief Eagerly loads all YAML config files and validates them for unknown keys.
+     *
+     * @details
+     * Forces loading and validation of all YAML config files in the priority chain for the given scope.
+     * If any files contain unknown configuration keys, errors are emitted via the diagnostics interface
+     * and this method returns @c true to indicate the caller should terminate.
+     *
+     * @param type The configuration scope type
+     * @param scope The scope name (e.g., tileset name)
+     * @return @c true if unknown keys were found (caller should terminate), @c false otherwise.
+     */
+    [[nodiscard]] bool preload_and_validate(ConfigScopeType type, const std::string &scope) const;
+{% for value in config_values %}
+
+    [[nodiscard]] LayerValue<{{ value.type }}> {{ value.symbol }}(ConfigScopeType type, const std::string &scope) const override;
+{% endfor %}
+
+  private:
+    std::unique_ptr<TextFormatter> owned_format_; // Optional owned formatter (when using default ctor)
+    const TextFormatter *format_;                 // Non-owning pointer to formatter
+    const UserDiagnostics *diagnostics_;          // Non-owning pointer to diagnostics
+    std::filesystem::path project_root_;
+};
+
+} // namespace porytiles

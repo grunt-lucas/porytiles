@@ -1,0 +1,133 @@
+#include "porytiles/app/use_cases/decompile_primary_tileset.hpp"
+
+#include <memory>
+#include <string>
+
+#include "porytiles/domain/algorithms/diagnostic_stencils.hpp"
+#include "porytiles/utilities/result/chainable_result.hpp"
+#include "porytiles/xcut/config/unwrap_config.hpp"
+
+namespace porytiles {
+
+ChainableResult<void> DecompilePrimaryTileset::decompile(const std::string &tileset_name) const
+{
+    // 1. Check if the primary tileset exists and is Porytiles-managed. If not, abort with error.
+    if (!metadata_provider_->exists(tileset_name)) {
+        return FormattableError{"Tileset '{}' does not exist.", FormatParam{tileset_name, Style::bold}};
+    }
+    if (!tileset_manager_->is_porytiles_managed(tileset_name)) {
+        return FormattableError{
+            "Tileset '{}' exists but is not Porytiles-managed.", FormatParam{tileset_name, Style::bold}};
+    }
+
+    // 2. Load the tileset into a `Tileset` aggregate.
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        tileset,
+        tileset_repo_->load(tileset_name),
+        void,
+        diag_->formatter().format("Failed to load tileset '{}'.", FormatParam(tileset_name, Style::bold)));
+
+    PT_UNWRAP_TILESET_CONFIG_PTR(app_config_, verify_checksums, tileset_name, void);
+    if (!tileset_repo_->checksum_provider().cached_checksums_exist(tileset_name) && verify_checksums) {
+        std::vector<std::string> err_msg{};
+        err_msg.emplace_back(diag_->formatter().format(
+            "No cached checksums found for tileset '{}'.", FormatParam{tileset_name, Style::bold}));
+        err_msg.emplace_back(diag_->formatter().format(
+            "Expected to find file '{}'.",
+            FormatParam{"porytiles/tilesets/" + tileset_name + "/tileset.cache.json", Style::bold}));
+        err_msg.emplace_back("Checksum verification requested via configuration.");
+        err_msg.append_range(format_config_note_with_separator(diag_->formatter(), verify_checksums));
+
+        return ChainableResult<void>{FormattableError{err_msg}};
+    }
+
+    // 3. If `PorytilesTilesetComponent` is not empty, compare with cached checksums in `tileset.cache.json`.
+    // If any differ, bail with the message "uncompiled changes present in Porytiles asset X."
+
+    // Only perform the checksum checks if: 1) cached checksums exist and 2) the user is requesting checksum validation
+    if (tileset_repo_->checksum_provider().cached_checksums_exist(tileset_name) && verify_checksums.value()) {
+        if (!tileset->porytiles_component().is_empty()) {
+            PT_TRY_ASSIGN_CHAIN_ERR(
+                porytiles_keys,
+                tileset_repo_->key_provider().get_porytiles_artifact_keys(tileset_name),
+                void,
+                "Failed to get Porytiles artifact keys.");
+            const auto mismatched_keys =
+                tileset_repo_->checksum_provider().find_unsynced_tileset_artifacts(tileset_name, porytiles_keys);
+            if (!mismatched_keys.empty()) {
+                std::vector<std::string> err_msg{};
+                err_msg.emplace_back("Changes present in Porytiles assets:");
+                for (const auto &key : mismatched_keys) {
+                    err_msg.emplace_back(diag_->formatter().format("  {}", FormatParam{key.key(), Style::bold}));
+                }
+                err_msg.emplace_back("");
+                err_msg.emplace_back("Decompiling now would clobber your Porytiles asset changes.");
+                err_msg.emplace_back("To resolve:");
+                err_msg.emplace_back(diag_->formatter().format(
+                    "  - Run '{} {}' to synchronize assets.",
+                    FormatParam{"compile-tileset", Style::bold},
+                    FormatParam{tileset_name, Style::bold}));
+                err_msg.emplace_back(diag_->formatter().format(
+                    "  - {} disable checksum verification to allow the clobber.", FormatParam{"OR", Style::bold}));
+                err_msg.emplace_back(diag_->formatter().format(
+                    "  - {} delete '{}' cache file.",
+                    FormatParam{"OR", Style::bold},
+                    FormatParam{"porytiles/tilesets/" + tileset_name + "/tileset.cache.json", Style::bold}));
+                err_msg.append_range(format_config_note_with_separator(diag_->formatter(), verify_checksums));
+                return ChainableResult<void>{FormattableError{err_msg}};
+            }
+        }
+
+        // 4. If all `PorymapTilesetComponent` checksums match those cached in `tileset.cache.json`, bail with the
+        // message "nothing to do."
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            porymap_keys,
+            tileset_repo_->key_provider().get_porymap_artifact_keys(tileset_name),
+            void,
+            "Failed to get Porymap artifact keys.");
+        if (tileset_repo_->checksum_provider().all_checksums_tileset_match(tileset_name, porymap_keys)) {
+            diag_->warning(
+                "nothing-to-do",
+                "Skipping decompilation for '{}', no changes found.",
+                FormatParam{tileset_name, Style::bold});
+            return {};
+        }
+    }
+
+    // 5. Decompile the `PorymapTilesetComponent`, generating a new `PorytilesTilesetComponent`.
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        decompiled_tileset,
+        decompiler_->decompile(*tileset),
+        void,
+        "Import job failed for '{}'.",
+        FormatParam(tileset_name, Style::bold));
+
+    // 6. Persist the `Tileset` (which also caches the checksums).
+    PT_TRY_CALL_CHAIN_ERR(
+        tileset_repo_->save(*decompiled_tileset),
+        void,
+        "Tileset save job failed for '{}'.",
+        FormatParam(tileset_name, Style::bold));
+
+    // 7. Handle animation code wiring
+    if (!decompiled_tileset->porytiles_component().anims().empty()) {
+        // Tileset has animations - wire the generated code
+        PT_TRY_CALL_CHAIN_ERR(
+            tileset_manager_->wire_anim_code(tileset_name, /*is_secondary=*/false),
+            void,
+            "Failed to wire animation code for '{}'.",
+            FormatParam(tileset_name, Style::bold));
+    }
+    else {
+        // Tileset has no animations - remove any stale wiring
+        PT_TRY_CALL_CHAIN_ERR(
+            tileset_manager_->remove_wired_anim_code(tileset_name, /*is_secondary=*/false),
+            void,
+            "Failed to remove wired animation code for '{}'.",
+            FormatParam(tileset_name, Style::bold));
+    }
+
+    return {};
+}
+
+} // namespace porytiles

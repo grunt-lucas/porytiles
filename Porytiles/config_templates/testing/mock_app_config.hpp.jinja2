@@ -1,0 +1,25 @@
+{% import '_macros.jinja2' as macros %}
+#pragma once
+
+{{ macros.autogen_warning() }}
+
+#include <memory>
+#include <string>
+
+#include "porytiles/app/config/app_config.hpp"
+#include "porytiles/infra/config/config_provider.hpp"
+
+namespace porytiles {
+
+class MockAppConfig : public AppConfig {
+  public:
+    // Stub: mocks do not layer providers.
+    void add_provider(std::unique_ptr<ConfigProvider>) override {}
+
+{{ macros.mock_public_fields(config_values, 'app') }}
+
+  protected:
+{{ macros.mock_raw_methods(config_values, 'app') }}
+};
+
+} // namespace porytiles

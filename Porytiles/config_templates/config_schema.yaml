@@ -1,0 +1,836 @@
+# Configuration Schema for Porytiles
+# This file defines all configuration values that will be auto-generated
+#
+# Fields:
+#   canonical_name: Human-readable display name for the config value
+#
+#   symbol: C++ method name / programmatic identifier for the config value
+#
+#   yaml_path: Dot-separated YAML path (e.g., "fieldmap.num_tiles_in_primary")
+#
+#   header_define: (optional) Name of the #define macro in header files for HeaderDefineProvider
+#     - Only supported for std::size_t types
+#     - Example: "NUM_TILES_IN_PRIMARY" to match "#define NUM_TILES_IN_PRIMARY 512"
+#
+#   cli_option: CLI option name (e.g., "num-tiles-in-primary")
+#
+#   cli_desc: (optional) Custom description for CLI --help output
+#     - When absent, templates fall back to using canonical_name
+#     - Use this to provide more user-friendly CLI descriptions without changing canonical_name
+#
+#   yaml_only: (optional, default false) When true, this config value can only be set via YAML
+#     - Excludes from CLI integration and any other non-YAML providers
+#     - Use for complex types that cannot be reasonably expressed on the command line
+#     - Example: std::vector<PaletteHint>, PerAnimOverrides
+#
+#   type: C++ type for the value
+#
+#   parser: Parser function name (e.g., "parse_size_t") - used by all providers
+#
+#   layer: Configuration layer (domain/app/infra)
+#
+#   default_value: Default value for DefaultProvider (C++ expression as string)
+#
+#   validators: List of validator function names to apply (required, use empty list [] if none)
+#     - Validators are chainable functions taking ConfigValue<T> and returning ChainableResult<ConfigValue<T>>
+#     - Defined in xcut/config/config_validators.hpp or <layer>/config/<layer>_config_validators.hpp
+#     - Applied in sequence after fetching from provider, before returning to caller
+#     - Example: [size_t_val_greater_than_zero]
+#
+#   cross_field_validators: List of cross-field validators that can access other config values (required, use empty list [] if none)
+#     - Applied after regular validators, have access to config object and can fetch other values
+#     - Defined in xcut/config/config_validators.hpp or <layer>/config/<layer>_config_validators.hpp
+#     - Reference syntax: "<validator_func_name>:<field_name>"
+#     - Example: [compare_greater_than:num_tiles_primary]
+
+# ============================================================================
+# Enum Type Definitions
+# ============================================================================
+# Enum types are defined here and used to generate:
+#   - Enum header files (enum class, *_from_str(), to_string(), ostream operator)
+#   - CLI registration code (CheckedTransformer maps)
+#   - CLI completion data (enum choices)
+#
+# Fields:
+#   cpp_type: The C++ enum class name (e.g., "ArtifactEditMode")
+#   header_path: Output path relative to include/ (e.g., "porytiles/domain/config/artifact_edit_mode.hpp")
+#   brief: Brief description for the enum class (used in Doxygen @brief)
+#   details: (optional) Detailed description (used in Doxygen @details)
+#   enum_values: List of enum values, each with:
+#     - name: The C++ enum constant name (snake_case)
+#     - cli_completion_name: The name to show for CLI tab completion
+#     - fuzzy_names: (optional) List of fuzzy names for case-insensitive matching; auto-computed as [name, kebab-name] if not provided
+#     - brief: Brief description for this value (used in Doxygen @brief)
+
+enum_types:
+  - cpp_type: ArtifactEditMode
+    header_path: porytiles/domain/config/artifact_edit_mode.hpp
+    brief: Specifies whether artifacts (tiles or palettes) can be modified during patch compilation.
+    details: |
+      Controls the behavior of tile and palette handling when compiling a tileset patch. In locked mode,
+      the compiler must use only the existing artifacts from the base tileset without modifications. In
+      patch mode, the compiler can modify unused or "open" slots as needed. In optimize mode, artifacts
+      are cleared and packed optimally (Porytiles1 behavior).
+    enum_values:
+      - name: locked
+        cli_completion_name: locked
+        fuzzy_names: [ locked ]
+        brief: Artifacts cannot be edited; must use existing from base tileset.
+      - name: patch
+        cli_completion_name: patch
+        fuzzy_names: [ patch ]
+        brief: Artifacts can be freely edited in "open" slots during compilation.
+      - name: optimize
+        cli_completion_name: optimize
+        fuzzy_names: [ optimize ]
+        brief: The Porytiles1 behavior; artifact is cleared and packed optimally.
+
+  - cpp_type: TilesPalMode
+    header_path: porytiles/domain/config/tiles_pal_mode.hpp
+    brief: Controls how tiles.png is rendered.
+    enum_values:
+      - name: true_color
+        cli_completion_name: true-color
+        fuzzy_names: [ true-color, true_color, truecolor, color ]
+        brief: Render tiles with true colors from the palette.
+      - name: greyscale
+        cli_completion_name: greyscale
+        fuzzy_names: [ greyscale, grayscale, grey, gray ]
+        brief: Render tiles in greyscale (useful for debugging).
+
+  - cpp_type: AnimPalResolutionStrategy
+    header_path: porytiles/domain/config/anim_pal_resolution_strategy.hpp
+    brief: Strategy for determining which palette to use when decompiling animation tiles.
+    details: |
+      When decompiling animation tiles, the decompiler needs to know which tileset palette to use for
+      converting indexed pixels to RGBA. This enum determines the strategy used to find that palette.
+      The strategy is applied directly.
+    enum_values:
+      - name: scan_local_metatiles
+        cli_completion_name: scan-local-metatiles
+        fuzzy_names: [ scan-local-metatiles, scan_local_metatiles, scanlocalmetatiles ]
+        brief: Scan local tileset metatile entries to find palette references for the animation tiles.
+      - name: palette_00
+        cli_completion_name: palette-00
+        fuzzy_names: [ palette-00, palette_00, palette00, pal-0, pal_0, pal0, palette-0, palette_0, palette0 ]
+        brief: Use palette 00 directly.
+      - name: palette_01
+        cli_completion_name: palette-01
+        fuzzy_names: [ palette-01, palette_01, palette01, pal-1, pal_1, pal1, palette-1, palette_1, palette1 ]
+        brief: Use palette 01 directly.
+      - name: palette_02
+        cli_completion_name: palette-02
+        fuzzy_names: [ palette-02, palette_02, palette02, pal-2, pal_2, pal2, palette-2, palette_2, palette2 ]
+        brief: Use palette 02 directly.
+      - name: palette_03
+        cli_completion_name: palette-03
+        fuzzy_names: [ palette-03, palette_03, palette03, pal-3, pal_3, pal3, palette-3, palette_3, palette3 ]
+        brief: Use palette 03 directly.
+      - name: palette_04
+        cli_completion_name: palette-04
+        fuzzy_names: [ palette-04, palette_04, palette04, pal-4, pal_4, pal4, palette-4, palette_4, palette4 ]
+        brief: Use palette 04 directly.
+      - name: palette_05
+        cli_completion_name: palette-05
+        fuzzy_names: [ palette-05, palette_05, palette05, pal-5, pal_5, pal5, palette-5, palette_5, palette5 ]
+        brief: Use palette 05 directly.
+      - name: palette_06
+        cli_completion_name: palette-06
+        fuzzy_names: [ palette-06, palette_06, palette06, pal-6, pal_6, pal6, palette-6, palette_6, palette6 ]
+        brief: Use palette 06 directly.
+      - name: palette_07
+        cli_completion_name: palette-07
+        fuzzy_names: [ palette-07, palette_07, palette07, pal-7, pal_7, pal7, palette-7, palette_7, palette7 ]
+        brief: Use palette 07 directly.
+      - name: palette_08
+        cli_completion_name: palette-08
+        fuzzy_names: [ palette-08, palette_08, palette08, pal-8, pal_8, pal8, palette-8, palette_8, palette8 ]
+        brief: Use palette 08 directly.
+      - name: palette_09
+        cli_completion_name: palette-09
+        fuzzy_names: [ palette-09, palette_09, palette09, pal-9, pal_9, pal9, palette-9, palette_9, palette9 ]
+        brief: Use palette 09 directly.
+      - name: palette_10
+        cli_completion_name: palette-10
+        fuzzy_names: [ palette-10, palette_10, palette10, pal-10, pal_10, pal10 ]
+        brief: Use palette 10 directly.
+      - name: palette_11
+        cli_completion_name: palette-11
+        fuzzy_names: [ palette-11, palette_11, palette11, pal-11, pal_11, pal11 ]
+        brief: Use palette 11 directly.
+      - name: palette_12
+        cli_completion_name: palette-12
+        fuzzy_names: [ palette-12, palette_12, palette12, pal-12, pal_12, pal12 ]
+        brief: Use palette 12 directly.
+      - name: palette_13
+        cli_completion_name: palette-13
+        fuzzy_names: [ palette-13, palette_13, palette13, pal-13, pal_13, pal13 ]
+        brief: Use palette 13 directly.
+      - name: palette_14
+        cli_completion_name: palette-14
+        fuzzy_names: [ palette-14, palette_14, palette14, pal-14, pal_14, pal14 ]
+        brief: Use palette 14 directly.
+      - name: palette_15
+        cli_completion_name: palette-15
+        fuzzy_names: [ palette-15, palette_15, palette15, pal-15, pal_15, pal15 ]
+        brief: Use palette 15 directly.
+      - name: internal_png_pal
+        cli_completion_name: internal-png-palette
+        fuzzy_names: [ internal-png-palette, internal_png_palette, internal-png-pal, internal_png_pal, internalpngpal ]
+        brief: Use the Porymap-component frame PNG internal palette, if present.
+      - name: scan_all_tilesets
+        cli_completion_name: scan-all-tilesets
+        fuzzy_names: [ scan-all-tilesets, scan_all_tilesets, scanalltilesets, full-tileset-scan, full_tileset_scan, fulltilesetscan ]
+        brief: Scan layouts config and find all tilesets paired with current tileset, see if an index is present in any.
+
+  - cpp_type: FrameLinking
+    header_path: porytiles/domain/config/frame_linking.hpp
+    brief: Controls how animation frames are linked to metatile entries.
+    details: |
+      In automatic mode, Porytiles generates and uses key.png for frame linking.
+      In manual mode, Porytiles uses explicit overrides specified in anim.json.
+    enum_values:
+      - name: automatic
+        cli_completion_name: automatic
+        fuzzy_names: [ automatic, auto ]
+        brief: Use key.png for frame linking.
+      - name: manual
+        cli_completion_name: manual
+        fuzzy_names: [ manual ]
+        brief: Use manual overrides in anim.json.
+      - name: hybrid
+        cli_completion_name: hybrid
+        fuzzy_names: [ hybrid ]
+        brief: Automatic key.png linking plus manual override pass (not yet implemented).
+
+  - cpp_type: AnimKeyFrameResolutionStrategy
+    header_path: porytiles/domain/config/anim_key_frame_resolution_strategy.hpp
+    brief: Strategy for handling duplicate key frame tiles in animation decompilation.
+    details: |
+      When decompiling animations, it's possible for multiple key frame tiles to be identical. This is
+      problematic because during recompilation, identical tiles cannot be distinguished. This enum
+      determines how to handle such cases.
+    enum_values:
+      - name: error
+        cli_completion_name: error
+        fuzzy_names: [ error, err ]
+        brief: Emit a formatted error and fail decompilation.
+      - name: warning
+        cli_completion_name: warning
+        fuzzy_names: [ warning, warn ]
+        brief: Emit a warning and continue decompilation.
+      - name: mangle
+        cli_completion_name: mangle
+        fuzzy_names: [ mangle ]
+        brief: Mangle duplicate tiles to make them unique, then backport changes to tiles.png.
+
+  - cpp_type: TileSharingPacking
+    header_path: porytiles/domain/config/tile_sharing_packing.hpp
+    brief: Controls whether palette packing considers tile sharing shape group membership.
+    details: |
+      When set to off, the packer ignores shape groups entirely. When biased,
+      a soft cost penalty steers shape group siblings toward different palettes. When
+      optimal, co-placing siblings is rejected outright (not yet implemented).
+    enum_values:
+      - name: "off"
+        cli_completion_name: "off"
+        fuzzy_names: [ "off" ]
+        brief: Packing ignores shape group membership (default).
+      - name: biased
+        cli_completion_name: biased
+        fuzzy_names: [ biased ]
+        brief: Soft penalty steers shape group siblings toward different palettes.
+      - name: optimal
+        cli_completion_name: optimal
+        fuzzy_names: [ optimal ]
+        brief: Hard constraint rejecting sibling co-placement (not yet implemented).
+
+  - cpp_type: TileSharingAlignment
+    header_path: porytiles/domain/config/tile_sharing_alignment.hpp
+    brief: Controls palette slot alignment strategy for tile sharing deduplication.
+    details: |
+      When set to off, palettes are filled sequentially with no sharing attempt.
+      When greedy, indirect links align palette slot indices for color-isomorphic
+      tiles. When optimal, a CSP-based solver finds globally optimal alignment (not yet implemented).
+    enum_values:
+      - name: "off"
+        cli_completion_name: "off"
+        fuzzy_names: [ "off" ]
+        brief: Pure sequential fill with no sharing alignment (default).
+      - name: greedy
+        cli_completion_name: greedy
+        fuzzy_names: [ greedy ]
+        brief: Best-effort alignment via indirect link resolution.
+      - name: optimal
+        cli_completion_name: optimal
+        fuzzy_names: [ optimal ]
+        brief: CSP-based globally optimal alignment (not yet implemented).
+
+  - cpp_type: PrimaryPairingMode
+    header_path: porytiles/app/config/primary_pairing_mode.hpp
+    brief: Controls how a secondary tileset finds its partner primary for compilation.
+    details: |
+      When compiling a secondary tileset, the compiler needs the compiled primary
+      tileset to produce correct global tile indices and palette references.
+      This mode controls how the partner primary is resolved.
+    enum_values:
+      - name: "off"
+        cli_completion_name: "off"
+        fuzzy_names: [ "off", "none", "disabled" ]
+        brief: Skip primary loading entirely. Compile as a standalone secondary.
+      - name: manual
+        cli_completion_name: manual
+        fuzzy_names: [ manual ]
+        brief: Use the partner primary specified via primary_pairing_partners config.
+      - name: automatic
+        cli_completion_name: automatic
+        fuzzy_names: [ automatic, auto ]
+        brief: Scan layout metadata to find the partner primary automatically.
+
+  - cpp_type: PackingStrategyType
+    header_path: porytiles/domain/config/packing_strategy_type.hpp
+    brief: Selects the palette packing algorithm to use during tileset compilation.
+    details: |
+      Controls which algorithm is used to assign tiles to palettes. Each strategy offers different
+      trade-offs between speed, solution quality, and configurability. Backtracking is the default
+      and handles the widest range of inputs. Best Fusion is fast but may fail on hard instances.
+      Overload-And-Remove uses multi-start retries to escape local optima.
+    enum_values:
+      - name: best_fusion
+        cli_completion_name: best-fusion
+        fuzzy_names: [ best-fusion, best_fusion, bestfusion ]
+        brief: Greedy weighted-cost packing (fast, no retries).
+      - name: backtracking
+        cli_completion_name: backtracking
+        fuzzy_names: [ backtracking ]
+        brief: DFS/BFS backtracking search (default).
+      - name: overload_and_remove
+        cli_completion_name: overload-and-remove
+        fuzzy_names: [ overload-and-remove, overload_and_remove, overloadandremove ]
+        brief: Greedy with overload-and-remove multi-start retries.
+
+  - cpp_type: SearchAlgorithm
+    header_path: porytiles/domain/config/search_algorithm.hpp
+    brief: Search algorithm used by BacktrackingStrategy.
+    details: |
+      Controls whether the backtracking search explores the solution space using depth-first or breadth-first traversal.
+      DFS uses in-place mutation with undo for memory efficiency, while BFS uses visited-state deduplication and a
+      dual-queue heuristic.
+    enum_values:
+      - name: dfs
+        cli_completion_name: dfs
+        fuzzy_names: [ dfs, depth-first, depth_first, depthfirst ]
+        brief: Depth-first search with in-place mutation and undo.
+      - name: bfs
+        cli_completion_name: bfs
+        fuzzy_names: [ bfs, breadth-first, breadth_first, breadthfirst ]
+        brief: Breadth-first search with dual-queue heuristic and visited-state deduplication.
+
+  - cpp_type: ShuffleStrategy
+    header_path: porytiles/domain/config/shuffle_strategy.hpp
+    brief: Controls how tile orderings are generated during multi-start packing.
+    details: |
+      The packing algorithm can attempt multiple tile orderings to find a valid solution. This enum
+      controls the strategy used to generate those orderings after the initial FFD (First Fit Decreasing)
+      attempt.
+    enum_values:
+      - name: single_ffd
+        cli_completion_name: single-ffd
+        fuzzy_names: [ single-ffd, single_ffd, singleffd ]
+        brief: One FFD attempt only, no multi-start retries.
+      - name: noisy_ffd
+        cli_completion_name: noisy-ffd
+        fuzzy_names: [ noisy-ffd, noisy_ffd, noisyffd ]
+        brief: FFD first, then perturbed FFD orderings that preserve the large-first property.
+      - name: random
+        cli_completion_name: random
+        fuzzy_names: [ random ]
+        brief: FFD first, then fully random shuffles (original behavior).
+
+  - cpp_type: AnimMultiPalSubtileResolutionStrategy
+    header_path: porytiles/domain/config/anim_multi_pal_subtile_resolution_strategy.hpp
+    brief: Strategy for handling animation subtiles referenced with multiple palettes.
+    details: |
+      When decompiling animations using the scan_local_metatiles strategy, a single tile index
+      can be referenced by multiple metatile entries with different palette indices. This is valid
+      GBA behavior (the hardware selects palette per metatile entry, not per tile), but Porytiles
+      cannot represent multiple palette variants in a single RGBA layer PNG. This enum determines
+      how to handle such cases.
+    enum_values:
+      - name: error
+        cli_completion_name: error
+        fuzzy_names: [ error, err ]
+        brief: Emit a formatted error and fail decompilation.
+      - name: warning
+        cli_completion_name: warning
+        fuzzy_names: [ warning, warn ]
+        brief: Emit a warning and continue decompilation using the lowest palette index.
+      - name: split
+        cli_completion_name: split
+        fuzzy_names: [ split ]
+        brief: Split the animation into separate animations for each palette variant (not yet implemented).
+
+config_values:
+  # Domain Layer Configuration Values
+  - canonical_name: Number Of Tiles In Primary
+    symbol: num_tiles_in_primary
+    yaml_path: fieldmap.num_tiles_in_primary
+    header_define: NUM_TILES_IN_PRIMARY
+    cli_option: num-tiles-in-primary
+    cli_desc: The NUM_TILES_IN_PRIMARY setting from include/fieldmap.h.
+    layer: domain
+    type: std::size_t
+    parser: parse_size_t
+    default_value: "512"
+    validators: [ size_t_val_greater_than_zero ]
+    cross_field_validators: [ compare_less_equal:num_tiles_total ]
+
+  - canonical_name: Number Of Tiles Total
+    symbol: num_tiles_total
+    yaml_path: fieldmap.num_tiles_total
+    header_define: NUM_TILES_TOTAL
+    cli_option: num-tiles-total
+    cli_desc: The NUM_TILES_TOTAL setting from include/fieldmap.h.
+    layer: domain
+    type: std::size_t
+    parser: parse_size_t
+    default_value: "1024"
+    validators: [ size_t_val_greater_than_zero ]
+    cross_field_validators: [ compare_greater_equal:num_tiles_in_primary ]
+
+  - canonical_name: Number Of Metatiles In Primary
+    symbol: num_metatiles_in_primary
+    yaml_path: fieldmap.num_metatiles_in_primary
+    header_define: NUM_METATILES_IN_PRIMARY
+    cli_option: num-metatiles-in-primary
+    cli_desc: The NUM_METATILES_IN_PRIMARY setting from include/fieldmap.h.
+    layer: domain
+    type: std::size_t
+    parser: parse_size_t
+    default_value: "512"
+    validators: [ size_t_val_greater_than_zero ]
+    cross_field_validators: [ compare_less_equal:num_metatiles_total ]
+
+  - canonical_name: Number Of Metatiles Total
+    symbol: num_metatiles_total
+    yaml_path: fieldmap.num_metatiles_total
+    header_define: NUM_METATILES_TOTAL
+    cli_option: num-metatiles-total
+    cli_desc: The NUM_METATILES_TOTAL setting from include/fieldmap.h.
+    layer: domain
+    type: std::size_t
+    parser: parse_size_t
+    default_value: "1024"
+    validators: [ size_t_val_greater_than_zero ]
+    cross_field_validators: [ compare_greater_equal:num_metatiles_in_primary ]
+
+  - canonical_name: Number Of Palettes In Primary
+    symbol: num_pals_in_primary
+    yaml_path: fieldmap.num_pals_in_primary
+    header_define: NUM_PALS_IN_PRIMARY
+    cli_option: num-pals-in-primary
+    cli_desc: The NUM_PALS_IN_PRIMARY setting from include/fieldmap.h.
+    layer: domain
+    type: std::size_t
+    parser: parse_size_t
+    default_value: "6"
+    validators: [ size_t_val_greater_than_zero ]
+    cross_field_validators: [ compare_less_equal:num_pals_total ]
+
+  - canonical_name: Number Of Palettes Total
+    symbol: num_pals_total
+    yaml_path: fieldmap.num_pals_total
+    header_define: NUM_PALS_TOTAL
+    cli_option: num-pals-total
+    cli_desc: The NUM_PALS_TOTAL setting from include/fieldmap.h.
+    layer: domain
+    type: std::size_t
+    parser: parse_size_t
+    default_value: "13"
+    validators: [ size_t_val_greater_than_zero ]
+    cross_field_validators: [ compare_greater_equal:num_pals_in_primary ]
+
+  - canonical_name: Max Map Data Size
+    symbol: max_map_data_size
+    yaml_path: fieldmap.max_map_data_size
+    header_define: MAX_MAP_DATA_SIZE
+    cli_option: max-map-data-size
+    cli_desc: The MAX_MAP_DATA_SIZE setting from include/fieldmap.h.
+    layer: domain
+    type: std::size_t
+    parser: parse_size_t
+    default_value: "10240"
+    validators: [ size_t_val_greater_than_zero ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Number Of Tiles Per Metatile
+    symbol: num_tiles_per_metatile
+    yaml_path: fieldmap.num_tiles_per_metatile
+    header_define: NUM_TILES_PER_METATILE
+    cli_option: num-tiles-per-metatile
+    cli_desc: The NUM_TILES_PER_METATILE setting from include/fieldmap.h.
+    layer: domain
+    type: std::size_t
+    parser: parse_size_t
+    default_value: "8"
+    validators: [ size_t_val_eight_or_twelve ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Extrinsic Transparency
+    symbol: extrinsic_transparency
+    yaml_path: tileset.extrinsic_transparency
+    cli_option: extrinsic-transparency
+    cli_desc: The RGB color to treat as transparent during compilation.
+    layer: domain
+    type: Rgba32
+    parser: parse_rgba32
+    default_value: "rgba_magenta"
+    validators: [ rgba_alpha_component_opaque ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Tiles Edit Mode
+    symbol: tiles_edit_mode
+    yaml_path: tileset.tiles.edit_mode
+    cli_option: tiles-edit-mode
+    cli_desc: The allowed edit mode for the tiles.png artifact.
+    layer: domain
+    type: ArtifactEditMode
+    parser: parse_artifact_edit_mode
+    default_value: "ArtifactEditMode::optimize"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Palettes Edit Mode
+    symbol: pals_edit_mode
+    yaml_path: tileset.palettes.edit_mode
+    cli_option: pals-edit-mode
+    cli_desc: The allowed edit mode for the palettes/ artifacts.
+    layer: domain
+    type: ArtifactEditMode
+    parser: parse_artifact_edit_mode
+    default_value: "ArtifactEditMode::optimize"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Palette Hints Enabled
+    symbol: pal_hints_enabled
+    yaml_path: tileset.palettes.packing.hints_enabled
+    cli_option: pal-hints-enabled
+    cli_desc: Enable configured palette hints.
+    layer: domain
+    type: bool
+    parser: parse_bool
+    default_value: "true"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Palette Hints
+    symbol: pal_hints
+    yaml_path: tileset.palettes.packing.hints
+    cli_option: pal-hints
+    yaml_only: true  # Too complex for non-YAML providers (std::vector<PaletteHint>)
+    layer: domain
+    type: std::vector<PaletteHint>
+    parser: parse_pal_hints
+    default_value: "std::vector<PaletteHint>{}"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Packing Strategy
+    symbol: packing_strategy
+    yaml_path: tileset.palettes.packing.strategy
+    cli_option: packing-strategy
+    cli_desc: The palette packing algorithm to use during compilation.
+    layer: domain
+    type: PackingStrategyType
+    parser: parse_packing_strategy_type
+    default_value: "PackingStrategyType::backtracking"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Packing Strategy Params
+    symbol: packing_strategy_params
+    yaml_path: tileset.palettes.packing.strategy_params
+    cli_option: packing-strategy-params
+    yaml_only: true
+    yaml_is_map: true
+    layer: domain
+    type: PackingStrategyParams
+    parser: parse_packing_strategy_params
+    default_value: "PackingStrategyParams{}"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Tile Sharing Packing
+    symbol: tile_sharing_packing
+    yaml_path: tileset.tiles.sharing.packing
+    cli_option: tile-sharing-packing
+    cli_desc: Controls whether palette packing considers tile sharing.
+    layer: domain
+    type: TileSharingPacking
+    parser: parse_tile_sharing_packing
+    default_value: "TileSharingPacking::off"
+    validators: [ ]
+    cross_field_validators: [ require_packing_strategy_backtracking:packing_strategy ]
+
+  - canonical_name: Tile Sharing Alignment
+    symbol: tile_sharing_alignment
+    yaml_path: tileset.tiles.sharing.alignment
+    cli_option: tile-sharing-alignment
+    cli_desc: Controls palette slot alignment strategy for tile sharing.
+    layer: domain
+    type: TileSharingAlignment
+    parser: parse_tile_sharing_alignment
+    default_value: "TileSharingAlignment::off"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Tiles Palette Mode
+    symbol: tiles_pal_mode
+    yaml_path: tileset.tiles.palette_mode
+    cli_option: tiles-pal-mode
+    cli_desc: The color mode to use when saving the tiles.png artifact.
+    layer: domain
+    type: TilesPalMode
+    parser: parse_tiles_pal_mode
+    default_value: "TilesPalMode::true_color"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Global Animation Palette Resolution Strategy
+    symbol: global_anim_pal_resolution_strategy
+    yaml_path: tileset.animations.palette_resolution_strategy
+    cli_option: anim-pal-resolution-strategy
+    cli_desc: The global strategy for determining which palette to use when decompiling animation tiles.
+    layer: domain
+    type: AnimPalResolutionStrategy
+    parser: parse_anim_pal_resolution_strategy
+    default_value: "AnimPalResolutionStrategy::scan_local_metatiles"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Global Animation Key Frame Resolution Strategy
+    symbol: global_anim_key_frame_resolution_strategy
+    yaml_path: tileset.animations.key_frame_resolution_strategy
+    cli_option: anim-key-frame-resolution-strategy
+    cli_desc: The strategy to use when decompilation encounters duplicate key frame subtiles.
+    layer: domain
+    type: AnimKeyFrameResolutionStrategy
+    parser: parse_anim_key_frame_resolution_strategy
+    default_value: "AnimKeyFrameResolutionStrategy::error"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Global Animation Multi-Pal Subtile Resolution Strategy
+    symbol: global_anim_multi_pal_subtile_resolution_strategy
+    yaml_path: tileset.animations.multi_palette_subtile_resolution_strategy
+    cli_option: anim-multi-pal-subtile-resolution-strategy
+    cli_desc: The strategy for handling animation subtiles referenced with multiple palettes.
+    layer: domain
+    type: AnimMultiPalSubtileResolutionStrategy
+    parser: parse_anim_multi_pal_subtile_resolution_strategy
+    default_value: "AnimMultiPalSubtileResolutionStrategy::error"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Global Frame Linking
+    symbol: global_frame_linking
+    yaml_path: tileset.animations.frame_linking
+    cli_option: frame-linking
+    cli_desc: The global default frame linking mode for animations.
+    layer: domain
+    type: FrameLinking
+    parser: parse_frame_linking
+    default_value: "FrameLinking::automatic"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Per-Animation Overrides
+    symbol: per_anim_overrides
+    yaml_path: tileset.animations.per_animation_overrides
+    cli_option: per-anim-overrides
+    yaml_only: true
+    yaml_is_map: true
+    layer: domain
+    type: PerAnimOverrides
+    parser: parse_per_anim_overrides
+    default_value: "PerAnimOverrides{}"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Cross-Tileset Animation Linking
+    symbol: cross_tileset_anim_linking
+    yaml_path: tileset.animations.cross_tileset_linking
+    cli_option: cross-tileset-anim-linking
+    cli_desc: Enable automatic matching of secondary tiles against primary animation key frames.
+    layer: domain
+    type: bool
+    parser: parse_bool
+    default_value: "true"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  # Application Layer Configuration Values
+  - canonical_name: Verify Checksums
+    symbol: verify_checksums
+    yaml_path: verify_checksums
+    cli_option: verify-checksums
+    cli_desc: Enable or disable artifact checksum verification.
+    layer: app
+    type: bool
+    parser: parse_bool
+    default_value: "true"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Primary Pairing Mode
+    symbol: primary_pairing_mode
+    yaml_path: tileset.primary_pairing.mode
+    cli_option: primary-pairing-mode
+    cli_desc: How a secondary tileset resolves its partner primary for compilation.
+    layer: app
+    type: PrimaryPairingMode
+    parser: parse_primary_pairing_mode
+    default_value: "PrimaryPairingMode::automatic"
+    validators: []
+    cross_field_validators: []
+
+  - canonical_name: Primary Pairing Partners
+    symbol: primary_pairing_partners
+    yaml_path: tileset.primary_pairing.partners
+    cli_option: primary-pairing-partners
+    cli_desc: Tileset names to use as partner primaries in manual pairing mode.
+    layer: app
+    type: "std::vector<std::string>"
+    parser: parse_string_vector
+    default_value: "std::vector<std::string>{}"
+    validators: []
+    cross_field_validators: []
+
+  # Note: Unlike verify_checksums (consumed by app-layer use cases), the diagnostic filter values below are "meta-config"
+  # — they are only consumed at the composition root (tools/driver/ commands) to wire the FilteredUserDiagnostics
+  # decorator. No Porytiles library code reads them; the library receives a fully-configured UserDiagnostics pointer.
+  #
+  # AppConfig is the least-wrong home (semantically "user-facing tool behavior"), but if more composition-root-only
+  # config values accumulate, consider extracting a dedicated config layer (e.g. "bootstrap" or "tooling"). This aligns
+  # with Seemann's principle that the Composition Root is an "application infrastructure component" (ploeh blog, 2011).
+  - canonical_name: Diagnostic Warnings Exclude
+    symbol: diagnostic_warnings_exclude
+    yaml_path: diagnostics.warnings.exclude
+    cli_option: diagnostic-warnings-exclude
+    cli_desc: Regex patterns for warning tags to exclude.
+    layer: app
+    type: std::vector<std::string>
+    parser: parse_string_vector
+    default_value: "std::vector<std::string>{}"
+    validators: []
+    cross_field_validators: []
+
+  - canonical_name: Diagnostic Warnings Include
+    symbol: diagnostic_warnings_include
+    yaml_path: diagnostics.warnings.include
+    cli_option: diagnostic-warnings-include
+    cli_desc: Regex patterns for warning tags to include (overrides excludes).
+    layer: app
+    type: std::vector<std::string>
+    parser: parse_string_vector
+    default_value: "std::vector<std::string>{}"
+    validators: []
+    cross_field_validators: []
+
+  - canonical_name: Diagnostic Remarks Exclude
+    symbol: diagnostic_remarks_exclude
+    yaml_path: diagnostics.remarks.exclude
+    cli_option: diagnostic-remarks-exclude
+    cli_desc: Regex patterns for remark tags to exclude.
+    layer: app
+    type: std::vector<std::string>
+    parser: parse_string_vector
+    default_value: "std::vector<std::string>{}"
+    validators: []
+    cross_field_validators: []
+
+  - canonical_name: Diagnostic Remarks Include
+    symbol: diagnostic_remarks_include
+    yaml_path: diagnostics.remarks.include
+    cli_option: diagnostic-remarks-include
+    cli_desc: Regex patterns for remark tags to include (overrides excludes).
+    layer: app
+    type: std::vector<std::string>
+    parser: parse_string_vector
+    default_value: "std::vector<std::string>{}"
+    validators: []
+    cross_field_validators: []
+
+  # Infrastructure Layer Configuration Values
+  - canonical_name: Tileset Paths Primary Source
+    symbol: tileset_paths_primary_src
+    yaml_path: tileset.paths.primary.src
+    cli_option: tileset-paths-primary-src
+    cli_desc: The directory for primary tileset Porytiles component assets.
+    layer: infra
+    type: std::string
+    parser: parse_string
+    default_value: '"data/tilesets/primary"'
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Tileset Paths Primary Bin
+    symbol: tileset_paths_primary_bin
+    yaml_path: tileset.paths.primary.bin
+    cli_option: tileset-paths-primary-bin
+    cli_desc: The directory for primary tileset Porymap component assets.
+    layer: infra
+    type: std::string
+    parser: parse_string
+    default_value: '"data/tilesets/primary"'
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Tileset Paths Secondary Source
+    symbol: tileset_paths_secondary_src
+    yaml_path: tileset.paths.secondary.src
+    cli_option: tileset-paths-secondary-src
+    cli_desc: The directory for secondary tileset Porytiles component assets.
+    layer: infra
+    type: std::string
+    parser: parse_string
+    default_value: '"data/tilesets/secondary"'
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Tileset Paths Secondary Bin
+    symbol: tileset_paths_secondary_bin
+    yaml_path: tileset.paths.secondary.bin
+    cli_option: tileset-paths-secondary-bin
+    cli_desc: The directory for secondary tileset Porymap component assets.
+    layer: infra
+    type: std::string
+    parser: parse_string
+    default_value: '"data/tilesets/secondary"'
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Metatile Attribute Size
+    symbol: metatile_attr_size
+    yaml_path: fieldmap.metatile_attribute_size
+    cli_option: metatile-attr-size
+    cli_desc: The size in bytes of each metatile attribute entry (2 for Emerald/Ruby, 4 for FireRed).
+    layer: infra
+    type: std::size_t
+    parser: parse_size_t
+    default_value: "2"
+    validators: [ size_t_val_two_or_four ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Tileset Animations Wire Anim Code
+    symbol: tileset_animations_wire_anim_code
+    yaml_path: tileset.animations.wire_anim_code
+    cli_option: tileset-animations-wire-anim-code
+    cli_desc: Enable or disable automatic animation code wiring.
+    layer: infra
+    type: bool
+    parser: parse_bool
+    default_value: "true"
+    validators: [ ]
+    cross_field_validators: [ ]

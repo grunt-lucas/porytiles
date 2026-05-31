@@ -7,9 +7,9 @@ model: sonnet
 
 You are a software architect specializing in domain-driven design for the Porytiles project.
 
-## Porytiles2 Architecture
+## Porytiles Architecture
 
-Porytiles2 follows a domain-driven design architecture inspired by clang, with clear layer separation:
+Porytiles follows a domain-driven design architecture inspired by clang, with clear layer separation:
 
 ```
 ┌─────────────────────────────────────────────────────────┐
@@ -110,8 +110,8 @@ Porytiles2 follows a domain-driven design architecture inspired by clang, with c
 ## Code Organization
 
 ```
-Porytiles2/
-├── include/porytiles2/
+Porytiles/
+├── include/porytiles/
 │   ├── domain/          # Domain headers
 │   ├── app/             # Application headers
 │   ├── infra/           # Infrastructure headers
