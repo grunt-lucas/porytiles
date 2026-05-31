@@ -27,7 +27,7 @@ disagree, the planning doc is authoritative for intent; update this tracker to m
 | D  | CI / release pipeline overhaul | ⬜ Not started |
 | E  | Gitflow adoption + 1.0.0 cut | ⬜ Not started |
 | F  | Documentation repos gitflow alignment | ⬜ Not started |
-| G  | AI policy documentation | ⬜ Not started |
+| G  | AI policy documentation | 🟡 In progress |
 
 Legend: ⬜ not started · 🟡 in progress · ✅ done · 🚫 blocked
 
@@ -416,11 +416,18 @@ End-to-end through `cmake --build` + install + execute is the first validation t
 
 ## Phase G — AI policy documentation (parallel with A–F; land early)
 
-- [ ] **G1** Draft `AI-POLICY.md` at repo root (two-track stance; maintainer discretion;
-  slop-tell heuristics; pointer to STYLE.md/CONTRIBUTING.md; no-disclosure stance;
-  revisit-annually line). Keep it short.
-- [ ] **G2** Reference from `CONTRIBUTING.md` (one-liner near top) and optionally `README.md`.
-- [ ] **G3** Verify: file exists, references resolve, reads as not-itself-slop.
+- [x] **G1** Drafted `AI-POLICY.md` at repo root. Two-track stance: `Legacy/` is closed to AI
+  contributions of any kind (hard-line, no exceptions); `Porytiles/` accepts AI-assisted work at
+  maintainer discretion. Slop description stayed abstract per maintainer choice (defers to STYLE.md
+  and reviewer judgment, no enumeration of specific tells). No disclosure checkbox, no detector.
+  Revisit-cadence section omitted entirely. Pointers to `STYLE.md` and `CONTRIBUTING.md` included.
+  ~25 lines of prose, one screen. Slop self-audit pass complete (no em-dashes, no marketing prose,
+  no platitude bullets).
+- [ ] **G2** Reference from `CONTRIBUTING.md` (and optionally `README.md`). **Deferred to a later
+  step** per maintainer direction; `CONTRIBUTING.md`/`README.md` overhaul folded into a later
+  phase rather than landed alongside G1.
+- [ ] **G3** Verify (deferred half): `CONTRIBUTING.md`/`README.md` references resolve. The G1 half
+  (file exists at repo root, reads as not-itself-slop) is satisfied.
 
 ---
 
