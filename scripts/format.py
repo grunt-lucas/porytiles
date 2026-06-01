@@ -28,7 +28,7 @@ CLANG_FORMAT_VERSION_CANDIDATES = [f"clang-format-{v}" for v in range(25, 17, -1
 
 def collect_sources(project_root):
     """Collect all C++ source files under porytiles/."""
-    porytiles_dir = project_root / "Porytiles"
+    porytiles_dir = project_root / "porytiles"
     files = []
     for ext in SOURCE_EXTENSIONS:
         files.extend(porytiles_dir.rglob(ext))

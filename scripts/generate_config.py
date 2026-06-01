@@ -99,7 +99,7 @@ def generate_config_files():
     print(f"Project root: {project_root}")
 
     # Load schema from porytiles/config_templates/
-    schema_path = project_root / "Porytiles" / "config_templates" / "config_schema.yaml"
+    schema_path = project_root / "porytiles" / "config_templates" / "config_schema.yaml"
     print(f"Loading schema from: {schema_path}")
 
     if not schema_path.exists():
@@ -215,7 +215,7 @@ def generate_config_files():
     print(f"Processed {len(enum_type_map)} enum types")
 
     # Setup Jinja2 environment with new template directory
-    template_dir = project_root / "Porytiles" / "config_templates"
+    template_dir = project_root / "porytiles" / "config_templates"
     env = Environment(
         loader=FileSystemLoader(template_dir),
         autoescape=select_autoescape(),

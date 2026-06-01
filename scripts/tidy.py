@@ -19,8 +19,8 @@ from pathlib import Path
 def collect_sources(project_root):
     """Collect all .cpp translation units from Porytiles lib/ and tools/."""
     dirs = [
-        project_root / "Porytiles" / "lib",
-        project_root / "Porytiles" / "tools",
+        project_root / "porytiles" / "lib",
+        project_root / "porytiles" / "tools",
     ]
     files = []
     for d in dirs:

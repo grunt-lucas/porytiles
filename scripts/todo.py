@@ -68,7 +68,7 @@ def main():
         help="Category to search for (case-insensitive)."
     )
     parser.add_argument(
-        "--path", default="Porytiles",
+        "--path", default="porytiles",
         help="Directory to search in (default: Porytiles)."
     )
     parser.add_argument(

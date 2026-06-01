@@ -73,7 +73,7 @@ def cmd_build(project_root, build_dir):
     ], description="Building with coverage instrumentation")
 
     # 3. Run tests
-    test_binary = build_path / "Porytiles" / "tests" / "PorytilesAllTests"
+    test_binary = build_path / "porytiles" / "tests" / "PorytilesAllTests"
     if not test_binary.exists():
         print(f"Error: Test binary not found at {test_binary}.", file=sys.stderr)
         sys.exit(1)
@@ -99,7 +99,7 @@ def cmd_build(project_root, build_dir):
 def validate_profdata(build_path):
     """Validate that profdata exists and return paths."""
     profdata = build_path / "testcov.profdata"
-    test_binary = build_path / "Porytiles" / "tests" / "PorytilesAllTests"
+    test_binary = build_path / "porytiles" / "tests" / "PorytilesAllTests"
 
     if not profdata.exists():
         print(f"Error: Profile data not found at {profdata}.", file=sys.stderr)

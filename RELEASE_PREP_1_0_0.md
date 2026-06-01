@@ -566,6 +566,22 @@ paths. Independent of B, C, F, G.
   `docs/Doxyfile.in:1539` — the macOS system-path comment deliberately preserved
   in H2. Identifier-form grep `git grep -nE '\b(Doctests|Examples|Readme|Wiki)\b'`
   in scope returns empty.
+- [x] **macOS case-insensitivity post-mortem (caught by CI on Ubuntu).** Initial
+  H5 reported green on local macOS, but Ubuntu amd64 CI failed in
+  `scripts/generate_config.py` because the path-component string `"Porytiles" /
+  "config_templates"` (constructed via `pathlib`, no trailing slash to anchor my
+  regex on) hadn't been swept. APFS resolved the capital-P path to the lowercase
+  dir transparently; ext4 did not. Follow-up sweep caught 11 more identifier-form
+  path-component holes in `scripts/{generate_config,coverage,format,new_class,tidy,
+  todo}.py` (all `project_root / "Porytiles" / ...` or `default="Porytiles"`
+  patterns) and lowercased them. Remaining capital-P refs in scripts (~10) are
+  prose in docstrings, `--help` text, and module-level comments referring to the
+  product name; those stay. Workflow `name:` fields ("Checkout Porytiles
+  repository") and CMake-comment refs likewise are product-brand prose.
+  **Lesson for future Phase A-style renames: a sweep regex that requires a
+  trailing `/` must be paired with a separate identifier-form audit
+  (`"Porytiles"` quoted as a path component, `default="Porytiles"`, etc.),
+  ideally run against a case-sensitive filesystem.**
 
 **Cross-cutting notes**
 - Same disposition as Phase A for open feature branches (`bug/anim-tiles`,

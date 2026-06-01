@@ -128,9 +128,9 @@ def main():
 
     class_name = args.class_name
     layer_path = args.layer_path
-    header_path = project_root / "Porytiles" / "include" / "porytiles" / layer_path
-    impl_path = project_root / "Porytiles" / "lib" / layer_path
-    test_path = project_root / "Porytiles" / "tests" / "unit" / layer_path
+    header_path = project_root / "porytiles" / "include" / "porytiles" / layer_path
+    impl_path = project_root / "porytiles" / "lib" / layer_path
+    test_path = project_root / "porytiles" / "tests" / "unit" / layer_path
 
     if not class_name or not class_name[0].isupper():
         print("Error: Class name should start with an uppercase letter", file=sys.stderr)
