@@ -218,7 +218,7 @@ TEST(Rgba32Tests, OperatorEqualsAndEqualsIgnoringAlphaShouldDifferBasedOnAlpha)
 // No obvious-context comments (e.g., "// Duplicate color"). Comment only when WHY is non-obvious.
 ```
 
-## Comment Prose Style
+## Prose Style
 
 Avoid excessive em dashes. Prefer periods, commas, or parentheses for clause
 separation. Em dashes are fine occasionally but become an obnoxious AI-ism when overused.
@@ -227,6 +227,10 @@ Write comments in plain, direct English. Avoid "literary" flourish in code comme
 
 No box-drawing section banners (`// ====`) etc., in source or test files. Use a plain
 single-line comment if grouping is truly needed.
+
+Documentation and multi-line doc comments should use [semantic linebreaks](https://sembr.org/):
+one sentence or independent clause per line. This applies to Markdown documentation,
+README sections, and multi-line Doxygen `@details` blocks.
 
 ## std::formatter Specializations
 

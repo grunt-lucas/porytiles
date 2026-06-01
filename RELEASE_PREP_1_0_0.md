@@ -27,7 +27,7 @@ disagree, the planning doc is authoritative for intent; update this tracker to m
 | D  | CI / release pipeline overhaul | ⬜ Not started |
 | E  | Gitflow adoption + 1.0.0 cut | ⬜ Not started |
 | F  | Documentation repos gitflow alignment | ⬜ Not started |
-| G  | AI policy documentation | 🟡 In progress |
+| G  | AI policy documentation | ✅ Done |
 
 Legend: ⬜ not started · 🟡 in progress · ✅ done · 🚫 blocked
 
@@ -423,11 +423,15 @@ End-to-end through `cmake --build` + install + execute is the first validation t
   Revisit-cadence section omitted entirely. Pointers to `STYLE.md` and `CONTRIBUTING.md` included.
   ~25 lines of prose, one screen. Slop self-audit pass complete (no em-dashes, no marketing prose,
   no platitude bullets).
-- [ ] **G2** Reference from `CONTRIBUTING.md` (and optionally `README.md`). **Deferred to a later
-  step** per maintainer direction; `CONTRIBUTING.md`/`README.md` overhaul folded into a later
-  phase rather than landed alongside G1.
-- [ ] **G3** Verify (deferred half): `CONTRIBUTING.md`/`README.md` references resolve. The G1 half
-  (file exists at repo root, reads as not-itself-slop) is satisfied.
+- [x] **G2** Added AI-POLICY reference to `CONTRIBUTING.md` (intro paragraph). Bundled with a
+  broader simplification of `CONTRIBUTING.md` per maintainer direction: dropped the Topic Branch
+  Conventions section (6 subsections) and Issues section, since GitHub labels handle PR
+  categorization. The sembr endorsement that lived in the dropped Documentation subsection moved
+  to `STYLE.md` under a renamed "Prose Style" section (was "Comment Prose Style"). Document went
+  from ~115 lines to ~50. Optional `README.md` mention still deferred to a later phase.
+- [x] **G3** Verified: `AI-POLICY.md` exists at repo root; `STYLE.md` and `CONTRIBUTING.md` link
+  references resolve; the doc reads as not-itself-slop after maintainer edits and the bundled
+  simplification pass.
 
 ---
 
