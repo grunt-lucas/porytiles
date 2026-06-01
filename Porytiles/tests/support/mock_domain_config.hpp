@@ -41,26 +41,23 @@ class MockDomainConfig : public DomainConfig {
     TilesPalMode tiles_pal_mode = TilesPalMode::true_color;
     AnimPalResolutionStrategy global_anim_pal_resolution_strategy = AnimPalResolutionStrategy::scan_local_metatiles;
     AnimKeyFrameResolutionStrategy global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
-    AnimMultiPalSubtileResolutionStrategy global_anim_multi_pal_subtile_resolution_strategy = AnimMultiPalSubtileResolutionStrategy::error;
+    AnimMultiPalSubtileResolutionStrategy global_anim_multi_pal_subtile_resolution_strategy =
+        AnimMultiPalSubtileResolutionStrategy::error;
     FrameLinking global_frame_linking = FrameLinking::automatic;
     PerAnimOverrides per_anim_overrides = PerAnimOverrides{};
     bool cross_tileset_anim_linking = true;
 
-
   protected:
-
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
     num_tiles_in_primary_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{
-            num_tiles_in_primary, "Number Of Tiles In Primary", "num_tiles_in_primary", "mock", {}};
+        return ConfigValue{num_tiles_in_primary, "Number Of Tiles In Primary", "num_tiles_in_primary", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
     num_tiles_total_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{
-            num_tiles_total, "Number Of Tiles Total", "num_tiles_total", "mock", {}};
+        return ConfigValue{num_tiles_total, "Number Of Tiles Total", "num_tiles_total", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
@@ -73,29 +70,25 @@ class MockDomainConfig : public DomainConfig {
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
     num_metatiles_total_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{
-            num_metatiles_total, "Number Of Metatiles Total", "num_metatiles_total", "mock", {}};
+        return ConfigValue{num_metatiles_total, "Number Of Metatiles Total", "num_metatiles_total", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
     num_pals_in_primary_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{
-            num_pals_in_primary, "Number Of Palettes In Primary", "num_pals_in_primary", "mock", {}};
+        return ConfigValue{num_pals_in_primary, "Number Of Palettes In Primary", "num_pals_in_primary", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
     num_pals_total_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{
-            num_pals_total, "Number Of Palettes Total", "num_pals_total", "mock", {}};
+        return ConfigValue{num_pals_total, "Number Of Palettes Total", "num_pals_total", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
     max_map_data_size_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{
-            max_map_data_size, "Max Map Data Size", "max_map_data_size", "mock", {}};
+        return ConfigValue{max_map_data_size, "Max Map Data Size", "max_map_data_size", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
@@ -108,106 +101,106 @@ class MockDomainConfig : public DomainConfig {
     [[nodiscard]] ChainableResult<ConfigValue<Rgba32>>
     extrinsic_transparency_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{
-            extrinsic_transparency, "Extrinsic Transparency", "extrinsic_transparency", "mock", {}};
+        return ConfigValue{extrinsic_transparency, "Extrinsic Transparency", "extrinsic_transparency", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<ArtifactEditMode>>
     tiles_edit_mode_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{
-            tiles_edit_mode, "Tiles Edit Mode", "tiles_edit_mode", "mock", {}};
+        return ConfigValue{tiles_edit_mode, "Tiles Edit Mode", "tiles_edit_mode", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<ArtifactEditMode>>
     pals_edit_mode_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{
-            pals_edit_mode, "Palettes Edit Mode", "pals_edit_mode", "mock", {}};
+        return ConfigValue{pals_edit_mode, "Palettes Edit Mode", "pals_edit_mode", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
     pal_hints_enabled_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{
-            pal_hints_enabled, "Palette Hints Enabled", "pal_hints_enabled", "mock", {}};
+        return ConfigValue{pal_hints_enabled, "Palette Hints Enabled", "pal_hints_enabled", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<std::vector<PaletteHint>>>
     pal_hints_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{
-            pal_hints, "Palette Hints", "pal_hints", "mock", {}};
+        return ConfigValue{pal_hints, "Palette Hints", "pal_hints", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<PackingStrategyType>>
     packing_strategy_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{
-            packing_strategy, "Packing Strategy", "packing_strategy", "mock", {}};
+        return ConfigValue{packing_strategy, "Packing Strategy", "packing_strategy", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<PackingStrategyParams>>
     packing_strategy_params_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{
-            packing_strategy_params, "Packing Strategy Params", "packing_strategy_params", "mock", {}};
+        return ConfigValue{packing_strategy_params, "Packing Strategy Params", "packing_strategy_params", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<TileSharingPacking>>
     tile_sharing_packing_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{
-            tile_sharing_packing, "Tile Sharing Packing", "tile_sharing_packing", "mock", {}};
+        return ConfigValue{tile_sharing_packing, "Tile Sharing Packing", "tile_sharing_packing", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<TileSharingAlignment>>
     tile_sharing_alignment_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{
-            tile_sharing_alignment, "Tile Sharing Alignment", "tile_sharing_alignment", "mock", {}};
+        return ConfigValue{tile_sharing_alignment, "Tile Sharing Alignment", "tile_sharing_alignment", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>>
     tiles_pal_mode_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{
-            tiles_pal_mode, "Tiles Palette Mode", "tiles_pal_mode", "mock", {}};
+        return ConfigValue{tiles_pal_mode, "Tiles Palette Mode", "tiles_pal_mode", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<AnimPalResolutionStrategy>>
     global_anim_pal_resolution_strategy_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{
-            global_anim_pal_resolution_strategy, "Global Animation Palette Resolution Strategy", "global_anim_pal_resolution_strategy", "mock", {}};
+            global_anim_pal_resolution_strategy,
+            "Global Animation Palette Resolution Strategy",
+            "global_anim_pal_resolution_strategy",
+            "mock",
+            {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<AnimKeyFrameResolutionStrategy>>
     global_anim_key_frame_resolution_strategy_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{
-            global_anim_key_frame_resolution_strategy, "Global Animation Key Frame Resolution Strategy", "global_anim_key_frame_resolution_strategy", "mock", {}};
+            global_anim_key_frame_resolution_strategy,
+            "Global Animation Key Frame Resolution Strategy",
+            "global_anim_key_frame_resolution_strategy",
+            "mock",
+            {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<AnimMultiPalSubtileResolutionStrategy>>
     global_anim_multi_pal_subtile_resolution_strategy_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{
-            global_anim_multi_pal_subtile_resolution_strategy, "Global Animation Multi-Pal Subtile Resolution Strategy", "global_anim_multi_pal_subtile_resolution_strategy", "mock", {}};
+            global_anim_multi_pal_subtile_resolution_strategy,
+            "Global Animation Multi-Pal Subtile Resolution Strategy",
+            "global_anim_multi_pal_subtile_resolution_strategy",
+            "mock",
+            {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<FrameLinking>>
     global_frame_linking_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{
-            global_frame_linking, "Global Frame Linking", "global_frame_linking", "mock", {}};
+        return ConfigValue{global_frame_linking, "Global Frame Linking", "global_frame_linking", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<PerAnimOverrides>>
     per_anim_overrides_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{
-            per_anim_overrides, "Per-Animation Overrides", "per_anim_overrides", "mock", {}};
+        return ConfigValue{per_anim_overrides, "Per-Animation Overrides", "per_anim_overrides", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
@@ -216,7 +209,6 @@ class MockDomainConfig : public DomainConfig {
         return ConfigValue{
             cross_tileset_anim_linking, "Cross-Tileset Animation Linking", "cross_tileset_anim_linking", "mock", {}};
     }
-
 };
 
 } // namespace porytiles

@@ -17,10 +17,10 @@
 #include "porytiles/domain/packing/models/palette_hint.hpp"
 #include "porytiles/infra/config/config_provider.hpp"
 #include "porytiles/infra/config/infra_config.hpp"
+#include "porytiles/utilities/result/chainable_result.hpp"
 #include "porytiles/utilities/text/plain_text_formatter.hpp"
 #include "porytiles/utilities/text/text_formatter.hpp"
 #include "porytiles/xcut/config/config_value.hpp"
-#include "porytiles/utilities/result/chainable_result.hpp"
 
 namespace porytiles {
 
@@ -163,7 +163,8 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     global_anim_key_frame_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<AnimMultiPalSubtileResolutionStrategy>>
-    global_anim_multi_pal_subtile_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const override;
+    global_anim_multi_pal_subtile_resolution_strategy_raw(
+        ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<FrameLinking>>
     global_frame_linking_raw(ConfigScopeType type, const std::string &scope) const override;
@@ -204,12 +205,18 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      * Infra Config Raw Methods (Tier 1)
      * Note: _validated methods (Tier 2) are inherited from InfraConfig and not overridden
      */
-    [[nodiscard]] ChainableResult<ConfigValue<std::string>> tileset_paths_primary_src_raw(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] ChainableResult<ConfigValue<std::string>> tileset_paths_primary_bin_raw(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] ChainableResult<ConfigValue<std::string>> tileset_paths_secondary_src_raw(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] ChainableResult<ConfigValue<std::string>> tileset_paths_secondary_bin_raw(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>> metatile_attr_size_raw(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] ChainableResult<ConfigValue<bool>> tileset_animations_wire_anim_code_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
+    tileset_paths_primary_src_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
+    tileset_paths_primary_bin_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
+    tileset_paths_secondary_src_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<std::string>>
+    tileset_paths_secondary_bin_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
+    metatile_attr_size_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    tileset_animations_wire_anim_code_raw(ConfigScopeType type, const std::string &scope) const override;
 
   public:
     /*
@@ -531,7 +538,8 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      * @return Vector of ProvenanceChainLink entries, one per provider
      */
     [[nodiscard]] std::vector<ProvenanceChainLink<AnimMultiPalSubtileResolutionStrategy>>
-    global_anim_multi_pal_subtile_resolution_strategy_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+    global_anim_multi_pal_subtile_resolution_strategy_provenance_chain(
+        ConfigScopeType type, const std::string &scope) const;
 
     /**
      * @brief Gets the full provenance chain for global_frame_linking.

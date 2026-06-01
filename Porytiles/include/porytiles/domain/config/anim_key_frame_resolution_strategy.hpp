@@ -25,7 +25,7 @@ namespace porytiles {
  * When decompiling animations, it's possible for multiple key frame tiles to be identical. This is
  * problematic because during recompilation, identical tiles cannot be distinguished. This enum
  * determines how to handle such cases.
- * 
+ *
  */
 enum class AnimKeyFrameResolutionStrategy {
     /**
@@ -57,41 +57,42 @@ enum class AnimKeyFrameResolutionStrategy {
  * @param str The string to parse
  * @return The parsed value, or std::nullopt if the string is invalid
  */
-[[nodiscard]] inline std::optional<AnimKeyFrameResolutionStrategy> anim_key_frame_resolution_strategy_from_str(const std::string &str)
+[[nodiscard]] inline std::optional<AnimKeyFrameResolutionStrategy>
+anim_key_frame_resolution_strategy_from_str(const std::string &str)
 {
     // Phase 1: Exact match against C++ constant names
     if (str == "error") {
-        return std::optional{ AnimKeyFrameResolutionStrategy::error };
+        return std::optional{AnimKeyFrameResolutionStrategy::error};
     }
     if (str == "warning") {
-        return std::optional{ AnimKeyFrameResolutionStrategy::warning };
+        return std::optional{AnimKeyFrameResolutionStrategy::warning};
     }
     if (str == "mangle") {
-        return std::optional{ AnimKeyFrameResolutionStrategy::mangle };
+        return std::optional{AnimKeyFrameResolutionStrategy::mangle};
     }
 
     // Phase 2: Case-insensitive fuzzy match
     std::string lower_str = str;
     std::ranges::transform(
-            lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
     // Fuzzy names for error
     if (lower_str == "error") {
-        return std::optional{ AnimKeyFrameResolutionStrategy::error };
+        return std::optional{AnimKeyFrameResolutionStrategy::error};
     }
     if (lower_str == "err") {
-        return std::optional{ AnimKeyFrameResolutionStrategy::error };
+        return std::optional{AnimKeyFrameResolutionStrategy::error};
     }
     // Fuzzy names for warning
     if (lower_str == "warning") {
-        return std::optional{ AnimKeyFrameResolutionStrategy::warning };
+        return std::optional{AnimKeyFrameResolutionStrategy::warning};
     }
     if (lower_str == "warn") {
-        return std::optional{ AnimKeyFrameResolutionStrategy::warning };
+        return std::optional{AnimKeyFrameResolutionStrategy::warning};
     }
     // Fuzzy names for mangle
     if (lower_str == "mangle") {
-        return std::optional{ AnimKeyFrameResolutionStrategy::mangle };
+        return std::optional{AnimKeyFrameResolutionStrategy::mangle};
     }
 
     return std::nullopt;

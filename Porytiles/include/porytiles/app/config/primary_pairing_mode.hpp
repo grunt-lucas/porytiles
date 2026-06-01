@@ -25,7 +25,7 @@ namespace porytiles {
  * When compiling a secondary tileset, the compiler needs the compiled primary
  * tileset to produce correct global tile indices and palette references.
  * This mode controls how the partner primary is resolved.
- * 
+ *
  */
 enum class PrimaryPairingMode {
     /**
@@ -61,40 +61,40 @@ enum class PrimaryPairingMode {
 {
     // Phase 1: Exact match against C++ constant names
     if (str == "off") {
-        return std::optional{ PrimaryPairingMode::off };
+        return std::optional{PrimaryPairingMode::off};
     }
     if (str == "manual") {
-        return std::optional{ PrimaryPairingMode::manual };
+        return std::optional{PrimaryPairingMode::manual};
     }
     if (str == "automatic") {
-        return std::optional{ PrimaryPairingMode::automatic };
+        return std::optional{PrimaryPairingMode::automatic};
     }
 
     // Phase 2: Case-insensitive fuzzy match
     std::string lower_str = str;
     std::ranges::transform(
-            lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
     // Fuzzy names for off
     if (lower_str == "off") {
-        return std::optional{ PrimaryPairingMode::off };
+        return std::optional{PrimaryPairingMode::off};
     }
     if (lower_str == "none") {
-        return std::optional{ PrimaryPairingMode::off };
+        return std::optional{PrimaryPairingMode::off};
     }
     if (lower_str == "disabled") {
-        return std::optional{ PrimaryPairingMode::off };
+        return std::optional{PrimaryPairingMode::off};
     }
     // Fuzzy names for manual
     if (lower_str == "manual") {
-        return std::optional{ PrimaryPairingMode::manual };
+        return std::optional{PrimaryPairingMode::manual};
     }
     // Fuzzy names for automatic
     if (lower_str == "automatic") {
-        return std::optional{ PrimaryPairingMode::automatic };
+        return std::optional{PrimaryPairingMode::automatic};
     }
     if (lower_str == "auto") {
-        return std::optional{ PrimaryPairingMode::automatic };
+        return std::optional{PrimaryPairingMode::automatic};
     }
 
     return std::nullopt;
