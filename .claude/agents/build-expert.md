@@ -43,11 +43,11 @@ echo "Exit code: $?"
 
 Always run the format script after making changes:
 ```bash
-uv run Scripts/format.py
+uv run scripts/format.py
 ```
 
 ## Project Structure Notes
 
-- **Legacy/**: Legacy version - ignore unless explicitly told otherwise
-- **Porytiles/**: Active development with domain-driven design architecture
+- **legacy/**: Legacy version - ignore unless explicitly told otherwise
+- **porytiles/**: Active development with domain-driven design architecture
 - Headers use non-relative includes (e.g., `#include "porytiles/domain/Foo.hpp"`)

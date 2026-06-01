@@ -5,7 +5,7 @@
             "name": "LLDB - Porytiles Driver Debug Command",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/porytiles-build-debug/Porytiles/tools/driver/porytiles",
+            "program": "${workspaceFolder}/porytiles-build-debug/porytiles/tools/driver/porytiles",
             "args": ["debug-compile-primary", "porytiles_test_simple"],
             "cwd": "${workspaceFolder}/../pokeemerald-expansion"
         },
@@ -13,7 +13,7 @@
             "name": "LLDB - PorytilesAllTests",
             "type": "lldb",
             "request": "launch",
-            "program": "${workspaceFolder}/porytiles-build-debug/Porytiles/tests/PorytilesAllTests",
+            "program": "${workspaceFolder}/porytiles-build-debug/porytiles/tests/PorytilesAllTests",
             "args": [],
             "cwd": "${workspaceFolder}"
         }

@@ -7,7 +7,7 @@ Note that pushes to `develop` produce nightly snapshot builds for users,
 so please only submit work that's feature-complete and ready for end-user consumption! 
 
 If you plan to use AI tooling on your contribution,
-please review [`AI-POLICY.md`](./AI-POLICY.md) first.
+please review [`AI_POLICY.md`](./AI_POLICY.md) first.
 
 PR type and topic are tracked via GitHub labels.
 There is no required branch-name convention.

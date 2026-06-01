@@ -50,12 +50,12 @@ else ()
     #
     # -Werror must be disabled for now, due to a dependency issue:
     #
-    # Porytiles/vendor/fast-cpp-csv-parser/csv.h: In constructor
+    # porytiles/vendor/fast-cpp-csv-parser/csv.h: In constructor
     # ‘io::CSVReader<column_count, trim_policy, quote_policy, overflow_policy, comment_policy>::CSVReader(Args&& ...)
     # [with Args = {const std::__cxx11::basic_string<char, std::char_traits<char>, std::allocator<char> >&};
     # unsigned int column_count = 4; trim_policy = io::trim_chars<' ', '\011'>; quote_policy = io::no_quote_escape<','>;
     # overflow_policy = io::throw_on_overflow; comment_policy = io::no_comment]’:
-    # Porytiles/vendor/fast-cpp-csv-parser/csv.h:410:14: error:
+    # porytiles/vendor/fast-cpp-csv-parser/csv.h:410:14: error:
     # ‘char* __builtin_strncpy(char*, const char*, long unsigned int)’ specified bound 1025 equals destination size [-Werror=stringop-truncation]
     #  410 |       strncpy(this->file_name, file_name, sizeof(this->file_name));
     #      |              ^
@@ -64,6 +64,6 @@ else ()
     add_compile_options(-Wall -Wpedantic)
 endif ()
 
-add_subdirectory(Legacy)
-add_subdirectory(Porytiles)
-add_subdirectory(Documentation)
+add_subdirectory(legacy)
+add_subdirectory(porytiles)
+add_subdirectory(docs)

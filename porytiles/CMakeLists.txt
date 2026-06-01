@@ -1,0 +1,83 @@
+
+# Set a variable that points to the global include directory for Porytiles
+set(PORYTILES_INCLUDE_DIR ${CMAKE_SOURCE_DIR}/porytiles/include)
+
+# ============================================================================
+# Configuration Code Generation
+# ============================================================================
+
+# Find uv executable for Python script execution
+find_program(UV_EXECUTABLE uv REQUIRED)
+
+# Define generated output files
+set(GENERATED_CONFIG_FILES
+        # Layer interfaces
+        ${CMAKE_SOURCE_DIR}/porytiles/include/porytiles/domain/config/domain_config.hpp
+        ${CMAKE_SOURCE_DIR}/porytiles/include/porytiles/app/config/app_config.hpp
+        ${CMAKE_SOURCE_DIR}/porytiles/include/porytiles/infra/config/infra_config.hpp
+        # LazyLayeredConfig implementation
+        ${CMAKE_SOURCE_DIR}/porytiles/include/porytiles/infra/config/lazy_layered_config.hpp
+        ${CMAKE_SOURCE_DIR}/porytiles/lib/infra/config/lazy_layered_config.cpp
+        # ConfigProvider
+        ${CMAKE_SOURCE_DIR}/porytiles/include/porytiles/infra/config/config_provider.hpp
+        ${CMAKE_SOURCE_DIR}/porytiles/lib/infra/config/config_provider.cpp
+        # DefaultProvider
+        ${CMAKE_SOURCE_DIR}/porytiles/include/porytiles/infra/config/default_provider.hpp
+        ${CMAKE_SOURCE_DIR}/porytiles/lib/infra/config/default_provider.cpp
+        # HeaderDefineProvider
+        ${CMAKE_SOURCE_DIR}/porytiles/include/porytiles/infra/config/header_define_provider.hpp
+        ${CMAKE_SOURCE_DIR}/porytiles/lib/infra/config/header_define_provider.cpp
+        # OverrideConfigProvider
+        ${CMAKE_SOURCE_DIR}/porytiles/include/porytiles/infra/config/override_config_provider.hpp
+        ${CMAKE_SOURCE_DIR}/porytiles/lib/infra/config/override_config_provider.cpp
+        # YamlFileProvider
+        ${CMAKE_SOURCE_DIR}/porytiles/include/porytiles/infra/config/yaml_file_provider.hpp
+        ${CMAKE_SOURCE_DIR}/porytiles/lib/infra/config/yaml_file_provider.cpp
+        ${CMAKE_SOURCE_DIR}/porytiles/include/porytiles/infra/config/valid_yaml_paths.hpp
+        # CLI Option System
+        ${CMAKE_SOURCE_DIR}/porytiles/include/porytiles/infra/cli/cli_option_storage.hpp
+        ${CMAKE_SOURCE_DIR}/porytiles/include/porytiles/infra/config/cli_option_provider.hpp
+        ${CMAKE_SOURCE_DIR}/porytiles/lib/infra/config/cli_option_provider.cpp
+        ${CMAKE_SOURCE_DIR}/porytiles/include/porytiles/infra/cli/cli_option_registration.hpp
+        ${CMAKE_SOURCE_DIR}/porytiles/lib/infra/cli/cli_option_registration.cpp
+        ${CMAKE_SOURCE_DIR}/porytiles/include/porytiles/infra/cli/cli_completion_data.hpp
+        # Test mock configs
+        ${CMAKE_SOURCE_DIR}/porytiles/tests/support/mock_domain_config.hpp
+        ${CMAKE_SOURCE_DIR}/porytiles/tests/support/mock_infra_config.hpp
+        ${CMAKE_SOURCE_DIR}/porytiles/tests/support/mock_app_config.hpp
+)
+
+# Define schema and template files
+set(CONFIG_SCHEMA
+        ${CMAKE_SOURCE_DIR}/porytiles/config_templates/config_schema.yaml
+)
+
+# Glob all template files in the config_templates directory (recursively)
+file(GLOB_RECURSE CONFIG_TEMPLATES
+        "${CMAKE_SOURCE_DIR}/porytiles/config_templates/*.jinja2"
+)
+
+# Generate config files before building using uv run
+add_custom_command(
+        OUTPUT ${GENERATED_CONFIG_FILES}
+        COMMAND ${UV_EXECUTABLE} run ${CMAKE_SOURCE_DIR}/scripts/generate_config.py
+        DEPENDS
+        ${CONFIG_SCHEMA}
+        ${CMAKE_SOURCE_DIR}/scripts/generate_config.py
+        ${CONFIG_TEMPLATES}
+        ${CMAKE_SOURCE_DIR}/pyproject.toml
+        WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
+        COMMENT "Generating configuration code from templates (via uv)..."
+        VERBATIM
+)
+
+# Create target that depends on generated files
+add_custom_target(generate_config_code
+        DEPENDS ${GENERATED_CONFIG_FILES}
+)
+
+# ============================================================================
+
+add_subdirectory(lib)
+add_subdirectory(tests)
+add_subdirectory(tools)
