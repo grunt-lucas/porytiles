@@ -17,17 +17,18 @@ disagree, the planning doc is authoritative for intent; update this tracker to m
 |-------|-------|--------|
 | 0  | Document the plan in the repo (this file) | ✅ Done |
 | A1 | Legacy include-prefix rename (collision unblocker) | ✅ Done |
-| A2 | Porytiles2 → Porytiles (the big rename) | ✅ Done (local) |
-| A3 | Porytiles1 → Legacy directory rename | ✅ Done (local) |
-| A4 | Scripts, configs, IDE files, docs sweep | ✅ Done (local) |
-| A5 | GitHub Actions hardcoded paths | ✅ Done (local) |
-| A6 | Phase A end-to-end verification | ✅ Done (local) |
-| B  | CHANGELOG infrastructure | ⬜ Not started |
+| A2 | Porytiles2 → Porytiles (the big rename) | ✅ Done |
+| A3 | Porytiles1 → Legacy directory rename | ✅ Done |
+| A4 | Scripts, configs, IDE files, docs sweep | ✅ Done |
+| A5 | GitHub Actions hardcoded paths | ✅ Done |
+| A6 | Phase A end-to-end verification | ✅ Done |
+| B  | CHANGELOG infrastructure | ✅ Done |
 | C  | Versioning system | ⬜ Not started |
 | D  | CI / release pipeline overhaul | ⬜ Not started |
 | E  | Gitflow adoption + 1.0.0 cut | ⬜ Not started |
 | F  | Documentation repos gitflow alignment | ⬜ Not started |
-| G  | AI policy documentation | ⬜ Not started |
+| G  | AI policy documentation | ✅ Done |
+| H  | Top-level lowercase migration | ⬜ Not started |
 
 Legend: ⬜ not started · 🟡 in progress · ✅ done · 🚫 blocked
 
@@ -46,6 +47,9 @@ Other dependencies:
 - **D** depends on **A** and **C** complete.
 - **E** is last; happens when A–D are stable on `develop`.
 - **B**, **F**, **G** can land in parallel with **A** (no source-file overlap).
+- **H** depends on **A** complete (already met); should land BEFORE **D** so the CI
+  workflow rewrites reference final lowercase paths. Independent of **B**, **C**,
+  **F**, **G**.
 
 ---
 
@@ -340,12 +344,13 @@ End-to-end through `cmake --build` + install + execute is the first validation t
 
 ## Phase B — CHANGELOG infrastructure (parallel with A)
 
-- [ ] **B1** Create `CHANGELOG.md` at repo root (simplified Keep A Changelog skeleton:
-  `## [Unreleased]` + `## [1.0.0] - YYYY-MM-DD`).
-- [ ] **B2** Add `.github/workflows/changelog_check.yml`: trigger on PRs to
-  `develop`/`master`; fail if `CHANGELOG.md` not in diff; skip on `no-changelog` label.
-- [ ] **B3** Document the convention in `CONTRIBUTING.md` (every PR adds an
-  `## [Unreleased]` entry or carries `no-changelog`).
+- [x] **B1** Created `CHANGELOG.md` at repo root: empty `## [Unreleased]` above a catch-all `## [1.0.0] - YYYY-MM-DD` release note. Release-prep work itself is not enumerated as changelog entries per user direction — accumulation begins post-1.0.0 cut.
+- [x] **B2** Added `.github/workflows/changelog_check.yml`: triggers on `pull_request` to `develop` (not `master` — release cuts always touch CHANGELOG by construction); step-level `if:` skips the gate when the PR carries `no-changelog`, leaving job status as success for required-check compatibility; diff check uses `git diff --name-only origin/${{ github.base_ref }}...HEAD | grep -q '^CHANGELOG\.md$'`. yaml.safe_load passes.
+- [x] **B3** Added "Changelog" section to `CONTRIBUTING.md` (after "Branch Cleanup", with matching TOC entry) documenting the rule, the `no-changelog` opt-out, and the release-cut migration of `[Unreleased]` to a dated heading. Uses sembr to match the rest of the file.
+
+**Phase B prerequisites for the gate to actually function** (carried forward — do NOT skip before pushing the PR):
+- [x] Created the `no-changelog` label (`#cfd3d7`, "PR is exempt from CHANGELOG.md enforcement") via `gh label create`. Now selectable by contributors on PRs.
+- [ ] The recursive-bootstrap test: B's own PR will be the first run of `Porytiles Changelog Check` — confirm it passes (because the PR touches `CHANGELOG.md` by creating it).
 
 ---
 
@@ -415,11 +420,111 @@ End-to-end through `cmake --build` + install + execute is the first validation t
 
 ## Phase G — AI policy documentation (parallel with A–F; land early)
 
-- [ ] **G1** Draft `AI-POLICY.md` at repo root (two-track stance; maintainer discretion;
-  slop-tell heuristics; pointer to STYLE.md/CONTRIBUTING.md; no-disclosure stance;
-  revisit-annually line). Keep it short.
-- [ ] **G2** Reference from `CONTRIBUTING.md` (one-liner near top) and optionally `README.md`.
-- [ ] **G3** Verify: file exists, references resolve, reads as not-itself-slop.
+- [x] **G1** Drafted `AI-POLICY.md` at repo root. Two-track stance: `Legacy/` is closed to AI
+  contributions of any kind (hard-line, no exceptions); `Porytiles/` accepts AI-assisted work at
+  maintainer discretion. Slop description stayed abstract per maintainer choice (defers to STYLE.md
+  and reviewer judgment, no enumeration of specific tells). No disclosure checkbox, no detector.
+  Revisit-cadence section omitted entirely. Pointers to `STYLE.md` and `CONTRIBUTING.md` included.
+  ~25 lines of prose, one screen. Slop self-audit pass complete (no em-dashes, no marketing prose,
+  no platitude bullets).
+- [x] **G2** Added AI-POLICY reference to `CONTRIBUTING.md` (intro paragraph). Bundled with a
+  broader simplification of `CONTRIBUTING.md` per maintainer direction: dropped the Topic Branch
+  Conventions section (6 subsections) and Issues section, since GitHub labels handle PR
+  categorization. The sembr endorsement that lived in the dropped Documentation subsection moved
+  to `STYLE.md` under a renamed "Prose Style" section (was "Comment Prose Style"). Document went
+  from ~115 lines to ~50. Optional `README.md` mention still deferred to a later phase.
+- [x] **G3** Verified: `AI-POLICY.md` exists at repo root; `STYLE.md` and `CONTRIBUTING.md` link
+  references resolve; the doc reads as not-itself-slop after maintainer edits and the bundled
+  simplification pass.
+
+---
+
+## Phase H — Top-level lowercase migration (after A; before D)
+
+Bundles Tier 1 + Tier 2 + Tier 3 of the naming convention audit into one
+mechanical pass: rename PascalCase top-level dirs to lowercase, normalize
+test-asset kebab-case to snake_case, and rename `AI-POLICY.md` to `AI_POLICY.md`.
+Lands BEFORE Phase D so the CI/release pipeline rewrite already references final
+paths. Independent of B, C, F, G.
+
+> ⚠️ Case-only renames on macOS HFS+/APFS need the intermediate workaround:
+> `git mv X X_tmp && git mv X_tmp x`. Every clone must `rm -rf porytiles-build-*`
+> after merging Phase H — CMake won't detect the path case change.
+
+### H1 — Decide final target slugs (one-shot, at execution start)
+
+Locked (no sub-question):
+- [ ] `Porytiles/` → `porytiles/`
+- [ ] `Legacy/` → `legacy/`
+- [ ] `Scripts/` → `scripts/`
+- [ ] `Porytiles/Notes/` → `porytiles/notes/` (Tier 1 PascalCase outlier subsumed)
+
+Open sub-questions to resolve at execution time:
+- [ ] `Documentation/` → `documentation/` or `docs/` (LLVM/Catch2/fmt convention is `docs/`)?
+- [ ] `Porytiles/Documentation/` (nested) — mirror the choice above.
+- [ ] `Resources/` → `resources/`; `Resources/Readme/` → `resources/readme/` (also lowercase child).
+- [ ] `Documentation/Wiki/` → mirror H1 choice.
+
+### H2 — Mechanical path sweep
+
+For each renamed dir, `git mv` (use the intermediate-name workaround for case-only
+renames on macOS), then update every reference:
+
+- [ ] Every `CMakeLists.txt` (root + sub-CMakeLists across the active tree,
+  legacy tree, and `Documentation/`).
+- [ ] Every `.github/workflows/*.yml` and composite `action.yml`.
+- [ ] Every `Scripts/*.py` (6 files: `format`, `coverage`, `tidy`, `new_class`,
+  `generate_config`, `todo`).
+- [ ] Top-level docs: `CLAUDE.md`, `README.md`, `CONTRIBUTING.md`, `STYLE.md`,
+  `RELEASE_PREP_1_0_0.md` (this file), `AI-POLICY.md` (becomes `AI_POLICY.md`
+  in H3).
+- [ ] Jinja2 templates under `Porytiles/config_templates/` if any hardcode paths.
+- [ ] `.vscode/c_cpp_properties.json`, `.vscode/launch.json`.
+- [ ] `.claude/agents/*.md`, `.claude/skills/*.md`.
+- [ ] Verify `.clang-tidy` (currently filters on the `porytiles/` include
+  namespace, which is already lowercase — likely no edit needed).
+- [ ] Planning artifact `.claude/plans/i-m-currently-prepping-porytiles-merry-lovelace.md`.
+
+### H3 — `AI-POLICY.md` → `AI_POLICY.md` (Tier 1)
+
+- [ ] `git mv AI-POLICY.md AI_POLICY.md`.
+- [ ] Update the inbound reference in `CONTRIBUTING.md` (intro paragraph).
+
+### H4 — `resources/` test-asset normalization (Tier 2)
+
+Inside the renamed `resources/`, kebab → snake:
+
+- [ ] `resources/Examples/*-tutorial/` → `resources/examples/*_tutorial/` (5 dirs:
+  `palette-overrides-tutorial`, `palette-primers-tutorial`, `porytiles-anim-tutorial`,
+  `porytiles-primary-tutorial`, `porytiles-secondary-tutorial`).
+- [ ] `resources/Doctests/palette_override_1/palette-overrides/` (and matching
+  `palette-primers/` siblings under `palette_primer_1/`).
+- [ ] `resources/Doctests/precision-loss-test{,2}/` → `precision_loss_test{,2}/`
+  (and their kebab-named `palette-overrides/` / `palette-primers/` children).
+- [ ] Audit `Porytiles/tests/integration/...` for hardcoded path strings and update.
+
+### H5 — End-to-end verification
+
+- [ ] `rm -rf porytiles-build-debug && cmake -B porytiles-build-debug -S .` (exit 0).
+- [ ] `cmake --build porytiles-build-debug -j7 > /tmp/build.log 2>&1` (exit 0).
+- [ ] `./porytiles-build-debug/porytiles/tests/PorytilesAllTests > /tmp/test.log 2>&1` (exit 0).
+- [ ] `./porytiles-build-debug/legacy/tests/LegacyTests > /tmp/legacy_test.log 2>&1` (exit 0).
+- [ ] `cmake --install porytiles-build-debug --prefix ~/.local`; both `--version` calls succeed.
+- [ ] `uv run scripts/generate_config.py` (note lowercase path); zero diff on rerun.
+- [ ] Residual greps return empty: `rg -F 'Porytiles/'`, `'Legacy/'`,
+  `'Documentation/'`, `'Resources/'`, `'Scripts/'` across tracked source
+  (excluding `porytiles-build-*`, testbeds, docs-repo siblings, `homebrew-porytiles/`).
+
+**Cross-cutting notes**
+- Same disposition as Phase A for open feature branches (`bug/anim-tiles`,
+  `bug/issue-0060/key-frame-bug`, `feature/issue-0047/compiled-paired-primary`):
+  hand-port if still live, close if not. Not a Phase H prerequisite.
+- External user-facing docs (`porytiles-user-docs`, `porytiles-dev-docs`) may
+  reference `Porytiles/` paths in tutorials; Phase F should sweep those repos
+  during its initial-sync step.
+- CHANGELOG entry: Phase H is release-prep structure, not user-facing behavior.
+  Same framing as B and G — no CHANGELOG entry needed; the bundled PR's diff
+  touches `CHANGELOG.md` incidentally so the gate passes without `no-changelog`.
 
 ---
 
@@ -434,4 +539,8 @@ End-to-end through `cmake --build` + install + execute is the first validation t
 - [ ] Branch protection rejects direct push to `master`.
 - [ ] CHANGELOG workflow blocks a PR missing a CHANGELOG entry (unless `no-changelog`).
 - [ ] `AI-POLICY.md` exists; `CONTRIBUTING.md` links it; legacy AI-free stance unambiguous.
+  (Becomes `AI_POLICY.md` after Phase H3.)
 - [ ] `STABILITY.md` (or equivalent) classifies every public surface.
+- [ ] Top-level directory names are all lowercase (`porytiles/`, `legacy/`,
+  `scripts/`, plus the H1-decided slugs for docs/resources). Residual greps in H5
+  return zero hits in tracked source.

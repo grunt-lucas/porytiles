@@ -9,187 +9,224 @@
 
 namespace porytiles {
 
-LayerValue<std::size_t> ConfigProvider::num_tiles_in_primary([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> ConfigProvider::num_tiles_in_primary(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_tiles_total([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t>
+ConfigProvider::num_tiles_total([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_metatiles_in_primary([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> ConfigProvider::num_metatiles_in_primary(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_metatiles_total([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> ConfigProvider::num_metatiles_total(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_pals_in_primary([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> ConfigProvider::num_pals_in_primary(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_pals_total([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t>
+ConfigProvider::num_pals_total([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::max_map_data_size([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> ConfigProvider::max_map_data_size(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::num_tiles_per_metatile([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> ConfigProvider::num_tiles_per_metatile(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<Rgba32> ConfigProvider::extrinsic_transparency([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<Rgba32> ConfigProvider::extrinsic_transparency(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<Rgba32>::not_provided();
 }
 
-LayerValue<ArtifactEditMode> ConfigProvider::tiles_edit_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<ArtifactEditMode>
+ConfigProvider::tiles_edit_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<ArtifactEditMode>::not_provided();
 }
 
-LayerValue<ArtifactEditMode> ConfigProvider::pals_edit_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<ArtifactEditMode>
+ConfigProvider::pals_edit_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<ArtifactEditMode>::not_provided();
 }
 
-LayerValue<bool> ConfigProvider::pal_hints_enabled([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<bool> ConfigProvider::pal_hints_enabled(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<bool>::not_provided();
 }
 
-LayerValue<std::vector<PaletteHint>> ConfigProvider::pal_hints([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::vector<PaletteHint>>
+ConfigProvider::pal_hints([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::vector<PaletteHint>>::not_provided();
 }
 
-LayerValue<PackingStrategyType> ConfigProvider::packing_strategy([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<PackingStrategyType>
+ConfigProvider::packing_strategy([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<PackingStrategyType>::not_provided();
 }
 
-LayerValue<PackingStrategyParams> ConfigProvider::packing_strategy_params([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<PackingStrategyParams> ConfigProvider::packing_strategy_params(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<PackingStrategyParams>::not_provided();
 }
 
-LayerValue<TileSharingPacking> ConfigProvider::tile_sharing_packing([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<TileSharingPacking> ConfigProvider::tile_sharing_packing(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<TileSharingPacking>::not_provided();
 }
 
-LayerValue<TileSharingAlignment> ConfigProvider::tile_sharing_alignment([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<TileSharingAlignment> ConfigProvider::tile_sharing_alignment(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<TileSharingAlignment>::not_provided();
 }
 
-LayerValue<TilesPalMode> ConfigProvider::tiles_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<TilesPalMode>
+ConfigProvider::tiles_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<TilesPalMode>::not_provided();
 }
 
-LayerValue<AnimPalResolutionStrategy> ConfigProvider::global_anim_pal_resolution_strategy([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<AnimPalResolutionStrategy> ConfigProvider::global_anim_pal_resolution_strategy(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<AnimPalResolutionStrategy>::not_provided();
 }
 
-LayerValue<AnimKeyFrameResolutionStrategy> ConfigProvider::global_anim_key_frame_resolution_strategy([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<AnimKeyFrameResolutionStrategy> ConfigProvider::global_anim_key_frame_resolution_strategy(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<AnimKeyFrameResolutionStrategy>::not_provided();
 }
 
-LayerValue<AnimMultiPalSubtileResolutionStrategy> ConfigProvider::global_anim_multi_pal_subtile_resolution_strategy([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<AnimMultiPalSubtileResolutionStrategy> ConfigProvider::global_anim_multi_pal_subtile_resolution_strategy(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<AnimMultiPalSubtileResolutionStrategy>::not_provided();
 }
 
-LayerValue<FrameLinking> ConfigProvider::global_frame_linking([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<FrameLinking> ConfigProvider::global_frame_linking(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<FrameLinking>::not_provided();
 }
 
-LayerValue<PerAnimOverrides> ConfigProvider::per_anim_overrides([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<PerAnimOverrides> ConfigProvider::per_anim_overrides(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<PerAnimOverrides>::not_provided();
 }
 
-LayerValue<bool> ConfigProvider::cross_tileset_anim_linking([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<bool> ConfigProvider::cross_tileset_anim_linking(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<bool>::not_provided();
 }
 
-LayerValue<bool> ConfigProvider::verify_checksums([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<bool>
+ConfigProvider::verify_checksums([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<bool>::not_provided();
 }
 
-LayerValue<PrimaryPairingMode> ConfigProvider::primary_pairing_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<PrimaryPairingMode> ConfigProvider::primary_pairing_mode(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<PrimaryPairingMode>::not_provided();
 }
 
-LayerValue<std::vector<std::string>> ConfigProvider::primary_pairing_partners([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::vector<std::string>> ConfigProvider::primary_pairing_partners(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::vector<std::string>>::not_provided();
 }
 
-LayerValue<std::vector<std::string>> ConfigProvider::diagnostic_warnings_exclude([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::vector<std::string>> ConfigProvider::diagnostic_warnings_exclude(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::vector<std::string>>::not_provided();
 }
 
-LayerValue<std::vector<std::string>> ConfigProvider::diagnostic_warnings_include([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::vector<std::string>> ConfigProvider::diagnostic_warnings_include(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::vector<std::string>>::not_provided();
 }
 
-LayerValue<std::vector<std::string>> ConfigProvider::diagnostic_remarks_exclude([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::vector<std::string>> ConfigProvider::diagnostic_remarks_exclude(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::vector<std::string>>::not_provided();
 }
 
-LayerValue<std::vector<std::string>> ConfigProvider::diagnostic_remarks_include([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::vector<std::string>> ConfigProvider::diagnostic_remarks_include(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::vector<std::string>>::not_provided();
 }
 
-LayerValue<std::string> ConfigProvider::tileset_paths_primary_src([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::string> ConfigProvider::tileset_paths_primary_src(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::string>::not_provided();
 }
 
-LayerValue<std::string> ConfigProvider::tileset_paths_primary_bin([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::string> ConfigProvider::tileset_paths_primary_bin(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::string>::not_provided();
 }
 
-LayerValue<std::string> ConfigProvider::tileset_paths_secondary_src([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::string> ConfigProvider::tileset_paths_secondary_src(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::string>::not_provided();
 }
 
-LayerValue<std::string> ConfigProvider::tileset_paths_secondary_bin([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::string> ConfigProvider::tileset_paths_secondary_bin(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::string>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::metatile_attr_size([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> ConfigProvider::metatile_attr_size(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::not_provided();
 }
 
-LayerValue<bool> ConfigProvider::tileset_animations_wire_anim_code([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<bool> ConfigProvider::tileset_animations_wire_anim_code(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<bool>::not_provided();
 }

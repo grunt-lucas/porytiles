@@ -18,223 +18,263 @@ std::string CliOptionProvider::name() const
     return "CliOptionProvider";
 }
 
-LayerValue<std::size_t> CliOptionProvider::num_tiles_in_primary([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> CliOptionProvider::num_tiles_in_primary(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_size_t(storage_.num_tiles_in_primary, "--num-tiles-in-primary");
 }
 
-LayerValue<std::size_t> CliOptionProvider::num_tiles_total([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> CliOptionProvider::num_tiles_total(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_size_t(storage_.num_tiles_total, "--num-tiles-total");
 }
 
-LayerValue<std::size_t> CliOptionProvider::num_metatiles_in_primary([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> CliOptionProvider::num_metatiles_in_primary(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_size_t(storage_.num_metatiles_in_primary, "--num-metatiles-in-primary");
 }
 
-LayerValue<std::size_t> CliOptionProvider::num_metatiles_total([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> CliOptionProvider::num_metatiles_total(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_size_t(storage_.num_metatiles_total, "--num-metatiles-total");
 }
 
-LayerValue<std::size_t> CliOptionProvider::num_pals_in_primary([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> CliOptionProvider::num_pals_in_primary(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_size_t(storage_.num_pals_in_primary, "--num-pals-in-primary");
 }
 
-LayerValue<std::size_t> CliOptionProvider::num_pals_total([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> CliOptionProvider::num_pals_total(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_size_t(storage_.num_pals_total, "--num-pals-total");
 }
 
-LayerValue<std::size_t> CliOptionProvider::max_map_data_size([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> CliOptionProvider::max_map_data_size(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_size_t(storage_.max_map_data_size, "--max-map-data-size");
 }
 
-LayerValue<std::size_t> CliOptionProvider::num_tiles_per_metatile([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> CliOptionProvider::num_tiles_per_metatile(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_size_t(storage_.num_tiles_per_metatile, "--num-tiles-per-metatile");
 }
 
-LayerValue<Rgba32> CliOptionProvider::extrinsic_transparency([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<Rgba32> CliOptionProvider::extrinsic_transparency(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_rgba32(storage_.extrinsic_transparency, "--extrinsic-transparency");
 }
 
-LayerValue<ArtifactEditMode> CliOptionProvider::tiles_edit_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<ArtifactEditMode> CliOptionProvider::tiles_edit_mode(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_artifact_edit_mode(storage_.tiles_edit_mode, "--tiles-edit-mode");
 }
 
-LayerValue<ArtifactEditMode> CliOptionProvider::pals_edit_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<ArtifactEditMode> CliOptionProvider::pals_edit_mode(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_artifact_edit_mode(storage_.pals_edit_mode, "--pals-edit-mode");
 }
 
-LayerValue<bool> CliOptionProvider::pal_hints_enabled([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<bool> CliOptionProvider::pal_hints_enabled(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_bool(storage_.pal_hints_enabled, "--pal-hints-enabled");
 }
 
-LayerValue<std::vector<PaletteHint>> CliOptionProvider::pal_hints([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::vector<PaletteHint>>
+CliOptionProvider::pal_hints([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // Skipped for CLI (yaml_only: type too complex for non-YAML providers)
     return LayerValue<std::vector<PaletteHint>>::not_provided();
 }
 
-LayerValue<PackingStrategyType> CliOptionProvider::packing_strategy([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<PackingStrategyType> CliOptionProvider::packing_strategy(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_packing_strategy_type(storage_.packing_strategy, "--packing-strategy");
 }
 
-LayerValue<PackingStrategyParams> CliOptionProvider::packing_strategy_params([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<PackingStrategyParams> CliOptionProvider::packing_strategy_params(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // Skipped for CLI (yaml_only: type too complex for non-YAML providers)
     return LayerValue<PackingStrategyParams>::not_provided();
 }
 
-LayerValue<TileSharingPacking> CliOptionProvider::tile_sharing_packing([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<TileSharingPacking> CliOptionProvider::tile_sharing_packing(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_tile_sharing_packing(storage_.tile_sharing_packing, "--tile-sharing-packing");
 }
 
-LayerValue<TileSharingAlignment> CliOptionProvider::tile_sharing_alignment([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<TileSharingAlignment> CliOptionProvider::tile_sharing_alignment(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_tile_sharing_alignment(storage_.tile_sharing_alignment, "--tile-sharing-alignment");
 }
 
-LayerValue<TilesPalMode> CliOptionProvider::tiles_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<TilesPalMode> CliOptionProvider::tiles_pal_mode(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_tiles_pal_mode(storage_.tiles_pal_mode, "--tiles-pal-mode");
 }
 
-LayerValue<AnimPalResolutionStrategy> CliOptionProvider::global_anim_pal_resolution_strategy([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<AnimPalResolutionStrategy> CliOptionProvider::global_anim_pal_resolution_strategy(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
-    return parse_anim_pal_resolution_strategy(storage_.global_anim_pal_resolution_strategy, "--anim-pal-resolution-strategy");
+    return parse_anim_pal_resolution_strategy(
+        storage_.global_anim_pal_resolution_strategy, "--anim-pal-resolution-strategy");
 }
 
-LayerValue<AnimKeyFrameResolutionStrategy> CliOptionProvider::global_anim_key_frame_resolution_strategy([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<AnimKeyFrameResolutionStrategy> CliOptionProvider::global_anim_key_frame_resolution_strategy(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
-    return parse_anim_key_frame_resolution_strategy(storage_.global_anim_key_frame_resolution_strategy, "--anim-key-frame-resolution-strategy");
+    return parse_anim_key_frame_resolution_strategy(
+        storage_.global_anim_key_frame_resolution_strategy, "--anim-key-frame-resolution-strategy");
 }
 
-LayerValue<AnimMultiPalSubtileResolutionStrategy> CliOptionProvider::global_anim_multi_pal_subtile_resolution_strategy([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<AnimMultiPalSubtileResolutionStrategy> CliOptionProvider::global_anim_multi_pal_subtile_resolution_strategy(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
-    return parse_anim_multi_pal_subtile_resolution_strategy(storage_.global_anim_multi_pal_subtile_resolution_strategy, "--anim-multi-pal-subtile-resolution-strategy");
+    return parse_anim_multi_pal_subtile_resolution_strategy(
+        storage_.global_anim_multi_pal_subtile_resolution_strategy, "--anim-multi-pal-subtile-resolution-strategy");
 }
 
-LayerValue<FrameLinking> CliOptionProvider::global_frame_linking([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<FrameLinking> CliOptionProvider::global_frame_linking(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_frame_linking(storage_.global_frame_linking, "--frame-linking");
 }
 
-LayerValue<PerAnimOverrides> CliOptionProvider::per_anim_overrides([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<PerAnimOverrides> CliOptionProvider::per_anim_overrides(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // Skipped for CLI (yaml_only: type too complex for non-YAML providers)
     return LayerValue<PerAnimOverrides>::not_provided();
 }
 
-LayerValue<bool> CliOptionProvider::cross_tileset_anim_linking([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<bool> CliOptionProvider::cross_tileset_anim_linking(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_bool(storage_.cross_tileset_anim_linking, "--cross-tileset-anim-linking");
 }
 
-LayerValue<bool> CliOptionProvider::verify_checksums([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<bool> CliOptionProvider::verify_checksums(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_bool(storage_.verify_checksums, "--verify-checksums");
 }
 
-LayerValue<PrimaryPairingMode> CliOptionProvider::primary_pairing_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<PrimaryPairingMode> CliOptionProvider::primary_pairing_mode(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_primary_pairing_mode(storage_.primary_pairing_mode, "--primary-pairing-mode");
 }
 
-LayerValue<std::vector<std::string>> CliOptionProvider::primary_pairing_partners([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::vector<std::string>> CliOptionProvider::primary_pairing_partners(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_string_vector(storage_.primary_pairing_partners, "--primary-pairing-partners");
 }
 
-LayerValue<std::vector<std::string>> CliOptionProvider::diagnostic_warnings_exclude([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::vector<std::string>> CliOptionProvider::diagnostic_warnings_exclude(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_string_vector(storage_.diagnostic_warnings_exclude, "--diagnostic-warnings-exclude");
 }
 
-LayerValue<std::vector<std::string>> CliOptionProvider::diagnostic_warnings_include([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::vector<std::string>> CliOptionProvider::diagnostic_warnings_include(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_string_vector(storage_.diagnostic_warnings_include, "--diagnostic-warnings-include");
 }
 
-LayerValue<std::vector<std::string>> CliOptionProvider::diagnostic_remarks_exclude([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::vector<std::string>> CliOptionProvider::diagnostic_remarks_exclude(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_string_vector(storage_.diagnostic_remarks_exclude, "--diagnostic-remarks-exclude");
 }
 
-LayerValue<std::vector<std::string>> CliOptionProvider::diagnostic_remarks_include([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::vector<std::string>> CliOptionProvider::diagnostic_remarks_include(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_string_vector(storage_.diagnostic_remarks_include, "--diagnostic-remarks-include");
 }
 
-LayerValue<std::string> CliOptionProvider::tileset_paths_primary_src([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::string> CliOptionProvider::tileset_paths_primary_src(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_string(storage_.tileset_paths_primary_src, "--tileset-paths-primary-src");
 }
 
-LayerValue<std::string> CliOptionProvider::tileset_paths_primary_bin([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::string> CliOptionProvider::tileset_paths_primary_bin(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_string(storage_.tileset_paths_primary_bin, "--tileset-paths-primary-bin");
 }
 
-LayerValue<std::string> CliOptionProvider::tileset_paths_secondary_src([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::string> CliOptionProvider::tileset_paths_secondary_src(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_string(storage_.tileset_paths_secondary_src, "--tileset-paths-secondary-src");
 }
 
-LayerValue<std::string> CliOptionProvider::tileset_paths_secondary_bin([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::string> CliOptionProvider::tileset_paths_secondary_bin(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_string(storage_.tileset_paths_secondary_bin, "--tileset-paths-secondary-bin");
 }
 
-LayerValue<std::size_t> CliOptionProvider::metatile_attr_size([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> CliOptionProvider::metatile_attr_size(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_size_t(storage_.metatile_attr_size, "--metatile-attr-size");
 }
 
-LayerValue<bool> CliOptionProvider::tileset_animations_wire_anim_code([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<bool> CliOptionProvider::tileset_animations_wire_anim_code(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_bool(storage_.tileset_animations_wire_anim_code, "--tileset-animations-wire-anim-code");

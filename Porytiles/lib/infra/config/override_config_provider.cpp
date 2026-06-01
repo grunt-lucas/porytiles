@@ -12,8 +12,7 @@
 
 namespace porytiles {
 
-OverrideConfigProvider::OverrideConfigProvider(
-    ConfigScopeType scope_type, std::string scope, std::string source_info)
+OverrideConfigProvider::OverrideConfigProvider(ConfigScopeType scope_type, std::string scope, std::string source_info)
     : scope_type_{scope_type}, scope_{std::move(scope)}, source_info_{std::move(source_info)}
 {
 }
@@ -128,7 +127,8 @@ void OverrideConfigProvider::set_global_anim_key_frame_resolution_strategy(AnimK
     global_anim_key_frame_resolution_strategy_override_ = std::move(value);
 }
 
-void OverrideConfigProvider::set_global_anim_multi_pal_subtile_resolution_strategy(AnimMultiPalSubtileResolutionStrategy value)
+void OverrideConfigProvider::set_global_anim_multi_pal_subtile_resolution_strategy(
+    AnimMultiPalSubtileResolutionStrategy value)
 {
     global_anim_multi_pal_subtile_resolution_strategy_override_ = std::move(value);
 }
@@ -219,18 +219,15 @@ OverrideConfigProvider::num_tiles_in_primary(ConfigScopeType type, const std::st
     if (!scope_matches(type, scope) || !num_tiles_in_primary_override_.has_value()) {
         return LayerValue<std::size_t>::not_provided();
     }
-    return LayerValue<std::size_t>::valid(
-        num_tiles_in_primary_override_.value(), "num_tiles_in_primary", source_info_);
+    return LayerValue<std::size_t>::valid(num_tiles_in_primary_override_.value(), "num_tiles_in_primary", source_info_);
 }
 
-LayerValue<std::size_t>
-OverrideConfigProvider::num_tiles_total(ConfigScopeType type, const std::string &scope) const
+LayerValue<std::size_t> OverrideConfigProvider::num_tiles_total(ConfigScopeType type, const std::string &scope) const
 {
     if (!scope_matches(type, scope) || !num_tiles_total_override_.has_value()) {
         return LayerValue<std::size_t>::not_provided();
     }
-    return LayerValue<std::size_t>::valid(
-        num_tiles_total_override_.value(), "num_tiles_total", source_info_);
+    return LayerValue<std::size_t>::valid(num_tiles_total_override_.value(), "num_tiles_total", source_info_);
 }
 
 LayerValue<std::size_t>
@@ -249,8 +246,7 @@ OverrideConfigProvider::num_metatiles_total(ConfigScopeType type, const std::str
     if (!scope_matches(type, scope) || !num_metatiles_total_override_.has_value()) {
         return LayerValue<std::size_t>::not_provided();
     }
-    return LayerValue<std::size_t>::valid(
-        num_metatiles_total_override_.value(), "num_metatiles_total", source_info_);
+    return LayerValue<std::size_t>::valid(num_metatiles_total_override_.value(), "num_metatiles_total", source_info_);
 }
 
 LayerValue<std::size_t>
@@ -259,28 +255,23 @@ OverrideConfigProvider::num_pals_in_primary(ConfigScopeType type, const std::str
     if (!scope_matches(type, scope) || !num_pals_in_primary_override_.has_value()) {
         return LayerValue<std::size_t>::not_provided();
     }
-    return LayerValue<std::size_t>::valid(
-        num_pals_in_primary_override_.value(), "num_pals_in_primary", source_info_);
+    return LayerValue<std::size_t>::valid(num_pals_in_primary_override_.value(), "num_pals_in_primary", source_info_);
 }
 
-LayerValue<std::size_t>
-OverrideConfigProvider::num_pals_total(ConfigScopeType type, const std::string &scope) const
+LayerValue<std::size_t> OverrideConfigProvider::num_pals_total(ConfigScopeType type, const std::string &scope) const
 {
     if (!scope_matches(type, scope) || !num_pals_total_override_.has_value()) {
         return LayerValue<std::size_t>::not_provided();
     }
-    return LayerValue<std::size_t>::valid(
-        num_pals_total_override_.value(), "num_pals_total", source_info_);
+    return LayerValue<std::size_t>::valid(num_pals_total_override_.value(), "num_pals_total", source_info_);
 }
 
-LayerValue<std::size_t>
-OverrideConfigProvider::max_map_data_size(ConfigScopeType type, const std::string &scope) const
+LayerValue<std::size_t> OverrideConfigProvider::max_map_data_size(ConfigScopeType type, const std::string &scope) const
 {
     if (!scope_matches(type, scope) || !max_map_data_size_override_.has_value()) {
         return LayerValue<std::size_t>::not_provided();
     }
-    return LayerValue<std::size_t>::valid(
-        max_map_data_size_override_.value(), "max_map_data_size", source_info_);
+    return LayerValue<std::size_t>::valid(max_map_data_size_override_.value(), "max_map_data_size", source_info_);
 }
 
 LayerValue<std::size_t>
@@ -293,14 +284,12 @@ OverrideConfigProvider::num_tiles_per_metatile(ConfigScopeType type, const std::
         num_tiles_per_metatile_override_.value(), "num_tiles_per_metatile", source_info_);
 }
 
-LayerValue<Rgba32>
-OverrideConfigProvider::extrinsic_transparency(ConfigScopeType type, const std::string &scope) const
+LayerValue<Rgba32> OverrideConfigProvider::extrinsic_transparency(ConfigScopeType type, const std::string &scope) const
 {
     if (!scope_matches(type, scope) || !extrinsic_transparency_override_.has_value()) {
         return LayerValue<Rgba32>::not_provided();
     }
-    return LayerValue<Rgba32>::valid(
-        extrinsic_transparency_override_.value(), "extrinsic_transparency", source_info_);
+    return LayerValue<Rgba32>::valid(extrinsic_transparency_override_.value(), "extrinsic_transparency", source_info_);
 }
 
 LayerValue<ArtifactEditMode>
@@ -309,8 +298,7 @@ OverrideConfigProvider::tiles_edit_mode(ConfigScopeType type, const std::string 
     if (!scope_matches(type, scope) || !tiles_edit_mode_override_.has_value()) {
         return LayerValue<ArtifactEditMode>::not_provided();
     }
-    return LayerValue<ArtifactEditMode>::valid(
-        tiles_edit_mode_override_.value(), "tiles_edit_mode", source_info_);
+    return LayerValue<ArtifactEditMode>::valid(tiles_edit_mode_override_.value(), "tiles_edit_mode", source_info_);
 }
 
 LayerValue<ArtifactEditMode>
@@ -319,18 +307,15 @@ OverrideConfigProvider::pals_edit_mode(ConfigScopeType type, const std::string &
     if (!scope_matches(type, scope) || !pals_edit_mode_override_.has_value()) {
         return LayerValue<ArtifactEditMode>::not_provided();
     }
-    return LayerValue<ArtifactEditMode>::valid(
-        pals_edit_mode_override_.value(), "pals_edit_mode", source_info_);
+    return LayerValue<ArtifactEditMode>::valid(pals_edit_mode_override_.value(), "pals_edit_mode", source_info_);
 }
 
-LayerValue<bool>
-OverrideConfigProvider::pal_hints_enabled(ConfigScopeType type, const std::string &scope) const
+LayerValue<bool> OverrideConfigProvider::pal_hints_enabled(ConfigScopeType type, const std::string &scope) const
 {
     if (!scope_matches(type, scope) || !pal_hints_enabled_override_.has_value()) {
         return LayerValue<bool>::not_provided();
     }
-    return LayerValue<bool>::valid(
-        pal_hints_enabled_override_.value(), "pal_hints_enabled", source_info_);
+    return LayerValue<bool>::valid(pal_hints_enabled_override_.value(), "pal_hints_enabled", source_info_);
 }
 
 LayerValue<std::vector<PaletteHint>>
@@ -339,8 +324,7 @@ OverrideConfigProvider::pal_hints(ConfigScopeType type, const std::string &scope
     if (!scope_matches(type, scope) || !pal_hints_override_.has_value()) {
         return LayerValue<std::vector<PaletteHint>>::not_provided();
     }
-    return LayerValue<std::vector<PaletteHint>>::valid(
-        pal_hints_override_.value(), "pal_hints", source_info_);
+    return LayerValue<std::vector<PaletteHint>>::valid(pal_hints_override_.value(), "pal_hints", source_info_);
 }
 
 LayerValue<PackingStrategyType>
@@ -349,8 +333,7 @@ OverrideConfigProvider::packing_strategy(ConfigScopeType type, const std::string
     if (!scope_matches(type, scope) || !packing_strategy_override_.has_value()) {
         return LayerValue<PackingStrategyType>::not_provided();
     }
-    return LayerValue<PackingStrategyType>::valid(
-        packing_strategy_override_.value(), "packing_strategy", source_info_);
+    return LayerValue<PackingStrategyType>::valid(packing_strategy_override_.value(), "packing_strategy", source_info_);
 }
 
 LayerValue<PackingStrategyParams>
@@ -383,14 +366,12 @@ OverrideConfigProvider::tile_sharing_alignment(ConfigScopeType type, const std::
         tile_sharing_alignment_override_.value(), "tile_sharing_alignment", source_info_);
 }
 
-LayerValue<TilesPalMode>
-OverrideConfigProvider::tiles_pal_mode(ConfigScopeType type, const std::string &scope) const
+LayerValue<TilesPalMode> OverrideConfigProvider::tiles_pal_mode(ConfigScopeType type, const std::string &scope) const
 {
     if (!scope_matches(type, scope) || !tiles_pal_mode_override_.has_value()) {
         return LayerValue<TilesPalMode>::not_provided();
     }
-    return LayerValue<TilesPalMode>::valid(
-        tiles_pal_mode_override_.value(), "tiles_pal_mode", source_info_);
+    return LayerValue<TilesPalMode>::valid(tiles_pal_mode_override_.value(), "tiles_pal_mode", source_info_);
 }
 
 LayerValue<AnimPalResolutionStrategy>
@@ -410,17 +391,22 @@ OverrideConfigProvider::global_anim_key_frame_resolution_strategy(ConfigScopeTyp
         return LayerValue<AnimKeyFrameResolutionStrategy>::not_provided();
     }
     return LayerValue<AnimKeyFrameResolutionStrategy>::valid(
-        global_anim_key_frame_resolution_strategy_override_.value(), "global_anim_key_frame_resolution_strategy", source_info_);
+        global_anim_key_frame_resolution_strategy_override_.value(),
+        "global_anim_key_frame_resolution_strategy",
+        source_info_);
 }
 
 LayerValue<AnimMultiPalSubtileResolutionStrategy>
-OverrideConfigProvider::global_anim_multi_pal_subtile_resolution_strategy(ConfigScopeType type, const std::string &scope) const
+OverrideConfigProvider::global_anim_multi_pal_subtile_resolution_strategy(
+    ConfigScopeType type, const std::string &scope) const
 {
     if (!scope_matches(type, scope) || !global_anim_multi_pal_subtile_resolution_strategy_override_.has_value()) {
         return LayerValue<AnimMultiPalSubtileResolutionStrategy>::not_provided();
     }
     return LayerValue<AnimMultiPalSubtileResolutionStrategy>::valid(
-        global_anim_multi_pal_subtile_resolution_strategy_override_.value(), "global_anim_multi_pal_subtile_resolution_strategy", source_info_);
+        global_anim_multi_pal_subtile_resolution_strategy_override_.value(),
+        "global_anim_multi_pal_subtile_resolution_strategy",
+        source_info_);
 }
 
 LayerValue<FrameLinking>
@@ -453,14 +439,12 @@ OverrideConfigProvider::cross_tileset_anim_linking(ConfigScopeType type, const s
         cross_tileset_anim_linking_override_.value(), "cross_tileset_anim_linking", source_info_);
 }
 
-LayerValue<bool>
-OverrideConfigProvider::verify_checksums(ConfigScopeType type, const std::string &scope) const
+LayerValue<bool> OverrideConfigProvider::verify_checksums(ConfigScopeType type, const std::string &scope) const
 {
     if (!scope_matches(type, scope) || !verify_checksums_override_.has_value()) {
         return LayerValue<bool>::not_provided();
     }
-    return LayerValue<bool>::valid(
-        verify_checksums_override_.value(), "verify_checksums", source_info_);
+    return LayerValue<bool>::valid(verify_checksums_override_.value(), "verify_checksums", source_info_);
 }
 
 LayerValue<PrimaryPairingMode>
@@ -563,14 +547,12 @@ OverrideConfigProvider::tileset_paths_secondary_bin(ConfigScopeType type, const 
         tileset_paths_secondary_bin_override_.value(), "tileset_paths_secondary_bin", source_info_);
 }
 
-LayerValue<std::size_t>
-OverrideConfigProvider::metatile_attr_size(ConfigScopeType type, const std::string &scope) const
+LayerValue<std::size_t> OverrideConfigProvider::metatile_attr_size(ConfigScopeType type, const std::string &scope) const
 {
     if (!scope_matches(type, scope) || !metatile_attr_size_override_.has_value()) {
         return LayerValue<std::size_t>::not_provided();
     }
-    return LayerValue<std::size_t>::valid(
-        metatile_attr_size_override_.value(), "metatile_attr_size", source_info_);
+    return LayerValue<std::size_t>::valid(metatile_attr_size_override_.value(), "metatile_attr_size", source_info_);
 }
 
 LayerValue<bool>

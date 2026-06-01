@@ -27,7 +27,7 @@ namespace porytiles {
  * GBA behavior (the hardware selects palette per metatile entry, not per tile), but Porytiles
  * cannot represent multiple palette variants in a single RGBA layer PNG. This enum determines
  * how to handle such cases.
- * 
+ *
  */
 enum class AnimMultiPalSubtileResolutionStrategy {
     /**
@@ -59,41 +59,42 @@ enum class AnimMultiPalSubtileResolutionStrategy {
  * @param str The string to parse
  * @return The parsed value, or std::nullopt if the string is invalid
  */
-[[nodiscard]] inline std::optional<AnimMultiPalSubtileResolutionStrategy> anim_multi_pal_subtile_resolution_strategy_from_str(const std::string &str)
+[[nodiscard]] inline std::optional<AnimMultiPalSubtileResolutionStrategy>
+anim_multi_pal_subtile_resolution_strategy_from_str(const std::string &str)
 {
     // Phase 1: Exact match against C++ constant names
     if (str == "error") {
-        return std::optional{ AnimMultiPalSubtileResolutionStrategy::error };
+        return std::optional{AnimMultiPalSubtileResolutionStrategy::error};
     }
     if (str == "warning") {
-        return std::optional{ AnimMultiPalSubtileResolutionStrategy::warning };
+        return std::optional{AnimMultiPalSubtileResolutionStrategy::warning};
     }
     if (str == "split") {
-        return std::optional{ AnimMultiPalSubtileResolutionStrategy::split };
+        return std::optional{AnimMultiPalSubtileResolutionStrategy::split};
     }
 
     // Phase 2: Case-insensitive fuzzy match
     std::string lower_str = str;
     std::ranges::transform(
-            lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
     // Fuzzy names for error
     if (lower_str == "error") {
-        return std::optional{ AnimMultiPalSubtileResolutionStrategy::error };
+        return std::optional{AnimMultiPalSubtileResolutionStrategy::error};
     }
     if (lower_str == "err") {
-        return std::optional{ AnimMultiPalSubtileResolutionStrategy::error };
+        return std::optional{AnimMultiPalSubtileResolutionStrategy::error};
     }
     // Fuzzy names for warning
     if (lower_str == "warning") {
-        return std::optional{ AnimMultiPalSubtileResolutionStrategy::warning };
+        return std::optional{AnimMultiPalSubtileResolutionStrategy::warning};
     }
     if (lower_str == "warn") {
-        return std::optional{ AnimMultiPalSubtileResolutionStrategy::warning };
+        return std::optional{AnimMultiPalSubtileResolutionStrategy::warning};
     }
     // Fuzzy names for split
     if (lower_str == "split") {
-        return std::optional{ AnimMultiPalSubtileResolutionStrategy::split };
+        return std::optional{AnimMultiPalSubtileResolutionStrategy::split};
     }
 
     return std::nullopt;

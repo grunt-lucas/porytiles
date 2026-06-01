@@ -24,7 +24,7 @@ namespace porytiles {
  * @details
  * In automatic mode, Porytiles generates and uses key.png for frame linking.
  * In manual mode, Porytiles uses explicit overrides specified in anim.json.
- * 
+ *
  */
 enum class FrameLinking {
     /**
@@ -60,34 +60,34 @@ enum class FrameLinking {
 {
     // Phase 1: Exact match against C++ constant names
     if (str == "automatic") {
-        return std::optional{ FrameLinking::automatic };
+        return std::optional{FrameLinking::automatic};
     }
     if (str == "manual") {
-        return std::optional{ FrameLinking::manual };
+        return std::optional{FrameLinking::manual};
     }
     if (str == "hybrid") {
-        return std::optional{ FrameLinking::hybrid };
+        return std::optional{FrameLinking::hybrid};
     }
 
     // Phase 2: Case-insensitive fuzzy match
     std::string lower_str = str;
     std::ranges::transform(
-            lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
     // Fuzzy names for automatic
     if (lower_str == "automatic") {
-        return std::optional{ FrameLinking::automatic };
+        return std::optional{FrameLinking::automatic};
     }
     if (lower_str == "auto") {
-        return std::optional{ FrameLinking::automatic };
+        return std::optional{FrameLinking::automatic};
     }
     // Fuzzy names for manual
     if (lower_str == "manual") {
-        return std::optional{ FrameLinking::manual };
+        return std::optional{FrameLinking::manual};
     }
     // Fuzzy names for hybrid
     if (lower_str == "hybrid") {
-        return std::optional{ FrameLinking::hybrid };
+        return std::optional{FrameLinking::hybrid};
     }
 
     return std::nullopt;
