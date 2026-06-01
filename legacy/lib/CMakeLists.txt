@@ -43,6 +43,8 @@ add_library(LegacyLib STATIC ${CppSources})
 set(CANONICAL_LIB_NAME "porytiles_legacy")
 set_target_properties(LegacyLib PROPERTIES OUTPUT_NAME "${CANONICAL_LIB_NAME}")
 
+target_compile_definitions(LegacyLib PRIVATE PORYTILES_BUILD_VERSION_=${PORYTILES_BUILD_VERSION_})
+
 
 #######################################
 #### Configure include directories ####

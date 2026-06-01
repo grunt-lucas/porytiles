@@ -91,6 +91,8 @@ add_library(PorytilesLib STATIC ${CppSources})
 set(CANONICAL_LIB_NAME "porytiles")
 set_target_properties(PorytilesLib PROPERTIES OUTPUT_NAME "${CANONICAL_LIB_NAME}")
 
+target_compile_definitions(PorytilesLib PRIVATE PORYTILES_BUILD_VERSION_=${PORYTILES_BUILD_VERSION_})
+
 # Ensure config code is generated before building the library
 add_dependencies(PorytilesLib generate_config_code)
 

@@ -1,6 +1,11 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(Porytiles CXX)
+project(Porytiles VERSION 1.0.0 LANGUAGES CXX)
+
+# Default the version stamp baked into both binaries. CI overrides via `cmake -DPORYTILES_BUILD_VERSION_=<snapshot-string>`.
+if(NOT DEFINED PORYTILES_BUILD_VERSION_)
+    set(PORYTILES_BUILD_VERSION_ ${CMAKE_PROJECT_VERSION})
+endif()
 
 # Debug builds: no optimization, full debug info
 set(CMAKE_CXX_FLAGS_DEBUG "-O0 -g -fstandalone-debug -fno-limit-debug-info -fno-omit-frame-pointer"

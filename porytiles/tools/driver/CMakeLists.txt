@@ -14,6 +14,8 @@ FILE(GLOB_RECURSE CppSources CONFIGURE_DEPENDS *.cpp)
 add_executable(PorytilesDriver ${CppSources})
 # Adding this to try to help CLion and CMake with inspections
 target_compile_definitions(PorytilesDriver PRIVATE DOCTEST_CONFIG_DISABLE)
+# Driver TU consumes PORYTILES_BUILD_VERSION directly (in main.cpp); PorytilesLib's PRIVATE def doesn't reach this target.
+target_compile_definitions(PorytilesDriver PRIVATE PORYTILES_BUILD_VERSION_=${PORYTILES_BUILD_VERSION_})
 set_target_properties(PorytilesDriver PROPERTIES OUTPUT_NAME "porytiles")
 target_include_directories(PorytilesDriver PRIVATE ${CMAKE_CURRENT_SOURCE_DIR})
 target_link_libraries(PorytilesDriver PRIVATE PorytilesLib)

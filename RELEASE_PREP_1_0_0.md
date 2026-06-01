@@ -23,7 +23,7 @@ disagree, the planning doc is authoritative for intent; update this tracker to m
 | A5 | GitHub Actions hardcoded paths | ✅ Done |
 | A6 | Phase A end-to-end verification | ✅ Done |
 | B  | CHANGELOG infrastructure | ✅ Done |
-| C  | Versioning system | ⬜ Not started |
+| C  | Versioning system | ✅ Done |
 | D  | CI / release pipeline overhaul | ⬜ Not started |
 | E  | Gitflow adoption + 1.0.0 cut | ⬜ Not started |
 | F  | Documentation repos gitflow alignment | ⬜ Not started |
@@ -356,14 +356,62 @@ End-to-end through `cmake --build` + install + execute is the first validation t
 
 ## Phase C — Versioning system (depends on A2)
 
-- [ ] **C1** Root `CMakeLists.txt`: `project(Porytiles CXX)` → `project(Porytiles VERSION 1.0.0 CXX)`;
-  confirm sub-CMakeLists read `${CMAKE_PROJECT_VERSION}` (validate with a `message(STATUS ...)`).
-- [ ] **C2** `porytiles/lib/CMakeLists.txt` + `legacy/lib/CMakeLists.txt`: add
-  `target_compile_definitions(... PRIVATE PORYTILES_BUILD_VERSION_=${CMAKE_PROJECT_VERSION})`.
-- [ ] **C3** Uniform `<exec-name> <version> <date>` across both binaries
-  (`porytiles/tools/driver/main.cpp` + `legacy/lib/legacy/cli_parser.cpp`).
-- [ ] **C4** Verify: `porytiles --version` → `porytiles 1.0.0 <date>`;
-  `porytiles-legacy --version` → `porytiles-legacy 1.0.0 <date>`; override flag echoes.
+- [x] **C1** Root `CMakeLists.txt`: `project(Porytiles CXX)` → `project(Porytiles VERSION 1.0.0 LANGUAGES CXX)`;
+  confirmed sub-CMakeLists see `CMAKE_PROJECT_VERSION=1.0.0` (validated with a temporary
+  `message(STATUS ...)` then removed). **Plan said `project(Porytiles VERSION 1.0.0 CXX)`; actual
+  is `project(Porytiles VERSION 1.0.0 LANGUAGES CXX)`** — the moment `VERSION` is present,
+  CMake's `project()` parser requires the explicit `LANGUAGES` keyword instead of the bare
+  positional language list, otherwise it errors with `must use LANGUAGES before language names`.
+  Easy one-keyword fix; not flagged by the plan landmines.
+- [x] **C2** Compile-def wiring landed in **three** targets, not two, plus a top-level resolver
+  block. **Plan said add the def to `PorytilesLib` + `LegacyLib`; actual added it to
+  `PorytilesLib`, `LegacyLib`, AND `PorytilesDriver`.** The asymmetric extra is forced by where
+  the macro is consumed: legacy's `--version` handler lives in `cli_parser.cpp` (a TU of
+  `LegacyLib`), so `target_compile_definitions(... PRIVATE)` on the lib is sufficient; active's
+  `--version` handler lives in `porytiles/tools/driver/main.cpp` (a TU of `PorytilesDriver`, not
+  `PorytilesLib`), so a `PRIVATE` def on the lib does NOT reach it. Caught by the first install
+  verification: legacy reported `1.0.0` but active reported `default_build_version`. Adding a
+  matching `target_compile_definitions(PorytilesDriver PRIVATE ...)` line resolved it. The C2
+  spec missed this because the driver wasn't named in the planning checklist — worth flagging
+  for future code: header consumers in `tools/` need parallel CMake wiring.
+
+  **Refactor over the literal plan wording:** rather than three sites of `=${CMAKE_PROJECT_VERSION}`
+  (DRY violation that also broke the CMake-level override channel — see below), lifted the
+  default resolution into the root `CMakeLists.txt`:
+  ```cmake
+  if(NOT DEFINED PORYTILES_BUILD_VERSION_)
+      set(PORYTILES_BUILD_VERSION_ ${CMAKE_PROJECT_VERSION})
+  endif()
+  ```
+  The three target sites then read `${PORYTILES_BUILD_VERSION_}` as a one-line interpolation.
+  Single source of default truth, single override channel.
+- [x] **C3** No-op. Both `--version` handlers already produced `<EXEC> <VERSION> <DATE>` —
+  active driver via `std::cout << ... << " " << ...` (line 64 of
+  `porytiles/tools/driver/main.cpp`), legacy via `fmt::println("{} {} {}", ...)` (line 675 of
+  `legacy/lib/legacy/cli_parser.cpp`). The plan was conservative ("reconcile any divergence"),
+  the actual shapes already matched, no edit needed.
+- [x] **C4** Default path verified: `~/.local/bin/porytiles --version` → `porytiles 1.0.0
+  1970.01.01T00:00:00+00:00`; `~/.local/bin/porytiles-legacy --version` →
+  `porytiles-legacy 1.0.0 1970.01.01T00:00:00+00:00`. Date placeholder stays at the
+  `build_version.h` 1970-epoch default (Phase C only touches the version macro, not the date
+  macro). Override path verified via the cleaner CMake cache-var channel:
+  `cmake -DPORYTILES_BUILD_VERSION_=1.0.0-snapshot.20260601000000.abc12345`, rebuild + reinstall,
+  both binaries echo the snapshot string exactly. Tests stayed green at every step:
+  `PorytilesAllTests` 1144/1144, `LegacyTests` 73 cases / 2,689,245 assertions.
+
+  **Override-channel discovery worth recording for Phase D:** CI today (per
+  `.github/workflows/build_{linux_clang,linux_gcc,macos_clang}/action.yml`) passes the version
+  override via `-DCMAKE_CXX_FLAGS="-DPORYTILES_BUILD_VERSION_=..."` — i.e. as a literal compiler
+  flag, NOT as a CMake cache variable. After Phase C, that channel STILL WORKS (compiler honors
+  "last `-D` wins" for any macro defined twice), but with cosmetic noise: builds emit **109
+  `-Wmacro-redefined` warnings** (one per TU that includes `build_version.h`) because both
+  Phase C's `target_compile_definitions` AND CI's `CMAKE_CXX_FLAGS` end up on the command line
+  for the same macro. Final binaries echo correctly, but the warning stream is loud. **`-Werror`
+  is currently disabled** (see the `fast-cpp-csv-parser` `strncpy` comment in the root
+  `CMakeLists.txt`) so the warnings don't break the build. Phase D should migrate CI to the
+  cache-var channel (`cmake -DPORYTILES_BUILD_VERSION_=... -DPORYTILES_BUILD_DATE_=...` instead
+  of `-DCMAKE_CXX_FLAGS="..."`); my Phase C resolver block then short-circuits the default and
+  the double-define disappears.
 
 ---
 
