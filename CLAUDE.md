@@ -124,7 +124,10 @@ Install uv if you haven't: https://docs.astral.sh/uv/getting-started/installatio
 uv run scripts/generate_config.py
 ```
 
-That's it - `uv run` automatically handles dependencies from `pyproject.toml`.
+That's it - each script under `scripts/` is self-contained via [PEP 723](https://peps.python.org/pep-0723/)
+inline metadata (`# /// script ... # ///` block at the top), so `uv run` resolves
+its dependencies and Python version from the script itself. No `pyproject.toml`
+or `uv.lock` at the repo root.
 
 ## C++ Code Style
 

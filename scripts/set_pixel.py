@@ -1,4 +1,10 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.14"
+# dependencies = [
+#     "Pillow>=10.0.0",
+# ]
+# ///
 """
 Script to set a specific pixel in a PNG file with RGBA values.
 

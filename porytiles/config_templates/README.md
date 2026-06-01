@@ -225,4 +225,6 @@ curl -LsSf https://astral.sh/uv/install.sh | sh
 brew install uv
 ```
 
-The `uv run` command automatically handles Python dependencies from `pyproject.toml`.
+The `uv run` command resolves Python dependencies from each script's own
+[PEP 723](https://peps.python.org/pep-0723/) inline metadata block
+(`# /// script ... # ///` at the top of the file).

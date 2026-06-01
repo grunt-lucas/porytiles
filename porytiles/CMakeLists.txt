@@ -65,7 +65,6 @@ add_custom_command(
         ${CONFIG_SCHEMA}
         ${CMAKE_SOURCE_DIR}/scripts/generate_config.py
         ${CONFIG_TEMPLATES}
-        ${CMAKE_SOURCE_DIR}/pyproject.toml
         WORKING_DIRECTORY ${CMAKE_SOURCE_DIR}
         COMMENT "Generating configuration code from templates (via uv)..."
         VERBATIM

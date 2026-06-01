@@ -1,4 +1,11 @@
 #!/usr/bin/env python3
+# /// script
+# requires-python = ">=3.14"
+# dependencies = [
+#     "Jinja2>=3.1.6",
+#     "PyYAML>=6.0.3",
+# ]
+# ///
 """
 Generate configuration code from YAML schema and Jinja2 templates.
 
