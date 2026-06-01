@@ -61,7 +61,7 @@ class CParserFacadeTests : public ::testing::Test {
 
 TEST_F(CParserFacadeTests, ParseDefinesFromRealFile)
 {
-    auto file_path = test_resource_path("Tests/integration/shared/c_parser/metatile_behaviors_define.h");
+    auto file_path = test_resource_path("tests/integration/shared/c_parser/metatile_behaviors_define.h");
     CParserFacade driver{file_path, &formatter_};
 
     auto result = driver.parse_defines();
@@ -95,7 +95,7 @@ TEST_F(CParserFacadeTests, ParseDefinesFromRealFile)
 
 TEST_F(CParserFacadeTests, ParseEnumsFromRealFile)
 {
-    auto file_path = test_resource_path("Tests/integration/shared/c_parser/metatile_behaviors_enum.h");
+    auto file_path = test_resource_path("tests/integration/shared/c_parser/metatile_behaviors_enum.h");
     CParserFacade driver{file_path, &formatter_};
 
     auto enums_result = driver.parse_enums();
@@ -117,7 +117,7 @@ TEST_F(CParserFacadeTests, ParseEnumsFromRealFile)
 
 TEST_F(CParserFacadeTests, ParseDefinesAndEnumsFromRealFile)
 {
-    auto file_path = test_resource_path("Tests/integration/shared/c_parser/metatile_behaviors_mixed.h");
+    auto file_path = test_resource_path("tests/integration/shared/c_parser/metatile_behaviors_mixed.h");
     CParserFacade driver{file_path, &formatter_};
 
     auto defines_result = driver.parse_defines();
@@ -350,7 +350,7 @@ enum { C, D };
 
 TEST_F(CParserFacadeTests, ParsePointerArraysFromGeneratedHeader)
 {
-    auto file_path = test_resource_path("Tests/integration/shared/c_parser/generated_anim_code.h");
+    auto file_path = test_resource_path("tests/integration/shared/c_parser/generated_anim_code.h");
     CParserFacade driver{file_path, &formatter_};
 
     auto result = driver.parse_pointer_arrays();
@@ -410,7 +410,7 @@ TEST_F(CParserFacadeTests, ParsePointerArraysNonExistentFileReturnsError)
 
 TEST_F(CParserFacadeTests, ParseFunctionsFromGeneratedHeader)
 {
-    auto file_path = test_resource_path("Tests/integration/shared/c_parser/generated_anim_code.h");
+    auto file_path = test_resource_path("tests/integration/shared/c_parser/generated_anim_code.h");
     CParserFacade driver{file_path, &formatter_};
 
     auto result = driver.parse_functions();
@@ -430,7 +430,7 @@ TEST_F(CParserFacadeTests, ParseFunctionsFromGeneratedHeader)
 
 TEST_F(CParserFacadeTests, ParseFunctionsWithPrefixFilter)
 {
-    auto file_path = test_resource_path("Tests/integration/shared/c_parser/generated_anim_code.h");
+    auto file_path = test_resource_path("tests/integration/shared/c_parser/generated_anim_code.h");
     CParserFacade driver{file_path, &formatter_};
 
     auto result = driver.parse_functions("QueueAnimTiles_");
@@ -479,7 +479,7 @@ TEST_F(CParserFacadeTests, ParseFunctionsNonExistentFileReturnsError)
 
 TEST_F(CParserFacadeTests, ParseFunctionBodyContainsExpectedTokens)
 {
-    auto file_path = test_resource_path("Tests/integration/shared/c_parser/generated_anim_code.h");
+    auto file_path = test_resource_path("tests/integration/shared/c_parser/generated_anim_code.h");
     CParserFacade driver{file_path, &formatter_};
 
     auto result = driver.parse_functions("QueueAnimTiles_PorytilesManaged_General_Flower");
