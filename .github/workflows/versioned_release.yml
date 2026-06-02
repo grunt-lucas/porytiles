@@ -1,0 +1,243 @@
+name: Porytiles Versioned Release
+
+on:
+  push:
+    tags:
+      - 'v[0-9]+.[0-9]+.[0-9]+'
+
+permissions:
+  contents: write
+
+concurrency:
+  group: versioned-release-${{ github.ref }}
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Compute versioned-release inputs
+    runs-on: ubuntu-latest
+    outputs:
+      build_version: ${{ steps.compute.outputs.build_version }}
+      build_date: ${{ steps.compute.outputs.build_date }}
+      tag_name: ${{ steps.compute.outputs.tag_name }}
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute version + date
+        id: compute
+        run: |
+          TAG_NAME="${{ github.ref_name }}"
+          # Strip the leading 'v' from the tag (v1.0.0 -> 1.0.0).
+          BUILD_VERSION="${TAG_NAME#v}"
+          PROJECT_VERSION=$(cat VERSION)
+          if [ "$BUILD_VERSION" != "$PROJECT_VERSION" ]; then
+            echo "::error::Tag version ($BUILD_VERSION) does not match VERSION file ($PROJECT_VERSION). Refusing to publish a versioned release with mismatched stamps."
+            exit 1
+          fi
+          BUILD_DATE=$(date -u +'%Y.%m.%dT%H:%M:%S+00:00')
+          echo "build_version=$BUILD_VERSION" >> "$GITHUB_OUTPUT"
+          echo "build_date=$BUILD_DATE"       >> "$GITHUB_OUTPUT"
+          echo "tag_name=$TAG_NAME"           >> "$GITHUB_OUTPUT"
+          echo "Tag:     $TAG_NAME"
+          echo "Version: $BUILD_VERSION"
+          echo "Date:    $BUILD_DATE"
+
+  build:
+    name: Build ${{ matrix.os-arch }}
+    needs: [prepare]
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os-arch: linux-amd64
+            runs-on: ubuntu-latest
+          - os-arch: linux-arm64
+            runs-on: ubuntu-24.04-arm
+          - os-arch: macos-arm64
+            runs-on: macos-latest
+      # macos-amd64 (Intel) deliberately omitted: the active `porytiles/` codebase has
+      # C++23 dependencies that don't build on macos-13's Apple Clang/libc++ snapshot
+      # (commit 745b0152, Oct 2025). Reintroduce only after a toolchain fix lands.
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies (linux)
+        if: startsWith(matrix.os-arch, 'linux-')
+        uses: ./.github/workflows/install_dependencies_linux
+
+      - name: Install build dependencies (macOS)
+        if: startsWith(matrix.os-arch, 'macos-')
+        uses: ./.github/workflows/install_dependencies_macos
+
+      - name: Install clang toolchain (linux)
+        if: startsWith(matrix.os-arch, 'linux-')
+        uses: ./.github/workflows/install_clang_linux
+
+      - name: Build (linux-clang)
+        if: startsWith(matrix.os-arch, 'linux-')
+        uses: ./.github/workflows/build_linux_clang
+        with:
+          build-version: ${{ needs.prepare.outputs.build_version }}
+          build-date: ${{ needs.prepare.outputs.build_date }}
+
+      - name: Build (macos-clang)
+        if: startsWith(matrix.os-arch, 'macos-')
+        uses: ./.github/workflows/build_macos_clang
+        with:
+          build-version: ${{ needs.prepare.outputs.build_version }}
+          build-date: ${{ needs.prepare.outputs.build_date }}
+
+      - name: Run test suite
+        uses: ./.github/workflows/run_test_suite
+
+      - name: Create release package
+        uses: ./.github/workflows/create_release_package
+        with:
+          os-arch: ${{ matrix.os-arch }}
+
+      - name: Upload zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: porytiles-${{ matrix.os-arch }}
+          path: porytiles-${{ matrix.os-arch }}.zip
+          if-no-files-found: error
+          retention-days: 30
+
+  publish:
+    name: Publish versioned release
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout tag
+        uses: actions/checkout@v4
+
+      - name: Download all platform zips
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Stage release files
+        run: |
+          mkdir -p release
+          find artifacts -name '*.zip' -exec mv {} release/ \;
+          ls -lh release/
+
+      - name: Extract CHANGELOG section
+        id: changelog
+        run: |
+          CHANGELOG_BODY=$(scripts/extract_changelog.sh "${{ needs.prepare.outputs.build_version }}")
+          {
+            echo "Porytiles ${{ needs.prepare.outputs.build_version }} (${{ needs.prepare.outputs.build_date }})."
+            echo ""
+            if [ -n "$CHANGELOG_BODY" ]; then
+              echo "$CHANGELOG_BODY"
+            else
+              echo "_No CHANGELOG entry found for this version._"
+            fi
+          } > release_body.md
+          echo "--- release_body.md ---"
+          cat release_body.md
+
+      - name: Create versioned release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: ${{ needs.prepare.outputs.tag_name }}
+          name: ${{ needs.prepare.outputs.tag_name }}
+          body_path: release_body.md
+          prerelease: false
+          make_latest: "true"
+          files: release/*.zip
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update-homebrew-tap:
+    name: Update Homebrew tap versioned formula
+    needs: [prepare, publish]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Homebrew tap repository
+        uses: actions/checkout@v4
+        with:
+          repository: grunt-lucas/homebrew-porytiles
+          token: ${{ secrets.PORYTILES_TAP_REPO_PAT }}
+
+      - name: Set up Git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Define vars
+        id: vars
+        run: |
+          echo "release_tag=${{ needs.prepare.outputs.tag_name }}"        >> "$GITHUB_OUTPUT"
+          echo "new_version=${{ needs.prepare.outputs.build_version }}"   >> "$GITHUB_OUTPUT"
+          echo "formula_path=Formula/porytiles.rb"                        >> "$GITHUB_OUTPUT"
+
+      - name: Download assets and calculate SHA256 checksums
+        id: checksums
+        run: |
+          URL_BASE="https://github.com/${{ github.repository }}/releases/download/${{ steps.vars.outputs.release_tag }}"
+          for arch in linux-amd64 linux-arm64 macos-arm64; do
+            url="$URL_BASE/porytiles-$arch.zip"
+            echo "Downloading $url"
+            curl -fsSL -o "porytiles-$arch.zip" "$url"
+            sha=$(sha256sum "porytiles-$arch.zip" | awk '{ print $1 }')
+            key=$(echo "$arch" | tr '-' '_')
+            echo "${key}_sha=$sha" >> "$GITHUB_OUTPUT"
+            echo "Calculated SHA256 for $arch: $sha"
+          done
+
+      - name: Update formula file
+        run: |
+          FORMULA_PATH="${{ steps.vars.outputs.formula_path }}"
+          sed -i "s/^  version \".*\"/  version \"${{ steps.vars.outputs.new_version }}\"/" "$FORMULA_PATH"
+          sed -i "/if OS.linux? && Hardware::CPU.intel?/,/elsif/ s/^    sha256 \".*\"/    sha256 \"${{ steps.checksums.outputs.linux_amd64_sha }}\"/" "$FORMULA_PATH"
+          sed -i "/elsif OS.linux? && Hardware::CPU.arm?/,/elsif/ s/^    sha256 \".*\"/    sha256 \"${{ steps.checksums.outputs.linux_arm64_sha }}\"/" "$FORMULA_PATH"
+          sed -i "/elsif OS.mac? && Hardware::CPU.arm?/,/end/    s/^    sha256 \".*\"/    sha256 \"${{ steps.checksums.outputs.macos_arm64_sha }}\"/" "$FORMULA_PATH"
+          echo "Formula file updated:"
+          cat "$FORMULA_PATH"
+
+      - name: Commit and push changes
+        run: |
+          git add "${{ steps.vars.outputs.formula_path }}"
+          git commit -m "Update porytiles formula to ${{ steps.vars.outputs.release_tag }}"
+          git push
+
+  test-brew-tap-linux-amd64:
+    name: Test the brew tap on linux-amd64
+    needs: [update-homebrew-tap]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install porytiles
+        run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          brew tap grunt-lucas/porytiles
+          brew update
+          brew install porytiles
+
+      - name: Test porytiles binaries
+        run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          porytiles --version
+          porytiles-legacy --version
+
+  test-brew-tap-macos-arm64:
+    name: Test the brew tap on macos-arm64
+    needs: [update-homebrew-tap]
+    runs-on: macos-latest
+    steps:
+      - name: Install porytiles
+        run: |
+          brew tap grunt-lucas/porytiles
+          brew update
+          brew install porytiles
+
+      - name: Test porytiles binaries
+        run: |
+          porytiles --version
+          porytiles-legacy --version

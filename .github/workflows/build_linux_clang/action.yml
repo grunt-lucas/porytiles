@@ -6,6 +6,10 @@ inputs:
     description: The build version to inject into the Porytiles build
     required: false
     default: default_build_version
+  build-date:
+    description: UTC build date (format YYYY.MM.DDTHH:MM:SS+00:00). Defaults to current UTC when empty.
+    required: false
+    default: ""
 
 runs:
   using: composite
@@ -15,11 +19,16 @@ runs:
       run: |
         export CC=clang
         export CXX=clang++
-        BUILD_DATE=`date -uIseconds`
+        BUILD_DATE="${{ inputs.build-date }}"
+        if [ -z "$BUILD_DATE" ]; then
+          BUILD_DATE="$(date -u +'%Y.%m.%dT%H:%M:%S+00:00')"
+        fi
         cmake -B build \
-          -DCMAKE_BUILD_TYPE="Release" \
-          -DCMAKE_CXX_FLAGS="-stdlib=libc++ -DPORYTILES_BUILD_VERSION_=${{ inputs.build-version }} -DPORYTILES_BUILD_DATE_=${BUILD_DATE}" \
-          -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -static-libstdc++"
+          -DCMAKE_BUILD_TYPE=Release \
+          -DCMAKE_CXX_FLAGS="-stdlib=libc++" \
+          -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -static-libstdc++" \
+          -DPORYTILES_BUILD_VERSION_="${{ inputs.build-version }}" \
+          -DPORYTILES_BUILD_DATE_="$BUILD_DATE"
         cd build
         cmake --build .
         file ./legacy/tools/driver/porytiles-legacy

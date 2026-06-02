@@ -1,10 +1,18 @@
 cmake_minimum_required(VERSION 3.20)
 
-project(Porytiles VERSION 1.0.0 LANGUAGES CXX)
+# Single source of truth for the version. CI and CMake both read this file.
+file(STRINGS "${CMAKE_CURRENT_SOURCE_DIR}/VERSION" PORYTILES_PROJECT_VERSION LIMIT_COUNT 1)
+
+project(Porytiles VERSION ${PORYTILES_PROJECT_VERSION} LANGUAGES CXX)
 
 # Default the version stamp baked into both binaries. CI overrides via `cmake -DPORYTILES_BUILD_VERSION_=<snapshot-string>`.
 if(NOT DEFINED PORYTILES_BUILD_VERSION_)
     set(PORYTILES_BUILD_VERSION_ ${CMAKE_PROJECT_VERSION})
+endif()
+
+# Default the build-date stamp baked into both binaries. CI overrides via `cmake -DPORYTILES_BUILD_DATE_=<utc-iso8601>`.
+if(NOT DEFINED PORYTILES_BUILD_DATE_)
+    string(TIMESTAMP PORYTILES_BUILD_DATE_ "%Y.%m.%dT%H:%M:%S+00:00" UTC)
 endif()
 
 # Debug builds: no optimization, full debug info

@@ -24,7 +24,7 @@ disagree, the planning doc is authoritative for intent; update this tracker to m
 | A6 | Phase A end-to-end verification | ✅ Done |
 | B  | CHANGELOG infrastructure | ✅ Done |
 | C  | Versioning system | ✅ Done |
-| D  | CI / release pipeline overhaul | ⬜ Not started |
+| D  | CI / release pipeline overhaul | 🟡 In progress (D1-D4 done; D5 verify pending) |
 | E  | Gitflow adoption + 1.0.0 cut | ⬜ Not started |
 | F  | Documentation repos gitflow alignment | ⬜ Not started |
 | G  | AI policy documentation | ✅ Done |
@@ -88,7 +88,14 @@ split). Repo root. Starts at `## [1.0.0]`; ongoing work under `## [Unreleased]`.
 so back-to-back develop pushes serialize.
 
 **Versioned release** — triggered on `v[0-9]+.[0-9]+.[0-9]+` pushed to `master`;
-preserved permanently; same four-platform matrix; both binaries bundled.
+preserved permanently; same platform matrix as snapshot; both binaries bundled.
+
+**Platform matrix (both release pipelines)** — three platforms: `linux-amd64`,
+`linux-arm64`, `macos-arm64`. **`macos-amd64` (Intel) is deliberately omitted** because
+the active `porytiles/` codebase has C++23 deps that don't build on `macos-13`'s Apple
+Clang/libc++ snapshot (see commit `745b0152`, Oct 2025). Reintroduce only after a
+toolchain fix lands — either install homebrew LLVM clang and absorb the libc++ ABI work,
+or migrate macos-amd64 to a GCC-based build with static-linked libstdc++.
 
 **Homebrew** (`grunt-lucas/homebrew-porytiles` tap) — two formulas. `porytiles.rb`
 tracks latest `v*` tag (versioned-release workflow). `porytiles@snapshot.rb` tracks
@@ -413,30 +420,50 @@ End-to-end through `cmake --build` + install + execute is the first validation t
   of `-DCMAKE_CXX_FLAGS="..."`); my Phase C resolver block then short-circuits the default and
   the double-define disappears.
 
+  **→ Resolved in Phase D.** The three composite actions (`build_linux_clang/action.yml`,
+  `build_linux_gcc/action.yml`, `build_macos_clang/action.yml`) were rewritten to pass
+  `PORYTILES_BUILD_VERSION_` and `PORYTILES_BUILD_DATE_` as standalone cmake cache args. The
+  resolver short-circuits the default, the double-define disappears, and a clean override-path
+  build now produces zero `macro-redefined` warnings in the log (verified locally before D5).
+  See the Phase D pre-work prose for the full migration record, including the date-resolver
+  addition and the CI date-format normalization from `date -uIseconds` (dashes) to dotted form.
+
 ---
 
 ## Phase D — CI / release pipeline overhaul (depends on A, C)
 
-- [ ] **D1** `nightly_release.yml` → `snapshot_release.yml`: trigger `push: [develop]`;
-  concurrency group `snapshot-release` (no cancel); drop "already built" gate;
-  pre-delete prior snapshot release+tag; build-version flag with timestamp+sha;
-  bundle both binaries; `softprops/action-gh-release` `tag_name: snapshot` prerelease;
-  update `porytiles@snapshot.rb` in tap.
-- [ ] **D2** New `versioned_release.yml`: trigger `push: tags: ['v[0-9]+.[0-9]+.[0-9]+']`;
-  concurrency `versioned-release-${{ github.ref }}`; build-version from tag; four-platform
-  matrix; bundle both binaries; non-prerelease; update `porytiles.rb`; never delete prior releases.
-- [ ] **D3** CHANGELOG-extraction helper shared by D1/D2.
-- [ ] **D4** Audit overlaps: recommend deleting `dev_build.yml` (snapshot becomes the
-  single develop-push pipeline); keep `pr_dev_build.yml`; decide `build_pages.yml` scope.
-- [ ] **D5** Verify on a real develop push + a throwaway `v0.0.0-test` tag.
+**Pre-work (single-source-of-truth promotion).** Two open decisions from the prompt resolved at session start: (1) snapshot version prefix and (2) date-macro resolver. Decision (1) initially framed as "CI parses CMakeLists.txt vs hardcode in YAML" was upgraded to a third option the user surfaced: **promote the version constant to a top-level `VERSION` file** that both CMakeLists.txt and CI read. This is the LLVM / Linux kernel pattern (`file(STRINGS ... LIMIT_COUNT 1)` in CMake; `cat VERSION` in CI), strictly cleaner than parsing CMakeLists with a regex. Implemented in root `CMakeLists.txt` BEFORE `project()` (`CMAKE_CURRENT_SOURCE_DIR` is available pre-project; `PROJECT_SOURCE_DIR` is not). Decision (2): added a parallel `if(NOT DEFINED PORYTILES_BUILD_DATE_) string(TIMESTAMP ... "%Y.%m.%dT%H:%M:%S+00:00" UTC) endif()` resolver mirroring Phase C's version resolver. Local builds now report a real UTC timestamp in `--version` (verified: `porytiles 1.0.0 2026.06.02T01:53:27+00:00`) instead of the 1970 fallback. Two parallel `target_compile_definitions(... PRIVATE PORYTILES_BUILD_DATE_=${PORYTILES_BUILD_DATE_})` lines added at the same three sites Phase C touched (`PorytilesLib`, `LegacyLib`, `PorytilesDriver`). Plan didn't explicitly include the VERSION-file promotion — credit to the user for asking "can we put just the version in a simple dot file" rather than accepting the CMakeLists-parsing option.
+
+**Composite-action overhaul (Phase C carried-forward fix).** Phase C left a note that CI's existing `-DCMAKE_CXX_FLAGS="-DPORYTILES_BUILD_VERSION_=... -DPORYTILES_BUILD_DATE_=..."` channel still worked but emitted 109 `-Wmacro-redefined` warnings per build (compiler `-D` and CMake `target_compile_definitions` colliding). Migrated `.github/workflows/build_linux_clang/action.yml`, `build_linux_gcc/action.yml`, `build_macos_clang/action.yml` off the compiler-flag channel onto standalone cmake cache args (`cmake -DPORYTILES_BUILD_VERSION_=... -DPORYTILES_BUILD_DATE_=...`). The Phase C resolver block now short-circuits the default and the double-define disappears (locally verified: clean override-path build produces zero `macro-redefined` matches in the log). Added a `build-date` input to each composite action; if empty, action computes its own UTC timestamp inline. Normalized the CI date format from `date -uIseconds` (dashes — `2026-06-01T...`) to `date -u +'%Y.%m.%dT%H:%M:%S+00:00'` (dots), matching the new local CMake resolver. Behavior change: prior nightly tags reported `2026-06-01T...`, snapshot tags will report `2026.06.01T...`. Acceptable since nightlies are being retired.
+
+- [x] **D1** `snapshot_release.yml` written; `nightly_release.yml` deleted. Triggers on `push: [develop]` + `workflow_dispatch`. Workflow-level `permissions: contents: write`. Concurrency `group: snapshot-release, cancel-in-progress: false`. Seven jobs (originally eight; one tap-test job dropped with the macos-amd64 deprecation — see follow-ups): **prepare** (computes `1.0.0-snapshot.${TIMESTAMP}.${SHORT_SHA}` from a single Unix-epoch snapshot — avoids skew across two `date` calls; outputs `build_version`, `build_date`, `short_sha`), **delete-prior-snapshot** (`gh release delete snapshot --yes --cleanup-tag || true`; `needs: [prepare]` so it doesn't nuke the prior snapshot if version computation fails), **build** (3-platform matrix `fail-fast: false`; uploads each `porytiles-<arch>.zip` as a v4 artifact rather than uploading to the release directly — kills the race where four parallel `softprops/action-gh-release` calls in the old nightly all attached to the same rolling tag), **publish** (downloads all three artifacts, runs `scripts/extract_changelog.sh Unreleased` for the release body, creates the `snapshot` tag with `prerelease: true, make_latest: "false"` — quoted strings, since softprops expects string types not booleans), **update-homebrew-tap** (updates `Formula/porytiles@snapshot.rb` in the tap repo via `secrets.PORYTILES_TAP_REPO_PAT`; reuses the existing sed patterns from the old nightly workflow, minus the OS.mac+intel branch), **test-brew-tap-{linux-amd64, macos-arm64}** (2 jobs verifying `brew install porytiles@snapshot` resolves both binaries; linux-arm64 tap test stays disabled — the existing workflow's comment about `ubuntu-24.04-arm` not shipping Homebrew still applies). Matrix over a literal `include` list (3 entries) rather than three or four duplicated jobs as in the existing nightly workflow — significantly shorter YAML, single edit-point for platform-set changes.
+- [x] **D2** `versioned_release.yml` written. Triggers on `push: tags: ['v[0-9]+.[0-9]+.[0-9]+']`. Per-tag concurrency (`versioned-release-${{ github.ref }}`) so different tag pushes don't serialize. Tag-as-version strip: `BUILD_VERSION="${TAG_NAME#v}"` (e.g. `v1.0.1` → `1.0.1` baked into binary). Added a **VERSION-file vs tag consistency check** in `prepare`: if `cat VERSION` doesn't match the stripped tag, the workflow fails with `::error::` before building anything. Guards against the gitflow-violation scenario where someone tags `v1.0.1` without bumping `VERSION` first. `prerelease: false, make_latest: "true"` for proper "latest stable" pointer. CHANGELOG extraction uses the version (e.g. `1.0.0`) rather than `Unreleased`. Updates `Formula/porytiles.rb` (not snapshot). No delete-prior step — versioned releases are immutable.
+- [x] **D3** `scripts/extract_changelog.sh` written. Bash + awk; takes a section name (`Unreleased` or `1.0.0`), prints lines between the matching `## [<section>]` heading and the next `## [...` heading. Buffer-and-flush pattern for inner blank lines (preserved); trims leading/trailing blanks naturally. Empty section emits empty output (exit 0). Verified against current CHANGELOG: `Unreleased` → empty; `1.0.0` → just the "First stable release..." paragraph; nonexistent `9.9.9` → empty.
+- [x] **D4** Deleted `dev_build.yml` — fully redundant with `snapshot_release.yml`'s push-to-develop trigger (the snapshot workflow does a superset of work and fails identically on build errors, so a separate dev-build pipeline only delays feedback). Kept `pr_dev_build.yml` (PR validation is distinct from post-merge develop builds — no overlap). Left `build_pages.yml` alone — Phase F3's master-trigger rewrite is the right place for it, since `master` doesn't exist yet (Phase E creates it) and flipping the trigger now would freeze Doxygen deploys until E3. Final workflow set: `build_jobs_template.yml`, `build_pages.yml`, `changelog_check.yml`, `pr_dev_build.yml`, `snapshot_release.yml`, `versioned_release.yml` (6 top-level workflows + 9 composite actions). `build_jobs_template.yml` is now only called by `pr_dev_build.yml` — release pipelines stay self-contained because their matrix scope (3 platforms) and inputs (`build-version`, `build-date`) don't fit the template signature.
+- [ ] **D5** Verify the snapshot pipeline on a real develop push. (Originally also planned a throwaway `v0.0.0-test` tag to pre-flight `versioned_release.yml`, but that step was dropped — see follow-ups below for why; D2 gets its first real run at the v1.0.0 cut in Phase E3.)
+
+**Verification done locally (pre-D5).** Both default and override CMake paths pass clean. Default: `~/.local/bin/porytiles --version` → `porytiles 1.0.0 2026.06.02T01:53:27+00:00` (UTC); `~/.local/bin/porytiles-legacy --version` → same. Override: `cmake -DPORYTILES_BUILD_VERSION_=1.0.0-snapshot.20260601000000.abc12345 -DPORYTILES_BUILD_DATE_=2026.06.01T00:00:00+00:00` → both binaries echo the override strings exactly, zero `-Wmacro-redefined` warnings in the build log. `PorytilesAllTests` 1144/1144, `LegacyTests` 73 cases / 2,689,245 assertions. All 15 workflow / composite-action YAML files parse via `yaml.safe_load`.
+
+**Open follow-ups carried into D5 (and beyond).**
+- **Tap-repo prerequisite (snapshot formula).** D1's `update-homebrew-tap` job assumes `Formula/porytiles@snapshot.rb` already exists in the `grunt-lucas/homebrew-porytiles` repo with the expected shape (specifically: a `version "..."` line and three `sha256 "..."` lines under the `OS.linux?/Hardware::CPU.intel?` / `arm?` / `OS.mac?/Hardware::CPU.arm?` branches that the new sed patterns target). Resolved: a new `Formula/porytiles@snapshot.rb` was authored in the local clone with the correct shape, Ruby syntax verified via `ruby -c`, and the sed patterns simulated against it to confirm each branch's `sha256` line is updated to the correct platform's hash. The tap-repo commit + push is the user's responsibility before triggering D5.
+- **Legacy `porytiles.rb` shape mismatch deferred to Phase E2.** The existing `porytiles.rb` in the tap is the legacy nightly-style formula (single binary, URL interpolates `#{nightly}` which is bound to the historical `nightly-3a9d31c...` tag). Phase D's new `versioned_release.yml` sed patterns update `version` and the three `sha256` lines, but NOT the `nightly = "..."` line, so running D2 against the current formula would leave the URL pointing at the legacy nightly while updating the version + sha256s — a broken composite state. Rewriting `porytiles.rb` now to the new shape (v-tag URL interpolation, both binaries installed) would break `brew install porytiles` for users until the first v* tag ships real release zips. **Decision: defer the rewrite to Phase E2** (release-branch prep), so the legacy nightly stays installable in the interim, and the formula transitions to the new shape in lockstep with the v1.0.0 cut. Tracked as a new E2 substep.
+- **D5 scope reduced.** Original plan included a throwaway `v0.0.0-test` tag to pre-flight `versioned_release.yml`. With the `porytiles.rb` rewrite deferred to E2, a throwaway-tag run would touch the legacy-shape formula and produce a broken commit in the tap repo. Cleaner to skip D2 pre-flight and let v1.0.0 be its first real run. D5 now verifies only the snapshot pipeline. D2's YAML is trusted based on D1 verification (shared structure: prepare, build matrix, publish, tap update, brew tests) and local sanity (yaml-parses clean across all 15 workflow files; the VERSION-vs-tag guardrail logic exercised against multiple scenarios mentally).
+- **Test binaries in release zips.** `create_release_package/action.yml` currently bundles three test binaries (`LegacyTests`, `PorytilesUnitTests`, `PorytilesIntegrationTests`) into each platform zip alongside the two driver binaries. Not in D's scope but worth questioning: are test binaries meant to ship to end users, or is this a vestige of CI's pre-package smoke test? If the latter, the test binaries can stay in CI (the action's `pushd ... && ./LegacyTests` step runs them right after copy) but be dropped from the zip itself. Phase E6 README rewrite is the natural place to decide.
+- **`macos-amd64` divergence resolved by dropping from release matrices.** Initial Phase D rewrite copied the four-platform set from the old `nightly_release.yml` without cross-referencing the PR template's commented-out entry. Investigation traced the deprecation to commit `745b0152` (Oct 2025, "Comment out Intel Mac build for now, Porytiles2 has some incompatible dependencies") — `macos-amd64` was decommissioned because the active codebase's C++23 deps don't build on `macos-13`'s Apple Clang. The old nightly continued listing it because nightlies ran only on `workflow_dispatch` against the legacy codebase, so the breakage was passive. Phase D's `push:[develop]` trigger would have surfaced this as a snapshot-pipeline failure on first run. Pre-emptively dropped `macos-amd64` from both `snapshot_release.yml` and `versioned_release.yml` matrices (and from `porytiles@snapshot.rb`'s OS-arch conditional, and from the homebrew tap update's sed targets and download loop). The locked-in decisions section was updated from "four-platform matrix" to "three-platform matrix" with the deprecation citation. Re-introducing `macos-amd64` is a future toolchain-fix project, not in Phase D scope.
 
 ---
 
 ## Phase E — Gitflow adoption + 1.0.0 cut (last; A–D stable on develop)
 
 - [ ] **E1** Audit open feature branches (see Open blockers).
-- [ ] **E2** Cut `release/1.0.0` from `develop`; confirm `project(... VERSION 1.0.0)`;
-  migrate `[Unreleased]` → `[1.0.0] - <date>`; **resolve `STABILITY.md` blocker**; smoke test.
+- [ ] **E2** Cut `release/1.0.0` from `develop`; confirm `VERSION` file + `project(... VERSION 1.0.0)`;
+  migrate `[Unreleased]` → `[1.0.0] - <date>`; **resolve `STABILITY.md` blocker**;
+  **rewrite `homebrew-porytiles/Formula/porytiles.rb` to the new shape** (Phase D's
+  carried-forward item — versioned formula with `v#{version}` URL interpolation, install both
+  `porytiles` and `porytiles-legacy`, sed-compatible `version`/`sha256` line shapes matching
+  the snapshot formula); coordinate that rewrite's push to the tap repo with the v1.0.0 tag
+  push at E3 so the broken-window between formula rewrite and first real v* release is
+  minimized (ideally minutes, not days); smoke test.
 - [ ] **E3** Tag + merge in lockstep across main + both docs repos: create `master` from
   `release/1.0.0`; tag `v1.0.0` (verify `versioned_release.yml` fires before tagging docs
   repos); merge release back to `develop`; delete release branch. Verify docs sites.
