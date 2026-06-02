@@ -9,24 +9,24 @@ Porytiles is a C++ overworld tileset compiler for Pokémon Generation III decomp
 ## Architecture
 
 The project is organized into two main code trees:
-- **`Legacy/`**: Old codebase, ignore unless explicitly instructed
-- **`Porytiles/`**: Active development with domain-driven design architecture inspired by clang
+- **`legacy/`**: Old codebase, ignore unless explicitly instructed
+- **`porytiles/`**: Active development with domain-driven design architecture inspired by clang
 
-Key directories in `Porytiles/`:
-- `Documentation/` - Documentation source folder
-- `Porytiles/config_templates/` - Code generation for config system
-- `Porytiles/include/porytiles/domain/` - Pure business logic, no I/O dependencies
-- `Porytiles/include/porytiles/app/` - User-facing use cases and workflows
-- `Porytiles/include/porytiles/infra/` - I/O and external system/library integration
-- `Porytiles/include/porytiles/xcut/` - Cross-cutting concerns (errors, diagnostics, config, di, etc)
-- `Porytiles/include/porytiles/utilities/` - Generic helpers, zero dependencies
-- `Porytiles/lib/` - .cpp implementation files
-- `Porytiles/Notes/` - WIP documentation, feature outlines, refactoring plans, etc
-- `Porytiles/tests/` - GoogleTest test suites
-- `Porytiles/scratch/` - My scratch directory, you can ignore this
-- `Porytiles/tools/` - Tools that use the Porytiles library, currently just the main CLI tool
-- `Resources/` - Test assets and example files
-- `Scripts/` - Utility scripts for the repository (including config system generation)
+Key directories in `porytiles/`:
+- `docs/` - Documentation source folder
+- `porytiles/config_templates/` - Code generation for config system
+- `porytiles/include/porytiles/domain/` - Pure business logic, no I/O dependencies
+- `porytiles/include/porytiles/app/` - User-facing use cases and workflows
+- `porytiles/include/porytiles/infra/` - I/O and external system/library integration
+- `porytiles/include/porytiles/xcut/` - Cross-cutting concerns (errors, diagnostics, config, di, etc)
+- `porytiles/include/porytiles/utilities/` - Generic helpers, zero dependencies
+- `porytiles/lib/` - .cpp implementation files
+- `porytiles/notes/` - WIP documentation, feature outlines, refactoring plans, etc
+- `porytiles/tests/` - GoogleTest test suites
+- `porytiles/scratch/` - My scratch directory, you can ignore this
+- `porytiles/tools/` - Tools that use the Porytiles library, currently just the main CLI tool
+- `resources/` - Test assets and example files
+- `scripts/` - Utility scripts for the repository (including config system generation)
 
 ## Specialized Agents
 
@@ -47,24 +47,24 @@ Uses CMake 3.20+ with C++23.
 
 Quick reference:
 ```bash
-uv run Scripts/format.py          # Format code
+uv run scripts/format.py          # Format code
 cmake --build porytiles-build-debug -j7 > /tmp/build.log 2>&1  # Build (check exit code)
 cmake --install porytiles-build-debug --prefix ~/.local        # Install to ~/.local/bin
-./porytiles-build-debug/Porytiles/tests/PorytilesAllTests > /tmp/test.log 2>&1  # Test
+./porytiles-build-debug/porytiles/tests/PorytilesAllTests > /tmp/test.log 2>&1  # Test
 ```
 
 **After building, always install the executable to make it available for testing.**
 
 ## Code Coverage
 
-Uses LLVM source-based coverage via `Scripts/coverage.py`. Build directory: `porytiles-build-coverage`.
+Uses LLVM source-based coverage via `scripts/coverage.py`. Build directory: `porytiles-build-coverage`.
 
 ```bash
-uv run Scripts/coverage.py build                    # Configure, build, run tests, merge profile data
-uv run Scripts/coverage.py report                   # Summary report to stdout
-uv run Scripts/coverage.py report --html /tmp/cov   # HTML report
-uv run Scripts/coverage.py show Porytiles/lib/domain/foo.cpp  # Line-by-line for specific files
-uv run Scripts/coverage.py clean                    # Remove coverage build dir
+uv run scripts/coverage.py build                    # Configure, build, run tests, merge profile data
+uv run scripts/coverage.py report                   # Summary report to stdout
+uv run scripts/coverage.py report --html /tmp/cov   # HTML report
+uv run scripts/coverage.py show porytiles/lib/domain/foo.cpp  # Line-by-line for specific files
+uv run scripts/coverage.py clean                    # Remove coverage build dir
 ```
 
 When writing tests for new features or bug fixes, always check coverage to verify new code paths are actually exercised — don't just trust that tests pass. Run `build`, then `report` or `show` for the specific files you changed.
@@ -121,10 +121,13 @@ Install uv if you haven't: https://docs.astral.sh/uv/getting-started/installatio
 
 ```bash
 # Regenerate config files (after modifying config_schema.yaml or .jinja2 templates)
-uv run Scripts/generate_config.py
+uv run scripts/generate_config.py
 ```
 
-That's it - `uv run` automatically handles dependencies from `pyproject.toml`.
+That's it - each script under `scripts/` is self-contained via [PEP 723](https://peps.python.org/pep-0723/)
+inline metadata (`# /// script ... # ///` block at the top), so `uv run` resolves
+its dependencies and Python version from the script itself. No `pyproject.toml`
+or `uv.lock` at the repo root.
 
 ## C++ Code Style
 
@@ -133,7 +136,7 @@ Follow the style guide in @./STYLE.md
 ## **CRITICAL RULES - DO NOT VIOLATE**
 
 ### Behavioral Rules
-- **Ignore `Legacy/`** unless explicitly told to work with those files
+- **Ignore `legacy/`** unless explicitly told to work with those files
 - **NEVER create mock data or simplified components** unless explicitly told to
 - **NEVER replace existing complex components with simplified versions** - fix the actual problem
 - **ALWAYS find and fix the root cause** of issues instead of creating workarounds

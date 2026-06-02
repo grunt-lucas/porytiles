@@ -17,7 +17,7 @@ RGBA (or indexed) input assets.
 - [Using Porytiles - Wiki](https://github.com/grunt-lucas/porytiles/wiki)
 - [Introductory YouTube Tutorial (made by a community member, not a rick roll this time I promise)](https://www.youtube.com/playlist?list=PLuyjFojPxF7-O5o_mS6uTBtyYcuyFf_Ce)
 
-![PokemonHearth](https://github.com/grunt-lucas/porytiles/blob/develop/Resources/Readme/PokemonHearth.png?raw=true)
+![PokemonHearth](https://github.com/grunt-lucas/porytiles/blob/develop/resources/readme/PokemonHearth.png?raw=true)
 *Pokémon Hearth by PurrfectDoodle. Tile art inserted via Porytiles. Used with permission.*
 
 - [Porytiles](#porytiles)
@@ -81,7 +81,7 @@ Porytiles's build system will search the system library paths for
 `libpng.a` and `libz.a`.
 If you'd like to link those libraries dynamically,
 or if the CMake configuration is having trouble finding them,
-then you'll need to modify `Legacy/lib/CMakeLists.txt` appropriately.
+then you'll need to modify `legacy/lib/CMakeLists.txt` appropriately.
 
 You'll also need `cmake` version `3.20` or greater.
 
@@ -98,11 +98,11 @@ cmake --build .
 You can check that everything is working like this:
 ```
 cd ..
-./build/Legacy/tests/LegacyTests
+./build/legacy/tests/LegacyTests
 ```
 To run the actual tool:
 ```
-./build/Legacy/tools/driver/porytiles-legacy
+./build/legacy/tools/driver/porytiles-legacy
 ```
 
 ### Notes For macOS
@@ -119,6 +119,6 @@ you may need to tweak this command to match your system.
 ## Note For Aseprite Users
 GitHub user [PKGaspi](https://github.com/PKGaspi) has created a collection
 of [useful scripts here.](https://github.com/PKGaspi/AsepriteScripts) Of particular interest is this [
-`export_layers`](https://github.com/PKGaspi/AsepriteScripts/blob/main/scripts/gaspi/export_layers.lua) script, which
+`export_layers`](https://github.com/PKGaspi/Asepritescripts/blob/main/scripts/gaspi/export_layers.lua) script, which
 allows you to save each sprite layer to a different file. This may be useful, since Porytiles requires each tile layer
 in a separate PNG file.

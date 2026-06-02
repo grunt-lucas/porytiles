@@ -23,12 +23,12 @@ disagree, the planning doc is authoritative for intent; update this tracker to m
 | A5 | GitHub Actions hardcoded paths | ✅ Done |
 | A6 | Phase A end-to-end verification | ✅ Done |
 | B  | CHANGELOG infrastructure | ✅ Done |
-| C  | Versioning system | ⬜ Not started |
+| C  | Versioning system | ✅ Done |
 | D  | CI / release pipeline overhaul | ⬜ Not started |
 | E  | Gitflow adoption + 1.0.0 cut | ⬜ Not started |
 | F  | Documentation repos gitflow alignment | ⬜ Not started |
 | G  | AI policy documentation | ✅ Done |
-| H  | Top-level lowercase migration | ⬜ Not started |
+| H  | Top-level lowercase migration | ✅ Done |
 
 Legend: ⬜ not started · 🟡 in progress · ✅ done · 🚫 blocked
 
@@ -70,9 +70,9 @@ Other dependencies:
 ## Locked-in decisions
 
 **Renames**
-- `Porytiles2/` → `Porytiles/`; namespace `porytiles2` → `porytiles`; include prefix
+- `Porytiles2/` → `porytiles/`; namespace `porytiles2` → `porytiles`; include prefix
   `porytiles2/` → `porytiles/`; executable `porytiles2` → `porytiles`.
-- `Porytiles1/` → `Legacy/`; namespace `porytiles1` → `porytiles_legacy`; include
+- `Porytiles1/` → `legacy/`; namespace `porytiles1` → `porytiles_legacy`; include
   prefix `porytiles/` (inside Porytiles1) → `porytiles_legacy/`; executable
   `porytiles` → `porytiles-legacy`.
 - CMake targets: `Porytiles2Lib`→`PorytilesLib`, `Porytiles2Driver`→`PorytilesDriver`,
@@ -153,19 +153,19 @@ sweep only, build + test verify; pass 2 = directory rename + include paths +
 CMake skeleton + generator script + templates, regenerate, build + test.
 
 **A2a — Directory + CMake skeleton**
-- [x] Rename `Porytiles2/` → `Porytiles/` (via `git mv`; git rename-detection clean).
+- [x] Rename `Porytiles2/` → `porytiles/` (via `git mv`; git rename-detection clean).
 - [x] Root `CMakeLists.txt`: `add_subdirectory(Porytiles2)` → `add_subdirectory(Porytiles)`.
 - [x] `PORYTILES2_INCLUDE_DIR` → `PORYTILES_INCLUDE_DIR` everywhere.
 - [x] CMake targets renamed (`Porytiles2Lib`→`PorytilesLib`, Driver, three Tests).
-- [x] `Porytiles/lib/CMakeLists.txt`: `project(Porytiles2Lib CXX)`→`PorytilesLib`;
+- [x] `porytiles/lib/CMakeLists.txt`: `project(Porytiles2Lib CXX)`→`PorytilesLib`;
   `CANONICAL_LIB_NAME "porytiles2"`→`"porytiles"`; `export()` file renamed.
-- [x] `Porytiles/tools/driver/CMakeLists.txt`: project rename; `OUTPUT_NAME "porytiles2"`→`"porytiles"`.
-- [x] `Porytiles/tests/CMakeLists.txt`: all three test-target names.
-- [x] `Porytiles/CMakeLists.txt`: all generated-file paths + `config_templates/` references.
-- [x] `Documentation/CMakeLists.txt`: `Porytiles2Lib`, `PORYTILES2_PUBLIC_HEADER*`, three source paths.
+- [x] `porytiles/tools/driver/CMakeLists.txt`: project rename; `OUTPUT_NAME "porytiles2"`→`"porytiles"`.
+- [x] `porytiles/tests/CMakeLists.txt`: all three test-target names.
+- [x] `porytiles/CMakeLists.txt`: all generated-file paths + `config_templates/` references.
+- [x] `docs/CMakeLists.txt`: `Porytiles2Lib`, `PORYTILES2_PUBLIC_HEADER*`, three source paths.
 
 **A2b — Include directory + namespace sweep**
-- [x] Rename `Porytiles/include/porytiles2/` → `Porytiles/include/porytiles/` (via `git mv`).
+- [x] Rename `porytiles/include/porytiles2/` → `porytiles/include/porytiles/` (via `git mv`).
 - [x] `#include "porytiles2/` → `#include "porytiles/` (1,830 occurrences pre-sweep — actual count, plan said ~1,670).
 - [x] `namespace porytiles2` → `namespace porytiles` (799 pre-sweep — plan said ~722). Pattern catches namespace decls, `using namespace`, and closing comments in one shot.
 - [x] `porytiles2::` → `porytiles::` qualified refs (135 pre-sweep).
@@ -174,15 +174,15 @@ CMake skeleton + generator script + templates, regenerate, build + test.
 - [x] Doxygen comment refs to "Porytiles2" in 5 source files (project-name references in `@details` blocks).
 
 **A2c — Build-version macro defaults**
-- [x] `Porytiles/include/porytiles/build_version.h`: `PORYTILES_EXECUTABLE_` already
+- [x] `porytiles/include/porytiles/build_version.h`: `PORYTILES_EXECUTABLE_` already
   defaulted to `porytiles` pre-rename (which was wrong-for-old-state but correct-for-new). Namespace decl + closing comment swept by A2b pattern.
 - [x] (Legacy `porytiles-legacy` default handled in A3.)
 
 **A2d — Jinja2 templates + generator script**
-- [x] 27 templates under `Porytiles/config_templates/*.jinja2` (plan said 29 — actual file count includes 2 non-`.jinja2` files): swept `porytiles2/` include paths and `namespace porytiles2`/`porytiles2::` patterns.
+- [x] 27 templates under `porytiles/config_templates/*.jinja2` (plan said 29 — actual file count includes 2 non-`.jinja2` files): swept `porytiles2/` include paths and `namespace porytiles2`/`porytiles2::` patterns.
 - [x] `config_schema.yaml`: 12 `header_path: porytiles2/...` entries → `porytiles/...`.
-- [x] `Scripts/generate_config.py`: all `Porytiles2/` → `Porytiles/` and `porytiles2/` → `porytiles/` substitutions.
-- [x] `uv run Scripts/generate_config.py` runs clean; idempotent (no diff on second invocation).
+- [x] `scripts/generate_config.py`: all `Porytiles2/` → `porytiles/` and `porytiles2/` → `porytiles/` substitutions.
+- [x] `uv run scripts/generate_config.py` runs clean; idempotent (no diff on second invocation).
 - [x] Reconciled GENERATED_CONFIG_FILES (CMake) vs `templates` list (script): added 5 missing entries that the script generates but CMake didn't track — `header_define_provider.{hpp,cpp}` (the flagged inconsistency) plus 3 test mocks (`mock_{domain,infra,app}_config.hpp` under `tests/support/`).
 
 **A2 verification**
@@ -190,23 +190,23 @@ CMake skeleton + generator script + templates, regenerate, build + test.
 - [x] Pass 2 build (post dir-rename, fresh `porytiles-build-debug`): exit 0 after one transient nlohmann/json FetchContent retry and one CMake re-run for GSL.natvis state settling.
 - [x] Pass 2 tests (`PorytilesAllTests`): 1144/1144 pass in 1.544s.
 - [x] Porytiles1 sanity (`Porytiles1Tests`): 73/73 cases / 2,689,245 assertions pass — confirms A2 didn't regress A1.
-- [x] Binary: `./porytiles-build-debug/Porytiles/tools/driver/porytiles --version` reports `porytiles default_build_version 1970...` (executable name correct; real version comes in Phase C).
+- [x] Binary: `./porytiles-build-debug/porytiles/tools/driver/porytiles --version` reports `porytiles default_build_version 1970...` (executable name correct; real version comes in Phase C).
 - [x] `cmake --install --prefix ~/.local`: writes `~/.local/bin/porytiles` (old `~/.local/bin/porytiles2` from prior install remains — see unresolved item #3, deprecation symlink decision).
 
 ### A3 — Porytiles1 → Legacy directory rename — after A1 + A2 stable
 
-- [x] Rename `Porytiles1/` → `Legacy/` via `git mv`.
+- [x] Rename `Porytiles1/` → `legacy/` via `git mv`.
 - [x] Root `CMakeLists.txt`: `add_subdirectory(Porytiles1)` → `add_subdirectory(Legacy)`.
 - [x] `PORYTILES1_INCLUDE_DIR` → `PORYTILES_LEGACY_INCLUDE_DIR` (3 refs across 3 CMake files; swept via `s/PORYTILES1/PORYTILES_LEGACY/g`).
 - [x] Rename targets: `Porytiles1Lib`→`LegacyLib`, `Porytiles1Driver`→`LegacyDriver`,
   `Porytiles1Tests`→`LegacyTests`, `Porytiles1LibTests`→`LegacyLibTests`,
-  `Porytiles1TestSuite`→`LegacyTestSuite`, CTest `AllPorytiles1Tests`→`AllLegacyTests`, export filename `Porytiles1LibraryTargets.cmake`→`LegacyLibraryTargets.cmake`. Single `s/Porytiles1/Legacy/g` sweep handled all because every name has `Porytiles1` as substring. `Porytiles1/tools/CMakeLists.txt` contained no tokens (just `add_subdirectory(driver)`), no edit needed.
-- [x] `Legacy/tools/driver/CMakeLists.txt`: `OUTPUT_NAME "porytiles"`→`"porytiles-legacy"`;
+  `Porytiles1TestSuite`→`LegacyTestSuite`, CTest `AllPorytiles1Tests`→`AllLegacyTests`, export filename `Porytiles1LibraryTargets.cmake`→`LegacyLibraryTargets.cmake`. Single `s/Porytiles1/legacy/g` sweep handled all because every name has `Porytiles1` as substring. `Porytiles1/tools/CMakeLists.txt` contained no tokens (just `add_subdirectory(driver)`), no edit needed.
+- [x] `legacy/tools/driver/CMakeLists.txt`: `OUTPUT_NAME "porytiles"`→`"porytiles-legacy"`;
   added `install(TARGETS LegacyDriver RUNTIME DESTINATION bin)`.
-- [x] `Legacy/lib/legacy/cli_parser.cpp`: hardcoded `porytiles` help/usage literals → `porytiles-legacy`. **Plan said 37; actual was 15 CLI literals + 7 URLs (22 total `\bporytiles\b` matches).** URLs preserved unchanged (`github.com/grunt-lucas/porytiles/wiki` etc. — the repo itself is still named `porytiles`). Used literal-sed `s|porytiles |porytiles-legacy |g` (trailing space cleanly partitions the two groups; `porytiles_legacy` underscore-tokens auto-protected). macOS BSD sed `-E` does NOT honor `\b` — first attempt was a no-op.
-- [x] **Out-of-scope addition (originally A2c per plan, fixed here):** `Legacy/include/porytiles_legacy/build_version.h` `#define PORYTILES_EXECUTABLE_ porytiles` → `porytiles-legacy`. Required for `porytiles-legacy --version` to print its own name; pp-token stringification of `porytiles-legacy` works because C99 6.10.3.2/2 preserves token spelling and adjacent no-whitespace tokens concatenate (same mechanism CI uses for `1.0.0-snapshot.<ts>.<sha>`).
+- [x] `legacy/lib/legacy/cli_parser.cpp`: hardcoded `porytiles` help/usage literals → `porytiles-legacy`. **Plan said 37; actual was 15 CLI literals + 7 URLs (22 total `\bporytiles\b` matches).** URLs preserved unchanged (`github.com/grunt-lucas/porytiles/wiki` etc. — the repo itself is still named `porytiles`). Used literal-sed `s|porytiles |porytiles-legacy |g` (trailing space cleanly partitions the two groups; `porytiles_legacy` underscore-tokens auto-protected). macOS BSD sed `-E` does NOT honor `\b` — first attempt was a no-op.
+- [x] **Out-of-scope addition (originally A2c per plan, fixed here):** `legacy/include/porytiles_legacy/build_version.h` `#define PORYTILES_EXECUTABLE_ porytiles` → `porytiles-legacy`. Required for `porytiles-legacy --version` to print its own name; pp-token stringification of `porytiles-legacy` works because C99 6.10.3.2/2 preserves token spelling and adjacent no-whitespace tokens concatenate (same mechanism CI uses for `1.0.0-snapshot.<ts>.<sha>`).
 - [x] Build green: `cmake --build` exit 0 (yaml-cpp FetchContent populate race on first try → resolved by retry, like A2's GSL.natvis flake).
-- [x] Tests green: PorytilesAllTests 1144/1144 (unchanged from A2 — Porytiles/ untouched by A3); LegacyTests 73 cases / 2,689,245 assertions.
+- [x] Tests green: PorytilesAllTests 1144/1144 (unchanged from A2 — porytiles/ untouched by A3); LegacyTests 73 cases / 2,689,245 assertions.
 - [x] Install green: `~/.local/bin/porytiles` and `~/.local/bin/porytiles-legacy` both installed; `--version` outputs correct executable names (`porytiles ...` and `porytiles-legacy ...`). Pre-A2 `~/.local/bin/porytiles2` still present — unresolved item #3.
 
 ### A4 — Scripts, configs, IDE files, docs sweep
@@ -235,19 +235,19 @@ decision, `GEMINI.md` was a 13-byte `@./CLAUDE.md` import stub with no hits).
 - [x] **A4d — Top-level docs (3 files, plan said 4).** `STYLE.md` mechanical sweep
   (9 hits, all code-fenced namespace/include examples). `README.md` mechanical
   `Porytiles1`→`Legacy` (3 hits) + one targeted edit for legacy binary path
-  (`./build/Legacy/tools/driver/porytiles` → `porytiles-legacy`). `CLAUDE.md` (24 hits)
+  (`./build/legacy/tools/driver/porytiles` → `porytiles-legacy`). `CLAUDE.md` (24 hits)
   hand-edited 3 prose sections (architecture overview lines 11-15 now reference
   directory names not version suffixes; "### Legacy Porytiles1 Wiki" → "### Legacy
-  Wiki" with surrounding prose; behavioral rule `Porytiles1/`→`Legacy/`), then
+  Wiki" with surrounding prose; behavioral rule `Porytiles1/`→`legacy/`), then
   mechanical sweep for the rest. **`GEMINI.md` had zero hits** — it's a 13-byte
   `@./CLAUDE.md` import directive; will pick up updates automatically.
 - [x] **A4e — Claude-Code docs (5 files).** `.claude/agents/{architect,build-expert,
   code-reviewer,debugger}.md` + `.claude/skills/fix-includes.md`. `debugger.md`
   needed special handling for legacy-CLI line (`./porytiles-build-debug/Porytiles1/
-  tools/driver/porytiles` → `./porytiles-build-debug/Legacy/tools/driver/porytiles-legacy`);
+  tools/driver/porytiles` → `./porytiles-build-debug/legacy/tools/driver/porytiles-legacy`);
   the rest mechanical. **`.claude/settings.local.json` is gitignored user state, skipped.**
-- [x] **A4f — Sub-project docs (12 files, plan said 9 Notes).** `Porytiles/ARCHITECTURE.md`
-  (6 hits), `Porytiles/README.md` (3 hits) and `Legacy/README.md` (1 hit + legacy binary
+- [x] **A4f — Sub-project docs (12 files, plan said 9 Notes).** `porytiles/ARCHITECTURE.md`
+  (6 hits), `porytiles/README.md` (3 hits) and `legacy/README.md` (1 hit + legacy binary
   edit) mechanical. Notes/*.md sweep across 9 files (`c_parser_ast_analysis`,
   `diagnostics_formatting_cookbook`, `fmtlib_usage_analysis`, `fruit_migration_plan`,
   `project_structure_refactoring_plan`, `secondary_animation_handling`,
@@ -264,11 +264,11 @@ decision, `GEMINI.md` was a 13-byte `@./CLAUDE.md` import stub with no hits).
   (3 gitignored + 1 deferred plan). All 6 Python scripts run green with renamed
   paths (`--help` output reflects updated descriptions; `generate_config.py`
   produces zero diff). Edit-tool quirk: a few earlier `replace_all` calls on
-  `Porytiles/ARCHITECTURE.md` and the Notes files reported success but didn't
+  `porytiles/ARCHITECTURE.md` and the Notes files reported success but didn't
   modify files (Edit tracks Read-state inconsistently when files were only seen
   via `grep` output); worked around with `sed -i ''`.
 
-**Note on architectural framing in `Legacy/README.md` and `Porytiles/README.md`:**
+**Note on architectural framing in `legacy/README.md` and `porytiles/README.md`:**
 both still describe the old "MV1 is the current Porytiles offering" / "MV2 is the
 next-generation" framing, which is factually wrong post-1.0.0 but outside A4 scope
 (mechanical sweep only). Defer to Phase E6 README rewrite for the release.
@@ -283,23 +283,23 @@ next-generation" framing, which is factually wrong post-1.0.0 but outside A4 sco
   paths or target names — they need no edits. This is good CI hygiene we
   benefit from. Total hits: 26 (4+4+4+9+5).
 - [x] `build_linux_clang/action.yml` (4 hits) — `file`/`objdump` lines on
-  driver binaries: legacy → `Legacy/tools/driver/porytiles-legacy`, active →
-  `Porytiles/tools/driver/porytiles`.
+  driver binaries: legacy → `legacy/tools/driver/porytiles-legacy`, active →
+  `porytiles/tools/driver/porytiles`.
 - [x] `build_linux_gcc/action.yml` (4 hits) — same pattern.
 - [x] `build_macos_clang/action.yml` (4 hits) — same pattern.
 - [x] `create_release_package/action.yml` (9 hits) — both driver `cp`s; three
   test-binary `cp`s (`Porytiles1Tests` → `LegacyTests`, `Porytiles2UnitTests` →
   `PorytilesUnitTests`, `Porytiles2IntegrationTests` → `PorytilesIntegrationTests`);
-  `Porytiles1/vendor` → `Legacy/vendor`; three executable invocations updated
+  `Porytiles1/vendor` → `legacy/vendor`; three executable invocations updated
   to match.
 - [x] `run_test_suite/action.yml` (5 hits) — both `--version` invocations + all
   three test-binary executions.
 - [x] **Cross-reference vs. post-A3 filesystem**: confirmed
-  `Legacy/tools/driver/CMakeLists.txt` sets `OUTPUT_NAME "porytiles-legacy"`,
-  `Porytiles/tools/driver/CMakeLists.txt` sets `OUTPUT_NAME "porytiles"`,
-  `Porytiles/tests/CMakeLists.txt` produces `PorytilesUnitTests` +
-  `PorytilesIntegrationTests` + `PorytilesAllTests`, `Legacy/tests/CMakeLists.txt`
-  produces a single `LegacyTests` binary, and `Legacy/vendor/` exists.
+  `legacy/tools/driver/CMakeLists.txt` sets `OUTPUT_NAME "porytiles-legacy"`,
+  `porytiles/tools/driver/CMakeLists.txt` sets `OUTPUT_NAME "porytiles"`,
+  `porytiles/tests/CMakeLists.txt` produces `PorytilesUnitTests` +
+  `PorytilesIntegrationTests` + `PorytilesAllTests`, `legacy/tests/CMakeLists.txt`
+  produces a single `LegacyTests` binary, and `legacy/vendor/` exists.
 - [x] **Verification**: re-grep across `.github/` for any residual
   `Porytiles[12]|porytiles[12]|PORYTILES[12]` returned zero hits. All 14 yaml
   files under `.github/workflows/` parse via `yaml.safe_load`. Visual diff is
@@ -322,11 +322,11 @@ the paths/targets these workflows reference still resolve.
 
 - [x] `rm -rf porytiles-build-debug/` then `cmake -B porytiles-build-debug -S .`.
 - [x] `cmake --build porytiles-build-debug -j7 > /tmp/build.log 2>&1` (check exit code).
-- [x] `./porytiles-build-debug/Porytiles/tests/PorytilesAllTests > /tmp/test.log 2>&1` (check exit code).
-- [x] `./porytiles-build-debug/Legacy/tests/LegacyTests > /tmp/legacy_test.log 2>&1` (check exit code).
+- [x] `./porytiles-build-debug/porytiles/tests/PorytilesAllTests > /tmp/test.log 2>&1` (check exit code).
+- [x] `./porytiles-build-debug/legacy/tests/LegacyTests > /tmp/legacy_test.log 2>&1` (check exit code).
 - [x] `cmake --install porytiles-build-debug --prefix ~/.local`.
 - [x] `~/.local/bin/porytiles --version` and `~/.local/bin/porytiles-legacy --version`.
-- [x] `uv run Scripts/generate_config.py` produces no diff.
+- [x] `uv run scripts/generate_config.py` produces no diff.
 
 **Verification results (local, 2026-05-31)**
 
@@ -356,14 +356,62 @@ End-to-end through `cmake --build` + install + execute is the first validation t
 
 ## Phase C — Versioning system (depends on A2)
 
-- [ ] **C1** Root `CMakeLists.txt`: `project(Porytiles CXX)` → `project(Porytiles VERSION 1.0.0 CXX)`;
-  confirm sub-CMakeLists read `${CMAKE_PROJECT_VERSION}` (validate with a `message(STATUS ...)`).
-- [ ] **C2** `Porytiles/lib/CMakeLists.txt` + `Legacy/lib/CMakeLists.txt`: add
-  `target_compile_definitions(... PRIVATE PORYTILES_BUILD_VERSION_=${CMAKE_PROJECT_VERSION})`.
-- [ ] **C3** Uniform `<exec-name> <version> <date>` across both binaries
-  (`Porytiles/tools/driver/main.cpp` + `Legacy/lib/legacy/cli_parser.cpp`).
-- [ ] **C4** Verify: `porytiles --version` → `porytiles 1.0.0 <date>`;
-  `porytiles-legacy --version` → `porytiles-legacy 1.0.0 <date>`; override flag echoes.
+- [x] **C1** Root `CMakeLists.txt`: `project(Porytiles CXX)` → `project(Porytiles VERSION 1.0.0 LANGUAGES CXX)`;
+  confirmed sub-CMakeLists see `CMAKE_PROJECT_VERSION=1.0.0` (validated with a temporary
+  `message(STATUS ...)` then removed). **Plan said `project(Porytiles VERSION 1.0.0 CXX)`; actual
+  is `project(Porytiles VERSION 1.0.0 LANGUAGES CXX)`** — the moment `VERSION` is present,
+  CMake's `project()` parser requires the explicit `LANGUAGES` keyword instead of the bare
+  positional language list, otherwise it errors with `must use LANGUAGES before language names`.
+  Easy one-keyword fix; not flagged by the plan landmines.
+- [x] **C2** Compile-def wiring landed in **three** targets, not two, plus a top-level resolver
+  block. **Plan said add the def to `PorytilesLib` + `LegacyLib`; actual added it to
+  `PorytilesLib`, `LegacyLib`, AND `PorytilesDriver`.** The asymmetric extra is forced by where
+  the macro is consumed: legacy's `--version` handler lives in `cli_parser.cpp` (a TU of
+  `LegacyLib`), so `target_compile_definitions(... PRIVATE)` on the lib is sufficient; active's
+  `--version` handler lives in `porytiles/tools/driver/main.cpp` (a TU of `PorytilesDriver`, not
+  `PorytilesLib`), so a `PRIVATE` def on the lib does NOT reach it. Caught by the first install
+  verification: legacy reported `1.0.0` but active reported `default_build_version`. Adding a
+  matching `target_compile_definitions(PorytilesDriver PRIVATE ...)` line resolved it. The C2
+  spec missed this because the driver wasn't named in the planning checklist — worth flagging
+  for future code: header consumers in `tools/` need parallel CMake wiring.
+
+  **Refactor over the literal plan wording:** rather than three sites of `=${CMAKE_PROJECT_VERSION}`
+  (DRY violation that also broke the CMake-level override channel — see below), lifted the
+  default resolution into the root `CMakeLists.txt`:
+  ```cmake
+  if(NOT DEFINED PORYTILES_BUILD_VERSION_)
+      set(PORYTILES_BUILD_VERSION_ ${CMAKE_PROJECT_VERSION})
+  endif()
+  ```
+  The three target sites then read `${PORYTILES_BUILD_VERSION_}` as a one-line interpolation.
+  Single source of default truth, single override channel.
+- [x] **C3** No-op. Both `--version` handlers already produced `<EXEC> <VERSION> <DATE>` —
+  active driver via `std::cout << ... << " " << ...` (line 64 of
+  `porytiles/tools/driver/main.cpp`), legacy via `fmt::println("{} {} {}", ...)` (line 675 of
+  `legacy/lib/legacy/cli_parser.cpp`). The plan was conservative ("reconcile any divergence"),
+  the actual shapes already matched, no edit needed.
+- [x] **C4** Default path verified: `~/.local/bin/porytiles --version` → `porytiles 1.0.0
+  1970.01.01T00:00:00+00:00`; `~/.local/bin/porytiles-legacy --version` →
+  `porytiles-legacy 1.0.0 1970.01.01T00:00:00+00:00`. Date placeholder stays at the
+  `build_version.h` 1970-epoch default (Phase C only touches the version macro, not the date
+  macro). Override path verified via the cleaner CMake cache-var channel:
+  `cmake -DPORYTILES_BUILD_VERSION_=1.0.0-snapshot.20260601000000.abc12345`, rebuild + reinstall,
+  both binaries echo the snapshot string exactly. Tests stayed green at every step:
+  `PorytilesAllTests` 1144/1144, `LegacyTests` 73 cases / 2,689,245 assertions.
+
+  **Override-channel discovery worth recording for Phase D:** CI today (per
+  `.github/workflows/build_{linux_clang,linux_gcc,macos_clang}/action.yml`) passes the version
+  override via `-DCMAKE_CXX_FLAGS="-DPORYTILES_BUILD_VERSION_=..."` — i.e. as a literal compiler
+  flag, NOT as a CMake cache variable. After Phase C, that channel STILL WORKS (compiler honors
+  "last `-D` wins" for any macro defined twice), but with cosmetic noise: builds emit **109
+  `-Wmacro-redefined` warnings** (one per TU that includes `build_version.h`) because both
+  Phase C's `target_compile_definitions` AND CI's `CMAKE_CXX_FLAGS` end up on the command line
+  for the same macro. Final binaries echo correctly, but the warning stream is loud. **`-Werror`
+  is currently disabled** (see the `fast-cpp-csv-parser` `strncpy` comment in the root
+  `CMakeLists.txt`) so the warnings don't break the build. Phase D should migrate CI to the
+  cache-var channel (`cmake -DPORYTILES_BUILD_VERSION_=... -DPORYTILES_BUILD_DATE_=...` instead
+  of `-DCMAKE_CXX_FLAGS="..."`); my Phase C resolver block then short-circuits the default and
+  the double-define disappears.
 
 ---
 
@@ -420,8 +468,8 @@ End-to-end through `cmake --build` + install + execute is the first validation t
 
 ## Phase G — AI policy documentation (parallel with A–F; land early)
 
-- [x] **G1** Drafted `AI-POLICY.md` at repo root. Two-track stance: `Legacy/` is closed to AI
-  contributions of any kind (hard-line, no exceptions); `Porytiles/` accepts AI-assisted work at
+- [x] **G1** Drafted `AI-POLICY.md` at repo root. Two-track stance: `legacy/` is closed to AI
+  contributions of any kind (hard-line, no exceptions); `porytiles/` accepts AI-assisted work at
   maintainer discretion. Slop description stayed abstract per maintainer choice (defers to STYLE.md
   and reviewer judgment, no enumeration of specific tells). No disclosure checkbox, no detector.
   Revisit-cadence section omitted entirely. Pointers to `STYLE.md` and `CONTRIBUTING.md` included.
@@ -453,74 +501,142 @@ paths. Independent of B, C, F, G.
 
 ### H1 — Decide final target slugs (one-shot, at execution start)
 
-Locked (no sub-question):
-- [ ] `Porytiles/` → `porytiles/`
-- [ ] `Legacy/` → `legacy/`
-- [ ] `Scripts/` → `scripts/`
-- [ ] `Porytiles/Notes/` → `porytiles/notes/` (Tier 1 PascalCase outlier subsumed)
-
-Open sub-questions to resolve at execution time:
-- [ ] `Documentation/` → `documentation/` or `docs/` (LLVM/Catch2/fmt convention is `docs/`)?
-- [ ] `Porytiles/Documentation/` (nested) — mirror the choice above.
-- [ ] `Resources/` → `resources/`; `Resources/Readme/` → `resources/readme/` (also lowercase child).
-- [ ] `Documentation/Wiki/` → mirror H1 choice.
+- [x] `Porytiles/` → `porytiles/`, `Legacy/` → `legacy/`, `Scripts/` → `scripts/`,
+  `Porytiles/Notes/` → `porytiles/notes/` (Tier 1 PascalCase outlier subsumed).
+- [x] **Documentation slug chosen: `docs/`** (LLVM / Catch2 / fmt convention; three
+  characters shorter than `documentation/`, no abbreviation cost since `docs` is the
+  industry norm for C++ projects). Applied uniformly: `Documentation/` → `docs/`,
+  `Documentation/Wiki/` → `docs/wiki/`.
+- [x] `Resources/` → `resources/`, with all PascalCase children lowercased in lockstep:
+  `Examples/`, `Doctests/`, `Readme/`, `Tests/` → `examples/`, `doctests/`, `readme/`,
+  `tests/`.
 
 ### H2 — Mechanical path sweep
 
-For each renamed dir, `git mv` (use the intermediate-name workaround for case-only
-renames on macOS), then update every reference:
-
-- [ ] Every `CMakeLists.txt` (root + sub-CMakeLists across the active tree,
-  legacy tree, and `Documentation/`).
-- [ ] Every `.github/workflows/*.yml` and composite `action.yml`.
-- [ ] Every `Scripts/*.py` (6 files: `format`, `coverage`, `tidy`, `new_class`,
-  `generate_config`, `todo`).
-- [ ] Top-level docs: `CLAUDE.md`, `README.md`, `CONTRIBUTING.md`, `STYLE.md`,
-  `RELEASE_PREP_1_0_0.md` (this file), `AI-POLICY.md` (becomes `AI_POLICY.md`
-  in H3).
-- [ ] Jinja2 templates under `Porytiles/config_templates/` if any hardcode paths.
-- [ ] `.vscode/c_cpp_properties.json`, `.vscode/launch.json`.
-- [ ] `.claude/agents/*.md`, `.claude/skills/*.md`.
-- [ ] Verify `.clang-tidy` (currently filters on the `porytiles/` include
-  namespace, which is already lowercase — likely no edit needed).
-- [ ] Planning artifact `.claude/plans/i-m-currently-prepping-porytiles-merry-lovelace.md`.
+- [x] **One ordered sed script applied to all tracked text files.** Long-prefix-first
+  ordering (e.g., `Resources/Doctests/` before `Resources/`, `precision-loss-test-2`
+  before `precision-loss-test`, tutorial names before bare `palette-overrides`) to
+  avoid substring overshoot. 24 substitution rules covering 11 path prefixes + 13
+  kebab→snake fixture-container names. **Touched 101 tracked text files** across
+  workflows, scripts, CMakeLists, IDE configs, Claude-Code docs, top-level docs,
+  Jinja templates, config headers, integration tests, legacy doctests, and Notes.
+- [x] **Three identifier-form holes caught by post-sweep audit** (regex required a
+  trailing `/`, so no-trailing-slash refs slipped):
+  (1) Root `CMakeLists.txt` `add_subdirectory(Legacy)` / `(Porytiles)` /
+  `(Documentation)` triplet;
+  (2) `.github/workflows/create_release_package/action.yml` `resources/Doctests`,
+  `resources/Examples`, `resources/Readme`, `resources/Tests` (the `cp -r` lines
+  bundling release zips) plus the destination subdir `./porytiles-<arch>/Resources`;
+  (3) `porytiles/tests/integration/utilities/c_parser/c_parser_facade_test.cpp` lines
+  22-25: a `"Resources"` sentinel string used by `test_resource_path()` to walk up
+  from cwd to the repo root.
+- [x] **Two prose-case false positives reverted:**
+  `porytiles/include/porytiles/infra/algorithms/anim_frame_loader.hpp` line 12
+  contained `Porytiles/Porymap` as prose meaning "Porytiles or Porymap" (not a path
+  literal); reworded to that phrasing rather than left as broken kebab.
+  `docs/Doxyfile.in` line 1539 references the macOS system path
+  `~/Library/Developer/Shared/Documentation/DocSets` — sed had lowercased the
+  `Documentation` to `docs`, reverted since it's a Doxygen-docset install location
+  Apple controls, not a project path.
+- [x] `.clang-tidy`'s `HeaderFilterRegex: 'porytiles/.*'` already targets the
+  include-namespace (lowercase from Phase A) — no edit needed, as the plan
+  predicted.
+- [x] **Planning artifact at `.claude/plans/...`** intentionally NOT swept — it lives
+  outside the tracked tree and the dashboard (this file) is the durable artifact;
+  the plan file is ephemeral.
 
 ### H3 — `AI-POLICY.md` → `AI_POLICY.md` (Tier 1)
 
-- [ ] `git mv AI-POLICY.md AI_POLICY.md`.
-- [ ] Update the inbound reference in `CONTRIBUTING.md` (intro paragraph).
+- [x] `git mv AI-POLICY.md AI_POLICY.md`; inbound `CONTRIBUTING.md` reference
+  (`[`AI-POLICY.md`](./AI-POLICY.md)`) updated to point at the new filename.
+- [x] **Historical mentions left as-is per Phase A4f precedent.** The dashboard's
+  Phase G log entries and `porytiles/notes/release_1_0_0_prep_plan.md` describe the
+  artifact under its pre-rename name `AI-POLICY.md`; rewriting them would create
+  self-contradictions ("renamed AI-POLICY.md to AI_POLICY.md" doesn't make sense if
+  both names read `AI_POLICY.md`).
 
 ### H4 — `resources/` test-asset normalization (Tier 2)
 
-Inside the renamed `resources/`, kebab → snake:
-
-- [ ] `resources/Examples/*-tutorial/` → `resources/examples/*_tutorial/` (5 dirs:
+- [x] **5 tutorial container dirs** under `resources/examples/`:
   `palette-overrides-tutorial`, `palette-primers-tutorial`, `porytiles-anim-tutorial`,
-  `porytiles-primary-tutorial`, `porytiles-secondary-tutorial`).
-- [ ] `resources/Doctests/palette_override_1/palette-overrides/` (and matching
-  `palette-primers/` siblings under `palette_primer_1/`).
-- [ ] `resources/Doctests/precision-loss-test{,2}/` → `precision_loss_test{,2}/`
-  (and their kebab-named `palette-overrides/` / `palette-primers/` children).
-- [ ] Audit `Porytiles/tests/integration/...` for hardcoded path strings and update.
+  `porytiles-primary-tutorial`, `porytiles-secondary-tutorial` → snake_case
+  equivalents. Same for tutorial sub-containers (`primary-with`, `primary-without`,
+  `secondary-with`, `secondary-without`).
+- [x] **2 `precision-loss-test` container dirs** under `resources/doctests/` →
+  `precision_loss_test`, `precision_loss_test_2`.
+- [x] **Critical cascade caught, reverted: `palette-overrides/` and `palette-primers/`
+  leaf fixture dirs kept kebab.** These leaf names mirror the legacy tool's
+  user-facing INPUT PROTOCOL — the directory names that downstream Pokemon decomp
+  projects use (per the porymap convention). The initial Tier 2 sweep blindly
+  renamed them to snake, which cascaded into 4 string literals in
+  `legacy/include/porytiles_legacy/legacy/types.h`'s `CompilerSourcePaths` (the
+  runtime path-builder for `primaryPalettePrimers()`, `secondaryPalettePrimers()`,
+  `primaryPaletteOverrides()`, `secondaryPaletteOverrides()`) AND 4 lines of CLI
+  help text in `legacy/lib/legacy/cli_parser.cpp` documenting the protocol to users.
+  That's a breaking change to the legacy binary's input contract, not a
+  test-asset normalization. **Decision: revert.** Reverted the 12 leaf fixture dirs
+  (`palette_overrides/` → `palette-overrides/`, `palette_primers/` → `palette-primers/`
+  under each of the 9 doctest cases + 3 example sub-containers), reverted the
+  protocol literals in `types.h` and `cli_parser.cpp` help text, reverted the ~50
+  doctest path string literals in `legacy/lib/legacy/compiler.cpp` to use the
+  snake-container/kebab-leaf form (e.g.
+  `resources/doctests/palette_override_1/palette-overrides/00.pal`). The plan author
+  flagged this kind of cascade only after the fact — worth recording for future
+  fixture-rename phases.
+- [x] **Active integration tests had zero kebab-leaf references** — they don't
+  consume the legacy input protocol. `porytiles/tests/integration/**/*.cpp` references
+  to `resources/` (10 files) all use snake container names or top-level paths.
 
 ### H5 — End-to-end verification
 
-- [ ] `rm -rf porytiles-build-debug && cmake -B porytiles-build-debug -S .` (exit 0).
-- [ ] `cmake --build porytiles-build-debug -j7 > /tmp/build.log 2>&1` (exit 0).
-- [ ] `./porytiles-build-debug/porytiles/tests/PorytilesAllTests > /tmp/test.log 2>&1` (exit 0).
-- [ ] `./porytiles-build-debug/legacy/tests/LegacyTests > /tmp/legacy_test.log 2>&1` (exit 0).
-- [ ] `cmake --install porytiles-build-debug --prefix ~/.local`; both `--version` calls succeed.
-- [ ] `uv run scripts/generate_config.py` (note lowercase path); zero diff on rerun.
-- [ ] Residual greps return empty: `rg -F 'Porytiles/'`, `'Legacy/'`,
-  `'Documentation/'`, `'Resources/'`, `'Scripts/'` across tracked source
-  (excluding `porytiles-build-*`, testbeds, docs-repo siblings, `homebrew-porytiles/`).
+- [x] `rm -rf porytiles-build-debug && cmake -B porytiles-build-debug -S .` exit 0
+  (clean configure took 79s including FetchContent populate of doxygen-awesome-css).
+- [x] `cmake --build porytiles-build-debug -j7` exit 0; zero `error:` / `undefined
+  symbol` / `fatal error` matches in log.
+- [x] `PorytilesAllTests`: 1144 tests across 99 suites, all pass (957ms). Unchanged
+  count from Phase A6.
+- [x] `LegacyTests`: 73 doctest cases, **2,689,245 assertions** all pass — also
+  unchanged from Phase A6, confirming the kebab-leaf revert preserved the legacy
+  doctest paths correctly.
+- [x] `cmake --install porytiles-build-debug --prefix ~/.local` exit 0; both
+  `~/.local/bin/porytiles --version` and `~/.local/bin/porytiles-legacy --version`
+  run successfully. Output still the static `default_build_version
+  1970.01.01T00:00:00+00:00` fallback — Phase C will replace this.
+- [x] **Regen idempotent.** First `uv run scripts/generate_config.py` produces a diff
+  vs HEAD: (a) the swept `Scripts/` → `scripts/` auto-gen banner one-liner
+  in 2 generated config headers (`app_config.hpp`, `primary_pairing_mode.hpp`),
+  matching what the swept Jinja template now emits; (b) a few stray blank-line
+  additions that look like pre-existing template-vs-output drift unrelated to
+  Phase H. A SECOND run produces zero new diff (true idempotency). Build + tests
+  re-run against the regen output also green.
+- [x] **Residual PascalCase grep**: `git grep -nE '(Porytiles|Legacy|Documentation|
+  Resources|Scripts)/'` across tracked source returns exactly one match:
+  `docs/Doxyfile.in:1539` — the macOS system-path comment deliberately preserved
+  in H2. Identifier-form grep `git grep -nE '\b(Doctests|Examples|Readme|Wiki)\b'`
+  in scope returns empty.
+- [x] **macOS case-insensitivity post-mortem (caught by CI on Ubuntu).** Initial
+  H5 reported green on local macOS, but Ubuntu amd64 CI failed in
+  `scripts/generate_config.py` because the path-component string `"Porytiles" /
+  "config_templates"` (constructed via `pathlib`, no trailing slash to anchor my
+  regex on) hadn't been swept. APFS resolved the capital-P path to the lowercase
+  dir transparently; ext4 did not. Follow-up sweep caught 11 more identifier-form
+  path-component holes in `scripts/{generate_config,coverage,format,new_class,tidy,
+  todo}.py` (all `project_root / "Porytiles" / ...` or `default="Porytiles"`
+  patterns) and lowercased them. Remaining capital-P refs in scripts (~10) are
+  prose in docstrings, `--help` text, and module-level comments referring to the
+  product name; those stay. Workflow `name:` fields ("Checkout Porytiles
+  repository") and CMake-comment refs likewise are product-brand prose.
+  **Lesson for future Phase A-style renames: a sweep regex that requires a
+  trailing `/` must be paired with a separate identifier-form audit
+  (`"Porytiles"` quoted as a path component, `default="Porytiles"`, etc.),
+  ideally run against a case-sensitive filesystem.**
 
 **Cross-cutting notes**
 - Same disposition as Phase A for open feature branches (`bug/anim-tiles`,
   `bug/issue-0060/key-frame-bug`, `feature/issue-0047/compiled-paired-primary`):
   hand-port if still live, close if not. Not a Phase H prerequisite.
 - External user-facing docs (`porytiles-user-docs`, `porytiles-dev-docs`) may
-  reference `Porytiles/` paths in tutorials; Phase F should sweep those repos
+  reference `porytiles/` paths in tutorials; Phase F should sweep those repos
   during its initial-sync step.
 - CHANGELOG entry: Phase H is release-prep structure, not user-facing behavior.
   Same framing as B and G — no CHANGELOG entry needed; the bundled PR's diff
@@ -538,8 +654,8 @@ Inside the renamed `resources/`, kebab → snake:
 - [ ] `CHANGELOG.md` has a date-stamped 1.0.0 section.
 - [ ] Branch protection rejects direct push to `master`.
 - [ ] CHANGELOG workflow blocks a PR missing a CHANGELOG entry (unless `no-changelog`).
-- [ ] `AI-POLICY.md` exists; `CONTRIBUTING.md` links it; legacy AI-free stance unambiguous.
-  (Becomes `AI_POLICY.md` after Phase H3.)
+- [ ] `AI_POLICY.md` exists at repo root; `CONTRIBUTING.md` links it; legacy AI-free
+  stance unambiguous. (File was `AI-POLICY.md` pre-Phase H3.)
 - [ ] `STABILITY.md` (or equivalent) classifies every public surface.
 - [ ] Top-level directory names are all lowercase (`porytiles/`, `legacy/`,
   `scripts/`, plus the H1-decided slugs for docs/resources). Residual greps in H5

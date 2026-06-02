@@ -110,7 +110,7 @@ Porytiles follows a domain-driven design architecture inspired by clang, with cl
 ## Code Organization
 
 ```
-Porytiles/
+porytiles/
 ├── include/porytiles/
 │   ├── domain/          # Domain headers
 │   ├── app/             # Application headers

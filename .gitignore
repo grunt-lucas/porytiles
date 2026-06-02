@@ -12,8 +12,8 @@ build/**
 porytiles-build-*/**
 
 # Doxygen: ignore the build artifacts. They change frequently.
-Documentation/html/**
-Documentation/latex/**
+docs/html/**
+docs/latex/**
 
 # LLVM coverage files
 default.profraw

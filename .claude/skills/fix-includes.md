@@ -14,7 +14,7 @@ IDE refactoring tools sometimes convert absolute-style includes into relative pa
 
 ## Task
 
-1. Search for all `#include` directives in `Porytiles/**/*.hpp`, `Porytiles/**/*.cpp`, and `Porytiles/**/*.ipp` that use relative paths (containing `../`)
+1. Search for all `#include` directives in `porytiles/**/*.hpp`, `porytiles/**/*.cpp`, and `porytiles/**/*.ipp` that use relative paths (containing `../`)
 2. For each file with relative includes, convert them to the proper absolute-style format:
    - All includes should start with `porytiles/` followed by the appropriate path
    - Remove any `../` or `../../` prefixes
@@ -26,6 +26,6 @@ IDE refactoring tools sometimes convert absolute-style includes into relative pa
 - Only fix includes that match the relative path pattern (containing `../`)
 - Preserve the order of includes within each file
 - Do not add or remove any includes, only fix the paths
-- After fixing, run the format script: `uv run Scripts/format.py`
+- After fixing, run the format script: `uv run scripts/format.py`
 
 Report which files were modified when done.
