@@ -1,0 +1,258 @@
+name: Porytiles Snapshot Release
+
+on:
+  push:
+    branches: [develop]
+  workflow_dispatch:
+
+permissions:
+  contents: write
+
+concurrency:
+  group: snapshot-release
+  cancel-in-progress: false
+
+jobs:
+  prepare:
+    name: Compute snapshot version + date
+    runs-on: ubuntu-latest
+    outputs:
+      build_version: ${{ steps.compute.outputs.build_version }}
+      build_date: ${{ steps.compute.outputs.build_date }}
+      short_sha: ${{ steps.compute.outputs.short_sha }}
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+        with:
+          fetch-depth: 0
+
+      - name: Compute version + date
+        id: compute
+        run: |
+          PROJECT_VERSION=$(cat VERSION)
+          EPOCH=$(date -u +'%s')
+          TIMESTAMP=$(date -u -d "@$EPOCH" +'%Y%m%d%H%M%S')
+          BUILD_DATE=$(date -u -d "@$EPOCH" +'%Y.%m.%dT%H:%M:%S+00:00')
+          SHORT_SHA=$(git rev-parse --short=8 HEAD)
+          BUILD_VERSION="${PROJECT_VERSION}-snapshot.${TIMESTAMP}.${SHORT_SHA}"
+          echo "build_version=$BUILD_VERSION" >> "$GITHUB_OUTPUT"
+          echo "build_date=$BUILD_DATE"       >> "$GITHUB_OUTPUT"
+          echo "short_sha=$SHORT_SHA"         >> "$GITHUB_OUTPUT"
+          echo "Snapshot version: $BUILD_VERSION"
+          echo "Snapshot date:    $BUILD_DATE"
+
+  delete-prior-snapshot:
+    name: Delete prior snapshot release + tag
+    needs: [prepare]
+    runs-on: ubuntu-latest
+    steps:
+      - name: gh release delete snapshot
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+        run: |
+          # Idempotent: missing tag/release is not an error.
+          gh release delete snapshot --yes --cleanup-tag --repo ${{ github.repository }} || true
+
+  build:
+    name: Build ${{ matrix.os-arch }}
+    needs: [prepare, delete-prior-snapshot]
+    runs-on: ${{ matrix.runs-on }}
+    strategy:
+      fail-fast: false
+      matrix:
+        include:
+          - os-arch: linux-amd64
+            runs-on: ubuntu-latest
+          - os-arch: linux-arm64
+            runs-on: ubuntu-24.04-arm
+          - os-arch: macos-arm64
+            runs-on: macos-latest
+      # macos-amd64 (Intel) deliberately omitted: the active `porytiles/` codebase has
+      # C++23 dependencies that don't build on macos-13's Apple Clang/libc++ snapshot
+      # (commit 745b0152, Oct 2025). Reintroduce only after a toolchain fix lands.
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Install build dependencies
+        uses: ./.github/workflows/install_dependencies_linux
+        if: startsWith(matrix.os-arch, 'linux-')
+
+      - name: Install build dependencies (macOS)
+        uses: ./.github/workflows/install_dependencies_macos
+        if: startsWith(matrix.os-arch, 'macos-')
+
+      - name: Install clang toolchain
+        uses: ./.github/workflows/install_clang_linux
+        if: startsWith(matrix.os-arch, 'linux-')
+
+      - name: Build (linux-clang)
+        uses: ./.github/workflows/build_linux_clang
+        if: startsWith(matrix.os-arch, 'linux-')
+        with:
+          build-version: ${{ needs.prepare.outputs.build_version }}
+          build-date: ${{ needs.prepare.outputs.build_date }}
+
+      - name: Build (macos-clang)
+        uses: ./.github/workflows/build_macos_clang
+        if: startsWith(matrix.os-arch, 'macos-')
+        with:
+          build-version: ${{ needs.prepare.outputs.build_version }}
+          build-date: ${{ needs.prepare.outputs.build_date }}
+
+      - name: Run test suite
+        uses: ./.github/workflows/run_test_suite
+
+      - name: Create release package
+        uses: ./.github/workflows/create_release_package
+        with:
+          os-arch: ${{ matrix.os-arch }}
+
+      - name: Upload zip artifact
+        uses: actions/upload-artifact@v4
+        with:
+          name: porytiles-${{ matrix.os-arch }}
+          path: porytiles-${{ matrix.os-arch }}.zip
+          if-no-files-found: error
+          retention-days: 7
+
+  publish:
+    name: Publish snapshot release
+    needs: [prepare, build]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout
+        uses: actions/checkout@v4
+
+      - name: Download all platform zips
+        uses: actions/download-artifact@v4
+        with:
+          path: artifacts
+
+      - name: Stage release files
+        run: |
+          mkdir -p release
+          find artifacts -name '*.zip' -exec mv {} release/ \;
+          ls -lh release/
+
+      - name: Extract CHANGELOG [Unreleased]
+        id: changelog
+        run: |
+          CHANGELOG_BODY=$(scripts/extract_changelog.sh Unreleased)
+          {
+            echo "Rolling snapshot built from \`develop\` at commit \`${{ github.sha }}\`."
+            echo ""
+            echo "**Version stamp:** \`${{ needs.prepare.outputs.build_version }}\`"
+            echo "**Built at:**      \`${{ needs.prepare.outputs.build_date }}\`"
+            echo ""
+            echo "> This tag is force-replaced on every push to \`develop\`. For a stable, permanent release, install from a tagged version instead."
+            if [ -n "$CHANGELOG_BODY" ]; then
+              echo ""
+              echo "## Pending changelog entries"
+              echo ""
+              echo "$CHANGELOG_BODY"
+            fi
+          } > release_body.md
+          echo "--- release_body.md ---"
+          cat release_body.md
+
+      - name: Create snapshot release
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: snapshot
+          name: "Snapshot ${{ needs.prepare.outputs.build_version }}"
+          body_path: release_body.md
+          prerelease: true
+          make_latest: "false"
+          files: release/*.zip
+          target_commitish: ${{ github.sha }}
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+
+  update-homebrew-tap:
+    name: Update Homebrew tap snapshot formula
+    needs: [prepare, publish]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Checkout Homebrew tap repository
+        uses: actions/checkout@v4
+        with:
+          repository: grunt-lucas/homebrew-porytiles
+          token: ${{ secrets.PORYTILES_TAP_REPO_PAT }}
+
+      - name: Set up Git
+        run: |
+          git config --global user.name 'github-actions[bot]'
+          git config --global user.email 'github-actions[bot]@users.noreply.github.com'
+
+      - name: Define vars
+        id: vars
+        run: |
+          echo "release_tag=snapshot"                                 >> "$GITHUB_OUTPUT"
+          echo "new_version=${{ needs.prepare.outputs.build_version }}" >> "$GITHUB_OUTPUT"
+          echo "formula_path=Formula/porytiles@snapshot.rb"           >> "$GITHUB_OUTPUT"
+
+      - name: Download assets and calculate SHA256 checksums
+        id: checksums
+        run: |
+          URL_BASE="https://github.com/${{ github.repository }}/releases/download/${{ steps.vars.outputs.release_tag }}"
+          for arch in linux-amd64 linux-arm64 macos-arm64; do
+            url="$URL_BASE/porytiles-$arch.zip"
+            echo "Downloading $url"
+            curl -fsSL -o "porytiles-$arch.zip" "$url"
+            sha=$(sha256sum "porytiles-$arch.zip" | awk '{ print $1 }')
+            # underscore-canonicalize for output keys (linux-amd64 -> linux_amd64)
+            key=$(echo "$arch" | tr '-' '_')
+            echo "${key}_sha=$sha" >> "$GITHUB_OUTPUT"
+            echo "Calculated SHA256 for $arch: $sha"
+          done
+
+      - name: Update formula file
+        run: |
+          FORMULA_PATH="${{ steps.vars.outputs.formula_path }}"
+          sed -i "s/^  version \".*\"/  version \"${{ steps.vars.outputs.new_version }}\"/" "$FORMULA_PATH"
+          sed -i "/if OS.linux? && Hardware::CPU.intel?/,/elsif/ s/^    sha256 \".*\"/    sha256 \"${{ steps.checksums.outputs.linux_amd64_sha }}\"/" "$FORMULA_PATH"
+          sed -i "/elsif OS.linux? && Hardware::CPU.arm?/,/elsif/ s/^    sha256 \".*\"/    sha256 \"${{ steps.checksums.outputs.linux_arm64_sha }}\"/" "$FORMULA_PATH"
+          sed -i "/elsif OS.mac? && Hardware::CPU.arm?/,/end/    s/^    sha256 \".*\"/    sha256 \"${{ steps.checksums.outputs.macos_arm64_sha }}\"/" "$FORMULA_PATH"
+          echo "Formula file updated:"
+          cat "$FORMULA_PATH"
+
+      - name: Commit and push changes
+        run: |
+          git add "${{ steps.vars.outputs.formula_path }}"
+          git commit -m "Update porytiles@snapshot formula to ${{ steps.vars.outputs.new_version }}"
+          git push
+
+  test-brew-tap-linux-amd64:
+    name: Test the brew tap snapshot on linux-amd64
+    needs: [update-homebrew-tap]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Install porytiles@snapshot
+        run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          brew tap grunt-lucas/porytiles
+          brew update
+          brew install porytiles@snapshot
+
+      - name: Test porytiles snapshot binaries
+        run: |
+          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
+          porytiles --version
+          porytiles-legacy --version
+
+  test-brew-tap-macos-arm64:
+    name: Test the brew tap snapshot on macos-arm64
+    needs: [update-homebrew-tap]
+    runs-on: macos-latest
+    steps:
+      - name: Install porytiles@snapshot
+        run: |
+          brew tap grunt-lucas/porytiles
+          brew update
+          brew install porytiles@snapshot
+
+      - name: Test porytiles snapshot binaries
+        run: |
+          porytiles --version
+          porytiles-legacy --version
