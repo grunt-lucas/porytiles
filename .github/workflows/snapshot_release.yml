@@ -190,7 +190,7 @@ jobs:
         run: |
           echo "release_tag=snapshot"                                 >> "$GITHUB_OUTPUT"
           echo "new_version=${{ needs.prepare.outputs.build_version }}" >> "$GITHUB_OUTPUT"
-          echo "formula_path=Formula/porytiles@snapshot.rb"           >> "$GITHUB_OUTPUT"
+          echo "formula_path=Formula/porytiles-snapshot.rb"           >> "$GITHUB_OUTPUT"
 
       - name: Download assets and calculate SHA256 checksums
         id: checksums
@@ -220,7 +220,7 @@ jobs:
       - name: Commit and push changes
         run: |
           git add "${{ steps.vars.outputs.formula_path }}"
-          git commit -m "Update porytiles@snapshot formula to ${{ steps.vars.outputs.new_version }}"
+          git commit -m "Update porytiles-snapshot formula to ${{ steps.vars.outputs.new_version }}"
           git push
 
   test-brew-tap-linux-amd64:
@@ -228,12 +228,12 @@ jobs:
     needs: [update-homebrew-tap]
     runs-on: ubuntu-latest
     steps:
-      - name: Install porytiles@snapshot
+      - name: Install porytiles-snapshot
         run: |
           eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           brew tap grunt-lucas/porytiles
           brew update
-          brew install porytiles@snapshot
+          brew install porytiles-snapshot
 
       - name: Test porytiles snapshot binaries
         run: |
@@ -246,11 +246,11 @@ jobs:
     needs: [update-homebrew-tap]
     runs-on: macos-latest
     steps:
-      - name: Install porytiles@snapshot
+      - name: Install porytiles-snapshot
         run: |
           brew tap grunt-lucas/porytiles
           brew update
-          brew install porytiles@snapshot
+          brew install porytiles-snapshot
 
       - name: Test porytiles snapshot binaries
         run: |
