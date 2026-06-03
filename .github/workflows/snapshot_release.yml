@@ -228,16 +228,17 @@ jobs:
     needs: [update-homebrew-tap]
     runs-on: ubuntu-latest
     steps:
-      - name: Install porytiles-snapshot
-        run: |
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
-          brew tap grunt-lucas/porytiles
-          brew update
-          brew install porytiles-snapshot
+      - name: Add Homebrew to PATH
+        run: echo "/home/linuxbrew/.linuxbrew/bin" >> "$GITHUB_PATH"
 
-      - name: Test porytiles snapshot binaries
+      - name: Install porytiles-snapshot via auto-tap
+        # Fully qualified `<owner>/<tap>/<formula>` form auto-taps the repo without a
+        # separate `brew tap` / `brew update` step. The latter has been observed to
+        # SIGPIPE on the GHA Linuxbrew runner (see git history of this file).
+        run: brew install grunt-lucas/porytiles/porytiles-snapshot
+
+      - name: Smoke test porytiles snapshot binaries
         run: |
-          eval "$(/home/linuxbrew/.linuxbrew/bin/brew shellenv)"
           porytiles --version
           porytiles-legacy --version
 
