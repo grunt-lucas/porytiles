@@ -88,7 +88,7 @@ A fourth repo,
 hosts the Homebrew formulas and is updated by CI, not tagged.
 
 When a contribution has user-visible impact (new CLI flags, new YAML keys,
-changed semantics, etc.), the corresponding documentation update should land
+changed semantics, etc.), the corresponding documentation update should occur
 in the same release cycle.
 For larger changes, open the docs PR alongside the code PR and link them.
 
