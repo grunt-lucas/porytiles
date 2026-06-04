@@ -55,15 +55,19 @@ Other dependencies:
 
 ## Open blockers (must be resolved before tagging `v1.0.0`)
 
-- [ ] **1.0.0 public API surface / `STABILITY.md`** — classify each surface (CLI
-  flags, YAML config schema, output file formats, project layout, exit codes,
-  diagnostic codes vs. message text, C++ library API, CMake targets, build
-  requirements) as **stable / experimental / internal**, plus a deprecation policy.
-  Release-cut blocker (Phase E2). See "Open design question" in the planning doc.
-- [ ] **Open feature branches audit** — decide for each of `bug/anim-tiles`,
-  `bug/issue-0060/key-frame-bug`, `feature/issue-0047/compiled-paired-primary`:
-  hand-port onto post-rename `develop`, or close. NOT a release prerequisite (can
-  ship in 1.0.x), but audit before tagging (Phase E1).
+- [x] **1.0.0 public API surface / `STABILITY.md`** — *Resolved by absorption*.
+  The classification matrix was deemed overkill for a CLI tool of Porytiles's
+  size and audience (comparable indie/decomp tools — jq, ripgrep, Porymap,
+  Poryscript — don't ship such docs and version fine without one). The
+  version-bump philosophy now lives in `RELEASE_PROCESS.md`'s
+  "Choosing the version number" subsection. CHANGELOG plus maintainer judgment
+  is the per-release authority. (Phase E2.)
+- [x] **Open feature branches audit** — *Resolved by archival deletion*.
+  All three (`bug/anim-tiles`, `bug/issue-0060/key-frame-bug`,
+  `feature/issue-0047/compiled-paired-primary`) were 1.5+ year old single-commit
+  investigations against the legacy `src/` codebase with their tracking GitHub
+  issues already closed. Archive-tagged as `archived/<branch>` (commits preserved)
+  and deleted from `origin`. (Phase E1.)
 
 ---
 
@@ -459,8 +463,8 @@ End-to-end through `cmake --build` + install + execute is the first validation t
 
 - [ ] **E1** Audit open feature branches (see Open blockers).
 - [ ] **E2** Cut `release/1.0.0` from `develop`; confirm `VERSION` file + `project(... VERSION 1.0.0)`;
-  migrate `[Unreleased]` → `[1.0.0] - <date>`; **resolve `STABILITY.md` blocker**;
-  **rewrite `homebrew-porytiles/Formula/porytiles.rb` to the new shape** (Phase D's
+  migrate `[Unreleased]` → `[1.0.0] - <date>`; **absorb version-bump philosophy into `RELEASE_PROCESS.md`**
+  (in lieu of a separate `STABILITY.md`); **rewrite `homebrew-porytiles/Formula/porytiles.rb` to the new shape** (Phase D's
   carried-forward item — versioned formula with `v#{version}` URL interpolation, install both
   `porytiles` and `porytiles-legacy`, sed-compatible `version`/`sha256` line shapes matching
   the snapshot formula); coordinate that rewrite's push to the tap repo with the v1.0.0 tag
@@ -685,7 +689,8 @@ paths. Independent of B, C, F, G.
 - [ ] CHANGELOG workflow blocks a PR missing a CHANGELOG entry (unless `no-changelog`).
 - [ ] `AI_POLICY.md` exists at repo root; `CONTRIBUTING.md` links it; legacy AI-free
   stance unambiguous. (File was `AI-POLICY.md` pre-Phase H3.)
-- [ ] `STABILITY.md` (or equivalent) classifies every public surface.
+- [ ] `RELEASE_PROCESS.md`'s "Choosing the version number" subsection documents
+  version-bump philosophy in lieu of a separate `STABILITY.md`.
 - [ ] Top-level directory names are all lowercase (`porytiles/`, `legacy/`,
   `scripts/`, plus the H1-decided slugs for docs/resources). Residual greps in H5
   return zero hits in tracked source.
