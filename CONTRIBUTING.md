@@ -12,7 +12,7 @@ please review [`AI_POLICY.md`](./AI_POLICY.md) first.
 PR type and topic are tracked via GitHub labels.
 There is no required branch-name convention for contributor branches.
 Pick something descriptive;
-the PR target (`develop` for new work, `master` for hotfixes) carries the meaning.
+the PR target (`develop` for new work, `hotfix` for hotfixes, etc.) carries the meaning.
 
 - [Contributions](#contributions)
 - [Branching](#branching)

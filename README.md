@@ -26,9 +26,6 @@ RGBA (or indexed) input assets.
   - [Getting Started](#getting-started)
   - [Release Cadence](#release-cadence)
   - [Building From Source](#building-from-source)
-    - [Dependencies](#dependencies)
-    - [Build And Run](#build-and-run)
-    - [Notes For macOS](#notes-for-macos)
   - [Note For Aseprite Users](#note-for-aseprite-users)
 
 ## Why Should I Use This Tool?
@@ -42,17 +39,9 @@ For more info, please
 see [this wiki page which explains what Porytiles can do in more detail.](https://github.com/grunt-lucas/porytiles/wiki/Why-Should-I-Use-This-Tool%3F)
 
 ## Getting Started
-First, go ahead and follow [the release installation instructions in the wiki](https://github.com/grunt-lucas/porytiles/wiki/Installing-A-Release).
-You can use Homebrew,
-or you can download a release binary and install it yourself.
-Alternatively, intrepid users may choose
-to [build Porytiles from source](https://github.com/grunt-lucas/porytiles/wiki/Building-From-Source).
-Once you've got Porytiles working,
-try the demo steps located [at this wiki page](https://github.com/grunt-lucas/porytiles/wiki/My-First-Demo).
-Everything else you need to know about Porytiles can be found [in the wiki.](https://github.com/grunt-lucas/porytiles/wiki)
-I highly recommend reading the wiki articles in order.
-If you have further questions,
-I can be found on the `pret` and `RH Hideout` discord servers under the name `grunt-lucas`.
+*TODO: replace this stub with a Quick Start walkthrough, or link out to the [user docs](https://grunt-lucas.github.io/porytiles-user-docs/) once that page is written.*
+
+For now, install instructions live in [Release Cadence](#release-cadence) below.
 
 ## Release Cadence
 Porytiles publishes both versioned releases and a rolling snapshot.
@@ -79,60 +68,17 @@ Install the latest rolling snapshot via Homebrew:
 brew install grunt-lucas/porytiles/porytiles-snapshot
 ```
 
-Both formulas install two binaries:
+Alternatively, download platform-specific zip files directly from the
+[releases page](https://github.com/grunt-lucas/porytiles/releases).
+
+Either install path provides two binaries:
 `porytiles` (the modern compiler) and `porytiles-legacy` (the preserved
-pre-1.0 compiler).
-Homebrew works on Linux, macOS, and WSL.
+pre-1.0.0 compiler).
+[Homebrew](https://brew.sh) works on Linux, macOS, and WSL.
+On Linux and WSL, follow the [Homebrew on Linux](https://docs.brew.sh/Homebrew-on-Linux) setup instructions.
 
 ## Building From Source
-You can use either GCC or Clang,
-provided your installation is reasonably recent
-and supports most C++20 (and some C++23) features.
-[Please see this wiki page](https://github.com/grunt-lucas/porytiles/wiki/Building-From-Source) for more detailed instructions,
-should you need them.
-
-### Dependencies
-You'll need `zlib` and `libpng` installed on your system,
-specifically the static (`.a`) libraries.
-Consult your system's package manager for details.
-Porytiles's build system will search the system library paths for
-`libpng.a` and `libz.a`.
-If you'd like to link those libraries dynamically,
-or if the CMake configuration is having trouble finding them,
-then you'll need to modify `legacy/lib/CMakeLists.txt` appropriately.
-
-You'll also need `cmake` version `3.20` or greater.
-
-### Build And Run
-Set up the CMake build folder:
-```
-cmake -B build -DCMAKE_BUILD_TYPE=Release
-```
-Then build with:
-```
-cd build
-cmake --build .
-```
-You can check that everything is working like this:
-```
-cd ..
-./build/legacy/tests/LegacyTests
-```
-To run the actual tool:
-```
-./build/legacy/tools/driver/porytiles-legacy
-```
-
-### Notes For macOS
-On macOS,
-the CMake configuration command typically finds your system clang compiler.
-If you've installed GCC via Homebrew and would like to use that instead,
-try this alternative configuration command (assuming you have GCC 15):
-```
-CXX=g++-15 cmake -B build -DCMAKE_BUILD_TYPE=Release -DCMAKE_OSX_SYSROOT="" -DCMAKE_CXX_FLAGS="-stdlib=libstdc++ -I/opt/homebrew/opt/gcc/include/c++/15 -L/opt/homebrew/opt/gcc/lib/gcc/15"
-```
-If you have a different major version of GCC or you are using an Intel Mac,
-you may need to tweak this command to match your system.
+See the [developer documentation](https://grunt-lucas.github.io/porytiles-dev-docs/) for build instructions.
 
 ## Note For Aseprite Users
 GitHub user [PKGaspi](https://github.com/PKGaspi) has created a collection
