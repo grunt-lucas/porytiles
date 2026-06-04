@@ -1,7 +1,7 @@
 # Porytiles
 
-[![Porytiles Develop Branch Build](https://github.com/grunt-lucas/porytiles/actions/workflows/dev_build.yml/badge.svg)](https://github.com/grunt-lucas/porytiles/actions/workflows/dev_build.yml)
-[![Porytiles Nightly Release](https://github.com/grunt-lucas/porytiles/actions/workflows/nightly_release.yml/badge.svg)](https://github.com/grunt-lucas/porytiles/actions/workflows/nightly_release.yml)
+[![Porytiles Snapshot Release](https://github.com/grunt-lucas/porytiles/actions/workflows/snapshot_release.yml/badge.svg)](https://github.com/grunt-lucas/porytiles/actions/workflows/snapshot_release.yml)
+[![Porytiles Versioned Release](https://github.com/grunt-lucas/porytiles/actions/workflows/versioned_release.yml/badge.svg)](https://github.com/grunt-lucas/porytiles/actions/workflows/versioned_release.yml)
 
 Overworld tileset compiler for use with the [`pokeruby`](https://github.com/pret/pokeruby), [
 `pokefirered`](https://github.com/pret/pokefirered), and [`pokeemerald`](https://github.com/pret/pokeemerald) Pokémon
@@ -12,7 +12,7 @@ RGBA (or indexed) input assets.
 
 ## Quick Links
 - [Release binaries](https://github.com/grunt-lucas/porytiles/releases)
-- [Install via Homebrew](https://github.com/grunt-lucas/porytiles/wiki/Installing-A-Release#homebrew)
+- [Install via Homebrew](#release-cadence)
 - [Doxygen API documentation](https://grunt-lucas.github.io/porytiles)
 - [Using Porytiles - Wiki](https://github.com/grunt-lucas/porytiles/wiki)
 - [Introductory YouTube Tutorial (made by a community member, not a rick roll this time I promise)](https://www.youtube.com/playlist?list=PLuyjFojPxF7-O5o_mS6uTBtyYcuyFf_Ce)
@@ -55,16 +55,34 @@ If you have further questions,
 I can be found on the `pret` and `RH Hideout` discord servers under the name `grunt-lucas`.
 
 ## Release Cadence
-Porytiles follows a Continuous Delivery model for release cadence.
-Every commit on the `develop` branch gets packaged
-and published as a nightly release.
-Due to my development style as well as time constraints,
-I don't plan on creating versioned releases for Porytiles.
-I try to keep the commit history clean,
-so you can quickly see what has changed in each nightly release.
-Users are encouraged to [install via the brew tap](https://github.com/grunt-lucas/porytiles/wiki/Installing-A-Release#homebrew)
-(brew works great on WSL, it's straightforward to set up).
-With Homebrew, you can run two quick commands and always be up to date.
+Porytiles publishes both versioned releases and a rolling snapshot.
+
+**Versioned releases** follow semantic versioning (`vX.Y.Z`) and are tagged on
+the `master` branch.
+Each tag triggers a permanent GitHub release with platform-specific zip files
+and updates the `porytiles` Homebrew formula.
+The [CHANGELOG](./CHANGELOG.md) lists what changed in each release.
+
+**Snapshot releases** are published automatically on every push to `develop`.
+They land at the rolling `snapshot` GitHub release and update the
+`porytiles-snapshot` Homebrew formula.
+Snapshots are for users who want the latest changes;
+they are not considered stable and the tag is force-replaced on every push.
+
+Install the latest versioned release via Homebrew:
+```sh
+brew install grunt-lucas/porytiles/porytiles
+```
+
+Install the latest rolling snapshot via Homebrew:
+```sh
+brew install grunt-lucas/porytiles/porytiles-snapshot
+```
+
+Both formulas install two binaries:
+`porytiles` (the modern compiler) and `porytiles-legacy` (the preserved
+pre-1.0 compiler).
+Homebrew works on Linux, macOS, and WSL.
 
 ## Building From Source
 You can use either GCC or Clang,
