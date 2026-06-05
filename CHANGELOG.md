@@ -6,7 +6,7 @@ simplified to a single flat list of changes per version.
 
 ## [Unreleased]
 
-## [1.0.0] - 2026-06-04
+## [1.0.0] - 2026-06-05
 
 First stable release of Porytiles.
 The cumulative scope of changes since the pre-1.0.0 legacy version is substantial and not enumerated here.
