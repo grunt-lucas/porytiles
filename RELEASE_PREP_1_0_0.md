@@ -24,7 +24,7 @@ disagree, the planning doc is authoritative for intent; update this tracker to m
 | A6 | Phase A end-to-end verification | ✅ Done |
 | B  | CHANGELOG infrastructure | ✅ Done |
 | C  | Versioning system | ✅ Done |
-| D  | CI / release pipeline overhaul | 🟡 In progress (D1-D4 done; D5 verify pending) |
+| D  | CI / release pipeline overhaul | ✅ Done |
 | E  | Gitflow adoption + 1.0.0 cut | ⬜ Not started |
 | F  | Documentation repos gitflow alignment | ⬜ Not started |
 | G  | AI policy documentation | ✅ Done |
@@ -55,15 +55,19 @@ Other dependencies:
 
 ## Open blockers (must be resolved before tagging `v1.0.0`)
 
-- [ ] **1.0.0 public API surface / `STABILITY.md`** — classify each surface (CLI
-  flags, YAML config schema, output file formats, project layout, exit codes,
-  diagnostic codes vs. message text, C++ library API, CMake targets, build
-  requirements) as **stable / experimental / internal**, plus a deprecation policy.
-  Release-cut blocker (Phase E2). See "Open design question" in the planning doc.
-- [ ] **Open feature branches audit** — decide for each of `bug/anim-tiles`,
-  `bug/issue-0060/key-frame-bug`, `feature/issue-0047/compiled-paired-primary`:
-  hand-port onto post-rename `develop`, or close. NOT a release prerequisite (can
-  ship in 1.0.x), but audit before tagging (Phase E1).
+- [x] **1.0.0 public API surface / `STABILITY.md`** — *Resolved by absorption*.
+  The classification matrix was deemed overkill for a CLI tool of Porytiles's
+  size and audience (comparable indie/decomp tools — jq, ripgrep, Porymap,
+  Poryscript — don't ship such docs and version fine without one). The
+  version-bump philosophy now lives in `RELEASE_PROCESS.md`'s
+  "Choosing the version number" subsection. CHANGELOG plus maintainer judgment
+  is the per-release authority. (Phase E2.)
+- [x] **Open feature branches audit** — *Resolved by archival deletion*.
+  All three (`bug/anim-tiles`, `bug/issue-0060/key-frame-bug`,
+  `feature/issue-0047/compiled-paired-primary`) were 1.5+ year old single-commit
+  investigations against the legacy `src/` codebase with their tracking GitHub
+  issues already closed. Archive-tagged as `archived/<branch>` (commits preserved)
+  and deleted from `origin`. (Phase E1.)
 
 ---
 
@@ -440,7 +444,7 @@ End-to-end through `cmake --build` + install + execute is the first validation t
 - [x] **D2** `versioned_release.yml` written. Triggers on `push: tags: ['v[0-9]+.[0-9]+.[0-9]+']`. Per-tag concurrency (`versioned-release-${{ github.ref }}`) so different tag pushes don't serialize. Tag-as-version strip: `BUILD_VERSION="${TAG_NAME#v}"` (e.g. `v1.0.1` → `1.0.1` baked into binary). Added a **VERSION-file vs tag consistency check** in `prepare`: if `cat VERSION` doesn't match the stripped tag, the workflow fails with `::error::` before building anything. Guards against the gitflow-violation scenario where someone tags `v1.0.1` without bumping `VERSION` first. `prerelease: false, make_latest: "true"` for proper "latest stable" pointer. CHANGELOG extraction uses the version (e.g. `1.0.0`) rather than `Unreleased`. Updates `Formula/porytiles.rb` (not snapshot). No delete-prior step — versioned releases are immutable.
 - [x] **D3** `scripts/extract_changelog.sh` written. Bash + awk; takes a section name (`Unreleased` or `1.0.0`), prints lines between the matching `## [<section>]` heading and the next `## [...` heading. Buffer-and-flush pattern for inner blank lines (preserved); trims leading/trailing blanks naturally. Empty section emits empty output (exit 0). Verified against current CHANGELOG: `Unreleased` → empty; `1.0.0` → just the "First stable release..." paragraph; nonexistent `9.9.9` → empty.
 - [x] **D4** Deleted `dev_build.yml` — fully redundant with `snapshot_release.yml`'s push-to-develop trigger (the snapshot workflow does a superset of work and fails identically on build errors, so a separate dev-build pipeline only delays feedback). Kept `pr_dev_build.yml` (PR validation is distinct from post-merge develop builds — no overlap). Left `build_pages.yml` alone — Phase F3's master-trigger rewrite is the right place for it, since `master` doesn't exist yet (Phase E creates it) and flipping the trigger now would freeze Doxygen deploys until E3. Final workflow set: `build_jobs_template.yml`, `build_pages.yml`, `changelog_check.yml`, `pr_dev_build.yml`, `snapshot_release.yml`, `versioned_release.yml` (6 top-level workflows + 9 composite actions). `build_jobs_template.yml` is now only called by `pr_dev_build.yml` — release pipelines stay self-contained because their matrix scope (3 platforms) and inputs (`build-version`, `build-date`) don't fit the template signature.
-- [ ] **D5** Verify the snapshot pipeline on a real develop push. (Originally also planned a throwaway `v0.0.0-test` tag to pre-flight `versioned_release.yml`, but that step was dropped — see follow-ups below for why; D2 gets its first real run at the v1.0.0 cut in Phase E3.)
+- [x] **D5** Verified the snapshot pipeline on a real develop push, after four pipeline iterations. Final passing run: `26904203219` (PR #311 merged to develop), produced snapshot `1.0.0-snapshot.20260603181655.37606464` with 3 platform zips (linux-amd64 88 MB, linux-arm64 88 MB, macos-arm64 12 MB), tap repo updated by the bot (`9e6eea2 Update porytiles-snapshot formula to ...`), `brew install grunt-lucas/porytiles/porytiles-snapshot` works on both linux-amd64 (via the rewritten `$GITHUB_PATH` + auto-tap pattern) and macos-arm64. The four iterations each surfaced a distinct real-world issue invisible to local pre-flight: (1) expired `PORYTILES_TAP_REPO_PAT` secret blocked `update-tap`; (2) brew formula name→class rules don't accept `@<non-digit>` like `@snapshot` — required rename to `porytiles-snapshot.rb`; (3) Linuxbrew + GHA-runner SIGPIPE on `eval "$(brew shellenv)"` broke the linux brew-install test step. Each fix was committed back to develop via separate PRs (PR #309 initial, PR #310 rename, PR #311 brew-test rewrite) and re-triggered the full pipeline. **D2 (`versioned_release.yml`) intentionally not pre-flight-tested** — first real run will be the v1.0.0 cut in Phase E3, coordinated with the `porytiles.rb` rewrite at E2 (per the deferred follow-up).
 
 **Verification done locally (pre-D5).** Both default and override CMake paths pass clean. Default: `~/.local/bin/porytiles --version` → `porytiles 1.0.0 2026.06.02T01:53:27+00:00` (UTC); `~/.local/bin/porytiles-legacy --version` → same. Override: `cmake -DPORYTILES_BUILD_VERSION_=1.0.0-snapshot.20260601000000.abc12345 -DPORYTILES_BUILD_DATE_=2026.06.01T00:00:00+00:00` → both binaries echo the override strings exactly, zero `-Wmacro-redefined` warnings in the build log. `PorytilesAllTests` 1144/1144, `LegacyTests` 73 cases / 2,689,245 assertions. All 15 workflow / composite-action YAML files parse via `yaml.safe_load`.
 
@@ -459,8 +463,8 @@ End-to-end through `cmake --build` + install + execute is the first validation t
 
 - [ ] **E1** Audit open feature branches (see Open blockers).
 - [ ] **E2** Cut `release/1.0.0` from `develop`; confirm `VERSION` file + `project(... VERSION 1.0.0)`;
-  migrate `[Unreleased]` → `[1.0.0] - <date>`; **resolve `STABILITY.md` blocker**;
-  **rewrite `homebrew-porytiles/Formula/porytiles.rb` to the new shape** (Phase D's
+  migrate `[Unreleased]` → `[1.0.0] - <date>`; **absorb version-bump philosophy into `RELEASE_PROCESS.md`**
+  (in lieu of a separate `STABILITY.md`); **rewrite `homebrew-porytiles/Formula/porytiles.rb` to the new shape** (Phase D's
   carried-forward item — versioned formula with `v#{version}` URL interpolation, install both
   `porytiles` and `porytiles-legacy`, sed-compatible `version`/`sha256` line shapes matching
   the snapshot formula); coordinate that rewrite's push to the tap repo with the v1.0.0 tag
@@ -685,7 +689,8 @@ paths. Independent of B, C, F, G.
 - [ ] CHANGELOG workflow blocks a PR missing a CHANGELOG entry (unless `no-changelog`).
 - [ ] `AI_POLICY.md` exists at repo root; `CONTRIBUTING.md` links it; legacy AI-free
   stance unambiguous. (File was `AI-POLICY.md` pre-Phase H3.)
-- [ ] `STABILITY.md` (or equivalent) classifies every public surface.
+- [ ] `RELEASE_PROCESS.md`'s "Choosing the version number" subsection documents
+  version-bump philosophy in lieu of a separate `STABILITY.md`.
 - [ ] Top-level directory names are all lowercase (`porytiles/`, `legacy/`,
   `scripts/`, plus the H1-decided slugs for docs/resources). Residual greps in H5
   return zero hits in tracked source.

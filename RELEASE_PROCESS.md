@@ -21,11 +21,11 @@ bootstrap must establish before this runbook is usable.
 
 A release touches **three git repositories** that are tagged in lockstep:
 
-| Repo | Role | Local path |
-|------|------|------------|
-| `grunt-lucas/porytiles` | The compiler. Source of truth for the version. | `.` |
-| `grunt-lucas/porytiles-user-docs` | User-facing Sphinx docs site. | `porytiles-user-docs/` |
-| `grunt-lucas/porytiles-dev-docs` | Developer Sphinx docs site. | `porytiles-dev-docs/` |
+| Repo                              | Role                                           | Local path             |
+|-----------------------------------|------------------------------------------------|------------------------|
+| `grunt-lucas/porytiles`           | The compiler. Source of truth for the version. | `.`                    |
+| `grunt-lucas/porytiles-user-docs` | User-facing Sphinx docs site.                  | `porytiles-user-docs/` |
+| `grunt-lucas/porytiles-dev-docs`  | Developer Sphinx docs site.                    | `porytiles-dev-docs/`  |
 
 A fourth repo, the Homebrew tap `grunt-lucas/homebrew-porytiles`
 (`homebrew-porytiles/`), is **updated by CI**, not tagged.
@@ -100,9 +100,6 @@ Until a box is checked, the dependent step below is blocked.
   parameterized `docsrc/conf.py`, plus a GH Pages deploy workflow that fires on
   push to `master`. Today the docs deploy is the manual `make github` flow and
   `conf.py` hardcodes a stale version. (Phase F2, F3.)
-- [ ] **`STABILITY.md` exists** so the major/minor/patch decision has a written
-  authority. (Open blocker, Phase E2.)
-
 ---
 
 ## Conventions and invariants
@@ -127,17 +124,30 @@ differ, the whole workflow aborts before building anything. Therefore the
 `VERSION` bump must be committed and merged to the tagged commit **before** the
 tag is pushed. Bump first, tag second. This ordering is load-bearing.
 
-**Choosing the version number.** Consult `STABILITY.md` for what counts as a
-breaking change on each public surface. Roughly: bump **patch** (`Z`) for
-backwards-compatible fixes, **minor** (`Y`) for backwards-compatible features,
-**major** (`X`) for a break to a stable surface.
+**Choosing the version number.** Walk the `[Unreleased]` section of
+`CHANGELOG.md` and ask, for each entry: does this change something users are
+depending on?
+
+- **Patch** (`Z`): backwards-compatible fixes; bug fixes; no user-visible
+  behavior change beyond the fix itself.
+- **Minor** (`Y`): new functionality; new CLI flags or YAML keys; renames or
+  schema evolution that ship *alongside* a transitional alias (the old shape
+  keeps working); deprecation announcements.
+- **Major** (`X`): breaking changes to CLI invocations, YAML configuration
+  keys, output file formats, or other user-visible commitments that have
+  shipped in a prior release without an alias bridge. Also: raising minimum
+  compiler/CMake versions in a way that strands current users.
+
+When in doubt, prefer the higher bump.
+The CHANGELOG entry for the change is the written record of the rationale —
+there is no separate stability matrix to consult.
 
 **What each pipeline produces.**
 
-| Trigger | Workflow | GitHub release | Homebrew formula |
-|---------|----------|----------------|------------------|
-| push to `develop` | `snapshot_release.yml` | rolling `snapshot` prerelease (force-replaced) | `porytiles@snapshot.rb` |
-| push tag `vX.Y.Z` | `versioned_release.yml` | permanent `vX.Y.Z` release, marked latest | `porytiles.rb` |
+| Trigger           | Workflow                | GitHub release                                 | Homebrew formula        |
+|-------------------|-------------------------|------------------------------------------------|-------------------------|
+| push to `develop` | `snapshot_release.yml`  | rolling `snapshot` prerelease (force-replaced) | `porytiles-snapshot.rb` |
+| push tag `vX.Y.Z` | `versioned_release.yml` | permanent `vX.Y.Z` release, marked latest      | `porytiles.rb`          |
 
 Snapshot version strings are `X.Y.Z-snapshot.<UTCYYYYMMDDHHMMSS>.<short8sha>`.
 Build dates are UTC in dotted form: `%Y.%m.%dT%H:%M:%S+00:00`.
@@ -207,8 +217,7 @@ All of these are commits on `release/X.Y.Z`.
    repos in step). Update the `VERSION` file or `docsrc/conf.py` `version` /
    `release` values per the Phase F2 mechanism.
 
-4. **Resolve any release blockers.** Confirm `STABILITY.md` is current for this
-   version's surface. Land any final release-only bugfixes here.
+4. **Resolve any release blockers.** Land any final release-only bugfixes here.
 
 5. Commit each logical change.
 

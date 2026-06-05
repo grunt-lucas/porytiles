@@ -16,6 +16,7 @@
  * All functions are inline to avoid ODR violations when included in multiple translation units.
  */
 
+#include <algorithm>
 #include <cctype>
 #include <format>
 #include <ranges>

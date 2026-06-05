@@ -2,9 +2,10 @@
 name: Deploy static content to Pages
 
 on:
-  # Runs on pushes targeting the default branch
+  # Runs on pushes to master so the published Doxygen site reflects released code,
+  # not in-flight develop work. Manual dispatch is preserved for ad-hoc rebuilds.
   push:
-    branches: [ "develop" ]
+    branches: [ "master" ]
 
   # Allows you to run this workflow manually from the Actions tab
   workflow_dispatch:

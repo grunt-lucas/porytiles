@@ -15,7 +15,8 @@ AI-drafted patches to `legacy/` will be closed without review.
 
 **`porytiles/`** is the active codebase, producing the `porytiles` binary.
 The active codebase accepts AI-assisted contributions, subject to the same quality bar as any other PR.
-There is no required disclosure of AI use nor any automated detection mechanisms. Maintainer judgment is the only filter.
+There is no required disclosure of AI use nor any automated detection mechanisms.
+Maintainer judgment is the only filter.
 
 ## Review Criteria
 
@@ -24,7 +25,8 @@ Code that meets the style guide and the contribution conventions is welcome rega
 Code that does not is rejected regardless of how it was produced.
 
 Contributions that read as low-effort "slop" or are out of step with the rest of the codebase will be asked to rework or be closed.
-There is no formal taxonomy of disqualifying tells: if the maintainer flags quality concerns, you must rework or your contribution will be closed.
+There is no formal taxonomy of disqualifying tells:
+if the maintainer flags quality concerns, you must rework or your contribution will be closed.
 
 Contributors must be able to discuss **any** aspect of their contribution intelligently and understand how it fits into the codebase.
 Inability to discuss one's own contribution is disqualifying, as is the response of "the bot wrote it, I don't know how/why it works."
