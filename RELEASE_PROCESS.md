@@ -52,7 +52,7 @@ All four follow the gitflow branching model originally described in
 Vincent Driessen's [A successful Git branching model](https://nvie.com/posts/a-successful-git-branching-model/)
 — the definitive reference:
 
-<img src="resources/release_process/git_model.png" alt="Gitflow branching model (image from nvie.com)" width="400">
+<img src="resources/release_process/git_model.png" alt="Gitflow branching model (image from nvie.com)" width="600">
 
 - **`develop`** is integration. Every push to `develop` rebuilds the rolling
   `snapshot` prerelease and the `porytiles@snapshot` Homebrew formula.
