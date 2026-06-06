@@ -31,16 +31,11 @@ A fourth repo, the Homebrew tap `grunt-lucas/homebrew-porytiles`
 (`homebrew-porytiles/`), is **updated by CI**, not tagged.
 You generally do not touch it by hand during a release.
 
-All four follow the same gitflow:
+All four follow the gitflow branching model originally described in
+Vincent Driessen's [A successful Git branching model](https://nvie.com/posts/a-successful-git-branching-model/)
+— the definitive reference:
 
-```text
-feature/* ┐
-bug/*     ├─→ develop ──(release/<v>)──→ master ──(tag vX.Y.Z)──→ versioned release
-docfix/*  ┘                  │                                         │
-                            (merge back)                         CI builds + publishes
-                             develop ←─────────────────────────────────┘
-hotfix/<v> off master ─→ master (tag) + back to develop
-```
+![Gitflow branching model (image from nvie.com)](resources/release_process/git_model.png)
 
 - **`develop`** is integration. Every push to `develop` rebuilds the rolling
   `snapshot` prerelease and the `porytiles@snapshot` Homebrew formula.
@@ -48,8 +43,10 @@ hotfix/<v> off master ─→ master (tag) + back to develop
   versioned release and updates the `porytiles` Homebrew formula.
 - **`release/<v>`** is cut from `develop` for stabilization, then merged into
   **both** `master` and `develop`.
-- **`hotfix/<v>`** is cut from `master` for emergency fixes, then merged into
-  **both** `master` and `develop`.
+- **`hotfix/*`** is cut from `master` for urgent patches, then propagates
+  to **both** `master` and `develop` (merge or cherry-pick depending on
+  repo; see [Hotfix release](#hotfix-release) and [Docs hotfix between
+  releases](#docs-hotfix-between-releases)).
 
 ### What is automated vs. what you do by hand
 
@@ -124,6 +121,14 @@ differ, the whole workflow aborts before building anything. Therefore the
 `VERSION` bump must be committed and merged to the tagged commit **before** the
 tag is pushed. Bump first, tag second. This ordering is load-bearing.
 
+**Branch invariants.** Three load-bearing rules that the runbooks below all exist to satisfy:
+
+1. **`master` is merge-only.** No commit lands on `master` except as part of a PR-merged commit from a `release/<v>` branch (regular release) or `hotfix/*` branch (urgent patch). In the main repo a hotfix bumps the patch version and produces a new `vX.Y.Z+1` tag (see [Hotfix release](#hotfix-release)); in the docs repos a hotfix is content-only and does not bump the version or mint a new tag — changes accumulate on docs `master` under the current docs version until the next release cut (see [Docs hotfix between releases](#docs-hotfix-between-releases)). Direct pushes to `master` must be blocked by branch protection (E4, F6 — see [Prerequisites](#prerequisites)). Even a one-line CHANGELOG date fix goes through one of these branches.
+
+2. **Every `release/<v>` and `hotfix/*` branch propagates to both `master` AND `develop`.** In the main repo this happens via merge-back (see [Regular versioned release](#regular-versioned-release) and [Hotfix release](#hotfix-release)); in the docs repos a hotfix is cherry-picked to develop instead of merged (see [Docs hotfix between releases](#docs-hotfix-between-releases)). The change must reach develop in some form so the next release doesn't silently regress it.
+
+3. **`develop` is the integration trunk for new work.** All `feature/*`, `bug/*`, and similar branches target `develop` via PR. New work does not land directly on `master`, on a `release/<v>` branch, or on a `hotfix/*` branch.
+
 **Choosing the version number.** Walk the `[Unreleased]` section of
 `CHANGELOG.md` and ask, for each entry: does this change something users are
 depending on?
@@ -154,13 +159,13 @@ Build dates are UTC in dotted form: `%Y.%m.%dT%H:%M:%S+00:00`.
 
 ---
 
-## Runbook A — Regular versioned release
+## Regular versioned release
 
 Use this for a planned release of accumulated work on `develop`
 (a patch, minor, or major).
 Throughout, replace `X.Y.Z` with the target version (example: `1.1.0`).
 
-### A0 — Pre-flight `[auto]`
+### 0 — Pre-flight `[auto]`
 
 ```bash
 # Be on an up-to-date develop.
@@ -175,7 +180,7 @@ Decide the version number (see [Choosing the version number](#conventions-and-in
 Skim the `## [Unreleased]` section of [`CHANGELOG.md`](./CHANGELOG.md) and confirm
 it reflects everything shipping in this release.
 
-### A1 — Cut the release branch `[auto]`
+### 1 — Cut the release branch `[auto]`
 
 ```bash
 git checkout -b release/X.Y.Z
@@ -185,7 +190,7 @@ git push -u origin release/X.Y.Z
 Only bugfixes and release-prep edits land on `release/X.Y.Z` from here.
 New features wait for the next cycle on `develop`.
 
-### A2 — Release-branch edits `[auto]`
+### 2 — Release-branch edits `[auto]`
 
 All of these are commits on `release/X.Y.Z`.
 
@@ -213,7 +218,7 @@ All of these are commits on `release/X.Y.Z`.
    body falls back to "_No CHANGELOG entry found_".
 
 3. **Bump the docs version** in each docs repo's `develop` (these become the
-   docs `release/X.Y.Z` in step A8; doing the version bump now keeps all three
+   docs `release/X.Y.Z` in step 8; doing the version bump now keeps all three
    repos in step). Update the `VERSION` file or `docsrc/conf.py` `version` /
    `release` values per the Phase F2 mechanism.
 
@@ -221,7 +226,7 @@ All of these are commits on `release/X.Y.Z`.
 
 5. Commit each logical change.
 
-### A3 — Local smoke test `[auto]`
+### 3 — Local smoke test `[auto]`
 
 ```bash
 rm -rf porytiles-build-debug
@@ -238,7 +243,7 @@ Both `--version` lines must show `X.Y.Z` (proving the `VERSION` bump flows
 through CMake). If they still show the old version, the bump did not take; stop
 and fix before tagging.
 
-### A4 — Merge the release branch into `master` `[confirm]`
+### 4 — Merge the release branch into `master` `[confirm]`
 
 ```bash
 gh pr create --base master --head release/X.Y.Z \
@@ -250,7 +255,7 @@ gh pr merge --merge
 > Branch protection requires this to go through a PR. For a solo workflow you
 > still open and merge the PR rather than pushing to `master` directly.
 
-### A5 — Tag `master` and push the tag `[confirm]`
+### 5 — Tag `master` and push the tag `[confirm]`
 
 This is the point of no return. Pushing the tag publishes a permanent release
 and rewrites the public Homebrew formula.
@@ -263,7 +268,7 @@ git tag -a vX.Y.Z -m "Porytiles X.Y.Z"
 git push origin vX.Y.Z
 ```
 
-### A6 — Watch CI and verify `[auto]`
+### 6 — Watch CI and verify `[auto]`
 
 ```bash
 gh run watch --workflow versioned_release.yml
@@ -282,7 +287,7 @@ Confirm, in order:
 gh release view vX.Y.Z          # release exists, correct assets, notes from CHANGELOG
 ```
 
-### A7 — Merge the release branch back into `develop` `[confirm]`
+### 7 — Merge the release branch back into `develop` `[confirm]`
 
 `master` now has the version bump and CHANGELOG migration; `develop` does not
 until you merge back. Skipping this regresses the version on the next cycle.
@@ -301,7 +306,7 @@ git push origin --delete release/X.Y.Z   # [confirm] delete the release branch
 git branch -d release/X.Y.Z
 ```
 
-### A8 — Docs repos lockstep `[confirm]`
+### 8 — Docs repos lockstep `[confirm]`
 
 Tag the **main repo first** (done above) and verify its release succeeded
 **before** tagging the docs repos. This ordering means a mid-sequence failure
@@ -312,12 +317,17 @@ Repeat identically for `porytiles-user-docs/` and then `porytiles-dev-docs/`:
 ```bash
 cd porytiles-user-docs
 git checkout develop && git pull
-git checkout -b release/X.Y.Z              # confirm version/conf.py already bumped (A2.3)
+git checkout -b release/X.Y.Z              # VERSION/conf.py already bumped per step 2.3
+git push -u origin release/X.Y.Z
+
+gh pr create --base master --head release/X.Y.Z \
+  --title "Release X.Y.Z" --body "Docs cut of X.Y.Z."
+gh pr merge --merge                          # push to master triggers the GH Pages deploy (Phase F3)
+
 git checkout master && git pull
-git merge --no-ff release/X.Y.Z
-git push                                     # push to master triggers the GH Pages deploy (Phase F3)
 git tag -a vX.Y.Z -m "Porytiles docs X.Y.Z" # immutable archival snapshot; does not itself deploy
 git push origin vX.Y.Z
+
 git checkout develop && git merge --no-ff release/X.Y.Z && git push
 git push origin --delete release/X.Y.Z
 cd ..
@@ -328,7 +338,7 @@ cd ..
 > `cd docsrc && uv run make github`, then commit and push the regenerated
 > `docs/` folder.
 
-### A9 — Post-release verification `[auto]`
+### 9 — Post-release verification `[auto]`
 
 ```bash
 # Stable Homebrew install pulls the new version and both binaries.
@@ -345,13 +355,13 @@ porytiles-legacy --version     # porytiles-legacy X.Y.Z <date>
 
 ---
 
-## Runbook B — Hotfix release
+## Hotfix release
 
 Use this for an urgent fix to a **published** release when `develop` has moved
 on and you cannot wait for the next regular cut. A hotfix is almost always a
 patch bump (`X.Y.Z` → `X.Y.Z+1`).
 
-### B1 — Cut the hotfix branch from `master` `[auto]`
+### 1 — Cut the hotfix branch from `master` `[auto]`
 
 ```bash
 git checkout master && git pull
@@ -363,7 +373,7 @@ The defining difference from a regular release: you branch from `master`, not
 `develop`, so the fix sits on top of the released code with none of develop's
 unreleased work.
 
-### B2 — Fix, bump, changelog `[auto]`
+### 2 — Fix, bump, changelog `[auto]`
 
 1. Make the minimal fix.
 2. `echo "X.Y.Z+1" > VERSION`.
@@ -371,13 +381,13 @@ unreleased work.
    fix. (On `master` the `## [Unreleased]` section is empty, so you are adding a
    fresh dated section, not migrating an accumulated one.)
 4. Bump the docs version if the fix is user-visible.
-5. Run the A3 local smoke test.
+5. Run the local smoke test (step 3 of [Regular versioned release](#regular-versioned-release)).
 
-### B3 — Merge to `master`, tag, verify `[confirm]`
+### 3 — Merge to `master`, tag, verify `[confirm]`
 
-Same as A4–A6, using `hotfix/X.Y.Z+1` and tag `vX.Y.Z+1`.
+Same as steps 4–6 of [Regular versioned release](#regular-versioned-release), using `hotfix/X.Y.Z+1` and tag `vX.Y.Z+1`.
 
-### B4 — Merge back to `develop` `[confirm]`
+### 4 — Merge back to `develop` `[confirm]`
 
 This is the easy-to-forget step that defines a hotfix: the fix exists only on
 `master` until you bring it back.
@@ -397,23 +407,39 @@ with the same branch-from-master-merge-to-both pattern.
 
 ---
 
-## Runbook C — Doc-only fix between releases
+## Docs hotfix between releases
 
-Use this when a published docs site has an error but no code changed. Docs tags
-are immutable snapshots; the docs `master` is a rolling head that GitHub Pages
-always serves. You fix `master` directly and do **not** mint a new tag.
+Use this for any change to docs `master` between release tags: error
+corrections, expansions of placeholder content, additions, or any other
+improvement. Same gitflow pattern as [Hotfix release](#hotfix-release) with two differences:
+**no version bump**, and **no new tag**. Docs tags are immutable archival
+snapshots of what shipped at each release cut; docs `master` is a rolling
+head that GitHub Pages serves continuously and accumulates hotfix commits
+until the next release.
+
+Docs hotfix branches use the form `hotfix/<short-description>` (e.g.,
+`hotfix/fix-install-typo`, `hotfix/fill-in-cli-reference`), since there is
+no version number to suffix. This is the one structural difference from
+Hotfix release's `hotfix/X.Y.Z+1` naming — flagged here so the asymmetry is
+obvious to readers.
 
 ```bash
 cd porytiles-user-docs            # or porytiles-dev-docs
 git checkout master && git pull
-git checkout -b docfix/<short-description>
-# fix the error
-git checkout master && git merge --no-ff docfix/<short-description> && git push   # [confirm]
-# GH Pages rebuilds within minutes; the public site is corrected.
+git checkout -b hotfix/<short-description>
+# make the change
+git commit -am "<description of change>"
+git push -u origin hotfix/<short-description>
 
-# Carry the same fix forward so the next release does not regress it.
-git checkout develop && git cherry-pick <master-fix-sha> && git push             # [confirm]
-git push origin --delete docfix/<short-description>
+gh pr create --base master --head hotfix/<short-description> \
+  --title "Hotfix: <short description>" --body "..."
+gh pr merge --merge                                                                # [confirm]
+# GH Pages rebuilds within minutes; the public site updates.
+
+# Carry the same change forward so the next release does not regress it.
+git checkout master && git pull                                                    # bring local master current
+git checkout develop && git cherry-pick <hotfix-commit-sha> && git push            # [confirm]
+git push origin --delete hotfix/<short-description>
 ```
 
 Do **not** create a new tag (`vX.Y.Z.1`, `vX.Y.Z-doc.1`) and do **not** move the
@@ -439,8 +465,9 @@ This is safe only because the failed run published nothing (it aborts before the
 `build` and `publish` jobs).
 
 **Partial three-repo lockstep.** A tag pushed to one repo but not another (for
-example main tagged, dev-docs not). Because A8 tags main first and verifies
-before the docs repos, the common failure is a missing docs tag. Just complete
+example main tagged, dev-docs not). Because the docs lockstep step tags
+main first and verifies before the docs repos, the common failure is a
+missing docs tag. Just complete
 the remaining docs tag(s); nothing needs undoing.
 
 **The Homebrew formula did not update or installs the wrong thing.** Check the
@@ -466,6 +493,7 @@ The common case (regular release), condensed:
 ```bash
 # 1. branch
 git checkout develop && git pull && git checkout -b release/X.Y.Z
+git push -u origin release/X.Y.Z
 
 # 2. edit on the branch: VERSION, CHANGELOG, docs version, then smoke test
 echo "X.Y.Z" > VERSION
