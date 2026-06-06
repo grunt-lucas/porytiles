@@ -4,11 +4,6 @@ This is the **operational** tracking document for the Porytiles 1.0.0 release. I
 distills the locked-in decisions, the phase outline, and a tickable checklist so a
 session can be directed with "execute Phase A2 from `RELEASE_PREP_1_0_0.md`."
 
-The full planning rationale lives in
-[`Porytiles2/Notes/release_1_0_0_prep_plan.md`](Porytiles2/Notes/release_1_0_0_prep_plan.md).
-That file is the *why*; this file is the *what's done / what's next*. When the two
-disagree, the planning doc is authoritative for intent; update this tracker to match.
-
 ---
 
 ## Status dashboard
@@ -25,8 +20,8 @@ disagree, the planning doc is authoritative for intent; update this tracker to m
 | B  | CHANGELOG infrastructure | ✅ Done |
 | C  | Versioning system | ✅ Done |
 | D  | CI / release pipeline overhaul | ✅ Done |
-| E  | Gitflow adoption + 1.0.0 cut | ⬜ Not started |
-| F  | Documentation repos gitflow alignment | ⬜ Not started |
+| E  | Gitflow adoption + 1.0.0 cut | 🟡 In progress — E4 pending; docs lockstep deferred ([#313](https://github.com/grunt-lucas/porytiles/issues/313)) |
+| F  | Documentation repos gitflow alignment | 🟡 In progress — F6/F8/F3-docs deferred to docs release ([#313](https://github.com/grunt-lucas/porytiles/issues/313)) |
 | G  | AI policy documentation | ✅ Done |
 | H  | Top-level lowercase migration | ✅ Done |
 
@@ -461,21 +456,23 @@ End-to-end through `cmake --build` + install + execute is the first validation t
 
 ## Phase E — Gitflow adoption + 1.0.0 cut (last; A–D stable on develop)
 
-- [ ] **E1** Audit open feature branches (see Open blockers).
-- [ ] **E2** Cut `release/1.0.0` from `develop`; confirm `VERSION` file + `project(... VERSION 1.0.0)`;
-  migrate `[Unreleased]` → `[1.0.0] - <date>`; **absorb version-bump philosophy into `RELEASE_PROCESS.md`**
-  (in lieu of a separate `STABILITY.md`); **rewrite `homebrew-porytiles/Formula/porytiles.rb` to the new shape** (Phase D's
-  carried-forward item — versioned formula with `v#{version}` URL interpolation, install both
-  `porytiles` and `porytiles-legacy`, sed-compatible `version`/`sha256` line shapes matching
-  the snapshot formula); coordinate that rewrite's push to the tap repo with the v1.0.0 tag
-  push at E3 so the broken-window between formula rewrite and first real v* release is
-  minimized (ideally minutes, not days); smoke test.
-- [ ] **E3** Tag + merge in lockstep across main + both docs repos: create `master` from
-  `release/1.0.0`; tag `v1.0.0` (verify `versioned_release.yml` fires before tagging docs
-  repos); merge release back to `develop`; delete release branch. Verify docs sites.
-- [ ] **E4** Branch + tag protection (`master`, `develop`, `v[0-9]+.[0-9]+.[0-9]+`).
-- [ ] **E5** Document gitflow conventions in `CONTRIBUTING.md`.
-- [ ] **E6** README install section; confirm default branch `develop`; housekeeping; announce.
+Phases A–D + G + H landed stably on develop over 2026-06-02 through 2026-06-04. The 1.0.0 cut itself executed on 2026-06-05 as a single coordinated push of `2/release-prep` → develop (#312), followed by master creation, CHANGELOG date bump, and `v1.0.0` tag push. `versioned_release.yml`'s first real run completed green across all 8 jobs in 33m07s.
+
+- [x] **E1** Audit open feature branches — resolved via archive-tag-and-delete pattern. The three open branches (`bug/anim-tiles`, `bug/issue-0060/key-frame-bug`, `feature/issue-0047/compiled-paired-primary`) were all single-commit 1.5+ year old investigations against the legacy `src/` codebase with their tracking GitHub issues already closed; preserved as `archived/<branch>` annotated tags (commits preserved in tag refs) and deleted from origin.
+- [x] **E2** Cut work landed across multiple sub-steps on the `2/release-prep` branch (chosen "one-PR-at-end" over per-step PRs to minimize churn on develop while release prep firmed up):
+  - **E2a** `VERSION` file + `project(... VERSION 1.0.0)` already established by Phase D pre-work; no edits needed.
+  - **E2b** CHANGELOG migrated from `[Unreleased]` to `[1.0.0] - 2026-06-04`. Date was bumped to `2026-06-05` directly on master immediately before the v1.0.0 tag push, satisfying the VERSION-must-match-tag invariant on the actual release day.
+  - **E2c** Version-bump philosophy absorbed into `RELEASE_PROCESS.md`'s "Choosing the version number" subsection in lieu of a standalone `STABILITY.md`. The standalone doc was drafted, reviewed, and rejected as overkill for a CLI tool of Porytiles's size — comparable indie/decomp tools (jq, ripgrep, Porymap, Poryscript) don't ship classification matrices and version fine without one.
+  - **E2d** `homebrew-porytiles/Formula/porytiles.rb` rewritten to the versioned shape: `version "1.0.0"`, `v#{version}` URL interpolation, three placeholder `sha256` lines that `versioned_release.yml`'s `update-homebrew-tap` job sed-replaces at tag-push time. macos-amd64 branch dropped per the Phase D toolchain-constraint decision. Pushed to tap origin/main ahead of E3 so the broken-window between formula push and first real v* release was minutes, not days.
+  - **E2e** Local smoke test green: clean rebuild produces both binaries reporting `porytiles 1.0.0 ...+00:00` and `porytiles-legacy 1.0.0 ...+00:00`.
+- [x] **E3** Lockstep tag executed for main repo on 2026-06-05; docs-side deferred (see sub-bullet). Main flow: PR `2/release-prep` → develop (#312, `no-changelog` labeled, merged green); created master from develop's tip via `git checkout -b master develop && git push -u origin master`; bumped CHANGELOG date on master via direct push (bootstrap exception since branch protection wasn't yet in place); pushed annotated `v1.0.0` tag with `git tag -a v1.0.0 -m "Porytiles 1.0.0"`. `versioned_release.yml` first real run completed in 33m07s across all 8 jobs: prepare green (`cat VERSION` matched `${TAG#v}`), 3 platform builds green (linux-amd64 31m28s, linux-arm64 29m52s, macos-arm64 13m02s), publish created the permanent `v1.0.0` GitHub release with 3 platform zips + CHANGELOG-extracted release notes + marked-latest, `update-homebrew-tap` sed-replaced the porytiles.rb sha256s with real hashes (tap commit `22fbaca`), both brew-install smoke tests green (linux-amd64 28s, macos-arm64 37s). CHANGELOG date bump cherry-picked back to develop (commit `5b6aa9d8`) so both branches stay content-aligned per Branch invariant 2.
+
+  **Doxygen Pages env-policy fix carried into E3.** First post-master Pages deploy failed with "Branch 'master' is not allowed to deploy to github-pages due to environment protection rules." Root cause: GH Pages environment had `develop` and a stale `2/mvp` in the allowlist, not `master`. Fixed via three `gh api` calls (added `master`, removed `develop`, removed `2/mvp`), and re-ran the failed workflow. Doxygen now serves from master only, matching F3's intent.
+
+  **Docs lockstep deferred to [#313](https://github.com/grunt-lucas/porytiles/issues/313).** Both docs repos had master + annotated `v1.0.0` tag bootstrap-created during E3.6 then rolled back: a quiet bootstrap push leaves no archival PR for the docs 1.0.0 state, which is worth more than the lockstep convenience. The proper docs 1.0.0 release will follow the canonical Regular versioned release runbook (release/1.0.0 from develop → PR to master → tag), so the PR itself documents the initial docs state. F3-docs (Pages source flip + `github_version` in conf.py) and F6 (docs branch protection) ride along with that release.
+- [ ] **E4** Branch + tag protection on main repo (`master`, `develop`, `v[0-9]+.[0-9]+.[0-9]+` tag pattern). Outstanding; last item before Phase E fully closes.
+- [x] **E5** Gitflow conventions documented in `CONTRIBUTING.md` with a new Branching section (develop/master/release/hotfix conventions, `vX.Y.Z` tag pattern, `VERSION`-file-as-source-of-truth) and a Documentation section explaining the three-repo lockstep tagging plus the homebrew-porytiles tap as a fourth-but-not-tagged repo.
+- [x] **E6** README install section reworked: workflow badges updated (`snapshot_release.yml` + `versioned_release.yml` replaced the deleted `dev_build.yml` + `nightly_release.yml`); new Release Cadence section with both `brew install` commands plus direct-download alternative plus Homebrew install/Linux pointers; Getting Started stubbed pending the user-docs Quick Start page; Building From Source trimmed to a one-line pointer at dev-docs; default branch confirmed as `develop`; stale `nightly-3a9d31c...` GH release + tag deleted (the rolling `snapshot` release stays). Downstream announce is the maintainer's manual step.
 
 ---
 
@@ -484,18 +481,16 @@ End-to-end through `cmake --build` + install + execute is the first validation t
 > Commit all Phase F changes in `porytiles-user-docs/` and `porytiles-dev-docs/`,
 > NOT the main repo.
 
-- [ ] **F1** Adopt gitflow branches in each docs repo (create/establish `develop` default;
-  rename `main`→`master` recommended; `master` created at first cut).
-- [ ] **F2** Parameterize Sphinx version display in `docsrc/conf.py` (Option A: tracked
-  `VERSION` file recommended).
-- [ ] **F3** GH Pages deploy from `master` only — both Sphinx repos AND main-repo Doxygen
-  (`build_pages.yml` trigger → `master`); verify post-rename Doxygen paths.
-- [ ] **F4** Local-only viewing instructions in each docs `README.md`.
-- [ ] **F5** Docs/code coordination convention in main `CONTRIBUTING.md`.
-- [ ] **F6** Branch protection on docs repos.
-- [ ] **F7** Initial sync: both docs `develop` reflect post-rename names/CLI/install.
-- [ ] **F8** Verify per docs repo (build on develop+master; deploy on master only;
-  checkout-tag-build works; version string renders).
+Phase F landed on 2026-06-05 in lockstep with Phase E rather than the originally-planned parallel-with-A–D timing. F1, F2, F4, F5, F7 closed cleanly; F3 closed for the main repo's Doxygen deploy but the docs-repos portion + F6 + F8 ride along with the deferred docs 1.0.0 release ([#313](https://github.com/grunt-lucas/porytiles/issues/313)).
+
+- [x] **F1** `release` branch deleted from each docs repo. Both repos had a stale `release` branch (4 commits behind develop, zero unique commits — vestigial reference from pre-gitflow days; not the canonical `release/<v>` form). `master` was NOT created at F1 because both docs repos were destined for the proper "release branch + PR + tag" flow at the eventual docs 1.0.0 release, not a bootstrap-master-from-develop push. Once that proper flow lands, master is created by the PR merge automatically.
+- [x] **F2** Top-level `VERSION` file added to each docs repo (containing `1.0.0`). `docsrc/conf.py` modified in both: pathlib-based `_version_str = (Path(__file__).parent.parent / 'VERSION').read_text().strip()`; `version` and `release` both derive from `_version_str` (plus `myst_substitutions['version']` in dev-docs). Sphinx build verified locally: page titles render "Porytiles ... 1.0.0 documentation".
+- [x] **F3** Main repo's `build_pages.yml` trigger flipped from `push: [develop]` to `push: [master]`. After master creation at E3, the published Doxygen site rebuilt successfully (after the GH Pages env-policy fix noted in E3). The docs-repos portion of F3 (GH Pages source flip from `develop /docs` to `master /docs` on each docs repo + GH Actions deploy workflow + `github_version` bumped to `master` in conf.py) is deferred to the future docs 1.0.0 release per the E3 docs-deferred note.
+- [x] **F4** "Viewing Docs For Other Versions" section added to each docs `README.md`, covering both released-tag checkout and develop-branch checkout flows. Cross-references the existing "Building Locally" section to avoid duplicating build commands.
+- [x] **F5** "Documentation" section added to main repo `CONTRIBUTING.md` explaining the three-repo lockstep tagging convention plus the tap as a fourth-but-not-tagged repo.
+- [ ] **F6** Branch + tag protection on docs repos. Deferred — blocked by the docs 1.0.0 release flow (master doesn't exist on either docs repo until that flow lands). See [#313](https://github.com/grunt-lucas/porytiles/issues/313).
+- [x] **F7** Initial content sync to current 1.0.0 state ("path-rename pass" scope). Discovered ~14 .md files with stale references to the old codebase naming (`Porytiles2/`, `porytiles2`, `Scripts/`, `Resources/`, `Notes/`) from before commit `8ea58d71`'s file/dir rename. Mechanical sweep updated all instances in `index.rst`, `tile-sharing.md`, `creating-your-first-tileset.md`, `importing-an-existing-tileset.md`, `installation.md` (user-docs) plus `index.rst`, `build-and-test.md`, `layered-architecture.md`, `project-layout.md`, `scripts-and-tooling.md`, `testbed.md`, `adding-a-config-value.md`, `adding-a-command.md`, `config-generation-system.md`, `writing-tests.md` (dev-docs). Index `.. note::` hardcoded "v2.0.0" version note switched to dynamic `|release|` substitution (renders from the VERSION file via Sphinx's built-in substitution). Testbed page's intentionally-illustrative 2.0.0 examples (JSON/YAML/RST field-list/`versionadded` directive demos) left as-is — they're syntax-demo content, not version claims.
+- [ ] **F8** Per-repo end-to-end verify (build develop+master locally; GH Pages fires only on master push; checkout-tag v1.0.0 builds; version string renders). Deferred — pre-master portions are already verified (develop builds green, version renders 1.0.0); post-master portions ride along with the docs 1.0.0 release. See [#313](https://github.com/grunt-lucas/porytiles/issues/313).
 
 ---
 
@@ -679,18 +674,18 @@ paths. Independent of B, C, F, G.
 
 ## End-to-end verification (after all phases)
 
-- [ ] Clean build produces `porytiles` + `porytiles-legacy`; `--version` reports `1.0.0` + date.
-- [ ] `cmake --install` writes both binaries to `<prefix>/bin/`.
-- [ ] Develop push → exactly one `snapshot` release; zips contain both binaries; brew snapshot re-pulls.
-- [ ] `v1.0.1` tag → versioned release; `v1.0.0` untouched; brew stable re-pulls.
-- [ ] `brew install grunt-lucas/porytiles/porytiles` and `...porytiles-snapshot` both work, both binaries.
-- [ ] `CHANGELOG.md` has a date-stamped 1.0.0 section.
-- [ ] Branch protection rejects direct push to `master`.
-- [ ] CHANGELOG workflow blocks a PR missing a CHANGELOG entry (unless `no-changelog`).
-- [ ] `AI_POLICY.md` exists at repo root; `CONTRIBUTING.md` links it; legacy AI-free
+- [x] Clean build produces `porytiles` + `porytiles-legacy`; `--version` reports `1.0.0` + date.
+- [x] `cmake --install` writes both binaries to `<prefix>/bin/`.
+- [x] Develop push → exactly one `snapshot` release; zips contain both binaries; brew snapshot re-pulls. (Phase D5.)
+- [x] First `v1.0.0` tag → versioned release; brew stable re-pulls. (E3 / 2026-06-05.) Subsequent `v1.0.1` would leave `v1.0.0` untouched per the immutable-release pipeline design.
+- [x] `brew install grunt-lucas/porytiles/porytiles` and `...porytiles-snapshot` both work, both binaries.
+- [x] `CHANGELOG.md` has a date-stamped 1.0.0 section.
+- [ ] Branch protection rejects direct push to `master`. (E4 pending.)
+- [x] CHANGELOG workflow blocks a PR missing a CHANGELOG entry (unless `no-changelog`). (Verified via B's recursive bootstrap.)
+- [x] `AI_POLICY.md` exists at repo root; `CONTRIBUTING.md` links it; legacy AI-free
   stance unambiguous. (File was `AI-POLICY.md` pre-Phase H3.)
-- [ ] `RELEASE_PROCESS.md`'s "Choosing the version number" subsection documents
+- [x] `RELEASE_PROCESS.md`'s "Choosing the version number" subsection documents
   version-bump philosophy in lieu of a separate `STABILITY.md`.
-- [ ] Top-level directory names are all lowercase (`porytiles/`, `legacy/`,
+- [x] Top-level directory names are all lowercase (`porytiles/`, `legacy/`,
   `scripts/`, plus the H1-decided slugs for docs/resources). Residual greps in H5
   return zero hits in tracked source.

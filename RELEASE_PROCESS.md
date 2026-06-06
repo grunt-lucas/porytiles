@@ -1,19 +1,36 @@
 # Porytiles Release Process
 
-This is the operational runbook for cutting a Porytiles release.
+- [Porytiles Release Process](#porytiles-release-process)
+  - [Mental model](#mental-model)
+    - [What is automated vs. what you do by hand](#what-is-automated-vs-what-you-do-by-hand)
+    - [Execution legend](#execution-legend)
+  - [Prerequisites](#prerequisites)
+  - [`conf.py` hardcodes a stale version. (Phase F2, F3.)](#confpy-hardcodes-a-stale-version-phase-f2-f3)
+  - [Conventions and invariants](#conventions-and-invariants)
+  - [Regular versioned release](#regular-versioned-release)
+    - [0 — Pre-flight `[auto]`](#0--pre-flight-auto)
+    - [1 — Cut the release branch `[auto]`](#1--cut-the-release-branch-auto)
+    - [2 — Release-branch edits `[auto]`](#2--release-branch-edits-auto)
+    - [3 — Local smoke test `[auto]`](#3--local-smoke-test-auto)
+    - [4 — Merge the release branch into `master` `[confirm]`](#4--merge-the-release-branch-into-master-confirm)
+    - [5 — Tag `master` and push the tag `[confirm]`](#5--tag-master-and-push-the-tag-confirm)
+    - [6 — Watch CI and verify `[auto]`](#6--watch-ci-and-verify-auto)
+    - [7 — Merge the release branch back into `develop` `[confirm]`](#7--merge-the-release-branch-back-into-develop-confirm)
+    - [8 — Docs repos lockstep `[confirm]`](#8--docs-repos-lockstep-confirm)
+    - [9 — Post-release verification `[auto]`](#9--post-release-verification-auto)
+  - [Hotfix release](#hotfix-release)
+    - [1 — Cut the hotfix branch from `master` `[auto]`](#1--cut-the-hotfix-branch-from-master-auto)
+    - [2 — Fix, bump, changelog `[auto]`](#2--fix-bump-changelog-auto)
+    - [3 — Merge to `master`, tag, verify `[confirm]`](#3--merge-to-master-tag-verify-confirm)
+    - [4 — Merge back to `develop` `[confirm]`](#4--merge-back-to-develop-confirm)
+  - [Docs hotfix between releases](#docs-hotfix-between-releases)
+  - [Verification and rollback](#verification-and-rollback)
+  - [Quick reference](#quick-reference)
+  - [Appendix: stable Homebrew formula shape](#appendix-stable-homebrew-formula-shape)
+
+This is the operational runbook for executing a Porytiles release.
 It is the *recurring* process used for every release after 1.0.0
 (`1.0.1`, `1.1.0`, `2.0.0`, and so on).
-
-This document is **not** the one-time 1.0.0 bootstrap.
-The first cut creates infrastructure that this runbook then assumes
-(the `master` branches, branch protection, the rewritten Homebrew formula,
-the docs deploy workflows).
-That bootstrap is tracked in
-[`RELEASE_PREP_1_0_0.md`](./RELEASE_PREP_1_0_0.md) Phases E and F,
-with rationale in
-[`porytiles/notes/release_1_0_0_prep_plan.md`](./porytiles/notes/release_1_0_0_prep_plan.md).
-The [Prerequisites](#prerequisites) section below lists exactly what the
-bootstrap must establish before this runbook is usable.
 
 ---
 
@@ -35,7 +52,7 @@ All four follow the gitflow branching model originally described in
 Vincent Driessen's [A successful Git branching model](https://nvie.com/posts/a-successful-git-branching-model/)
 — the definitive reference:
 
-![Gitflow branching model (image from nvie.com)](resources/release_process/git_model.png)
+<img src="resources/release_process/git_model.png" alt="Gitflow branching model (image from nvie.com)" width="400">
 
 - **`develop`** is integration. Every push to `develop` rebuilds the rolling
   `snapshot` prerelease and the `porytiles@snapshot` Homebrew formula.
