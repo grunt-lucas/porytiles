@@ -1,10 +1,12 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <map>
 #include <set>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "gsl/pointers"
 
@@ -16,6 +18,21 @@
 #include "porytiles/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles {
+
+namespace detail {
+
+enum class IncbinResolutionFailure : std::uint8_t {
+    not_found,  // The variable name was not declared in any scanned source file.
+    empty_paths // The variable was found but its INCBIN declaration captured no paths.
+};
+
+struct UnresolvedIncbinVar {
+    std::string field_label;   // The struct field, e.g. ".tiles" or ".metatileAttributes".
+    std::string variable_name; // The INCBIN variable the field referenced.
+    IncbinResolutionFailure reason;
+};
+
+} // namespace detail
 
 /**
  * @brief Provides a pokeemerald project filesystem-based implementation for TilesetMetadataProvider.
@@ -94,6 +111,9 @@ class ProjectTilesetMetadataProvider : public TilesetMetadataProvider {
     // Lazy-loaded cache for resolved tileset artifact paths (mutable for const methods)
     mutable bool artifact_paths_parsed_{false};
     mutable std::map<std::string, ProjectTilesetArtifactPaths> tileset_artifact_paths_;
+
+    // Per-tileset record of artifact fields that failed INCBIN resolution, for diagnostics
+    mutable std::map<std::string, std::vector<detail::UnresolvedIncbinVar>> tileset_unresolved_vars_;
 };
 
 } // namespace porytiles

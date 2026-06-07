@@ -773,6 +773,37 @@ TEST_F(ParserTests, ParseStaticIncbinArray)
     EXPECT_EQ(result.value()[0].paths()[0], "data/tilesets/primary/general/anim/flower/0.4bpp");
 }
 
+TEST_F(ParserTests, ParseIncgfxArray)
+{
+    // pokeemerald-expansion's auto-conversion macro: first arg is the source PNG, second is the target extension.
+    auto result = parse_incbin_arrays(
+        R"(const u32 gTilesetTiles_velvet_forest[] = INCGFX_U32("data/tilesets/primary/velvet_forest/tiles.png", ".4bpp.lz");)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].variable_name(), "gTilesetTiles_velvet_forest");
+    EXPECT_EQ(result.value()[0].macro_name(), "INCGFX_U32");
+    ASSERT_EQ(result.value()[0].paths().size(), 1);
+    EXPECT_EQ(result.value()[0].paths().front(), "data/tilesets/primary/velvet_forest/tiles.png");
+}
+
+TEST_F(ParserTests, ParseIncgfxMultiPathArray)
+{
+    // The brace/multi-path branch must also accept INCGFX_*; only the first string literal of each call is captured.
+    auto result = parse_incbin_arrays(
+        R"(const u16 gTilesetPalettes_velvet_forest[][16] =
+{
+    INCGFX_U16("data/tilesets/primary/velvet_forest/palettes/00.png", ".gbapal"),
+    INCGFX_U16("data/tilesets/primary/velvet_forest/palettes/01.png", ".gbapal"),
+};)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].variable_name(), "gTilesetPalettes_velvet_forest");
+    EXPECT_EQ(result.value()[0].macro_name(), "INCGFX_U16");
+    ASSERT_EQ(result.value()[0].paths().size(), 2);
+    EXPECT_EQ(result.value()[0].paths()[0], "data/tilesets/primary/velvet_forest/palettes/00.png");
+    EXPECT_EQ(result.value()[0].paths()[1], "data/tilesets/primary/velvet_forest/palettes/01.png");
+}
+
 TEST_F(ParserTests, ParseFunctionsEmptyInput)
 {
     auto result = parse_functions("");
