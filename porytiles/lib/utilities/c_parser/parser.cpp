@@ -122,6 +122,22 @@ namespace {
     return pos;
 }
 
+/**
+ * @brief Determines whether a token names a graphic-inclusion macro understood by the INCBIN parser.
+ *
+ * @details
+ * Recognizes the plain @c INCBIN_* family (e.g. @c INCBIN_U32) as well as the alternate form
+ * auto-conversion @c INCGFX_* family (e.g. @c INCGFX_U32). Both forms take the source/binary path as their
+ * first string-literal argument, so the parser handles them identically.
+ *
+ * @param token The macro identifier text to test.
+ * @return @c true if @p token begins with @c "INCBIN_" or @c "INCGFX_".
+ */
+[[nodiscard]] bool is_gfx_inclusion_macro(const std::string &token)
+{
+    return token.starts_with("INCBIN_") || token.starts_with("INCGFX_");
+}
+
 } // namespace
 
 FormattableError Parser::make_error(SourcePosition pos, std::string message) const
@@ -1303,7 +1319,7 @@ ChainableResult<std::vector<IncbinDeclaration>> Parser::parse_incbin_arrays()
                 }
 
                 std::string token_text = brace_contents[brace_pos].text();
-                if (token_text.find("INCBIN_") != 0) {
+                if (!is_gfx_inclusion_macro(token_text)) {
                     ++brace_pos;
                     continue;
                 }
@@ -1346,7 +1362,7 @@ ChainableResult<std::vector<IncbinDeclaration>> Parser::parse_incbin_arrays()
             }
 
             std::string token_text = peek().text();
-            if (token_text.find("INCBIN_") != 0) {
+            if (!is_gfx_inclusion_macro(token_text)) {
                 continue;
             }
             std::string macro_name = token_text;
