@@ -28,17 +28,6 @@ Key directories in `porytiles/`:
 - `resources/` - Test assets and example files
 - `scripts/` - Utility scripts for the repository (including config system generation)
 
-## Specialized Agents
-
-This project has custom Claude Code agents in `.claude/agents/` for specialized tasks:
-
-- **build-expert**: CMake builds, compilation errors, linker issues
-- **debugger**: Runtime errors, crashes, logic bugs
-- **code-reviewer**: Code quality, style compliance, security review
-- **architect**: DDD layer decisions, component placement, dependency rules
-
-Use these agents for complex tasks in their domains.
-
 ## Build System
 
 Uses CMake 3.20+ with C++23.
@@ -129,9 +118,10 @@ inline metadata (`# /// script ... # ///` block at the top), so `uv run` resolve
 its dependencies and Python version from the script itself. No `pyproject.toml`
 or `uv.lock` at the repo root.
 
-## C++ Code Style
+## Code and Documentation Style
 
-Follow the style guide in @./STYLE.md
+Follow the style guide in @./STYLE.md. It covers C++ code style, documentation
+comments, tests, idioms, error messages, and prose/Markdown conventions.
 
 ## **CRITICAL RULES - DO NOT VIOLATE**
 
