@@ -50,53 +50,73 @@ class ConfigProvider {
      * Domain Config
      */
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_in_primary(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::size_t>
+    num_tiles_in_primary(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_total(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_metatiles_in_primary(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::size_t>
+    num_metatiles_in_primary(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_metatiles_total(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::size_t>
+    num_metatiles_total(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_in_primary(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::size_t>
+    num_pals_in_primary(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<std::size_t> num_pals_total(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> max_map_data_size(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::size_t>
+    max_map_data_size(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_tiles_per_metatile(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::size_t>
+    num_tiles_per_metatile(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<Rgba32> extrinsic_transparency(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<Rgba32>
+    extrinsic_transparency(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<ArtifactEditMode> tiles_edit_mode(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<ArtifactEditMode>
+    tiles_edit_mode(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<ArtifactEditMode> pals_edit_mode(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<ArtifactEditMode>
+    pals_edit_mode(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<bool> pal_hints_enabled(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::vector<PaletteHint>> pal_hints(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::vector<PaletteHint>>
+    pal_hints(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<PackingStrategyType> packing_strategy(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<PackingStrategyType>
+    packing_strategy(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<PackingStrategyParams> packing_strategy_params(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<PackingStrategyParams>
+    packing_strategy_params(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<TileSharingPacking> tile_sharing_packing(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<TileSharingPacking>
+    tile_sharing_packing(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<TileSharingAlignment> tile_sharing_alignment(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<TileSharingAlignment>
+    tile_sharing_alignment(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<TilesPalMode> tiles_pal_mode(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<AnimPalResolutionStrategy> global_anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<AnimPalResolutionStrategy>
+    global_anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<AnimKeyFrameResolutionStrategy> global_anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<AnimKeyFrameResolutionStrategy>
+    global_anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<AnimMultiPalSubtileResolutionStrategy> global_anim_multi_pal_subtile_resolution_strategy(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<AnimMultiPalSubtileResolutionStrategy>
+    global_anim_multi_pal_subtile_resolution_strategy(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<FrameLinking> global_frame_linking(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<FrameLinking>
+    global_frame_linking(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<PerAnimOverrides> per_anim_overrides(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<PerAnimOverrides>
+    per_anim_overrides(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<bool> cross_tileset_anim_linking(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<bool>
+    cross_tileset_anim_linking(ConfigScopeType type, const std::string &scope) const;
 
     /*
      * App Config
@@ -104,27 +124,39 @@ class ConfigProvider {
 
     [[nodiscard]] virtual LayerValue<bool> verify_checksums(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<PrimaryPairingMode> primary_pairing_mode(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<PrimaryPairingMode>
+    primary_pairing_mode(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::vector<std::string>> primary_pairing_partners(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::vector<std::string>>
+    primary_pairing_partners(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::vector<std::string>> diagnostic_warnings_exclude(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::vector<std::string>>
+    diagnostic_warnings_exclude(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::vector<std::string>> diagnostic_warnings_include(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::vector<std::string>>
+    diagnostic_warnings_include(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::vector<std::string>> diagnostic_remarks_exclude(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::vector<std::string>>
+    diagnostic_remarks_exclude(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::vector<std::string>> diagnostic_remarks_include(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::vector<std::string>>
+    diagnostic_remarks_include(ConfigScopeType type, const std::string &scope) const;
 
     /*
      * Infra Config
      */
-    [[nodiscard]] virtual LayerValue<std::string> tileset_paths_primary_src(ConfigScopeType type, const std::string &scope) const;
-    [[nodiscard]] virtual LayerValue<std::string> tileset_paths_primary_bin(ConfigScopeType type, const std::string &scope) const;
-    [[nodiscard]] virtual LayerValue<std::string> tileset_paths_secondary_src(ConfigScopeType type, const std::string &scope) const;
-    [[nodiscard]] virtual LayerValue<std::string> tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const;
-    [[nodiscard]] virtual LayerValue<std::size_t> metatile_attr_size(ConfigScopeType type, const std::string &scope) const;
-    [[nodiscard]] virtual LayerValue<bool> tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::string>
+    tileset_paths_primary_src(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::string>
+    tileset_paths_primary_bin(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::string>
+    tileset_paths_secondary_src(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::string>
+    tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::size_t>
+    metatile_attr_size(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<bool>
+    tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const;
 };
 
 } // namespace porytiles

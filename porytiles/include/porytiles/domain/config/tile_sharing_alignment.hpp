@@ -25,7 +25,7 @@ namespace porytiles {
  * When set to off, palettes are filled sequentially with no sharing attempt.
  * When greedy, indirect links align palette slot indices for color-isomorphic
  * tiles. When optimal, a CSP-based solver finds globally optimal alignment (not yet implemented).
- * 
+ *
  */
 enum class TileSharingAlignment {
     /**
@@ -61,31 +61,31 @@ enum class TileSharingAlignment {
 {
     // Phase 1: Exact match against C++ constant names
     if (str == "off") {
-        return std::optional{ TileSharingAlignment::off };
+        return std::optional{TileSharingAlignment::off};
     }
     if (str == "greedy") {
-        return std::optional{ TileSharingAlignment::greedy };
+        return std::optional{TileSharingAlignment::greedy};
     }
     if (str == "optimal") {
-        return std::optional{ TileSharingAlignment::optimal };
+        return std::optional{TileSharingAlignment::optimal};
     }
 
     // Phase 2: Case-insensitive fuzzy match
     std::string lower_str = str;
     std::ranges::transform(
-            lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
     // Fuzzy names for off
     if (lower_str == "off") {
-        return std::optional{ TileSharingAlignment::off };
+        return std::optional{TileSharingAlignment::off};
     }
     // Fuzzy names for greedy
     if (lower_str == "greedy") {
-        return std::optional{ TileSharingAlignment::greedy };
+        return std::optional{TileSharingAlignment::greedy};
     }
     // Fuzzy names for optimal
     if (lower_str == "optimal") {
-        return std::optional{ TileSharingAlignment::optimal };
+        return std::optional{TileSharingAlignment::optimal};
     }
 
     return std::nullopt;

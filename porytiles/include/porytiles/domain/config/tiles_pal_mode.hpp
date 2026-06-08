@@ -54,42 +54,42 @@ enum class TilesPalMode {
 {
     // Phase 1: Exact match against C++ constant names
     if (str == "true_color") {
-        return std::optional{ TilesPalMode::true_color };
+        return std::optional{TilesPalMode::true_color};
     }
     if (str == "greyscale") {
-        return std::optional{ TilesPalMode::greyscale };
+        return std::optional{TilesPalMode::greyscale};
     }
 
     // Phase 2: Case-insensitive fuzzy match
     std::string lower_str = str;
     std::ranges::transform(
-            lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
     // Fuzzy names for true_color
     if (lower_str == "true-color") {
-        return std::optional{ TilesPalMode::true_color };
+        return std::optional{TilesPalMode::true_color};
     }
     if (lower_str == "true_color") {
-        return std::optional{ TilesPalMode::true_color };
+        return std::optional{TilesPalMode::true_color};
     }
     if (lower_str == "truecolor") {
-        return std::optional{ TilesPalMode::true_color };
+        return std::optional{TilesPalMode::true_color};
     }
     if (lower_str == "color") {
-        return std::optional{ TilesPalMode::true_color };
+        return std::optional{TilesPalMode::true_color};
     }
     // Fuzzy names for greyscale
     if (lower_str == "greyscale") {
-        return std::optional{ TilesPalMode::greyscale };
+        return std::optional{TilesPalMode::greyscale};
     }
     if (lower_str == "grayscale") {
-        return std::optional{ TilesPalMode::greyscale };
+        return std::optional{TilesPalMode::greyscale};
     }
     if (lower_str == "grey") {
-        return std::optional{ TilesPalMode::greyscale };
+        return std::optional{TilesPalMode::greyscale};
     }
     if (lower_str == "gray") {
-        return std::optional{ TilesPalMode::greyscale };
+        return std::optional{TilesPalMode::greyscale};
     }
 
     return std::nullopt;

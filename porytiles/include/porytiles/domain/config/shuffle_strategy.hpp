@@ -25,7 +25,7 @@ namespace porytiles {
  * The packing algorithm can attempt multiple tile orderings to find a valid solution. This enum
  * controls the strategy used to generate those orderings after the initial FFD (First Fit Decreasing)
  * attempt.
- * 
+ *
  */
 enum class ShuffleStrategy {
     /**
@@ -61,43 +61,43 @@ enum class ShuffleStrategy {
 {
     // Phase 1: Exact match against C++ constant names
     if (str == "single_ffd") {
-        return std::optional{ ShuffleStrategy::single_ffd };
+        return std::optional{ShuffleStrategy::single_ffd};
     }
     if (str == "noisy_ffd") {
-        return std::optional{ ShuffleStrategy::noisy_ffd };
+        return std::optional{ShuffleStrategy::noisy_ffd};
     }
     if (str == "random") {
-        return std::optional{ ShuffleStrategy::random };
+        return std::optional{ShuffleStrategy::random};
     }
 
     // Phase 2: Case-insensitive fuzzy match
     std::string lower_str = str;
     std::ranges::transform(
-            lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
     // Fuzzy names for single_ffd
     if (lower_str == "single-ffd") {
-        return std::optional{ ShuffleStrategy::single_ffd };
+        return std::optional{ShuffleStrategy::single_ffd};
     }
     if (lower_str == "single_ffd") {
-        return std::optional{ ShuffleStrategy::single_ffd };
+        return std::optional{ShuffleStrategy::single_ffd};
     }
     if (lower_str == "singleffd") {
-        return std::optional{ ShuffleStrategy::single_ffd };
+        return std::optional{ShuffleStrategy::single_ffd};
     }
     // Fuzzy names for noisy_ffd
     if (lower_str == "noisy-ffd") {
-        return std::optional{ ShuffleStrategy::noisy_ffd };
+        return std::optional{ShuffleStrategy::noisy_ffd};
     }
     if (lower_str == "noisy_ffd") {
-        return std::optional{ ShuffleStrategy::noisy_ffd };
+        return std::optional{ShuffleStrategy::noisy_ffd};
     }
     if (lower_str == "noisyffd") {
-        return std::optional{ ShuffleStrategy::noisy_ffd };
+        return std::optional{ShuffleStrategy::noisy_ffd};
     }
     // Fuzzy names for random
     if (lower_str == "random") {
-        return std::optional{ ShuffleStrategy::random };
+        return std::optional{ShuffleStrategy::random};
     }
 
     return std::nullopt;

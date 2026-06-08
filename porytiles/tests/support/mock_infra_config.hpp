@@ -27,9 +27,7 @@ class MockInfraConfig : public InfraConfig {
     std::size_t metatile_attr_size = 2;
     bool tileset_animations_wire_anim_code = true;
 
-
   protected:
-
     [[nodiscard]] ChainableResult<ConfigValue<std::string>>
     tileset_paths_primary_src_raw(ConfigScopeType, const std::string &) const override
     {
@@ -61,17 +59,19 @@ class MockInfraConfig : public InfraConfig {
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
     metatile_attr_size_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{
-            metatile_attr_size, "Metatile Attribute Size", "metatile_attr_size", "mock", {}};
+        return ConfigValue{metatile_attr_size, "Metatile Attribute Size", "metatile_attr_size", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
     tileset_animations_wire_anim_code_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{
-            tileset_animations_wire_anim_code, "Tileset Animations Wire Anim Code", "tileset_animations_wire_anim_code", "mock", {}};
+            tileset_animations_wire_anim_code,
+            "Tileset Animations Wire Anim Code",
+            "tileset_animations_wire_anim_code",
+            "mock",
+            {}};
     }
-
 };
 
 } // namespace porytiles

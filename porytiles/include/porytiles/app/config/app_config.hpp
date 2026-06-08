@@ -95,9 +95,7 @@ class AppConfig {
         return validated_val;
     }
 
-
   protected:
-
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
     verify_checksums_validated(ConfigScopeType type, const std::string &scope) const
@@ -181,7 +179,6 @@ class AppConfig {
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::vector<std::string>>>
     diagnostic_remarks_include_raw(ConfigScopeType type, const std::string &scope) const = 0;
-
 };
 
 } // namespace porytiles

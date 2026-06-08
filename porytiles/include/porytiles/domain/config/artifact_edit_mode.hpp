@@ -26,7 +26,7 @@ namespace porytiles {
  * the compiler must use only the existing artifacts from the base tileset without modifications. In
  * patch mode, the compiler can modify unused or "open" slots as needed. In optimize mode, artifacts
  * are cleared and packed optimally (Porytiles1 behavior).
- * 
+ *
  */
 enum class ArtifactEditMode {
     /**
@@ -62,31 +62,31 @@ enum class ArtifactEditMode {
 {
     // Phase 1: Exact match against C++ constant names
     if (str == "locked") {
-        return std::optional{ ArtifactEditMode::locked };
+        return std::optional{ArtifactEditMode::locked};
     }
     if (str == "patch") {
-        return std::optional{ ArtifactEditMode::patch };
+        return std::optional{ArtifactEditMode::patch};
     }
     if (str == "optimize") {
-        return std::optional{ ArtifactEditMode::optimize };
+        return std::optional{ArtifactEditMode::optimize};
     }
 
     // Phase 2: Case-insensitive fuzzy match
     std::string lower_str = str;
     std::ranges::transform(
-            lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
     // Fuzzy names for locked
     if (lower_str == "locked") {
-        return std::optional{ ArtifactEditMode::locked };
+        return std::optional{ArtifactEditMode::locked};
     }
     // Fuzzy names for patch
     if (lower_str == "patch") {
-        return std::optional{ ArtifactEditMode::patch };
+        return std::optional{ArtifactEditMode::patch};
     }
     // Fuzzy names for optimize
     if (lower_str == "optimize") {
-        return std::optional{ ArtifactEditMode::optimize };
+        return std::optional{ArtifactEditMode::optimize};
     }
 
     return std::nullopt;

@@ -91,8 +91,7 @@ class OverrideConfigProvider final : public ConfigProvider {
     num_metatiles_total(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<std::size_t>
     num_pals_in_primary(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<std::size_t>
-    num_pals_total(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::size_t> num_pals_total(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<std::size_t>
     max_map_data_size(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<std::size_t>
@@ -103,8 +102,7 @@ class OverrideConfigProvider final : public ConfigProvider {
     tiles_edit_mode(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<ArtifactEditMode>
     pals_edit_mode(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<bool>
-    pal_hints_enabled(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<bool> pal_hints_enabled(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<std::vector<PaletteHint>>
     pal_hints(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<PackingStrategyType>
@@ -129,8 +127,7 @@ class OverrideConfigProvider final : public ConfigProvider {
     per_anim_overrides(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<bool>
     cross_tileset_anim_linking(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<bool>
-    verify_checksums(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<bool> verify_checksums(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<PrimaryPairingMode>
     primary_pairing_mode(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<std::vector<std::string>>

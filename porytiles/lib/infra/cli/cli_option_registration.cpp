@@ -14,7 +14,7 @@ namespace porytiles {
 void register_config_options(CLI::App &app, CliOptionStorage &storage)
 {
     auto *config_group = app.add_option_group("Config Options", "Override configuration values");
-    config_group->footer("");  // Clear inherited footer to prevent duplication in help output
+    config_group->footer(""); // Clear inherited footer to prevent duplication in help output
 
     // Number Of Tiles In Primary (std::size_t, captured as string, parsed by CliOptionProvider)
     config_group->add_option(
@@ -65,24 +65,28 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
         "Number Of Tiles Per Metatile - The NUM_TILES_PER_METATILE setting from include/fieldmap.h.");
 
     // Extrinsic Transparency (Rgba32, captured as string, parsed by CliOptionProvider)
-    config_group->add_option(
-        "--extrinsic-transparency",
-        storage.extrinsic_transparency,
-        "Extrinsic Transparency - The RGB color to treat as transparent during compilation. (format: R,G,B or R,G,B,A, values 0-255)")
+    config_group
+        ->add_option(
+            "--extrinsic-transparency",
+            storage.extrinsic_transparency,
+            "Extrinsic Transparency - The RGB color to treat as transparent during compilation. (format: R,G,B or "
+            "R,G,B,A, values 0-255)")
         ->type_name("R,G,B[,A]");
 
     // Tiles Edit Mode (enum ArtifactEditMode, captured as string, parsed by CliOptionProvider)
-    config_group->add_option(
-        "--tiles-edit-mode",
-        storage.tiles_edit_mode,
-        "Tiles Edit Mode - The allowed edit mode for the tiles.png artifact.")
+    config_group
+        ->add_option(
+            "--tiles-edit-mode",
+            storage.tiles_edit_mode,
+            "Tiles Edit Mode - The allowed edit mode for the tiles.png artifact.")
         ->type_name("{locked|patch|optimize}");
 
     // Palettes Edit Mode (enum ArtifactEditMode, captured as string, parsed by CliOptionProvider)
-    config_group->add_option(
-        "--pals-edit-mode",
-        storage.pals_edit_mode,
-        "Palettes Edit Mode - The allowed edit mode for the palettes/ artifacts.")
+    config_group
+        ->add_option(
+            "--pals-edit-mode",
+            storage.pals_edit_mode,
+            "Palettes Edit Mode - The allowed edit mode for the palettes/ artifacts.")
         ->type_name("{locked|patch|optimize}");
 
     // Palette Hints Enabled (bool with --flag/--no-flag, captured as "true"/"false" string)
@@ -100,59 +104,76 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
         "Palette Hints Enabled - Enable configured palette hints.");
 
     // Packing Strategy (enum PackingStrategyType, captured as string, parsed by CliOptionProvider)
-    config_group->add_option(
-        "--packing-strategy",
-        storage.packing_strategy,
-        "Packing Strategy - The palette packing algorithm to use during compilation.")
+    config_group
+        ->add_option(
+            "--packing-strategy",
+            storage.packing_strategy,
+            "Packing Strategy - The palette packing algorithm to use during compilation.")
         ->type_name("{best-fusion|backtracking|overload-and-remove}");
 
     // Tile Sharing Packing (enum TileSharingPacking, captured as string, parsed by CliOptionProvider)
-    config_group->add_option(
-        "--tile-sharing-packing",
-        storage.tile_sharing_packing,
-        "Tile Sharing Packing - Controls whether palette packing considers tile sharing.")
+    config_group
+        ->add_option(
+            "--tile-sharing-packing",
+            storage.tile_sharing_packing,
+            "Tile Sharing Packing - Controls whether palette packing considers tile sharing.")
         ->type_name("{off|biased|optimal}");
 
     // Tile Sharing Alignment (enum TileSharingAlignment, captured as string, parsed by CliOptionProvider)
-    config_group->add_option(
-        "--tile-sharing-alignment",
-        storage.tile_sharing_alignment,
-        "Tile Sharing Alignment - Controls palette slot alignment strategy for tile sharing.")
+    config_group
+        ->add_option(
+            "--tile-sharing-alignment",
+            storage.tile_sharing_alignment,
+            "Tile Sharing Alignment - Controls palette slot alignment strategy for tile sharing.")
         ->type_name("{off|greedy|optimal}");
 
     // Tiles Palette Mode (enum TilesPalMode, captured as string, parsed by CliOptionProvider)
-    config_group->add_option(
-        "--tiles-pal-mode",
-        storage.tiles_pal_mode,
-        "Tiles Palette Mode - The color mode to use when saving the tiles.png artifact.")
+    config_group
+        ->add_option(
+            "--tiles-pal-mode",
+            storage.tiles_pal_mode,
+            "Tiles Palette Mode - The color mode to use when saving the tiles.png artifact.")
         ->type_name("{true-color|greyscale}");
 
-    // Global Animation Palette Resolution Strategy (enum AnimPalResolutionStrategy, captured as string, parsed by CliOptionProvider)
-    config_group->add_option(
-        "--anim-pal-resolution-strategy",
-        storage.global_anim_pal_resolution_strategy,
-        "Global Animation Palette Resolution Strategy - The global strategy for determining which palette to use when decompiling animation tiles.")
-        ->type_name("{scan-local-metatiles|palette-00|palette-01|palette-02|palette-03|palette-04|palette-05|palette-06|palette-07|palette-08|palette-09|palette-10|palette-11|palette-12|palette-13|palette-14|palette-15|internal-png-pal|scan-all-tilesets}");
+    // Global Animation Palette Resolution Strategy (enum AnimPalResolutionStrategy, captured as string, parsed by
+    // CliOptionProvider)
+    config_group
+        ->add_option(
+            "--anim-pal-resolution-strategy",
+            storage.global_anim_pal_resolution_strategy,
+            "Global Animation Palette Resolution Strategy - The global strategy for determining which palette to use "
+            "when decompiling animation tiles.")
+        ->type_name(
+            "{scan-local-metatiles|palette-00|palette-01|palette-02|palette-03|palette-04|palette-05|palette-06|"
+            "palette-07|palette-08|palette-09|palette-10|palette-11|palette-12|palette-13|palette-14|palette-15|"
+            "internal-png-pal|scan-all-tilesets}");
 
-    // Global Animation Key Frame Resolution Strategy (enum AnimKeyFrameResolutionStrategy, captured as string, parsed by CliOptionProvider)
-    config_group->add_option(
-        "--anim-key-frame-resolution-strategy",
-        storage.global_anim_key_frame_resolution_strategy,
-        "Global Animation Key Frame Resolution Strategy - The strategy to use when decompilation encounters duplicate key frame subtiles.")
+    // Global Animation Key Frame Resolution Strategy (enum AnimKeyFrameResolutionStrategy, captured as string, parsed
+    // by CliOptionProvider)
+    config_group
+        ->add_option(
+            "--anim-key-frame-resolution-strategy",
+            storage.global_anim_key_frame_resolution_strategy,
+            "Global Animation Key Frame Resolution Strategy - The strategy to use when decompilation encounters "
+            "duplicate key frame subtiles.")
         ->type_name("{error|warning|mangle}");
 
-    // Global Animation Multi-Pal Subtile Resolution Strategy (enum AnimMultiPalSubtileResolutionStrategy, captured as string, parsed by CliOptionProvider)
-    config_group->add_option(
-        "--anim-multi-pal-subtile-resolution-strategy",
-        storage.global_anim_multi_pal_subtile_resolution_strategy,
-        "Global Animation Multi-Pal Subtile Resolution Strategy - The strategy for handling animation subtiles referenced with multiple palettes.")
+    // Global Animation Multi-Pal Subtile Resolution Strategy (enum AnimMultiPalSubtileResolutionStrategy, captured as
+    // string, parsed by CliOptionProvider)
+    config_group
+        ->add_option(
+            "--anim-multi-pal-subtile-resolution-strategy",
+            storage.global_anim_multi_pal_subtile_resolution_strategy,
+            "Global Animation Multi-Pal Subtile Resolution Strategy - The strategy for handling animation subtiles "
+            "referenced with multiple palettes.")
         ->type_name("{error|warning|split}");
 
     // Global Frame Linking (enum FrameLinking, captured as string, parsed by CliOptionProvider)
-    config_group->add_option(
-        "--frame-linking",
-        storage.global_frame_linking,
-        "Global Frame Linking - The global default frame linking mode for animations.")
+    config_group
+        ->add_option(
+            "--frame-linking",
+            storage.global_frame_linking,
+            "Global Frame Linking - The global default frame linking mode for animations.")
         ->type_name("{automatic|manual|hybrid}");
 
     // Cross-Tileset Animation Linking (bool with --flag/--no-flag, captured as "true"/"false" string)
@@ -167,7 +188,8 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
             }
             // count == 0 means neither flag was provided, leave optional empty
         },
-        "Cross-Tileset Animation Linking - Enable automatic matching of secondary tiles against primary animation key frames.");
+        "Cross-Tileset Animation Linking - Enable automatic matching of secondary tiles against primary animation key "
+        "frames.");
 
     // Verify Checksums (bool with --flag/--no-flag, captured as "true"/"false" string)
     config_group->add_flag(
@@ -184,10 +206,11 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
         "Verify Checksums - Enable or disable artifact checksum verification.");
 
     // Primary Pairing Mode (enum PrimaryPairingMode, captured as string, parsed by CliOptionProvider)
-    config_group->add_option(
-        "--primary-pairing-mode",
-        storage.primary_pairing_mode,
-        "Primary Pairing Mode - How a secondary tileset resolves its partner primary for compilation.")
+    config_group
+        ->add_option(
+            "--primary-pairing-mode",
+            storage.primary_pairing_mode,
+            "Primary Pairing Mode - How a secondary tileset resolves its partner primary for compilation.")
         ->type_name("{off|manual|automatic}");
 
     // Primary Pairing Partners (std::vector<std::string>, multi-value)
@@ -248,7 +271,8 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
     config_group->add_option(
         "--metatile-attr-size",
         storage.metatile_attr_size,
-        "Metatile Attribute Size - The size in bytes of each metatile attribute entry (2 for Emerald/Ruby, 4 for FireRed).");
+        "Metatile Attribute Size - The size in bytes of each metatile attribute entry (2 for Emerald/Ruby, 4 for "
+        "FireRed).");
 
     // Tileset Animations Wire Anim Code (bool with --flag/--no-flag, captured as "true"/"false" string)
     config_group->add_flag(
@@ -263,7 +287,6 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
             // count == 0 means neither flag was provided, leave optional empty
         },
         "Tileset Animations Wire Anim Code - Enable or disable automatic animation code wiring.");
-
 }
 
 } // namespace porytiles

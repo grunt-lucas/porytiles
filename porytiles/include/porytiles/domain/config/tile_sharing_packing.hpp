@@ -25,7 +25,7 @@ namespace porytiles {
  * When set to off, the packer ignores shape groups entirely. When biased,
  * a soft cost penalty steers shape group siblings toward different palettes. When
  * optimal, co-placing siblings is rejected outright (not yet implemented).
- * 
+ *
  */
 enum class TileSharingPacking {
     /**
@@ -61,31 +61,31 @@ enum class TileSharingPacking {
 {
     // Phase 1: Exact match against C++ constant names
     if (str == "off") {
-        return std::optional{ TileSharingPacking::off };
+        return std::optional{TileSharingPacking::off};
     }
     if (str == "biased") {
-        return std::optional{ TileSharingPacking::biased };
+        return std::optional{TileSharingPacking::biased};
     }
     if (str == "optimal") {
-        return std::optional{ TileSharingPacking::optimal };
+        return std::optional{TileSharingPacking::optimal};
     }
 
     // Phase 2: Case-insensitive fuzzy match
     std::string lower_str = str;
     std::ranges::transform(
-            lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
     // Fuzzy names for off
     if (lower_str == "off") {
-        return std::optional{ TileSharingPacking::off };
+        return std::optional{TileSharingPacking::off};
     }
     // Fuzzy names for biased
     if (lower_str == "biased") {
-        return std::optional{ TileSharingPacking::biased };
+        return std::optional{TileSharingPacking::biased};
     }
     // Fuzzy names for optimal
     if (lower_str == "optimal") {
-        return std::optional{ TileSharingPacking::optimal };
+        return std::optional{TileSharingPacking::optimal};
     }
 
     return std::nullopt;

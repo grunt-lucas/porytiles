@@ -26,7 +26,7 @@ namespace porytiles {
  * trade-offs between speed, solution quality, and configurability. Backtracking is the default
  * and handles the widest range of inputs. Best Fusion is fast but may fail on hard instances.
  * Overload-And-Remove uses multi-start retries to escape local optima.
- * 
+ *
  */
 enum class PackingStrategyType {
     /**
@@ -62,43 +62,43 @@ enum class PackingStrategyType {
 {
     // Phase 1: Exact match against C++ constant names
     if (str == "best_fusion") {
-        return std::optional{ PackingStrategyType::best_fusion };
+        return std::optional{PackingStrategyType::best_fusion};
     }
     if (str == "backtracking") {
-        return std::optional{ PackingStrategyType::backtracking };
+        return std::optional{PackingStrategyType::backtracking};
     }
     if (str == "overload_and_remove") {
-        return std::optional{ PackingStrategyType::overload_and_remove };
+        return std::optional{PackingStrategyType::overload_and_remove};
     }
 
     // Phase 2: Case-insensitive fuzzy match
     std::string lower_str = str;
     std::ranges::transform(
-            lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
     // Fuzzy names for best_fusion
     if (lower_str == "best-fusion") {
-        return std::optional{ PackingStrategyType::best_fusion };
+        return std::optional{PackingStrategyType::best_fusion};
     }
     if (lower_str == "best_fusion") {
-        return std::optional{ PackingStrategyType::best_fusion };
+        return std::optional{PackingStrategyType::best_fusion};
     }
     if (lower_str == "bestfusion") {
-        return std::optional{ PackingStrategyType::best_fusion };
+        return std::optional{PackingStrategyType::best_fusion};
     }
     // Fuzzy names for backtracking
     if (lower_str == "backtracking") {
-        return std::optional{ PackingStrategyType::backtracking };
+        return std::optional{PackingStrategyType::backtracking};
     }
     // Fuzzy names for overload_and_remove
     if (lower_str == "overload-and-remove") {
-        return std::optional{ PackingStrategyType::overload_and_remove };
+        return std::optional{PackingStrategyType::overload_and_remove};
     }
     if (lower_str == "overload_and_remove") {
-        return std::optional{ PackingStrategyType::overload_and_remove };
+        return std::optional{PackingStrategyType::overload_and_remove};
     }
     if (lower_str == "overloadandremove") {
-        return std::optional{ PackingStrategyType::overload_and_remove };
+        return std::optional{PackingStrategyType::overload_and_remove};
     }
 
     return std::nullopt;

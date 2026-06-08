@@ -25,7 +25,7 @@ namespace porytiles {
  * Controls whether the backtracking search explores the solution space using depth-first or breadth-first traversal.
  * DFS uses in-place mutation with undo for memory efficiency, while BFS uses visited-state deduplication and a
  * dual-queue heuristic.
- * 
+ *
  */
 enum class SearchAlgorithm {
     /**
@@ -57,42 +57,42 @@ enum class SearchAlgorithm {
 {
     // Phase 1: Exact match against C++ constant names
     if (str == "dfs") {
-        return std::optional{ SearchAlgorithm::dfs };
+        return std::optional{SearchAlgorithm::dfs};
     }
     if (str == "bfs") {
-        return std::optional{ SearchAlgorithm::bfs };
+        return std::optional{SearchAlgorithm::bfs};
     }
 
     // Phase 2: Case-insensitive fuzzy match
     std::string lower_str = str;
     std::ranges::transform(
-            lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+        lower_str, lower_str.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
 
     // Fuzzy names for dfs
     if (lower_str == "dfs") {
-        return std::optional{ SearchAlgorithm::dfs };
+        return std::optional{SearchAlgorithm::dfs};
     }
     if (lower_str == "depth-first") {
-        return std::optional{ SearchAlgorithm::dfs };
+        return std::optional{SearchAlgorithm::dfs};
     }
     if (lower_str == "depth_first") {
-        return std::optional{ SearchAlgorithm::dfs };
+        return std::optional{SearchAlgorithm::dfs};
     }
     if (lower_str == "depthfirst") {
-        return std::optional{ SearchAlgorithm::dfs };
+        return std::optional{SearchAlgorithm::dfs};
     }
     // Fuzzy names for bfs
     if (lower_str == "bfs") {
-        return std::optional{ SearchAlgorithm::bfs };
+        return std::optional{SearchAlgorithm::bfs};
     }
     if (lower_str == "breadth-first") {
-        return std::optional{ SearchAlgorithm::bfs };
+        return std::optional{SearchAlgorithm::bfs};
     }
     if (lower_str == "breadth_first") {
-        return std::optional{ SearchAlgorithm::bfs };
+        return std::optional{SearchAlgorithm::bfs};
     }
     if (lower_str == "breadthfirst") {
-        return std::optional{ SearchAlgorithm::bfs };
+        return std::optional{SearchAlgorithm::bfs};
     }
 
     return std::nullopt;
