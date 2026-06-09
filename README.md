@@ -13,6 +13,8 @@ RGBA (or indexed) input assets.
 ## Quick Links
 - [Release binaries](https://github.com/grunt-lucas/porytiles/releases)
 - [Install via Homebrew](#release-cadence)
+- [User documentation](https://grunt-lucas.github.io/porytiles-user-docs/)
+- [Developer documentation](https://grunt-lucas.github.io/porytiles-dev-docs/)
 - [Doxygen API documentation](https://grunt-lucas.github.io/porytiles)
 - [Using Porytiles - Wiki](https://github.com/grunt-lucas/porytiles/wiki)
 - [Introductory YouTube Tutorial (made by a community member, not a rick roll this time I promise)](https://www.youtube.com/playlist?list=PLuyjFojPxF7-O5o_mS6uTBtyYcuyFf_Ce)
