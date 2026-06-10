@@ -17,6 +17,8 @@ and to its issue too when one was filed
 
 - Fixed `import-tileset` failing to resolve artifact paths for tilesets declared with `INCGFX_*`-style macros (e.g. `INCGFX_U32`) - [#315](https://github.com/grunt-lucas/porytiles/pull/315)
 
+- Fixed tileset names with a `snake_case` segment (e.g. `gTileset_velvet_forest`) producing a mismatched animation callback symbol in `headers.h`, where the `.callback` field kept the raw `snake_case` name while the generated init function used `PascalCase`, breaking the decomp build - [#317](https://github.com/grunt-lucas/porytiles/pull/317)
+
 ## [1.0.0] - 2026-06-05
 
 First stable release of Porytiles.

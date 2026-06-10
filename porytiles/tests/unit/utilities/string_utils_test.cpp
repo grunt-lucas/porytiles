@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "porytiles/domain/models/animation.hpp"
 #include "porytiles/utilities/dynamic_cased_name.hpp"
 #include "porytiles/utilities/string_utils.hpp"
 
@@ -158,4 +159,16 @@ TEST_F(StringUtilsTest, ExtractTilesetCasedNameCompound)
     auto result = extract_tileset_cased_name("gTileset_PetalburgCity");
     EXPECT_EQ(result.to_pascal_case(), "PetalburgCity");
     EXPECT_EQ(result.to_snake_case(), "petalburg_city");
+}
+
+TEST_F(StringUtilsTest, ManagedCallbackName)
+{
+    // snake_case-segmented names (the bug repro): the callback symbol must be PascalCase so it matches the
+    // generated function definition and forward declaration, not the raw snake_case shorthand.
+    EXPECT_EQ(anim::managed_callback_name("gTileset_velvet_forest"), "InitTilesetAnim_PorytilesManaged_VelvetForest");
+    EXPECT_EQ(
+        anim::managed_callback_name("gTileset_battle_frontier"), "InitTilesetAnim_PorytilesManaged_BattleFrontier");
+
+    // PascalCase input (every vanilla tileset) still converges to the same result.
+    EXPECT_EQ(anim::managed_callback_name("gTileset_General"), "InitTilesetAnim_PorytilesManaged_General");
 }
