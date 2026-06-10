@@ -6,8 +6,8 @@
 
 #include "nlohmann/json.hpp"
 
+#include "porytiles/domain/models/animation.hpp"
 #include "porytiles/domain/models/palette.hpp"
-#include "porytiles/utilities/string_utils.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
 
 namespace {
@@ -19,14 +19,12 @@ std::filesystem::path artifacts_file(const std::filesystem::path &project_root, 
     return project_root / "porytiles" / "tilesets" / tileset_name / "tileset-manifest.json";
 }
 
-constexpr std::string_view porytiles_managed_callback_prefix = "InitTilesetAnim_PorytilesManaged_";
-
 [[nodiscard]] bool is_porytiles_managed_callback(const std::optional<std::string> &callback)
 {
     if (!callback.has_value()) {
         return false;
     }
-    return callback->starts_with(porytiles_managed_callback_prefix);
+    return callback->starts_with(anim::porytiles_managed_callback_prefix);
 }
 
 ChainableResult<void> append_incbin_declarations(
@@ -236,9 +234,8 @@ ProjectPorytilesTilesetManager::wire_anim_code(const std::string &tileset_name, 
         "Failed to wire tileset_anims include/declaration for '{}'.",
         FormatParam(tileset_name, Style::bold));
 
-    // Step 2: Generate callback function name
-    const std::string shorthand = extract_tileset_shorthand(tileset_name);
-    const std::string callback_name = "InitTilesetAnim_PorytilesManaged_" + shorthand;
+    // Step 2: Generate callback function name (PascalCase, to match the generated function + declaration)
+    const std::string callback_name = anim::managed_callback_name(tileset_name);
 
     // Step 3: Update callback field in headers.h
     PT_TRY_CALL_CHAIN_ERR(

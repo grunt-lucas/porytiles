@@ -228,7 +228,7 @@ ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKe
 
     // Setup callback info, use Porytiles-managed callback regardless of metadata
     const auto tileset_cased = extract_tileset_cased_name(dest.name());
-    const std::string callback_func = "InitTilesetAnim_PorytilesManaged_" + tileset_cased.to_pascal_case();
+    const std::string callback_func = anim::managed_callback_name(dest.name());
 
     // Parse C code for animation params
     PT_TRY_ASSIGN_CHAIN_ERR(

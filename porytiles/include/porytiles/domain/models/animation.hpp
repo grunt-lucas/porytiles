@@ -5,12 +5,14 @@
 #include <ranges>
 #include <set>
 #include <string>
+#include <string_view>
 #include <vector>
 
 #include "porytiles/domain/models/anim_frame.hpp"
 #include "porytiles/domain/models/anim_params.hpp"
 #include "porytiles/domain/models/supports_transparency.hpp"
 #include "porytiles/utilities/panic/panic.hpp"
+#include "porytiles/utilities/string_utils.hpp"
 #include "porytiles/utilities/text/text_formatter.hpp"
 
 namespace porytiles {
@@ -20,6 +22,17 @@ namespace anim {
 constexpr std::string g_tileset_anims_prefix = "gTilesetAnims_";
 constexpr std::string s_tileset_anims_prefix = "sTilesetAnims_";
 constexpr std::string porytiles_managed_prefix = "PorytilesManaged_";
+
+// "InitTilesetAnim_PorytilesManaged_": prefix of the init callback symbol Porytiles generates for a managed
+// tileset (i.e. "InitTilesetAnim_" + porytiles_managed_prefix). Used for both constructing and detecting it.
+constexpr std::string_view porytiles_managed_callback_prefix = "InitTilesetAnim_PorytilesManaged_";
+
+// Builds the Porytiles-managed init-callback symbol name for a tileset, e.g.
+// "gTileset_velvet_forest" -> "InitTilesetAnim_PorytilesManaged_VelvetForest".
+[[nodiscard]] inline std::string managed_callback_name(const std::string &tileset_name)
+{
+    return std::string{porytiles_managed_callback_prefix} + extract_tileset_cased_name(tileset_name).to_pascal_case();
+}
 
 [[nodiscard]] inline std::string message_header(
     const TextFormatter &format,
