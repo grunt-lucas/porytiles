@@ -51,12 +51,9 @@ ChainableResult<void> CompileSecondaryTileset::compile(const std::string &tilese
 
     // 4b. Cross-tileset extrinsic transparency mismatch warning.
     {
-        auto secondary_et_result = domain_config_->extrinsic_transparency(ConfigScopeType::tileset, tileset_name);
-        auto primary_et_result =
-            domain_config_->extrinsic_transparency(ConfigScopeType::tileset, paired_primary->name());
-
-        const auto &secondary_et = secondary_et_result.value();
-        const auto &primary_et = primary_et_result.value();
+        PT_UNWRAP_TILESET_CONFIG_PTR_AS(secondary_et, domain_config_, extrinsic_transparency, tileset_name, void);
+        PT_UNWRAP_TILESET_CONFIG_PTR_AS(
+            primary_et, domain_config_, extrinsic_transparency, paired_primary->name(), void);
         if (secondary_et.value() != primary_et.value()) {
             std::vector<std::string> warn_msg{};
             warn_msg.emplace_back(diag_->formatter().format(

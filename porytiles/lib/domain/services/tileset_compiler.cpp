@@ -298,8 +298,9 @@ ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
      * across mismatched-ET inputs.
      */
     if (has_paired_primary()) {
-        paired_primary_extrinsic_transparency_ =
-            config_.extrinsic_transparency(ConfigScopeType::tileset, paired_primary_->name()).value();
+        PT_UNWRAP_TILESET_CONFIG_REF_AS(
+            paired_primary_et, config_, extrinsic_transparency, paired_primary_->name(), std::unique_ptr<Tileset>);
+        paired_primary_extrinsic_transparency_ = std::move(paired_primary_et);
     }
 
     // Execute subtasks
@@ -898,6 +899,11 @@ CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> 
         if (const auto anim_match = anim_tile_matcher_.find_match(
                 CanonicalPixelTile{porytiles_tile, extrinsic_transparency_.value()}, extrinsic_transparency_.value());
             anim_match.has_value()) {
+            /*
+             * The remark is gated on is_cross_tileset by design: it surfaces new runtime behavior, i.e. a tile that
+             * now animates because it links into primary art. Matches against this tileset's own animations are the
+             * expected path and stay silent.
+             */
             if (anim_match->is_cross_tileset) {
                 std::vector<std::string> remark_lines;
                 remark_lines.emplace_back(format_.format(
@@ -943,6 +949,11 @@ CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> 
          * identical IndexPixel data after palette mapping (indexed-pixel coincidence). This happens when two
          * visually distinct RGBA tiles map to the same palette indices. When cross-tileset linking is disabled,
          * this catches all workspace-level matches to primary animation ranges.
+         *
+         * The O(primary_anims) scan is deliberate. AnimTileMatcher::is_in_animation_range() cannot replace it: when
+         * cross-tileset linking is disabled the primary animations are never registered in the matcher, the matcher
+         * mixes in this tileset's own animation ranges, and it returns only a bool while the diagnostic needs the
+         * animation name.
          */
         if (is_secondary() && has_paired_primary()) {
             const auto &primary_porymap_anims = paired_primary_->porymap_component().anims();
@@ -1488,7 +1499,12 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
 
     } // if (!anims.empty())
 
-    // Register primary animations for cross-tileset linking (secondary only)
+    /*
+     * Register primary animations for cross-tileset linking (secondary only). Ordering is load-bearing: the
+     * secondary's own animations were registered above, so they win the matcher's first-registration-wins lookups
+     * when key frames overlap. The collision check below then turns what would otherwise be a silent primary-side
+     * loss into a fatal error.
+     */
     if (is_secondary() && has_paired_primary() && cross_tileset_anim_linking_.value()) {
         const auto &primary_porytiles_anims = paired_primary_->porytiles_component().anims();
         const auto &primary_porymap_anims = paired_primary_->porymap_component().anims();
@@ -1498,7 +1514,10 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
          * This is the authoritative source for which palette each primary tile was compiled against.
          * If multiple metatile entries reference the same tile with different palettes, the first
          * entry wins (consistent with the first-match convention used in
-         * pipeline_helper_build_keyframe_data).
+         * pipeline_helper_build_keyframe_data). The two conventions must stay in sync: switching
+         * either side to last-match-wins (or raising on conflict) without the other would assign
+         * cross-tileset animation tiles palettes that disagree with how their reused siblings were
+         * compiled.
          */
         std::map<std::size_t, std::size_t> primary_tile_pal_map;
         for (const auto &entry : paired_primary_->porymap_component().metatiles_bin()) {
@@ -1564,12 +1583,21 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
              * The two loops are independent. Collision detection only reads anim_tile_matcher_;
              * the palette lookup only reads primary_tile_pal_map.
              *
-             * Check for cross-tileset key frame collisions. At this point only secondary animations have been
-             * registered in the matcher, so any match is a secondary collision. Each side of the comparison uses its
-             * own ET: primary subtiles are classified under the paired primary's ET and the canonical form is built
-             * under that ET, while the matcher's internal comparator classifies the already-registered secondary
-             * entries under the secondary's ET. This is what lets the comparator find a collision across mismatched-ET
-             * inputs.
+             * Check for cross-tileset key frame collisions. Any non-cross-tileset match is a collision with a
+             * secondary animation. Matches flagged is_cross_tileset come from primary animations registered on
+             * earlier loop iterations and are intentionally ignored: two primary animations sharing subtile art is a
+             * primary-side authoring mistake, and the primary compiler owns its own validation. This check only
+             * protects the cross-tileset boundary.
+             *
+             * Each side of the comparison uses its own ET: primary subtiles are classified under the paired primary's
+             * ET and the canonical form is built under that ET, while the matcher's internal comparator classifies
+             * the already-registered secondary entries under the secondary's ET. This is what lets the comparator
+             * find a collision across mismatched-ET inputs.
+             *
+             * The check must keep using CanonicalPixelTile + find_match, the exact mechanism the tile assignment loop
+             * later uses to match secondary tiles against these key frames. A different or looser comparator would
+             * let the collision check pass for subtiles that still collide at assignment time, reintroducing the
+             * silent first-registration-wins loss this check exists to prevent.
              */
             for (std::size_t i = 0; i < prim_tile_count; ++i) {
                 if (prim_anim.key_frame().tile_at(i).is_transparent(paired_primary_extrinsic_transparency_.value())) {

@@ -100,6 +100,11 @@ class AnimTileMatcher {
     /**
      * @brief Returns the total number of keyframe tiles registered across all animations.
      *
+     * @details
+     * The count includes cross-tileset registrations (paired primary animations registered with
+     * @c is_cross_tileset=true), not just the current tileset's own animations. A caller that needs a count of only
+     * the current tileset's animation tiles must track that separately.
+     *
      * @return Total tile count for all registered animations
      */
     [[nodiscard]] std::size_t total_keyframe_tiles() const
