@@ -179,6 +179,16 @@ index resolution so that the error path does not waste work on palette lookups. 
 each primary subtile and calls `find_match`. Any non-cross-tileset match (i.e. a secondary animation)
 triggers the error.
 
+A name-level check runs earlier in the same per-primary-animation loop: after the key frame skip (so
+manual-linking primary animations, which are never registered here, keep compiling) and before the RGBA
+art collision check and palette resolution. If a secondary animation shares a name with the primary
+animation, the compiler emits a fatal error requiring distinct names. This catches the same-name /
+different-art case that the RGBA art check cannot: two animations named `flower` with visually distinct
+key frames. Before this check existed, that input reached `register_animation` and aborted the compiler via
+the matcher's cross-tileset name panic (#328). Same-name / same-art is caught here by the name check first,
+which is correct: the art-collision guidance ("make key frames visually distinct") would be misleading when
+the real conflict is the shared name.
+
 ### Extrinsic transparency mismatch warning
 
 The use-case layer (`CompileSecondaryTileset::compile()`) now checks whether the secondary and paired
@@ -303,6 +313,14 @@ the code comments are the authoritative copies.
   intentional: two primary animations sharing subtile art would be a primary-side authoring
   mistake, and the primary compiler is responsible for its own validation. The secondary
   collision check exists only to protect the cross-tileset boundary.
+
+- **The matcher's cross-tileset name panic is a backstop, not the user-facing guard.**
+  `AnimTileMatcher::register_animation` panics when a cross-tileset animation reuses an
+  already-registered name. That panic is an internal invariant assertion: the user-facing guard is the
+  name-level check in `pipeline_helper_register_animations()`, which returns a `FormattableError` before
+  the primary animation is ever registered (#328). Do not "fix" the panic into a diagnostic or delete it;
+  it exists to catch any future caller that reaches `register_animation` with a colliding name without
+  going through the compiler-level check.
 
 - **`total_keyframe_tiles()` counts cross-tileset registrations.** `AnimTileMatcher::register_animation`
   increments `total_tiles_` for every call, including `is_cross_tileset=true` registrations. The

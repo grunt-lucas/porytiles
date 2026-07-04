@@ -19,6 +19,8 @@ and to its issue too when one was filed
 
 - Fixed tileset names with a `snake_case` segment (e.g. `gTileset_velvet_forest`) producing a mismatched animation callback symbol in `headers.h`, where the `.callback` field kept the raw `snake_case` name while the generated init function used `PascalCase`, breaking the decomp build - [#317](https://github.com/grunt-lucas/porytiles/pull/317)
 
+- Fixed a same-named animation in a secondary and its paired primary aborting the compiler with an internal panic instead of a diagnostic when cross-tileset animation linking is enabled - [#TODO](https://github.com/grunt-lucas/porytiles/pull/TODO)
+
 ## [1.0.0] - 2026-06-05
 
 First stable release of Porytiles.
