@@ -442,21 +442,9 @@ FormattableError{"Failed to pack palettes for tileset '{}'.", FormatParam{tilese
 
 ### Prose Style
 
-Avoid excessive em dashes and other exotic punctuation.
-Prefer periods, commas, or parentheses for clause separation.
-Exotic punctuations are fine occasionally but become obnoxious AI-isms when overused.
-
-Write documentation, code comments, and user-facing prose in plain, direct English:
-professional but slightly casual, never stiff. Avoid "literary" flourish.
-Do not use jargony software-engineering filler such as "when your work lands",
-"ship your tileset", "your changes land", "battle-tested", "leverage", or "seamless".
-
 The porytiles-user-docs `quickstart.md` page is the tone exemplar for user-facing docs:
 confident and clear, it addresses the reader as "you", uses cross-references, and avoids
-AI-isms and hype.
-
-No box-drawing section banners (`// ====`) etc., in source or test files. Use a plain
-single-line comment if grouping is truly needed.
+clichés and tech-jargon-hype language.
 
 Documentation and multi-line doc comments should use [semantic linebreaks](https://sembr.org/):
 one sentence or independent clause per line. This applies to Markdown documentation,

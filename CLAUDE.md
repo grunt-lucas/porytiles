@@ -125,6 +125,21 @@ comments, tests, idioms, error messages, and prose/Markdown conventions.
 
 ## **CRITICAL RULES - DO NOT VIOLATE**
 
+### Tone
+Avoid excessive em dashes and other exotic punctuation.
+Prefer periods, commas, or parentheses for clause separation.
+Exotic punctuations are fine occasionally but become obnoxious AI-isms when overused.
+
+Write documentation, code comments, and user-facing prose in plain, direct English:
+professional but slightly casual, never stiff. Avoid "literary" flourish.
+Do not use jargony software-engineering filler such as "when your work lands",
+"ship your tileset", "your changes land", "battle-tested", "leverage", or "seamless".
+DO NOT use stupid corporate Slack-therapy phrases like "One honest flag", "My honest take", etc.
+You don't have to keep telling me you're honest. SHOW ME that you're honest with good output.
+
+No box-drawing section banners (`// ====`) etc., in source or test files. Use a plain
+single-line comment if grouping is truly needed.
+
 ### Behavioral Rules
 - **Ignore `legacy/`** unless explicitly told to work with those files
 - **NEVER create mock data or simplified components** unless explicitly told to
