@@ -1535,12 +1535,12 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
         }
 
         // Check for stale compiled data: animations in porymap but removed from porytiles source
-        for (const auto &prim_anim_name : primary_porymap_anims | std::views::keys) {
-            if (!primary_porytiles_anims.contains(prim_anim_name)) {
+        for (const auto &primary_anim_name : primary_porymap_anims | std::views::keys) {
+            if (!primary_porytiles_anims.contains(primary_anim_name)) {
                 return FormattableError{std::vector<std::string>{
                     format_.format(
                         "Primary animation '{}' exists in compiled Porymap data but not in Porytiles source.",
-                        FormatParam{prim_anim_name, Style::bold}),
+                        FormatParam{primary_anim_name, Style::bold}),
                     "The paired primary tileset has uncompiled changes. Recompile it before compiling this "
                     "secondary."}};
             }
@@ -1567,6 +1567,25 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
                 remark_lines.emplace_back("Cross-tileset key frame matching is not possible for this animation.");
                 diag_.remark("cross-tileset-anim-skip-no-keyframe", remark_lines);
                 continue;
+            }
+
+            /*
+             * Same-name collision check. A secondary-owned animation sharing a name with a paired-primary
+             * animation cannot coexist with cross-tileset linking: the anim_pal_indices_ write below would
+             * clobber the secondary's entry, and the matcher panics on cross-tileset name reuse as a backstop
+             * invariant. Checked after the key-frame skip above so manual-linking primary animations, which
+             * are never registered here, keep compiling as before.
+             */
+            if (anims.contains(prim_anim_name)) {
+                std::vector<std::string> err_msg{};
+                err_msg.emplace_back(format_.format(
+                    "Primary animation '{}' has the same name as a secondary animation.",
+                    FormatParam{prim_anim_name, Style::bold}));
+                err_msg.emplace_back(
+                    "Cross-tileset animation linking requires unique animation names across primary and secondary.");
+                err_msg.emplace_back("Rename the secondary (or primary) animation so the names are distinct.");
+                err_msg.append_range(format_config_note_with_separator(format_, cross_tileset_anim_linking_));
+                return FormattableError{err_msg};
             }
 
             const auto &prim_porymap_anim = primary_porymap_anims.at(prim_anim_name);
