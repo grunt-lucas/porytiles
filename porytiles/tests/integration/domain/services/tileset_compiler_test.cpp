@@ -4,10 +4,14 @@
 #include <string>
 
 #include "porytiles/domain/config/artifact_edit_mode.hpp"
+#include "porytiles/domain/config/frame_linking.hpp"
 #include "porytiles/domain/models/anim_frame.hpp"
+#include "porytiles/domain/models/anim_override_entry.hpp"
 #include "porytiles/domain/models/anim_params.hpp"
 #include "porytiles/domain/models/animation.hpp"
+#include "porytiles/domain/models/image.hpp"
 #include "porytiles/domain/models/index_pixel.hpp"
+#include "porytiles/domain/models/metatile.hpp"
 #include "porytiles/domain/models/palette.hpp"
 #include "porytiles/domain/models/pixel_tile.hpp"
 #include "porytiles/domain/models/porymap_tileset_component.hpp"
@@ -81,9 +85,17 @@ Palette<Rgba32, pal::max_size> make_concrete_porymap_pal()
  * palette validation passes) plus a name-only Animation<IndexPixel> of the same name (the other stale-primary check).
  * The animation color is also placed in a non-slot-0 position of Porymap palette 0 so a cross-tileset primary anim
  * whose subtile is unreferenced by any metatile can still resolve its palette via the RGBA fallback path.
+ *
+ * When porymap_anim_tile_count is nonzero, the Porymap animation carries tile_count/tile_offset params so a secondary's
+ * primary_references overrides can resolve the primary animation's tile range. It defaults to 0 (name-only) so existing
+ * call sites are unaffected.
  */
 Tileset build_compiled_primary_with_anim(
-    const std::string &name, const std::string &anim_name, const Rgba32 &color, std::size_t num_pals)
+    const std::string &name,
+    const std::string &anim_name,
+    const Rgba32 &color,
+    std::size_t num_pals,
+    std::size_t porymap_anim_tile_count = 0)
 {
     auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
     porytiles_component->add_anim(make_rgba_animation(anim_name, color));
@@ -97,9 +109,42 @@ Tileset build_compiled_primary_with_anim(
         }
         porymap_component->set_pal(i, pal);
     }
-    porymap_component->add_anim(Animation<IndexPixel>{anim_name});
+    if (porymap_anim_tile_count != 0) {
+        AnimParams porymap_params;
+        porymap_params.tile_count(porymap_anim_tile_count);
+        porymap_params.tile_offset(1);
+        porymap_component->add_anim(Animation<IndexPixel>{anim_name, porymap_params});
+    }
+    else {
+        porymap_component->add_anim(Animation<IndexPixel>{anim_name});
+    }
 
     return Tileset{name, std::move(porytiles_component), std::move(porymap_component)};
+}
+
+// Builds a primary tileset with exactly one metatile: transparent (extrinsic-transparency-filled) bottom and top
+// layers and a solid-color middle layer. The middle-only content infers LayerType::normal, so dual-layerization drops
+// the bottom layer.
+Tileset build_single_metatile_tileset(const std::string &name, const Rgba32 &middle_color)
+{
+    auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
+    porytiles_component->bottom(Image<Rgba32>{16, 16, rgba_magenta});
+    porytiles_component->middle(Image<Rgba32>{16, 16, middle_color});
+    porytiles_component->top(Image<Rgba32>{16, 16, rgba_magenta});
+
+    auto porymap_component = std::make_unique<PorymapTilesetComponent>();
+    return Tileset{name, std::move(porytiles_component), std::move(porymap_component)};
+}
+
+// Adds a manual-frame-linking RGBA animation (tile_count 1) carrying the given override entries to a tileset.
+void add_manual_anim(
+    Tileset &tileset, const std::string &anim_name, const Rgba32 &color, std::vector<AnimOverrideEntry> overrides)
+{
+    Animation<Rgba32> anim = make_rgba_animation(anim_name, color);
+    AnimParams params = anim.params();
+    params.overrides(std::move(overrides));
+    anim.params(std::move(params));
+    tileset.porytiles_component().add_anim(std::move(anim));
 }
 
 } // namespace
@@ -280,4 +325,349 @@ TEST_F(TilesetCompilerCrossTilesetAnimTests, DistinctlyNamedSecondaryAnimDoesNot
     auto result = compiler->compile(secondary, true, &primary);
 
     ASSERT_TRUE(result.has_value()) << "Expected compile to succeed, got: " << join_error_chain(result);
+}
+
+/*
+ * Coverage for #330: anim.json override entry validation parity between the manual and primary_references paths. Each
+ * override entry is now bounds- and encodability-checked through a shared validator that emits graceful diagnostics
+ * instead of panicking (the manual metatile-OOB case previously panicked). These diagnostics do not abort the compile,
+ * so every test below expects result.has_value() to remain true and asserts via the buffered diagnostic tag counts.
+ */
+class TilesetCompilerOverrideValidationTests : public TilesetCompilerTestBase {};
+
+TEST_F(TilesetCompilerOverrideValidationTests, ManualOverrideApplies)
+{
+    config_.global_frame_linking = FrameLinking::manual;
+
+    auto tileset = build_single_metatile_tileset("test_primary", rgba_green);
+    add_manual_anim(
+        tileset,
+        "anim",
+        rgba_red,
+        {AnimOverrideEntry{
+            .metatile_id = 0,
+            .layer = metatile::Layer::middle,
+            .subtile = metatile::Subtile::northwest,
+            .frame_subtile = 0,
+            .pal_index = 0,
+            .h_flip = true,
+            .v_flip = false}});
+
+    auto compiler = make_compiler();
+    auto result = compiler->compile(tileset, false, nullptr);
+
+    ASSERT_TRUE(result.has_value()) << "Expected compile to succeed, got: " << join_error_chain(result);
+    EXPECT_FALSE(diag_->error_tag_counts().contains("manual-frame-subtile-oob"));
+    EXPECT_FALSE(diag_->error_tag_counts().contains("manual-metatile-oob"));
+    EXPECT_FALSE(diag_->error_tag_counts().contains("manual-pal-index-oob"));
+    EXPECT_FALSE(diag_->warning_tag_counts().contains("manual-pal-index-unused"));
+    EXPECT_FALSE(diag_->warning_tag_counts().contains("manual-dual-layer-drop"));
+
+    // Dual mode with an inferred-normal metatile keeps [middle, top], so the overridden middle/NW entry lands at
+    // dual-layer index 0 with the animation's tile offset and the requested horizontal flip.
+    const std::size_t tile_offset = result.value()->porytiles_component().anim_for_name("anim").params().tile_offset();
+    const auto &bin = result.value()->porymap_component().metatiles_bin();
+    ASSERT_FALSE(bin.empty());
+    EXPECT_EQ(bin.at(0).tile_index(), tile_offset);
+    EXPECT_TRUE(bin.at(0).h_flip());
+}
+
+TEST_F(TilesetCompilerOverrideValidationTests, ManualFrameSubtileOobReportsError)
+{
+    config_.global_frame_linking = FrameLinking::manual;
+
+    auto tileset = build_single_metatile_tileset("test_primary", rgba_green);
+    add_manual_anim(
+        tileset,
+        "anim",
+        rgba_red,
+        {AnimOverrideEntry{
+            .metatile_id = 0,
+            .layer = metatile::Layer::middle,
+            .subtile = metatile::Subtile::northwest,
+            .frame_subtile = 5,
+            .pal_index = 0,
+            .h_flip = false,
+            .v_flip = false}});
+
+    auto compiler = make_compiler();
+    auto result = compiler->compile(tileset, false, nullptr);
+
+    ASSERT_TRUE(result.has_value()) << "Expected compile to succeed, got: " << join_error_chain(result);
+    ASSERT_TRUE(diag_->error_tag_counts().contains("manual-frame-subtile-oob"));
+    EXPECT_EQ(diag_->error_tag_counts().at("manual-frame-subtile-oob"), 1U);
+}
+
+TEST_F(TilesetCompilerOverrideValidationTests, ManualMetatileOobReportsError)
+{
+    config_.global_frame_linking = FrameLinking::manual;
+
+    auto tileset = build_single_metatile_tileset("test_primary", rgba_green);
+    add_manual_anim(
+        tileset,
+        "anim",
+        rgba_red,
+        {AnimOverrideEntry{
+            .metatile_id = 99,
+            .layer = metatile::Layer::middle,
+            .subtile = metatile::Subtile::northwest,
+            .frame_subtile = 0,
+            .pal_index = 0,
+            .h_flip = false,
+            .v_flip = false}});
+
+    auto compiler = make_compiler();
+    auto result = compiler->compile(tileset, false, nullptr);
+
+    // Regression: an out-of-range metatile_id previously aborted the compiler via panic().
+    ASSERT_TRUE(result.has_value()) << "Expected compile to succeed, got: " << join_error_chain(result);
+    ASSERT_TRUE(diag_->error_tag_counts().contains("manual-metatile-oob"));
+    EXPECT_EQ(diag_->error_tag_counts().at("manual-metatile-oob"), 1U);
+}
+
+TEST_F(TilesetCompilerOverrideValidationTests, ManualPalIndexUnencodableReportsError)
+{
+    config_.global_frame_linking = FrameLinking::manual;
+
+    auto tileset = build_single_metatile_tileset("test_primary", rgba_green);
+    add_manual_anim(
+        tileset,
+        "anim",
+        rgba_red,
+        {AnimOverrideEntry{
+            .metatile_id = 0,
+            .layer = metatile::Layer::middle,
+            .subtile = metatile::Subtile::northwest,
+            .frame_subtile = 0,
+            .pal_index = 16,
+            .h_flip = false,
+            .v_flip = false}});
+
+    auto compiler = make_compiler();
+    auto result = compiler->compile(tileset, false, nullptr);
+
+    ASSERT_TRUE(result.has_value()) << "Expected compile to succeed, got: " << join_error_chain(result);
+    ASSERT_TRUE(diag_->error_tag_counts().contains("manual-pal-index-oob"));
+    EXPECT_EQ(diag_->error_tag_counts().at("manual-pal-index-oob"), 1U);
+}
+
+TEST_F(TilesetCompilerOverrideValidationTests, ManualPalIndexUnconfiguredReportsWarning)
+{
+    config_.global_frame_linking = FrameLinking::manual;
+
+    auto tileset = build_single_metatile_tileset("test_primary", rgba_green);
+    add_manual_anim(
+        tileset,
+        "anim",
+        rgba_red,
+        {AnimOverrideEntry{
+            .metatile_id = 0,
+            .layer = metatile::Layer::middle,
+            .subtile = metatile::Subtile::northwest,
+            .frame_subtile = 0,
+            .pal_index = 14,
+            .h_flip = false,
+            .v_flip = false}});
+
+    auto compiler = make_compiler();
+    auto result = compiler->compile(tileset, false, nullptr);
+
+    ASSERT_TRUE(result.has_value()) << "Expected compile to succeed, got: " << join_error_chain(result);
+    ASSERT_TRUE(diag_->warning_tag_counts().contains("manual-pal-index-unused"));
+    EXPECT_EQ(diag_->warning_tag_counts().at("manual-pal-index-unused"), 1U);
+    EXPECT_TRUE(diag_->error_tag_counts().empty());
+
+    // A pal_index past the configured count is encodable, so the entry still applies.
+    const auto &bin = result.value()->porymap_component().metatiles_bin();
+    ASSERT_FALSE(bin.empty());
+    EXPECT_EQ(bin.at(0).pal_index(), 14U);
+}
+
+TEST_F(TilesetCompilerOverrideValidationTests, ManualDualDropReportsWarning)
+{
+    config_.global_frame_linking = FrameLinking::manual;
+
+    auto tileset = build_single_metatile_tileset("test_primary", rgba_green);
+    add_manual_anim(
+        tileset,
+        "anim",
+        rgba_red,
+        {AnimOverrideEntry{
+            .metatile_id = 0,
+            .layer = metatile::Layer::bottom,
+            .subtile = metatile::Subtile::northwest,
+            .frame_subtile = 0,
+            .pal_index = 0,
+            .h_flip = false,
+            .v_flip = false}});
+
+    auto compiler = make_compiler();
+    auto result = compiler->compile(tileset, false, nullptr);
+
+    // The metatile infers LayerType::normal, so dual-layerization drops the bottom layer this override targets.
+    ASSERT_TRUE(result.has_value()) << "Expected compile to succeed, got: " << join_error_chain(result);
+    ASSERT_TRUE(diag_->warning_tag_counts().contains("manual-dual-layer-drop"));
+    EXPECT_EQ(diag_->warning_tag_counts().at("manual-dual-layer-drop"), 1U);
+    EXPECT_TRUE(diag_->error_tag_counts().empty());
+}
+
+TEST_F(TilesetCompilerOverrideValidationTests, ManualBottomOverrideAppliesInTripleMode)
+{
+    config_.global_frame_linking = FrameLinking::manual;
+    config_.num_tiles_per_metatile = 12;
+
+    auto tileset = build_single_metatile_tileset("test_primary", rgba_green);
+    add_manual_anim(
+        tileset,
+        "anim",
+        rgba_red,
+        {AnimOverrideEntry{
+            .metatile_id = 0,
+            .layer = metatile::Layer::bottom,
+            .subtile = metatile::Subtile::northwest,
+            .frame_subtile = 0,
+            .pal_index = 0,
+            .h_flip = false,
+            .v_flip = false}});
+
+    auto compiler = make_compiler();
+    auto result = compiler->compile(tileset, false, nullptr);
+
+    // Triple mode keeps all layers, so the bottom/NW override survives at triple-layer index 0.
+    ASSERT_TRUE(result.has_value()) << "Expected compile to succeed, got: " << join_error_chain(result);
+    EXPECT_FALSE(diag_->warning_tag_counts().contains("manual-dual-layer-drop"));
+
+    const std::size_t tile_offset = result.value()->porytiles_component().anim_for_name("anim").params().tile_offset();
+    const auto &bin = result.value()->porymap_component().metatiles_bin();
+    ASSERT_FALSE(bin.empty());
+    EXPECT_EQ(bin.at(0).tile_index(), tile_offset);
+}
+
+TEST_F(TilesetCompilerOverrideValidationTests, PrimaryReferencesFrameSubtileOobReportsError)
+{
+    auto primary = build_compiled_primary_with_anim(
+        "test_primary", "flower", rgba_blue, config_.num_pals_in_primary, /*porymap_anim_tile_count=*/1);
+
+    auto secondary = build_empty_tileset("test_secondary");
+    secondary.porytiles_component().primary_anim_overrides(
+        {{"flower",
+          {AnimOverrideEntry{
+              .metatile_id = 0,
+              .layer = metatile::Layer::middle,
+              .subtile = metatile::Subtile::northwest,
+              .frame_subtile = 5,
+              .pal_index = 0,
+              .h_flip = false,
+              .v_flip = false}}}});
+
+    auto compiler = make_compiler();
+    auto result = compiler->compile(secondary, true, &primary);
+
+    ASSERT_TRUE(result.has_value()) << "Expected compile to succeed, got: " << join_error_chain(result);
+    ASSERT_TRUE(diag_->error_tag_counts().contains("primary-references-frame-subtile-oob"));
+    EXPECT_EQ(diag_->error_tag_counts().at("primary-references-frame-subtile-oob"), 1U);
+}
+
+TEST_F(TilesetCompilerOverrideValidationTests, PrimaryReferencesMetatileOobReportsError)
+{
+    auto primary = build_compiled_primary_with_anim(
+        "test_primary", "flower", rgba_blue, config_.num_pals_in_primary, /*porymap_anim_tile_count=*/1);
+
+    // A secondary with zero metatiles makes metatile_id 0 out of range.
+    auto secondary = build_empty_tileset("test_secondary");
+    secondary.porytiles_component().primary_anim_overrides(
+        {{"flower",
+          {AnimOverrideEntry{
+              .metatile_id = 0,
+              .layer = metatile::Layer::middle,
+              .subtile = metatile::Subtile::northwest,
+              .frame_subtile = 0,
+              .pal_index = 0,
+              .h_flip = false,
+              .v_flip = false}}}});
+
+    auto compiler = make_compiler();
+    auto result = compiler->compile(secondary, true, &primary);
+
+    ASSERT_TRUE(result.has_value()) << "Expected compile to succeed, got: " << join_error_chain(result);
+    ASSERT_TRUE(diag_->error_tag_counts().contains("primary-references-metatile-oob"));
+    EXPECT_EQ(diag_->error_tag_counts().at("primary-references-metatile-oob"), 1U);
+}
+
+TEST_F(TilesetCompilerOverrideValidationTests, PrimaryReferencesPalIndexUnencodableReportsError)
+{
+    auto primary = build_compiled_primary_with_anim(
+        "test_primary", "flower", rgba_blue, config_.num_pals_in_primary, /*porymap_anim_tile_count=*/1);
+
+    auto secondary = build_single_metatile_tileset("test_secondary", rgba_green);
+    secondary.porytiles_component().primary_anim_overrides(
+        {{"flower",
+          {AnimOverrideEntry{
+              .metatile_id = 0,
+              .layer = metatile::Layer::middle,
+              .subtile = metatile::Subtile::northwest,
+              .frame_subtile = 0,
+              .pal_index = 16,
+              .h_flip = false,
+              .v_flip = false}}}});
+
+    auto compiler = make_compiler();
+    auto result = compiler->compile(secondary, true, &primary);
+
+    ASSERT_TRUE(result.has_value()) << "Expected compile to succeed, got: " << join_error_chain(result);
+    ASSERT_TRUE(diag_->error_tag_counts().contains("primary-references-pal-index-oob"));
+    EXPECT_EQ(diag_->error_tag_counts().at("primary-references-pal-index-oob"), 1U);
+}
+
+TEST_F(TilesetCompilerOverrideValidationTests, PrimaryReferencesPalIndexUnconfiguredReportsWarning)
+{
+    auto primary = build_compiled_primary_with_anim(
+        "test_primary", "flower", rgba_blue, config_.num_pals_in_primary, /*porymap_anim_tile_count=*/1);
+
+    auto secondary = build_single_metatile_tileset("test_secondary", rgba_green);
+    secondary.porytiles_component().primary_anim_overrides(
+        {{"flower",
+          {AnimOverrideEntry{
+              .metatile_id = 0,
+              .layer = metatile::Layer::middle,
+              .subtile = metatile::Subtile::northwest,
+              .frame_subtile = 0,
+              .pal_index = 14,
+              .h_flip = false,
+              .v_flip = false}}}});
+
+    auto compiler = make_compiler();
+    auto result = compiler->compile(secondary, true, &primary);
+
+    ASSERT_TRUE(result.has_value()) << "Expected compile to succeed, got: " << join_error_chain(result);
+    ASSERT_TRUE(diag_->warning_tag_counts().contains("primary-references-pal-index-unused"));
+    EXPECT_EQ(diag_->warning_tag_counts().at("primary-references-pal-index-unused"), 1U);
+    EXPECT_TRUE(diag_->error_tag_counts().empty());
+}
+
+TEST_F(TilesetCompilerOverrideValidationTests, PrimaryReferencesDualDropReportsWarning)
+{
+    auto primary = build_compiled_primary_with_anim(
+        "test_primary", "flower", rgba_blue, config_.num_pals_in_primary, /*porymap_anim_tile_count=*/1);
+
+    auto secondary = build_single_metatile_tileset("test_secondary", rgba_green);
+    secondary.porytiles_component().primary_anim_overrides(
+        {{"flower",
+          {AnimOverrideEntry{
+              .metatile_id = 0,
+              .layer = metatile::Layer::bottom,
+              .subtile = metatile::Subtile::northwest,
+              .frame_subtile = 0,
+              .pal_index = 0,
+              .h_flip = false,
+              .v_flip = false}}}});
+
+    auto compiler = make_compiler();
+    auto result = compiler->compile(secondary, true, &primary);
+
+    // The secondary metatile infers LayerType::normal, so dual-layerization drops the bottom layer.
+    ASSERT_TRUE(result.has_value()) << "Expected compile to succeed, got: " << join_error_chain(result);
+    ASSERT_TRUE(diag_->warning_tag_counts().contains("primary-references-dual-layer-drop"));
+    EXPECT_EQ(diag_->warning_tag_counts().at("primary-references-dual-layer-drop"), 1U);
+    EXPECT_TRUE(diag_->error_tag_counts().empty());
 }

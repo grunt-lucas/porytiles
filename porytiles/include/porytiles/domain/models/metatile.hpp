@@ -42,6 +42,31 @@ inline std::ostream &operator<<(std::ostream &os, const Layer &layer)
     return os;
 }
 
+/**
+ * @brief Returns the layer that dual-layerization discards for a given inferred LayerType.
+ *
+ * @details
+ * Dual-layer mode renders only two of a metatile's three layers, chosen by the inferred LayerType: normal renders
+ * middle/top (bottom dropped), covered renders bottom/middle (top dropped), split renders bottom/top (middle dropped).
+ * Anything written to the dropped layer is lost during conversion, so callers use this to detect and warn about such
+ * writes. Mirrors the drop behavior of LayerModeConverter::dual_layerize.
+ *
+ * @param layer_type The inferred LayerType for the metatile
+ * @return The Layer that dual-layerization will drop
+ */
+[[nodiscard]] inline Layer dropped_layer_for(LayerType layer_type)
+{
+    switch (layer_type) {
+    case LayerType::normal:
+        return Layer::bottom;
+    case LayerType::covered:
+        return Layer::top;
+    case LayerType::split:
+        return Layer::middle;
+    }
+    panic("unhandled LayerType value in dropped_layer_for");
+}
+
 enum class Subtile : std::uint8_t { northwest = 0, northeast = 1, southwest = 2, southeast = 3 };
 
 [[nodiscard]] inline Subtile subtile_from_index(std::size_t i)
