@@ -345,3 +345,11 @@ TEST(MetatileTests, InferLayerTypeWithExtrinsicTransparency_Rgba32)
     const Rgba32 extrinsic{255, 0, 255, 255}; // Magenta as transparency key
     EXPECT_EQ(metatile.infer_layer_type(extrinsic), LayerType::split);
 }
+
+TEST(MetatileNamespaceTests, DroppedLayerForMatchesDualLayerizeBehavior)
+{
+    // normal renders middle/top, covered renders bottom/middle, split renders bottom/top.
+    EXPECT_EQ(dropped_layer_for(LayerType::normal), Layer::bottom);
+    EXPECT_EQ(dropped_layer_for(LayerType::covered), Layer::top);
+    EXPECT_EQ(dropped_layer_for(LayerType::split), Layer::middle);
+}

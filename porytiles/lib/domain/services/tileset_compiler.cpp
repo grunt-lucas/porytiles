@@ -22,10 +22,13 @@
 #include "porytiles/domain/config/packing_strategy_type.hpp"
 #include "porytiles/domain/config/per_anim_overrides.hpp"
 #include "porytiles/domain/config/tiles_pal_mode.hpp"
+#include "porytiles/domain/models/anim_override_entry.hpp"
 #include "porytiles/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles/domain/models/color_index_map.hpp"
 #include "porytiles/domain/models/image.hpp"
 #include "porytiles/domain/models/index_pixel.hpp"
+#include "porytiles/domain/models/layer.hpp"
+#include "porytiles/domain/models/metatile.hpp"
 #include "porytiles/domain/models/palette.hpp"
 #include "porytiles/domain/models/rgba32.hpp"
 #include "porytiles/domain/models/tiles_png_workspace.hpp"
@@ -127,6 +130,157 @@ struct AnimKeyframeData {
     std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
     std::vector<std::size_t> pal_indices;
 };
+
+/**
+ * @brief Per-path text used to tag and phrase override-validation diagnostics.
+ *
+ * @details
+ * The two override-application paths (manual frame linking and primary_references) share identical validation logic
+ * but differ in diagnostic tag prefix and message subject. This bundles those two per-path strings so the shared
+ * validator can compose path-appropriate diagnostics.
+ */
+struct OverridePathInfo {
+    /// Prefix for diagnostic tags, e.g. "manual" or "primary-references".
+    std::string tag_prefix;
+    /// Format string (one "{}" placeholder for the animation name) naming the override subject in messages.
+    std::string subject_template;
+};
+
+/**
+ * @brief Validates a single anim.json override entry before it is written to metatiles_bin.
+ *
+ * @details
+ * Both override-application paths route user-authored override entries through should_apply, which performs bounds and
+ * encodability checks and emits graceful diagnostics (never a panic) on bad input. This consolidates checks that
+ * previously diverged between the two paths: the manual path panicked on an out-of-range metatile_id and skipped the
+ * frame_subtile bound entirely, while neither path checked pal_index or warned about entries destined for a
+ * dual-layerization-dropped layer.
+ */
+class OverrideEntryValidator {
+  public:
+    OverrideEntryValidator(
+        const TextFormatter &format,
+        const UserDiagnostics &diag,
+        const ConfigValue<std::size_t> &num_pals_total,
+        LayerMode configured_layer_mode,
+        const std::vector<Metatile<Rgba32>> &source_metatiles,
+        Rgba32 extrinsic_transparency)
+        : format_{format}, diag_{diag}, num_pals_total_{num_pals_total}, configured_layer_mode_{configured_layer_mode},
+          source_metatiles_{source_metatiles}, extrinsic_transparency_{extrinsic_transparency}
+    {
+    }
+
+    /**
+     * @brief Validates one override entry and reports whether it should be written to metatiles_bin.
+     *
+     * @details
+     * Emits an error diagnostic and returns false for unrecoverable problems (frame_subtile out of range, metatile_id
+     * out of range, pal_index unencodable in the 4-bit hardware field). Emits a warning but returns true for a
+     * pal_index that references a configured-but-unmanaged palette slot. Emits a warning and returns false for an entry
+     * targeting a layer that dual-layerization will drop.
+     *
+     * @param path Per-path diagnostic tag prefix and message subject
+     * @param anim_name The animation name, substituted into the subject template
+     * @param entry The override entry to validate
+     * @param tile_count The number of tiles in the referenced animation (the frame_subtile upper bound)
+     * @return True if the entry passed validation and should be applied, false otherwise
+     */
+    [[nodiscard]] bool should_apply(
+        const OverridePathInfo &path,
+        const std::string &anim_name,
+        const AnimOverrideEntry &entry,
+        std::size_t tile_count) const;
+
+  private:
+    const TextFormatter &format_;
+    const UserDiagnostics &diag_;
+    const ConfigValue<std::size_t> &num_pals_total_;
+    LayerMode configured_layer_mode_;
+    const std::vector<Metatile<Rgba32>> &source_metatiles_;
+    Rgba32 extrinsic_transparency_;
+};
+
+bool OverrideEntryValidator::should_apply(
+    const OverridePathInfo &path,
+    const std::string &anim_name,
+    const AnimOverrideEntry &entry,
+    std::size_t tile_count) const
+{
+    const std::string subject = format_.format(path.subject_template, FormatParam{anim_name, Style::bold});
+
+    // 1. frame_subtile must index a real tile in the animation.
+    if (entry.frame_subtile >= tile_count) {
+        std::vector<std::string> lines;
+        lines.push_back(
+            subject + format_.format(
+                          " override has frame_subtile {} but the animation only has {} tiles.",
+                          FormatParam{entry.frame_subtile},
+                          FormatParam{tile_count}));
+        diag_.error(path.tag_prefix + "-frame-subtile-oob", lines);
+        return false;
+    }
+
+    // 2. metatile_id must be in range. This precedes the .at() in check 5.
+    if (entry.metatile_id >= source_metatiles_.size()) {
+        std::vector<std::string> lines;
+        lines.push_back(
+            subject +
+            format_.format(
+                " override references metatile_id {} which is out of range.", FormatParam{entry.metatile_id}));
+        lines.push_back(format_.format("This tileset has {} metatiles.", FormatParam{source_metatiles_.size()}));
+        diag_.error(path.tag_prefix + "-metatile-oob", lines);
+        return false;
+    }
+
+    // 3. pal_index must fit the 4-bit GBA palette field.
+    if (entry.pal_index >= pal::num_pals) {
+        std::vector<std::string> lines;
+        lines.push_back(
+            subject + format_.format(
+                          " override has pal_index {} but the maximum palette index is {}.",
+                          FormatParam{entry.pal_index},
+                          FormatParam{pal::num_pals - 1}));
+        lines.push_back(
+            format_.format("The GBA hardware only supports {} background palettes.", FormatParam{pal::num_pals}));
+        diag_.error(path.tag_prefix + "-pal-index-oob", lines);
+        return false;
+    }
+
+    // 4. pal_index is encodable but points past the configured palette count: warn, but still apply.
+    if (entry.pal_index >= num_pals_total_.value()) {
+        std::vector<std::string> lines;
+        lines.push_back(
+            subject + format_.format(
+                          " override has pal_index {} but only {} palettes are configured.",
+                          FormatParam{entry.pal_index},
+                          FormatParam{num_pals_total_.value()}));
+        lines.emplace_back(
+            "Porytiles does not manage palettes beyond the configured count, so this override will render with "
+            "whatever colors occupy that slot.");
+        lines.append_range(format_config_note_with_separator(format_, num_pals_total_));
+        diag_.warning(path.tag_prefix + "-pal-index-unused", lines);
+    }
+
+    // 5. In dual-layer mode, an entry targeting the dropped layer would silently vanish.
+    if (configured_layer_mode_ == LayerMode::dual) {
+        const LayerType inferred = source_metatiles_.at(entry.metatile_id).infer_layer_type(extrinsic_transparency_);
+        if (metatile::dropped_layer_for(inferred) == entry.layer) {
+            std::vector<std::string> lines;
+            lines.push_back(
+                subject + format_.format(
+                              " override targets the '{}' layer of metatile {} but dual-layer conversion drops that "
+                              "layer (inferred layer type '{}').",
+                              FormatParam{metatile::to_string(entry.layer)},
+                              FormatParam{entry.metatile_id},
+                              FormatParam{to_string(inferred)}));
+            lines.emplace_back("The override will be ignored.");
+            diag_.warning(path.tag_prefix + "-dual-layer-drop", lines);
+            return false;
+        }
+    }
+
+    return true;
+}
 
 /**
  * @brief Task encapsulating the compilation operation for primary tilesets.
@@ -1880,11 +2034,23 @@ void CompilerTask::pipeline_helper_compile_animations()
 void CompilerTask::pipeline_helper_apply_manual_overrides()
 {
     const auto &source_anims = tileset_.porytiles_component().anims();
-    if (source_anims.empty()) {
+    // Bail only when there is genuinely nothing to apply. A secondary can carry primary_references without defining any
+    // animations of its own, so guarding on source_anims alone would silently drop those overrides.
+    if (source_anims.empty() && tileset_.porytiles_component().primary_anim_overrides().empty()) {
         return;
     }
 
     const auto &per_anim_overrides = per_anim_overrides_.value();
+
+    const OverrideEntryValidator validator{
+        format_,
+        diag_,
+        num_pals_total_,
+        layer_mode_from_val(num_tiles_per_metatile_.value()),
+        porytiles_metatiles_,
+        extrinsic_transparency_.value()};
+    const OverridePathInfo manual_path{"manual", "Animation '{}'"};
+    const OverridePathInfo primary_refs_path{"primary-references", "Primary reference '{}'"};
 
     for (const auto &[anim_name, source_anim] : source_anims) {
         // Resolve effective FrameLinking for this animation
@@ -1920,29 +2086,33 @@ void CompilerTask::pipeline_helper_apply_manual_overrides()
                 break;
             }
 
-            // Get the tile_offset for this animation from the matcher
+            // Get the tile_offset and tile_count for this animation from the matcher
             auto maybe_tile_offset = anim_tile_matcher_.tile_offset_for(anim_name);
             if (!maybe_tile_offset.has_value()) {
                 panic("animation '" + anim_name + "' not registered in anim_tile_matcher_");
             }
             const std::size_t tile_offset = maybe_tile_offset.value();
 
+            auto maybe_tile_count = anim_tile_matcher_.tile_count_for(anim_name);
+            if (!maybe_tile_count.has_value()) {
+                panic("animation '" + anim_name + "' not registered in anim_tile_matcher_");
+            }
+            const std::size_t tile_count = maybe_tile_count.value();
+
             // Apply each override entry to metatiles_bin
             auto &metatiles_bin = new_porymap_component_->metatiles_bin();
             for (const auto &entry : overrides) {
+                if (!validator.should_apply(manual_path, anim_name, entry, tile_count)) {
+                    continue;
+                }
+
                 const std::size_t bin_index =
                     entry.metatile_id * metatile::entries_per_metatile_triple +
                     static_cast<std::size_t>(entry.layer) * metatile::tiles_per_metatile_layer +
                     static_cast<std::size_t>(entry.subtile);
 
-                if (bin_index >= metatiles_bin.size()) {
-                    panic(
-                        "animation '" + anim_name + "' override references metatile_id " +
-                        std::to_string(entry.metatile_id) + " which is out of range");
-                }
-
                 const std::size_t absolute_tile = tile_offset + entry.frame_subtile;
-                metatiles_bin[bin_index] = TilemapEntry{absolute_tile, entry.pal_index, entry.h_flip, entry.v_flip};
+                metatiles_bin.at(bin_index) = TilemapEntry{absolute_tile, entry.pal_index, entry.h_flip, entry.v_flip};
             }
             break;
         }
@@ -2003,14 +2173,7 @@ void CompilerTask::pipeline_helper_apply_manual_overrides()
             const std::size_t prim_tile_count = prim_anim.params().tile_count();
 
             for (const auto &entry : entries) {
-                if (entry.frame_subtile >= prim_tile_count) {
-                    std::vector<std::string> err_lines;
-                    err_lines.emplace_back(format_.format(
-                        "Primary reference '{}' override has frame_subtile {} but primary animation only has {} tiles.",
-                        FormatParam{prim_anim_name, Style::bold},
-                        FormatParam{entry.frame_subtile},
-                        FormatParam{prim_tile_count}));
-                    diag_.error("primary-references-frame-subtile-oob", err_lines);
+                if (!validator.should_apply(primary_refs_path, prim_anim_name, entry, prim_tile_count)) {
                     continue;
                 }
 
@@ -2018,16 +2181,6 @@ void CompilerTask::pipeline_helper_apply_manual_overrides()
                     entry.metatile_id * metatile::entries_per_metatile_triple +
                     static_cast<std::size_t>(entry.layer) * metatile::tiles_per_metatile_layer +
                     static_cast<std::size_t>(entry.subtile);
-
-                if (bin_index >= metatiles_bin.size()) {
-                    std::vector<std::string> err_lines;
-                    err_lines.emplace_back(format_.format(
-                        "Primary reference '{}' override references metatile_id {} which is out of range.",
-                        FormatParam{prim_anim_name, Style::bold},
-                        FormatParam{entry.metatile_id}));
-                    diag_.error("primary-references-metatile-oob", err_lines);
-                    continue;
-                }
 
                 const std::size_t absolute_tile = prim_tile_offset + entry.frame_subtile;
                 metatiles_bin.at(bin_index) = TilemapEntry{absolute_tile, entry.pal_index, entry.h_flip, entry.v_flip};

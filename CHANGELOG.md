@@ -21,6 +21,8 @@ and to its issue too when one was filed
 
 - Fixed a same-named animation in a secondary and its paired primary aborting the compiler with an internal panic instead of a diagnostic when cross-tileset animation linking is enabled - [#331](https://github.com/grunt-lucas/porytiles/pull/331)
 
+- Fixed manual frame-linking overrides in `anim.json` aborting the compiler with an internal panic on an out-of-range `metatile_id`, and gave the manual and `primary_references` override paths consistent validation: both now report graceful diagnostics for out-of-range `frame_subtile` and `metatile_id`, a `pal_index` that does not fit the hardware palette field, a `pal_index` past the configured palette count, and an override targeting a layer that dual-layer conversion drops. Also fixed a secondary that uses `primary_references` without defining any animations of its own having all of its overrides silently ignored - [#330](https://github.com/grunt-lucas/porytiles/issues/330)
+
 ## [1.0.0] - 2026-06-05
 
 First stable release of Porytiles.
