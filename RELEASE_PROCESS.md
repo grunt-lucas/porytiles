@@ -57,10 +57,11 @@ Vincent Driessen's [A successful Git branching model](https://nvie.com/posts/a-s
   versioned release and updates the `porytiles` Homebrew formula.
 - **`release/<v>`** is branched from `develop` for stabilization, then merged into
   **both** `master` and `develop`.
-- **`hotfix/*`** is branched from `master` for urgent patches, then propagates
-  to **both** `master` and `develop` via merge (see
-  [Hotfix release](#hotfix-release) and
-  [Docs hotfix between releases](#docs-hotfix-between-releases)).
+- **`hotfix/*`** is branched from `master` for urgent patches to the compiler,
+  then propagates to **both** `master` and `develop` via merge (see
+  [Hotfix release](#hotfix-release)). The docs repos skip hotfix branches
+  entirely: fixes are committed straight to docs `master` and merged back to
+  `develop` (see [Docs hotfix between releases](#docs-hotfix-between-releases)).
 
 ### What is automated vs. what you do by hand
 
@@ -113,9 +114,9 @@ tag is pushed. Bump first, tag second. This ordering is critical.
 
 **Branch invariants.** Three load-bearing rules that the runbooks below all exist to satisfy:
 
-1. **`master` is merge-only.** No commit lands on `master` except as part of a PR-merged commit from a `release/<v>` branch (regular release) or `hotfix/*` branch (urgent patch). In the main repo a hotfix bumps the patch version and produces a new `vX.Y.Z+1` tag (see [Hotfix release](#hotfix-release)); in the docs repos a hotfix is content-only and does not bump the version or mint a new tag — changes accumulate on docs `master` under the current docs version until the next release cut (see [Docs hotfix between releases](#docs-hotfix-between-releases)). Direct pushes to `master` are blocked by branch protection. Even a one-line CHANGELOG date fix goes through one of these branches.
+1. **Main-repo `master` is merge-only; docs `master` is not.** In the main repo, no commit hits `master` except as part of a PR-merged commit from a `release/<v>` branch (regular release) or `hotfix/*` branch (urgent patch). A hotfix bumps the patch version and produces a new `vX.Y.Z+1` tag (see [Hotfix release](#hotfix-release)). Even a one-line CHANGELOG date fix goes through one of these branches, and branch protection blocks direct pushes. The docs repos are deliberately looser: fixes to the released docs are committed directly to docs `master` (no branch, no PR, no version bump, no new tag) and accumulate under the current docs version until the next release cut (see [Docs hotfix between releases](#docs-hotfix-between-releases)).
 
-2. **Every `release/<v>` and `hotfix/*` branch propagates to both `master` AND `develop`.** This happens via merge-back in every repo (see [Regular versioned release](#regular-versioned-release), [Hotfix release](#hotfix-release), and [Docs hotfix between releases](#docs-hotfix-between-releases)). The change must reach develop in some form so the next release doesn't silently regress it.
+2. **Everything that lands on `master` propagates to `develop`.** In the main repo this happens by merging the `release/<v>` or `hotfix/*` branch back (see [Regular versioned release](#regular-versioned-release) and [Hotfix release](#hotfix-release)); in the docs repos, by merging `master` into `develop` after each direct fix (see [Docs hotfix between releases](#docs-hotfix-between-releases)). The change must reach develop in some form so the next release doesn't silently regress it.
 
 3. **`develop` is the integration trunk for new work.** All `feature/*`, `bug/*`, and similar branches target `develop` via PR. New work does not go directly to `master`, on a `release/<v>` branch, or on a `hotfix/*` branch (unless it's a genuine hotfix, and is merged back as outlined above).
 
@@ -386,45 +387,46 @@ git push
 git push origin --delete hotfix/X.Y.Z+1
 ```
 
-If the fix is also relevant to the docs, mirror the hotfix in the docs repos
-with the same branch-from-master-merge-to-both pattern.
+If the fix is also relevant to the docs, apply it to the docs repos with the
+lighter flow in [Docs hotfix between releases](#docs-hotfix-between-releases).
 
 ---
 
 ## Docs hotfix between releases
 
-Use this for any change to docs `master` between release tags: error
-corrections, expansions of placeholder content, additions, or any other
-improvement. Same gitflow pattern as [Hotfix release](#hotfix-release) with two differences:
-**no version bump**, and **no new tag**. Docs tags are immutable archival
-snapshots of what shipped at each release cut; docs `master` is a rolling
-head that GitHub Pages serves continuously and accumulates hotfix commits
-until the next release.
+Use this for any docs change that should reach the live site now, under the
+currently released version: typo fixes, error corrections, expansions of
+placeholder content. No branch, no PR, **no version bump**, and **no new tag**.
+Docs tags are immutable archival snapshots of what shipped at each release
+cut; docs `master` is a rolling head that GitHub Pages serves continuously and
+accumulates fixes until the next release.
 
-Docs hotfix branches use the form `hotfix/<short-description>` (e.g.,
-`hotfix/fix-install-typo`, `hotfix/fill-in-cli-reference`), since there is
-no version number to suffix.
-This is the one structural difference from Hotfix release's `hotfix/X.Y.Z+1` naming.
+The develop/master split still does its job here: docs for features landing in
+Porytiles version N+1 are written on `develop` as usual and reach the site at
+the next release cut, while fixes to the version-N docs go straight onto
+`master` so the site updates immediately. If a change is big enough that you want a
+reviewable diff, nothing stops you from using a branch and PR, but it is never
+required in the docs repos.
 
 ```bash
 cd porytiles-user-docs            # or porytiles-dev-docs
 git checkout master && git pull
-git checkout -b hotfix/<short-description>
-# make the change
-git commit -am "<description of change>"
-git push -u origin hotfix/<short-description>
+# make the fix in docsrc/, then rebuild the served HTML. The site serves the
+# committed docs/ folder, so a docsrc-only commit changes nothing on the site.
+cd docsrc && uv run make github && cd ..
+git add -A && git commit -m "<description of change>"
+git push  # [confirm] GH Pages redeploys within minutes; the public site updates.
 
-gh pr create --base master --head hotfix/<short-description> \
-  --title "Hotfix: <short description>" --body "..."
-gh pr merge --merge  # [confirm]
-# GH Pages rebuilds within minutes; the public site updates.
-
-# Carry the same change forward so the next release does not regress it.
+# Carry the fix forward so the next release does not regress it.
 git checkout develop && git pull
-git merge --no-ff hotfix/<short-description>
-git push  # [confirm]
-git push origin --delete hotfix/<short-description>
+git merge master  # [confirm]
+# If generated files under docs/ conflict, do not hand-resolve them: take
+# either side, re-run `make github` on develop, and commit the result.
+git push
 ```
+
+(Docs `master` branch protection requires PRs but does not bind admins, which
+is what lets the owner's direct push through.)
 
 Do **not** create a new tag (`vX.Y.Z.1`, `vX.Y.Z-doc.1`)
 and do **not** move the existing `vX.Y.Z` tag.
