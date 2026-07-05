@@ -164,6 +164,21 @@ Six diagnostics cover cross-tileset animation linking scenarios:
 Manual `primary_references` overrides always win. They write directly to `metatiles_bin` after the tile
 assignment loop, naturally overriding any automatically-linked entries.
 
+Each override entry is validated before it is written, sharing an `OverrideEntryValidator` with the manual
+frame-linking override path so the two paths stay in lockstep (#330). An out-of-range `frame_subtile` or
+`metatile_id`, or a `pal_index` that does not fit the 4-bit hardware palette field, produces an error
+diagnostic and skips the entry (`primary-references-frame-subtile-oob`, `-metatile-oob`, `-pal-index-oob`).
+A `pal_index` past the configured palette count warns but still applies
+(`primary-references-pal-index-unused`); an entry targeting a layer that dual-layer conversion drops warns
+and is skipped (`primary-references-dual-layer-drop`). The manual path emits the same set under a `manual-`
+prefix. None of these diagnostics abort the compile. Before this, the manual path panicked on an out-of-range
+`metatile_id` and skipped several checks the `primary_references` path already had.
+
+A secondary that uses `primary_references` without defining any animations of its own is fully supported.
+The override-application helper previously bailed as soon as the secondary had no animations of its own,
+silently dropping every `primary_references` entry; it now bails only when both the secondary's own
+animations and its `primary_references` are empty.
+
 ### Cross-tileset key frame collision detection
 
 When registering primary animations for cross-tileset linking, each non-transparent primary key frame
