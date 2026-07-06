@@ -38,6 +38,16 @@ bool is_contiguous(std::uint32_t mask)
 
 } // namespace
 
+EnumSpec ProviderSpec::to_enum_spec(std::string field_display_name, std::uint32_t max_value) const
+{
+    return EnumSpec{
+        .prefix = prefix,
+        .max_value = max_value,
+        .skipped = skipped,
+        .format = format,
+        .field_display_name = std::move(field_display_name)};
+}
+
 ChainableResult<void>
 Field::validate_provider_values(const std::vector<std::pair<std::string, std::uint32_t>> &entries) const
 {

@@ -6,9 +6,7 @@
 #include "porytiles/domain/models/base_game.hpp"
 #include "porytiles/domain/models/layer.hpp"
 #include "porytiles/domain/models/metatile_attribute.hpp"
-#include "porytiles/domain/services/behavior_map_provider.hpp"
-#include "porytiles/domain/services/encounter_type_map_provider.hpp"
-#include "porytiles/domain/services/terrain_type_map_provider.hpp"
+#include "porytiles/domain/services/enum_map_provider.hpp"
 #include "porytiles/infra/services/attributes_csv_loader.hpp"
 #include "porytiles/utilities/text/plain_text_formatter.hpp"
 
@@ -18,121 +16,51 @@ namespace {
 
 const std::filesystem::path test_resources_dir = "resources/tests/integration/infra/services/attributes_csv";
 
-class StubBehaviorMapProvider final : public BehaviorMapProvider {
+// One stub serves every field now that providers are a single interface. The noun feeds its own error
+// strings so the "unknown terrain type"/"unknown encounter type" expectations below still hold.
+class StubEnumMapProvider final : public EnumMapProvider {
   public:
-    StubBehaviorMapProvider()
+    StubEnumMapProvider(std::unordered_map<std::string, std::uint32_t> name_to_value, std::string noun)
+        : name_to_value_{std::move(name_to_value)}, noun_{std::move(noun)}
     {
-        name_to_value_["MB_NORMAL"] = 0x00;
-        name_to_value_["MB_TALL_GRASS"] = 0x02;
-        name_to_value_["MB_DEEP_WATER"] = 0x12;
-        name_to_value_["MB_COUNTER"] = 0x80;
-
         for (const auto &[name, value] : name_to_value_) {
             value_to_name_[value] = name;
         }
     }
 
-    [[nodiscard]] ChainableResult<std::uint16_t> lookup(const std::string &behavior_name) const override
+    [[nodiscard]] ChainableResult<std::uint32_t> lookup(const std::string &name) const override
     {
-        auto it = name_to_value_.find(behavior_name);
+        auto it = name_to_value_.find(name);
         if (it == name_to_value_.end()) {
-            return FormattableError{"unknown behavior: {}", FormatParam{behavior_name}};
+            return FormattableError{"unknown {}: {}", FormatParam{noun_}, FormatParam{name}};
         }
         return it->second;
     }
 
-    [[nodiscard]] ChainableResult<std::string> lookup(std::uint16_t behavior_value) const override
+    [[nodiscard]] ChainableResult<std::string> lookup(std::uint32_t value) const override
     {
-        auto it = value_to_name_.find(behavior_value);
+        auto it = value_to_name_.find(value);
         if (it == value_to_name_.end()) {
-            return FormattableError{"unknown behavior value: {}", FormatParam{behavior_value}};
+            return FormattableError{"unknown {} value: {}", FormatParam{noun_}, FormatParam{value}};
         }
         return it->second;
     }
 
   private:
-    std::unordered_map<std::string, std::uint16_t> name_to_value_{};
-    std::unordered_map<std::uint16_t, std::string> value_to_name_{};
-};
-
-class StubTerrainTypeMapProvider final : public TerrainTypeMapProvider {
-  public:
-    StubTerrainTypeMapProvider()
-    {
-        name_to_value_["TILE_TERRAIN_NORMAL"] = 0;
-        name_to_value_["TILE_TERRAIN_GRASS"] = 1;
-        name_to_value_["TILE_TERRAIN_WATER"] = 2;
-
-        for (const auto &[name, value] : name_to_value_) {
-            value_to_name_[value] = name;
-        }
-    }
-
-    [[nodiscard]] ChainableResult<std::uint8_t> lookup(const std::string &terrain_name) const override
-    {
-        auto it = name_to_value_.find(terrain_name);
-        if (it == name_to_value_.end()) {
-            return FormattableError{"unknown terrain type: {}", FormatParam{terrain_name}};
-        }
-        return it->second;
-    }
-
-    [[nodiscard]] ChainableResult<std::string> lookup(std::uint8_t terrain_value) const override
-    {
-        auto it = value_to_name_.find(terrain_value);
-        if (it == value_to_name_.end()) {
-            return FormattableError{"unknown terrain type value: {}", FormatParam{terrain_value}};
-        }
-        return it->second;
-    }
-
-  private:
-    std::unordered_map<std::string, std::uint8_t> name_to_value_{};
-    std::unordered_map<std::uint8_t, std::string> value_to_name_{};
-};
-
-class StubEncounterTypeMapProvider final : public EncounterTypeMapProvider {
-  public:
-    StubEncounterTypeMapProvider()
-    {
-        name_to_value_["TILE_ENCOUNTER_NONE"] = 0;
-        name_to_value_["TILE_ENCOUNTER_LAND"] = 1;
-        name_to_value_["TILE_ENCOUNTER_WATER"] = 2;
-
-        for (const auto &[name, value] : name_to_value_) {
-            value_to_name_[value] = name;
-        }
-    }
-
-    [[nodiscard]] ChainableResult<std::uint8_t> lookup(const std::string &encounter_name) const override
-    {
-        auto it = name_to_value_.find(encounter_name);
-        if (it == name_to_value_.end()) {
-            return FormattableError{"unknown encounter type: {}", FormatParam{encounter_name}};
-        }
-        return it->second;
-    }
-
-    [[nodiscard]] ChainableResult<std::string> lookup(std::uint8_t encounter_value) const override
-    {
-        auto it = value_to_name_.find(encounter_value);
-        if (it == value_to_name_.end()) {
-            return FormattableError{"unknown encounter type value: {}", FormatParam{encounter_value}};
-        }
-        return it->second;
-    }
-
-  private:
-    std::unordered_map<std::string, std::uint8_t> name_to_value_{};
-    std::unordered_map<std::uint8_t, std::string> value_to_name_{};
+    std::unordered_map<std::string, std::uint32_t> name_to_value_{};
+    std::unordered_map<std::uint32_t, std::string> value_to_name_{};
+    std::string noun_;
 };
 
 class AttributesCsvLoaderTest : public ::testing::Test {
   protected:
     PlainTextFormatter formatter_{};
-    StubBehaviorMapProvider behavior_map_{};
-    StubTerrainTypeMapProvider terrain_map_{};
-    StubEncounterTypeMapProvider encounter_map_{};
+    StubEnumMapProvider behavior_map_{
+        {{"MB_NORMAL", 0x00}, {"MB_TALL_GRASS", 0x02}, {"MB_DEEP_WATER", 0x12}, {"MB_COUNTER", 0x80}}, "behavior"};
+    StubEnumMapProvider terrain_map_{
+        {{"TILE_TERRAIN_NORMAL", 0}, {"TILE_TERRAIN_GRASS", 1}, {"TILE_TERRAIN_WATER", 2}}, "terrain type"};
+    StubEnumMapProvider encounter_map_{
+        {{"TILE_ENCOUNTER_NONE", 0}, {"TILE_ENCOUNTER_LAND", 1}, {"TILE_ENCOUNTER_WATER", 2}}, "encounter type"};
 };
 
 } // namespace

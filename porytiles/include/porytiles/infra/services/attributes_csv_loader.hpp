@@ -9,9 +9,7 @@
 
 #include "porytiles/domain/models/base_game.hpp"
 #include "porytiles/domain/models/metatile_attribute.hpp"
-#include "porytiles/domain/services/behavior_map_provider.hpp"
-#include "porytiles/domain/services/encounter_type_map_provider.hpp"
-#include "porytiles/domain/services/terrain_type_map_provider.hpp"
+#include "porytiles/domain/services/enum_map_provider.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 #include "porytiles/utilities/text/file_highlight_printer.hpp"
 #include "porytiles/utilities/text/text_formatter.hpp"
@@ -59,10 +57,10 @@ class AttributesCsvLoader {
      */
     AttributesCsvLoader(
         gsl::not_null<const TextFormatter *> format,
-        gsl::not_null<const BehaviorMapProvider *> behavior_map,
+        gsl::not_null<const EnumMapProvider *> behavior_map,
         std::optional<BaseGame> base_game = std::nullopt,
-        const TerrainTypeMapProvider *terrain_map = nullptr,
-        const EncounterTypeMapProvider *encounter_map = nullptr)
+        const EnumMapProvider *terrain_map = nullptr,
+        const EnumMapProvider *encounter_map = nullptr)
         : format_{format}, behavior_map_{behavior_map}, base_game_{base_game}, terrain_map_{terrain_map},
           encounter_map_{encounter_map}, file_printer_{std::make_unique<FileHighlightPrinter>(format)}
     {
@@ -86,10 +84,10 @@ class AttributesCsvLoader {
 
   private:
     const TextFormatter *format_;
-    const BehaviorMapProvider *behavior_map_;
+    const EnumMapProvider *behavior_map_;
     std::optional<BaseGame> base_game_;
-    const TerrainTypeMapProvider *terrain_map_;
-    const EncounterTypeMapProvider *encounter_map_;
+    const EnumMapProvider *terrain_map_;
+    const EnumMapProvider *encounter_map_;
     const std::unique_ptr<FileHighlightPrinter> file_printer_;
 };
 

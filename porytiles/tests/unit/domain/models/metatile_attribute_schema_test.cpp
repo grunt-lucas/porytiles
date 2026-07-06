@@ -70,6 +70,40 @@ TEST(MetatileAttributeSchemaTest, FieldProviderPresence)
     EXPECT_TRUE(with_provider.provider_spec().skipped.empty());
 }
 
+TEST(MetatileAttributeSchemaTest, ToEnumSpecCopiesDescriptionAndStoresArgs)
+{
+    ProviderSpec spec{};
+    spec.header = "include/global.fieldmap.h";
+    spec.prefix = "TILE_TERRAIN_";
+    spec.skipped = {"TILE_TERRAIN_UNUSED"};
+    spec.format = HeaderFormat::enums_only;
+
+    const EnumSpec enum_spec = spec.to_enum_spec("terrain", 0x1F);
+
+    // The description fields carry over verbatim.
+    EXPECT_EQ(enum_spec.prefix, "TILE_TERRAIN_");
+    EXPECT_EQ(enum_spec.skipped, spec.skipped);
+    EXPECT_EQ(enum_spec.format, HeaderFormat::enums_only);
+
+    // The two facts that live on the owning field are the supplied arguments.
+    EXPECT_EQ(enum_spec.max_value, 0x1Fu);
+    EXPECT_EQ(enum_spec.field_display_name, "terrain");
+}
+
+TEST(MetatileAttributeSchemaTest, ToEnumSpecDefaultsAreCarriedOver)
+{
+    ProviderSpec spec{};
+    spec.prefix = "MB_";
+
+    const EnumSpec enum_spec = spec.to_enum_spec("behavior", 0xFFFF);
+
+    EXPECT_EQ(enum_spec.prefix, "MB_");
+    EXPECT_TRUE(enum_spec.skipped.empty());
+    EXPECT_EQ(enum_spec.format, HeaderFormat::either);
+    EXPECT_EQ(enum_spec.max_value, 0xFFFFu);
+    EXPECT_EQ(enum_spec.field_display_name, "behavior");
+}
+
 TEST(MetatileAttributeSchemaTest, CreateAcceptsFireredLayout)
 {
     auto result = Schema::create(firered_fields(), 4);

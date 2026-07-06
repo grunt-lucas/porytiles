@@ -1,6 +1,5 @@
-#include "porytiles/infra/services/header_behavior_map_provider.hpp"
+#include "porytiles/infra/services/header_enum_map_provider.hpp"
 
-#include <limits>
 #include <utility>
 
 #include "porytiles/utilities/panic/panic.hpp"
@@ -57,23 +56,28 @@ namespace {
 } // namespace
 
 template <typename Entry>
-ChainableResult<void> HeaderBehaviorMapProvider::try_add_behavior_entry(const Entry &entry) const
+ChainableResult<void> HeaderEnumMapProvider::try_add_entry(const Entry &entry) const
 {
     const auto &name = entry.name();
 
-    // Filter: must start with MB_
-    if (!name.starts_with("MB_")) {
+    // Filter: must start with the configured prefix
+    if (!name.starts_with(spec_.prefix)) {
+        return {};
+    }
+
+    // Filter: skip names the spec excludes
+    if (spec_.skipped.contains(name)) {
         return {};
     }
 
     auto raw_value = entry.int_value();
 
-    // Filter: value must be in valid range
-    if (raw_value < 0 || raw_value > std::numeric_limits<std::uint16_t>::max()) {
+    // Filter: value must be within the field's range
+    if (raw_value < 0 || raw_value > spec_.max_value) {
         return {};
     }
 
-    auto value = static_cast<std::uint16_t>(raw_value);
+    auto value = static_cast<std::uint32_t>(raw_value);
     const auto &new_pos = entry.position();
 
     // Check for duplicate name
@@ -82,10 +86,11 @@ ChainableResult<void> HeaderBehaviorMapProvider::try_add_behavior_entry(const En
         const auto &orig_pos = name_to_position_.at(name);
         return make_duplicate_error(
             format_->format(
-                "{}:{}:{}: duplicate behavior name '{}'.",
+                "{}:{}:{}: duplicate {} name '{}'.",
                 FormatParam{header_path_, Style::bold},
                 new_pos.line,
                 new_pos.column,
+                FormatParam{spec_.field_display_name},
                 FormatParam{name, Style::bold}),
             new_pos,
             format_->format(
@@ -102,10 +107,11 @@ ChainableResult<void> HeaderBehaviorMapProvider::try_add_behavior_entry(const En
         const auto &orig_pos = value_to_position_.at(value);
         return make_duplicate_error(
             format_->format(
-                "{}:{}:{}: duplicate behavior value '{}': both '{}' and '{}' have this value.",
+                "{}:{}:{}: duplicate {} value '{}': both '{}' and '{}' have this value.",
                 FormatParam{header_path_, Style::bold},
                 new_pos.line,
                 new_pos.column,
+                FormatParam{spec_.field_display_name},
                 FormatParam{value, Style::bold},
                 FormatParam{orig_name, Style::bold},
                 FormatParam{name, Style::bold}),
@@ -129,53 +135,63 @@ ChainableResult<void> HeaderBehaviorMapProvider::try_add_behavior_entry(const En
     return {};
 }
 
-ChainableResult<std::uint16_t> HeaderBehaviorMapProvider::lookup(const std::string &behavior_name) const
+ChainableResult<std::uint32_t> HeaderEnumMapProvider::lookup(const std::string &name) const
 {
-    if (!behavior_name.starts_with("MB_")) {
+    if (!name.starts_with(spec_.prefix)) {
         return FormattableError{
-            "Invalid behavior name '{}': expected prefix '{}'.",
-            FormatParam{behavior_name, Style::bold},
-            FormatParam{"MB_", Style::bold}};
+            "Invalid {} name '{}': expected prefix '{}'.",
+            FormatParam{spec_.field_display_name},
+            FormatParam{name, Style::bold},
+            FormatParam{spec_.prefix, Style::bold}};
     }
 
     auto load_result = ensure_loaded();
     if (!load_result.has_value()) {
-        return ChainableResult<std::uint16_t>{
-            FormattableError{"Metatile behavior provider lookup failed."}, load_result};
+        return ChainableResult<std::uint32_t>{
+            FormattableError{
+                "Provider lookup for field '{}' failed.", FormatParam{spec_.field_display_name, Style::bold}},
+            load_result};
     }
 
-    const auto it = name_to_value_.find(behavior_name);
+    const auto it = name_to_value_.find(name);
     if (it == name_to_value_.end()) {
         return FormattableError{
-            "Behavior '{}' not found in '{}'.",
-            FormatParam{behavior_name, Style::bold},
+            "No {} named '{}' exists in '{}'.",
+            FormatParam{spec_.field_display_name},
+            FormatParam{name, Style::bold},
             FormatParam{header_path_.string(), Style::bold}};
     }
     return it->second;
 }
 
-ChainableResult<std::string> HeaderBehaviorMapProvider::lookup(std::uint16_t behavior_value) const
+ChainableResult<std::string> HeaderEnumMapProvider::lookup(std::uint32_t value) const
 {
     auto load_result = ensure_loaded();
     if (!load_result.has_value()) {
-        return ChainableResult<std::string>{FormattableError{"Metatile behavior provider lookup failed."}, load_result};
+        return ChainableResult<std::string>{
+            FormattableError{
+                "Provider lookup for field '{}' failed.", FormatParam{spec_.field_display_name, Style::bold}},
+            load_result};
     }
 
-    const auto it = value_to_name_.find(behavior_value);
+    const auto it = value_to_name_.find(value);
     if (it == value_to_name_.end()) {
         return FormattableError{
-            "Unknown behavior value '{}' not found in '{}'.",
-            FormatParam{behavior_value, Style::bold},
+            "No {} with value '{}' exists in '{}'.",
+            FormatParam{spec_.field_display_name},
+            FormatParam{value, Style::bold},
             FormatParam{header_path_.string(), Style::bold}};
     }
     return it->second;
 }
 
-ChainableResult<void> HeaderBehaviorMapProvider::ensure_loaded() const
+ChainableResult<void> HeaderEnumMapProvider::ensure_loaded() const
 {
     if (loaded_) {
         if (load_failed_) {
-            return FormattableError{"Behavior header file previously failed to load."};
+            return FormattableError{
+                "Header file for field '{}' previously failed to load.",
+                FormatParam{spec_.field_display_name, Style::bold}};
         }
         return {};
     }
@@ -185,33 +201,37 @@ ChainableResult<void> HeaderBehaviorMapProvider::ensure_loaded() const
     // Create and store CParserFacade for rich error formatting with source context
     driver_ = std::make_unique<CParserFacade>(header_path_, format_);
 
-    // Parse #define statements
-    auto defines_result = driver_->parse_defines();
-    if (!defines_result.has_value()) {
-        load_failed_ = true;
-        return ChainableResult<void>{defines_result};
-    }
-    for (const auto &def : defines_result.value()) {
-        if (!def.has_int_value()) {
-            continue;
+    // Parse #define statements when the format admits them
+    if (spec_.format == HeaderFormat::defines_only || spec_.format == HeaderFormat::either) {
+        auto defines_result = driver_->parse_defines();
+        if (!defines_result.has_value()) {
+            load_failed_ = true;
+            return ChainableResult<void>{defines_result};
         }
-        auto insert_result = try_add_behavior_entry(def);
-        if (!insert_result.has_value()) {
-            return insert_result;
+        for (const auto &def : defines_result.value()) {
+            if (!def.has_int_value()) {
+                continue;
+            }
+            auto insert_result = try_add_entry(def);
+            if (!insert_result.has_value()) {
+                return insert_result;
+            }
         }
     }
 
-    // Parse enum declarations
-    auto enums_result = driver_->parse_enums();
-    if (!enums_result.has_value()) {
-        load_failed_ = true;
-        return ChainableResult<void>{enums_result};
-    }
-    for (const auto &enum_decl : enums_result.value()) {
-        for (const auto &member : enum_decl.members()) {
-            auto insert_result = try_add_behavior_entry(member);
-            if (!insert_result.has_value()) {
-                return insert_result;
+    // Parse enum declarations when the format admits them
+    if (spec_.format == HeaderFormat::enums_only || spec_.format == HeaderFormat::either) {
+        auto enums_result = driver_->parse_enums();
+        if (!enums_result.has_value()) {
+            load_failed_ = true;
+            return ChainableResult<void>{enums_result};
+        }
+        for (const auto &enum_decl : enums_result.value()) {
+            for (const auto &member : enum_decl.members()) {
+                auto insert_result = try_add_entry(member);
+                if (!insert_result.has_value()) {
+                    return insert_result;
+                }
             }
         }
     }
@@ -219,7 +239,9 @@ ChainableResult<void> HeaderBehaviorMapProvider::ensure_loaded() const
     if (name_to_value_.empty()) {
         load_failed_ = true;
         return FormattableError{
-            "{}: no behavior definitions exist in file.", FormatParam{header_path_.string(), Style::bold}};
+            "{}: no {} definitions exist in file.",
+            FormatParam{header_path_.string(), Style::bold},
+            FormatParam{spec_.field_display_name}};
     }
 
     return {};

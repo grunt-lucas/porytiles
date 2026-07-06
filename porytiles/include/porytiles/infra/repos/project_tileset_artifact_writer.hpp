@@ -8,9 +8,7 @@
 #include "porytiles/domain/config/domain_config.hpp"
 #include "porytiles/domain/models/base_game.hpp"
 #include "porytiles/domain/repos/tileset_artifact_writer.hpp"
-#include "porytiles/domain/services/behavior_map_provider.hpp"
-#include "porytiles/domain/services/encounter_type_map_provider.hpp"
-#include "porytiles/domain/services/terrain_type_map_provider.hpp"
+#include "porytiles/domain/services/enum_map_provider.hpp"
 #include "porytiles/infra/config/infra_config.hpp"
 #include "porytiles/infra/services/anim_code_generator.hpp"
 #include "porytiles/infra/services/anim_json_parser.hpp"
@@ -47,9 +45,9 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
         gsl::not_null<FilePalSaver *> pal_saver,
         gsl::not_null<const AnimJsonParser *> anim_json_parser,
         gsl::not_null<const AnimCodeGenerator *> anim_code_generator,
-        gsl::not_null<const BehaviorMapProvider *> behavior_map,
-        const TerrainTypeMapProvider *terrain_map = nullptr,
-        const EncounterTypeMapProvider *encounter_map = nullptr)
+        gsl::not_null<const EnumMapProvider *> behavior_map,
+        const EnumMapProvider *terrain_map = nullptr,
+        const EnumMapProvider *encounter_map = nullptr)
         : domain_config_{domain_config}, infra_config_{infra_config}, project_root_{std::move(project_root)},
           base_game_{base_game}, metatile_attr_size_{metatile_attr_size}, format_{format}, diag_{diag},
           png_rgba_saver_{png_rgba_saver}, png_indexed_saver_{png_indexed_saver}, pal_saver_{pal_saver},
@@ -136,9 +134,9 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
     FilePalSaver *pal_saver_;
     const AnimJsonParser *anim_json_parser_;
     const AnimCodeGenerator *anim_code_generator_;
-    const BehaviorMapProvider *behavior_map_;
-    const TerrainTypeMapProvider *terrain_map_;
-    const EncounterTypeMapProvider *encounter_map_;
+    const EnumMapProvider *behavior_map_;
+    const EnumMapProvider *terrain_map_;
+    const EnumMapProvider *encounter_map_;
     ProjectTilesetMetadataProvider metadata_provider_;
     ProjectTilesetMetadataWriter metadata_writer_;
 

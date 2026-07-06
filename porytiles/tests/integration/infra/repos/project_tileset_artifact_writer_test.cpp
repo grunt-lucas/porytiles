@@ -16,7 +16,7 @@
 #include "porytiles/domain/models/rgba32.hpp"
 #include "porytiles/domain/models/tilemap_entry.hpp"
 #include "porytiles/domain/models/tileset.hpp"
-#include "porytiles/domain/services/behavior_map_provider.hpp"
+#include "porytiles/domain/services/enum_map_provider.hpp"
 #include "porytiles/infra/repos/project_tileset_artifact_writer.hpp"
 #include "porytiles/infra/services/anim_code_generator.hpp"
 #include "porytiles/infra/services/anim_json_parser.hpp"
@@ -66,15 +66,15 @@ class MockFilePalSaver : public FilePalSaver {
     }
 };
 
-class MockBehaviorMapProvider : public BehaviorMapProvider {
+class MockBehaviorMapProvider : public EnumMapProvider {
   public:
-    [[nodiscard]] ChainableResult<std::uint16_t> lookup(const std::string &behavior_name) const override
+    [[nodiscard]] ChainableResult<std::uint32_t> lookup(const std::string &name) const override
     {
         // Simple mock: return 0 for any behavior name
-        return std::uint16_t{0};
+        return std::uint32_t{0};
     }
 
-    [[nodiscard]] ChainableResult<std::string> lookup(std::uint16_t behavior_value) const override
+    [[nodiscard]] ChainableResult<std::string> lookup(std::uint32_t value) const override
     {
         // Simple mock: return a behavior name based on value
         return std::string{"MB_NORMAL"};

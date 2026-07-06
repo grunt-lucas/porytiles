@@ -1,0 +1,12 @@
+#ifndef GUARD_METATILE_BEHAVIORS_DUPLICATE_ENUM_H
+#define GUARD_METATILE_BEHAVIORS_DUPLICATE_ENUM_H
+
+enum {
+    MB_NORMAL,
+    MB_SECRET_BASE_WALL,
+    MB_TALL_GRASS,
+    // Duplicate enum member name later in the same enum.
+    MB_TALL_GRASS,
+};
+
+#endif // GUARD_METATILE_BEHAVIORS_DUPLICATE_ENUM_H

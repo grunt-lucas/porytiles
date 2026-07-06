@@ -133,10 +133,10 @@ ChainableResult<CsvRow> parse_firered_csv_row(
 
 ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
     const std::filesystem::path &path,
-    const BehaviorMapProvider &behavior_map,
+    const EnumMapProvider &behavior_map,
     std::optional<BaseGame> base_game,
-    const TerrainTypeMapProvider *terrain_map,
-    const EncounterTypeMapProvider *encounter_map,
+    const EnumMapProvider *terrain_map,
+    const EnumMapProvider *encounter_map,
     const TextFormatter &format,
     const FileHighlightPrinter &file_printer)
 {

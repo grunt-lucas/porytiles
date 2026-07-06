@@ -865,17 +865,17 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
             }
             PT_TRY_ASSIGN_CHAIN_ERR(
                 behavior_name,
-                behavior_map_->lookup(static_cast<std::uint16_t>(attribute.field(attr::field_behavior))),
+                behavior_map_->lookup(attribute.field(attr::field_behavior)),
                 void,
                 std::format("Failed to lookup behavior name for metatile {}.", metatile_id));
             PT_TRY_ASSIGN_CHAIN_ERR(
                 terrain_name,
-                terrain_map_->lookup(static_cast<std::uint8_t>(attribute.field(attr::field_terrain))),
+                terrain_map_->lookup(attribute.field(attr::field_terrain)),
                 void,
                 std::format("Failed to lookup terrain type name for metatile {}.", metatile_id));
             PT_TRY_ASSIGN_CHAIN_ERR(
                 encounter_name,
-                encounter_map_->lookup(static_cast<std::uint8_t>(attribute.field(attr::field_encounter_type))),
+                encounter_map_->lookup(attribute.field(attr::field_encounter_type)),
                 void,
                 std::format("Failed to lookup encounter type name for metatile {}.", metatile_id));
             out << metatile_id << "," << behavior_name << "," << terrain_name << "," << encounter_name << "\n";
@@ -887,7 +887,7 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
             }
             PT_TRY_ASSIGN_CHAIN_ERR(
                 behavior_name,
-                behavior_map_->lookup(static_cast<std::uint16_t>(attribute.field(attr::field_behavior))),
+                behavior_map_->lookup(attribute.field(attr::field_behavior)),
                 void,
                 std::format("Failed to lookup behavior name for metatile {}.", metatile_id));
             out << metatile_id << "," << behavior_name << "\n";

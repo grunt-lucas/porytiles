@@ -31,9 +31,7 @@
 #include "porytiles/infra/services/attributes_csv_loader.hpp"
 #include "porytiles/infra/services/base_game_detector.hpp"
 #include "porytiles/infra/services/color_palette_printer.hpp"
-#include "porytiles/infra/services/header_behavior_map_provider.hpp"
-#include "porytiles/infra/services/header_encounter_type_map_provider.hpp"
-#include "porytiles/infra/services/header_terrain_type_map_provider.hpp"
+#include "porytiles/infra/services/header_enum_map_provider.hpp"
 #include "porytiles/infra/services/incbin_declaration_appender.hpp"
 #include "porytiles/infra/services/jasc_pal_loader.hpp"
 #include "porytiles/infra/services/jasc_pal_saver.hpp"
@@ -53,6 +51,7 @@
 #include "porytiles/xcut/diagnostics/user_diagnostics.hpp"
 
 #include "command.hpp"
+#include "interim_enum_specs.hpp"
 #include "option.hpp"
 
 class CompileTilesetCommand final : public Command {
@@ -152,8 +151,8 @@ class CompileTilesetCommand final : public Command {
         TilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
 
         // Setup behavior map provider
-        HeaderBehaviorMapProvider behavior_map_provider{
-            project_root / behaviors_header_root_relative, text_formatter, diag.get()};
+        HeaderEnumMapProvider behavior_map_provider{
+            project_root / behaviors_header_root_relative, behavior_enum_spec(), text_formatter, diag.get()};
 
         // Setup metadata provider (needed by artifact reader for animation param loading)
         ProjectTilesetMetadataProvider metadata_provider{project_root, text_formatter, diag.get()};
@@ -182,13 +181,13 @@ class CompileTilesetCommand final : public Command {
         const BaseGame base_game = base_game_result.value();
 
         // Conditionally create terrain/encounter providers for FireRed
-        std::unique_ptr<HeaderTerrainTypeMapProvider> terrain_provider;
-        std::unique_ptr<HeaderEncounterTypeMapProvider> encounter_provider;
+        std::unique_ptr<HeaderEnumMapProvider> terrain_provider;
+        std::unique_ptr<HeaderEnumMapProvider> encounter_provider;
         if (base_game == BaseGame::pokefirered) {
-            terrain_provider = std::make_unique<HeaderTerrainTypeMapProvider>(
-                project_root / global_fieldmap_header_root_relative, text_formatter, diag.get());
-            encounter_provider = std::make_unique<HeaderEncounterTypeMapProvider>(
-                project_root / global_fieldmap_header_root_relative, text_formatter, diag.get());
+            terrain_provider = std::make_unique<HeaderEnumMapProvider>(
+                project_root / global_fieldmap_header_root_relative, terrain_enum_spec(), text_formatter, diag.get());
+            encounter_provider = std::make_unique<HeaderEnumMapProvider>(
+                project_root / global_fieldmap_header_root_relative, encounter_enum_spec(), text_formatter, diag.get());
         }
 
         // Setup attributes CSV loader (after base game detection for format validation)

@@ -59,6 +59,8 @@ inline std::ostream &operator<<(std::ostream &os, const HeaderFormat format)
     return os << to_string(format);
 }
 
+struct EnumSpec;
+
 /**
  * @brief Describes where and how a field's named values are declared.
  *
@@ -74,6 +76,40 @@ struct ProviderSpec {
     HeaderFormat format{HeaderFormat::either};
 
     bool operator==(const ProviderSpec &) const = default;
+
+    /**
+     * @brief Builds the resolvable enum spec a header provider needs from this description.
+     *
+     * @details
+     * A ProviderSpec describes a field's value names in the abstract; a provider that reads a header also
+     * needs the field's value cap and a human-readable field name for diagnostics. Those two facts live on
+     * the owning Field, not here, so the caller supplies them. The header path is intentionally not carried
+     * over: it is resolved separately against the project root before a provider is built.
+     *
+     * @param field_display_name The field name used in this provider's diagnostics
+     * @param max_value The largest value a resolved name may hold, from the field's width
+     * @return An EnumSpec copying this spec's prefix, skip set, and format alongside the two given facts
+     */
+    [[nodiscard]] EnumSpec to_enum_spec(std::string field_display_name, std::uint32_t max_value) const;
+};
+
+/**
+ * @brief The self-contained description a header enum provider needs to scan and validate values.
+ *
+ * @details
+ * Where ProviderSpec describes how a field's values are declared in the abstract, an EnumSpec is the
+ * concrete, resolvable form a provider consumes: it adds the field's value cap and a display name for
+ * diagnostics, and drops the header path (resolved separately against the project root). It is plain data
+ * derived from a ProviderSpec plus its owning Field via ProviderSpec::to_enum_spec.
+ */
+struct EnumSpec {
+    std::string prefix;
+    std::uint32_t max_value;
+    std::unordered_set<std::string> skipped{};
+    HeaderFormat format{HeaderFormat::either};
+    std::string field_display_name;
+
+    bool operator==(const EnumSpec &) const = default;
 };
 
 /**
