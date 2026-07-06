@@ -215,6 +215,10 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     tileset_paths_secondary_bin_raw(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
     metatile_attr_size_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<MetatileAttrFieldSpecs>>
+    metatile_attr_fields_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<MetatileAttrFieldOverrides>>
+    metatile_attr_field_overrides_raw(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
     tileset_animations_wire_anim_code_raw(ConfigScopeType type, const std::string &scope) const override;
 
@@ -765,6 +769,36 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      */
     [[nodiscard]] std::vector<ProvenanceChainLink<std::size_t>>
     metatile_attr_size_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for metatile_attr_fields.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<MetatileAttrFieldSpecs>>
+    metatile_attr_fields_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for metatile_attr_field_overrides.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<MetatileAttrFieldOverrides>>
+    metatile_attr_field_overrides_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
     /**
      * @brief Gets the full provenance chain for tileset_animations_wire_anim_code.

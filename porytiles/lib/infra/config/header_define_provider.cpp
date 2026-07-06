@@ -315,6 +315,20 @@ HeaderDefineProvider::metatile_attr_size(ConfigScopeType /*type*/, const std::st
     return LayerValue<std::size_t>::not_provided();
 }
 
+LayerValue<MetatileAttrFieldSpecs>
+HeaderDefineProvider::metatile_attr_fields(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<MetatileAttrFieldSpecs>::not_provided();
+}
+
+LayerValue<MetatileAttrFieldOverrides>
+HeaderDefineProvider::metatile_attr_field_overrides(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<MetatileAttrFieldOverrides>::not_provided();
+}
+
 LayerValue<bool>
 HeaderDefineProvider::tileset_animations_wire_anim_code(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {

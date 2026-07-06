@@ -3,6 +3,7 @@
 #include <memory>
 #include <string>
 
+#include "porytiles/domain/config/metatile_attr_field_spec.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
 #include "porytiles/xcut/config/config_value.hpp"
@@ -79,6 +80,22 @@ class InfraConfig {
     }
 
     // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<MetatileAttrFieldSpecs>>
+    metatile_attr_fields(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = metatile_attr_fields_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<MetatileAttrFieldOverrides>>
+    metatile_attr_field_overrides(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = metatile_attr_field_overrides_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
     tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const
     {
@@ -150,6 +167,30 @@ class InfraConfig {
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
     metatile_attr_size_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<MetatileAttrFieldSpecs>>
+    metatile_attr_fields_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = metatile_attr_fields_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<MetatileAttrFieldSpecs>>
+    metatile_attr_fields_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<MetatileAttrFieldOverrides>>
+    metatile_attr_field_overrides_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = metatile_attr_field_overrides_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<MetatileAttrFieldOverrides>>
+    metatile_attr_field_overrides_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>

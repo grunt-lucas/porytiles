@@ -25,6 +25,8 @@ class MockInfraConfig : public InfraConfig {
     std::string tileset_paths_secondary_src = "data/tilesets/secondary";
     std::string tileset_paths_secondary_bin = "data/tilesets/secondary";
     std::size_t metatile_attr_size = 2;
+    MetatileAttrFieldSpecs metatile_attr_fields = MetatileAttrFieldSpecs{};
+    MetatileAttrFieldOverrides metatile_attr_field_overrides = MetatileAttrFieldOverrides{};
     bool tileset_animations_wire_anim_code = true;
 
   protected:
@@ -60,6 +62,23 @@ class MockInfraConfig : public InfraConfig {
     metatile_attr_size_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{metatile_attr_size, "Metatile Attribute Size", "metatile_attr_size", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<MetatileAttrFieldSpecs>>
+    metatile_attr_fields_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{metatile_attr_fields, "Metatile Attribute Fields", "metatile_attr_fields", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<MetatileAttrFieldOverrides>>
+    metatile_attr_field_overrides_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{
+            metatile_attr_field_overrides,
+            "Metatile Attribute Field Overrides",
+            "metatile_attr_field_overrides",
+            "mock",
+            {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<bool>>

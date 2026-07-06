@@ -225,6 +225,18 @@ LayerValue<std::size_t> ConfigProvider::metatile_attr_size(
     return LayerValue<std::size_t>::not_provided();
 }
 
+LayerValue<MetatileAttrFieldSpecs> ConfigProvider::metatile_attr_fields(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<MetatileAttrFieldSpecs>::not_provided();
+}
+
+LayerValue<MetatileAttrFieldOverrides> ConfigProvider::metatile_attr_field_overrides(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<MetatileAttrFieldOverrides>::not_provided();
+}
+
 LayerValue<bool> ConfigProvider::tileset_animations_wire_anim_code(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

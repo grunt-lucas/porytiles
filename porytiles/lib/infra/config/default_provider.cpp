@@ -246,6 +246,20 @@ LayerValue<std::size_t> DefaultProvider::metatile_attr_size(
     return LayerValue<std::size_t>::valid(2, "Metatile Attribute Size", source_info);
 }
 
+LayerValue<MetatileAttrFieldSpecs> DefaultProvider::metatile_attr_fields(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<MetatileAttrFieldSpecs>::valid(
+        MetatileAttrFieldSpecs{}, "Metatile Attribute Fields", source_info);
+}
+
+LayerValue<MetatileAttrFieldOverrides> DefaultProvider::metatile_attr_field_overrides(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<MetatileAttrFieldOverrides>::valid(
+        MetatileAttrFieldOverrides{}, "Metatile Attribute Field Overrides", source_info);
+}
+
 LayerValue<bool> DefaultProvider::tileset_animations_wire_anim_code(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

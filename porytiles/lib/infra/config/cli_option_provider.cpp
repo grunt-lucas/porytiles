@@ -273,6 +273,20 @@ LayerValue<std::size_t> CliOptionProvider::metatile_attr_size(
     return parse_size_t(storage_.metatile_attr_size, "--metatile-attr-size");
 }
 
+LayerValue<MetatileAttrFieldSpecs> CliOptionProvider::metatile_attr_fields(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // Skipped for CLI (yaml_only: type too complex for non-YAML providers)
+    return LayerValue<MetatileAttrFieldSpecs>::not_provided();
+}
+
+LayerValue<MetatileAttrFieldOverrides> CliOptionProvider::metatile_attr_field_overrides(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // Skipped for CLI (yaml_only: type too complex for non-YAML providers)
+    return LayerValue<MetatileAttrFieldOverrides>::not_provided();
+}
+
 LayerValue<bool> CliOptionProvider::tileset_animations_wire_anim_code(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

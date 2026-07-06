@@ -31,6 +31,8 @@ inline const std::unordered_set<std::string> valid_yaml_paths = {
     "diagnostics.warnings.include",
     "fieldmap",
     "fieldmap.max_map_data_size",
+    "fieldmap.metatile_attr_field_overrides",
+    "fieldmap.metatile_attr_fields",
     "fieldmap.metatile_attribute_size",
     "fieldmap.num_metatiles_in_primary",
     "fieldmap.num_metatiles_total",
@@ -86,6 +88,7 @@ inline const std::unordered_set<std::string> valid_yaml_paths = {
  * This is auto-generated from config_schema.yaml - do not edit directly.
  */
 inline const std::unordered_set<std::string> valid_yaml_map_prefixes = {
+    "fieldmap.metatile_attr_field_overrides",
     "tileset.animations.per_animation_overrides",
     "tileset.palettes.packing.strategy_params",
 };

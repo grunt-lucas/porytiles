@@ -823,6 +823,31 @@ config_values:
     validators: [ size_t_val_two_or_four ]
     cross_field_validators: [ ]
 
+  - canonical_name: Metatile Attribute Fields
+    symbol: metatile_attr_fields
+    yaml_path: fieldmap.metatile_attr_fields
+    cli_option: metatile-attr-fields
+    yaml_only: true  # Too complex for non-YAML providers (MetatileAttrFieldSpecs)
+    layer: infra
+    type: MetatileAttrFieldSpecs
+    parser: parse_metatile_attr_fields
+    default_value: "MetatileAttrFieldSpecs{}"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Metatile Attribute Field Overrides
+    symbol: metatile_attr_field_overrides
+    yaml_path: fieldmap.metatile_attr_field_overrides
+    cli_option: metatile-attr-field-overrides
+    yaml_only: true
+    yaml_is_map: true
+    layer: infra
+    type: MetatileAttrFieldOverrides
+    parser: parse_metatile_attr_field_overrides
+    default_value: "MetatileAttrFieldOverrides{}"
+    validators: [ ]
+    cross_field_validators: [ ]
+
   - canonical_name: Tileset Animations Wire Anim Code
     symbol: tileset_animations_wire_anim_code
     yaml_path: tileset.animations.wire_anim_code

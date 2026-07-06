@@ -17,6 +17,7 @@
 #include "porytiles/infra/config/default_provider.hpp"
 #include "porytiles/infra/config/header_define_provider.hpp"
 #include "porytiles/infra/config/lazy_layered_config.hpp"
+#include "porytiles/infra/config/metatile_attribute_config_provider.hpp"
 #include "porytiles/infra/config/metatiles_header_provider.hpp"
 #include "porytiles/infra/config/yaml_file_provider.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
@@ -61,6 +62,9 @@ class DumpTilesetConfigCommand final : public Command {
         providers.push_back(std::move(yaml_provider));
         providers.push_back(
             std::make_unique<HeaderDefineProvider>(project_root, fieldmap_header_root_relative, text_formatter));
+        providers.push_back(
+
+            std::make_unique<MetatileAttributeConfigProvider>(project_root, text_formatter, stderr_diag.get()));
         providers.push_back(std::make_unique<MetatilesHeaderProvider>(project_root, text_formatter));
         providers.push_back(std::make_unique<DefaultProvider>());
         LazyLayeredConfig config{text_formatter, std::move(providers)};
