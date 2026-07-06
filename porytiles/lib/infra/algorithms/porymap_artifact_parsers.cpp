@@ -86,7 +86,9 @@ ChainableResult<std::vector<MetatileAttribute>> parse_emerald_metatile_attribute
                 FormattableError{"Invalid layer type for metatile '{}'.", FormatParam{metatile_index, Style::bold}},
                 layer_type_result};
         }
-        MetatileAttribute metatile_attribute{layer_type_result.value(), static_cast<std::uint16_t>(attribute & 0x00FF)};
+        MetatileAttribute metatile_attribute{};
+        metatile_attribute.layer_type(layer_type_result.value());
+        metatile_attribute.field(attr::field_behavior, attribute & 0x00FF);
         attributes.push_back(std::move(metatile_attribute));
     }
 
@@ -146,15 +148,15 @@ ChainableResult<std::vector<MetatileAttribute>> parse_firered_metatile_attribute
                 layer_type_result};
         }
 
-        MetatileAttribute metatile_attribute{
-            layer_type_result.value(),
-            behavior,
-            terrain,
-            encounter_type,
-            attribute_2,
-            attribute_3,
-            attribute_5,
-            attribute_7};
+        MetatileAttribute metatile_attribute{};
+        metatile_attribute.layer_type(layer_type_result.value());
+        metatile_attribute.field(attr::field_behavior, behavior);
+        metatile_attribute.field(attr::field_terrain, terrain);
+        metatile_attribute.field(attr::field_attribute_2, attribute_2);
+        metatile_attribute.field(attr::field_attribute_3, attribute_3);
+        metatile_attribute.field(attr::field_encounter_type, encounter_type);
+        metatile_attribute.field(attr::field_attribute_5, attribute_5);
+        metatile_attribute.field(attr::field_attribute_7, attribute_7);
         attributes.push_back(std::move(metatile_attribute));
     }
 

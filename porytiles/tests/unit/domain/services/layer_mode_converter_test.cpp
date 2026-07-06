@@ -20,6 +20,13 @@ TilemapEntry create_test_entry(std::size_t tile_index, std::size_t pal_index = 0
     return TilemapEntry{tile_index, pal_index, false, false};
 }
 
+MetatileAttribute make_attribute(LayerType layer_type)
+{
+    MetatileAttribute attribute{};
+    attribute.layer_type(layer_type);
+    return attribute;
+}
+
 PorymapTilesetComponent create_dual_layer_component_single_metatile(LayerType layer_type)
 {
     PorymapTilesetComponent component;
@@ -30,7 +37,7 @@ PorymapTilesetComponent create_dual_layer_component_single_metatile(LayerType la
     }
 
     // Add one metatile attribute
-    component.push_back_attribute(MetatileAttribute{layer_type, 0});
+    component.push_back_attribute(make_attribute(layer_type));
 
     return component;
 }
@@ -45,7 +52,7 @@ PorymapTilesetComponent create_triple_layer_component_single_metatile(LayerType 
     }
 
     // Add one metatile attribute
-    component.push_back_attribute(MetatileAttribute{layer_type, 0});
+    component.push_back_attribute(make_attribute(layer_type));
 
     return component;
 }
@@ -196,19 +203,19 @@ TEST_F(LayerModeConverterTests, TripleLayerizeMultipleMetatilesWithDifferentLaye
     for (std::size_t i = 1; i <= 8; ++i) {
         component.push_back_tilemap_entry(create_test_entry(i));
     }
-    component.push_back_attribute(MetatileAttribute{LayerType::normal, 0});
+    component.push_back_attribute(make_attribute(LayerType::normal));
 
     // Add second metatile with LayerType::covered (tile indices 9-16)
     for (std::size_t i = 9; i <= 16; ++i) {
         component.push_back_tilemap_entry(create_test_entry(i));
     }
-    component.push_back_attribute(MetatileAttribute{LayerType::covered, 0});
+    component.push_back_attribute(make_attribute(LayerType::covered));
 
     // Add third metatile with LayerType::split (tile indices 17-24)
     for (std::size_t i = 17; i <= 24; ++i) {
         component.push_back_tilemap_entry(create_test_entry(i));
     }
-    component.push_back_attribute(MetatileAttribute{LayerType::split, 0});
+    component.push_back_attribute(make_attribute(LayerType::split));
 
     auto result = converter_->triple_layerize(component);
 
@@ -254,7 +261,7 @@ TEST_F(LayerModeConverterTests, TripleLayerizePreservesNonZeroPalIndex)
     for (std::size_t i = 1; i <= 8; ++i) {
         component.push_back_tilemap_entry(create_test_entry(i, i % 4)); // Use different pal indices
     }
-    component.push_back_attribute(MetatileAttribute{LayerType::normal, 0});
+    component.push_back_attribute(make_attribute(LayerType::normal));
 
     auto result = converter_->triple_layerize(component);
 
@@ -277,7 +284,7 @@ TEST_F(LayerModeConverterTests, TripleLayerizePreservesFlipFlags)
         bool vflip = (i % 3 == 0);
         component.push_back_tilemap_entry(TilemapEntry{i, 0, hflip, vflip});
     }
-    component.push_back_attribute(MetatileAttribute{LayerType::covered, 0});
+    component.push_back_attribute(make_attribute(LayerType::covered));
 
     auto result = converter_->triple_layerize(component);
 
@@ -523,19 +530,19 @@ TEST_F(LayerModeConverterTests, RoundTripMultipleMetatiles)
     for (std::size_t i = 1; i <= 8; ++i) {
         dual_component.push_back_tilemap_entry(create_test_entry(i));
     }
-    dual_component.push_back_attribute(MetatileAttribute{LayerType::normal, 0});
+    dual_component.push_back_attribute(make_attribute(LayerType::normal));
 
     // Add second metatile with LayerType::covered (tile indices 9-16)
     for (std::size_t i = 9; i <= 16; ++i) {
         dual_component.push_back_tilemap_entry(create_test_entry(i));
     }
-    dual_component.push_back_attribute(MetatileAttribute{LayerType::covered, 0});
+    dual_component.push_back_attribute(make_attribute(LayerType::covered));
 
     // Add third metatile with LayerType::split (tile indices 17-24)
     for (std::size_t i = 17; i <= 24; ++i) {
         dual_component.push_back_tilemap_entry(create_test_entry(i));
     }
-    dual_component.push_back_attribute(MetatileAttribute{LayerType::split, 0});
+    dual_component.push_back_attribute(make_attribute(LayerType::split));
 
     const auto &original_entries = dual_component.metatiles_bin();
 

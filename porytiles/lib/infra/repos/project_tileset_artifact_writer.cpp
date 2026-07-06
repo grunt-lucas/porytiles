@@ -167,7 +167,7 @@ ChainableResult<void> save_emerald_metatile_attributes_bin(
 {
     std::ofstream out{path};
     for (const auto &attribute : attributes) {
-        const std::uint16_t behavior = attribute.behavior();
+        const std::uint32_t behavior = attribute.field(attr::field_behavior);
         const auto layer_type = static_cast<std::uint8_t>(attribute.layer_type());
         const auto attribute_value = static_cast<std::uint16_t>((behavior & 0xff) | ((layer_type & 0xf) << 12));
         out << static_cast<std::uint8_t>(attribute_value);
@@ -192,14 +192,13 @@ ChainableResult<void> save_firered_metatile_attributes_bin(
         //   Bits 29-30: layer_type     (0x60000000)
         //   Bit  31:    attribute_7    (0x80000000)
         const auto attribute_value = static_cast<std::uint32_t>(
-            (static_cast<std::uint32_t>(attribute.behavior()) & 0x1FF) |
-            ((static_cast<std::uint32_t>(attribute.terrain()) & 0x1F) << 9) |
-            ((static_cast<std::uint32_t>(attribute.attribute_2()) & 0x0F) << 14) |
-            ((static_cast<std::uint32_t>(attribute.attribute_3()) & 0x3F) << 18) |
-            ((static_cast<std::uint32_t>(attribute.encounter_type()) & 0x07) << 24) |
-            ((static_cast<std::uint32_t>(attribute.attribute_5()) & 0x03) << 27) |
+            (attribute.field(attr::field_behavior) & 0x1FF) | ((attribute.field(attr::field_terrain) & 0x1F) << 9) |
+            ((attribute.field(attr::field_attribute_2) & 0x0F) << 14) |
+            ((attribute.field(attr::field_attribute_3) & 0x3F) << 18) |
+            ((attribute.field(attr::field_encounter_type) & 0x07) << 24) |
+            ((attribute.field(attr::field_attribute_5) & 0x03) << 27) |
             ((static_cast<std::uint32_t>(attribute.layer_type()) & 0x03) << 29) |
-            ((static_cast<std::uint32_t>(attribute.attribute_7()) & 0x01) << 31));
+            ((attribute.field(attr::field_attribute_7) & 0x01) << 31));
         out << static_cast<std::uint8_t>(attribute_value);
         out << static_cast<std::uint8_t>(attribute_value >> 8);
         out << static_cast<std::uint8_t>(attribute_value >> 16);
@@ -806,9 +805,9 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
 {
     const auto &attributes = src.porytiles_component().metatile_attributes();
 
-    constexpr std::uint16_t default_behavior = 0;
-    constexpr std::uint8_t default_terrain = 0;
-    constexpr std::uint8_t default_encounter = 0;
+    constexpr std::uint32_t default_behavior = 0;
+    constexpr std::uint32_t default_terrain = 0;
+    constexpr std::uint32_t default_encounter = 0;
 
     const bool is_firered = base_game_ == BaseGame::pokefirered;
 
@@ -816,13 +815,14 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
     std::size_t non_default_count = 0;
     for (const auto &attribute : attributes | std::views::values) {
         if (is_firered) {
-            if (attribute.behavior() != default_behavior || attribute.terrain() != default_terrain ||
-                attribute.encounter_type() != default_encounter) {
+            if (attribute.field(attr::field_behavior) != default_behavior ||
+                attribute.field(attr::field_terrain) != default_terrain ||
+                attribute.field(attr::field_encounter_type) != default_encounter) {
                 non_default_count++;
             }
         }
         else {
-            if (attribute.behavior() != default_behavior) {
+            if (attribute.field(attr::field_behavior) != default_behavior) {
                 non_default_count++;
             }
         }
@@ -858,35 +858,36 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
     // Write each non-default attribute row
     for (const auto &[metatile_id, attribute] : attributes) {
         if (is_firered) {
-            if (attribute.behavior() == default_behavior && attribute.terrain() == default_terrain &&
-                attribute.encounter_type() == default_encounter) {
+            if (attribute.field(attr::field_behavior) == default_behavior &&
+                attribute.field(attr::field_terrain) == default_terrain &&
+                attribute.field(attr::field_encounter_type) == default_encounter) {
                 continue;
             }
             PT_TRY_ASSIGN_CHAIN_ERR(
                 behavior_name,
-                behavior_map_->lookup(attribute.behavior()),
+                behavior_map_->lookup(static_cast<std::uint16_t>(attribute.field(attr::field_behavior))),
                 void,
                 std::format("Failed to lookup behavior name for metatile {}.", metatile_id));
             PT_TRY_ASSIGN_CHAIN_ERR(
                 terrain_name,
-                terrain_map_->lookup(attribute.terrain()),
+                terrain_map_->lookup(static_cast<std::uint8_t>(attribute.field(attr::field_terrain))),
                 void,
                 std::format("Failed to lookup terrain type name for metatile {}.", metatile_id));
             PT_TRY_ASSIGN_CHAIN_ERR(
                 encounter_name,
-                encounter_map_->lookup(attribute.encounter_type()),
+                encounter_map_->lookup(static_cast<std::uint8_t>(attribute.field(attr::field_encounter_type))),
                 void,
                 std::format("Failed to lookup encounter type name for metatile {}.", metatile_id));
             out << metatile_id << "," << behavior_name << "," << terrain_name << "," << encounter_name << "\n";
         }
         else {
-            if (attribute.behavior() == default_behavior) {
+            if (attribute.field(attr::field_behavior) == default_behavior) {
                 // Skip default behavior (MB_NORMAL = 0), since it's implicit for missing entries
                 continue;
             }
             PT_TRY_ASSIGN_CHAIN_ERR(
                 behavior_name,
-                behavior_map_->lookup(attribute.behavior()),
+                behavior_map_->lookup(static_cast<std::uint16_t>(attribute.field(attr::field_behavior))),
                 void,
                 std::format("Failed to lookup behavior name for metatile {}.", metatile_id));
             out << metatile_id << "," << behavior_name << "\n";

@@ -321,20 +321,18 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
                     FormattableError{std::move(err_lines)}, encounter_value};
             }
 
-            result.emplace(
-                row.metatile_id,
-                MetatileAttribute{
-                    LayerType::normal,
-                    behavior_value.value(),
-                    terrain_value.value(),
-                    encounter_value.value(),
-                    0,
-                    0,
-                    0,
-                    false});
+            MetatileAttribute attribute{};
+            attribute.layer_type(LayerType::normal);
+            attribute.field(attr::field_behavior, behavior_value.value());
+            attribute.field(attr::field_terrain, terrain_value.value());
+            attribute.field(attr::field_encounter_type, encounter_value.value());
+            result.emplace(row.metatile_id, std::move(attribute));
         }
         else {
-            result.emplace(row.metatile_id, MetatileAttribute{LayerType::normal, behavior_value.value()});
+            MetatileAttribute attribute{};
+            attribute.layer_type(LayerType::normal);
+            attribute.field(attr::field_behavior, behavior_value.value());
+            result.emplace(row.metatile_id, std::move(attribute));
         }
     }
 

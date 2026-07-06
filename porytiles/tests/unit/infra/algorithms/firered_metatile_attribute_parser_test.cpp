@@ -76,15 +76,15 @@ TEST_F(FireRedMetatileAttributeParserTest, ParsesAllFieldsCorrectly)
     ASSERT_TRUE(result.has_value()) << "Parse failed";
     ASSERT_EQ(result.value().size(), 1);
 
-    const auto &attr = result.value()[0];
-    EXPECT_EQ(attr.behavior(), 0x1AB);
-    EXPECT_EQ(attr.terrain(), 17);
-    EXPECT_EQ(attr.attribute_2(), 9);
-    EXPECT_EQ(attr.attribute_3(), 33);
-    EXPECT_EQ(attr.encounter_type(), 5);
-    EXPECT_EQ(attr.attribute_5(), 2);
-    EXPECT_EQ(attr.layer_type(), LayerType::split);
-    EXPECT_TRUE(attr.attribute_7());
+    const auto &attribute = result.value()[0];
+    EXPECT_EQ(attribute.field(attr::field_behavior), 0x1ABu);
+    EXPECT_EQ(attribute.field(attr::field_terrain), 17u);
+    EXPECT_EQ(attribute.field(attr::field_attribute_2), 9u);
+    EXPECT_EQ(attribute.field(attr::field_attribute_3), 33u);
+    EXPECT_EQ(attribute.field(attr::field_encounter_type), 5u);
+    EXPECT_EQ(attribute.field(attr::field_attribute_5), 2u);
+    EXPECT_EQ(attribute.layer_type(), LayerType::split);
+    EXPECT_EQ(attribute.field(attr::field_attribute_7), 1u);
 }
 
 TEST_F(FireRedMetatileAttributeParserTest, ParsesMultipleAttributes)
@@ -104,25 +104,25 @@ TEST_F(FireRedMetatileAttributeParserTest, ParsesMultipleAttributes)
 
     // First attribute: all zeros
     const auto &attr0 = result.value()[0];
-    EXPECT_EQ(attr0.behavior(), 0);
-    EXPECT_EQ(attr0.terrain(), 0);
-    EXPECT_EQ(attr0.attribute_2(), 0);
-    EXPECT_EQ(attr0.attribute_3(), 0);
-    EXPECT_EQ(attr0.encounter_type(), 0);
-    EXPECT_EQ(attr0.attribute_5(), 0);
+    EXPECT_EQ(attr0.field(attr::field_behavior), 0u);
+    EXPECT_EQ(attr0.field(attr::field_terrain), 0u);
+    EXPECT_EQ(attr0.field(attr::field_attribute_2), 0u);
+    EXPECT_EQ(attr0.field(attr::field_attribute_3), 0u);
+    EXPECT_EQ(attr0.field(attr::field_encounter_type), 0u);
+    EXPECT_EQ(attr0.field(attr::field_attribute_5), 0u);
     EXPECT_EQ(attr0.layer_type(), LayerType::normal);
-    EXPECT_FALSE(attr0.attribute_7());
+    EXPECT_EQ(attr0.field(attr::field_attribute_7), 0u);
 
     // Second attribute: all max values
     const auto &attr1 = result.value()[1];
-    EXPECT_EQ(attr1.behavior(), 511);
-    EXPECT_EQ(attr1.terrain(), 31);
-    EXPECT_EQ(attr1.attribute_2(), 15);
-    EXPECT_EQ(attr1.attribute_3(), 63);
-    EXPECT_EQ(attr1.encounter_type(), 7);
-    EXPECT_EQ(attr1.attribute_5(), 3);
+    EXPECT_EQ(attr1.field(attr::field_behavior), 511u);
+    EXPECT_EQ(attr1.field(attr::field_terrain), 31u);
+    EXPECT_EQ(attr1.field(attr::field_attribute_2), 15u);
+    EXPECT_EQ(attr1.field(attr::field_attribute_3), 63u);
+    EXPECT_EQ(attr1.field(attr::field_encounter_type), 7u);
+    EXPECT_EQ(attr1.field(attr::field_attribute_5), 3u);
     EXPECT_EQ(attr1.layer_type(), LayerType::covered);
-    EXPECT_TRUE(attr1.attribute_7());
+    EXPECT_EQ(attr1.field(attr::field_attribute_7), 1u);
 }
 
 TEST_F(FireRedMetatileAttributeParserTest, ErrorOnNonMultipleOf4)

@@ -1,0 +1,255 @@
+#include "gtest/gtest.h"
+
+#include <cstdint>
+#include <format>
+#include <optional>
+#include <sstream>
+#include <string>
+#include <utility>
+#include <vector>
+
+#include "porytiles/domain/models/metatile_attribute_schema.hpp"
+#include "porytiles/utilities/text/plain_text_formatter.hpp"
+
+using namespace porytiles;
+
+namespace {
+
+// The stock firered value-backed fields (everything except the structural layer_type at bits 29-30,
+// which is left as an unused gap in the layout).
+std::vector<Field> firered_fields()
+{
+    std::vector<Field> fields;
+    fields.emplace_back("behavior", 0x000001FF);
+    fields.emplace_back("terrain", 0x00003E00);
+    fields.emplace_back("attribute_2", 0x0003C000);
+    fields.emplace_back("attribute_3", 0x00FC0000);
+    fields.emplace_back("encounter_type", 0x07000000);
+    fields.emplace_back("attribute_5", 0x18000000);
+    fields.emplace_back("attribute_7", 0x80000000);
+    return fields;
+}
+
+} // namespace
+
+TEST(MetatileAttributeSchemaTest, FieldDerivations)
+{
+    const Field behavior{"behavior", 0x1FF};
+    EXPECT_EQ(behavior.offset(), 0u);
+    EXPECT_EQ(behavior.width(), 9u);
+    EXPECT_EQ(behavior.max_value(), 511u);
+
+    const Field terrain{"terrain", 0x3E00};
+    EXPECT_EQ(terrain.offset(), 9u);
+    EXPECT_EQ(terrain.width(), 5u);
+    EXPECT_EQ(terrain.max_value(), 31u);
+
+    const Field layer{"layer", 0x60000000};
+    EXPECT_EQ(layer.offset(), 29u);
+    EXPECT_EQ(layer.width(), 2u);
+    EXPECT_EQ(layer.max_value(), 3u);
+
+    const Field top_bit{"top_bit", 0x80000000};
+    EXPECT_EQ(top_bit.offset(), 31u);
+    EXPECT_EQ(top_bit.width(), 1u);
+    EXPECT_EQ(top_bit.max_value(), 1u);
+}
+
+TEST(MetatileAttributeSchemaTest, FieldProviderPresence)
+{
+    const Field no_provider{"behavior", 0x1FF};
+    EXPECT_FALSE(no_provider.has_provider());
+
+    ProviderSpec spec{};
+    spec.header = "include/constants/metatile_behaviors.h";
+    spec.prefix = "MB_";
+    const Field with_provider{"behavior", 0x1FF, 0, spec};
+    ASSERT_TRUE(with_provider.has_provider());
+    EXPECT_EQ(with_provider.provider_spec().prefix, "MB_");
+    EXPECT_EQ(with_provider.provider_spec().format, HeaderFormat::either);
+    EXPECT_TRUE(with_provider.provider_spec().skipped.empty());
+}
+
+TEST(MetatileAttributeSchemaTest, CreateAcceptsFireredLayout)
+{
+    auto result = Schema::create(firered_fields(), 4);
+    ASSERT_TRUE(result.has_value());
+
+    const Schema &schema = result.value();
+    EXPECT_EQ(schema.attr_bytes(), 4u);
+
+    ASSERT_EQ(schema.fields().size(), 7u);
+    EXPECT_EQ(schema.fields()[0].name(), "behavior");
+    EXPECT_EQ(schema.fields()[1].name(), "terrain");
+    EXPECT_EQ(schema.fields()[2].name(), "attribute_2");
+    EXPECT_EQ(schema.fields()[3].name(), "attribute_3");
+    EXPECT_EQ(schema.fields()[4].name(), "encounter_type");
+    EXPECT_EQ(schema.fields()[5].name(), "attribute_5");
+    EXPECT_EQ(schema.fields()[6].name(), "attribute_7");
+}
+
+TEST(MetatileAttributeSchemaTest, CreateAcceptsFullWidthMasks)
+{
+    std::vector<Field> emerald_full;
+    emerald_full.emplace_back("all", 0xFFFF);
+    auto emerald_result = Schema::create(std::move(emerald_full), 2);
+    ASSERT_TRUE(emerald_result.has_value());
+
+    std::vector<Field> firered_full;
+    firered_full.emplace_back("all", 0xFFFFFFFF);
+    auto firered_result = Schema::create(std::move(firered_full), 4);
+    ASSERT_TRUE(firered_result.has_value());
+}
+
+TEST(MetatileAttributeSchemaTest, RejectsZeroMask)
+{
+    PlainTextFormatter formatter;
+    std::vector<Field> fields;
+    fields.emplace_back("mystery", 0x0);
+
+    auto result = Schema::create(std::move(fields), 2);
+    ASSERT_FALSE(result.has_value());
+    EXPECT_NE(result.error().join(formatter).find("mystery"), std::string::npos);
+}
+
+TEST(MetatileAttributeSchemaTest, RejectsNonContiguousMask)
+{
+    PlainTextFormatter formatter;
+
+    std::vector<Field> gapped;
+    gapped.emplace_back("gapped", 0xF0F0);
+    auto gapped_result = Schema::create(std::move(gapped), 2);
+    ASSERT_FALSE(gapped_result.has_value());
+    EXPECT_NE(gapped_result.error().join(formatter).find("gapped"), std::string::npos);
+
+    std::vector<Field> scattered;
+    scattered.emplace_back("scattered", 0x5);
+    auto scattered_result = Schema::create(std::move(scattered), 2);
+    ASSERT_FALSE(scattered_result.has_value());
+    EXPECT_NE(scattered_result.error().join(formatter).find("scattered"), std::string::npos);
+}
+
+TEST(MetatileAttributeSchemaTest, RejectsOverlappingMasks)
+{
+    PlainTextFormatter formatter;
+    std::vector<Field> fields;
+    fields.emplace_back("behavior", 0x1FF);
+    fields.emplace_back("intruder", 0x100);
+
+    auto result = Schema::create(std::move(fields), 2);
+    ASSERT_FALSE(result.has_value());
+
+    const std::string message = result.error().join(formatter);
+    EXPECT_NE(message.find("intruder"), std::string::npos);
+    EXPECT_NE(message.find("behavior"), std::string::npos);
+}
+
+TEST(MetatileAttributeSchemaTest, RejectsMaskBeyondAttributeSize)
+{
+    PlainTextFormatter formatter;
+
+    std::vector<Field> beyond;
+    beyond.emplace_back("beyond", 0x30000);
+    auto beyond_result = Schema::create(std::move(beyond), 2);
+    ASSERT_FALSE(beyond_result.has_value());
+    EXPECT_NE(beyond_result.error().join(formatter).find("beyond"), std::string::npos);
+
+    std::vector<Field> top_of_two;
+    top_of_two.emplace_back("top_of_two", 0x8000);
+    EXPECT_TRUE(Schema::create(std::move(top_of_two), 2).has_value());
+
+    std::vector<Field> top_of_four;
+    top_of_four.emplace_back("top_of_four", 0x80000000);
+    EXPECT_TRUE(Schema::create(std::move(top_of_four), 4).has_value());
+}
+
+TEST(MetatileAttributeSchemaTest, RejectsDefaultThatDoesNotFit)
+{
+    PlainTextFormatter formatter;
+
+    std::vector<Field> low_ok;
+    low_ok.emplace_back("low", 0x3, 3);
+    EXPECT_TRUE(Schema::create(std::move(low_ok), 2).has_value());
+
+    std::vector<Field> low_bad;
+    low_bad.emplace_back("low", 0x3, 4);
+    auto low_bad_result = Schema::create(std::move(low_bad), 2);
+    ASSERT_FALSE(low_bad_result.has_value());
+    EXPECT_NE(low_bad_result.error().join(formatter).find("low"), std::string::npos);
+
+    // A shifted mask has the same 2-bit width, so the fit check must be width-based (max_value), not raw mask.
+    std::vector<Field> shifted_ok;
+    shifted_ok.emplace_back("shifted", 0x60000000, 3);
+    EXPECT_TRUE(Schema::create(std::move(shifted_ok), 4).has_value());
+
+    std::vector<Field> shifted_bad;
+    shifted_bad.emplace_back("shifted", 0x60000000, 4);
+    auto shifted_bad_result = Schema::create(std::move(shifted_bad), 4);
+    ASSERT_FALSE(shifted_bad_result.has_value());
+    EXPECT_NE(shifted_bad_result.error().join(formatter).find("shifted"), std::string::npos);
+}
+
+TEST(MetatileAttributeSchemaTest, RejectsDuplicateName)
+{
+    PlainTextFormatter formatter;
+    std::vector<Field> fields;
+    fields.emplace_back("behavior", 0x00FF);
+    fields.emplace_back("behavior", 0xFF00);
+
+    auto result = Schema::create(std::move(fields), 2);
+    ASSERT_FALSE(result.has_value());
+    EXPECT_NE(result.error().join(formatter).find("behavior"), std::string::npos);
+}
+
+TEST(MetatileAttributeSchemaTest, ValidateProviderValuesAcceptsInRange)
+{
+    const Field behavior{"behavior", 0x1FF};
+    std::vector<std::pair<std::string, std::uint32_t>> entries{{"MB_NORMAL", 0}, {"MB_MAX", behavior.max_value()}};
+
+    EXPECT_TRUE(behavior.validate_provider_values(entries).has_value());
+}
+
+TEST(MetatileAttributeSchemaTest, ValidateProviderValuesDiagnosesOffender)
+{
+    PlainTextFormatter formatter;
+    const Field behavior{"behavior", 0x1FF};
+    std::vector<std::pair<std::string, std::uint32_t>> entries{{"MB_TOO_BIG", 512}};
+
+    auto result = behavior.validate_provider_values(entries);
+    ASSERT_FALSE(result.has_value());
+
+    const std::string message = result.error().join(formatter);
+    EXPECT_NE(message.find("MB_TOO_BIG"), std::string::npos);
+    EXPECT_NE(message.find("512"), std::string::npos);
+    EXPECT_NE(message.find("behavior"), std::string::npos);
+}
+
+TEST(MetatileAttributeSchemaTest, ValidateProviderValuesReportsFirstOffender)
+{
+    PlainTextFormatter formatter;
+    const Field behavior{"behavior", 0x1FF};
+    std::vector<std::pair<std::string, std::uint32_t>> entries{{"MB_FIRST_BAD", 600}, {"MB_SECOND_BAD", 700}};
+
+    auto result = behavior.validate_provider_values(entries);
+    ASSERT_FALSE(result.has_value());
+
+    const std::string message = result.error().join(formatter);
+    EXPECT_NE(message.find("MB_FIRST_BAD"), std::string::npos);
+    EXPECT_EQ(message.find("MB_SECOND_BAD"), std::string::npos);
+}
+
+TEST(MetatileAttributeSchemaTest, HeaderFormatToString)
+{
+    EXPECT_EQ(to_string(HeaderFormat::defines_only), "defines-only");
+    EXPECT_EQ(to_string(HeaderFormat::enums_only), "enums-only");
+    EXPECT_EQ(to_string(HeaderFormat::either), "either");
+}
+
+TEST(MetatileAttributeSchemaTest, HeaderFormatFormatsAndStreams)
+{
+    EXPECT_EQ(std::format("{}", HeaderFormat::defines_only), "defines-only");
+
+    std::ostringstream stream;
+    stream << HeaderFormat::enums_only;
+    EXPECT_EQ(stream.str(), "enums-only");
+}
