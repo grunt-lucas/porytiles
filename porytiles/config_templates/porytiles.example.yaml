@@ -23,6 +23,58 @@ fieldmap:
   # This is really a per-tileset setting; prefer setting it in porytiles/tilesets/<name>/config.yaml.
   use_frlg_alternate_masks: automatic
 
+  # Declare the metatile attribute field layout explicitly, replacing schema inference.
+  # You normally omit this: Porytiles infers the layout from your project's own declarations
+  # (the METATILE_ATTRIBUTE_* enum, the METATILE_ATTR_*_MASK defines, and the sMetatileAttrMasks
+  # table). Declare the list yourself only when your layout has diverged beyond what inference
+  # can describe. Each field takes:
+  # - name: the attributes.csv column header
+  # - mask: the bits the field occupies in the packed attribute value (a single contiguous
+  #     run of bits; fields must not overlap each other or the layer type bits)
+  # - frlg_mask: optional alternate mask used when the FRLG layout is selected for a tileset
+  #     (see use_frlg_alternate_masks above); a field with only a frlg_mask exists only in
+  #     the FRLG layout, and a field with only a mask is excluded from it
+  # - default: optional value for metatiles with no attributes.csv row (0 when omitted)
+  # - provider: optional; where the field's named constants live. With a provider, the
+  #     field's CSV column takes constant names (e.g. MB_TALL_GRASS); without one it takes
+  #     plain integers.
+  #   - header: C header path, relative to the project root
+  #   - prefix: the shared name prefix of the constants
+  #   - skipped: constant names to ignore while scanning the header
+  #   - format: defines-only, enums-only, or [default] either
+  metatile_attr_fields:
+    - name: behavior
+      mask: 0x00FF
+      frlg_mask: 0x000001FF
+      provider:
+        header: include/constants/metatile_behaviors.h
+        prefix: MB_
+        skipped: [ MB_INVALID ]
+        format: either
+    - name: terrain
+      frlg_mask: 0x00003E00
+      provider:
+        header: include/global.fieldmap.h
+        prefix: TILE_TERRAIN_
+        format: enums-only
+    - name: light_level
+      mask: 0x0E00
+      default: 0
+
+  # Adjust individual attribute fields without redeclaring the whole layout.
+  # Overrides merge onto the baseline fields (the metatile_attr_fields list above, or the
+  # inferred fields when that list is omitted). Keys are field names; members you set
+  # (mask, frlg_mask, default, provider) replace the baseline value, and members you omit
+  # fall through. Setting provider members adjusts just those members; "provider: null"
+  # removes the provider entirely, turning the field's CSV column into raw integers.
+  metatile_attr_field_overrides:
+    # Enter terrain values as raw integers instead of TILE_TERRAIN_ names
+    terrain:
+      provider: null
+    # Change the value used for metatiles with no attributes.csv row
+    light_level:
+      default: 3
+
 diagnostics:
   warnings:
     exclude: [ ".*" ]
