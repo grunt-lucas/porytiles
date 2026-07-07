@@ -62,23 +62,6 @@ EnumSpec ProviderSpec::to_enum_spec(std::string field_display_name, std::uint32_
         .field_display_name = std::move(field_display_name)};
 }
 
-ChainableResult<void>
-Field::validate_provider_values(const std::vector<std::pair<std::string, std::uint32_t>> &entries) const
-{
-    const std::uint32_t max = max_value();
-    for (const auto &[value_name, value] : entries) {
-        if (value > max) {
-            return FormattableError{
-                "'{}' has value '{}', which does not fit in the {}-bit field '{}'.",
-                FormatParam{value_name, Style::bold},
-                FormatParam{value, Style::bold},
-                FormatParam{width()},
-                FormatParam{name_, Style::bold}};
-        }
-    }
-    return {};
-}
-
 ChainableResult<Schema> Schema::create(std::vector<Field> fields, std::size_t attr_bytes)
 {
     assert_or_panic(attr_bytes == 2 || attr_bytes == 4, "Schema::create requires a 2-byte or 4-byte attribute size");

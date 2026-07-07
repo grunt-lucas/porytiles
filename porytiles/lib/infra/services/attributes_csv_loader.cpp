@@ -91,6 +91,24 @@ ChainableResult<CsvRow> parse_csv_row(
         return FormattableError{std::move(err_lines)};
     }
 
+    // The row-level mirror of the header's unexpected-column check: a data row wider than the header shape means the
+    // CSV was written for a wider schema, and its extra cells must fail loudly instead of being silently dropped.
+    const std::size_t max_columns = 1 + field_count + (has_layer_type_column ? 1 : 0);
+    if (columns.size() > max_columns) {
+        std::vector<std::string> err_lines{};
+        err_lines.push_back(format.format(
+            "{}:{}: expected at most {} columns ({}{}), found {}",
+            FormatParam{path.string(), Style::bold},
+            FormatParam{line_index + 1, Style::bold},
+            FormatParam{max_columns},
+            FormatParam{expected_header_string(schema)},
+            FormatParam{has_layer_type_column ? ",layerType" : ""},
+            FormatParam{columns.size()}));
+        err_lines.emplace_back();
+        err_lines.append_range(file_printer.print(all_lines, std::vector{line_index}));
+        return FormattableError{std::move(err_lines)};
+    }
+
     for (std::size_t i = 0; i <= field_count; ++i) {
         trim(columns[i]);
     }

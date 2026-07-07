@@ -1,5 +1,6 @@
 #include "porytiles/infra/services/header_enum_map_provider.hpp"
 
+#include <bit>
 #include <utility>
 
 #include "porytiles/utilities/panic/panic.hpp"
@@ -71,14 +72,44 @@ ChainableResult<void> HeaderEnumMapProvider::try_add_entry(const Entry &entry) c
     }
 
     auto raw_value = entry.int_value();
+    const auto &new_pos = entry.position();
 
-    // Filter: value must be within the field's range
+    // A parsed value outside the field's range is a hard error, not a name to drop quietly. Dropping it would resurface
+    // later as a baffling "no such name" lookup failure; the real problem is that the field's mask is too narrow for
+    // the header's constants (or the name is a sentinel that belongs in the skipped set).
     if (raw_value < 0 || raw_value > spec_.max_value) {
-        return {};
+        load_failed_ = true;
+        std::vector<std::string> lines;
+        FileHighlightPrinter printer{format_};
+
+        lines.push_back(format_->format(
+            "{}:{}:{}: '{}' has value '{}', which does not fit in the {}-bit field '{}'.",
+            FormatParam{header_path_, Style::bold},
+            new_pos.line,
+            new_pos.column,
+            FormatParam{name, Style::bold},
+            FormatParam{raw_value, Style::bold},
+            FormatParam{std::bit_width(spec_.max_value)},
+            FormatParam{spec_.field_display_name, Style::bold}));
+
+        assert_or_panic(new_pos.line > 0, "new_pos.line must be positive (1-based)");
+        assert_or_panic(new_pos.line <= driver_->file_lines().size(), "new_pos.line exceeds file bounds");
+        assert_or_panic(new_pos.column > 0, "new_pos.column must be positive (1-based)");
+        auto context = printer.print(driver_->file_lines(), new_pos.line - 1, new_pos.column - 1);
+        for (auto &line : context) {
+            lines.push_back(std::move(line));
+        }
+
+        lines.emplace_back("");
+        lines.push_back(format_->format(
+            "{} widen the field's mask to cover this value, or add '{}' to the provider's skipped names to ignore it.",
+            FormatParam{"note:", Style::cyan | Style::bold},
+            FormatParam{name, Style::bold}));
+
+        return FormattableError{std::move(lines)};
     }
 
     auto value = static_cast<std::uint32_t>(raw_value);
-    const auto &new_pos = entry.position();
 
     // Check for duplicate name
     if (name_to_value_.contains(name)) {

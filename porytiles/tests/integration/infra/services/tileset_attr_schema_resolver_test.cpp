@@ -227,6 +227,31 @@ TEST_F(TilesetAttrSchemaResolverTest, MixedU16U32DeclarationsAreFatal)
     EXPECT_NE(error_text(result).find("Mixed"), std::string::npos) << error_text(result);
 }
 
+TEST_F(TilesetAttrSchemaResolverTest, UndetectableWidthWarnsAndAssumesTwoBytes)
+{
+    write_config(kFieldsYaml);
+    // No metatiles.h written: the width cannot be detected. A real 4-byte project with only low-bit masks would get
+    // the wrong layout here, so the resolver must say what it assumed instead of silently landing on 2 bytes.
+
+    const auto result = resolve(kTilesetName);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().attr_bytes, 2U);
+    EXPECT_TRUE(diag_.warning_tag_counts().contains("metatile-attr-schema"));
+}
+
+TEST_F(TilesetAttrSchemaResolverTest, DetectedWidthDoesNotWarn)
+{
+    write_config(kFieldsYaml);
+    write_metatiles_header(
+        "const u16 gMetatileAttributes_General[] = "
+        "INCBIN_U16(\"data/tilesets/primary/general/metatile_attributes.bin\");\n");
+
+    const auto result = resolve(kTilesetName);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().attr_bytes, 2U);
+    EXPECT_FALSE(diag_.warning_tag_counts().contains("metatile-attr-schema"));
+}
+
 TEST_F(TilesetAttrSchemaResolverTest, MalformedLayoutsJsonWarnsAndFallsBackToPrimary)
 {
     write_config(kFieldsYaml);
@@ -234,6 +259,30 @@ TEST_F(TilesetAttrSchemaResolverTest, MalformedLayoutsJsonWarnsAndFallsBackToPri
 
     const auto result = resolve(kTilesetName);
     // A malformed layouts.json is a soft failure: warn and assume the primary layout rather than blocking resolution.
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().layout, AttrSchemaLayout::primary);
+    EXPECT_TRUE(diag_.warning_tag_counts().contains("frlg-alternate-masks"));
+}
+
+TEST_F(TilesetAttrSchemaResolverTest, NonStringLayoutsTableLabelWarnsAndFallsBackToPrimary)
+{
+    write_config(kFieldsYaml);
+    // Syntactically valid JSON whose layouts_table_label has the wrong type. This must take the same warn-and-fall-back
+    // path as unparseable JSON, not escape as an uncaught nlohmann type error.
+    write_layouts(R"({ "layouts_table_label": 42, "layouts": [] })");
+
+    const auto result = resolve(kTilesetName);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().layout, AttrSchemaLayout::primary);
+    EXPECT_TRUE(diag_.warning_tag_counts().contains("frlg-alternate-masks"));
+}
+
+TEST_F(TilesetAttrSchemaResolverTest, NonArrayLayoutsFieldWarnsAndFallsBackToPrimary)
+{
+    write_config(kFieldsYaml);
+    write_layouts(R"({ "layouts_table_label": "gMapLayouts", "layouts": { "id": "LAYOUT_TEST" } })");
+
+    const auto result = resolve(kTilesetName);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().layout, AttrSchemaLayout::primary);
     EXPECT_TRUE(diag_.warning_tag_counts().contains("frlg-alternate-masks"));

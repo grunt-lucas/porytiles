@@ -276,43 +276,6 @@ TEST(MetatileAttributeSchemaTest, RejectsDuplicateName)
     EXPECT_NE(result.error().join(formatter).find("behavior"), std::string::npos);
 }
 
-TEST(MetatileAttributeSchemaTest, ValidateProviderValuesAcceptsInRange)
-{
-    const Field behavior{"behavior", 0x1FF};
-    std::vector<std::pair<std::string, std::uint32_t>> entries{{"MB_NORMAL", 0}, {"MB_MAX", behavior.max_value()}};
-
-    EXPECT_TRUE(behavior.validate_provider_values(entries).has_value());
-}
-
-TEST(MetatileAttributeSchemaTest, ValidateProviderValuesDiagnosesOffender)
-{
-    PlainTextFormatter formatter;
-    const Field behavior{"behavior", 0x1FF};
-    std::vector<std::pair<std::string, std::uint32_t>> entries{{"MB_TOO_BIG", 512}};
-
-    auto result = behavior.validate_provider_values(entries);
-    ASSERT_FALSE(result.has_value());
-
-    const std::string message = result.error().join(formatter);
-    EXPECT_NE(message.find("MB_TOO_BIG"), std::string::npos);
-    EXPECT_NE(message.find("512"), std::string::npos);
-    EXPECT_NE(message.find("behavior"), std::string::npos);
-}
-
-TEST(MetatileAttributeSchemaTest, ValidateProviderValuesReportsFirstOffender)
-{
-    PlainTextFormatter formatter;
-    const Field behavior{"behavior", 0x1FF};
-    std::vector<std::pair<std::string, std::uint32_t>> entries{{"MB_FIRST_BAD", 600}, {"MB_SECOND_BAD", 700}};
-
-    auto result = behavior.validate_provider_values(entries);
-    ASSERT_FALSE(result.has_value());
-
-    const std::string message = result.error().join(formatter);
-    EXPECT_NE(message.find("MB_FIRST_BAD"), std::string::npos);
-    EXPECT_EQ(message.find("MB_SECOND_BAD"), std::string::npos);
-}
-
 TEST(MetatileAttributeSchemaTest, HeaderFormatToString)
 {
     EXPECT_EQ(to_string(HeaderFormat::defines_only), "defines-only");

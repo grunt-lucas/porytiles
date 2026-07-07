@@ -336,6 +336,34 @@ TEST_F(AttributesCsvLoaderTest, LoadMissingColumnsReturnsErrorWithContext)
         << "Error should mention expected columns. Got: " << error_text;
 }
 
+TEST_F(AttributesCsvLoaderTest, LoadRowWithExtraCellsReturnsErrorWithContext)
+{
+    AttributesCsvLoader loader = emerald_loader();
+
+    // The header matches the schema, but a data row carries an extra trailing cell. That cell must fail the load like
+    // the header path's unexpected-column check, not silently vanish.
+    auto result = loader.load(test_resources_dir / "row_extra_columns.csv", kTilesetScope);
+    EXPECT_FALSE(result.has_value());
+
+    std::string error_text = join_error_chain(result);
+    EXPECT_TRUE(error_text.find("expected at most 2 columns") != std::string::npos)
+        << "Error should mention the column cap. Got: " << error_text;
+}
+
+TEST_F(AttributesCsvLoaderTest, LoadRowWithExtraCellsAfterLayerTypeReturnsError)
+{
+    config_.write_layer_type_column = true;
+    AttributesCsvLoader loader = emerald_loader();
+
+    // With a layerType column present, the cap is one wider; a cell beyond it still fails.
+    auto result = loader.load(test_resources_dir / "layer_type_row_extra_columns.csv", kTilesetScope);
+    EXPECT_FALSE(result.has_value());
+
+    std::string error_text = join_error_chain(result);
+    EXPECT_TRUE(error_text.find("expected at most 3 columns") != std::string::npos)
+        << "Error should mention the column cap. Got: " << error_text;
+}
+
 TEST_F(AttributesCsvLoaderTest, LoadDuplicateIdReturnsErrorWithBothLocations)
 {
     AttributesCsvLoader loader = emerald_loader();

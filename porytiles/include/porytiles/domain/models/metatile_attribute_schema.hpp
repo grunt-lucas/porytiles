@@ -188,7 +188,7 @@ class Field {
      *
      * @details
      * This is the mask shifted down to bit zero, which is the single source of truth for the range checks
-     * that Schema::create and validate_provider_values apply.
+     * that Schema::create and the provider-backed enum loading apply.
      *
      * @pre mask() must not be zero. Guaranteed for any field inside a created Schema.
      * @return The maximum value representable in the field's width
@@ -214,21 +214,6 @@ class Field {
         assert_or_panic(provider_.has_value(), "Field::provider_spec() called on a field with no provider");
         return provider_.value();
     }
-
-    /**
-     * @brief Checks that a set of named values all fit within this field's width.
-     *
-     * @details
-     * The entries are given in header order as (name, value) pairs so the first offender is reported
-     * deterministically. The check depends only on the field's width, not on whether it has a provider,
-     * which keeps it usable with synthetic fields in tests. The header path is deliberately not part of
-     * the message; callers chain file context around this via the PT_TRY_* macros.
-     *
-     * @param entries The named values to check, in header declaration order
-     * @return An empty result on success, or an error naming the first value that does not fit
-     */
-    [[nodiscard]] ChainableResult<void>
-    validate_provider_values(const std::vector<std::pair<std::string, std::uint32_t>> &entries) const;
 
   private:
     std::string name_;

@@ -1,39 +1,23 @@
 #pragma once
 
-#include <filesystem>
 #include <format>
 #include <iostream>
-#include <memory>
 #include <ostream>
 #include <string>
-#include <unistd.h>
 #include <vector>
 
 #include "CLI/CLI.hpp"
-#include "fruit/fruit.h"
-
-#include "porytiles/utilities/result/chainable_result.hpp"
 
 #include "porytiles/domain/models/metatile_attribute_schema.hpp"
 #include "porytiles/domain/services/metatile_attr_schema_loader.hpp"
 #include "porytiles/infra/cli/cli_option_registration.hpp"
 #include "porytiles/infra/cli/cli_option_storage.hpp"
-#include "porytiles/infra/config/cli_option_provider.hpp"
-#include "porytiles/infra/config/default_provider.hpp"
-#include "porytiles/infra/config/header_define_provider.hpp"
-#include "porytiles/infra/config/lazy_layered_config.hpp"
-#include "porytiles/infra/config/metatile_attribute_config_provider.hpp"
-#include "porytiles/infra/config/metatiles_header_provider.hpp"
-#include "porytiles/infra/config/yaml_file_provider.hpp"
-#include "porytiles/infra/services/project_layout_metadata_provider.hpp"
-#include "porytiles/infra/services/tileset_attr_schema_resolver.hpp"
+#include "porytiles/utilities/result/chainable_result.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
-#include "porytiles/xcut/di/components.hpp"
-#include "porytiles/xcut/diagnostics/stderr_styled_user_diagnostics.hpp"
-#include "porytiles/xcut/diagnostics/user_diagnostics.hpp"
 
 #include "command.hpp"
 #include "option.hpp"
+#include "tileset_command_setup.hpp"
 
 class DumpTilesetConfigCommand final : public Command {
   public:
@@ -50,50 +34,21 @@ class DumpTilesetConfigCommand final : public Command {
     {
         using namespace porytiles;
 
-        // Use Fruit DI to inject TextFormatter based on no_color flag
-        const bool no_color = !isatty(STDERR_FILENO);
-        fruit::Injector injector{di::get_formatter_component, no_color};
-        auto text_formatter = injector.get<TextFormatter *>();
+        TilesetCommandEnv env{project_root_opt_.project_root(), tileset_name_, cli_storage_};
+        auto *text_formatter = env.text_formatter;
 
-        // Create unfiltered diag for config bootstrapping (so config-loading warnings always show)
-        auto stderr_diag = std::make_unique<StderrStyledUserDiagnostics>(text_formatter);
-
-        std::filesystem::path project_root = project_root_opt_.project_root();
-        std::filesystem::path fieldmap_header_root_relative{"include/fieldmap.h"};
-
-        // Setup layered configuration (CLI options have highest priority)
-        std::vector<std::unique_ptr<ConfigProvider>> providers{};
-        providers.push_back(std::make_unique<CliOptionProvider>(cli_storage_));
-        auto yaml_provider = std::make_unique<YamlFileProvider>(text_formatter, stderr_diag.get(), project_root);
-        auto *yaml_provider_ptr = yaml_provider.get();
-        providers.push_back(std::move(yaml_provider));
-        providers.push_back(
-            std::make_unique<HeaderDefineProvider>(project_root, fieldmap_header_root_relative, text_formatter));
-        providers.push_back(
-
-            std::make_unique<MetatileAttributeConfigProvider>(project_root, text_formatter, stderr_diag.get()));
-        providers.push_back(std::make_unique<DefaultProvider>());
-        LazyLayeredConfig config{text_formatter, std::move(providers)};
-
-        // Eagerly validate all YAML config files for unknown keys
-        if (yaml_provider_ptr->preload_and_validate(ConfigScopeType::tileset, tileset_name_)) {
-            const auto validation_err = ChainableResult<void>{FormattableError{
-                "Configuration validation failed for tileset '{}'.", FormatParam{tileset_name_, Style::bold}}};
-            stderr_diag->fatal(validation_err);
-            throw CLI::RuntimeError{1};
-        }
-
-        config.dump_config(std::cout, ConfigScopeType::tileset, tileset_name_);
+        env.config.dump_config(std::cout, ConfigScopeType::tileset, tileset_name_);
 
         // Resolve and print the per-tileset attribute schema, mirroring the resolver setup every other command uses
-        // (size detection from metatiles.h, layout selection, and mask-driven widening).
-        ProjectLayoutMetadataProvider layout_metadata_provider{project_root, text_formatter, stderr_diag.get()};
-        MetatilesHeaderProvider metatiles_header{project_root, text_formatter};
+        // (size detection from metatiles.h, layout selection, and mask-driven widening). Unlike the other commands,
+        // dump deliberately resolves against the unfiltered stderr diagnostics so nothing is hidden from the dump.
+        ProjectLayoutMetadataProvider layout_metadata_provider{env.project_root, text_formatter, &env.stderr_diag};
+        MetatilesHeaderProvider metatiles_header{env.project_root, text_formatter};
         TilesetAttrSchemaResolver schema_resolver{
-            &config, &layout_metadata_provider, &metatiles_header, text_formatter, stderr_diag.get()};
+            &env.config, &layout_metadata_provider, &metatiles_header, text_formatter, &env.stderr_diag};
         auto resolved_result = schema_resolver.resolve(tileset_name_);
         if (!resolved_result.has_value()) {
-            stderr_diag->fatal(resolved_result);
+            env.stderr_diag.fatal(resolved_result);
             throw CLI::RuntimeError{1};
         }
         const ResolvedTilesetAttrSchema &resolved = resolved_result.value();

@@ -72,9 +72,23 @@ const std::filesystem::path layouts_json_rel_path = std::filesystem::path{"data"
             FormatParam{layouts_path.string(), Style::bold})};
     }
 
+    // Type-check the top-level fields before extracting them: an unchecked get<std::string>() on a non-string value
+    // throws an nlohmann type_error that would escape this function, so a malformed file must fail here as a
+    // ChainableResult like every other malformed-file case.
+    if (!json_data.at("layouts_table_label").is_string()) {
+        return FormattableError{format->format(
+            "Layouts file '{}' field 'layouts_table_label' must be a string.",
+            FormatParam{layouts_path.string(), Style::bold})};
+    }
+
     if (!json_data.contains("layouts")) {
         return FormattableError{format->format(
             "Layouts file '{}' missing required field 'layouts'.", FormatParam{layouts_path.string(), Style::bold})};
+    }
+
+    if (!json_data.at("layouts").is_array()) {
+        return FormattableError{format->format(
+            "Layouts file '{}' field 'layouts' must be an array.", FormatParam{layouts_path.string(), Style::bold})};
     }
 
     /*

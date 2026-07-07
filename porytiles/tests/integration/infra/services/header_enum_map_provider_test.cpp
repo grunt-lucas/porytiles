@@ -413,22 +413,29 @@ TEST_F(HeaderEnumMapProviderTest, SkippedSetExcludesNamedEntries)
     EXPECT_EQ(deep_water.value(), 0x12u);
 }
 
-TEST_F(HeaderEnumMapProviderTest, MaxValueFilterDropsOutOfRangeEntries)
+TEST_F(HeaderEnumMapProviderTest, OutOfRangeValueFailsLoadNamingConstantAndField)
 {
     EnumSpec spec = behavior_spec();
     spec.max_value = 0x12;
     HeaderEnumMapProvider provider{test_resources_dir / "metatile_behaviors_define.h", spec, &formatter_, &diag_};
 
-    // 0x12 sits at the cap and loads.
-    auto deep_water = provider.lookup("MB_DEEP_WATER");
-    ASSERT_TRUE(deep_water.has_value());
-    EXPECT_EQ(deep_water.value(), 0x12u);
+    // MB_WATERFALL (0x13) is the first define past the cap. It must fail the whole load with a diagnostic naming the
+    // offending constant and the field, not silently vanish and resurface later as a "no such name" lookup failure.
+    auto result = provider.lookup("MB_DEEP_WATER");
+    ASSERT_FALSE(result.has_value());
 
-    // 0x80 exceeds the cap and is silently absent both directions.
-    auto counter = provider.lookup("MB_COUNTER");
-    EXPECT_FALSE(counter.has_value());
+    ASSERT_FALSE(result.chain().empty());
+    std::string error_text;
+    for (const auto &err : result.chain()) {
+        error_text += err->join(formatter_);
+        error_text += "\n";
+    }
+    EXPECT_NE(error_text.find("MB_WATERFALL"), std::string::npos) << error_text;
+    EXPECT_NE(error_text.find("does not fit"), std::string::npos) << error_text;
+    EXPECT_NE(error_text.find("behavior"), std::string::npos) << error_text;
 
-    auto reverse = provider.lookup(static_cast<std::uint32_t>(0x80));
+    // Reverse lookups fail the same way once the load has failed.
+    auto reverse = provider.lookup(static_cast<std::uint32_t>(0x12));
     EXPECT_FALSE(reverse.has_value());
 }
 

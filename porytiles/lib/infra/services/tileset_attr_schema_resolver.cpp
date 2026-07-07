@@ -40,6 +40,19 @@ ChainableResult<ResolvedTilesetAttrSchema> TilesetAttrSchemaResolver::resolve(co
     if (detected.state == ValidationState::invalid) {
         return FormattableError{detected.error_message};
     }
+    // An undetectable width silently landing on 2 bytes could halve a real 4-byte project's attribute layout when its
+    // configured masks all sit below bit 16 (masks can widen the layout but never prove it narrow), so say what was
+    // assumed and how to pin the width.
+    if (detected.state != ValidationState::valid) {
+        diag_->warning(
+            "metatile-attr-schema",
+            "could not detect the metatile attribute size from 'src/data/tilesets/metatiles.h' for tileset '{}'; "
+            "assuming {}-byte attributes. If your project uses {}-byte attributes, declare gMetatileAttributes_* as "
+            "'const u32' in metatiles.h, or configure a field whose mask uses a bit at or above bit 16.",
+            FormatParam{tileset_name, Style::bold},
+            FormatParam{2},
+            FormatParam{4});
+    }
     const std::size_t detected_attr_bytes =
         detected.state == ValidationState::valid ? detected.value.value() : std::size_t{2};
 
