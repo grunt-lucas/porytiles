@@ -498,3 +498,58 @@ TEST_F(HeaderEnumMapProviderTest, DiagnosticsCarryFieldDisplayName)
     EXPECT_TRUE(not_found_text.find("terrain") != std::string::npos)
         << "Not-found message should name the field. Got: " << not_found_text;
 }
+
+TEST_F(HeaderEnumMapProviderTest, EmptyMatchDiagnosticNamesFieldPrefixAndHeader)
+{
+    // A behavior provider over a header holding only TILE_ names finds nothing matching its prefix. The diagnostic
+    // must name the field, the declared prefix, and the header, so the user can tell whether the spec or the header
+    // is the thing to fix.
+    HeaderEnumMapProvider provider{test_resources_dir / "fieldmap_enums.h", behavior_spec(), &formatter_, &diag_};
+
+    auto result = provider.lookup("MB_NORMAL");
+    ASSERT_FALSE(result.has_value());
+    ASSERT_FALSE(result.chain().empty());
+
+    std::string full_error_text{};
+    for (const auto &err : result.chain()) {
+        full_error_text += err->join(formatter_);
+        full_error_text += "\n";
+    }
+    EXPECT_TRUE(full_error_text.find("Field 'behavior'") != std::string::npos)
+        << "Diagnostic should name the field. Got: " << full_error_text;
+    EXPECT_TRUE(full_error_text.find("prefix 'MB_'") != std::string::npos)
+        << "Diagnostic should name the declared prefix. Got: " << full_error_text;
+    EXPECT_TRUE(full_error_text.find("fieldmap_enums.h") != std::string::npos)
+        << "Diagnostic should name the header. Got: " << full_error_text;
+    EXPECT_TRUE(full_error_text.find("no matching names were found") != std::string::npos)
+        << "Diagnostic should say nothing matched. Got: " << full_error_text;
+}
+
+TEST_F(HeaderEnumMapProviderTest, BuildProviderMapContainsExactlyProviderBackedFields)
+{
+    // build_provider_map upholds the ProviderMap membership contract: exactly the schema's has_provider() fields get
+    // an entry, keyed by field name, and the built provider resolves names against the spec's header end to end.
+    auto schema_result = Schema::create(
+        {
+            Field{
+                "behavior",
+                0x00FF,
+                0,
+                ProviderSpec{.header = test_resources_dir / "metatile_behaviors_define.h", .prefix = "MB_"}},
+            Field{"raw_field", 0xFF00},
+        },
+        2);
+    ASSERT_TRUE(schema_result.has_value());
+    const Schema schema = std::move(schema_result).value();
+
+    ProviderMap providers = build_provider_map(".", schema, &formatter_, &diag_);
+
+    EXPECT_EQ(providers.size(), 1u);
+    EXPECT_FALSE(providers.contains("raw_field"));
+    const auto behavior_it = providers.find("behavior");
+    ASSERT_NE(behavior_it, providers.end());
+
+    auto value = behavior_it->second->lookup("MB_TALL_GRASS");
+    ASSERT_TRUE(value.has_value());
+    EXPECT_EQ(value.value(), 0x02u);
+}

@@ -13,9 +13,9 @@
 #include <sstream>
 #include <string>
 
-#include "porytiles/domain/models/base_game.hpp"
 #include "porytiles/domain/models/metatile.hpp"
 #include "porytiles/domain/models/metatile_attribute.hpp"
+#include "porytiles/domain/models/metatile_attribute_schema.hpp"
 #include "porytiles/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles/utilities/filesystem_utils.hpp"
@@ -806,12 +806,6 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
 {
     const auto &attributes = src.porytiles_component().metatile_attributes();
 
-    constexpr std::uint32_t default_behavior = 0;
-    constexpr std::uint32_t default_terrain = 0;
-    constexpr std::uint32_t default_encounter = 0;
-
-    const bool is_firered = base_game_ == BaseGame::pokefirered;
-
     PT_TRY_ASSIGN_CHAIN_ERR(
         write_layer_type_column_cv,
         infra_config_->write_layer_type_column(ConfigScopeType::tileset, src.name()),
@@ -832,58 +826,82 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
             "Failed to open file for writing: '{}'.", FormatParam{transaction_dest_path.string(), Style::bold}};
     }
 
-    // Write header, with the optional trailing layerType column.
-    std::string header = is_firered ? "id,behavior,terrainType,encounterType" : "id,behavior";
+    // Write header: id plus every schema field name in schema order, with the optional trailing layerType column.
+    std::string header = "id";
+    for (const Field &field : schema_->fields()) {
+        header += "," + field.name();
+    }
     if (write_layer_type_column) {
         header += ",layerType";
     }
     out << header << "\n";
 
-    // Renders a row's field columns (behavior, plus terrain/encounter for firered) without the id or layerType.
+    // A field absent from an attribute takes its schema default. MetatileAttribute::field() reads an absent field as
+    // 0, but a schema field may declare a nonzero default, so the effective value must come through the schema. This
+    // one value drives both cell rendering and all-default row omission.
+    auto effective_value = [](const MetatileAttribute &attribute, const Field &field) -> std::uint32_t {
+        return attribute.fields().contains(field.name()) ? attribute.field(field.name()) : field.default_value();
+    };
+
+    // Renders a row's field cells in schema order, without the id or layerType. A provider-backed field renders its
+    // value's constant name; a raw field renders the plain integer. has_provider() is the authority for that split,
+    // and build_provider_map upholds has_provider() <=> map membership, so a missing provider is an internal bug.
     auto render_fields = [&](const MetatileAttribute &attribute,
                              std::size_t metatile_id) -> ChainableResult<std::string> {
-        if (is_firered) {
+        std::string cells{};
+        for (const Field &field : schema_->fields()) {
+            if (!cells.empty()) {
+                cells += ",";
+            }
+            const std::uint32_t value = effective_value(attribute, field);
+            if (!field.has_provider()) {
+                cells += std::to_string(value);
+                continue;
+            }
+            const auto provider_it = providers_->find(field.name());
+            if (provider_it == providers_->end()) {
+                panic(
+                    std::format(
+                        "write_attributes_csv: field '{}' has a provider spec but no provider was built for it",
+                        field.name()));
+            }
             PT_TRY_ASSIGN_CHAIN_ERR(
-                behavior_name,
-                behavior_map_->lookup(attribute.field(attr::field_behavior)),
+                field_name,
+                provider_it->second->lookup(value),
                 std::string,
-                std::format("Failed to lookup behavior name for metatile {}.", metatile_id));
-            PT_TRY_ASSIGN_CHAIN_ERR(
-                terrain_name,
-                terrain_map_->lookup(attribute.field(attr::field_terrain)),
-                std::string,
-                std::format("Failed to lookup terrain type name for metatile {}.", metatile_id));
-            PT_TRY_ASSIGN_CHAIN_ERR(
-                encounter_name,
-                encounter_map_->lookup(attribute.field(attr::field_encounter_type)),
-                std::string,
-                std::format("Failed to lookup encounter type name for metatile {}.", metatile_id));
-            return std::format("{},{},{}", behavior_name, terrain_name, encounter_name);
+                std::format("Failed to lookup {} name for metatile {}.", field.name(), metatile_id));
+            cells += field_name;
         }
-        PT_TRY_ASSIGN_CHAIN_ERR(
-            behavior_name,
-            behavior_map_->lookup(attribute.field(attr::field_behavior)),
-            std::string,
-            std::format("Failed to lookup behavior name for metatile {}.", metatile_id));
-        return std::string{behavior_name};
+        return cells;
+    };
+
+    // A row is all-default only when every field's effective value equals its schema default.
+    auto is_all_default = [&](const MetatileAttribute &attribute) -> bool {
+        for (const Field &field : schema_->fields()) {
+            if (effective_value(attribute, field) != field.default_value()) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    // Omitting a row is only lossless when every schema default is 0: an omitted row reloads as an absent attribute,
+    // and downstream consumers (the compiler's bin path in particular) materialize an absent attribute as all-zero
+    // fields, not as schema defaults. With any nonzero default, omission would silently rewrite that row's fields to
+    // zero on the next compile, so every row must be written out.
+    const bool omission_is_lossless =
+        std::ranges::all_of(schema_->fields(), [](const Field &field) { return field.default_value() == 0; });
+    auto omit_row = [&](const MetatileAttribute &attribute) -> bool {
+        return omission_is_lossless && is_all_default(attribute);
     };
 
     if (!write_layer_type_column) {
-        // Knob off: byte-identical to the historical output. Skip all-default rows, and if none survive write only the
-        // header.
+        // Knob off: byte-identical to the historical output. Skip all-default rows (when omission round-trips), and if
+        // none survive write only the header.
         std::size_t non_default_count = 0;
         for (const auto &attribute : attributes | std::views::values) {
-            if (is_firered) {
-                if (attribute.field(attr::field_behavior) != default_behavior ||
-                    attribute.field(attr::field_terrain) != default_terrain ||
-                    attribute.field(attr::field_encounter_type) != default_encounter) {
-                    non_default_count++;
-                }
-            }
-            else {
-                if (attribute.field(attr::field_behavior) != default_behavior) {
-                    non_default_count++;
-                }
+            if (!omit_row(attribute)) {
+                non_default_count++;
             }
         }
 
@@ -893,14 +911,7 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
         }
 
         for (const auto &[metatile_id, attribute] : attributes) {
-            if (is_firered) {
-                if (attribute.field(attr::field_behavior) == default_behavior &&
-                    attribute.field(attr::field_terrain) == default_terrain &&
-                    attribute.field(attr::field_encounter_type) == default_encounter) {
-                    continue;
-                }
-            }
-            else if (attribute.field(attr::field_behavior) == default_behavior) {
+            if (omit_row(attribute)) {
                 continue;
             }
             PT_TRY_ASSIGN_PASS_ERR(fields_str, render_fields(attribute, metatile_id), void);

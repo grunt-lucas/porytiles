@@ -1,6 +1,9 @@
 #pragma once
 
 #include <cstdint>
+#include <functional>
+#include <map>
+#include <memory>
 #include <string>
 
 #include "porytiles/utilities/result/chainable_result.hpp"
@@ -41,5 +44,17 @@ class EnumMapProvider {
      */
     [[nodiscard]] virtual ChainableResult<std::string> lookup(std::uint32_t value) const = 0;
 };
+
+/**
+ * @brief Maps schema field names to the provider that names that field's values.
+ *
+ * @details
+ * A ProviderMap holds one provider per provider-backed schema field, keyed by the field's name. Field::has_provider()
+ * is the single authority for "provider-backed vs raw": a well-formed map contains exactly the schema's
+ * has_provider() fields, so consumers may treat has_provider() implying membership as an invariant and panic when it
+ * is violated rather than silently falling back to raw handling. The transparent comparator admits lookups by the
+ * string_view field-name constants without allocating.
+ */
+using ProviderMap = std::map<std::string, std::unique_ptr<EnumMapProvider>, std::less<>>;
 
 } // namespace porytiles

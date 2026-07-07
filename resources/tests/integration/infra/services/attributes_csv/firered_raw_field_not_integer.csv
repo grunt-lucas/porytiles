@@ -1,2 +1,2 @@
 id,behavior,terrain,attribute_2,attribute_3,encounter_type,attribute_5,attribute_7
-0,MB_NORMAL,TILE_TERRAIN_DOES_NOT_EXIST,0,0,TILE_ENCOUNTER_NONE,0,0
+0,MB_NORMAL,TILE_TERRAIN_NORMAL,abc,0,TILE_ENCOUNTER_NONE,0,0

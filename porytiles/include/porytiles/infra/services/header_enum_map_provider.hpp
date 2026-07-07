@@ -108,4 +108,27 @@ class HeaderEnumMapProvider final : public EnumMapProvider {
     mutable std::unordered_map<std::uint32_t, SourcePosition> value_to_position_;
 };
 
+/**
+ * @brief Builds a header provider for every provider-backed field in a schema.
+ *
+ * @details
+ * Walks the schema's fields and, for each field with a provider spec, constructs a HeaderEnumMapProvider from the
+ * spec's header (resolved against @p project_root) and the EnumSpec derived via ProviderSpec::to_enum_spec. The
+ * returned map upholds the ProviderMap membership contract: it contains exactly the schema's has_provider() fields,
+ * keyed by field name, so has_provider() and map membership stay equivalent for consumers.
+ *
+ * Providers load lazily, so building the map does no file I/O; a bad header path surfaces on first lookup.
+ *
+ * @param project_root The decomp project root the provider header paths are resolved against
+ * @param schema The resolved attribute schema whose provider-backed fields need providers
+ * @param format The text formatter for styled output
+ * @param diag The user diagnostics for error reporting
+ * @return A map from field name to its header-backed provider
+ */
+[[nodiscard]] ProviderMap build_provider_map(
+    const std::filesystem::path &project_root,
+    const Schema &schema,
+    gsl::not_null<const TextFormatter *> format,
+    gsl::not_null<const UserDiagnostics *> diag);
+
 } // namespace porytiles

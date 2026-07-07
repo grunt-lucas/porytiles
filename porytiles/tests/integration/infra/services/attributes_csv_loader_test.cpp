@@ -1,11 +1,13 @@
 #include "gtest/gtest.h"
 
 #include <filesystem>
+#include <memory>
 #include <unordered_map>
+#include <utility>
 
-#include "porytiles/domain/models/base_game.hpp"
 #include "porytiles/domain/models/layer.hpp"
 #include "porytiles/domain/models/metatile_attribute.hpp"
+#include "porytiles/domain/models/metatile_attribute_schema.hpp"
 #include "porytiles/domain/services/enum_map_provider.hpp"
 #include "porytiles/infra/services/attributes_csv_loader.hpp"
 #include "porytiles/utilities/text/plain_text_formatter.hpp"
@@ -19,7 +21,7 @@ namespace {
 const std::filesystem::path test_resources_dir = "resources/tests/integration/infra/services/attributes_csv";
 
 // One stub serves every field now that providers are a single interface. The noun feeds its own error
-// strings so the "unknown terrain type"/"unknown encounter type" expectations below still hold.
+// strings so the chained lookup errors below still identify their field.
 class StubEnumMapProvider final : public EnumMapProvider {
   public:
     StubEnumMapProvider(std::unordered_map<std::string, std::uint32_t> name_to_value, std::string noun)
@@ -54,17 +56,101 @@ class StubEnumMapProvider final : public EnumMapProvider {
     std::string noun_;
 };
 
+// The ProviderSpec contents are irrelevant here (the tests stub the ProviderMap directly); the spec's presence is what
+// marks a field provider-backed.
+ProviderSpec dummy_provider_spec()
+{
+    return ProviderSpec{.header = "include/dummy.h", .prefix = "DUMMY_"};
+}
+
+// The stock emerald shape: a single provider-backed behavior field in a 2-byte attribute.
+Schema make_emerald_schema()
+{
+    auto result = Schema::create({Field{"behavior", 0x00FF, 0, dummy_provider_spec()}}, 2);
+    return std::move(result).value();
+}
+
+// The stock firered shape: seven fields in a 4-byte attribute, three provider-backed and four raw. Masks match the
+// FRLG attribute bit layout from fieldmap.c (layer_type is structural and never a schema field).
+Schema make_firered_schema()
+{
+    auto result = Schema::create(
+        {
+            Field{"behavior", 0x000001FF, 0, dummy_provider_spec()},
+            Field{"terrain", 0x00003E00, 0, dummy_provider_spec()},
+            Field{"attribute_2", 0x0003C000},
+            Field{"attribute_3", 0x00FC0000},
+            Field{"encounter_type", 0x07000000, 0, dummy_provider_spec()},
+            Field{"attribute_5", 0x18000000},
+            Field{"attribute_7", 0x80000000},
+        },
+        4);
+    return std::move(result).value();
+}
+
+std::unique_ptr<StubEnumMapProvider> make_behavior_stub()
+{
+    return std::make_unique<StubEnumMapProvider>(
+        std::unordered_map<std::string, std::uint32_t>{
+            {"MB_NORMAL", 0x00}, {"MB_TALL_GRASS", 0x02}, {"MB_DEEP_WATER", 0x12}, {"MB_COUNTER", 0x80}},
+        "behavior");
+}
+
+ProviderMap make_emerald_provider_map()
+{
+    ProviderMap providers{};
+    providers.emplace("behavior", make_behavior_stub());
+    return providers;
+}
+
+ProviderMap make_firered_provider_map()
+{
+    ProviderMap providers{};
+    providers.emplace("behavior", make_behavior_stub());
+    providers.emplace(
+        "terrain",
+        std::make_unique<StubEnumMapProvider>(
+            std::unordered_map<std::string, std::uint32_t>{
+                {"TILE_TERRAIN_NORMAL", 0}, {"TILE_TERRAIN_GRASS", 1}, {"TILE_TERRAIN_WATER", 2}},
+            "terrain type"));
+    providers.emplace(
+        "encounter_type",
+        std::make_unique<StubEnumMapProvider>(
+            std::unordered_map<std::string, std::uint32_t>{
+                {"TILE_ENCOUNTER_NONE", 0}, {"TILE_ENCOUNTER_LAND", 1}, {"TILE_ENCOUNTER_WATER", 2}},
+            "encounter type"));
+    return providers;
+}
+
 class AttributesCsvLoaderTest : public ::testing::Test {
   protected:
     PlainTextFormatter formatter_{};
-    StubEnumMapProvider behavior_map_{
-        {{"MB_NORMAL", 0x00}, {"MB_TALL_GRASS", 0x02}, {"MB_DEEP_WATER", 0x12}, {"MB_COUNTER", 0x80}}, "behavior"};
-    StubEnumMapProvider terrain_map_{
-        {{"TILE_TERRAIN_NORMAL", 0}, {"TILE_TERRAIN_GRASS", 1}, {"TILE_TERRAIN_WATER", 2}}, "terrain type"};
-    StubEnumMapProvider encounter_map_{
-        {{"TILE_ENCOUNTER_NONE", 0}, {"TILE_ENCOUNTER_LAND", 1}, {"TILE_ENCOUNTER_WATER", 2}}, "encounter type"};
+    Schema emerald_schema_ = make_emerald_schema();
+    ProviderMap emerald_providers_ = make_emerald_provider_map();
+    Schema firered_schema_ = make_firered_schema();
+    ProviderMap firered_providers_ = make_firered_provider_map();
     MockInfraConfig config_{};
     BufferedUserDiagnostics diag_{};
+
+    [[nodiscard]] AttributesCsvLoader emerald_loader() const
+    {
+        return AttributesCsvLoader{&formatter_, &emerald_schema_, &emerald_providers_, &config_, &diag_};
+    }
+
+    [[nodiscard]] AttributesCsvLoader firered_loader() const
+    {
+        return AttributesCsvLoader{&formatter_, &firered_schema_, &firered_providers_, &config_, &diag_};
+    }
+
+    [[nodiscard]] std::string join_error_chain(const auto &result) const
+    {
+        std::string full_error_text{};
+        for (const auto &err : result.chain()) {
+            full_error_text += err->join(formatter_);
+            full_error_text += "\n";
+        }
+        return full_error_text;
+    }
 };
 
 // The tileset scope passed to load(); MockInfraConfig ignores the scope and returns its member values.
@@ -74,7 +160,7 @@ constexpr auto kTilesetScope = "gTileset_Test";
 
 TEST_F(AttributesCsvLoaderTest, LoadValidCsvReturnsCorrectAttributes)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
+    AttributesCsvLoader loader = emerald_loader();
 
     auto result = loader.load(test_resources_dir / "valid.csv", kTilesetScope);
     ASSERT_TRUE(result.has_value()) << "Expected successful load";
@@ -100,8 +186,7 @@ TEST_F(AttributesCsvLoaderTest, LoadValidCsvReturnsCorrectAttributes)
 
 TEST_F(AttributesCsvLoaderTest, LoadValidFireredCsvReturnsCorrectAttributes)
 {
-    AttributesCsvLoader loader{
-        &formatter_, &behavior_map_, &config_, &diag_, BaseGame::pokefirered, &terrain_map_, &encounter_map_};
+    AttributesCsvLoader loader = firered_loader();
 
     auto result = loader.load(test_resources_dir / "valid_firered.csv", kTilesetScope);
     ASSERT_TRUE(result.has_value()) << "Expected successful load";
@@ -109,11 +194,13 @@ TEST_F(AttributesCsvLoaderTest, LoadValidFireredCsvReturnsCorrectAttributes)
     const auto &attributes = result.value();
     ASSERT_EQ(attributes.size(), 3);
 
-    // Check metatile 0: MB_NORMAL, TILE_TERRAIN_NORMAL (0), TILE_ENCOUNTER_NONE (0)
+    // Check metatile 0: MB_NORMAL, TILE_TERRAIN_NORMAL (0), TILE_ENCOUNTER_NONE (0), raw fields 0
     ASSERT_TRUE(attributes.contains(0));
     EXPECT_EQ(attributes.at(0).field(attr::field_behavior), 0x00u);
     EXPECT_EQ(attributes.at(0).field(attr::field_terrain), 0u);
     EXPECT_EQ(attributes.at(0).field(attr::field_encounter_type), 0u);
+    EXPECT_EQ(attributes.at(0).field(attr::field_attribute_2), 0u);
+    EXPECT_EQ(attributes.at(0).field(attr::field_attribute_7), 0u);
     EXPECT_EQ(attributes.at(0).layer_type(), LayerType::normal);
 
     // Check metatile 1: MB_TALL_GRASS, TILE_TERRAIN_GRASS (1), TILE_ENCOUNTER_LAND (1)
@@ -129,26 +216,9 @@ TEST_F(AttributesCsvLoaderTest, LoadValidFireredCsvReturnsCorrectAttributes)
     EXPECT_EQ(attributes.at(2).field(attr::field_encounter_type), 2u);
 }
 
-TEST_F(AttributesCsvLoaderTest, LoadFireredCsvWithoutBaseGameAutoDetects)
-{
-    // No base_game provided, but terrain/encounter providers are available
-    AttributesCsvLoader loader{
-        &formatter_, &behavior_map_, &config_, &diag_, std::nullopt, &terrain_map_, &encounter_map_};
-
-    auto result = loader.load(test_resources_dir / "valid_firered.csv", kTilesetScope);
-    ASSERT_TRUE(result.has_value()) << "Expected auto-detection to succeed";
-
-    const auto &attributes = result.value();
-    ASSERT_EQ(attributes.size(), 3);
-
-    // Verify terrain/encounter values were parsed correctly
-    EXPECT_EQ(attributes.at(1).field(attr::field_terrain), 1u);
-    EXPECT_EQ(attributes.at(1).field(attr::field_encounter_type), 1u);
-}
-
 TEST_F(AttributesCsvLoaderTest, LoadNonExistentFileReturnsError)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
+    AttributesCsvLoader loader = emerald_loader();
 
     auto result = loader.load(test_resources_dir / "does_not_exist.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
@@ -160,7 +230,7 @@ TEST_F(AttributesCsvLoaderTest, LoadNonExistentFileReturnsError)
 
 TEST_F(AttributesCsvLoaderTest, LoadEmptyFileReturnsError)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
+    AttributesCsvLoader loader = emerald_loader();
 
     auto result = loader.load(test_resources_dir / "empty.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
@@ -168,11 +238,13 @@ TEST_F(AttributesCsvLoaderTest, LoadEmptyFileReturnsError)
     std::string error_text = result.chain().back()->join(formatter_);
     EXPECT_TRUE(error_text.find("empty") != std::string::npos)
         << "Error should mention file is empty. Got: " << error_text;
+    EXPECT_TRUE(error_text.find("id,behavior") != std::string::npos)
+        << "Error should show the schema's expected header. Got: " << error_text;
 }
 
 TEST_F(AttributesCsvLoaderTest, LoadInvalidHeaderSingleColumnReturnsError)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
+    AttributesCsvLoader loader = emerald_loader();
 
     auto result = loader.load(test_resources_dir / "invalid_header_single_column.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
@@ -180,11 +252,13 @@ TEST_F(AttributesCsvLoaderTest, LoadInvalidHeaderSingleColumnReturnsError)
     std::string error_text = result.chain().back()->join(formatter_);
     EXPECT_TRUE(error_text.find("invalid header") != std::string::npos)
         << "Error should mention invalid header. Got: " << error_text;
+    EXPECT_TRUE(error_text.find("missing column 'behavior'") != std::string::npos)
+        << "Error should name the missing column. Got: " << error_text;
 }
 
 TEST_F(AttributesCsvLoaderTest, LoadInvalidHeaderWrongNamesReturnsError)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
+    AttributesCsvLoader loader = emerald_loader();
 
     auto result = loader.load(test_resources_dir / "invalid_header_wrong_names.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
@@ -193,17 +267,45 @@ TEST_F(AttributesCsvLoaderTest, LoadInvalidHeaderWrongNamesReturnsError)
     EXPECT_TRUE(error_text.find("invalid header") != std::string::npos)
         << "Error should mention invalid header. Got: " << error_text;
     EXPECT_TRUE(error_text.find("id,behavior") != std::string::npos)
-        << "Error should show expected format. Got: " << error_text;
+        << "Error should show the schema's expected header. Got: " << error_text;
+}
+
+// A CSV written for a wider schema fails the header cross-check instead of silently dropping its extra field columns.
+// Together with the missing-column direction below, this replaces the old base-game format cross-check.
+TEST_F(AttributesCsvLoaderTest, LoadFireredCsvWithEmeraldSchemaReturnsError)
+{
+    AttributesCsvLoader loader = emerald_loader();
+
+    auto result = loader.load(test_resources_dir / "valid_firered.csv", kTilesetScope);
+    EXPECT_FALSE(result.has_value());
+
+    std::string error_text = result.chain().back()->join(formatter_);
+    EXPECT_TRUE(error_text.find("unexpected column 'terrain'") != std::string::npos)
+        << "Error should name the unexpected column. Got: " << error_text;
+    EXPECT_TRUE(error_text.find("id,behavior") != std::string::npos)
+        << "Error should show the schema's expected header. Got: " << error_text;
+}
+
+TEST_F(AttributesCsvLoaderTest, LoadEmeraldCsvWithFireredSchemaReturnsError)
+{
+    AttributesCsvLoader loader = firered_loader();
+
+    auto result = loader.load(test_resources_dir / "valid.csv", kTilesetScope);
+    EXPECT_FALSE(result.has_value());
+
+    std::string error_text = result.chain().back()->join(formatter_);
+    EXPECT_TRUE(error_text.find("missing column 'terrain' at position 3") != std::string::npos)
+        << "Error should name the missing column and its position. Got: " << error_text;
 }
 
 TEST_F(AttributesCsvLoaderTest, LoadInvalidIdNotIntegerReturnsErrorWithContext)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
+    AttributesCsvLoader loader = emerald_loader();
 
     auto result = loader.load(test_resources_dir / "invalid_id_not_integer.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
 
-    std::string error_text = result.chain().back()->join(formatter_);
+    std::string error_text = join_error_chain(result);
     EXPECT_TRUE(error_text.find("invalid metatile id") != std::string::npos)
         << "Error should mention invalid metatile id. Got: " << error_text;
     EXPECT_TRUE(error_text.find("abc") != std::string::npos)
@@ -212,31 +314,31 @@ TEST_F(AttributesCsvLoaderTest, LoadInvalidIdNotIntegerReturnsErrorWithContext)
 
 TEST_F(AttributesCsvLoaderTest, LoadNegativeIdReturnsErrorWithContext)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
+    AttributesCsvLoader loader = emerald_loader();
 
     auto result = loader.load(test_resources_dir / "negative_id.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
 
-    std::string error_text = result.chain().back()->join(formatter_);
+    std::string error_text = join_error_chain(result);
     EXPECT_TRUE(error_text.find("cannot be negative") != std::string::npos)
         << "Error should mention negative id. Got: " << error_text;
 }
 
 TEST_F(AttributesCsvLoaderTest, LoadMissingColumnsReturnsErrorWithContext)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
+    AttributesCsvLoader loader = emerald_loader();
 
     auto result = loader.load(test_resources_dir / "missing_columns.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
 
-    std::string error_text = result.chain().back()->join(formatter_);
+    std::string error_text = join_error_chain(result);
     EXPECT_TRUE(error_text.find("expected at least 2 columns") != std::string::npos)
         << "Error should mention expected columns. Got: " << error_text;
 }
 
 TEST_F(AttributesCsvLoaderTest, LoadDuplicateIdReturnsErrorWithBothLocations)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
+    AttributesCsvLoader loader = emerald_loader();
 
     auto result = loader.load(test_resources_dir / "duplicate_id.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
@@ -258,134 +360,114 @@ TEST_F(AttributesCsvLoaderTest, LoadDuplicateIdReturnsErrorWithBothLocations)
 
 TEST_F(AttributesCsvLoaderTest, LoadUnknownBehaviorReturnsErrorWithContext)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
+    AttributesCsvLoader loader = emerald_loader();
 
     auto result = loader.load(test_resources_dir / "unknown_behavior.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
 
-    // The error chain contains multiple errors - join all of them for the full message
-    std::string full_error_text{};
-    for (const auto &err : result.chain()) {
-        full_error_text += err->join(formatter_);
-        full_error_text += "\n";
-    }
-
-    EXPECT_TRUE(full_error_text.find("unknown metatile behavior") != std::string::npos)
+    std::string full_error_text = join_error_chain(result);
+    EXPECT_TRUE(full_error_text.find("unknown behavior") != std::string::npos)
         << "Error should mention unknown behavior. Got: " << full_error_text;
     EXPECT_TRUE(full_error_text.find("MB_DOES_NOT_EXIST") != std::string::npos)
         << "Error should show the unknown behavior name. Got: " << full_error_text;
 }
 
-TEST_F(AttributesCsvLoaderTest, LoadFireredCsvWithEmeraldBaseGameReturnsError)
+// The ProviderMap membership contract: has_provider() and map membership are equivalent. A provider-backed schema
+// field with no provider in the map is an internal bug, so the loader panics instead of degrading to raw parsing.
+TEST_F(AttributesCsvLoaderTest, ProviderBackedFieldMissingFromProviderMapPanics)
 {
-    AttributesCsvLoader loader{
-        &formatter_, &behavior_map_, &config_, &diag_, BaseGame::pokeemerald, &terrain_map_, &encounter_map_};
-
-    auto result = loader.load(test_resources_dir / "valid_firered.csv", kTilesetScope);
-    EXPECT_FALSE(result.has_value());
-
-    std::string error_text = result.chain().back()->join(formatter_);
-    EXPECT_TRUE(error_text.find("FireRed format") != std::string::npos)
-        << "Error should mention FireRed format. Got: " << error_text;
-    EXPECT_TRUE(error_text.find("pokeemerald") != std::string::npos)
-        << "Error should mention base game. Got: " << error_text;
-}
-
-TEST_F(AttributesCsvLoaderTest, LoadEmeraldCsvWithFireredBaseGameReturnsError)
-{
-    AttributesCsvLoader loader{
-        &formatter_, &behavior_map_, &config_, &diag_, BaseGame::pokefirered, &terrain_map_, &encounter_map_};
-
-    auto result = loader.load(test_resources_dir / "valid.csv", kTilesetScope);
-    EXPECT_FALSE(result.has_value());
-
-    std::string error_text = result.chain().back()->join(formatter_);
-    EXPECT_TRUE(error_text.find("Emerald format") != std::string::npos)
-        << "Error should mention Emerald format. Got: " << error_text;
-    EXPECT_TRUE(error_text.find("pokefirered") != std::string::npos)
-        << "Error should mention base game. Got: " << error_text;
-}
-
-TEST_F(AttributesCsvLoaderTest, LoadFireredCsvWithoutTerrainProviderPanics)
-{
-    // FireRed CSV but no terrain provider -- should panic
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_, std::nullopt, nullptr, &encounter_map_};
+    ProviderMap missing_terrain = make_firered_provider_map();
+    missing_terrain.erase("terrain");
+    AttributesCsvLoader loader{&formatter_, &firered_schema_, &missing_terrain, &config_, &diag_};
 
     EXPECT_DEATH(
-        std::ignore = loader.load(test_resources_dir / "valid_firered.csv", kTilesetScope), "terrain type provider");
-}
-
-TEST_F(AttributesCsvLoaderTest, LoadFireredCsvWithoutEncounterProviderPanics)
-{
-    // FireRed CSV but no encounter provider -- should panic
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_, std::nullopt, &terrain_map_, nullptr};
-
-    EXPECT_DEATH(
-        std::ignore = loader.load(test_resources_dir / "valid_firered.csv", kTilesetScope), "encounter type provider");
+        std::ignore = loader.load(test_resources_dir / "valid_firered.csv", kTilesetScope), "no provider was built");
 }
 
 TEST_F(AttributesCsvLoaderTest, LoadFireredCsvUnknownTerrainTypeReturnsError)
 {
-    AttributesCsvLoader loader{
-        &formatter_, &behavior_map_, &config_, &diag_, BaseGame::pokefirered, &terrain_map_, &encounter_map_};
+    AttributesCsvLoader loader = firered_loader();
 
     auto result = loader.load(test_resources_dir / "firered_unknown_terrain.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
 
-    std::string full_error_text{};
-    for (const auto &err : result.chain()) {
-        full_error_text += err->join(formatter_);
-        full_error_text += "\n";
-    }
-
-    EXPECT_TRUE(full_error_text.find("unknown terrain type") != std::string::npos)
-        << "Error should mention unknown terrain type. Got: " << full_error_text;
+    std::string full_error_text = join_error_chain(result);
+    EXPECT_TRUE(full_error_text.find("unknown terrain") != std::string::npos)
+        << "Error should mention unknown terrain. Got: " << full_error_text;
     EXPECT_TRUE(full_error_text.find("TILE_TERRAIN_DOES_NOT_EXIST") != std::string::npos)
         << "Error should show the unknown terrain name. Got: " << full_error_text;
 }
 
 TEST_F(AttributesCsvLoaderTest, LoadFireredCsvUnknownEncounterTypeReturnsError)
 {
-    AttributesCsvLoader loader{
-        &formatter_, &behavior_map_, &config_, &diag_, BaseGame::pokefirered, &terrain_map_, &encounter_map_};
+    AttributesCsvLoader loader = firered_loader();
 
     auto result = loader.load(test_resources_dir / "firered_unknown_encounter.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
 
-    std::string full_error_text{};
-    for (const auto &err : result.chain()) {
-        full_error_text += err->join(formatter_);
-        full_error_text += "\n";
-    }
-
-    EXPECT_TRUE(full_error_text.find("unknown encounter type") != std::string::npos)
-        << "Error should mention unknown encounter type. Got: " << full_error_text;
+    std::string full_error_text = join_error_chain(result);
+    EXPECT_TRUE(full_error_text.find("unknown encounter_type") != std::string::npos)
+        << "Error should mention unknown encounter_type. Got: " << full_error_text;
     EXPECT_TRUE(full_error_text.find("TILE_ENCOUNTER_DOES_NOT_EXIST") != std::string::npos)
         << "Error should show the unknown encounter name. Got: " << full_error_text;
 }
 
 TEST_F(AttributesCsvLoaderTest, LoadFireredCsvRowTooFewColumnsReturnsError)
 {
-    AttributesCsvLoader loader{
-        &formatter_, &behavior_map_, &config_, &diag_, BaseGame::pokefirered, &terrain_map_, &encounter_map_};
+    AttributesCsvLoader loader = firered_loader();
 
     auto result = loader.load(test_resources_dir / "firered_row_too_few_columns.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
 
-    std::string full_error_text{};
-    for (const auto &err : result.chain()) {
-        full_error_text += err->join(formatter_);
-        full_error_text += "\n";
-    }
+    std::string full_error_text = join_error_chain(result);
+    EXPECT_TRUE(full_error_text.find("expected at least 8 columns") != std::string::npos)
+        << "Error should mention expected 8 columns. Got: " << full_error_text;
+}
 
-    EXPECT_TRUE(full_error_text.find("expected 4 columns") != std::string::npos)
-        << "Error should mention expected 4 columns. Got: " << full_error_text;
+// Raw fields have no provider cap, so the parser itself must reject a value the field cannot hold; otherwise the
+// binary writer would silently mask it away later.
+TEST_F(AttributesCsvLoaderTest, LoadFireredCsvRawFieldTooLargeReturnsError)
+{
+    AttributesCsvLoader loader = firered_loader();
+
+    auto result = loader.load(test_resources_dir / "firered_raw_field_too_large.csv", kTilesetScope);
+    EXPECT_FALSE(result.has_value());
+
+    std::string full_error_text = join_error_chain(result);
+    EXPECT_TRUE(full_error_text.find("attribute_2 value '99' exceeds the field's maximum of 15") != std::string::npos)
+        << "Error should name the field, value, and maximum. Got: " << full_error_text;
+}
+
+TEST_F(AttributesCsvLoaderTest, LoadFireredCsvRawFieldNotIntegerReturnsError)
+{
+    AttributesCsvLoader loader = firered_loader();
+
+    auto result = loader.load(test_resources_dir / "firered_raw_field_not_integer.csv", kTilesetScope);
+    EXPECT_FALSE(result.has_value());
+
+    std::string full_error_text = join_error_chain(result);
+    EXPECT_TRUE(full_error_text.find("invalid attribute_2 value 'abc'") != std::string::npos)
+        << "Error should name the field and the bad cell. Got: " << full_error_text;
+}
+
+// A raw field spanning the full 32-bit word must accept any value up to its maximum, including values above INT_MAX.
+// This regressed when the raw-cell parse bottomed out in std::stoi regardless of the requested integer type.
+TEST_F(AttributesCsvLoaderTest, LoadWideRawFieldValueAboveIntMaxSucceeds)
+{
+    auto schema_result = Schema::create({Field{"wide", 0xFFFFFFFF}}, 4);
+    Schema wide_schema = std::move(schema_result).value();
+    ProviderMap no_providers{};
+    AttributesCsvLoader loader{&formatter_, &wide_schema, &no_providers, &config_, &diag_};
+
+    auto result = loader.load(test_resources_dir / "wide_raw_field.csv", kTilesetScope);
+    ASSERT_TRUE(result.has_value()) << join_error_chain(result);
+    EXPECT_EQ(result.value().at(0).field("wide"), 3000000000u);
 }
 
 TEST_F(AttributesCsvLoaderTest, LayerTypeColumnKnobOnAppliesFilledCellsAndLeavesBlankInferred)
 {
     config_.write_layer_type_column = true;
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
+    AttributesCsvLoader loader = emerald_loader();
 
     auto result = loader.load(test_resources_dir / "valid_layer_type.csv", kTilesetScope);
     ASSERT_TRUE(result.has_value());
@@ -407,11 +489,10 @@ TEST_F(AttributesCsvLoaderTest, LayerTypeColumnKnobOnAppliesFilledCellsAndLeaves
     EXPECT_FALSE(diag_.warning_tag_counts().contains("layer-type-column"));
 }
 
-TEST_F(AttributesCsvLoaderTest, LayerTypeColumnKnobOnAppliesForFireredFormat)
+TEST_F(AttributesCsvLoaderTest, LayerTypeColumnKnobOnAppliesForMultiFieldSchema)
 {
     config_.write_layer_type_column = true;
-    AttributesCsvLoader loader{
-        &formatter_, &behavior_map_, &config_, &diag_, BaseGame::pokefirered, &terrain_map_, &encounter_map_};
+    AttributesCsvLoader loader = firered_loader();
 
     auto result = loader.load(test_resources_dir / "valid_firered_layer_type.csv", kTilesetScope);
     ASSERT_TRUE(result.has_value());
@@ -426,7 +507,7 @@ TEST_F(AttributesCsvLoaderTest, LayerTypeColumnKnobOnAppliesForFireredFormat)
 TEST_F(AttributesCsvLoaderTest, LayerTypeColumnKnobOffWarnsOnceAndIgnoresValues)
 {
     // Default MockInfraConfig has write_layer_type_column = false.
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
+    AttributesCsvLoader loader = emerald_loader();
 
     auto result = loader.load(test_resources_dir / "valid_layer_type.csv", kTilesetScope);
     ASSERT_TRUE(result.has_value());
@@ -444,7 +525,7 @@ TEST_F(AttributesCsvLoaderTest, LayerTypeColumnKnobOffWarnsOnceAndIgnoresValues)
 TEST_F(AttributesCsvLoaderTest, LayerTypeColumnKnobOnWithNoColumnNoWarning)
 {
     config_.write_layer_type_column = true;
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
+    AttributesCsvLoader loader = emerald_loader();
 
     auto result = loader.load(test_resources_dir / "valid.csv", kTilesetScope);
     ASSERT_TRUE(result.has_value());
@@ -455,16 +536,12 @@ TEST_F(AttributesCsvLoaderTest, LayerTypeColumnKnobOnWithNoColumnNoWarning)
 TEST_F(AttributesCsvLoaderTest, LayerTypeColumnKnobOnBadTokenErrorsWithFileContext)
 {
     config_.write_layer_type_column = true;
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
+    AttributesCsvLoader loader = emerald_loader();
 
     auto result = loader.load(test_resources_dir / "invalid_layer_type_token.csv", kTilesetScope);
     ASSERT_FALSE(result.has_value());
 
-    std::string full_error_text{};
-    for (const auto &err : result.chain()) {
-        full_error_text += err->join(formatter_);
-        full_error_text += "\n";
-    }
+    std::string full_error_text = join_error_chain(result);
     EXPECT_NE(full_error_text.find("invalid layerType"), std::string::npos) << full_error_text;
     EXPECT_NE(full_error_text.find("sideways"), std::string::npos) << full_error_text;
 }
@@ -486,7 +563,7 @@ TEST_F(AttributesCsvLoaderTest, KnobResolvesUnderTheScopePassedToLoad)
 
     ScopedConfig scoped_config{};
     BufferedUserDiagnostics scoped_diag{};
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, &scoped_config, &scoped_diag};
+    AttributesCsvLoader loader{&formatter_, &emerald_schema_, &emerald_providers_, &scoped_config, &scoped_diag};
 
     // Loading under the primary's scope applies the column.
     auto applied = loader.load(test_resources_dir / "valid_layer_type.csv", "gTileset_Primary");

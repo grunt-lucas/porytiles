@@ -239,12 +239,35 @@ ChainableResult<void> HeaderEnumMapProvider::ensure_loaded() const
     if (name_to_value_.empty()) {
         load_failed_ = true;
         return FormattableError{
-            "{}: no {} definitions exist in file.",
-            FormatParam{header_path_.string(), Style::bold},
-            FormatParam{spec_.field_display_name}};
+            "Field '{}' declared provider prefix '{}' in '{}' but no matching names were found.",
+            FormatParam{spec_.field_display_name, Style::bold},
+            FormatParam{spec_.prefix, Style::bold},
+            FormatParam{header_path_.string(), Style::bold}};
     }
 
     return {};
+}
+
+ProviderMap build_provider_map(
+    const std::filesystem::path &project_root,
+    const Schema &schema,
+    gsl::not_null<const TextFormatter *> format,
+    gsl::not_null<const UserDiagnostics *> diag)
+{
+    // Membership contract: the map contains exactly the schema's has_provider() fields, so downstream code
+    // can key raw-vs-provider handling off has_provider() and treat a missing map entry as an internal bug.
+    ProviderMap providers{};
+    for (const Field &field : schema.fields()) {
+        if (!field.has_provider()) {
+            continue;
+        }
+        const ProviderSpec &spec = field.provider_spec();
+        providers.emplace(
+            field.name(),
+            std::make_unique<HeaderEnumMapProvider>(
+                project_root / spec.header, spec.to_enum_spec(field.name(), field.max_value()), format, diag));
+    }
+    return providers;
 }
 
 } // namespace porytiles

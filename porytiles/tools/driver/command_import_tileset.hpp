@@ -38,10 +38,12 @@
 #include "porytiles/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles/infra/services/png_rgba_image_saver.hpp"
+#include "porytiles/infra/services/project_layout_metadata_provider.hpp"
 #include "porytiles/infra/services/project_porytiles_tileset_manager.hpp"
 #include "porytiles/infra/services/project_primary_tileset_importer.hpp"
 #include "porytiles/infra/services/project_tileset_anims_modifier.hpp"
 #include "porytiles/infra/services/project_tileset_metadata_writer.hpp"
+#include "porytiles/infra/services/tileset_attr_schema_resolver.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 #include "porytiles/xcut/di/components.hpp"
 #include "porytiles/xcut/diagnostics/diagnostic_tag_filter.hpp"
@@ -50,7 +52,6 @@
 #include "porytiles/xcut/diagnostics/user_diagnostics.hpp"
 
 #include "command.hpp"
-#include "interim_enum_specs.hpp"
 #include "option.hpp"
 
 class ImportTilesetCommand final : public Command {
@@ -77,8 +78,6 @@ class ImportTilesetCommand final : public Command {
 
         std::filesystem::path project_root = project_root_opt_.project_root();
         std::filesystem::path fieldmap_header_root_relative{"include/fieldmap.h"};
-        std::filesystem::path behaviors_header_root_relative{"include/constants/metatile_behaviors.h"};
-        std::filesystem::path global_fieldmap_header_root_relative{"include/global.fieldmap.h"};
 
         // Setup layered configuration (CLI options have highest priority)
         std::vector<std::unique_ptr<ConfigProvider>> providers{};
@@ -103,13 +102,13 @@ class ImportTilesetCommand final : public Command {
             throw CLI::RuntimeError{1};
         }
 
-        // Eagerly validate metatile-attr-size to fail fast before any file I/O
+        // Eagerly validate metatile-attr-size to fail fast before any file I/O. The effective attribute width used
+        // below is the schema resolver's attr_bytes, which starts from this config value but may widen it.
         auto attr_size_check = config.metatile_attr_size(ConfigScopeType::tileset, tileset_name_);
         if (!attr_size_check.has_value()) {
             stderr_diag->fatal(attr_size_check);
             throw CLI::RuntimeError{1};
         }
-        const std::size_t metatile_attr_size = attr_size_check.value().value();
 
         // Helper to safely extract filter patterns from config, falling back to empty on error
         auto get_filter_patterns =
@@ -148,65 +147,60 @@ class ImportTilesetCommand final : public Command {
         AnimCodeParser anim_code_parser{text_formatter, diag.get()};
         AnimCodeGenerator anim_code_generator{};
 
-        // Setup behavior map provider
-        HeaderEnumMapProvider behavior_map_provider{
-            project_root / behaviors_header_root_relative, behavior_enum_spec(), text_formatter, diag.get()};
-
         // Setup metadata provider, tileset manager
         ProjectTilesetMetadataProvider metadata_provider{project_root, text_formatter, diag.get()};
+        ProjectLayoutMetadataProvider layout_metadata_provider{project_root, text_formatter, diag.get()};
         ProjectTilesetMetadataWriter metadata_writer{project_root, text_formatter};
         IncbinDeclarationAppender incbin_appender{project_root, text_formatter};
         ProjectTilesetAnimsModifier tileset_anims_modifier{project_root, &config, diag.get()};
-        ProjectPorytilesTilesetManager tileset_manager{
-            project_root,
-            &metadata_provider,
-            &metadata_writer,
-            &config,
-            diag.get(),
-            &incbin_appender,
-            &tileset_anims_modifier};
 
-        // Detect base game
+        // Detect base game, only to gate out pokeruby imports. No other behavioral path reads the base game; the
+        // attribute handling below is driven entirely by the resolved schema.
         BaseGameDetector base_game_detector{project_root, text_formatter, diag.get()};
         auto base_game_result = base_game_detector.detect();
         if (!base_game_result.has_value()) {
             diag->fatal(base_game_result);
             throw CLI::RuntimeError{1};
         }
-        const BaseGame base_game = base_game_result.value();
-        if (base_game == BaseGame::pokeruby) {
+        if (base_game_result.value() == BaseGame::pokeruby) {
             diag->fatal(
                 ChainableResult<void>{
                     FormattableError{"Importing pokeruby-based projects is not currently supported."}});
             throw CLI::RuntimeError{1};
         }
 
-        // Conditionally create terrain/encounter providers for FireRed
-        std::unique_ptr<HeaderEnumMapProvider> terrain_provider;
-        std::unique_ptr<HeaderEnumMapProvider> encounter_provider;
-        if (base_game == BaseGame::pokefirered) {
-            terrain_provider = std::make_unique<HeaderEnumMapProvider>(
-                project_root / global_fieldmap_header_root_relative, terrain_enum_spec(), text_formatter, diag.get());
-            encounter_provider = std::make_unique<HeaderEnumMapProvider>(
-                project_root / global_fieldmap_header_root_relative, encounter_enum_spec(), text_formatter, diag.get());
+        // Resolve the per-tileset attribute schema and build one enum provider per provider-backed field. The schema
+        // and provider map must outlive the CSV loader and artifact writer below, which hold pointers into them.
+        TilesetAttrSchemaResolver schema_resolver{&config, &layout_metadata_provider, text_formatter, diag.get()};
+        auto resolved_result = schema_resolver.resolve(tileset_name_);
+        if (!resolved_result.has_value()) {
+            diag->fatal(resolved_result);
+            throw CLI::RuntimeError{1};
         }
+        const ResolvedTilesetAttrSchema resolved = std::move(resolved_result).value();
+        ProviderMap provider_map = build_provider_map(project_root, resolved.schema, text_formatter, diag.get());
 
-        // Setup attributes CSV loader (after base game detection for format validation)
-        AttributesCsvLoader attributes_csv_loader{
-            text_formatter,
-            &behavior_map_provider,
+        // The tileset manager takes the resolved attribute width so its generated INCBIN declarations match the
+        // binary attribute format, so it must be constructed after schema resolution.
+        ProjectPorytilesTilesetManager tileset_manager{
+            project_root,
+            &metadata_provider,
+            &metadata_writer,
             &config,
+            resolved.attr_bytes,
             diag.get(),
-            base_game,
-            terrain_provider.get(),
-            encounter_provider.get()};
+            &incbin_appender,
+            &tileset_anims_modifier};
+
+        // Setup attributes CSV loader
+        AttributesCsvLoader attributes_csv_loader{text_formatter, &resolved.schema, &provider_map, &config, diag.get()};
 
         // Setup the tileset repository
         ProjectTilesetArtifactKeyProvider key_provider{
             project_root, &config, &metadata_provider, text_formatter, diag.get()};
         ProjectTilesetArtifactReader artifact_reader{
             project_root,
-            metatile_attr_size,
+            resolved.attr_bytes,
             &png_rgba_loader,
             &png_indexed_loader,
             &jasc_loader,
@@ -218,25 +212,23 @@ class ImportTilesetCommand final : public Command {
             &config,
             &config,
             project_root,
-            base_game,
-            metatile_attr_size,
+            &resolved.schema,
+            &provider_map,
+            resolved.attr_bytes,
             text_formatter,
             diag.get(),
             &png_rgba_saver,
             &png_indexed_saver,
             &jasc_saver,
             &anim_json_parser,
-            &anim_code_generator,
-            &behavior_map_provider,
-            terrain_provider.get(),
-            encounter_provider.get()};
+            &anim_code_generator};
         ProjectArtifactChecksumProvider checksum_provider{project_root};
         TilesetRepo repo{
             &checksum_provider, &metadata_provider, &key_provider, &artifact_reader, &artifact_writer, diag.get()};
 
         ProjectPrimaryTilesetImporter importer{
             project_root,
-            metatile_attr_size,
+            resolved.attr_bytes,
             &config,
             text_formatter,
             diag.get(),
