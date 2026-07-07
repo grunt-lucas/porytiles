@@ -14,6 +14,7 @@
 #include <string>
 
 #include "porytiles/domain/models/base_game.hpp"
+#include "porytiles/domain/models/metatile.hpp"
 #include "porytiles/domain/models/metatile_attribute.hpp"
 #include "porytiles/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles/infra/services/png_rgba_image_saver.hpp"
@@ -811,22 +812,12 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
 
     const bool is_firered = base_game_ == BaseGame::pokefirered;
 
-    // Count non-default attributes
-    std::size_t non_default_count = 0;
-    for (const auto &attribute : attributes | std::views::values) {
-        if (is_firered) {
-            if (attribute.field(attr::field_behavior) != default_behavior ||
-                attribute.field(attr::field_terrain) != default_terrain ||
-                attribute.field(attr::field_encounter_type) != default_encounter) {
-                non_default_count++;
-            }
-        }
-        else {
-            if (attribute.field(attr::field_behavior) != default_behavior) {
-                non_default_count++;
-            }
-        }
-    }
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        write_layer_type_column_cv,
+        infra_config_->write_layer_type_column(ConfigScopeType::tileset, src.name()),
+        void,
+        "Failed to resolve write_layer_type_column.");
+    const bool write_layer_type_column = write_layer_type_column_cv.value();
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
@@ -841,57 +832,118 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
             "Failed to open file for writing: '{}'.", FormatParam{transaction_dest_path.string(), Style::bold}};
     }
 
-    // Write header
-    if (is_firered) {
-        out << "id,behavior,terrainType,encounterType\n";
+    // Write header, with the optional trailing layerType column.
+    std::string header = is_firered ? "id,behavior,terrainType,encounterType" : "id,behavior";
+    if (write_layer_type_column) {
+        header += ",layerType";
     }
-    else {
-        out << "id,behavior\n";
-    }
+    out << header << "\n";
 
-    if (non_default_count == 0) {
-        // No non-default attributes to write
-        out.flush();
-        return {};
-    }
-
-    // Write each non-default attribute row
-    for (const auto &[metatile_id, attribute] : attributes) {
+    // Renders a row's field columns (behavior, plus terrain/encounter for firered) without the id or layerType.
+    auto render_fields = [&](const MetatileAttribute &attribute,
+                             std::size_t metatile_id) -> ChainableResult<std::string> {
         if (is_firered) {
-            if (attribute.field(attr::field_behavior) == default_behavior &&
-                attribute.field(attr::field_terrain) == default_terrain &&
-                attribute.field(attr::field_encounter_type) == default_encounter) {
-                continue;
-            }
             PT_TRY_ASSIGN_CHAIN_ERR(
                 behavior_name,
                 behavior_map_->lookup(attribute.field(attr::field_behavior)),
-                void,
+                std::string,
                 std::format("Failed to lookup behavior name for metatile {}.", metatile_id));
             PT_TRY_ASSIGN_CHAIN_ERR(
                 terrain_name,
                 terrain_map_->lookup(attribute.field(attr::field_terrain)),
-                void,
+                std::string,
                 std::format("Failed to lookup terrain type name for metatile {}.", metatile_id));
             PT_TRY_ASSIGN_CHAIN_ERR(
                 encounter_name,
                 encounter_map_->lookup(attribute.field(attr::field_encounter_type)),
-                void,
+                std::string,
                 std::format("Failed to lookup encounter type name for metatile {}.", metatile_id));
-            out << metatile_id << "," << behavior_name << "," << terrain_name << "," << encounter_name << "\n";
+            return std::format("{},{},{}", behavior_name, terrain_name, encounter_name);
         }
-        else {
-            if (attribute.field(attr::field_behavior) == default_behavior) {
-                // Skip default behavior (MB_NORMAL = 0), since it's implicit for missing entries
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            behavior_name,
+            behavior_map_->lookup(attribute.field(attr::field_behavior)),
+            std::string,
+            std::format("Failed to lookup behavior name for metatile {}.", metatile_id));
+        return std::string{behavior_name};
+    };
+
+    if (!write_layer_type_column) {
+        // Knob off: byte-identical to the historical output. Skip all-default rows, and if none survive write only the
+        // header.
+        std::size_t non_default_count = 0;
+        for (const auto &attribute : attributes | std::views::values) {
+            if (is_firered) {
+                if (attribute.field(attr::field_behavior) != default_behavior ||
+                    attribute.field(attr::field_terrain) != default_terrain ||
+                    attribute.field(attr::field_encounter_type) != default_encounter) {
+                    non_default_count++;
+                }
+            }
+            else {
+                if (attribute.field(attr::field_behavior) != default_behavior) {
+                    non_default_count++;
+                }
+            }
+        }
+
+        if (non_default_count == 0) {
+            out.flush();
+            return {};
+        }
+
+        for (const auto &[metatile_id, attribute] : attributes) {
+            if (is_firered) {
+                if (attribute.field(attr::field_behavior) == default_behavior &&
+                    attribute.field(attr::field_terrain) == default_terrain &&
+                    attribute.field(attr::field_encounter_type) == default_encounter) {
+                    continue;
+                }
+            }
+            else if (attribute.field(attr::field_behavior) == default_behavior) {
                 continue;
             }
-            PT_TRY_ASSIGN_CHAIN_ERR(
-                behavior_name,
-                behavior_map_->lookup(attribute.field(attr::field_behavior)),
-                void,
-                std::format("Failed to lookup behavior name for metatile {}.", metatile_id));
-            out << metatile_id << "," << behavior_name << "\n";
+            PT_TRY_ASSIGN_PASS_ERR(fields_str, render_fields(attribute, metatile_id), void);
+            out << metatile_id << "," << fields_str << "\n";
         }
+
+        out.flush();
+        return {};
+    }
+
+    // Renders the trailing layerType cell for one attribute. Only an explicitly pinned layer type emits a token; an
+    // inferred/auto layer type (the default, and everything a bin parser or decompiler produces) emits a blank cell.
+    // This is what keeps the "blank = auto" workflow intact across a load/save round-trip: a row the user left blank
+    // carries no explicit layer type, so it must not be written back as a pinned token that the next compile would then
+    // treat as an override.
+    auto render_layer_type_cell = [](const MetatileAttribute &attribute) -> std::string {
+        return attribute.explicit_layer_type().has_value()
+                   ? layer_type_csv_token(attribute.explicit_layer_type().value())
+                   : std::string{};
+    };
+
+    // Knob on: emit one row per metatile so every metatile has a layerType slot the user can fill. The attribute map
+    // can be sparse (tileset creation stores only some ids), so materialize a default row for any missing id. Row count
+    // comes from the Porytiles layer image dimensions, the same source LayerImageMetatileizer uses.
+    const std::size_t layer_metatile_count = metatile::metatile_count(src.porytiles_component().bottom());
+    const MetatileAttribute default_attribute{}; // all-default fields, no explicit layer type (blank cell)
+
+    for (std::size_t metatile_id = 0; metatile_id < layer_metatile_count; ++metatile_id) {
+        const auto it = attributes.find(metatile_id);
+        const MetatileAttribute &attribute = it != attributes.end() ? it->second : default_attribute;
+
+        PT_TRY_ASSIGN_PASS_ERR(fields_str, render_fields(attribute, metatile_id), void);
+        out << metatile_id << "," << fields_str << "," << render_layer_type_cell(attribute) << "\n";
+    }
+
+    // Inconsistent input: emit any stored ids at or beyond the derived count so no stored attribute is silently
+    // dropped.
+    for (const auto &[metatile_id, attribute] : attributes) {
+        if (metatile_id < layer_metatile_count) {
+            continue;
+        }
+        PT_TRY_ASSIGN_PASS_ERR(fields_str, render_fields(attribute, metatile_id), void);
+        out << metatile_id << "," << fields_str << "," << render_layer_type_cell(attribute) << "\n";
     }
 
     out.flush();

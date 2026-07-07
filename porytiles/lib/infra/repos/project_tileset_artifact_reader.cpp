@@ -298,8 +298,10 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_top_png(Tileset &dest, 
 
 ChainableResult<void> ProjectTilesetArtifactReader::read_attributes_csv(Tileset &dest, const ArtifactKey &src_key) const
 {
-    // Keys are relative to project_root_, so prepend for file I/O
-    PT_TRY_ASSIGN_PASS_ERR(attributes, attributes_csv_loader_->load((project_root_ / src_key.key()).string()), void);
+    // Keys are relative to project_root_, so prepend for file I/O. The knob resolves under the tileset that owns this
+    // CSV (dest.name()); when reading a paired primary, that is the primary's scope.
+    PT_TRY_ASSIGN_PASS_ERR(
+        attributes, attributes_csv_loader_->load((project_root_ / src_key.key()).string(), dest.name()), void);
     for (const auto &[metatile_id, attribute] : attributes) {
         dest.porytiles_component().insert_attribute(metatile_id, attribute);
     }

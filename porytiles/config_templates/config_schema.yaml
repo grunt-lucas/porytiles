@@ -85,6 +85,31 @@ enum_types:
         fuzzy_names: [ optimize ]
         brief: The Porytiles1 behavior; artifact is cleared and packed optimally.
 
+  - cpp_type: FrlgAlternateMaskMode
+    header_path: porytiles/infra/config/frlg_alternate_mask_mode.hpp
+    brief: Controls whether the FireRed/LeafGreen alternate metatile attribute masks are selected for a tileset.
+    details: |
+      FireRed and LeafGreen pack metatile attributes differently than Ruby/Sapphire/Emerald: the fields
+      use different bit masks and the layout is typically four bytes wide instead of two. This mode controls
+      whether Porytiles selects those alternate masks when resolving a tileset's attribute schema. In
+      automatic mode, Porytiles cross-references data/layouts/layouts.json and reads each layout's
+      layout_version to decide per tileset. The always and never values force the choice, which is useful
+      when a tileset has no layouts.json entry or is referenced by both emerald and frlg layouts. This key
+      is intended to be set at tileset scope.
+    enum_values:
+      - name: automatic
+        cli_completion_name: automatic
+        fuzzy_names: [ automatic, auto ]
+        brief: Cross-reference layouts.json layout_version to decide the masks per tileset.
+      - name: always
+        cli_completion_name: always
+        fuzzy_names: [ always, "true", "yes", "on" ]
+        brief: Always select the FRLG alternate masks for this tileset.
+      - name: never
+        cli_completion_name: never
+        fuzzy_names: [ never, "false", "no", "off" ]
+        brief: Never select the FRLG alternate masks; use the primary masks.
+
   - cpp_type: TilesPalMode
     header_path: porytiles/domain/config/tiles_pal_mode.hpp
     brief: Controls how tiles.png is rendered.
@@ -845,6 +870,34 @@ config_values:
     type: MetatileAttrFieldOverrides
     parser: parse_metatile_attr_field_overrides
     default_value: "MetatileAttrFieldOverrides{}"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Write Layer Type Column
+    symbol: write_layer_type_column
+    yaml_path: fieldmap.write_layer_type_column
+    cli_option: write-layer-type-column
+    cli_desc: Emit and honor a layerType column in the metatile attributes CSV.
+    layer: infra
+    type: bool
+    parser: parse_bool
+    default_value: "false"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Use FRLG Alternate Masks
+    symbol: use_frlg_alternate_masks
+    yaml_path: fieldmap.use_frlg_alternate_masks
+    cli_option: use-frlg-alternate-masks
+    cli_desc: >-
+      Whether to select the FireRed/LeafGreen alternate metatile attribute masks for a tileset:
+      automatic (cross-reference layouts.json), always, or never. true/false are accepted as
+      aliases for always/never. Intended to be set at tileset scope in
+      porytiles/tilesets/<name>/config.yaml.
+    layer: infra
+    type: FrlgAlternateMaskMode
+    parser: parse_frlg_alternate_mask_mode
+    default_value: "FrlgAlternateMaskMode::automatic"
     validators: [ ]
     cross_field_validators: [ ]
 

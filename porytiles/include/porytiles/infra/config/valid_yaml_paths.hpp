@@ -41,6 +41,8 @@ inline const std::unordered_set<std::string> valid_yaml_paths = {
     "fieldmap.num_tiles_in_primary",
     "fieldmap.num_tiles_per_metatile",
     "fieldmap.num_tiles_total",
+    "fieldmap.use_frlg_alternate_masks",
+    "fieldmap.write_layer_type_column",
     "tileset",
     "tileset.animations",
     "tileset.animations.cross_tileset_linking",

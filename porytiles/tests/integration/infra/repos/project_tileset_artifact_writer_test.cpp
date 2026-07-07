@@ -2,6 +2,7 @@
 
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <memory>
 #include <string>
 #include <vector>
@@ -114,6 +115,55 @@ Tileset create_test_tileset(const std::string &name)
     }
 
     return Tileset{name, std::move(porytiles_component), std::move(porymap_component)};
+}
+
+// A tileset whose bottom layer holds two metatiles (32x16 px) but whose Porytiles attribute map stores only metatile 0.
+// This is the sparse case the layerType writer must materialize a full row set for.
+Tileset create_sparse_two_metatile_tileset(const std::string &name)
+{
+    auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
+    porytiles_component->bottom(Image<Rgba32>{32, 16}); // (32/16) * (16/16) = 2 metatiles
+    porytiles_component->middle(Image<Rgba32>{32, 16});
+    porytiles_component->top(Image<Rgba32>{32, 16});
+
+    // Only metatile 0 has a stored attribute: a non-default behavior and an explicit "covered" layer type.
+    MetatileAttribute attr_0{};
+    attr_0.field(attr::field_behavior, 5);
+    attr_0.explicit_layer_type(LayerType::covered);
+    porytiles_component->insert_attribute(0, attr_0);
+
+    auto porymap_component = std::make_unique<PorymapTilesetComponent>();
+    porymap_component->tiles_png(create_test_indexed_image());
+
+    return Tileset{name, std::move(porytiles_component), std::move(porymap_component)};
+}
+
+// Like create_sparse_two_metatile_tileset, but metatile 0's layer type is set through the plain layer_type() setter
+// (as a bin parser or the CSV loader does for an inferred/auto row) rather than explicit_layer_type(). This is the
+// round-trip case: an auto row must never be written back as a pinned token, no matter what layer_type() happens to be.
+Tileset create_two_metatile_tileset_with_inferred_layer_type(const std::string &name)
+{
+    auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
+    porytiles_component->bottom(Image<Rgba32>{32, 16}); // 2 metatiles
+    porytiles_component->middle(Image<Rgba32>{32, 16});
+    porytiles_component->top(Image<Rgba32>{32, 16});
+
+    // Non-default behavior so the row is meaningful, and a non-'normal' layer type set the inferred way (no explicit).
+    MetatileAttribute attr_0{};
+    attr_0.field(attr::field_behavior, 5);
+    attr_0.layer_type(LayerType::covered);
+    porytiles_component->insert_attribute(0, attr_0);
+
+    auto porymap_component = std::make_unique<PorymapTilesetComponent>();
+    porymap_component->tiles_png(create_test_indexed_image());
+
+    return Tileset{name, std::move(porytiles_component), std::move(porymap_component)};
+}
+
+[[nodiscard]] std::string read_whole_file(const std::filesystem::path &path)
+{
+    std::ifstream in{path};
+    return std::string{std::istreambuf_iterator<char>{in}, std::istreambuf_iterator<char>{}};
 }
 
 } // namespace
@@ -514,4 +564,55 @@ TEST_F(ProjectTilesetArtifactWriterTests, TransactionSequence)
     ASSERT_TRUE(std::filesystem::exists(test_root_ / "trans1.png"));
     ASSERT_FALSE(std::filesystem::exists(test_root_ / "trans2.png"));
     ASSERT_TRUE(std::filesystem::exists(test_root_ / "trans3.png"));
+}
+
+TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvKnobOnEmitsOneRowPerMetatileWithSynthesizedDefaults)
+{
+    infra_config_->write_layer_type_column = true;
+    auto tileset = create_sparse_two_metatile_tileset("test_tileset");
+
+    ASSERT_TRUE(writer_->begin_transaction().has_value());
+    ArtifactKey key{"attributes.csv"};
+    auto write_result = writer_->write_attributes_csv(key, tileset);
+    ASSERT_TRUE(write_result.has_value()) << write_result.error().join(PlainTextFormatter{});
+    ASSERT_TRUE(writer_->commit().has_value());
+
+    // Header gains layerType. Present metatile 0 emits its "covered" token; synthesized metatile 1 emits a blank cell.
+    const std::string expected = "id,behavior,layerType\n0,MB_NORMAL,covered\n1,MB_NORMAL,\n";
+    EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), expected);
+}
+
+TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvKnobOnEmitsBlankCellForInferredLayerType)
+{
+    // Regression: a present attribute whose layer type was set the inferred way (not pinned via explicit_layer_type)
+    // must emit a BLANK layerType cell. If the writer keyed off layer_type() instead of explicit_layer_type(), it would
+    // pin this row as "covered", and the next compile would wrongly treat the auto row as a user override.
+    infra_config_->write_layer_type_column = true;
+    auto tileset = create_two_metatile_tileset_with_inferred_layer_type("test_tileset");
+
+    ASSERT_TRUE(writer_->begin_transaction().has_value());
+    ArtifactKey key{"attributes.csv"};
+    auto write_result = writer_->write_attributes_csv(key, tileset);
+    ASSERT_TRUE(write_result.has_value()) << write_result.error().join(PlainTextFormatter{});
+    ASSERT_TRUE(writer_->commit().has_value());
+
+    // Both cells blank despite metatile 0's non-'normal' layer_type(): neither row carries an explicit pin.
+    const std::string expected = "id,behavior,layerType\n0,MB_NORMAL,\n1,MB_NORMAL,\n";
+    EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), expected);
+}
+
+TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvKnobOffIsByteIdenticalToHistoricalOutput)
+{
+    // Default MockInfraConfig has write_layer_type_column = false.
+    auto tileset = create_sparse_two_metatile_tileset("test_tileset");
+
+    ASSERT_TRUE(writer_->begin_transaction().has_value());
+    ArtifactKey key{"attributes.csv"};
+    auto write_result = writer_->write_attributes_csv(key, tileset);
+    ASSERT_TRUE(write_result.has_value()) << write_result.error().join(PlainTextFormatter{});
+    ASSERT_TRUE(writer_->commit().has_value());
+
+    // No layerType column, and the sole all-default metatile (1) is skipped: only metatile 0's row survives.
+    const std::string expected = "id,behavior\n0,MB_NORMAL\n";
+    EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), expected);
 }

@@ -7,6 +7,7 @@
 
 #include "porytiles/infra/config/metatile_attr_inference.hpp"
 #include "porytiles/utilities/c_parser/c_parser_facade.hpp"
+#include "porytiles/xcut/config/config_scope_type.hpp"
 
 namespace porytiles {
 
@@ -183,10 +184,12 @@ MetatileAttributeConfigProvider::compute(ConfigScopeType type, const std::string
 LayerValue<MetatileAttrFieldSpecs>
 MetatileAttributeConfigProvider::metatile_attr_fields(ConfigScopeType type, const std::string &scope) const
 {
-    if (!cached_result_.has_value()) {
-        cached_result_ = compute(type, scope);
+    const auto cache_key = to_string(type) + ":" + scope;
+    const auto it = cached_results_.find(cache_key);
+    if (it != cached_results_.end()) {
+        return it->second;
     }
-    return cached_result_.value();
+    return cached_results_.emplace(cache_key, compute(type, scope)).first->second;
 }
 
 } // namespace porytiles

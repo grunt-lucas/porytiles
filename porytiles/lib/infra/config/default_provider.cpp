@@ -260,6 +260,19 @@ LayerValue<MetatileAttrFieldOverrides> DefaultProvider::metatile_attr_field_over
         MetatileAttrFieldOverrides{}, "Metatile Attribute Field Overrides", source_info);
 }
 
+LayerValue<bool> DefaultProvider::write_layer_type_column(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<bool>::valid(false, "Write Layer Type Column", source_info);
+}
+
+LayerValue<FrlgAlternateMaskMode> DefaultProvider::use_frlg_alternate_masks(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<FrlgAlternateMaskMode>::valid(
+        FrlgAlternateMaskMode::automatic, "Use FRLG Alternate Masks", source_info);
+}
+
 LayerValue<bool> DefaultProvider::tileset_animations_wire_anim_code(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

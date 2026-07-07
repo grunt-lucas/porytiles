@@ -274,6 +274,30 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
         "Metatile Attribute Size - The size in bytes of each metatile attribute entry (2 for Emerald/Ruby, 4 for "
         "FireRed).");
 
+    // Write Layer Type Column (bool with --flag/--no-flag, captured as "true"/"false" string)
+    config_group->add_flag(
+        "--write-layer-type-column,!--no-write-layer-type-column",
+        [&storage](std::int64_t count) {
+            if (count > 0) {
+                storage.write_layer_type_column = "true";
+            }
+            else if (count < 0) {
+                storage.write_layer_type_column = "false";
+            }
+            // count == 0 means neither flag was provided, leave optional empty
+        },
+        "Write Layer Type Column - Emit and honor a layerType column in the metatile attributes CSV.");
+
+    // Use FRLG Alternate Masks (enum FrlgAlternateMaskMode, captured as string, parsed by CliOptionProvider)
+    config_group
+        ->add_option(
+            "--use-frlg-alternate-masks",
+            storage.use_frlg_alternate_masks,
+            "Use FRLG Alternate Masks - Whether to select the FireRed/LeafGreen alternate metatile attribute masks for "
+            "a tileset: automatic (cross-reference layouts.json), always, or never. true/false are accepted as aliases "
+            "for always/never. Intended to be set at tileset scope in porytiles/tilesets/<name>/config.yaml.")
+        ->type_name("{automatic|always|never}");
+
     // Tileset Animations Wire Anim Code (bool with --flag/--no-flag, captured as "true"/"false" string)
     config_group->add_flag(
         "--tileset-animations-wire-anim-code,!--no-tileset-animations-wire-anim-code",

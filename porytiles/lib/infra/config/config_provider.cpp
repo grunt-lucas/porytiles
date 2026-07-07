@@ -237,6 +237,18 @@ LayerValue<MetatileAttrFieldOverrides> ConfigProvider::metatile_attr_field_overr
     return LayerValue<MetatileAttrFieldOverrides>::not_provided();
 }
 
+LayerValue<bool> ConfigProvider::write_layer_type_column(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<bool>::not_provided();
+}
+
+LayerValue<FrlgAlternateMaskMode> ConfigProvider::use_frlg_alternate_masks(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<FrlgAlternateMaskMode>::not_provided();
+}
+
 LayerValue<bool> ConfigProvider::tileset_animations_wire_anim_code(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

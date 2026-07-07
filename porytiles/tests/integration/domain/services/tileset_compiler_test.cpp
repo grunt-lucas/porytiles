@@ -511,6 +511,75 @@ TEST_F(TilesetCompilerOverrideValidationTests, ManualDualDropReportsWarning)
     EXPECT_TRUE(diag_->error_tag_counts().empty());
 }
 
+TEST_F(TilesetCompilerOverrideValidationTests, ManualBottomOverrideSurvivesExplicitCoveredLayerType)
+{
+    // Regression for the effective-layer-type mismatch: this metatile infers 'normal' (which drops the bottom layer),
+    // but an explicit 'covered' override keeps the bottom layer. The manual override targets bottom, so it must NOT be
+    // rejected. Before the fix, validation used the inferred 'normal' and wrongly warned + dropped the override.
+    config_.global_frame_linking = FrameLinking::manual;
+
+    auto tileset = build_single_metatile_tileset("test_primary", rgba_green);
+
+    // Pin metatile 0 to 'covered' via the source Porytiles attribute, exactly as an explicit layerType CSV cell would.
+    MetatileAttribute attr_0{};
+    attr_0.explicit_layer_type(LayerType::covered);
+    tileset.porytiles_component().insert_attribute(0, attr_0);
+
+    add_manual_anim(
+        tileset,
+        "anim",
+        rgba_red,
+        {AnimOverrideEntry{
+            .metatile_id = 0,
+            .layer = metatile::Layer::bottom,
+            .subtile = metatile::Subtile::northwest,
+            .frame_subtile = 0,
+            .pal_index = 0,
+            .h_flip = false,
+            .v_flip = false}});
+
+    auto compiler = make_compiler();
+    auto result = compiler->compile(tileset, false, nullptr);
+
+    // 'covered' drops the top layer, so the bottom override is kept: no drop warning, and the compile is clean.
+    ASSERT_TRUE(result.has_value()) << "Expected compile to succeed, got: " << join_error_chain(result);
+    EXPECT_FALSE(diag_->warning_tag_counts().contains("manual-dual-layer-drop"));
+    EXPECT_TRUE(diag_->error_tag_counts().empty());
+}
+
+TEST_F(TilesetCompilerOverrideValidationTests, ManualOverrideOnExplicitlyDroppedLayerStillWarns)
+{
+    // The complement of the previous test: an explicit 'covered' pin drops the top layer, so an override targeting top
+    // must warn even though inference (which would say 'normal', dropping bottom) would have let it through.
+    config_.global_frame_linking = FrameLinking::manual;
+
+    auto tileset = build_single_metatile_tileset("test_primary", rgba_green);
+
+    MetatileAttribute attr_0{};
+    attr_0.explicit_layer_type(LayerType::covered);
+    tileset.porytiles_component().insert_attribute(0, attr_0);
+
+    add_manual_anim(
+        tileset,
+        "anim",
+        rgba_red,
+        {AnimOverrideEntry{
+            .metatile_id = 0,
+            .layer = metatile::Layer::top,
+            .subtile = metatile::Subtile::northwest,
+            .frame_subtile = 0,
+            .pal_index = 0,
+            .h_flip = false,
+            .v_flip = false}});
+
+    auto compiler = make_compiler();
+    auto result = compiler->compile(tileset, false, nullptr);
+
+    ASSERT_TRUE(result.has_value()) << "Expected compile to succeed, got: " << join_error_chain(result);
+    ASSERT_TRUE(diag_->warning_tag_counts().contains("manual-dual-layer-drop"));
+    EXPECT_EQ(diag_->warning_tag_counts().at("manual-dual-layer-drop"), 1U);
+}
+
 TEST_F(TilesetCompilerOverrideValidationTests, ManualBottomOverrideAppliesInTripleMode)
 {
     config_.global_frame_linking = FrameLinking::manual;

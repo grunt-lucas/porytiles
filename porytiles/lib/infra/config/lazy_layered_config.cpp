@@ -193,6 +193,10 @@ void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, con
         "Metatile Attribute Field Overrides",
         metatile_attr_field_overrides_provenance_chain(type, scope));
     dump_single_config_value(
+        out, *format_, "Write Layer Type Column", write_layer_type_column_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Use FRLG Alternate Masks", use_frlg_alternate_masks_provenance_chain(type, scope));
+    dump_single_config_value(
         out,
         *format_,
         "Tileset Animations Wire Anim Code",
@@ -778,6 +782,31 @@ LazyLayeredConfig::metatile_attr_field_overrides_raw(ConfigScopeType type, const
 }
 
 ChainableResult<ConfigValue<bool>>
+LazyLayeredConfig::write_layer_type_column_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<bool>(key, "Write Layer Type Column", [&type, &scope](const ConfigProvider &provider) {
+        return provider.write_layer_type_column(type, scope);
+    });
+}
+
+ChainableResult<ConfigValue<FrlgAlternateMaskMode>>
+LazyLayeredConfig::use_frlg_alternate_masks_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<FrlgAlternateMaskMode>(
+        key, "Use FRLG Alternate Masks", [&type, &scope](const ConfigProvider &provider) {
+            return provider.use_frlg_alternate_masks(type, scope);
+        });
+}
+
+ChainableResult<ConfigValue<bool>>
 LazyLayeredConfig::tileset_animations_wire_anim_code_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
@@ -1062,6 +1091,20 @@ LazyLayeredConfig::metatile_attr_field_overrides_provenance_chain(ConfigScopeTyp
     return collect_provenance_chain<MetatileAttrFieldOverrides>([&type, &scope](const ConfigProvider &provider) {
         return provider.metatile_attr_field_overrides(type, scope);
     });
+}
+
+std::vector<ProvenanceChainLink<bool>>
+LazyLayeredConfig::write_layer_type_column_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<bool>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.write_layer_type_column(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<FrlgAlternateMaskMode>>
+LazyLayeredConfig::use_frlg_alternate_masks_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<FrlgAlternateMaskMode>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.use_frlg_alternate_masks(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<bool>> LazyLayeredConfig::tileset_animations_wire_anim_code_provenance_chain(

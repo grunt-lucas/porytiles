@@ -6,6 +6,7 @@
 
 #include "gtest/gtest.h"
 
+#include "porytiles/infra/config/frlg_alternate_mask_mode.hpp"
 #include "porytiles/utilities/text/plain_text_formatter.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
 
@@ -155,6 +156,85 @@ fieldmap:
     const auto result = provider.metatile_attr_fields(ConfigScopeType::tileset, "test");
     EXPECT_EQ(result.state, ValidationState::invalid);
     EXPECT_NE(result.error_message.find("msak"), std::string::npos);
+}
+
+TEST_F(YamlFileProviderMetatileAttrTest, WriteLayerTypeColumnBoolParses)
+{
+    write_config(R"(
+fieldmap:
+  write_layer_type_column: true
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.write_layer_type_column(ConfigScopeType::tileset, "test");
+    ASSERT_EQ(result.state, ValidationState::valid);
+    ASSERT_TRUE(result.value.has_value());
+    EXPECT_TRUE(result.value.value());
+}
+
+TEST_F(YamlFileProviderMetatileAttrTest, UseFrlgAlternateMasksEnumSpellingsParse)
+{
+    write_config(R"(
+fieldmap:
+  use_frlg_alternate_masks: always
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.use_frlg_alternate_masks(ConfigScopeType::tileset, "test");
+    ASSERT_EQ(result.state, ValidationState::valid);
+    ASSERT_TRUE(result.value.has_value());
+    EXPECT_EQ(result.value.value(), FrlgAlternateMaskMode::always);
+}
+
+TEST_F(YamlFileProviderMetatileAttrTest, UseFrlgAlternateMasksBoolTrueMapsToAlways)
+{
+    write_config(R"(
+fieldmap:
+  use_frlg_alternate_masks: true
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.use_frlg_alternate_masks(ConfigScopeType::tileset, "test");
+    ASSERT_EQ(result.state, ValidationState::valid);
+    EXPECT_EQ(result.value.value(), FrlgAlternateMaskMode::always);
+}
+
+TEST_F(YamlFileProviderMetatileAttrTest, UseFrlgAlternateMasksBoolFalseMapsToNever)
+{
+    write_config(R"(
+fieldmap:
+  use_frlg_alternate_masks: false
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.use_frlg_alternate_masks(ConfigScopeType::tileset, "test");
+    ASSERT_EQ(result.state, ValidationState::valid);
+    EXPECT_EQ(result.value.value(), FrlgAlternateMaskMode::never);
+}
+
+TEST_F(YamlFileProviderMetatileAttrTest, UseFrlgAlternateMasksGarbageIsInvalid)
+{
+    write_config(R"(
+fieldmap:
+  use_frlg_alternate_masks: sideways
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.use_frlg_alternate_masks(ConfigScopeType::tileset, "test");
+    EXPECT_EQ(result.state, ValidationState::invalid);
+}
+
+TEST_F(YamlFileProviderMetatileAttrTest, BothNewKeysPassUnknownKeyValidation)
+{
+    write_config(R"(
+fieldmap:
+  write_layer_type_column: true
+  use_frlg_alternate_masks: automatic
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    // preload_and_validate returns true on validation failure (e.g. an unknown key). Both keys are known, so it passes.
+    EXPECT_FALSE(provider.preload_and_validate(ConfigScopeType::tileset, "test"));
 }
 
 } // namespace

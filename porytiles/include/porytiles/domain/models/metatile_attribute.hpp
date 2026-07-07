@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <functional>
 #include <map>
+#include <optional>
 #include <string>
 #include <string_view>
 
@@ -61,6 +62,37 @@ class MetatileAttribute {
     }
 
     /**
+     * @brief Returns the explicit (user-pinned) layer type, if one was set.
+     *
+     * @details
+     * When set, this value pins the layer type against inference: the compile path uses it verbatim instead of the type
+     * it would otherwise infer from the metatile's tiles. It is populated from an explicit layerType cell in the
+     * attributes CSV. Producers of inferred layer types (bin parsers, decompiler, metatileizer) must leave it unset so
+     * downstream code can tell "the user said so" apart from "we guessed".
+     *
+     * @return The pinned layer type, or nullopt when the layer type is inferred.
+     */
+    [[nodiscard]] const std::optional<LayerType> &explicit_layer_type() const
+    {
+        return explicit_layer_type_;
+    }
+
+    /**
+     * @brief Pins the layer type to an explicit value.
+     *
+     * @details
+     * Records the pinned value and also updates the plain layer_type so reads through layer_type() stay coherent for
+     * code that does not consult the explicit flag.
+     *
+     * @param layer_type The user-pinned layer type.
+     */
+    void explicit_layer_type(LayerType layer_type)
+    {
+        explicit_layer_type_ = layer_type;
+        layer_type_ = layer_type;
+    }
+
+    /**
      * @brief Returns the value of a named field, or 0 if the field is absent.
      *
      * @param field_name The field name to look up
@@ -90,6 +122,7 @@ class MetatileAttribute {
 
   private:
     LayerType layer_type_{};
+    std::optional<LayerType> explicit_layer_type_{};
     std::map<std::string, std::uint32_t, std::less<>> fields_{};
 };
 

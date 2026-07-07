@@ -24,6 +24,7 @@
 #include "porytiles/domain/config/tiles_pal_mode.hpp"
 #include "porytiles/domain/packing/models/palette_hint.hpp"
 #include "porytiles/infra/config/config_provider.hpp"
+#include "porytiles/infra/config/frlg_alternate_mask_mode.hpp"
 #include "porytiles/infra/config/valid_yaml_paths.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 #include "porytiles/utilities/text/file_highlight_printer.hpp"
@@ -1412,6 +1413,49 @@ LayerValue<PrimaryPairingMode> parse_primary_pairing_mode(
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<PrimaryPairingMode>::invalid(error, source, details);
+    }
+}
+
+LayerValue<FrlgAlternateMaskMode> parse_frlg_alternate_mask_mode(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<FrlgAlternateMaskMode>::not_provided();
+    }
+
+    const auto mark = node.Mark();
+    const auto source = make_source_string(format, file_path, mark);
+    const auto details = make_source_details(format, file_path, mark);
+
+    // Accept a YAML boolean as an alias: true maps to always, false maps to never. yaml-cpp throws
+    // a YAML::Exception for a non-boolean scalar, in which case we fall back to fuzzy string parsing.
+    try {
+        const auto bool_value = node.as<bool>();
+        return LayerValue<FrlgAlternateMaskMode>::valid(
+            bool_value ? FrlgAlternateMaskMode::always : FrlgAlternateMaskMode::never, key, source, details);
+    }
+    catch (const YAML::Exception &) {
+        // Not a boolean scalar; fall through to string parsing below.
+    }
+
+    try {
+        const auto node_value = node.as<std::string>();
+        const auto mode_opt = frlg_alternate_mask_mode_from_str(node_value);
+
+        if (!mode_opt.has_value()) {
+            const auto error = format->format(
+                "'{}' has invalid value '{}'. Valid values are true, false, automatic, always, or never.",
+                FormatParam{key, Style::bold},
+                FormatParam{node_value, Style::bold});
+            return LayerValue<FrlgAlternateMaskMode>::invalid(error, source, details);
+        }
+
+        return LayerValue<FrlgAlternateMaskMode>::valid(mode_opt.value(), key, source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto error = format->format(
+            "Failed to parse '{}' as FrlgAlternateMaskMode: {}.", FormatParam{key, Style::bold}, e.what());
+        return LayerValue<FrlgAlternateMaskMode>::invalid(error, source, details);
     }
 }
 

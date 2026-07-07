@@ -330,6 +330,20 @@ HeaderDefineProvider::metatile_attr_field_overrides(ConfigScopeType /*type*/, co
 }
 
 LayerValue<bool>
+HeaderDefineProvider::write_layer_type_column(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<bool>::not_provided();
+}
+
+LayerValue<FrlgAlternateMaskMode>
+HeaderDefineProvider::use_frlg_alternate_masks(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<FrlgAlternateMaskMode>::not_provided();
+}
+
+LayerValue<bool>
 HeaderDefineProvider::tileset_animations_wire_anim_code(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {
     // No header_define specified for this config value

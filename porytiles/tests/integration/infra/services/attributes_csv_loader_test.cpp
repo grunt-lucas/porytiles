@@ -9,6 +9,8 @@
 #include "porytiles/domain/services/enum_map_provider.hpp"
 #include "porytiles/infra/services/attributes_csv_loader.hpp"
 #include "porytiles/utilities/text/plain_text_formatter.hpp"
+#include "porytiles/xcut/diagnostics/buffered_user_diagnostics.hpp"
+#include "support/mock_infra_config.hpp"
 
 using namespace porytiles;
 
@@ -61,15 +63,20 @@ class AttributesCsvLoaderTest : public ::testing::Test {
         {{"TILE_TERRAIN_NORMAL", 0}, {"TILE_TERRAIN_GRASS", 1}, {"TILE_TERRAIN_WATER", 2}}, "terrain type"};
     StubEnumMapProvider encounter_map_{
         {{"TILE_ENCOUNTER_NONE", 0}, {"TILE_ENCOUNTER_LAND", 1}, {"TILE_ENCOUNTER_WATER", 2}}, "encounter type"};
+    MockInfraConfig config_{};
+    BufferedUserDiagnostics diag_{};
 };
+
+// The tileset scope passed to load(); MockInfraConfig ignores the scope and returns its member values.
+constexpr auto kTilesetScope = "gTileset_Test";
 
 } // namespace
 
 TEST_F(AttributesCsvLoaderTest, LoadValidCsvReturnsCorrectAttributes)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_};
+    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
 
-    auto result = loader.load(test_resources_dir / "valid.csv");
+    auto result = loader.load(test_resources_dir / "valid.csv", kTilesetScope);
     ASSERT_TRUE(result.has_value()) << "Expected successful load";
 
     const auto &attributes = result.value();
@@ -93,9 +100,10 @@ TEST_F(AttributesCsvLoaderTest, LoadValidCsvReturnsCorrectAttributes)
 
 TEST_F(AttributesCsvLoaderTest, LoadValidFireredCsvReturnsCorrectAttributes)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, BaseGame::pokefirered, &terrain_map_, &encounter_map_};
+    AttributesCsvLoader loader{
+        &formatter_, &behavior_map_, &config_, &diag_, BaseGame::pokefirered, &terrain_map_, &encounter_map_};
 
-    auto result = loader.load(test_resources_dir / "valid_firered.csv");
+    auto result = loader.load(test_resources_dir / "valid_firered.csv", kTilesetScope);
     ASSERT_TRUE(result.has_value()) << "Expected successful load";
 
     const auto &attributes = result.value();
@@ -124,9 +132,10 @@ TEST_F(AttributesCsvLoaderTest, LoadValidFireredCsvReturnsCorrectAttributes)
 TEST_F(AttributesCsvLoaderTest, LoadFireredCsvWithoutBaseGameAutoDetects)
 {
     // No base_game provided, but terrain/encounter providers are available
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, std::nullopt, &terrain_map_, &encounter_map_};
+    AttributesCsvLoader loader{
+        &formatter_, &behavior_map_, &config_, &diag_, std::nullopt, &terrain_map_, &encounter_map_};
 
-    auto result = loader.load(test_resources_dir / "valid_firered.csv");
+    auto result = loader.load(test_resources_dir / "valid_firered.csv", kTilesetScope);
     ASSERT_TRUE(result.has_value()) << "Expected auto-detection to succeed";
 
     const auto &attributes = result.value();
@@ -139,9 +148,9 @@ TEST_F(AttributesCsvLoaderTest, LoadFireredCsvWithoutBaseGameAutoDetects)
 
 TEST_F(AttributesCsvLoaderTest, LoadNonExistentFileReturnsError)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_};
+    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
 
-    auto result = loader.load(test_resources_dir / "does_not_exist.csv");
+    auto result = loader.load(test_resources_dir / "does_not_exist.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -151,9 +160,9 @@ TEST_F(AttributesCsvLoaderTest, LoadNonExistentFileReturnsError)
 
 TEST_F(AttributesCsvLoaderTest, LoadEmptyFileReturnsError)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_};
+    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
 
-    auto result = loader.load(test_resources_dir / "empty.csv");
+    auto result = loader.load(test_resources_dir / "empty.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -163,9 +172,9 @@ TEST_F(AttributesCsvLoaderTest, LoadEmptyFileReturnsError)
 
 TEST_F(AttributesCsvLoaderTest, LoadInvalidHeaderSingleColumnReturnsError)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_};
+    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
 
-    auto result = loader.load(test_resources_dir / "invalid_header_single_column.csv");
+    auto result = loader.load(test_resources_dir / "invalid_header_single_column.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -175,9 +184,9 @@ TEST_F(AttributesCsvLoaderTest, LoadInvalidHeaderSingleColumnReturnsError)
 
 TEST_F(AttributesCsvLoaderTest, LoadInvalidHeaderWrongNamesReturnsError)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_};
+    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
 
-    auto result = loader.load(test_resources_dir / "invalid_header_wrong_names.csv");
+    auto result = loader.load(test_resources_dir / "invalid_header_wrong_names.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -189,9 +198,9 @@ TEST_F(AttributesCsvLoaderTest, LoadInvalidHeaderWrongNamesReturnsError)
 
 TEST_F(AttributesCsvLoaderTest, LoadInvalidIdNotIntegerReturnsErrorWithContext)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_};
+    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
 
-    auto result = loader.load(test_resources_dir / "invalid_id_not_integer.csv");
+    auto result = loader.load(test_resources_dir / "invalid_id_not_integer.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -203,9 +212,9 @@ TEST_F(AttributesCsvLoaderTest, LoadInvalidIdNotIntegerReturnsErrorWithContext)
 
 TEST_F(AttributesCsvLoaderTest, LoadNegativeIdReturnsErrorWithContext)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_};
+    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
 
-    auto result = loader.load(test_resources_dir / "negative_id.csv");
+    auto result = loader.load(test_resources_dir / "negative_id.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -215,9 +224,9 @@ TEST_F(AttributesCsvLoaderTest, LoadNegativeIdReturnsErrorWithContext)
 
 TEST_F(AttributesCsvLoaderTest, LoadMissingColumnsReturnsErrorWithContext)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_};
+    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
 
-    auto result = loader.load(test_resources_dir / "missing_columns.csv");
+    auto result = loader.load(test_resources_dir / "missing_columns.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -227,9 +236,9 @@ TEST_F(AttributesCsvLoaderTest, LoadMissingColumnsReturnsErrorWithContext)
 
 TEST_F(AttributesCsvLoaderTest, LoadDuplicateIdReturnsErrorWithBothLocations)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_};
+    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
 
-    auto result = loader.load(test_resources_dir / "duplicate_id.csv");
+    auto result = loader.load(test_resources_dir / "duplicate_id.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -249,9 +258,9 @@ TEST_F(AttributesCsvLoaderTest, LoadDuplicateIdReturnsErrorWithBothLocations)
 
 TEST_F(AttributesCsvLoaderTest, LoadUnknownBehaviorReturnsErrorWithContext)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_};
+    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
 
-    auto result = loader.load(test_resources_dir / "unknown_behavior.csv");
+    auto result = loader.load(test_resources_dir / "unknown_behavior.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
 
     // The error chain contains multiple errors - join all of them for the full message
@@ -269,9 +278,10 @@ TEST_F(AttributesCsvLoaderTest, LoadUnknownBehaviorReturnsErrorWithContext)
 
 TEST_F(AttributesCsvLoaderTest, LoadFireredCsvWithEmeraldBaseGameReturnsError)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, BaseGame::pokeemerald, &terrain_map_, &encounter_map_};
+    AttributesCsvLoader loader{
+        &formatter_, &behavior_map_, &config_, &diag_, BaseGame::pokeemerald, &terrain_map_, &encounter_map_};
 
-    auto result = loader.load(test_resources_dir / "valid_firered.csv");
+    auto result = loader.load(test_resources_dir / "valid_firered.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -283,9 +293,10 @@ TEST_F(AttributesCsvLoaderTest, LoadFireredCsvWithEmeraldBaseGameReturnsError)
 
 TEST_F(AttributesCsvLoaderTest, LoadEmeraldCsvWithFireredBaseGameReturnsError)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, BaseGame::pokefirered, &terrain_map_, &encounter_map_};
+    AttributesCsvLoader loader{
+        &formatter_, &behavior_map_, &config_, &diag_, BaseGame::pokefirered, &terrain_map_, &encounter_map_};
 
-    auto result = loader.load(test_resources_dir / "valid.csv");
+    auto result = loader.load(test_resources_dir / "valid.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -298,24 +309,27 @@ TEST_F(AttributesCsvLoaderTest, LoadEmeraldCsvWithFireredBaseGameReturnsError)
 TEST_F(AttributesCsvLoaderTest, LoadFireredCsvWithoutTerrainProviderPanics)
 {
     // FireRed CSV but no terrain provider -- should panic
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, std::nullopt, nullptr, &encounter_map_};
+    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_, std::nullopt, nullptr, &encounter_map_};
 
-    EXPECT_DEATH(std::ignore = loader.load(test_resources_dir / "valid_firered.csv"), "terrain type provider");
+    EXPECT_DEATH(
+        std::ignore = loader.load(test_resources_dir / "valid_firered.csv", kTilesetScope), "terrain type provider");
 }
 
 TEST_F(AttributesCsvLoaderTest, LoadFireredCsvWithoutEncounterProviderPanics)
 {
     // FireRed CSV but no encounter provider -- should panic
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, std::nullopt, &terrain_map_, nullptr};
+    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_, std::nullopt, &terrain_map_, nullptr};
 
-    EXPECT_DEATH(std::ignore = loader.load(test_resources_dir / "valid_firered.csv"), "encounter type provider");
+    EXPECT_DEATH(
+        std::ignore = loader.load(test_resources_dir / "valid_firered.csv", kTilesetScope), "encounter type provider");
 }
 
 TEST_F(AttributesCsvLoaderTest, LoadFireredCsvUnknownTerrainTypeReturnsError)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, BaseGame::pokefirered, &terrain_map_, &encounter_map_};
+    AttributesCsvLoader loader{
+        &formatter_, &behavior_map_, &config_, &diag_, BaseGame::pokefirered, &terrain_map_, &encounter_map_};
 
-    auto result = loader.load(test_resources_dir / "firered_unknown_terrain.csv");
+    auto result = loader.load(test_resources_dir / "firered_unknown_terrain.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
 
     std::string full_error_text{};
@@ -332,9 +346,10 @@ TEST_F(AttributesCsvLoaderTest, LoadFireredCsvUnknownTerrainTypeReturnsError)
 
 TEST_F(AttributesCsvLoaderTest, LoadFireredCsvUnknownEncounterTypeReturnsError)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, BaseGame::pokefirered, &terrain_map_, &encounter_map_};
+    AttributesCsvLoader loader{
+        &formatter_, &behavior_map_, &config_, &diag_, BaseGame::pokefirered, &terrain_map_, &encounter_map_};
 
-    auto result = loader.load(test_resources_dir / "firered_unknown_encounter.csv");
+    auto result = loader.load(test_resources_dir / "firered_unknown_encounter.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
 
     std::string full_error_text{};
@@ -351,9 +366,10 @@ TEST_F(AttributesCsvLoaderTest, LoadFireredCsvUnknownEncounterTypeReturnsError)
 
 TEST_F(AttributesCsvLoaderTest, LoadFireredCsvRowTooFewColumnsReturnsError)
 {
-    AttributesCsvLoader loader{&formatter_, &behavior_map_, BaseGame::pokefirered, &terrain_map_, &encounter_map_};
+    AttributesCsvLoader loader{
+        &formatter_, &behavior_map_, &config_, &diag_, BaseGame::pokefirered, &terrain_map_, &encounter_map_};
 
-    auto result = loader.load(test_resources_dir / "firered_row_too_few_columns.csv");
+    auto result = loader.load(test_resources_dir / "firered_row_too_few_columns.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
 
     std::string full_error_text{};
@@ -364,4 +380,122 @@ TEST_F(AttributesCsvLoaderTest, LoadFireredCsvRowTooFewColumnsReturnsError)
 
     EXPECT_TRUE(full_error_text.find("expected 4 columns") != std::string::npos)
         << "Error should mention expected 4 columns. Got: " << full_error_text;
+}
+
+TEST_F(AttributesCsvLoaderTest, LayerTypeColumnKnobOnAppliesFilledCellsAndLeavesBlankInferred)
+{
+    config_.write_layer_type_column = true;
+    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
+
+    auto result = loader.load(test_resources_dir / "valid_layer_type.csv", kTilesetScope);
+    ASSERT_TRUE(result.has_value());
+    const auto &attributes = result.value();
+
+    // Row 0: filled "covered" pins the layer type.
+    ASSERT_TRUE(attributes.at(0).explicit_layer_type().has_value());
+    EXPECT_EQ(attributes.at(0).explicit_layer_type().value(), LayerType::covered);
+    EXPECT_EQ(attributes.at(0).layer_type(), LayerType::covered);
+
+    // Row 1: blank cell leaves the layer type inferred (unset explicit, default normal).
+    EXPECT_FALSE(attributes.at(1).explicit_layer_type().has_value());
+    EXPECT_EQ(attributes.at(1).layer_type(), LayerType::normal);
+
+    // Row 2: filled "split".
+    ASSERT_TRUE(attributes.at(2).explicit_layer_type().has_value());
+    EXPECT_EQ(attributes.at(2).explicit_layer_type().value(), LayerType::split);
+
+    EXPECT_FALSE(diag_.warning_tag_counts().contains("layer-type-column"));
+}
+
+TEST_F(AttributesCsvLoaderTest, LayerTypeColumnKnobOnAppliesForFireredFormat)
+{
+    config_.write_layer_type_column = true;
+    AttributesCsvLoader loader{
+        &formatter_, &behavior_map_, &config_, &diag_, BaseGame::pokefirered, &terrain_map_, &encounter_map_};
+
+    auto result = loader.load(test_resources_dir / "valid_firered_layer_type.csv", kTilesetScope);
+    ASSERT_TRUE(result.has_value());
+    const auto &attributes = result.value();
+
+    ASSERT_TRUE(attributes.at(0).explicit_layer_type().has_value());
+    EXPECT_EQ(attributes.at(0).explicit_layer_type().value(), LayerType::covered);
+    EXPECT_FALSE(attributes.at(1).explicit_layer_type().has_value());
+    EXPECT_EQ(attributes.at(2).explicit_layer_type().value(), LayerType::split);
+}
+
+TEST_F(AttributesCsvLoaderTest, LayerTypeColumnKnobOffWarnsOnceAndIgnoresValues)
+{
+    // Default MockInfraConfig has write_layer_type_column = false.
+    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
+
+    auto result = loader.load(test_resources_dir / "valid_layer_type.csv", kTilesetScope);
+    ASSERT_TRUE(result.has_value());
+    const auto &attributes = result.value();
+
+    // Values are ignored: nothing is pinned.
+    EXPECT_FALSE(attributes.at(0).explicit_layer_type().has_value());
+    EXPECT_EQ(attributes.at(0).layer_type(), LayerType::normal);
+
+    // Exactly one warning for the whole file.
+    ASSERT_TRUE(diag_.warning_tag_counts().contains("layer-type-column"));
+    EXPECT_EQ(diag_.warning_tag_counts().at("layer-type-column"), 1u);
+}
+
+TEST_F(AttributesCsvLoaderTest, LayerTypeColumnKnobOnWithNoColumnNoWarning)
+{
+    config_.write_layer_type_column = true;
+    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
+
+    auto result = loader.load(test_resources_dir / "valid.csv", kTilesetScope);
+    ASSERT_TRUE(result.has_value());
+    EXPECT_FALSE(result.value().at(0).explicit_layer_type().has_value());
+    EXPECT_FALSE(diag_.warning_tag_counts().contains("layer-type-column"));
+}
+
+TEST_F(AttributesCsvLoaderTest, LayerTypeColumnKnobOnBadTokenErrorsWithFileContext)
+{
+    config_.write_layer_type_column = true;
+    AttributesCsvLoader loader{&formatter_, &behavior_map_, &config_, &diag_};
+
+    auto result = loader.load(test_resources_dir / "invalid_layer_type_token.csv", kTilesetScope);
+    ASSERT_FALSE(result.has_value());
+
+    std::string full_error_text{};
+    for (const auto &err : result.chain()) {
+        full_error_text += err->join(formatter_);
+        full_error_text += "\n";
+    }
+    EXPECT_NE(full_error_text.find("invalid layerType"), std::string::npos) << full_error_text;
+    EXPECT_NE(full_error_text.find("sideways"), std::string::npos) << full_error_text;
+}
+
+// The knob resolves under the scope passed to load(), which is how a paired primary's CSV (loaded during a secondary
+// compile) resolves under the primary's name rather than the secondary's.
+TEST_F(AttributesCsvLoaderTest, KnobResolvesUnderTheScopePassedToLoad)
+{
+    // A scope-sensitive config: the column is only enabled for "gTileset_Primary".
+    class ScopedConfig final : public MockInfraConfig {
+      protected:
+        [[nodiscard]] ChainableResult<ConfigValue<bool>>
+        write_layer_type_column_raw(ConfigScopeType, const std::string &scope) const override
+        {
+            return ConfigValue{
+                scope == "gTileset_Primary", "Write Layer Type Column", "write_layer_type_column", "mock", {}};
+        }
+    };
+
+    ScopedConfig scoped_config{};
+    BufferedUserDiagnostics scoped_diag{};
+    AttributesCsvLoader loader{&formatter_, &behavior_map_, &scoped_config, &scoped_diag};
+
+    // Loading under the primary's scope applies the column.
+    auto applied = loader.load(test_resources_dir / "valid_layer_type.csv", "gTileset_Primary");
+    ASSERT_TRUE(applied.has_value());
+    EXPECT_EQ(applied.value().at(0).explicit_layer_type().value(), LayerType::covered);
+
+    // Loading the same file under a different scope ignores the column (and warns).
+    auto ignored = loader.load(test_resources_dir / "valid_layer_type.csv", "gTileset_Other");
+    ASSERT_TRUE(ignored.has_value());
+    EXPECT_FALSE(ignored.value().at(0).explicit_layer_type().has_value());
+    EXPECT_TRUE(scoped_diag.warning_tag_counts().contains("layer-type-column"));
 }

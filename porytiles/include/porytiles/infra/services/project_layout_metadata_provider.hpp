@@ -19,6 +19,36 @@
 namespace porytiles {
 
 /**
+ * @brief How the layouts that reference a given tileset classify under their layout_version fields.
+ *
+ * @details
+ * Computed by ProjectLayoutMetadataProvider::layout_version_usage. Drives FRLG alternate mask selection in automatic
+ * mode: frlg_only picks the alternate masks, emerald_only and unreferenced pick the primary masks, and mixed is a hard
+ * error because a single tileset cannot carry two different binary schemas.
+ */
+enum class TilesetLayoutVersionUsage {
+    unreferenced, ///< No layout references the tileset (or layouts.json is absent).
+    emerald_only, ///< Every referencing layout is emerald (or omits layout_version).
+    frlg_only,    ///< Every referencing layout is frlg.
+    mixed,        ///< Referencing layouts disagree: some emerald, some frlg.
+};
+
+[[nodiscard]] inline std::string to_string(TilesetLayoutVersionUsage usage)
+{
+    switch (usage) {
+    case TilesetLayoutVersionUsage::unreferenced:
+        return "unreferenced";
+    case TilesetLayoutVersionUsage::emerald_only:
+        return "emerald_only";
+    case TilesetLayoutVersionUsage::frlg_only:
+        return "frlg_only";
+    case TilesetLayoutVersionUsage::mixed:
+        return "mixed";
+    }
+    return "unreferenced";
+}
+
+/**
  * @brief Provides a pokeemerald project filesystem-based implementation for LayoutMetadataProvider.
  *
  * @details
@@ -52,6 +82,25 @@ class ProjectLayoutMetadataProvider : public LayoutMetadataProvider {
     [[nodiscard]] ChainableResult<std::set<std::string>> layout_ids() const override;
 
     [[nodiscard]] ChainableResult<std::string> layouts_table_label() const;
+
+    /**
+     * @brief Classifies how the layouts referencing a tileset set their layout_version.
+     *
+     * @details
+     * Scans every layout whose primary_tileset or secondary_tileset equals @p tileset_label and buckets by
+     * layout_version: absent or exactly "emerald" counts as emerald, exactly "frlg" counts as frlg. A missing
+     * layouts.json yields @c unreferenced (checked before parsing). A malformed layouts.json propagates the existing
+     * parse error. Any layout_version value other than exactly "emerald" or "frlg" on a referencing layout is a hard
+     * error, because this string controls the binary attribute schema width and a typo like "firered" must not silently
+     * mean emerald. Comparison is exact and case-sensitive, matching mapjson.
+     *
+     * @param tileset_label The tileset label as referenced in layouts.json (e.g., "gTileset_General"). Commands pass
+     * the gTileset_* label as both the tileset name and config scope, which is exactly what layouts.json references, so
+     * no name mapping is needed.
+     * @return The usage classification, or an error for malformed JSON / an invalid layout_version value.
+     */
+    [[nodiscard]] ChainableResult<TilesetLayoutVersionUsage>
+    layout_version_usage(const std::string &tileset_label) const;
 
     /**
      * @brief Resolves border file path for a layout by parsing layouts.json.

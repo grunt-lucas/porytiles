@@ -1,7 +1,7 @@
 #pragma once
 
 #include <filesystem>
-#include <optional>
+#include <map>
 #include <string>
 
 #include "gsl/pointers"
@@ -25,8 +25,9 @@ namespace porytiles {
  * hand-written schema always wins.
  *
  * The provider performs the file I/O and hands the gathered facts to the pure inference in metatile_attr_inference.hpp.
- * Inference warnings and conflicts are routed to the user diagnostics. The result is computed once and cached; the
- * warnings are therefore emitted a single time.
+ * Inference warnings and conflicts are routed to the user diagnostics. The result is computed once per config scope and
+ * cached under a @c type:scope key (mirroring LazyLayeredConfig), so inference warnings are emitted a single time per
+ * scope. Every command uses a single scope per run, so there is no visible duplication in practice.
  *
  * Outcomes mirror the inference outcomes:
  * - valid: an inferred field set is returned.
@@ -59,7 +60,7 @@ class MetatileAttributeConfigProvider final : public ConfigProvider {
     const TextFormatter *format_;
     const UserDiagnostics *diagnostics_;
     MetatilesHeaderProvider metatiles_provider_;
-    mutable std::optional<LayerValue<MetatileAttrFieldSpecs>> cached_result_;
+    mutable std::map<std::string, LayerValue<MetatileAttrFieldSpecs>> cached_results_;
 };
 
 } // namespace porytiles

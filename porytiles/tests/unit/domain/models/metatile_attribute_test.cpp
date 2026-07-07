@@ -47,6 +47,44 @@ TEST(MetatileAttributeTest, LayerTypeRoundTrips)
     EXPECT_EQ(attribute.layer_type(), LayerType::split);
 }
 
+TEST(MetatileAttributeTest, ExplicitLayerTypeUnsetByDefault)
+{
+    MetatileAttribute attribute{};
+    EXPECT_FALSE(attribute.explicit_layer_type().has_value());
+}
+
+TEST(MetatileAttributeTest, ExplicitLayerTypeSetterAlsoUpdatesLayerType)
+{
+    MetatileAttribute attribute{};
+
+    attribute.explicit_layer_type(LayerType::split);
+    ASSERT_TRUE(attribute.explicit_layer_type().has_value());
+    EXPECT_EQ(attribute.explicit_layer_type().value(), LayerType::split);
+    // The plain layer_type stays coherent for code that does not consult the explicit flag.
+    EXPECT_EQ(attribute.layer_type(), LayerType::split);
+}
+
+TEST(MetatileAttributeTest, PlainLayerTypeSetterLeavesExplicitUnset)
+{
+    MetatileAttribute attribute{};
+
+    attribute.layer_type(LayerType::covered);
+    EXPECT_EQ(attribute.layer_type(), LayerType::covered);
+    // A producer of an inferred value must not accidentally pin the layer type.
+    EXPECT_FALSE(attribute.explicit_layer_type().has_value());
+}
+
+TEST(MetatileAttributeTest, ExplicitLayerTypeSurvivesCopy)
+{
+    MetatileAttribute attribute{};
+    attribute.explicit_layer_type(LayerType::covered);
+
+    MetatileAttribute copy = attribute;
+    ASSERT_TRUE(copy.explicit_layer_type().has_value());
+    EXPECT_EQ(copy.explicit_layer_type().value(), LayerType::covered);
+    EXPECT_EQ(copy.layer_type(), LayerType::covered);
+}
+
 TEST(MetatileAttributeTest, FieldsIterateInDeterministicOrder)
 {
     MetatileAttribute attribute{};

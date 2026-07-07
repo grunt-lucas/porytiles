@@ -1,5 +1,7 @@
 #include "porytiles/domain/services/metatile_attr_schema_loader.hpp"
 
+#include <algorithm>
+#include <cstdint>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -24,12 +26,18 @@ namespace {
     return joined;
 }
 
-} // namespace
-
-ChainableResult<LoadedAttrSchema> load_metatile_attr_schema(
+/**
+ * @brief Merges field overrides into a baseline field list and validates the merged specs.
+ *
+ * @details
+ * Shared front half of load_metatile_attr_schema and resolve_tileset_attr_schema: applies the empty-list, unique-name,
+ * unknown-override, provider-override, and neither-mask-nor-frlg_mask checks, and returns the fully merged specs. It
+ * does not build a Schema, because which mask each spec contributes depends on the target layout, which is the caller's
+ * concern.
+ */
+[[nodiscard]] ChainableResult<MetatileAttrFieldSpecs> merge_field_overrides(
     const MetatileAttrFieldSpecs &fields,
     const MetatileAttrFieldOverrides &overrides,
-    std::size_t attr_bytes,
     gsl::not_null<const TextFormatter *> format)
 {
     if (fields.empty()) {
@@ -60,7 +68,6 @@ ChainableResult<LoadedAttrSchema> load_metatile_attr_schema(
 
     MetatileAttrFieldSpecs resolved;
     resolved.reserve(fields.size());
-    std::vector<Field> schema_fields;
 
     for (const auto &baseline : fields) {
         MetatileAttrFieldSpec merged = baseline;
@@ -111,11 +118,28 @@ ChainableResult<LoadedAttrSchema> load_metatile_attr_schema(
                 FormatParam{merged.name, Style::bold})};
         }
 
+        resolved.push_back(std::move(merged));
+    }
+
+    return resolved;
+}
+
+} // namespace
+
+ChainableResult<LoadedAttrSchema> load_metatile_attr_schema(
+    const MetatileAttrFieldSpecs &fields,
+    const MetatileAttrFieldOverrides &overrides,
+    std::size_t attr_bytes,
+    gsl::not_null<const TextFormatter *> format)
+{
+    PT_TRY_ASSIGN_PASS_ERR(resolved, merge_field_overrides(fields, overrides, format), LoadedAttrSchema);
+
+    std::vector<Field> schema_fields;
+    for (const auto &merged : resolved) {
         if (merged.mask.has_value()) {
             schema_fields.push_back(
                 Field{merged.name, merged.mask.value(), merged.default_value.value_or(0), merged.provider});
         }
-        resolved.push_back(std::move(merged));
     }
 
     auto schema_result = Schema::create(std::move(schema_fields), attr_bytes);
@@ -125,6 +149,59 @@ ChainableResult<LoadedAttrSchema> load_metatile_attr_schema(
     }
 
     return LoadedAttrSchema{std::move(schema_result).value(), std::move(resolved)};
+}
+
+ChainableResult<ResolvedTilesetAttrSchema> resolve_tileset_attr_schema(
+    const MetatileAttrFieldSpecs &fields,
+    const MetatileAttrFieldOverrides &overrides,
+    AttrSchemaLayout layout,
+    std::size_t configured_attr_bytes,
+    bool attr_bytes_explicit,
+    gsl::not_null<const TextFormatter *> format)
+{
+    PT_TRY_ASSIGN_PASS_ERR(resolved, merge_field_overrides(fields, overrides, format), ResolvedTilesetAttrSchema);
+
+    const bool frlg = layout == AttrSchemaLayout::frlg;
+
+    std::vector<Field> schema_fields;
+    bool needs_wide = false;
+    for (const auto &merged : resolved) {
+        const std::optional<std::uint32_t> selected = frlg ? merged.frlg_mask : merged.mask;
+        if (!selected.has_value()) {
+            continue; // symmetric exclusion: a spec with no mask for the selected layout is dropped
+        }
+        // A mask that sets any bit at or above bit 16 cannot fit in a two-byte attribute word.
+        if (selected.value() > 0xFFFFU) {
+            needs_wide = true;
+        }
+        schema_fields.push_back(
+            Field{merged.name, selected.value(), merged.default_value.value_or(0), merged.provider});
+    }
+
+    if (schema_fields.empty()) {
+        if (frlg) {
+            return FormattableError{
+                "the FRLG attribute layout has no fields: none of the configured fields define a frlg_mask. Add a "
+                "frlg_mask to at least one field, or set use_frlg_alternate_masks: never to use the primary masks."};
+        }
+        return FormattableError{
+            "the primary attribute layout has no fields: none of the configured fields define a mask. Add a mask to at "
+            "least one field."};
+    }
+
+    // Explicit user config wins even when too small (Schema::create surfaces the error). Otherwise widen silently to
+    // the smallest of 2 or 4 bytes that covers the selected masks, but never below the configured size.
+    const std::size_t detected_bytes = needs_wide ? 4U : 2U;
+    const std::size_t attr_bytes =
+        attr_bytes_explicit ? configured_attr_bytes : std::max(configured_attr_bytes, detected_bytes);
+
+    auto schema_result = Schema::create(std::move(schema_fields), attr_bytes);
+    if (!schema_result.has_value()) {
+        return ChainableResult<ResolvedTilesetAttrSchema>{
+            FormattableError{"the configured metatile attribute fields do not form a valid layout."}, schema_result};
+    }
+
+    return ResolvedTilesetAttrSchema{std::move(schema_result).value(), std::move(resolved), layout, attr_bytes};
 }
 
 } // namespace porytiles

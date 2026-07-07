@@ -287,6 +287,20 @@ LayerValue<MetatileAttrFieldOverrides> CliOptionProvider::metatile_attr_field_ov
     return LayerValue<MetatileAttrFieldOverrides>::not_provided();
 }
 
+LayerValue<bool> CliOptionProvider::write_layer_type_column(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_bool(storage_.write_layer_type_column, "--write-layer-type-column");
+}
+
+LayerValue<FrlgAlternateMaskMode> CliOptionProvider::use_frlg_alternate_masks(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_frlg_alternate_mask_mode(storage_.use_frlg_alternate_masks, "--use-frlg-alternate-masks");
+}
+
 LayerValue<bool> CliOptionProvider::tileset_animations_wire_anim_code(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

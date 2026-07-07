@@ -1,6 +1,7 @@
 #pragma once
 
 #include <cstddef>
+#include <string>
 
 #include "gsl/pointers"
 
@@ -49,6 +50,67 @@ struct LoadedAttrSchema {
     const MetatileAttrFieldSpecs &fields,
     const MetatileAttrFieldOverrides &overrides,
     std::size_t attr_bytes,
+    gsl::not_null<const TextFormatter *> format);
+
+/**
+ * @brief Which per-tileset attribute layout to resolve: the primary (Ruby/Sapphire/Emerald) or FRLG alternate.
+ */
+enum class AttrSchemaLayout { primary, frlg };
+
+[[nodiscard]] inline std::string to_string(AttrSchemaLayout layout)
+{
+    switch (layout) {
+    case AttrSchemaLayout::primary:
+        return "primary";
+    case AttrSchemaLayout::frlg:
+        return "frlg";
+    }
+    return "primary";
+}
+
+/**
+ * @brief The product of resolving a per-tileset attribute schema for a chosen layout.
+ *
+ * @details
+ * @c schema holds the fields selected for @c layout (the primary mask for @c primary, the frlg_mask for @c frlg),
+ * validated against @c attr_bytes. @c resolved_specs is the full post-merge spec list (both layouts' masks), useful for
+ * diagnostics and for reporting which fields were excluded for the chosen layout. @c attr_bytes is the byte width the
+ * schema was validated against, which may have been widened past the configured size to cover the selected masks.
+ */
+struct ResolvedTilesetAttrSchema {
+    Schema schema;
+    MetatileAttrFieldSpecs resolved_specs;
+    AttrSchemaLayout layout;
+    std::size_t attr_bytes;
+};
+
+/**
+ * @brief Resolves the attribute schema for one tileset under a chosen layout, widening the attr size as needed.
+ *
+ * @details
+ * Merges @p overrides into @p fields (same rules as load_metatile_attr_schema), then selects, per spec, the primary
+ * @c mask when @p layout is @c primary or the @c frlg_mask when @p layout is @c frlg. Specs lacking the selected mask
+ * are excluded symmetrically. If no field survives selection, a semantic error is returned naming the fix (add a mask
+ * for the layout, or switch use_frlg_alternate_masks).
+ *
+ * The attribute byte width is @p configured_attr_bytes when @p attr_bytes_explicit is true (the user's explicit choice
+ * wins, and a too-small choice surfaces the existing Schema::create error). Otherwise it is widened silently to the
+ * smallest of 2 or 4 bytes that covers the selected masks, but never below @p configured_attr_bytes.
+ *
+ * @param fields The baseline field specs, in display order
+ * @param overrides The per-field overrides to merge in
+ * @param layout The layout to resolve (primary or frlg)
+ * @param configured_attr_bytes The attribute byte size from config (2 or 4)
+ * @param attr_bytes_explicit Whether the caller set @p configured_attr_bytes explicitly (vs. a default/detected value)
+ * @param format The formatter used for diagnostic text
+ * @return The resolved schema, specs, layout, and final byte width, or the first hard error encountered
+ */
+[[nodiscard]] ChainableResult<ResolvedTilesetAttrSchema> resolve_tileset_attr_schema(
+    const MetatileAttrFieldSpecs &fields,
+    const MetatileAttrFieldOverrides &overrides,
+    AttrSchemaLayout layout,
+    std::size_t configured_attr_bytes,
+    bool attr_bytes_explicit,
     gsl::not_null<const TextFormatter *> format);
 
 } // namespace porytiles

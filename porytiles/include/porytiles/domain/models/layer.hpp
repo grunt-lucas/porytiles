@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cctype>
 #include <cstdint>
 #include <format>
 #include <optional>
@@ -129,6 +130,62 @@ enum class LayerType : unsigned int { normal = 0, covered = 1, split = 2 };
             "invalid layer type integer value '{}': must be 0, 1, or 2", FormatParam{i, Style::bold}};
     }
     return static_cast<LayerType>(i);
+}
+
+/**
+ * @brief Converts a LayerType to its lowercase CSV token.
+ *
+ * @details
+ * These tokens ("normal", "covered", "split") are the stable, machine-readable form used in the attributes CSV
+ * layerType column. They are distinct from to_string(LayerType), which returns a human-readable display string
+ * ("Normal - Middle/Top") unsuitable as a round-trippable token.
+ *
+ * @param layer_type The LayerType to convert
+ * @return The CSV token: "normal", "covered", or "split"
+ */
+[[nodiscard]] inline std::string layer_type_csv_token(LayerType layer_type)
+{
+    switch (layer_type) {
+    case LayerType::normal:
+        return "normal";
+    case LayerType::covered:
+        return "covered";
+    case LayerType::split:
+        return "split";
+    default:
+        panic("layer_type_csv_token unknown LayerType");
+    }
+}
+
+/**
+ * @brief Parses a CSV layerType token into a LayerType.
+ *
+ * @details
+ * Matching is case-insensitive, so "Normal", "NORMAL", and "normal" all parse. An unrecognized token is a hard error
+ * listing the valid tokens.
+ *
+ * @param token The token to parse
+ * @return The parsed LayerType, or an error naming the valid tokens
+ */
+[[nodiscard]] inline ChainableResult<LayerType> layer_type_from_csv_token(const std::string &token)
+{
+    std::string lower;
+    lower.reserve(token.size());
+    for (const unsigned char c : token) {
+        lower.push_back(static_cast<char>(std::tolower(c)));
+    }
+
+    if (lower == "normal") {
+        return LayerType::normal;
+    }
+    if (lower == "covered") {
+        return LayerType::covered;
+    }
+    if (lower == "split") {
+        return LayerType::split;
+    }
+    return FormattableError{
+        "invalid layerType token '{}': must be 'normal', 'covered', or 'split'", FormatParam{token, Style::bold}};
 }
 
 } // namespace porytiles

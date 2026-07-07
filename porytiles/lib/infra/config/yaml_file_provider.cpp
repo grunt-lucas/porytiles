@@ -708,6 +708,40 @@ YamlFileProvider::metatile_attr_field_overrides(ConfigScopeType type, const std:
         "fieldmap.metatile_attr_field_overrides");
 }
 
+LayerValue<bool> YamlFileProvider::write_layer_type_column(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<bool>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<bool>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["fieldmap"]["write_layer_type_column"]; },
+        parse_bool,
+        "fieldmap.write_layer_type_column",
+        "fieldmap.write_layer_type_column");
+}
+
+LayerValue<FrlgAlternateMaskMode>
+YamlFileProvider::use_frlg_alternate_masks(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<FrlgAlternateMaskMode>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<FrlgAlternateMaskMode>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["fieldmap"]["use_frlg_alternate_masks"]; },
+        parse_frlg_alternate_mask_mode,
+        "fieldmap.use_frlg_alternate_masks",
+        "fieldmap.use_frlg_alternate_masks");
+}
+
 LayerValue<bool>
 YamlFileProvider::tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const
 {

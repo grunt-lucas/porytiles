@@ -20,6 +20,7 @@
 #include "porytiles/domain/config/tile_sharing_packing.hpp"
 #include "porytiles/domain/config/tiles_pal_mode.hpp"
 #include "porytiles/domain/models/rgba32.hpp"
+#include "porytiles/infra/config/frlg_alternate_mask_mode.hpp"
 #include "porytiles/infra/config/layer_value.hpp"
 
 // The anonymous namespace ensures internal linkage per translation unit
@@ -476,6 +477,24 @@ parse_primary_pairing_mode(const std::optional<std::string> &raw_value, const st
 
     const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
     return LayerValue<PrimaryPairingMode>::invalid(error, option_name);
+}
+
+LayerValue<FrlgAlternateMaskMode>
+parse_frlg_alternate_mask_mode(const std::optional<std::string> &raw_value, const std::string &option_name)
+{
+    if (!raw_value.has_value()) {
+        return LayerValue<FrlgAlternateMaskMode>::not_provided();
+    }
+
+    const auto &str = raw_value.value();
+    const auto result = frlg_alternate_mask_mode_from_str(str);
+
+    if (result.has_value()) {
+        return LayerValue<FrlgAlternateMaskMode>::valid(result.value(), option_name, "CLI");
+    }
+
+    const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
+    return LayerValue<FrlgAlternateMaskMode>::invalid(error, option_name);
 }
 
 } // namespace

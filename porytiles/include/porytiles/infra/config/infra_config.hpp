@@ -4,6 +4,7 @@
 #include <string>
 
 #include "porytiles/domain/config/metatile_attr_field_spec.hpp"
+#include "porytiles/infra/config/frlg_alternate_mask_mode.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
 #include "porytiles/xcut/config/config_value.hpp"
@@ -92,6 +93,22 @@ class InfraConfig {
     metatile_attr_field_overrides(ConfigScopeType type, const std::string &scope) const
     {
         auto validated_val = metatile_attr_field_overrides_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    write_layer_type_column(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = write_layer_type_column_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<FrlgAlternateMaskMode>>
+    use_frlg_alternate_masks(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = use_frlg_alternate_masks_validated(type, scope);
         return validated_val;
     }
 
@@ -191,6 +208,30 @@ class InfraConfig {
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<MetatileAttrFieldOverrides>>
     metatile_attr_field_overrides_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
+    write_layer_type_column_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = write_layer_type_column_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
+    write_layer_type_column_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<FrlgAlternateMaskMode>>
+    use_frlg_alternate_masks_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = use_frlg_alternate_masks_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<FrlgAlternateMaskMode>>
+    use_frlg_alternate_masks_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>

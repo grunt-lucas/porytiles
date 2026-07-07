@@ -190,7 +190,13 @@ class CreateTilesetCommand final : public Command {
 
         // Setup attributes CSV loader (after base game detection for format validation)
         AttributesCsvLoader attributes_csv_loader{
-            text_formatter, &behavior_map_provider, base_game, terrain_provider.get(), encounter_provider.get()};
+            text_formatter,
+            &behavior_map_provider,
+            &config,
+            diag.get(),
+            base_game,
+            terrain_provider.get(),
+            encounter_provider.get()};
 
         // Setup the tileset repository
         ProjectTilesetArtifactKeyProvider key_provider{

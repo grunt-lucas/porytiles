@@ -250,6 +250,20 @@ struct CliOptionMeta {
             {},
             false},
         CliOptionMeta{
+            "write-layer-type-column",
+            "Write Layer Type Column - Emit and honor a layerType column in the metatile attributes CSV.",
+            "bool",
+            {},
+            true},
+        CliOptionMeta{
+            "use-frlg-alternate-masks",
+            "Use FRLG Alternate Masks - Whether to select the FireRed/LeafGreen alternate metatile attribute masks for "
+            "a tileset: automatic (cross-reference layouts.json), always, or never. true/false are accepted as aliases "
+            "for always/never. Intended to be set at tileset scope in porytiles/tilesets/<name>/config.yaml.",
+            "enum",
+            {"automatic", "always", "never"},
+            false},
+        CliOptionMeta{
             "tileset-animations-wire-anim-code",
             "Tileset Animations Wire Anim Code - Enable or disable automatic animation code wiring.",
             "bool",

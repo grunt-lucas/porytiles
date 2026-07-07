@@ -15,6 +15,7 @@
 #include "porytiles/domain/config/tiles_pal_mode.hpp"
 #include "porytiles/domain/models/rgba32.hpp"
 #include "porytiles/domain/packing/models/palette_hint.hpp"
+#include "porytiles/infra/config/frlg_alternate_mask_mode.hpp"
 #include "porytiles/infra/config/layer_value.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
 
@@ -160,6 +161,10 @@ class ConfigProvider {
     metatile_attr_fields(ConfigScopeType type, const std::string &scope) const;
     [[nodiscard]] virtual LayerValue<MetatileAttrFieldOverrides>
     metatile_attr_field_overrides(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<bool>
+    write_layer_type_column(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<FrlgAlternateMaskMode>
+    use_frlg_alternate_masks(ConfigScopeType type, const std::string &scope) const;
     [[nodiscard]] virtual LayerValue<bool>
     tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const;
 };

@@ -2,11 +2,14 @@
 
 #include <filesystem>
 #include <fstream>
+#include <optional>
+#include <string>
 #include <unordered_map>
 
 #include "porytiles/domain/models/layer.hpp"
 #include "porytiles/utilities/parse_int.hpp"
 #include "porytiles/utilities/string_utils.hpp"
+#include "porytiles/xcut/config/config_scope_type.hpp"
 
 namespace {
 
@@ -19,7 +22,29 @@ struct CsvRow {
     std::string behavior;
     std::string terrain_type;
     std::string encounter_type;
+    std::optional<std::string> layer_type_token; // raw layerType cell, nullopt when the column or cell is blank
 };
+
+/**
+ * @brief Extracts the trimmed layerType cell at a fixed column index, or nullopt when the cell is blank/absent.
+ *
+ * @details
+ * The split() helper keeps trailing empty fields, so a blank cell arrives as an empty string; a row that simply omits
+ * the trailing comma has fewer columns than @p index. Both cases mean "no explicit layer type" and map to nullopt.
+ */
+[[nodiscard]] std::optional<std::string>
+extract_layer_type_token(const std::vector<std::string> &columns, bool has_layer_type_column, std::size_t index)
+{
+    if (!has_layer_type_column || columns.size() <= index) {
+        return std::nullopt;
+    }
+    std::string token = columns[index];
+    trim(token);
+    if (token.empty()) {
+        return std::nullopt;
+    }
+    return token;
+}
 
 ChainableResult<CsvRow> parse_emerald_csv_row(
     const std::string &line,
@@ -27,7 +52,8 @@ ChainableResult<CsvRow> parse_emerald_csv_row(
     const std::filesystem::path &path,
     const std::vector<std::string> &all_lines,
     const TextFormatter &format,
-    const FileHighlightPrinter &file_printer)
+    const FileHighlightPrinter &file_printer,
+    bool has_layer_type_column)
 {
     auto columns = split(line, ",");
 
@@ -72,7 +98,13 @@ ChainableResult<CsvRow> parse_emerald_csv_row(
         return FormattableError{std::move(err_lines)};
     }
 
-    return CsvRow{static_cast<std::size_t>(id_result.value()), columns[1], "", ""};
+    // Emerald layerType column, when present, sits at index 2 (after id, behavior).
+    return CsvRow{
+        static_cast<std::size_t>(id_result.value()),
+        columns[1],
+        "",
+        "",
+        extract_layer_type_token(columns, has_layer_type_column, 2)};
 }
 
 ChainableResult<CsvRow> parse_firered_csv_row(
@@ -81,7 +113,8 @@ ChainableResult<CsvRow> parse_firered_csv_row(
     const std::filesystem::path &path,
     const std::vector<std::string> &all_lines,
     const TextFormatter &format,
-    const FileHighlightPrinter &file_printer)
+    const FileHighlightPrinter &file_printer,
+    bool has_layer_type_column)
 {
     auto columns = split(line, ",");
 
@@ -128,7 +161,13 @@ ChainableResult<CsvRow> parse_firered_csv_row(
         return FormattableError{std::move(err_lines)};
     }
 
-    return CsvRow{static_cast<std::size_t>(id_result.value()), columns[1], columns[2], columns[3]};
+    // FireRed layerType column, when present, sits at index 4 (after id, behavior, terrainType, encounterType).
+    return CsvRow{
+        static_cast<std::size_t>(id_result.value()),
+        columns[1],
+        columns[2],
+        columns[3],
+        extract_layer_type_token(columns, has_layer_type_column, 4)};
 }
 
 ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
@@ -138,7 +177,9 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
     const EnumMapProvider *terrain_map,
     const EnumMapProvider *encounter_map,
     const TextFormatter &format,
-    const FileHighlightPrinter &file_printer)
+    const FileHighlightPrinter &file_printer,
+    bool write_layer_type_column,
+    const UserDiagnostics &diag)
 {
     if (!exists(path)) {
         return FormattableError{"{}: file does not exist.", FormatParam{path.string(), Style::bold}};
@@ -224,9 +265,53 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
         }
     }
 
+    // Detect an optional trailing layerType column at its fixed position for the detected format (index 2 for emerald,
+    // index 4 for firered). We always detect it; the knob decides whether its values are applied. Other unknown
+    // trailing columns stay tolerated.
+    const std::size_t layer_type_index = csv_format == CsvFormat::firered ? 4 : 2;
+    const bool has_layer_type_column =
+        header_columns.size() > layer_type_index && header_columns[layer_type_index] == "layerType";
+
+    // Knob off but the column is present: ignore the values and say so once for the whole file.
+    if (has_layer_type_column && !write_layer_type_column) {
+        diag.warning(
+            "layer-type-column",
+            std::vector<std::string>{
+                format.format(
+                    "{}: a layerType column is present but write_layer_type_column is off; its values are ignored and "
+                    "layer types will be inferred.",
+                    FormatParam{path.string(), Style::bold}),
+                format.format(
+                    "set {} to apply the column.",
+                    FormatParam{"fieldmap.write_layer_type_column: true", Style::bold})});
+    }
+
     // Parse data rows (starting at index 1)
     std::map<std::size_t, MetatileAttribute> result{};
     std::unordered_map<std::size_t, std::size_t> id_to_line_index{};
+
+    // Applies a filled layerType cell as an explicit override, when the column is present and the knob is on. A blank
+    // cell (nullopt token) leaves the layer type inferred. A bad token is a hard error with file context.
+    auto apply_explicit_layer_type =
+        [&](MetatileAttribute &attribute, const CsvRow &row, std::size_t line_index) -> ChainableResult<void> {
+        if (!has_layer_type_column || !write_layer_type_column || !row.layer_type_token.has_value()) {
+            return {};
+        }
+        auto layer_type = layer_type_from_csv_token(row.layer_type_token.value());
+        if (!layer_type.has_value()) {
+            std::vector<std::string> err_lines{};
+            err_lines.push_back(format.format(
+                "{}:{}: invalid layerType '{}'",
+                FormatParam{path.string(), Style::bold},
+                FormatParam{line_index + 1, Style::bold},
+                FormatParam{row.layer_type_token.value(), Style::bold}));
+            err_lines.emplace_back();
+            err_lines.append_range(file_printer.print(lines, std::vector{line_index}));
+            return ChainableResult<void>{FormattableError{std::move(err_lines)}, layer_type};
+        }
+        attribute.explicit_layer_type(layer_type.value());
+        return {};
+    };
 
     for (std::size_t line_index = 1; line_index < lines.size(); ++line_index) {
         const auto &line = lines[line_index];
@@ -237,8 +322,8 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
 
         ChainableResult<CsvRow> row_result =
             csv_format == CsvFormat::firered
-                ? parse_firered_csv_row(line, line_index, path, lines, format, file_printer)
-                : parse_emerald_csv_row(line, line_index, path, lines, format, file_printer);
+                ? parse_firered_csv_row(line, line_index, path, lines, format, file_printer, has_layer_type_column)
+                : parse_emerald_csv_row(line, line_index, path, lines, format, file_printer, has_layer_type_column);
 
         if (!row_result.has_value()) {
             return ChainableResult<std::map<std::size_t, MetatileAttribute>>{
@@ -326,12 +411,20 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
             attribute.field(attr::field_behavior, behavior_value.value());
             attribute.field(attr::field_terrain, terrain_value.value());
             attribute.field(attr::field_encounter_type, encounter_value.value());
+            if (const auto applied = apply_explicit_layer_type(attribute, row, line_index); !applied.has_value()) {
+                return ChainableResult<std::map<std::size_t, MetatileAttribute>>{
+                    FormattableError{"Failed to apply layerType override."}, applied};
+            }
             result.emplace(row.metatile_id, std::move(attribute));
         }
         else {
             MetatileAttribute attribute{};
             attribute.layer_type(LayerType::normal);
             attribute.field(attr::field_behavior, behavior_value.value());
+            if (const auto applied = apply_explicit_layer_type(attribute, row, line_index); !applied.has_value()) {
+                return ChainableResult<std::map<std::size_t, MetatileAttribute>>{
+                    FormattableError{"Failed to apply layerType override."}, applied};
+            }
             result.emplace(row.metatile_id, std::move(attribute));
         }
     }
@@ -344,10 +437,27 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
 namespace porytiles {
 
 ChainableResult<std::map<std::size_t, MetatileAttribute>>
-AttributesCsvLoader::load(const std::filesystem::path &path) const
+AttributesCsvLoader::load(const std::filesystem::path &path, const std::string &tileset_name) const
 {
+    // Resolve the knob under the file's owning tileset scope. When compiling a secondary, the paired primary's CSV
+    // loads through this same loader with the primary's name, so its knob resolves under the primary's config. (The
+    // result type has a comma, so it cannot go through the PT_TRY_ASSIGN macros; unwrap by hand.)
+    auto write_layer_type_column_cv = config_->write_layer_type_column(ConfigScopeType::tileset, tileset_name);
+    if (!write_layer_type_column_cv.has_value()) {
+        return ChainableResult<std::map<std::size_t, MetatileAttribute>>{
+            FormattableError{"Failed to resolve write_layer_type_column."}, write_layer_type_column_cv};
+    }
+
     return parse_attributes_csv(
-        path, *behavior_map_, base_game_, terrain_map_, encounter_map_, *format_, *file_printer_);
+        path,
+        *behavior_map_,
+        base_game_,
+        terrain_map_,
+        encounter_map_,
+        *format_,
+        *file_printer_,
+        write_layer_type_column_cv.value(),
+        *diag_);
 }
 
 } // namespace porytiles

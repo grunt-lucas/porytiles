@@ -218,6 +218,16 @@ void OverrideConfigProvider::set_metatile_attr_field_overrides(MetatileAttrField
     metatile_attr_field_overrides_override_ = std::move(value);
 }
 
+void OverrideConfigProvider::set_write_layer_type_column(bool value)
+{
+    write_layer_type_column_override_ = std::move(value);
+}
+
+void OverrideConfigProvider::set_use_frlg_alternate_masks(FrlgAlternateMaskMode value)
+{
+    use_frlg_alternate_masks_override_ = std::move(value);
+}
+
 void OverrideConfigProvider::set_tileset_animations_wire_anim_code(bool value)
 {
     tileset_animations_wire_anim_code_override_ = std::move(value);
@@ -583,6 +593,24 @@ OverrideConfigProvider::metatile_attr_field_overrides(ConfigScopeType type, cons
     }
     return LayerValue<MetatileAttrFieldOverrides>::valid(
         metatile_attr_field_overrides_override_.value(), "metatile_attr_field_overrides", source_info_);
+}
+
+LayerValue<bool> OverrideConfigProvider::write_layer_type_column(ConfigScopeType type, const std::string &scope) const
+{
+    if (!scope_matches(type, scope) || !write_layer_type_column_override_.has_value()) {
+        return LayerValue<bool>::not_provided();
+    }
+    return LayerValue<bool>::valid(write_layer_type_column_override_.value(), "write_layer_type_column", source_info_);
+}
+
+LayerValue<FrlgAlternateMaskMode>
+OverrideConfigProvider::use_frlg_alternate_masks(ConfigScopeType type, const std::string &scope) const
+{
+    if (!scope_matches(type, scope) || !use_frlg_alternate_masks_override_.has_value()) {
+        return LayerValue<FrlgAlternateMaskMode>::not_provided();
+    }
+    return LayerValue<FrlgAlternateMaskMode>::valid(
+        use_frlg_alternate_masks_override_.value(), "use_frlg_alternate_masks", source_info_);
 }
 
 LayerValue<bool>

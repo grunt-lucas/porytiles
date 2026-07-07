@@ -167,5 +167,20 @@ TEST_F(MetatileAttrProviderTest, WarningsRoutedToDiagnosticsAndComputedOnce)
     EXPECT_EQ(diagnostics_.warnings().size(), warnings_after_first);
 }
 
+TEST_F(MetatileAttrProviderTest, DifferentScopesComputeIndependently)
+{
+    MetatileAttributeConfigProvider provider{fixture_base / "warns", &formatter_, &diagnostics_};
+
+    // The cache is keyed by type:scope, so a query under a second scope recomputes and re-emits the warnings.
+    const auto first = provider.metatile_attr_fields(ConfigScopeType::tileset, "general");
+    ASSERT_EQ(first.state, ValidationState::valid) << first.error_message;
+    const std::size_t warnings_after_first = diagnostics_.warnings().size();
+    EXPECT_GT(warnings_after_first, 0U);
+
+    const auto second = provider.metatile_attr_fields(ConfigScopeType::tileset, "building");
+    ASSERT_EQ(second.state, ValidationState::valid);
+    EXPECT_EQ(diagnostics_.warnings().size(), warnings_after_first * 2);
+}
+
 } // namespace
 } // namespace porytiles

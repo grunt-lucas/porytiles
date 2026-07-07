@@ -1,5 +1,9 @@
 #include "gtest/gtest.h"
 
+#include <optional>
+#include <tuple>
+#include <vector>
+
 #include "porytiles/domain/models/metatile.hpp"
 #include "porytiles/domain/models/metatile_attribute.hpp"
 #include "porytiles/domain/models/pixel_tile.hpp"
@@ -9,6 +13,7 @@
 #include "porytiles/domain/services/layer_mode_converter.hpp"
 #include "porytiles/infra/services/ascii_tile_printer.hpp"
 #include "porytiles/utilities/text/plain_text_formatter.hpp"
+#include "porytiles/xcut/diagnostics/buffered_user_diagnostics.hpp"
 #include "porytiles/xcut/diagnostics/stderr_styled_user_diagnostics.hpp"
 
 using namespace porytiles;
@@ -520,6 +525,68 @@ TEST_F(LayerModeConverterTests, RoundTripSplitLayerType)
         EXPECT_EQ(final_entries[i].h_flip(), original_entries[i].h_flip()) << "Mismatch at index " << i;
         EXPECT_EQ(final_entries[i].v_flip(), original_entries[i].v_flip()) << "Mismatch at index " << i;
     }
+}
+
+TEST_F(LayerModeConverterTests, ExplicitOverrideChangesEntrySelection)
+{
+    // 12 distinct entries so we can tell which 8 survive. Groups: [0,4)=tiles 1-4, [4,8)=5-8, [8,12)=9-12.
+    std::vector<TilemapEntry> triple_entries;
+    for (std::size_t i = 1; i <= metatile::entries_per_metatile_triple; ++i) {
+        triple_entries.push_back(create_test_entry(i));
+    }
+    // The source metatile infers 'normal' (would drop the first 4), but the override forces 'covered' (drops the last
+    // 4), so the surviving entries must be tiles 1-8, not 5-12.
+    std::vector<Metatile<Rgba32>> source_metatiles{create_metatile_with_layer_type(LayerType::normal)};
+    std::vector<std::optional<LayerType>> explicit_layer_types{LayerType::covered};
+
+    auto dual_entries = converter_->dual_layerize(triple_entries, source_metatiles, explicit_layer_types);
+
+    ASSERT_EQ(dual_entries.size(), metatile::entries_per_metatile_dual);
+    for (std::size_t i = 0; i < metatile::entries_per_metatile_dual; ++i) {
+        EXPECT_EQ(dual_entries[i].tile_index(), i + 1) << "index " << i;
+    }
+}
+
+TEST_F(LayerModeConverterTests, ExplicitOverrideDroppingVisibleTilesWarns)
+{
+    BufferedUserDiagnostics buffered_diag{};
+    LayerModeConverter converter{format_.get(), &buffered_diag, tile_printer_.get(), rgba_magenta};
+
+    // All 12 entries reference real tiles. Forcing 'covered' drops the last 4 (tiles 9-12), which are visible.
+    std::vector<TilemapEntry> triple_entries;
+    for (std::size_t i = 1; i <= metatile::entries_per_metatile_triple; ++i) {
+        triple_entries.push_back(create_test_entry(i));
+    }
+    std::vector<Metatile<Rgba32>> source_metatiles{create_metatile_with_layer_type(LayerType::normal)};
+    std::vector<std::optional<LayerType>> explicit_layer_types{LayerType::covered};
+
+    std::ignore = converter.dual_layerize(triple_entries, source_metatiles, explicit_layer_types);
+
+    const auto &counts = buffered_diag.warning_tag_counts();
+    ASSERT_TRUE(counts.contains("layer-type-column"));
+    EXPECT_EQ(counts.at("layer-type-column"), 1u);
+}
+
+TEST_F(LayerModeConverterTests, DroppingOnlyTransparentEntriesDoesNotWarn)
+{
+    BufferedUserDiagnostics buffered_diag{};
+    LayerModeConverter converter{format_.get(), &buffered_diag, tile_printer_.get(), rgba_magenta};
+
+    // Normal layout: first 4 entries transparent, last 8 visible. Inference and the override both say normal, so the
+    // dropped group [0,4) is all transparent and no warning should fire.
+    std::vector<TilemapEntry> triple_entries;
+    for (std::size_t i = 0; i < 4; ++i) {
+        triple_entries.push_back(TilemapEntry{0, 0, false, false});
+    }
+    for (std::size_t i = 1; i <= metatile::entries_per_metatile_dual; ++i) {
+        triple_entries.push_back(create_test_entry(i));
+    }
+    std::vector<Metatile<Rgba32>> source_metatiles{create_metatile_with_layer_type(LayerType::normal)};
+    std::vector<std::optional<LayerType>> explicit_layer_types{LayerType::normal};
+
+    std::ignore = converter.dual_layerize(triple_entries, source_metatiles, explicit_layer_types);
+
+    EXPECT_FALSE(buffered_diag.warning_tag_counts().contains("layer-type-column"));
 }
 
 TEST_F(LayerModeConverterTests, RoundTripMultipleMetatiles)

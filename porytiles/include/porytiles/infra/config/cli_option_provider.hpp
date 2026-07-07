@@ -116,6 +116,10 @@ class CliOptionProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<MetatileAttrFieldOverrides>
     metatile_attr_field_overrides(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<bool>
+    write_layer_type_column(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<FrlgAlternateMaskMode>
+    use_frlg_alternate_masks(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<bool>
     tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const override;
 
   private:

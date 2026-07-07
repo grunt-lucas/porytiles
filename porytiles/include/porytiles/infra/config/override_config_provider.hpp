@@ -81,6 +81,8 @@ class OverrideConfigProvider final : public ConfigProvider {
     void set_metatile_attr_size(std::size_t value);
     void set_metatile_attr_fields(MetatileAttrFieldSpecs value);
     void set_metatile_attr_field_overrides(MetatileAttrFieldOverrides value);
+    void set_write_layer_type_column(bool value);
+    void set_use_frlg_alternate_masks(FrlgAlternateMaskMode value);
     void set_tileset_animations_wire_anim_code(bool value);
 
     [[nodiscard]] LayerValue<std::size_t>
@@ -157,6 +159,10 @@ class OverrideConfigProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<MetatileAttrFieldOverrides>
     metatile_attr_field_overrides(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<bool>
+    write_layer_type_column(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<FrlgAlternateMaskMode>
+    use_frlg_alternate_masks(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<bool>
     tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const override;
 
   private:
@@ -204,6 +210,8 @@ class OverrideConfigProvider final : public ConfigProvider {
     std::optional<std::size_t> metatile_attr_size_override_;
     std::optional<MetatileAttrFieldSpecs> metatile_attr_fields_override_;
     std::optional<MetatileAttrFieldOverrides> metatile_attr_field_overrides_override_;
+    std::optional<bool> write_layer_type_column_override_;
+    std::optional<FrlgAlternateMaskMode> use_frlg_alternate_masks_override_;
     std::optional<bool> tileset_animations_wire_anim_code_override_;
 };
 
