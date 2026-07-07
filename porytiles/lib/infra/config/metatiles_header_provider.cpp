@@ -72,13 +72,7 @@ detect_attr_size(const std::filesystem::path &metatiles_path, const TextFormatte
 
 namespace porytiles {
 
-std::string MetatilesHeaderProvider::name() const
-{
-    return "MetatilesHeaderProvider";
-}
-
-LayerValue<std::size_t>
-MetatilesHeaderProvider::metatile_attr_size(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+LayerValue<std::size_t> MetatilesHeaderProvider::detect() const
 {
     if (!cached_result_.has_value()) {
         cached_result_ = detect_attr_size(project_root_ / metatiles_rel_path, format_);

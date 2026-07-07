@@ -6,6 +6,7 @@
 
 #include "porytiles/domain/services/metatile_attr_schema_loader.hpp"
 #include "porytiles/infra/config/lazy_layered_config.hpp"
+#include "porytiles/infra/config/metatiles_header_provider.hpp"
 #include "porytiles/infra/services/project_layout_metadata_provider.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 #include "porytiles/utilities/text/text_formatter.hpp"
@@ -18,8 +19,9 @@ namespace porytiles {
  *
  * @details
  * This is the infra-layer adapter that gathers the inputs to the pure domain resolve_tileset_attr_schema: it fetches
- * the field specs, overrides, attribute size, and the FRLG mask mode from config at tileset scope, decides which layout
- * applies, and reports its reasoning through the user diagnostics.
+ * the field specs, overrides, and the FRLG mask mode from config at tileset scope, detects the attribute byte width
+ * from the project's metatiles.h, decides which layout applies, and reports its reasoning through the user
+ * diagnostics.
  *
  * Layout selection follows use_frlg_alternate_masks: @c always and @c never force the choice, while @c automatic
  * cross-references data/layouts/layouts.json via the layout metadata provider. In automatic mode a tileset referenced
@@ -27,14 +29,16 @@ namespace porytiles {
  * tilesets select the primary masks, a tileset used by both is a hard error naming the escape hatch, and a malformed
  * layouts.json downgrades to a warning plus primary fallback.
  *
- * The attribute byte width is treated as explicit only when the config value came from the CLI or a YAML file; a value
- * synthesized by the metatiles-header or default provider is not explicit and may be widened to cover the FRLG masks.
+ * The attribute byte width comes from the injected MetatilesHeaderProvider: a project with no detectable width
+ * defaults to 2 bytes, mixed u16/u32 declarations are a hard error, and the resolved width may be widened past the
+ * detected value to cover the selected masks.
  */
 class TilesetAttrSchemaResolver {
   public:
     TilesetAttrSchemaResolver(
         gsl::not_null<const LazyLayeredConfig *> config,
         gsl::not_null<const ProjectLayoutMetadataProvider *> layout_metadata,
+        gsl::not_null<const MetatilesHeaderProvider *> metatiles,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag);
 
@@ -49,6 +53,7 @@ class TilesetAttrSchemaResolver {
   private:
     const LazyLayeredConfig *config_;
     const ProjectLayoutMetadataProvider *layout_metadata_;
+    const MetatilesHeaderProvider *metatiles_;
     const TextFormatter *format_;
     const UserDiagnostics *diag_;
 };

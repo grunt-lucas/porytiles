@@ -75,7 +75,7 @@ enum class AttrSchemaLayout { primary, frlg };
  * @c schema holds the fields selected for @c layout (the primary mask for @c primary, the frlg_mask for @c frlg),
  * validated against @c attr_bytes. @c resolved_specs is the full post-merge spec list (both layouts' masks), useful for
  * diagnostics and for reporting which fields were excluded for the chosen layout. @c attr_bytes is the byte width the
- * schema was validated against, which may have been widened past the configured size to cover the selected masks.
+ * schema was validated against, which may have been widened past the detected size to cover the selected masks.
  */
 struct ResolvedTilesetAttrSchema {
     Schema schema;
@@ -93,15 +93,13 @@ struct ResolvedTilesetAttrSchema {
  * are excluded symmetrically. If no field survives selection, a semantic error is returned naming the fix (add a mask
  * for the layout, or switch use_frlg_alternate_masks).
  *
- * The attribute byte width is @p configured_attr_bytes when @p attr_bytes_explicit is true (the user's explicit choice
- * wins, and a too-small choice surfaces the existing Schema::create error). Otherwise it is widened silently to the
- * smallest of 2 or 4 bytes that covers the selected masks, but never below @p configured_attr_bytes.
+ * The attribute byte width is widened silently to the smallest of 2 or 4 bytes that covers the selected masks, but
+ * never below @p detected_attr_bytes (the width detected from the project's own metatiles.h declarations).
  *
  * @param fields The baseline field specs, in display order
  * @param overrides The per-field overrides to merge in
  * @param layout The layout to resolve (primary or frlg)
- * @param configured_attr_bytes The attribute byte size from config (2 or 4)
- * @param attr_bytes_explicit Whether the caller set @p configured_attr_bytes explicitly (vs. a default/detected value)
+ * @param detected_attr_bytes The attribute byte size detected from the project (2 or 4)
  * @param format The formatter used for diagnostic text
  * @return The resolved schema, specs, layout, and final byte width, or the first hard error encountered
  */
@@ -109,8 +107,7 @@ struct ResolvedTilesetAttrSchema {
     const MetatileAttrFieldSpecs &fields,
     const MetatileAttrFieldOverrides &overrides,
     AttrSchemaLayout layout,
-    std::size_t configured_attr_bytes,
-    bool attr_bytes_explicit,
+    std::size_t detected_attr_bytes,
     gsl::not_null<const TextFormatter *> format);
 
 } // namespace porytiles

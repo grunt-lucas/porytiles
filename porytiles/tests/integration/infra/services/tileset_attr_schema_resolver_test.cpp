@@ -10,6 +10,7 @@
 
 #include "porytiles/infra/config/default_provider.hpp"
 #include "porytiles/infra/config/lazy_layered_config.hpp"
+#include "porytiles/infra/config/metatiles_header_provider.hpp"
 #include "porytiles/infra/config/yaml_file_provider.hpp"
 #include "porytiles/infra/services/project_layout_metadata_provider.hpp"
 #include "porytiles/utilities/text/plain_text_formatter.hpp"
@@ -68,6 +69,13 @@ class TilesetAttrSchemaResolverTest : public ::testing::Test {
         out << json;
     }
 
+    void write_metatiles_header(const std::string &content)
+    {
+        std::filesystem::create_directories(project_root_ / "src" / "data" / "tilesets");
+        std::ofstream out{project_root_ / "src" / "data" / "tilesets" / "metatiles.h"};
+        out << content;
+    }
+
     [[nodiscard]] ChainableResult<ResolvedTilesetAttrSchema> resolve(const std::string &tileset_name)
     {
         std::vector<std::unique_ptr<ConfigProvider>> providers;
@@ -76,7 +84,8 @@ class TilesetAttrSchemaResolverTest : public ::testing::Test {
         LazyLayeredConfig config{&formatter_, std::move(providers)};
 
         ProjectLayoutMetadataProvider layout_metadata{project_root_, &formatter_, &diag_};
-        TilesetAttrSchemaResolver resolver{&config, &layout_metadata, &formatter_, &diag_};
+        MetatilesHeaderProvider metatiles_header{project_root_, &formatter_};
+        TilesetAttrSchemaResolver resolver{&config, &layout_metadata, &metatiles_header, &formatter_, &diag_};
         return resolver.resolve(tileset_name);
     }
 
@@ -190,15 +199,32 @@ TEST_F(TilesetAttrSchemaResolverTest, MixedUsageErrorsMentioningEscapeHatch)
     EXPECT_NE(error_text(result).find("use_frlg_alternate_masks"), std::string::npos) << error_text(result);
 }
 
-TEST_F(TilesetAttrSchemaResolverTest, ExplicitTooSmallSizeWithFrlgSurfacesSchemaError)
+TEST_F(TilesetAttrSchemaResolverTest, DetectedU32WidthResolvesFourBytesForPrimaryMasks)
 {
-    write_config(std::string{kFieldsYaml} + "  metatile_attribute_size: 2\n");
-    write_layouts(layout_json(kTilesetName, R"(,
-      "layout_version": "frlg")"));
+    // metatiles.h declares u32 attributes, so even a small-mask primary layout resolves to a 4-byte width.
+    write_config(kFieldsYaml);
+    write_metatiles_header(
+        "const u32 gMetatileAttributes_General[] = "
+        "INCBIN_U32(\"data/tilesets/primary/general/metatile_attributes.bin\");\n");
+
+    const auto result = resolve(kTilesetName);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().layout, AttrSchemaLayout::primary);
+    EXPECT_EQ(result.value().attr_bytes, 4U);
+}
+
+TEST_F(TilesetAttrSchemaResolverTest, MixedU16U32DeclarationsAreFatal)
+{
+    write_config(kFieldsYaml);
+    write_metatiles_header(
+        "const u16 gMetatileAttributes_General[] = "
+        "INCBIN_U16(\"data/tilesets/primary/general/metatile_attributes.bin\");\n"
+        "const u32 gMetatileAttributes_Petalburg[] = "
+        "INCBIN_U32(\"data/tilesets/secondary/petalburg/metatile_attributes.bin\");\n");
 
     const auto result = resolve(kTilesetName);
     ASSERT_FALSE(result.has_value());
-    EXPECT_FALSE(error_text(result).empty());
+    EXPECT_NE(error_text(result).find("Mixed"), std::string::npos) << error_text(result);
 }
 
 TEST_F(TilesetAttrSchemaResolverTest, MalformedLayoutsJsonWarnsAndFallsBackToPrimary)

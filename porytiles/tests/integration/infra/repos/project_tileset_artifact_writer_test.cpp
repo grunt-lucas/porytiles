@@ -284,7 +284,6 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
             test_root_,
             &schema_,
             &providers_,
-            attr::bytes_per_attr_emerald,
             formatter_.get(),
             diag_.get(),
             png_rgba_saver_.get(),
@@ -563,6 +562,66 @@ TEST_F(ProjectTilesetArtifactWriterTests, WriteMetatileAttributesBin)
     ASSERT_EQ(std::filesystem::file_size(expected_file), 16);
 }
 
+// A metatile_attr_field_overrides mask change must reach metatile_attributes.bin, not just the CSV: the same
+// attribute written under two schemas differing only in the behavior mask produces different bytes, each matching
+// the schema's layout exactly.
+TEST_F(ProjectTilesetArtifactWriterTests, WriteMetatileAttributesBinFollowsSchemaMasks)
+{
+    auto make_writer = [&](const Schema &schema, const ProviderMap &providers) {
+        return ProjectTilesetArtifactWriter{
+            domain_config_.get(),
+            infra_config_.get(),
+            test_root_,
+            &schema,
+            &providers,
+            formatter_.get(),
+            diag_.get(),
+            png_rgba_saver_.get(),
+            png_indexed_saver_.get(),
+            pal_saver_.get(),
+            anim_json_parser_.get(),
+            anim_code_generator_.get()};
+    };
+
+    auto make_tileset = [] {
+        auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
+        auto porymap_component = std::make_unique<PorymapTilesetComponent>();
+        MetatileAttribute attribute{};
+        attribute.field(attr::field_behavior, 5);
+        porymap_component->push_back_attribute(attribute);
+        return Tileset{"test_tileset", std::move(porytiles_component), std::move(porymap_component)};
+    };
+
+    auto read_file_bytes = [](const std::filesystem::path &path) {
+        std::ifstream in{path, std::ios::binary};
+        return std::vector<char>{std::istreambuf_iterator<char>{in}, std::istreambuf_iterator<char>{}};
+    };
+
+    ProviderMap providers{};
+
+    // Stock mask: behavior at bits 0-7, so value 5 lands in the low byte.
+    Schema stock_schema = std::move(Schema::create({Field{"behavior", 0x00FF}}, 2)).value();
+    {
+        auto writer = make_writer(stock_schema, providers);
+        auto tileset = make_tileset();
+        ASSERT_TRUE(writer.begin_transaction().has_value());
+        ASSERT_TRUE(writer.write_metatile_attributes_bin(ArtifactKey{"stock.bin"}, tileset).has_value());
+        ASSERT_TRUE(writer.commit().has_value());
+    }
+    EXPECT_EQ(read_file_bytes(test_root_ / "stock.bin"), (std::vector<char>{0x05, 0x00}));
+
+    // Overridden mask: behavior shifted to bits 4-11, so the same value 5 lands at offset 4 (0x50).
+    Schema shifted_schema = std::move(Schema::create({Field{"behavior", 0x0FF0}}, 2)).value();
+    {
+        auto writer = make_writer(shifted_schema, providers);
+        auto tileset = make_tileset();
+        ASSERT_TRUE(writer.begin_transaction().has_value());
+        ASSERT_TRUE(writer.write_metatile_attributes_bin(ArtifactKey{"shifted.bin"}, tileset).has_value());
+        ASSERT_TRUE(writer.commit().has_value());
+    }
+    EXPECT_EQ(read_file_bytes(test_root_ / "shifted.bin"), (std::vector<char>{0x50, 0x00}));
+}
+
 TEST_F(ProjectTilesetArtifactWriterTests, WritePalette)
 {
     auto tileset = create_test_tileset("test_tileset");
@@ -744,7 +803,6 @@ TEST_F(ProjectTilesetArtifactWriterTests, ProviderBackedFieldMissingFromProvider
         test_root_,
         &schema_,
         &empty_providers,
-        attr::bytes_per_attr_emerald,
         formatter_.get(),
         diag_.get(),
         png_rgba_saver_.get(),
@@ -773,7 +831,6 @@ TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvMultiFieldSchemaRendersPr
         test_root_,
         &firered_schema,
         &firered_providers,
-        attr::bytes_per_attr_firered,
         formatter_.get(),
         diag_.get(),
         png_rgba_saver_.get(),
@@ -812,15 +869,14 @@ TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvMultiFieldSchemaRendersPr
 }
 
 // A schema field may declare a nonzero default (the value an absent field takes). An attribute that omits the field
-// renders that default, not 0. Row omission is disabled for such a schema: an omitted row would reload as an absent
-// attribute, which downstream consumers materialize as all-zero fields rather than schema defaults, so even an
-// all-default row must be written out to round-trip.
-TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvNonzeroDefaultRendersDefaultAndWritesAllRows)
+// renders that default, not 0. Omitting an all-default row is lossless: it reloads as an absent attribute, which the
+// compiler materializes from the schema defaults, so the round trip reproduces the omitted values exactly.
+TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvNonzeroDefaultRendersDefaultAndOmitsAllDefaultRows)
 {
     auto schema_result = Schema::create(
         {
             Field{"behavior", 0x00FF, 0, dummy_provider_spec()},
-            Field{"pad", 0xFF00, 3},
+            Field{"pad", 0x0F00, 3},
         },
         2);
     Schema schema = std::move(schema_result).value();
@@ -835,7 +891,6 @@ TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvNonzeroDefaultRendersDefa
         test_root_,
         &schema,
         &providers,
-        attr::bytes_per_attr_emerald,
         formatter_.get(),
         diag_.get(),
         png_rgba_saver_.get(),
@@ -854,8 +909,8 @@ TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvNonzeroDefaultRendersDefa
     attr_0.field(attr::field_behavior, 2);
     porytiles_component->insert_attribute(0, attr_0);
 
-    // Metatile 1: behavior absent (effective 0 = default) and 'pad' stored as its default 3 -> all-default, but still
-    // written because omission would not round-trip under a nonzero-default schema.
+    // Metatile 1: behavior absent (effective 0 = default) and 'pad' stored as its default 3 -> all-default, so the
+    // row is omitted; the compiler rematerializes it from the schema defaults on the next compile.
     MetatileAttribute attr_1{};
     attr_1.field("pad", 3);
     porytiles_component->insert_attribute(1, attr_1);
@@ -870,6 +925,6 @@ TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvNonzeroDefaultRendersDefa
     ASSERT_TRUE(write_result.has_value()) << write_result.error().join(PlainTextFormatter{});
     ASSERT_TRUE(writer.commit().has_value());
 
-    const std::string expected = "id,behavior,pad\n0,MB_TALL_GRASS,3\n1,MB_NORMAL,3\n";
+    const std::string expected = "id,behavior,pad\n0,MB_TALL_GRASS,3\n";
     EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), expected);
 }

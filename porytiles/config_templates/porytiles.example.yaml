@@ -9,7 +9,6 @@ fieldmap:
   num_pals_total: 13
   max_map_data_size: 10240
   num_tiles_per_metatile: 8
-  metatile_attribute_size: 2  # 2 for Emerald/Ruby, 4 for FireRed
 
   # Emit and honor a trailing "layerType" column in the metatile attributes CSV. When true, a filled cell
   # ("normal", "covered", or "split") pins that metatile's layer type against inference, and a blank cell means

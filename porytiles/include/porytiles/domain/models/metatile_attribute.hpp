@@ -14,14 +14,10 @@ namespace porytiles {
 
 namespace attr {
 
-constexpr std::size_t bytes_per_attr_emerald = 2;
-constexpr std::size_t bytes_per_attr_firered = 4;
-
 /*
- * Interim field-name constants for the hardcoded emerald/firered attribute layouts. These are the single
- * home for the keys the bin parsers and emitters use while every consumer still forks on base game. They
- * match the names #282's schema inference will produce, so the field map survives untouched once the
- * schema is wired in.
+ * Field-name constants for the stock decomp attribute layouts. These are the names the schema inference
+ * produces when it scans a stock emerald- or firered-family header, so code and tests that address those
+ * fields by name share a single home for the keys.
  */
 constexpr std::string_view field_behavior = "behavior";
 constexpr std::string_view field_terrain = "terrain";
@@ -38,13 +34,13 @@ constexpr std::string_view field_attribute_7 = "attribute_7";
  *
  * @details
  * An attribute is a bag of named field values plus a structural layer type. The bit layout of those
- * fields (their masks, defaults, and how their values are named in a base-game header) is not the
- * attribute's concern; that lives on a Schema. A field absent from the map reads as 0, so an emerald
- * attribute carrying only a behavior and a firered attribute carrying seven fields are the same type,
- * differing only in which keys are populated.
+ * fields (their masks, defaults, and how their values are named in a decomp/provider header) is not the
+ * attribute's concern; that lives on a Schema. A field absent from the map reads as 0, so an attribute
+ * carrying a single field and one carrying seven are the same type, differing only in which keys are
+ * populated.
  *
  * layer_type is first-class rather than a schema field because it is structural: it selects which layers
- * a metatile renders and pairs with the layer mode, independent of any base game's attribute encoding.
+ * a metatile renders and pairs with the layer mode, independent of any particular attribute encoding.
  * The attribute also does not know whether a field is provider-backed; that too belongs to the Schema.
  */
 class MetatileAttribute {

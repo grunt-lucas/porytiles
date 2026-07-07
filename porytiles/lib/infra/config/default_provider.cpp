@@ -240,12 +240,6 @@ LayerValue<std::string> DefaultProvider::tileset_paths_secondary_bin(
     return LayerValue<std::string>::valid("data/tilesets/secondary", "Tileset Paths Secondary Bin", source_info);
 }
 
-LayerValue<std::size_t> DefaultProvider::metatile_attr_size(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    return LayerValue<std::size_t>::valid(2, "Metatile Attribute Size", source_info);
-}
-
 LayerValue<MetatileAttrFieldSpecs> DefaultProvider::metatile_attr_fields(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

@@ -16,6 +16,7 @@
 #include "porytiles/domain/models/metatile.hpp"
 #include "porytiles/domain/models/metatile_attribute.hpp"
 #include "porytiles/domain/models/metatile_attribute_schema.hpp"
+#include "porytiles/infra/algorithms/porymap_artifact_parsers.hpp"
 #include "porytiles/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles/utilities/filesystem_utils.hpp"
@@ -158,52 +159,6 @@ ChainableResult<void> save_metatiles_bin(const std::vector<TilemapEntry> &entrie
             ((entry.pal_index() & 0xf) << 12));
         out << static_cast<std::uint8_t>(tile_value);
         out << static_cast<std::uint8_t>(tile_value >> 8);
-    }
-    out.flush();
-    return {};
-}
-
-ChainableResult<void> save_emerald_metatile_attributes_bin(
-    const std::vector<MetatileAttribute> &attributes, const std::filesystem::path &path)
-{
-    std::ofstream out{path};
-    for (const auto &attribute : attributes) {
-        const std::uint32_t behavior = attribute.field(attr::field_behavior);
-        const auto layer_type = static_cast<std::uint8_t>(attribute.layer_type());
-        const auto attribute_value = static_cast<std::uint16_t>((behavior & 0xff) | ((layer_type & 0xf) << 12));
-        out << static_cast<std::uint8_t>(attribute_value);
-        out << static_cast<std::uint8_t>(attribute_value >> 8);
-    }
-    out.flush();
-    return {};
-}
-
-ChainableResult<void> save_firered_metatile_attributes_bin(
-    const std::vector<MetatileAttribute> &attributes, const std::filesystem::path &path)
-{
-    std::ofstream out{path};
-    for (const auto &attribute : attributes) {
-        // FireRed attribute bit layout (from fieldmap.c):
-        //   Bits  0-8:  behavior       (0x000001FF)
-        //   Bits  9-13: terrain        (0x00003E00)
-        //   Bits 14-17: attribute_2    (0x0003C000)
-        //   Bits 18-23: attribute_3    (0x00FC0000)
-        //   Bits 24-26: encounter_type (0x07000000)
-        //   Bits 27-28: attribute_5    (0x18000000)
-        //   Bits 29-30: layer_type     (0x60000000)
-        //   Bit  31:    attribute_7    (0x80000000)
-        const auto attribute_value = static_cast<std::uint32_t>(
-            (attribute.field(attr::field_behavior) & 0x1FF) | ((attribute.field(attr::field_terrain) & 0x1F) << 9) |
-            ((attribute.field(attr::field_attribute_2) & 0x0F) << 14) |
-            ((attribute.field(attr::field_attribute_3) & 0x3F) << 18) |
-            ((attribute.field(attr::field_encounter_type) & 0x07) << 24) |
-            ((attribute.field(attr::field_attribute_5) & 0x03) << 27) |
-            ((static_cast<std::uint32_t>(attribute.layer_type()) & 0x03) << 29) |
-            ((attribute.field(attr::field_attribute_7) & 0x01) << 31));
-        out << static_cast<std::uint8_t>(attribute_value);
-        out << static_cast<std::uint8_t>(attribute_value >> 8);
-        out << static_cast<std::uint8_t>(attribute_value >> 16);
-        out << static_cast<std::uint8_t>(attribute_value >> 24);
     }
     out.flush();
     return {};
@@ -638,12 +593,8 @@ ProjectTilesetArtifactWriter::write_metatile_attributes_bin(const ArtifactKey &d
             transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
         void,
         "Failed to compute transaction dest path.");
-    if (metatile_attr_size_ == attr::bytes_per_attr_firered) {
-        return save_firered_metatile_attributes_bin(
-            src.porymap_component().metatile_attributes_bin(), transaction_dest_path);
-    }
-    return save_emerald_metatile_attributes_bin(
-        src.porymap_component().metatile_attributes_bin(), transaction_dest_path);
+    return save_metatile_attributes_bin(
+        src.porymap_component().metatile_attributes_bin(), transaction_dest_path, *schema_);
 }
 
 ChainableResult<void> ProjectTilesetArtifactWriter::write_tiles_png(const ArtifactKey &dest_key, const Tileset &src)
@@ -885,19 +836,14 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
         return true;
     };
 
-    // Omitting a row is only lossless when every schema default is 0: an omitted row reloads as an absent attribute,
-    // and downstream consumers (the compiler's bin path in particular) materialize an absent attribute as all-zero
-    // fields, not as schema defaults. With any nonzero default, omission would silently rewrite that row's fields to
-    // zero on the next compile, so every row must be written out.
-    const bool omission_is_lossless =
-        std::ranges::all_of(schema_->fields(), [](const Field &field) { return field.default_value() == 0; });
-    auto omit_row = [&](const MetatileAttribute &attribute) -> bool {
-        return omission_is_lossless && is_all_default(attribute);
-    };
+    // Omitting an all-default row is lossless: it reloads as an absent attribute, and downstream consumers (the
+    // compiler in particular) materialize an absent attribute from the schema defaults, so the round trip reproduces
+    // exactly the values the row was omitted for.
+    auto omit_row = [&](const MetatileAttribute &attribute) -> bool { return is_all_default(attribute); };
 
     if (!write_layer_type_column) {
-        // Knob off: byte-identical to the historical output. Skip all-default rows (when omission round-trips), and if
-        // none survive write only the header.
+        // Knob off: byte-identical to the historical output. Skip all-default rows, and if none survive write only
+        // the header.
         std::size_t non_default_count = 0;
         for (const auto &attribute : attributes | std::views::values) {
             if (!omit_row(attribute)) {
@@ -937,7 +883,10 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
     // can be sparse (tileset creation stores only some ids), so materialize a default row for any missing id. Row count
     // comes from the Porytiles layer image dimensions, the same source LayerImageMetatileizer uses.
     const std::size_t layer_metatile_count = metatile::metatile_count(src.porytiles_component().bottom());
-    const MetatileAttribute default_attribute{}; // all-default fields, no explicit layer type (blank cell)
+    MetatileAttribute default_attribute{}; // all-default fields, no explicit layer type (blank cell)
+    for (const Field &field : schema_->fields()) {
+        default_attribute.field(field.name(), field.default_value());
+    }
 
     for (std::size_t metatile_id = 0; metatile_id < layer_metatile_count; ++metatile_id) {
         const auto it = attributes.find(metatile_id);

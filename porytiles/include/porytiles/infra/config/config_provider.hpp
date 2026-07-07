@@ -155,8 +155,6 @@ class ConfigProvider {
     tileset_paths_secondary_src(ConfigScopeType type, const std::string &scope) const;
     [[nodiscard]] virtual LayerValue<std::string>
     tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const;
-    [[nodiscard]] virtual LayerValue<std::size_t>
-    metatile_attr_size(ConfigScopeType type, const std::string &scope) const;
     [[nodiscard]] virtual LayerValue<MetatileAttrFieldSpecs>
     metatile_attr_fields(ConfigScopeType type, const std::string &scope) const;
     [[nodiscard]] virtual LayerValue<MetatileAttrFieldOverrides>

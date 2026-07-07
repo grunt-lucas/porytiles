@@ -36,6 +36,20 @@ bool is_contiguous(std::uint32_t mask)
     return std::popcount(mask) == std::bit_width(mask) - std::countr_zero(mask);
 }
 
+/**
+ * @brief Returns the structural layer_type mask for the given attribute width.
+ *
+ * @details
+ * The layer type's bit position is a fixed GBA/porymap format convention keyed on the total attribute
+ * width: bits 12-15 in a 2-byte attribute word, bits 29-30 in a 4-byte word. This helper is the single
+ * named home for that convention; everything downstream (the binary attribute pack/unpack in
+ * particular) reads it through Schema::layer_type_mask().
+ */
+std::uint32_t structural_layer_type_mask(std::size_t attr_bytes)
+{
+    return attr_bytes == 4 ? 0x60000000U : 0x0000F000U;
+}
+
 } // namespace
 
 EnumSpec ProviderSpec::to_enum_spec(std::string field_display_name, std::uint32_t max_value) const
@@ -69,6 +83,7 @@ ChainableResult<Schema> Schema::create(std::vector<Field> fields, std::size_t at
 {
     assert_or_panic(attr_bytes == 2 || attr_bytes == 4, "Schema::create requires a 2-byte or 4-byte attribute size");
 
+    const std::uint32_t layer_type_mask = structural_layer_type_mask(attr_bytes);
     std::unordered_set<std::string> seen_names;
 
     for (std::size_t i = 0; i < fields.size(); ++i) {
@@ -101,6 +116,15 @@ ChainableResult<Schema> Schema::create(std::vector<Field> fields, std::size_t at
                 FormatParam{attr_bytes, Style::bold}};
         }
 
+        if ((mask & layer_type_mask) != 0) {
+            return FormattableError{
+                "Field '{}' has mask '{}', which overlaps the layer type bits '{}' of a {}-byte metatile attribute.",
+                FormatParam{field.name(), Style::bold},
+                FormatParam{hex_string(mask), Style::bold},
+                FormatParam{hex_string(layer_type_mask), Style::bold},
+                FormatParam{attr_bytes, Style::bold}};
+        }
+
         if (field.default_value() > field.max_value()) {
             return FormattableError{
                 "Field '{}' has default value '{}', which does not fit in its {}-bit mask '{}'.",
@@ -125,7 +149,7 @@ ChainableResult<Schema> Schema::create(std::vector<Field> fields, std::size_t at
         seen_names.insert(field.name());
     }
 
-    return Schema{std::move(fields), attr_bytes};
+    return Schema{std::move(fields), attr_bytes, layer_type_mask};
 }
 
 } // namespace porytiles

@@ -109,8 +109,6 @@ class CliOptionProvider final : public ConfigProvider {
     tileset_paths_secondary_src(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<std::string>
     tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<std::size_t>
-    metatile_attr_size(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<MetatileAttrFieldSpecs>
     metatile_attr_fields(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<MetatileAttrFieldOverrides>

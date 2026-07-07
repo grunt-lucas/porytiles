@@ -315,11 +315,12 @@ class CompilerTask {
         const UserDiagnostics &diag,
         const TilePrinter &tile_printer,
         const PalettePrinter &pal_printer,
-        const DomainConfig &config)
+        const DomainConfig &config,
+        const Schema &schema)
         : tileset_{tileset}, is_secondary_{is_secondary}, paired_primary_{paired_primary}, format_{format}, diag_{diag},
-          tile_printer_{tile_printer}, pal_printer_{pal_printer}, config_{config}, extrinsic_transparency_{},
-          num_pals_in_primary_{}, num_pals_total_{}, num_metatiles_in_primary_{}, num_tiles_in_primary_{},
-          num_tiles_per_metatile_{}, pal_hints_enabled_{}, pal_hints_{}
+          tile_printer_{tile_printer}, pal_printer_{pal_printer}, config_{config}, schema_{schema},
+          extrinsic_transparency_{}, num_pals_in_primary_{}, num_pals_total_{}, num_metatiles_in_primary_{},
+          num_tiles_in_primary_{}, num_tiles_per_metatile_{}, pal_hints_enabled_{}, pal_hints_{}
     {
     }
 
@@ -388,6 +389,7 @@ class CompilerTask {
     const TilePrinter &tile_printer_;
     const PalettePrinter &pal_printer_;
     const DomainConfig &config_;
+    const Schema &schema_;
 
     // Config values (populated in run())
     ConfigValue<Rgba32> extrinsic_transparency_;
@@ -920,6 +922,15 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
         MetatileAttribute new_attr{};
         if (maybe_porytiles_attr.has_value()) {
             new_attr = maybe_porytiles_attr.value();
+        }
+        else {
+            // A metatile with no stored attribute (e.g. a CSV row omitted as all-default) materializes from the
+            // schema defaults, not from all-zero fields. This is what lets the CSV writer omit all-default rows even
+            // under a schema with nonzero defaults: the omitted row reloads as an absent attribute here and comes
+            // back as exactly the defaults it was omitted for.
+            for (const Field &field : schema_.fields()) {
+                new_attr.field(field.name(), field.default_value());
+            }
         }
         // An explicit override wins uniformly, including triple mode: the user owns those rows.
         new_attr.layer_type(new_attr.explicit_layer_type().value_or(layer_type));
@@ -2564,7 +2575,8 @@ namespace porytiles {
 ChainableResult<std::unique_ptr<Tileset>>
 TilesetCompiler::compile(const Tileset &tileset, bool is_secondary, const Tileset *paired_primary) const
 {
-    CompilerTask task{tileset, is_secondary, paired_primary, *format_, *diag_, *tile_printer_, *pal_printer_, *config_};
+    CompilerTask task{
+        tileset, is_secondary, paired_primary, *format_, *diag_, *tile_printer_, *pal_printer_, *config_, *schema_};
     return task.run();
 }
 

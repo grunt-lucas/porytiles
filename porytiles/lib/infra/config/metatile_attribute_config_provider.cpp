@@ -154,7 +154,7 @@ MetatileAttributeConfigProvider::compute(ConfigScopeType type, const std::string
 
     scan.behaviors_header_present = behaviors_header_has_entries(project_root_ / behaviors_header_rel, format_);
 
-    const auto detected_size = metatiles_provider_.metatile_attr_size(type, scope);
+    const auto detected_size = metatiles_provider_.detect();
     if (detected_size.state == ValidationState::valid && detected_size.value.has_value()) {
         scan.detected_attr_size = detected_size.value.value();
     }

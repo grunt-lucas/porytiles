@@ -72,7 +72,6 @@ class DumpTilesetConfigCommand final : public Command {
         providers.push_back(
 
             std::make_unique<MetatileAttributeConfigProvider>(project_root, text_formatter, stderr_diag.get()));
-        providers.push_back(std::make_unique<MetatilesHeaderProvider>(project_root, text_formatter));
         providers.push_back(std::make_unique<DefaultProvider>());
         LazyLayeredConfig config{text_formatter, std::move(providers)};
 
@@ -86,12 +85,12 @@ class DumpTilesetConfigCommand final : public Command {
 
         config.dump_config(std::cout, ConfigScopeType::tileset, tileset_name_);
 
-        // Resolve and print the per-tileset attribute schema. This is the one place today that exercises the full
-        // resolver (layout selection + attr-size widening); the compile/decompile/import/create paths still fork on
-        // base game and do not construct it yet (issue #284).
+        // Resolve and print the per-tileset attribute schema, mirroring the resolver setup every other command uses
+        // (size detection from metatiles.h, layout selection, and mask-driven widening).
         ProjectLayoutMetadataProvider layout_metadata_provider{project_root, text_formatter, stderr_diag.get()};
+        MetatilesHeaderProvider metatiles_header{project_root, text_formatter};
         TilesetAttrSchemaResolver schema_resolver{
-            &config, &layout_metadata_provider, text_formatter, stderr_diag.get()};
+            &config, &layout_metadata_provider, &metatiles_header, text_formatter, stderr_diag.get()};
         auto resolved_result = schema_resolver.resolve(tileset_name_);
         if (!resolved_result.has_value()) {
             stderr_diag->fatal(resolved_result);
@@ -108,18 +107,10 @@ class DumpTilesetConfigCommand final : public Command {
             << text_formatter->format("Layout: {}", FormatParam{to_string(resolved.layout), Style::cyan | Style::bold})
             << "\n";
 
-        // Note when the byte width was widened past the configured size to cover the selected masks.
-        std::string attr_bytes_note;
-        if (auto configured = config.metatile_attr_size(ConfigScopeType::tileset, tileset_name_);
-            configured.has_value() && resolved.attr_bytes > configured.value().value()) {
-            attr_bytes_note = text_formatter->format(
-                " (widened from {} to cover the selected masks)",
-                FormatParam{std::to_string(configured.value().value()), Style::faint});
-        }
         out << "  "
             << text_formatter->format(
                    "Attribute size: {} bytes", FormatParam{std::to_string(resolved.attr_bytes), Style::bold})
-            << attr_bytes_note << "\n\n";
+            << "\n\n";
 
         out << "  " << text_formatter->style("Fields:", Style::faint) << "\n";
         for (const Field &field : resolved.schema.fields()) {

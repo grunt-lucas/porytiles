@@ -184,8 +184,6 @@ void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, con
     dump_single_config_value(
         out, *format_, "Tileset Paths Secondary Bin", tileset_paths_secondary_bin_provenance_chain(type, scope));
     dump_single_config_value(
-        out, *format_, "Metatile Attribute Size", metatile_attr_size_provenance_chain(type, scope));
-    dump_single_config_value(
         out, *format_, "Metatile Attribute Fields", metatile_attr_fields_provenance_chain(type, scope));
     dump_single_config_value(
         out,
@@ -742,19 +740,6 @@ LazyLayeredConfig::tileset_paths_secondary_bin_raw(ConfigScopeType type, const s
         });
 }
 
-ChainableResult<ConfigValue<std::size_t>>
-LazyLayeredConfig::metatile_attr_size_raw(ConfigScopeType type, const std::string &scope) const
-{
-    const auto name = extract_function_name();
-    // Strip the _raw suffix from the function name for cache key
-    const auto base_name = name.substr(0, name.size() - 4);
-    const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<std::size_t>(
-        key, "Metatile Attribute Size", [&type, &scope](const ConfigProvider &provider) {
-            return provider.metatile_attr_size(type, scope);
-        });
-}
-
 ChainableResult<ConfigValue<MetatileAttrFieldSpecs>>
 LazyLayeredConfig::metatile_attr_fields_raw(ConfigScopeType type, const std::string &scope) const
 {
@@ -1069,13 +1054,6 @@ LazyLayeredConfig::tileset_paths_secondary_bin_provenance_chain(ConfigScopeType 
 {
     return collect_provenance_chain<std::string>(
         [&type, &scope](const ConfigProvider &provider) { return provider.tileset_paths_secondary_bin(type, scope); });
-}
-
-std::vector<ProvenanceChainLink<std::size_t>>
-LazyLayeredConfig::metatile_attr_size_provenance_chain(ConfigScopeType type, const std::string &scope) const
-{
-    return collect_provenance_chain<std::size_t>(
-        [&type, &scope](const ConfigProvider &provider) { return provider.metatile_attr_size(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<MetatileAttrFieldSpecs>>

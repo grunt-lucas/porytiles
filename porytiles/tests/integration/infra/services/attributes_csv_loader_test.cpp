@@ -450,18 +450,19 @@ TEST_F(AttributesCsvLoaderTest, LoadFireredCsvRawFieldNotIntegerReturnsError)
         << "Error should name the field and the bad cell. Got: " << full_error_text;
 }
 
-// A raw field spanning the full 32-bit word must accept any value up to its maximum, including values above INT_MAX.
-// This regressed when the raw-cell parse bottomed out in std::stoi regardless of the requested integer type.
-TEST_F(AttributesCsvLoaderTest, LoadWideRawFieldValueAboveIntMaxSucceeds)
+// A wide raw field must accept values far beyond a 16-bit range. The widest legal field in a 4-byte word spans bits
+// 0-28 (bits 29-30 are the structural layer_type, which no field may overlap). This regressed when the raw-cell parse
+// bottomed out in std::stoi regardless of the requested integer type.
+TEST_F(AttributesCsvLoaderTest, LoadWideRawFieldLargeValueSucceeds)
 {
-    auto schema_result = Schema::create({Field{"wide", 0xFFFFFFFF}}, 4);
+    auto schema_result = Schema::create({Field{"wide", 0x1FFFFFFF}}, 4);
     Schema wide_schema = std::move(schema_result).value();
     ProviderMap no_providers{};
     AttributesCsvLoader loader{&formatter_, &wide_schema, &no_providers, &config_, &diag_};
 
     auto result = loader.load(test_resources_dir / "wide_raw_field.csv", kTilesetScope);
     ASSERT_TRUE(result.has_value()) << join_error_chain(result);
-    EXPECT_EQ(result.value().at(0).field("wide"), 3000000000u);
+    EXPECT_EQ(result.value().at(0).field("wide"), 500000000u);
 }
 
 TEST_F(AttributesCsvLoaderTest, LayerTypeColumnKnobOnAppliesFilledCellsAndLeavesBlankInferred)

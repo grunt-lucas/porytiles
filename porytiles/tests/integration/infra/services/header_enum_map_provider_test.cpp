@@ -536,7 +536,7 @@ TEST_F(HeaderEnumMapProviderTest, BuildProviderMapContainsExactlyProviderBackedF
                 0x00FF,
                 0,
                 ProviderSpec{.header = test_resources_dir / "metatile_behaviors_define.h", .prefix = "MB_"}},
-            Field{"raw_field", 0xFF00},
+            Field{"raw_field", 0x0F00},
         },
         2);
     ASSERT_TRUE(schema_result.has_value());

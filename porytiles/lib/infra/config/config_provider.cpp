@@ -219,12 +219,6 @@ LayerValue<std::string> ConfigProvider::tileset_paths_secondary_bin(
     return LayerValue<std::string>::not_provided();
 }
 
-LayerValue<std::size_t> ConfigProvider::metatile_attr_size(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    return LayerValue<std::size_t>::not_provided();
-}
-
 LayerValue<MetatileAttrFieldSpecs> ConfigProvider::metatile_attr_fields(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

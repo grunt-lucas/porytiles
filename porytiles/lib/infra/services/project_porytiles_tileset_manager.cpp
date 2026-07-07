@@ -31,7 +31,7 @@ ChainableResult<void> append_incbin_declarations(
     const IncbinDeclarationAppender *incbin_appender,
     const std::string &tileset_name,
     const std::string &bin_path_base,
-    std::size_t metatile_attr_size)
+    std::size_t attr_bytes)
 {
     // Append INCBIN declarations to graphics.h
     PT_TRY_CALL_CHAIN_ERR(
@@ -42,7 +42,7 @@ ChainableResult<void> append_incbin_declarations(
 
     // Append INCBIN declarations to metatiles.h
     PT_TRY_CALL_CHAIN_ERR(
-        incbin_appender->append_metatiles_declarations(tileset_name, bin_path_base, metatile_attr_size),
+        incbin_appender->append_metatiles_declarations(tileset_name, bin_path_base, attr_bytes),
         void,
         "Failed to append metatiles INCBIN declarations for '{}'.",
         FormatParam(tileset_name, Style::bold));
@@ -146,7 +146,8 @@ ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_existing(c
         FormatParam(tileset_name, Style::bold));
 
     // Step 5: Append INCBIN declarations using the resolved attribute width
-    auto incbin_result = append_incbin_declarations(incbin_appender_, tileset_name, bin_path_base, metatile_attr_size_);
+    auto incbin_result =
+        append_incbin_declarations(incbin_appender_, tileset_name, bin_path_base, schema_->attr_bytes());
     if (!incbin_result.has_value()) {
         return incbin_result;
     }
@@ -183,7 +184,8 @@ ProjectPorytilesTilesetManager::persist_managed_new(const std::string &tileset_n
         FormatParam(tileset_name, Style::bold));
 
     // Step 4: Append INCBIN declarations using the resolved attribute width
-    auto incbin_result = append_incbin_declarations(incbin_appender_, tileset_name, bin_path_base, metatile_attr_size_);
+    auto incbin_result =
+        append_incbin_declarations(incbin_appender_, tileset_name, bin_path_base, schema_->attr_bytes());
     if (!incbin_result.has_value()) {
         return incbin_result;
     }

@@ -78,7 +78,6 @@ class OverrideConfigProvider final : public ConfigProvider {
     void set_tileset_paths_primary_bin(std::string value);
     void set_tileset_paths_secondary_src(std::string value);
     void set_tileset_paths_secondary_bin(std::string value);
-    void set_metatile_attr_size(std::size_t value);
     void set_metatile_attr_fields(MetatileAttrFieldSpecs value);
     void set_metatile_attr_field_overrides(MetatileAttrFieldOverrides value);
     void set_write_layer_type_column(bool value);
@@ -152,8 +151,6 @@ class OverrideConfigProvider final : public ConfigProvider {
     tileset_paths_secondary_src(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<std::string>
     tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<std::size_t>
-    metatile_attr_size(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<MetatileAttrFieldSpecs>
     metatile_attr_fields(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<MetatileAttrFieldOverrides>
@@ -207,7 +204,6 @@ class OverrideConfigProvider final : public ConfigProvider {
     std::optional<std::string> tileset_paths_primary_bin_override_;
     std::optional<std::string> tileset_paths_secondary_src_override_;
     std::optional<std::string> tileset_paths_secondary_bin_override_;
-    std::optional<std::size_t> metatile_attr_size_override_;
     std::optional<MetatileAttrFieldSpecs> metatile_attr_fields_override_;
     std::optional<MetatileAttrFieldOverrides> metatile_attr_field_overrides_override_;
     std::optional<bool> write_layer_type_column_override_;

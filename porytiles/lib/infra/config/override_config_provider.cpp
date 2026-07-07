@@ -203,11 +203,6 @@ void OverrideConfigProvider::set_tileset_paths_secondary_bin(std::string value)
     tileset_paths_secondary_bin_override_ = std::move(value);
 }
 
-void OverrideConfigProvider::set_metatile_attr_size(std::size_t value)
-{
-    metatile_attr_size_override_ = std::move(value);
-}
-
 void OverrideConfigProvider::set_metatile_attr_fields(MetatileAttrFieldSpecs value)
 {
     metatile_attr_fields_override_ = std::move(value);
@@ -565,14 +560,6 @@ OverrideConfigProvider::tileset_paths_secondary_bin(ConfigScopeType type, const 
     }
     return LayerValue<std::string>::valid(
         tileset_paths_secondary_bin_override_.value(), "tileset_paths_secondary_bin", source_info_);
-}
-
-LayerValue<std::size_t> OverrideConfigProvider::metatile_attr_size(ConfigScopeType type, const std::string &scope) const
-{
-    if (!scope_matches(type, scope) || !metatile_attr_size_override_.has_value()) {
-        return LayerValue<std::size_t>::not_provided();
-    }
-    return LayerValue<std::size_t>::valid(metatile_attr_size_override_.value(), "metatile_attr_size", source_info_);
 }
 
 LayerValue<MetatileAttrFieldSpecs>

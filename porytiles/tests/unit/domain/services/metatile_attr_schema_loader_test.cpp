@@ -36,7 +36,7 @@ TEST_F(MetatileAttrSchemaLoaderTest, BuildsSchemaFromPrimaryMaskFields)
 {
     MetatileAttrFieldSpecs fields = {
         {"behavior", 0x00FFU, std::nullopt, std::nullopt, std::nullopt},
-        {"layer", 0xF000U, std::nullopt, 0U, std::nullopt},
+        {"extra", 0x0F00U, std::nullopt, 0U, std::nullopt},
     };
     const auto result = load_metatile_attr_schema(fields, {}, 2, &formatter_);
     ASSERT_TRUE(result.has_value()) << all_error_text(result);
@@ -198,7 +198,7 @@ resolve_error_text(const ChainableResult<ResolvedTilesetAttrSchema> &result, con
 {
     return {
         {"behavior", 0x00FFU, 0x01FFU, 0U, std::nullopt},
-        {"terrain", 0x3F00U, std::nullopt, 0U, std::nullopt},     // primary-only
+        {"terrain", 0x0F00U, std::nullopt, 0U, std::nullopt},     // primary-only
         {"layer_type", std::nullopt, 0x30000U, 0U, std::nullopt}, // frlg-only, needs > 16 bits
     };
 }
@@ -207,8 +207,7 @@ resolve_error_text(const ChainableResult<ResolvedTilesetAttrSchema> &result, con
 
 TEST_F(MetatileAttrSchemaLoaderTest, FrlgSelectionPicksAlternateMasks)
 {
-    const auto result =
-        resolve_tileset_attr_schema(dual_layout_fields(), {}, AttrSchemaLayout::frlg, 2, false, &formatter_);
+    const auto result = resolve_tileset_attr_schema(dual_layout_fields(), {}, AttrSchemaLayout::frlg, 2, &formatter_);
     ASSERT_TRUE(result.has_value()) << resolve_error_text(result, formatter_);
     // behavior uses its frlg_mask, not its primary mask.
     ASSERT_NE(find_field(result.value().schema, "behavior"), nullptr);
@@ -221,7 +220,7 @@ TEST_F(MetatileAttrSchemaLoaderTest, FrlgSelectionPicksAlternateMasks)
 TEST_F(MetatileAttrSchemaLoaderTest, PrimaryDropsAlternateOnlyFields)
 {
     const auto result =
-        resolve_tileset_attr_schema(dual_layout_fields(), {}, AttrSchemaLayout::primary, 2, false, &formatter_);
+        resolve_tileset_attr_schema(dual_layout_fields(), {}, AttrSchemaLayout::primary, 2, &formatter_);
     ASSERT_TRUE(result.has_value()) << resolve_error_text(result, formatter_);
     EXPECT_EQ(find_field(result.value().schema, "behavior")->mask(), 0x00FFU);
     EXPECT_NE(find_field(result.value().schema, "terrain"), nullptr);
@@ -234,9 +233,9 @@ TEST_F(MetatileAttrSchemaLoaderTest, FrlgWithZeroFrlgMasksErrors)
     // No field defines a frlg_mask, so the FRLG layout has nothing to select.
     MetatileAttrFieldSpecs fields = {
         {"behavior", 0x00FFU, std::nullopt, 0U, std::nullopt},
-        {"terrain", 0x3F00U, std::nullopt, 0U, std::nullopt},
+        {"terrain", 0x0F00U, std::nullopt, 0U, std::nullopt},
     };
-    const auto result = resolve_tileset_attr_schema(fields, {}, AttrSchemaLayout::frlg, 2, false, &formatter_);
+    const auto result = resolve_tileset_attr_schema(fields, {}, AttrSchemaLayout::frlg, 2, &formatter_);
     ASSERT_FALSE(result.has_value());
     const auto text = resolve_error_text(result, formatter_);
     EXPECT_NE(text.find("frlg_mask"), std::string::npos);
@@ -245,28 +244,18 @@ TEST_F(MetatileAttrSchemaLoaderTest, FrlgWithZeroFrlgMasksErrors)
 
 TEST_F(MetatileAttrSchemaLoaderTest, AttrSizeWidensSilentlyForFrlg)
 {
-    // Configured 2 bytes, not explicit. The FRLG layer_type mask reaches bit 16, so the schema must widen to 4.
-    const auto result =
-        resolve_tileset_attr_schema(dual_layout_fields(), {}, AttrSchemaLayout::frlg, 2, false, &formatter_);
+    // Detected 2 bytes. The FRLG layer_type mask reaches bit 16, so the schema must widen to 4.
+    const auto result = resolve_tileset_attr_schema(dual_layout_fields(), {}, AttrSchemaLayout::frlg, 2, &formatter_);
     ASSERT_TRUE(result.has_value()) << resolve_error_text(result, formatter_);
     EXPECT_EQ(result.value().attr_bytes, 4U);
     EXPECT_EQ(result.value().schema.attr_bytes(), 4U);
 }
 
-TEST_F(MetatileAttrSchemaLoaderTest, ExplicitTooSmallSurfacesSchemaError)
+TEST_F(MetatileAttrSchemaLoaderTest, DetectedLargerSizeKept)
 {
-    // Explicit 2 bytes wins even though it is too small for the FRLG masks; Schema::create rejects the layout.
-    const auto result =
-        resolve_tileset_attr_schema(dual_layout_fields(), {}, AttrSchemaLayout::frlg, 2, true, &formatter_);
-    ASSERT_FALSE(result.has_value());
-    EXPECT_FALSE(resolve_error_text(result, formatter_).empty());
-}
-
-TEST_F(MetatileAttrSchemaLoaderTest, ExplicitLargerSizeKept)
-{
-    // Explicit 4 bytes with small primary masks: the size is kept, not shrunk to the detected 2.
+    // A detected 4-byte width with small primary masks: the width is never shrunk below the detected value.
     MetatileAttrFieldSpecs fields = {{"behavior", 0x00FFU, std::nullopt, 0U, std::nullopt}};
-    const auto result = resolve_tileset_attr_schema(fields, {}, AttrSchemaLayout::primary, 4, true, &formatter_);
+    const auto result = resolve_tileset_attr_schema(fields, {}, AttrSchemaLayout::primary, 4, &formatter_);
     ASSERT_TRUE(result.has_value()) << resolve_error_text(result, formatter_);
     EXPECT_EQ(result.value().attr_bytes, 4U);
 }
@@ -278,7 +267,7 @@ TEST_F(MetatileAttrSchemaLoaderTest, OverridesMergeBeforeSelection)
     MetatileAttrFieldOverrides overrides;
     overrides["special"] = MetatileAttrFieldOverride{std::nullopt, 0x0F00U, std::nullopt, std::nullopt};
 
-    const auto result = resolve_tileset_attr_schema(fields, overrides, AttrSchemaLayout::frlg, 2, false, &formatter_);
+    const auto result = resolve_tileset_attr_schema(fields, overrides, AttrSchemaLayout::frlg, 2, &formatter_);
     ASSERT_TRUE(result.has_value()) << resolve_error_text(result, formatter_);
     ASSERT_NE(find_field(result.value().schema, "special"), nullptr);
     EXPECT_EQ(find_field(result.value().schema, "special")->mask(), 0x0F00U);

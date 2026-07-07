@@ -28,7 +28,6 @@
 #include "porytiles/infra/repos/project_tileset_artifact_writer.hpp"
 #include "porytiles/infra/services/ascii_tile_printer.hpp"
 #include "porytiles/infra/services/attributes_csv_loader.hpp"
-#include "porytiles/infra/services/base_game_detector.hpp"
 #include "porytiles/infra/services/color_palette_printer.hpp"
 #include "porytiles/infra/services/header_enum_map_provider.hpp"
 #include "porytiles/infra/services/incbin_declaration_appender.hpp"
@@ -90,7 +89,6 @@ class ImportTilesetCommand final : public Command {
         providers.push_back(
 
             std::make_unique<MetatileAttributeConfigProvider>(project_root, text_formatter, stderr_diag.get()));
-        providers.push_back(std::make_unique<MetatilesHeaderProvider>(project_root, text_formatter));
         providers.push_back(std::make_unique<DefaultProvider>());
         LazyLayeredConfig config{text_formatter, std::move(providers)};
 
@@ -99,14 +97,6 @@ class ImportTilesetCommand final : public Command {
             const auto validation_err = ChainableResult<void>{FormattableError{
                 "Configuration validation failed for tileset '{}'.", FormatParam{tileset_name_, Style::bold}}};
             stderr_diag->fatal(validation_err);
-            throw CLI::RuntimeError{1};
-        }
-
-        // Eagerly validate metatile-attr-size to fail fast before any file I/O. The effective attribute width used
-        // below is the schema resolver's attr_bytes, which starts from this config value but may widen it.
-        auto attr_size_check = config.metatile_attr_size(ConfigScopeType::tileset, tileset_name_);
-        if (!attr_size_check.has_value()) {
-            stderr_diag->fatal(attr_size_check);
             throw CLI::RuntimeError{1};
         }
 
@@ -154,24 +144,11 @@ class ImportTilesetCommand final : public Command {
         IncbinDeclarationAppender incbin_appender{project_root, text_formatter};
         ProjectTilesetAnimsModifier tileset_anims_modifier{project_root, &config, diag.get()};
 
-        // Detect base game, only to gate out pokeruby imports. No other behavioral path reads the base game; the
-        // attribute handling below is driven entirely by the resolved schema.
-        BaseGameDetector base_game_detector{project_root, text_formatter, diag.get()};
-        auto base_game_result = base_game_detector.detect();
-        if (!base_game_result.has_value()) {
-            diag->fatal(base_game_result);
-            throw CLI::RuntimeError{1};
-        }
-        if (base_game_result.value() == BaseGame::pokeruby) {
-            diag->fatal(
-                ChainableResult<void>{
-                    FormattableError{"Importing pokeruby-based projects is not currently supported."}});
-            throw CLI::RuntimeError{1};
-        }
-
         // Resolve the per-tileset attribute schema and build one enum provider per provider-backed field. The schema
         // and provider map must outlive the CSV loader and artifact writer below, which hold pointers into them.
-        TilesetAttrSchemaResolver schema_resolver{&config, &layout_metadata_provider, text_formatter, diag.get()};
+        MetatilesHeaderProvider metatiles_header{project_root, text_formatter};
+        TilesetAttrSchemaResolver schema_resolver{
+            &config, &layout_metadata_provider, &metatiles_header, text_formatter, diag.get()};
         auto resolved_result = schema_resolver.resolve(tileset_name_);
         if (!resolved_result.has_value()) {
             diag->fatal(resolved_result);
@@ -180,14 +157,14 @@ class ImportTilesetCommand final : public Command {
         const ResolvedTilesetAttrSchema resolved = std::move(resolved_result).value();
         ProviderMap provider_map = build_provider_map(project_root, resolved.schema, text_formatter, diag.get());
 
-        // The tileset manager takes the resolved attribute width so its generated INCBIN declarations match the
+        // The tileset manager takes the resolved schema so its generated INCBIN declarations match the
         // binary attribute format, so it must be constructed after schema resolution.
         ProjectPorytilesTilesetManager tileset_manager{
             project_root,
             &metadata_provider,
             &metadata_writer,
             &config,
-            resolved.attr_bytes,
+            &resolved.schema,
             diag.get(),
             &incbin_appender,
             &tileset_anims_modifier};
@@ -200,7 +177,7 @@ class ImportTilesetCommand final : public Command {
             project_root, &config, &metadata_provider, text_formatter, diag.get()};
         ProjectTilesetArtifactReader artifact_reader{
             project_root,
-            resolved.attr_bytes,
+            &resolved.schema,
             &png_rgba_loader,
             &png_indexed_loader,
             &jasc_loader,
@@ -214,7 +191,6 @@ class ImportTilesetCommand final : public Command {
             project_root,
             &resolved.schema,
             &provider_map,
-            resolved.attr_bytes,
             text_formatter,
             diag.get(),
             &png_rgba_saver,
@@ -228,7 +204,7 @@ class ImportTilesetCommand final : public Command {
 
         ProjectPrimaryTilesetImporter importer{
             project_root,
-            resolved.attr_bytes,
+            &resolved.schema,
             &config,
             text_formatter,
             diag.get(),
@@ -239,7 +215,8 @@ class ImportTilesetCommand final : public Command {
             &jasc_loader,
         };
         PrimaryTilesetDecompiler decompiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
-        TilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
+        TilesetCompiler compiler{
+            &config, &resolved.schema, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
         ImportPrimaryTileset import_use_case{
             &importer,
             &decompiler,

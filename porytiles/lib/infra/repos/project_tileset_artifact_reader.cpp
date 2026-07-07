@@ -167,11 +167,7 @@ ProjectTilesetArtifactReader::read_metatile_attributes_bin(Tileset &dest, const 
     // Keys are relative to project_root_, so prepend for file I/O
     const auto path = project_root_ / src_key.key();
     PT_TRY_ASSIGN_CHAIN_ERR(
-        attributes,
-        metatile_attr_size_ == attr::bytes_per_attr_firered ? parse_firered_metatile_attributes(path)
-                                                            : parse_emerald_metatile_attributes(path),
-        void,
-        "Failed to read metatile_attributes.bin.");
+        attributes, parse_metatile_attributes(path, *schema_), void, "Failed to read metatile_attributes.bin.");
     for (auto &attr : attributes) {
         dest.porymap_component().push_back_attribute(std::move(attr));
     }

@@ -12,6 +12,7 @@
 #include "porytiles/domain/models/image.hpp"
 #include "porytiles/domain/models/index_pixel.hpp"
 #include "porytiles/domain/models/metatile.hpp"
+#include "porytiles/domain/models/metatile_attribute_schema.hpp"
 #include "porytiles/domain/models/palette.hpp"
 #include "porytiles/domain/models/pixel_tile.hpp"
 #include "porytiles/domain/models/porymap_tileset_component.hpp"
@@ -162,7 +163,7 @@ class TilesetCompilerTestBase : public ::testing::Test {
     [[nodiscard]] std::unique_ptr<TilesetCompiler> make_compiler() const
     {
         return std::make_unique<TilesetCompiler>(
-            &config_, formatter_.get(), diag_.get(), tile_printer_.get(), pal_printer_.get());
+            &config_, &schema_, formatter_.get(), diag_.get(), tile_printer_.get(), pal_printer_.get());
     }
 
     template <typename T>
@@ -183,6 +184,8 @@ class TilesetCompilerTestBase : public ::testing::Test {
     std::unique_ptr<AsciiTilePrinter> tile_printer_;
     std::unique_ptr<ColorPalettePrinter> pal_printer_;
     MockDomainConfig config_;
+    // The stock emerald shape: a single behavior field in a 2-byte attribute.
+    Schema schema_ = std::move(Schema::create({Field{"behavior", 0x00FF}}, 2)).value();
 };
 
 class TilesetCompilerModeComboTests : public TilesetCompilerTestBase {};

@@ -243,13 +243,6 @@ struct CliOptionMeta {
             {},
             false},
         CliOptionMeta{
-            "metatile-attr-size",
-            "Metatile Attribute Size - The size in bytes of each metatile attribute entry (2 for Emerald/Ruby, 4 for "
-            "FireRed).",
-            "integer",
-            {},
-            false},
-        CliOptionMeta{
             "write-layer-type-column",
             "Write Layer Type Column - Emit and honor a layerType column in the metatile attributes CSV.",
             "bool",

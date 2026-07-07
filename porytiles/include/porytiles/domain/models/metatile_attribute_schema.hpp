@@ -241,11 +241,17 @@ class Field {
  * @brief A validated metatile attribute layout: an ordered set of non-overlapping fields.
  *
  * @details
- * A Schema is the data-driven replacement for hardcoded per-base-game attribute layouts. It owns the
+ * A Schema is the single source of truth for how a packed attribute word is laid out. It owns the
  * fields that make up an attribute word and the byte size those fields were validated against. Schemas
  * can only be built through Schema::create, which enforces the layout rules, so any Schema in hand is
  * known to be well-formed: every field has a contiguous non-zero mask that fits the attribute size, no
  * two fields overlap, no name repeats, and every default fits its field.
+ *
+ * Alongside the user-defined fields, a Schema owns the structural layer_type layout. The layer type's
+ * bit position is a fixed GBA/porymap format convention keyed on the total attribute width (2-byte:
+ * bits 12-15; 4-byte: bits 29-30), so it is derived from attr_bytes rather than declared as a field.
+ * Schema::create rejects any field whose mask overlaps the structural layer_type mask, so field masks
+ * and the layer type can never collide.
  */
 class Schema {
   public:
@@ -254,9 +260,10 @@ class Schema {
      *
      * @details
      * Runs a single fail-fast pass over the fields in the given order. Intra-field rules (zero mask,
-     * non-contiguous mask, mask beyond the attribute size, default value too large) are checked before
-     * the cross-field overlap and duplicate-name rules. The first violation wins and is returned as the
-     * error; on success the fields are stored in the order given.
+     * non-contiguous mask, mask beyond the attribute size, overlap with the structural layer_type mask,
+     * default value too large) are checked before the cross-field overlap and duplicate-name rules. The
+     * first violation wins and is returned as the error; on success the fields are stored in the order
+     * given.
      *
      * @param fields The fields making up the layout, in the order they should be preserved
      * @param attr_bytes The attribute size in bytes the layout is validated against
@@ -275,11 +282,39 @@ class Schema {
         return attr_bytes_;
     }
 
+    /**
+     * @brief Returns the mask of the structural layer_type bits within the packed attribute word.
+     *
+     * @details
+     * Derived from attr_bytes() at creation: 0x0000F000 for a 2-byte attribute, 0x60000000 for a
+     * 4-byte attribute. No field in a created Schema overlaps this mask.
+     *
+     * @return The structural layer_type mask
+     */
+    [[nodiscard]] std::uint32_t layer_type_mask() const
+    {
+        return layer_type_mask_;
+    }
+
+    /**
+     * @brief Returns the bit offset of the structural layer_type's least-significant bit.
+     *
+     * @return The number of low-order zero bits in layer_type_mask()
+     */
+    [[nodiscard]] std::uint32_t layer_type_offset() const
+    {
+        return static_cast<std::uint32_t>(std::countr_zero(layer_type_mask_));
+    }
+
   private:
-    Schema(std::vector<Field> fields, std::size_t attr_bytes) : fields_{std::move(fields)}, attr_bytes_{attr_bytes} {}
+    Schema(std::vector<Field> fields, std::size_t attr_bytes, std::uint32_t layer_type_mask)
+        : fields_{std::move(fields)}, attr_bytes_{attr_bytes}, layer_type_mask_{layer_type_mask}
+    {
+    }
 
     std::vector<Field> fields_;
     std::size_t attr_bytes_;
+    std::uint32_t layer_type_mask_;
 };
 
 } // namespace porytiles

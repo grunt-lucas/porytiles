@@ -34,12 +34,10 @@ ProjectPrimaryTilesetImporter::import_porymap_component_from_vanilla(const std::
         porymap_component->push_back_tilemap_entry(std::move(entry));
     }
 
-    // Step 3: Parse metatile_attributes.bin (dispatch on attribute size for correct format)
+    // Step 3: Parse metatile_attributes.bin using the resolved schema's binary layout
     PT_TRY_ASSIGN_CHAIN_ERR(
         attributes,
-        metatile_attr_size_ == attr::bytes_per_attr_firered
-            ? parse_firered_metatile_attributes(project_root_ / artifact_paths.metatile_attributes_path())
-            : parse_emerald_metatile_attributes(project_root_ / artifact_paths.metatile_attributes_path()),
+        parse_metatile_attributes(project_root_ / artifact_paths.metatile_attributes_path(), *schema_),
         std::unique_ptr<PorymapTilesetComponent>,
         "Failed to parse metatile_attributes.bin.");
 

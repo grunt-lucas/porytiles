@@ -122,17 +122,57 @@ TEST(MetatileAttributeSchemaTest, CreateAcceptsFireredLayout)
     EXPECT_EQ(schema.fields()[6].name(), "attribute_7");
 }
 
-TEST(MetatileAttributeSchemaTest, CreateAcceptsFullWidthMasks)
+TEST(MetatileAttributeSchemaTest, CreateAcceptsWidestMasksOutsideLayerTypeBits)
 {
-    std::vector<Field> emerald_full;
-    emerald_full.emplace_back("all", 0xFFFF);
-    auto emerald_result = Schema::create(std::move(emerald_full), 2);
-    ASSERT_TRUE(emerald_result.has_value());
+    // The widest legal field fills every bit up to the structural layer_type bits (12-15 in a 2-byte word).
+    std::vector<Field> two_byte_full;
+    two_byte_full.emplace_back("all", 0x0FFF);
+    auto two_byte_result = Schema::create(std::move(two_byte_full), 2);
+    ASSERT_TRUE(two_byte_result.has_value());
 
-    std::vector<Field> firered_full;
-    firered_full.emplace_back("all", 0xFFFFFFFF);
-    auto firered_result = Schema::create(std::move(firered_full), 4);
-    ASSERT_TRUE(firered_result.has_value());
+    // In a 4-byte word the structural bits are 29-30, so bits 0-28 and bit 31 are both usable.
+    std::vector<Field> four_byte_full;
+    four_byte_full.emplace_back("low", 0x1FFFFFFF);
+    four_byte_full.emplace_back("top", 0x80000000);
+    auto four_byte_result = Schema::create(std::move(four_byte_full), 4);
+    ASSERT_TRUE(four_byte_result.has_value());
+}
+
+TEST(MetatileAttributeSchemaTest, LayerTypeMaskDerivedFromAttrBytes)
+{
+    std::vector<Field> two_byte_fields;
+    two_byte_fields.emplace_back("behavior", 0x00FF);
+    auto two_byte_result = Schema::create(std::move(two_byte_fields), 2);
+    ASSERT_TRUE(two_byte_result.has_value());
+    EXPECT_EQ(two_byte_result.value().layer_type_mask(), 0x0000F000u);
+    EXPECT_EQ(two_byte_result.value().layer_type_offset(), 12u);
+
+    std::vector<Field> four_byte_fields;
+    four_byte_fields.emplace_back("behavior", 0x000001FF);
+    auto four_byte_result = Schema::create(std::move(four_byte_fields), 4);
+    ASSERT_TRUE(four_byte_result.has_value());
+    EXPECT_EQ(four_byte_result.value().layer_type_mask(), 0x60000000u);
+    EXPECT_EQ(four_byte_result.value().layer_type_offset(), 29u);
+}
+
+TEST(MetatileAttributeSchemaTest, RejectsFieldOverlappingLayerTypeMask)
+{
+    PlainTextFormatter formatter;
+
+    // 0x3000 sits squarely inside the 2-byte structural layer_type bits 12-15.
+    std::vector<Field> two_byte_fields;
+    two_byte_fields.emplace_back("intruder", 0x3000);
+    auto two_byte_result = Schema::create(std::move(two_byte_fields), 2);
+    ASSERT_FALSE(two_byte_result.has_value());
+    EXPECT_NE(two_byte_result.error().join(formatter).find("intruder"), std::string::npos);
+    EXPECT_NE(two_byte_result.error().join(formatter).find("layer type"), std::string::npos);
+
+    // A full 32-bit mask necessarily covers the 4-byte structural bits 29-30.
+    std::vector<Field> four_byte_fields;
+    four_byte_fields.emplace_back("all", 0xFFFFFFFF);
+    auto four_byte_result = Schema::create(std::move(four_byte_fields), 4);
+    ASSERT_FALSE(four_byte_result.has_value());
+    EXPECT_NE(four_byte_result.error().join(formatter).find("layer type"), std::string::npos);
 }
 
 TEST(MetatileAttributeSchemaTest, RejectsZeroMask)
@@ -188,8 +228,9 @@ TEST(MetatileAttributeSchemaTest, RejectsMaskBeyondAttributeSize)
     ASSERT_FALSE(beyond_result.has_value());
     EXPECT_NE(beyond_result.error().join(formatter).find("beyond"), std::string::npos);
 
+    // The highest usable bit below the 2-byte structural layer_type bits (12-15) is bit 11.
     std::vector<Field> top_of_two;
-    top_of_two.emplace_back("top_of_two", 0x8000);
+    top_of_two.emplace_back("top_of_two", 0x0800);
     EXPECT_TRUE(Schema::create(std::move(top_of_two), 2).has_value());
 
     std::vector<Field> top_of_four;
@@ -213,11 +254,11 @@ TEST(MetatileAttributeSchemaTest, RejectsDefaultThatDoesNotFit)
 
     // A shifted mask has the same 2-bit width, so the fit check must be width-based (max_value), not raw mask.
     std::vector<Field> shifted_ok;
-    shifted_ok.emplace_back("shifted", 0x60000000, 3);
+    shifted_ok.emplace_back("shifted", 0x18000000, 3);
     EXPECT_TRUE(Schema::create(std::move(shifted_ok), 4).has_value());
 
     std::vector<Field> shifted_bad;
-    shifted_bad.emplace_back("shifted", 0x60000000, 4);
+    shifted_bad.emplace_back("shifted", 0x18000000, 4);
     auto shifted_bad_result = Schema::create(std::move(shifted_bad), 4);
     ASSERT_FALSE(shifted_bad_result.has_value());
     EXPECT_NE(shifted_bad_result.error().join(formatter).find("shifted"), std::string::npos);

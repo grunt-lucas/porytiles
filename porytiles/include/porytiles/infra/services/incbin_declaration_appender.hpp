@@ -73,8 +73,8 @@ class IncbinDeclarationAppender {
      * - `gMetatiles_PorytilesManaged_{Shorthand}` pointing to `porytiles_bin/metatiles.bin`
      * - `gMetatileAttributes_PorytilesManaged_{Shorthand}` pointing to `porytiles_bin/metatile_attributes.bin`
      *
-     * The attribute declaration uses `const u16` / `INCBIN_U16` when @p metatile_attr_size is 2,
-     * or `const u32` / `INCBIN_U32` when @p metatile_attr_size is 4.
+     * The attribute declaration uses `const u16` / `INCBIN_U16` when @p attr_bytes is 2,
+     * or `const u32` / `INCBIN_U32` when @p attr_bytes is 4.
      *
      * This is an idempotent upsert.
      * Any existing managed declarations for the tileset are removed first,
@@ -85,14 +85,14 @@ class IncbinDeclarationAppender {
      *
      * @param tileset_name The tileset name (e.g., "gTileset_General")
      * @param bin_path_base The base path for binary assets (e.g., "data/tilesets/primary")
-     * @param metatile_attr_size The size in bytes of each metatile attribute entry (2 or 4)
+     * @param attr_bytes The size in bytes of each metatile attribute entry (2 or 4)
      * @pre tileset_name must start with "gTileset_"
-     * @pre @p metatile_attr_size must be 2 or 4
+     * @pre @p attr_bytes must be 2 or 4
      * @post Exactly one metatiles and one attributes declaration for the tileset exist in metatiles.h.
      * @return Success or error result with details
      */
     [[nodiscard]] ChainableResult<void> append_metatiles_declarations(
-        const std::string &tileset_name, const std::string &bin_path_base, std::size_t metatile_attr_size) const;
+        const std::string &tileset_name, const std::string &bin_path_base, std::size_t attr_bytes) const;
 
     /**
      * @brief Removes INCBIN declarations for a Porytiles-managed tileset (for restore workflow).

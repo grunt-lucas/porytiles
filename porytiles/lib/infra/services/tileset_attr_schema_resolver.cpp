@@ -9,9 +9,10 @@ namespace porytiles {
 TilesetAttrSchemaResolver::TilesetAttrSchemaResolver(
     gsl::not_null<const LazyLayeredConfig *> config,
     gsl::not_null<const ProjectLayoutMetadataProvider *> layout_metadata,
+    gsl::not_null<const MetatilesHeaderProvider *> metatiles,
     gsl::not_null<const TextFormatter *> format,
     gsl::not_null<const UserDiagnostics *> diag)
-    : config_{config}, layout_metadata_{layout_metadata}, format_{format}, diag_{diag}
+    : config_{config}, layout_metadata_{layout_metadata}, metatiles_{metatiles}, format_{format}, diag_{diag}
 {
 }
 
@@ -24,28 +25,23 @@ ChainableResult<ResolvedTilesetAttrSchema> TilesetAttrSchemaResolver::resolve(co
         config_->metatile_attr_field_overrides(ConfigScopeType::tileset, tileset_name),
         ResolvedTilesetAttrSchema);
     PT_TRY_ASSIGN_PASS_ERR(
-        attr_size_cv, config_->metatile_attr_size(ConfigScopeType::tileset, tileset_name), ResolvedTilesetAttrSchema);
-    PT_TRY_ASSIGN_PASS_ERR(
         frlg_mode_cv,
         config_->use_frlg_alternate_masks(ConfigScopeType::tileset, tileset_name),
         ResolvedTilesetAttrSchema);
 
     const MetatileAttrFieldSpecs fields = fields_cv.value();
     const MetatileAttrFieldOverrides overrides = overrides_cv.value();
-    const std::size_t configured_attr_bytes = attr_size_cv.value();
     const FrlgAlternateMaskMode frlg_mode = frlg_mode_cv.value();
 
-    // Attr size is "explicit" only when the user set it via the CLI or a YAML file. A value synthesized by the
-    // metatiles-header or default provider does not count, so an FRLG layout may widen it silently. Walk the provenance
-    // chain and let the first provider that actually provides a value (valid or invalid) decide.
-    bool attr_bytes_explicit = false;
-    for (const auto &link : config_->metatile_attr_size_provenance_chain(ConfigScopeType::tileset, tileset_name)) {
-        if (link.layer_value.state == ValidationState::not_provided) {
-            continue;
-        }
-        attr_bytes_explicit = link.provider_name == "CliOptionProvider" || link.provider_name == "YamlFileProvider";
-        break;
+    // The attribute byte width comes straight from the metatiles.h detector. A project with no detectable width (no
+    // metatiles.h, or no attribute declarations in it) defaults to 2 bytes; mixed u16/u32 declarations are a hard
+    // error. The resolved schema may still widen past the detected width to cover the selected masks.
+    const LayerValue<std::size_t> detected = metatiles_->detect();
+    if (detected.state == ValidationState::invalid) {
+        return FormattableError{detected.error_message};
     }
+    const std::size_t detected_attr_bytes =
+        detected.state == ValidationState::valid ? detected.value.value() : std::size_t{2};
 
     AttrSchemaLayout layout = AttrSchemaLayout::primary;
     switch (frlg_mode) {
@@ -99,7 +95,25 @@ ChainableResult<ResolvedTilesetAttrSchema> TilesetAttrSchemaResolver::resolve(co
     }
     }
 
-    return resolve_tileset_attr_schema(fields, overrides, layout, configured_attr_bytes, attr_bytes_explicit, format_);
+    auto resolved = resolve_tileset_attr_schema(fields, overrides, layout, detected_attr_bytes, format_);
+    if (resolved.has_value()) {
+        // Summarize the resolved schema so the user can see what layout the data-driven resolution landed on. This is
+        // the schema-shaped replacement for the old "detected base game" remark.
+        std::string field_names;
+        for (const Field &field : resolved.value().schema.fields()) {
+            if (!field_names.empty()) {
+                field_names += ", ";
+            }
+            field_names += field.name();
+        }
+        diag_->remark(
+            "metatile-attr-schema",
+            "resolved {}-byte metatile attributes for tileset '{}' with fields: {}.",
+            FormatParam{resolved.value().attr_bytes, Style::bold},
+            FormatParam{tileset_name, Style::bold},
+            FormatParam{field_names, Style::bold});
+    }
+    return resolved;
 }
 
 } // namespace porytiles

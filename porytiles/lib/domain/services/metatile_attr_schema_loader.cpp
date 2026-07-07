@@ -155,8 +155,7 @@ ChainableResult<ResolvedTilesetAttrSchema> resolve_tileset_attr_schema(
     const MetatileAttrFieldSpecs &fields,
     const MetatileAttrFieldOverrides &overrides,
     AttrSchemaLayout layout,
-    std::size_t configured_attr_bytes,
-    bool attr_bytes_explicit,
+    std::size_t detected_attr_bytes,
     gsl::not_null<const TextFormatter *> format)
 {
     PT_TRY_ASSIGN_PASS_ERR(resolved, merge_field_overrides(fields, overrides, format), ResolvedTilesetAttrSchema);
@@ -189,11 +188,10 @@ ChainableResult<ResolvedTilesetAttrSchema> resolve_tileset_attr_schema(
             "least one field."};
     }
 
-    // Explicit user config wins even when too small (Schema::create surfaces the error). Otherwise widen silently to
-    // the smallest of 2 or 4 bytes that covers the selected masks, but never below the configured size.
-    const std::size_t detected_bytes = needs_wide ? 4U : 2U;
-    const std::size_t attr_bytes =
-        attr_bytes_explicit ? configured_attr_bytes : std::max(configured_attr_bytes, detected_bytes);
+    // Widen silently to the smallest of 2 or 4 bytes that covers the selected masks, but never below the width
+    // detected from the project's own metatiles.h declarations.
+    const std::size_t mask_bytes = needs_wide ? 4U : 2U;
+    const std::size_t attr_bytes = std::max(detected_attr_bytes, mask_bytes);
 
     auto schema_result = Schema::create(std::move(schema_fields), attr_bytes);
     if (!schema_result.has_value()) {

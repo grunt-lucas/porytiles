@@ -267,13 +267,6 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
         storage.tileset_paths_secondary_bin,
         "Tileset Paths Secondary Bin - The directory for secondary tileset Porymap component assets.");
 
-    // Metatile Attribute Size (std::size_t, captured as string, parsed by CliOptionProvider)
-    config_group->add_option(
-        "--metatile-attr-size",
-        storage.metatile_attr_size,
-        "Metatile Attribute Size - The size in bytes of each metatile attribute entry (2 for Emerald/Ruby, 4 for "
-        "FireRed).");
-
     // Write Layer Type Column (bool with --flag/--no-flag, captured as "true"/"false" string)
     config_group->add_flag(
         "--write-layer-type-column,!--no-write-layer-type-column",

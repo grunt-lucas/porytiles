@@ -91,7 +91,6 @@ class CreateTilesetCommand final : public Command {
         providers.push_back(
 
             std::make_unique<MetatileAttributeConfigProvider>(project_root, text_formatter, stderr_diag.get()));
-        providers.push_back(std::make_unique<MetatilesHeaderProvider>(project_root, text_formatter));
         providers.push_back(std::make_unique<DefaultProvider>());
         LazyLayeredConfig config{text_formatter, std::move(providers)};
 
@@ -100,14 +99,6 @@ class CreateTilesetCommand final : public Command {
             const auto validation_err = ChainableResult<void>{FormattableError{
                 "Configuration validation failed for tileset '{}'.", FormatParam{tileset_name_, Style::bold}}};
             stderr_diag->fatal(validation_err);
-            throw CLI::RuntimeError{1};
-        }
-
-        // Eagerly validate metatile-attr-size to fail fast before any file I/O. The effective attribute width used
-        // below is the schema resolver's attr_bytes, which starts from this config value but may widen it.
-        auto attr_size_check = config.metatile_attr_size(ConfigScopeType::tileset, tileset_name_);
-        if (!attr_size_check.has_value()) {
-            stderr_diag->fatal(attr_size_check);
             throw CLI::RuntimeError{1};
         }
 
@@ -158,7 +149,9 @@ class CreateTilesetCommand final : public Command {
         // Resolve the per-tileset attribute schema and build one enum provider per provider-backed field. The schema
         // and provider map must outlive the CSV loader, artifact writer, and creator below, which hold pointers into
         // them.
-        TilesetAttrSchemaResolver schema_resolver{&config, &layout_metadata_provider, text_formatter, diag.get()};
+        MetatilesHeaderProvider metatiles_header{project_root, text_formatter};
+        TilesetAttrSchemaResolver schema_resolver{
+            &config, &layout_metadata_provider, &metatiles_header, text_formatter, diag.get()};
         auto resolved_result = schema_resolver.resolve(tileset_name_);
         if (!resolved_result.has_value()) {
             diag->fatal(resolved_result);
@@ -167,14 +160,14 @@ class CreateTilesetCommand final : public Command {
         const ResolvedTilesetAttrSchema resolved = std::move(resolved_result).value();
         ProviderMap provider_map = build_provider_map(project_root, resolved.schema, text_formatter, diag.get());
 
-        // The tileset manager takes the resolved attribute width so its generated INCBIN declarations match the
+        // The tileset manager takes the resolved schema so its generated INCBIN declarations match the
         // binary attribute format, so it must be constructed after schema resolution.
         ProjectPorytilesTilesetManager tileset_manager{
             project_root,
             &metadata_provider,
             &metadata_writer,
             &config,
-            resolved.attr_bytes,
+            &resolved.schema,
             diag.get(),
             &incbin_appender,
             &tileset_anims_modifier};
@@ -187,7 +180,7 @@ class CreateTilesetCommand final : public Command {
             project_root, &config, &metadata_provider, text_formatter, diag.get()};
         ProjectTilesetArtifactReader artifact_reader{
             project_root,
-            resolved.attr_bytes,
+            &resolved.schema,
             &png_rgba_loader,
             &png_indexed_loader,
             &jasc_loader,
@@ -201,7 +194,6 @@ class CreateTilesetCommand final : public Command {
             project_root,
             &resolved.schema,
             &provider_map,
-            resolved.attr_bytes,
             text_formatter,
             diag.get(),
             &png_rgba_saver,
@@ -225,7 +217,8 @@ class CreateTilesetCommand final : public Command {
             throw CLI::RuntimeError{1};
         }
         TilesetCreator creator{&config, behavior_provider_it->second.get()};
-        TilesetCompiler compiler{&config, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
+        TilesetCompiler compiler{
+            &config, &resolved.schema, text_formatter, diag.get(), tile_printer.get(), pal_printer.get()};
 
         // Create and run the appropriate use case based on --secondary flag
         ChainableResult<void> create_result;
