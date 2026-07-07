@@ -318,6 +318,25 @@ TEST_F(ParserTests, ParseUnaryNot)
     EXPECT_EQ(defines[0].int_value(), ~static_cast<std::int64_t>(0));
 }
 
+TEST_F(ParserTests, ParseUnaryOperatorWithFollowingBinaryOperator)
+{
+    // Unary ~ and ! must bind tighter than the binary operator that follows them.
+    auto result = parse(R"(
+#define MASKED ~5 & 3
+#define CLEARED ~0xF0 & 0xFF
+#define LOGIC !0 && 1
+#define GROUPED ~(5 & 3)
+)");
+    ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
+
+    const auto &defines = result.value();
+    ASSERT_EQ(defines.size(), 4);
+    EXPECT_EQ(defines[0].int_value(), 2);    // (~5) & 3, not ~(5 & 3) == -2
+    EXPECT_EQ(defines[1].int_value(), 0x0F); // (~0xF0) & 0xFF
+    EXPECT_EQ(defines[2].int_value(), 1);    // (!0) && 1
+    EXPECT_EQ(defines[3].int_value(), -2);   // explicit grouping still applies
+}
+
 TEST_F(ParserTests, ParseComplexExpression)
 {
     // ((1 << 4) | (1 << 2)) = 16 | 4 = 20
@@ -1317,6 +1336,68 @@ enum {
     EXPECT_EQ(members[4].value, 6);
 }
 
+TEST_F(ParserTests, TolerantDefineSkipsUnsupportedExpressionForms)
+{
+    // A ternary is not supported, and stranded operands mean the expression was not understood. Both must degrade to
+    // "value unknown" rather than evaluate to whatever operand the evaluator saw last.
+    Lexer lexer{&formatter_, R"(
+#define COND 1
+#define CHOICE COND ? 10 : 20
+#define STRANDED 5 6
+#define AFTER 7
+)"};
+    auto tokens = lexer.lex();
+    ASSERT_TRUE(tokens.has_value());
+    Parser parser{&formatter_, std::move(tokens).value()};
+
+    TolerantDefineScan scan = parser.parse_defines_tolerant();
+
+    EXPECT_TRUE(has_define(scan.defines, "COND"));
+    EXPECT_TRUE(has_define(scan.defines, "AFTER"));
+    EXPECT_FALSE(has_define(scan.defines, "CHOICE"));
+    EXPECT_FALSE(has_define(scan.defines, "STRANDED"));
+    ASSERT_EQ(scan.skipped.size(), 2U);
+    EXPECT_EQ(scan.skipped[0].name, "CHOICE");
+    EXPECT_EQ(scan.skipped[1].name, "STRANDED");
+}
+
+TEST_F(ParserTests, TolerantEnumDirectiveInBodyPoisonsFollowingValues)
+{
+    // The scanner does not evaluate conditionals inside an enum body, so once a directive appears, no later value
+    // (implicit or explicit) can be trusted: an explicit value may sit in an untaken branch. The directive's own
+    // tokens must not be lexed as phantom members, which would silently shift every following implicit value.
+    Lexer lexer{&formatter_, R"(
+enum {
+    A,
+    B,
+#if SOME_FLAG
+    C,
+    D = 5,
+#endif
+    E,
+};
+)"};
+    auto tokens = lexer.lex();
+    ASSERT_TRUE(tokens.has_value());
+    Parser parser{&formatter_, std::move(tokens).value()};
+
+    TolerantEnumScan scan = parser.parse_enums_tolerant();
+    ASSERT_EQ(scan.enums.size(), 1U);
+    const auto &members = scan.enums[0].members;
+    ASSERT_EQ(members.size(), 5U);
+
+    EXPECT_EQ(members[0].name, "A");
+    EXPECT_EQ(members[0].value, 0);
+    EXPECT_EQ(members[1].name, "B");
+    EXPECT_EQ(members[1].value, 1);
+    EXPECT_EQ(members[2].name, "C");
+    EXPECT_FALSE(members[2].value.has_value());
+    EXPECT_EQ(members[3].name, "D");
+    EXPECT_FALSE(members[3].value.has_value());
+    EXPECT_EQ(members[4].name, "E");
+    EXPECT_FALSE(members[4].value.has_value());
+}
+
 TEST_F(ParserTests, IndexedArrayResolvesSeededMacroValuesAndHexCasing)
 {
     Lexer lexer{&formatter_, R"(
@@ -1371,6 +1452,28 @@ static const u32 sMasks[COUNT] = {
     EXPECT_FALSE(arr.entries[1].value.has_value());
     EXPECT_FALSE(arr.entries[1].value_tokens.empty()); // raw tokens retained for later re-evaluation
     EXPECT_EQ(arr.entries[2].value.value(), 4);
+}
+
+TEST_F(ParserTests, IndexedArrayParsesHighBitMasks)
+{
+    // pokeemerald-expansion's sMetatileAttrMasks really contains 0x80000000; the full 32-bit mask must survive too.
+    Lexer lexer{&formatter_, R"(
+static const u32 sMasks[COUNT] = {
+    [IDX_A] = 0x80000000,
+    [IDX_B] = 0xFFFFFFFF,
+};
+)"};
+    auto tokens = lexer.lex();
+    ASSERT_TRUE(tokens.has_value());
+    Parser parser{&formatter_, std::move(tokens).value()};
+
+    auto result = parser.parse_indexed_arrays();
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1U);
+    const auto &arr = result.value()[0];
+    ASSERT_EQ(arr.entries.size(), 2U);
+    EXPECT_EQ(arr.entries[0].value.value(), 0x80000000LL);
+    EXPECT_EQ(arr.entries[1].value.value(), 0xFFFFFFFFLL);
 }
 
 TEST_F(ParserTests, IndexedArrayDecoyDistinguishedByExactName)

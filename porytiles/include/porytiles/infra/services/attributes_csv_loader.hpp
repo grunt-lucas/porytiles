@@ -42,25 +42,15 @@ class AttributesCsvLoader {
     /**
      * @brief Constructs an AttributesCsvLoader with required dependencies.
      *
-     * @details
-     * The schema dictates the expected columns and how each cell parses; the provider map must uphold the ProviderMap
-     * membership contract for that schema (one provider per has_provider() field). A provider-backed field missing
-     * from the map is an internal invariant violation and panics rather than degrading to raw parsing.
-     *
      * @param format The text formatter for styled output
-     * @param schema The resolved attribute schema the CSV columns are validated and parsed against
-     * @param providers The provider map holding one provider per provider-backed schema field
      * @param config The config used to resolve the write_layer_type_column knob at tileset scope
      * @param diag The diagnostics sink for the "column ignored" warning when the knob is off
      */
     AttributesCsvLoader(
         gsl::not_null<const TextFormatter *> format,
-        gsl::not_null<const Schema *> schema,
-        gsl::not_null<const ProviderMap *> providers,
         gsl::not_null<const InfraConfig *> config,
         gsl::not_null<const UserDiagnostics *> diag)
-        : format_{format}, schema_{schema}, providers_{providers}, config_{config}, diag_{diag},
-          file_printer_{std::make_unique<FileHighlightPrinter>(format)}
+        : format_{format}, config_{config}, diag_{diag}, file_printer_{std::make_unique<FileHighlightPrinter>(format)}
     {
     }
 
@@ -68,27 +58,36 @@ class AttributesCsvLoader {
      * @brief Loads metatile attributes from a CSV file.
      *
      * @details
-     * Parses the CSV file, validates the header row against the resolved schema, resolves each field cell (constant
+     * Parses the CSV file, validates the header row against the given schema, resolves each field cell (constant
      * names through the field's provider, integers for raw fields), and returns a map of metatile ID to
      * MetatileAttribute. All attributes are created with LayerType::normal.
+     *
+     * The schema and providers must belong to the tileset that owns the CSV: when compiling a secondary, the paired
+     * primary's CSV parses against the primary's own resolved schema, which can differ from the secondary's. The
+     * provider map must uphold the ProviderMap membership contract for the schema (one provider per has_provider()
+     * field); a provider-backed field missing from the map is an internal invariant violation and panics rather than
+     * degrading to raw parsing.
      *
      * When a @c layer_type column is present, its handling depends on the write_layer_type_column knob resolved at the
      * scope of @p tileset_name: with the knob on, a filled cell pins the attribute's layer type and a blank cell leaves
      * it inferred; with the knob off, the column is ignored and a single warning is emitted for the file.
      *
      * @param path The path to the attributes CSV file
+     * @param schema The owning tileset's resolved attribute schema the CSV columns are validated and parsed against
+     * @param providers The provider map holding one provider per provider-backed schema field
      * @param tileset_name The tileset whose config scope resolves the write_layer_type_column knob. When compiling a
      * secondary this is the primary's name for the primary's CSV, so the knob resolves under the file's owning tileset.
      * @pre File must exist and be readable
      * @return Map of metatile IDs to their attributes, or an error with file context
      */
-    [[nodiscard]] ChainableResult<std::map<std::size_t, MetatileAttribute>>
-    load(const std::filesystem::path &path, const std::string &tileset_name) const;
+    [[nodiscard]] ChainableResult<std::map<std::size_t, MetatileAttribute>> load(
+        const std::filesystem::path &path,
+        const Schema &schema,
+        const ProviderMap &providers,
+        const std::string &tileset_name) const;
 
   private:
     const TextFormatter *format_;
-    const Schema *schema_;
-    const ProviderMap *providers_;
     const InfraConfig *config_;
     const UserDiagnostics *diag_;
     const std::unique_ptr<FileHighlightPrinter> file_printer_;

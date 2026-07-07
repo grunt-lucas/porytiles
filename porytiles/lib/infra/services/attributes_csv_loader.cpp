@@ -414,8 +414,11 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
 
 namespace porytiles {
 
-ChainableResult<std::map<std::size_t, MetatileAttribute>>
-AttributesCsvLoader::load(const std::filesystem::path &path, const std::string &tileset_name) const
+ChainableResult<std::map<std::size_t, MetatileAttribute>> AttributesCsvLoader::load(
+    const std::filesystem::path &path,
+    const Schema &schema,
+    const ProviderMap &providers,
+    const std::string &tileset_name) const
 {
     // Resolve the knob under the file's owning tileset scope. When compiling a secondary, the paired primary's CSV
     // loads through this same loader with the primary's name, so its knob resolves under the primary's config. (The
@@ -427,7 +430,7 @@ AttributesCsvLoader::load(const std::filesystem::path &path, const std::string &
     }
 
     return parse_attributes_csv(
-        path, *schema_, *providers_, *format_, *file_printer_, write_layer_type_column_cv.value(), *diag_);
+        path, schema, providers, *format_, *file_printer_, write_layer_type_column_cv.value(), *diag_);
 }
 
 } // namespace porytiles

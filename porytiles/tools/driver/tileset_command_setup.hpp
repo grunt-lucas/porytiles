@@ -32,7 +32,6 @@
 #include "porytiles/infra/services/ascii_tile_printer.hpp"
 #include "porytiles/infra/services/attributes_csv_loader.hpp"
 #include "porytiles/infra/services/color_palette_printer.hpp"
-#include "porytiles/infra/services/header_enum_map_provider.hpp"
 #include "porytiles/infra/services/incbin_declaration_appender.hpp"
 #include "porytiles/infra/services/jasc_pal_loader.hpp"
 #include "porytiles/infra/services/jasc_pal_saver.hpp"
@@ -45,6 +44,7 @@
 #include "porytiles/infra/services/project_tileset_anims_modifier.hpp"
 #include "porytiles/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles/infra/services/project_tileset_metadata_writer.hpp"
+#include "porytiles/infra/services/tileset_attr_schema_cache.hpp"
 #include "porytiles/infra/services/tileset_attr_schema_resolver.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
@@ -150,15 +150,18 @@ class TilesetCommandEnv {
  * @brief The schema-driven service graph shared by the compile, create, import, and decompile commands.
  *
  * @details
- * Resolves the per-tileset attribute schema, builds one enum provider per provider-backed field, and wires the
- * services that consume them: the attributes CSV loader, the artifact reader/writer, the tileset repo, the tileset
- * manager, and the compiler. This is the single home for that wiring so the commands cannot drift apart.
+ * Builds the per-tileset schema cache (each tileset a command touches resolves its own schema and providers, so a
+ * paired primary's artifacts decode with the primary's schema, not the target's) and wires the services that consume
+ * it: the attributes CSV loader, the artifact reader/writer, the tileset repo, the tileset manager, and the compiler.
+ * This is the single home for that wiring so the commands cannot drift apart.
  *
- * Declaration order is dependency order: the resolved schema and provider map come before the CSV loader, artifact
- * writer, manager, and compiler, which hold pointers into them. That makes the graph self-pinning: not copyable, not
- * movable, constructed once on the stack after the env.
+ * Declaration order is dependency order: the schema cache and the target's entry come before the artifact
+ * reader/writer, manager, and compiler, which hold pointers into them. That makes the graph self-pinning: not
+ * copyable, not movable, constructed once on the stack after the env.
  *
- * Construction fails the command (fatal diagnostic plus CLI::RuntimeError) when schema resolution fails.
+ * Construction fails the command (fatal diagnostic plus CLI::RuntimeError) when the target's schema resolution fails.
+ * Schemas for other tilesets (a secondary's paired primary) resolve lazily on first artifact read, and a failure
+ * there surfaces as that read's error.
  */
 class TilesetCommandServices {
   public:
@@ -174,8 +177,9 @@ class TilesetCommandServices {
           metatiles_header{env.project_root, env.text_formatter},
           schema_resolver{
               &env.config, &layout_metadata_provider, &metatiles_header, env.text_formatter, env.diag.get()},
-          resolved{resolve_schema_or_fail(schema_resolver, tileset_name, *env.diag)},
-          provider_map{build_provider_map(env.project_root, resolved.schema, env.text_formatter, env.diag.get())},
+          schema_cache{env.project_root, &schema_resolver, env.text_formatter, env.diag.get()},
+          target_entry{entry_or_fail(schema_cache, tileset_name, *env.diag)}, resolved{target_entry->resolved},
+          provider_map{target_entry->providers},
           tileset_manager{
               env.project_root,
               &metadata_provider,
@@ -185,11 +189,11 @@ class TilesetCommandServices {
               env.diag.get(),
               &incbin_appender,
               &tileset_anims_modifier},
-          attributes_csv_loader{env.text_formatter, &resolved.schema, &provider_map, &env.config, env.diag.get()},
+          attributes_csv_loader{env.text_formatter, &env.config, env.diag.get()},
           key_provider{env.project_root, &env.config, &metadata_provider, env.text_formatter, env.diag.get()},
           artifact_reader{
               env.project_root,
-              &resolved.schema,
+              &schema_cache,
               &png_rgba_loader,
               &png_indexed_loader,
               &jasc_loader,
@@ -246,8 +250,12 @@ class TilesetCommandServices {
     ProjectTilesetAnimsModifier tileset_anims_modifier;
     MetatilesHeaderProvider metatiles_header;
     TilesetAttrSchemaResolver schema_resolver;
-    ResolvedTilesetAttrSchema resolved;
-    ProviderMap provider_map;
+    TilesetAttrSchemaCache schema_cache;
+    // The command target's cache entry, resolved fail-fast at construction. resolved and provider_map alias into it
+    // for the consumers (and commands) that operate on the target tileset only.
+    const TilesetAttrSchemaCache::Entry *target_entry;
+    const ResolvedTilesetAttrSchema &resolved;
+    const ProviderMap &provider_map;
     ProjectPorytilesTilesetManager tileset_manager;
     AttributesCsvLoader attributes_csv_loader;
     ProjectTilesetArtifactKeyProvider key_provider;
@@ -258,15 +266,15 @@ class TilesetCommandServices {
     TilesetCompiler compiler;
 
   private:
-    [[nodiscard]] static ResolvedTilesetAttrSchema resolve_schema_or_fail(
-        const TilesetAttrSchemaResolver &schema_resolver, const std::string &tileset_name, const UserDiagnostics &diag)
+    [[nodiscard]] static const TilesetAttrSchemaCache::Entry *entry_or_fail(
+        const TilesetAttrSchemaCache &schema_cache, const std::string &tileset_name, const UserDiagnostics &diag)
     {
-        auto resolved_result = schema_resolver.resolve(tileset_name);
-        if (!resolved_result.has_value()) {
-            diag.fatal(resolved_result);
+        auto entry_result = schema_cache.entry(tileset_name);
+        if (!entry_result.has_value()) {
+            diag.fatal(entry_result);
             throw CLI::RuntimeError{1};
         }
-        return std::move(resolved_result).value();
+        return entry_result.value();
     }
 };
 

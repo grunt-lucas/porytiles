@@ -515,6 +515,7 @@ std::optional<TolerantEnum> Parser::parse_enum_tolerant()
     std::vector<TolerantEnumMember> members;
     std::int64_t counter = 0;
     bool counter_valid = true;
+    bool directive_seen = false;
 
     while (!is_at_end() && !check(TokenType::right_brace)) {
         while (check(TokenType::newline)) {
@@ -523,6 +524,15 @@ std::optional<TolerantEnum> Parser::parse_enum_tolerant()
         if (check(TokenType::right_brace)) {
             break;
         }
+        if (check(TokenType::hash)) {
+            // A preprocessor directive inside the body. The scanner does not evaluate conditionals here, so every
+            // member value beyond this point depends on a branch it cannot decide. Skip the directive line (rather
+            // than lexing its tokens as phantom members) and record later members as valueless.
+            skip_to_next_line();
+            directive_seen = true;
+            counter_valid = false;
+            continue;
+        }
         if (!check(TokenType::identifier)) {
             // Unexpected token inside the enum body; skip it to stay resilient.
             advance();
@@ -530,6 +540,11 @@ std::optional<TolerantEnum> Parser::parse_enum_tolerant()
         }
 
         members.push_back(parse_enum_member_tolerant(counter, counter_valid));
+        if (directive_seen) {
+            // Even an explicit '= value' cannot be trusted once a directive appeared: it may sit in an untaken branch.
+            members.back().value = std::nullopt;
+            counter_valid = false;
+        }
 
         if (check(TokenType::comma)) {
             advance();
@@ -892,6 +907,19 @@ ChainableResult<std::int64_t> Parser::evaluate_expression(const std::vector<Toke
         return make_error(SourcePosition{}, "empty expression");
     }
 
+    // Reject any token the evaluator has no rule for (ternaries, casts, sizeof, etc). Dropping it and evaluating the
+    // remaining tokens would produce a confidently wrong value; failing here degrades to "value unknown" instead.
+    for (const Token &token : expr_tokens) {
+        const bool supported = token.is(TokenType::integer_literal) || token.is(TokenType::identifier) ||
+                               token.is(TokenType::left_paren) || token.is(TokenType::right_paren) ||
+                               is_operator(token.type());
+        if (!supported) {
+            return make_error(
+                token.position(),
+                format_->format("unsupported token '{}' in expression", FormatParam{token.text(), Style::bold}));
+        }
+    }
+
     // Convert to postfix notation using Shunting Yard
     std::vector<Token> postfix = to_postfix(expr_tokens);
 
@@ -954,7 +982,7 @@ std::vector<Token> Parser::to_postfix(const std::vector<Token> &expr_tokens)
                 expect_operand = true;
             }
         }
-        // Skip unknown tokens
+        // No other token kinds can appear: evaluate_expression rejects unsupported tokens before conversion.
     }
 
     // Pop remaining operators
@@ -1107,6 +1135,11 @@ ChainableResult<std::int64_t> Parser::evaluate_postfix(const std::vector<Token> 
     if (values.empty()) {
         return make_error(SourcePosition{}, "expression evaluated to no value");
     }
+    if (values.size() != 1) {
+        // Operands were left stranded, meaning the expression was not fully understood. Returning the top of the
+        // stack here would be a confidently wrong answer.
+        return make_error(SourcePosition{}, "expression did not reduce to a single value");
+    }
 
     return values.top();
 }
@@ -1116,6 +1149,11 @@ int Parser::operator_precedence(TokenType type) const
     // Lower number = higher precedence (evaluated first)
     // Based on C operator precedence
     switch (type) {
+    case TokenType::tilde:
+    case TokenType::exclaim:
+        // Always unary; they must bind tighter than every binary operator so that ~5 & 3 means (~5) & 3. Unary minus
+        // cannot be distinguished from binary minus here, but sharing precedence 4 evaluates it correctly anyway.
+        return 2;
     case TokenType::star:
     case TokenType::slash:
     case TokenType::percent:

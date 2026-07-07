@@ -164,10 +164,22 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_metatiles_bin(Tileset &
 ChainableResult<void>
 ProjectTilesetArtifactReader::read_metatile_attributes_bin(Tileset &dest, const ArtifactKey &src_key) const
 {
+    // Decode with the owning tileset's schema (dest.name()), not the command target's: when compiling a secondary,
+    // the paired primary's bin can follow a different resolved schema.
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        schema_entry,
+        schema_cache_->entry(dest.name()),
+        void,
+        "Failed to resolve the metatile attribute schema for tileset '{}'.",
+        FormatParam(dest.name(), Style::bold));
+
     // Keys are relative to project_root_, so prepend for file I/O
     const auto path = project_root_ / src_key.key();
     PT_TRY_ASSIGN_CHAIN_ERR(
-        attributes, parse_metatile_attributes(path, *schema_), void, "Failed to read metatile_attributes.bin.");
+        attributes,
+        parse_metatile_attributes(path, schema_entry->resolved.schema),
+        void,
+        "Failed to read metatile_attributes.bin.");
     for (auto &attr : attributes) {
         dest.porymap_component().push_back_attribute(std::move(attr));
     }
@@ -294,10 +306,24 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_top_png(Tileset &dest, 
 
 ChainableResult<void> ProjectTilesetArtifactReader::read_attributes_csv(Tileset &dest, const ArtifactKey &src_key) const
 {
-    // Keys are relative to project_root_, so prepend for file I/O. The knob resolves under the tileset that owns this
-    // CSV (dest.name()); when reading a paired primary, that is the primary's scope.
+    // The schema, providers, and layer-type knob all resolve under the tileset that owns this CSV (dest.name()); when
+    // reading a paired primary, that is the primary's scope, not the command target's.
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        schema_entry,
+        schema_cache_->entry(dest.name()),
+        void,
+        "Failed to resolve the metatile attribute schema for tileset '{}'.",
+        FormatParam(dest.name(), Style::bold));
+
+    // Keys are relative to project_root_, so prepend for file I/O
     PT_TRY_ASSIGN_PASS_ERR(
-        attributes, attributes_csv_loader_->load((project_root_ / src_key.key()).string(), dest.name()), void);
+        attributes,
+        attributes_csv_loader_->load(
+            (project_root_ / src_key.key()).string(),
+            schema_entry->resolved.schema,
+            schema_entry->providers,
+            dest.name()),
+        void);
     for (const auto &[metatile_id, attribute] : attributes) {
         dest.porytiles_component().insert_attribute(metatile_id, attribute);
     }
