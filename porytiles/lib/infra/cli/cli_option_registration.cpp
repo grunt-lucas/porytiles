@@ -279,7 +279,7 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
             }
             // count == 0 means neither flag was provided, leave optional empty
         },
-        "Write Layer Type Column - Emit and honor a layerType column in the metatile attributes CSV.");
+        "Write Layer Type Column - Emit and honor a layer_type column in the metatile attributes CSV.");
 
     // Use FRLG Alternate Masks (enum FrlgAlternateMaskMode, captured as string, parsed by CliOptionProvider)
     config_group

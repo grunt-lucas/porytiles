@@ -865,7 +865,7 @@ config_values:
     symbol: write_layer_type_column
     yaml_path: fieldmap.write_layer_type_column
     cli_option: write-layer-type-column
-    cli_desc: Emit and honor a layerType column in the metatile attributes CSV.
+    cli_desc: Emit and honor a layer_type column in the metatile attributes CSV.
     layer: infra
     type: bool
     parser: parse_bool

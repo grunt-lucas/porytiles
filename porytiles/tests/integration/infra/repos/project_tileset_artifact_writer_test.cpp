@@ -211,7 +211,7 @@ Tileset create_test_tileset(const std::string &name)
 }
 
 // A tileset whose bottom layer holds two metatiles (32x16 px) but whose Porytiles attribute map stores only metatile 0.
-// This is the sparse case the layerType writer must materialize a full row set for.
+// This is the sparse case the layer_type writer must materialize a full row set for.
 Tileset create_sparse_two_metatile_tileset(const std::string &name)
 {
     auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
@@ -729,16 +729,16 @@ TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvKnobOnEmitsOneRowPerMetat
     ASSERT_TRUE(write_result.has_value()) << write_result.error().join(PlainTextFormatter{});
     ASSERT_TRUE(writer_->commit().has_value());
 
-    // Header gains layerType. Present metatile 0 emits its "covered" token; synthesized metatile 1 emits a blank cell.
-    const std::string expected = "id,behavior,layerType\n0,MB_NORMAL,covered\n1,MB_NORMAL,\n";
+    // Header gains layer_type. Present metatile 0 emits its "covered" token; synthesized metatile 1 emits a blank cell.
+    const std::string expected = "id,behavior,layer_type\n0,MB_NORMAL,covered\n1,MB_NORMAL,\n";
     EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), expected);
 }
 
 TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvKnobOnEmitsBlankCellForInferredLayerType)
 {
     // Regression: a present attribute whose layer type was set the inferred way (not pinned via explicit_layer_type)
-    // must emit a BLANK layerType cell. If the writer keyed off layer_type() instead of explicit_layer_type(), it would
-    // pin this row as "covered", and the next compile would wrongly treat the auto row as a user override.
+    // must emit a BLANK layer_type cell. If the writer keyed off layer_type() instead of explicit_layer_type(), it
+    // would pin this row as "covered", and the next compile would wrongly treat the auto row as a user override.
     infra_config_->write_layer_type_column = true;
     auto tileset = create_two_metatile_tileset_with_inferred_layer_type("test_tileset");
 
@@ -749,7 +749,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvKnobOnEmitsBlankCellForIn
     ASSERT_TRUE(writer_->commit().has_value());
 
     // Both cells blank despite metatile 0's non-'normal' layer_type(): neither row carries an explicit pin.
-    const std::string expected = "id,behavior,layerType\n0,MB_NORMAL,\n1,MB_NORMAL,\n";
+    const std::string expected = "id,behavior,layer_type\n0,MB_NORMAL,\n1,MB_NORMAL,\n";
     EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), expected);
 }
 
@@ -764,7 +764,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvKnobOffIsByteIdenticalToH
     ASSERT_TRUE(write_result.has_value()) << write_result.error().join(PlainTextFormatter{});
     ASSERT_TRUE(writer_->commit().has_value());
 
-    // Byte-identical to the pre-schema emerald output: no layerType column, and the sole all-default metatile (1) is
+    // Byte-identical to the pre-schema emerald output: no layer_type column, and the sole all-default metatile (1) is
     // skipped, so only metatile 0's row survives. This exact string is the emerald compatibility contract for #284.
     const std::string expected = "id,behavior\n0,MB_NORMAL\n";
     EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), expected);

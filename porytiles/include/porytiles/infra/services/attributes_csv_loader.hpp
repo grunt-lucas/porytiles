@@ -72,7 +72,7 @@ class AttributesCsvLoader {
      * names through the field's provider, integers for raw fields), and returns a map of metatile ID to
      * MetatileAttribute. All attributes are created with LayerType::normal.
      *
-     * When a @c layerType column is present, its handling depends on the write_layer_type_column knob resolved at the
+     * When a @c layer_type column is present, its handling depends on the write_layer_type_column knob resolved at the
      * scope of @p tileset_name: with the knob on, a filled cell pins the attribute's layer type and a blank cell leaves
      * it inferred; with the knob off, the column is ignored and a single warning is emitted for the file.
      *

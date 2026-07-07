@@ -244,7 +244,7 @@ struct CliOptionMeta {
             false},
         CliOptionMeta{
             "write-layer-type-column",
-            "Write Layer Type Column - Emit and honor a layerType column in the metatile attributes CSV.",
+            "Write Layer Type Column - Emit and honor a layer_type column in the metatile attributes CSV.",
             "bool",
             {},
             true},

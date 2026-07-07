@@ -62,7 +62,7 @@ class MetatileAttribute {
      *
      * @details
      * When set, this value pins the layer type against inference: the compile path uses it verbatim instead of the type
-     * it would otherwise infer from the metatile's tiles. It is populated from an explicit layerType cell in the
+     * it would otherwise infer from the metatile's tiles. It is populated from an explicit layer_type cell in the
      * attributes CSV. Producers of inferred layer types (bin parsers, decompiler, metatileizer) must leave it unset so
      * downstream code can tell "the user said so" apart from "we guessed".
      *

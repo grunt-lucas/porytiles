@@ -21,7 +21,7 @@ using namespace porytiles;
 struct CsvRow {
     std::size_t metatile_id;
     std::vector<std::string> field_cells;        // one trimmed cell per schema field, in schema order
-    std::optional<std::string> layer_type_token; // raw layerType cell, nullopt when the column or cell is blank
+    std::optional<std::string> layer_type_token; // raw layer_type cell, nullopt when the column or cell is blank
 };
 
 /**
@@ -37,7 +37,7 @@ struct CsvRow {
 }
 
 /**
- * @brief Extracts the trimmed layerType cell at a fixed column index, or nullopt when the cell is blank/absent.
+ * @brief Extracts the trimmed layer_type cell at a fixed column index, or nullopt when the cell is blank/absent.
  *
  * @details
  * The split() helper keeps trailing empty fields, so a blank cell arrives as an empty string; a row that simply omits
@@ -58,7 +58,7 @@ extract_layer_type_token(const std::vector<std::string> &columns, bool has_layer
 }
 
 /**
- * @brief Splits one data row into an id, one cell per schema field, and the optional layerType token.
+ * @brief Splits one data row into an id, one cell per schema field, and the optional layer_type token.
  *
  * @details
  * The cells are not resolved here; the caller interprets each one against its schema field (provider lookup or raw
@@ -102,7 +102,7 @@ ChainableResult<CsvRow> parse_csv_row(
             FormatParam{line_index + 1, Style::bold},
             FormatParam{max_columns},
             FormatParam{expected_header_string(schema)},
-            FormatParam{has_layer_type_column ? ",layerType" : ""},
+            FormatParam{has_layer_type_column ? ",layer_type" : ""},
             FormatParam{columns.size()}));
         err_lines.emplace_back();
         err_lines.append_range(file_printer.print(all_lines, std::vector{line_index}));
@@ -145,7 +145,7 @@ ChainableResult<CsvRow> parse_csv_row(
         field_cells.push_back(columns[1 + i]);
     }
 
-    // The layerType column, when present, sits directly after the schema fields.
+    // The layer_type column, when present, sits directly after the schema fields.
     return CsvRow{
         static_cast<std::size_t>(id_result.value()),
         std::move(field_cells),
@@ -186,7 +186,7 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
     }
 
     // Cross-check the header line (index 0) against the resolved schema: the columns must be 'id' followed by every
-    // schema field name in schema order, then at most an optional trailing layerType column. Anything missing,
+    // schema field name in schema order, then at most an optional trailing layer_type column. Anything missing,
     // mis-ordered, or extra is a schema mismatch and fails with a diagnostic naming the column and its position.
     auto header_columns = split(lines[0], ",");
     for (auto &col : header_columns) {
@@ -225,13 +225,13 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
         }
     }
 
-    // Detect an optional trailing layerType column directly after the schema fields. We always detect it; the knob
+    // Detect an optional trailing layer_type column directly after the schema fields. We always detect it; the knob
     // decides whether its values are applied.
     const std::size_t layer_type_index = 1 + field_count;
     const bool has_layer_type_column =
-        header_columns.size() > layer_type_index && header_columns[layer_type_index] == "layerType";
+        header_columns.size() > layer_type_index && header_columns[layer_type_index] == "layer_type";
 
-    // Any trailing column other than the optional layerType is a schema mismatch, not a tolerated extra: a CSV written
+    // Any trailing column other than the optional layer_type is a schema mismatch, not a tolerated extra: a CSV written
     // for a wider schema (more fields than this tileset resolves) must fail loudly instead of silently dropping its
     // extra fields.
     const std::size_t first_unexpected_index = layer_type_index + (has_layer_type_column ? 1 : 0);
@@ -250,7 +250,7 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
             "layer-type-column",
             std::vector<std::string>{
                 format.format(
-                    "{}: a layerType column is present but write_layer_type_column is off; its values are ignored and "
+                    "{}: a layer_type column is present but write_layer_type_column is off; its values are ignored and "
                     "layer types will be inferred.",
                     FormatParam{path.string(), Style::bold}),
                 format.format(
@@ -262,7 +262,7 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
     std::map<std::size_t, MetatileAttribute> result{};
     std::unordered_map<std::size_t, std::size_t> id_to_line_index{};
 
-    // Applies a filled layerType cell as an explicit override, when the column is present and the knob is on. A blank
+    // Applies a filled layer_type cell as an explicit override, when the column is present and the knob is on. A blank
     // cell (nullopt token) leaves the layer type inferred. A bad token is a hard error with file context.
     auto apply_explicit_layer_type =
         [&](MetatileAttribute &attribute, const CsvRow &row, std::size_t line_index) -> ChainableResult<void> {
@@ -273,7 +273,7 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
         if (!layer_type.has_value()) {
             std::vector<std::string> err_lines{};
             err_lines.push_back(format.format(
-                "{}:{}: invalid layerType '{}'",
+                "{}:{}: invalid layer_type '{}'",
                 FormatParam{path.string(), Style::bold},
                 FormatParam{line_index + 1, Style::bold},
                 FormatParam{row.layer_type_token.value(), Style::bold}));
@@ -402,7 +402,7 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
         }
         if (const auto applied = apply_explicit_layer_type(attribute, row, line_index); !applied.has_value()) {
             return ChainableResult<std::map<std::size_t, MetatileAttribute>>{
-                FormattableError{"Failed to apply layerType override."}, applied};
+                FormattableError{"Failed to apply layer_type override."}, applied};
         }
         result.emplace(row.metatile_id, std::move(attribute));
     }

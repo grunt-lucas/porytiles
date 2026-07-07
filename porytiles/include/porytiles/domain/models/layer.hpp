@@ -137,7 +137,7 @@ enum class LayerType : unsigned int { normal = 0, covered = 1, split = 2 };
  *
  * @details
  * These tokens ("normal", "covered", "split") are the stable, machine-readable form used in the attributes CSV
- * layerType column. They are distinct from to_string(LayerType), which returns a human-readable display string
+ * layer_type column. They are distinct from to_string(LayerType), which returns a human-readable display string
  * ("Normal - Middle/Top") unsuitable as a round-trippable token.
  *
  * @param layer_type The LayerType to convert
@@ -158,7 +158,7 @@ enum class LayerType : unsigned int { normal = 0, covered = 1, split = 2 };
 }
 
 /**
- * @brief Parses a CSV layerType token into a LayerType.
+ * @brief Parses a CSV layer_type token into a LayerType.
  *
  * @details
  * Matching is case-insensitive, so "Normal", "NORMAL", and "normal" all parse. An unrecognized token is a hard error
@@ -185,7 +185,7 @@ enum class LayerType : unsigned int { normal = 0, covered = 1, split = 2 };
         return LayerType::split;
     }
     return FormattableError{
-        "invalid layerType token '{}': must be 'normal', 'covered', or 'split'", FormatParam{token, Style::bold}};
+        "invalid layer_type token '{}': must be 'normal', 'covered', or 'split'", FormatParam{token, Style::bold}};
 }
 
 } // namespace porytiles

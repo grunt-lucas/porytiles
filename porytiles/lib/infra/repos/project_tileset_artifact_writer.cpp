@@ -777,13 +777,13 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
             "Failed to open file for writing: '{}'.", FormatParam{transaction_dest_path.string(), Style::bold}};
     }
 
-    // Write header: id plus every schema field name in schema order, with the optional trailing layerType column.
+    // Write header: id plus every schema field name in schema order, with the optional trailing layer_type column.
     std::string header = "id";
     for (const Field &field : schema_->fields()) {
         header += "," + field.name();
     }
     if (write_layer_type_column) {
-        header += ",layerType";
+        header += ",layer_type";
     }
     out << header << "\n";
 
@@ -794,7 +794,7 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
         return attribute.fields().contains(field.name()) ? attribute.field(field.name()) : field.default_value();
     };
 
-    // Renders a row's field cells in schema order, without the id or layerType. A provider-backed field renders its
+    // Renders a row's field cells in schema order, without the id or layer_type. A provider-backed field renders its
     // value's constant name; a raw field renders the plain integer. has_provider() is the authority for that split,
     // and build_provider_map upholds has_provider() <=> map membership, so a missing provider is an internal bug.
     auto render_fields = [&](const MetatileAttribute &attribute,
@@ -868,7 +868,7 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
         return {};
     }
 
-    // Renders the trailing layerType cell for one attribute. Only an explicitly pinned layer type emits a token; an
+    // Renders the trailing layer_type cell for one attribute. Only an explicitly pinned layer type emits a token; an
     // inferred/auto layer type (the default, and everything a bin parser or decompiler produces) emits a blank cell.
     // This is what keeps the "blank = auto" workflow intact across a load/save round-trip: a row the user left blank
     // carries no explicit layer type, so it must not be written back as a pinned token that the next compile would then
@@ -879,7 +879,7 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
                    : std::string{};
     };
 
-    // Knob on: emit one row per metatile so every metatile has a layerType slot the user can fill. The attribute map
+    // Knob on: emit one row per metatile so every metatile has a layer_type slot the user can fill. The attribute map
     // can be sparse (tileset creation stores only some ids), so materialize a default row for any missing id. Row count
     // comes from the Porytiles layer image dimensions, the same source LayerImageMetatileizer uses.
     const std::size_t layer_metatile_count = metatile::metatile_count(src.porytiles_component().bottom());

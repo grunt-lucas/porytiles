@@ -355,7 +355,7 @@ TEST_F(AttributesCsvLoaderTest, LoadRowWithExtraCellsAfterLayerTypeReturnsError)
     config_.write_layer_type_column = true;
     AttributesCsvLoader loader = emerald_loader();
 
-    // With a layerType column present, the cap is one wider; a cell beyond it still fails.
+    // With a layer_type column present, the cap is one wider; a cell beyond it still fails.
     auto result = loader.load(test_resources_dir / "layer_type_row_extra_columns.csv", kTilesetScope);
     EXPECT_FALSE(result.has_value());
 
@@ -571,7 +571,7 @@ TEST_F(AttributesCsvLoaderTest, LayerTypeColumnKnobOnBadTokenErrorsWithFileConte
     ASSERT_FALSE(result.has_value());
 
     std::string full_error_text = join_error_chain(result);
-    EXPECT_NE(full_error_text.find("invalid layerType"), std::string::npos) << full_error_text;
+    EXPECT_NE(full_error_text.find("invalid layer_type"), std::string::npos) << full_error_text;
     EXPECT_NE(full_error_text.find("sideways"), std::string::npos) << full_error_text;
 }
 
