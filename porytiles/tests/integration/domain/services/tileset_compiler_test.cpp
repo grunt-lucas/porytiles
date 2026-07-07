@@ -188,6 +188,31 @@ class TilesetCompilerTestBase : public ::testing::Test {
     Schema schema_ = std::move(Schema::create({Field{"behavior", 0x00FF}}, 2)).value();
 };
 
+class TilesetCompilerAttributeDefaultTests : public TilesetCompilerTestBase {};
+
+/*
+ * Issue #285 crux: a metatile with no stored attribute (an all-default CSV row the writer omits) must reload as the
+ * schema's field defaults, not as all-zero fields, so an omitted row round-trips back to exactly the defaults it was
+ * omitted for. Reverting tileset_compiler's materialize-from-defaults branch to a bare MetatileAttribute{} would
+ * silently zero every omitted row under a schema with a nonzero default. A default-0 schema cannot tell the two forms
+ * apart, so this uses a nonzero default and asserts the compiled attribute carries it.
+ */
+TEST_F(TilesetCompilerAttributeDefaultTests, AbsentAttributeMaterializesNonzeroSchemaDefault)
+{
+    schema_ = std::move(Schema::create({Field{"behavior", 0x00FF, 0x05}}, 2)).value();
+
+    auto tileset = build_single_metatile_tileset("test_primary", rgba_green);
+    auto compiler = make_compiler();
+
+    auto result = compiler->compile(tileset, false, nullptr);
+    ASSERT_TRUE(result.has_value()) << join_error_chain(result);
+
+    const auto &attributes = result.value()->porymap_component().metatile_attributes_bin();
+    ASSERT_EQ(attributes.size(), 1U);
+    // The metatile carried no attribute, so it materializes from the schema default (0x05), not all-zero.
+    EXPECT_EQ(attributes[0].field("behavior"), 0x05U);
+}
+
 class TilesetCompilerModeComboTests : public TilesetCompilerTestBase {};
 
 TEST_F(TilesetCompilerModeComboTests, PrimaryRejectsPalsOptimizeWithTilesLocked)

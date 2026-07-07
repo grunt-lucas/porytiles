@@ -253,9 +253,11 @@ infer_metatile_attr_fields(const MetatileAttrScan &scan, gsl::not_null<const Tex
             }
         }
 
-        // Shift table cross-check: the recorded shift should equal the mask's low-bit offset.
+        // Shift table cross-check: the recorded shift should equal the mask's low-bit offset. The
+        // sMetatileAttrMasks/sMetatileAttrShifts tables describe the FRLG layout in a dual-layout project, so the
+        // shift must be checked against the FRLG mask offset there; a single-layout project uses the primary mask.
         if (const auto shift_it = shifts.find(suffix); shift_it != shifts.end()) {
-            const auto mask_for_check = fm.primary.has_value() ? fm.primary : fm.frlg;
+            const auto mask_for_check = any_frlg_define ? fm.frlg : fm.primary;
             if (mask_for_check.has_value()) {
                 const auto expected = static_cast<std::uint32_t>(std::countr_zero(mask_for_check.value()));
                 if (shift_it->second != expected) {

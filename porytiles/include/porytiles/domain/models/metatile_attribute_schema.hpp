@@ -244,11 +244,11 @@ class Schema {
      * @brief Validates a set of fields against an attribute size and builds a Schema.
      *
      * @details
-     * Runs a single fail-fast pass over the fields in the given order. Intra-field rules (zero mask,
-     * non-contiguous mask, mask beyond the attribute size, overlap with the structural layer_type mask,
-     * default value too large) are checked before the cross-field overlap and duplicate-name rules. The
-     * first violation wins and is returned as the error; on success the fields are stored in the order
-     * given.
+     * Runs a single fail-fast pass over the fields in the given order. For each field the duplicate-name
+     * check runs first, then the intra-field rules (zero mask, non-contiguous mask, mask beyond the
+     * attribute size, overlap with the structural layer_type mask, default value too large), then the
+     * cross-field overlap check against the fields already seen. The first violation wins and is returned
+     * as the error; on success the fields are stored in the order given.
      *
      * @param fields The fields making up the layout, in the order they should be preserved
      * @param attr_bytes The attribute size in bytes the layout is validated against

@@ -9,6 +9,7 @@
 #include "porytiles/infra/config/frlg_alternate_mask_mode.hpp"
 #include "porytiles/utilities/text/plain_text_formatter.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
+#include "porytiles/xcut/diagnostics/buffered_user_diagnostics.hpp"
 
 namespace porytiles {
 namespace {
@@ -235,6 +236,25 @@ fieldmap:
     YamlFileProvider provider{nullptr, project_root_};
     // preload_and_validate returns true on validation failure (e.g. an unknown key). Both keys are known, so it passes.
     EXPECT_FALSE(provider.preload_and_validate(ConfigScopeType::tileset, "test"));
+}
+
+TEST_F(YamlFileProviderMetatileAttrTest, RemovedBaseGameKeysFailUnknownKeyValidation)
+{
+    // base_game and metatile_attribute_size were removed in the base-game-decomposition work (issue #285): the layout
+    // is now inferred from the target decomp and configured through metatile_attr_fields. A config that still sets a
+    // stale key must fail validation so an upgrading user gets a clear error instead of a silently ignored setting.
+    write_config(R"(
+fieldmap:
+  base_game: pokeemerald
+  metatile_attribute_size: 2
+)");
+
+    // Validation only runs when a real diagnostics sink is present: with a null diagnostics the provider skips the
+    // unknown-key check entirely, so the negative case needs a live sink to exercise it.
+    BufferedUserDiagnostics diag;
+    YamlFileProvider provider{&diag, project_root_};
+    // preload_and_validate returns true on validation failure; both keys are now unknown.
+    EXPECT_TRUE(provider.preload_and_validate(ConfigScopeType::tileset, "test"));
 }
 
 } // namespace

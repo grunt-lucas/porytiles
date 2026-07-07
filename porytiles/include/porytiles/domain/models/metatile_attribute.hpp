@@ -52,9 +52,20 @@ class MetatileAttribute {
         return layer_type_;
     }
 
+    /**
+     * @brief Sets the plain (inferred) layer type, clearing any explicit pin.
+     *
+     * @details
+     * This is the inferred-value setter: it records the layer type and drops any prior explicit pin, so a later
+     * read through explicit_layer_type() cannot report a stale user pin that layer_type() has since overwritten. A
+     * caller that means "the user pinned this" must use explicit_layer_type() instead.
+     *
+     * @param layer_type The inferred layer type.
+     */
     void layer_type(LayerType layer_type)
     {
         layer_type_ = layer_type;
+        explicit_layer_type_ = std::nullopt;
     }
 
     /**

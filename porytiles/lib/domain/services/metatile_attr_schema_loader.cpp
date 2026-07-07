@@ -126,31 +126,6 @@ namespace {
 
 } // namespace
 
-ChainableResult<LoadedAttrSchema> load_metatile_attr_schema(
-    const MetatileAttrFieldSpecs &fields,
-    const MetatileAttrFieldOverrides &overrides,
-    std::size_t attr_bytes,
-    gsl::not_null<const TextFormatter *> format)
-{
-    PT_TRY_ASSIGN_PASS_ERR(resolved, merge_field_overrides(fields, overrides, format), LoadedAttrSchema);
-
-    std::vector<Field> schema_fields;
-    for (const auto &merged : resolved) {
-        if (merged.mask.has_value()) {
-            schema_fields.push_back(
-                Field{merged.name, merged.mask.value(), merged.default_value.value_or(0), merged.provider});
-        }
-    }
-
-    auto schema_result = Schema::create(std::move(schema_fields), attr_bytes);
-    if (!schema_result.has_value()) {
-        return ChainableResult<LoadedAttrSchema>{
-            FormattableError{"the configured metatile attribute fields do not form a valid layout."}, schema_result};
-    }
-
-    return LoadedAttrSchema{std::move(schema_result).value(), std::move(resolved)};
-}
-
 ChainableResult<ResolvedTilesetAttrSchema> resolve_tileset_attr_schema(
     const MetatileAttrFieldSpecs &fields,
     const MetatileAttrFieldOverrides &overrides,

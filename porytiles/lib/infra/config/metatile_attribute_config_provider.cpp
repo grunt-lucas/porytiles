@@ -150,6 +150,10 @@ MetatileAttributeConfigProvider::compute(ConfigScopeType type, const std::string
                 }
             }
         }
+        // Surface the source file's scan warnings too, matching how the header facade's warnings are drained below.
+        for (const auto &warning : source_facade.scan_warnings()) {
+            diagnostics_->warning(diagnostic_tag, warning);
+        }
     }
 
     scan.behaviors_header_present = behaviors_header_has_entries(project_root_ / behaviors_header_rel, format_);

@@ -1361,6 +1361,27 @@ TEST_F(ParserTests, TolerantDefineSkipsUnsupportedExpressionForms)
     EXPECT_EQ(scan.skipped[1].name, "STRANDED");
 }
 
+TEST_F(ParserTests, TolerantDefineSkipsCastExpression)
+{
+    // A C cast like (u32)0x... is not an arithmetic form the evaluator understands: its parens and literal are all
+    // "supported" tokens, so it slips past the token gate and only fails when the cast type reads as an unknown
+    // identifier. The define must degrade to "value unknown" (skipped), not resolve to a partial value.
+    Lexer lexer{&formatter_, R"(
+#define CASTED (u32)0x000001ff
+#define AFTER 7
+)"};
+    auto tokens = lexer.lex();
+    ASSERT_TRUE(tokens.has_value());
+    Parser parser{&formatter_, std::move(tokens).value()};
+
+    TolerantDefineScan scan = parser.parse_defines_tolerant();
+
+    EXPECT_FALSE(has_define(scan.defines, "CASTED"));
+    EXPECT_TRUE(has_define(scan.defines, "AFTER"));
+    ASSERT_EQ(scan.skipped.size(), 1U);
+    EXPECT_EQ(scan.skipped[0].name, "CASTED");
+}
+
 TEST_F(ParserTests, TolerantEnumDirectiveInBodyPoisonsFollowingValues)
 {
     // The scanner does not evaluate conditionals inside an enum body, so once a directive appears, no later value
@@ -1499,6 +1520,36 @@ static const u32 sMetatileAttrMasksEmerald[COUNT] = {
     });
     ASSERT_NE(exact, result.value().end());
     EXPECT_EQ(exact->entries[0].value.value(), 1);
+}
+
+TEST_F(ParserTests, IndexedArrayInInactiveConditionalIsExcluded)
+{
+    // A masks table sometimes sits inside a preprocessor branch. A table in a provably inactive branch (#if 0) must be
+    // dropped while one in a taken branch (#if 1) is kept, so inference never reads masks the C build does not compile.
+    Lexer lexer{&formatter_, R"(
+#if 0
+static const u32 sMetatileAttrMasks[COUNT] = {
+    [IDX_A] = 0x1,
+};
+#endif
+#if 1
+static const u32 sMetatileAttrMasks[COUNT] = {
+    [IDX_A] = 0x00FF,
+};
+#endif
+)"};
+    auto tokens = lexer.lex();
+    ASSERT_TRUE(tokens.has_value());
+    Parser parser{&formatter_, std::move(tokens).value()};
+
+    auto result = parser.parse_indexed_arrays();
+    ASSERT_TRUE(result.has_value());
+    // Only the taken branch's table survives.
+    ASSERT_EQ(result.value().size(), 1U);
+    const auto &arr = result.value()[0];
+    EXPECT_EQ(arr.name, "sMetatileAttrMasks");
+    ASSERT_EQ(arr.entries.size(), 1U);
+    EXPECT_EQ(arr.entries[0].value.value(), 0x00FF);
 }
 
 TEST_F(ParserTests, EvaluatesComparisonAndLogicalOperators)
