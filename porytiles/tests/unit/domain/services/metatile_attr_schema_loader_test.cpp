@@ -214,15 +214,41 @@ TEST_F(MetatileAttrSchemaLoaderTest, FrlgWithZeroFrlgMasksErrors)
     EXPECT_NE(text.find("use_frlg_alternate_masks"), std::string::npos);
 }
 
-TEST_F(MetatileAttrSchemaLoaderTest, AttrSizeWidensSilentlyForFrlg)
+TEST_F(MetatileAttrSchemaLoaderTest, FrlgLayoutResolvesFourBytes)
 {
-    // Width is a guessed default (undetectable, so not authoritative). The FRLG layer_type mask reaches bit 16, so the
-    // schema is free to widen to 4: the mask is the only evidence of the true width.
+    // The FRLG layout is read through the engine's hardcoded 'const u32 *' accessor, so its entry width is forced to
+    // 4 bytes regardless of the detected width or the selected masks.
     const auto result = resolve_tileset_attr_schema(
         dual_layout_fields(), {}, AttrSchemaLayout::frlg, 2, false, std::nullopt, &formatter_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().attr_bytes, 4U);
     EXPECT_EQ(result.value().schema.attr_bytes(), 4U);
+}
+
+TEST_F(MetatileAttrSchemaLoaderTest, FrlgLayoutIgnoresAuthoritativeNarrowWidth)
+{
+    // A real u16 declaration in metatiles.h (authoritative 2 bytes) does not constrain the FRLG layout: the
+    // declaration only has to match the 'const u16 *metatileAttributes' struct field, while the engine reads
+    // FRLG-layout attributes as 4-byte words. This is pokeemerald-expansion's stock shape. The declaration width
+    // survives as declaration_bytes for generated INCBIN declarations.
+    const auto result = resolve_tileset_attr_schema(
+        dual_layout_fields(), {}, AttrSchemaLayout::frlg, 2, true, std::nullopt, &formatter_);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().attr_bytes, 4U);
+    EXPECT_EQ(result.value().declaration_bytes, 2U);
+}
+
+TEST_F(MetatileAttrSchemaLoaderTest, FrlgLayoutForcesFourBytesForNarrowMasks)
+{
+    // Even when every selected frlg mask fits in 2 bytes, the FRLG layout still resolves 4: the engine's read stride
+    // is fixed, so emitting 2-byte entries would corrupt the data. The unset layer mask then falls back to the 4-byte
+    // size-based default, the FRLG bits-29..30 mask.
+    MetatileAttrFieldSpecs fields = {{"behavior", std::nullopt, 0x01FFU, 0U, std::nullopt}};
+    const auto result =
+        resolve_tileset_attr_schema(fields, {}, AttrSchemaLayout::frlg, 2, false, std::nullopt, &formatter_);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().attr_bytes, 4U);
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0x60000000U);
 }
 
 TEST_F(MetatileAttrSchemaLoaderTest, DetectedLargerSizeKept)
@@ -247,11 +273,13 @@ TEST_F(MetatileAttrSchemaLoaderTest, OverridesMergeBeforeSelection)
     ASSERT_TRUE(result.has_value()) << error_text(result);
     ASSERT_NE(schema_field(result.value().schema, "special"), nullptr);
     EXPECT_EQ(schema_field(result.value().schema, "special")->mask(), 0x0F00U);
+    // The FRLG layout forces 4 bytes even though this mask would fit in 2 (it previously resolved 2 here).
+    EXPECT_EQ(result.value().attr_bytes, 4U);
 }
 
 // Layer-type mask resolution.
 
-TEST_F(MetatileAttrSchemaLoaderTest, UnsetLayerMaskUsesSizeConvention)
+TEST_F(MetatileAttrSchemaLoaderTest, UnsetLayerMaskUsesSizeBasedDefault)
 {
     MetatileAttrFieldSpecs fields = {{"behavior", 0x00FFU, std::nullopt, 0U, std::nullopt}};
     const auto result =
@@ -294,9 +322,10 @@ TEST_F(MetatileAttrSchemaLoaderTest, WideExplicitLayerMaskWidensWord)
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0x60000000U);
 }
 
-// Authoritative width: a real metatiles.h declaration pins the engine-fixed width. A mask that needs a wider word is a
-// misconfiguration (e.g. an FRLG layer mask pasted onto an emerald-width project), not evidence of a hidden width, so
-// it is a hard error rather than a silent widen.
+// Authoritative width, primary layout only: a real metatiles.h declaration pins the engine-fixed width, because for
+// the primary layout the declared type IS the read stride. A mask that needs a wider word is a misconfiguration (e.g.
+// an FRLG layer mask pasted onto an emerald-width project), not evidence of a hidden width, so it is a hard error
+// rather than a silent widen. The frlg layout is exempt: its stride is the engine's hardcoded u32 accessor.
 
 TEST_F(MetatileAttrSchemaLoaderTest, AuthoritativeWidthExceededByLayerMaskIsError)
 {
@@ -331,6 +360,25 @@ TEST_F(MetatileAttrSchemaLoaderTest, AuthoritativeWidthThatCoversMasksSucceeds)
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().attr_bytes, 4U);
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0x60000000U);
+}
+
+TEST_F(MetatileAttrSchemaLoaderTest, DeclarationBytesTracksAuthoritativeWidth)
+{
+    MetatileAttrFieldSpecs fields = {{"behavior", 0x00FFU, std::nullopt, 0U, std::nullopt}};
+
+    // An authoritative declared width is the declaration width (primary layout: also the resolved width).
+    const auto authoritative =
+        resolve_tileset_attr_schema(fields, {}, AttrSchemaLayout::primary, 4, true, std::nullopt, &formatter_);
+    ASSERT_TRUE(authoritative.has_value()) << error_text(authoritative);
+    EXPECT_EQ(authoritative.value().declaration_bytes, 4U);
+    EXPECT_EQ(authoritative.value().attr_bytes, 4U);
+
+    // With no declaration to follow, the declaration width matches whatever the schema resolved.
+    const auto guessed = resolve_tileset_attr_schema(
+        fields, {}, AttrSchemaLayout::primary, 2, false, std::optional<std::uint32_t>{0x60000000U}, &formatter_);
+    ASSERT_TRUE(guessed.has_value()) << error_text(guessed);
+    EXPECT_EQ(guessed.value().attr_bytes, 4U);
+    EXPECT_EQ(guessed.value().declaration_bytes, 4U);
 }
 
 } // namespace

@@ -25,7 +25,7 @@ fieldmap:
 
   # Bit mask for the layer-type bits of a metatile attribute, written as a hex literal.
   # You normally omit this: Porytiles infers the mask from the base game
-  # (METATILE_ATTR_LAYER_MASK / sMetatileAttrMasks) and falls back to the size convention
+  # (METATILE_ATTR_LAYER_MASK / sMetatileAttrMasks) and falls back to the size-based default
   # (0xF000 for 2-byte attributes, 0x60000000 for 4-byte). Set it only to override that.
   # A mask of 0x0 disables the layer type: every metatile is Normal and no layer-type bits
   # are written. metatile_layer_type_mask_frlg is the equivalent for the FRLG alternate layout.

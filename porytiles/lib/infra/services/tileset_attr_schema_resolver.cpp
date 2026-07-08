@@ -49,7 +49,8 @@ ChainableResult<ResolvedTilesetAttrSchema> TilesetAttrSchemaResolver::resolve(co
 
     // The attribute byte width comes straight from the metatiles.h detector. A project with no detectable width (no
     // metatiles.h, or no attribute declarations in it) defaults to 2 bytes; mixed u16/u32 declarations are a hard
-    // error. The resolved schema may still widen past the detected width to cover the selected masks.
+    // error. The resolved schema may still widen past the detected width to cover the selected masks, and the frlg
+    // layout ignores the detected width entirely (its entry width is always 4 bytes, the engine's read stride).
     const LayerValue<std::size_t> detected = metatiles_->detect();
     if (detected.state == ValidationState::invalid) {
         return FormattableError{detected.error_message};
@@ -60,9 +61,10 @@ ChainableResult<ResolvedTilesetAttrSchema> TilesetAttrSchemaResolver::resolve(co
     if (detected.state != ValidationState::valid) {
         diag_->warning(
             "metatile-attr-schema",
-            "could not detect the metatile attribute size from 'src/data/tilesets/metatiles.h' for tileset '{}'; "
-            "assuming {}-byte attributes. Declare gMetatileAttributes_* as 'const u8', 'const u16', or 'const u32' in "
-            "metatiles.h to pin the width (1, 2, or 4 bytes), or configure a field whose mask needs a wider word.",
+            "Porytiles could not detect the metatile attribute size from 'src/data/tilesets/metatiles.h' for tileset "
+            "'{}' and assumed {}-byte attributes. Declare gMetatileAttributes_* as 'const u8', 'const u16', or "
+            "'const u32' in metatiles.h to pin the width (1, 2, or 4 bytes), or configure a field whose mask needs a "
+            "wider word.",
             FormatParam{tileset_name, Style::bold},
             FormatParam{2});
     }
@@ -86,8 +88,8 @@ ChainableResult<ResolvedTilesetAttrSchema> TilesetAttrSchemaResolver::resolve(co
             if (!layout_metadata_->layout_names().has_value()) {
                 diag_->warning(
                     "frlg-alternate-masks",
-                    "could not read 'data/layouts/layouts.json' to determine FRLG-ness for tileset '{}'; assuming the "
-                    "primary attribute layout. Set use_frlg_alternate_masks explicitly to silence this.",
+                    "Porytiles could not read 'data/layouts/layouts.json' to determine FRLG-ness for tileset '{}' and "
+                    "assumed the primary attribute layout. Set use_frlg_alternate_masks explicitly to silence this.",
                     FormatParam{tileset_name, Style::bold});
                 layout = AttrSchemaLayout::primary;
                 break;
@@ -101,8 +103,8 @@ ChainableResult<ResolvedTilesetAttrSchema> TilesetAttrSchemaResolver::resolve(co
             layout = AttrSchemaLayout::frlg;
             diag_->remark(
                 "frlg-alternate-masks",
-                "tileset '{}' is referenced only by frlg layouts in data/layouts/layouts.json; selecting the FRLG "
-                "alternate metatile attribute masks.",
+                "Tileset '{}' is referenced only by frlg layouts in 'data/layouts/layouts.json', so Porytiles "
+                "selected the FRLG alternate metatile attribute masks.",
                 FormatParam{tileset_name, Style::bold});
             break;
         case TilesetLayoutVersionUsage::emerald_only:
@@ -111,7 +113,7 @@ ChainableResult<ResolvedTilesetAttrSchema> TilesetAttrSchemaResolver::resolve(co
             break;
         case TilesetLayoutVersionUsage::mixed:
             return FormattableError{format_->format(
-                "tileset '{}' is referenced by both emerald and frlg layouts in data/layouts/layouts.json, so its "
+                "Tileset '{}' is referenced by both emerald and frlg layouts in 'data/layouts/layouts.json', so its "
                 "attribute schema is ambiguous. Set use_frlg_alternate_masks (always or never) in "
                 "porytiles/tilesets/{}/config.yaml to choose.",
                 FormatParam{tileset_name, Style::bold},
@@ -122,13 +124,24 @@ ChainableResult<ResolvedTilesetAttrSchema> TilesetAttrSchemaResolver::resolve(co
     }
 
     // The layer-type mask follows the same primary/FRLG selection as the fields: the FRLG value for the FRLG layout,
-    // the primary value otherwise. An unset (nullopt) value lets the size-convention fallback apply in Schema::create.
+    // the primary value otherwise. An unset (nullopt) value lets the size-based default apply in Schema::create.
     const std::optional<std::uint32_t> layer_mask_opt =
         layout == AttrSchemaLayout::frlg ? layer_mask_frlg : layer_mask_primary;
 
     auto resolved = resolve_tileset_attr_schema(
         fields, overrides, layout, detected_attr_bytes, detected_width_is_authoritative, layer_mask_opt, format_);
     if (resolved.has_value()) {
+        // A declared width narrower than 4 is expected on expansion (FRLG tilesets declared 'const u16' but read as
+        // 4-byte words), yet surprising enough to be worth a remark when the frlg layout overrides it.
+        if (layout == AttrSchemaLayout::frlg && detected_width_is_authoritative && detected_attr_bytes != 4) {
+            diag_->remark(
+                "metatile-attr-schema",
+                "Although 'src/data/tilesets/metatiles.h' declares {}-byte attributes, tileset '{}' uses the FRLG "
+                "attribute layout, which the engine reads as 4-byte words at runtime, so Porytiles resolved 4-byte "
+                "attributes.",
+                FormatParam{detected_attr_bytes, Style::bold},
+                FormatParam{tileset_name, Style::bold});
+        }
         // Summarize the resolved schema so the user can see what layout the data-driven resolution landed on. This is
         // the schema-shaped replacement for the old "detected base game" remark.
         std::string field_names;
@@ -144,7 +157,7 @@ ChainableResult<ResolvedTilesetAttrSchema> TilesetAttrSchemaResolver::resolve(co
                                                 : std::format("layer type mask 0x{:X}", resolved_layer_mask);
         diag_->remark(
             "metatile-attr-schema",
-            "resolved {}-byte metatile attributes for tileset '{}' with fields: {} ({}).",
+            "Porytiles resolved {}-byte metatile attributes for tileset '{}' with fields: {} ({}).",
             FormatParam{resolved.value().attr_bytes, Style::bold},
             FormatParam{tileset_name, Style::bold},
             FormatParam{field_names, Style::bold},

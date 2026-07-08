@@ -167,7 +167,7 @@ TEST_F(MetatileAttrProviderTest, FixtureOneByteHasNoLayerMask)
     ASSERT_EQ(result.value->size(), 1U);
     EXPECT_EQ(find(result.value.value(), "behavior")->mask.value(), 0x0FU);
 
-    // No layer field is declared, so the layer mask defers and the size-convention fallback (disabled for 1 byte)
+    // No layer field is declared, so the layer mask defers and the size-based default (disabled for 1 byte)
     // takes over downstream.
     EXPECT_EQ(
         provider.metatile_layer_type_mask(ConfigScopeType::tileset, "general").state, ValidationState::not_provided);

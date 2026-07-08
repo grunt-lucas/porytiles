@@ -84,7 +84,7 @@ enum class AttrInferenceStatus {
  * @c layer_type_mask / @c layer_type_frlg_mask carry the layer-type bit mask as declared by the base game (the
  * primary and FRLG-alternate values respectively), when one was found. The layer type is never emitted as a field,
  * but its mask is now surfaced so downstream resolution can honor a base game's custom layer-type position instead of
- * assuming the size convention. Either is @c std::nullopt when the base game declares no mask for that layout.
+ * assuming the size-based default. Either is @c std::nullopt when the base game declares no mask for that layout.
  */
 struct MetatileAttrInferenceResult {
     AttrInferenceStatus status{AttrInferenceStatus::not_provided};

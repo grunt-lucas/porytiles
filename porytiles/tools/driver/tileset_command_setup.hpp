@@ -185,7 +185,7 @@ class TilesetCommandServices {
               &metadata_provider,
               &metadata_writer,
               &env.config,
-              &resolved.schema,
+              resolved.declaration_bytes,
               env.diag.get(),
               &incbin_appender,
               &tileset_anims_modifier},

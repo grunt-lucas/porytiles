@@ -289,7 +289,7 @@ TEST(MetatileAttributeSchemaTest, ExplicitLayerTypeMaskHonoredOverConvention)
 
 TEST(MetatileAttributeSchemaTest, ZeroLayerTypeMaskDisablesAndFreesConventionBits)
 {
-    // With the layer type disabled, a field may occupy the bits the size convention would have used (0xF000).
+    // With the layer type disabled, a field may occupy the bits the size-based default would have used (0xF000).
     std::vector<Field> fields;
     fields.emplace_back("behavior", 0x00FF);
     fields.emplace_back("wide", 0xF000);

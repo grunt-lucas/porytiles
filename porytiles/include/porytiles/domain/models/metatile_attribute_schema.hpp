@@ -234,7 +234,7 @@ class Field {
  *
  * Alongside the user-defined fields, a Schema owns the structural layer_type layout. The layer type's
  * bit position is resolved when the Schema is created: the caller may pass an explicit mask (inferred
- * from the base game or set in config), and when none is given the size convention is used as a fallback
+ * from the base game or set in config), and when none is given the size-based default is used as a fallback
  * (2-byte: bits 12-15; 4-byte: bits 29-30; 1-byte: disabled). A mask of 0 disables the layer type
  * entirely, so every metatile reads back as LayerType::normal and no layer-type bits are packed.
  * Schema::create rejects any field whose mask overlaps a non-zero layer_type mask, so field masks and
@@ -253,13 +253,13 @@ class Schema {
      * error; on success the fields are stored in the order given.
      *
      * The layer_type mask is resolved from @p layer_type_mask when it is present (including 0, which
-     * disables the layer type), falling back to the size convention when it is @c std::nullopt. A
+     * disables the layer type), falling back to the size-based default when it is @c std::nullopt. A
      * non-zero resolved mask must itself be a single contiguous run of bits that fits the attribute
      * size, or a user-facing error is returned.
      *
      * @param fields The fields making up the layout, in the order they should be preserved
      * @param attr_bytes The attribute size in bytes the layout is validated against
-     * @param layer_type_mask An explicit layer_type mask (0 disables it), or nullopt to use the size convention
+     * @param layer_type_mask An explicit layer_type mask (0 disables it), or nullopt to use the size-based default
      * @pre @p attr_bytes must be 1, 2, or 4.
      * @return A validated Schema, or an error describing the first layout rule violation
      */
@@ -280,7 +280,7 @@ class Schema {
      * @brief Returns the mask of the layer_type bits within the packed attribute word.
      *
      * @details
-     * Resolved at creation from the explicit mask passed to Schema::create, or from the size convention
+     * Resolved at creation from the explicit mask passed to Schema::create, or from the size-based default
      * when none was given (0x0000F000 for a 2-byte attribute, 0x60000000 for a 4-byte attribute, 0 for a
      * 1-byte attribute). A returned value of 0 means the layer type is disabled: no bits are packed and
      * every metatile decodes as LayerType::normal. No field in a created Schema overlaps a non-zero mask.

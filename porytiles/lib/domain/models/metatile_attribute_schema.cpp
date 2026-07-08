@@ -37,14 +37,15 @@ bool is_contiguous(std::uint32_t mask)
 }
 
 /**
- * @brief Returns the size-convention layer_type mask for the given attribute width.
+ * @brief Returns the size-based default layer_type mask for the given attribute width.
  *
  * @details
- * When no explicit layer_type mask is configured or inferred, Porytiles falls back to the fixed
- * GBA/porymap format convention keyed on the total attribute width: bits 12-15 in a 2-byte attribute
- * word, bits 29-30 in a 4-byte word, and disabled (0) in a 1-byte word (there is no vanilla 1-byte
- * layer-type position). This helper is the single named home for that convention; Schema::create uses
- * it only as the fallback when the caller passes std::nullopt.
+ * When no explicit layer_type mask is configured or inferred, Porytiles falls back to the vanilla games'
+ * layer-type positions keyed on the total attribute width: bits 12-15 in a 2-byte attribute word (the RSE
+ * position), bits 29-30 in a 4-byte word (the FRLG position), and disabled (0) in a 1-byte word (there is
+ * no vanilla 1-byte layer-type position). Porymap defaults to the same masks, though it selects them by
+ * base game version rather than by width. This helper is the single named home for that default;
+ * Schema::create uses it only as the fallback when the caller passes std::nullopt.
  */
 std::uint32_t structural_layer_type_mask(std::size_t attr_bytes)
 {
@@ -77,7 +78,8 @@ Schema::create(std::vector<Field> fields, std::size_t attr_bytes, std::optional<
         attr_bytes == 1 || attr_bytes == 2 || attr_bytes == 4,
         "Schema::create requires a 1-byte, 2-byte, or 4-byte attribute size");
 
-    // An explicit mask (including 0, which disables the layer type) wins; otherwise fall back to the size convention.
+    // An explicit mask (including 0, which disables the layer type) wins; otherwise fall back to the size-based
+    // default.
     const std::uint32_t ltm = layer_type_mask.value_or(structural_layer_type_mask(attr_bytes));
 
     // A non-zero layer_type mask is itself part of the layout, so it must obey the same shape rules as a field. A

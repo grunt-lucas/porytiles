@@ -201,7 +201,7 @@ infer_metatile_attr_fields(const MetatileAttrScan &scan, gsl::not_null<const Tex
 
         // Phase B: the layer-type field is structural, never emitted as an attribute field. Its mask is still
         // recorded so downstream resolution can honor a base game's custom layer-type position instead of assuming
-        // the size convention.
+        // the size-based default.
         if (suffix == "LAYER_TYPE") {
             result.layer_type_mask = fm.primary;
             result.layer_type_frlg_mask = fm.frlg;

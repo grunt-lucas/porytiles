@@ -145,9 +145,9 @@ ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_existing(c
         "Failed to get tileset bin path config for '{}'.",
         FormatParam(tileset_name, Style::bold));
 
-    // Step 5: Append INCBIN declarations using the resolved attribute width
+    // Step 5: Append INCBIN declarations using the project's declared attribute width
     auto incbin_result =
-        append_incbin_declarations(incbin_appender_, tileset_name, bin_path_base, schema_->attr_bytes());
+        append_incbin_declarations(incbin_appender_, tileset_name, bin_path_base, declaration_attr_bytes_);
     if (!incbin_result.has_value()) {
         return incbin_result;
     }
@@ -183,9 +183,9 @@ ProjectPorytilesTilesetManager::persist_managed_new(const std::string &tileset_n
         "Failed to get tileset bin path config for '{}'.",
         FormatParam(tileset_name, Style::bold));
 
-    // Step 4: Append INCBIN declarations using the resolved attribute width
+    // Step 4: Append INCBIN declarations using the project's declared attribute width
     auto incbin_result =
-        append_incbin_declarations(incbin_appender_, tileset_name, bin_path_base, schema_->attr_bytes());
+        append_incbin_declarations(incbin_appender_, tileset_name, bin_path_base, declaration_attr_bytes_);
     if (!incbin_result.has_value()) {
         return incbin_result;
     }

@@ -1460,7 +1460,7 @@ LayerValue<FrlgAlternateMaskMode> parse_frlg_alternate_mask_mode(
 }
 
 // Parses an optional layer-type mask written as a scalar. A parsed value (including 0, which disables the layer type)
-// yields a present optional; an absent node yields not_provided so the inference provider and size convention can
+// yields a present optional; an absent node yields not_provided so the inference provider and size-based default can
 // supply it. The scalar is parsed as a string so hex/decimal/octal literals all work regardless of yaml-cpp's numeric
 // handling.
 LayerValue<std::optional<std::uint32_t>> parse_layer_type_mask(

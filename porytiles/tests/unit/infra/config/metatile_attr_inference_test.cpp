@@ -184,7 +184,7 @@ TEST_F(MetatileAttrInferenceTest, ExpansionDualLayout)
     EXPECT_EQ(result.layer_type_frlg_mask.value(), 0x60000000U);
 }
 
-// A base game whose LAYER_MASK is a custom value (not the size convention) has that exact value captured.
+// A base game whose LAYER_MASK is a custom value (not the size-based default) has that exact value captured.
 TEST_F(MetatileAttrInferenceTest, CustomLayerMaskCaptured)
 {
     MetatileAttrScan scan;
@@ -198,7 +198,7 @@ TEST_F(MetatileAttrInferenceTest, CustomLayerMaskCaptured)
     EXPECT_EQ(result.layer_type_mask.value(), 0x0300U);
 }
 
-// A base game that declares no layer field at all leaves the captured layer mask unset, so the size convention
+// A base game that declares no layer field at all leaves the captured layer mask unset, so the size-based default
 // fallback applies downstream.
 TEST_F(MetatileAttrInferenceTest, AbsentLayerMaskLeavesNullopt)
 {

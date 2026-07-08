@@ -34,7 +34,7 @@ namespace porytiles {
  *
  * Besides the field schema, the same cached inference run also answers @c metatile_layer_type_mask and
  * @c metatile_layer_type_mask_frlg: the layer-type bit mask the base game declares (primary and FRLG-alternate). Each
- * is answered only when the base game declared a mask for that layout; otherwise it defers so the size convention
+ * is answered only when the base game declared a mask for that layout; otherwise it defers so the size-based default
  * fallback applies. The user's explicit config still wins over this inference via the provider chain order.
  *
  * Outcomes mirror the inference outcomes:

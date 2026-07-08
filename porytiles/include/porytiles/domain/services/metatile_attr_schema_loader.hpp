@@ -38,13 +38,18 @@ enum class AttrSchemaLayout { primary, frlg };
  * @c schema holds the fields selected for @c layout (the primary mask for @c primary, the frlg_mask for @c frlg),
  * validated against @c attr_bytes. @c resolved_specs is the full post-merge spec list (both layouts' masks), useful for
  * diagnostics and for reporting which fields were excluded for the chosen layout. @c attr_bytes is the byte width the
- * schema was validated against, which may have been widened past the detected size to cover the selected masks.
+ * schema was validated against: for the primary layout it may have been widened past the detected size to cover the
+ * selected masks, and for the frlg layout it is always 4 (the engine reads FRLG-layout attributes through a hardcoded
+ * 'const u32 *' cast). @c declaration_bytes is the width for generated @c gMetatileAttributes_* C declarations: the
+ * authoritative declared width when one exists, else @c attr_bytes. It may be narrower than @c attr_bytes for frlg,
+ * matching pokeemerald-expansion, whose FRLG tilesets are declared 'const u16' but read as 4-byte words.
  */
 struct ResolvedTilesetAttrSchema {
     Schema schema;
     MetatileAttrFieldSpecs resolved_specs;
     AttrSchemaLayout layout;
     std::size_t attr_bytes;
+    std::size_t declaration_bytes;
 };
 
 /**
@@ -59,22 +64,27 @@ struct ResolvedTilesetAttrSchema {
  * are excluded symmetrically. If no field survives selection, a semantic error is returned naming the fix (add a mask
  * for the layout, or switch use_frlg_alternate_masks).
  *
- * How the attribute byte width is decided depends on @p detected_width_is_authoritative. When it is @c false the
- * detected width was only a guessed default (the project has no metatiles.h declaration to read), so the selected
- * masks are the sole evidence of the true width and the word is widened silently to the smallest of 1, 2, or 4 bytes
- * that covers them, never below @p detected_attr_bytes. When it is @c true the detected width came from a real
+ * How the attribute byte width is decided depends on @p layout. The frlg layout always resolves 4 bytes: the engine
+ * reads FRLG-layout attributes through a hardcoded 'const u32 *' cast, so the entry width is fixed regardless of what
+ * metatiles.h declares. For the primary layout the width depends on @p detected_width_is_authoritative. When it is
+ * @c false the detected width was only a guessed default (the project has no metatiles.h declaration to read), so the
+ * selected masks are the sole evidence of the true width and the word is widened silently to the smallest of 1, 2, or
+ * 4 bytes that covers them, never below @p detected_attr_bytes. When it is @c true the detected width came from a real
  * @c const @c uN declaration and is fixed by the base game (shared across every tileset), so a mask that needs a wider
  * word contradicts a hard fact and is reported as a hard error rather than silently widening.
  *
  * @param fields The baseline field specs, in display order
  * @param overrides The per-field overrides to merge in
  * @param layout The layout to resolve (primary or frlg)
- * @param detected_attr_bytes The attribute byte size detected from the project (1, 2, or 4)
+ * @param detected_attr_bytes The attribute byte size detected from the project (1, 2, or 4); does not constrain the
+ *        frlg width, but an authoritative value still becomes @c declaration_bytes
  * @param detected_width_is_authoritative Whether @p detected_attr_bytes came from a real declaration (true) or is a
- *        guessed default (false); true forbids widening past it, false allows silent widening to fit the masks
- * @param layer_type_mask The resolved layer_type mask (0 disables it), or nullopt to use the size convention
+ *        guessed default (false); for the primary layout, true forbids widening past it and false allows silent
+ *        widening to fit the masks. Does not constrain the frlg width, but feeds @c declaration_bytes
+ * @param layer_type_mask The resolved layer_type mask (0 disables it), or nullopt to use the size-based default
  * @param format The formatter used for diagnostic text
- * @return The resolved schema, specs, layout, and final byte width, or the first hard error encountered
+ * @return The resolved schema, specs, layout, final byte width, and declaration width, or the first hard error
+ *         encountered
  */
 [[nodiscard]] ChainableResult<ResolvedTilesetAttrSchema> resolve_tileset_attr_schema(
     const MetatileAttrFieldSpecs &fields,

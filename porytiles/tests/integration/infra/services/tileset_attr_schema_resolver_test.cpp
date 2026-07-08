@@ -119,6 +119,18 @@ class TilesetAttrSchemaResolverTest : public ::testing::Test {
         }
         return text;
     }
+
+    [[nodiscard]] bool remark_text_contains(const std::string &needle) const
+    {
+        for (const auto &remark : diag_.remarks()) {
+            for (const auto &line : remark) {
+                if (line.find(needle) != std::string::npos) {
+                    return true;
+                }
+            }
+        }
+        return false;
+    }
 };
 
 TEST_F(TilesetAttrSchemaResolverTest, AutomaticFrlgSignalResolvesFrlgWidenedToFourBytes)
@@ -213,12 +225,49 @@ TEST_F(TilesetAttrSchemaResolverTest, DetectedU32WidthResolvesFourBytesForPrimar
     EXPECT_EQ(result.value().attr_bytes, 4U);
 }
 
-TEST_F(TilesetAttrSchemaResolverTest, DetectedNarrowWidthWithWideFrlgMaskIsFatal)
+TEST_F(TilesetAttrSchemaResolverTest, DeclaredU16WithFrlgLayoutResolvesFourBytes)
 {
-    // metatiles.h authoritatively declares u16 (2 bytes), but forcing the FRLG layout selects layer_type's frlg_mask
-    // (0x30000, bit 17), which needs 4 bytes. The declared width is engine-fixed and shared across all tilesets, so
-    // this is a misconfiguration, not a hidden width: it must be a hard error, not a silent widen to a mismatched u32.
+    // metatiles.h authoritatively declares u16 (2 bytes), but the FRLG layout is read through the engine's hardcoded
+    // 'const u32 *' accessor, so the declaration does not constrain the FRLG entry width: it only has to match the
+    // 'const u16 *metatileAttributes' struct field. This is pokeemerald-expansion's stock shape and must resolve
+    // 4 bytes with a remark, not fatal.
     write_config(std::string{kFieldsYaml} + "  use_frlg_alternate_masks: always\n");
+    write_metatiles_header(
+        "const u16 gMetatileAttributes_General[] = "
+        "INCBIN_U16(\"data/tilesets/primary/general/metatile_attributes.bin\");\n");
+
+    const auto result = resolve(kTilesetName);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().layout, AttrSchemaLayout::frlg);
+    EXPECT_EQ(result.value().attr_bytes, 4U);
+    EXPECT_EQ(result.value().declaration_bytes, 2U);
+    EXPECT_TRUE(remark_text_contains("metatiles.h")) << "expected a width-override remark naming metatiles.h";
+}
+
+TEST_F(TilesetAttrSchemaResolverTest, AutomaticFrlgSignalWithDeclaredU16ResolvesFourBytes)
+{
+    // The stock-expansion regression: a u16 metatiles.h plus a layouts.json that references the tileset only from frlg
+    // layouts. Automatic mode selects the FRLG layout, which must resolve 4 bytes with a remark instead of the old
+    // fatal width mismatch.
+    write_config(kFieldsYaml);
+    write_metatiles_header(
+        "const u16 gMetatileAttributes_General[] = "
+        "INCBIN_U16(\"data/tilesets/primary/general/metatile_attributes.bin\");\n");
+    write_layouts(layout_json(kTilesetName, R"(,
+      "layout_version": "frlg")"));
+
+    const auto result = resolve(kTilesetName);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().layout, AttrSchemaLayout::frlg);
+    EXPECT_EQ(result.value().attr_bytes, 4U);
+    EXPECT_TRUE(remark_text_contains("metatiles.h")) << "expected a width-override remark naming metatiles.h";
+}
+
+TEST_F(TilesetAttrSchemaResolverTest, DeclaredU16WithWidePrimaryLayerMaskStillFatal)
+{
+    // The primary layout keeps the authoritative-width fatal: there the declared type IS the engine's read stride, so
+    // a 4-byte layer mask on a u16 project is a misconfiguration, not a hidden width.
+    write_config(std::string{kFieldsYaml} + "  metatile_layer_type_mask: 0x60000000\n");
     write_metatiles_header(
         "const u16 gMetatileAttributes_General[] = "
         "INCBIN_U16(\"data/tilesets/primary/general/metatile_attributes.bin\");\n");
@@ -227,7 +276,7 @@ TEST_F(TilesetAttrSchemaResolverTest, DetectedNarrowWidthWithWideFrlgMaskIsFatal
     ASSERT_FALSE(result.has_value());
     const auto text = error_text(result);
     EXPECT_NE(text.find("metatiles.h"), std::string::npos) << text;
-    EXPECT_NE(text.find("layer_type"), std::string::npos) << text; // names the offending field
+    EXPECT_NE(text.find("layer-type mask"), std::string::npos) << text; // names the offending mask
 }
 
 TEST_F(TilesetAttrSchemaResolverTest, MixedU16U32DeclarationsAreFatal)

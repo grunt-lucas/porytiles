@@ -213,7 +213,7 @@ MetatileAttributeConfigProvider::metatile_layer_type_mask(ConfigScopeType type, 
 {
     const CachedInference &cached = inference_for(type, scope);
     if (!cached.provided || !cached.result.layer_type_mask.has_value()) {
-        // No mask was declared by the base game for this layout; defer so the size-convention fallback applies.
+        // No mask was declared by the base game for this layout; defer so the size-based default applies.
         return LayerValue<std::optional<std::uint32_t>>::not_provided();
     }
     return LayerValue<std::optional<std::uint32_t>>::valid(
