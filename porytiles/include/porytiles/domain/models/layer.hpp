@@ -132,17 +132,15 @@ enum class LayerType : unsigned int { normal = 0, covered = 1, split = 2 };
     return static_cast<LayerType>(i);
 }
 
-/**
- * @brief Converts a LayerType to its lowercase CSV token.
- *
- * @details
- * These tokens ("normal", "covered", "split") are the stable, machine-readable form used in the attributes CSV
- * layer_type column. They are distinct from to_string(LayerType), which returns a human-readable display string
- * ("Normal - Middle/Top") unsuitable as a round-trippable token.
- *
- * @param layer_type The LayerType to convert
- * @return The CSV token: "normal", "covered", or "split"
- */
+/// @brief Converts a LayerType to its lowercase CSV token.
+///
+/// @details
+/// These tokens ("normal", "covered", "split") are the stable, machine-readable form used in the attributes CSV
+/// layer_type column. They are distinct from to_string(LayerType), which returns a human-readable display string
+/// ("Normal - Middle/Top") unsuitable as a round-trippable token.
+///
+/// @param layer_type The LayerType to convert
+/// @return The CSV token: "normal", "covered", or "split"
 [[nodiscard]] inline std::string layer_type_csv_token(LayerType layer_type)
 {
     switch (layer_type) {
@@ -157,16 +155,14 @@ enum class LayerType : unsigned int { normal = 0, covered = 1, split = 2 };
     }
 }
 
-/**
- * @brief Parses a CSV layer_type token into a LayerType.
- *
- * @details
- * Matching is case-insensitive, so "Normal", "NORMAL", and "normal" all parse. An unrecognized token is a hard error
- * listing the valid tokens.
- *
- * @param token The token to parse
- * @return The parsed LayerType, or an error naming the valid tokens
- */
+/// @brief Parses a CSV layer_type token into a LayerType.
+///
+/// @details
+/// Matching is case-insensitive, so "Normal", "NORMAL", and "normal" all parse. An unrecognized token is a hard error
+/// listing the valid tokens.
+///
+/// @param token The token to parse
+/// @return The parsed LayerType, or an error naming the valid tokens
 [[nodiscard]] inline ChainableResult<LayerType> layer_type_from_csv_token(const std::string &token)
 {
     std::string lower;

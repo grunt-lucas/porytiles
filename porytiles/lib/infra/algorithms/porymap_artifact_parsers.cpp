@@ -9,16 +9,14 @@ namespace {
 
 using namespace porytiles;
 
-/**
- * @brief Packs one attribute's schema fields and structural layer type into a single word.
- *
- * @details
- * Every mask and offset comes from the schema; this function carries no layout literals. A field absent
- * from the attribute packs its schema default, the same effective-value rule the attributes CSV writer
- * applies, so the binary and CSV renderings of one attribute always agree. Field values are masked after
- * shifting, so a stored value wider than its field cannot bleed into neighboring bits. A schema whose
- * layer_type mask is 0 has the layer type disabled, so its bits are left unset.
- */
+/// @brief Packs one attribute's schema fields and structural layer type into a single word.
+///
+/// @details
+/// Every mask and offset comes from the schema; this function carries no layout literals. A field absent
+/// from the attribute packs its schema default, the same effective-value rule the attributes CSV writer
+/// applies, so the binary and CSV renderings of one attribute always agree. Field values are masked after
+/// shifting, so a stored value wider than its field cannot bleed into neighboring bits. A schema whose
+/// layer_type mask is 0 has the layer type disabled, so its bits are left unset.
 [[nodiscard]] std::uint32_t pack_metatile_attribute(const MetatileAttribute &attribute, const Schema &schema)
 {
     std::uint32_t raw = 0;
@@ -34,15 +32,13 @@ using namespace porytiles;
     return raw;
 }
 
-/**
- * @brief Unpacks a single attribute word into schema field values and a structural layer type.
- *
- * @details
- * The inverse of pack_metatile_attribute. Every schema field is set explicitly (a zero bit pattern
- * stores an explicit 0), matching what the binary genuinely encodes. When the schema's layer_type mask
- * is 0 the layer type is disabled: no bits are read and the attribute keeps the default LayerType::normal.
- * Otherwise the layer type bits must decode to a known LayerType; an out-of-range value is a parse error.
- */
+/// @brief Unpacks a single attribute word into schema field values and a structural layer type.
+///
+/// @details
+/// The inverse of pack_metatile_attribute. Every schema field is set explicitly (a zero bit pattern
+/// stores an explicit 0), matching what the binary genuinely encodes. When the schema's layer_type mask
+/// is 0 the layer type is disabled: no bits are read and the attribute keeps the default LayerType::normal.
+/// Otherwise the layer type bits must decode to a known LayerType; an out-of-range value is a parse error.
 [[nodiscard]] ChainableResult<MetatileAttribute> unpack_metatile_attribute(std::uint32_t raw, const Schema &schema)
 {
     MetatileAttribute attribute{};

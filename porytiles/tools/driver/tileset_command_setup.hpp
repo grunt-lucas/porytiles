@@ -56,19 +56,17 @@
 
 namespace porytiles {
 
-/**
- * @brief The config and diagnostics bootstrap every tileset command runs before doing anything else.
- *
- * @details
- * Owns the formatter injector, the unfiltered stderr diagnostics used during config loading, the layered config
- * (CLI options over YAML over header defines over defaults), and the filtered diagnostics built from the config's
- * diagnostic include/exclude patterns. Construction eagerly validates the YAML config files for the tileset scope
- * and fails the command (fatal diagnostic plus CLI::RuntimeError) on validation errors, exactly like the inline
- * bootstrap it replaces.
- *
- * Members hold pointers into earlier members, so the env is pinned to its construction site: not copyable, not
- * movable. Commands construct it once on the stack and keep it alive for the whole run.
- */
+/// @brief The config and diagnostics bootstrap every tileset command runs before doing anything else.
+///
+/// @details
+/// Owns the formatter injector, the unfiltered stderr diagnostics used during config loading, the layered config
+/// (CLI options over YAML over header defines over defaults), and the filtered diagnostics built from the config's
+/// diagnostic include/exclude patterns. Construction eagerly validates the YAML config files for the tileset scope
+/// and fails the command (fatal diagnostic plus CLI::RuntimeError) on validation errors, exactly like the inline
+/// bootstrap it replaces.
+///
+/// Members hold pointers into earlier members, so the env is pinned to its construction site: not copyable, not
+/// movable. Commands construct it once on the stack and keep it alive for the whole run.
 class TilesetCommandEnv {
   public:
     TilesetCommandEnv(std::filesystem::path root, const std::string &tileset_name, const CliOptionStorage &cli_storage)
@@ -146,23 +144,21 @@ class TilesetCommandEnv {
     }
 };
 
-/**
- * @brief The schema-driven service graph shared by the compile, create, import, and decompile commands.
- *
- * @details
- * Builds the per-tileset schema cache (each tileset a command touches resolves its own schema and providers, so a
- * paired primary's artifacts decode with the primary's schema, not the target's) and wires the services that consume
- * it: the attributes CSV loader, the artifact reader/writer, the tileset repo, the tileset manager, and the compiler.
- * This is the single home for that wiring so the commands cannot drift apart.
- *
- * Declaration order is dependency order: the schema cache and the target's entry come before the artifact
- * reader/writer, manager, and compiler, which hold pointers into them. That makes the graph self-pinning: not
- * copyable, not movable, constructed once on the stack after the env.
- *
- * Construction fails the command (fatal diagnostic plus CLI::RuntimeError) when the target's schema resolution fails.
- * Schemas for other tilesets (a secondary's paired primary) resolve lazily on first artifact read, and a failure
- * there surfaces as that read's error.
- */
+/// @brief The schema-driven service graph shared by the compile, create, import, and decompile commands.
+///
+/// @details
+/// Builds the per-tileset schema cache (each tileset a command touches resolves its own schema and providers, so a
+/// paired primary's artifacts decode with the primary's schema, not the target's) and wires the services that consume
+/// it: the attributes CSV loader, the artifact reader/writer, the tileset repo, the tileset manager, and the compiler.
+/// This is the single home for that wiring so the commands cannot drift apart.
+///
+/// Declaration order is dependency order: the schema cache and the target's entry come before the artifact
+/// reader/writer, manager, and compiler, which hold pointers into them. That makes the graph self-pinning: not
+/// copyable, not movable, constructed once on the stack after the env.
+///
+/// Construction fails the command (fatal diagnostic plus CLI::RuntimeError) when the target's schema resolution fails.
+/// Schemas for other tilesets (a secondary's paired primary) resolve lazily on first artifact read, and a failure
+/// there surfaces as that read's error.
 class TilesetCommandServices {
   public:
     TilesetCommandServices(TilesetCommandEnv &env, const std::string &tileset_name)

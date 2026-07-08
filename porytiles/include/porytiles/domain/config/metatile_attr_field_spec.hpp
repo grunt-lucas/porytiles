@@ -14,19 +14,17 @@
 
 namespace porytiles {
 
-/**
- * @brief A user-authored (or inferred) description of one metatile attribute field.
- *
- * @details
- * This is the raw config-layer value that feeds the schema loader. Unlike the validated domain Field, a spec may be
- * incomplete: a field with only a @c frlg_mask and no primary @c mask is an alternate-layout-only field, valid at the
- * config layer but excluded from the primary Schema. The loader turns the specs into a validated Schema and resolves
- * any overrides.
- *
- * @c mask is the primary-layout bit mask; when absent, the field is alternate-only. @c frlg_mask is the FRLG-layout
- * mask stored for per-tileset layout selection (see issue #283). @c default_value is the value used when the field is
- * absent from a metatile. @c provider optionally points the field at the header that declares its value names.
- */
+/// @brief A user-authored (or inferred) description of one metatile attribute field.
+///
+/// @details
+/// This is the raw config-layer value that feeds the schema loader. Unlike the validated domain Field, a spec may be
+/// incomplete: a field with only a @c frlg_mask and no primary @c mask is an alternate-layout-only field, valid at the
+/// config layer but excluded from the primary Schema. The loader turns the specs into a validated Schema and resolves
+/// any overrides.
+///
+/// @c mask is the primary-layout bit mask; when absent, the field is alternate-only. @c frlg_mask is the FRLG-layout
+/// mask stored for per-tileset layout selection (see issue #283). @c default_value is the value used when the field is
+/// absent from a metatile. @c provider optionally points the field at the header that declares its value names.
 struct MetatileAttrFieldSpec {
     std::string name;
     std::optional<std::uint32_t> mask;
@@ -37,19 +35,15 @@ struct MetatileAttrFieldSpec {
     bool operator==(const MetatileAttrFieldSpec &) const = default;
 };
 
-/**
- * @brief An ordered list of metatile attribute field specs; order is display/declaration order.
- */
+/// @brief An ordered list of metatile attribute field specs; order is display/declaration order.
 using MetatileAttrFieldSpecs = std::vector<MetatileAttrFieldSpec>;
 
-/**
- * @brief A partial override of a field's provider spec.
- *
- * @details
- * Each present member replaces the corresponding member of the base provider spec at merge time; absent members leave
- * the base value untouched. @c skipped, when present, replaces the base skip set wholesale rather than adding to it.
- * @c remove encodes `provider: null`, which drops the field's provider entirely (turning it into a raw field).
- */
+/// @brief A partial override of a field's provider spec.
+///
+/// @details
+/// Each present member replaces the corresponding member of the base provider spec at merge time; absent members leave
+/// the base value untouched. @c skipped, when present, replaces the base skip set wholesale rather than adding to it.
+/// @c remove encodes `provider: null`, which drops the field's provider entirely (turning it into a raw field).
 struct ProviderSpecOverride {
     bool remove{false};
     std::optional<std::filesystem::path> header;
@@ -60,13 +54,11 @@ struct ProviderSpecOverride {
     bool operator==(const ProviderSpecOverride &) const = default;
 };
 
-/**
- * @brief A partial override of a single field, merged additively onto a baseline spec.
- *
- * @details
- * Present scalar members replace the baseline field's value; absent members fall through. @c provider is itself a
- * partial override: nullopt means "do not touch the provider", while a present value adjusts (or removes) it.
- */
+/// @brief A partial override of a single field, merged additively onto a baseline spec.
+///
+/// @details
+/// Present scalar members replace the baseline field's value; absent members fall through. @c provider is itself a
+/// partial override: nullopt means "do not touch the provider", while a present value adjusts (or removes) it.
 struct MetatileAttrFieldOverride {
     std::optional<std::uint32_t> mask;
     std::optional<std::uint32_t> frlg_mask;
@@ -76,9 +68,7 @@ struct MetatileAttrFieldOverride {
     bool operator==(const MetatileAttrFieldOverride &) const = default;
 };
 
-/**
- * @brief A map from field name to its override; applied at schema load time.
- */
+/// @brief A map from field name to its override; applied at schema load time.
 using MetatileAttrFieldOverrides = std::map<std::string, MetatileAttrFieldOverride>;
 
 namespace detail {
@@ -100,9 +90,7 @@ namespace detail {
 
 } // namespace detail
 
-/**
- * @brief Converts one field spec to a human-readable string.
- */
+/// @brief Converts one field spec to a human-readable string.
 [[nodiscard]] inline std::string to_string(const MetatileAttrFieldSpec &spec)
 {
     std::string result = std::format(
@@ -118,9 +106,7 @@ namespace detail {
     return result;
 }
 
-/**
- * @brief Converts a field spec list to a human-readable string.
- */
+/// @brief Converts a field spec list to a human-readable string.
 [[nodiscard]] inline std::string to_string(const MetatileAttrFieldSpecs &specs)
 {
     if (specs.empty()) {
@@ -144,9 +130,7 @@ inline std::ostream &operator<<(std::ostream &os, const MetatileAttrFieldSpecs &
     return os << to_string(specs);
 }
 
-/**
- * @brief Converts one field override to a human-readable string.
- */
+/// @brief Converts one field override to a human-readable string.
 [[nodiscard]] inline std::string to_string(const MetatileAttrFieldOverride &override_value)
 {
     std::string result = std::format(
@@ -166,9 +150,7 @@ inline std::ostream &operator<<(std::ostream &os, const MetatileAttrFieldSpecs &
     return result;
 }
 
-/**
- * @brief Converts a field override map to a human-readable string.
- */
+/// @brief Converts a field override map to a human-readable string.
 [[nodiscard]] inline std::string to_string(const MetatileAttrFieldOverrides &overrides)
 {
     if (overrides.empty()) {

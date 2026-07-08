@@ -22,31 +22,27 @@ std::string hex_string(std::uint32_t mask)
     return std::format("0x{:X}", mask);
 }
 
-/**
- * @brief Reports whether a mask is a single contiguous run of set bits.
- *
- * @details
- * A contiguous run has as many set bits as it spans from its lowest to its highest set bit. The naive
- * "is (mask >> ctz) + 1 a power of two" test overflows for a full 32-bit mask, so the population count
- * against the span width is used instead. Assumes a non-zero mask, which the zero-mask rule guarantees
- * before this is called.
- */
+/// @brief Reports whether a mask is a single contiguous run of set bits.
+///
+/// @details
+/// A contiguous run has as many set bits as it spans from its lowest to its highest set bit. The naive
+/// "is (mask >> ctz) + 1 a power of two" test overflows for a full 32-bit mask, so the population count
+/// against the span width is used instead. Assumes a non-zero mask, which the zero-mask rule guarantees
+/// before this is called.
 bool is_contiguous(std::uint32_t mask)
 {
     return std::popcount(mask) == std::bit_width(mask) - std::countr_zero(mask);
 }
 
-/**
- * @brief Returns the size-based default layer_type mask for the given attribute width.
- *
- * @details
- * When no explicit layer_type mask is configured or inferred, Porytiles falls back to the vanilla games'
- * layer-type positions keyed on the total attribute width: bits 12-15 in a 2-byte attribute word (the RSE
- * position), bits 29-30 in a 4-byte word (the FRLG position), and disabled (0) in a 1-byte word (there is
- * no vanilla 1-byte layer-type position). Porymap defaults to the same masks, though it selects them by
- * base game version rather than by width. This helper is the single named home for that default;
- * Schema::create uses it only as the fallback when the caller passes std::nullopt.
- */
+/// @brief Returns the size-based default layer_type mask for the given attribute width.
+///
+/// @details
+/// When no explicit layer_type mask is configured or inferred, Porytiles falls back to the vanilla games'
+/// layer-type positions keyed on the total attribute width: bits 12-15 in a 2-byte attribute word (the RSE
+/// position), bits 29-30 in a 4-byte word (the FRLG position), and disabled (0) in a 1-byte word (there is
+/// no vanilla 1-byte layer-type position). Porymap defaults to the same masks, though it selects them by
+/// base game version rather than by width. This helper is the single named home for that default;
+/// Schema::create uses it only as the fallback when the caller passes std::nullopt.
 std::uint32_t structural_layer_type_mask(std::size_t attr_bytes)
 {
     switch (attr_bytes) {

@@ -17,23 +17,19 @@
 
 namespace porytiles {
 
-/**
- * @brief Describes which header declaration styles a provider header may use.
- *
- * @details
- * A base game exposes its metatile attribute value names (behavior constants, terrain types, and so on)
- * through a C header. Those names can be declared either as preprocessor defines, as C enum members, or
- * as a mix of both. A field's provider records which form is expected so the value scan can reject the
- * wrong one or accept either.
- */
+/// @brief Describes which header declaration styles a provider header may use.
+///
+/// @details
+/// A base game exposes its metatile attribute value names (behavior constants, terrain types, and so on)
+/// through a C header. Those names can be declared either as preprocessor defines, as C enum members, or
+/// as a mix of both. A field's provider records which form is expected so the value scan can reject the
+/// wrong one or accept either.
 enum class HeaderFormat { defines_only, enums_only, either };
 
-/**
- * @brief Converts HeaderFormat to string representation.
- *
- * @param format The HeaderFormat to convert
- * @return String representation ("defines-only", "enums-only", or "either")
- */
+/// @brief Converts HeaderFormat to string representation.
+///
+/// @param format The HeaderFormat to convert
+/// @return String representation ("defines-only", "enums-only", or "either")
 [[nodiscard]] inline std::string to_string(HeaderFormat format)
 {
     switch (format) {
@@ -47,13 +43,11 @@ enum class HeaderFormat { defines_only, enums_only, either };
     panic("unhandled HeaderFormat value");
 }
 
-/**
- * @brief Stream insertion operator for HeaderFormat.
- *
- * @param os The output stream
- * @param format The HeaderFormat to output
- * @return The output stream
- */
+/// @brief Stream insertion operator for HeaderFormat.
+///
+/// @param os The output stream
+/// @param format The HeaderFormat to output
+/// @return The output stream
 inline std::ostream &operator<<(std::ostream &os, const HeaderFormat format)
 {
     return os << to_string(format);
@@ -61,14 +55,12 @@ inline std::ostream &operator<<(std::ostream &os, const HeaderFormat format)
 
 struct EnumSpec;
 
-/**
- * @brief Describes where and how a field's named values are declared.
- *
- * @details
- * A provider spec points a field at the header that declares its value names, the prefix those names
- * share, the names to skip during scanning, and which declaration styles are acceptable. It carries no
- * behavior of its own; it is a plain description consumed by later stages that actually read the header.
- */
+/// @brief Describes where and how a field's named values are declared.
+///
+/// @details
+/// A provider spec points a field at the header that declares its value names, the prefix those names
+/// share, the names to skip during scanning, and which declaration styles are acceptable. It carries no
+/// behavior of its own; it is a plain description consumed by later stages that actually read the header.
 struct ProviderSpec {
     std::filesystem::path header;
     std::string prefix;
@@ -77,31 +69,27 @@ struct ProviderSpec {
 
     bool operator==(const ProviderSpec &) const = default;
 
-    /**
-     * @brief Builds the resolvable enum spec a header provider needs from this description.
-     *
-     * @details
-     * A ProviderSpec describes a field's value names in the abstract; a provider that reads a header also
-     * needs the field's value cap and a human-readable field name for diagnostics. Those two facts live on
-     * the owning Field, not here, so the caller supplies them. The header path is intentionally not carried
-     * over: it is resolved separately against the project root before a provider is built.
-     *
-     * @param field_display_name The field name used in this provider's diagnostics
-     * @param max_value The largest value a resolved name may hold, from the field's width
-     * @return An EnumSpec copying this spec's prefix, skip set, and format alongside the two given facts
-     */
+    /// @brief Builds the resolvable enum spec a header provider needs from this description.
+    ///
+    /// @details
+    /// A ProviderSpec describes a field's value names in the abstract; a provider that reads a header also
+    /// needs the field's value cap and a human-readable field name for diagnostics. Those two facts live on
+    /// the owning Field, not here, so the caller supplies them. The header path is intentionally not carried
+    /// over: it is resolved separately against the project root before a provider is built.
+    ///
+    /// @param field_display_name The field name used in this provider's diagnostics
+    /// @param max_value The largest value a resolved name may hold, from the field's width
+    /// @return An EnumSpec copying this spec's prefix, skip set, and format alongside the two given facts
     [[nodiscard]] EnumSpec to_enum_spec(std::string field_display_name, std::uint32_t max_value) const;
 };
 
-/**
- * @brief The self-contained description a header enum provider needs to scan and validate values.
- *
- * @details
- * Where ProviderSpec describes how a field's values are declared in the abstract, an EnumSpec is the
- * concrete, resolvable form a provider consumes: it adds the field's value cap and a display name for
- * diagnostics, and drops the header path (resolved separately against the project root). It is plain data
- * derived from a ProviderSpec plus its owning Field via ProviderSpec::to_enum_spec.
- */
+/// @brief The self-contained description a header enum provider needs to scan and validate values.
+///
+/// @details
+/// Where ProviderSpec describes how a field's values are declared in the abstract, an EnumSpec is the
+/// concrete, resolvable form a provider consumes: it adds the field's value cap and a display name for
+/// diagnostics, and drops the header path (resolved separately against the project root). It is plain data
+/// derived from a ProviderSpec plus its owning Field via ProviderSpec::to_enum_spec.
 struct EnumSpec {
     std::string prefix;
     std::uint32_t max_value;
@@ -112,32 +100,28 @@ struct EnumSpec {
     bool operator==(const EnumSpec &) const = default;
 };
 
-/**
- * @brief One named bit-field within a metatile attribute layout.
- *
- * @details
- * A field pairs a name with the mask of bits it occupies inside the packed attribute word. The mask is
- * the single source of truth for the field's position and size: the offset, width, and maximum storable
- * value are all derived from it. A field may also carry a provider spec describing how its values are
- * named in a base-game header.
- *
- * A Field is a passive carrier and does not validate itself. Layout rules (contiguous non-zero mask,
- * in-range, non-overlapping, default fits) are enforced when a Field is placed into a Schema via
- * Schema::create. Deriving offset() or max_value() from a zero mask is meaningless, so those accessors
- * document a non-zero-mask precondition that Schema::create guarantees for every field it accepts.
- *
- * @invariant For a Field obtained from a created Schema, mask() is a single contiguous run of at least one bit.
- */
+/// @brief One named bit-field within a metatile attribute layout.
+///
+/// @details
+/// A field pairs a name with the mask of bits it occupies inside the packed attribute word. The mask is
+/// the single source of truth for the field's position and size: the offset, width, and maximum storable
+/// value are all derived from it. A field may also carry a provider spec describing how its values are
+/// named in a base-game header.
+///
+/// A Field is a passive carrier and does not validate itself. Layout rules (contiguous non-zero mask,
+/// in-range, non-overlapping, default fits) are enforced when a Field is placed into a Schema via
+/// Schema::create. Deriving offset() or max_value() from a zero mask is meaningless, so those accessors
+/// document a non-zero-mask precondition that Schema::create guarantees for every field it accepts.
+///
+/// @invariant For a Field obtained from a created Schema, mask() is a single contiguous run of at least one bit.
 class Field {
   public:
-    /**
-     * @brief Constructs a field from a name, mask, and optional default value and provider spec.
-     *
-     * @param name The field name
-     * @param mask The bits this field occupies within the packed attribute word
-     * @param default_value The value used when the field is absent from a metatile's attribute
-     * @param provider An optional description of how this field's named values are declared
-     */
+    /// @brief Constructs a field from a name, mask, and optional default value and provider spec.
+    ///
+    /// @param name The field name
+    /// @param mask The bits this field occupies within the packed attribute word
+    /// @param default_value The value used when the field is absent from a metatile's attribute
+    /// @param provider An optional description of how this field's named values are declared
     Field(
         std::string name,
         std::uint32_t mask,
@@ -162,37 +146,31 @@ class Field {
         return default_value_;
     }
 
-    /**
-     * @brief Returns the bit offset of the field's least-significant bit.
-     *
-     * @pre mask() must not be zero. Guaranteed for any field inside a created Schema.
-     * @return The number of low-order zero bits in the mask
-     */
+    /// @brief Returns the bit offset of the field's least-significant bit.
+    ///
+    /// @pre mask() must not be zero. Guaranteed for any field inside a created Schema.
+    /// @return The number of low-order zero bits in the mask
     [[nodiscard]] std::uint32_t offset() const
     {
         return static_cast<std::uint32_t>(std::countr_zero(mask_));
     }
 
-    /**
-     * @brief Returns the number of bits the field occupies.
-     *
-     * @return The population count of the mask
-     */
+    /// @brief Returns the number of bits the field occupies.
+    ///
+    /// @return The population count of the mask
     [[nodiscard]] std::uint32_t width() const
     {
         return static_cast<std::uint32_t>(std::popcount(mask_));
     }
 
-    /**
-     * @brief Returns the largest value the field can hold.
-     *
-     * @details
-     * This is the mask shifted down to bit zero, which is the single source of truth for the range checks
-     * that Schema::create and the provider-backed enum loading apply.
-     *
-     * @pre mask() must not be zero. Guaranteed for any field inside a created Schema.
-     * @return The maximum value representable in the field's width
-     */
+    /// @brief Returns the largest value the field can hold.
+    ///
+    /// @details
+    /// This is the mask shifted down to bit zero, which is the single source of truth for the range checks
+    /// that Schema::create and the provider-backed enum loading apply.
+    ///
+    /// @pre mask() must not be zero. Guaranteed for any field inside a created Schema.
+    /// @return The maximum value representable in the field's width
     [[nodiscard]] std::uint32_t max_value() const
     {
         return mask_ >> offset();
@@ -203,12 +181,10 @@ class Field {
         return provider_.has_value();
     }
 
-    /**
-     * @brief Returns the field's provider spec.
-     *
-     * @pre has_provider() must be true.
-     * @return A const reference to the provider spec
-     */
+    /// @brief Returns the field's provider spec.
+    ///
+    /// @pre has_provider() must be true.
+    /// @return A const reference to the provider spec
     [[nodiscard]] const ProviderSpec &provider_spec() const
     {
         assert_or_panic(provider_.has_value(), "Field::provider_spec() called on a field with no provider");
@@ -222,47 +198,43 @@ class Field {
     std::optional<ProviderSpec> provider_;
 };
 
-/**
- * @brief A validated metatile attribute layout: an ordered set of non-overlapping fields.
- *
- * @details
- * A Schema is the single source of truth for how a packed attribute word is laid out. It owns the
- * fields that make up an attribute word and the byte size those fields were validated against. Schemas
- * can only be built through Schema::create, which enforces the layout rules, so any Schema in hand is
- * known to be well-formed: every field has a contiguous non-zero mask that fits the attribute size, no
- * two fields overlap, no name repeats, and every default fits its field.
- *
- * Alongside the user-defined fields, a Schema owns the structural layer_type layout. The layer type's
- * bit position is resolved when the Schema is created: the caller may pass an explicit mask (inferred
- * from the base game or set in config), and when none is given the size-based default is used as a fallback
- * (2-byte: bits 12-15; 4-byte: bits 29-30; 1-byte: disabled). A mask of 0 disables the layer type
- * entirely, so every metatile reads back as LayerType::normal and no layer-type bits are packed.
- * Schema::create rejects any field whose mask overlaps a non-zero layer_type mask, so field masks and
- * the layer type can never collide.
- */
+/// @brief A validated metatile attribute layout: an ordered set of non-overlapping fields.
+///
+/// @details
+/// A Schema is the single source of truth for how a packed attribute word is laid out. It owns the
+/// fields that make up an attribute word and the byte size those fields were validated against. Schemas
+/// can only be built through Schema::create, which enforces the layout rules, so any Schema in hand is
+/// known to be well-formed: every field has a contiguous non-zero mask that fits the attribute size, no
+/// two fields overlap, no name repeats, and every default fits its field.
+///
+/// Alongside the user-defined fields, a Schema owns the structural layer_type layout. The layer type's
+/// bit position is resolved when the Schema is created: the caller may pass an explicit mask (inferred
+/// from the base game or set in config), and when none is given the size-based default is used as a fallback
+/// (2-byte: bits 12-15; 4-byte: bits 29-30; 1-byte: disabled). A mask of 0 disables the layer type
+/// entirely, so every metatile reads back as LayerType::normal and no layer-type bits are packed.
+/// Schema::create rejects any field whose mask overlaps a non-zero layer_type mask, so field masks and
+/// the layer type can never collide.
 class Schema {
   public:
-    /**
-     * @brief Validates a set of fields against an attribute size and builds a Schema.
-     *
-     * @details
-     * Runs a single fail-fast pass over the fields in the given order. For each field the duplicate-name
-     * check runs first, then the intra-field rules (zero mask, non-contiguous mask, mask beyond the
-     * attribute size, overlap with the layer_type mask, default value too large), then the cross-field
-     * overlap check against the fields already seen. The first violation wins and is returned as the
-     * error; on success the fields are stored in the order given.
-     *
-     * The layer_type mask is resolved from @p layer_type_mask when it is present (including 0, which
-     * disables the layer type), falling back to the size-based default when it is @c std::nullopt. A
-     * non-zero resolved mask must itself be a single contiguous run of bits that fits the attribute
-     * size, or a user-facing error is returned.
-     *
-     * @param fields The fields making up the layout, in the order they should be preserved
-     * @param attr_bytes The attribute size in bytes the layout is validated against
-     * @param layer_type_mask An explicit layer_type mask (0 disables it), or nullopt to use the size-based default
-     * @pre @p attr_bytes must be 1, 2, or 4.
-     * @return A validated Schema, or an error describing the first layout rule violation
-     */
+    /// @brief Validates a set of fields against an attribute size and builds a Schema.
+    ///
+    /// @details
+    /// Runs a single fail-fast pass over the fields in the given order. For each field the duplicate-name
+    /// check runs first, then the intra-field rules (zero mask, non-contiguous mask, mask beyond the
+    /// attribute size, overlap with the layer_type mask, default value too large), then the cross-field
+    /// overlap check against the fields already seen. The first violation wins and is returned as the
+    /// error; on success the fields are stored in the order given.
+    ///
+    /// The layer_type mask is resolved from @p layer_type_mask when it is present (including 0, which
+    /// disables the layer type), falling back to the size-based default when it is @c std::nullopt. A
+    /// non-zero resolved mask must itself be a single contiguous run of bits that fits the attribute
+    /// size, or a user-facing error is returned.
+    ///
+    /// @param fields The fields making up the layout, in the order they should be preserved
+    /// @param attr_bytes The attribute size in bytes the layout is validated against
+    /// @param layer_type_mask An explicit layer_type mask (0 disables it), or nullopt to use the size-based default
+    /// @pre @p attr_bytes must be 1, 2, or 4.
+    /// @return A validated Schema, or an error describing the first layout rule violation
     [[nodiscard]] static ChainableResult<Schema> create(
         std::vector<Field> fields, std::size_t attr_bytes, std::optional<std::uint32_t> layer_type_mask = std::nullopt);
 
@@ -276,31 +248,27 @@ class Schema {
         return attr_bytes_;
     }
 
-    /**
-     * @brief Returns the mask of the layer_type bits within the packed attribute word.
-     *
-     * @details
-     * Resolved at creation from the explicit mask passed to Schema::create, or from the size-based default
-     * when none was given (0x0000F000 for a 2-byte attribute, 0x60000000 for a 4-byte attribute, 0 for a
-     * 1-byte attribute). A returned value of 0 means the layer type is disabled: no bits are packed and
-     * every metatile decodes as LayerType::normal. No field in a created Schema overlaps a non-zero mask.
-     *
-     * @return The layer_type mask, or 0 when the layer type is disabled
-     */
+    /// @brief Returns the mask of the layer_type bits within the packed attribute word.
+    ///
+    /// @details
+    /// Resolved at creation from the explicit mask passed to Schema::create, or from the size-based default
+    /// when none was given (0x0000F000 for a 2-byte attribute, 0x60000000 for a 4-byte attribute, 0 for a
+    /// 1-byte attribute). A returned value of 0 means the layer type is disabled: no bits are packed and
+    /// every metatile decodes as LayerType::normal. No field in a created Schema overlaps a non-zero mask.
+    ///
+    /// @return The layer_type mask, or 0 when the layer type is disabled
     [[nodiscard]] std::uint32_t layer_type_mask() const
     {
         return layer_type_mask_;
     }
 
-    /**
-     * @brief Returns the bit offset of the layer_type's least-significant bit.
-     *
-     * @details
-     * Meaningful only when layer_type_mask() is non-zero. For a disabled (zero) mask the offset is not
-     * used: the binary pack/unpack skips the layer type entirely.
-     *
-     * @return The number of low-order zero bits in layer_type_mask()
-     */
+    /// @brief Returns the bit offset of the layer_type's least-significant bit.
+    ///
+    /// @details
+    /// Meaningful only when layer_type_mask() is non-zero. For a disabled (zero) mask the offset is not
+    /// used: the binary pack/unpack skips the layer type entirely.
+    ///
+    /// @return The number of low-order zero bits in layer_type_mask()
     [[nodiscard]] std::uint32_t layer_type_offset() const
     {
         return static_cast<std::uint32_t>(std::countr_zero(layer_type_mask_));

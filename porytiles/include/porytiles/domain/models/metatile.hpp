@@ -26,18 +26,16 @@ inline constexpr std::size_t entries_per_metatile_dual = 8;
 inline constexpr std::size_t entries_per_metatile_triple = 12;
 inline constexpr std::size_t metatiles_per_row = 8;
 
-/**
- * @brief Returns how many metatiles a single layer image holds.
- *
- * @details
- * The count is derived from the layer image's pixel dimensions, the same derivation LayerImageMetatileizer::metatileize
- * uses: (width / side_length_pix) * (height / side_length_pix). This is the number of source metatiles a Porytiles
- * layer contributes, which is the honest row count for the attributes CSV. It intentionally does not consult the
- * Porymap metatiles.bin, which is a different ownership surface.
- *
- * @param layer A layer image (e.g. the bottom layer of a Porytiles tileset component)
- * @return The number of metatiles in the layer
- */
+/// @brief Returns how many metatiles a single layer image holds.
+///
+/// @details
+/// The count is derived from the layer image's pixel dimensions, the same derivation
+/// LayerImageMetatileizer::metatileize uses: (width / side_length_pix) * (height / side_length_pix). This is the number
+/// of source metatiles a Porytiles layer contributes, which is the honest row count for the attributes CSV. It
+/// intentionally does not consult the Porymap metatiles.bin, which is a different ownership surface.
+///
+/// @param layer A layer image (e.g. the bottom layer of a Porytiles tileset component)
+/// @return The number of metatiles in the layer
 template <typename PixelType>
 [[nodiscard]] std::size_t metatile_count(const Image<PixelType> &layer)
 {

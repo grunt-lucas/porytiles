@@ -70,18 +70,16 @@ class CParserFacade {
      */
     CParserFacade(std::filesystem::path file_path, gsl::not_null<const TextFormatter *> format);
 
-    /**
-     * @brief Constructs a facade that seeds every parse with externally known macro values.
-     *
-     * @details
-     * The facade creates a fresh Parser per parse call, so the seed map is merged into each one. This lets the file
-     * resolve references to symbols declared elsewhere, for example seeding a source file with the defines and enum
-     * member values gathered from its header.
-     *
-     * @param file_path Path to the C/C++ source file to parse
-     * @param format Formatter for error message styling (non-owning, must outlive facade)
-     * @param seed_symbols Name-to-value pairs merged into each parser's symbol table before scanning
-     */
+    /// @brief Constructs a facade that seeds every parse with externally known macro values.
+    ///
+    /// @details
+    /// The facade creates a fresh Parser per parse call, so the seed map is merged into each one. This lets the file
+    /// resolve references to symbols declared elsewhere, for example seeding a source file with the defines and enum
+    /// member values gathered from its header.
+    ///
+    /// @param file_path Path to the C/C++ source file to parse
+    /// @param format Formatter for error message styling (non-owning, must outlive facade)
+    /// @param seed_symbols Name-to-value pairs merged into each parser's symbol table before scanning
     CParserFacade(
         std::filesystem::path file_path,
         gsl::not_null<const TextFormatter *> format,
@@ -115,34 +113,28 @@ class CParserFacade {
      */
     [[nodiscard]] ChainableResult<std::vector<EnumDeclaration>> parse_enums();
 
-    /**
-     * @brief Parses all #define statements, tolerating individual evaluation failures.
-     *
-     * @details
-     * Like parse_defines() but returns a scan that separates resolved defines from those whose value could not be
-     * evaluated. Only load and lex failures produce an error result; unevaluable defines are reported in the scan.
-     * Any recoverable scan warnings are appended to the facade's warning log (see scan_warnings()).
-     *
-     * @return The tolerant define scan on success, or an error chain on load/lex failure
-     */
+    /// @brief Parses all #define statements, tolerating individual evaluation failures.
+    ///
+    /// @details
+    /// Like parse_defines() but returns a scan that separates resolved defines from those whose value could not be
+    /// evaluated. Only load and lex failures produce an error result; unevaluable defines are reported in the scan.
+    /// Any recoverable scan warnings are appended to the facade's warning log (see scan_warnings()).
+    ///
+    /// @return The tolerant define scan on success, or an error chain on load/lex failure
     [[nodiscard]] ChainableResult<TolerantDefineScan> parse_defines_tolerant();
 
-    /**
-     * @brief Parses all enum declarations, tolerating individual member evaluation failures.
-     *
-     * @details
-     * Like parse_enums() but returns per-member values that may be absent when they could not be evaluated. Only load
-     * and lex failures produce an error result.
-     *
-     * @return The tolerant enum scan on success, or an error chain on load/lex failure
-     */
+    /// @brief Parses all enum declarations, tolerating individual member evaluation failures.
+    ///
+    /// @details
+    /// Like parse_enums() but returns per-member values that may be absent when they could not be evaluated. Only load
+    /// and lex failures produce an error result.
+    ///
+    /// @return The tolerant enum scan on success, or an error chain on load/lex failure
     [[nodiscard]] ChainableResult<TolerantEnumScan> parse_enums_tolerant();
 
-    /**
-     * @brief Returns recoverable warnings accumulated across tolerant parse calls.
-     *
-     * @return A const reference to the accumulated warning messages
-     */
+    /// @brief Returns recoverable warnings accumulated across tolerant parse calls.
+    ///
+    /// @return A const reference to the accumulated warning messages
     [[nodiscard]] const std::vector<std::string> &scan_warnings() const
     {
         return scan_warnings_;
@@ -286,19 +278,17 @@ class CParserFacade {
     [[nodiscard]] ChainableResult<std::vector<IncbinDeclaration>>
     parse_incbin_arrays(const std::optional<std::string> &name_prefix = std::nullopt);
 
-    /**
-     * @brief Parses designated (indexed) array declarations from the file.
-     *
-     * @details
-     * Loads the file (if not already loaded), tokenizes it, and extracts array declarations that use designated
-     * initializers of the form `[index] = value`. Value expressions are evaluated against any seeded symbols. This is
-     * used to read attribute mask/shift tables such as `sMetatileAttrMasks` from `src/fieldmap.c`.
-     *
-     * @param name_prefix Optional prefix to filter array names. If provided, only arrays whose names start with this
-     *        prefix are returned. An exact array name (with no other array sharing it as a prefix) selects just that
-     *        array.
-     * @return A vector of IndexedArrayDeclaration on success, or an error chain on failure
-     */
+    /// @brief Parses designated (indexed) array declarations from the file.
+    ///
+    /// @details
+    /// Loads the file (if not already loaded), tokenizes it, and extracts array declarations that use designated
+    /// initializers of the form `[index] = value`. Value expressions are evaluated against any seeded symbols. This is
+    /// used to read attribute mask/shift tables such as `sMetatileAttrMasks` from `src/fieldmap.c`.
+    ///
+    /// @param name_prefix Optional prefix to filter array names. If provided, only arrays whose names start with this
+    ///        prefix are returned. An exact array name (with no other array sharing it as a prefix) selects just that
+    ///        array.
+    /// @return A vector of IndexedArrayDeclaration on success, or an error chain on failure
     [[nodiscard]] ChainableResult<std::vector<IndexedArrayDeclaration>>
     parse_indexed_arrays(const std::optional<std::string> &name_prefix = std::nullopt);
 

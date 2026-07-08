@@ -14,11 +14,9 @@ namespace porytiles {
 
 namespace attr {
 
-/*
- * Field-name constants for the stock decomp attribute layouts. These are the names the schema inference
- * produces when it scans a stock emerald- or firered-family header, so code and tests that address those
- * fields by name share a single home for the keys.
- */
+// Field-name constants for the stock decomp attribute layouts. These are the names the schema inference
+// produces when it scans a stock emerald- or firered-family header, so code and tests that address those
+// fields by name share a single home for the keys.
 constexpr std::string_view field_behavior = "behavior";
 constexpr std::string_view field_terrain = "terrain";
 constexpr std::string_view field_attribute_2 = "attribute_2";
@@ -52,71 +50,61 @@ class MetatileAttribute {
         return layer_type_;
     }
 
-    /**
-     * @brief Sets the plain (inferred) layer type, clearing any explicit pin.
-     *
-     * @details
-     * This is the inferred-value setter: it records the layer type and drops any prior explicit pin, so a later
-     * read through explicit_layer_type() cannot report a stale user pin that layer_type() has since overwritten. A
-     * caller that means "the user pinned this" must use explicit_layer_type() instead.
-     *
-     * @param layer_type The inferred layer type.
-     */
+    /// @brief Sets the plain (inferred) layer type, clearing any explicit pin.
+    ///
+    /// @details
+    /// This is the inferred-value setter: it records the layer type and drops any prior explicit pin, so a later
+    /// read through explicit_layer_type() cannot report a stale user pin that layer_type() has since overwritten. A
+    /// caller that means "the user pinned this" must use explicit_layer_type() instead.
+    ///
+    /// @param layer_type The inferred layer type.
     void layer_type(LayerType layer_type)
     {
         layer_type_ = layer_type;
         explicit_layer_type_ = std::nullopt;
     }
 
-    /**
-     * @brief Returns the explicit (user-pinned) layer type, if one was set.
-     *
-     * @details
-     * When set, this value pins the layer type against inference: the compile path uses it verbatim instead of the type
-     * it would otherwise infer from the metatile's tiles. It is populated from an explicit layer_type cell in the
-     * attributes CSV. Producers of inferred layer types (bin parsers, decompiler, metatileizer) must leave it unset so
-     * downstream code can tell "the user said so" apart from "we guessed".
-     *
-     * @return The pinned layer type, or nullopt when the layer type is inferred.
-     */
+    /// @brief Returns the explicit (user-pinned) layer type, if one was set.
+    ///
+    /// @details
+    /// When set, this value pins the layer type against inference: the compile path uses it verbatim instead of the
+    /// type it would otherwise infer from the metatile's tiles. It is populated from an explicit layer_type cell in the
+    /// attributes CSV. Producers of inferred layer types (bin parsers, decompiler, metatileizer) must leave it unset so
+    /// downstream code can tell "the user said so" apart from "we guessed".
+    ///
+    /// @return The pinned layer type, or nullopt when the layer type is inferred.
     [[nodiscard]] const std::optional<LayerType> &explicit_layer_type() const
     {
         return explicit_layer_type_;
     }
 
-    /**
-     * @brief Pins the layer type to an explicit value.
-     *
-     * @details
-     * Records the pinned value and also updates the plain layer_type so reads through layer_type() stay coherent for
-     * code that does not consult the explicit flag.
-     *
-     * @param layer_type The user-pinned layer type.
-     */
+    /// @brief Pins the layer type to an explicit value.
+    ///
+    /// @details
+    /// Records the pinned value and also updates the plain layer_type so reads through layer_type() stay coherent for
+    /// code that does not consult the explicit flag.
+    ///
+    /// @param layer_type The user-pinned layer type.
     void explicit_layer_type(LayerType layer_type)
     {
         explicit_layer_type_ = layer_type;
         layer_type_ = layer_type;
     }
 
-    /**
-     * @brief Returns the value of a named field, or 0 if the field is absent.
-     *
-     * @param field_name The field name to look up
-     * @return The stored value, or 0 when no value has been set for the field
-     */
+    /// @brief Returns the value of a named field, or 0 if the field is absent.
+    ///
+    /// @param field_name The field name to look up
+    /// @return The stored value, or 0 when no value has been set for the field
     [[nodiscard]] std::uint32_t field(std::string_view field_name) const
     {
         const auto it = fields_.find(field_name);
         return it != fields_.end() ? it->second : 0;
     }
 
-    /**
-     * @brief Sets the value of a named field, inserting or overwriting as needed.
-     *
-     * @param field_name The field name to set
-     * @param value The value to store
-     */
+    /// @brief Sets the value of a named field, inserting or overwriting as needed.
+    ///
+    /// @param field_name The field name to set
+    /// @param value The value to store
     void field(std::string_view field_name, std::uint32_t value)
     {
         fields_.insert_or_assign(std::string{field_name}, value);

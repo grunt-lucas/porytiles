@@ -10,9 +10,7 @@ namespace porytiles {
 
 namespace {
 
-/**
- * @brief Builds a multi-line FormattableError showing both duplicate locations with source context.
- */
+/// @brief Builds a multi-line FormattableError showing both duplicate locations with source context.
 [[nodiscard]] FormattableError make_duplicate_error(
     const std::string &header_message,
     SourcePosition duplicate_pos,

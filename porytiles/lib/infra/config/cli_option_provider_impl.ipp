@@ -499,18 +499,16 @@ parse_frlg_alternate_mask_mode(const std::optional<std::string> &raw_value, cons
     return LayerValue<FrlgAlternateMaskMode>::invalid(error, option_name);
 }
 
-/**
- * @brief Parses an optional layer-type mask from a CLI string option.
- *
- * @details
- * Accepts hexadecimal (0x...), decimal, and octal literals (via std::stoul base 0), mirroring the YAML mask parser.
- * A parsed value, including 0 (which disables the layer type), yields a present optional. Absence of the option
- * yields not_provided so lower-priority providers and the size-based default can supply the value instead.
- *
- * @param raw_value The raw string value from CLI, or std::nullopt if not provided
- * @param option_name The CLI option name for error messages (e.g., "--metatile-layer-type-mask")
- * @return LayerValue with the parsed mask, an invalid error, or not_provided status
- */
+/// @brief Parses an optional layer-type mask from a CLI string option.
+///
+/// @details
+/// Accepts hexadecimal (0x...), decimal, and octal literals (via std::stoul base 0), mirroring the YAML mask parser.
+/// A parsed value, including 0 (which disables the layer type), yields a present optional. Absence of the option
+/// yields not_provided so lower-priority providers and the size-based default can supply the value instead.
+///
+/// @param raw_value The raw string value from CLI, or std::nullopt if not provided
+/// @param option_name The CLI option name for error messages (e.g., "--metatile-layer-type-mask")
+/// @return LayerValue with the parsed mask, an invalid error, or not_provided status
 LayerValue<std::optional<std::uint32_t>>
 parse_layer_type_mask(const std::optional<std::string> &raw_value, const std::string &option_name)
 {

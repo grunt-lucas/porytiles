@@ -776,78 +776,68 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     [[nodiscard]] std::vector<ProvenanceChainLink<MetatileAttrFieldSpecs>>
     metatile_attr_fields_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
-    /**
-     * @brief Gets the full provenance chain for metatile_attr_field_overrides.
-     *
-     * @details
-     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
-     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
-     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
-     *
-     * @param type The config scope type
-     * @param scope The scope identifier
-     * @return Vector of ProvenanceChainLink entries, one per provider
-     */
+    /// @brief Gets the full provenance chain for metatile_attr_field_overrides.
+    ///
+    /// @details
+    /// Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+    /// Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+    /// a complete diagnostic picture. Does not use caching - always queries providers fresh.
+    ///
+    /// @param type The config scope type
+    /// @param scope The scope identifier
+    /// @return Vector of ProvenanceChainLink entries, one per provider
     [[nodiscard]] std::vector<ProvenanceChainLink<MetatileAttrFieldOverrides>>
     metatile_attr_field_overrides_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
-    /**
-     * @brief Gets the full provenance chain for write_layer_type_column.
-     *
-     * @details
-     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
-     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
-     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
-     *
-     * @param type The config scope type
-     * @param scope The scope identifier
-     * @return Vector of ProvenanceChainLink entries, one per provider
-     */
+    /// @brief Gets the full provenance chain for write_layer_type_column.
+    ///
+    /// @details
+    /// Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+    /// Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+    /// a complete diagnostic picture. Does not use caching - always queries providers fresh.
+    ///
+    /// @param type The config scope type
+    /// @param scope The scope identifier
+    /// @return Vector of ProvenanceChainLink entries, one per provider
     [[nodiscard]] std::vector<ProvenanceChainLink<bool>>
     write_layer_type_column_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
-    /**
-     * @brief Gets the full provenance chain for use_frlg_alternate_masks.
-     *
-     * @details
-     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
-     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
-     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
-     *
-     * @param type The config scope type
-     * @param scope The scope identifier
-     * @return Vector of ProvenanceChainLink entries, one per provider
-     */
+    /// @brief Gets the full provenance chain for use_frlg_alternate_masks.
+    ///
+    /// @details
+    /// Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+    /// Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+    /// a complete diagnostic picture. Does not use caching - always queries providers fresh.
+    ///
+    /// @param type The config scope type
+    /// @param scope The scope identifier
+    /// @return Vector of ProvenanceChainLink entries, one per provider
     [[nodiscard]] std::vector<ProvenanceChainLink<FrlgAlternateMaskMode>>
     use_frlg_alternate_masks_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
-    /**
-     * @brief Gets the full provenance chain for metatile_layer_type_mask.
-     *
-     * @details
-     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
-     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
-     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
-     *
-     * @param type The config scope type
-     * @param scope The scope identifier
-     * @return Vector of ProvenanceChainLink entries, one per provider
-     */
+    /// @brief Gets the full provenance chain for metatile_layer_type_mask.
+    ///
+    /// @details
+    /// Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+    /// Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+    /// a complete diagnostic picture. Does not use caching - always queries providers fresh.
+    ///
+    /// @param type The config scope type
+    /// @param scope The scope identifier
+    /// @return Vector of ProvenanceChainLink entries, one per provider
     [[nodiscard]] std::vector<ProvenanceChainLink<std::optional<std::uint32_t>>>
     metatile_layer_type_mask_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
-    /**
-     * @brief Gets the full provenance chain for metatile_layer_type_mask_frlg.
-     *
-     * @details
-     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
-     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
-     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
-     *
-     * @param type The config scope type
-     * @param scope The scope identifier
-     * @return Vector of ProvenanceChainLink entries, one per provider
-     */
+    /// @brief Gets the full provenance chain for metatile_layer_type_mask_frlg.
+    ///
+    /// @details
+    /// Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+    /// Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+    /// a complete diagnostic picture. Does not use caching - always queries providers fresh.
+    ///
+    /// @param type The config scope type
+    /// @param scope The scope identifier
+    /// @return Vector of ProvenanceChainLink entries, one per provider
     [[nodiscard]] std::vector<ProvenanceChainLink<std::optional<std::uint32_t>>>
     metatile_layer_type_mask_frlg_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 

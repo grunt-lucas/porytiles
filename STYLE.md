@@ -179,16 +179,14 @@ The two sections below show the full block (tier 1) and the trimmed or absent fo
 
 ```c++
 // Always use @brief and @details
-/**
- * @brief A basic class for for modeling foos.
- *
- * @details
- * The Foo class assumes that your foos are all like bars, but different. Notice that the comment goes all the way to
- * the column limit of 120 before wrapping.
- *
- * @tparam T The type parameter for the foo
- * @invariant Some note would go here
- */
+/// @brief A basic class for for modeling foos.
+///
+/// @details
+/// The Foo class assumes that your foos are all like bars, but different. Notice that the comment goes all the way to
+/// the column limit of 120 before wrapping.
+///
+/// @tparam T The type parameter for the foo
+/// @invariant Some note would go here
 template <typename T>
 class Foo {
   public:
@@ -216,29 +214,27 @@ class Foo {
    // documented with @pre tags. Panics are not exceptions - they terminate the
    // program and are not catchable/recoverable.
 
-   /**
-    * @brief Computes a bar value by applying a factor to a base value.
-    *
-    * @details
-    * This function performs a computation using the provided factor and base value.
-    * The function panics if the factor is negative, exceeds the maximum safe value,
-    * or if the base is zero. The computation is optimized for positive integers.
-    *
-    * @tparam ResultType The type to cast the result to (must be numeric).
-    * @param factor The factor to use in the computation.
-    * @param base The base value to multiply with the factor.
-    * @pre @p factor must be non-negative.
-    * @pre @p factor must be less than @c MAX_SAFE_FACTOR.
-    * @pre @p base must not be zero.
-    * @return The computed bar value cast to @c ResultType.
-    * @post The returned value is always positive.
-    * @post The returned value is less than @c MAX_BAR_VALUE.
-    * @note This function is thread-safe.
-    * @warning This function may lose precision when casting to smaller numeric types.
-    * @see @c compute_baz() for a related computation.
-    * @see @c apply_factor() for a simpler version without base parameter.
-    * @todo Handle MAX_SAFE_FACTOR more elegantly
-    */
+    /// @brief Computes a bar value by applying a factor to a base value.
+    ///
+    /// @details
+    /// This function performs a computation using the provided factor and base value.
+    /// The function panics if the factor is negative, exceeds the maximum safe value,
+    /// or if the base is zero. The computation is optimized for positive integers.
+    ///
+    /// @tparam ResultType The type to cast the result to (must be numeric).
+    /// @param factor The factor to use in the computation.
+    /// @param base The base value to multiply with the factor.
+    /// @pre @p factor must be non-negative.
+    /// @pre @p factor must be less than @c MAX_SAFE_FACTOR.
+    /// @pre @p base must not be zero.
+    /// @return The computed bar value cast to @c ResultType.
+    /// @post The returned value is always positive.
+    /// @post The returned value is less than @c MAX_BAR_VALUE.
+    /// @note This function is thread-safe.
+    /// @warning This function may lose precision when casting to smaller numeric types.
+    /// @see @c compute_baz() for a related computation.
+    /// @see @c apply_factor() for a simpler version without base parameter.
+    /// @todo Handle MAX_SAFE_FACTOR more elegantly
     template <typename ResultType>
     ResultType compute_bar(int factor, int base);
 };

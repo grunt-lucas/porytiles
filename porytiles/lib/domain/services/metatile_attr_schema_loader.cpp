@@ -29,15 +29,13 @@ namespace {
     return joined;
 }
 
-/**
- * @brief Merges field overrides into a baseline field list and validates the merged specs.
- *
- * @details
- * Shared front half of load_metatile_attr_schema and resolve_tileset_attr_schema: applies the empty-list, unique-name,
- * unknown-override, provider-override, and neither-mask-nor-frlg_mask checks, and returns the fully merged specs. It
- * does not build a Schema, because which mask each spec contributes depends on the target layout, which is the caller's
- * concern.
- */
+/// @brief Merges field overrides into a baseline field list and validates the merged specs.
+///
+/// @details
+/// Shared front half of load_metatile_attr_schema and resolve_tileset_attr_schema: applies the empty-list, unique-name,
+/// unknown-override, provider-override, and neither-mask-nor-frlg_mask checks, and returns the fully merged specs. It
+/// does not build a Schema, because which mask each spec contributes depends on the target layout, which is the
+/// caller's concern.
 [[nodiscard]] ChainableResult<MetatileAttrFieldSpecs> merge_field_overrides(
     const MetatileAttrFieldSpecs &fields,
     const MetatileAttrFieldOverrides &overrides,
@@ -144,11 +142,9 @@ ChainableResult<ResolvedTilesetAttrSchema> resolve_tileset_attr_schema(
     const bool frlg = layout == AttrSchemaLayout::frlg;
 
     std::vector<Field> schema_fields;
-    /*
-     * The widest bit set by any selected field mask or by an explicit layer_type mask decides the minimum word width.
-     * widest_source names whatever set that bit, so a conflict against an authoritative declared width can point at the
-     * offending mask.
-     */
+    // The widest bit set by any selected field mask or by an explicit layer_type mask decides the minimum word width.
+    // widest_source names whatever set that bit, so a conflict against an authoritative declared width can point at the
+    // offending mask.
     std::size_t required_bits = 0;
     std::string widest_source;
     for (const auto &merged : resolved) {
@@ -177,11 +173,9 @@ ChainableResult<ResolvedTilesetAttrSchema> resolve_tileset_attr_schema(
             "Add a mask to at least one field."}};
     }
 
-    /*
-     * An explicit non-zero layer_type mask is part of the layout too, so a wide one (e.g. 0x60000000) widens the word.
-     * An unset (nullopt) mask resolves to the size-based default later, which always fits the chosen width by
-     * definition.
-     */
+    // An explicit non-zero layer_type mask is part of the layout too, so a wide one (e.g. 0x60000000) widens the word.
+    // An unset (nullopt) mask resolves to the size-based default later, which always fits the chosen width by
+    // definition.
     if (layer_type_mask.has_value() && layer_type_mask.value() != 0) {
         const auto bits = static_cast<std::size_t>(std::bit_width(layer_type_mask.value()));
         if (bits > required_bits) {
@@ -194,22 +188,18 @@ ChainableResult<ResolvedTilesetAttrSchema> resolve_tileset_attr_schema(
 
     std::size_t attr_bytes = 0;
     if (frlg) {
-        /*
-         * The FRLG alternate layout is read through the engine's hardcoded 'const u32 *' accessor, so its entry width
-         * is exactly 4 bytes no matter what metatiles.h declares: those declarations only have to match the
-         * 'const u16 *metatileAttributes' struct field and say nothing about the FRLG read stride. mask_bytes can never
-         * exceed 4 (masks are 32-bit), so the forced width always covers the selected masks.
-         */
+        // The FRLG alternate layout is read through the engine's hardcoded 'const u32 *' accessor, so its entry width
+        // is exactly 4 bytes no matter what metatiles.h declares: those declarations only have to match the
+        // 'const u16 *metatileAttributes' struct field and say nothing about the FRLG read stride. mask_bytes can never
+        // exceed 4 (masks are 32-bit), so the forced width always covers the selected masks.
         attr_bytes = 4;
     }
     else if (detected_width_is_authoritative && mask_bytes > detected_attr_bytes) {
-        /*
-         * For the primary layout, a detected width that came from a real declaration in metatiles.h is not a guess: the
-         * declared type IS the read stride, fixed by the base game and shared across every tileset (they all feed one
-         * 'const uN *metatileAttributes'). A mask that needs a wider word contradicts that hard fact, so reject it
-         * instead of silently widening, which would emit a mismatched declaration and corrupt the packed attributes on
-         * the next read.
-         */
+        // For the primary layout, a detected width that came from a real declaration in metatiles.h is not a guess: the
+        // declared type IS the read stride, fixed by the base game and shared across every tileset (they all feed one
+        // 'const uN *metatileAttributes'). A mask that needs a wider word contradicts that hard fact, so reject it
+        // instead of silently widening, which would emit a mismatched declaration and corrupt the packed attributes on
+        // the next read.
         return FormattableError{std::vector<std::string>{
             format->format(
                 "{} needs a {}-byte attribute word, but 'src/data/tilesets/metatiles.h' declares {}-byte attributes.",
@@ -225,11 +215,9 @@ ChainableResult<ResolvedTilesetAttrSchema> resolve_tileset_attr_schema(
             "if the base game really uses a wider attribute word."}};
     }
     else {
-        /*
-         * Primary layout where the detected width covers the masks (authoritative) or was only a guessed default. In
-         * the guessed case the mask is the sole evidence of the true width, so widen silently to the smallest of 1, 2,
-         * or 4 bytes that covers the selected masks, but never below the detected width.
-         */
+        // Primary layout where the detected width covers the masks (authoritative) or was only a guessed default. In
+        // the guessed case the mask is the sole evidence of the true width, so widen silently to the smallest of 1, 2,
+        // or 4 bytes that covers the selected masks, but never below the detected width.
         attr_bytes = std::max(detected_attr_bytes, mask_bytes);
     }
 

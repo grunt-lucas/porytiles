@@ -41,12 +41,10 @@ class MetatilesHeaderProvider final {
     {
     }
 
-    /**
-     * @brief Detects the project-global metatile attribute byte size from metatiles.h.
-     *
-     * @return A LayerValue holding the detected size (2 or 4), invalid on mixed u16/u32 declarations, or
-     * not_provided when the header is missing or has no attribute declarations
-     */
+    /// @brief Detects the project-global metatile attribute byte size from metatiles.h.
+    ///
+    /// @return A LayerValue holding the detected size (2 or 4), invalid on mixed u16/u32 declarations, or
+    /// not_provided when the header is missing or has no attribute declarations
     [[nodiscard]] LayerValue<std::size_t> detect() const;
 
   private:

@@ -262,89 +262,78 @@ class Parser {
      */
     [[nodiscard]] ChainableResult<std::vector<IncbinDeclaration>> parse_incbin_arrays();
 
-    /**
-     * @brief Parses array declarations that use designated (indexed) initializers.
-     *
-     * @details
-     * Scans for declarations of the form:
-     * @code
-     * [static] [const] TYPE IDENTIFIER [SIZE_EXPR] = { [index1] = value1, [index2] = value2, ... };
-     * @endcode
-     *
-     * Each `[index] = value` element becomes an IndexedArrayEntry. Value expressions are evaluated against the current
-     * symbol table (including any seeded symbols); an unevaluable value leaves the entry's value absent rather than
-     * failing the scan. Blank lines inside the braces and a missing trailing comma on the last entry are tolerated.
-     * Preprocessor conditionals are tracked as in parse_defines(), and arrays inside a provably inactive region are
-     * dropped.
-     *
-     * @return A vector of IndexedArrayDeclaration on success, or an error on failure
-     */
+    /// @brief Parses array declarations that use designated (indexed) initializers.
+    ///
+    /// @details
+    /// Scans for declarations of the form:
+    /// @code
+    /// [static] [const] TYPE IDENTIFIER [SIZE_EXPR] = { [index1] = value1, [index2] = value2, ... };
+    /// @endcode
+    ///
+    /// Each `[index] = value` element becomes an IndexedArrayEntry. Value expressions are evaluated against the current
+    /// symbol table (including any seeded symbols); an unevaluable value leaves the entry's value absent rather than
+    /// failing the scan. Blank lines inside the braces and a missing trailing comma on the last entry are tolerated.
+    /// Preprocessor conditionals are tracked as in parse_defines(), and arrays inside a provably inactive region are
+    /// dropped.
+    ///
+    /// @return A vector of IndexedArrayDeclaration on success, or an error on failure
     [[nodiscard]] ChainableResult<std::vector<IndexedArrayDeclaration>> parse_indexed_arrays();
 
-    /**
-     * @brief Parses all #define statements, tolerating individual evaluation failures.
-     *
-     * @details
-     * Behaves like parse_defines() but never aborts on a define whose value cannot be evaluated (for example a value
-     * that references a macro declared in an unparsed header). Such defines are reported in the returned scan's skipped
-     * list, and their names are still recorded as defined so later conditionals can use them. Preprocessor conditionals
-     * are tracked exactly as in parse_defines().
-     *
-     * @return The resolved defines and the skipped defines
-     */
+    /// @brief Parses all #define statements, tolerating individual evaluation failures.
+    ///
+    /// @details
+    /// Behaves like parse_defines() but never aborts on a define whose value cannot be evaluated (for example a value
+    /// that references a macro declared in an unparsed header). Such defines are reported in the returned scan's
+    /// skipped list, and their names are still recorded as defined so later conditionals can use them. Preprocessor
+    /// conditionals are tracked exactly as in parse_defines().
+    ///
+    /// @return The resolved defines and the skipped defines
     [[nodiscard]] TolerantDefineScan parse_defines_tolerant();
 
-    /**
-     * @brief Parses all enum declarations, tolerating individual member evaluation failures.
-     *
-     * @details
-     * Behaves like parse_enums() but never aborts on an enum member whose explicit value cannot be evaluated. An
-     * unevaluable explicit value poisons the running counter, so that member and any following implicit members carry
-     * an absent value until the next evaluable explicit value re-anchors the counter. Enums that cannot be parsed
-     * structurally are reported in the scan's skipped list.
-     *
-     * @return The parsed enums (with possibly-absent member values) and any structurally skipped enums
-     */
+    /// @brief Parses all enum declarations, tolerating individual member evaluation failures.
+    ///
+    /// @details
+    /// Behaves like parse_enums() but never aborts on an enum member whose explicit value cannot be evaluated. An
+    /// unevaluable explicit value poisons the running counter, so that member and any following implicit members carry
+    /// an absent value until the next evaluable explicit value re-anchors the counter. Enums that cannot be parsed
+    /// structurally are reported in the scan's skipped list.
+    ///
+    /// @return The parsed enums (with possibly-absent member values) and any structurally skipped enums
     [[nodiscard]] TolerantEnumScan parse_enums_tolerant();
 
-    /**
-     * @brief Returns warnings accumulated while scanning conditionals and defines.
-     *
-     * @details
-     * Scans do not fail on recoverable oddities such as a value that conflicts with an earlier define inside an
-     * undecidable conditional region. Those are collected here so a caller can surface them without aborting the parse.
-     *
-     * @return A const reference to the accumulated warning messages
-     */
+    /// @brief Returns warnings accumulated while scanning conditionals and defines.
+    ///
+    /// @details
+    /// Scans do not fail on recoverable oddities such as a value that conflicts with an earlier define inside an
+    /// undecidable conditional region. Those are collected here so a caller can surface them without aborting the
+    /// parse.
+    ///
+    /// @return A const reference to the accumulated warning messages
     [[nodiscard]] const std::vector<std::string> &scan_warnings() const
     {
         return scan_warnings_;
     }
 
-    /**
-     * @brief Returns the set of macro names seen as defined so far.
-     *
-     * @details
-     * Includes every define name recorded during scanning (integer, string, flag, and parametric) plus any names
-     * seeded at construction. Used to decide preprocessor conditionals such as `#ifdef NAME`.
-     *
-     * @return A const reference to the defined-name set
-     */
+    /// @brief Returns the set of macro names seen as defined so far.
+    ///
+    /// @details
+    /// Includes every define name recorded during scanning (integer, string, flag, and parametric) plus any names
+    /// seeded at construction. Used to decide preprocessor conditionals such as `#ifdef NAME`.
+    ///
+    /// @return A const reference to the defined-name set
     [[nodiscard]] const std::unordered_set<std::string> &defined_names() const
     {
         return defined_names_;
     }
 
-    /**
-     * @brief Seeds the symbol table with externally known macro values before scanning.
-     *
-     * @details
-     * Merges the given name-to-value pairs into both the value symbol table and the defined-name set. This lets a file
-     * resolve references to symbols declared in another file that was parsed earlier (for example seeding a source file
-     * with values from its header). Existing entries are overwritten.
-     *
-     * @param symbols The name-to-value pairs to merge in
-     */
+    /// @brief Seeds the symbol table with externally known macro values before scanning.
+    ///
+    /// @details
+    /// Merges the given name-to-value pairs into both the value symbol table and the defined-name set. This lets a file
+    /// resolve references to symbols declared in another file that was parsed earlier (for example seeding a source
+    /// file with values from its header). Existing entries are overwritten.
+    ///
+    /// @param symbols The name-to-value pairs to merge in
     void seed_symbols(const std::unordered_map<std::string, std::int64_t> &symbols)
     {
         for (const auto &[name, value] : symbols) {
@@ -354,23 +343,19 @@ class Parser {
     }
 
   private:
-    /**
-     * @brief Three-valued state of a preprocessor conditional region.
-     *
-     * @details
-     * A region is @c active when its condition is known true, @c skipping when known false, and @c both when the
-     * condition cannot be decided from the symbols known so far (so its body is scanned conservatively).
-     */
+    /// @brief Three-valued state of a preprocessor conditional region.
+    ///
+    /// @details
+    /// A region is @c active when its condition is known true, @c skipping when known false, and @c both when the
+    /// condition cannot be decided from the symbols known so far (so its body is scanned conservatively).
     enum class CondState : std::uint8_t { active, skipping, both };
 
-    /**
-     * @brief One frame on the preprocessor conditional stack.
-     *
-     * @details
-     * @c state is the current branch's state. @c decidable is false once any branch of the chain was undecidable,
-     * which pins the whole chain to @c both. @c branch_taken records whether a decidable branch has already been the
-     * active one, so a later `#elif`/`#else` in a decided chain becomes skipping.
-     */
+    /// @brief One frame on the preprocessor conditional stack.
+    ///
+    /// @details
+    /// @c state is the current branch's state. @c decidable is false once any branch of the chain was undecidable,
+    /// which pins the whole chain to @c both. @c branch_taken records whether a decidable branch has already been the
+    /// active one, so a later `#elif`/`#else` in a decided chain becomes skipping.
     struct ConditionalFrame {
         CondState state;
         bool decidable;

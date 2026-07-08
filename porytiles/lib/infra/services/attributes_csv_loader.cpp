@@ -24,9 +24,7 @@ struct CsvRow {
     std::optional<std::string> layer_type_token; // raw layer_type cell, nullopt when the column or cell is blank
 };
 
-/**
- * @brief Renders the header row the schema expects: id plus every field name in schema order.
- */
+/// @brief Renders the header row the schema expects: id plus every field name in schema order.
 [[nodiscard]] std::string expected_header_string(const Schema &schema)
 {
     std::string header = "id";
@@ -36,13 +34,11 @@ struct CsvRow {
     return header;
 }
 
-/**
- * @brief Extracts the trimmed layer_type cell at a fixed column index, or nullopt when the cell is blank/absent.
- *
- * @details
- * The split() helper keeps trailing empty fields, so a blank cell arrives as an empty string; a row that simply omits
- * the trailing comma has fewer columns than @p index. Both cases mean "no explicit layer type" and map to nullopt.
- */
+/// @brief Extracts the trimmed layer_type cell at a fixed column index, or nullopt when the cell is blank/absent.
+///
+/// @details
+/// The split() helper keeps trailing empty fields, so a blank cell arrives as an empty string; a row that simply omits
+/// the trailing comma has fewer columns than @p index. Both cases mean "no explicit layer type" and map to nullopt.
 [[nodiscard]] std::optional<std::string>
 extract_layer_type_token(const std::vector<std::string> &columns, bool has_layer_type_column, std::size_t index)
 {
@@ -57,13 +53,11 @@ extract_layer_type_token(const std::vector<std::string> &columns, bool has_layer
     return token;
 }
 
-/**
- * @brief Splits one data row into an id, one cell per schema field, and the optional layer_type token.
- *
- * @details
- * The cells are not resolved here; the caller interprets each one against its schema field (provider lookup or raw
- * integer parse). This keeps row shape errors (too few columns, bad id) separate from value errors.
- */
+/// @brief Splits one data row into an id, one cell per schema field, and the optional layer_type token.
+///
+/// @details
+/// The cells are not resolved here; the caller interprets each one against its schema field (provider lookup or raw
+/// integer parse). This keeps row shape errors (too few columns, bad id) separate from value errors.
 ChainableResult<CsvRow> parse_csv_row(
     const std::string &line,
     std::size_t line_index,

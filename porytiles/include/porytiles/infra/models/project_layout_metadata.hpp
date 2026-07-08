@@ -105,15 +105,13 @@ class ProjectLayoutMetadata {
         return blockdata_filepath_;
     }
 
-    /**
-     * @brief The raw @c layout_version string from layouts.json, or nullopt if the key was absent.
-     *
-     * @details
-     * Returned verbatim without validation. FireRed/LeafGreen decomps set this to "frlg"; Emerald-family layouts either
-     * set it to "emerald" or omit it. Validation of unexpected values happens in
-     * ProjectLayoutMetadataProvider::layout_version_usage, which is the only consumer that treats the value as a schema
-     * signal.
-     */
+    /// @brief The raw @c layout_version string from layouts.json, or nullopt if the key was absent.
+    ///
+    /// @details
+    /// Returned verbatim without validation. FireRed/LeafGreen decomps set this to "frlg"; Emerald-family layouts
+    /// either set it to "emerald" or omit it. Validation of unexpected values happens in
+    /// ProjectLayoutMetadataProvider::layout_version_usage, which is the only consumer that treats the value as a
+    /// schema signal.
     [[nodiscard]] const std::optional<std::string> &layout_version() const
     {
         return layout_version_;

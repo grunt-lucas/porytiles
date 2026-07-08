@@ -190,13 +190,11 @@ class TilesetCompilerTestBase : public ::testing::Test {
 
 class TilesetCompilerAttributeDefaultTests : public TilesetCompilerTestBase {};
 
-/*
- * Issue #285 crux: a metatile with no stored attribute (an all-default CSV row the writer omits) must reload as the
- * schema's field defaults, not as all-zero fields, so an omitted row round-trips back to exactly the defaults it was
- * omitted for. Reverting tileset_compiler's materialize-from-defaults branch to a bare MetatileAttribute{} would
- * silently zero every omitted row under a schema with a nonzero default. A default-0 schema cannot tell the two forms
- * apart, so this uses a nonzero default and asserts the compiled attribute carries it.
- */
+// Issue #285 crux: a metatile with no stored attribute (an all-default CSV row the writer omits) must reload as the
+// schema's field defaults, not as all-zero fields, so an omitted row round-trips back to exactly the defaults it was
+// omitted for. Reverting tileset_compiler's materialize-from-defaults branch to a bare MetatileAttribute{} would
+// silently zero every omitted row under a schema with a nonzero default. A default-0 schema cannot tell the two forms
+// apart, so this uses a nonzero default and asserts the compiled attribute carries it.
 TEST_F(TilesetCompilerAttributeDefaultTests, AbsentAttributeMaterializesNonzeroSchemaDefault)
 {
     schema_ = std::move(Schema::create({Field{"behavior", 0x00FF, 0x05}}, 2)).value();
