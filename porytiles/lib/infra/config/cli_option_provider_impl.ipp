@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cctype>
 #include <charconv>
+#include <cstdint>
+#include <exception>
 #include <format>
 #include <optional>
 #include <sstream>
@@ -495,6 +497,46 @@ parse_frlg_alternate_mask_mode(const std::optional<std::string> &raw_value, cons
 
     const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
     return LayerValue<FrlgAlternateMaskMode>::invalid(error, option_name);
+}
+
+/**
+ * @brief Parses an optional layer-type mask from a CLI string option.
+ *
+ * @details
+ * Accepts hexadecimal (0x...), decimal, and octal literals (via std::stoul base 0), mirroring the YAML mask parser.
+ * A parsed value, including 0 (which disables the layer type), yields a present optional. Absence of the option
+ * yields not_provided so lower-priority providers and the size convention can supply the value instead.
+ *
+ * @param raw_value The raw string value from CLI, or std::nullopt if not provided
+ * @param option_name The CLI option name for error messages (e.g., "--metatile-layer-type-mask")
+ * @return LayerValue with the parsed mask, an invalid error, or not_provided status
+ */
+LayerValue<std::optional<std::uint32_t>>
+parse_layer_type_mask(const std::optional<std::string> &raw_value, const std::string &option_name)
+{
+    if (!raw_value.has_value()) {
+        return LayerValue<std::optional<std::uint32_t>>::not_provided();
+    }
+
+    const auto &str = raw_value.value();
+    try {
+        std::size_t consumed = 0;
+        const unsigned long parsed = std::stoul(str, &consumed, 0);
+        if (consumed == str.size() && parsed <= 0xFFFFFFFFUL) {
+            return LayerValue<std::optional<std::uint32_t>>::valid(
+                std::optional<std::uint32_t>{static_cast<std::uint32_t>(parsed)}, option_name, "CLI");
+        }
+    }
+    catch (const std::exception &) {
+        // Fall through to the invalid path below.
+    }
+
+    const auto error = std::format(
+        "Invalid value '{}' for '{}': expected a 32-bit integer mask (for example 0xF000); use 0 to disable the layer "
+        "type.",
+        str,
+        option_name);
+    return LayerValue<std::optional<std::uint32_t>>::invalid(error, option_name);
 }
 
 } // namespace

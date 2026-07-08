@@ -23,6 +23,16 @@ fieldmap:
   # This is really a per-tileset setting; prefer setting it in porytiles/tilesets/<name>/config.yaml.
   use_frlg_alternate_masks: automatic
 
+  # Bit mask for the layer-type bits of a metatile attribute, written as a hex literal.
+  # You normally omit this: Porytiles infers the mask from the base game
+  # (METATILE_ATTR_LAYER_MASK / sMetatileAttrMasks) and falls back to the size convention
+  # (0xF000 for 2-byte attributes, 0x60000000 for 4-byte). Set it only to override that.
+  # A mask of 0x0 disables the layer type: every metatile is Normal and no layer-type bits
+  # are written. metatile_layer_type_mask_frlg is the equivalent for the FRLG alternate layout.
+  # These are per-tileset settings; prefer setting them in porytiles/tilesets/<name>/config.yaml.
+  metatile_layer_type_mask: 0xF000
+  metatile_layer_type_mask_frlg: 0x60000000
+
   # Declare the metatile attribute field layout explicitly, replacing schema inference.
   # You normally omit this: Porytiles infers the layout from your project's own declarations
   # (the METATILE_ATTRIBUTE_* enum, the METATILE_ATTR_*_MASK defines, and the sMetatileAttrMasks

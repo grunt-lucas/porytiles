@@ -28,6 +28,8 @@ class MockInfraConfig : public InfraConfig {
     MetatileAttrFieldOverrides metatile_attr_field_overrides = MetatileAttrFieldOverrides{};
     bool write_layer_type_column = false;
     FrlgAlternateMaskMode use_frlg_alternate_masks = FrlgAlternateMaskMode::automatic;
+    std::optional<std::uint32_t> metatile_layer_type_mask = std::nullopt;
+    std::optional<std::uint32_t> metatile_layer_type_mask_frlg = std::nullopt;
     bool tileset_animations_wire_anim_code = true;
 
   protected:
@@ -87,6 +89,24 @@ class MockInfraConfig : public InfraConfig {
     {
         return ConfigValue{
             use_frlg_alternate_masks, "Use FRLG Alternate Masks", "use_frlg_alternate_masks", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::optional<std::uint32_t>>>
+    metatile_layer_type_mask_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{
+            metatile_layer_type_mask, "Metatile Layer Type Mask", "metatile_layer_type_mask", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<std::optional<std::uint32_t>>>
+    metatile_layer_type_mask_frlg_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{
+            metatile_layer_type_mask_frlg,
+            "Metatile Layer Type Mask FRLG",
+            "metatile_layer_type_mask_frlg",
+            "mock",
+            {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<bool>>

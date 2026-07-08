@@ -80,12 +80,19 @@ enum class AttrInferenceStatus {
  * @c fields is populated only when @c status is valid; it includes alternate-only fields (a frlg_mask but no primary
  * mask). @c error_message carries the actionable diagnostic when @c status is invalid. @c warnings holds non-fatal
  * notes (conflicts, missing providers, shift mismatches) regardless of status.
+ *
+ * @c layer_type_mask / @c layer_type_frlg_mask carry the layer-type bit mask as declared by the base game (the
+ * primary and FRLG-alternate values respectively), when one was found. The layer type is never emitted as a field,
+ * but its mask is now surfaced so downstream resolution can honor a base game's custom layer-type position instead of
+ * assuming the size convention. Either is @c std::nullopt when the base game declares no mask for that layout.
  */
 struct MetatileAttrInferenceResult {
     AttrInferenceStatus status{AttrInferenceStatus::not_provided};
     MetatileAttrFieldSpecs fields;
     std::string error_message;
     std::vector<std::string> warnings;
+    std::optional<std::uint32_t> layer_type_mask;
+    std::optional<std::uint32_t> layer_type_frlg_mask;
 };
 
 /**
@@ -97,7 +104,7 @@ struct MetatileAttrInferenceResult {
  *   METATILE_ATTR_*_MASK defines, and the sMetatileAttrMasks table, applying the dual-layout rule when FRLG mask
  *   defines are present.
  * - Phase B names each field and attaches a value-name provider (behavior constants, terrain/encounter enums) where
- *   one can be located, dropping the layer-type field.
+ *   one can be located. The layer-type field is never emitted, but its mask is recorded on the result.
  * - Phase C fills or rejects fields with no mask: the stock two-byte behavior-only case is completed silently, any
  *   other missing mask is a fatal, actionable error.
  *

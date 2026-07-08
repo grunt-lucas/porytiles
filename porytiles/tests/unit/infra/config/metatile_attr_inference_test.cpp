@@ -45,6 +45,11 @@ TEST_F(MetatileAttrInferenceTest, EmeraldDefinesOnly)
     ASSERT_TRUE(behavior->provider.has_value());
     EXPECT_EQ(behavior->provider->prefix, "MB_");
     EXPECT_TRUE(behavior->provider->skipped.contains("MB_INVALID"));
+
+    // The layer-type mask is captured from METATILE_ATTR_LAYER_MASK even though layer_type is never a field.
+    ASSERT_TRUE(result.layer_type_mask.has_value());
+    EXPECT_EQ(result.layer_type_mask.value(), 0xF000U);
+    EXPECT_FALSE(result.layer_type_frlg_mask.has_value());
 }
 
 // Stock pokefirered: the declaration enum plus the sMetatileAttrMasks table, single 4-byte layout.
@@ -108,6 +113,11 @@ TEST_F(MetatileAttrInferenceTest, FireredEnumPlusMaskTable)
 
     // Numeric-suffix fields stay raw.
     EXPECT_FALSE(find(result.fields, "attribute_2")->provider.has_value());
+
+    // The layer-type mask is captured from the sMetatileAttrMasks table (single 4-byte layout).
+    ASSERT_TRUE(result.layer_type_mask.has_value());
+    EXPECT_EQ(result.layer_type_mask.value(), 0x60000000U);
+    EXPECT_FALSE(result.layer_type_frlg_mask.has_value());
 }
 
 // pokeemerald-expansion: dual layout. Emerald-side primary is behavior only; the rest are FRLG-only alternates.
@@ -166,6 +176,50 @@ TEST_F(MetatileAttrInferenceTest, ExpansionDualLayout)
         EXPECT_TRUE(field->frlg_mask.has_value()) << name;
     }
     EXPECT_EQ(find(result.fields, "terrain")->frlg_mask.value(), 0x3E00U);
+
+    // Dual layout: the primary layer mask is the emerald define, the FRLG layer mask is the FRLG define.
+    ASSERT_TRUE(result.layer_type_mask.has_value());
+    EXPECT_EQ(result.layer_type_mask.value(), 0xF000U);
+    ASSERT_TRUE(result.layer_type_frlg_mask.has_value());
+    EXPECT_EQ(result.layer_type_frlg_mask.value(), 0x60000000U);
+}
+
+// A base game whose LAYER_MASK is a custom value (not the size convention) has that exact value captured.
+TEST_F(MetatileAttrInferenceTest, CustomLayerMaskCaptured)
+{
+    MetatileAttrScan scan;
+    scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}, {"METATILE_ATTR_LAYER_MASK", 0x0300}};
+    scan.detected_attr_size = 2;
+    scan.behaviors_header_present = true;
+
+    const auto result = infer_metatile_attr_fields(scan, &formatter_);
+    ASSERT_EQ(result.status, AttrInferenceStatus::valid);
+    ASSERT_TRUE(result.layer_type_mask.has_value());
+    EXPECT_EQ(result.layer_type_mask.value(), 0x0300U);
+}
+
+// A base game that declares no layer field at all leaves the captured layer mask unset, so the size convention
+// fallback applies downstream.
+TEST_F(MetatileAttrInferenceTest, AbsentLayerMaskLeavesNullopt)
+{
+    MetatileAttrScan scan;
+    scan.enum_members = {
+        enum_member("METATILE_ATTRIBUTE_BEHAVIOR", 0),
+        enum_member("METATILE_ATTRIBUTE_TERRAIN", 1),
+        enum_member("METATILE_ATTRIBUTE_COUNT", 2),
+        enum_member("TILE_TERRAIN_NORMAL", 0),
+    };
+    scan.masks_array = {
+        {"METATILE_ATTRIBUTE_BEHAVIOR", 0x000000FF},
+        {"METATILE_ATTRIBUTE_TERRAIN", 0x00000F00},
+    };
+    scan.detected_attr_size = 2;
+    scan.behaviors_header_present = true;
+
+    const auto result = infer_metatile_attr_fields(scan, &formatter_);
+    ASSERT_EQ(result.status, AttrInferenceStatus::valid);
+    EXPECT_FALSE(result.layer_type_mask.has_value());
+    EXPECT_FALSE(result.layer_type_frlg_mask.has_value());
 }
 
 // A source with only behavior + layer defines but no behavior mask: the 2-byte exception fills behavior = 0x00FF.

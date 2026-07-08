@@ -18,8 +18,10 @@ const std::filesystem::path metatiles_rel_path = std::filesystem::path{"src"} / 
  * @brief Scans a metatiles.h file and detects the attribute byte size from gMetatileAttributes_ declarations.
  *
  * @details
- * Looks for lines containing "gMetatileAttributes_" and checks whether the type is "const u16" or "const u32".
- * Returns a LayerValue with the detected size, or not_provided if the file is missing or has no attribute lines.
+ * Looks for lines containing "gMetatileAttributes_" and checks whether the type is "const u8", "const u16", or
+ * "const u32", mapping to 1, 2, or 4 bytes respectively (matching Porymap, which supports all three widths).
+ * A mix of more than one type is a hard error. Returns a LayerValue with the detected size, or not_provided if
+ * the file is missing or has no attribute lines.
  */
 [[nodiscard]] LayerValue<std::size_t>
 detect_attr_size(const std::filesystem::path &metatiles_path, const TextFormatter *format)
@@ -33,6 +35,7 @@ detect_attr_size(const std::filesystem::path &metatiles_path, const TextFormatte
         return LayerValue<std::size_t>::not_provided();
     }
 
+    bool found_u8 = false;
     bool found_u16 = false;
     bool found_u32 = false;
     std::string line;
@@ -42,6 +45,10 @@ detect_attr_size(const std::filesystem::path &metatiles_path, const TextFormatte
             continue;
         }
 
+        // "const u8" is not a substring of "const u16"/"const u32", so these checks stay mutually exclusive.
+        if (line.find("const u8") != std::string::npos) {
+            found_u8 = true;
+        }
         if (line.find("const u16") != std::string::npos) {
             found_u16 = true;
         }
@@ -50,21 +57,22 @@ detect_attr_size(const std::filesystem::path &metatiles_path, const TextFormatte
         }
     }
 
-    if (!found_u16 && !found_u32) {
+    if (!found_u8 && !found_u16 && !found_u32) {
         return LayerValue<std::size_t>::not_provided();
     }
 
     const std::string source_info = metatiles_path.string();
 
-    if (found_u16 && found_u32) {
+    const int distinct_types = static_cast<int>(found_u8) + static_cast<int>(found_u16) + static_cast<int>(found_u32);
+    if (distinct_types > 1) {
         return LayerValue<std::size_t>::invalid(
             format->format(
-                "Mixed u16/u32 attribute declarations found in '{}'.",
+                "Mixed u8/u16/u32 attribute declarations found in '{}'.",
                 FormatParam{metatiles_path.string(), Style::bold}),
             source_info);
     }
 
-    const std::size_t attr_size = found_u32 ? 4 : 2;
+    const std::size_t attr_size = found_u32 ? 4 : (found_u16 ? 2 : 1);
     return LayerValue<std::size_t>::valid(attr_size, "MetatilesHeaderProvider", source_info);
 }
 

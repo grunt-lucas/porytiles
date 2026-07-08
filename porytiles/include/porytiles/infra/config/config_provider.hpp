@@ -17,6 +17,7 @@
 #include "porytiles/domain/packing/models/palette_hint.hpp"
 #include "porytiles/infra/config/frlg_alternate_mask_mode.hpp"
 #include "porytiles/infra/config/layer_value.hpp"
+#include "porytiles/infra/config/optional_mask_format.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
 
 namespace porytiles {
@@ -163,6 +164,10 @@ class ConfigProvider {
     write_layer_type_column(ConfigScopeType type, const std::string &scope) const;
     [[nodiscard]] virtual LayerValue<FrlgAlternateMaskMode>
     use_frlg_alternate_masks(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::optional<std::uint32_t>>
+    metatile_layer_type_mask(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::optional<std::uint32_t>>
+    metatile_layer_type_mask_frlg(ConfigScopeType type, const std::string &scope) const;
     [[nodiscard]] virtual LayerValue<bool>
     tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const;
 };

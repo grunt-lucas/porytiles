@@ -4,6 +4,7 @@
 #include <filesystem>
 #include <fstream>
 #include <iterator>
+#include <optional>
 #include <vector>
 
 #include "porytiles/domain/models/layer.hpp"
@@ -51,6 +52,20 @@ Schema make_custom_schema()
             Field{"top_bit", 0x80000000},      // bit 31
         },
         4);
+    return std::move(result).value();
+}
+
+// A 2-byte schema with the layer type disabled (explicit mask 0): layer bits are neither written nor read.
+Schema make_layer_disabled_schema()
+{
+    auto result = Schema::create({Field{"behavior", 0x00FF}}, 2, std::optional<std::uint32_t>{0U});
+    return std::move(result).value();
+}
+
+// A 1-byte schema (behavior in bits 0-3, terrain in bits 4-5). The layer type is disabled by the 1-byte convention.
+Schema make_one_byte_schema()
+{
+    auto result = Schema::create({Field{"behavior", 0x0F}, Field{"terrain", 0x30}}, 1);
     return std::move(result).value();
 }
 
@@ -239,6 +254,64 @@ TEST_F(MetatileAttributeParserTest, EmeraldLayoutRoundTripsThroughSaveAndParse)
     ASSERT_EQ(result.value().size(), 1);
     EXPECT_EQ(result.value()[0].field(attr::field_behavior), 0x21u);
     EXPECT_EQ(result.value()[0].layer_type(), LayerType::split);
+}
+
+TEST_F(MetatileAttributeParserTest, DisabledLayerTypeRoundTripsAsNormal)
+{
+    const Schema schema = make_layer_disabled_schema();
+    ASSERT_EQ(schema.layer_type_mask(), 0u);
+
+    MetatileAttribute attribute{};
+    attribute.field(attr::field_behavior, 0x21);
+    attribute.layer_type(LayerType::split); // dropped when packing, because the layer type is disabled
+
+    ASSERT_TRUE(save_metatile_attributes_bin({attribute}, test_file_, schema).has_value());
+    // Only the behavior byte is written; no layer-type bits appear.
+    EXPECT_EQ(read_bytes(test_file_), le16(0x0021));
+
+    auto result = parse_metatile_attributes(test_file_, schema);
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].field(attr::field_behavior), 0x21u);
+    EXPECT_EQ(result.value()[0].layer_type(), LayerType::normal);
+}
+
+TEST_F(MetatileAttributeParserTest, DisabledLayerTypeIgnoresUnusedHighBits)
+{
+    const Schema schema = make_layer_disabled_schema();
+    // Bits 12-15 = 3 would be an invalid layer type if enabled, but a disabled layer type never reads them.
+    write_bytes(test_file_, le16(static_cast<std::uint16_t>(0x0007 | (3u << 12))));
+
+    auto result = parse_metatile_attributes(test_file_, schema);
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].field(attr::field_behavior), 0x07u);
+    EXPECT_EQ(result.value()[0].layer_type(), LayerType::normal);
+}
+
+TEST_F(MetatileAttributeParserTest, OneByteSchemaRoundTrips)
+{
+    const Schema schema = make_one_byte_schema();
+    ASSERT_EQ(schema.attr_bytes(), 1u);
+
+    MetatileAttribute a0{};
+    a0.field("behavior", 0x5);
+    a0.field("terrain", 0x2);
+    MetatileAttribute a1{};
+    a1.field("behavior", 0xF);
+    a1.field("terrain", 0x3);
+
+    ASSERT_TRUE(save_metatile_attributes_bin({a0, a1}, test_file_, schema).has_value());
+    // Each attribute is one byte: behavior in bits 0-3, terrain in bits 4-5.
+    EXPECT_EQ(read_bytes(test_file_), (std::vector<std::uint8_t>{0x25, 0x3F}));
+
+    auto result = parse_metatile_attributes(test_file_, schema);
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 2);
+    EXPECT_EQ(result.value()[0].field("behavior"), 0x5u);
+    EXPECT_EQ(result.value()[0].field("terrain"), 0x2u);
+    EXPECT_EQ(result.value()[1].field("behavior"), 0xFu);
+    EXPECT_EQ(result.value()[1].field("terrain"), 0x3u);
 }
 
 TEST_F(MetatileAttributeParserTest, ErrorOnSizeNotMultipleOfAttrBytes)

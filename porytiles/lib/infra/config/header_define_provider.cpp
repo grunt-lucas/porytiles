@@ -336,6 +336,20 @@ HeaderDefineProvider::use_frlg_alternate_masks(ConfigScopeType /*type*/, const s
     return LayerValue<FrlgAlternateMaskMode>::not_provided();
 }
 
+LayerValue<std::optional<std::uint32_t>>
+HeaderDefineProvider::metatile_layer_type_mask(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<std::optional<std::uint32_t>>::not_provided();
+}
+
+LayerValue<std::optional<std::uint32_t>>
+HeaderDefineProvider::metatile_layer_type_mask_frlg(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+{
+    // No header_define specified for this config value
+    return LayerValue<std::optional<std::uint32_t>>::not_provided();
+}
+
 LayerValue<bool>
 HeaderDefineProvider::tileset_animations_wire_anim_code(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {

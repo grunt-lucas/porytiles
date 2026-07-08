@@ -33,6 +33,8 @@ inline const std::unordered_set<std::string> valid_yaml_paths = {
     "fieldmap.max_map_data_size",
     "fieldmap.metatile_attr_field_overrides",
     "fieldmap.metatile_attr_fields",
+    "fieldmap.metatile_layer_type_mask",
+    "fieldmap.metatile_layer_type_mask_frlg",
     "fieldmap.num_metatiles_in_primary",
     "fieldmap.num_metatiles_total",
     "fieldmap.num_pals_in_primary",

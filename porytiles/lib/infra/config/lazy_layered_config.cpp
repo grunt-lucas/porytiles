@@ -195,6 +195,10 @@ void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, con
     dump_single_config_value(
         out, *format_, "Use FRLG Alternate Masks", use_frlg_alternate_masks_provenance_chain(type, scope));
     dump_single_config_value(
+        out, *format_, "Metatile Layer Type Mask", metatile_layer_type_mask_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Metatile Layer Type Mask FRLG", metatile_layer_type_mask_frlg_provenance_chain(type, scope));
+    dump_single_config_value(
         out,
         *format_,
         "Tileset Animations Wire Anim Code",
@@ -791,6 +795,32 @@ LazyLayeredConfig::use_frlg_alternate_masks_raw(ConfigScopeType type, const std:
         });
 }
 
+ChainableResult<ConfigValue<std::optional<std::uint32_t>>>
+LazyLayeredConfig::metatile_layer_type_mask_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<std::optional<std::uint32_t>>(
+        key, "Metatile Layer Type Mask", [&type, &scope](const ConfigProvider &provider) {
+            return provider.metatile_layer_type_mask(type, scope);
+        });
+}
+
+ChainableResult<ConfigValue<std::optional<std::uint32_t>>>
+LazyLayeredConfig::metatile_layer_type_mask_frlg_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<std::optional<std::uint32_t>>(
+        key, "Metatile Layer Type Mask FRLG", [&type, &scope](const ConfigProvider &provider) {
+            return provider.metatile_layer_type_mask_frlg(type, scope);
+        });
+}
+
 ChainableResult<ConfigValue<bool>>
 LazyLayeredConfig::tileset_animations_wire_anim_code_raw(ConfigScopeType type, const std::string &scope) const
 {
@@ -1083,6 +1113,21 @@ LazyLayeredConfig::use_frlg_alternate_masks_provenance_chain(ConfigScopeType typ
 {
     return collect_provenance_chain<FrlgAlternateMaskMode>(
         [&type, &scope](const ConfigProvider &provider) { return provider.use_frlg_alternate_masks(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::optional<std::uint32_t>>>
+LazyLayeredConfig::metatile_layer_type_mask_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::optional<std::uint32_t>>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.metatile_layer_type_mask(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::optional<std::uint32_t>>>
+LazyLayeredConfig::metatile_layer_type_mask_frlg_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::optional<std::uint32_t>>([&type, &scope](const ConfigProvider &provider) {
+        return provider.metatile_layer_type_mask_frlg(type, scope);
+    });
 }
 
 std::vector<ProvenanceChainLink<bool>> LazyLayeredConfig::tileset_animations_wire_anim_code_provenance_chain(

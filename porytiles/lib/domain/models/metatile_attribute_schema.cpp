@@ -37,17 +37,25 @@ bool is_contiguous(std::uint32_t mask)
 }
 
 /**
- * @brief Returns the structural layer_type mask for the given attribute width.
+ * @brief Returns the size-convention layer_type mask for the given attribute width.
  *
  * @details
- * The layer type's bit position is a fixed GBA/porymap format convention keyed on the total attribute
- * width: bits 12-15 in a 2-byte attribute word, bits 29-30 in a 4-byte word. This helper is the single
- * named home for that convention; everything downstream (the binary attribute pack/unpack in
- * particular) reads it through Schema::layer_type_mask().
+ * When no explicit layer_type mask is configured or inferred, Porytiles falls back to the fixed
+ * GBA/porymap format convention keyed on the total attribute width: bits 12-15 in a 2-byte attribute
+ * word, bits 29-30 in a 4-byte word, and disabled (0) in a 1-byte word (there is no vanilla 1-byte
+ * layer-type position). This helper is the single named home for that convention; Schema::create uses
+ * it only as the fallback when the caller passes std::nullopt.
  */
 std::uint32_t structural_layer_type_mask(std::size_t attr_bytes)
 {
-    return attr_bytes == 4 ? 0x60000000U : 0x0000F000U;
+    switch (attr_bytes) {
+    case 4:
+        return 0x60000000U;
+    case 2:
+        return 0x0000F000U;
+    default: // 1-byte: no vanilla layer-type convention, so disabled
+        return 0U;
+    }
 }
 
 } // namespace
@@ -62,11 +70,32 @@ EnumSpec ProviderSpec::to_enum_spec(std::string field_display_name, std::uint32_
         .field_display_name = std::move(field_display_name)};
 }
 
-ChainableResult<Schema> Schema::create(std::vector<Field> fields, std::size_t attr_bytes)
+ChainableResult<Schema>
+Schema::create(std::vector<Field> fields, std::size_t attr_bytes, std::optional<std::uint32_t> layer_type_mask)
 {
-    assert_or_panic(attr_bytes == 2 || attr_bytes == 4, "Schema::create requires a 2-byte or 4-byte attribute size");
+    assert_or_panic(
+        attr_bytes == 1 || attr_bytes == 2 || attr_bytes == 4,
+        "Schema::create requires a 1-byte, 2-byte, or 4-byte attribute size");
 
-    const std::uint32_t layer_type_mask = structural_layer_type_mask(attr_bytes);
+    // An explicit mask (including 0, which disables the layer type) wins; otherwise fall back to the size convention.
+    const std::uint32_t ltm = layer_type_mask.value_or(structural_layer_type_mask(attr_bytes));
+
+    // A non-zero layer_type mask is itself part of the layout, so it must obey the same shape rules as a field. A
+    // zero mask means the layer type is disabled, so these checks are skipped and it never overlaps anything.
+    if (ltm != 0) {
+        if (!is_contiguous(ltm)) {
+            return FormattableError{
+                "The layer type mask '{}' must be a single contiguous run of bits.",
+                FormatParam{hex_string(ltm), Style::bold}};
+        }
+        if (static_cast<std::size_t>(std::bit_width(ltm)) > attr_bytes * 8) {
+            return FormattableError{
+                "The layer type mask '{}' extends beyond the '{}'-byte metatile attribute size.",
+                FormatParam{hex_string(ltm), Style::bold},
+                FormatParam{attr_bytes, Style::bold}};
+        }
+    }
+
     std::unordered_set<std::string> seen_names;
 
     for (std::size_t i = 0; i < fields.size(); ++i) {
@@ -99,12 +128,12 @@ ChainableResult<Schema> Schema::create(std::vector<Field> fields, std::size_t at
                 FormatParam{attr_bytes, Style::bold}};
         }
 
-        if ((mask & layer_type_mask) != 0) {
+        if (ltm != 0 && (mask & ltm) != 0) {
             return FormattableError{
                 "Field '{}' has mask '{}', which overlaps the layer type bits '{}' of a {}-byte metatile attribute.",
                 FormatParam{field.name(), Style::bold},
                 FormatParam{hex_string(mask), Style::bold},
-                FormatParam{hex_string(layer_type_mask), Style::bold},
+                FormatParam{hex_string(ltm), Style::bold},
                 FormatParam{attr_bytes, Style::bold}};
         }
 
@@ -132,7 +161,7 @@ ChainableResult<Schema> Schema::create(std::vector<Field> fields, std::size_t at
         seen_names.insert(field.name());
     }
 
-    return Schema{std::move(fields), attr_bytes, layer_type_mask};
+    return Schema{std::move(fields), attr_bytes, ltm};
 }
 
 } // namespace porytiles

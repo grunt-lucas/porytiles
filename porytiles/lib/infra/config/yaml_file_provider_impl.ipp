@@ -1459,6 +1459,42 @@ LayerValue<FrlgAlternateMaskMode> parse_frlg_alternate_mask_mode(
     }
 }
 
+// Parses an optional layer-type mask written as a scalar. A parsed value (including 0, which disables the layer type)
+// yields a present optional; an absent node yields not_provided so the inference provider and size convention can
+// supply it. The scalar is parsed as a string so hex/decimal/octal literals all work regardless of yaml-cpp's numeric
+// handling.
+LayerValue<std::optional<std::uint32_t>> parse_layer_type_mask(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<std::optional<std::uint32_t>>::not_provided();
+    }
+
+    const auto mark = node.Mark();
+    const auto source = make_source_string(format, file_path, mark);
+    const auto details = make_source_details(format, file_path, mark);
+
+    try {
+        const auto text = node.as<std::string>();
+        const auto parsed = parse_mask_scalar(text);
+        if (!parsed.has_value()) {
+            const auto error = format->format(
+                "'{}' has invalid value '{}'. Expected a 32-bit integer mask (for example 0xF000); use 0 to disable "
+                "the layer type.",
+                FormatParam{key, Style::bold},
+                FormatParam{text, Style::bold});
+            return LayerValue<std::optional<std::uint32_t>>::invalid(error, source, details);
+        }
+        return LayerValue<std::optional<std::uint32_t>>::valid(
+            std::optional<std::uint32_t>{parsed.value()}, key, source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto error =
+            format->format("Failed to parse '{}' as a layer type mask: {}.", FormatParam{key, Style::bold}, e.what());
+        return LayerValue<std::optional<std::uint32_t>>::invalid(error, source, details);
+    }
+}
+
 LayerValue<PackingStrategyParams> parse_packing_strategy_params(
     const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {

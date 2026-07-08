@@ -300,5 +300,61 @@ TEST_F(TilesetAttrSchemaResolverTest, InvalidLayoutVersionValueIsFatal)
     EXPECT_NE(error_text(result).find("firered"), std::string::npos) << error_text(result);
 }
 
+// A minimal single-field config whose behavior mask fits either layout in two bytes, isolating layer-mask behavior.
+constexpr auto kSimpleFieldsYaml = R"(
+fieldmap:
+  metatile_attr_fields:
+    - name: behavior
+      mask: 0x00FF
+      frlg_mask: 0x01FF
+)";
+
+TEST_F(TilesetAttrSchemaResolverTest, ExplicitPrimaryLayerMaskOverridesConvention)
+{
+    write_config(std::string{kSimpleFieldsYaml} + "  metatile_layer_type_mask: 0x0300\n");
+
+    const auto result = resolve(kTilesetName);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().layout, AttrSchemaLayout::primary);
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0x0300U);
+}
+
+TEST_F(TilesetAttrSchemaResolverTest, ZeroLayerMaskDisablesLayerType)
+{
+    write_config(std::string{kSimpleFieldsYaml} + "  metatile_layer_type_mask: 0x0\n");
+
+    const auto result = resolve(kTilesetName);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0U);
+}
+
+TEST_F(TilesetAttrSchemaResolverTest, FrlgLayoutSelectsFrlgLayerMask)
+{
+    // Both layer masks are configured; forcing the FRLG layout must pick the FRLG value and widen the word to 4 bytes.
+    write_config(
+        std::string{kSimpleFieldsYaml} + "  metatile_layer_type_mask: 0xF000\n" +
+        "  metatile_layer_type_mask_frlg: 0x60000000\n" + "  use_frlg_alternate_masks: always\n");
+
+    const auto result = resolve(kTilesetName);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().layout, AttrSchemaLayout::frlg);
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0x60000000U);
+    EXPECT_EQ(result.value().attr_bytes, 4U);
+}
+
+TEST_F(TilesetAttrSchemaResolverTest, PrimaryLayoutSelectsPrimaryLayerMask)
+{
+    // Same config, but forcing the primary layout must pick the primary value and stay two bytes.
+    write_config(
+        std::string{kSimpleFieldsYaml} + "  metatile_layer_type_mask: 0xF000\n" +
+        "  metatile_layer_type_mask_frlg: 0x60000000\n" + "  use_frlg_alternate_masks: never\n");
+
+    const auto result = resolve(kTilesetName);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().layout, AttrSchemaLayout::primary);
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0xF000U);
+    EXPECT_EQ(result.value().attr_bytes, 2U);
+}
+
 } // namespace
 } // namespace porytiles

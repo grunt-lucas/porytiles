@@ -16,7 +16,8 @@ using namespace porytiles;
  * Every mask and offset comes from the schema; this function carries no layout literals. A field absent
  * from the attribute packs its schema default, the same effective-value rule the attributes CSV writer
  * applies, so the binary and CSV renderings of one attribute always agree. Field values are masked after
- * shifting, so a stored value wider than its field cannot bleed into neighboring bits.
+ * shifting, so a stored value wider than its field cannot bleed into neighboring bits. A schema whose
+ * layer_type mask is 0 has the layer type disabled, so its bits are left unset.
  */
 [[nodiscard]] std::uint32_t pack_metatile_attribute(const MetatileAttribute &attribute, const Schema &schema)
 {
@@ -26,8 +27,10 @@ using namespace porytiles;
             attribute.fields().contains(field.name()) ? attribute.field(field.name()) : field.default_value();
         raw |= (value << field.offset()) & field.mask();
     }
-    raw |=
-        (static_cast<std::uint32_t>(attribute.layer_type()) << schema.layer_type_offset()) & schema.layer_type_mask();
+    if (schema.layer_type_mask() != 0) {
+        raw |= (static_cast<std::uint32_t>(attribute.layer_type()) << schema.layer_type_offset()) &
+               schema.layer_type_mask();
+    }
     return raw;
 }
 
@@ -36,8 +39,9 @@ using namespace porytiles;
  *
  * @details
  * The inverse of pack_metatile_attribute. Every schema field is set explicitly (a zero bit pattern
- * stores an explicit 0), matching what the binary genuinely encodes. The layer type bits must decode to
- * a known LayerType; an out-of-range value is a parse error.
+ * stores an explicit 0), matching what the binary genuinely encodes. When the schema's layer_type mask
+ * is 0 the layer type is disabled: no bits are read and the attribute keeps the default LayerType::normal.
+ * Otherwise the layer type bits must decode to a known LayerType; an out-of-range value is a parse error.
  */
 [[nodiscard]] ChainableResult<MetatileAttribute> unpack_metatile_attribute(std::uint32_t raw, const Schema &schema)
 {
@@ -46,11 +50,13 @@ using namespace porytiles;
         attribute.field(field.name(), (raw & field.mask()) >> field.offset());
     }
 
-    PT_TRY_ASSIGN_PASS_ERR(
-        layer_type,
-        layer_type_from_int((raw & schema.layer_type_mask()) >> schema.layer_type_offset()),
-        MetatileAttribute);
-    attribute.layer_type(layer_type);
+    if (schema.layer_type_mask() != 0) {
+        PT_TRY_ASSIGN_PASS_ERR(
+            layer_type,
+            layer_type_from_int((raw & schema.layer_type_mask()) >> schema.layer_type_offset()),
+            MetatileAttribute);
+        attribute.layer_type(layer_type);
+    }
 
     return attribute;
 }

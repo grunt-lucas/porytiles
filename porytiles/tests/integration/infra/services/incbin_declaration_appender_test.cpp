@@ -262,6 +262,19 @@ TEST_F(IncbinDeclarationAppenderTest_VanillaStock, AppendsMetatilesDeclarationsW
     EXPECT_NE(content.find("INCBIN_U32"), std::string::npos) << "INCBIN_U32 not found for attr size 4";
 }
 
+TEST_F(IncbinDeclarationAppenderTest_VanillaStock, AppendsMetatilesDeclarationsWithU8AttrSize)
+{
+    auto result = appender_->append_metatiles_declarations("gTileset_General", "data/tilesets/primary", 1);
+    ASSERT_TRUE(result.has_value()) << "append_metatiles_declarations failed";
+
+    const std::string content = read_file_contents(metatiles_path());
+
+    // Verify u8 type and INCBIN_U8 macro for attr size 1 (Porymap 1-byte attribute parity).
+    EXPECT_NE(content.find("const u8 gMetatileAttributes_PorytilesManaged_General"), std::string::npos)
+        << "const u8 attribute declaration not found for attr size 1";
+    EXPECT_NE(content.find("INCBIN_U8"), std::string::npos) << "INCBIN_U8 not found for attr size 1";
+}
+
 TEST_F(IncbinDeclarationAppenderTest_ExpansionFrlgStock, AppendsGraphicsDeclarationsAfterFrlgBlock)
 {
     auto result = appender_->append_graphics_declarations("gTileset_General", "data/tilesets/primary", 6);

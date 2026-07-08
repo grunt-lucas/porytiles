@@ -243,6 +243,18 @@ LayerValue<FrlgAlternateMaskMode> ConfigProvider::use_frlg_alternate_masks(
     return LayerValue<FrlgAlternateMaskMode>::not_provided();
 }
 
+LayerValue<std::optional<std::uint32_t>> ConfigProvider::metatile_layer_type_mask(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::optional<std::uint32_t>>::not_provided();
+}
+
+LayerValue<std::optional<std::uint32_t>> ConfigProvider::metatile_layer_type_mask_frlg(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::optional<std::uint32_t>>::not_provided();
+}
+
 LayerValue<bool> ConfigProvider::tileset_animations_wire_anim_code(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

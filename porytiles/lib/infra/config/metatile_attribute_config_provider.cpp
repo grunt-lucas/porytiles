@@ -1,6 +1,7 @@
 #include "porytiles/infra/config/metatile_attribute_config_provider.hpp"
 
 #include <cstdint>
+#include <optional>
 #include <unordered_map>
 #include <utility>
 #include <vector>
@@ -84,13 +85,13 @@ std::string MetatileAttributeConfigProvider::name() const
     return "MetatileAttributeConfigProvider";
 }
 
-LayerValue<MetatileAttrFieldSpecs>
+MetatileAttributeConfigProvider::CachedInference
 MetatileAttributeConfigProvider::compute(ConfigScopeType type, const std::string &scope) const
 {
     const auto fieldmap_header = project_root_ / fieldmap_header_rel;
     if (!std::filesystem::exists(fieldmap_header)) {
         // No fieldmap header to infer from; defer to the next provider.
-        return LayerValue<MetatileAttrFieldSpecs>::not_provided();
+        return CachedInference{};
     }
 
     CParserFacade header_facade{fieldmap_header, format_};
@@ -101,7 +102,7 @@ MetatileAttributeConfigProvider::compute(ConfigScopeType type, const std::string
             format_->format(
                 "could not scan {} for attribute masks; skipping schema inference",
                 FormatParam{fieldmap_header.string(), Style::bold}));
-        return LayerValue<MetatileAttrFieldSpecs>::not_provided();
+        return CachedInference{};
     }
     auto enums_result = header_facade.parse_enums_tolerant();
     if (!enums_result.has_value()) {
@@ -110,7 +111,7 @@ MetatileAttributeConfigProvider::compute(ConfigScopeType type, const std::string
             format_->format(
                 "could not scan {} for the attribute enum; skipping schema inference",
                 FormatParam{fieldmap_header.string(), Style::bold}));
-        return LayerValue<MetatileAttrFieldSpecs>::not_provided();
+        return CachedInference{};
     }
 
     const auto &header_defines = defines_result.value().defines;
@@ -168,25 +169,16 @@ MetatileAttributeConfigProvider::compute(ConfigScopeType type, const std::string
         diagnostics_->warning(diagnostic_tag, warning);
     }
 
-    const auto inference = infer_metatile_attr_fields(scan, format_);
+    auto inference = infer_metatile_attr_fields(scan, format_);
     for (const auto &warning : inference.warnings) {
         diagnostics_->warning(diagnostic_tag, warning);
     }
 
-    switch (inference.status) {
-    case AttrInferenceStatus::valid:
-        return LayerValue<MetatileAttrFieldSpecs>::valid(
-            inference.fields, "MetatileAttributeConfigProvider", fieldmap_header.string());
-    case AttrInferenceStatus::invalid:
-        return LayerValue<MetatileAttrFieldSpecs>::invalid(inference.error_message, fieldmap_header.string());
-    case AttrInferenceStatus::not_provided:
-        return LayerValue<MetatileAttrFieldSpecs>::not_provided();
-    }
-    return LayerValue<MetatileAttrFieldSpecs>::not_provided();
+    return CachedInference{true, std::move(inference), fieldmap_header.string()};
 }
 
-LayerValue<MetatileAttrFieldSpecs>
-MetatileAttributeConfigProvider::metatile_attr_fields(ConfigScopeType type, const std::string &scope) const
+const MetatileAttributeConfigProvider::CachedInference &
+MetatileAttributeConfigProvider::inference_for(ConfigScopeType type, const std::string &scope) const
 {
     const auto cache_key = to_string(type) + ":" + scope;
     const auto it = cached_results_.find(cache_key);
@@ -194,6 +186,49 @@ MetatileAttributeConfigProvider::metatile_attr_fields(ConfigScopeType type, cons
         return it->second;
     }
     return cached_results_.emplace(cache_key, compute(type, scope)).first->second;
+}
+
+LayerValue<MetatileAttrFieldSpecs>
+MetatileAttributeConfigProvider::metatile_attr_fields(ConfigScopeType type, const std::string &scope) const
+{
+    const CachedInference &cached = inference_for(type, scope);
+    if (!cached.provided) {
+        return LayerValue<MetatileAttrFieldSpecs>::not_provided();
+    }
+
+    switch (cached.result.status) {
+    case AttrInferenceStatus::valid:
+        return LayerValue<MetatileAttrFieldSpecs>::valid(
+            cached.result.fields, "MetatileAttributeConfigProvider", cached.source);
+    case AttrInferenceStatus::invalid:
+        return LayerValue<MetatileAttrFieldSpecs>::invalid(cached.result.error_message, cached.source);
+    case AttrInferenceStatus::not_provided:
+        return LayerValue<MetatileAttrFieldSpecs>::not_provided();
+    }
+    return LayerValue<MetatileAttrFieldSpecs>::not_provided();
+}
+
+LayerValue<std::optional<std::uint32_t>>
+MetatileAttributeConfigProvider::metatile_layer_type_mask(ConfigScopeType type, const std::string &scope) const
+{
+    const CachedInference &cached = inference_for(type, scope);
+    if (!cached.provided || !cached.result.layer_type_mask.has_value()) {
+        // No mask was declared by the base game for this layout; defer so the size-convention fallback applies.
+        return LayerValue<std::optional<std::uint32_t>>::not_provided();
+    }
+    return LayerValue<std::optional<std::uint32_t>>::valid(
+        cached.result.layer_type_mask, "MetatileAttributeConfigProvider", cached.source);
+}
+
+LayerValue<std::optional<std::uint32_t>>
+MetatileAttributeConfigProvider::metatile_layer_type_mask_frlg(ConfigScopeType type, const std::string &scope) const
+{
+    const CachedInference &cached = inference_for(type, scope);
+    if (!cached.provided || !cached.result.layer_type_frlg_mask.has_value()) {
+        return LayerValue<std::optional<std::uint32_t>>::not_provided();
+    }
+    return LayerValue<std::optional<std::uint32_t>>::valid(
+        cached.result.layer_type_frlg_mask, "MetatileAttributeConfigProvider", cached.source);
 }
 
 } // namespace porytiles

@@ -115,6 +115,17 @@ TEST_F(MetatileAttrProviderTest, FixtureEmerald)
     EXPECT_EQ(find(result.value.value(), "behavior")->mask.value(), 0x00FFU);
     // The backslash-continuation cross-header define does not derail the scan.
     EXPECT_TRUE(find(result.value.value(), "behavior")->provider.has_value());
+
+    // The layer-type mask is sourced from METATILE_ATTR_LAYER_MASK, which matches the 2-byte convention here.
+    const auto mask = provider.metatile_layer_type_mask(ConfigScopeType::tileset, "general");
+    ASSERT_EQ(mask.state, ValidationState::valid);
+    ASSERT_TRUE(mask.value.has_value());
+    ASSERT_TRUE(mask.value.value().has_value());
+    EXPECT_EQ(mask.value.value().value(), 0xF000U);
+    // No FRLG layout is declared, so the FRLG layer mask defers.
+    EXPECT_EQ(
+        provider.metatile_layer_type_mask_frlg(ConfigScopeType::tileset, "general").state,
+        ValidationState::not_provided);
 }
 
 TEST_F(MetatileAttrProviderTest, FixtureFirered)
@@ -127,6 +138,39 @@ TEST_F(MetatileAttrProviderTest, FixtureFirered)
     EXPECT_EQ(find(specs, "behavior")->mask.value(), 0x1FFU);
     EXPECT_EQ(find(specs, "encounter_type")->mask.value(), 0x7000000U);
     EXPECT_EQ(find(specs, "encounter_type")->provider->prefix, "TILE_ENCOUNTER_");
+
+    // The layer-type mask comes from the sMetatileAttrMasks table (bits 29-30 of the 4-byte word).
+    const auto mask = provider.metatile_layer_type_mask(ConfigScopeType::tileset, "general");
+    ASSERT_EQ(mask.state, ValidationState::valid);
+    ASSERT_TRUE(mask.value.value().has_value());
+    EXPECT_EQ(mask.value.value().value(), 0x60000000U);
+}
+
+TEST_F(MetatileAttrProviderTest, FixtureCustomLayerMask)
+{
+    MetatileAttributeConfigProvider provider{fixture_base / "custom_layer", &formatter_, &diagnostics_};
+    const auto result = provider.metatile_attr_fields(ConfigScopeType::tileset, "general");
+    ASSERT_EQ(result.state, ValidationState::valid) << result.error_message;
+
+    // The custom 0x0C00 layer mask must be sourced verbatim, not silently replaced by the 0xF000 convention.
+    const auto mask = provider.metatile_layer_type_mask(ConfigScopeType::tileset, "general");
+    ASSERT_EQ(mask.state, ValidationState::valid);
+    ASSERT_TRUE(mask.value.value().has_value());
+    EXPECT_EQ(mask.value.value().value(), 0x0C00U);
+}
+
+TEST_F(MetatileAttrProviderTest, FixtureOneByteHasNoLayerMask)
+{
+    MetatileAttributeConfigProvider provider{fixture_base / "one_byte", &formatter_, &diagnostics_};
+    const auto result = provider.metatile_attr_fields(ConfigScopeType::tileset, "general");
+    ASSERT_EQ(result.state, ValidationState::valid) << result.error_message;
+    ASSERT_EQ(result.value->size(), 1U);
+    EXPECT_EQ(find(result.value.value(), "behavior")->mask.value(), 0x0FU);
+
+    // No layer field is declared, so the layer mask defers and the size-convention fallback (disabled for 1 byte)
+    // takes over downstream.
+    EXPECT_EQ(
+        provider.metatile_layer_type_mask(ConfigScopeType::tileset, "general").state, ValidationState::not_provided);
 }
 
 TEST_F(MetatileAttrProviderTest, FixtureExpansionIgnoresDecoyTable)

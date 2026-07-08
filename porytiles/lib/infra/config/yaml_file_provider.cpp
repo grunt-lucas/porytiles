@@ -725,6 +725,42 @@ YamlFileProvider::use_frlg_alternate_masks(ConfigScopeType type, const std::stri
         "fieldmap.use_frlg_alternate_masks");
 }
 
+LayerValue<std::optional<std::uint32_t>>
+YamlFileProvider::metatile_layer_type_mask(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::optional<std::uint32_t>>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<std::optional<std::uint32_t>>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["fieldmap"]["metatile_layer_type_mask"]; },
+        parse_layer_type_mask,
+        "fieldmap.metatile_layer_type_mask",
+        "fieldmap.metatile_layer_type_mask");
+}
+
+LayerValue<std::optional<std::uint32_t>>
+YamlFileProvider::metatile_layer_type_mask_frlg(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::optional<std::uint32_t>>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<std::optional<std::uint32_t>>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["fieldmap"]["metatile_layer_type_mask_frlg"]; },
+        parse_layer_type_mask,
+        "fieldmap.metatile_layer_type_mask_frlg",
+        "fieldmap.metatile_layer_type_mask_frlg");
+}
+
 LayerValue<bool>
 YamlFileProvider::tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const
 {

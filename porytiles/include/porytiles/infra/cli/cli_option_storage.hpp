@@ -60,6 +60,8 @@ struct CliOptionStorage {
     std::optional<std::string> tileset_paths_secondary_bin;
     std::optional<std::string> write_layer_type_column;
     std::optional<std::string> use_frlg_alternate_masks;
+    std::optional<std::string> metatile_layer_type_mask;
+    std::optional<std::string> metatile_layer_type_mask_frlg;
     std::optional<std::string> tileset_animations_wire_anim_code;
 };
 

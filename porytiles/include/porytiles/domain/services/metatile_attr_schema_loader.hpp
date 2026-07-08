@@ -1,6 +1,8 @@
 #pragma once
 
 #include <cstddef>
+#include <cstdint>
+#include <optional>
 #include <string>
 
 #include "gsl/pointers"
@@ -57,13 +59,15 @@ struct ResolvedTilesetAttrSchema {
  * are excluded symmetrically. If no field survives selection, a semantic error is returned naming the fix (add a mask
  * for the layout, or switch use_frlg_alternate_masks).
  *
- * The attribute byte width is widened silently to the smallest of 2 or 4 bytes that covers the selected masks, but
- * never below @p detected_attr_bytes (the width detected from the project's own metatiles.h declarations).
+ * The attribute byte width is widened silently to the smallest of 1, 2, or 4 bytes that covers the selected field
+ * masks and any explicit non-zero @p layer_type_mask, but never below @p detected_attr_bytes (the width detected from
+ * the project's own metatiles.h declarations).
  *
  * @param fields The baseline field specs, in display order
  * @param overrides The per-field overrides to merge in
  * @param layout The layout to resolve (primary or frlg)
- * @param detected_attr_bytes The attribute byte size detected from the project (2 or 4)
+ * @param detected_attr_bytes The attribute byte size detected from the project (1, 2, or 4)
+ * @param layer_type_mask The resolved layer_type mask (0 disables it), or nullopt to use the size convention
  * @param format The formatter used for diagnostic text
  * @return The resolved schema, specs, layout, and final byte width, or the first hard error encountered
  */
@@ -72,6 +76,7 @@ struct ResolvedTilesetAttrSchema {
     const MetatileAttrFieldOverrides &overrides,
     AttrSchemaLayout layout,
     std::size_t detected_attr_bytes,
+    std::optional<std::uint32_t> layer_type_mask,
     gsl::not_null<const TextFormatter *> format);
 
 } // namespace porytiles

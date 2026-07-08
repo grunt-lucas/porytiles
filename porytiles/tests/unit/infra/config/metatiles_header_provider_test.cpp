@@ -83,6 +83,39 @@ TEST_F(MetatilesHeaderProviderTest, DetectsU32Attributes)
     EXPECT_EQ(result.value.value(), 4);
 }
 
+TEST_F(MetatilesHeaderProviderTest, DetectsU8Attributes)
+{
+    temp_dir_ = create_test_project(
+        "u8",
+        "const u8 gMetatileAttributes_General[] = INCBIN_U8(\"data/tilesets/primary/general/"
+        "metatile_attributes.bin\");\n"
+        "const u8 gMetatileAttributes_Petalburg[] = INCBIN_U8(\"data/tilesets/secondary/petalburg/"
+        "metatile_attributes.bin\");\n");
+
+    MetatilesHeaderProvider provider{temp_dir_, formatter_.get()};
+    auto result = provider.detect();
+
+    ASSERT_EQ(result.state, ValidationState::valid);
+    ASSERT_TRUE(result.value.has_value());
+    EXPECT_EQ(result.value.value(), 1);
+}
+
+TEST_F(MetatilesHeaderProviderTest, MixedU8AndU16ReturnsInvalid)
+{
+    temp_dir_ = create_test_project(
+        "mixed_u8_u16",
+        "const u8 gMetatileAttributes_General[] = INCBIN_U8(\"data/tilesets/primary/general/"
+        "metatile_attributes.bin\");\n"
+        "const u16 gMetatileAttributes_Petalburg[] = INCBIN_U16(\"data/tilesets/secondary/petalburg/"
+        "metatile_attributes.bin\");\n");
+
+    MetatilesHeaderProvider provider{temp_dir_, formatter_.get()};
+    auto result = provider.detect();
+
+    EXPECT_EQ(result.state, ValidationState::invalid);
+    EXPECT_FALSE(result.error_message.empty());
+}
+
 TEST_F(MetatilesHeaderProviderTest, MissingFileReturnsNotProvided)
 {
     temp_dir_ = std::filesystem::temp_directory_path() / "porytiles_metatiles_header_provider_test" / "missing";

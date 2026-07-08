@@ -223,6 +223,16 @@ void OverrideConfigProvider::set_use_frlg_alternate_masks(FrlgAlternateMaskMode 
     use_frlg_alternate_masks_override_ = std::move(value);
 }
 
+void OverrideConfigProvider::set_metatile_layer_type_mask(std::optional<std::uint32_t> value)
+{
+    metatile_layer_type_mask_override_ = std::move(value);
+}
+
+void OverrideConfigProvider::set_metatile_layer_type_mask_frlg(std::optional<std::uint32_t> value)
+{
+    metatile_layer_type_mask_frlg_override_ = std::move(value);
+}
+
 void OverrideConfigProvider::set_tileset_animations_wire_anim_code(bool value)
 {
     tileset_animations_wire_anim_code_override_ = std::move(value);
@@ -598,6 +608,26 @@ OverrideConfigProvider::use_frlg_alternate_masks(ConfigScopeType type, const std
     }
     return LayerValue<FrlgAlternateMaskMode>::valid(
         use_frlg_alternate_masks_override_.value(), "use_frlg_alternate_masks", source_info_);
+}
+
+LayerValue<std::optional<std::uint32_t>>
+OverrideConfigProvider::metatile_layer_type_mask(ConfigScopeType type, const std::string &scope) const
+{
+    if (!scope_matches(type, scope) || !metatile_layer_type_mask_override_.has_value()) {
+        return LayerValue<std::optional<std::uint32_t>>::not_provided();
+    }
+    return LayerValue<std::optional<std::uint32_t>>::valid(
+        metatile_layer_type_mask_override_.value(), "metatile_layer_type_mask", source_info_);
+}
+
+LayerValue<std::optional<std::uint32_t>>
+OverrideConfigProvider::metatile_layer_type_mask_frlg(ConfigScopeType type, const std::string &scope) const
+{
+    if (!scope_matches(type, scope) || !metatile_layer_type_mask_frlg_override_.has_value()) {
+        return LayerValue<std::optional<std::uint32_t>>::not_provided();
+    }
+    return LayerValue<std::optional<std::uint32_t>>::valid(
+        metatile_layer_type_mask_frlg_override_.value(), "metatile_layer_type_mask_frlg", source_info_);
 }
 
 LayerValue<bool>

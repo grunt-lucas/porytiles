@@ -276,6 +276,82 @@ TEST(MetatileAttributeSchemaTest, RejectsDuplicateName)
     EXPECT_NE(result.error().join(formatter).find("behavior"), std::string::npos);
 }
 
+TEST(MetatileAttributeSchemaTest, ExplicitLayerTypeMaskHonoredOverConvention)
+{
+    std::vector<Field> fields;
+    fields.emplace_back("behavior", 0x00FF);
+    // 0x0300 instead of the 0xF000 convention.
+    auto result = Schema::create(std::move(fields), 2, std::optional<std::uint32_t>{0x0300U});
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(result.value().layer_type_mask(), 0x0300U);
+    EXPECT_EQ(result.value().layer_type_offset(), 8u);
+}
+
+TEST(MetatileAttributeSchemaTest, ZeroLayerTypeMaskDisablesAndFreesConventionBits)
+{
+    // With the layer type disabled, a field may occupy the bits the size convention would have used (0xF000).
+    std::vector<Field> fields;
+    fields.emplace_back("behavior", 0x00FF);
+    fields.emplace_back("wide", 0xF000);
+    auto result = Schema::create(std::move(fields), 2, std::optional<std::uint32_t>{0U});
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(result.value().layer_type_mask(), 0U);
+}
+
+TEST(MetatileAttributeSchemaTest, RejectsNonContiguousLayerTypeMask)
+{
+    PlainTextFormatter formatter;
+    std::vector<Field> fields;
+    fields.emplace_back("behavior", 0x000001FF);
+    auto result = Schema::create(std::move(fields), 4, std::optional<std::uint32_t>{0x50000000U});
+    ASSERT_FALSE(result.has_value());
+    EXPECT_NE(result.error().join(formatter).find("layer type mask"), std::string::npos);
+}
+
+TEST(MetatileAttributeSchemaTest, RejectsLayerTypeMaskBeyondAttributeSize)
+{
+    PlainTextFormatter formatter;
+    std::vector<Field> fields;
+    fields.emplace_back("behavior", 0x00FF);
+    // Bits 16-17 do not fit a 2-byte attribute word.
+    auto result = Schema::create(std::move(fields), 2, std::optional<std::uint32_t>{0x30000U});
+    ASSERT_FALSE(result.has_value());
+    EXPECT_NE(result.error().join(formatter).find("layer type mask"), std::string::npos);
+}
+
+TEST(MetatileAttributeSchemaTest, RejectsFieldOverlappingExplicitLayerTypeMask)
+{
+    PlainTextFormatter formatter;
+    std::vector<Field> fields;
+    fields.emplace_back("intruder", 0x0300);
+    auto result = Schema::create(std::move(fields), 2, std::optional<std::uint32_t>{0x0300U});
+    ASSERT_FALSE(result.has_value());
+    const std::string message = result.error().join(formatter);
+    EXPECT_NE(message.find("intruder"), std::string::npos);
+    EXPECT_NE(message.find("layer type"), std::string::npos);
+}
+
+TEST(MetatileAttributeSchemaTest, OneByteSchemaDisablesLayerTypeByConvention)
+{
+    std::vector<Field> fields;
+    fields.emplace_back("behavior", 0x00FF);
+    auto result = Schema::create(std::move(fields), 1);
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(result.value().attr_bytes(), 1u);
+    // No vanilla 1-byte layer-type position exists, so the convention disables it.
+    EXPECT_EQ(result.value().layer_type_mask(), 0U);
+}
+
+TEST(MetatileAttributeSchemaTest, OneByteSchemaAcceptsExplicitLayerTypeMask)
+{
+    std::vector<Field> fields;
+    fields.emplace_back("behavior", 0x0F);
+    auto result = Schema::create(std::move(fields), 1, std::optional<std::uint32_t>{0x30U});
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(result.value().layer_type_mask(), 0x30U);
+    EXPECT_EQ(result.value().layer_type_offset(), 4u);
+}
+
 TEST(MetatileAttributeSchemaTest, HeaderFormatToString)
 {
     EXPECT_EQ(to_string(HeaderFormat::defines_only), "defines-only");

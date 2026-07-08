@@ -199,8 +199,27 @@ infer_metatile_attr_fields(const MetatileAttrScan &scan, gsl::not_null<const Tex
     for (auto &fm : field_masks) {
         const std::string &suffix = fm.suffix;
 
-        // Phase B: the layer-type field is structural, never emitted as an attribute field.
+        // Phase B: the layer-type field is structural, never emitted as an attribute field. Its mask is still
+        // recorded so downstream resolution can honor a base game's custom layer-type position instead of assuming
+        // the size convention.
         if (suffix == "LAYER_TYPE") {
+            result.layer_type_mask = fm.primary;
+            result.layer_type_frlg_mask = fm.frlg;
+
+            // Same shift-table cross-check applied to real fields: the recorded shift should equal the mask offset.
+            if (const auto shift_it = shifts.find(suffix); shift_it != shifts.end()) {
+                const auto mask_for_check = any_frlg_define ? fm.frlg : fm.primary;
+                if (mask_for_check.has_value()) {
+                    const auto expected = static_cast<std::uint32_t>(std::countr_zero(mask_for_check.value()));
+                    if (shift_it->second != expected) {
+                        result.warnings.push_back(format->format(
+                            "field '{}' shift table entry ({}) does not match its mask offset ({}); using the mask",
+                            FormatParam{"layer_type", Style::bold},
+                            FormatParam{shift_it->second},
+                            FormatParam{expected}));
+                    }
+                }
+            }
             continue;
         }
 

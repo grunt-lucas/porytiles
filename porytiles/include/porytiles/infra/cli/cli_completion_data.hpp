@@ -257,6 +257,24 @@ struct CliOptionMeta {
             {"automatic", "always", "never"},
             false},
         CliOptionMeta{
+            "metatile-layer-type-mask",
+            "Metatile Layer Type Mask - Bit mask (a hex literal like 0xF000) for the layer-type bits of a metatile "
+            "attribute. A mask of 0 disables the layer type, so every metatile is Normal and no layer-type bits are "
+            "written. When unset, Porytiles infers the mask from the base game (METATILE_ATTR_LAYER_MASK / "
+            "sMetatileAttrMasks) and falls back to the size convention. Intended to be set at tileset scope.",
+            "string",
+            {},
+            false},
+        CliOptionMeta{
+            "metatile-layer-type-mask-frlg",
+            "Metatile Layer Type Mask FRLG - Bit mask (a hex literal like 0x60000000) for the layer-type bits under "
+            "the FireRed/LeafGreen alternate attribute layout. A mask of 0 disables the layer type. When unset, "
+            "Porytiles infers the mask from the base game and falls back to the size convention. Intended to be set at "
+            "tileset scope.",
+            "string",
+            {},
+            false},
+        CliOptionMeta{
             "tileset-animations-wire-anim-code",
             "Tileset Animations Wire Anim Code - Enable or disable automatic animation code wiring.",
             "bool",

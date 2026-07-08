@@ -1,5 +1,9 @@
 #include "porytiles/infra/services/tileset_attr_schema_resolver.hpp"
 
+#include <cstdint>
+#include <format>
+#include <optional>
+
 #include "porytiles/infra/config/frlg_alternate_mask_mode.hpp"
 #include "porytiles/infra/config/layer_value.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
@@ -28,10 +32,20 @@ ChainableResult<ResolvedTilesetAttrSchema> TilesetAttrSchemaResolver::resolve(co
         frlg_mode_cv,
         config_->use_frlg_alternate_masks(ConfigScopeType::tileset, tileset_name),
         ResolvedTilesetAttrSchema);
+    PT_TRY_ASSIGN_PASS_ERR(
+        layer_mask_cv,
+        config_->metatile_layer_type_mask(ConfigScopeType::tileset, tileset_name),
+        ResolvedTilesetAttrSchema);
+    PT_TRY_ASSIGN_PASS_ERR(
+        layer_mask_frlg_cv,
+        config_->metatile_layer_type_mask_frlg(ConfigScopeType::tileset, tileset_name),
+        ResolvedTilesetAttrSchema);
 
     const MetatileAttrFieldSpecs fields = fields_cv.value();
     const MetatileAttrFieldOverrides overrides = overrides_cv.value();
     const FrlgAlternateMaskMode frlg_mode = frlg_mode_cv.value();
+    const std::optional<std::uint32_t> layer_mask_primary = layer_mask_cv.value();
+    const std::optional<std::uint32_t> layer_mask_frlg = layer_mask_frlg_cv.value();
 
     // The attribute byte width comes straight from the metatiles.h detector. A project with no detectable width (no
     // metatiles.h, or no attribute declarations in it) defaults to 2 bytes; mixed u16/u32 declarations are a hard
@@ -47,11 +61,10 @@ ChainableResult<ResolvedTilesetAttrSchema> TilesetAttrSchemaResolver::resolve(co
         diag_->warning(
             "metatile-attr-schema",
             "could not detect the metatile attribute size from 'src/data/tilesets/metatiles.h' for tileset '{}'; "
-            "assuming {}-byte attributes. If your project uses {}-byte attributes, declare gMetatileAttributes_* as "
-            "'const u32' in metatiles.h, or configure a field whose mask uses a bit at or above bit 16.",
+            "assuming {}-byte attributes. Declare gMetatileAttributes_* as 'const u8', 'const u16', or 'const u32' in "
+            "metatiles.h to pin the width (1, 2, or 4 bytes), or configure a field whose mask needs a wider word.",
             FormatParam{tileset_name, Style::bold},
-            FormatParam{2},
-            FormatParam{4});
+            FormatParam{2});
     }
     const std::size_t detected_attr_bytes =
         detected.state == ValidationState::valid ? detected.value.value() : std::size_t{2};
@@ -108,7 +121,13 @@ ChainableResult<ResolvedTilesetAttrSchema> TilesetAttrSchemaResolver::resolve(co
     }
     }
 
-    auto resolved = resolve_tileset_attr_schema(fields, overrides, layout, detected_attr_bytes, format_);
+    // The layer-type mask follows the same primary/FRLG selection as the fields: the FRLG value for the FRLG layout,
+    // the primary value otherwise. An unset (nullopt) value lets the size-convention fallback apply in Schema::create.
+    const std::optional<std::uint32_t> layer_mask_opt =
+        layout == AttrSchemaLayout::frlg ? layer_mask_frlg : layer_mask_primary;
+
+    auto resolved =
+        resolve_tileset_attr_schema(fields, overrides, layout, detected_attr_bytes, layer_mask_opt, format_);
     if (resolved.has_value()) {
         // Summarize the resolved schema so the user can see what layout the data-driven resolution landed on. This is
         // the schema-shaped replacement for the old "detected base game" remark.
@@ -119,12 +138,17 @@ ChainableResult<ResolvedTilesetAttrSchema> TilesetAttrSchemaResolver::resolve(co
             }
             field_names += field.name();
         }
+        const std::uint32_t resolved_layer_mask = resolved.value().schema.layer_type_mask();
+        const std::string layer_type_note = resolved_layer_mask == 0
+                                                ? "layer type disabled"
+                                                : std::format("layer type mask 0x{:X}", resolved_layer_mask);
         diag_->remark(
             "metatile-attr-schema",
-            "resolved {}-byte metatile attributes for tileset '{}' with fields: {}.",
+            "resolved {}-byte metatile attributes for tileset '{}' with fields: {} ({}).",
             FormatParam{resolved.value().attr_bytes, Style::bold},
             FormatParam{tileset_name, Style::bold},
-            FormatParam{field_names, Style::bold});
+            FormatParam{field_names, Style::bold},
+            FormatParam{layer_type_note, Style::bold});
     }
     return resolved;
 }

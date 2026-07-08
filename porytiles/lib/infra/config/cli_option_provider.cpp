@@ -294,6 +294,20 @@ LayerValue<FrlgAlternateMaskMode> CliOptionProvider::use_frlg_alternate_masks(
     return parse_frlg_alternate_mask_mode(storage_.use_frlg_alternate_masks, "--use-frlg-alternate-masks");
 }
 
+LayerValue<std::optional<std::uint32_t>> CliOptionProvider::metatile_layer_type_mask(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_layer_type_mask(storage_.metatile_layer_type_mask, "--metatile-layer-type-mask");
+}
+
+LayerValue<std::optional<std::uint32_t>> CliOptionProvider::metatile_layer_type_mask_frlg(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_layer_type_mask(storage_.metatile_layer_type_mask_frlg, "--metatile-layer-type-mask-frlg");
+}
+
 LayerValue<bool> CliOptionProvider::tileset_animations_wire_anim_code(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

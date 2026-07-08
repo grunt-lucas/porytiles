@@ -1,7 +1,9 @@
 #include "porytiles/domain/services/metatile_attr_schema_loader.hpp"
 
 #include <algorithm>
+#include <bit>
 #include <cstdint>
+#include <optional>
 #include <string>
 #include <unordered_set>
 #include <vector>
@@ -131,6 +133,7 @@ ChainableResult<ResolvedTilesetAttrSchema> resolve_tileset_attr_schema(
     const MetatileAttrFieldOverrides &overrides,
     AttrSchemaLayout layout,
     std::size_t detected_attr_bytes,
+    std::optional<std::uint32_t> layer_type_mask,
     gsl::not_null<const TextFormatter *> format)
 {
     PT_TRY_ASSIGN_PASS_ERR(resolved, merge_field_overrides(fields, overrides, format), ResolvedTilesetAttrSchema);
@@ -138,16 +141,14 @@ ChainableResult<ResolvedTilesetAttrSchema> resolve_tileset_attr_schema(
     const bool frlg = layout == AttrSchemaLayout::frlg;
 
     std::vector<Field> schema_fields;
-    bool needs_wide = false;
+    // The widest bit set by any selected field mask or by an explicit layer_type mask decides the minimum word width.
+    std::size_t required_bits = 0;
     for (const auto &merged : resolved) {
         const std::optional<std::uint32_t> selected = frlg ? merged.frlg_mask : merged.mask;
         if (!selected.has_value()) {
             continue; // symmetric exclusion: a spec with no mask for the selected layout is dropped
         }
-        // A mask that sets any bit at or above bit 16 cannot fit in a two-byte attribute word.
-        if (selected.value() > 0xFFFFU) {
-            needs_wide = true;
-        }
+        required_bits = std::max(required_bits, static_cast<std::size_t>(std::bit_width(selected.value())));
         schema_fields.push_back(
             Field{merged.name, selected.value(), merged.default_value.value_or(0), merged.provider});
     }
@@ -163,12 +164,18 @@ ChainableResult<ResolvedTilesetAttrSchema> resolve_tileset_attr_schema(
             "least one field."};
     }
 
-    // Widen silently to the smallest of 2 or 4 bytes that covers the selected masks, but never below the width
+    // An explicit non-zero layer_type mask is part of the layout too, so a wide one (e.g. 0x60000000) widens the word.
+    // An unset (nullopt) mask resolves to the size convention later, which always fits the chosen width by definition.
+    if (layer_type_mask.has_value() && layer_type_mask.value() != 0) {
+        required_bits = std::max(required_bits, static_cast<std::size_t>(std::bit_width(layer_type_mask.value())));
+    }
+
+    // Widen silently to the smallest of 1, 2, or 4 bytes that covers the selected masks, but never below the width
     // detected from the project's own metatiles.h declarations.
-    const std::size_t mask_bytes = needs_wide ? 4U : 2U;
+    const std::size_t mask_bytes = required_bits <= 8 ? 1U : (required_bits <= 16 ? 2U : 4U);
     const std::size_t attr_bytes = std::max(detected_attr_bytes, mask_bytes);
 
-    auto schema_result = Schema::create(std::move(schema_fields), attr_bytes);
+    auto schema_result = Schema::create(std::move(schema_fields), attr_bytes, layer_type_mask);
     if (!schema_result.has_value()) {
         return ChainableResult<ResolvedTilesetAttrSchema>{
             FormattableError{"the configured metatile attribute fields do not form a valid layout."}, schema_result};
