@@ -22,6 +22,14 @@ const std::filesystem::path metatiles_rel_path = std::filesystem::path{"src"} / 
  * "const u32", mapping to 1, 2, or 4 bytes respectively (matching Porymap, which supports all three widths).
  * A mix of more than one type is a hard error. Returns a LayerValue with the detected size, or not_provided if
  * the file is missing or has no attribute lines.
+ *
+ * Note that the `struct Tileset` definition in include/global.fieldmap.h also encodes this width, via the element
+ * type of its `metatileAttributes` pointer field (const u16* in emerald-family projects, const u32* in
+ * firered-family ones). We infer from metatiles.h instead for two reasons: it is the file directly coupled to the
+ * metatile_attributes.bin artifact Porytiles emits (the INCBIN'd array's element type is literally the on-disk
+ * entry width), and Porytiles already scans it for INCBIN declarations, so no new parsing machinery is needed.
+ * Reading the struct field type would require parsing the fields of a C struct type definition, which the C parser
+ * facade does not currently do.
  */
 [[nodiscard]] LayerValue<std::size_t>
 detect_attr_size(const std::filesystem::path &metatiles_path, const TextFormatter *format)

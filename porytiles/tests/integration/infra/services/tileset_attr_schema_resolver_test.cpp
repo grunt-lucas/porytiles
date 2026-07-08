@@ -213,6 +213,23 @@ TEST_F(TilesetAttrSchemaResolverTest, DetectedU32WidthResolvesFourBytesForPrimar
     EXPECT_EQ(result.value().attr_bytes, 4U);
 }
 
+TEST_F(TilesetAttrSchemaResolverTest, DetectedNarrowWidthWithWideFrlgMaskIsFatal)
+{
+    // metatiles.h authoritatively declares u16 (2 bytes), but forcing the FRLG layout selects layer_type's frlg_mask
+    // (0x30000, bit 17), which needs 4 bytes. The declared width is engine-fixed and shared across all tilesets, so
+    // this is a misconfiguration, not a hidden width: it must be a hard error, not a silent widen to a mismatched u32.
+    write_config(std::string{kFieldsYaml} + "  use_frlg_alternate_masks: always\n");
+    write_metatiles_header(
+        "const u16 gMetatileAttributes_General[] = "
+        "INCBIN_U16(\"data/tilesets/primary/general/metatile_attributes.bin\");\n");
+
+    const auto result = resolve(kTilesetName);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("metatiles.h"), std::string::npos) << text;
+    EXPECT_NE(text.find("layer_type"), std::string::npos) << text; // names the offending field
+}
+
 TEST_F(TilesetAttrSchemaResolverTest, MixedU16U32DeclarationsAreFatal)
 {
     write_config(kFieldsYaml);

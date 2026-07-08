@@ -59,14 +59,19 @@ struct ResolvedTilesetAttrSchema {
  * are excluded symmetrically. If no field survives selection, a semantic error is returned naming the fix (add a mask
  * for the layout, or switch use_frlg_alternate_masks).
  *
- * The attribute byte width is widened silently to the smallest of 1, 2, or 4 bytes that covers the selected field
- * masks and any explicit non-zero @p layer_type_mask, but never below @p detected_attr_bytes (the width detected from
- * the project's own metatiles.h declarations).
+ * How the attribute byte width is decided depends on @p detected_width_is_authoritative. When it is @c false the
+ * detected width was only a guessed default (the project has no metatiles.h declaration to read), so the selected
+ * masks are the sole evidence of the true width and the word is widened silently to the smallest of 1, 2, or 4 bytes
+ * that covers them, never below @p detected_attr_bytes. When it is @c true the detected width came from a real
+ * @c const @c uN declaration and is fixed by the base game (shared across every tileset), so a mask that needs a wider
+ * word contradicts a hard fact and is reported as a hard error rather than silently widening.
  *
  * @param fields The baseline field specs, in display order
  * @param overrides The per-field overrides to merge in
  * @param layout The layout to resolve (primary or frlg)
  * @param detected_attr_bytes The attribute byte size detected from the project (1, 2, or 4)
+ * @param detected_width_is_authoritative Whether @p detected_attr_bytes came from a real declaration (true) or is a
+ *        guessed default (false); true forbids widening past it, false allows silent widening to fit the masks
  * @param layer_type_mask The resolved layer_type mask (0 disables it), or nullopt to use the size convention
  * @param format The formatter used for diagnostic text
  * @return The resolved schema, specs, layout, and final byte width, or the first hard error encountered
@@ -76,6 +81,7 @@ struct ResolvedTilesetAttrSchema {
     const MetatileAttrFieldOverrides &overrides,
     AttrSchemaLayout layout,
     std::size_t detected_attr_bytes,
+    bool detected_width_is_authoritative,
     std::optional<std::uint32_t> layer_type_mask,
     gsl::not_null<const TextFormatter *> format);
 

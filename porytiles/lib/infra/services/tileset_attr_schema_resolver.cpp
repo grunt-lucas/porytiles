@@ -66,8 +66,8 @@ ChainableResult<ResolvedTilesetAttrSchema> TilesetAttrSchemaResolver::resolve(co
             FormatParam{tileset_name, Style::bold},
             FormatParam{2});
     }
-    const std::size_t detected_attr_bytes =
-        detected.state == ValidationState::valid ? detected.value.value() : std::size_t{2};
+    const bool detected_width_is_authoritative = detected.state == ValidationState::valid;
+    const std::size_t detected_attr_bytes = detected_width_is_authoritative ? detected.value.value() : std::size_t{2};
 
     AttrSchemaLayout layout = AttrSchemaLayout::primary;
     switch (frlg_mode) {
@@ -126,8 +126,8 @@ ChainableResult<ResolvedTilesetAttrSchema> TilesetAttrSchemaResolver::resolve(co
     const std::optional<std::uint32_t> layer_mask_opt =
         layout == AttrSchemaLayout::frlg ? layer_mask_frlg : layer_mask_primary;
 
-    auto resolved =
-        resolve_tileset_attr_schema(fields, overrides, layout, detected_attr_bytes, layer_mask_opt, format_);
+    auto resolved = resolve_tileset_attr_schema(
+        fields, overrides, layout, detected_attr_bytes, detected_width_is_authoritative, layer_mask_opt, format_);
     if (resolved.has_value()) {
         // Summarize the resolved schema so the user can see what layout the data-driven resolution landed on. This is
         // the schema-shaped replacement for the old "detected base game" remark.
