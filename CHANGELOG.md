@@ -25,6 +25,8 @@ and to its issue too when one was filed
 
 - Fixed INCBIN declarations for a managed tileset being written inside a trailing preprocessor conditional (such as pokeemerald-expansion's `#if IS_FRLG` block at the end of `graphics.h`/`metatiles.h`) instead of after it, which compiled the data out of a non-FRLG build while the `headers.h` struct still referenced it, breaking the decomp build with `undeclared` errors. Also fixed the same declarations being duplicated when an import was retried. Appending is now an idempotent operation that places declarations after the last non-blank line and fixes any declarations previously misplaced inside such a conditional - [#333](https://github.com/grunt-lucas/porytiles/pull/333)
 
+- Added a fully configurable metatile attribute schema, replacing the hardcoded `BaseGame` (Emerald vs. FireRed/LeafGreen) system. Attribute layout, bit masks, and per-field enum sources are now handled by the config system, inferred from the project's own headers by default or declared explicitly via `metatile_attr_fields`, with per-tileset overrides for FRLG's alternate mask layout and layer type - [#341](https://github.com/grunt-lucas/porytiles/pull/341)
+
 ## [1.0.0] - 2026-06-05
 
 First stable release of Porytiles.
