@@ -118,6 +118,7 @@ MetatileAttributeConfigProvider::compute(ConfigScopeType type, const std::string
     const auto &header_enums = enums_result.value().enums;
 
     MetatileAttrScan scan;
+    scan.ambiguous_defines = defines_result.value().ambiguous_values;
     std::unordered_map<std::string, std::int64_t> seeds;
 
     for (const auto &define : header_defines) {

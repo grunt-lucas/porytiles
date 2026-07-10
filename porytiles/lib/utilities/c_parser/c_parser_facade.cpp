@@ -11,6 +11,40 @@
 
 namespace porytiles {
 
+namespace {
+
+[[nodiscard]] std::unordered_map<std::string, std::int64_t> resolved_define_values(const TolerantDefineScan &scan)
+{
+    std::unordered_map<std::string, std::int64_t> values;
+    for (const DefineStatement &define : scan.defines) {
+        if (define.has_int_value()) {
+            values.insert_or_assign(define.name(), define.int_value());
+        }
+    }
+    return values;
+}
+
+[[nodiscard]] ChainableResult<TolerantDefineScan> scan_define_values_for_enums(
+    gsl::not_null<const TextFormatter *> format,
+    const std::string &content,
+    const CParserContext *context,
+    const std::unordered_map<std::string, std::int64_t> &seed_symbols)
+{
+    Lexer lexer{format, content, context};
+    auto lex_result = lexer.lex();
+    if (!lex_result.has_value()) {
+        return ChainableResult<TolerantDefineScan>{lex_result};
+    }
+
+    Parser parser{format, std::move(lex_result).value(), context};
+    parser.seed_symbols(seed_symbols);
+    TolerantDefineScan scan = parser.parse_defines_tolerant();
+    scan.ambiguous_values = parser.ambiguous_defines();
+    return scan;
+}
+
+} // namespace
+
 CParserFacade::CParserFacade(std::filesystem::path file_path, gsl::not_null<const TextFormatter *> format)
     : file_path_{std::move(file_path)}, format_{format}
 {
@@ -123,6 +157,16 @@ ChainableResult<std::vector<EnumDeclaration>> CParserFacade::parse_enums()
             load_result};
     }
 
+    // Enum values commonly refer to integer #defines in the same header. Use a tolerant define scan so unrelated
+    // function-like or otherwise unevaluable macros do not prevent the enum parser from receiving the values it needs.
+    auto defines_result = scan_define_values_for_enums(format_, content_, context_.get(), seed_symbols_);
+    if (!defines_result.has_value()) {
+        return ChainableResult<std::vector<EnumDeclaration>>{
+            FormattableError{
+                format_->format("{}: failed to parse enums", FormatParam{file_path_.string(), Style::bold})},
+            defines_result};
+    }
+
     // Lex the content
     Lexer lexer{format_, content_, context_.get()};
     auto lex_result = lexer.lex();
@@ -135,6 +179,7 @@ ChainableResult<std::vector<EnumDeclaration>> CParserFacade::parse_enums()
 
     // Parse the tokens
     auto parser = make_seeded_parser(std::move(lex_result).value());
+    parser.seed_values(resolved_define_values(defines_result.value()));
     auto parse_result = parser.parse_enums();
     if (!parse_result.has_value()) {
         return ChainableResult<std::vector<EnumDeclaration>>{
@@ -167,6 +212,7 @@ ChainableResult<TolerantDefineScan> CParserFacade::parse_defines_tolerant()
 
     auto parser = make_seeded_parser(std::move(lex_result).value());
     TolerantDefineScan scan = parser.parse_defines_tolerant();
+    scan.ambiguous_values = parser.ambiguous_defines();
     scan_warnings_.insert(scan_warnings_.end(), parser.scan_warnings().begin(), parser.scan_warnings().end());
     return scan;
 }
@@ -181,6 +227,14 @@ ChainableResult<TolerantEnumScan> CParserFacade::parse_enums_tolerant()
             load_result};
     }
 
+    auto defines_result = scan_define_values_for_enums(format_, content_, context_.get(), seed_symbols_);
+    if (!defines_result.has_value()) {
+        return ChainableResult<TolerantEnumScan>{
+            FormattableError{
+                format_->format("{}: failed to parse enums", FormatParam{file_path_.string(), Style::bold})},
+            defines_result};
+    }
+
     Lexer lexer{format_, content_, context_.get()};
     auto lex_result = lexer.lex();
     if (!lex_result.has_value()) {
@@ -191,6 +245,7 @@ ChainableResult<TolerantEnumScan> CParserFacade::parse_enums_tolerant()
     }
 
     auto parser = make_seeded_parser(std::move(lex_result).value());
+    parser.seed_values(resolved_define_values(defines_result.value()));
     TolerantEnumScan scan = parser.parse_enums_tolerant();
     scan_warnings_.insert(scan_warnings_.end(), parser.scan_warnings().begin(), parser.scan_warnings().end());
     return scan;

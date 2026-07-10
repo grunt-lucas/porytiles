@@ -71,6 +71,23 @@ infer_metatile_attr_fields(const MetatileAttrScan &scan, gsl::not_null<const Tex
 
     // --- Phase A: gather suffixes and masks ---
 
+    for (const std::string &name : scan.ambiguous_defines) {
+        if (!name.starts_with(mask_define_prefix)) {
+            continue;
+        }
+        const std::string_view body = std::string_view{name}.substr(std::string_view{mask_define_prefix}.size());
+        if (!body.ends_with(mask_define_suffix) && !body.ends_with(frlg_mask_define_suffix)) {
+            continue;
+        }
+        result.status = AttrInferenceStatus::invalid;
+        result.error_message = format->format(
+            "Metatile attribute mask define '{}' has conflicting values in a conditional Porytiles could not "
+            "evaluate. Porytiles cannot infer a safe attribute layout from that definition. Set the mask explicitly "
+            "with metatile_attr_field_overrides or declare metatile_attr_fields in your Porytiles config.",
+            FormatParam{name, Style::bold});
+        return result;
+    }
+
     // Ordered, de-duplicated suffix list: enum suffixes first (declaration order), then define-only suffixes.
     std::vector<std::string> ordered_suffixes;
     std::unordered_set<std::string> seen_suffixes;

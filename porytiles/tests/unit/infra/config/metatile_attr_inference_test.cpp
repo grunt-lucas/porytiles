@@ -363,6 +363,20 @@ TEST_F(MetatileAttrInferenceTest, DualLayoutFrlgDefineVsTableConflictDefineWins)
     EXPECT_FALSE(result.warnings.empty());
 }
 
+TEST_F(MetatileAttrInferenceTest, AmbiguousConditionalMaskIsInvalid)
+{
+    MetatileAttrScan scan;
+    scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}};
+    scan.ambiguous_defines.insert("METATILE_ATTR_BEHAVIOR_MASK");
+    scan.detected_attr_size = 2;
+    scan.behaviors_header_present = true;
+
+    const auto result = infer_metatile_attr_fields(scan, &formatter_);
+    EXPECT_EQ(result.status, AttrInferenceStatus::invalid);
+    EXPECT_NE(result.error_message.find("METATILE_ATTR_BEHAVIOR_MASK"), std::string::npos);
+    EXPECT_NE(result.error_message.find("metatile_attr_field_overrides"), std::string::npos);
+}
+
 // Nothing attribute-related at all means the provider should defer to the next provider.
 TEST_F(MetatileAttrInferenceTest, NothingFoundIsNotProvided)
 {

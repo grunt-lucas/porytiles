@@ -136,6 +136,20 @@ TEST_F(HeaderEnumMapProviderTest, EnumFormatParsesCounterBasedValues)
     EXPECT_EQ(deep_water.value(), 18u);
 }
 
+TEST_F(HeaderEnumMapProviderTest, EnumFormatResolvesSameHeaderDefinesAndPriorMembers)
+{
+    HeaderEnumMapProvider provider{
+        test_resources_dir / "metatile_behaviors_enum_references.h", behavior_spec(), &formatter_, &diag_};
+
+    auto normal = provider.lookup("MB_NORMAL");
+    ASSERT_TRUE(normal.has_value());
+    EXPECT_EQ(normal.value(), 0x10U);
+
+    auto tall_grass = provider.lookup("MB_TALL_GRASS");
+    ASSERT_TRUE(tall_grass.has_value());
+    EXPECT_EQ(tall_grass.value(), 0x12U);
+}
+
 TEST_F(HeaderEnumMapProviderTest, EnumFormatHandlesCommentsAfterComma)
 {
     HeaderEnumMapProvider provider{

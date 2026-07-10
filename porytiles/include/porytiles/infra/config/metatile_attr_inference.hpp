@@ -4,6 +4,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "gsl/pointers"
@@ -49,6 +50,8 @@ struct InferenceArrayEntry {
 struct MetatileAttrScan {
     std::vector<InferenceEnumMember> enum_members; ///< all enum members from the fieldmap header, in declaration order
     std::vector<InferenceDefine> defines;          ///< all integer defines from the fieldmap header
+    std::unordered_set<std::string>
+        ambiguous_defines; ///< mask defines with conflicting values in an undecidable conditional branch
     std::vector<InferenceArrayEntry> masks_array; ///< entries of the exact-name sMetatileAttrMasks table (may be empty)
     std::vector<InferenceArrayEntry>
         shifts_array;                     ///< entries of the exact-name sMetatileAttrShifts table (may be empty)

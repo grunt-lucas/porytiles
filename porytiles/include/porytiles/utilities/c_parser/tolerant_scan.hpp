@@ -3,6 +3,7 @@
 #include <cstdint>
 #include <optional>
 #include <string>
+#include <unordered_set>
 #include <vector>
 
 #include "porytiles/utilities/c_parser/define_statement.hpp"
@@ -28,10 +29,13 @@ struct SkippedConstruct {
 ///
 /// @details
 /// @c defines holds every define whose value was resolved (or that carries no value). @c skipped holds the defines
-/// whose value could not be evaluated; their names were still recorded as defined.
+/// whose value could not be evaluated; their names were still recorded as defined. @c ambiguous_values contains names
+/// that resolved to conflicting values in an undecidable conditional branch. Consumers that need an authoritative value
+/// must reject those names rather than relying on the scan's last encountered definition.
 struct TolerantDefineScan {
     std::vector<DefineStatement> defines;
     std::vector<SkippedConstruct> skipped;
+    std::unordered_set<std::string> ambiguous_values;
 };
 
 /// @brief One enum member from a tolerant enum scan.

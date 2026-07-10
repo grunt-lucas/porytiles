@@ -1256,10 +1256,22 @@ TEST_F(ParserTests, ConditionalBothRegionDuplicateConflictWarnsLastWins)
     ASSERT_TRUE(result.has_value());
     ASSERT_EQ(parser.scan_warnings().size(), 1U);
     EXPECT_NE(parser.scan_warnings()[0].find("conflicting redefinition"), std::string::npos);
+    EXPECT_TRUE(parser.ambiguous_defines().contains("X"));
     // Last write wins in the symbol table, reflected in the recorded statement order.
     ASSERT_FALSE(result.value().empty());
     EXPECT_EQ(result.value().back().name(), "X");
     EXPECT_EQ(result.value().back().int_value(), 9);
+}
+
+TEST_F(ParserTests, ParseEnumResolvesPriorEnumerator)
+{
+    auto result = parse_enums("enum { FIRST = 4, SECOND = FIRST + 2 };");
+    ASSERT_TRUE(result.has_value());
+
+    const auto &members = result.value().at(0).members();
+    ASSERT_EQ(members.size(), 2U);
+    EXPECT_EQ(members.at(0).int_value(), 4);
+    EXPECT_EQ(members.at(1).int_value(), 6);
 }
 
 TEST_F(ParserTests, TolerantDefineSkipsCrossHeaderReference)

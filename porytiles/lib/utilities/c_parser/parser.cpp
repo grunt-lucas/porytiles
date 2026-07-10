@@ -356,6 +356,7 @@ void Parser::record_define(DefineStatement statement, std::vector<DefineStatemen
     if (statement.has_int_value()) {
         auto it = defined_values_.find(statement.name());
         if (eff == CondState::both && it != defined_values_.end() && it->second != statement.int_value()) {
+            ambiguous_defines_.insert(statement.name());
             scan_warnings_.push_back(format_->format(
                 "conflicting redefinition of '{}' inside an undecidable conditional; using the last value",
                 FormatParam{statement.name(), Style::bold}));
@@ -476,6 +477,7 @@ TolerantEnumMember Parser::parse_enum_member_tolerant(std::int64_t &counter, boo
                 counter_valid = true;
                 TolerantEnumMember member{std::move(name), counter, member_pos};
                 counter++;
+                defined_values_[member.name] = member.value.value();
                 return member;
             }
         }
@@ -488,6 +490,9 @@ TolerantEnumMember Parser::parse_enum_member_tolerant(std::int64_t &counter, boo
     std::optional<std::int64_t> value = counter_valid ? std::optional<std::int64_t>{counter} : std::nullopt;
     TolerantEnumMember member{std::move(name), value, member_pos};
     counter++;
+    if (member.value.has_value()) {
+        defined_values_[member.name] = member.value.value();
+    }
     return member;
 }
 
@@ -738,6 +743,7 @@ ChainableResult<EnumMember> Parser::parse_enum_member(std::int64_t &counter)
 
     EnumMember member{std::move(name), counter, has_explicit, member_pos};
     counter++; // Increment for next member
+    defined_values_[member.name()] = member.int_value();
     return member;
 }
 

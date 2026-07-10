@@ -314,6 +314,19 @@ class Parser {
         return scan_warnings_;
     }
 
+    /// @brief Returns names whose definitions conflicted in an undecidable conditional branch.
+    ///
+    /// @details
+    /// The tolerant scanner keeps traversing both sides of a conditional whose controlling macro is unknown. When the
+    /// same name resolves to different integer values on those paths, its final stored value is not authoritative.
+    /// Consumers that derive binary layouts from the value use this set to reject the ambiguity instead of guessing.
+    ///
+    /// @return The names with conflicting values in undecidable conditional branches
+    [[nodiscard]] const std::unordered_set<std::string> &ambiguous_defines() const
+    {
+        return ambiguous_defines_;
+    }
+
     /// @brief Returns the set of macro names seen as defined so far.
     ///
     /// @details
@@ -339,6 +352,21 @@ class Parser {
         for (const auto &[name, value] : symbols) {
             defined_values_[name] = value;
             defined_names_.insert(name);
+        }
+    }
+
+    /// @brief Seeds only expression values without marking their names as preprocessor-defined.
+    ///
+    /// @details
+    /// Same-file #defines can provide values for enum expressions, but pre-seeding their names would make a normal
+    /// include guard appear already defined before the parser reaches its opening #ifndef. This method supports the
+    /// expression lookup without changing #ifdef or defined(...) decisions.
+    ///
+    /// @param symbols The name-to-value pairs to merge into the expression symbol table
+    void seed_values(const std::unordered_map<std::string, std::int64_t> &symbols)
+    {
+        for (const auto &[name, value] : symbols) {
+            defined_values_[name] = value;
         }
     }
 
@@ -417,6 +445,7 @@ class Parser {
     std::unordered_set<std::string> defined_names_;                                    // All names seen as defined
     std::vector<ConditionalFrame> cond_stack_; // Active preprocessor conditionals
     std::vector<std::string> scan_warnings_;   // Recoverable scan diagnostics
+    std::unordered_set<std::string> ambiguous_defines_;
     const CParserContext *context_{nullptr};
 };
 
