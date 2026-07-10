@@ -1,8 +1,63 @@
 #include "porytiles/infra/algorithms/porymap_artifact_parsers.hpp"
 
+#include <cstdint>
 #include <format>
 #include <fstream>
 #include <iterator>
+
+namespace {
+
+using namespace porytiles;
+
+/// @brief Packs one attribute's schema fields and structural layer type into a single word.
+///
+/// @details
+/// Every mask and offset comes from the schema; this function carries no layout literals. A field absent
+/// from the attribute packs its schema default, the same effective-value rule the attributes CSV writer
+/// applies, so the binary and CSV renderings of one attribute always agree. Field values are masked after
+/// shifting, so a stored value wider than its field cannot bleed into neighboring bits. A schema whose
+/// layer_type mask is 0 has the layer type disabled, so its bits are left unset.
+[[nodiscard]] std::uint32_t pack_metatile_attribute(const MetatileAttribute &attribute, const Schema &schema)
+{
+    std::uint32_t raw = 0;
+    for (const Field &field : schema.fields()) {
+        const std::uint32_t value =
+            attribute.fields().contains(field.name()) ? attribute.field(field.name()) : field.default_value();
+        raw |= (value << field.offset()) & field.mask();
+    }
+    if (schema.layer_type_mask() != 0) {
+        raw |= (static_cast<std::uint32_t>(attribute.layer_type()) << schema.layer_type_offset()) &
+               schema.layer_type_mask();
+    }
+    return raw;
+}
+
+/// @brief Unpacks a single attribute word into schema field values and a structural layer type.
+///
+/// @details
+/// The inverse of pack_metatile_attribute. Every schema field is set explicitly (a zero bit pattern
+/// stores an explicit 0), matching what the binary genuinely encodes. When the schema's layer_type mask
+/// is 0 the layer type is disabled: no bits are read and the attribute keeps the default LayerType::normal.
+/// Otherwise the layer type bits must decode to a known LayerType; an out-of-range value is a parse error.
+[[nodiscard]] ChainableResult<MetatileAttribute> unpack_metatile_attribute(std::uint32_t raw, const Schema &schema)
+{
+    MetatileAttribute attribute{};
+    for (const Field &field : schema.fields()) {
+        attribute.field(field.name(), (raw & field.mask()) >> field.offset());
+    }
+
+    if (schema.layer_type_mask() != 0) {
+        PT_TRY_ASSIGN_PASS_ERR(
+            layer_type,
+            layer_type_from_int((raw & schema.layer_type_mask()) >> schema.layer_type_offset()),
+            MetatileAttribute);
+        attribute.layer_type(layer_type);
+    }
+
+    return attribute;
+}
+
+} // namespace
 
 namespace porytiles {
 
@@ -55,7 +110,8 @@ ChainableResult<std::vector<TilemapEntry>> parse_metatiles_bin(const std::filesy
     return entries;
 }
 
-ChainableResult<std::vector<MetatileAttribute>> parse_emerald_metatile_attributes(const std::filesystem::path &path)
+ChainableResult<std::vector<MetatileAttribute>>
+parse_metatile_attributes(const std::filesystem::path &path, const Schema &schema)
 {
     std::ifstream metatile_attr_bin{path, std::ios::binary};
     if (!metatile_attr_bin) {
@@ -65,100 +121,54 @@ ChainableResult<std::vector<MetatileAttribute>> parse_emerald_metatile_attribute
 
     const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
 
-    if (data_buf.size() % attr::bytes_per_attr_emerald != 0) {
+    const std::size_t attr_bytes = schema.attr_bytes();
+    if (data_buf.size() % attr_bytes != 0) {
         return FormattableError{
             "Size of metatile_attributes.bin is not a multiple of {} bytes, possibly corrupted.",
-            FormatParam{attr::bytes_per_attr_emerald, Style::bold}};
+            FormatParam{attr_bytes, Style::bold}};
     }
 
     std::vector<MetatileAttribute> attributes;
-    const std::size_t metatile_count = data_buf.size() / attr::bytes_per_attr_emerald;
+    const std::size_t metatile_count = data_buf.size() / attr_bytes;
     attributes.reserve(metatile_count);
 
     for (std::size_t metatile_index = 0; metatile_index < metatile_count; metatile_index++) {
-        std::uint16_t byte0 = data_buf.at((metatile_index * attr::bytes_per_attr_emerald));
-        std::uint16_t byte1 = data_buf.at((metatile_index * attr::bytes_per_attr_emerald) + 1);
-        std::uint16_t attribute = (byte1 << 8) | byte0;
+        const std::size_t base = metatile_index * attr_bytes;
+        std::uint32_t raw = 0;
+        for (std::size_t byte_index = 0; byte_index < attr_bytes; byte_index++) {
+            raw |= static_cast<std::uint32_t>(data_buf.at(base + byte_index)) << (byte_index * 8);
+        }
 
-        auto layer_type_result = layer_type_from_int(attribute >> 12 & 0x000F);
-        if (!layer_type_result.has_value()) {
+        auto attribute_result = unpack_metatile_attribute(raw, schema);
+        if (!attribute_result.has_value()) {
             return ChainableResult<std::vector<MetatileAttribute>>{
                 FormattableError{"Invalid layer type for metatile '{}'.", FormatParam{metatile_index, Style::bold}},
-                layer_type_result};
+                attribute_result};
         }
-        MetatileAttribute metatile_attribute{layer_type_result.value(), static_cast<std::uint16_t>(attribute & 0x00FF)};
-        attributes.push_back(std::move(metatile_attribute));
+        attributes.push_back(std::move(attribute_result).value());
     }
 
     return attributes;
 }
 
-ChainableResult<std::vector<MetatileAttribute>> parse_firered_metatile_attributes(const std::filesystem::path &path)
+ChainableResult<void> save_metatile_attributes_bin(
+    const std::vector<MetatileAttribute> &attributes, const std::filesystem::path &path, const Schema &schema)
 {
-    std::ifstream metatile_attr_bin{path, std::ios::binary};
-    if (!metatile_attr_bin) {
+    std::ofstream out{path, std::ios::binary};
+    if (!out) {
         return FormattableError{
-            "Failed to open metatile_attributes.bin: '{}'.", FormatParam{path.string(), Style::bold}};
+            "Failed to open metatile_attributes.bin for writing: '{}'.", FormatParam{path.string(), Style::bold}};
     }
 
-    const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
-
-    if (data_buf.size() % attr::bytes_per_attr_firered != 0) {
-        return FormattableError{
-            "Size of metatile_attributes.bin is not a multiple of {} bytes, possibly corrupted.",
-            FormatParam{attr::bytes_per_attr_firered, Style::bold}};
-    }
-
-    std::vector<MetatileAttribute> attributes;
-    const std::size_t metatile_count = data_buf.size() / attr::bytes_per_attr_firered;
-    attributes.reserve(metatile_count);
-
-    for (std::size_t metatile_index = 0; metatile_index < metatile_count; metatile_index++) {
-        const std::size_t base = metatile_index * attr::bytes_per_attr_firered;
-        const std::uint32_t byte0 = data_buf.at(base);
-        const std::uint32_t byte1 = data_buf.at(base + 1);
-        const std::uint32_t byte2 = data_buf.at(base + 2);
-        const std::uint32_t byte3 = data_buf.at(base + 3);
-        const std::uint32_t attribute = (byte3 << 24) | (byte2 << 16) | (byte1 << 8) | byte0;
-
-        // FireRed attribute bit layout (from fieldmap.c):
-        //   Bits  0-8:  behavior       (0x000001FF)
-        //   Bits  9-13: terrain        (0x00003E00)
-        //   Bits 14-17: attribute_2    (0x0003C000)
-        //   Bits 18-23: attribute_3    (0x00FC0000)
-        //   Bits 24-26: encounter_type (0x07000000)
-        //   Bits 27-28: attribute_5    (0x18000000)
-        //   Bits 29-30: layer_type     (0x60000000)
-        //   Bit  31:    attribute_7    (0x80000000)
-        const auto behavior = static_cast<std::uint16_t>(attribute & 0x000001FF);
-        const auto terrain = static_cast<std::uint8_t>((attribute >> 9) & 0x1F);
-        const auto attribute_2 = static_cast<std::uint8_t>((attribute >> 14) & 0x0F);
-        const auto attribute_3 = static_cast<std::uint8_t>((attribute >> 18) & 0x3F);
-        const auto encounter_type = static_cast<std::uint8_t>((attribute >> 24) & 0x07);
-        const auto attribute_5 = static_cast<std::uint8_t>((attribute >> 27) & 0x03);
-        const auto layer_type_raw = static_cast<unsigned int>((attribute >> 29) & 0x03);
-        const bool attribute_7 = (attribute >> 31) & 0x01;
-
-        auto layer_type_result = layer_type_from_int(layer_type_raw);
-        if (!layer_type_result.has_value()) {
-            return ChainableResult<std::vector<MetatileAttribute>>{
-                FormattableError{"Invalid layer type for metatile '{}'.", FormatParam{metatile_index, Style::bold}},
-                layer_type_result};
+    const std::size_t attr_bytes = schema.attr_bytes();
+    for (const auto &attribute : attributes) {
+        const std::uint32_t raw = pack_metatile_attribute(attribute, schema);
+        for (std::size_t byte_index = 0; byte_index < attr_bytes; byte_index++) {
+            out << static_cast<std::uint8_t>(raw >> (byte_index * 8));
         }
-
-        MetatileAttribute metatile_attribute{
-            layer_type_result.value(),
-            behavior,
-            terrain,
-            encounter_type,
-            attribute_2,
-            attribute_3,
-            attribute_5,
-            attribute_7};
-        attributes.push_back(std::move(metatile_attribute));
     }
-
-    return attributes;
+    out.flush();
+    return {};
 }
 
 ChainableResult<std::unique_ptr<Image<IndexPixel>>>

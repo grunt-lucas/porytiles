@@ -1,8 +1,11 @@
 #pragma once
 
+#include <optional>
 #include <vector>
 
 #include "gsl/pointers"
+
+#include "porytiles/domain/models/layer.hpp"
 
 #include "porytiles/domain/models/porymap_tileset_component.hpp"
 #include "porytiles/domain/models/rgba32.hpp"
@@ -56,14 +59,24 @@ class LayerModeConverter {
      * - covered: Keeps the first 8 entries, removes the last 4 transparent entries
      * - split: Keeps the first 4 entries, removes the middle 4 transparent entries, keeps the last 4 entries
      *
+     * When @p explicit_layer_types supplies a value for a metatile, that value overrides the inferred layer type and
+     * therefore selects which 8 of the 12 entries survive. If dropping the layer chosen by the override would discard
+     * an entry that references a visible (non-transparent) tile, a warning is emitted (tag @c layer-type-column). The
+     * check inspects the actual tilemap entries at reduction time (after manual animation overrides), not the source
+     * RGBA transparency, so it catches entries made visible by post-inference overrides.
+     *
      * @param entries The triple-layer tilemap entries to convert
      * @param source_metatiles The source metatiles used to infer layer types
+     * @param explicit_layer_types Per-metatile explicit layer-type overrides; an empty vector (or a nullopt element)
+     * means "infer this metatile's layer type".
      * @pre The entries vector contains triple-layer entries (size must equal source_metatiles.size() * 12)
      * @pre No metatile in source_metatiles has implied LayerMode::triple
      * @return A dual-layerized TilemapEntry vector
      */
-    [[nodiscard]] std::vector<TilemapEntry>
-    dual_layerize(const std::vector<TilemapEntry> &entries, const std::vector<Metatile<Rgba32>> &source_metatiles);
+    [[nodiscard]] std::vector<TilemapEntry> dual_layerize(
+        const std::vector<TilemapEntry> &entries,
+        const std::vector<Metatile<Rgba32>> &source_metatiles,
+        const std::vector<std::optional<LayerType>> &explicit_layer_types = {});
 
   private:
     const TextFormatter *format_;

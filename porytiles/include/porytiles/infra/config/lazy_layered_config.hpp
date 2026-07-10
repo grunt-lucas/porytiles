@@ -213,8 +213,18 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     tileset_paths_secondary_src_raw(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] ChainableResult<ConfigValue<std::string>>
     tileset_paths_secondary_bin_raw(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    metatile_attr_size_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<MetatileAttrFieldSpecs>>
+    metatile_attr_fields_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<MetatileAttrFieldOverrides>>
+    metatile_attr_field_overrides_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    write_layer_type_column_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<FrlgAlternateMaskMode>>
+    use_frlg_alternate_masks_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<std::optional<std::uint32_t>>>
+    metatile_layer_type_mask_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<std::optional<std::uint32_t>>>
+    metatile_layer_type_mask_frlg_raw(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
     tileset_animations_wire_anim_code_raw(ConfigScopeType type, const std::string &scope) const override;
 
@@ -752,7 +762,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     tileset_paths_secondary_bin_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
     /**
-     * @brief Gets the full provenance chain for metatile_attr_size.
+     * @brief Gets the full provenance chain for metatile_attr_fields.
      *
      * @details
      * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
@@ -763,8 +773,83 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
      * @param scope The scope identifier
      * @return Vector of ProvenanceChainLink entries, one per provider
      */
-    [[nodiscard]] std::vector<ProvenanceChainLink<std::size_t>>
-    metatile_attr_size_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] std::vector<ProvenanceChainLink<MetatileAttrFieldSpecs>>
+    metatile_attr_fields_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for metatile_attr_field_overrides.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<MetatileAttrFieldOverrides>>
+    metatile_attr_field_overrides_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for write_layer_type_column.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<bool>>
+    write_layer_type_column_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for use_frlg_alternate_masks.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<FrlgAlternateMaskMode>>
+    use_frlg_alternate_masks_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for metatile_layer_type_mask.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<std::optional<std::uint32_t>>>
+    metatile_layer_type_mask_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /**
+     * @brief Gets the full provenance chain for metatile_layer_type_mask_frlg.
+     *
+     * @details
+     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
+     *
+     * @param type The config scope type
+     * @param scope The scope identifier
+     * @return Vector of ProvenanceChainLink entries, one per provider
+     */
+    [[nodiscard]] std::vector<ProvenanceChainLink<std::optional<std::uint32_t>>>
+    metatile_layer_type_mask_frlg_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
     /**
      * @brief Gets the full provenance chain for tileset_animations_wire_anim_code.

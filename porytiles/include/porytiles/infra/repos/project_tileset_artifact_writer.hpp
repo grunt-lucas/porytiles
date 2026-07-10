@@ -6,11 +6,9 @@
 #include "gsl/pointers"
 
 #include "porytiles/domain/config/domain_config.hpp"
-#include "porytiles/domain/models/base_game.hpp"
+#include "porytiles/domain/models/metatile_attribute_schema.hpp"
 #include "porytiles/domain/repos/tileset_artifact_writer.hpp"
-#include "porytiles/domain/services/behavior_map_provider.hpp"
-#include "porytiles/domain/services/encounter_type_map_provider.hpp"
-#include "porytiles/domain/services/terrain_type_map_provider.hpp"
+#include "porytiles/domain/services/enum_map_provider.hpp"
 #include "porytiles/infra/config/infra_config.hpp"
 #include "porytiles/infra/services/anim_code_generator.hpp"
 #include "porytiles/infra/services/anim_json_parser.hpp"
@@ -38,23 +36,19 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
         gsl::not_null<DomainConfig *> domain_config,
         gsl::not_null<InfraConfig *> infra_config,
         std::filesystem::path project_root,
-        BaseGame base_game,
-        std::size_t metatile_attr_size,
+        gsl::not_null<const Schema *> schema,
+        gsl::not_null<const ProviderMap *> providers,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag,
         gsl::not_null<PngRgbaImageSaver *> png_rgba_saver,
         gsl::not_null<PngIndexedImageSaver *> png_indexed_saver,
         gsl::not_null<FilePalSaver *> pal_saver,
         gsl::not_null<const AnimJsonParser *> anim_json_parser,
-        gsl::not_null<const AnimCodeGenerator *> anim_code_generator,
-        gsl::not_null<const BehaviorMapProvider *> behavior_map,
-        const TerrainTypeMapProvider *terrain_map = nullptr,
-        const EncounterTypeMapProvider *encounter_map = nullptr)
+        gsl::not_null<const AnimCodeGenerator *> anim_code_generator)
         : domain_config_{domain_config}, infra_config_{infra_config}, project_root_{std::move(project_root)},
-          base_game_{base_game}, metatile_attr_size_{metatile_attr_size}, format_{format}, diag_{diag},
-          png_rgba_saver_{png_rgba_saver}, png_indexed_saver_{png_indexed_saver}, pal_saver_{pal_saver},
-          anim_json_parser_{anim_json_parser}, anim_code_generator_{anim_code_generator}, behavior_map_{behavior_map},
-          terrain_map_{terrain_map}, encounter_map_{encounter_map}, metadata_provider_{project_root_, format, diag},
+          schema_{schema}, providers_{providers}, format_{format}, diag_{diag}, png_rgba_saver_{png_rgba_saver},
+          png_indexed_saver_{png_indexed_saver}, pal_saver_{pal_saver}, anim_json_parser_{anim_json_parser},
+          anim_code_generator_{anim_code_generator}, metadata_provider_{project_root_, format, diag},
           metadata_writer_{project_root_, format}
     {
     }
@@ -126,8 +120,8 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
     DomainConfig *domain_config_;
     InfraConfig *infra_config_;
     std::filesystem::path project_root_;
-    const BaseGame base_game_;
-    const std::size_t metatile_attr_size_;
+    const Schema *schema_;
+    const ProviderMap *providers_;
     std::filesystem::path transaction_root_;
     const TextFormatter *format_;
     const UserDiagnostics *diag_;
@@ -136,9 +130,6 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
     FilePalSaver *pal_saver_;
     const AnimJsonParser *anim_json_parser_;
     const AnimCodeGenerator *anim_code_generator_;
-    const BehaviorMapProvider *behavior_map_;
-    const TerrainTypeMapProvider *terrain_map_;
-    const EncounterTypeMapProvider *encounter_map_;
     ProjectTilesetMetadataProvider metadata_provider_;
     ProjectTilesetMetadataWriter metadata_writer_;
 

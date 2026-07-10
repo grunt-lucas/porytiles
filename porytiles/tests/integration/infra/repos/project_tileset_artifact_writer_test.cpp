@@ -2,21 +2,24 @@
 
 #include <filesystem>
 #include <fstream>
+#include <iterator>
 #include <memory>
 #include <string>
+#include <unordered_map>
+#include <utility>
 #include <vector>
 
-#include "porytiles/domain/models/base_game.hpp"
 #include "porytiles/domain/models/image.hpp"
 #include "porytiles/domain/models/index_pixel.hpp"
 #include "porytiles/domain/models/metatile_attribute.hpp"
+#include "porytiles/domain/models/metatile_attribute_schema.hpp"
 #include "porytiles/domain/models/palette.hpp"
 #include "porytiles/domain/models/porymap_tileset_component.hpp"
 #include "porytiles/domain/models/porytiles_tileset_component.hpp"
 #include "porytiles/domain/models/rgba32.hpp"
 #include "porytiles/domain/models/tilemap_entry.hpp"
 #include "porytiles/domain/models/tileset.hpp"
-#include "porytiles/domain/services/behavior_map_provider.hpp"
+#include "porytiles/domain/services/enum_map_provider.hpp"
 #include "porytiles/infra/repos/project_tileset_artifact_writer.hpp"
 #include "porytiles/infra/services/anim_code_generator.hpp"
 #include "porytiles/infra/services/anim_json_parser.hpp"
@@ -66,20 +69,111 @@ class MockFilePalSaver : public FilePalSaver {
     }
 };
 
-class MockBehaviorMapProvider : public BehaviorMapProvider {
+class MockBehaviorMapProvider : public EnumMapProvider {
   public:
-    [[nodiscard]] ChainableResult<std::uint16_t> lookup(const std::string &behavior_name) const override
+    [[nodiscard]] ChainableResult<std::uint32_t> lookup(const std::string &name) const override
     {
         // Simple mock: return 0 for any behavior name
-        return std::uint16_t{0};
+        return std::uint32_t{0};
     }
 
-    [[nodiscard]] ChainableResult<std::string> lookup(std::uint16_t behavior_value) const override
+    [[nodiscard]] ChainableResult<std::string> lookup(std::uint32_t value) const override
     {
         // Simple mock: return a behavior name based on value
         return std::string{"MB_NORMAL"};
     }
 };
+
+// A stub with a real value<->name mapping, for the multi-field tests that must render distinct provider names.
+class StubEnumMapProvider final : public EnumMapProvider {
+  public:
+    explicit StubEnumMapProvider(std::unordered_map<std::string, std::uint32_t> name_to_value)
+        : name_to_value_{std::move(name_to_value)}
+    {
+        for (const auto &[name, value] : name_to_value_) {
+            value_to_name_[value] = name;
+        }
+    }
+
+    [[nodiscard]] ChainableResult<std::uint32_t> lookup(const std::string &name) const override
+    {
+        auto it = name_to_value_.find(name);
+        if (it == name_to_value_.end()) {
+            return FormattableError{"unknown name: {}", FormatParam{name}};
+        }
+        return it->second;
+    }
+
+    [[nodiscard]] ChainableResult<std::string> lookup(std::uint32_t value) const override
+    {
+        auto it = value_to_name_.find(value);
+        if (it == value_to_name_.end()) {
+            return FormattableError{"unknown value: {}", FormatParam{value}};
+        }
+        return it->second;
+    }
+
+  private:
+    std::unordered_map<std::string, std::uint32_t> name_to_value_{};
+    std::unordered_map<std::uint32_t, std::string> value_to_name_{};
+};
+
+// The ProviderSpec contents are irrelevant here (the tests stub the ProviderMap directly); the spec's presence is what
+// marks a field provider-backed.
+ProviderSpec dummy_provider_spec()
+{
+    return ProviderSpec{.header = "include/dummy.h", .prefix = "DUMMY_"};
+}
+
+// The stock emerald shape: a single provider-backed behavior field in a 2-byte attribute.
+Schema make_emerald_schema()
+{
+    auto result = Schema::create({Field{"behavior", 0x00FF, 0, dummy_provider_spec()}}, 2);
+    return std::move(result).value();
+}
+
+ProviderMap make_emerald_provider_map()
+{
+    ProviderMap providers{};
+    providers.emplace("behavior", std::make_unique<MockBehaviorMapProvider>());
+    return providers;
+}
+
+// The stock firered shape: seven fields in a 4-byte attribute, three provider-backed and four raw. Masks match the
+// FRLG attribute bit layout from fieldmap.c (layer_type is structural and never a schema field).
+Schema make_firered_schema()
+{
+    auto result = Schema::create(
+        {
+            Field{"behavior", 0x000001FF, 0, dummy_provider_spec()},
+            Field{"terrain", 0x00003E00, 0, dummy_provider_spec()},
+            Field{"attribute_2", 0x0003C000},
+            Field{"attribute_3", 0x00FC0000},
+            Field{"encounter_type", 0x07000000, 0, dummy_provider_spec()},
+            Field{"attribute_5", 0x18000000},
+            Field{"attribute_7", 0x80000000},
+        },
+        4);
+    return std::move(result).value();
+}
+
+ProviderMap make_firered_provider_map()
+{
+    ProviderMap providers{};
+    providers.emplace(
+        "behavior",
+        std::make_unique<StubEnumMapProvider>(
+            std::unordered_map<std::string, std::uint32_t>{{"MB_NORMAL", 0}, {"MB_TALL_GRASS", 2}}));
+    providers.emplace(
+        "terrain",
+        std::make_unique<StubEnumMapProvider>(
+            std::unordered_map<std::string, std::uint32_t>{{"TILE_TERRAIN_NORMAL", 0}, {"TILE_TERRAIN_GRASS", 1}}));
+    providers.emplace(
+        "encounter_type",
+        std::make_unique<StubEnumMapProvider>(
+            std::unordered_map<std::string, std::uint32_t>{{"TILE_ENCOUNTER_NONE", 0}, {"TILE_ENCOUNTER_LAND", 1}}));
+    return providers;
+}
 
 Image<Rgba32> create_test_rgba_image()
 {
@@ -116,6 +210,55 @@ Tileset create_test_tileset(const std::string &name)
     return Tileset{name, std::move(porytiles_component), std::move(porymap_component)};
 }
 
+// A tileset whose bottom layer holds two metatiles (32x16 px) but whose Porytiles attribute map stores only metatile 0.
+// This is the sparse case the layer_type writer must materialize a full row set for.
+Tileset create_sparse_two_metatile_tileset(const std::string &name)
+{
+    auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
+    porytiles_component->bottom(Image<Rgba32>{32, 16}); // (32/16) * (16/16) = 2 metatiles
+    porytiles_component->middle(Image<Rgba32>{32, 16});
+    porytiles_component->top(Image<Rgba32>{32, 16});
+
+    // Only metatile 0 has a stored attribute: a non-default behavior and an explicit "covered" layer type.
+    MetatileAttribute attr_0{};
+    attr_0.field(attr::field_behavior, 5);
+    attr_0.explicit_layer_type(LayerType::covered);
+    porytiles_component->insert_attribute(0, attr_0);
+
+    auto porymap_component = std::make_unique<PorymapTilesetComponent>();
+    porymap_component->tiles_png(create_test_indexed_image());
+
+    return Tileset{name, std::move(porytiles_component), std::move(porymap_component)};
+}
+
+// Like create_sparse_two_metatile_tileset, but metatile 0's layer type is set through the plain layer_type() setter
+// (as a bin parser or the CSV loader does for an inferred/auto row) rather than explicit_layer_type(). This is the
+// round-trip case: an auto row must never be written back as a pinned token, no matter what layer_type() happens to be.
+Tileset create_two_metatile_tileset_with_inferred_layer_type(const std::string &name)
+{
+    auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
+    porytiles_component->bottom(Image<Rgba32>{32, 16}); // 2 metatiles
+    porytiles_component->middle(Image<Rgba32>{32, 16});
+    porytiles_component->top(Image<Rgba32>{32, 16});
+
+    // Non-default behavior so the row is meaningful, and a non-'normal' layer type set the inferred way (no explicit).
+    MetatileAttribute attr_0{};
+    attr_0.field(attr::field_behavior, 5);
+    attr_0.layer_type(LayerType::covered);
+    porytiles_component->insert_attribute(0, attr_0);
+
+    auto porymap_component = std::make_unique<PorymapTilesetComponent>();
+    porymap_component->tiles_png(create_test_indexed_image());
+
+    return Tileset{name, std::move(porytiles_component), std::move(porymap_component)};
+}
+
+[[nodiscard]] std::string read_whole_file(const std::filesystem::path &path)
+{
+    std::ifstream in{path};
+    return std::string{std::istreambuf_iterator<char>{in}, std::istreambuf_iterator<char>{}};
+}
+
 } // namespace
 
 class ProjectTilesetArtifactWriterTests : public ::testing::Test {
@@ -131,7 +274,6 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
         pal_saver_ = std::make_unique<MockFilePalSaver>();
         anim_json_parser_ = std::make_unique<AnimJsonParser>(formatter_.get());
         anim_code_generator_ = std::make_unique<AnimCodeGenerator>();
-        behavior_map_ = std::make_unique<MockBehaviorMapProvider>();
 
         test_root_ = std::filesystem::temp_directory_path() / "porytiles_artifact_writer_tests";
         std::filesystem::create_directories(test_root_);
@@ -140,16 +282,15 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
             domain_config_.get(),
             infra_config_.get(),
             test_root_,
-            BaseGame::pokeemerald,
-            attr::bytes_per_attr_emerald,
+            &schema_,
+            &providers_,
             formatter_.get(),
             diag_.get(),
             png_rgba_saver_.get(),
             png_indexed_saver_.get(),
             pal_saver_.get(),
             anim_json_parser_.get(),
-            anim_code_generator_.get(),
-            behavior_map_.get());
+            anim_code_generator_.get());
     }
 
     void TearDown() override
@@ -196,7 +337,8 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
     std::unique_ptr<MockFilePalSaver> pal_saver_;
     std::unique_ptr<AnimJsonParser> anim_json_parser_;
     std::unique_ptr<AnimCodeGenerator> anim_code_generator_;
-    std::unique_ptr<MockBehaviorMapProvider> behavior_map_;
+    Schema schema_ = make_emerald_schema();
+    ProviderMap providers_ = make_emerald_provider_map();
     std::unique_ptr<ProjectTilesetArtifactWriter> writer_;
 };
 
@@ -420,6 +562,66 @@ TEST_F(ProjectTilesetArtifactWriterTests, WriteMetatileAttributesBin)
     ASSERT_EQ(std::filesystem::file_size(expected_file), 16);
 }
 
+// A metatile_attr_field_overrides mask change must reach metatile_attributes.bin, not just the CSV: the same
+// attribute written under two schemas differing only in the behavior mask produces different bytes, each matching
+// the schema's layout exactly.
+TEST_F(ProjectTilesetArtifactWriterTests, WriteMetatileAttributesBinFollowsSchemaMasks)
+{
+    auto make_writer = [&](const Schema &schema, const ProviderMap &providers) {
+        return ProjectTilesetArtifactWriter{
+            domain_config_.get(),
+            infra_config_.get(),
+            test_root_,
+            &schema,
+            &providers,
+            formatter_.get(),
+            diag_.get(),
+            png_rgba_saver_.get(),
+            png_indexed_saver_.get(),
+            pal_saver_.get(),
+            anim_json_parser_.get(),
+            anim_code_generator_.get()};
+    };
+
+    auto make_tileset = [] {
+        auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
+        auto porymap_component = std::make_unique<PorymapTilesetComponent>();
+        MetatileAttribute attribute{};
+        attribute.field(attr::field_behavior, 5);
+        porymap_component->push_back_attribute(attribute);
+        return Tileset{"test_tileset", std::move(porytiles_component), std::move(porymap_component)};
+    };
+
+    auto read_file_bytes = [](const std::filesystem::path &path) {
+        std::ifstream in{path, std::ios::binary};
+        return std::vector<char>{std::istreambuf_iterator<char>{in}, std::istreambuf_iterator<char>{}};
+    };
+
+    ProviderMap providers{};
+
+    // Stock mask: behavior at bits 0-7, so value 5 lands in the low byte.
+    Schema stock_schema = std::move(Schema::create({Field{"behavior", 0x00FF}}, 2)).value();
+    {
+        auto writer = make_writer(stock_schema, providers);
+        auto tileset = make_tileset();
+        ASSERT_TRUE(writer.begin_transaction().has_value());
+        ASSERT_TRUE(writer.write_metatile_attributes_bin(ArtifactKey{"stock.bin"}, tileset).has_value());
+        ASSERT_TRUE(writer.commit().has_value());
+    }
+    EXPECT_EQ(read_file_bytes(test_root_ / "stock.bin"), (std::vector<char>{0x05, 0x00}));
+
+    // Overridden mask: behavior shifted to bits 4-11, so the same value 5 lands at offset 4 (0x50).
+    Schema shifted_schema = std::move(Schema::create({Field{"behavior", 0x0FF0}}, 2)).value();
+    {
+        auto writer = make_writer(shifted_schema, providers);
+        auto tileset = make_tileset();
+        ASSERT_TRUE(writer.begin_transaction().has_value());
+        ASSERT_TRUE(writer.write_metatile_attributes_bin(ArtifactKey{"shifted.bin"}, tileset).has_value());
+        ASSERT_TRUE(writer.commit().has_value());
+    }
+    EXPECT_EQ(read_file_bytes(test_root_ / "shifted.bin"), (std::vector<char>{0x50, 0x00}));
+}
+
 TEST_F(ProjectTilesetArtifactWriterTests, WritePalette)
 {
     auto tileset = create_test_tileset("test_tileset");
@@ -514,4 +716,215 @@ TEST_F(ProjectTilesetArtifactWriterTests, TransactionSequence)
     ASSERT_TRUE(std::filesystem::exists(test_root_ / "trans1.png"));
     ASSERT_FALSE(std::filesystem::exists(test_root_ / "trans2.png"));
     ASSERT_TRUE(std::filesystem::exists(test_root_ / "trans3.png"));
+}
+
+TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvKnobOnEmitsOneRowPerMetatileWithSynthesizedDefaults)
+{
+    infra_config_->write_layer_type_column = true;
+    auto tileset = create_sparse_two_metatile_tileset("test_tileset");
+
+    ASSERT_TRUE(writer_->begin_transaction().has_value());
+    ArtifactKey key{"attributes.csv"};
+    auto write_result = writer_->write_attributes_csv(key, tileset);
+    ASSERT_TRUE(write_result.has_value()) << write_result.error().join(PlainTextFormatter{});
+    ASSERT_TRUE(writer_->commit().has_value());
+
+    // Header gains layer_type. Present metatile 0 emits its "covered" token; synthesized metatile 1 emits a blank cell.
+    const std::string expected = "id,behavior,layer_type\n0,MB_NORMAL,covered\n1,MB_NORMAL,\n";
+    EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), expected);
+}
+
+TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvKnobOnEmitsBlankCellForInferredLayerType)
+{
+    // Regression: a present attribute whose layer type was set the inferred way (not pinned via explicit_layer_type)
+    // must emit a BLANK layer_type cell. If the writer keyed off layer_type() instead of explicit_layer_type(), it
+    // would pin this row as "covered", and the next compile would wrongly treat the auto row as a user override.
+    infra_config_->write_layer_type_column = true;
+    auto tileset = create_two_metatile_tileset_with_inferred_layer_type("test_tileset");
+
+    ASSERT_TRUE(writer_->begin_transaction().has_value());
+    ArtifactKey key{"attributes.csv"};
+    auto write_result = writer_->write_attributes_csv(key, tileset);
+    ASSERT_TRUE(write_result.has_value()) << write_result.error().join(PlainTextFormatter{});
+    ASSERT_TRUE(writer_->commit().has_value());
+
+    // Both cells blank despite metatile 0's non-'normal' layer_type(): neither row carries an explicit pin.
+    const std::string expected = "id,behavior,layer_type\n0,MB_NORMAL,\n1,MB_NORMAL,\n";
+    EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), expected);
+}
+
+TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvKnobOffIsByteIdenticalToHistoricalOutput)
+{
+    // Default MockInfraConfig has write_layer_type_column = false.
+    auto tileset = create_sparse_two_metatile_tileset("test_tileset");
+
+    ASSERT_TRUE(writer_->begin_transaction().has_value());
+    ArtifactKey key{"attributes.csv"};
+    auto write_result = writer_->write_attributes_csv(key, tileset);
+    ASSERT_TRUE(write_result.has_value()) << write_result.error().join(PlainTextFormatter{});
+    ASSERT_TRUE(writer_->commit().has_value());
+
+    // Byte-identical to the pre-schema emerald output: no layer_type column, and the sole all-default metatile (1) is
+    // skipped, so only metatile 0's row survives. This exact string is the emerald compatibility contract for #284.
+    const std::string expected = "id,behavior\n0,MB_NORMAL\n";
+    EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), expected);
+}
+
+TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvKnobOffAllDefaultRowsWritesHeaderOnly)
+{
+    // Every stored attribute is all-default, so the row-omission compression collapses the file to just the header.
+    auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
+    porytiles_component->bottom(Image<Rgba32>{32, 16}); // 2 metatiles
+    porytiles_component->middle(Image<Rgba32>{32, 16});
+    porytiles_component->top(Image<Rgba32>{32, 16});
+    porytiles_component->insert_attribute(0, MetatileAttribute{});
+    porytiles_component->insert_attribute(1, MetatileAttribute{});
+    auto porymap_component = std::make_unique<PorymapTilesetComponent>();
+    porymap_component->tiles_png(create_test_indexed_image());
+    Tileset tileset{"test_tileset", std::move(porytiles_component), std::move(porymap_component)};
+
+    ASSERT_TRUE(writer_->begin_transaction().has_value());
+    ArtifactKey key{"attributes.csv"};
+    auto write_result = writer_->write_attributes_csv(key, tileset);
+    ASSERT_TRUE(write_result.has_value()) << write_result.error().join(PlainTextFormatter{});
+    ASSERT_TRUE(writer_->commit().has_value());
+
+    EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), "id,behavior\n");
+}
+
+// The ProviderMap membership contract: has_provider() and map membership are equivalent. A provider-backed schema
+// field with no provider in the map is an internal bug, so the writer panics instead of degrading to raw rendering.
+TEST_F(ProjectTilesetArtifactWriterTests, ProviderBackedFieldMissingFromProviderMapPanics)
+{
+    ProviderMap empty_providers{};
+    ProjectTilesetArtifactWriter writer{
+        domain_config_.get(),
+        infra_config_.get(),
+        test_root_,
+        &schema_,
+        &empty_providers,
+        formatter_.get(),
+        diag_.get(),
+        png_rgba_saver_.get(),
+        png_indexed_saver_.get(),
+        pal_saver_.get(),
+        anim_json_parser_.get(),
+        anim_code_generator_.get()};
+
+    auto tileset = create_sparse_two_metatile_tileset("test_tileset");
+    ASSERT_TRUE(writer.begin_transaction().has_value());
+    ArtifactKey key{"attributes.csv"};
+    EXPECT_DEATH(std::ignore = writer.write_attributes_csv(key, tileset), "no provider was built");
+    ASSERT_TRUE(writer.rollback().has_value());
+}
+
+// The schema-driven writer for a multi-field (stock firered shape) schema: field names become header columns,
+// provider-backed cells render constant names, raw cells render plain integers, and a row is omitted only when every
+// field's effective value equals its schema default.
+TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvMultiFieldSchemaRendersProviderNamesAndRawIntegers)
+{
+    Schema firered_schema = make_firered_schema();
+    ProviderMap firered_providers = make_firered_provider_map();
+    ProjectTilesetArtifactWriter writer{
+        domain_config_.get(),
+        infra_config_.get(),
+        test_root_,
+        &firered_schema,
+        &firered_providers,
+        formatter_.get(),
+        diag_.get(),
+        png_rgba_saver_.get(),
+        png_indexed_saver_.get(),
+        pal_saver_.get(),
+        anim_json_parser_.get(),
+        anim_code_generator_.get()};
+
+    auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
+    porytiles_component->bottom(Image<Rgba32>{32, 16}); // 2 metatiles
+    porytiles_component->middle(Image<Rgba32>{32, 16});
+    porytiles_component->top(Image<Rgba32>{32, 16});
+
+    // Metatile 0 mixes provider-backed and raw non-defaults; metatile 1 is all-default and must be omitted.
+    MetatileAttribute attr_0{};
+    attr_0.field(attr::field_behavior, 2);
+    attr_0.field(attr::field_terrain, 1);
+    attr_0.field(attr::field_attribute_3, 5);
+    attr_0.field(attr::field_encounter_type, 1);
+    porytiles_component->insert_attribute(0, attr_0);
+    porytiles_component->insert_attribute(1, MetatileAttribute{});
+
+    auto porymap_component = std::make_unique<PorymapTilesetComponent>();
+    porymap_component->tiles_png(create_test_indexed_image());
+    Tileset tileset{"test_tileset", std::move(porytiles_component), std::move(porymap_component)};
+
+    ASSERT_TRUE(writer.begin_transaction().has_value());
+    ArtifactKey key{"attributes.csv"};
+    auto write_result = writer.write_attributes_csv(key, tileset);
+    ASSERT_TRUE(write_result.has_value()) << write_result.error().join(PlainTextFormatter{});
+    ASSERT_TRUE(writer.commit().has_value());
+
+    const std::string expected = "id,behavior,terrain,attribute_2,attribute_3,encounter_type,attribute_5,attribute_7\n"
+                                 "0,MB_TALL_GRASS,TILE_TERRAIN_GRASS,0,5,TILE_ENCOUNTER_LAND,0,0\n";
+    EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), expected);
+}
+
+// A schema field may declare a nonzero default (the value an absent field takes). An attribute that omits the field
+// renders that default, not 0. Omitting an all-default row is lossless: it reloads as an absent attribute, which the
+// compiler materializes from the schema defaults, so the round trip reproduces the omitted values exactly.
+TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvNonzeroDefaultRendersDefaultAndOmitsAllDefaultRows)
+{
+    auto schema_result = Schema::create(
+        {
+            Field{"behavior", 0x00FF, 0, dummy_provider_spec()},
+            Field{"pad", 0x0F00, 3},
+        },
+        2);
+    Schema schema = std::move(schema_result).value();
+    ProviderMap providers{};
+    providers.emplace(
+        "behavior",
+        std::make_unique<StubEnumMapProvider>(
+            std::unordered_map<std::string, std::uint32_t>{{"MB_NORMAL", 0}, {"MB_TALL_GRASS", 2}}));
+    ProjectTilesetArtifactWriter writer{
+        domain_config_.get(),
+        infra_config_.get(),
+        test_root_,
+        &schema,
+        &providers,
+        formatter_.get(),
+        diag_.get(),
+        png_rgba_saver_.get(),
+        png_indexed_saver_.get(),
+        pal_saver_.get(),
+        anim_json_parser_.get(),
+        anim_code_generator_.get()};
+
+    auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
+    porytiles_component->bottom(Image<Rgba32>{32, 16}); // 2 metatiles
+    porytiles_component->middle(Image<Rgba32>{32, 16});
+    porytiles_component->top(Image<Rgba32>{32, 16});
+
+    // Metatile 0: behavior stored, 'pad' absent -> its cell renders the default 3.
+    MetatileAttribute attr_0{};
+    attr_0.field(attr::field_behavior, 2);
+    porytiles_component->insert_attribute(0, attr_0);
+
+    // Metatile 1: behavior absent (effective 0 = default) and 'pad' stored as its default 3 -> all-default, so the
+    // row is omitted; the compiler rematerializes it from the schema defaults on the next compile.
+    MetatileAttribute attr_1{};
+    attr_1.field("pad", 3);
+    porytiles_component->insert_attribute(1, attr_1);
+
+    auto porymap_component = std::make_unique<PorymapTilesetComponent>();
+    porymap_component->tiles_png(create_test_indexed_image());
+    Tileset tileset{"test_tileset", std::move(porytiles_component), std::move(porymap_component)};
+
+    ASSERT_TRUE(writer.begin_transaction().has_value());
+    ArtifactKey key{"attributes.csv"};
+    auto write_result = writer.write_attributes_csv(key, tileset);
+    ASSERT_TRUE(write_result.has_value()) << write_result.error().join(PlainTextFormatter{});
+    ASSERT_TRUE(writer.commit().has_value());
+
+    const std::string expected = "id,behavior,pad\n0,MB_TALL_GRASS,3\n";
+    EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), expected);
 }

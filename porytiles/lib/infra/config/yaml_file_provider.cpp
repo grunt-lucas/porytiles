@@ -655,21 +655,110 @@ YamlFileProvider::tileset_paths_secondary_bin(ConfigScopeType type, const std::s
         "tileset.paths.secondary.bin");
 }
 
-LayerValue<std::size_t> YamlFileProvider::metatile_attr_size(ConfigScopeType type, const std::string &scope) const
+LayerValue<MetatileAttrFieldSpecs>
+YamlFileProvider::metatile_attr_fields(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<std::size_t>::invalid(
+        return LayerValue<MetatileAttrFieldSpecs>::invalid(
             paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
-    return search_config_files<std::size_t>(
+    return search_config_files<MetatileAttrFieldSpecs>(
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["fieldmap"]["metatile_attribute_size"]; },
-        parse_size_t,
-        "fieldmap.metatile_attribute_size",
-        "fieldmap.metatile_attribute_size");
+        [](const YAML::Node &doc) { return doc["fieldmap"]["metatile_attr_fields"]; },
+        parse_metatile_attr_fields,
+        "fieldmap.metatile_attr_fields",
+        "fieldmap.metatile_attr_fields");
+}
+
+LayerValue<MetatileAttrFieldOverrides>
+YamlFileProvider::metatile_attr_field_overrides(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<MetatileAttrFieldOverrides>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<MetatileAttrFieldOverrides>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["fieldmap"]["metatile_attr_field_overrides"]; },
+        parse_metatile_attr_field_overrides,
+        "fieldmap.metatile_attr_field_overrides",
+        "fieldmap.metatile_attr_field_overrides");
+}
+
+LayerValue<bool> YamlFileProvider::write_layer_type_column(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<bool>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<bool>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["fieldmap"]["write_layer_type_column"]; },
+        parse_bool,
+        "fieldmap.write_layer_type_column",
+        "fieldmap.write_layer_type_column");
+}
+
+LayerValue<FrlgAlternateMaskMode>
+YamlFileProvider::use_frlg_alternate_masks(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<FrlgAlternateMaskMode>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<FrlgAlternateMaskMode>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["fieldmap"]["use_frlg_alternate_masks"]; },
+        parse_frlg_alternate_mask_mode,
+        "fieldmap.use_frlg_alternate_masks",
+        "fieldmap.use_frlg_alternate_masks");
+}
+
+LayerValue<std::optional<std::uint32_t>>
+YamlFileProvider::metatile_layer_type_mask(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::optional<std::uint32_t>>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<std::optional<std::uint32_t>>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["fieldmap"]["metatile_layer_type_mask"]; },
+        parse_layer_type_mask,
+        "fieldmap.metatile_layer_type_mask",
+        "fieldmap.metatile_layer_type_mask");
+}
+
+LayerValue<std::optional<std::uint32_t>>
+YamlFileProvider::metatile_layer_type_mask_frlg(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::optional<std::uint32_t>>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<std::optional<std::uint32_t>>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["fieldmap"]["metatile_layer_type_mask_frlg"]; },
+        parse_layer_type_mask,
+        "fieldmap.metatile_layer_type_mask_frlg",
+        "fieldmap.metatile_layer_type_mask_frlg");
 }
 
 LayerValue<bool>

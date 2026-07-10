@@ -7,6 +7,7 @@
 #include "porytiles/domain/models/image.hpp"
 #include "porytiles/domain/models/index_pixel.hpp"
 #include "porytiles/domain/models/metatile_attribute.hpp"
+#include "porytiles/domain/models/metatile_attribute_schema.hpp"
 #include "porytiles/domain/models/palette.hpp"
 #include "porytiles/domain/models/rgba32.hpp"
 #include "porytiles/domain/models/tilemap_entry.hpp"
@@ -34,42 +35,38 @@ namespace porytiles {
 [[nodiscard]] ChainableResult<std::vector<TilemapEntry>> parse_metatiles_bin(const std::filesystem::path &path);
 
 /**
- * @brief Parses a metatile_attributes.bin file for Emerald format.
+ * @brief Parses a metatile_attributes.bin file according to a metatile attribute schema.
  *
  * @details
- * Reads a binary file containing 2-byte metatile attribute entries. Each entry encodes:
- * - Bits 0-7: terrain/behavior value
- * - Bits 12-15: layer type
+ * Reads a binary file containing schema.attr_bytes() bytes per attribute entry, little-endian. Each
+ * schema field's value is extracted through its mask and offset, and the structural layer type is
+ * extracted through the schema's layer_type_mask(). The schema is the sole authority on the layout;
+ * this function carries no hardcoded masks.
  *
  * @param path Absolute path to the metatile_attributes.bin file
+ * @param schema The attribute schema describing the binary layout
  * @pre File must exist and be readable
- * @pre File size must be a multiple of 2 bytes (attr::bytes_per_attr_emerald)
+ * @pre File size must be a multiple of schema.attr_bytes()
  * @return Vector of parsed MetatileAttribute objects, or error if file is invalid/corrupted
  */
 [[nodiscard]] ChainableResult<std::vector<MetatileAttribute>>
-parse_emerald_metatile_attributes(const std::filesystem::path &path);
+parse_metatile_attributes(const std::filesystem::path &path, const Schema &schema);
 
 /**
- * @brief Parses a metatile_attributes.bin file for FireRed format.
+ * @brief Writes metatile attributes to a metatile_attributes.bin file according to a schema.
  *
  * @details
- * Reads a binary file containing 4-byte metatile attribute entries. Each entry encodes:
- * - Bits 0-8: behavior value (9 bits)
- * - Bits 9-13: terrain type (5 bits)
- * - Bits 14-17: attribute 2 (4 bits)
- * - Bits 18-23: attribute 3 (6 bits)
- * - Bits 24-26: encounter type (3 bits)
- * - Bits 27-28: attribute 5 (2 bits)
- * - Bits 29-30: layer type (2 bits)
- * - Bit 31: attribute 7 (1 bit)
+ * The inverse of parse_metatile_attributes: each attribute's schema fields and structural layer type
+ * are packed into a single word through the schema's masks and offsets, then written as
+ * schema.attr_bytes() bytes, little-endian.
  *
- * @param path Absolute path to the metatile_attributes.bin file
- * @pre File must exist and be readable
- * @pre File size must be a multiple of 4 bytes (attr::bytes_per_attr_firered)
- * @return Vector of parsed MetatileAttribute objects, or error if file is invalid/corrupted
+ * @param attributes The attributes to write, in metatile order
+ * @param path Absolute path of the metatile_attributes.bin file to write
+ * @param schema The attribute schema describing the binary layout
+ * @return Success, or an error if the file cannot be written
  */
-[[nodiscard]] ChainableResult<std::vector<MetatileAttribute>>
-parse_firered_metatile_attributes(const std::filesystem::path &path);
+[[nodiscard]] ChainableResult<void> save_metatile_attributes_bin(
+    const std::vector<MetatileAttribute> &attributes, const std::filesystem::path &path, const Schema &schema);
 
 /**
  * @brief Loads an indexed PNG file (e.g., tiles.png).

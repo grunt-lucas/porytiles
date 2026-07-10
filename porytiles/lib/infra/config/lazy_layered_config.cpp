@@ -184,7 +184,20 @@ void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, con
     dump_single_config_value(
         out, *format_, "Tileset Paths Secondary Bin", tileset_paths_secondary_bin_provenance_chain(type, scope));
     dump_single_config_value(
-        out, *format_, "Metatile Attribute Size", metatile_attr_size_provenance_chain(type, scope));
+        out, *format_, "Metatile Attribute Fields", metatile_attr_fields_provenance_chain(type, scope));
+    dump_single_config_value(
+        out,
+        *format_,
+        "Metatile Attribute Field Overrides",
+        metatile_attr_field_overrides_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Write Layer Type Column", write_layer_type_column_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Use FRLG Alternate Masks", use_frlg_alternate_masks_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Metatile Layer Type Mask", metatile_layer_type_mask_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Metatile Layer Type Mask FRLG", metatile_layer_type_mask_frlg_provenance_chain(type, scope));
     dump_single_config_value(
         out,
         *format_,
@@ -731,16 +744,80 @@ LazyLayeredConfig::tileset_paths_secondary_bin_raw(ConfigScopeType type, const s
         });
 }
 
-ChainableResult<ConfigValue<std::size_t>>
-LazyLayeredConfig::metatile_attr_size_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<MetatileAttrFieldSpecs>>
+LazyLayeredConfig::metatile_attr_fields_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<std::size_t>(
-        key, "Metatile Attribute Size", [&type, &scope](const ConfigProvider &provider) {
-            return provider.metatile_attr_size(type, scope);
+    return resolve_config_value<MetatileAttrFieldSpecs>(
+        key, "Metatile Attribute Fields", [&type, &scope](const ConfigProvider &provider) {
+            return provider.metatile_attr_fields(type, scope);
+        });
+}
+
+ChainableResult<ConfigValue<MetatileAttrFieldOverrides>>
+LazyLayeredConfig::metatile_attr_field_overrides_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<MetatileAttrFieldOverrides>(
+        key, "Metatile Attribute Field Overrides", [&type, &scope](const ConfigProvider &provider) {
+            return provider.metatile_attr_field_overrides(type, scope);
+        });
+}
+
+ChainableResult<ConfigValue<bool>>
+LazyLayeredConfig::write_layer_type_column_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<bool>(key, "Write Layer Type Column", [&type, &scope](const ConfigProvider &provider) {
+        return provider.write_layer_type_column(type, scope);
+    });
+}
+
+ChainableResult<ConfigValue<FrlgAlternateMaskMode>>
+LazyLayeredConfig::use_frlg_alternate_masks_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<FrlgAlternateMaskMode>(
+        key, "Use FRLG Alternate Masks", [&type, &scope](const ConfigProvider &provider) {
+            return provider.use_frlg_alternate_masks(type, scope);
+        });
+}
+
+ChainableResult<ConfigValue<std::optional<std::uint32_t>>>
+LazyLayeredConfig::metatile_layer_type_mask_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<std::optional<std::uint32_t>>(
+        key, "Metatile Layer Type Mask", [&type, &scope](const ConfigProvider &provider) {
+            return provider.metatile_layer_type_mask(type, scope);
+        });
+}
+
+ChainableResult<ConfigValue<std::optional<std::uint32_t>>>
+LazyLayeredConfig::metatile_layer_type_mask_frlg_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<std::optional<std::uint32_t>>(
+        key, "Metatile Layer Type Mask FRLG", [&type, &scope](const ConfigProvider &provider) {
+            return provider.metatile_layer_type_mask_frlg(type, scope);
         });
 }
 
@@ -1009,11 +1086,48 @@ LazyLayeredConfig::tileset_paths_secondary_bin_provenance_chain(ConfigScopeType 
         [&type, &scope](const ConfigProvider &provider) { return provider.tileset_paths_secondary_bin(type, scope); });
 }
 
-std::vector<ProvenanceChainLink<std::size_t>>
-LazyLayeredConfig::metatile_attr_size_provenance_chain(ConfigScopeType type, const std::string &scope) const
+std::vector<ProvenanceChainLink<MetatileAttrFieldSpecs>>
+LazyLayeredConfig::metatile_attr_fields_provenance_chain(ConfigScopeType type, const std::string &scope) const
 {
-    return collect_provenance_chain<std::size_t>(
-        [&type, &scope](const ConfigProvider &provider) { return provider.metatile_attr_size(type, scope); });
+    return collect_provenance_chain<MetatileAttrFieldSpecs>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.metatile_attr_fields(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<MetatileAttrFieldOverrides>>
+LazyLayeredConfig::metatile_attr_field_overrides_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<MetatileAttrFieldOverrides>([&type, &scope](const ConfigProvider &provider) {
+        return provider.metatile_attr_field_overrides(type, scope);
+    });
+}
+
+std::vector<ProvenanceChainLink<bool>>
+LazyLayeredConfig::write_layer_type_column_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<bool>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.write_layer_type_column(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<FrlgAlternateMaskMode>>
+LazyLayeredConfig::use_frlg_alternate_masks_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<FrlgAlternateMaskMode>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.use_frlg_alternate_masks(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::optional<std::uint32_t>>>
+LazyLayeredConfig::metatile_layer_type_mask_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::optional<std::uint32_t>>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.metatile_layer_type_mask(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<std::optional<std::uint32_t>>>
+LazyLayeredConfig::metatile_layer_type_mask_frlg_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<std::optional<std::uint32_t>>([&type, &scope](const ConfigProvider &provider) {
+        return provider.metatile_layer_type_mask_frlg(type, scope);
+    });
 }
 
 std::vector<ProvenanceChainLink<bool>> LazyLayeredConfig::tileset_animations_wire_anim_code_provenance_chain(

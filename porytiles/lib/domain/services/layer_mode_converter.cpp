@@ -81,7 +81,9 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(c
 }
 
 [[nodiscard]] std::vector<TilemapEntry> LayerModeConverter::dual_layerize(
-    const std::vector<TilemapEntry> &entries, const std::vector<Metatile<Rgba32>> &source_metatiles)
+    const std::vector<TilemapEntry> &entries,
+    const std::vector<Metatile<Rgba32>> &source_metatiles,
+    const std::vector<std::optional<LayerType>> &explicit_layer_types)
 {
     const std::size_t expected_entries_size = source_metatiles.size() * metatile::entries_per_metatile_triple;
     if (entries.size() != expected_entries_size) {
@@ -103,8 +105,31 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(c
             panic("metatile " + std::to_string(i) + " has implied LayerMode::triple, cannot dual_layerize");
         }
 
-        // Infer the layer type for this metatile using extrinsic transparency
-        const LayerType layer_type = metatile.infer_layer_type(extrinsic_transparency_);
+        // An explicit override wins over inference and drives which layer group is dropped.
+        const LayerType inferred = metatile.infer_layer_type(extrinsic_transparency_);
+        const LayerType layer_type = (i < explicit_layer_types.size() && explicit_layer_types[i].has_value())
+                                         ? explicit_layer_types[i].value()
+                                         : inferred;
+
+        // The layer group this type drops. Warn if any dropped entry references a visible (non-transparent) tile, which
+        // means the reduction would silently discard real tiles. Inspect the actual entries here (post anim overrides),
+        // not the source RGBA transparency, so overrides that made an entry visible are caught.
+        const std::size_t drop_begin = layer_type == LayerType::normal ? 0 : (layer_type == LayerType::covered ? 8 : 4);
+        bool drops_visible = false;
+        for (std::size_t j = drop_begin; j < drop_begin + 4; ++j) {
+            if (entries[input_offset + j].tile_index() != 0) {
+                drops_visible = true;
+                break;
+            }
+        }
+        if (drops_visible) {
+            diag_->warning(
+                "layer-type-column",
+                "metatile {}: layer type '{}' drops a layer that contains visible tiles; those tiles will be "
+                "discarded.",
+                FormatParam{i},
+                FormatParam{layer_type_csv_token(layer_type), Style::bold});
+        }
 
         switch (layer_type) {
         case LayerType::normal:

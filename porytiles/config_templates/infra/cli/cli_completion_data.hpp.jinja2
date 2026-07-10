@@ -59,6 +59,14 @@ struct CliOptionMeta {
             {},
             false
         },
+{% elif value.type == 'std::optional<std::uint32_t>' %}
+        CliOptionMeta{
+            "{{ value.cli_option }}",
+            "{{ value.canonical_name }}{% if value.cli_desc %} - {{ value.cli_desc }}{% endif %}",
+            "string",
+            {},
+            false
+        },
 {% elif value.type == 'std::vector<std::string>' %}
         CliOptionMeta{
             "{{ value.cli_option }}",

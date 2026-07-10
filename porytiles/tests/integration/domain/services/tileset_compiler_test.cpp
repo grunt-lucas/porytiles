@@ -12,6 +12,7 @@
 #include "porytiles/domain/models/image.hpp"
 #include "porytiles/domain/models/index_pixel.hpp"
 #include "porytiles/domain/models/metatile.hpp"
+#include "porytiles/domain/models/metatile_attribute_schema.hpp"
 #include "porytiles/domain/models/palette.hpp"
 #include "porytiles/domain/models/pixel_tile.hpp"
 #include "porytiles/domain/models/porymap_tileset_component.hpp"
@@ -162,7 +163,7 @@ class TilesetCompilerTestBase : public ::testing::Test {
     [[nodiscard]] std::unique_ptr<TilesetCompiler> make_compiler() const
     {
         return std::make_unique<TilesetCompiler>(
-            &config_, formatter_.get(), diag_.get(), tile_printer_.get(), pal_printer_.get());
+            &config_, &schema_, formatter_.get(), diag_.get(), tile_printer_.get(), pal_printer_.get());
     }
 
     template <typename T>
@@ -183,7 +184,32 @@ class TilesetCompilerTestBase : public ::testing::Test {
     std::unique_ptr<AsciiTilePrinter> tile_printer_;
     std::unique_ptr<ColorPalettePrinter> pal_printer_;
     MockDomainConfig config_;
+    // The stock emerald shape: a single behavior field in a 2-byte attribute.
+    Schema schema_ = std::move(Schema::create({Field{"behavior", 0x00FF}}, 2)).value();
 };
+
+class TilesetCompilerAttributeDefaultTests : public TilesetCompilerTestBase {};
+
+// Issue #285 crux: a metatile with no stored attribute (an all-default CSV row the writer omits) must reload as the
+// schema's field defaults, not as all-zero fields, so an omitted row round-trips back to exactly the defaults it was
+// omitted for. Reverting tileset_compiler's materialize-from-defaults branch to a bare MetatileAttribute{} would
+// silently zero every omitted row under a schema with a nonzero default. A default-0 schema cannot tell the two forms
+// apart, so this uses a nonzero default and asserts the compiled attribute carries it.
+TEST_F(TilesetCompilerAttributeDefaultTests, AbsentAttributeMaterializesNonzeroSchemaDefault)
+{
+    schema_ = std::move(Schema::create({Field{"behavior", 0x00FF, 0x05}}, 2)).value();
+
+    auto tileset = build_single_metatile_tileset("test_primary", rgba_green);
+    auto compiler = make_compiler();
+
+    auto result = compiler->compile(tileset, false, nullptr);
+    ASSERT_TRUE(result.has_value()) << join_error_chain(result);
+
+    const auto &attributes = result.value()->porymap_component().metatile_attributes_bin();
+    ASSERT_EQ(attributes.size(), 1U);
+    // The metatile carried no attribute, so it materializes from the schema default (0x05), not all-zero.
+    EXPECT_EQ(attributes[0].field("behavior"), 0x05U);
+}
 
 class TilesetCompilerModeComboTests : public TilesetCompilerTestBase {};
 
@@ -509,6 +535,75 @@ TEST_F(TilesetCompilerOverrideValidationTests, ManualDualDropReportsWarning)
     ASSERT_TRUE(diag_->warning_tag_counts().contains("manual-dual-layer-drop"));
     EXPECT_EQ(diag_->warning_tag_counts().at("manual-dual-layer-drop"), 1U);
     EXPECT_TRUE(diag_->error_tag_counts().empty());
+}
+
+TEST_F(TilesetCompilerOverrideValidationTests, ManualBottomOverrideSurvivesExplicitCoveredLayerType)
+{
+    // Regression for the effective-layer-type mismatch: this metatile infers 'normal' (which drops the bottom layer),
+    // but an explicit 'covered' override keeps the bottom layer. The manual override targets bottom, so it must NOT be
+    // rejected. Before the fix, validation used the inferred 'normal' and wrongly warned + dropped the override.
+    config_.global_frame_linking = FrameLinking::manual;
+
+    auto tileset = build_single_metatile_tileset("test_primary", rgba_green);
+
+    // Pin metatile 0 to 'covered' via the source Porytiles attribute, exactly as an explicit layer_type CSV cell would.
+    MetatileAttribute attr_0{};
+    attr_0.explicit_layer_type(LayerType::covered);
+    tileset.porytiles_component().insert_attribute(0, attr_0);
+
+    add_manual_anim(
+        tileset,
+        "anim",
+        rgba_red,
+        {AnimOverrideEntry{
+            .metatile_id = 0,
+            .layer = metatile::Layer::bottom,
+            .subtile = metatile::Subtile::northwest,
+            .frame_subtile = 0,
+            .pal_index = 0,
+            .h_flip = false,
+            .v_flip = false}});
+
+    auto compiler = make_compiler();
+    auto result = compiler->compile(tileset, false, nullptr);
+
+    // 'covered' drops the top layer, so the bottom override is kept: no drop warning, and the compile is clean.
+    ASSERT_TRUE(result.has_value()) << "Expected compile to succeed, got: " << join_error_chain(result);
+    EXPECT_FALSE(diag_->warning_tag_counts().contains("manual-dual-layer-drop"));
+    EXPECT_TRUE(diag_->error_tag_counts().empty());
+}
+
+TEST_F(TilesetCompilerOverrideValidationTests, ManualOverrideOnExplicitlyDroppedLayerStillWarns)
+{
+    // The complement of the previous test: an explicit 'covered' pin drops the top layer, so an override targeting top
+    // must warn even though inference (which would say 'normal', dropping bottom) would have let it through.
+    config_.global_frame_linking = FrameLinking::manual;
+
+    auto tileset = build_single_metatile_tileset("test_primary", rgba_green);
+
+    MetatileAttribute attr_0{};
+    attr_0.explicit_layer_type(LayerType::covered);
+    tileset.porytiles_component().insert_attribute(0, attr_0);
+
+    add_manual_anim(
+        tileset,
+        "anim",
+        rgba_red,
+        {AnimOverrideEntry{
+            .metatile_id = 0,
+            .layer = metatile::Layer::top,
+            .subtile = metatile::Subtile::northwest,
+            .frame_subtile = 0,
+            .pal_index = 0,
+            .h_flip = false,
+            .v_flip = false}});
+
+    auto compiler = make_compiler();
+    auto result = compiler->compile(tileset, false, nullptr);
+
+    ASSERT_TRUE(result.has_value()) << "Expected compile to succeed, got: " << join_error_chain(result);
+    ASSERT_TRUE(diag_->warning_tag_counts().contains("manual-dual-layer-drop"));
+    EXPECT_EQ(diag_->warning_tag_counts().at("manual-dual-layer-drop"), 1U);
 }
 
 TEST_F(TilesetCompilerOverrideValidationTests, ManualBottomOverrideAppliesInTripleMode)

@@ -188,6 +188,22 @@ TEST_F(CParserFacadeTests, ParseDefinesFromTempFile)
     EXPECT_EQ(defines[2].int_value(), 16);
 }
 
+TEST_F(CParserFacadeTests, TolerantDefineScanReportsAmbiguousConditionalValue)
+{
+    auto temp_path = create_temp_file(R"(
+#if EXTERNAL_FEATURE
+#define METATILE_ATTR_BEHAVIOR_MASK 0x00FF
+#else
+#define METATILE_ATTR_BEHAVIOR_MASK 0x01FF
+#endif
+)");
+    CParserFacade driver{temp_path, &formatter_};
+
+    auto result = driver.parse_defines_tolerant();
+    ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
+    EXPECT_TRUE(result.value().ambiguous_values.contains("METATILE_ATTR_BEHAVIOR_MASK"));
+}
+
 TEST_F(CParserFacadeTests, ParseEnumsFromTempFile)
 {
     auto temp_path = create_temp_file("enum { A, B = 10, C };");

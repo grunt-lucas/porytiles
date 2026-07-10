@@ -262,6 +262,19 @@ TEST_F(IncbinDeclarationAppenderTest_VanillaStock, AppendsMetatilesDeclarationsW
     EXPECT_NE(content.find("INCBIN_U32"), std::string::npos) << "INCBIN_U32 not found for attr size 4";
 }
 
+TEST_F(IncbinDeclarationAppenderTest_VanillaStock, AppendsMetatilesDeclarationsWithU8AttrSize)
+{
+    auto result = appender_->append_metatiles_declarations("gTileset_General", "data/tilesets/primary", 1);
+    ASSERT_TRUE(result.has_value()) << "append_metatiles_declarations failed";
+
+    const std::string content = read_file_contents(metatiles_path());
+
+    // Verify u8 type and INCBIN_U8 macro for attr size 1 (Porymap 1-byte attribute parity).
+    EXPECT_NE(content.find("const u8 gMetatileAttributes_PorytilesManaged_General"), std::string::npos)
+        << "const u8 attribute declaration not found for attr size 1";
+    EXPECT_NE(content.find("INCBIN_U8"), std::string::npos) << "INCBIN_U8 not found for attr size 1";
+}
+
 TEST_F(IncbinDeclarationAppenderTest_ExpansionFrlgStock, AppendsGraphicsDeclarationsAfterFrlgBlock)
 {
     auto result = appender_->append_graphics_declarations("gTileset_General", "data/tilesets/primary", 6);
@@ -295,6 +308,21 @@ TEST_F(IncbinDeclarationAppenderTest_ExpansionFrlgStock, AppendsMetatilesDeclara
     EXPECT_NE(content.find("gMetatiles_Building_Frlg"), std::string::npos)
         << "FRLG metatiles declaration was disturbed";
     EXPECT_NE(content.find("#endif // IS_FRLG"), std::string::npos) << "FRLG #endif was disturbed";
+}
+
+TEST_F(IncbinDeclarationAppenderTest_ExpansionFrlgStock, FrlgTilesetDeclarationWidthTwoAppendsU16)
+{
+    // Expansion declares its FRLG tilesets 'const u16' even though the engine reads them as 4-byte words, so the
+    // manager passes the resolver's declaration_bytes (2) here, not the schema's resolved entry width (4). Appending
+    // u16 keeps metatiles.h single-typed; a u32 append would trip the mixed-type fatal on the next width detection.
+    auto result = appender_->append_metatiles_declarations("gTileset_BuildingFrlg", "data/tilesets/secondary", 2);
+    ASSERT_TRUE(result.has_value()) << "append_metatiles_declarations failed";
+
+    const std::string content = read_file_contents(metatiles_path());
+    EXPECT_NE(content.find("const u16 gMetatileAttributes_PorytilesManaged_BuildingFrlg"), std::string::npos)
+        << "const u16 attribute declaration not found for declaration width 2";
+    EXPECT_EQ(content.find("const u32 gMetatileAttributes_PorytilesManaged_BuildingFrlg"), std::string::npos)
+        << "declaration wrongly widened to u32";
 }
 
 TEST_F(IncbinDeclarationAppenderTest_ExpansionFrlgStock, RepeatedAppendYieldsSingleDeclaration)

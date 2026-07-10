@@ -11,6 +11,11 @@
 
 namespace porytiles {
 
+// Forward-declared to keep this widely-included header free of the Image header. metatile_count is a template, so the
+// definition only needs Image complete at the call site.
+template <typename PixelType>
+class Image;
+
 namespace metatile {
 
 inline constexpr std::size_t tiles_per_side = 2;
@@ -20,6 +25,22 @@ inline constexpr std::size_t side_length_pix = tiles_per_side * tile::side_lengt
 inline constexpr std::size_t entries_per_metatile_dual = 8;
 inline constexpr std::size_t entries_per_metatile_triple = 12;
 inline constexpr std::size_t metatiles_per_row = 8;
+
+/// @brief Returns how many metatiles a single layer image holds.
+///
+/// @details
+/// The count is derived from the layer image's pixel dimensions, the same derivation
+/// LayerImageMetatileizer::metatileize uses: (width / side_length_pix) * (height / side_length_pix). This is the number
+/// of source metatiles a Porytiles layer contributes, which is the honest row count for the attributes CSV. It
+/// intentionally does not consult the Porymap metatiles.bin, which is a different ownership surface.
+///
+/// @param layer A layer image (e.g. the bottom layer of a Porytiles tileset component)
+/// @return The number of metatiles in the layer
+template <typename PixelType>
+[[nodiscard]] std::size_t metatile_count(const Image<PixelType> &layer)
+{
+    return (layer.width() / side_length_pix) * (layer.height() / side_length_pix);
+}
 
 enum class Layer : std::uint8_t { bottom = 0, middle = 1, top = 2 };
 

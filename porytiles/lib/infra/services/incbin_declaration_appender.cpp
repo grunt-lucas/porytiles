@@ -92,7 +92,8 @@ generate_tiles_declaration(const std::string &shorthand, const std::string &bin_
  * @brief Generates metatile attributes INCBIN declaration string.
  *
  * @details
- * Selects the C type and INCBIN macro based on metatile_attr_size:
+ * Selects the C type and INCBIN macro based on attr_bytes:
+ * - 1 -> const u8 / INCBIN_U8
  * - 2 -> const u16 / INCBIN_U16
  * - 4 -> const u32 / INCBIN_U32
  */
@@ -100,10 +101,10 @@ generate_tiles_declaration(const std::string &shorthand, const std::string &bin_
     const std::string &shorthand,
     const std::string &bin_path_base,
     const std::string &snake_dir,
-    std::size_t metatile_attr_size)
+    std::size_t attr_bytes)
 {
-    const std::string c_type = (metatile_attr_size == 4) ? "u32" : "u16";
-    const std::string incbin_macro = (metatile_attr_size == 4) ? "INCBIN_U32" : "INCBIN_U16";
+    const std::string c_type = (attr_bytes == 4) ? "u32" : (attr_bytes == 1) ? "u8" : "u16";
+    const std::string incbin_macro = (attr_bytes == 4) ? "INCBIN_U32" : (attr_bytes == 1) ? "INCBIN_U8" : "INCBIN_U16";
     return fmt::format(
         "const {} gMetatileAttributes_{}{}[] = {}(\"{}/{}/porytiles_bin/metatile_attributes.bin\");",
         c_type,
@@ -299,7 +300,7 @@ ChainableResult<void> IncbinDeclarationAppender::append_graphics_declarations(
 }
 
 ChainableResult<void> IncbinDeclarationAppender::append_metatiles_declarations(
-    const std::string &tileset_name, const std::string &bin_path_base, std::size_t metatile_attr_size) const
+    const std::string &tileset_name, const std::string &bin_path_base, std::size_t attr_bytes) const
 {
     const std::string shorthand = extract_shorthand(tileset_name);
     if (shorthand.empty()) {
@@ -321,7 +322,7 @@ ChainableResult<void> IncbinDeclarationAppender::append_metatiles_declarations(
     // Generate declarations
     const std::string metatiles_decl = generate_metatiles_declaration(shorthand, bin_path_base, snake_dir);
     const std::string attributes_decl =
-        generate_attributes_declaration(shorthand, bin_path_base, snake_dir, metatile_attr_size);
+        generate_attributes_declaration(shorthand, bin_path_base, snake_dir, attr_bytes);
 
     /*
      * Remove any existing managed declarations (wherever they are, including copies misplaced inside a trailing

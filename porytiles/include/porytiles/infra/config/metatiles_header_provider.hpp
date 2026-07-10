@@ -3,30 +3,32 @@
 #include <cstddef>
 #include <filesystem>
 #include <optional>
-#include <string>
 
 #include "gsl/pointers"
 
-#include "porytiles/infra/config/config_provider.hpp"
 #include "porytiles/infra/config/layer_value.hpp"
 #include "porytiles/utilities/text/text_formatter.hpp"
 
 namespace porytiles {
 
 /**
- * @brief A ConfigProvider that auto-detects metatile attribute size from metatiles.h declarations.
+ * @brief A standalone detector that infers the metatile attribute size from metatiles.h declarations.
  *
  * @details
  * MetatilesHeaderProvider scans `src/data/tilesets/metatiles.h` for `gMetatileAttributes_` declaration lines and
  * infers the attribute byte size from the C type used:
- * - All `const u16` -> 2 bytes (pokeemerald / pokeruby)
- * - All `const u32` -> 4 bytes (pokefirered)
+ * - All `const u16` -> 2 bytes (emerald-family layouts)
+ * - All `const u32` -> 4 bytes (firered-family layouts)
  * - Mixed types -> invalid (error)
- * - No matching lines or missing file -> not_provided (fall through to next provider)
+ * - No matching lines or missing file -> not_provided
+ *
+ * This is the sole authoritative source for the attribute byte width; the schema resolver consumes it directly
+ * (there is no user-facing size knob). It returns a LayerValue so the three states (valid / invalid / not_provided)
+ * stay distinguishable: the resolver treats not_provided as the 2-byte default and surfaces invalid as an error.
  *
  * The file is read lazily on first access and the result is cached.
  */
-class MetatilesHeaderProvider final : public ConfigProvider {
+class MetatilesHeaderProvider final {
   public:
     /**
      * @brief Constructs a MetatilesHeaderProvider.
@@ -39,10 +41,11 @@ class MetatilesHeaderProvider final : public ConfigProvider {
     {
     }
 
-    [[nodiscard]] std::string name() const override;
-
-    [[nodiscard]] LayerValue<std::size_t>
-    metatile_attr_size(ConfigScopeType type, const std::string &scope) const override;
+    /// @brief Detects the project-global metatile attribute byte size from metatiles.h.
+    ///
+    /// @return A LayerValue holding the detected size (2 or 4), invalid on mixed u16/u32 declarations, or
+    /// not_provided when the header is missing or has no attribute declarations
+    [[nodiscard]] LayerValue<std::size_t> detect() const;
 
   private:
     std::filesystem::path project_root_;

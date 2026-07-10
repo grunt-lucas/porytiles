@@ -61,6 +61,13 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
         storage.{{ value.symbol }},
         "{{ value.canonical_name }}{% if value.cli_desc %} - {{ value.cli_desc }}{% endif %}");
 
+{% elif value.type == 'std::optional<std::uint32_t>' %}
+    // {{ value.canonical_name }} (optional mask, captured as string, parsed by CliOptionProvider)
+    config_group->add_option(
+        "--{{ value.cli_option }}",
+        storage.{{ value.symbol }},
+        "{{ value.canonical_name }}{% if value.cli_desc %} - {{ value.cli_desc }}{% endif %}");
+
 {% elif value.type == 'Rgba32' %}
     // {{ value.canonical_name }} (Rgba32, captured as string, parsed by CliOptionProvider)
     config_group->add_option(

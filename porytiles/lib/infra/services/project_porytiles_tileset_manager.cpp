@@ -31,7 +31,7 @@ ChainableResult<void> append_incbin_declarations(
     const IncbinDeclarationAppender *incbin_appender,
     const std::string &tileset_name,
     const std::string &bin_path_base,
-    std::size_t metatile_attr_size)
+    std::size_t attr_bytes)
 {
     // Append INCBIN declarations to graphics.h
     PT_TRY_CALL_CHAIN_ERR(
@@ -42,7 +42,7 @@ ChainableResult<void> append_incbin_declarations(
 
     // Append INCBIN declarations to metatiles.h
     PT_TRY_CALL_CHAIN_ERR(
-        incbin_appender->append_metatiles_declarations(tileset_name, bin_path_base, metatile_attr_size),
+        incbin_appender->append_metatiles_declarations(tileset_name, bin_path_base, attr_bytes),
         void,
         "Failed to append metatiles INCBIN declarations for '{}'.",
         FormatParam(tileset_name, Style::bold));
@@ -145,21 +145,14 @@ ChainableResult<void> ProjectPorytilesTilesetManager::persist_managed_existing(c
         "Failed to get tileset bin path config for '{}'.",
         FormatParam(tileset_name, Style::bold));
 
-    // Step 5: Resolve metatile attribute size from config
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        metatile_attr_size,
-        infra_config_->metatile_attr_size(ConfigScopeType::tileset, tileset_name),
-        void,
-        "Failed to get metatile attribute size config for '{}'.",
-        FormatParam(tileset_name, Style::bold));
-
-    // Step 6: Append INCBIN declarations
-    auto incbin_result = append_incbin_declarations(incbin_appender_, tileset_name, bin_path_base, metatile_attr_size);
+    // Step 5: Append INCBIN declarations using the project's declared attribute width
+    auto incbin_result =
+        append_incbin_declarations(incbin_appender_, tileset_name, bin_path_base, declaration_attr_bytes_);
     if (!incbin_result.has_value()) {
         return incbin_result;
     }
 
-    // Step 7: Update headers.h to use Porytiles-managed asset variables
+    // Step 6: Update headers.h to use Porytiles-managed asset variables
     // Note: Callback update is handled separately by wire_anim_code() in the use-case layer
     return metadata_writer_->update_to_porytiles_managed(tileset_name);
 }
@@ -190,16 +183,9 @@ ProjectPorytilesTilesetManager::persist_managed_new(const std::string &tileset_n
         "Failed to get tileset bin path config for '{}'.",
         FormatParam(tileset_name, Style::bold));
 
-    // Step 4: Resolve metatile attribute size from config
-    PT_TRY_ASSIGN_CHAIN_ERR(
-        metatile_attr_size,
-        infra_config_->metatile_attr_size(ConfigScopeType::tileset, tileset_name),
-        void,
-        "Failed to get metatile attribute size config for '{}'.",
-        FormatParam(tileset_name, Style::bold));
-
-    // Step 5: Append INCBIN declarations
-    auto incbin_result = append_incbin_declarations(incbin_appender_, tileset_name, bin_path_base, metatile_attr_size);
+    // Step 4: Append INCBIN declarations using the project's declared attribute width
+    auto incbin_result =
+        append_incbin_declarations(incbin_appender_, tileset_name, bin_path_base, declaration_attr_bytes_);
     if (!incbin_result.has_value()) {
         return incbin_result;
     }

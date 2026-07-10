@@ -1,6 +1,5 @@
 #pragma once
 
-#include <cstddef>
 #include <utility>
 
 #include "gsl/pointers"
@@ -14,6 +13,7 @@
 #include "porytiles/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles/infra/services/project_tileset_metadata_provider.hpp"
+#include "porytiles/infra/services/tileset_attr_schema_cache.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 
 namespace porytiles {
@@ -24,12 +24,16 @@ namespace porytiles {
  * @details
  * This class implements the TilesetArtifactReader interface to provide reading functionality for tileset artifacts. It
  * operates within the context of a Pokémon Gen III decompilation project on the local filesystem.
+ *
+ * Metatile attribute artifacts decode against the owning tileset's schema, looked up through the injected
+ * TilesetAttrSchemaCache by the destination tileset's name. This matters when a command reads a tileset other than its
+ * target: compiling a secondary loads the paired primary's artifacts, and the primary can resolve a different schema.
  */
 class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
   public:
     ProjectTilesetArtifactReader(
         std::filesystem::path project_root,
-        std::size_t metatile_attr_size,
+        gsl::not_null<const TilesetAttrSchemaCache *> schema_cache,
         gsl::not_null<const PngRgbaImageLoader *> png_rgba_loader,
         gsl::not_null<const PngIndexedImageLoader *> png_indexed_loader,
         gsl::not_null<const FilePalLoader *> pal_loader,
@@ -37,8 +41,8 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
         gsl::not_null<const AnimJsonParser *> anim_json_parser,
         gsl::not_null<const AnimCodeParser *> anim_code_parser,
         gsl::not_null<const ProjectTilesetMetadataProvider *> metadata_provider)
-        : project_root_{std::move(project_root)}, metatile_attr_size_{metatile_attr_size},
-          png_rgba_loader_{png_rgba_loader}, png_indexed_loader_{png_indexed_loader}, pal_loader_{pal_loader},
+        : project_root_{std::move(project_root)}, schema_cache_{schema_cache}, png_rgba_loader_{png_rgba_loader},
+          png_indexed_loader_{png_indexed_loader}, pal_loader_{pal_loader},
           attributes_csv_loader_{attributes_csv_loader}, anim_json_parser_{anim_json_parser},
           anim_code_parser_{anim_code_parser}, metadata_provider_{metadata_provider}
     {
@@ -89,7 +93,7 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
 
   private:
     const std::filesystem::path project_root_;
-    const std::size_t metatile_attr_size_;
+    const TilesetAttrSchemaCache *schema_cache_;
     const PngRgbaImageLoader *png_rgba_loader_;
     const PngIndexedImageLoader *png_indexed_loader_;
     const FilePalLoader *pal_loader_;

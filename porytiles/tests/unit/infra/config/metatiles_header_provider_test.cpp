@@ -8,7 +8,6 @@
 #include "porytiles/infra/config/layer_value.hpp"
 #include "porytiles/infra/config/metatiles_header_provider.hpp"
 #include "porytiles/utilities/text/plain_text_formatter.hpp"
-#include "porytiles/xcut/config/config_scope_type.hpp"
 
 using namespace porytiles;
 
@@ -60,7 +59,7 @@ TEST_F(MetatilesHeaderProviderTest, DetectsU16Attributes)
         "metatile_attributes.bin\");\n");
 
     MetatilesHeaderProvider provider{temp_dir_, formatter_.get()};
-    auto result = provider.metatile_attr_size(ConfigScopeType::tileset, "gTileset_General");
+    auto result = provider.detect();
 
     ASSERT_EQ(result.state, ValidationState::valid);
     ASSERT_TRUE(result.value.has_value());
@@ -77,11 +76,44 @@ TEST_F(MetatilesHeaderProviderTest, DetectsU32Attributes)
         "metatile_attributes.bin\");\n");
 
     MetatilesHeaderProvider provider{temp_dir_, formatter_.get()};
-    auto result = provider.metatile_attr_size(ConfigScopeType::tileset, "gTileset_General");
+    auto result = provider.detect();
 
     ASSERT_EQ(result.state, ValidationState::valid);
     ASSERT_TRUE(result.value.has_value());
     EXPECT_EQ(result.value.value(), 4);
+}
+
+TEST_F(MetatilesHeaderProviderTest, DetectsU8Attributes)
+{
+    temp_dir_ = create_test_project(
+        "u8",
+        "const u8 gMetatileAttributes_General[] = INCBIN_U8(\"data/tilesets/primary/general/"
+        "metatile_attributes.bin\");\n"
+        "const u8 gMetatileAttributes_Petalburg[] = INCBIN_U8(\"data/tilesets/secondary/petalburg/"
+        "metatile_attributes.bin\");\n");
+
+    MetatilesHeaderProvider provider{temp_dir_, formatter_.get()};
+    auto result = provider.detect();
+
+    ASSERT_EQ(result.state, ValidationState::valid);
+    ASSERT_TRUE(result.value.has_value());
+    EXPECT_EQ(result.value.value(), 1);
+}
+
+TEST_F(MetatilesHeaderProviderTest, MixedU8AndU16ReturnsInvalid)
+{
+    temp_dir_ = create_test_project(
+        "mixed_u8_u16",
+        "const u8 gMetatileAttributes_General[] = INCBIN_U8(\"data/tilesets/primary/general/"
+        "metatile_attributes.bin\");\n"
+        "const u16 gMetatileAttributes_Petalburg[] = INCBIN_U16(\"data/tilesets/secondary/petalburg/"
+        "metatile_attributes.bin\");\n");
+
+    MetatilesHeaderProvider provider{temp_dir_, formatter_.get()};
+    auto result = provider.detect();
+
+    EXPECT_EQ(result.state, ValidationState::invalid);
+    EXPECT_FALSE(result.error_message.empty());
 }
 
 TEST_F(MetatilesHeaderProviderTest, MissingFileReturnsNotProvided)
@@ -91,7 +123,7 @@ TEST_F(MetatilesHeaderProviderTest, MissingFileReturnsNotProvided)
     std::filesystem::create_directories(temp_dir_);
 
     MetatilesHeaderProvider provider{temp_dir_, formatter_.get()};
-    auto result = provider.metatile_attr_size(ConfigScopeType::tileset, "gTileset_General");
+    auto result = provider.detect();
 
     EXPECT_EQ(result.state, ValidationState::not_provided);
 }
@@ -102,7 +134,7 @@ TEST_F(MetatilesHeaderProviderTest, NoAttributeLinesReturnsNotProvided)
         "no_attrs", "const u16 gMetatiles_General[] = INCBIN_U16(\"data/tilesets/primary/general/metatiles.bin\");\n");
 
     MetatilesHeaderProvider provider{temp_dir_, formatter_.get()};
-    auto result = provider.metatile_attr_size(ConfigScopeType::tileset, "gTileset_General");
+    auto result = provider.detect();
 
     EXPECT_EQ(result.state, ValidationState::not_provided);
 }
@@ -117,7 +149,7 @@ TEST_F(MetatilesHeaderProviderTest, MixedTypesReturnsInvalid)
         "metatile_attributes.bin\");\n");
 
     MetatilesHeaderProvider provider{temp_dir_, formatter_.get()};
-    auto result = provider.metatile_attr_size(ConfigScopeType::tileset, "gTileset_General");
+    auto result = provider.detect();
 
     EXPECT_EQ(result.state, ValidationState::invalid);
     EXPECT_FALSE(result.error_message.empty());
@@ -132,8 +164,8 @@ TEST_F(MetatilesHeaderProviderTest, CachesResultAcrossCalls)
 
     MetatilesHeaderProvider provider{temp_dir_, formatter_.get()};
 
-    auto result1 = provider.metatile_attr_size(ConfigScopeType::tileset, "gTileset_General");
-    auto result2 = provider.metatile_attr_size(ConfigScopeType::tileset, "gTileset_Petalburg");
+    auto result1 = provider.detect();
+    auto result2 = provider.detect();
 
     // Both calls should return the same cached result
     ASSERT_EQ(result1.state, ValidationState::valid);

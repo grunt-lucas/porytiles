@@ -1,74 +1,104 @@
 #include "gtest/gtest.h"
 
+#include <ranges>
+#include <string>
+#include <vector>
+
 #include "porytiles/domain/models/metatile_attribute.hpp"
 
 using namespace porytiles;
 
-TEST(MetatileAttributeTest, DefaultConstructorZerosAllFields)
+TEST(MetatileAttributeTest, DefaultConstructedHasNormalLayerTypeAndNoFields)
 {
-    MetatileAttribute attr{};
-    EXPECT_EQ(attr.behavior(), 0);
-    EXPECT_EQ(attr.terrain(), 0);
-    EXPECT_EQ(attr.encounter_type(), 0);
-    EXPECT_EQ(attr.attribute_2(), 0);
-    EXPECT_EQ(attr.attribute_3(), 0);
-    EXPECT_EQ(attr.attribute_5(), 0);
-    EXPECT_FALSE(attr.attribute_7());
+    MetatileAttribute attribute{};
+    EXPECT_EQ(attribute.layer_type(), LayerType::normal);
+    EXPECT_TRUE(attribute.fields().empty());
 }
 
-TEST(MetatileAttributeTest, EmeraldConstructorLeavesFireRedFieldsZero)
+TEST(MetatileAttributeTest, UnsetFieldReadsZero)
 {
-    MetatileAttribute attr{LayerType::covered, 42};
-    EXPECT_EQ(attr.layer_type(), LayerType::covered);
-    EXPECT_EQ(attr.behavior(), 42);
-    EXPECT_EQ(attr.terrain(), 0);
-    EXPECT_EQ(attr.encounter_type(), 0);
-    EXPECT_EQ(attr.attribute_2(), 0);
-    EXPECT_EQ(attr.attribute_3(), 0);
-    EXPECT_EQ(attr.attribute_5(), 0);
-    EXPECT_FALSE(attr.attribute_7());
+    MetatileAttribute attribute{};
+    EXPECT_EQ(attribute.field(attr::field_behavior), 0u);
+    EXPECT_EQ(attribute.field(attr::field_terrain), 0u);
+    EXPECT_EQ(attribute.field(attr::field_attribute_7), 0u);
 }
 
-TEST(MetatileAttributeTest, FullConstructorPopulatesAllFields)
+TEST(MetatileAttributeTest, SetFieldInsertsThenOverwrites)
 {
-    MetatileAttribute attr{LayerType::split, 255, 17, 5, 9, 33, 2, true};
-    EXPECT_EQ(attr.layer_type(), LayerType::split);
-    EXPECT_EQ(attr.behavior(), 255);
-    EXPECT_EQ(attr.terrain(), 17);
-    EXPECT_EQ(attr.encounter_type(), 5);
-    EXPECT_EQ(attr.attribute_2(), 9);
-    EXPECT_EQ(attr.attribute_3(), 33);
-    EXPECT_EQ(attr.attribute_5(), 2);
-    EXPECT_TRUE(attr.attribute_7());
+    MetatileAttribute attribute{};
+
+    attribute.field(attr::field_behavior, 42);
+    EXPECT_EQ(attribute.field(attr::field_behavior), 42u);
+    EXPECT_EQ(attribute.fields().size(), 1u);
+
+    attribute.field(attr::field_behavior, 511);
+    EXPECT_EQ(attribute.field(attr::field_behavior), 511u);
+    EXPECT_EQ(attribute.fields().size(), 1u);
 }
 
-TEST(MetatileAttributeTest, AccessorMutatorRoundTrips)
+TEST(MetatileAttributeTest, LayerTypeRoundTrips)
 {
-    MetatileAttribute attr{};
+    MetatileAttribute attribute{};
 
-    attr.layer_type(LayerType::covered);
-    EXPECT_EQ(attr.layer_type(), LayerType::covered);
+    attribute.layer_type(LayerType::covered);
+    EXPECT_EQ(attribute.layer_type(), LayerType::covered);
 
-    attr.behavior(511);
-    EXPECT_EQ(attr.behavior(), 511);
+    attribute.layer_type(LayerType::split);
+    EXPECT_EQ(attribute.layer_type(), LayerType::split);
+}
 
-    attr.terrain(31);
-    EXPECT_EQ(attr.terrain(), 31);
+TEST(MetatileAttributeTest, ExplicitLayerTypeUnsetByDefault)
+{
+    MetatileAttribute attribute{};
+    EXPECT_FALSE(attribute.explicit_layer_type().has_value());
+}
 
-    attr.encounter_type(7);
-    EXPECT_EQ(attr.encounter_type(), 7);
+TEST(MetatileAttributeTest, ExplicitLayerTypeSetterAlsoUpdatesLayerType)
+{
+    MetatileAttribute attribute{};
 
-    attr.attribute_2(15);
-    EXPECT_EQ(attr.attribute_2(), 15);
+    attribute.explicit_layer_type(LayerType::split);
+    ASSERT_TRUE(attribute.explicit_layer_type().has_value());
+    EXPECT_EQ(attribute.explicit_layer_type().value(), LayerType::split);
+    // The plain layer_type stays coherent for code that does not consult the explicit flag.
+    EXPECT_EQ(attribute.layer_type(), LayerType::split);
+}
 
-    attr.attribute_3(63);
-    EXPECT_EQ(attr.attribute_3(), 63);
+TEST(MetatileAttributeTest, PlainLayerTypeSetterLeavesExplicitUnset)
+{
+    MetatileAttribute attribute{};
 
-    attr.attribute_5(3);
-    EXPECT_EQ(attr.attribute_5(), 3);
+    attribute.layer_type(LayerType::covered);
+    EXPECT_EQ(attribute.layer_type(), LayerType::covered);
+    // A producer of an inferred value must not accidentally pin the layer type.
+    EXPECT_FALSE(attribute.explicit_layer_type().has_value());
+}
 
-    attr.attribute_7(true);
-    EXPECT_TRUE(attr.attribute_7());
-    attr.attribute_7(false);
-    EXPECT_FALSE(attr.attribute_7());
+TEST(MetatileAttributeTest, ExplicitLayerTypeSurvivesCopy)
+{
+    MetatileAttribute attribute{};
+    attribute.explicit_layer_type(LayerType::covered);
+
+    MetatileAttribute copy = attribute;
+    ASSERT_TRUE(copy.explicit_layer_type().has_value());
+    EXPECT_EQ(copy.explicit_layer_type().value(), LayerType::covered);
+    EXPECT_EQ(copy.layer_type(), LayerType::covered);
+}
+
+TEST(MetatileAttributeTest, FieldsIterateInDeterministicOrder)
+{
+    MetatileAttribute attribute{};
+    attribute.field(attr::field_terrain, 1);
+    attribute.field(attr::field_behavior, 2);
+    attribute.field(attr::field_encounter_type, 3);
+
+    // std::map with std::less<> keeps keys sorted, so iteration order is stable regardless of insertion order.
+    std::vector<std::string> names;
+    for (const auto &name : attribute.fields() | std::views::keys) {
+        names.push_back(name);
+    }
+
+    const std::vector<std::string> expected{
+        std::string{attr::field_behavior}, std::string{attr::field_encounter_type}, std::string{attr::field_terrain}};
+    EXPECT_EQ(names, expected);
 }

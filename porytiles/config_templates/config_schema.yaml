@@ -53,9 +53,13 @@
 #
 # Fields:
 #   cpp_type: The C++ enum class name (e.g., "ArtifactEditMode")
+#
 #   header_path: Output path relative to include/ (e.g., "porytiles/domain/config/artifact_edit_mode.hpp")
+#
 #   brief: Brief description for the enum class (used in Doxygen @brief)
+#
 #   details: (optional) Detailed description (used in Doxygen @details)
+#
 #   enum_values: List of enum values, each with:
 #     - name: The C++ enum constant name (snake_case)
 #     - cli_completion_name: The name to show for CLI tab completion
@@ -84,6 +88,31 @@ enum_types:
         cli_completion_name: optimize
         fuzzy_names: [ optimize ]
         brief: The Porytiles1 behavior; artifact is cleared and packed optimally.
+
+  - cpp_type: FrlgAlternateMaskMode
+    header_path: porytiles/infra/config/frlg_alternate_mask_mode.hpp
+    brief: Controls whether the FireRed/LeafGreen alternate metatile attribute masks are selected for a tileset.
+    details: |
+      FireRed and LeafGreen pack metatile attributes differently than Ruby/Sapphire/Emerald: the fields
+      use different bit masks and the layout is typically four bytes wide instead of two. This mode controls
+      whether Porytiles selects those alternate masks when resolving a tileset's attribute schema. In
+      automatic mode, Porytiles cross-references data/layouts/layouts.json and reads each layout's
+      layout_version to decide per tileset. The always and never values force an explicit choice, which is useful
+      when a tileset has no layouts.json entry or is referenced by both emerald and frlg layouts. This key
+      is intended to be set at the tileset scope.
+    enum_values:
+      - name: automatic
+        cli_completion_name: automatic
+        fuzzy_names: [ automatic, auto ]
+        brief: Cross-reference layouts.json layout_version to decide the masks per tileset.
+      - name: always
+        cli_completion_name: always
+        fuzzy_names: [ always, "true", "yes", "on" ]
+        brief: Always select the FRLG alternate masks for this tileset.
+      - name: never
+        cli_completion_name: never
+        fuzzy_names: [ never, "false", "no", "off" ]
+        brief: Never select the FRLG alternate masks; use the primary masks.
 
   - cpp_type: TilesPalMode
     header_path: porytiles/domain/config/tiles_pal_mode.hpp
@@ -811,16 +840,90 @@ config_values:
     validators: [ ]
     cross_field_validators: [ ]
 
-  - canonical_name: Metatile Attribute Size
-    symbol: metatile_attr_size
-    yaml_path: fieldmap.metatile_attribute_size
-    cli_option: metatile-attr-size
-    cli_desc: The size in bytes of each metatile attribute entry (2 for Emerald/Ruby, 4 for FireRed).
+  - canonical_name: Metatile Attribute Fields
+    symbol: metatile_attr_fields
+    yaml_path: fieldmap.metatile_attr_fields
+    cli_option: metatile-attr-fields
+    yaml_only: true  # Too complex for non-YAML providers (MetatileAttrFieldSpecs)
     layer: infra
-    type: std::size_t
-    parser: parse_size_t
-    default_value: "2"
-    validators: [ size_t_val_two_or_four ]
+    type: MetatileAttrFieldSpecs
+    parser: parse_metatile_attr_fields
+    default_value: "MetatileAttrFieldSpecs{}"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Metatile Attribute Field Overrides
+    symbol: metatile_attr_field_overrides
+    yaml_path: fieldmap.metatile_attr_field_overrides
+    cli_option: metatile-attr-field-overrides
+    yaml_only: true
+    yaml_is_map: true
+    layer: infra
+    type: MetatileAttrFieldOverrides
+    parser: parse_metatile_attr_field_overrides
+    default_value: "MetatileAttrFieldOverrides{}"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Write Layer Type Column
+    symbol: write_layer_type_column
+    yaml_path: fieldmap.write_layer_type_column
+    cli_option: write-layer-type-column
+    cli_desc: Emit and honor a layer_type column in the metatile attributes CSV.
+    layer: infra
+    type: bool
+    parser: parse_bool
+    default_value: "false"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Use FRLG Alternate Masks
+    symbol: use_frlg_alternate_masks
+    yaml_path: fieldmap.use_frlg_alternate_masks
+    cli_option: use-frlg-alternate-masks
+    cli_desc: >-
+      Whether to select the FireRed/LeafGreen alternate metatile attribute masks for a tileset:
+      automatic (cross-reference layouts.json), always, or never. true/false are accepted as
+      aliases for always/never. Intended to be set at tileset scope in
+      porytiles/tilesets/<name>/config.yaml.
+    layer: infra
+    type: FrlgAlternateMaskMode
+    parser: parse_frlg_alternate_mask_mode
+    default_value: "FrlgAlternateMaskMode::automatic"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Metatile Layer Type Mask
+    symbol: metatile_layer_type_mask
+    yaml_path: fieldmap.metatile_layer_type_mask
+    cli_option: metatile-layer-type-mask
+    cli_desc: >-
+      Bit mask (a hex literal like 0xF000) for the layer-type bits of a metatile attribute. A mask of 0
+      disables the layer type, so every metatile is Normal and no layer-type bits are written. When unset,
+      Porytiles infers the mask from the base game (METATILE_ATTR_LAYER_MASK / sMetatileAttrMasks) and
+      falls back to the size-based default. Intended to be set at tileset scope in
+      porytiles/tilesets/<name>/config.yaml.
+    layer: infra
+    type: std::optional<std::uint32_t>
+    parser: parse_layer_type_mask
+    default_value: "std::nullopt"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Metatile Layer Type Mask FRLG
+    symbol: metatile_layer_type_mask_frlg
+    yaml_path: fieldmap.metatile_layer_type_mask_frlg
+    cli_option: metatile-layer-type-mask-frlg
+    cli_desc: >-
+      Bit mask (a hex literal like 0x60000000) for the layer-type bits under the FireRed/LeafGreen
+      alternate attribute layout. A mask of 0 disables the layer type. When unset, Porytiles infers the
+      mask from the base game and falls back to the size-based default. Intended to be set at tileset scope in
+      porytiles/tilesets/<name>/config.yaml.
+    layer: infra
+    type: std::optional<std::uint32_t>
+    parser: parse_layer_type_mask
+    default_value: "std::nullopt"
+    validators: [ ]
     cross_field_validators: [ ]
 
   - canonical_name: Tileset Animations Wire Anim Code

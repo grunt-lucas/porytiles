@@ -7,7 +7,7 @@
 
 #include "porytiles/domain/config/domain_config.hpp"
 #include "porytiles/domain/models/porytiles_tileset_component.hpp"
-#include "porytiles/domain/services/behavior_map_provider.hpp"
+#include "porytiles/domain/services/enum_map_provider.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 
 namespace porytiles {
@@ -31,7 +31,7 @@ class TilesetCreator {
      * @param config Domain configuration for tileset creation parameters
      * @param behavior_map The behavior map provider for resolving behavior names to values
      */
-    TilesetCreator(gsl::not_null<const DomainConfig *> config, gsl::not_null<const BehaviorMapProvider *> behavior_map)
+    TilesetCreator(gsl::not_null<const DomainConfig *> config, gsl::not_null<const EnumMapProvider *> behavior_map)
         : config_{config}, behavior_map_{behavior_map}
     {
     }
@@ -56,7 +56,7 @@ class TilesetCreator {
 
   private:
     const DomainConfig *config_;
-    const BehaviorMapProvider *behavior_map_;
+    const EnumMapProvider *behavior_map_;
 };
 
 } // namespace porytiles

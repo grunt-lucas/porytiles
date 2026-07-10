@@ -5,6 +5,7 @@
 #include <iostream>
 #include <map>
 #include <memory>
+#include <optional>
 #include <ranges>
 #include <set>
 #include <unordered_map>
@@ -164,9 +165,11 @@ class OverrideEntryValidator {
         const ConfigValue<std::size_t> &num_pals_total,
         LayerMode configured_layer_mode,
         const std::vector<Metatile<Rgba32>> &source_metatiles,
-        Rgba32 extrinsic_transparency)
+        Rgba32 extrinsic_transparency,
+        const std::vector<std::optional<LayerType>> &explicit_layer_types)
         : format_{format}, diag_{diag}, num_pals_total_{num_pals_total}, configured_layer_mode_{configured_layer_mode},
-          source_metatiles_{source_metatiles}, extrinsic_transparency_{extrinsic_transparency}
+          source_metatiles_{source_metatiles}, extrinsic_transparency_{extrinsic_transparency},
+          explicit_layer_types_{explicit_layer_types}
     {
     }
 
@@ -198,6 +201,9 @@ class OverrideEntryValidator {
     LayerMode configured_layer_mode_;
     const std::vector<Metatile<Rgba32>> &source_metatiles_;
     Rgba32 extrinsic_transparency_;
+    // Per-metatile explicit layer-type overrides (indexed by metatile_id, nullopt when unset). Must match the vector
+    // dual_layerize receives so the dropped-layer check here agrees with what conversion actually drops.
+    const std::vector<std::optional<LayerType>> &explicit_layer_types_;
 };
 
 bool OverrideEntryValidator::should_apply(
@@ -261,18 +267,24 @@ bool OverrideEntryValidator::should_apply(
         diag_.warning(path.tag_prefix + "-pal-index-unused", lines);
     }
 
-    // 5. In dual-layer mode, an entry targeting the dropped layer would silently vanish.
+    // 5. In dual-layer mode, an entry targeting the dropped layer would silently vanish. Use the same effective layer
+    // type dual_layerize uses: an explicit override wins over inference, so a manual override targeting a layer that a
+    // covered/split override keeps must not be rejected on the strength of an inferred 'normal'.
     if (configured_layer_mode_ == LayerMode::dual) {
         const LayerType inferred = source_metatiles_.at(entry.metatile_id).infer_layer_type(extrinsic_transparency_);
-        if (metatile::dropped_layer_for(inferred) == entry.layer) {
+        const bool explicit_set =
+            entry.metatile_id < explicit_layer_types_.size() && explicit_layer_types_[entry.metatile_id].has_value();
+        const LayerType effective = explicit_set ? explicit_layer_types_[entry.metatile_id].value() : inferred;
+        if (metatile::dropped_layer_for(effective) == entry.layer) {
             std::vector<std::string> lines;
             lines.push_back(
                 subject + format_.format(
                               " override targets the '{}' layer of metatile {} but dual-layer conversion drops that "
-                              "layer (inferred layer type '{}').",
+                              "layer ({} layer type '{}').",
                               FormatParam{metatile::to_string(entry.layer)},
                               FormatParam{entry.metatile_id},
-                              FormatParam{to_string(inferred)}));
+                              FormatParam{explicit_set ? std::string{"explicit"} : std::string{"inferred"}},
+                              FormatParam{to_string(effective)}));
             lines.emplace_back("The override will be ignored.");
             diag_.warning(path.tag_prefix + "-dual-layer-drop", lines);
             return false;
@@ -303,11 +315,12 @@ class CompilerTask {
         const UserDiagnostics &diag,
         const TilePrinter &tile_printer,
         const PalettePrinter &pal_printer,
-        const DomainConfig &config)
+        const DomainConfig &config,
+        const Schema &schema)
         : tileset_{tileset}, is_secondary_{is_secondary}, paired_primary_{paired_primary}, format_{format}, diag_{diag},
-          tile_printer_{tile_printer}, pal_printer_{pal_printer}, config_{config}, extrinsic_transparency_{},
-          num_pals_in_primary_{}, num_pals_total_{}, num_metatiles_in_primary_{}, num_tiles_in_primary_{},
-          num_tiles_per_metatile_{}, pal_hints_enabled_{}, pal_hints_{}
+          tile_printer_{tile_printer}, pal_printer_{pal_printer}, config_{config}, schema_{schema},
+          extrinsic_transparency_{}, num_pals_in_primary_{}, num_pals_total_{}, num_metatiles_in_primary_{},
+          num_tiles_in_primary_{}, num_tiles_per_metatile_{}, pal_hints_enabled_{}, pal_hints_{}
     {
     }
 
@@ -338,6 +351,11 @@ class CompilerTask {
     [[nodiscard]] ChainableResult<void> pipeline_helper_validate_primary_anim_subtile_coverage() const;
     void pipeline_helper_compile_animations();
     void pipeline_helper_apply_manual_overrides();
+
+    // Builds the per-metatile explicit layer-type override vector (indexed by metatile_id) from the source Porytiles
+    // attributes. Shared by manual-override validation and dual-layer conversion so both agree on what each metatile's
+    // effective layer type is.
+    [[nodiscard]] std::vector<std::optional<LayerType>> gather_explicit_layer_types() const;
 
     // Pipeline helpers - true_color mode
     void pipeline_helper_apply_true_color_to_tiles_png();
@@ -371,6 +389,7 @@ class CompilerTask {
     const TilePrinter &tile_printer_;
     const PalettePrinter &pal_printer_;
     const DomainConfig &config_;
+    const Schema &schema_;
 
     // Config values (populated in run())
     ConfigValue<Rgba32> extrinsic_transparency_;
@@ -877,11 +896,15 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
      * metatile and remove the relevant tilemap entries. Here, we assume that the Porytiles metatiles have already been
      * validated in an earlier step as dual-layer compatible.
      */
+    // Gather any per-metatile explicit layer-type overrides. These pin the layer type against inference and, in dual
+    // mode, drive both the dropped-layer selection and the stored attribute below.
+    const std::vector<std::optional<LayerType>> explicit_layer_types = gather_explicit_layer_types();
+
     LayerModeConverter layer_mode_converter{&format_, &diag_, &tile_printer_, extrinsic_transparency_};
     const auto configured_layer_mode = layer_mode_from_val(num_tiles_per_metatile_);
     if (configured_layer_mode == LayerMode::dual) {
-        const auto &dual_layerized =
-            layer_mode_converter.dual_layerize(new_porymap_component_->metatiles_bin(), porytiles_metatiles_);
+        const auto &dual_layerized = layer_mode_converter.dual_layerize(
+            new_porymap_component_->metatiles_bin(), porytiles_metatiles_, explicit_layer_types);
         new_porymap_component_->metatiles_bin(dual_layerized);
     }
 
@@ -900,7 +923,17 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
         if (maybe_porytiles_attr.has_value()) {
             new_attr = maybe_porytiles_attr.value();
         }
-        new_attr.layer_type(layer_type);
+        else {
+            // A metatile with no stored attribute (e.g. a CSV row omitted as all-default) materializes from the
+            // schema defaults, not from all-zero fields. This is what lets the CSV writer omit all-default rows even
+            // under a schema with nonzero defaults: the omitted row reloads as an absent attribute here and comes
+            // back as exactly the defaults it was omitted for.
+            for (const Field &field : schema_.fields()) {
+                new_attr.field(field.name(), field.default_value());
+            }
+        }
+        // An explicit override wins uniformly, including triple mode: the user owns those rows.
+        new_attr.layer_type(new_attr.explicit_layer_type().value_or(layer_type));
         new_porymap_component_->push_back_attribute(new_attr);
     }
 
@@ -2031,6 +2064,18 @@ void CompilerTask::pipeline_helper_compile_animations()
     }
 }
 
+std::vector<std::optional<LayerType>> CompilerTask::gather_explicit_layer_types() const
+{
+    std::vector<std::optional<LayerType>> explicit_layer_types;
+    explicit_layer_types.reserve(porytiles_metatiles_.size());
+    for (std::size_t i = 0; i < porytiles_metatiles_.size(); i++) {
+        const auto maybe_attr = tileset_.porytiles_component().get_attribute(i);
+        explicit_layer_types.push_back(
+            maybe_attr.has_value() ? maybe_attr.value().explicit_layer_type() : std::nullopt);
+    }
+    return explicit_layer_types;
+}
+
 void CompilerTask::pipeline_helper_apply_manual_overrides()
 {
     const auto &source_anims = tileset_.porytiles_component().anims();
@@ -2042,13 +2087,18 @@ void CompilerTask::pipeline_helper_apply_manual_overrides()
 
     const auto &per_anim_overrides = per_anim_overrides_.value();
 
+    // Kept alive for the validator, which holds it by const reference. Both this validation and dual_layerize must see
+    // the same overrides so their dropped-layer decisions agree.
+    const std::vector<std::optional<LayerType>> explicit_layer_types = gather_explicit_layer_types();
+
     const OverrideEntryValidator validator{
         format_,
         diag_,
         num_pals_total_,
         layer_mode_from_val(num_tiles_per_metatile_.value()),
         porytiles_metatiles_,
-        extrinsic_transparency_.value()};
+        extrinsic_transparency_.value(),
+        explicit_layer_types};
     const OverridePathInfo manual_path{"manual", "Animation '{}'"};
     const OverridePathInfo primary_refs_path{"primary-references", "Primary reference '{}'"};
 
@@ -2525,7 +2575,8 @@ namespace porytiles {
 ChainableResult<std::unique_ptr<Tileset>>
 TilesetCompiler::compile(const Tileset &tileset, bool is_secondary, const Tileset *paired_primary) const
 {
-    CompilerTask task{tileset, is_secondary, paired_primary, *format_, *diag_, *tile_printer_, *pal_printer_, *config_};
+    CompilerTask task{
+        tileset, is_secondary, paired_primary, *format_, *diag_, *tile_printer_, *pal_printer_, *config_, *schema_};
     return task.run();
 }
 

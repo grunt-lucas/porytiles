@@ -64,6 +64,39 @@ A `pokeemerald-expansion` testbed project is available at `./pokeemerald-expansi
 You can either `cd` into the testbed project or run `porytiles` with the `--project-root` set to `./pokeemerald-expansion`.
 There is also a `pokefirered` testbed at `./pokefirered`, and a `pokeemerald` at `./pokeemerald`.
 
+### Importing and compiling gTileset_General (pokeemerald-expansion)
+
+`gTileset_General` is the usual smoke test for changes. Stock expansion assets do not
+import or compile cleanly with defaults, so use these exact flag sets. Without them the
+import fails and you get stuck.
+
+Import:
+
+```bash
+porytiles import-tileset gTileset_General \
+  --anim-pal-resolution-strategy palette-04 \
+  --anim-key-frame-resolution-strategy mangle \
+  --diagnostic-remarks-exclude '.*' \
+  --diagnostic-warnings-exclude '.*' \
+  --extrinsic-transparency 1,2,3
+```
+
+Compile:
+
+```bash
+porytiles compile-tileset gTileset_General \
+  --extrinsic-transparency 1,2,3 \
+  --no-verify-checksums \
+  --diagnostic-remarks-exclude '.*' \
+  --diagnostic-warnings-exclude '.*'
+```
+
+Notes:
+- Drop the `--diagnostic-remarks-exclude '.*'` / `--diagnostic-warnings-exclude '.*'`
+  flags when you actually want to see diagnostics; they suppress all remarks/warnings.
+- For compile, `--tiles-edit-mode locked --pals-edit-mode locked` is an alternative for
+  when you want to skip palette packing.
+
 ## Documentation Repositories
 
 Porytiles has two separate documentation repositories (gitignored in the main repo):

@@ -2,6 +2,7 @@
 
 #include <cstddef>
 #include <filesystem>
+#include <optional>
 #include <string>
 #include <utility>
 
@@ -43,6 +44,9 @@ class ProjectLayoutMetadata {
      * @param secondary_tileset The secondary tileset name (e.g., "gTileset_Petalburg")
      * @param border_filepath Relative path to the border file
      * @param blockdata_filepath Relative path to the blockdata file
+     * @param layout_version The raw @c layout_version string from layouts.json, if the key was present. Stored verbatim
+     * and validated only where consumed (see ProjectLayoutMetadataProvider::layout_version_usage), so an unrelated
+     * layout's typo cannot brick commands that never consult FRLG-ness.
      */
     ProjectLayoutMetadata(
         std::string id,
@@ -52,10 +56,12 @@ class ProjectLayoutMetadata {
         std::string primary_tileset,
         std::string secondary_tileset,
         std::filesystem::path border_filepath,
-        std::filesystem::path blockdata_filepath)
+        std::filesystem::path blockdata_filepath,
+        std::optional<std::string> layout_version = std::nullopt)
         : id_{std::move(id)}, name_{std::move(name)}, width_{width}, height_{height},
           primary_tileset_{std::move(primary_tileset)}, secondary_tileset_{std::move(secondary_tileset)},
-          border_filepath_{std::move(border_filepath)}, blockdata_filepath_{std::move(blockdata_filepath)}
+          border_filepath_{std::move(border_filepath)}, blockdata_filepath_{std::move(blockdata_filepath)},
+          layout_version_{std::move(layout_version)}
     {
     }
 
@@ -99,6 +105,18 @@ class ProjectLayoutMetadata {
         return blockdata_filepath_;
     }
 
+    /// @brief The raw @c layout_version string from layouts.json, or nullopt if the key was absent.
+    ///
+    /// @details
+    /// Returned verbatim without validation. FireRed/LeafGreen decomps set this to "frlg"; Emerald-family layouts
+    /// either set it to "emerald" or omit it. Validation of unexpected values happens in
+    /// ProjectLayoutMetadataProvider::layout_version_usage, which is the only consumer that treats the value as a
+    /// schema signal.
+    [[nodiscard]] const std::optional<std::string> &layout_version() const
+    {
+        return layout_version_;
+    }
+
   private:
     std::string id_;
     std::string name_;
@@ -108,6 +126,7 @@ class ProjectLayoutMetadata {
     std::string secondary_tileset_;
     std::filesystem::path border_filepath_;
     std::filesystem::path blockdata_filepath_;
+    std::optional<std::string> layout_version_;
 };
 
 } // namespace porytiles

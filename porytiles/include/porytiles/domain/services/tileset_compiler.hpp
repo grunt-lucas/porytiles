@@ -5,6 +5,7 @@
 #include "gsl/pointers"
 
 #include "porytiles/domain/config/domain_config.hpp"
+#include "porytiles/domain/models/metatile_attribute_schema.hpp"
 #include "porytiles/domain/models/tileset.hpp"
 #include "porytiles/domain/services/palette_printer.hpp"
 #include "porytiles/domain/services/tile_printer.hpp"
@@ -29,11 +30,13 @@ class TilesetCompiler {
   public:
     explicit TilesetCompiler(
         gsl::not_null<const DomainConfig *> config,
+        gsl::not_null<const Schema *> schema,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag,
         gsl::not_null<const TilePrinter *> tile_printer,
         gsl::not_null<const PalettePrinter *> pal_printer)
-        : config_{config}, format_{format}, diag_{diag}, tile_printer_{tile_printer}, pal_printer_{pal_printer}
+        : config_{config}, schema_{schema}, format_{format}, diag_{diag}, tile_printer_{tile_printer},
+          pal_printer_{pal_printer}
     {
     }
 
@@ -50,6 +53,7 @@ class TilesetCompiler {
 
   private:
     const DomainConfig *config_;
+    const Schema *schema_;
     const TextFormatter *format_;
     const UserDiagnostics *diag_;
     const TilePrinter *tile_printer_;

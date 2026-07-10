@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <filesystem>
 
 #include "porytiles/domain/services/porytiles_tileset_manager.hpp"
@@ -37,6 +38,9 @@ class ProjectPorytilesTilesetManager : public PorytilesTilesetManager {
      * @param metadata_provider Provider for reading headers.h fields
      * @param metadata_writer Writer for updating headers.h fields
      * @param infra_config Configuration provider for tileset paths and animation settings
+     * @param declaration_attr_bytes The width for generated gMetatileAttributes_* INCBIN declarations; pass the schema
+     * resolver's declaration_bytes, which follows the project's declared width and may be narrower than the resolved
+     * schema's attr_bytes() for FRLG-layout tilesets (expansion declares them u16 but reads them as 4-byte words)
      * @param diag Diagnostics interface for warnings/notes
      * @param incbin_appender Service for appending INCBIN declarations to header files
      * @param tileset_anims_modifier Service for modifying tileset_anims.c includes
@@ -46,12 +50,14 @@ class ProjectPorytilesTilesetManager : public PorytilesTilesetManager {
         const ProjectTilesetMetadataProvider *metadata_provider,
         const ProjectTilesetMetadataWriter *metadata_writer,
         const InfraConfig *infra_config,
+        std::size_t declaration_attr_bytes,
         gsl::not_null<const UserDiagnostics *> diag,
         const IncbinDeclarationAppender *incbin_appender,
         const ProjectTilesetAnimsModifier *tileset_anims_modifier)
         : project_root_{std::move(project_root)}, metadata_provider_{metadata_provider},
-          metadata_writer_{metadata_writer}, infra_config_{infra_config}, diag_{diag},
-          incbin_appender_{incbin_appender}, tileset_anims_modifier_{tileset_anims_modifier}
+          metadata_writer_{metadata_writer}, infra_config_{infra_config},
+          declaration_attr_bytes_{declaration_attr_bytes}, diag_{diag}, incbin_appender_{incbin_appender},
+          tileset_anims_modifier_{tileset_anims_modifier}
     {
     }
 
@@ -107,6 +113,7 @@ class ProjectPorytilesTilesetManager : public PorytilesTilesetManager {
     const ProjectTilesetMetadataProvider *metadata_provider_;
     const ProjectTilesetMetadataWriter *metadata_writer_;
     const InfraConfig *infra_config_;
+    std::size_t declaration_attr_bytes_;
     const UserDiagnostics *diag_;
     const IncbinDeclarationAppender *incbin_appender_;
     const ProjectTilesetAnimsModifier *tileset_anims_modifier_;

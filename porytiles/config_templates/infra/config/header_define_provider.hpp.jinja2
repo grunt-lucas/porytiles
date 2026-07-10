@@ -2,7 +2,8 @@
   Template for generating header_define_provider.hpp
 
   This template generates the HeaderDefineProvider class header with override declarations
-  for all configuration values defined in config_schema.yaml.
+  for the configuration values in config_schema.yaml that specify a header_define. Values
+  without one fall through to the ConfigProvider base class default (not_provided()).
 #}
 {% import '_macros.jinja2' as macros %}
 #pragma once
@@ -37,7 +38,8 @@ namespace porytiles {
  * - Macro references: `#define TOTAL (PRIMARY + SECONDARY)`
  *
  * The header file is loaded lazily and cached for performance. If the file doesn't exist or a define is not found,
- * methods return LayerValue::not_provided(), allowing graceful fallback to other providers.
+ * methods return LayerValue::not_provided(), allowing graceful fallback to other providers. Config values with no
+ * associated header define are not overridden here at all; they defer via the ConfigProvider base class default.
  */
 class HeaderDefineProvider final : public ConfigProvider {
   public:
@@ -86,7 +88,7 @@ class HeaderDefineProvider final : public ConfigProvider {
      * @return The name "HeaderDefineProvider"
      */
     [[nodiscard]] std::string name() const override;
-{% for value in config_values %}
+{% for value in config_values if value.header_define is defined and value.header_define %}
 
     [[nodiscard]] LayerValue<{{ value.type }}> {{ value.symbol }}(ConfigScopeType type, const std::string &scope) const override;
 {% endfor %}

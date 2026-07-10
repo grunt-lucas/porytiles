@@ -200,6 +200,23 @@ ChainableResult<std::vector<Token>> Lexer::lex()
 
         char c = peek();
 
+        // Handle line continuation: a backslash immediately before a newline splices the two physical lines into one
+        // logical line. Emit no token and consume the backslash together with the following newline (handling CRLF).
+        if (c == '\\') {
+            char next = peek_next();
+            if (next == '\n') {
+                advance(); // backslash
+                advance(); // newline
+                continue;
+            }
+            if (next == '\r' && current_ + 2 < content_.size() && content_[current_ + 2] == '\n') {
+                advance(); // backslash
+                advance(); // carriage return
+                advance(); // newline
+                continue;
+            }
+        }
+
         // Handle newlines
         if (c == '\n') {
             tokens.emplace_back(TokenType::newline, "\n", current_position());

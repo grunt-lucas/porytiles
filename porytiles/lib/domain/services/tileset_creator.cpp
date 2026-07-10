@@ -2938,7 +2938,10 @@ TilesetCreator::create_sample_primary_porytiles_component(const std::string &til
      */
     const auto behavior_result = behavior_map_->lookup("MB_TALL_GRASS");
     if (behavior_result.has_value()) {
-        component->insert_attribute(3, MetatileAttribute{LayerType::normal, behavior_result.value()});
+        MetatileAttribute attribute{};
+        attribute.layer_type(LayerType::normal);
+        attribute.field(attr::field_behavior, behavior_result.value());
+        component->insert_attribute(3, std::move(attribute));
     }
 
     // Set up flower animation frames using the conversion helper
