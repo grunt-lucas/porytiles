@@ -14,7 +14,6 @@
 #include "porytiles/infra/services/ascii_tile_printer.hpp"
 #include "porytiles/utilities/text/plain_text_formatter.hpp"
 #include "porytiles/xcut/diagnostics/buffered_user_diagnostics.hpp"
-#include "porytiles/xcut/diagnostics/stderr_styled_user_diagnostics.hpp"
 
 using namespace porytiles;
 
@@ -104,14 +103,14 @@ class LayerModeConverterTests : public ::testing::Test {
     void SetUp() override
     {
         format_ = std::make_unique<PlainTextFormatter>();
-        diag_ = std::make_unique<StderrStyledUserDiagnostics>(format_.get());
+        diag_ = std::make_unique<BufferedUserDiagnostics>();
         tile_printer_ = std::make_unique<AsciiTilePrinter>(format_.get());
         converter_ =
             std::make_unique<LayerModeConverter>(format_.get(), diag_.get(), tile_printer_.get(), rgba_magenta);
     }
 
     std::unique_ptr<PlainTextFormatter> format_;
-    std::unique_ptr<StderrStyledUserDiagnostics> diag_;
+    std::unique_ptr<BufferedUserDiagnostics> diag_;
     std::unique_ptr<AsciiTilePrinter> tile_printer_;
     std::unique_ptr<LayerModeConverter> converter_;
 };
@@ -549,9 +548,6 @@ TEST_F(LayerModeConverterTests, ExplicitOverrideChangesEntrySelection)
 
 TEST_F(LayerModeConverterTests, ExplicitOverrideDroppingVisibleTilesWarns)
 {
-    BufferedUserDiagnostics buffered_diag{};
-    LayerModeConverter converter{format_.get(), &buffered_diag, tile_printer_.get(), rgba_magenta};
-
     // All 12 entries reference real tiles. Forcing 'covered' drops the last 4 (tiles 9-12), which are visible.
     std::vector<TilemapEntry> triple_entries;
     for (std::size_t i = 1; i <= metatile::entries_per_metatile_triple; ++i) {
@@ -560,18 +556,15 @@ TEST_F(LayerModeConverterTests, ExplicitOverrideDroppingVisibleTilesWarns)
     std::vector<Metatile<Rgba32>> source_metatiles{create_metatile_with_layer_type(LayerType::normal)};
     std::vector<std::optional<LayerType>> explicit_layer_types{LayerType::covered};
 
-    std::ignore = converter.dual_layerize(triple_entries, source_metatiles, explicit_layer_types);
+    std::ignore = converter_->dual_layerize(triple_entries, source_metatiles, explicit_layer_types);
 
-    const auto &counts = buffered_diag.warning_tag_counts();
+    const auto &counts = diag_->warning_tag_counts();
     ASSERT_TRUE(counts.contains("layer-type-column"));
     EXPECT_EQ(counts.at("layer-type-column"), 1u);
 }
 
 TEST_F(LayerModeConverterTests, DroppingOnlyTransparentEntriesDoesNotWarn)
 {
-    BufferedUserDiagnostics buffered_diag{};
-    LayerModeConverter converter{format_.get(), &buffered_diag, tile_printer_.get(), rgba_magenta};
-
     // Normal layout: first 4 entries transparent, last 8 visible. Inference and the override both say normal, so the
     // dropped group [0,4) is all transparent and no warning should fire.
     std::vector<TilemapEntry> triple_entries;
@@ -584,9 +577,9 @@ TEST_F(LayerModeConverterTests, DroppingOnlyTransparentEntriesDoesNotWarn)
     std::vector<Metatile<Rgba32>> source_metatiles{create_metatile_with_layer_type(LayerType::normal)};
     std::vector<std::optional<LayerType>> explicit_layer_types{LayerType::normal};
 
-    std::ignore = converter.dual_layerize(triple_entries, source_metatiles, explicit_layer_types);
+    std::ignore = converter_->dual_layerize(triple_entries, source_metatiles, explicit_layer_types);
 
-    EXPECT_FALSE(buffered_diag.warning_tag_counts().contains("layer-type-column"));
+    EXPECT_FALSE(diag_->warning_tag_counts().contains("layer-type-column"));
 }
 
 TEST_F(LayerModeConverterTests, RoundTripMultipleMetatiles)
