@@ -27,20 +27,18 @@ constexpr std::string_view field_attribute_7 = "attribute_7";
 
 } // namespace attr
 
-/**
- * @brief The attributes of a single metatile, modeled as a map of named field values.
- *
- * @details
- * An attribute is a bag of named field values plus a structural layer type. The bit layout of those
- * fields (their masks, defaults, and how their values are named in a decomp/provider header) is not the
- * attribute's concern; that lives on a Schema. A field absent from the map reads as 0, so an attribute
- * carrying a single field and one carrying seven are the same type, differing only in which keys are
- * populated.
- *
- * layer_type is first-class rather than a schema field because it is structural: it selects which layers
- * a metatile renders and pairs with the layer mode, independent of any particular attribute encoding.
- * The attribute also does not know whether a field is provider-backed; that too belongs to the Schema.
- */
+/// @brief The attributes of a single metatile, modeled as a map of named field values.
+///
+/// @details
+/// An attribute is a bag of named field values plus a structural layer type. The bit layout of those
+/// fields (their masks, defaults, and how their values are named in a decomp/provider header) is not the
+/// attribute's concern; that lives on a Schema. A field absent from the map reads as 0, so an attribute
+/// carrying a single field and one carrying seven are the same type, differing only in which keys are
+/// populated.
+///
+/// layer_type is first-class rather than a schema field because it is structural: it selects which
+/// layers a metatile renders and pairs with the layer mode, independent of any particular attribute encoding.
+/// The attribute also does not know whether a field is provider-backed; that too belongs to the Schema.
 class MetatileAttribute {
   public:
     MetatileAttribute() = default;

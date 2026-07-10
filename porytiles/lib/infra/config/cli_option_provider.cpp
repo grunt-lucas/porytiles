@@ -102,25 +102,11 @@ LayerValue<bool> CliOptionProvider::pal_hints_enabled(
     return parse_bool(storage_.pal_hints_enabled, "--pal-hints-enabled");
 }
 
-LayerValue<std::vector<PaletteHint>>
-CliOptionProvider::pal_hints([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    // Skipped for CLI (yaml_only: type too complex for non-YAML providers)
-    return LayerValue<std::vector<PaletteHint>>::not_provided();
-}
-
 LayerValue<PackingStrategyType> CliOptionProvider::packing_strategy(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_packing_strategy_type(storage_.packing_strategy, "--packing-strategy");
-}
-
-LayerValue<PackingStrategyParams> CliOptionProvider::packing_strategy_params(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    // Skipped for CLI (yaml_only: type too complex for non-YAML providers)
-    return LayerValue<PackingStrategyParams>::not_provided();
 }
 
 LayerValue<TileSharingPacking> CliOptionProvider::tile_sharing_packing(
@@ -173,13 +159,6 @@ LayerValue<FrameLinking> CliOptionProvider::global_frame_linking(
 {
     // All types use parse functions for uniform error handling
     return parse_frame_linking(storage_.global_frame_linking, "--frame-linking");
-}
-
-LayerValue<PerAnimOverrides> CliOptionProvider::per_anim_overrides(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    // Skipped for CLI (yaml_only: type too complex for non-YAML providers)
-    return LayerValue<PerAnimOverrides>::not_provided();
 }
 
 LayerValue<bool> CliOptionProvider::cross_tileset_anim_linking(
@@ -264,20 +243,6 @@ LayerValue<std::string> CliOptionProvider::tileset_paths_secondary_bin(
 {
     // All types use parse functions for uniform error handling
     return parse_string(storage_.tileset_paths_secondary_bin, "--tileset-paths-secondary-bin");
-}
-
-LayerValue<MetatileAttrFieldSpecs> CliOptionProvider::metatile_attr_fields(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    // Skipped for CLI (yaml_only: type too complex for non-YAML providers)
-    return LayerValue<MetatileAttrFieldSpecs>::not_provided();
-}
-
-LayerValue<MetatileAttrFieldOverrides> CliOptionProvider::metatile_attr_field_overrides(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    // Skipped for CLI (yaml_only: type too complex for non-YAML providers)
-    return LayerValue<MetatileAttrFieldOverrides>::not_provided();
 }
 
 LayerValue<bool> CliOptionProvider::write_layer_type_column(

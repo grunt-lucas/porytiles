@@ -11,8 +11,8 @@ fieldmap:
   num_tiles_per_metatile: 8
 
   # Emit and honor a trailing "layer_type" column in the metatile attributes CSV. When true, a filled cell
-  # ("normal", "covered", or "split") pins that metatile's layer type against inference, and a blank cell means
-  # auto/inferred. When false (the default), any layer_type column present is ignored (with a warning) and layer types
+  # ("normal", "covered", or "split") pins that metatile's layer type, and a blank cell means auto/inferred.
+  # When false (the default), any layer_type column present is ignored (with a warning) and layer types
   # are inferred. Usually set per tileset in porytiles/tilesets/<name>/config.yaml.
   write_layer_type_column: false
 

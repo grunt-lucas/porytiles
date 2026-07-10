@@ -56,12 +56,8 @@ class CliOptionProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<ArtifactEditMode>
     pals_edit_mode(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<bool> pal_hints_enabled(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<std::vector<PaletteHint>>
-    pal_hints(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<PackingStrategyType>
     packing_strategy(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<PackingStrategyParams>
-    packing_strategy_params(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<TileSharingPacking>
     tile_sharing_packing(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<TileSharingAlignment>
@@ -76,8 +72,6 @@ class CliOptionProvider final : public ConfigProvider {
     global_anim_multi_pal_subtile_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<FrameLinking>
     global_frame_linking(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<PerAnimOverrides>
-    per_anim_overrides(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<bool>
     cross_tileset_anim_linking(ConfigScopeType type, const std::string &scope) const override;
 
@@ -109,10 +103,6 @@ class CliOptionProvider final : public ConfigProvider {
     tileset_paths_secondary_src(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<std::string>
     tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<MetatileAttrFieldSpecs>
-    metatile_attr_fields(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<MetatileAttrFieldOverrides>
-    metatile_attr_field_overrides(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<bool>
     write_layer_type_column(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<FrlgAlternateMaskMode>

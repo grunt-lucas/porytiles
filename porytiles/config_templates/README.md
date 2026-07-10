@@ -104,6 +104,10 @@ config_values:
 uv run scripts/generate_config.py
 ```
 
+The generator runs clang-format on its output files automatically, so no separate
+formatting step is needed. Pass `--no-format` to skip it (if clang-format is not
+installed, formatting is skipped with a warning).
+
 ### 5. Build and Test
 
 ```bash

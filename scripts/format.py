@@ -39,9 +39,10 @@ def collect_sources(project_root):
     return sorted(files)
 
 
-def resolve_clang_format():
+def find_clang_format():
     """Find a usable clang-format binary, preferring CLANG_FORMAT, then plain
-    clang-format, then versioned aliases like clang-format-21."""
+    clang-format, then versioned aliases like clang-format-21. Returns None if
+    no binary is found."""
     override = os.environ.get("CLANG_FORMAT")
     if override:
         return override
@@ -50,12 +51,20 @@ def resolve_clang_format():
         if shutil.which(candidate):
             return candidate
 
-    print(
-        "Error: Could not find a clang-format binary on PATH. Install clang-format "
-        "or set CLANG_FORMAT to the binary you want to use.",
-        file=sys.stderr,
-    )
-    sys.exit(1)
+    return None
+
+
+def resolve_clang_format():
+    """Like find_clang_format(), but exits with an error if no binary is found."""
+    clang_format = find_clang_format()
+    if clang_format is None:
+        print(
+            "Error: Could not find a clang-format binary on PATH. Install clang-format "
+            "or set CLANG_FORMAT to the binary you want to use.",
+            file=sys.stderr,
+        )
+        sys.exit(1)
+    return clang_format
 
 
 def main():

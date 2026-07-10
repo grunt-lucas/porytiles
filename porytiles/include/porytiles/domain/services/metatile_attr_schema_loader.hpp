@@ -52,14 +52,13 @@ struct ResolvedTilesetAttrSchema {
 /// @brief Resolves the attribute schema for one tileset under a chosen layout, widening the attr size as needed.
 ///
 /// @details
-/// Overrides are applied additively (each present override member replaces the baseline value, a present @c skipped set
-/// replaces the baseline skip set wholesale, and @c provider removal drops a field's provider), rejecting an empty
+/// Overrides are applied additively (each present override member replaces the baseline value, a present `skipped` set
+/// replaces the baseline skip set wholesale, and `provider` removal drops a field's provider), rejecting an empty
 /// field list, a duplicate baseline name, an override naming an unknown field, a provider override that leaves a field
 /// without both a header and a prefix, and a spec with neither a mask nor a frlg_mask. It then selects, per spec, the
-/// primary
-/// @c mask when @p layout is @c primary or the @c frlg_mask when @p layout is @c frlg. Specs lacking the selected mask
-/// are excluded symmetrically. If no field survives selection, a semantic error is returned naming the fix (add a mask
-/// for the layout, or switch use_frlg_alternate_masks).
+/// primary `mask` when `layout` is `primary` or the `frlg_mask` when `layout` is `frlg`. Specs lacking the selected
+/// mask are excluded symmetrically. If no field survives selection, a semantic error is returned naming the fix (add a
+/// mask for the layout, or switch use_frlg_alternate_masks).
 ///
 /// How the attribute byte width is decided depends on @p layout. The frlg layout always resolves 4 bytes: the engine
 /// reads FRLG-layout attributes through a hardcoded 'const u32 *' cast, so the entry width is fixed regardless of what

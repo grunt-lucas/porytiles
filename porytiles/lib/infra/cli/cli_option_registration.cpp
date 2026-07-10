@@ -298,7 +298,8 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
         "Metatile Layer Type Mask - Bit mask (a hex literal like 0xF000) for the layer-type bits of a metatile "
         "attribute. A mask of 0 disables the layer type, so every metatile is Normal and no layer-type bits are "
         "written. When unset, Porytiles infers the mask from the base game (METATILE_ATTR_LAYER_MASK / "
-        "sMetatileAttrMasks) and falls back to the size-based default. Intended to be set at tileset scope.");
+        "sMetatileAttrMasks) and falls back to the size-based default. Intended to be set at tileset scope in "
+        "porytiles/tilesets/<name>/config.yaml.");
 
     // Metatile Layer Type Mask FRLG (optional mask, captured as string, parsed by CliOptionProvider)
     config_group->add_option(
@@ -307,7 +308,7 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
         "Metatile Layer Type Mask FRLG - Bit mask (a hex literal like 0x60000000) for the layer-type bits under the "
         "FireRed/LeafGreen alternate attribute layout. A mask of 0 disables the layer type. When unset, Porytiles "
         "infers the mask from the base game and falls back to the size-based default. Intended to be set at tileset "
-        "scope.");
+        "scope in porytiles/tilesets/<name>/config.yaml.");
 
     // Tileset Animations Wire Anim Code (bool with --flag/--no-flag, captured as "true"/"false" string)
     config_group->add_flag(

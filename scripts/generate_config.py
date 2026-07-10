@@ -16,11 +16,18 @@ CMake during the build process.
 
 import argparse
 import re
+import subprocess
 import sys
 from pathlib import Path
 
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+
+# Reuse the clang-format resolution logic from format.py (same directory).
+# Skip bytecode caching so the import doesn't create scripts/__pycache__/.
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from format import find_clang_format  # noqa: E402
 
 
 def extract_all_yaml_paths(config_values):
@@ -99,7 +106,35 @@ def process_enum_types(schema):
     return enum_type_map
 
 
-def generate_config_files():
+def format_generated_files(generated_paths):
+    """
+    Run clang-format over the files the generator just wrote.
+
+    The Jinja2 templates produce nearly-formatted output, but the committed files are
+    clang-formatted, so without this step every regeneration dirties the tree with
+    whitespace-only diffs. If no clang-format binary is available (e.g. a contributor
+    building without dev tooling), formatting is skipped with a warning rather than
+    failing the build, since CMake runs this script as a build step.
+    """
+    clang_format = find_clang_format()
+    if clang_format is None:
+        print(
+            "Warning: clang-format not found on PATH; skipping formatting of generated files. "
+            "Run 'uv run scripts/format.py' once clang-format is installed.",
+            file=sys.stderr,
+        )
+        return
+
+    print(f"Formatting {len(generated_paths)} generated files with {clang_format}")
+    cmd = [clang_format, "-style=file", "-i", *[str(p) for p in generated_paths]]
+    result = subprocess.run(cmd)
+    if result.returncode != 0:
+        print("Error: clang-format failed on generated files", file=sys.stderr)
+        sys.exit(1)
+    print("✓ Formatted generated files")
+
+
+def generate_config_files(run_formatter=True):
     """Main generation function."""
     # Determine project root (script is in scripts/)
     project_root = Path(__file__).resolve().parent.parent
@@ -353,6 +388,9 @@ def generate_config_files():
         ),
     ]
 
+    # Track everything we write so we can format it all at the end
+    generated_paths = []
+
     # Generate each file
     for template_name, output_rel_path in templates:
         print(f"Generating: {output_rel_path}")
@@ -364,6 +402,7 @@ def generate_config_files():
             output_path = project_root / output_rel_path
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(output)
+            generated_paths.append(output_path)
 
             print(f"  ✓ Successfully generated {output_path}")
         except Exception as e:
@@ -382,11 +421,15 @@ def generate_config_files():
             output_path = project_root / output_rel_path
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(output)
+            generated_paths.append(output_path)
 
             print(f"  ✓ Successfully generated {output_path}")
         except Exception as e:
             print(f"  ✗ Failed to generate {output_rel_path}: {e}", file=sys.stderr)
             sys.exit(1)
+
+    if run_formatter:
+        format_generated_files(generated_paths)
 
     print("✓ Configuration code generation complete")
 
@@ -395,10 +438,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Generate configuration code from YAML schema and Jinja2 templates."
     )
-    parser.parse_args()
+    parser.add_argument(
+        "--no-format", action="store_true",
+        help="Skip running clang-format on the generated files."
+    )
+    args = parser.parse_args()
 
     try:
-        generate_config_files()
+        generate_config_files(run_formatter=not args.no_format)
     except Exception as e:
         print(f"Error generating config files: {e}", file=sys.stderr)
         import traceback

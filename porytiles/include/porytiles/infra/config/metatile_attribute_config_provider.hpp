@@ -41,6 +41,12 @@ namespace porytiles {
 /// - valid: an inferred field set is returned.
 /// - invalid: the project declares fields whose masks could not be determined; a fatal, actionable error is returned.
 /// - not_provided: nothing attribute-related was found, so the next provider is consulted.
+///
+/// Unlike the other providers in this directory, this class is handwritten rather than generated from
+/// config_schema.yaml. The generated providers map every config value to a uniform source (a YAML path, a header
+/// define, a CLI option); this one answers just three values through a bespoke inference pipeline, so there is
+/// nothing schema-shaped to generate. It only overrides the methods it answers and defers the rest to the
+/// ConfigProvider base class defaults.
 class MetatileAttributeConfigProvider final : public ConfigProvider {
   public:
     /// @brief Constructs a MetatileAttributeConfigProvider.

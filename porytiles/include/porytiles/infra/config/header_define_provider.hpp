@@ -35,7 +35,8 @@ namespace porytiles {
  * - Macro references: `#define TOTAL (PRIMARY + SECONDARY)`
  *
  * The header file is loaded lazily and cached for performance. If the file doesn't exist or a define is not found,
- * methods return LayerValue::not_provided(), allowing graceful fallback to other providers.
+ * methods return LayerValue::not_provided(), allowing graceful fallback to other providers. Config values with no
+ * associated header define are not overridden here at all; they defer via the ConfigProvider base class default.
  */
 class HeaderDefineProvider final : public ConfigProvider {
   public:
@@ -107,106 +108,6 @@ class HeaderDefineProvider final : public ConfigProvider {
 
     [[nodiscard]] LayerValue<std::size_t>
     num_tiles_per_metatile(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<Rgba32>
-    extrinsic_transparency(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<ArtifactEditMode>
-    tiles_edit_mode(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<ArtifactEditMode>
-    pals_edit_mode(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<bool> pal_hints_enabled(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<std::vector<PaletteHint>>
-    pal_hints(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<PackingStrategyType>
-    packing_strategy(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<PackingStrategyParams>
-    packing_strategy_params(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<TileSharingPacking>
-    tile_sharing_packing(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<TileSharingAlignment>
-    tile_sharing_alignment(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<TilesPalMode>
-    tiles_pal_mode(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<AnimPalResolutionStrategy>
-    global_anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<AnimKeyFrameResolutionStrategy>
-    global_anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<AnimMultiPalSubtileResolutionStrategy>
-    global_anim_multi_pal_subtile_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<FrameLinking>
-    global_frame_linking(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<PerAnimOverrides>
-    per_anim_overrides(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<bool>
-    cross_tileset_anim_linking(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<bool> verify_checksums(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<PrimaryPairingMode>
-    primary_pairing_mode(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<std::vector<std::string>>
-    primary_pairing_partners(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<std::vector<std::string>>
-    diagnostic_warnings_exclude(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<std::vector<std::string>>
-    diagnostic_warnings_include(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<std::vector<std::string>>
-    diagnostic_remarks_exclude(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<std::vector<std::string>>
-    diagnostic_remarks_include(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<std::string>
-    tileset_paths_primary_src(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<std::string>
-    tileset_paths_primary_bin(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<std::string>
-    tileset_paths_secondary_src(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<std::string>
-    tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<MetatileAttrFieldSpecs>
-    metatile_attr_fields(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<MetatileAttrFieldOverrides>
-    metatile_attr_field_overrides(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<bool>
-    write_layer_type_column(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<FrlgAlternateMaskMode>
-    use_frlg_alternate_masks(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<std::optional<std::uint32_t>>
-    metatile_layer_type_mask(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<std::optional<std::uint32_t>>
-    metatile_layer_type_mask_frlg(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<bool>
-    tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const override;
 
   private:
     std::unique_ptr<TextFormatter> owned_format_; // Optional owned formatter (when using default ctor)

@@ -41,3 +41,6 @@ pokefirered
 pokeemerald-expansion
 pokeruby
 porymap
+
+# Python bytecode caches from repo scripts
+__pycache__/
