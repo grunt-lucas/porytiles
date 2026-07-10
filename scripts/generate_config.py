@@ -112,9 +112,9 @@ def format_generated_files(generated_paths):
 
     The Jinja2 templates produce nearly-formatted output, but the committed files are
     clang-formatted, so without this step every regeneration dirties the tree with
-    whitespace-only diffs. If no clang-format binary is available (e.g. a contributor
-    building without dev tooling), formatting is skipped with a warning rather than
-    failing the build, since CMake runs this script as a build step.
+    whitespace-only diffs. Formatting is cosmetic, and CMake runs this script as a
+    build step, so a missing clang-format binary or a clang-format failure (e.g. a
+    binary too old for our .clang-format options) is a warning, never a build failure.
     """
     clang_format = find_clang_format()
     if clang_format is None:
@@ -129,8 +129,12 @@ def format_generated_files(generated_paths):
     cmd = [clang_format, "-style=file", "-i", *[str(p) for p in generated_paths]]
     result = subprocess.run(cmd)
     if result.returncode != 0:
-        print("Error: clang-format failed on generated files", file=sys.stderr)
-        sys.exit(1)
+        print(
+            f"Warning: {clang_format} failed; leaving generated files unformatted. "
+            "Generation itself succeeded, so the build can proceed.",
+            file=sys.stderr,
+        )
+        return
     print("✓ Formatted generated files")
 
 
