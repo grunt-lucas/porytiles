@@ -26,6 +26,7 @@ class CompileTilesetCommand final : public Command {
         porytiles::register_config_options(cmd, cli_storage_);
     }
 
+  private:
     void Run() override
     {
         using namespace porytiles;
@@ -81,7 +82,6 @@ class CompileTilesetCommand final : public Command {
         }
     }
 
-  private:
     static constexpr auto kCommandName = "compile-tileset";
     static constexpr auto kCommandDesc =
         "Compile a tileset -- update the Porymap assets to match the Porytiles assets.";

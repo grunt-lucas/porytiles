@@ -30,6 +30,7 @@ class CompletionCommand final : public Command {
         cmd.add_option("<shell>", shell_, "Shell type: bash, zsh, or fish")->required();
     }
 
+  private:
     void Run() override
     {
         if (shell_ == "bash") {
@@ -48,7 +49,6 @@ class CompletionCommand final : public Command {
         }
     }
 
-  private:
     static constexpr auto kCommandName = "completion";
     static constexpr auto kCommandDesc = "Generate shell completion scripts.";
     static constexpr auto kCommandGroup = "UTILITIES";

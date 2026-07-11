@@ -43,6 +43,7 @@ class ListTilesetsCommand final : public Command {
         cmd.add_option("--prefix", prefix_, "Only show tilesets starting with this prefix")->default_val("");
     }
 
+  private:
     void Run() override
     {
         using namespace porytiles;
@@ -93,7 +94,6 @@ class ListTilesetsCommand final : public Command {
         }
     }
 
-  private:
     static constexpr auto kCommandName = "list-tilesets";
     static constexpr auto kCommandDesc = "List tilesets in the project.";
     static constexpr auto kCommandGroup = "UTILITIES";

@@ -26,6 +26,7 @@ class ImportTilesetCommand final : public Command {
         porytiles::register_config_options(cmd, cli_storage_);
     }
 
+  private:
     void Run() override
     {
         using namespace porytiles;
@@ -69,7 +70,6 @@ class ImportTilesetCommand final : public Command {
         }
     }
 
-  private:
     static constexpr auto kCommandName = "import-tileset";
     static constexpr auto kCommandDesc = "Import a pre-existing tileset into Porytiles.";
     static constexpr auto kCommandGroup = "COMMANDS";

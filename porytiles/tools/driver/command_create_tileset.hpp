@@ -27,6 +27,7 @@ class CreateTilesetCommand final : public Command {
         porytiles::register_config_options(cmd, cli_storage_);
     }
 
+  private:
     void Run() override
     {
         using namespace porytiles;
@@ -83,7 +84,6 @@ class CreateTilesetCommand final : public Command {
         }
     }
 
-  private:
     static constexpr auto kCommandName = "create-tileset";
     static constexpr auto kCommandDesc = "Create a new Porytiles-managed tileset from scratch.";
     static constexpr auto kCommandGroup = "COMMANDS";
