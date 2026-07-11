@@ -45,9 +45,8 @@ namespace {
         return FormattableError{std::vector<std::string>{
             "No metatile attribute fields are configured.",
             "Porytiles could not infer a field layout and none was provided.",
-            "Add a metatile_attr_fields list to your Porytiles config,",
-            "or make sure the base game exposes its attribute masks "
-            "(a METATILE_ATTR_*_MASK define or an sMetatileAttrMasks table)."}};
+            "Add a metatile_attr_fields list to your Porytiles config, or make sure the base game exposes "
+            "its attribute masks (a METATILE_ATTR_*_MASK define or an sMetatileAttrMasks table)."}};
     }
 
     // A baseline name must be unique so overrides and the schema can address fields unambiguously.
@@ -165,8 +164,8 @@ ChainableResult<ResolvedTilesetAttrSchema> resolve_tileset_attr_schema(
         if (frlg) {
             return FormattableError{std::vector<std::string>{
                 "The FRLG attribute layout has no fields: none of the configured fields define a frlg_mask.",
-                "Add a frlg_mask to at least one field,",
-                "or set use_frlg_alternate_masks: never to use the primary masks."}};
+                "Add a frlg_mask to at least one field, or set use_frlg_alternate_masks: never to use the "
+                "primary masks."}};
         }
         return FormattableError{std::vector<std::string>{
             "The primary attribute layout has no fields: none of the configured fields define a mask.",
@@ -200,19 +199,16 @@ ChainableResult<ResolvedTilesetAttrSchema> resolve_tileset_attr_schema(
         // 'const uN *metatileAttributes'). A mask that needs a wider word contradicts that hard fact, so reject it
         // instead of silently widening, which would emit a mismatched declaration and corrupt the packed attributes on
         // the next read.
-        return FormattableError{std::vector<std::string>{
-            format->format(
-                "{} needs a {}-byte attribute word, but 'src/data/tilesets/metatiles.h' declares {}-byte attributes.",
-                FormatParam{widest_source, Style::bold},
-                FormatParam{mask_bytes, Style::bold},
-                FormatParam{detected_attr_bytes, Style::bold}),
-            "The attribute width is fixed by the base game and shared across all tilesets,",
-            "so Porytiles cannot widen it to fit this mask.",
-            format->format("Narrow the mask to fit {} bytes,", FormatParam{detected_attr_bytes, Style::bold}),
-            format->format(
-                "or change the gMetatileAttributes_* declarations in metatiles.h to 'const u{}'",
-                FormatParam{mask_bytes * 8, Style::bold}),
-            "if the base game really uses a wider attribute word."}};
+        return FormattableError{
+            "{} needs a {}-byte attribute word, but 'src/data/tilesets/metatiles.h' declares {}-byte attributes. The "
+            "attribute width is fixed by the base game and shared across all tilesets, so Porytiles cannot widen it to "
+            "fit this mask. Narrow the mask to fit {} bytes,  or change the gMetatileAttributes_* declarations in "
+            "metatiles.h to 'const u{}' if the base game really uses a wider attribute word.",
+            FormatParam{widest_source, Style::bold},
+            FormatParam{mask_bytes, Style::bold},
+            FormatParam{detected_attr_bytes, Style::bold},
+            FormatParam{detected_attr_bytes, Style::bold},
+            FormatParam{mask_bytes * 8, Style::bold}};
     }
     else {
         // Primary layout where the detected width covers the masks (authoritative) or was only a guessed default. In

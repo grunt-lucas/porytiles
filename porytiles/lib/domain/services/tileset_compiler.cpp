@@ -1808,8 +1808,8 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
                                 FormatParam{i},
                                 FormatParam{abs_tile_index}),
                             "Cannot determine the correct palette index for cross-tileset linking.",
-                            "Recompile the primary tileset, or verify that all primary animation subtiles",
-                            "are used in at least one primary metatile."}};
+                            "Recompile the primary tileset, or verify that all primary animation subtiles are used "
+                            "in at least one primary metatile."}};
                     }
                 }
             }

@@ -324,12 +324,13 @@ template <std::size_t N>
     return lines;
 }
 
-/// @brief Builds truncated tile reference lines, displaying up to 8 entries 2-per-line with ellipsis.
+/// @brief Builds truncated tile reference lines, listing up to 8 entries comma-joined with ellipsis.
 ///
 /// @details
-/// Formats tile indices as metatile message headers, 2 per line, up to a maximum of 8 displayed entries. If there are
-/// more than 8, appends an "... and N more." line. The caller is responsible for providing any header line. This
-/// function only emits the tile reference listing.
+/// Formats tile indices as metatile message headers joined into a single comma-separated line, up to a maximum of 8
+/// displayed entries, letting terminal auto-wrap break the line as needed. If there are more than 8, appends an
+/// "... and N more." line as its own element. The caller is responsible for providing any header line. This function
+/// only emits the tile reference listing.
 ///
 /// @param format The TextFormatter for styling
 /// @param tile_indices The tile indices to display
@@ -338,35 +339,23 @@ template <std::size_t N>
 build_truncated_tile_ref_lines(const TextFormatter &format, const std::vector<std::size_t> &tile_indices)
 {
     constexpr std::size_t max_displayed_refs = 8;
-    constexpr std::size_t refs_per_line = 2;
 
     std::vector<std::string> lines;
     const std::size_t display_count = std::min(tile_indices.size(), max_displayed_refs);
-    std::string current_line;
-    std::size_t count_on_line = 0;
+    std::string joined;
     for (std::size_t i = 0; i < display_count; i++) {
-        if (count_on_line > 0) {
-            current_line += ", ";
+        if (i > 0) {
+            joined += ", ";
         }
         auto [mt_index, layer, subtile] = metatile::from_tile_index(tile_indices.at(i));
-        current_line += "secondary " + metatile::message_header(format, mt_index, layer, subtile);
-        count_on_line++;
-        if (count_on_line == refs_per_line) {
-            lines.emplace_back(current_line);
-            current_line.clear();
-            count_on_line = 0;
-        }
+        joined += "secondary " + metatile::message_header(format, mt_index, layer, subtile);
+    }
+    if (!joined.empty()) {
+        lines.emplace_back(joined);
     }
     if (tile_indices.size() > max_displayed_refs) {
-        if (!current_line.empty()) {
-            lines.emplace_back(current_line);
-            current_line.clear();
-        }
         lines.emplace_back(
             format.format("... and {} more.", FormatParam{tile_indices.size() - max_displayed_refs, Style::bold}));
-    }
-    else if (!current_line.empty()) {
-        lines.emplace_back(current_line);
     }
     return lines;
 }
