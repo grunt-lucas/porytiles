@@ -47,6 +47,7 @@
 #include "porytiles/infra/services/tileset_attr_schema_cache.hpp"
 #include "porytiles/infra/services/tileset_attr_schema_resolver.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
+#include "porytiles/utilities/text/terminal_width.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
 #include "porytiles/xcut/di/components.hpp"
 #include "porytiles/xcut/diagnostics/diagnostic_tag_filter.hpp"
@@ -71,7 +72,8 @@ class TilesetCommandEnv {
   public:
     TilesetCommandEnv(std::filesystem::path root, const std::string &tileset_name, const CliOptionStorage &cli_storage)
         : project_root{std::move(root)}, injector{di::get_formatter_component, !isatty(STDERR_FILENO)},
-          text_formatter{injector.get<TextFormatter *>()}, stderr_diag{text_formatter},
+          text_formatter{injector.get<TextFormatter *>()},
+          stderr_diag{text_formatter, resolve_terminal_width(STDERR_FILENO)},
           config{text_formatter, make_providers(yaml_provider, project_root, cli_storage, text_formatter, &stderr_diag)}
     {
         // Eagerly validate all YAML config files for unknown keys
