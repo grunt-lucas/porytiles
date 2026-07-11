@@ -11,31 +11,27 @@
 
 namespace porytiles {
 
-/**
- * @brief A standalone detector that infers the metatile attribute size from metatiles.h declarations.
- *
- * @details
- * MetatilesHeaderProvider scans `src/data/tilesets/metatiles.h` for `gMetatileAttributes_` declaration lines and
- * infers the attribute byte size from the C type used:
- * - All `const u16` -> 2 bytes (emerald-family layouts)
- * - All `const u32` -> 4 bytes (firered-family layouts)
- * - Mixed types -> invalid (error)
- * - No matching lines or missing file -> not_provided
- *
- * This is the sole authoritative source for the attribute byte width; the schema resolver consumes it directly
- * (there is no user-facing size knob). It returns a LayerValue so the three states (valid / invalid / not_provided)
- * stay distinguishable: the resolver treats not_provided as the 2-byte default and surfaces invalid as an error.
- *
- * The file is read lazily on first access and the result is cached.
- */
+/// @brief A standalone detector that infers the metatile attribute size from metatiles.h declarations.
+///
+/// @details
+/// MetatilesHeaderProvider scans `src/data/tilesets/metatiles.h` for `gMetatileAttributes_` declaration lines and
+/// infers the attribute byte size from the C type used:
+/// - All `const u16` -> 2 bytes (emerald-family layouts)
+/// - All `const u32` -> 4 bytes (firered-family layouts)
+/// - Mixed types -> invalid (error)
+/// - No matching lines or missing file -> not_provided
+///
+/// This is the sole authoritative source for the attribute byte width; the schema resolver consumes it directly
+/// (there is no user-facing size knob). It returns a LayerValue so the three states (valid / invalid / not_provided)
+/// stay distinguishable: the resolver treats not_provided as the 2-byte default and surfaces invalid as an error.
+///
+/// The file is read lazily on first access and the result is cached.
 class MetatilesHeaderProvider final {
   public:
-    /**
-     * @brief Constructs a MetatilesHeaderProvider.
-     *
-     * @param project_root The root directory of the decomp project
-     * @param format A pointer to the TextFormatter to use for error messages
-     */
+    /// @brief Constructs a MetatilesHeaderProvider.
+    ///
+    /// @param project_root The root directory of the decomp project
+    /// @param format A pointer to the TextFormatter to use for error messages
     explicit MetatilesHeaderProvider(std::filesystem::path project_root, gsl::not_null<const TextFormatter *> format)
         : project_root_{std::move(project_root)}, format_{format}
     {

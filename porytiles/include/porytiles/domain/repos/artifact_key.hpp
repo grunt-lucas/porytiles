@@ -6,23 +6,19 @@
 
 namespace porytiles {
 
-/**
- * @brief A type-safe wrapper for artifact keys.
- *
- * @details
- * The ArtifactKey class provides a strong type wrapper around std::string to represent artifact keys in the compilation
- * system. This improves type safety and makes the concept of artifact keys more explicit in the codebase.
- *
- * The class supports usage in all standard containers, including std::set, std::map, and std::unordered_map, through
- * appropriate comparison operators and hash specialization.
- */
+/// @brief A type-safe wrapper for artifact keys.
+///
+/// @details
+/// The ArtifactKey class provides a strong type wrapper around std::string to represent artifact keys in the
+/// compilation system. This improves type safety and makes the concept of artifact keys more explicit in the codebase.
+///
+/// The class supports usage in all standard containers, including std::set, std::map, and std::unordered_map, through
+/// appropriate comparison operators and hash specialization.
 class ArtifactKey {
   public:
-    /**
-     * @brief Constructs an ArtifactKey from a string value.
-     *
-     * @param key The string value to wrap
-     */
+    /// @brief Constructs an ArtifactKey from a string value.
+    ///
+    /// @param key The string value to wrap
     explicit ArtifactKey(std::string key) : key_{std::move(key)} {}
 
     [[nodiscard]] const std::string &key() const

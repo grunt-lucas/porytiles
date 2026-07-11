@@ -68,25 +68,23 @@ constexpr std::string_view porytiles_managed_callback_prefix = "InitTilesetAnim_
 
 } // namespace anim
 
-/**
- * @brief A complete tileset animation with name, configuration, and frame data.
- *
- * @details
- * Animation represents a full animation definition for a tileset, combining:
- * - A unique name identifying the animation (e.g., "flower", "water", "waterfall")
- * - Configuration parameters (AnimParams) controlling timing and VRAM placement
- * - An optional key frame (for Porytiles-format animations)
- * - Frame data (map of AnimFrame) containing the actual tile pixels
- *
- * In addition to the standard frames, there is a special "key frame" that appears in tiles.png. The GBA game engine
- * uses the other frames (stored as separate .4bpp files) to animate by swapping tile data in VRAM at runtime.
- *
- * The template parameter determines the pixel format:
- * - Animation<Rgba32>: Used in PorytilesTilesetComponent (source format, RGBA pixels)
- * - Animation<IndexPixel>: Used in PorymapTilesetComponent (compiled format, palette indices)
- *
- * @tparam PixelType The pixel type for animation frame tiles; must satisfy SupportsTransparency concept
- */
+/// @brief A complete tileset animation with name, configuration, and frame data.
+///
+/// @details
+/// Animation represents a full animation definition for a tileset, combining:
+/// - A unique name identifying the animation (e.g., "flower", "water", "waterfall")
+/// - Configuration parameters (AnimParams) controlling timing and VRAM placement
+/// - An optional key frame (for Porytiles-format animations)
+/// - Frame data (map of AnimFrame) containing the actual tile pixels
+///
+/// In addition to the standard frames, there is a special "key frame" that appears in tiles.png. The GBA game engine
+/// uses the other frames (stored as separate .4bpp files) to animate by swapping tile data in VRAM at runtime.
+///
+/// The template parameter determines the pixel format:
+/// - Animation<Rgba32>: Used in PorytilesTilesetComponent (source format, RGBA pixels)
+/// - Animation<IndexPixel>: Used in PorymapTilesetComponent (compiled format, palette indices)
+///
+/// @tparam PixelType The pixel type for animation frame tiles; must satisfy SupportsTransparency concept
 template <SupportsTransparency PixelType>
 class Animation {
   public:
@@ -111,26 +109,22 @@ class Animation {
         params_ = std::move(params);
     }
 
-    /**
-     * @brief Checks if this animation has a key frame set.
-     *
-     * @return True if the key frame has been set, false otherwise
-     */
+    /// @brief Checks if this animation has a key frame set.
+    ///
+    /// @return True if the key frame has been set, false otherwise
     [[nodiscard]] bool has_key_frame() const
     {
         return key_frame_.has_value();
     }
 
-    /**
-     * @brief Returns the key frame of this animation.
-     *
-     * @details
-     * The key frame is a special frame of the animation and is the frame whose tiles are stored in tiles.png. All other
-     * frames are stored as separate .4bpp files and loaded dynamically by the game engine.
-     *
-     * @pre has_key_frame() must return true
-     * @return Reference to the keyframe
-     */
+    /// @brief Returns the key frame of this animation.
+    ///
+    /// @details
+    /// The key frame is a special frame of the animation and is the frame whose tiles are stored in tiles.png. All
+    /// other frames are stored as separate .4bpp files and loaded dynamically by the game engine.
+    ///
+    /// @pre has_key_frame() must return true
+    /// @return Reference to the keyframe
     [[nodiscard]] const AnimFrame<PixelType> &key_frame() const
     {
         if (!key_frame_.has_value()) {
@@ -159,21 +153,17 @@ class Animation {
         return frames_ | std::views::values | std::ranges::to<std::vector>();
     }
 
-    /**
-     * @brief Checks if this animation has any frames.
-     *
-     * @return True if the animation has at least one frame, false otherwise
-     */
+    /// @brief Checks if this animation has any frames.
+    ///
+    /// @return True if the animation has at least one frame, false otherwise
     [[nodiscard]] bool has_frames() const
     {
         return !frames_.empty();
     }
 
-    /**
-     * @brief Returns the number of frames in this animation.
-     *
-     * @return The frame count
-     */
+    /// @brief Returns the number of frames in this animation.
+    ///
+    /// @return The frame count
     [[nodiscard]] std::size_t frame_count() const
     {
         return frames_.size();
@@ -184,13 +174,11 @@ class Animation {
         return frames_.contains(frame_name);
     }
 
-    /**
-     * @brief Returns the frame with the specified name.
-     *
-     * @param frame_name The frame name
-     * @pre index must be less than frame_count()
-     * @return Reference to the frame at the specified index
-     */
+    /// @brief Returns the frame with the specified name.
+    ///
+    /// @param frame_name The frame name
+    /// @pre index must be less than frame_count()
+    /// @return Reference to the frame at the specified index
     [[nodiscard]] const AnimFrame<PixelType> &frame_for_name(const std::string &frame_name) const
     {
         if (!frames_.contains(frame_name)) {
@@ -199,45 +187,39 @@ class Animation {
         return frames_.at(frame_name);
     }
 
-    /**
-     * @brief Adds a frame to this Animation frame map.
-     *
-     * @param name The frame name
-     * @param frame The frame to add
-     */
+    /// @brief Adds a frame to this Animation frame map.
+    ///
+    /// @param name The frame name
+    /// @param frame The frame to add
     void put_frame(const std::string &name, AnimFrame<PixelType> frame)
     {
         frames_.emplace(name, std::move(frame));
     }
 
-    /**
-     * @brief Returns the "composite" frame for this animation.
-     *
-     * @details
-     * The "composite" frame for an Animation is a special, artificially constructed frame where each constituent
-     * subtile contains all colors across all AnimFrames (including the key frame, if present) for the given
-     * subtile index. This is essential: since animation tiles are dynamic but the palette index is fixed, the palette
-     * packer needs to know all possible colors that could appear in a given 8x8 animation tile region at any point in
-     * the animation. The composite frame's pixel arrangement is arbitrary and shouldn't be relied upon for meaningful
-     * information.
-     *
-     * If a key frame is present, its tile count determines the composite frame size. Otherwise, the first regular
-     * frame's tile count is used. This allows animations without key frames to support manual animation linking
-     * workflows.
-     *
-     * @param extrinsic_transparency The extrinsic transparency color to use when filtering pixels
-     * @pre has_key_frame() or has_frames() must return true
-     * @post Each composite tile within the frame will have <= 15 unique colors.
-     * @return A composite frame for this Animation.
-     */
+    /// @brief Returns the "composite" frame for this animation.
+    ///
+    /// @details
+    /// The "composite" frame for an Animation is a special, artificially constructed frame where each constituent
+    /// subtile contains all colors across all AnimFrames (including the key frame, if present) for the given
+    /// subtile index. This is essential: since animation tiles are dynamic but the palette index is fixed, the palette
+    /// packer needs to know all possible colors that could appear in a given 8x8 animation tile region at any point in
+    /// the animation. The composite frame's pixel arrangement is arbitrary and shouldn't be relied upon for meaningful
+    /// information.
+    ///
+    /// If a key frame is present, its tile count determines the composite frame size. Otherwise, the first regular
+    /// frame's tile count is used. This allows animations without key frames to support manual animation linking
+    /// workflows.
+    ///
+    /// @param extrinsic_transparency The extrinsic transparency color to use when filtering pixels
+    /// @pre has_key_frame() or has_frames() must return true
+    /// @post Each composite tile within the frame will have <= 15 unique colors.
+    /// @return A composite frame for this Animation.
     [[nodiscard]] AnimFrame<PixelType> composite_frame(const PixelType &extrinsic_transparency) const
         requires requires(const PixelType &p) { p.is_transparent(p); }
     {
-        /*
-         * Note: this method currently only supports extrinsic transparency (Rgba32). If a future caller needs the same
-         * logic for IndexPixel (intrinsic transparency), this would need to be extended — but no caller exists today,
-         * so the function is constrained via the requires-clause to the Rgba32 case.
-         */
+        // Note: this method currently only supports extrinsic transparency (Rgba32). If a future caller needs the same
+        // logic for IndexPixel (intrinsic transparency), this would need to be extended — but no caller exists today,
+        // so the function is constrained via the requires-clause to the Rgba32 case.
 
         // Determine tile count from key frame or first regular frame
         std::size_t tile_count = 0;

@@ -9,17 +9,15 @@ namespace porytiles {
 
 namespace {
 
-/**
- * @brief Parses function call arguments from a token stream starting after the opening parenthesis.
- *
- * @details
- * Extracts arguments by tracking parenthesis nesting and splitting on commas at the top level.
- *
- * @param tokens The token stream
- * @param start_index Index of the token AFTER the opening parenthesis
- * @param[out] end_index Set to the index of the closing parenthesis
- * @return Vector of argument token sequences
- */
+/// @brief Parses function call arguments from a token stream starting after the opening parenthesis.
+///
+/// @details
+/// Extracts arguments by tracking parenthesis nesting and splitting on commas at the top level.
+///
+/// @param tokens The token stream
+/// @param start_index Index of the token AFTER the opening parenthesis
+/// @param[out] end_index Set to the index of the closing parenthesis
+/// @return Vector of argument token sequences
 [[nodiscard]] std::vector<std::vector<Token>>
 parse_arguments(const std::vector<Token> &tokens, std::size_t start_index, std::size_t &end_index)
 {

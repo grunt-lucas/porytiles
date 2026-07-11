@@ -9,21 +9,19 @@
 
 #include "command.hpp"
 
-/**
- * @brief Command that outputs shell completion scripts.
- *
- * @details
- * CompletionCommand generates shell completion scripts for bash, zsh, and fish. It uses the
- * generated CLI option metadata to provide completions for all config options, including
- * enum choices.
- *
- * The generated scripts also support dynamic tileset name completion by calling the
- * `list-tilesets` subcommand. This provides context-sensitive filtering:
- * - compile-tileset: shows only managed tilesets
- * - decompile-tileset: shows only managed tilesets
- * - import-tileset: shows only unmanaged tilesets
- * - create-tileset: no completion (user provides new name)
- */
+/// @brief Command that outputs shell completion scripts.
+///
+/// @details
+/// CompletionCommand generates shell completion scripts for bash, zsh, and fish. It uses the
+/// generated CLI option metadata to provide completions for all config options, including
+/// enum choices.
+///
+/// The generated scripts also support dynamic tileset name completion by calling the
+/// `list-tilesets` subcommand. This provides context-sensitive filtering:
+/// - compile-tileset: shows only managed tilesets
+/// - decompile-tileset: shows only managed tilesets
+/// - import-tileset: shows only unmanaged tilesets
+/// - create-tileset: no completion (user provides new name)
 class CompletionCommand final : public Command {
   public:
     explicit CompletionCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}

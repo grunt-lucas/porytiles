@@ -20,24 +20,20 @@ class PorymapTilesetComponent {
   public:
     PorymapTilesetComponent();
 
-    /**
-     * @brief Add a TilemapEntry to the end of the entry vector.
-     *
-     * @details
-     * Moves the provided TilemapEntry into the entry vector.
-     *
-     * @param entry The TilemapEntry to move into the vector.
-     */
+    /// @brief Add a TilemapEntry to the end of the entry vector.
+    ///
+    /// @details
+    /// Moves the provided TilemapEntry into the entry vector.
+    ///
+    /// @param entry The TilemapEntry to move into the vector.
     void push_back_tilemap_entry(TilemapEntry entry);
 
-    /**
-     * @brief Add a MetatileAttribute to the end of the attribute vector.
-     *
-     * @details
-     * Moves the provided MetatileAttribute into the attribute vector.
-     *
-     * @param attribute The MetatileAttribute to move into the vector.
-     */
+    /// @brief Add a MetatileAttribute to the end of the attribute vector.
+    ///
+    /// @details
+    /// Moves the provided MetatileAttribute into the attribute vector.
+    ///
+    /// @param attribute The MetatileAttribute to move into the vector.
     void push_back_attribute(MetatileAttribute attribute);
 
     void set_pal(std::size_t pal_index, Palette<Rgba32, pal::max_size> pal);

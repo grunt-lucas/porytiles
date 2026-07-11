@@ -11,25 +11,23 @@
 
 namespace porytiles {
 
-/**
- * @brief Represents a single frame of an animation, containing tiles and a frame name.
- *
- * @details
- * AnimFrame holds the pixel data for one frame of an animation. Each frame consists of one or more 8x8 tiles
- * arranged in a grid. The frame name typically corresponds to the PNG filename (e.g., "0", "1", "2" for 0.png, 1.png,
- * 2.png).
- *
- * The template parameter PixelType determines whether the frame uses RGBA pixels (for Porytiles component, source
- * format) or indexed pixels (for Porymap component, compiled format).
- *
- * Key concepts:
- * - A special "key frame" that appears in tiles.png, but isn't part of the animation loop
- *   - Users tell Porytiles which metatile subtiles should be animated by using key frame tiles on the layer PNGs
- * - Other frames (0, 1, 2, ...) are stored as separate .4bpp files and swapped at runtime
- * - All frames of an animation must have the same tile count
- *
- * @tparam PixelType The pixel type for tiles; must satisfy SupportsTransparency concept
- */
+/// @brief Represents a single frame of an animation, containing tiles and a frame name.
+///
+/// @details
+/// AnimFrame holds the pixel data for one frame of an animation. Each frame consists of one or more 8x8 tiles
+/// arranged in a grid. The frame name typically corresponds to the PNG filename (e.g., "0", "1", "2" for 0.png, 1.png,
+/// 2.png).
+///
+/// The template parameter PixelType determines whether the frame uses RGBA pixels (for Porytiles component, source
+/// format) or indexed pixels (for Porymap component, compiled format).
+///
+/// Key concepts:
+/// - A special "key frame" that appears in tiles.png, but isn't part of the animation loop
+///   - Users tell Porytiles which metatile subtiles should be animated by using key frame tiles on the layer PNGs
+/// - Other frames (0, 1, 2, ...) are stored as separate .4bpp files and swapped at runtime
+/// - All frames of an animation must have the same tile count
+///
+/// @tparam PixelType The pixel type for tiles; must satisfy SupportsTransparency concept
 template <SupportsTransparency PixelType>
 class AnimFrame {
   public:
@@ -94,10 +92,8 @@ class AnimFrame {
     }
 
   private:
-    /*
-     * Note: Frame dimensions (width/height in tiles) are stored in AnimParams since all frames in an animation
-     * must share the same dimensions.
-     */
+    // Note: Frame dimensions (width/height in tiles) are stored in AnimParams since all frames in an animation
+    // must share the same dimensions.
     std::string frame_name_;
     std::vector<PixelTile<PixelType>> tiles_;
     std::optional<Palette<Rgba32>> palette_;

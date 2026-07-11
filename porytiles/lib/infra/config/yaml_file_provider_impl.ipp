@@ -42,17 +42,15 @@ using namespace porytiles;
 std::map<std::filesystem::path, YAML::Node> yaml_cache;
 std::map<std::filesystem::path, std::vector<std::string>> file_lines_cache;
 
-/**
- * @brief Gets the content of a specific line from a cached YAML file.
- *
- * @details
- * Returns the content of the specified line from the file contents cache. If the file is not cached or the line number
- * is out of bounds, returns an empty string.
- *
- * @param path The path to the YAML file
- * @param line_num The line number (0-indexed)
- * @return The line content, or empty string if not found
- */
+/// @brief Gets the content of a specific line from a cached YAML file.
+///
+/// @details
+/// Returns the content of the specified line from the file contents cache. If the file is not cached or the line number
+/// is out of bounds, returns an empty string.
+///
+/// @param path The path to the YAML file
+/// @param line_num The line number (0-indexed)
+/// @return The line content, or empty string if not found
 std::string get_line_content(const std::filesystem::path &path, std::size_t line_num)
 {
     const auto it = file_lines_cache.find(path);
@@ -62,48 +60,44 @@ std::string get_line_content(const std::filesystem::path &path, std::size_t line
     return "";
 }
 
-/**
- * @brief Constructs a source location string with file path and line number.
- *
- * @details
- * Creates a formatted string in the form "path:line" where:
- * - path is the file path
- * - line is the 1-indexed line number
- *
- * @param format The text formatter to use
- * @param file_path The path to the YAML file
- * @param mark The YAML mark containing line number information
- * @return Formatted source location string
- */
+/// @brief Constructs a source location string with file path and line number.
+///
+/// @details
+/// Creates a formatted string in the form "path:line" where:
+/// - path is the file path
+/// - line is the 1-indexed line number
+///
+/// @param format The text formatter to use
+/// @param file_path The path to the YAML file
+/// @param mark The YAML mark containing line number information
+/// @return Formatted source location string
 std::string make_source_string(const TextFormatter *format, const std::string &file_path, const YAML::Mark &mark)
 {
     return format->format("{}:{}", FormatParam{file_path}, FormatParam{mark.line + 1});
 }
 
-/**
- * @brief Constructs source details showing contextual lines around the target line.
- *
- * @details
- * Creates a vector of strings showing a contextual view of the YAML file around the target line. The view includes a
- * configurable number of lines before and after the target line, with the target line marked with a "> " prefix. Each
- * line is formatted with its line number.
- *
- * For example, with window_size=5 and target line 10:
- * ```
- *   8: some_config: value
- *   9: another_config: value
- * > 10: target_line: value
- *   11: next_config: value
- *   12: last_config: value
- * ```
- *
- * If the target line is near the start or end of the file, the window adjusts to show the available lines while
- * maintaining the requested window size where possible.
- *
- * @param file_path The path to the YAML file
- * @param mark The YAML mark containing line number information
- * @return Vector of formatted strings showing the contextual view
- */
+/// @brief Constructs source details showing contextual lines around the target line.
+///
+/// @details
+/// Creates a vector of strings showing a contextual view of the YAML file around the target line. The view includes a
+/// configurable number of lines before and after the target line, with the target line marked with a "> " prefix. Each
+/// line is formatted with its line number.
+///
+/// For example, with window_size=5 and target line 10:
+/// ```
+///   8: some_config: value
+///   9: another_config: value
+/// > 10: target_line: value
+///   11: next_config: value
+///   12: last_config: value
+/// ```
+///
+/// If the target line is near the start or end of the file, the window adjusts to show the available lines while
+/// maintaining the requested window size where possible.
+///
+/// @param file_path The path to the YAML file
+/// @param mark The YAML mark containing line number information
+/// @return Vector of formatted strings showing the contextual view
 std::vector<std::string>
 make_source_details(const TextFormatter *format, const std::string &file_path, const YAML::Mark &mark)
 {
@@ -125,17 +119,15 @@ make_source_details(const TextFormatter *format, const std::string &file_path, c
     return printer.print(lines, std::vector{line_num});
 }
 
-/**
- * @brief Recursively collects all dot-separated paths from a YAML node.
- *
- * @details
- * Walks the YAML node tree and collects all map keys as dot-separated paths. For each key
- * encountered, stores the full path and the YAML::Mark for source location reporting.
- *
- * @param node The YAML node to traverse
- * @param prefix Current path prefix (empty for root)
- * @param paths Output vector of discovered paths with their marks
- */
+/// @brief Recursively collects all dot-separated paths from a YAML node.
+///
+/// @details
+/// Walks the YAML node tree and collects all map keys as dot-separated paths. For each key
+/// encountered, stores the full path and the YAML::Mark for source location reporting.
+///
+/// @param node The YAML node to traverse
+/// @param prefix Current path prefix (empty for root)
+/// @param paths Output vector of discovered paths with their marks
 void collect_yaml_paths(
     const YAML::Node &node, const std::string &prefix, std::vector<std::pair<std::string, YAML::Mark>> &paths)
 {
@@ -155,20 +147,18 @@ void collect_yaml_paths(
     }
 }
 
-/**
- * @brief Validates YAML paths against the known valid paths set.
- *
- * @details
- * Walks the YAML document tree and compares each path against the set of valid paths
- * defined in valid_yaml_paths.hpp. For any unknown paths, emits an error via the
- * UserDiagnostics interface with source location and context.
- *
- * @param format Text formatter for styled output
- * @param diagnostics User diagnostics for emitting errors (may be nullptr)
- * @param file_path Path to the YAML file being validated
- * @param node The root YAML node to validate
- * @return @c true if any unknown keys were found, @c false otherwise.
- */
+/// @brief Validates YAML paths against the known valid paths set.
+///
+/// @details
+/// Walks the YAML document tree and compares each path against the set of valid paths
+/// defined in valid_yaml_paths.hpp. For any unknown paths, emits an error via the
+/// UserDiagnostics interface with source location and context.
+///
+/// @param format Text formatter for styled output
+/// @param diagnostics User diagnostics for emitting errors (may be nullptr)
+/// @param file_path Path to the YAML file being validated
+/// @param node The root YAML node to validate
+/// @return @c true if any unknown keys were found, @c false otherwise.
 [[nodiscard]] bool validate_yaml_paths(
     const TextFormatter *format,
     const UserDiagnostics *diagnostics,
@@ -217,15 +207,13 @@ void collect_yaml_paths(
     return found_unknown;
 }
 
-/**
- * @brief Attempts to parse a std::size_t value from a YAML node.
- *
- * @param format The text formatter to use
- * @param node The YAML node to parse
- * @param key The configuration key name (for error messages)
- * @param file_path The YAML file path (for source info)
- * @return LayerValue containing the parsed value, error, or not_provided status
- */
+/// @brief Attempts to parse a std::size_t value from a YAML node.
+///
+/// @param format The text formatter to use
+/// @param node The YAML node to parse
+/// @param key The configuration key name (for error messages)
+/// @param file_path The YAML file path (for source info)
+/// @return LayerValue containing the parsed value, error, or not_provided status
 LayerValue<std::size_t>
 parse_size_t(const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
@@ -250,15 +238,13 @@ parse_size_t(const TextFormatter *format, const YAML::Node &node, const std::str
     }
 }
 
-/**
- * @brief Attempts to parse a bool value from a YAML node.
- *
- * @param format The text formatter to use
- * @param node The YAML node to parse
- * @param key The configuration key name (for error messages)
- * @param file_path The YAML file path (for source info)
- * @return LayerValue containing the parsed value, error, or not_provided status
- */
+/// @brief Attempts to parse a bool value from a YAML node.
+///
+/// @param format The text formatter to use
+/// @param node The YAML node to parse
+/// @param key The configuration key name (for error messages)
+/// @param file_path The YAML file path (for source info)
+/// @return LayerValue containing the parsed value, error, or not_provided status
 LayerValue<bool>
 parse_bool(const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
@@ -283,15 +269,13 @@ parse_bool(const TextFormatter *format, const YAML::Node &node, const std::strin
     }
 }
 
-/**
- * @brief Attempts to parse a std::string value from a YAML node.
- *
- * @param format The text formatter to use
- * @param node The YAML node to parse
- * @param key The configuration key name (for error messages)
- * @param file_path The YAML file path (for source info)
- * @return LayerValue containing the parsed value, error, or not_provided status
- */
+/// @brief Attempts to parse a std::string value from a YAML node.
+///
+/// @param format The text formatter to use
+/// @param node The YAML node to parse
+/// @param key The configuration key name (for error messages)
+/// @param file_path The YAML file path (for source info)
+/// @return LayerValue containing the parsed value, error, or not_provided status
 LayerValue<std::string>
 parse_string(const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
@@ -316,19 +300,17 @@ parse_string(const TextFormatter *format, const YAML::Node &node, const std::str
     }
 }
 
-/**
- * @brief Attempts to parse an Rgba32 color from a YAML node.
- *
- * @details
- * Expects the YAML node to be a sequence with 3 or 4 elements: [r, g, b] or [r, g, b, a]. If alpha is not provided, it
- * defaults to 255 (opaque).
- *
- * @param format The text formatter to use
- * @param node The YAML node to parse
- * @param key The configuration key name (for error messages)
- * @param file_path The YAML file path (for source info)
- * @return LayerValue containing the parsed value, error, or not_provided status
- */
+/// @brief Attempts to parse an Rgba32 color from a YAML node.
+///
+/// @details
+/// Expects the YAML node to be a sequence with 3 or 4 elements: [r, g, b] or [r, g, b, a]. If alpha is not provided, it
+/// defaults to 255 (opaque).
+///
+/// @param format The text formatter to use
+/// @param node The YAML node to parse
+/// @param key The configuration key name (for error messages)
+/// @param file_path The YAML file path (for source info)
+/// @return LayerValue containing the parsed value, error, or not_provided status
 LayerValue<Rgba32>
 parse_rgba32(const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
@@ -478,19 +460,17 @@ LayerValue<std::vector<PaletteHint>> parse_pal_hints(
     }
 }
 
-/**
- * @brief Parses a std::vector<std::string> from a YAML sequence node.
- *
- * @details
- * Expects a YAML sequence of strings. Returns LayerValue::not_provided() if the node is undefined.
- * Returns LayerValue::invalid() if the node is not a sequence.
- *
- * @param format The text formatter to use
- * @param node The YAML node to parse
- * @param key The configuration key name (for error messages)
- * @param file_path The YAML file path (for source info)
- * @return LayerValue containing the parsed vector, error, or not_provided status
- */
+/// @brief Parses a std::vector<std::string> from a YAML sequence node.
+///
+/// @details
+/// Expects a YAML sequence of strings. Returns LayerValue::not_provided() if the node is undefined.
+/// Returns LayerValue::invalid() if the node is not a sequence.
+///
+/// @param format The text formatter to use
+/// @param node The YAML node to parse
+/// @param key The configuration key name (for error messages)
+/// @param file_path The YAML file path (for source info)
+/// @return LayerValue containing the parsed vector, error, or not_provided status
 LayerValue<std::vector<std::string>> parse_string_vector(
     const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
@@ -524,18 +504,16 @@ LayerValue<std::vector<std::string>> parse_string_vector(
     }
 }
 
-/**
- * @brief Attempts to parse a TilesPalMode value from a YAML node.
- *
- * @details
- * Expects a string value that matches one of the valid TilesPalMode YAML strings: "true_color" or "greyscale".
- *
- * @param format The text formatter to use
- * @param node The YAML node to parse
- * @param key The configuration key name (for error messages)
- * @param file_path The YAML file path (for source info)
- * @return LayerValue containing the parsed value, error, or not_provided status
- */
+/// @brief Attempts to parse a TilesPalMode value from a YAML node.
+///
+/// @details
+/// Expects a string value that matches one of the valid TilesPalMode YAML strings: "true_color" or "greyscale".
+///
+/// @param format The text formatter to use
+/// @param node The YAML node to parse
+/// @param key The configuration key name (for error messages)
+/// @param file_path The YAML file path (for source info)
+/// @return LayerValue containing the parsed value, error, or not_provided status
 LayerValue<TilesPalMode> parse_tiles_pal_mode(
     const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
@@ -1658,20 +1636,18 @@ LayerValue<PackingStrategyParams> parse_packing_strategy_params(
     }
 }
 
-/**
- * @brief Attempts to load a YAML file and add it to the cache.
- *
- * @details
- * If the file exists and can be parsed, it is added to the cache and returned. If diagnostics is provided, validates
- * the YAML paths and emits errors for unknown keys. If the file doesn't exist or cannot be parsed, returns
- * std::nullopt. Uses a static cache shared across all YamlFileProvider instances.
- *
- * @param path The path to the YAML file to load
- * @param format Text formatter for styled output (used for validation)
- * @param diagnostics User diagnostics for emitting errors (may be nullptr)
- * @param out_had_unknown_keys Optional output flag set to @c true if unknown keys were found during validation.
- * @return The loaded YAML node, or std::nullopt if the file doesn't exist or cannot be parsed
- */
+/// @brief Attempts to load a YAML file and add it to the cache.
+///
+/// @details
+/// If the file exists and can be parsed, it is added to the cache and returned. If diagnostics is provided, validates
+/// the YAML paths and emits errors for unknown keys. If the file doesn't exist or cannot be parsed, returns
+/// std::nullopt. Uses a static cache shared across all YamlFileProvider instances.
+///
+/// @param path The path to the YAML file to load
+/// @param format Text formatter for styled output (used for validation)
+/// @param diagnostics User diagnostics for emitting errors (may be nullptr)
+/// @param out_had_unknown_keys Optional output flag set to @c true if unknown keys were found during validation.
+/// @return The loaded YAML node, or std::nullopt if the file doesn't exist or cannot be parsed
 std::optional<YAML::Node> load_yaml_file(
     const std::filesystem::path &path,
     const TextFormatter *format = nullptr,
@@ -1718,23 +1694,21 @@ std::optional<YAML::Node> load_yaml_file(
     }
 }
 
-/**
- * @brief Gets the priority-ordered list of config file paths for a given tileset.
- *
- * @details
- * Returns config file paths in priority order (highest to lowest):
- * 1. porytiles/tilesets/{tileset_name}/config.local.yaml (tileset-specific local overrides)
- * 2. porytiles/tilesets/{tileset_name}/config.yaml (tileset-specific config)
- * 3. porytiles/config.local.yaml (project-wide local overrides)
- * 4. porytiles/config.yaml (project-wide defaults)
- *
- * Config files are stored in the centralized Porytiles utility directory rather than
- * within individual tileset folders.
- *
- * @param project_root The project root directory
- * @param tileset The name of the tileset
- * @return Vector of config file paths in priority order
- */
+/// @brief Gets the priority-ordered list of config file paths for a given tileset.
+///
+/// @details
+/// Returns config file paths in priority order (highest to lowest):
+/// 1. porytiles/tilesets/{tileset_name}/config.local.yaml (tileset-specific local overrides)
+/// 2. porytiles/tilesets/{tileset_name}/config.yaml (tileset-specific config)
+/// 3. porytiles/config.local.yaml (project-wide local overrides)
+/// 4. porytiles/config.yaml (project-wide defaults)
+///
+/// Config files are stored in the centralized Porytiles utility directory rather than
+/// within individual tileset folders.
+///
+/// @param project_root The project root directory
+/// @param tileset The name of the tileset
+/// @return Vector of config file paths in priority order
 std::vector<std::filesystem::path>
 get_tileset_config_path_chain(const std::filesystem::path &project_root, const std::string &tileset)
 {
@@ -1759,18 +1733,16 @@ get_tileset_config_path_chain(const std::filesystem::path &project_root, const s
     return paths;
 }
 
-/**
- * @brief Gets the config file path chain for a specific scope in priority order.
- *
- * @details
- * Returns a vector of config file paths that should be searched for config values in priority order from highest to
- * lowest. Dispatches to the appropriate path chain function based on the ConfigScopeType.
- *
- * @param project_root The root directory of the project
- * @param type The configuration scope type (tileset or layout)
- * @param scope The scope name (tileset name or layout name)
- * @return ChainableResult containing vector of config file paths in priority order
- */
+/// @brief Gets the config file path chain for a specific scope in priority order.
+///
+/// @details
+/// Returns a vector of config file paths that should be searched for config values in priority order from highest to
+/// lowest. Dispatches to the appropriate path chain function based on the ConfigScopeType.
+///
+/// @param project_root The root directory of the project
+/// @param type The configuration scope type (tileset or layout)
+/// @param scope The scope name (tileset name or layout name)
+/// @return ChainableResult containing vector of config file paths in priority order
 ChainableResult<std::vector<std::filesystem::path>>
 get_config_path_chain(const std::filesystem::path &project_root, ConfigScopeType type, const std::string &scope)
 {
@@ -1784,21 +1756,19 @@ get_config_path_chain(const std::filesystem::path &project_root, ConfigScopeType
     panic("Invalid ConfigScopeType");
 }
 
-/**
- * @brief Eagerly loads all YAML config files for a given scope and validates them for unknown keys.
- *
- * @details
- * Forces loading and validation of all YAML config files in the priority chain for the given scope.
- * If any files contain unknown configuration keys, errors are emitted via the diagnostics interface
- * and this function returns @c true to indicate the caller should terminate.
- *
- * @param format Text formatter for styled output
- * @param diagnostics User diagnostics for emitting errors
- * @param project_root The root directory of the project
- * @param type The configuration scope type
- * @param scope The scope name (e.g., tileset name)
- * @return @c true if unknown keys were found (caller should terminate), @c false otherwise.
- */
+/// @brief Eagerly loads all YAML config files for a given scope and validates them for unknown keys.
+///
+/// @details
+/// Forces loading and validation of all YAML config files in the priority chain for the given scope.
+/// If any files contain unknown configuration keys, errors are emitted via the diagnostics interface
+/// and this function returns @c true to indicate the caller should terminate.
+///
+/// @param format Text formatter for styled output
+/// @param diagnostics User diagnostics for emitting errors
+/// @param project_root The root directory of the project
+/// @param type The configuration scope type
+/// @param scope The scope name (e.g., tileset name)
+/// @return @c true if unknown keys were found (caller should terminate), @c false otherwise.
 [[nodiscard]] bool preload_and_validate_yaml_files(
     const TextFormatter *format,
     const UserDiagnostics *diagnostics,
@@ -1819,31 +1789,29 @@ get_config_path_chain(const std::filesystem::path &project_root, ConfigScopeType
     return had_unknown_keys;
 }
 
-/**
- * @brief Helper to search for a config value across multiple YAML files in priority order.
- *
- * @details
- * Searches through the provided config file paths in priority order. For each file:
- * - Attempts to load the file (using the load function)
- * - Extracts the node at the specified YAML path
- * - Parses the value using the provided parser function
- * - Returns the first valid value found
- * - Returns an error immediately if parsing fails
- * - Continues to the next file if not_provided
- *
- * @tparam T The type of value to return
- * @tparam LoadFunc Function type for loading YAML files (path -> optional<YAML::Node>)
- * @tparam NodeExtractFunc Function type for extracting node (YAML::Node -> YAML::Node)
- * @tparam ParseFunc Function type for parsing value (format, node, key, path -> LayerValue<T>)
- * @param format The text formatter to use
- * @param paths Config file paths to search in priority order
- * @param load_func Function to load a YAML file
- * @param extract_node_func Function to extract the target node from the YAML doc
- * @param parse_func Function to parse the value from the node
- * @param key The configuration key name (for error messages)
- * @param provider_name The provider-specific name for this value
- * @return The first valid LayerValue found, or not_provided if not found in any file
- */
+/// @brief Helper to search for a config value across multiple YAML files in priority order.
+///
+/// @details
+/// Searches through the provided config file paths in priority order. For each file:
+/// - Attempts to load the file (using the load function)
+/// - Extracts the node at the specified YAML path
+/// - Parses the value using the provided parser function
+/// - Returns the first valid value found
+/// - Returns an error immediately if parsing fails
+/// - Continues to the next file if not_provided
+///
+/// @tparam T The type of value to return
+/// @tparam LoadFunc Function type for loading YAML files (path -> optional<YAML::Node>)
+/// @tparam NodeExtractFunc Function type for extracting node (YAML::Node -> YAML::Node)
+/// @tparam ParseFunc Function type for parsing value (format, node, key, path -> LayerValue<T>)
+/// @param format The text formatter to use
+/// @param paths Config file paths to search in priority order
+/// @param load_func Function to load a YAML file
+/// @param extract_node_func Function to extract the target node from the YAML doc
+/// @param parse_func Function to parse the value from the node
+/// @param key The configuration key name (for error messages)
+/// @param provider_name The provider-specific name for this value
+/// @return The first valid LayerValue found, or not_provided if not found in any file
 template <typename T, typename LoadFunc, typename NodeExtractFunc, typename ParseFunc>
 LayerValue<T> search_config_files(
     const TextFormatter *format,

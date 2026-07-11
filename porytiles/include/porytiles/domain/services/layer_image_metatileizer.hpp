@@ -14,39 +14,35 @@
 
 namespace porytiles {
 
-/**
- * @brief Service for converting layer images into collections of metatiles.
- *
- * @details
- * The LayerImageMetatileizer service provides functionality to convert three layer images (bottom, middle, top) into a
- * collection of 16x16 pixel metatiles. Each metatile contains a 2x2 arrangement of 8x8 tiles from each layer.
- *
- * This service handles the validation of input dimensions, tileization of each layer, and the construction of metatiles
- * by combining corresponding tiles from each layer. Returns Metatile<T> objects.
- *
- * @tparam T The pixel type (e.g., Rgba32, IndexPixel)
- */
+/// @brief Service for converting layer images into collections of metatiles.
+///
+/// @details
+/// The LayerImageMetatileizer service provides functionality to convert three layer images (bottom, middle, top) into a
+/// collection of 16x16 pixel metatiles. Each metatile contains a 2x2 arrangement of 8x8 tiles from each layer.
+///
+/// This service handles the validation of input dimensions, tileization of each layer, and the construction of
+/// metatiles by combining corresponding tiles from each layer. Returns Metatile<T> objects.
+///
+/// @tparam T The pixel type (e.g., Rgba32, IndexPixel)
 template <typename T>
 class LayerImageMetatileizer {
   public:
-    /**
-     * @brief Converts three layer images into a vector of metatiles.
-     *
-     * @details
-     * This method takes three images representing the bottom, middle, and top layers and converts them into metatiles.
-     * The process involves:
-     * 1. Validating that all images have identical dimensions
-     * 2. Tileizing each layer into 8x8 tiles
-     * 3. Validating that dimensions are multiples of 16 (metatile size)
-     * 4. Constructing 16x16 metatiles by combining 2x2 groups of tiles from each layer
-     *
-     * @param bottom The bottom layer image
-     * @param middle The middle layer image
-     * @param top The top layer image
-     * @return A ChainableResult containing either:
-     *         - Success: A vector of Metatile<T> objects in row-major order
-     *         - Error: A FormattableError describing why metatileization failed
-     */
+    /// @brief Converts three layer images into a vector of metatiles.
+    ///
+    /// @details
+    /// This method takes three images representing the bottom, middle, and top layers and converts them into metatiles.
+    /// The process involves:
+    /// 1. Validating that all images have identical dimensions
+    /// 2. Tileizing each layer into 8x8 tiles
+    /// 3. Validating that dimensions are multiples of 16 (metatile size)
+    /// 4. Constructing 16x16 metatiles by combining 2x2 groups of tiles from each layer
+    ///
+    /// @param bottom The bottom layer image
+    /// @param middle The middle layer image
+    /// @param top The top layer image
+    /// @return A ChainableResult containing either:
+    ///         - Success: A vector of Metatile<T> objects in row-major order
+    ///         - Error: A FormattableError describing why metatileization failed
     [[nodiscard]] ChainableResult<std::vector<Metatile<T>>>
     metatileize(const Image<T> &bottom, const Image<T> &middle, const Image<T> &top) const
     {
@@ -85,12 +81,10 @@ class LayerImageMetatileizer {
         }
         const auto &top_tiles = top_tiles_result.value();
 
-        /*
-         * Validate that dimensions are multiples of metatile size. We already validated that all image dimensions are
-         * identical, so we can just check bottom here as a surrogate for the other two layers. Additionally, we already
-         * checked in the tileization step if the image dimensions were a multiple of 8. Now, we check that the image
-         * dimensions are a multiple of 16 to confirm that it can be correctly metatileized.
-         */
+        // Validate that dimensions are multiples of metatile size. We already validated that all image dimensions are
+        // identical, so we can just check bottom here as a surrogate for the other two layers. Additionally, we already
+        // checked in the tileization step if the image dimensions were a multiple of 8. Now, we check that the image
+        // dimensions are a multiple of 16 to confirm that it can be correctly metatileized.
         if (bottom.width() % metatile::side_length_pix != 0 || bottom.height() % metatile::side_length_pix != 0) {
             return FormattableError{std::format(
                 "image dimensions must be multiples of {}, got {}x{}",
@@ -121,23 +115,21 @@ class LayerImageMetatileizer {
         return metatiles;
     }
 
-    /**
-     * @brief Converts a vector of metatiles back into three separate layer images.
-     *
-     * @details
-     * This method performs the inverse of metatileize, reconstructing the original three layer images from a collection
-     * of metatiles. The process involves:
-     * 1. Computing the number of metatile rows based on the input vector size and metatiles_per_row
-     * 2. Extracting tiles from each metatile and organizing them by layer
-     * 3. Reconstructing the full images by combining tiles back into pixel data
-     * 4. Padding incomplete final rows with transparent pixels when necessary
-     *
-     * @param metatiles The vector of Metatile<T> objects to convert back to images
-     * @param metatiles_per_row The number of metatiles per row (width in metatiles)
-     * @return A ChainableResult containing either:
-     *         - Success: A tuple of three Image<T> objects (bottom, middle, top)
-     *         - Error: A FormattableError describing why demetatileization failed
-     */
+    /// @brief Converts a vector of metatiles back into three separate layer images.
+    ///
+    /// @details
+    /// This method performs the inverse of metatileize, reconstructing the original three layer images from a
+    /// collection of metatiles. The process involves:
+    /// 1. Computing the number of metatile rows based on the input vector size and metatiles_per_row
+    /// 2. Extracting tiles from each metatile and organizing them by layer
+    /// 3. Reconstructing the full images by combining tiles back into pixel data
+    /// 4. Padding incomplete final rows with transparent pixels when necessary
+    ///
+    /// @param metatiles The vector of Metatile<T> objects to convert back to images
+    /// @param metatiles_per_row The number of metatiles per row (width in metatiles)
+    /// @return A ChainableResult containing either:
+    ///         - Success: A tuple of three Image<T> objects (bottom, middle, top)
+    ///         - Error: A FormattableError describing why demetatileization failed
     [[nodiscard]] ChainableResult<std::tuple<Image<T>, Image<T>, Image<T>>>
     demetatileize(const std::vector<Metatile<T>> &metatiles, std::size_t metatiles_per_row) const
     {

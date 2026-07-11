@@ -66,11 +66,9 @@ Animation<Rgba32> make_rgba_animation(const std::string &name, const Rgba32 &col
     return anim;
 }
 
-/*
- * Builds a concrete (non-wildcard) Porymap palette whose slot 0 holds the mock extrinsic transparency color
- * (rgba_magenta). Default-constructed Porymap palettes are all-wildcard and make validate_porymap_pal panic during
- * input validation of the paired primary, so a paired-primary fixture must supply concrete palettes.
- */
+// Builds a concrete (non-wildcard) Porymap palette whose slot 0 holds the mock extrinsic transparency color
+// (rgba_magenta). Default-constructed Porymap palettes are all-wildcard and make validate_porymap_pal panic during
+// input validation of the paired primary, so a paired-primary fixture must supply concrete palettes.
 Palette<Rgba32, pal::max_size> make_concrete_porymap_pal()
 {
     Palette<Rgba32, pal::max_size> pal{rgba_black};
@@ -78,19 +76,17 @@ Palette<Rgba32, pal::max_size> make_concrete_porymap_pal()
     return pal;
 }
 
-/*
- * Builds a minimal "compiled" primary tileset carrying one animation named anim_name.
- *
- * The Porytiles component holds the RGBA animation (with a key frame) so the secondary's cross-tileset registration
- * passes both stale-primary checks. The Porymap component holds concrete palettes 0..num_pals-1 (so paired-primary
- * palette validation passes) plus a name-only Animation<IndexPixel> of the same name (the other stale-primary check).
- * The animation color is also placed in a non-slot-0 position of Porymap palette 0 so a cross-tileset primary anim
- * whose subtile is unreferenced by any metatile can still resolve its palette via the RGBA fallback path.
- *
- * When porymap_anim_tile_count is nonzero, the Porymap animation carries tile_count/tile_offset params so a secondary's
- * primary_references overrides can resolve the primary animation's tile range. It defaults to 0 (name-only) so existing
- * call sites are unaffected.
- */
+// Builds a minimal "compiled" primary tileset carrying one animation named anim_name.
+//
+// The Porytiles component holds the RGBA animation (with a key frame) so the secondary's cross-tileset registration
+// passes both stale-primary checks. The Porymap component holds concrete palettes 0..num_pals-1 (so paired-primary
+// palette validation passes) plus a name-only Animation<IndexPixel> of the same name (the other stale-primary check).
+// The animation color is also placed in a non-slot-0 position of Porymap palette 0 so a cross-tileset primary anim
+// whose subtile is unreferenced by any metatile can still resolve its palette via the RGBA fallback path.
+//
+// When porymap_anim_tile_count is nonzero, the Porymap animation carries tile_count/tile_offset params so a secondary's
+// primary_references overrides can resolve the primary animation's tile range. It defaults to 0 (name-only) so existing
+// call sites are unaffected.
 Tileset build_compiled_primary_with_anim(
     const std::string &name,
     const std::string &anim_name,
@@ -287,10 +283,8 @@ TEST_F(TilesetCompilerModeComboTests, SecondaryRejectsPalsNonOptimize)
 
 class TilesetCompilerCrossTilesetAnimTests : public TilesetCompilerTestBase {};
 
-/*
- * Regression test for #328: a secondary animation sharing a name with a paired-primary animation but holding different
- * art must produce a diagnostic, not abort the compiler via the matcher's cross-tileset name panic.
- */
+// Regression test for #328: a secondary animation sharing a name with a paired-primary animation but holding different
+// art must produce a diagnostic, not abort the compiler via the matcher's cross-tileset name panic.
 TEST_F(TilesetCompilerCrossTilesetAnimTests, SecondarySameNamedAnimAsPrimaryReportsDiagnostic)
 {
     config_.cross_tileset_anim_linking = true;
@@ -313,10 +307,8 @@ TEST_F(TilesetCompilerCrossTilesetAnimTests, SecondarySameNamedAnimAsPrimaryRepo
         << "Expected config note in error, got: " << error_text;
 }
 
-/*
- * With cross-tileset linking disabled, the entire primary-registration block is skipped, so a same-named secondary and
- * primary animation no longer collide and compilation succeeds.
- */
+// With cross-tileset linking disabled, the entire primary-registration block is skipped, so a same-named secondary and
+// primary animation no longer collide and compilation succeeds.
 TEST_F(TilesetCompilerCrossTilesetAnimTests, SecondarySameNamedAnimCompilesWhenLinkingDisabled)
 {
     config_.cross_tileset_anim_linking = false;
@@ -333,10 +325,8 @@ TEST_F(TilesetCompilerCrossTilesetAnimTests, SecondarySameNamedAnimCompilesWhenL
     ASSERT_TRUE(result.has_value()) << "Expected compile to succeed, got: " << join_error_chain(result);
 }
 
-/*
- * A distinctly-named secondary animation must not trip the same-name check: with cross-tileset linking enabled and no
- * name overlap, the primary animation registers cleanly and compilation succeeds.
- */
+// A distinctly-named secondary animation must not trip the same-name check: with cross-tileset linking enabled and no
+// name overlap, the primary animation registers cleanly and compilation succeeds.
 TEST_F(TilesetCompilerCrossTilesetAnimTests, DistinctlyNamedSecondaryAnimDoesNotOverFire)
 {
     config_.cross_tileset_anim_linking = true;
@@ -353,12 +343,10 @@ TEST_F(TilesetCompilerCrossTilesetAnimTests, DistinctlyNamedSecondaryAnimDoesNot
     ASSERT_TRUE(result.has_value()) << "Expected compile to succeed, got: " << join_error_chain(result);
 }
 
-/*
- * Coverage for #330: anim.json override entry validation parity between the manual and primary_references paths. Each
- * override entry is now bounds- and encodability-checked through a shared validator that emits graceful diagnostics
- * instead of panicking (the manual metatile-OOB case previously panicked). These diagnostics do not abort the compile,
- * so every test below expects result.has_value() to remain true and asserts via the buffered diagnostic tag counts.
- */
+// Coverage for #330: anim.json override entry validation parity between the manual and primary_references paths. Each
+// override entry is now bounds- and encodability-checked through a shared validator that emits graceful diagnostics
+// instead of panicking (the manual metatile-OOB case previously panicked). These diagnostics do not abort the compile,
+// so every test below expects result.has_value() to remain true and asserts via the buffered diagnostic tag counts.
 class TilesetCompilerOverrideValidationTests : public TilesetCompilerTestBase {};
 
 TEST_F(TilesetCompilerOverrideValidationTests, ManualOverrideApplies)

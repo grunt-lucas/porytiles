@@ -9,13 +9,11 @@ namespace porytiles {
 
 namespace {
 
-/**
- * @brief Skips tokens until finding a matching closing brace, handling nested braces.
- *
- * @param tokens The token vector
- * @param start Position of the opening brace
- * @return Position after the closing brace, or tokens.size() if not found
- */
+/// @brief Skips tokens until finding a matching closing brace, handling nested braces.
+///
+/// @param tokens The token vector
+/// @param start Position of the opening brace
+/// @return Position after the closing brace, or tokens.size() if not found
 [[nodiscard]] std::size_t skip_balanced_braces(const std::vector<Token> &tokens, std::size_t start)
 {
     if (start >= tokens.size() || !tokens[start].is(TokenType::left_brace)) {
@@ -38,13 +36,11 @@ namespace {
     return pos;
 }
 
-/**
- * @brief Collects all tokens between braces, handling nested braces.
- *
- * @param tokens The token vector
- * @param start Position of the opening brace
- * @return Vector of tokens between the braces (exclusive of braces themselves)
- */
+/// @brief Collects all tokens between braces, handling nested braces.
+///
+/// @param tokens The token vector
+/// @param start Position of the opening brace
+/// @return Vector of tokens between the braces (exclusive of braces themselves)
 [[nodiscard]] std::vector<Token> collect_brace_contents(const std::vector<Token> &tokens, std::size_t start)
 {
     std::vector<Token> contents;
@@ -73,12 +69,10 @@ namespace {
     return contents;
 }
 
-/**
- * @brief Extracts identifier names from a comma-separated list in brace contents.
- *
- * @param brace_contents Tokens from inside the braces
- * @return Vector of identifier names in order
- */
+/// @brief Extracts identifier names from a comma-separated list in brace contents.
+///
+/// @param brace_contents Tokens from inside the braces
+/// @return Vector of identifier names in order
 [[nodiscard]] std::vector<std::string> extract_identifier_elements(const std::vector<Token> &brace_contents)
 {
     std::vector<std::string> elements;
@@ -93,13 +87,11 @@ namespace {
     return elements;
 }
 
-/**
- * @brief Skips tokens until finding a matching closing parenthesis.
- *
- * @param tokens The token vector
- * @param start Position of the opening parenthesis
- * @return Position after the closing parenthesis, or tokens.size() if not found
- */
+/// @brief Skips tokens until finding a matching closing parenthesis.
+///
+/// @param tokens The token vector
+/// @param start Position of the opening parenthesis
+/// @return Position after the closing parenthesis, or tokens.size() if not found
 [[nodiscard]] std::size_t skip_balanced_parens(const std::vector<Token> &tokens, std::size_t start)
 {
     if (start >= tokens.size() || !tokens[start].is(TokenType::left_paren)) {
@@ -122,17 +114,15 @@ namespace {
     return pos;
 }
 
-/**
- * @brief Determines whether a token names a graphic-inclusion macro understood by the INCBIN parser.
- *
- * @details
- * Recognizes the plain @c INCBIN_* family (e.g. @c INCBIN_U32) as well as the alternate form
- * auto-conversion @c INCGFX_* family (e.g. @c INCGFX_U32). Both forms take the source/binary path as their
- * first string-literal argument, so the parser handles them identically.
- *
- * @param token The macro identifier text to test.
- * @return @c true if @p token begins with @c "INCBIN_" or @c "INCGFX_".
- */
+/// @brief Determines whether a token names a graphic-inclusion macro understood by the INCBIN parser.
+///
+/// @details
+/// Recognizes the plain @c INCBIN_* family (e.g. @c INCBIN_U32) as well as the alternate form
+/// auto-conversion @c INCGFX_* family (e.g. @c INCGFX_U32). Both forms take the source/binary path as their
+/// first string-literal argument, so the parser handles them identically.
+///
+/// @param token The macro identifier text to test.
+/// @return @c true if @p token begins with @c "INCBIN_" or @c "INCGFX_".
 [[nodiscard]] bool is_gfx_inclusion_macro(const std::string &token)
 {
     return token.starts_with("INCBIN_") || token.starts_with("INCGFX_");

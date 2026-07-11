@@ -11,23 +11,19 @@ namespace porytiles {
 
 namespace {
 
-/**
- * @brief Per-palette state during the build process.
- */
+/// @brief Per-palette state during the build process.
 struct PaletteBuildState {
     std::size_t hw_index;
     std::map<Rgba32, ColorPosition> color_positions;
     std::set<std::size_t> prefilled_slots;
 };
 
-/**
- * @brief Attempts to resolve an Indirect chain to an Absolute slot.
- *
- * @details
- * Follows the chain of IndirectPosition references across palettes until hitting an AbsolutePosition. Returns the
- * resolved slot on success, std::nullopt if the chain hits an Undetermined position (reference palette not yet
- * filled) or a broken reference. Panics on cycles (capped at pal::num_pals iterations).
- */
+/// @brief Attempts to resolve an Indirect chain to an Absolute slot.
+///
+/// @details
+/// Follows the chain of IndirectPosition references across palettes until hitting an AbsolutePosition. Returns the
+/// resolved slot on success, std::nullopt if the chain hits an Undetermined position (reference palette not yet
+/// filled) or a broken reference. Panics on cycles (capped at pal::num_pals iterations).
 [[nodiscard]] std::optional<std::size_t> try_resolve_indirect(
     const IndirectPosition &start, const std::array<std::optional<PaletteBuildState>, pal::num_pals> &states)
 {
@@ -200,13 +196,11 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
         }
     }
 
-    /*
-     * === Phase 3: Sequential fill ALL palettes (skipping Indirect) ===
-     *
-     * Every Undetermined color gets an Absolute slot. Indirect colors are left untouched; they'll be resolved in
-     * Phase 4. After this phase, all reference colors (which are Undetermined, not Indirect) have stable Absolute
-     * positions, enabling Indirect chain resolution.
-     */
+    // === Phase 3: Sequential fill ALL palettes (skipping Indirect) ===
+    //
+    // Every Undetermined color gets an Absolute slot. Indirect colors are left untouched; they'll be resolved in
+    // Phase 4. After this phase, all reference colors (which are Undetermined, not Indirect) have stable Absolute
+    // positions, enabling Indirect chain resolution.
     for (auto &state_opt : states) {
         if (!state_opt.has_value()) {
             continue;
@@ -242,17 +236,15 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
         }
     }
 
-    /*
-     * === Phase 4: Resolve Indirect chains with eviction ===
-     *
-     * Now all reference colors have Absolute positions (from Phase 3). Resolve each Indirect color to the reference
-     * color's slot. If the target slot is already occupied by a sequential-fill color, evict the occupant to the next
-     * free slot. Prefilled slots are never evicted.
-     *
-     * This handles cross-palette Indirect dependencies (where palette A links to B and B links to A for different
-     * shape groups) without deadlocking, because the reference colors are always Undetermined (not Indirect) and
-     * were assigned Absolute positions in Phase 3.
-     */
+    // === Phase 4: Resolve Indirect chains with eviction ===
+    //
+    // Now all reference colors have Absolute positions (from Phase 3). Resolve each Indirect color to the reference
+    // color's slot. If the target slot is already occupied by a sequential-fill color, evict the occupant to the next
+    // free slot. Prefilled slots are never evicted.
+    //
+    // This handles cross-palette Indirect dependencies (where palette A links to B and B links to A for different
+    // shape groups) without deadlocking, because the reference colors are always Undetermined (not Indirect) and
+    // were assigned Absolute positions in Phase 3.
     for (std::size_t pal_index = 0; pal_index < states.size(); ++pal_index) {
         if (!states.at(pal_index).has_value()) {
             continue;
@@ -334,10 +326,8 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
             }
 
             if (needs_eviction) {
-                /*
-                 * Find next free slot for the evicted color. Note: target_slot stays in all_used so the free
-                 * slot search won't pick target_slot itself (that slot is being claimed by the Indirect color).
-                 */
+                // Find next free slot for the evicted color. Note: target_slot stays in all_used so the free
+                // slot search won't pick target_slot itself (that slot is being claimed by the Indirect color).
                 std::set<std::size_t> all_used;
                 all_used.insert(0);
                 for (const auto &[c, p] : state.color_positions) {
@@ -368,13 +358,11 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
         }
     }
 
-    /*
-     * === Phase 5: Fallback, assign free slots to unresolved Indirect colors ===
-     *
-     * Phase 4 may leave colors in IndirectPosition if resolution failed (prefilled destination conflict). These colors
-     * still need placement in the final palette, so assign them sequential
-     * free slots, identical to Phase 3's logic but targeting IndirectPosition instead of UndeterminedPosition.
-     */
+    // === Phase 5: Fallback, assign free slots to unresolved Indirect colors ===
+    //
+    // Phase 4 may leave colors in IndirectPosition if resolution failed (prefilled destination conflict). These colors
+    // still need placement in the final palette, so assign them sequential
+    // free slots, identical to Phase 3's logic but targeting IndirectPosition instead of UndeterminedPosition.
     for (auto &state_opt : states) {
         if (!state_opt.has_value()) {
             continue;

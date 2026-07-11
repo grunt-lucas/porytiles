@@ -20,16 +20,14 @@ class PorytilesTilesetComponent {
   public:
     PorytilesTilesetComponent() = default;
 
-    /**
-     * @brief Insert a MetatileAttribute to the end of the attribute vector.
-     *
-     * @details
-     * Moves the provided MetatileAttribute into the attribute vector.
-     *
-     * @param metatile_id The id (index) of the metatile to which this attribute belongs
-     * @param attribute The MetatileAttribute to move into the vector.
-     * @pre Attribute at index is not already set
-     */
+    /// @brief Insert a MetatileAttribute to the end of the attribute vector.
+    ///
+    /// @details
+    /// Moves the provided MetatileAttribute into the attribute vector.
+    ///
+    /// @param metatile_id The id (index) of the metatile to which this attribute belongs
+    /// @param attribute The MetatileAttribute to move into the vector.
+    /// @pre Attribute at index is not already set
     void insert_attribute(std::size_t metatile_id, MetatileAttribute attribute);
 
     [[nodiscard]] std::optional<MetatileAttribute> get_attribute(std::size_t metatile_id) const;

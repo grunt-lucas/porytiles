@@ -8,13 +8,11 @@
 
 namespace porytiles {
 
-/**
- * @brief A service interface that saves a fixed-length Palette to a given file.
- *
- * @details
- * The FilePalSaver interface is file-format-agnostic. Different implementations can save to various pal file formats
- * (e.g., JASC, .gbapal, etc.).
- */
+/// @brief A service interface that saves a fixed-length Palette to a given file.
+///
+/// @details
+/// The FilePalSaver interface is file-format-agnostic. Different implementations can save to various pal file formats
+/// (e.g., JASC, .gbapal, etc.).
 class FilePalSaver {
   public:
     virtual ~FilePalSaver() = default;

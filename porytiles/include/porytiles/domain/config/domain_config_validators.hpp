@@ -1,11 +1,9 @@
-/**
- * @file
- * @brief Domain configuration validators for domain-layer models.
- *
- * @note All validators return ChainableResult<ConfigValue<T>> to support composable validation chains.
- * @see xcut_config_validators.hpp for layer cross-cutting validators.
- * @see chainable_result.hpp for the ChainableResult monadic error handling type.
- */
+/// @file
+/// @brief Domain configuration validators for domain-layer models.
+///
+/// @note All validators return ChainableResult<ConfigValue<T>> to support composable validation chains.
+/// @see xcut_config_validators.hpp for layer cross-cutting validators.
+/// @see chainable_result.hpp for the ChainableResult monadic error handling type.
 
 #pragma once
 
@@ -23,13 +21,11 @@
 
 namespace porytiles {
 
-/**
- * @brief Validates that an Rgba32 alpha component is opaque.
- *
- * @param val The config value to validate.
- * @return ChainableResult containing either the original value or a FormattableError if validation fails.
- * @post If successful, the returned value is guaranteed to have opaque alpha value.
- */
+/// @brief Validates that an Rgba32 alpha component is opaque.
+///
+/// @param val The config value to validate.
+/// @return ChainableResult containing either the original value or a FormattableError if validation fails.
+/// @post If successful, the returned value is guaranteed to have opaque alpha value.
 [[nodiscard]] inline ChainableResult<ConfigValue<Rgba32>> rgba_alpha_component_opaque(const ConfigValue<Rgba32> &val)
 {
     if (val.value().alpha() != Rgba32::alpha_opaque) {
@@ -53,25 +49,23 @@ namespace porytiles {
     return val;
 }
 
-/**
- * @brief Validates that 'biased' or 'optimal' tile sharing packing requires 'backtracking' packing strategy.
- *
- * @details
- * When tile sharing packing is set to @c TileSharingPacking::biased or @c TileSharingPacking::optimal, the packing
- * strategy must be @c PackingStrategyType::backtracking. If tile sharing packing is @c TileSharingPacking::off, no
- * constraint is enforced. This is a cross-field validator that fetches the packing strategy from the config interface.
- *
- * @tparam T The type of the config value (expected to be TileSharingPacking)
- * @tparam ConfigInterface The config interface type (e.g., DomainConfig)
- * @tparam FetchFunc Callable type that fetches the packing strategy config value
- * @param val The tile sharing packing config value being validated
- * @param config The config interface to fetch the packing strategy from
- * @param type The config scope type (tileset or layout)
- * @param scope The scope name (tileset or layout name)
- * @param other_field_name The name of the packing strategy field
- * @param fetch_other Callable that fetches the packing strategy config value
- * @return ChainableResult containing either the original value or an error
- */
+/// @brief Validates that 'biased' or 'optimal' tile sharing packing requires 'backtracking' packing strategy.
+///
+/// @details
+/// When tile sharing packing is set to @c TileSharingPacking::biased or @c TileSharingPacking::optimal, the packing
+/// strategy must be @c PackingStrategyType::backtracking. If tile sharing packing is @c TileSharingPacking::off, no
+/// constraint is enforced. This is a cross-field validator that fetches the packing strategy from the config interface.
+///
+/// @tparam T The type of the config value (expected to be TileSharingPacking)
+/// @tparam ConfigInterface The config interface type (e.g., DomainConfig)
+/// @tparam FetchFunc Callable type that fetches the packing strategy config value
+/// @param val The tile sharing packing config value being validated
+/// @param config The config interface to fetch the packing strategy from
+/// @param type The config scope type (tileset or layout)
+/// @param scope The scope name (tileset or layout name)
+/// @param other_field_name The name of the packing strategy field
+/// @param fetch_other Callable that fetches the packing strategy config value
+/// @return ChainableResult containing either the original value or an error
 template <typename T, typename ConfigInterface, typename FetchFunc>
 [[nodiscard]] ChainableResult<ConfigValue<T>> require_packing_strategy_backtracking(
     const ConfigValue<T> &val,

@@ -10,9 +10,7 @@
 
 namespace porytiles {
 
-/**
- * @brief An implementation of FilePalSaver that saves palettes to JASC-PAL (Paintshop Pro) pal files.
- */
+/// @brief An implementation of FilePalSaver that saves palettes to JASC-PAL (Paintshop Pro) pal files.
 class JascPalSaver final : public FilePalSaver {
   public:
     explicit JascPalSaver(gsl::not_null<const TextFormatter *> format) : format_{format} {}

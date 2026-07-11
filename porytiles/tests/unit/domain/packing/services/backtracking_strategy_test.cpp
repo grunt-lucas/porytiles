@@ -118,17 +118,15 @@ TEST(BacktrackingStrategyTest, DisjointTilesUseSeparatePalettes)
 
 TEST(BacktrackingStrategyTest, TightPackingRequiresBacktracking)
 {
-    /*
-     * Construct a scenario where greedy FFD ordering would fail but backtracking succeeds.
-     * 4 tiles, 2 palettes, capacity=6:
-     * - tile_a: {1,2,3,4}
-     * - tile_b: {3,4,5,6}
-     * - tile_c: {5,6,7,8}
-     * - tile_d: {7,8,1,2}
-     *
-     * Valid solution: pal0={tile_a, tile_b} => {1,2,3,4,5,6}=6, pal1={tile_c, tile_d} => {5,6,7,8,1,2}=6
-     * Greedy FFD might place tile_a and tile_c together (no overlap) causing {1,2,3,4,5,6,7,8}=8 > 6.
-     */
+    // Construct a scenario where greedy FFD ordering would fail but backtracking succeeds.
+    // 4 tiles, 2 palettes, capacity=6:
+    // - tile_a: {1,2,3,4}
+    // - tile_b: {3,4,5,6}
+    // - tile_c: {5,6,7,8}
+    // - tile_d: {7,8,1,2}
+    //
+    // Valid solution: pal0={tile_a, tile_b} => {1,2,3,4,5,6}=6, pal1={tile_c, tile_d} => {5,6,7,8,1,2}=6
+    // Greedy FFD might place tile_a and tile_c together (no overlap) causing {1,2,3,4,5,6,7,8}=8 > 6.
     auto tile_a = make_regular_tile(0, {1, 2, 3, 4});
     auto tile_b = make_regular_tile(1, {3, 4, 5, 6});
     auto tile_c = make_regular_tile(2, {5, 6, 7, 8});
@@ -293,10 +291,8 @@ TEST(BacktrackingStrategyTest, SingleConfigBfsSucceeds)
 
 TEST(BacktrackingStrategyTest, SingleConfigCutoffTooLow)
 {
-    /*
-     * Use the tight packing scenario that requires real backtracking, but with
-     * a very low node cutoff so the single config fails (no preset matrix fallback).
-     */
+    // Use the tight packing scenario that requires real backtracking, but with
+    // a very low node cutoff so the single config fails (no preset matrix fallback).
     auto tile_a = make_regular_tile(0, {1, 2, 3, 4});
     auto tile_b = make_regular_tile(1, {3, 4, 5, 6});
     auto tile_c = make_regular_tile(2, {5, 6, 7, 8});

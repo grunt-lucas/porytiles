@@ -11,22 +11,20 @@ namespace {
 
 using namespace porytiles;
 
-/**
- * @brief Finds the best palette for a tile based on palette-local weighted cost.
- *
- * @details
- * Uses cached palette color counts to compute weighted cost efficiently. The weighted cost
- * measures how well the tile's colors overlap with colors already in the palette.
- * Lower cost means better overlap.
- *
- * When sharing metadata is provided, palettes that already contain a sibling from the same shape
- * group receive a cost penalty to steer siblings into different palettes.
- *
- * @param tile The tile to place
- * @param palettes The current set of packed palettes
- * @param metadata Optional shape group metadata for sharing-aware cost adjustment (nullptr to disable)
- * @return Index of the best palette, or nullopt if a new palette should be created
- */
+/// @brief Finds the best palette for a tile based on palette-local weighted cost.
+///
+/// @details
+/// Uses cached palette color counts to compute weighted cost efficiently. The weighted cost
+/// measures how well the tile's colors overlap with colors already in the palette.
+/// Lower cost means better overlap.
+///
+/// When sharing metadata is provided, palettes that already contain a sibling from the same shape
+/// group receive a cost penalty to steer siblings into different palettes.
+///
+/// @param tile The tile to place
+/// @param palettes The current set of packed palettes
+/// @param metadata Optional shape group metadata for sharing-aware cost adjustment (nullptr to disable)
+/// @return Index of the best palette, or nullopt if a new palette should be created
 [[nodiscard]] std::optional<std::size_t> find_best_palette(
     const PackableTile &tile, const std::vector<PackedPalette> &palettes, const ShapeGroupMetadata *metadata)
 {
@@ -134,15 +132,13 @@ ChainableResult<PackingOutput> BestFusionStrategy::pack(const PackingInput &inpu
         return output;
     }
 
-    /*
-     * Right now, we mix together the hints and regular tiles before sorting. Do we want this? I think it's probably ok,
-     * since hints still guarantee that colors in the same hint will be in the same palette. And if the user supplied
-     * hints that are larger than any individual tile, they'll go first as expected. However, I think it makes sense to
-     * allow regular tiles that are large to go before smaller hints, since this probably helps to find an optimal
-     * result -- that larger tile *has to* get put somewhere in order for a solution to be found. No sense placing the
-     * hint first, only to block ourselves from finding a possible solution down the line. In other words, the promised
-     * hint postcondition is not violated, and we potentially get a better solution.
-     */
+    // Right now, we mix together the hints and regular tiles before sorting. Do we want this? I think it's probably ok,
+    // since hints still guarantee that colors in the same hint will be in the same palette. And if the user supplied
+    // hints that are larger than any individual tile, they'll go first as expected. However, I think it makes sense to
+    // allow regular tiles that are large to go before smaller hints, since this probably helps to find an optimal
+    // result -- that larger tile *has to* get put somewhere in order for a solution to be found. No sense placing the
+    // hint first, only to block ourselves from finding a possible solution down the line. In other words, the promised
+    // hint postcondition is not violated, and we potentially get a better solution.
 
     // Presort the tile pool so tiles with larger color counts come first (First Fit Decreasing heuristic)
     std::ranges::sort(

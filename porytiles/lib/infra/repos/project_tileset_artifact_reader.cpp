@@ -73,27 +73,25 @@ ChainableResult<void> import_porytiles_palette(
     return {};
 }
 
-/**
- * @brief Template helper for importing animation frames into a tileset component.
- *
- * @details
- * This function handles the tileset-specific logic for importing animation frames. It uses the shared
- * `load_animation_frame_from_png` helper for PNG loading and tile extraction, then manages the tileset component
- * integration including animation creation, key frame vs regular frame handling, and dimension tracking.
- *
- * @tparam PixelType The pixel type (Rgba32 or IndexPixel)
- * @tparam LoaderType The PNG loader type (must have load_from_file method)
- * @tparam ComponentGetter Callable returning a reference to the tileset component
- * @param dest The destination tileset
- * @param src_key The artifact key for the source PNG file
- * @param project_root The project root path (keys are relative to this)
- * @param anim_name The name of the animation
- * @param frame_name The frame name ("key" for key frames, otherwise arbitrary string like "0", "1", "left", etc.)
- * @param loader The PNG image loader
- * @param component_getter Lambda to get the appropriate component from tileset
- * @param error_context Description for error messages (e.g., "Porymap animation frame")
- * @return ChainableResult<void> indicating success or failure
- */
+/// @brief Template helper for importing animation frames into a tileset component.
+///
+/// @details
+/// This function handles the tileset-specific logic for importing animation frames. It uses the shared
+/// `load_animation_frame_from_png` helper for PNG loading and tile extraction, then manages the tileset component
+/// integration including animation creation, key frame vs regular frame handling, and dimension tracking.
+///
+/// @tparam PixelType The pixel type (Rgba32 or IndexPixel)
+/// @tparam LoaderType The PNG loader type (must have load_from_file method)
+/// @tparam ComponentGetter Callable returning a reference to the tileset component
+/// @param dest The destination tileset
+/// @param src_key The artifact key for the source PNG file
+/// @param project_root The project root path (keys are relative to this)
+/// @param anim_name The name of the animation
+/// @param frame_name The frame name ("key" for key frames, otherwise arbitrary string like "0", "1", "left", etc.)
+/// @param loader The PNG image loader
+/// @param component_getter Lambda to get the appropriate component from tileset
+/// @param error_context Description for error messages (e.g., "Porymap animation frame")
+/// @return ChainableResult<void> indicating success or failure
 template <SupportsTransparency PixelType, typename LoaderType, typename ComponentGetter>
 ChainableResult<void> import_anim_frame_impl(
     Tileset &dest,
@@ -148,9 +146,7 @@ ChainableResult<void> import_anim_frame_impl(
 
 namespace porytiles {
 
-/*
- * Porymap artifacts
- */
+// Porymap artifacts
 ChainableResult<void> ProjectTilesetArtifactReader::read_metatiles_bin(Tileset &dest, const ArtifactKey &src_key) const
 {
     // Keys are relative to project_root_, so prepend for file I/O
@@ -262,9 +258,7 @@ ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKe
     return {};
 }
 
-/*
- * Porytiles artifacts
- */
+// Porytiles artifacts
 ChainableResult<void> ProjectTilesetArtifactReader::read_bottom_png(Tileset &dest, const ArtifactKey &src_key) const
 {
     PT_TRY_CALL_PASS_ERR(

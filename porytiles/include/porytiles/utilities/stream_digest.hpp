@@ -11,22 +11,18 @@
 
 namespace porytiles {
 
-/**
- * @brief Computes the MD5 digest of an input stream.
- */
+/// @brief Computes the MD5 digest of an input stream.
 class StreamDigest {
   public:
-    /**
-     * @brief Computes the MD5 digest of an input stream.
-     *
-     * @details
-     * Reads the given input stream and computes the MD5 hash of its contents. The stream is read from its current
-     * position until the end. The stream's position is not restored after reading. The MD5 algorithm processes
-     * the data in 512-bit blocks and produces a 128-bit hash value represented as a 32-character hexadecimal string.
-     *
-     * @param stream The input stream to digest.
-     * @return A string representing the MD5 digest in lowercase hexadecimal format.
-     */
+    /// @brief Computes the MD5 digest of an input stream.
+    ///
+    /// @details
+    /// Reads the given input stream and computes the MD5 hash of its contents. The stream is read from its current
+    /// position until the end. The stream's position is not restored after reading. The MD5 algorithm processes
+    /// the data in 512-bit blocks and produces a 128-bit hash value represented as a 32-character hexadecimal string.
+    ///
+    /// @param stream The input stream to digest.
+    /// @return A string representing the MD5 digest in lowercase hexadecimal format.
     [[nodiscard]] std::string digest(std::istream &stream) const
     {
         // Initialize MD5 state

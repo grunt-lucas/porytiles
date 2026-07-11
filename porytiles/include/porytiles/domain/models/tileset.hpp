@@ -8,9 +8,7 @@
 
 namespace porytiles {
 
-/**
- * @brief A complete tileset containing both Porytiles and Porymap components.
- */
+/// @brief A complete tileset containing both Porytiles and Porymap components.
 class Tileset {
   public:
     Tileset(

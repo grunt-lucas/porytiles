@@ -13,12 +13,10 @@
 
 using namespace porytiles;
 
-/**
- * @brief Base fixture for ProjectTilesetMetadataProvider tests.
- *
- * @details
- * Subclass this fixture and override project_root_path() to test against different mock pokeemerald projects.
- */
+/// @brief Base fixture for ProjectTilesetMetadataProvider tests.
+///
+/// @details
+/// Subclass this fixture and override project_root_path() to test against different mock pokeemerald projects.
 class ProjectTilesetMetadataProviderTestBase : public ::testing::Test {
   protected:
     [[nodiscard]] virtual std::filesystem::path project_root_path() const = 0;

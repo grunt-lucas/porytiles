@@ -16,28 +16,24 @@
 
 namespace porytiles {
 
-/**
- * @brief Use case for compiling a secondary Tileset.
- *
- * @details
- * Orchestrates secondary tileset compilation by resolving the paired primary tileset (via automatic layout scanning,
- * manual configuration, or standalone mode), loading the necessary data, invoking the compiler, and persisting the
- * result. The pairing mode is controlled by the @c primary_pairing_mode configuration value.
- */
+/// @brief Use case for compiling a secondary Tileset.
+///
+/// @details
+/// Orchestrates secondary tileset compilation by resolving the paired primary tileset (via automatic layout scanning,
+/// manual configuration, or standalone mode), loading the necessary data, invoking the compiler, and persisting the
+/// result. The pairing mode is controlled by the @c primary_pairing_mode configuration value.
 class CompileSecondaryTileset {
   public:
-    /**
-     * @brief Constructs a CompileSecondaryTileset use case with the given repositories and services.
-     *
-     * @param tileset_repo A pointer to the TilesetRepo for this use case.
-     * @param compiler A pointer to the TilesetCompiler for this use case.
-     * @param metadata_provider A pointer to the TilesetMetadataProvider for this use case.
-     * @param layout_metadata_provider A pointer to the LayoutMetadataProvider for automatic primary resolution.
-     * @param tileset_manager A pointer to the PorytilesTilesetManager for this use case.
-     * @param domain_config A pointer to the DomainConfig for this use case.
-     * @param app_config A pointer to the AppConfig for this use case.
-     * @param diag A pointer to the UserDiagnostics for this use case.
-     */
+    /// @brief Constructs a CompileSecondaryTileset use case with the given repositories and services.
+    ///
+    /// @param tileset_repo A pointer to the TilesetRepo for this use case.
+    /// @param compiler A pointer to the TilesetCompiler for this use case.
+    /// @param metadata_provider A pointer to the TilesetMetadataProvider for this use case.
+    /// @param layout_metadata_provider A pointer to the LayoutMetadataProvider for automatic primary resolution.
+    /// @param tileset_manager A pointer to the PorytilesTilesetManager for this use case.
+    /// @param domain_config A pointer to the DomainConfig for this use case.
+    /// @param app_config A pointer to the AppConfig for this use case.
+    /// @param diag A pointer to the UserDiagnostics for this use case.
     CompileSecondaryTileset(
         gsl::not_null<const TilesetRepo *> tileset_repo,
         gsl::not_null<const TilesetCompiler *> compiler,
@@ -53,18 +49,16 @@ class CompileSecondaryTileset {
     {
     }
 
-    /**
-     * @brief Compiles the secondary Tileset with the given tileset name.
-     *
-     * @details
-     * Given a secondary tileset by name, resolves the paired primary tileset according to the configured pairing mode,
-     * then compiles the PorytilesTileset assets into PorymapTileset assets. Uses the use case's configured repos to
-     * load and save the tileset assets.
-     *
-     * @param tileset_name The name of the secondary Tileset to compile.
-     * @pre @p tileset_name must refer to an existing tileset in the project metadata.
-     * @return An empty Result on success, otherwise an error description.
-     */
+    /// @brief Compiles the secondary Tileset with the given tileset name.
+    ///
+    /// @details
+    /// Given a secondary tileset by name, resolves the paired primary tileset according to the configured pairing mode,
+    /// then compiles the PorytilesTileset assets into PorymapTileset assets. Uses the use case's configured repos to
+    /// load and save the tileset assets.
+    ///
+    /// @param tileset_name The name of the secondary Tileset to compile.
+    /// @pre @p tileset_name must refer to an existing tileset in the project metadata.
+    /// @return An empty Result on success, otherwise an error description.
     [[nodiscard]] ChainableResult<void> compile(const std::string &tileset_name) const;
 
   private:

@@ -10,31 +10,27 @@
 
 namespace porytiles {
 
-/**
- * @brief A container that wraps a configuration value with its name and source information.
- *
- * @details
- * ConfigValue provides transparent access to configuration values while also tracking the config value's canonical
- * name, provider-specific name, and where each value originated (e.g., which ConfigProvider supplied it). It supports
- * implicit conversion to the underlying type for ergonomic usage.
- *
- * @tparam T The type of the configuration value
- */
+/// @brief A container that wraps a configuration value with its name and source information.
+///
+/// @details
+/// ConfigValue provides transparent access to configuration values while also tracking the config value's canonical
+/// name, provider-specific name, and where each value originated (e.g., which ConfigProvider supplied it). It supports
+/// implicit conversion to the underlying type for ergonomic usage.
+///
+/// @tparam T The type of the configuration value
 template <typename T>
 class ConfigValue {
   public:
     ConfigValue() = default;
 
-    /**
-     * @brief Constructs a ConfigValue with a value, names, and source information.
-     *
-     * @param value The configuration value
-     * @param canonical_name The human-readable name from the schema (e.g., "Number Of Tiles In Primary")
-     * @param source_key The provider-specific identifier (e.g., "--num-tiles-per-metatile" for CLI,
-     *        "fieldmap.num_tiles_in_primary" for YAML)
-     * @param source A string describing where this value came from (e.g., "CliOptionProvider", "./porytiles.yaml:12")
-     * @param source_details A vector of strings with the optional source details
-     */
+    /// @brief Constructs a ConfigValue with a value, names, and source information.
+    ///
+    /// @param value The configuration value
+    /// @param canonical_name The human-readable name from the schema (e.g., "Number Of Tiles In Primary")
+    /// @param source_key The provider-specific identifier (e.g., "--num-tiles-per-metatile" for CLI,
+    ///        "fieldmap.num_tiles_in_primary" for YAML)
+    /// @param source A string describing where this value came from (e.g., "CliOptionProvider", "./porytiles.yaml:12")
+    /// @param source_details A vector of strings with the optional source details
     ConfigValue(
         T value,
         std::string canonical_name,
@@ -46,28 +42,24 @@ class ConfigValue {
     {
     }
 
-    /**
-     * @brief Implicit conversion to const reference of the underlying value.
-     *
-     * @details
-     * Allows ConfigValue to be used transparently where the underlying type is expected.
-     *
-     * @return A const reference to the stored value
-     */
+    /// @brief Implicit conversion to const reference of the underlying value.
+    ///
+    /// @details
+    /// Allows ConfigValue to be used transparently where the underlying type is expected.
+    ///
+    /// @return A const reference to the stored value
     // NOLINTNEXTLINE
     operator const T &() const &
     {
         return value_;
     }
 
-    /**
-     * @brief Implicit conversion to rvalue reference of the underlying value.
-     *
-     * @details
-     * Enables move semantics when the ConfigValue is an rvalue.
-     *
-     * @return An rvalue reference to the stored value
-     */
+    /// @brief Implicit conversion to rvalue reference of the underlying value.
+    ///
+    /// @details
+    /// Enables move semantics when the ConfigValue is an rvalue.
+    ///
+    /// @return An rvalue reference to the stored value
     // NOLINTNEXTLINE
     operator T &&() &&
     {
@@ -104,20 +96,18 @@ class ConfigValue {
         return source_details_;
     }
 
-    /**
-     * @brief Creates a child ConfigValue from a ConfigPODField, inheriting this value's source provenance.
-     *
-     * @details
-     * Used to resolve per-field overrides within aggregate config values. The derived ConfigValue inherits @c source()
-     * and @c source_details() from this (parent) ConfigValue, while taking the value, @c canonical_name, and
-     * @c source_key from the override. This allows provider-specific source metadata set at parse time to flow through
-     * to the consumer without hardcoding provider formats.
-     *
-     * @tparam U The type of the override value (may differ from @c T)
-     * @param override The config override containing the value and per-field source metadata
-     * @pre @p override must have a value (@c override.has_value() is @c true).
-     * @return A new ConfigValue wrapping the override's value with combined provenance
-     */
+    /// @brief Creates a child ConfigValue from a ConfigPODField, inheriting this value's source provenance.
+    ///
+    /// @details
+    /// Used to resolve per-field overrides within aggregate config values. The derived ConfigValue inherits @c source()
+    /// and @c source_details() from this (parent) ConfigValue, while taking the value, @c canonical_name, and
+    /// @c source_key from the override. This allows provider-specific source metadata set at parse time to flow through
+    /// to the consumer without hardcoding provider formats.
+    ///
+    /// @tparam U The type of the override value (may differ from @c T)
+    /// @param override The config override containing the value and per-field source metadata
+    /// @pre @p override must have a value (@c override.has_value() is @c true).
+    /// @return A new ConfigValue wrapping the override's value with combined provenance
     template <typename U>
     [[nodiscard]] ConfigValue<U> derive(const ConfigPODField<U> &override) const
     {
@@ -129,32 +119,30 @@ class ConfigValue {
             override.source_details.empty() ? source_details() : override.source_details};
     }
 
-    /**
-     * @brief Generates formatted text data for displaying this configuration value.
-     *
-     * @details
-     * Creates a structured representation of the configuration value suitable for formatted output or error messages.
-     * The output includes the value's canonical name, its actual value, the source information, and any additional
-     * source details if available. The format follows the pattern:
-     *
-     * ```
-     * canonical_name = value
-     * Source: source_string
-     * [optional source details lines]
-     * ```
-     *
-     * Each format string in the returned pair contains placeholders ({}) that correspond to the FormatParam objects in
-     * the parallel vector, which provide both the text to insert and styling information.
-     *
-     * @return A pair containing:
-     *         - first: Vector of format strings with placeholders
-     *         - second: Vector of FormatParam vectors, where each inner vector contains the parameters for the
-     *           corresponding format string at the same index
-     * @post The returned vectors in the pair have matching sizes (excluding source_details entries which have no
-     *       parameters)
-     * @post The first format string is always "{} = {}" for name and value
-     * @post The second format string is always "Source: {}" for source information
-     */
+    /// @brief Generates formatted text data for displaying this configuration value.
+    ///
+    /// @details
+    /// Creates a structured representation of the configuration value suitable for formatted output or error messages.
+    /// The output includes the value's canonical name, its actual value, the source information, and any additional
+    /// source details if available. The format follows the pattern:
+    ///
+    /// ```
+    /// canonical_name = value
+    /// Source: source_string
+    /// [optional source details lines]
+    /// ```
+    ///
+    /// Each format string in the returned pair contains placeholders ({}) that correspond to the FormatParam objects in
+    /// the parallel vector, which provide both the text to insert and styling information.
+    ///
+    /// @return A pair containing:
+    ///         - first: Vector of format strings with placeholders
+    ///         - second: Vector of FormatParam vectors, where each inner vector contains the parameters for the
+    ///           corresponding format string at the same index
+    /// @post The returned vectors in the pair have matching sizes (excluding source_details entries which have no
+    ///       parameters)
+    /// @post The first format string is always "{} = {}" for name and value
+    /// @post The second format string is always "Source: {}" for source information
     [[nodiscard]] std::pair<std::vector<std::string>, std::vector<std::vector<FormatParam>>> format_data() const
     {
         // foo = 3
@@ -185,33 +173,31 @@ class ConfigValue {
         return {err_text, params};
     }
 
-    /**
-     * @brief Generates a prettified, styled readout of this configuration value.
-     *
-     * @details
-     * Convenience method that combines format_data() with a TextFormatter to produce styled text output ready for
-     * display. This method internally calls format_data() and applies the formatter to each format string with its
-     * corresponding parameters, returning a vector of fully formatted lines.
-     *
-     * The output includes the value name, its actual value, the source information, and any additional source details
-     * if available, all with appropriate styling applied (or not, depending on the formatter implementation).
-     *
-     * Example output (when displayed):
-     * ```
-     * num_tiles_primary = 512
-     * Source: ./porytiles.yaml:12
-     *
-     *    1:   foo:
-     *    2:     bar: baz
-     *    3:   fieldmap:
-     * -> 4:     num_tiles_primary: 512
-     * ```
-     *
-     * @param formatter The TextFormatter to use for applying styles to the text
-     * @return A vector of formatted strings, each representing a line of the prettified output
-     * @post The returned vector has at least 2 elements (name/value line and source line)
-     * @post Additional lines may be present if source details are available
-     */
+    /// @brief Generates a prettified, styled readout of this configuration value.
+    ///
+    /// @details
+    /// Convenience method that combines format_data() with a TextFormatter to produce styled text output ready for
+    /// display. This method internally calls format_data() and applies the formatter to each format string with its
+    /// corresponding parameters, returning a vector of fully formatted lines.
+    ///
+    /// The output includes the value name, its actual value, the source information, and any additional source details
+    /// if available, all with appropriate styling applied (or not, depending on the formatter implementation).
+    ///
+    /// Example output (when displayed):
+    /// ```
+    /// num_tiles_primary = 512
+    /// Source: ./porytiles.yaml:12
+    ///
+    ///    1:   foo:
+    ///    2:     bar: baz
+    ///    3:   fieldmap:
+    /// -> 4:     num_tiles_primary: 512
+    /// ```
+    ///
+    /// @param formatter The TextFormatter to use for applying styles to the text
+    /// @return A vector of formatted strings, each representing a line of the prettified output
+    /// @post The returned vector has at least 2 elements (name/value line and source line)
+    /// @post Additional lines may be present if source details are available
     [[nodiscard]] std::vector<std::string> prettify(const TextFormatter &formatter) const
     {
         const auto [format_strings, param_vectors] = format_data();

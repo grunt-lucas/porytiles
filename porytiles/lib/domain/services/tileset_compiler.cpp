@@ -53,19 +53,17 @@ namespace {
 
 using namespace porytiles;
 
-/**
- * @brief Creates a packing strategy instance based on config settings.
- *
- * @details
- * If the selected strategy's parameter block has any values set, constructs the strategy in single-config mode with the
- * provided parameters (unset fields fall back to their per-field defaults). Otherwise, constructs the strategy in
- * preset matrix mode. BestFusionStrategy has no parameters and always uses its parameterless constructor.
- *
- * @param strategy_type The selected packing algorithm
- * @param params Per-strategy parameter blocks
- * @param diag Diagnostics interface for remarks about successful search parameters
- * @return A unique_ptr to the configured PackingStrategy
- */
+/// @brief Creates a packing strategy instance based on config settings.
+///
+/// @details
+/// If the selected strategy's parameter block has any values set, constructs the strategy in single-config mode with
+/// the provided parameters (unset fields fall back to their per-field defaults). Otherwise, constructs the strategy in
+/// preset matrix mode. BestFusionStrategy has no parameters and always uses its parameterless constructor.
+///
+/// @param strategy_type The selected packing algorithm
+/// @param params Per-strategy parameter blocks
+/// @param diag Diagnostics interface for remarks about successful search parameters
+/// @return A unique_ptr to the configured PackingStrategy
 [[nodiscard]] std::unique_ptr<PackingStrategy> make_packing_strategy(
     PackingStrategyType strategy_type, const PackingStrategyParams &params, const UserDiagnostics &diag)
 {
@@ -99,13 +97,11 @@ using namespace porytiles;
     panic("Unhandled PackingStrategyType value.");
 }
 
-/**
- * @brief Result type for tile assignment operations during compilation.
- *
- * @details
- * Encapsulates the outcome of attempting to assign a tile via palette matching. Contains all information needed for
- * error reporting in failure cases.
- */
+/// @brief Result type for tile assignment operations during compilation.
+///
+/// @details
+/// Encapsulates the outcome of attempting to assign a tile via palette matching. Contains all information needed for
+/// error reporting in failure cases.
 struct TileAssignmentResult {
     enum class Status { success, no_covering_pal, tile_not_found, tile_limit_reached };
 
@@ -119,27 +115,23 @@ struct TileAssignmentResult {
     Palette<Rgba32, pal::max_size> matched_pal{};
 };
 
-/**
- * @brief Data structure holding processed keyframe tiles and their matched palettes.
- *
- * @details
- * Used to pass the results of building keyframe data from the common helper to the mode-specific placement logic. The
- * palettes vector is only used in patch mode for color-equivalence matching; optimize and locked modes ignore it.
- */
+/// @brief Data structure holding processed keyframe tiles and their matched palettes.
+///
+/// @details
+/// Used to pass the results of building keyframe data from the common helper to the mode-specific placement logic. The
+/// palettes vector is only used in patch mode for color-equivalence matching; optimize and locked modes ignore it.
 struct AnimKeyframeData {
     std::vector<CanonicalPixelTile<IndexPixel>> tiles;
     std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
     std::vector<std::size_t> pal_indices;
 };
 
-/**
- * @brief Per-path text used to tag and phrase override-validation diagnostics.
- *
- * @details
- * The two override-application paths (manual frame linking and primary_references) share identical validation logic
- * but differ in diagnostic tag prefix and message subject. This bundles those two per-path strings so the shared
- * validator can compose path-appropriate diagnostics.
- */
+/// @brief Per-path text used to tag and phrase override-validation diagnostics.
+///
+/// @details
+/// The two override-application paths (manual frame linking and primary_references) share identical validation logic
+/// but differ in diagnostic tag prefix and message subject. This bundles those two per-path strings so the shared
+/// validator can compose path-appropriate diagnostics.
 struct OverridePathInfo {
     /// Prefix for diagnostic tags, e.g. "manual" or "primary-references".
     std::string tag_prefix;
@@ -147,16 +139,14 @@ struct OverridePathInfo {
     std::string subject_template;
 };
 
-/**
- * @brief Validates a single anim.json override entry before it is written to metatiles_bin.
- *
- * @details
- * Both override-application paths route user-authored override entries through should_apply, which performs bounds and
- * encodability checks and emits graceful diagnostics (never a panic) on bad input. This consolidates checks that
- * previously diverged between the two paths: the manual path panicked on an out-of-range metatile_id and skipped the
- * frame_subtile bound entirely, while neither path checked pal_index or warned about entries destined for a
- * dual-layerization-dropped layer.
- */
+/// @brief Validates a single anim.json override entry before it is written to metatiles_bin.
+///
+/// @details
+/// Both override-application paths route user-authored override entries through should_apply, which performs bounds and
+/// encodability checks and emits graceful diagnostics (never a panic) on bad input. This consolidates checks that
+/// previously diverged between the two paths: the manual path panicked on an out-of-range metatile_id and skipped the
+/// frame_subtile bound entirely, while neither path checked pal_index or warned about entries destined for a
+/// dual-layerization-dropped layer.
 class OverrideEntryValidator {
   public:
     OverrideEntryValidator(
@@ -173,21 +163,19 @@ class OverrideEntryValidator {
     {
     }
 
-    /**
-     * @brief Validates one override entry and reports whether it should be written to metatiles_bin.
-     *
-     * @details
-     * Emits an error diagnostic and returns false for unrecoverable problems (frame_subtile out of range, metatile_id
-     * out of range, pal_index unencodable in the 4-bit hardware field). Emits a warning but returns true for a
-     * pal_index that references a configured-but-unmanaged palette slot. Emits a warning and returns false for an entry
-     * targeting a layer that dual-layerization will drop.
-     *
-     * @param path Per-path diagnostic tag prefix and message subject
-     * @param anim_name The animation name, substituted into the subject template
-     * @param entry The override entry to validate
-     * @param tile_count The number of tiles in the referenced animation (the frame_subtile upper bound)
-     * @return True if the entry passed validation and should be applied, false otherwise
-     */
+    /// @brief Validates one override entry and reports whether it should be written to metatiles_bin.
+    ///
+    /// @details
+    /// Emits an error diagnostic and returns false for unrecoverable problems (frame_subtile out of range, metatile_id
+    /// out of range, pal_index unencodable in the 4-bit hardware field). Emits a warning but returns true for a
+    /// pal_index that references a configured-but-unmanaged palette slot. Emits a warning and returns false for an
+    /// entry targeting a layer that dual-layerization will drop.
+    ///
+    /// @param path Per-path diagnostic tag prefix and message subject
+    /// @param anim_name The animation name, substituted into the subject template
+    /// @param entry The override entry to validate
+    /// @param tile_count The number of tiles in the referenced animation (the frame_subtile upper bound)
+    /// @return True if the entry passed validation and should be applied, false otherwise
     [[nodiscard]] bool should_apply(
         const OverridePathInfo &path,
         const std::string &anim_name,
@@ -294,17 +282,15 @@ bool OverrideEntryValidator::should_apply(
     return true;
 }
 
-/**
- * @brief Task encapsulating the compilation operation for primary tilesets.
- *
- * @details
- * Breaks the monolithic compilation logic into discrete phases:
- * - process_porytiles_input() - metatileize, validate, decompose Porytiles layers
- * - process_porymap_input() - triple-layerize, decompile, decompose Porymap data
- * - setup_working_data() - initialize palettes, workspace, and output Porymap component
- * - match_tiles() - main loop matching Porytiles tiles to Porymap tiles/palettes
- * - assemble_output() - finalize output with dual-layer conversion, attributes, exports
- */
+/// @brief Task encapsulating the compilation operation for primary tilesets.
+///
+/// @details
+/// Breaks the monolithic compilation logic into discrete phases:
+/// - process_porytiles_input() - metatileize, validate, decompose Porytiles layers
+/// - process_porymap_input() - triple-layerize, decompile, decompose Porymap data
+/// - setup_working_data() - initialize palettes, workspace, and output Porymap component
+/// - match_tiles() - main loop matching Porytiles tiles to Porymap tiles/palettes
+/// - assemble_output() - finalize output with dual-layer conversion, attributes, exports
 class CompilerTask {
   public:
     CompilerTask(
@@ -464,12 +450,10 @@ ChainableResult<std::unique_ptr<Tileset>> CompilerTask::run()
     per_anim_overrides_ = per_anim_overrides;
     cross_tileset_anim_linking_ = cross_tileset_anim_linking;
 
-    /*
-     * Resolve the paired primary's ET if applicable. This is needed for cross-tileset animation linking so that
-     * primary subtiles are classified as transparent/opaque under the primary's own ET rather than the secondary's.
-     * Using each tileset's own ET is what makes the cross-ET comparator on the matcher's lookup map find matches
-     * across mismatched-ET inputs.
-     */
+    // Resolve the paired primary's ET if applicable. This is needed for cross-tileset animation linking so that
+    // primary subtiles are classified as transparent/opaque under the primary's own ET rather than the secondary's.
+    // Using each tileset's own ET is what makes the cross-ET comparator on the matcher's lookup map find matches
+    // across mismatched-ET inputs.
     if (has_paired_primary()) {
         PT_UNWRAP_TILESET_CONFIG_REF_AS(
             paired_primary_et, config_, extrinsic_transparency, paired_primary_->name(), std::unique_ptr<Tileset>);
@@ -533,12 +517,10 @@ ChainableResult<void> CompilerTask::pipeline_step_process_porymap_input()
         std::format("Failed to decompile Porymap component for tileset '{}'.", tileset_.name()));
     porymap_metatiles_ = std::move(metatiles);
 
-    /*
-     * We don't need to run any validation (including size validation) on porymap_metatiles here. We're going to
-     * overwrite them anyway. We only need to check the size of the final tilemap entry vector. Patch builds don't need
-     * to preserve tilemap entries since those cannot be referenced by other tilesets. We can just write a new entry
-     * vector every time.
-     */
+    // We don't need to run any validation (including size validation) on porymap_metatiles here. We're going to
+    // overwrite them anyway. We only need to check the size of the final tilemap entry vector. Patch builds don't need
+    // to preserve tilemap entries since those cannot be referenced by other tilesets. We can just write a new entry
+    // vector every time.
 
     // Decompose Porymap metatiles and generate canonical versions
     porymap_pixel_rgba_ = metatile::decompose(porymap_metatiles_);
@@ -551,10 +533,8 @@ ChainableResult<void> CompilerTask::pipeline_step_validate_input()
 {
     TilesetCompileValidatorServices services{config_, diag_, tile_printer_, pal_printer_};
 
-    /*
-     * Reject mode combinations that this compiler does not support before running any content-based validation. This
-     * function is the single source of truth for which compile mode combinations are supported.
-     */
+    // Reject mode combinations that this compiler does not support before running any content-based validation. This
+    // function is the single source of truth for which compile mode combinations are supported.
 
     if (is_secondary() && tiles_edit_mode_ != ArtifactEditMode::optimize) {
         std::vector<std::string> err_msg{};
@@ -619,13 +599,11 @@ ChainableResult<void> CompilerTask::pipeline_step_validate_input()
 
     std::size_t pal_start = is_secondary() ? num_pals_in_primary_.value() : 0;
 
-    /*
-     * For secondary compiles, validate the paired primary's Porymap palettes before validating the secondary's own
-     * palettes. The paired primary's palettes are loaded directly into the palette packer as pre-filled slots, so if
-     * they contain the extrinsic transparency color in a non-slot-0 position the packer will panic. Running
-     * validate_porymap_pal here turns that crash into a proper diagnostic scoped to the primary's name. This runs
-     * unconditionally since secondary compilation always consumes the primary's Porymap palettes.
-     */
+    // For secondary compiles, validate the paired primary's Porymap palettes before validating the secondary's own
+    // palettes. The paired primary's palettes are loaded directly into the palette packer as pre-filled slots, so if
+    // they contain the extrinsic transparency color in a non-slot-0 position the packer will panic. Running
+    // validate_porymap_pal here turns that crash into a proper diagnostic scoped to the primary's name. This runs
+    // unconditionally since secondary compilation always consumes the primary's Porymap palettes.
     if (is_secondary() && has_paired_primary()) {
         for (std::size_t pal_index = 0; pal_index < num_pals_in_primary_.value(); ++pal_index) {
             PT_TRY_CALL_PASS_ERR(
@@ -739,11 +717,9 @@ ChainableResult<void> CompilerTask::pipeline_step_setup_working_data()
 
     // Create tiles workspace
     if (tiles_edit_mode_ == ArtifactEditMode::locked) {
-        /*
-         * When tiles are locked, compute the exact size of tiles.png so we keep it completely unchanged. When we
-         * output, we'll also set ExportTrimMode::include_trailing_transparent so that if there was transparency at
-         * the end, we don't remove it.
-         */
+        // When tiles are locked, compute the exact size of tiles.png so we keep it completely unchanged. When we
+        // output, we'll also set ExportTrimMode::include_trailing_transparent so that if there was transparency at
+        // the end, we don't remove it.
         const auto size_in_tiles = tileset_.porymap_component().tiles_png().size_in_tiles();
         tiles_workspace_ = std::make_unique<TilesPngWorkspace>(tileset_.porymap_component().tiles_png(), size_in_tiles);
     }
@@ -797,16 +773,14 @@ ChainableResult<void> CompilerTask::pipeline_step_match_tiles_pals()
             }
         }
 
-        /*
-         * Transparent tiles always map to tile index 0 (the reserved transparent tile).
-         *
-         * If tile 0 transparency is a pokeemerald convention, why does this come after the
-         * pipeline_helper_try_reuse_porymap_tile step for non-tiles-optimize builds? It's because Porytiles design
-         * philosophy prioritizes surgical edits where possible. A user could have other locations in tiles.png marked
-         * transparent in addition to tile 0. If one of their metatiles referenced one of these alternate locations, we
-         * don't want to create a diff by forcing the metatile reference to change to tile 0. Instead, we'll just
-         * respect the idiosyncrasy by calling pipeline_helper_try_reuse_porymap_tile and letting it match there first.
-         */
+        // Transparent tiles always map to tile index 0 (the reserved transparent tile).
+        //
+        // If tile 0 transparency is a pokeemerald convention, why does this come after the
+        // pipeline_helper_try_reuse_porymap_tile step for non-tiles-optimize builds? It's because Porytiles design
+        // philosophy prioritizes surgical edits where possible. A user could have other locations in tiles.png marked
+        // transparent in addition to tile 0. If one of their metatiles referenced one of these alternate locations, we
+        // don't want to create a diff by forcing the metatile reference to change to tile 0. Instead, we'll just
+        // respect the idiosyncrasy by calling pipeline_helper_try_reuse_porymap_tile and letting it match there first.
         if (porytiles_tile.is_transparent(extrinsic_transparency_.value())) {
             new_porymap_component_->push_back_tilemap_entry(TilemapEntry{0, 0, false, false});
             continue;
@@ -858,11 +832,9 @@ ChainableResult<void> CompilerTask::pipeline_step_match_tiles_pals()
         return ChainableResult<void>{FormattableError{"Failed to match all Porytiles tiles."}};
     }
 
-    /*
-     * Catches unreferenced non-transparent animation subtiles at primary compile time, rather than letting the failure
-     * surface from a paired secondary compile with a confusing primary-pointing error. Secondary compiles still keep
-     * the defense-in-depth check in pipeline_helper_register_animations.
-     */
+    // Catches unreferenced non-transparent animation subtiles at primary compile time, rather than letting the failure
+    // surface from a paired secondary compile with a confusing primary-pointing error. Secondary compiles still keep
+    // the defense-in-depth check in pipeline_helper_register_animations.
     if (!is_secondary()) {
         PT_TRY_CALL_PASS_SAME_ERR(pipeline_helper_validate_primary_anim_subtile_coverage());
     }
@@ -891,11 +863,9 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
     // Apply manual animation overrides to metatiles_bin (must happen before dual-layerization)
     pipeline_helper_apply_manual_overrides();
 
-    /*
-     * If user is requesting dual-layer, use the input Porytiles-format metatiles to infer the LayerType for each
-     * metatile and remove the relevant tilemap entries. Here, we assume that the Porytiles metatiles have already been
-     * validated in an earlier step as dual-layer compatible.
-     */
+    // If user is requesting dual-layer, use the input Porytiles-format metatiles to infer the LayerType for each
+    // metatile and remove the relevant tilemap entries. Here, we assume that the Porytiles metatiles have already been
+    // validated in an earlier step as dual-layer compatible.
     // Gather any per-metatile explicit layer-type overrides. These pin the layer type against inference and, in dual
     // mode, drive both the dropped-layer selection and the stored attribute below.
     const std::vector<std::optional<LayerType>> explicit_layer_types = gather_explicit_layer_types();
@@ -1041,14 +1011,12 @@ CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> 
 {
     TileAssignmentResult result{};
 
-    /*
-     * Use the packer's authoritative palette assignment when available (optimize mode). This ensures tile sharing
-     * alignment is respected. The packer and alignment system chose specific palettes for each tile, and re-deriving
-     * via match_or_best could pick a different palette that breaks sharing slot alignment.
-     *
-     * Falls back to match_or_best for tiles not in the packer's assignments (e.g., locked/patch modes, or tiles
-     * excluded from packing like animation keyframes).
-     */
+    // Use the packer's authoritative palette assignment when available (optimize mode). This ensures tile sharing
+    // alignment is respected. The packer and alignment system chose specific palettes for each tile, and re-deriving
+    // via match_or_best could pick a different palette that breaks sharing slot alignment.
+    //
+    // Falls back to match_or_best for tiles not in the packer's assignments (e.g., locked/patch modes, or tiles
+    // excluded from packing like animation keyframes).
     std::size_t pal_index;
     if (tile_to_pal_.contains(flat_index)) {
         pal_index = tile_to_pal_.at(flat_index);
@@ -1069,12 +1037,10 @@ CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> 
     const auto index_tile = index_tile_from_color_tile(porytiles_tile, matched_pal, extrinsic_transparency_.value());
     const CanonicalPixelTile canonical_index_tile{index_tile};
 
-    /*
-     * In non-optimize modes with available original tilemap data, only use the animation matcher if the original
-     * tile_index was within a registered animation range. This prevents false positive interception where a static tile
-     * that visually matches an animation keyframe gets incorrectly mapped to the animation tile_index, causing
-     * unintended animation at runtime.
-     */
+    // In non-optimize modes with available original tilemap data, only use the animation matcher if the original
+    // tile_index was within a registered animation range. This prevents false positive interception where a static tile
+    // that visually matches an animation keyframe gets incorrectly mapped to the animation tile_index, causing
+    // unintended animation at runtime.
     bool should_check_anim_matcher = true;
     if (tiles_edit_mode_ != ArtifactEditMode::optimize && flat_index < porymap_tilemap_entries_.size()) {
         const auto original_tile_index = porymap_tilemap_entries_[flat_index].tile_index();
@@ -1086,11 +1052,9 @@ CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> 
         if (const auto anim_match = anim_tile_matcher_.find_match(
                 CanonicalPixelTile{porytiles_tile, extrinsic_transparency_.value()}, extrinsic_transparency_.value());
             anim_match.has_value()) {
-            /*
-             * The remark is gated on is_cross_tileset by design: it surfaces new runtime behavior, i.e. a tile that
-             * now animates because it links into primary art. Matches against this tileset's own animations are the
-             * expected path and stay silent.
-             */
+            // The remark is gated on is_cross_tileset by design: it surfaces new runtime behavior, i.e. a tile that
+            // now animates because it links into primary art. Matches against this tileset's own animations are the
+            // expected path and stay silent.
             if (anim_match->is_cross_tileset) {
                 std::vector<std::string> remark_lines;
                 remark_lines.emplace_back(format_.format(
@@ -1111,16 +1075,14 @@ CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> 
         }
     }
 
-    /*
-     * Tile found in workspace
-     *
-     * In optimize mode, we use fast O(1) exact index matching because palettes are freshly computed by the palette
-     * packing algorithm, which never produces duplicate colors. In patch/locked modes, we use O(n) color-equivalence
-     * comparison because vanilla palettes may contain duplicate colors at different indices. For example, if palette
-     * slots 7 and 14 both contain RGB(255,0,0), our index_tile_from_color_tile() always picks slot 7 (the first
-     * match), but vanilla workspace tiles might use slot 14. Exact index matching would fail to find the tile, causing
-     * unnecessary tile insertions or "tile not found" errors in locked mode.
-     */
+    // Tile found in workspace
+    //
+    // In optimize mode, we use fast O(1) exact index matching because palettes are freshly computed by the palette
+    // packing algorithm, which never produces duplicate colors. In patch/locked modes, we use O(n) color-equivalence
+    // comparison because vanilla palettes may contain duplicate colors at different indices. For example, if palette
+    // slots 7 and 14 both contain RGB(255,0,0), our index_tile_from_color_tile() always picks slot 7 (the first
+    // match), but vanilla workspace tiles might use slot 14. Exact index matching would fail to find the tile, causing
+    // unnecessary tile insertions or "tile not found" errors in locked mode.
     const auto maybe_tile_index =
         (tiles_edit_mode_ == ArtifactEditMode::optimize)
             ? tiles_workspace_->first_occurrence_of(canonical_index_tile)
@@ -1129,19 +1091,17 @@ CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> 
     if (maybe_tile_index.has_value()) {
         const auto workspace_tile_index = maybe_tile_index.value();
 
-        /*
-         * Warn if workspace fallthrough resolved to a primary animation range. When cross-tileset linking is
-         * enabled, the RGBA key frame matcher (above) catches tiles that visually match primary key frames.
-         * This branch catches a different case: tiles that don't match the RGBA key frame pixels but produce
-         * identical IndexPixel data after palette mapping (indexed-pixel coincidence). This happens when two
-         * visually distinct RGBA tiles map to the same palette indices. When cross-tileset linking is disabled,
-         * this catches all workspace-level matches to primary animation ranges.
-         *
-         * The O(primary_anims) scan is deliberate. AnimTileMatcher::is_in_animation_range() cannot replace it: when
-         * cross-tileset linking is disabled the primary animations are never registered in the matcher, the matcher
-         * mixes in this tileset's own animation ranges, and it returns only a bool while the diagnostic needs the
-         * animation name.
-         */
+        // Warn if workspace fallthrough resolved to a primary animation range. When cross-tileset linking is
+        // enabled, the RGBA key frame matcher (above) catches tiles that visually match primary key frames.
+        // This branch catches a different case: tiles that don't match the RGBA key frame pixels but produce
+        // identical IndexPixel data after palette mapping (indexed-pixel coincidence). This happens when two
+        // visually distinct RGBA tiles map to the same palette indices. When cross-tileset linking is disabled,
+        // this catches all workspace-level matches to primary animation ranges.
+        //
+        // The O(primary_anims) scan is deliberate. AnimTileMatcher::is_in_animation_range() cannot replace it: when
+        // cross-tileset linking is disabled the primary animations are never registered in the matcher, the matcher
+        // mixes in this tileset's own animation ranges, and it returns only a bool while the diagnostic needs the
+        // animation name.
         if (is_secondary() && has_paired_primary()) {
             const auto &primary_porymap_anims = paired_primary_->porymap_component().anims();
             for (const auto &[anim_name, anim] : primary_porymap_anims) {
@@ -1212,10 +1172,8 @@ CompilerTask::pipeline_helper_assign_tile_via_pal_match(const PixelTile<Rgba32> 
 
 ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
 {
-    /*
-     * Create ColorIndexMap from the Porytiles tiles, Porytiles pals, and palette hints. We already validated earlier
-     * that we don't exceed the global color count limit. So this will panic if there are too many global unique colors.
-     */
+    // Create ColorIndexMap from the Porytiles tiles, Porytiles pals, and palette hints. We already validated earlier
+    // that we don't exceed the global color count limit. So this will panic if there are too many global unique colors.
     const std::size_t color_count_limit =
         is_secondary() ? (num_pals_total_.value() - num_pals_in_primary_.value()) * (pal::max_size - 1)
                        : num_pals_in_primary_.value() * (pal::max_size - 1);
@@ -1289,12 +1247,10 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
             void,
             "Failed to tileize paired primary's tiles.png for cross-tileset shape group analysis.");
 
-        /*
-         * Normalize the paired primary's entries to triple-layer so a flat slot index decodes cleanly via
-         * metatile::from_tile_index. This absorbs the dual-layer per-LayerType layout variations (normal/covered/split)
-         * into canonical bottom/middle/top positioning; the inserted transparent entries are skipped by the existing
-         * tile_index == 0 filter below.
-         */
+        // Normalize the paired primary's entries to triple-layer so a flat slot index decodes cleanly via
+        // metatile::from_tile_index. This absorbs the dual-layer per-LayerType layout variations (normal/covered/split)
+        // into canonical bottom/middle/top positioning; the inserted transparent entries are skipped by the existing
+        // tile_index == 0 filter below.
         LayerModeConverter layer_mode_converter{&format_, &diag_, &tile_printer_, extrinsic_transparency_.value()};
         PT_TRY_ASSIGN_CHAIN_ERR(
             primary_triple_entries,
@@ -1347,10 +1303,8 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
             new_porymap_pals_[i] = maybe_packed_pal.value();
         }
         else if (tileset_.porytiles_component().pal_at(i).has_value()) {
-            /*
-             * Out-of-band Porytiles palette: exists but wasn't used in packing (e.g., palette 11.pal in a primary
-             * tileset). Resolve all wildcards to black and copy it over.
-             */
+            // Out-of-band Porytiles palette: exists but wasn't used in packing (e.g., palette 11.pal in a primary
+            // tileset). Resolve all wildcards to black and copy it over.
             const auto &porytiles_pal = tileset_.porytiles_component().pal_at(i).value();
             Palette<Rgba32, pal::max_size> resolved_pal{Rgba32{0, 0, 0, Rgba32::alpha_opaque}};
 
@@ -1372,17 +1326,15 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
             new_porymap_pals_[i] = resolved_pal;
         }
         else {
-            /*
-             * Copy remaining secondary palettes from the original component. The "secondary" pals in a primary
-             * tileset's folder won't be actually loaded by the game engine. Porymap also doesn't show them -- it
-             * will grab pals from the relevant secondary set folder. However, we copy them here for consistency. If
-             * for some reason the user had edited them, we don't want to clobber their edits. Porytiles should be
-             * surgical where possible.
-             *
-             * Copy junk pals. 13.pal, 14.pal, 15.pal exist in the tileset but are reserved by the game engine for
-             * overworld/shop UI. Here we just copy them over as-is. Again, if for some reason the user had edited
-             * them, let's not clobber anything unnecessarily.
-             */
+            // Copy remaining secondary palettes from the original component. The "secondary" pals in a primary
+            // tileset's folder won't be actually loaded by the game engine. Porymap also doesn't show them -- it
+            // will grab pals from the relevant secondary set folder. However, we copy them here for consistency. If
+            // for some reason the user had edited them, we don't want to clobber their edits. Porytiles should be
+            // surgical where possible.
+            //
+            // Copy junk pals. 13.pal, 14.pal, 15.pal exist in the tileset but are reserved by the game engine for
+            // overworld/shop UI. Here we just copy them over as-is. Again, if for some reason the user had edited
+            // them, let's not clobber anything unnecessarily.
             new_porymap_pals_[i] = tileset_.porymap_component().pal_at(i);
         }
     }
@@ -1427,12 +1379,10 @@ ChainableResult<ColorIndexMap<Rgba32>> CompilerTask::pipeline_helper_build_color
             "pipeline_step_validate_input");
     }
 
-    /*
-     * For secondary compilation, add primary palette colors to the map. The packer needs these to build ColorSets for
-     * locked primary palettes, enabling secondary tiles that only use primary colors to be correctly assigned to a
-     * primary palette. These colors don't count against the secondary color budget, so they're added after the limit
-     * check.
-     */
+    // For secondary compilation, add primary palette colors to the map. The packer needs these to build ColorSets for
+    // locked primary palettes, enabling secondary tiles that only use primary colors to be correctly assigned to a
+    // primary palette. These colors don't count against the secondary color budget, so they're added after the limit
+    // check.
     if (is_secondary() && has_paired_primary()) {
         for (std::size_t i = 0; i < num_pals_in_primary_.value(); ++i) {
             const auto &primary_pal = paired_primary_->porymap_component().pal_at(i);
@@ -1453,10 +1403,8 @@ CompilerTask::pipeline_helper_build_keyframe_data(const std::string &anim_name, 
     result.tiles.reserve(tile_count);
     result.palettes.reserve(tile_count);
 
-    /*
-     * For automatic/hybrid mode, we use the key frame tiles. For manual mode (no key frame),
-     * we use the first regular frame's tiles as the representative tiles to place in tiles.png.
-     */
+    // For automatic/hybrid mode, we use the key frame tiles. For manual mode (no key frame),
+    // we use the first regular frame's tiles as the representative tiles to place in tiles.png.
     const AnimFrame<Rgba32> &representative_frame =
         anim.has_key_frame() ? anim.key_frame() : anim.frames().begin()->second;
 
@@ -1464,11 +1412,9 @@ CompilerTask::pipeline_helper_build_keyframe_data(const std::string &anim_name, 
         const PixelTile<Rgba32> &composite_rgba_tile = composite_frame.tile_at(tile_idx);
         const PixelTile<Rgba32> &representative_tile = representative_frame.tile_at(tile_idx);
 
-        /*
-         * Transparent representative tiles are valid for animations without a key frame. They just produce a
-         * transparent IndexPixel tile with palette index 0. For key frame animations, validate_anim_frames() catches
-         * transparent tiles before we get here.
-         */
+        // Transparent representative tiles are valid for animations without a key frame. They just produce a
+        // transparent IndexPixel tile with palette index 0. For key frame animations, validate_anim_frames() catches
+        // transparent tiles before we get here.
         if (representative_tile.is_transparent(extrinsic_transparency_.value())) {
             PixelTile<IndexPixel> transparent_tile{IndexPixel{0}};
             result.tiles.emplace_back(transparent_tile);
@@ -1477,16 +1423,14 @@ CompilerTask::pipeline_helper_build_keyframe_data(const std::string &anim_name, 
             continue;
         }
 
-        /*
-         * Match tile to palette using composite frame to guarantee correct palette selection. As we have seen, some
-         * animations, like FireRed General's water_current_landwatersedge, have animated tiles that different palettes
-         * in different tilemap entries. Here, we're only selecting the first matching pal. It will be up to the user to
-         * ensure that the other pals are aligned such that the IndexTile we generate from this step will work for every
-         * palette the animation uses.
-         *
-         * Eventually, when we support tileset.tiles.sharing configuration, we might want to make this approach more
-         * sophisticated.
-         */
+        // Match tile to palette using composite frame to guarantee correct palette selection. As we have seen, some
+        // animations, like FireRed General's water_current_landwatersedge, have animated tiles that different palettes
+        // in different tilemap entries. Here, we're only selecting the first matching pal. It will be up to the user to
+        // ensure that the other pals are aligned such that the IndexTile we generate from this step will work for every
+        // palette the animation uses.
+        //
+        // Eventually, when we support tileset.tiles.sharing configuration, we might want to make this approach more
+        // sophisticated.
         std::vector<PaletteMatchResult<Rgba32>> matches =
             match_or_best(composite_rgba_tile, new_porymap_pals_, extrinsic_transparency_.value(), 1);
 
@@ -1541,17 +1485,15 @@ CompilerTask::pipeline_helper_build_keyframe_data(const std::string &anim_name, 
 
 ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
 {
-    /*
-     * This function has two primary responsibilities. For each anim:
-     *
-     * 1. Place the anim's key frame tiles into tiles.png at computed offsets
-     * 2. Register each animation and save the computed offsets
-     *
-     * The strategy differs by mode:
-     * - optimize: Reserve slots at the start, place keyframes in reserved region
-     * - patch: Try to reuse existing keyframes, else find contiguous free space
-     * - locked: Keyframes must already exist in tiles.png
-     */
+    // This function has two primary responsibilities. For each anim:
+    //
+    // 1. Place the anim's key frame tiles into tiles.png at computed offsets
+    // 2. Register each animation and save the computed offsets
+    //
+    // The strategy differs by mode:
+    // - optimize: Reserve slots at the start, place keyframes in reserved region
+    // - patch: Try to reuse existing keyframes, else find contiguous free space
+    // - locked: Keyframes must already exist in tiles.png
     const auto &anims = tileset_.porytiles_component().anims();
 
     if (!anims.empty()) {
@@ -1595,12 +1537,10 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
                     : global_frame_linking_;
 
             if (effective_linking == FrameLinking::manual && tiles_edit_mode_ != ArtifactEditMode::optimize) {
-                /*
-                 * Manual frame linking in patch/locked mode: use the tile_offset from anim.json directly.
-                 * Don't search tiles.png. The keyframes may not be findable via color matching. Whatever
-                 * is already at that offset in tiles.png will be dynamically overwritten by the game's
-                 * animation DMA code at runtime anyway.
-                 */
+                // Manual frame linking in patch/locked mode: use the tile_offset from anim.json directly.
+                // Don't search tiles.png. The keyframes may not be findable via color matching. Whatever
+                // is already at that offset in tiles.png will be dynamically overwritten by the game's
+                // animation DMA code at runtime anyway.
                 const std::size_t json_offset = anim.params().tile_offset();
                 if (json_offset == 0) {
                     return FormattableError{
@@ -1686,26 +1626,22 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
 
     } // if (!anims.empty())
 
-    /*
-     * Register primary animations for cross-tileset linking (secondary only). Ordering is load-bearing: the
-     * secondary's own animations were registered above, so they win the matcher's first-registration-wins lookups
-     * when key frames overlap. The collision check below then turns what would otherwise be a silent primary-side
-     * loss into a fatal error.
-     */
+    // Register primary animations for cross-tileset linking (secondary only). Ordering is load-bearing: the
+    // secondary's own animations were registered above, so they win the matcher's first-registration-wins lookups
+    // when key frames overlap. The collision check below then turns what would otherwise be a silent primary-side
+    // loss into a fatal error.
     if (is_secondary() && has_paired_primary() && cross_tileset_anim_linking_.value()) {
         const auto &primary_porytiles_anims = paired_primary_->porytiles_component().anims();
         const auto &primary_porymap_anims = paired_primary_->porymap_component().anims();
 
-        /*
-         * Build a lookup from tile_index to pal_index using the primary's compiled metatile data.
-         * This is the authoritative source for which palette each primary tile was compiled against.
-         * If multiple metatile entries reference the same tile with different palettes, the first
-         * entry wins (consistent with the first-match convention used in
-         * pipeline_helper_build_keyframe_data). The two conventions must stay in sync: switching
-         * either side to last-match-wins (or raising on conflict) without the other would assign
-         * cross-tileset animation tiles palettes that disagree with how their reused siblings were
-         * compiled.
-         */
+        // Build a lookup from tile_index to pal_index using the primary's compiled metatile data.
+        // This is the authoritative source for which palette each primary tile was compiled against.
+        // If multiple metatile entries reference the same tile with different palettes, the first
+        // entry wins (consistent with the first-match convention used in
+        // pipeline_helper_build_keyframe_data). The two conventions must stay in sync: switching
+        // either side to last-match-wins (or raising on conflict) without the other would assign
+        // cross-tileset animation tiles palettes that disagree with how their reused siblings were
+        // compiled.
         std::map<std::size_t, std::size_t> primary_tile_pal_map;
         for (const auto &entry : paired_primary_->porymap_component().metatiles_bin()) {
             if (entry.tile_index() == 0) {
@@ -1743,10 +1679,8 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
                     "secondary."}};
             }
             if (!prim_anim.has_key_frame()) {
-                /*
-                 * Manual-mode primary animations have no key frame for RGBA matching. They are still present in the
-                 * workspace and can be linked via fallthrough (which emits its own diagnostic).
-                 */
+                // Manual-mode primary animations have no key frame for RGBA matching. They are still present in the
+                // workspace and can be linked via fallthrough (which emits its own diagnostic).
                 std::vector<std::string> remark_lines;
                 remark_lines.emplace_back(format_.format(
                     "Primary animation '{}' has no key frame (likely manual frame linking).",
@@ -1756,13 +1690,11 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
                 continue;
             }
 
-            /*
-             * Same-name collision check. A secondary-owned animation sharing a name with a paired-primary
-             * animation cannot coexist with cross-tileset linking: the anim_pal_indices_ write below would
-             * clobber the secondary's entry, and the matcher panics on cross-tileset name reuse as a backstop
-             * invariant. Checked after the key-frame skip above so manual-linking primary animations, which
-             * are never registered here, keep compiling as before.
-             */
+            // Same-name collision check. A secondary-owned animation sharing a name with a paired-primary
+            // animation cannot coexist with cross-tileset linking: the anim_pal_indices_ write below would
+            // clobber the secondary's entry, and the matcher panics on cross-tileset name reuse as a backstop
+            // invariant. Checked after the key-frame skip above so manual-linking primary animations, which
+            // are never registered here, keep compiling as before.
             if (anims.contains(prim_anim_name)) {
                 std::vector<std::string> err_msg{};
                 err_msg.emplace_back(format_.format(
@@ -1780,31 +1712,29 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
 
             const std::size_t prim_tile_count = prim_anim.key_frame().tile_count();
 
-            /*
-             * Collision detection is performed before palette index resolution so that the error path does not waste
-             * work on palette lookups. If a user has both a collision and an unreferenced subtile, the collision wins:
-             * collisions indicate an art-side conflict between the primary and secondary that must be resolved before
-             * anything else, while an unreferenced subtile is a data-layout issue downstream of art choices.
-             *
-             * The two loops are independent. Collision detection only reads anim_tile_matcher_;
-             * the palette lookup only reads primary_tile_pal_map.
-             *
-             * Check for cross-tileset key frame collisions. Any non-cross-tileset match is a collision with a
-             * secondary animation. Matches flagged is_cross_tileset come from primary animations registered on
-             * earlier loop iterations and are intentionally ignored: two primary animations sharing subtile art is a
-             * primary-side authoring mistake, and the primary compiler owns its own validation. This check only
-             * protects the cross-tileset boundary.
-             *
-             * Each side of the comparison uses its own ET: primary subtiles are classified under the paired primary's
-             * ET and the canonical form is built under that ET, while the matcher's internal comparator classifies
-             * the already-registered secondary entries under the secondary's ET. This is what lets the comparator
-             * find a collision across mismatched-ET inputs.
-             *
-             * The check must keep using CanonicalPixelTile + find_match, the exact mechanism the tile assignment loop
-             * later uses to match secondary tiles against these key frames. A different or looser comparator would
-             * let the collision check pass for subtiles that still collide at assignment time, reintroducing the
-             * silent first-registration-wins loss this check exists to prevent.
-             */
+            // Collision detection is performed before palette index resolution so that the error path does not waste
+            // work on palette lookups. If a user has both a collision and an unreferenced subtile, the collision wins:
+            // collisions indicate an art-side conflict between the primary and secondary that must be resolved before
+            // anything else, while an unreferenced subtile is a data-layout issue downstream of art choices.
+            //
+            // The two loops are independent. Collision detection only reads anim_tile_matcher_;
+            // the palette lookup only reads primary_tile_pal_map.
+            //
+            // Check for cross-tileset key frame collisions. Any non-cross-tileset match is a collision with a
+            // secondary animation. Matches flagged is_cross_tileset come from primary animations registered on
+            // earlier loop iterations and are intentionally ignored: two primary animations sharing subtile art is a
+            // primary-side authoring mistake, and the primary compiler owns its own validation. This check only
+            // protects the cross-tileset boundary.
+            //
+            // Each side of the comparison uses its own ET: primary subtiles are classified under the paired primary's
+            // ET and the canonical form is built under that ET, while the matcher's internal comparator classifies
+            // the already-registered secondary entries under the secondary's ET. This is what lets the comparator
+            // find a collision across mismatched-ET inputs.
+            //
+            // The check must keep using CanonicalPixelTile + find_match, the exact mechanism the tile assignment loop
+            // later uses to match secondary tiles against these key frames. A different or looser comparator would
+            // let the collision check pass for subtiles that still collide at assignment time, reintroducing the
+            // silent first-registration-wins loss this check exists to prevent.
             for (std::size_t i = 0; i < prim_tile_count; ++i) {
                 if (prim_anim.key_frame().tile_at(i).is_transparent(paired_primary_extrinsic_transparency_.value())) {
                     continue;
@@ -1827,12 +1757,10 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
                 }
             }
 
-            /*
-             * Palette resolution cascade for cross-tileset subtiles:
-             * 1. Try metatile lookup (authoritative when subtile is referenced in primary metatiles)
-             * 2. Fall back to RGBA matching against primary palettes (for subtiles only referenced cross-tileset)
-             * Use the composite frame for RGBA matching — it covers all colors across all animation frames.
-             */
+            // Palette resolution cascade for cross-tileset subtiles:
+            // 1. Try metatile lookup (authoritative when subtile is referenced in primary metatiles)
+            // 2. Fall back to RGBA matching against primary palettes (for subtiles only referenced cross-tileset)
+            // Use the composite frame for RGBA matching — it covers all colors across all animation frames.
             const AnimFrame<Rgba32> composite =
                 prim_anim.composite_frame(paired_primary_extrinsic_transparency_.value());
 
@@ -1851,10 +1779,8 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
                     subtile_pal_indices.push_back(primary_tile_pal_map.at(abs_tile_index));
                 }
                 else {
-                    /*
-                     * Subtile not referenced in any primary metatile. Fall back to RGBA matching the composite tile
-                     * against the primary's compiled palettes.
-                     */
+                    // Subtile not referenced in any primary metatile. Fall back to RGBA matching the composite tile
+                    // against the primary's compiled palettes.
                     auto matches = match_or_best(
                         composite.tile_at(i), primary_palettes, paired_primary_extrinsic_transparency_.value(), 1);
                     if (matches.at(0).is_covered) {
@@ -1903,24 +1829,20 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
 
 ChainableResult<void> CompilerTask::pipeline_helper_validate_primary_anim_subtile_coverage() const
 {
-    /*
-     * Walk each primary animation's key frame subtiles. For every non-transparent subtile, verify its absolute tile
-     * index appears in at least one metatile entry of this primary's tilemap entries. Unreferenced subtiles are not
-     * fatal. Paired secondary compiles can resolve their palette via RGBA fallback matching. However, they are worth
-     * warning about since explicit metatile references are the preferred palette resolution path.
-     *
-     * Animations without a key frame (manual frame linking, no RGBA reference) are skipped: they have no palette to
-     * resolve via metatile lookup.
-     */
+    // Walk each primary animation's key frame subtiles. For every non-transparent subtile, verify its absolute tile
+    // index appears in at least one metatile entry of this primary's tilemap entries. Unreferenced subtiles are not
+    // fatal. Paired secondary compiles can resolve their palette via RGBA fallback matching. However, they are worth
+    // warning about since explicit metatile references are the preferred palette resolution path.
+    //
+    // Animations without a key frame (manual frame linking, no RGBA reference) are skipped: they have no palette to
+    // resolve via metatile lookup.
     const auto &anims = tileset_.porytiles_component().anims();
     if (anims.empty()) {
         return {};
     }
 
-    /*
-     * Collect tile indices referenced by any metatile entry in this primary's compiled tilemap. Tile 0 is the reserved
-     * transparent tile and is excluded (it carries no palette information).
-     */
+    // Collect tile indices referenced by any metatile entry in this primary's compiled tilemap. Tile 0 is the reserved
+    // transparent tile and is excluded (it carries no palette information).
     std::unordered_set<std::size_t> referenced_tile_indices;
     for (const auto &entry : new_porymap_component_->metatiles_bin()) {
         if (entry.tile_index() == 0) {

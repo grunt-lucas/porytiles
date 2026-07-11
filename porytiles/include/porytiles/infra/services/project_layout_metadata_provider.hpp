@@ -46,15 +46,13 @@ enum class TilesetLayoutVersionUsage {
     return "unreferenced";
 }
 
-/**
- * @brief Provides a pokeemerald project filesystem-based implementation for LayoutMetadataProvider.
- *
- * @details
- * This class parses layout definitions from layouts.json to extract metadata such a layout's width/height, primary
- * tileset, border filepath, etc.
- *
- * Layout metadata is lazy-loaded and cached for efficiency.
- */
+/// @brief Provides a pokeemerald project filesystem-based implementation for LayoutMetadataProvider.
+///
+/// @details
+/// This class parses layout definitions from layouts.json to extract metadata such a layout's width/height, primary
+/// tileset, border filepath, etc.
+///
+/// Layout metadata is lazy-loaded and cached for efficiency.
 class ProjectLayoutMetadataProvider : public LayoutMetadataProvider {
   public:
     ProjectLayoutMetadataProvider(
@@ -98,34 +96,28 @@ class ProjectLayoutMetadataProvider : public LayoutMetadataProvider {
     [[nodiscard]] ChainableResult<TilesetLayoutVersionUsage>
     layout_version_usage(const std::string &tileset_label) const;
 
-    /**
-     * @brief Resolves border file path for a layout by parsing layouts.json.
-     *
-     * @param layout_name_or_id The name or ID of the layout to check (e.g., "PetalburgCity_Layout" or
-     * "LAYOUT_PETALBURG_CITY")
-     * @pre layout_name_or_id must refer to an existing layout on disk
-     * @return The resolved border filepath for the layout
-     */
+    /// @brief Resolves border file path for a layout by parsing layouts.json.
+    ///
+    /// @param layout_name_or_id The name or ID of the layout to check (e.g., "PetalburgCity_Layout" or
+    /// "LAYOUT_PETALBURG_CITY")
+    /// @pre layout_name_or_id must refer to an existing layout on disk
+    /// @return The resolved border filepath for the layout
     [[nodiscard]] ChainableResult<std::filesystem::path> border_filepath(const std::string &layout_name_or_id) const;
 
-    /**
-     * @brief Resolves blockdata file path for a layout by parsing layouts.json.
-     *
-     * @param layout_name_or_id The name or ID of the layout to check (e.g., "PetalburgCity_Layout" or
-     * "LAYOUT_PETALBURG_CITY")
-     * @pre layout_name_or_id must refer to an existing layout on disk
-     * @return The resolved blockdata filepath for the layout
-     */
+    /// @brief Resolves blockdata file path for a layout by parsing layouts.json.
+    ///
+    /// @param layout_name_or_id The name or ID of the layout to check (e.g., "PetalburgCity_Layout" or
+    /// "LAYOUT_PETALBURG_CITY")
+    /// @pre layout_name_or_id must refer to an existing layout on disk
+    /// @return The resolved blockdata filepath for the layout
     [[nodiscard]] ChainableResult<std::filesystem::path> blockdata_filepath(const std::string &layout_name_or_id) const;
 
-    /**
-     * @brief Invalidates the lazy-loaded layout cache, forcing a re-parse on next access.
-     *
-     * @details
-     * This is needed when the underlying layouts.json file has been modified on disk since the cache was populated.
-     * For example, after creating a new layout entry, the cache must be invalidated so subsequent lookups see the
-     * newly written layout.
-     */
+    /// @brief Invalidates the lazy-loaded layout cache, forcing a re-parse on next access.
+    ///
+    /// @details
+    /// This is needed when the underlying layouts.json file has been modified on disk since the cache was populated.
+    /// For example, after creating a new layout entry, the cache must be invalidated so subsequent lookups see the
+    /// newly written layout.
     void invalidate_metadata_cache() const;
 
   private:

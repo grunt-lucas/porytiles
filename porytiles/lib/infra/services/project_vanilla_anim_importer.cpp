@@ -14,15 +14,13 @@ namespace {
 
 using namespace porytiles;
 
-/**
- * @brief Converts a .4bpp INCBIN path to a .png path.
- *
- * @details
- * Changes the extension from .4bpp to .png.
- *
- * @param path_4bpp The .4bpp path from INCBIN
- * @return The corresponding .png path
- */
+/// @brief Converts a .4bpp INCBIN path to a .png path.
+///
+/// @details
+/// Changes the extension from .4bpp to .png.
+///
+/// @param path_4bpp The .4bpp path from INCBIN
+/// @return The corresponding .png path
 [[nodiscard]] std::filesystem::path fourBpp_to_png_path(const std::string &path_4bpp)
 {
     std::filesystem::path p{path_4bpp};
@@ -99,12 +97,10 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
     }
     auto incbin_decls = std::move(incbin_decls_result).value();
 
-    /*
-     * Check if g-prefix results cover the expected animations from callback parsing. In pokefirered-expansion,
-     * BattleFrontier reuses gTilesetAnims_General_* names for its own shared animations, so the g-prefix may match
-     * INCBIN declarations that belong to a different tileset. If the g-prefix results don't cover the expected
-     * animations, try s-prefix.
-     */
+    // Check if g-prefix results cover the expected animations from callback parsing. In pokefirered-expansion,
+    // BattleFrontier reuses gTilesetAnims_General_* names for its own shared animations, so the g-prefix may match
+    // INCBIN declarations that belong to a different tileset. If the g-prefix results don't cover the expected
+    // animations, try s-prefix.
     auto incbins_cover_expected_anims = [&](const std::string &prefix,
                                             const std::vector<IncbinDeclaration> &decls) -> bool {
         for (const auto &params : anim_params_map | std::views::values) {

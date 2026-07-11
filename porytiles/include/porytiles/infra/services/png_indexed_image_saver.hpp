@@ -11,12 +11,10 @@
 
 namespace porytiles {
 
-/**
- * @brief An image saver that saves PNG files from an Image with an index pixel type.
- *
- * @details
- * This loader's implementation uses png++ wrapper for libpng to save the Image to a PNG.
- */
+/// @brief An image saver that saves PNG files from an Image with an index pixel type.
+///
+/// @details
+/// This loader's implementation uses png++ wrapper for libpng to save the Image to a PNG.
 class PngIndexedImageSaver {
   public:
     PngIndexedImageSaver() = default;

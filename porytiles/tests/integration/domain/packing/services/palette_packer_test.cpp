@@ -27,16 +27,14 @@ namespace {
     return PixelTile<Rgba32>{pixels};
 }
 
-/**
- * @brief Creates an 8x8 pixel tile with the specified colors distributed across pixels.
- *
- * @details
- * Colors are assigned to pixels in a round-robin fashion. For example, if 4 colors are provided,
- * pixel 0 gets color 0, pixel 1 gets color 1, ..., pixel 4 gets color 0 again, etc.
- *
- * @param colors The colors to distribute across the tile (must not be empty)
- * @return A PixelTile<Rgba32> with colors distributed across all pixels
- */
+/// @brief Creates an 8x8 pixel tile with the specified colors distributed across pixels.
+///
+/// @details
+/// Colors are assigned to pixels in a round-robin fashion. For example, if 4 colors are provided,
+/// pixel 0 gets color 0, pixel 1 gets color 1, ..., pixel 4 gets color 0 again, etc.
+///
+/// @param colors The colors to distribute across the tile (must not be empty)
+/// @return A PixelTile<Rgba32> with colors distributed across all pixels
 [[nodiscard]] PixelTile<Rgba32> make_tile_with_colors(const std::vector<Rgba32> &colors)
 {
     std::array<Rgba32, tile::size_pix> pixels{};

@@ -7,17 +7,15 @@
 namespace porytiles {
 namespace {
 
-/**
- * @brief Splits a PascalCase or camelCase token into lowercase words.
- *
- * @details
- * Mirrors the word-boundary logic from to_snake_case() in string_utils.hpp: insert a word break before an uppercase
- * character if the previous character was lowercase, OR if the next character is lowercase (to handle acronyms like
- * "XMLParser" -> ["xml", "parser"] and "TVTurnedOn" -> ["tv", "turned", "on"]).
- *
- * @param token The token to split.
- * @return A vector of lowercase words.
- */
+/// @brief Splits a PascalCase or camelCase token into lowercase words.
+///
+/// @details
+/// Mirrors the word-boundary logic from to_snake_case() in string_utils.hpp: insert a word break before an uppercase
+/// character if the previous character was lowercase, OR if the next character is lowercase (to handle acronyms like
+/// "XMLParser" -> ["xml", "parser"] and "TVTurnedOn" -> ["tv", "turned", "on"]).
+///
+/// @param token The token to split.
+/// @return A vector of lowercase words.
 [[nodiscard]] std::vector<std::string> split_pascal_words(const std::string &token)
 {
     if (token.empty()) {
@@ -31,11 +29,9 @@ namespace {
         const char c = token[i];
 
         if (std::isupper(static_cast<unsigned char>(c))) {
-            /*
-             * Insert a word break before this uppercase char if:
-             * 1. We have accumulated characters already, AND
-             * 2. Either the previous char was lowercase, OR the next char is lowercase (acronym boundary)
-             */
+            // Insert a word break before this uppercase char if:
+            // 1. We have accumulated characters already, AND
+            // 2. Either the previous char was lowercase, OR the next char is lowercase (acronym boundary)
             if (!current_word.empty()) {
                 const bool prev_is_lower = i > 0 && std::islower(static_cast<unsigned char>(token[i - 1]));
                 const bool next_is_lower =
@@ -59,12 +55,10 @@ namespace {
     return words;
 }
 
-/**
- * @brief Splits a string on underscores, filtering out empty tokens.
- *
- * @param input The string to split.
- * @return A vector of non-empty tokens.
- */
+/// @brief Splits a string on underscores, filtering out empty tokens.
+///
+/// @param input The string to split.
+/// @return A vector of non-empty tokens.
 [[nodiscard]] std::vector<std::string> split_on_underscores(const std::string &input)
 {
     std::vector<std::string> tokens;
@@ -89,12 +83,10 @@ namespace {
     return tokens;
 }
 
-/**
- * @brief Capitalizes the first character of a string.
- *
- * @param word The word to capitalize.
- * @return The word with its first character uppercased.
- */
+/// @brief Capitalizes the first character of a string.
+///
+/// @param word The word to capitalize.
+/// @return The word with its first character uppercased.
 [[nodiscard]] std::string capitalize(const std::string &word)
 {
     if (word.empty()) {

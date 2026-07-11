@@ -23,13 +23,11 @@
 
 namespace porytiles {
 
-/**
- * @brief Provides a filesystem-based implementation for TilesetArtifactWriter.
- *
- * @details
- * This class implements the TilesetArtifactWriter interface to provide writing functionality for tileset artifacts. It
- * operates within the context of a Pokémon Gen III decompilation project on the local filesystem.
- */
+/// @brief Provides a filesystem-based implementation for TilesetArtifactWriter.
+///
+/// @details
+/// This class implements the TilesetArtifactWriter interface to provide writing functionality for tileset artifacts. It
+/// operates within the context of a Pokémon Gen III decompilation project on the local filesystem.
 class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
   public:
     ProjectTilesetArtifactWriter(
@@ -59,9 +57,7 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
 
     [[nodiscard]] ChainableResult<void> rollback() override;
 
-    /*
-     * Porymap artifacts
-     */
+    // Porymap artifacts
     [[nodiscard]] ChainableResult<void> write_metatiles_bin(const ArtifactKey &dest_key, const Tileset &src) override;
 
     [[nodiscard]] ChainableResult<void>
@@ -81,9 +77,7 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
     [[nodiscard]] ChainableResult<void>
     write_porymap_anim_params(const ArtifactKey &dest_key, const Tileset &src) override;
 
-    /*
-     * Porytiles artifacts
-     */
+    // Porytiles artifacts
     [[nodiscard]] ChainableResult<void> write_bottom_png(const ArtifactKey &dest_key, const Tileset &src) override;
 
     [[nodiscard]] ChainableResult<void> write_middle_png(const ArtifactKey &dest_key, const Tileset &src) override;
@@ -105,13 +99,11 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
     write_porytiles_anim_params(const ArtifactKey &dest_key, const Tileset &src) override;
 
   private:
-    /**
-     * @brief Represents a staged directory to be atomically moved during commit.
-     *
-     * @details
-     * Each StagedDirectory tracks a directory in the staging area that will be
-     * atomically moved to its final destination via std::filesystem::rename().
-     */
+    /// @brief Represents a staged directory to be atomically moved during commit.
+    ///
+    /// @details
+    /// Each StagedDirectory tracks a directory in the staging area that will be
+    /// atomically moved to its final destination via std::filesystem::rename().
     struct StagedDirectory {
         std::filesystem::path staging_path; ///< Path in the transaction tmpdir
         std::filesystem::path dest_path;    ///< Final destination path

@@ -123,17 +123,15 @@ TEST(OverloadAndRemoveStrategyTest, TwoOverlappingTilesSharePalette)
 
 TEST(OverloadAndRemoveStrategyTest, EqualEfficiencyTiebreakerResolvesOverload)
 {
-    /*
-     * Construct a scenario where FFD places two equal-size tiles into the same palette,
-     * causing overload, and both tiles have identical efficiency (each contributes unique colors
-     * at the same rate). The tiebreaker should remove one tile and resolve the overload.
-     *
-     * Setup: capacity=4, tile_a has {1,2,3}, tile_b has {4,5,6}. If FFD assigns tile_a first,
-     * then tile_b gets placed into the same palette because there's no overlap benefit elsewhere.
-     * Combined colors = {1,2,3,4,5,6} = 6 > capacity 4 => overload.
-     * Both tiles have identical efficiency (all unique colors at multiplicity 1).
-     * The old code would `break` here; the new tiebreaker should pick one to remove.
-     */
+    // Construct a scenario where FFD places two equal-size tiles into the same palette,
+    // causing overload, and both tiles have identical efficiency (each contributes unique colors
+    // at the same rate). The tiebreaker should remove one tile and resolve the overload.
+    //
+    // Setup: capacity=4, tile_a has {1,2,3}, tile_b has {4,5,6}. If FFD assigns tile_a first,
+    // then tile_b gets placed into the same palette because there's no overlap benefit elsewhere.
+    // Combined colors = {1,2,3,4,5,6} = 6 > capacity 4 => overload.
+    // Both tiles have identical efficiency (all unique colors at multiplicity 1).
+    // The old code would `break` here; the new tiebreaker should pick one to remove.
     auto tile_a = make_regular_tile(0, {1, 2, 3});
     auto tile_b = make_regular_tile(1, {4, 5, 6});
 
@@ -157,22 +155,20 @@ TEST(OverloadAndRemoveStrategyTest, EqualEfficiencyTiebreakerResolvesOverload)
 
 TEST(OverloadAndRemoveStrategyTest, MultiStartFindsSolutionWhenFFDFails)
 {
-    /*
-     * Construct an instance where tight capacity causes FFD to fail but a different ordering succeeds.
-     *
-     * Setup: 4 tiles, 2 palettes with capacity=5.
-     * - Tile 0: {1,2,3,4,5} (5 colors -- fills a palette exactly)
-     * - Tile 1: {1,2,3,6,7} (overlaps 1-3 with tile 0, unique 6-7)
-     * - Tile 2: {6,7,8,9,10} (overlaps 6-7 with tile 1, unique 8-10)
-     * - Tile 3: {8,9,10,4,5} (overlaps 8-10 with tile 2, overlaps 4-5 with tile 0)
-     *
-     * A valid solution: pal0 = {tile 0, tile 1} => colors {1,2,3,4,5,6,7} -- 7 > 5, too many!
-     * Actually let me think more carefully...
-     *
-     * Simpler approach: just test that multi-start produces a result by checking
-     * that strategy{10, 42} succeeds while strategy{1} either succeeds or fails.
-     * The key property is determinism + eventual success with more attempts.
-     */
+    // Construct an instance where tight capacity causes FFD to fail but a different ordering succeeds.
+    //
+    // Setup: 4 tiles, 2 palettes with capacity=5.
+    // - Tile 0: {1,2,3,4,5} (5 colors -- fills a palette exactly)
+    // - Tile 1: {1,2,3,6,7} (overlaps 1-3 with tile 0, unique 6-7)
+    // - Tile 2: {6,7,8,9,10} (overlaps 6-7 with tile 1, unique 8-10)
+    // - Tile 3: {8,9,10,4,5} (overlaps 8-10 with tile 2, overlaps 4-5 with tile 0)
+    //
+    // A valid solution: pal0 = {tile 0, tile 1} => colors {1,2,3,4,5,6,7} -- 7 > 5, too many!
+    // Actually let me think more carefully...
+    //
+    // Simpler approach: just test that multi-start produces a result by checking
+    // that strategy{10, 42} succeeds while strategy{1} either succeeds or fails.
+    // The key property is determinism + eventual success with more attempts.
 
     // Build tiles where the optimal pairing requires non-FFD ordering
     // Pal capacity = 6, 2 palettes available
@@ -285,11 +281,9 @@ TEST(OverloadAndRemoveStrategyTest, GracefulFailureOnUnsolvableInstance)
 
 TEST(OverloadAndRemoveStrategyTest, NoisyFfdMaintainsLargeFirst)
 {
-    /*
-     * With noisy_ffd, larger tiles should still generally be placed before smaller tiles.
-     * The result should be a valid packing that respects the large-first property.
-     * We verify this indirectly: a scenario that requires large tiles to go first should still succeed.
-     */
+    // With noisy_ffd, larger tiles should still generally be placed before smaller tiles.
+    // The result should be a valid packing that respects the large-first property.
+    // We verify this indirectly: a scenario that requires large tiles to go first should still succeed.
     // Large tile needs to go first to avoid blocking the solution
     auto large_tile = make_regular_tile(0, {1, 2, 3, 4, 5, 6}); // 6 colors
     auto small_a = make_regular_tile(1, {1, 2});                // 2 colors, overlaps large
@@ -335,10 +329,8 @@ TEST(OverloadAndRemoveStrategyTest, NoisyFfdDeterministicWithSameSeed)
 
 TEST(OverloadAndRemoveStrategyTest, SingleFfdOnlyOneAttempt)
 {
-    /*
-     * With single_ffd, only one FFD attempt should be made regardless of max_attempts.
-     * If FFD fails, the result should be an error. No retries.
-     */
+    // With single_ffd, only one FFD attempt should be made regardless of max_attempts.
+    // If FFD fails, the result should be an error. No retries.
     auto tile_a = make_regular_tile(0, {1, 2, 3, 4});
     auto tile_b = make_regular_tile(1, {3, 4, 5, 6});
     auto tile_c = make_regular_tile(2, {5, 6, 7, 8});
@@ -366,10 +358,8 @@ TEST(OverloadAndRemoveStrategyTest, SingleFfdOnlyOneAttempt)
 
 TEST(OverloadAndRemoveStrategyTest, RandomShuffleStillWorks)
 {
-    /*
-     * Verify that ShuffleStrategy::random produces the same behavior as the original
-     * multi-start implementation (fully random shuffles after the FFD attempt).
-     */
+    // Verify that ShuffleStrategy::random produces the same behavior as the original
+    // multi-start implementation (fully random shuffles after the FFD attempt).
     auto tile_a = make_regular_tile(0, {1, 2, 3, 4});
     auto tile_b = make_regular_tile(1, {3, 4, 5, 6});
     auto tile_c = make_regular_tile(2, {5, 6, 7, 8});
@@ -488,10 +478,8 @@ TEST(OverloadAndRemoveStrategyTest, SingleConfigModeEmitsRemark)
 
 TEST(OverloadAndRemoveStrategyTest, SingleConfigModeFailsOnHardInput)
 {
-    /*
-     * With single_ffd and only 1 attempt on a tight input, the strategy should fail.
-     * The error message should mention "configured parameters" (not "preset configurations").
-     */
+    // With single_ffd and only 1 attempt on a tight input, the strategy should fail.
+    // The error message should mention "configured parameters" (not "preset configurations").
     auto tile_a = make_regular_tile(0, {1, 2, 3, 4, 5});
     auto tile_b = make_regular_tile(1, {6, 7, 8, 9, 10});
 
@@ -506,10 +494,8 @@ TEST(OverloadAndRemoveStrategyTest, SingleConfigModeFailsOnHardInput)
 
 TEST(OverloadAndRemoveStrategyTest, PresetMatrixModeHandlesHardInput)
 {
-    /*
-     * A tight input where FFD alone may fail, but the preset matrix's later configs
-     * (with more attempts and different seeds) should find a solution.
-     */
+    // A tight input where FFD alone may fail, but the preset matrix's later configs
+    // (with more attempts and different seeds) should find a solution.
     auto tile_a = make_regular_tile(0, {1, 2, 3, 4});
     auto tile_b = make_regular_tile(1, {3, 4, 5, 6});
     auto tile_c = make_regular_tile(2, {5, 6, 7, 8});

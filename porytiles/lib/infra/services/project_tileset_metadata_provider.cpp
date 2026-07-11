@@ -29,9 +29,7 @@ const std::filesystem::path graphics_rel_path = std::filesystem::path{"src"} / "
 const std::filesystem::path metatiles_rel_path = std::filesystem::path{"src"} / "data" / "tilesets" / "metatiles.h";
 const std::filesystem::path src_graphics_rel_path = std::filesystem::path{"src"} / "graphics.c";
 
-/**
- * @brief Classifies whether a single INCBIN variable resolves to at least one usable path.
- */
+/// @brief Classifies whether a single INCBIN variable resolves to at least one usable path.
 [[nodiscard]] std::optional<IncbinResolutionFailure>
 classify_incbin_lookup(const std::map<std::string, IncbinDeclaration> &incbin_vars, const std::string &variable_name)
 {
@@ -44,13 +42,11 @@ classify_incbin_lookup(const std::map<std::string, IncbinDeclaration> &incbin_va
     return std::nullopt;
 }
 
-/**
- * @brief Builds a multi-line error explaining why a tileset's artifact paths could not be resolved.
- *
- * @details
- * Lists each failed artifact field with the variable it referenced and the failure reason, then names the source
- * files that were scanned so the user can locate (or add) the missing declaration.
- */
+/// @brief Builds a multi-line error explaining why a tileset's artifact paths could not be resolved.
+///
+/// @details
+/// Lists each failed artifact field with the variable it referenced and the failure reason, then names the source
+/// files that were scanned so the user can locate (or add) the missing declaration.
 [[nodiscard]] FormattableError build_unresolved_artifact_paths_error(
     const std::string &tileset_name, const std::vector<UnresolvedIncbinVar> &unresolved, const TextFormatter *format)
 {
@@ -86,20 +82,18 @@ classify_incbin_lookup(const std::map<std::string, IncbinDeclaration> &incbin_va
     return FormattableError{std::move(lines)};
 }
 
-/**
- * @brief Ensures tileset metadata has been parsed from headers.h and cached.
- *
- * @details
- * Lazily parses the headers.h file to extract all tileset struct declarations, then immediately converts them into
- * @c ProjectTilesetMetadata objects. The parser types (@c StructInitializerDeclaration) are only used locally within
- * this function and never escape to the header.
- *
- * @param project_root The root directory of the pokeemerald-style project
- * @param metadata_parsed Mutable flag tracking whether metadata has been parsed
- * @param tileset_metadata Mutable cache of parsed tileset metadata
- * @param format Text formatter for styled output
- * @return Success or error result
- */
+/// @brief Ensures tileset metadata has been parsed from headers.h and cached.
+///
+/// @details
+/// Lazily parses the headers.h file to extract all tileset struct declarations, then immediately converts them into
+/// @c ProjectTilesetMetadata objects. The parser types (@c StructInitializerDeclaration) are only used locally within
+/// this function and never escape to the header.
+///
+/// @param project_root The root directory of the pokeemerald-style project
+/// @param metadata_parsed Mutable flag tracking whether metadata has been parsed
+/// @param tileset_metadata Mutable cache of parsed tileset metadata
+/// @param format Text formatter for styled output
+/// @return Success or error result
 [[nodiscard]] ChainableResult<void> ensure_metadata_parsed(
     const std::filesystem::path &project_root,
     bool &metadata_parsed,
@@ -157,23 +151,21 @@ classify_incbin_lookup(const std::map<std::string, IncbinDeclaration> &incbin_va
     return {};
 }
 
-/**
- * @brief Ensures artifact paths have been resolved for all tilesets and cached.
- *
- * @details
- * Lazily parses INCBIN declarations from graphics.h, metatiles.h, and src/graphics.c, then resolves paths for each
- * tileset in the metadata cache. The parser types (@c IncbinDeclaration) are only used locally within this function
- * and never escape to the header. Tilesets with unresolvable paths are silently skipped.
- *
- * @param project_root The root directory of the pokeemerald-style project
- * @param metadata_parsed Mutable flag tracking whether metadata has been parsed
- * @param tileset_metadata Mutable cache of parsed tileset metadata (must be populated first)
- * @param artifact_paths_parsed Mutable flag tracking whether artifact paths have been resolved
- * @param tileset_artifact_paths Mutable cache of resolved artifact paths
- * @param tileset_unresolved_vars Mutable record of per-tileset artifact fields that failed INCBIN resolution
- * @param format Text formatter for styled output
- * @return Success or error result
- */
+/// @brief Ensures artifact paths have been resolved for all tilesets and cached.
+///
+/// @details
+/// Lazily parses INCBIN declarations from graphics.h, metatiles.h, and src/graphics.c, then resolves paths for each
+/// tileset in the metadata cache. The parser types (@c IncbinDeclaration) are only used locally within this function
+/// and never escape to the header. Tilesets with unresolvable paths are silently skipped.
+///
+/// @param project_root The root directory of the pokeemerald-style project
+/// @param metadata_parsed Mutable flag tracking whether metadata has been parsed
+/// @param tileset_metadata Mutable cache of parsed tileset metadata (must be populated first)
+/// @param artifact_paths_parsed Mutable flag tracking whether artifact paths have been resolved
+/// @param tileset_artifact_paths Mutable cache of resolved artifact paths
+/// @param tileset_unresolved_vars Mutable record of per-tileset artifact fields that failed INCBIN resolution
+/// @param format Text formatter for styled output
+/// @return Success or error result
 [[nodiscard]] ChainableResult<void> ensure_artifact_paths_parsed(
     const std::filesystem::path &project_root,
     bool &metadata_parsed,

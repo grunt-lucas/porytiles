@@ -32,19 +32,17 @@ const std::filesystem::path metatiles_bin{"metatiles.bin"};
 const std::filesystem::path attrs_bin{"metatile_attributes.bin"};
 const std::filesystem::path tiles_png{"tiles.png"};
 
-/**
- * @brief Scans a directory for subdirectories and validates their names are snake_case.
- *
- * @details
- * Iterates through a directory and collects all subdirectory names. If any subdirectory
- * name is not in valid snake_case format, returns an error with a helpful message.
- * If the directory doesn't exist, returns an empty set (not an error).
- *
- * @param dir_path The directory to scan for subdirectories
- * @param artifact_type Human-readable description for error messages (e.g., "animation", "frame")
- * @param format TextFormatter for styled error messages
- * @return A set of subdirectory names, or error if any name fails snake_case validation
- */
+/// @brief Scans a directory for subdirectories and validates their names are snake_case.
+///
+/// @details
+/// Iterates through a directory and collects all subdirectory names. If any subdirectory
+/// name is not in valid snake_case format, returns an error with a helpful message.
+/// If the directory doesn't exist, returns an empty set (not an error).
+///
+/// @param dir_path The directory to scan for subdirectories
+/// @param artifact_type Human-readable description for error messages (e.g., "animation", "frame")
+/// @param format TextFormatter for styled error messages
+/// @return A set of subdirectory names, or error if any name fails snake_case validation
 [[nodiscard]] ChainableResult<std::set<std::string>> scan_subdirectories(
     const std::filesystem::path &dir_path, const std::string &artifact_type, const TextFormatter *format)
 {
@@ -71,19 +69,17 @@ const std::filesystem::path tiles_png{"tiles.png"};
     return result;
 }
 
-/**
- * @brief Scans a directory for PNG files and validates their names are snake_case.
- *
- * @details
- * Iterates through a directory and collects all PNG file stems (filenames without .png extension).
- * If any file stem is not in valid snake_case format, returns an error with a helpful message.
- * If the directory doesn't exist, returns an empty set (not an error).
- *
- * @param dir_path The directory to scan for PNG files
- * @param artifact_type Human-readable description for error messages (e.g., "frame")
- * @param format TextFormatter for styled error messages
- * @return A set of PNG file stems, or error if any name fails snake_case validation
- */
+/// @brief Scans a directory for PNG files and validates their names are snake_case.
+///
+/// @details
+/// Iterates through a directory and collects all PNG file stems (filenames without .png extension).
+/// If any file stem is not in valid snake_case format, returns an error with a helpful message.
+/// If the directory doesn't exist, returns an empty set (not an error).
+///
+/// @param dir_path The directory to scan for PNG files
+/// @param artifact_type Human-readable description for error messages (e.g., "frame")
+/// @param format TextFormatter for styled error messages
+/// @return A set of PNG file stems, or error if any name fails snake_case validation
 [[nodiscard]] ChainableResult<std::set<std::string>>
 scan_png_files(const std::filesystem::path &dir_path, const std::string &artifact_type, const TextFormatter *format)
 {
@@ -118,9 +114,7 @@ scan_png_files(const std::filesystem::path &dir_path, const std::string &artifac
 
 namespace porytiles {
 
-/*
- * Porymap artifacts
- */
+// Porymap artifacts
 ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_metatiles_bin(const std::string &tileset_name) const
 {
@@ -233,9 +227,7 @@ ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_params(const std::string
     return ArtifactKey{path.string()};
 }
 
-/*
- * Porytiles artifacts
- */
+// Porytiles artifacts
 ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_bottom_png(const std::string &tileset_name) const
 {

@@ -59,13 +59,11 @@ void copy_directory(const std::filesystem::path &src, const std::filesystem::pat
 
 } // namespace
 
-/**
- * @brief Base fixture for IncbinDeclarationAppender tests.
- *
- * @details
- * This fixture copies the test project to a temp directory so we can modify files
- * without affecting the original test data.
- */
+/// @brief Base fixture for IncbinDeclarationAppender tests.
+///
+/// @details
+/// This fixture copies the test project to a temp directory so we can modify files
+/// without affecting the original test data.
 class IncbinDeclarationAppenderTestBase : public ::testing::Test {
   protected:
     [[nodiscard]] virtual std::filesystem::path source_project_path() const = 0;
@@ -115,14 +113,12 @@ class IncbinDeclarationAppenderTest_VanillaStock : public IncbinDeclarationAppen
     }
 };
 
-/**
- * @brief Fixture whose graphics.h and metatiles.h end in a trailing preprocessor conditional.
- *
- * @details
- * Mirrors pokeemerald-expansion, whose graphics.h ends with `#if IS_FRLG ... #endif` and whose
- * metatiles.h ends with `#if !IS_FRLG ... #else ... #endif`. Declarations must land after the final
- * `#endif` (preprocessor depth 0), not inside the FRLG-only branch.
- */
+/// @brief Fixture whose graphics.h and metatiles.h end in a trailing preprocessor conditional.
+///
+/// @details
+/// Mirrors pokeemerald-expansion, whose graphics.h ends with `#if IS_FRLG ... #endif` and whose
+/// metatiles.h ends with `#if !IS_FRLG ... #else ... #endif`. Declarations must land after the final
+/// `#endif` (preprocessor depth 0), not inside the FRLG-only branch.
 class IncbinDeclarationAppenderTest_ExpansionFrlgStock : public IncbinDeclarationAppenderTestBase {
   protected:
     [[nodiscard]] std::filesystem::path source_project_path() const override

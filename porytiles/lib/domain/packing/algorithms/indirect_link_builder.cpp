@@ -50,16 +50,14 @@ std::vector<IndirectLink> build_indirect_links(
             continue;
         }
 
-        /*
-         * Pick the best reference member that minimizes conflicts with prefilled slots in other members' palettes.
-         * For each candidate reference, we check: if we were to link other members' colors to this reference's colors,
-         * how many of those links would conflict with prefilled slots? We pick the candidate with fewest conflicts.
-         *
-         * Note: unlike the old constraint builder, we don't need to know actual slot positions here. We only need to
-         * know whether a prefilled palette has a non-wildcard color at the slot where the ref color sits. This tells
-         * us the link would be unable to resolve cleanly. For simplicity, we use the base palette slot positions for
-         * this heuristic (same as the old builder did with Pass 1 positions).
-         */
+        // Pick the best reference member that minimizes conflicts with prefilled slots in other members' palettes.
+        // For each candidate reference, we check: if we were to link other members' colors to this reference's colors,
+        // how many of those links would conflict with prefilled slots? We pick the candidate with fewest conflicts.
+        //
+        // Note: unlike the old constraint builder, we don't need to know actual slot positions here. We only need to
+        // know whether a prefilled palette has a non-wildcard color at the slot where the ref color sits. This tells
+        // us the link would be unable to resolve cleanly. For simplicity, we use the base palette slot positions for
+        // this heuristic (same as the old builder did with Pass 1 positions).
         std::size_t best_ref_index = 0;
         std::size_t best_ref_conflicts = std::numeric_limits<std::size_t>::max();
 

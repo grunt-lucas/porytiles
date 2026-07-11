@@ -17,13 +17,11 @@ const Rgba32 yellow{255, 255, 0, Rgba32::alpha_opaque};
 const Rgba32 white{255, 255, 255, Rgba32::alpha_opaque};
 const Rgba32 black{0, 0, 0, Rgba32::alpha_opaque};
 
-/**
- * @brief Creates a simple pixel tile with a 2-color L-shape pattern.
- *
- * @details
- * The tile has color1 on a vertical stripe (column 0) and color2 on a horizontal stripe (row 7, cols 1-3).
- * All other pixels are transparent.
- */
+/// @brief Creates a simple pixel tile with a 2-color L-shape pattern.
+///
+/// @details
+/// The tile has color1 on a vertical stripe (column 0) and color2 on a horizontal stripe (row 7, cols 1-3).
+/// All other pixels are transparent.
 PixelTile<Rgba32> make_l_tile(const Rgba32 &color1, const Rgba32 &color2)
 {
     PixelTile<Rgba32> tile{transparent};

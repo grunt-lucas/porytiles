@@ -12,21 +12,19 @@
 
 #include "command.hpp"
 
-/**
- * @brief Lists tileset names in the project.
- *
- * @details
- * ListTilesetsCommand provides a way to list all tilesets in a project. This is useful
- * for scripting, getting an overview of the project, and for shell completion scripts.
- *
- * The command supports filtering by management status:
- * - `all`: Return all tilesets found in the project (default)
- * - `managed`: Return only tilesets that have been imported/created by Porytiles
- * - `unmanaged`: Return only tilesets not yet managed by Porytiles
- *
- * CRITICAL: This command must NEVER write to stderr, as that would corrupt shell
- * completion results. All errors are silently ignored.
- */
+/// @brief Lists tileset names in the project.
+///
+/// @details
+/// ListTilesetsCommand provides a way to list all tilesets in a project. This is useful
+/// for scripting, getting an overview of the project, and for shell completion scripts.
+///
+/// The command supports filtering by management status:
+/// - `all`: Return all tilesets found in the project (default)
+/// - `managed`: Return only tilesets that have been imported/created by Porytiles
+/// - `unmanaged`: Return only tilesets not yet managed by Porytiles
+///
+/// CRITICAL: This command must NEVER write to stderr, as that would corrupt shell
+/// completion results. All errors are silently ignored.
 class ListTilesetsCommand final : public Command {
   public:
     explicit ListTilesetsCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
@@ -104,22 +102,20 @@ class ListTilesetsCommand final : public Command {
     std::string filter_;
     std::string prefix_;
 
-    /**
-     * @brief Checks if a tileset is managed by Porytiles.
-     *
-     * @details
-     * A tileset is considered "managed" if it has a tileset-manifest.json file in its
-     * porytiles directory. This file is created when a tileset is imported or created
-     * via Porytiles commands.
-     *
-     * The porytiles directory structure uses the full tileset name (e.g., gTileset_General)
-     * as the subdirectory name.
-     *
-     * @param project_root The project root path.
-     * @param tileset_name The name of the tileset (e.g., "gTileset_General"). Must be a valid
-     *        tileset name from ProjectTilesetMetadataProvider (no path separators or traversal sequences).
-     * @return True if the tileset is managed by Porytiles.
-     */
+    /// @brief Checks if a tileset is managed by Porytiles.
+    ///
+    /// @details
+    /// A tileset is considered "managed" if it has a tileset-manifest.json file in its
+    /// porytiles directory. This file is created when a tileset is imported or created
+    /// via Porytiles commands.
+    ///
+    /// The porytiles directory structure uses the full tileset name (e.g., gTileset_General)
+    /// as the subdirectory name.
+    ///
+    /// @param project_root The project root path.
+    /// @param tileset_name The name of the tileset (e.g., "gTileset_General"). Must be a valid
+    ///        tileset name from ProjectTilesetMetadataProvider (no path separators or traversal sequences).
+    /// @return True if the tileset is managed by Porytiles.
     [[nodiscard]] static bool
     is_managed_tileset(const std::filesystem::path &project_root, const std::string &tileset_name)
     {

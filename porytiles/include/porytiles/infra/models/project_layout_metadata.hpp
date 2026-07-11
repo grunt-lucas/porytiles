@@ -8,46 +8,42 @@
 
 namespace porytiles {
 
-/**
- * @brief Represents parsed metadata for a single layout from layouts.json.
- *
- * @details
- * ProjectLayoutMetadata captures the key fields from a pokeemerald layout definition:
- * @code
- * {
- *     "id": "LAYOUT_PETALBURG_CITY",
- *     "name": "PetalburgCity_Layout",
- *     "width": 20,
- *     "height": 20,
- *     "primary_tileset": "gTileset_General",
- *     "secondary_tileset": "gTileset_Petalburg",
- *     "border_filepath": "data/layouts/PetalburgCity/border.bin",
- *     "blockdata_filepath": "data/layouts/PetalburgCity/map.bin"
- * }
- * @endcode
- *
- * @invariant id_ is never empty
- * @invariant name_ is never empty
- * @invariant primary_tileset_ is never empty
- * @invariant secondary_tileset_ is never empty
- */
+/// @brief Represents parsed metadata for a single layout from layouts.json.
+///
+/// @details
+/// ProjectLayoutMetadata captures the key fields from a pokeemerald layout definition:
+/// @code
+/// {
+///     "id": "LAYOUT_PETALBURG_CITY",
+///     "name": "PetalburgCity_Layout",
+///     "width": 20,
+///     "height": 20,
+///     "primary_tileset": "gTileset_General",
+///     "secondary_tileset": "gTileset_Petalburg",
+///     "border_filepath": "data/layouts/PetalburgCity/border.bin",
+///     "blockdata_filepath": "data/layouts/PetalburgCity/map.bin"
+/// }
+/// @endcode
+///
+/// @invariant id_ is never empty
+/// @invariant name_ is never empty
+/// @invariant primary_tileset_ is never empty
+/// @invariant secondary_tileset_ is never empty
 class ProjectLayoutMetadata {
   public:
-    /**
-     * @brief Constructs a ProjectLayoutMetadata from parsed layout fields.
-     *
-     * @param id The layout ID (e.g., "LAYOUT_PETALBURG_CITY")
-     * @param name The layout name (e.g., "PetalburgCity_Layout")
-     * @param width The layout width in metatiles
-     * @param height The layout height in metatiles
-     * @param primary_tileset The primary tileset name (e.g., "gTileset_General")
-     * @param secondary_tileset The secondary tileset name (e.g., "gTileset_Petalburg")
-     * @param border_filepath Relative path to the border file
-     * @param blockdata_filepath Relative path to the blockdata file
-     * @param layout_version The raw @c layout_version string from layouts.json, if the key was present. Stored verbatim
-     * and validated only where consumed (see ProjectLayoutMetadataProvider::layout_version_usage), so an unrelated
-     * layout's typo cannot brick commands that never consult FRLG-ness.
-     */
+    /// @brief Constructs a ProjectLayoutMetadata from parsed layout fields.
+    ///
+    /// @param id The layout ID (e.g., "LAYOUT_PETALBURG_CITY")
+    /// @param name The layout name (e.g., "PetalburgCity_Layout")
+    /// @param width The layout width in metatiles
+    /// @param height The layout height in metatiles
+    /// @param primary_tileset The primary tileset name (e.g., "gTileset_General")
+    /// @param secondary_tileset The secondary tileset name (e.g., "gTileset_Petalburg")
+    /// @param border_filepath Relative path to the border file
+    /// @param blockdata_filepath Relative path to the blockdata file
+    /// @param layout_version The raw @c layout_version string from layouts.json, if the key was present. Stored
+    /// verbatim and validated only where consumed (see ProjectLayoutMetadataProvider::layout_version_usage), so an
+    /// unrelated layout's typo cannot brick commands that never consult FRLG-ness.
     ProjectLayoutMetadata(
         std::string id,
         std::string name,

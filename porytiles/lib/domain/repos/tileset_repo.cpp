@@ -21,9 +21,7 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
 
     // Perform all write operations within the transaction
 
-    /*
-     * Porymap artifacts
-     */
+    // Porymap artifacts
     PT_TRY_ASSIGN_CHAIN_ERR(
         metatiles_key, key_provider_->key_for_metatiles_bin(tileset.name()), void, "Tileset save failed.");
     if (auto result = writer_->write_metatiles_bin(metatiles_key, tileset); !result.has_value()) {
@@ -87,9 +85,7 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
         return ChainableResult<void>{failed, result};
     }
 
-    /*
-     * Porytiles artifacts
-     */
+    // Porytiles artifacts
     PT_TRY_ASSIGN_CHAIN_ERR(
         bottom_png_key, key_provider_->key_for_bottom_png(tileset.name()), void, "Tileset save failed.");
     if (auto result = writer_->write_bottom_png(bottom_png_key, tileset); !result.has_value()) {
@@ -214,9 +210,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     auto porymap_component = std::make_unique<PorymapTilesetComponent>();
     auto tileset = std::make_unique<Tileset>(name, std::move(porytiles_component), std::move(porymap_component));
 
-    /*
-     * Porymap artifacts
-     */
+    // Porymap artifacts
     PT_TRY_ASSIGN_CHAIN_ERR(
         metatiles_key,
         key_provider_->key_for_metatiles_bin(tileset->name()),
@@ -318,9 +312,7 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
             FormatParam(porymap_anim_name, Style::bold));
     }
 
-    /*
-     * Porytiles artifacts
-     */
+    // Porytiles artifacts
     PT_TRY_ASSIGN_CHAIN_ERR(
         bottom_png_key,
         key_provider_->key_for_bottom_png(tileset->name()),

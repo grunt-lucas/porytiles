@@ -40,23 +40,20 @@ struct SearchContext {
     std::vector<std::size_t> palette_capacities;
     std::vector<std::size_t> hardware_indices;
 
-    /**
-     * @brief Optional shape group metadata for sharing-aware candidate sorting.
-     *
-     * @details
-     * When non-null, the DFS and BFS algorithms deprioritize candidate palettes that already contain a sibling from the
-     * same shape group. Sibling presence is inferred by checking whether any sibling tile's color set is a subset of
-     * the candidate palette's current color set.
-     */
+    /// @brief Optional shape group metadata for sharing-aware candidate sorting.
+    ///
+    /// @details
+    /// When non-null, the DFS and BFS algorithms deprioritize candidate palettes that already contain a sibling from
+    /// the same shape group. Sibling presence is inferred by checking whether any sibling tile's color set is a subset
+    /// of the candidate palette's current color set.
     const ShapeGroupMetadata *shape_group_metadata = nullptr;
 
-    /**
-     * @brief Maps each sorted tile index to a list of sibling color sets from the same shape group.
-     *
-     * @details
-     * Populated when shape_group_metadata is non-null. For tile at sorted_tiles[i], sibling_color_sets[i] contains the
-     * color sets of all OTHER members of its shape group. Empty if the tile is not in a shape group or has no siblings.
-     */
+    /// @brief Maps each sorted tile index to a list of sibling color sets from the same shape group.
+    ///
+    /// @details
+    /// Populated when shape_group_metadata is non-null. For tile at sorted_tiles[i], sibling_color_sets[i] contains the
+    /// color sets of all OTHER members of its shape group. Empty if the tile is not in a shape group or has no
+    /// siblings.
     std::vector<std::vector<ColorSet>> sibling_color_sets;
 };
 
@@ -185,15 +182,13 @@ struct BfsStateHash {
     return ctx;
 }
 
-/*
- * DFS with in-place mutation and undo. Porytiles1 copied the entire palette vector for each branch;
- * we save and restore only the single modified ColorSet, reducing per-node allocation overhead.
- *
- * Candidate palettes are sorted by intersection_size (descending), then color_set_count (ascending).
- * This "best-fit" heuristic tries palettes with the most color overlap first, preferring emptier
- * palettes as a tiebreaker. smart_prune caps candidates after the first zero-intersection palette,
- * and best_branches limits total branching factor.
- */
+// DFS with in-place mutation and undo. Porytiles1 copied the entire palette vector for each branch;
+// we save and restore only the single modified ColorSet, reducing per-node allocation overhead.
+//
+// Candidate palettes are sorted by intersection_size (descending), then color_set_count (ascending).
+// This "best-fit" heuristic tries palettes with the most color overlap first, preferring emptier
+// palettes as a tiebreaker. smart_prune caps candidates after the first zero-intersection palette,
+// and best_branches limits total branching factor.
 AssignResult assign_depth_first(
     std::vector<ColorSet> &palette_colors,
     const SearchContext &ctx,
@@ -214,24 +209,22 @@ AssignResult assign_depth_first(
     const auto &tile = ctx.sorted_tiles[next_tile_index];
     const auto &tile_colors = tile.color_set();
 
-    /*
-     * Authoritative subset shortcut (improvement over Porytiles1).
-     *
-     * If the tile's colors are already a subset of some palette, the tile is satisfied without adding
-     * any new colors. We recurse immediately and return the result directly (no fallthrough to the
-     * candidate loop).
-     *
-     * Why authoritative? If skipping the tile fails (remaining tiles can't be packed), trying explicit
-     * candidate assignments can only make things worse:
-     *   - Assigning to the covering palette is a no-op (union doesn't change its ColorSet), so we'd
-     *     re-explore the exact same subtree that already failed.
-     *   - Assigning to a different palette ADDS colors to it, strictly reducing its remaining capacity.
-     *
-     * A non-authoritative version that fell through to candidates caused exponential blowup: at each
-     * of K levels with a subset match, the same subtree was explored twice (once via shortcut, once
-     * via the covering palette as first candidate), yielding O(2^K) redundant work. For tilesets like
-     * gTileset_General with many shared colors, K is large enough to make the search hang indefinitely.
-     */
+    // Authoritative subset shortcut (improvement over Porytiles1).
+    //
+    // If the tile's colors are already a subset of some palette, the tile is satisfied without adding
+    // any new colors. We recurse immediately and return the result directly (no fallthrough to the
+    // candidate loop).
+    //
+    // Why authoritative? If skipping the tile fails (remaining tiles can't be packed), trying explicit
+    // candidate assignments can only make things worse:
+    //   - Assigning to the covering palette is a no-op (union doesn't change its ColorSet), so we'd
+    //     re-explore the exact same subtree that already failed.
+    //   - Assigning to a different palette ADDS colors to it, strictly reducing its remaining capacity.
+    //
+    // A non-authoritative version that fell through to candidates caused exponential blowup: at each
+    // of K levels with a subset match, the same subtree was explored twice (once via shortcut, once
+    // via the covering palette as first candidate), yielding O(2^K) redundant work. For tilesets like
+    // gTileset_General with many shared colors, K is large enough to make the search hang indefinitely.
     for (std::size_t i = 0; i < palette_colors.size(); ++i) {
         if (is_subset(tile_colors, palette_colors[i])) {
             return assign_depth_first(palette_colors, ctx, params, next_tile_index + 1, explored_nodes);
@@ -254,12 +247,10 @@ AssignResult assign_depth_first(
             std::size_t i_size = intersection_size(tile_colors, palette_colors[i]);
             std::size_t c_count = color_set_count(palette_colors[i]);
 
-            /*
-             * Heuristic: check if this palette likely contains a sibling by testing whether any sibling's color set
-             * is a subset of the palette's accumulated colors. This is an approximation; false positives are possible
-             * when unrelated tiles contribute the same colors. False positives only cause suboptimal candidate ordering
-             * (deprioritizing a palette unnecessarily), not incorrect packing.
-             */
+            // Heuristic: check if this palette likely contains a sibling by testing whether any sibling's color set
+            // is a subset of the palette's accumulated colors. This is an approximation; false positives are possible
+            // when unrelated tiles contribute the same colors. False positives only cause suboptimal candidate ordering
+            // (deprioritizing a palette unnecessarily), not incorrect packing.
             bool sibling = false;
             if (!ctx.sibling_color_sets.empty() && next_tile_index < ctx.sibling_color_sets.size()) {
                 for (const auto &sibling_cs : ctx.sibling_color_sets[next_tile_index]) {
@@ -318,20 +309,18 @@ AssignResult assign_depth_first(
     return AssignResult::no_solution;
 }
 
-/*
- * BFS with dual-queue heuristic and visited-state deduplication (matching Porytiles1's approach).
- *
- * Two queues partition the frontier: high_queue for states reached via overlapping assignments
- * (intersection > 0), and low_queue for states reached via zero-overlap assignments. The high_queue
- * is always drained first, focusing exploration on promising branches before resorting to "waste"
- * assignments that consume fresh palette capacity.
- *
- * Improvement over Porytiles1: when ALL candidates for a tile have zero intersection (no palette has
- * any color overlap), Porytiles1 routed them to the high queue via a `sawAssignmentWithIntersection`
- * flag that stayed false. We preserve this behavior: zero-intersection candidates only go to the low
- * queue after we've seen at least one candidate with overlap. This prevents starvation when a tile
- * has entirely unique colors (common for early tiles assigned to empty palettes).
- */
+// BFS with dual-queue heuristic and visited-state deduplication (matching Porytiles1's approach).
+//
+// Two queues partition the frontier: high_queue for states reached via overlapping assignments
+// (intersection > 0), and low_queue for states reached via zero-overlap assignments. The high_queue
+// is always drained first, focusing exploration on promising branches before resorting to "waste"
+// assignments that consume fresh palette capacity.
+//
+// Improvement over Porytiles1: when ALL candidates for a tile have zero intersection (no palette has
+// any color overlap), Porytiles1 routed them to the high queue via a `sawAssignmentWithIntersection`
+// flag that stayed false. We preserve this behavior: zero-intersection candidates only go to the low
+// queue after we've seen at least one candidate with overlap. This prevents starvation when a tile
+// has entirely unique colors (common for early tiles assigned to empty palettes).
 AssignResult assign_breadth_first(
     const std::vector<ColorSet> &initial_colors,
     const SearchContext &ctx,

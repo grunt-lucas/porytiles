@@ -110,11 +110,9 @@ TEST(IndirectLinkBuilderTests, PrefilledSlotPicksBetterRef)
 
     auto links = build_indirect_links(shape_groups, tile_pal_assignments, base_pals, prefilled_pals);
 
-    /*
-     * With pal 1 having a prefilled slot 1, choosing pal 0's member as reference would generate a link
-     * targeting pal 1 (which has the conflict). The conflict-minimization heuristic should instead pick pal 1's
-     * member (blue) as reference and generate a link for red in pal 0 (no prefilled, 0 conflicts).
-     */
+    // With pal 1 having a prefilled slot 1, choosing pal 0's member as reference would generate a link
+    // targeting pal 1 (which has the conflict). The conflict-minimization heuristic should instead pick pal 1's
+    // member (blue) as reference and generate a link for red in pal 0 (no prefilled, 0 conflicts).
     ASSERT_EQ(links.size(), 1);
     EXPECT_EQ(links.at(0).source_pal, 0);
     EXPECT_EQ(links.at(0).source_color, red);

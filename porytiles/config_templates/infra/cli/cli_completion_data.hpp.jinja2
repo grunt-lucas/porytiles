@@ -15,9 +15,7 @@ namespace porytiles {
 
 {{ macros.autogen_warning() }}
 
-/**
- * @brief Metadata for a single CLI option, used for shell completion generation.
- */
+/// @brief Metadata for a single CLI option, used for shell completion generation.
 struct CliOptionMeta {
     std::string long_name;      ///< Long option name (e.g., "num-tiles-in-primary")
     std::string description;    ///< Human-readable description
@@ -26,11 +24,9 @@ struct CliOptionMeta {
     bool has_negation;          ///< True if this is a bool flag with --no-* variant
 };
 
-/**
- * @brief Get all CLI option metadata for completion generation.
- *
- * @return Vector of CliOptionMeta for all CLI-configurable options
- */
+/// @brief Get all CLI option metadata for completion generation.
+///
+/// @return Vector of CliOptionMeta for all CLI-configurable options
 [[nodiscard]] inline std::vector<CliOptionMeta> get_cli_option_metadata()
 {
     return {

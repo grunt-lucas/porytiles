@@ -78,12 +78,10 @@ PixelTile<IndexPixel> create_asymmetric_tile(std::size_t left_color, std::size_t
     return tile;
 }
 
-/**
- * @brief Builds a tiles.png Image from a vector of tiles laid out in a single row of 8-pixel-wide columns.
- *
- * @details
- * Tiles are laid out left-to-right, each 8x8 pixels. The resulting image width is num_tiles * 8.
- */
+/// @brief Builds a tiles.png Image from a vector of tiles laid out in a single row of 8-pixel-wide columns.
+///
+/// @details
+/// Tiles are laid out left-to-right, each 8x8 pixels. The resulting image width is num_tiles * 8.
 Image<IndexPixel> build_tiles_png(const std::vector<PixelTile<IndexPixel>> &tiles)
 {
     const std::size_t num_tiles = tiles.size();
@@ -413,12 +411,10 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimationFlipEqui
 
 TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimDuplicateWhenAnimNotInTilesPng)
 {
-    /*
-     * Critical real-world case: models the land_waters_edge scenario. Water's key frame tiles are NOT present in
-     * tiles.png at all (simulating an animation whose tiles were removed/never appeared in the tileset image). Ocean's
-     * tiles ARE in tiles.png and are identical to water's. Without the inter-animation fix, this duplicate would be
-     * completely missed because existing_canonical_tiles wouldn't contain water's tiles.
-     */
+    // Critical real-world case: models the land_waters_edge scenario. Water's key frame tiles are NOT present in
+    // tiles.png at all (simulating an animation whose tiles were removed/never appeared in the tileset image). Ocean's
+    // tiles ARE in tiles.png and are identical to water's. Without the inter-animation fix, this duplicate would be
+    // completely missed because existing_canonical_tiles wouldn't contain water's tiles.
     const auto water_tile = create_two_color_tile(1, 2);
     const auto ocean_tile = water_tile; // identical to water's
     const auto unrelated_tile = create_two_color_tile(3, 4);

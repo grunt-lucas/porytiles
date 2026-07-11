@@ -45,14 +45,12 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
         std::unique_ptr<Tileset>,
         std::format("Failed to triple-layerize Porymap component for tileset '{}'.", tileset.name()));
 
-    /*
-     * Create the new Porymap component early so we can pass it for potential backporting during animation
-     * decompilation. If mangle strategy is used, duplicate key frame tiles will be modified and backported to
-     * tiles.png.
-     *
-     * IMPORTANT: This must happen BEFORE metatile decompilation so that mangled tiles are used when decompiling
-     * metatiles.
-     */
+    // Create the new Porymap component early so we can pass it for potential backporting during animation
+    // decompilation. If mangle strategy is used, duplicate key frame tiles will be modified and backported to
+    // tiles.png.
+    //
+    // IMPORTANT: This must happen BEFORE metatile decompilation so that mangled tiles are used when decompiling
+    // metatiles.
     auto new_porymap_component = std::make_unique<PorymapTilesetComponent>(tileset.porymap_component());
 
     auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>();
@@ -71,12 +69,10 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
         new_porytiles_component->insert_attribute(metatile_id, porymap_attributes[metatile_id]);
     }
 
-    /*
-     * Decompile animations from Porymap component to Porytiles component.
-     *
-     * IMPORTANT: This must happen BEFORE metatile decompilation so that any mangled key frame tiles are present in
-     * new_porymap_component->tiles_png() when metatiles are decompiled
-     */
+    // Decompile animations from Porymap component to Porytiles component.
+    //
+    // IMPORTANT: This must happen BEFORE metatile decompilation so that any mangled key frame tiles are present in
+    // new_porymap_component->tiles_png() when metatiles are decompiled
     // Triple-layerize the metatiles for the AnimDecompiler (it uses triple-layer addressing for override extraction)
     new_porymap_component->metatiles_bin(tilemap_entries);
 
@@ -96,10 +92,8 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
                 diag_->formatter().format(
                     "Failed to decompile animation '{}'.", FormatParam{index_pixel_anim.name(), Style::bold}));
 
-            /*
-             * After successful decompilation, extract canonical tiles from this animation's (potentially mangled) key
-             * frame range in tiles.png and add them to the accumulator for inter-animation duplicate detection.
-             */
+            // After successful decompilation, extract canonical tiles from this animation's (potentially mangled) key
+            // frame range in tiles.png and add them to the accumulator for inter-animation duplicate detection.
             const std::size_t anim_tile_offset = index_pixel_anim.params().tile_offset();
             if (anim_tile_offset == 0) {
                 // Unreachable.

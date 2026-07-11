@@ -9,13 +9,11 @@
 
 namespace porytiles {
 
-/**
- * @brief An implementation of ArtifactChecksumProvider that just does nothing.
- *
- * @details
- * This implementation provides no-op behavior for all checksum operations, returning empty results
- * and always indicating success. It's useful for testing or when checksum functionality is not needed.
- */
+/// @brief An implementation of ArtifactChecksumProvider that just does nothing.
+///
+/// @details
+/// This implementation provides no-op behavior for all checksum operations, returning empty results
+/// and always indicating success. It's useful for testing or when checksum functionality is not needed.
 class NoopArtifactChecksumProvider final : public ArtifactChecksumProvider {
   public:
     NoopArtifactChecksumProvider() = default;

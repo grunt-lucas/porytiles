@@ -25,87 +25,73 @@ const std::filesystem::path tileset_anims_h_rel_path = std::filesystem::path{"in
 const std::filesystem::path porytiles_generated_include_base =
     std::filesystem::path{"porytiles_generated"} / "tilesets";
 
-/**
- * @brief Generates the include directive string for a tileset.
- *
- * @details
- * Produces a line like:
- *     #include "porytiles_generated/tilesets/general/generated_anim_code.h"
- *
- * The "include/" prefix is omitted because pokeemerald's makefile already adds
- * "include" as an include directory.
- *
- * @param snake_dir The snake_case tileset directory name (e.g., "general")
- */
+/// @brief Generates the include directive string for a tileset.
+///
+/// @details
+/// Produces a line like:
+///     #include "porytiles_generated/tilesets/general/generated_anim_code.h"
+///
+/// The "include/" prefix is omitted because pokeemerald's makefile already adds
+/// "include" as an include directory.
+///
+/// @param snake_dir The snake_case tileset directory name (e.g., "general")
 [[nodiscard]] std::string generate_include_directive(const std::string &snake_dir)
 {
     return fmt::format(
         "#include \"{}/{}/generated_anim_code.h\"", porytiles_generated_include_base.string(), snake_dir);
 }
 
-/**
- * @brief Generates the comment line that precedes the auto-generated include in .c file.
- */
+/// @brief Generates the comment line that precedes the auto-generated include in .c file.
 [[nodiscard]] std::string generate_porytiles_include_comment()
 {
     return "// [Porytiles] Auto-generated include. Do not remove.";
 }
 
-/**
- * @brief Generates the comment line that precedes the auto-generated declaration in .h file.
- */
+/// @brief Generates the comment line that precedes the auto-generated declaration in .h file.
 [[nodiscard]] std::string generate_porytiles_declaration_comment()
 {
     return "// [Porytiles] Auto-generated declaration. Do not remove.";
 }
 
-/**
- * @brief Generates the function declaration string for a tileset.
- *
- * @details
- * Produces a line like:
- *     void InitTilesetAnim_PorytilesManaged_General(void);
- *
- * @param shorthand The PascalCase tileset shorthand (e.g., "General", "BattleFrontier")
- */
+/// @brief Generates the function declaration string for a tileset.
+///
+/// @details
+/// Produces a line like:
+///     void InitTilesetAnim_PorytilesManaged_General(void);
+///
+/// @param shorthand The PascalCase tileset shorthand (e.g., "General", "BattleFrontier")
 [[nodiscard]] std::string generate_declaration(const std::string &shorthand)
 {
     return fmt::format("void InitTilesetAnim_PorytilesManaged_{}(void);", shorthand);
 }
 
-/**
- * @brief Generates the unique pattern to identify a declaration for a specific tileset.
- *
- * @details
- * Returns a pattern that uniquely identifies this tileset's declaration,
- * e.g., "InitTilesetAnim_PorytilesManaged_General"
- *
- * @param shorthand The PascalCase tileset shorthand (e.g., "General")
- */
+/// @brief Generates the unique pattern to identify a declaration for a specific tileset.
+///
+/// @details
+/// Returns a pattern that uniquely identifies this tileset's declaration,
+/// e.g., "InitTilesetAnim_PorytilesManaged_General"
+///
+/// @param shorthand The PascalCase tileset shorthand (e.g., "General")
 [[nodiscard]] std::string generate_declaration_pattern(const std::string &shorthand)
 {
     return fmt::format("InitTilesetAnim_PorytilesManaged_{}", shorthand);
 }
 
-/**
- * @brief Generates the unique pattern to identify an include for a specific tileset.
- *
- * @details
- * Returns the path portion that uniquely identifies this tileset's include,
- * e.g., "general/generated_anim_code.h"
- *
- * @param snake_dir The snake_case tileset directory name (e.g., "general")
- */
+/// @brief Generates the unique pattern to identify an include for a specific tileset.
+///
+/// @details
+/// Returns the path portion that uniquely identifies this tileset's include,
+/// e.g., "general/generated_anim_code.h"
+///
+/// @param snake_dir The snake_case tileset directory name (e.g., "general")
 [[nodiscard]] std::string generate_include_pattern(const std::string &snake_dir)
 {
     return fmt::format("{}/generated_anim_code.h", snake_dir);
 }
 
-/**
- * @brief Checks if the file already contains an include for this tileset.
- *
- * @return The line index if found, or std::nullopt if not present.
- */
+/// @brief Checks if the file already contains an include for this tileset.
+///
+/// @return The line index if found, or std::nullopt if not present.
 [[nodiscard]] std::optional<std::size_t>
 find_existing_include(const std::vector<std::string> &lines, const std::string &snake_dir)
 {
@@ -119,11 +105,9 @@ find_existing_include(const std::vector<std::string> &lines, const std::string &
     return std::nullopt;
 }
 
-/**
- * @brief Checks if the file already contains a declaration for this tileset.
- *
- * @return The line index if found, or std::nullopt if not present.
- */
+/// @brief Checks if the file already contains a declaration for this tileset.
+///
+/// @return The line index if found, or std::nullopt if not present.
 [[nodiscard]] std::optional<std::size_t>
 find_existing_declaration(const std::vector<std::string> &lines, const std::string &shorthand)
 {
@@ -137,11 +121,9 @@ find_existing_declaration(const std::vector<std::string> &lines, const std::stri
     return std::nullopt;
 }
 
-/**
- * @brief Finds the line index of the #endif guard in a header file.
- *
- * @return The line index of #endif, or std::nullopt if not found.
- */
+/// @brief Finds the line index of the #endif guard in a header file.
+///
+/// @return The line index of #endif, or std::nullopt if not found.
 [[nodiscard]] std::optional<std::size_t> find_endif_guard(const std::vector<std::string> &lines)
 {
     for (std::size_t i = lines.size(); i > 0; --i) {
@@ -153,17 +135,13 @@ find_existing_declaration(const std::vector<std::string> &lines, const std::stri
     return std::nullopt;
 }
 
-/**
- * @brief Checks if a line is a Porytiles auto-generated comment.
- */
+/// @brief Checks if a line is a Porytiles auto-generated comment.
 [[nodiscard]] bool is_porytiles_comment(const std::string &line)
 {
     return line.find("[Porytiles]") != std::string::npos;
 }
 
-/**
- * @brief Reads all lines from a file into a vector
- */
+/// @brief Reads all lines from a file into a vector
 [[nodiscard]] ChainableResult<std::vector<std::string>>
 read_file_lines(const std::filesystem::path &path, const UserDiagnostics *diag)
 {
@@ -181,9 +159,7 @@ read_file_lines(const std::filesystem::path &path, const UserDiagnostics *diag)
     return lines;
 }
 
-/**
- * @brief Writes all lines to a file
- */
+/// @brief Writes all lines to a file
 [[nodiscard]] ChainableResult<void>
 write_file_lines(const std::filesystem::path &path, const std::vector<std::string> &lines, const UserDiagnostics *diag)
 {

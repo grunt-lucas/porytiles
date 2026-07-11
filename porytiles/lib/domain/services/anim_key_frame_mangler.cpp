@@ -23,16 +23,14 @@ namespace {
 
 using namespace porytiles;
 
-/*
- * Pixel priority order for mangling (least visually impactful first)
- * Corners: (0,0), (0,7), (7,0), (7,7) -> indices 0, 7, 56, 63
- * Corners: (0,0), (0,7), (7,0), (7,7) -> indices 0, 7, 56, 63
- * Top edge: 1-6
- * Left edge: 8, 16, 24, 32, 40, 48
- * Right edge: 15, 23, 31, 39, 47, 55
- * Bottom edge: 57-62
- * Interior: remaining pixels
- */
+// Pixel priority order for mangling (least visually impactful first)
+// Corners: (0,0), (0,7), (7,0), (7,7) -> indices 0, 7, 56, 63
+// Corners: (0,0), (0,7), (7,0), (7,7) -> indices 0, 7, 56, 63
+// Top edge: 1-6
+// Left edge: 8, 16, 24, 32, 40, 48
+// Right edge: 15, 23, 31, 39, 47, 55
+// Bottom edge: 57-62
+// Interior: remaining pixels
 constexpr std::array<std::size_t, tile::size_pix> pixel_priority_order = {
     // Corners first (least visible)
     0,
@@ -105,17 +103,15 @@ constexpr std::array<std::size_t, tile::size_pix> pixel_priority_order = {
     53,
     54};
 
-/**
- * @brief Calculates squared RGB distance between two colors.
- *
- * @details
- * Uses squared Euclidean distance in RGB space. Squared distance avoids the sqrt operation and is sufficient for
- * comparison purposes.
- *
- * @param a First color
- * @param b Second color
- * @return Squared RGB distance
- */
+/// @brief Calculates squared RGB distance between two colors.
+///
+/// @details
+/// Uses squared Euclidean distance in RGB space. Squared distance avoids the sqrt operation and is sufficient for
+/// comparison purposes.
+///
+/// @param a First color
+/// @param b Second color
+/// @return Squared RGB distance
 int color_distance_squared(const Rgba32 &a, const Rgba32 &b)
 {
     const int dr = static_cast<int>(a.red()) - static_cast<int>(b.red());
@@ -124,19 +120,17 @@ int color_distance_squared(const Rgba32 &a, const Rgba32 &b)
     return dr * dr + dg * dg + db * db;
 }
 
-/**
- * @brief Finds all alternative colors in the palette, sorted by RGB distance (ascending).
- *
- * @details
- * Searches through all palette colors (indices 1-15) excluding the current color and returns all alternative color
- * indices sorted by squared RGB distance from the current color. Ties in distance are broken by index (ascending) for
- * deterministic ordering. This allows the mangler to try multiple alternatives at each pixel position, greatly
- * expanding the mangle search space for symmetric tiles like solid-color tiles.
- *
- * @param current_color_index The current color index to find alternatives for
- * @param palette The palette to look up actual RGB values
- * @return A vector of alternative color indices sorted by distance (closest first), empty if no alternatives exist
- */
+/// @brief Finds all alternative colors in the palette, sorted by RGB distance (ascending).
+///
+/// @details
+/// Searches through all palette colors (indices 1-15) excluding the current color and returns all alternative color
+/// indices sorted by squared RGB distance from the current color. Ties in distance are broken by index (ascending) for
+/// deterministic ordering. This allows the mangler to try multiple alternatives at each pixel position, greatly
+/// expanding the mangle search space for symmetric tiles like solid-color tiles.
+///
+/// @param current_color_index The current color index to find alternatives for
+/// @param palette The palette to look up actual RGB values
+/// @return A vector of alternative color indices sorted by distance (closest first), empty if no alternatives exist
 [[nodiscard]] std::vector<std::size_t>
 find_alternative_colors_sorted(std::size_t current_color_index, const Palette<Rgba32, pal::max_size> &palette)
 {
@@ -174,40 +168,36 @@ find_alternative_colors_sorted(std::size_t current_color_index, const Palette<Rg
     return result;
 }
 
-/**
- * @brief Constructs a mangled IndexPixel preserving the palette index (upper 4 bits).
- *
- * @param original_palette_index The palette index from the original pixel
- * @param alt_color The new color index to swap to
- * @return The constructed IndexPixel
- */
+/// @brief Constructs a mangled IndexPixel preserving the palette index (upper 4 bits).
+///
+/// @param original_palette_index The palette index from the original pixel
+/// @param alt_color The new color index to swap to
+/// @return The constructed IndexPixel
 [[nodiscard]] IndexPixel make_mangled_pixel(std::size_t original_palette_index, std::size_t alt_color)
 {
     return IndexPixel{(original_palette_index << 4) | alt_color};
 }
 
-/**
- * @brief Attempts to mangle a single tile to make it unique.
- *
- * @details
- * Uses a two-phase approach to find a unique mangle:
- *
- * Phase 1 (single-pixel): Tries each pixel in priority order, attempting all alternative palette colors in order of
- * visual similarity (closest first). Returns the first successful single-pixel modification.
- *
- * Phase 2 (two-pixel fallback): If all single-pixel swaps produce collisions (common with solid-color tiles that have
- * many duplicates), tries swapping two pixels simultaneously. The first pixel is chosen at the least visible position,
- * paired with each subsequent pixel position, exhausting all color combinations at each pair.
- *
- * Uniqueness is checked against canonical forms to ensure tiles that are flip-equivalent are also treated as
- * duplicates.
- *
- * @param tile The tile to mangle
- * @param tile_index The index of the tile in the animation
- * @param palette The palette for color similarity calculations
- * @param all_existing_canonical_tiles Set of canonical base tiles that the result must be unique against
- * @return A pair of (mangled tile, mangle record), or nullopt if no valid mangle was found
- */
+/// @brief Attempts to mangle a single tile to make it unique.
+///
+/// @details
+/// Uses a two-phase approach to find a unique mangle:
+///
+/// Phase 1 (single-pixel): Tries each pixel in priority order, attempting all alternative palette colors in order of
+/// visual similarity (closest first). Returns the first successful single-pixel modification.
+///
+/// Phase 2 (two-pixel fallback): If all single-pixel swaps produce collisions (common with solid-color tiles that have
+/// many duplicates), tries swapping two pixels simultaneously. The first pixel is chosen at the least visible position,
+/// paired with each subsequent pixel position, exhausting all color combinations at each pair.
+///
+/// Uniqueness is checked against canonical forms to ensure tiles that are flip-equivalent are also treated as
+/// duplicates.
+///
+/// @param tile The tile to mangle
+/// @param tile_index The index of the tile in the animation
+/// @param palette The palette for color similarity calculations
+/// @param all_existing_canonical_tiles Set of canonical base tiles that the result must be unique against
+/// @return A pair of (mangled tile, mangle record), or nullopt if no valid mangle was found
 std::optional<std::pair<PixelTile<IndexPixel>, TileMangleRecord>> try_mangle_tile(
     const PixelTile<IndexPixel> &tile,
     std::size_t tile_index,
@@ -239,11 +229,9 @@ std::optional<std::pair<PixelTile<IndexPixel>, TileMangleRecord>> try_mangle_til
         }
     }
 
-    /*
-     * Phase 2: two-pixel swaps (fallback for heavily saturated canonical tile sets).
-     * Loop ordering: position pair (p1, p2) outermost, then color alternatives innermost. This ensures we prefer the
-     * least visible pixel positions before trying more visible ones, consistent with the Phase 1 priority ordering.
-     */
+    // Phase 2: two-pixel swaps (fallback for heavily saturated canonical tile sets).
+    // Loop ordering: position pair (p1, p2) outermost, then color alternatives innermost. This ensures we prefer the
+    // least visible pixel positions before trying more visible ones, consistent with the Phase 1 priority ordering.
     for (std::size_t p1_idx = 0; p1_idx < pixel_priority_order.size(); ++p1_idx) {
         const std::size_t p1 = pixel_priority_order[p1_idx];
         const IndexPixel p1_original = tile.at(p1);
@@ -313,21 +301,17 @@ ChainableResult<MangleResult> AnimKeyFrameMangler::mangle_duplicates(
     MangleResult result;
     result.tiles = std::move(tiles);
 
-    /*
-     * Build a set of all canonical tiles we need to be unique against. This includes the input existing_canonical_tiles
-     * plus tiles we've already processed. Using canonical forms ensures tiles that are flip-equivalent are treated as
-     * duplicates.
-     */
+    // Build a set of all canonical tiles we need to be unique against. This includes the input existing_canonical_tiles
+    // plus tiles we've already processed. Using canonical forms ensures tiles that are flip-equivalent are treated as
+    // duplicates.
     std::set<PixelTile<IndexPixel>> all_canonical_tiles = existing_canonical_tiles;
 
     // Map to track which canonical tiles we've seen at which indices (for duplicate detection)
     std::map<PixelTile<IndexPixel>, std::size_t> canonical_first_occurrence;
 
-    /*
-     * Each tile index is visited exactly once. A tile is mangled at most once, producing at most one TileMangleRecord.
-     * This guarantees that mangle_records contains non-overlapping entries (no two records share the same tile_index),
-     * so they can be applied independently in any order.
-     */
+    // Each tile index is visited exactly once. A tile is mangled at most once, producing at most one TileMangleRecord.
+    // This guarantees that mangle_records contains non-overlapping entries (no two records share the same tile_index),
+    // so they can be applied independently in any order.
     for (std::size_t i = 0; i < result.tiles.size(); ++i) {
         PixelTile<IndexPixel> &current_tile = result.tiles[i];
 

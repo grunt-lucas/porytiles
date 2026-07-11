@@ -24,9 +24,7 @@ namespace {
 
 using namespace porytiles;
 
-/**
- * @brief Creates a FormatParam for an Rgba32 color displayed as "R, G, B" with bold true-color ANSI styling.
- */
+/// @brief Creates a FormatParam for an Rgba32 color displayed as "R, G, B" with bold true-color ANSI styling.
 FormatParam color_param(const Rgba32 &color)
 {
     auto text =
@@ -34,27 +32,23 @@ FormatParam color_param(const Rgba32 &color)
     return FormatParam{std::move(text), rgb_fg_style(color.red(), color.green(), color.blue()) | Style::bold};
 }
 
-/**
- * @brief Result of extracting colors from a palette, tracking both unique colors and occupied slots.
- */
+/// @brief Result of extracting colors from a palette, tracking both unique colors and occupied slots.
 struct ColorSetWithOccupancy {
     ColorSet color_set;
     std::size_t occupied_slots{};
 };
 
-/**
- * @brief Converts a \link PixelTile PixelTile's\endlink colors to a ColorSet.
- *
- * @details
- * Extracts unique non-transparent colors from the tile and looks up each color in the ColorIndexMap to build a ColorSet
- * bitset.
- *
- * @param tile The pixel tile to convert
- * @param color_map The color-to-index mapping
- * @param extrinsic The extrinsic transparency color
- * @pre All colors in the tile are present in color_map
- * @return ColorSet containing all non-transparent tile colors
- */
+/// @brief Converts a \link PixelTile PixelTile's\endlink colors to a ColorSet.
+///
+/// @details
+/// Extracts unique non-transparent colors from the tile and looks up each color in the ColorIndexMap to build a
+/// ColorSet bitset.
+///
+/// @param tile The pixel tile to convert
+/// @param color_map The color-to-index mapping
+/// @param extrinsic The extrinsic transparency color
+/// @pre All colors in the tile are present in color_map
+/// @return ColorSet containing all non-transparent tile colors
 [[nodiscard]] ColorSet build_color_set_from_tile(
     const PixelTile<Rgba32> &tile, const ColorIndexMap<Rgba32> &color_map, const Rgba32 &extrinsic)
 {
@@ -64,11 +58,9 @@ struct ColorSetWithOccupancy {
     for (const auto &color : unique_colors) {
         const auto index_opt = color_map.index_at_color(color);
         if (!index_opt.has_value()) {
-            /*
-             * This will throw if a hint contains the extrinsic transparency color, since the ColorIndexMap won't
-             * contain any transparency colors. Callers of the packer service should have used the PaletteValidator
-             * service to validate input palettes and generate good user diagnostics.
-             */
+            // This will throw if a hint contains the extrinsic transparency color, since the ColorIndexMap won't
+            // contain any transparency colors. Callers of the packer service should have used the PaletteValidator
+            // service to validate input palettes and generate good user diagnostics.
             panic("tile color " + to_string(color) + " not found in color index map");
         }
         color_set.set(index_opt.value());
@@ -77,18 +69,16 @@ struct ColorSetWithOccupancy {
     return color_set;
 }
 
-/**
- * @brief Converts a fixed-size palette's non-wildcard colors to a ColorSet.
- *
- * @details
- * Extracts colors from slots 1-15 (skipping slot 0 which is transparency) and looks up each in the ColorIndexMap.
- * Wildcards are skipped. Returns both the ColorSet of unique colors and the count of occupied slots.
- *
- * @param pal The palette to convert
- * @param color_map The color-to-index mapping
- * @pre All colors in the pal are present in color_map
- * @return ColorSetWithOccupancy containing unique colors and occupied slot count
- */
+/// @brief Converts a fixed-size palette's non-wildcard colors to a ColorSet.
+///
+/// @details
+/// Extracts colors from slots 1-15 (skipping slot 0 which is transparency) and looks up each in the ColorIndexMap.
+/// Wildcards are skipped. Returns both the ColorSet of unique colors and the count of occupied slots.
+///
+/// @param pal The palette to convert
+/// @param color_map The color-to-index mapping
+/// @pre All colors in the pal are present in color_map
+/// @return ColorSetWithOccupancy containing unique colors and occupied slot count
 [[nodiscard]] ColorSetWithOccupancy
 build_color_set_from_pal(const Palette<Rgba32, pal::max_size> &pal, const ColorIndexMap<Rgba32> &color_map)
 {
@@ -104,11 +94,9 @@ build_color_set_from_pal(const Palette<Rgba32, pal::max_size> &pal, const ColorI
         const auto color = pal.at(i);
         const auto index_opt = color_map.index_at_color(color);
         if (!index_opt.has_value()) {
-            /*
-             * This will throw if a pal contains the extrinsic transparency color, since the ColorIndexMap won't
-             * contain any transparency colors. Callers of the packer service should have used the PaletteValidator
-             * service to validate input palettes and generate good user diagnostics.
-             */
+            // This will throw if a pal contains the extrinsic transparency color, since the ColorIndexMap won't
+            // contain any transparency colors. Callers of the packer service should have used the PaletteValidator
+            // service to validate input palettes and generate good user diagnostics.
             panic("pal color " + to_string(color) + " at slot " + std::to_string(i) + " not in color map");
         }
         color_set.set(index_opt.value());
@@ -117,18 +105,16 @@ build_color_set_from_pal(const Palette<Rgba32, pal::max_size> &pal, const ColorI
     return ColorSetWithOccupancy{color_set, occupied_slots};
 }
 
-/**
- * @brief Converts a hint palette's colors to a ColorSet.
- *
- * @details
- * Extracts colors from the hint palette and looks up each in the ColorIndexMap. Wildcards are skipped.
- *
- * @param pal The dynamic palette to convert
- * @param color_map The color-to-index mapping
- * @pre All colors in the pal are present in color_map
- * @pre Palette contains no wildcards
- * @return ColorSet containing all non-transparent pal colors
- */
+/// @brief Converts a hint palette's colors to a ColorSet.
+///
+/// @details
+/// Extracts colors from the hint palette and looks up each in the ColorIndexMap. Wildcards are skipped.
+///
+/// @param pal The dynamic palette to convert
+/// @param color_map The color-to-index mapping
+/// @pre All colors in the pal are present in color_map
+/// @pre Palette contains no wildcards
+/// @return ColorSet containing all non-transparent pal colors
 [[nodiscard]] ColorSet build_color_set_from_hint_pal(const Palette<Rgba32> &pal, const ColorIndexMap<Rgba32> &color_map)
 {
     ColorSet color_set{};
@@ -148,20 +134,18 @@ build_color_set_from_pal(const Palette<Rgba32, pal::max_size> &pal, const ColorI
     return color_set;
 }
 
-/**
- * @brief Builds a set of canonical key frame tiles from animation data.
- *
- * @details
- * Mirrors the representative frame selection logic in @c AnimTileMatcher::register_animation(): if the animation has a
- * key frame, use it; otherwise fall back to the first regular frame. Each non-transparent tile is canonicalized and
- * added to the result set. This set is used to exclude animation key frame tiles from shape group analysis, since
- * @c AnimTileMatcher::find_match() redirects these tiles to pre-placed animation tile indices during tile assignment,
- * making any sharing alignment computed for them illusory.
- *
- * @param anims The animation map from PackingParams
- * @param extrinsic The extrinsic transparency color
- * @return Set of canonical key frame tiles (as PixelTile<Rgba32>)
- */
+/// @brief Builds a set of canonical key frame tiles from animation data.
+///
+/// @details
+/// Mirrors the representative frame selection logic in @c AnimTileMatcher::register_animation(): if the animation has a
+/// key frame, use it; otherwise fall back to the first regular frame. Each non-transparent tile is canonicalized and
+/// added to the result set. This set is used to exclude animation key frame tiles from shape group analysis, since
+/// @c AnimTileMatcher::find_match() redirects these tiles to pre-placed animation tile indices during tile assignment,
+/// making any sharing alignment computed for them illusory.
+///
+/// @param anims The animation map from PackingParams
+/// @param extrinsic The extrinsic transparency color
+/// @return Set of canonical key frame tiles (as PixelTile<Rgba32>)
 [[nodiscard]] std::set<PixelTile<Rgba32>>
 build_anim_keyframe_set(const std::map<std::string, Animation<Rgba32>> &anims, const Rgba32 &extrinsic)
 {
@@ -183,16 +167,14 @@ build_anim_keyframe_set(const std::map<std::string, Animation<Rgba32>> &anims, c
     return result;
 }
 
-/**
- * @brief Builds a combined tile vector of regular tiles and a parallel ID mapping.
- *
- * @details
- * The combined vector is used as input to @c analyze_shape_groups(). The parallel @c combined_index_to_id vector maps
- * each combined index back to its PackableTile::RegularId, allowing shape group membership to be expressed in terms of
- * PackableTile IDs. Anim tiles are excluded because they occupy DMA-overwritten VRAM slots and cannot share with
- * regular tiles. Additionally, tiles whose canonical form matches an animation key frame tile are excluded, since
- * @c AnimTileMatcher will redirect them to animation tile indices during tile assignment.
- */
+/// @brief Builds a combined tile vector of regular tiles and a parallel ID mapping.
+///
+/// @details
+/// The combined vector is used as input to @c analyze_shape_groups(). The parallel @c combined_index_to_id vector maps
+/// each combined index back to its PackableTile::RegularId, allowing shape group membership to be expressed in terms of
+/// PackableTile IDs. Anim tiles are excluded because they occupy DMA-overwritten VRAM slots and cannot share with
+/// regular tiles. Additionally, tiles whose canonical form matches an animation key frame tile are excluded, since
+/// @c AnimTileMatcher will redirect them to animation tile indices during tile assignment.
 struct CombinedTiles {
     std::vector<PixelTile<Rgba32>> tiles;
     std::vector<PackableTile::Id> index_to_id;
@@ -223,80 +205,64 @@ build_combined_tiles(const PackingParams &params, const std::set<PixelTile<Rgba3
     return combined;
 }
 
-/**
- * @brief Describes a single member of a sharing group for diagnostic purposes.
- */
+/// @brief Describes a single member of a sharing group for diagnostic purposes.
 struct SharingGroupMember {
     std::size_t tile_index;
     std::size_t pal_index;
     bool is_primary{false};
 };
 
-/**
- * @brief Describes a shape group whose members landed in distinct palettes after packing.
- *
- * @details
- * Used locally within pack_tiles() for Phase 2/3/4 diagnostic emission and summary computation.
- */
+/// @brief Describes a shape group whose members landed in distinct palettes after packing.
+///
+/// @details
+/// Used locally within pack_tiles() for Phase 2/3/4 diagnostic emission and summary computation.
 struct PartitionGroup {
     std::vector<SharingGroupMember> members;
 
-    /**
-     * @brief Tile indices for each distinct color version (secondary tiles only).
-     *
-     * @details
-     * Primary tile members contribute to the seen_colors dedup set but are not added here, since these indices are
-     * used to index into params.tiles_ for diagnostic display. Safe to pass directly to diagnostic helpers.
-     */
+    /// @brief Tile indices for each distinct color version (secondary tiles only).
+    ///
+    /// @details
+    /// Primary tile members contribute to the seen_colors dedup set but are not added here, since these indices are
+    /// used to index into params.tiles_ for diagnostic display. Safe to pass directly to diagnostic helpers.
     std::vector<std::size_t> color_version_tile_indices;
 
-    /**
-     * @brief Primary tile color version entries (tile_index into primary_tiles_, pal_index).
-     *
-     * @details
-     * Collected during partition group computation for primary tiles that introduce a new color version. Used for
-     * diagnostic display of primary tile art in Phase 1 and Phase 2.
-     */
+    /// @brief Primary tile color version entries (tile_index into primary_tiles_, pal_index).
+    ///
+    /// @details
+    /// Collected during partition group computation for primary tiles that introduce a new color version. Used for
+    /// diagnostic display of primary tile art in Phase 1 and Phase 2.
     std::vector<std::pair<std::size_t, std::size_t>> primary_color_version_entries;
 };
 
-/**
- * @brief Tracks per-group statistics for partially aligned sharing groups.
- *
- * @details
- * Populated during Phase 3 verification when a sharing group has some members that aligned with the reference indexed
- * tile and others that diverged. Used to emit summary diagnostics showing the full/partial breakdown.
- */
+/// @brief Tracks per-group statistics for partially aligned sharing groups.
+///
+/// @details
+/// Populated during Phase 3 verification when a sharing group has some members that aligned with the reference indexed
+/// tile and others that diverged. Used to emit summary diagnostics showing the full/partial breakdown.
 struct PartialAlignmentInfo {
     std::size_t group_id;
     std::size_t dropped_color_version_count;
 };
 
-/**
- * @brief Result of converting PackingParams inputs into packer-internal forms.
- */
+/// @brief Result of converting PackingParams inputs into packer-internal forms.
 struct PackingInputs {
     std::vector<PackableTile> regular_tiles;
     std::vector<PackableTile> hint_tiles;
     std::set<PrefilledPalette> prefilled_palettes;
 };
 
-/**
- * @brief Result of Phase 2 partition group computation.
- *
- * @details
- * Captures which shape groups are eligible for sharing (2+ members in 2+ distinct palettes), the corresponding
- * partition groups, and the mapping from shape group index to partition group index.
- */
+/// @brief Result of Phase 2 partition group computation.
+///
+/// @details
+/// Captures which shape groups are eligible for sharing (2+ members in 2+ distinct palettes), the corresponding
+/// partition groups, and the mapping from shape group index to partition group index.
 struct Phase2Result {
     std::set<std::size_t> eligible_shape_indices;
     std::vector<PartitionGroup> partition_groups;
     std::map<std::size_t, std::size_t> shape_to_partition_index;
 };
 
-/**
- * @brief Per-group verification detail for Phase 3 diagnostics.
- */
+/// @brief Per-group verification detail for Phase 3 diagnostics.
 struct Phase3GroupResult {
     std::size_t shape_group_index;
     bool is_partial;
@@ -307,13 +273,11 @@ struct Phase3GroupResult {
     std::map<std::size_t, std::vector<std::size_t>> primary_members_by_pal;
 };
 
-/**
- * @brief Result of Phase 3 alignment verification.
- *
- * @details
- * Contains all counts, partial alignment info, unaligned groups, and per-group detail data needed for diagnostic
- * emission.
- */
+/// @brief Result of Phase 3 alignment verification.
+///
+/// @details
+/// Contains all counts, partial alignment info, unaligned groups, and per-group detail data needed for diagnostic
+/// emission.
 struct Phase3Result {
     std::size_t aligned_count{};
     std::size_t fully_aligned_count{};
@@ -323,9 +287,7 @@ struct Phase3Result {
     std::vector<Phase3GroupResult> aligned_groups;
 };
 
-/**
- * @brief Describes a verified member of a sharing group for Phase 3 alignment checking.
- */
+/// @brief Describes a verified member of a sharing group for Phase 3 alignment checking.
 struct VerifiedMember {
     std::size_t regular_index;
     std::size_t hw_pal;
@@ -334,16 +296,14 @@ struct VerifiedMember {
     bool is_primary{false};
 };
 
-/**
- * @brief Converts PackingParams inputs into packer-internal forms (Steps 1-3).
- *
- * @details
- * Converts regular tiles + anim composite tiles to PackableTile, hint palettes to PackableTile, and input prefilled
- * palettes to PrefilledPalette. Pure conversion, no side effects.
- *
- * @param params The packing input parameters
- * @return PackingInputs containing the converted forms
- */
+/// @brief Converts PackingParams inputs into packer-internal forms (Steps 1-3).
+///
+/// @details
+/// Converts regular tiles + anim composite tiles to PackableTile, hint palettes to PackableTile, and input prefilled
+/// palettes to PrefilledPalette. Pure conversion, no side effects.
+///
+/// @param params The packing input parameters
+/// @return PackingInputs containing the converted forms
 [[nodiscard]] PackingInputs build_packing_inputs(const PackingParams &params)
 {
     // Step 1: Convert regular tiles and anims to PackableTile vector
@@ -386,16 +346,14 @@ struct VerifiedMember {
     return PackingInputs{std::move(regular_tiles), std::move(hint_tiles), std::move(prefilled_palettes)};
 }
 
-/**
- * @brief Populates PalettePacking::tile_to_pal_ from a PackingOutput.
- *
- * @details
- * Visits each tile ID in the PackingOutput's tile_to_pal_ and records the palette assignment for RegularId entries
- * only. AnimId, HintId, and PrefilledPaletteId entries are silently skipped.
- *
- * @param packing The PalettePacking to populate
- * @param output The low-level packing output containing tile-to-palette assignments
- */
+/// @brief Populates PalettePacking::tile_to_pal_ from a PackingOutput.
+///
+/// @details
+/// Visits each tile ID in the PackingOutput's tile_to_pal_ and records the palette assignment for RegularId entries
+/// only. AnimId, HintId, and PrefilledPaletteId entries are silently skipped.
+///
+/// @param packing The PalettePacking to populate
+/// @param output The low-level packing output containing tile-to-palette assignments
 void populate_tile_to_pal(PalettePacking &packing, const PackingOutput &output)
 {
     packing.tile_to_pal_.clear();
@@ -426,18 +384,16 @@ void populate_tile_to_pal(PalettePacking &packing, const PackingOutput &output)
     }
 }
 
-/**
- * @brief Builds a combined-tile-index to hw-palette-index map from authoritative packing assignments.
- *
- * @details
- * Iterates shape group members and maps each combined tile index to its assigned hardware palette index via the
- * packing's tile_to_pal_. Used by both the link builder and the sharing diagnostics verifier.
- *
- * @param shape_groups The shape groups to iterate
- * @param combined The combined tiles with index-to-id mapping
- * @param tile_to_pal The authoritative tile-to-palette assignments from packing
- * @return Map from combined tile index to hardware palette index
- */
+/// @brief Builds a combined-tile-index to hw-palette-index map from authoritative packing assignments.
+///
+/// @details
+/// Iterates shape group members and maps each combined tile index to its assigned hardware palette index via the
+/// packing's tile_to_pal_. Used by both the link builder and the sharing diagnostics verifier.
+///
+/// @param shape_groups The shape groups to iterate
+/// @param combined The combined tiles with index-to-id mapping
+/// @param tile_to_pal The authoritative tile-to-palette assignments from packing
+/// @return Map from combined tile index to hardware palette index
 [[nodiscard]] std::map<std::size_t, std::size_t> build_tile_pal_assignments(
     const std::vector<ShapeGroup<Rgba32>> &shape_groups,
     const CombinedTiles &combined,
@@ -462,18 +418,16 @@ void populate_tile_to_pal(PalettePacking &packing, const PackingOutput &output)
     return tile_pal_assignments;
 }
 
-/**
- * @brief Computes Phase 2 partition groups from shape groups and packing assignments.
- *
- * @details
- * Iterates shape groups and identifies those with 2+ members assigned to 2+ distinct palettes. Returns eligible
- * indices, partition groups, and shape-to-partition mapping. No diagnostic emission.
- *
- * @param shape_groups The shape groups to analyze
- * @param combined The combined tiles with index-to-id mapping
- * @param tile_to_pal The authoritative tile-to-palette assignments from packing
- * @return Phase2Result with eligible indices, partition groups, and shape-to-partition index map
- */
+/// @brief Computes Phase 2 partition groups from shape groups and packing assignments.
+///
+/// @details
+/// Iterates shape groups and identifies those with 2+ members assigned to 2+ distinct palettes. Returns eligible
+/// indices, partition groups, and shape-to-partition mapping. No diagnostic emission.
+///
+/// @param shape_groups The shape groups to analyze
+/// @param combined The combined tiles with index-to-id mapping
+/// @param tile_to_pal The authoritative tile-to-palette assignments from packing
+/// @return Phase2Result with eligible indices, partition groups, and shape-to-partition index map
 [[nodiscard]] Phase2Result compute_partition_groups(
     const std::vector<ShapeGroup<Rgba32>> &shape_groups,
     const CombinedTiles &combined,
@@ -536,22 +490,20 @@ void populate_tile_to_pal(PalettePacking &packing, const PackingOutput &output)
     return result;
 }
 
-/**
- * @brief Verifies sharing alignment against final palettes (Phase 3 computation).
- *
- * @details
- * For each eligible shape group, verifies that members produce the same canonical indexed tile when indexed against
- * their assigned final palettes. Returns counts, partial alignment info, unaligned groups, and per-group detail data.
- * No diagnostic emission.
- *
- * @param shape_groups The shape groups to verify
- * @param combined The combined tiles with index-to-id mapping
- * @param tile_pal_assignments The combined-tile-index to hw-palette-index map
- * @param phase2 The Phase 2 result with eligible indices and partition groups
- * @param final_pals The final output palettes with indirect links applied
- * @param extrinsic The extrinsic transparency color
- * @return Phase3Result with alignment counts and per-group verification data
- */
+/// @brief Verifies sharing alignment against final palettes (Phase 3 computation).
+///
+/// @details
+/// For each eligible shape group, verifies that members produce the same canonical indexed tile when indexed against
+/// their assigned final palettes. Returns counts, partial alignment info, unaligned groups, and per-group detail data.
+/// No diagnostic emission.
+///
+/// @param shape_groups The shape groups to verify
+/// @param combined The combined tiles with index-to-id mapping
+/// @param tile_pal_assignments The combined-tile-index to hw-palette-index map
+/// @param phase2 The Phase 2 result with eligible indices and partition groups
+/// @param final_pals The final output palettes with indirect links applied
+/// @param extrinsic The extrinsic transparency color
+/// @return Phase3Result with alignment counts and per-group verification data
 [[nodiscard]] Phase3Result verify_sharing_alignment(
     const std::vector<ShapeGroup<Rgba32>> &shape_groups,
     const CombinedTiles &combined,
@@ -666,20 +618,18 @@ void populate_tile_to_pal(PalettePacking &packing, const PackingOutput &output)
     return result;
 }
 
-/**
- * @brief Emits Phase 1 sharing opportunity diagnostics.
- *
- * @details
- * For each shape group, emits a remark showing detected color versions (including primary tile art) and all tilemap
- * entries. Emits a summary count.
- *
- * @param format TextFormatter for building diagnostic output
- * @param diag UserDiagnostics for emitting remarks
- * @param tile_printer TilePrinter for rendering tile ASCII art
- * @param shape_groups The shape groups detected
- * @param combined The combined tiles with index-to-id mapping
- * @param params The packing parameters (for tiles, primary tiles, and extrinsic transparency)
- */
+/// @brief Emits Phase 1 sharing opportunity diagnostics.
+///
+/// @details
+/// For each shape group, emits a remark showing detected color versions (including primary tile art) and all tilemap
+/// entries. Emits a summary count.
+///
+/// @param format TextFormatter for building diagnostic output
+/// @param diag UserDiagnostics for emitting remarks
+/// @param tile_printer TilePrinter for rendering tile ASCII art
+/// @param shape_groups The shape groups detected
+/// @param combined The combined tiles with index-to-id mapping
+/// @param params The packing parameters (for tiles, primary tiles, and extrinsic transparency)
 void emit_phase1_diagnostics(
     const TextFormatter &format,
     const UserDiagnostics &diag,
@@ -752,20 +702,18 @@ void emit_phase1_diagnostics(
         FormatParam{shape_groups.size(), Style::bold});
 }
 
-/**
- * @brief Emits Phase 2 partition group diagnostics.
- *
- * @details
- * For each eligible partition group, emits a remark showing color versions, per-palette tile assignments, and packing
- * caveat when packing is off. Emits a summary count.
- *
- * @param format TextFormatter for building diagnostic output
- * @param diag UserDiagnostics for emitting remarks
- * @param tile_printer TilePrinter for rendering tile ASCII art
- * @param shape_groups The shape groups
- * @param phase2 The Phase 2 computation result
- * @param params The packing parameters (for tiles, extrinsic, and packing config)
- */
+/// @brief Emits Phase 2 partition group diagnostics.
+///
+/// @details
+/// For each eligible partition group, emits a remark showing color versions, per-palette tile assignments, and packing
+/// caveat when packing is off. Emits a summary count.
+///
+/// @param format TextFormatter for building diagnostic output
+/// @param diag UserDiagnostics for emitting remarks
+/// @param tile_printer TilePrinter for rendering tile ASCII art
+/// @param shape_groups The shape groups
+/// @param phase2 The Phase 2 computation result
+/// @param params The packing parameters (for tiles, extrinsic, and packing config)
 void emit_phase2_diagnostics(
     const TextFormatter &format,
     const UserDiagnostics &diag,
@@ -844,19 +792,17 @@ void emit_phase2_diagnostics(
         FormatParam{shape_groups.size(), Style::bold});
 }
 
-/**
- * @brief Emits Phase 3 per-group alignment success/partial diagnostics.
- *
- * @details
- * For each aligned group in the Phase3Result, emits a remark showing palette participation, per-palette tile
- * assignments (including primary tile representative art), and caveats for partial alignment or off alignment mode.
- *
- * @param format TextFormatter for building diagnostic output
- * @param diag UserDiagnostics for emitting remarks
- * @param tile_printer TilePrinter for rendering tile ASCII art
- * @param phase3 The Phase 3 verification result
- * @param params The packing parameters (for tiles, primary tiles, extrinsic transparency, and alignment config)
- */
+/// @brief Emits Phase 3 per-group alignment success/partial diagnostics.
+///
+/// @details
+/// For each aligned group in the Phase3Result, emits a remark showing palette participation, per-palette tile
+/// assignments (including primary tile representative art), and caveats for partial alignment or off alignment mode.
+///
+/// @param format TextFormatter for building diagnostic output
+/// @param diag UserDiagnostics for emitting remarks
+/// @param tile_printer TilePrinter for rendering tile ASCII art
+/// @param phase3 The Phase 3 verification result
+/// @param params The packing parameters (for tiles, primary tiles, extrinsic transparency, and alignment config)
 void emit_phase3_diagnostics(
     const TextFormatter &format,
     const UserDiagnostics &diag,
@@ -928,22 +874,20 @@ void emit_phase3_diagnostics(
     }
 }
 
-/**
- * @brief Emits the full tile sharing summary.
- *
- * @details
- * Emits detected -> eligible -> aligned breakdown, partial listings, unaligned groups with per-group failure details,
- * aggregate failure summary, and actionable suggestions.
- *
- * @param format TextFormatter for building diagnostic output
- * @param diag UserDiagnostics for emitting remarks
- * @param tile_printer TilePrinter for rendering tile ASCII art
- * @param params The packing parameters
- * @param shape_groups The shape groups
- * @param phase2 The Phase 2 result
- * @param phase3 The Phase 3 result
- * @param failure_counts The alignment failure counts from palette building
- */
+/// @brief Emits the full tile sharing summary.
+///
+/// @details
+/// Emits detected -> eligible -> aligned breakdown, partial listings, unaligned groups with per-group failure details,
+/// aggregate failure summary, and actionable suggestions.
+///
+/// @param format TextFormatter for building diagnostic output
+/// @param diag UserDiagnostics for emitting remarks
+/// @param tile_printer TilePrinter for rendering tile ASCII art
+/// @param params The packing parameters
+/// @param shape_groups The shape groups
+/// @param phase2 The Phase 2 result
+/// @param phase3 The Phase 3 result
+/// @param failure_counts The alignment failure counts from palette building
 void emit_sharing_summary(
     const TextFormatter &format,
     const UserDiagnostics &diag,
@@ -1202,14 +1146,12 @@ void emit_sharing_summary(
     diag.remark(tag, remark_lines);
 }
 
-/**
- * @brief Emits per-palette packing result diagnostics.
- *
- * @param format TextFormatter for building diagnostic output
- * @param diag UserDiagnostics for emitting remarks
- * @param pal_printer PalettePrinter for rendering palette diagnostics
- * @param pals The final packed palettes
- */
+/// @brief Emits per-palette packing result diagnostics.
+///
+/// @param format TextFormatter for building diagnostic output
+/// @param diag UserDiagnostics for emitting remarks
+/// @param pal_printer PalettePrinter for rendering palette diagnostics
+/// @param pals The final packed palettes
 void emit_palette_diagnostics(
     const TextFormatter &format,
     const UserDiagnostics &diag,
@@ -1267,11 +1209,9 @@ ChainableResult<PalettePacking> PalettePacker::pack_tiles(const PackingParams &p
         return ChainableResult<PalettePacking>{FormattableError{std::move(err_lines)}};
     }
 
-    /*
-     * For biased packing, build shape group metadata BEFORE the initial pack call so the strategy
-     * receives sharing-aware input. For off packing, pack normally first (metadata is only needed
-     * post-packing for diagnostics and alignment).
-     */
+    // For biased packing, build shape group metadata BEFORE the initial pack call so the strategy
+    // receives sharing-aware input. For off packing, pack normally first (metadata is only needed
+    // post-packing for diagnostics and alignment).
     std::vector<ShapeGroup<Rgba32>> shape_groups_for_biased;
     CombinedTiles combined_for_biased;
     if (params.tile_sharing_packing_ == TileSharingPacking::biased) {
@@ -1293,19 +1233,15 @@ ChainableResult<PalettePacking> PalettePacker::pack_tiles(const PackingParams &p
     PalettePacking packing{};
     populate_tile_to_pal(packing, packing_output);
 
-    /*
-     * 5b: Always compute shape groups for three-phase diagnostics, then conditionally build Indirect links.
-     *
-     * Shape group analysis and Phase 1/2 data are always computed regardless of config, so diagnostics can be
-     * emitted with appropriate caveats. Indirect link generation (alignment) is conditioned on
-     * tile_sharing_alignment_.
-     */
+    // 5b: Always compute shape groups for three-phase diagnostics, then conditionally build Indirect links.
+    //
+    // Shape group analysis and Phase 1/2 data are always computed regardless of config, so diagnostics can be
+    // emitted with appropriate caveats. Indirect link generation (alignment) is conditioned on
+    // tile_sharing_alignment_.
     std::vector<IndirectLink> indirect_links;
 
-    /*
-     * Always compute shape groups for three-phase diagnostics. Reuse pre-pack results when packing is
-     * biased (they were already computed for metadata injection).
-     */
+    // Always compute shape groups for three-phase diagnostics. Reuse pre-pack results when packing is
+    // biased (they were already computed for metadata injection).
     CombinedTiles combined;
     std::vector<ShapeGroup<Rgba32>> shape_groups;
 

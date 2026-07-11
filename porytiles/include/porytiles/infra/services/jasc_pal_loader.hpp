@@ -12,9 +12,7 @@
 
 namespace porytiles {
 
-/**
- * @brief An implementation of FilePalLoader that loads palettes from JASC-PAL (Paintshop Pro) pal files.
- */
+/// @brief An implementation of FilePalLoader that loads palettes from JASC-PAL (Paintshop Pro) pal files.
 class JascPalLoader final : public FilePalLoader {
   public:
     explicit JascPalLoader(gsl::not_null<const TextFormatter *> format)

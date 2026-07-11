@@ -47,20 +47,18 @@ Style rgba_to_bg_style(const Rgba32 &color)
     return rgb_bg_style(color.red(), color.green(), color.blue());
 }
 
-/**
- * @brief Helper function to render an 8x8 tile with highlighted pixels.
- *
- * @details
- * This function renders an 8x8 tile grid with highlighted pixels based on the provided set of (row, col) coordinates.
- * Pixels at the highlighted coordinates are marked with "X" and styled with the pixel's actual RGB color. Other pixels
- * are shown as " . ".
- *
- * @param tile The PixelTile to render
- * @param highlight_coords Set of (row, col) coordinates to highlight with "X"
- * @param extrinsic_transparency The extrinsic transparency color to substitute for intrinsically transparent pixels
- * @param format The text formatter to use for styling
- * @return A vector of strings representing the rendered tile
- */
+/// @brief Helper function to render an 8x8 tile with highlighted pixels.
+///
+/// @details
+/// This function renders an 8x8 tile grid with highlighted pixels based on the provided set of (row, col) coordinates.
+/// Pixels at the highlighted coordinates are marked with "X" and styled with the pixel's actual RGB color. Other pixels
+/// are shown as " . ".
+///
+/// @param tile The PixelTile to render
+/// @param highlight_coords Set of (row, col) coordinates to highlight with "X"
+/// @param extrinsic_transparency The extrinsic transparency color to substitute for intrinsically transparent pixels
+/// @param format The text formatter to use for styling
+/// @return A vector of strings representing the rendered tile
 std::vector<std::string> render_tile_with_highlights(
     const PixelTile<Rgba32> &tile,
     const std::set<std::pair<std::size_t, std::size_t>> &highlight_coords,
@@ -98,17 +96,15 @@ std::vector<std::string> render_tile_with_highlights(
     return result;
 }
 
-/**
- * @brief Helper function to extract the correct tile from a metatile.
- *
- * @details
- * Extracts the PixelTile at the specified layer and subtile position within a metatile.
- *
- * @param metatile The metatile to extract from
- * @param layer The layer to extract from (bottom, middle, top)
- * @param subtile The subtile position (northwest, northeast, southwest, southeast)
- * @return Reference to the PixelTile at the specified position
- */
+/// @brief Helper function to extract the correct tile from a metatile.
+///
+/// @details
+/// Extracts the PixelTile at the specified layer and subtile position within a metatile.
+///
+/// @param metatile The metatile to extract from
+/// @param layer The layer to extract from (bottom, middle, top)
+/// @param subtile The subtile position (northwest, northeast, southwest, southeast)
+/// @return Reference to the PixelTile at the specified position
 const PixelTile<Rgba32> &
 get_tile_from_metatile(const Metatile<Rgba32> &metatile, metatile::Layer layer, metatile::Subtile subtile)
 {
@@ -124,24 +120,22 @@ get_tile_from_metatile(const Metatile<Rgba32> &metatile, metatile::Layer layer, 
     panic("invalid layer value");
 }
 
-/**
- * @brief Helper function to render a metatile with highlighted pixels.
- *
- * @details
- * This function renders a 16x16 metatile grid with highlighted pixels based on the provided set of (row, col)
- * coordinates. Pixels at the highlighted coordinates are marked with "X" styled with their actual RGB color (bold),
- * other pixels in the target subtile are marked with "*" styled with their actual RGB color (bold), and pixels in
- * non-target subtiles are marked with "." styled with their actual RGB color (non-bold).
- *
- * @param metatile The metatile to render
- * @param layer The layer of the metatile to render
- * @param subtile The subtile being highlighted
- * @param highlight_coords Set of (row, col) coordinates within the subtile to highlight with "X"
- * @param extrinsic_transparency The extrinsic transparency color to substitute for intrinsically transparent pixels
- * @param format The text formatter to use for styling
- * @param highlight_subtile Toggle to highlight the provided subtile
- * @return A vector of strings representing the rendered metatile
- */
+/// @brief Helper function to render a metatile with highlighted pixels.
+///
+/// @details
+/// This function renders a 16x16 metatile grid with highlighted pixels based on the provided set of (row, col)
+/// coordinates. Pixels at the highlighted coordinates are marked with "X" styled with their actual RGB color (bold),
+/// other pixels in the target subtile are marked with "*" styled with their actual RGB color (bold), and pixels in
+/// non-target subtiles are marked with "." styled with their actual RGB color (non-bold).
+///
+/// @param metatile The metatile to render
+/// @param layer The layer of the metatile to render
+/// @param subtile The subtile being highlighted
+/// @param highlight_coords Set of (row, col) coordinates within the subtile to highlight with "X"
+/// @param extrinsic_transparency The extrinsic transparency color to substitute for intrinsically transparent pixels
+/// @param format The text formatter to use for styling
+/// @param highlight_subtile Toggle to highlight the provided subtile
+/// @return A vector of strings representing the rendered metatile
 std::vector<std::string> render_metatile_with_highlights(
     const Metatile<Rgba32> &metatile,
     metatile::Layer layer,

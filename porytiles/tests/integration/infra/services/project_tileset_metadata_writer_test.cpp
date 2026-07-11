@@ -39,13 +39,11 @@ void copy_directory(const std::filesystem::path &src, const std::filesystem::pat
 
 } // namespace
 
-/**
- * @brief Base fixture for ProjectTilesetMetadataWriter tests.
- *
- * @details
- * This fixture copies the test project to a temp directory so we can modify files
- * without affecting the original test data.
- */
+/// @brief Base fixture for ProjectTilesetMetadataWriter tests.
+///
+/// @details
+/// This fixture copies the test project to a temp directory so we can modify files
+/// without affecting the original test data.
 class ProjectTilesetMetadataWriterTestBase : public ::testing::Test {
   protected:
     [[nodiscard]] virtual std::filesystem::path source_project_path() const = 0;

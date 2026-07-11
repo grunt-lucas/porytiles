@@ -10,16 +10,14 @@
 
 namespace porytiles {
 
-/**
- * @brief Represents a 32-bit RGBA color.
- *
- * @details
- * RGBA32 stores color values as four 8-bit components: red, green, blue, and alpha. Alpha of 0 indicates full
- * transparency, while alpha of 255 indicates full opacity.
- *
- * @invariant Default-constructed Rgba32 is transparent (satisfies SupportsTransparency design invariant). That is,
- * `Rgba32{}` produces a transparent color with all components set to 0, including alpha.
- */
+/// @brief Represents a 32-bit RGBA color.
+///
+/// @details
+/// RGBA32 stores color values as four 8-bit components: red, green, blue, and alpha. Alpha of 0 indicates full
+/// transparency, while alpha of 255 indicates full opacity.
+///
+/// @invariant Default-constructed Rgba32 is transparent (satisfies SupportsTransparency design invariant). That is,
+/// `Rgba32{}` produces a transparent color with all components set to 0, including alpha.
 class Rgba32 {
   public:
     static constexpr std::uint8_t alpha_transparent = 0;
@@ -36,38 +34,32 @@ class Rgba32 {
 
     bool operator==(const Rgba32 &rgba) const = default;
 
-    /**
-     * @brief Checks if this color is intrinsically transparent based on its alpha channel.
-     *
-     * @details
-     * A color is intrinsically transparent if its alpha value is 0.
-     *
-     * @return True if alpha == alpha_transparent, false otherwise
-     */
+    /// @brief Checks if this color is intrinsically transparent based on its alpha channel.
+    ///
+    /// @details
+    /// A color is intrinsically transparent if its alpha value is 0.
+    ///
+    /// @return True if alpha == alpha_transparent, false otherwise
     [[nodiscard]] bool is_intrinsically_transparent() const;
 
-    /**
-     * @brief Checks if this color matches the extrinsic transparency color.
-     *
-     * @details
-     * A color is extrinsically transparent if its RGB components match the extrinsic transparency color, regardless of
-     * alpha values.
-     *
-     * @param extrinsic The extrinsic transparency color to check against
-     * @return True if this color's RGB components match the extrinsic color, false otherwise
-     */
+    /// @brief Checks if this color matches the extrinsic transparency color.
+    ///
+    /// @details
+    /// A color is extrinsically transparent if its RGB components match the extrinsic transparency color, regardless of
+    /// alpha values.
+    ///
+    /// @param extrinsic The extrinsic transparency color to check against
+    /// @return True if this color's RGB components match the extrinsic color, false otherwise
     [[nodiscard]] bool is_extrinsically_transparent(const Rgba32 &extrinsic) const;
 
-    /**
-     * @brief Checks if this color should be treated as transparent.
-     *
-     * @details
-     * An RGBA32 color is considered transparent if either the color matches the extrinsic transparency color (ignoring
-     * alpha values) or if this color's intrinsic alpha value indicates transparency (alpha == 0).
-     *
-     * @param extrinsic The extrinsic transparency color to check against
-     * @return True if this color should be treated as transparent, false otherwise
-     */
+    /// @brief Checks if this color should be treated as transparent.
+    ///
+    /// @details
+    /// An RGBA32 color is considered transparent if either the color matches the extrinsic transparency color (ignoring
+    /// alpha values) or if this color's intrinsic alpha value indicates transparency (alpha == 0).
+    ///
+    /// @param extrinsic The extrinsic transparency color to check against
+    /// @return True if this color should be treated as transparent, false otherwise
     [[nodiscard]] bool is_transparent(const Rgba32 &extrinsic) const;
 
     [[nodiscard]] std::string to_jasc_str() const;
@@ -111,17 +103,15 @@ inline std::string to_string(const Rgba32 &rgba)
            ", " + std::to_string(rgba.alpha()) + "]";
 }
 
-/**
- * @brief Stream insertion operator for Rgba32.
- *
- * @details
- * Allows Rgba32 objects to be written to output streams using the << operator. Uses the bracketed component format
- * (e.g., "[R, G, B, A]").
- *
- * @param os The output stream
- * @param rgba The Rgba32 color to output
- * @return Reference to the output stream
- */
+/// @brief Stream insertion operator for Rgba32.
+///
+/// @details
+/// Allows Rgba32 objects to be written to output streams using the << operator. Uses the bracketed component format
+/// (e.g., "[R, G, B, A]").
+///
+/// @param os The output stream
+/// @param rgba The Rgba32 color to output
+/// @return Reference to the output stream
 inline std::ostream &operator<<(std::ostream &os, const Rgba32 &rgba)
 {
     os << to_string(rgba);
@@ -140,15 +130,13 @@ constexpr Rgba32 rgba_cyan{0, 255, 255, Rgba32::alpha_opaque};
 constexpr Rgba32 rgba_purple{128, 0, 255, Rgba32::alpha_opaque};
 constexpr Rgba32 rgba_lime{128, 255, 128, Rgba32::alpha_opaque};
 
-/**
- * @brief Returns the standard 16-color greyscale palette used for indexed tile output.
- *
- * @details
- * This palette maps index 0 to pure white and index 15 to pure black, which matches vanilla game tilesets. The
- * intermediate values are evenly spaced greyscale tones.
- *
- * @return A vector of 16 Rgba32 colors representing the greyscale palette
- */
+/// @brief Returns the standard 16-color greyscale palette used for indexed tile output.
+///
+/// @details
+/// This palette maps index 0 to pure white and index 15 to pure black, which matches vanilla game tilesets. The
+/// intermediate values are evenly spaced greyscale tones.
+///
+/// @return A vector of 16 Rgba32 colors representing the greyscale palette
 inline std::vector<Rgba32> standard_greyscale_pal()
 {
     return {
@@ -195,25 +183,23 @@ struct std::hash<porytiles::Rgba32> {
     }
 };
 
-/**
- * @brief std::formatter specialization for Rgba32.
- *
- * @details
- * Enables Rgba32 to be used with std::format() and related formatting functions. This makes Rgba32 participate in
- * the FormatParam string conversion chain via the std::formattable concept.
- *
- * Example usage:
- * ```c++
- * Rgba32 color{255, 128, 0, 255};
- * std::string s = std::format("Color: {}", color);  // "Color: [255, 128, 0, 255]"
- *
- * // Works automatically with FormatParam:
- * FormattableError{"Invalid color: {}", FormatParam{color, Style::bold}};
- * ```
- *
- * This is the recommended way to add formatting support for custom types in Porytiles. The formatter delegates to
- * the porytiles::to_string() overload for consistent string representation across the codebase.
- */
+/// @brief std::formatter specialization for Rgba32.
+///
+/// @details
+/// Enables Rgba32 to be used with std::format() and related formatting functions. This makes Rgba32 participate in
+/// the FormatParam string conversion chain via the std::formattable concept.
+///
+/// Example usage:
+/// ```c++
+/// Rgba32 color{255, 128, 0, 255};
+/// std::string s = std::format("Color: {}", color);  // "Color: [255, 128, 0, 255]"
+///
+/// // Works automatically with FormatParam:
+/// FormattableError{"Invalid color: {}", FormatParam{color, Style::bold}};
+/// ```
+///
+/// This is the recommended way to add formatting support for custom types in Porytiles. The formatter delegates to
+/// the porytiles::to_string() overload for consistent string representation across the codebase.
 template <>
 struct std::formatter<porytiles::Rgba32> {
     constexpr auto parse(std::format_parse_context &ctx)

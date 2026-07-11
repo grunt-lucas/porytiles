@@ -33,39 +33,33 @@
 
 namespace porytiles {
 
-/**
- * @brief {{ enum.brief }}
- *
- * @details
+/// @brief {{ enum.brief }}
+///
+/// @details
 {% for line in (enum.details | default(enum.brief)).split('\n') %}
- * {{ line | trim }}
+/// {{ line | trim }}
 {% endfor %}
- */
 enum class {{ enum.cpp_type }} {
 {% for val in enum.enum_values %}
-    /**
-     * @brief {{ val.brief }}
-     */
+    /// @brief {{ val.brief }}
     {{ val.name }}{% if not loop.last %},{% endif %}
 
 {% endfor %}
 };
 
-/**
- * @brief Parses a string into a {{ enum.cpp_type }} with fuzzy matching.
- *
- * @details
- * Performs parsing in two phases:
- * 1. Exact match against C++ constant names (snake_case)
- * 2. Case-insensitive fuzzy match against configured fuzzy_names
- *
- * This unified function is used by both CLI and YAML parsing. The fuzzy matching
- * allows users to use various common formats (kebab-case, snake_case, etc.) while
- * still getting good error messages through LazyLayeredConfig.
- *
- * @param str The string to parse
- * @return The parsed value, or std::nullopt if the string is invalid
- */
+/// @brief Parses a string into a {{ enum.cpp_type }} with fuzzy matching.
+///
+/// @details
+/// Performs parsing in two phases:
+/// 1. Exact match against C++ constant names (snake_case)
+/// 2. Case-insensitive fuzzy match against configured fuzzy_names
+///
+/// This unified function is used by both CLI and YAML parsing. The fuzzy matching
+/// allows users to use various common formats (kebab-case, snake_case, etc.) while
+/// still getting good error messages through LazyLayeredConfig.
+///
+/// @param str The string to parse
+/// @return The parsed value, or std::nullopt if the string is invalid
 [[nodiscard]] inline std::optional<{{ enum.cpp_type }}> {{ enum.cpp_type | snake_case }}_from_str(const std::string &str)
 {
     // Phase 1: Exact match against C++ constant names
@@ -94,16 +88,14 @@ enum class {{ enum.cpp_type }} {
     return std::nullopt;
 }
 
-/**
- * @brief Converts a {{ enum.cpp_type }} to its canonical string representation.
- *
- * @details
- * Returns the C++ constant name (snake_case). This is the canonical form used for
- * general purpose string conversion, logging, and error messages.
- *
- * @param m The value to convert
- * @return The canonical snake_case string representation
- */
+/// @brief Converts a {{ enum.cpp_type }} to its canonical string representation.
+///
+/// @details
+/// Returns the C++ constant name (snake_case). This is the canonical form used for
+/// general purpose string conversion, logging, and error messages.
+///
+/// @param m The value to convert
+/// @return The canonical snake_case string representation
 [[nodiscard]] inline std::string to_string(const {{ enum.cpp_type }} m)
 {
     switch (m) {
@@ -115,13 +107,11 @@ enum class {{ enum.cpp_type }} {
     panic("unhandled {{ enum.cpp_type }} value");
 }
 
-/**
- * @brief Stream insertion operator for {{ enum.cpp_type }}.
- *
- * @param os The output stream
- * @param m The value to output
- * @return Reference to the output stream
- */
+/// @brief Stream insertion operator for {{ enum.cpp_type }}.
+///
+/// @param os The output stream
+/// @param m The value to output
+/// @return Reference to the output stream
 inline std::ostream &operator<<(std::ostream &os, const {{ enum.cpp_type }} m)
 {
     return os << to_string(m);

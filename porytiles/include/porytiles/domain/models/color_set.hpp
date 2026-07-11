@@ -11,18 +11,14 @@
 
 namespace porytiles {
 
-/**
- * @brief Maximum allowable color count for GBA hardware.
- */
+/// @brief Maximum allowable color count for GBA hardware.
 inline constexpr std::size_t num_colors = pal::max_size * pal::num_pals;
 
-/**
- * @brief A set of colors represented as a bitset.
- *
- * @details
- * ColorSet tracks which colors are present in a set using a fixed-size bitset. Each bit position corresponds to a
- * specific color index.
- */
+/// @brief A set of colors represented as a bitset.
+///
+/// @details
+/// ColorSet tracks which colors are present in a set using a fixed-size bitset. Each bit position corresponds to a
+/// specific color index.
 class ColorSet {
   public:
     ColorSet() = default;
@@ -44,91 +40,77 @@ class ColorSet {
     std::bitset<num_colors> colors_;
 };
 
-/**
- * @brief Computes the union of two ColorSets.
- *
- * @details
- * Returns a new ColorSet containing all colors present in either set.
- *
- * @param a The first ColorSet
- * @param b The second ColorSet
- * @return A ColorSet containing the union of both sets
- */
+/// @brief Computes the union of two ColorSets.
+///
+/// @details
+/// Returns a new ColorSet containing all colors present in either set.
+///
+/// @param a The first ColorSet
+/// @param b The second ColorSet
+/// @return A ColorSet containing the union of both sets
 [[nodiscard]] ColorSet color_set_union(const ColorSet &a, const ColorSet &b);
 
-/**
- * @brief Computes the intersection of two ColorSets.
- *
- * @details
- * Returns a new ColorSet containing only colors present in both sets.
- *
- * @param a The first ColorSet
- * @param b The second ColorSet
- * @return A ColorSet containing the intersection of both sets
- */
+/// @brief Computes the intersection of two ColorSets.
+///
+/// @details
+/// Returns a new ColorSet containing only colors present in both sets.
+///
+/// @param a The first ColorSet
+/// @param b The second ColorSet
+/// @return A ColorSet containing the intersection of both sets
 [[nodiscard]] ColorSet color_set_intersection(const ColorSet &a, const ColorSet &b);
 
-/**
- * @brief Counts the number of colors in a ColorSet.
- *
- * @details
- * Returns the number of bits set to true in the ColorSet.
- *
- * @param set The ColorSet to count
- * @return The number of colors in the set
- */
+/// @brief Counts the number of colors in a ColorSet.
+///
+/// @details
+/// Returns the number of bits set to true in the ColorSet.
+///
+/// @param set The ColorSet to count
+/// @return The number of colors in the set
 [[nodiscard]] std::size_t color_set_count(const ColorSet &set);
 
-/**
- * @brief Checks if one ColorSet is a subset of another.
- *
- * @details
- * Returns true if every color in set 'a' is also present in set 'b'. An empty set is a subset of any set.
- *
- * @param a The potential subset
- * @param b The potential superset
- * @return true if a is a subset of b, false otherwise
- */
+/// @brief Checks if one ColorSet is a subset of another.
+///
+/// @details
+/// Returns true if every color in set 'a' is also present in set 'b'. An empty set is a subset of any set.
+///
+/// @param a The potential subset
+/// @param b The potential superset
+/// @return true if a is a subset of b, false otherwise
 [[nodiscard]] bool is_subset(const ColorSet &a, const ColorSet &b);
 
-/**
- * @brief Computes the intersection size between two ColorSets.
- *
- * @details
- * Returns the count of colors present in both sets.
- *
- * @param a The first ColorSet
- * @param b The second ColorSet
- * @return The number of colors in the intersection
- */
+/// @brief Computes the intersection size between two ColorSets.
+///
+/// @details
+/// Returns the count of colors present in both sets.
+///
+/// @param a The first ColorSet
+/// @param b The second ColorSet
+/// @return The number of colors in the intersection
 [[nodiscard]] std::size_t intersection_size(const ColorSet &a, const ColorSet &b);
 
-/**
- * @brief Computes the union size of two ColorSets.
- *
- * @details
- * Returns the count of colors present in either set.
- *
- * @param a The first ColorSet
- * @param b The second ColorSet
- * @return The number of colors in the union
- */
+/// @brief Computes the union size of two ColorSets.
+///
+/// @details
+/// Returns the count of colors present in either set.
+///
+/// @param a The first ColorSet
+/// @param b The second ColorSet
+/// @return The number of colors in the union
 [[nodiscard]] std::size_t union_size(const ColorSet &a, const ColorSet &b);
 
-/**
- * @brief Iterates over each color index in a ColorSet.
- *
- * @details
- * Calls the provided function for each color index that is set in the ColorSet. The function is called with a
- * std::size_t representing the color index.
- *
- * This implementation uses efficient bit scanning to skip over zero bits, reducing iteration from O(256) to O(k)
- * where k is the number of set bits (typically 5-15 for tiles).
- *
- * @tparam Func A callable type accepting std::size_t
- * @param set The ColorSet to iterate over
- * @param func The function to call for each set color index
- */
+/// @brief Iterates over each color index in a ColorSet.
+///
+/// @details
+/// Calls the provided function for each color index that is set in the ColorSet. The function is called with a
+/// std::size_t representing the color index.
+///
+/// This implementation uses efficient bit scanning to skip over zero bits, reducing iteration from O(256) to O(k)
+/// where k is the number of set bits (typically 5-15 for tiles).
+///
+/// @tparam Func A callable type accepting std::size_t
+/// @param set The ColorSet to iterate over
+/// @param func The function to call for each set color index
 template <typename Func>
 void for_each_color(const ColorSet &set, Func &&func)
 {
@@ -136,13 +118,11 @@ void for_each_color(const ColorSet &set, Func &&func)
 
     const auto &bits = set.colors();
 
-    /*
-     * Process 64 bits at a time using efficient bit scanning:
-     *
-     *     num_colors = 256, so we have 4 64-bit words
-     *
-     * Note: The +63 ceiling division is a defensive pattern; not strictly necessary due to the static_assert above.
-     */
+    // Process 64 bits at a time using efficient bit scanning:
+    //
+    //     num_colors = 256, so we have 4 64-bit words
+    //
+    // Note: The +63 ceiling division is a defensive pattern; not strictly necessary due to the static_assert above.
     constexpr std::size_t words = (num_colors + 63) / 64;
 
     for (std::size_t word = 0; word < words; ++word) {
@@ -167,24 +147,20 @@ void for_each_color(const ColorSet &set, Func &&func)
 
 } // namespace porytiles
 
-/**
- * @brief std::hash specialization for ColorSet.
- *
- * @details
- * Provides a hash function for ColorSet objects to enable their use in standard hash-based containers like
- * std::unordered_set and std::unordered_map. The hash is computed by converting the bitset to a string representation.
- */
+/// @brief std::hash specialization for ColorSet.
+///
+/// @details
+/// Provides a hash function for ColorSet objects to enable their use in standard hash-based containers like
+/// std::unordered_set and std::unordered_map. The hash is computed by converting the bitset to a string representation.
 template <>
 struct std::hash<porytiles::ColorSet> {
-    /**
-     * @brief Computes the hash value for a ColorSet.
-     *
-     * @details
-     * Converts the internal bitset to a string and hashes the resulting string.
-     *
-     * @param color_set The ColorSet to hash
-     * @return The hash value
-     */
+    /// @brief Computes the hash value for a ColorSet.
+    ///
+    /// @details
+    /// Converts the internal bitset to a string and hashes the resulting string.
+    ///
+    /// @param color_set The ColorSet to hash
+    /// @return The hash value
     [[nodiscard]] std::size_t operator()(const porytiles::ColorSet &color_set) const noexcept
     {
         return std::hash<std::string>{}(color_set.colors().to_string());

@@ -18,17 +18,15 @@
 
 namespace porytiles {
 
-/**
- * @brief Provides a filesystem-based implementation for TilesetArtifactReader.
- *
- * @details
- * This class implements the TilesetArtifactReader interface to provide reading functionality for tileset artifacts. It
- * operates within the context of a Pokémon Gen III decompilation project on the local filesystem.
- *
- * Metatile attribute artifacts decode against the owning tileset's schema, looked up through the injected
- * TilesetAttrSchemaCache by the destination tileset's name. This matters when a command reads a tileset other than its
- * target: compiling a secondary loads the paired primary's artifacts, and the primary can resolve a different schema.
- */
+/// @brief Provides a filesystem-based implementation for TilesetArtifactReader.
+///
+/// @details
+/// This class implements the TilesetArtifactReader interface to provide reading functionality for tileset artifacts. It
+/// operates within the context of a Pokémon Gen III decompilation project on the local filesystem.
+///
+/// Metatile attribute artifacts decode against the owning tileset's schema, looked up through the injected
+/// TilesetAttrSchemaCache by the destination tileset's name. This matters when a command reads a tileset other than its
+/// target: compiling a secondary loads the paired primary's artifacts, and the primary can resolve a different schema.
 class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
   public:
     ProjectTilesetArtifactReader(
@@ -48,9 +46,7 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
     {
     }
 
-    /*
-     * Porymap artifacts
-     */
+    // Porymap artifacts
     [[nodiscard]] ChainableResult<void> read_metatiles_bin(Tileset &dest, const ArtifactKey &src_key) const override;
 
     [[nodiscard]] ChainableResult<void>
@@ -67,9 +63,7 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
         const ArtifactKey &params_key,
         const std::vector<std::pair<std::string, ArtifactKey>> &frame_keys) const override;
 
-    /*
-     * Porytiles artifacts
-     */
+    // Porytiles artifacts
     [[nodiscard]] ChainableResult<void> read_bottom_png(Tileset &dest, const ArtifactKey &src_key) const override;
 
     [[nodiscard]] ChainableResult<void> read_middle_png(Tileset &dest, const ArtifactKey &src_key) const override;

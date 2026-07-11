@@ -135,13 +135,11 @@ ChainableResult<void> CompileSecondaryTileset::compile(const std::string &tilese
             }
         }
 
-        /*
-         * Primary-side staleness check. Content-aware, unlike the name-only check in
-         * pipeline_helper_register_animations. If the paired primary's sources have drifted from its cached compile
-         * form, refuse to proceed: cross-tileset matching would operate against a stale compiled primary and silently
-         * produce wrong output. Only runs when the paired primary itself has cached checksums; a primary with no cache
-         * cannot be content-verified here (the user may have compiled it externally).
-         */
+        // Primary-side staleness check. Content-aware, unlike the name-only check in
+        // pipeline_helper_register_animations. If the paired primary's sources have drifted from its cached compile
+        // form, refuse to proceed: cross-tileset matching would operate against a stale compiled primary and silently
+        // produce wrong output. Only runs when the paired primary itself has cached checksums; a primary with no cache
+        // cannot be content-verified here (the user may have compiled it externally).
         if (tileset_repo_->checksum_provider().cached_checksums_exist(paired_primary->name())) {
             PT_TRY_ASSIGN_CHAIN_ERR(
                 primary_porytiles_keys,

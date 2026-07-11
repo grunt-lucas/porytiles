@@ -39,18 +39,16 @@ using namespace porytiles;
     return details;
 }
 
-/**
- * @brief Extracts the animation name from a gTilesetAnims array reference as a DynamicCasedName.
- *
- * @details
- * Parses identifiers like "gTilesetAnims_General_Flower" or "gTilesetAnims_PorytilesManaged_General_Flower"
- * to extract the animation name portion ("Flower") as a @c DynamicCasedName.
- *
- * @param identifier The full identifier name (e.g., from AppendTilesetAnimToBuffer first arg)
- * @param tileset_shorthand The tileset name (e.g., "General")
- * @param porytiles_managed Whether this uses the PorytilesManaged_ prefix
- * @return The animation name as a DynamicCasedName, or an error if the prefix does not match
- */
+/// @brief Extracts the animation name from a gTilesetAnims array reference as a DynamicCasedName.
+///
+/// @details
+/// Parses identifiers like "gTilesetAnims_General_Flower" or "gTilesetAnims_PorytilesManaged_General_Flower"
+/// to extract the animation name portion ("Flower") as a @c DynamicCasedName.
+///
+/// @param identifier The full identifier name (e.g., from AppendTilesetAnimToBuffer first arg)
+/// @param tileset_shorthand The tileset name (e.g., "General")
+/// @param porytiles_managed Whether this uses the PorytilesManaged_ prefix
+/// @return The animation name as a DynamicCasedName, or an error if the prefix does not match
 [[nodiscard]] ChainableResult<DynamicCasedName> extract_anim_name_from_array_ref(
     const std::string &identifier, const std::string &tileset_shorthand, bool porytiles_managed)
 {
@@ -86,17 +84,15 @@ using namespace porytiles;
     return DynamicCasedName::from_c_identifier(remainder);
 }
 
-/**
- * @brief Extracts frame names from array element names.
- *
- * @details
- * Given element names like ["..._Frame0", "..._Frame1", "..._Frame0", "..._Frame2"],
- * returns the frame names as DynamicCasedName instances ["0", "1", "0", "2"].
- * Frame names extracted from C identifiers (e.g., "0", "Center") are PascalCase.
- *
- * @param elements Vector of element identifier names
- * @return Vector of frame names in order (as DynamicCasedName)
- */
+/// @brief Extracts frame names from array element names.
+///
+/// @details
+/// Given element names like ["..._Frame0", "..._Frame1", "..._Frame0", "..._Frame2"],
+/// returns the frame names as DynamicCasedName instances ["0", "1", "0", "2"].
+/// Frame names extracted from C identifiers (e.g., "0", "Center") are PascalCase.
+///
+/// @param elements Vector of element identifier names
+/// @return Vector of frame names in order (as DynamicCasedName)
 [[nodiscard]] std::vector<DynamicCasedName> extract_frame_names(const std::vector<std::string> &elements)
 {
     std::vector<DynamicCasedName> frames;
@@ -114,17 +110,15 @@ using namespace porytiles;
     return frames;
 }
 
-/**
- * @brief Finds TILE_OFFSET_4BPP(X) in tokens and returns X.
- *
- * @details
- * Searches for the token pattern: identifier("TILE_OFFSET_4BPP") + lparen + integer + rparen.
- * On failure, produces a multi-line error showing the expected pattern vs the actual input tokens.
- *
- * @param tokens The token sequence to search
- * @param format Text formatter for error message styling
- * @return The tile offset value, or a descriptive error if the pattern was not found
- */
+/// @brief Finds TILE_OFFSET_4BPP(X) in tokens and returns X.
+///
+/// @details
+/// Searches for the token pattern: identifier("TILE_OFFSET_4BPP") + lparen + integer + rparen.
+/// On failure, produces a multi-line error showing the expected pattern vs the actual input tokens.
+///
+/// @param tokens The token sequence to search
+/// @param format Text formatter for error message styling
+/// @return The tile offset value, or a descriptive error if the pattern was not found
 [[nodiscard]] ChainableResult<std::size_t>
 extract_tile_offset(const std::vector<Token> &tokens, const TextFormatter &format)
 {
@@ -162,17 +156,15 @@ extract_tile_offset(const std::vector<Token> &tokens, const TextFormatter &forma
     }};
 }
 
-/**
- * @brief Finds X * TILE_SIZE_4BPP in tokens and returns X.
- *
- * @details
- * Searches for the token pattern: integer + star + identifier("TILE_SIZE_4BPP").
- * On failure, produces a multi-line error showing the expected pattern vs the actual input tokens.
- *
- * @param tokens The token sequence to search
- * @param format Text formatter for error message styling
- * @return The tile count value, or a descriptive error if the pattern was not found
- */
+/// @brief Finds X * TILE_SIZE_4BPP in tokens and returns X.
+///
+/// @details
+/// Searches for the token pattern: integer + star + identifier("TILE_SIZE_4BPP").
+/// On failure, produces a multi-line error showing the expected pattern vs the actual input tokens.
+///
+/// @param tokens The token sequence to search
+/// @param format Text formatter for error message styling
+/// @return The tile count value, or a descriptive error if the pattern was not found
 [[nodiscard]] ChainableResult<std::size_t>
 extract_tile_count(const std::vector<Token> &tokens, const TextFormatter &format)
 {
@@ -199,16 +191,14 @@ extract_tile_count(const std::vector<Token> &tokens, const TextFormatter &format
     }};
 }
 
-/**
- * @brief Finds the driver function name from an Init callback function body.
- *
- * @details
- * Searches for assignment pattern: sPrimaryTilesetAnimCallback = <driver_func>
- * or: sSecondaryTilesetAnimCallback = <driver_func>
- *
- * @param body_tokens The callback function body tokens
- * @return The driver function name, or an error if the callback assignment pattern was not found
- */
+/// @brief Finds the driver function name from an Init callback function body.
+///
+/// @details
+/// Searches for assignment pattern: sPrimaryTilesetAnimCallback = <driver_func>
+/// or: sSecondaryTilesetAnimCallback = <driver_func>
+///
+/// @param body_tokens The callback function body tokens
+/// @return The driver function name, or an error if the callback assignment pattern was not found
 [[nodiscard]] ChainableResult<std::string> find_driver_function_from_callback(const std::vector<Token> &body_tokens)
 {
     for (std::size_t i = 0; i + 2 < body_tokens.size(); ++i) {
@@ -231,25 +221,21 @@ extract_tile_count(const std::vector<Token> &tokens, const TextFormatter &format
     return FormattableError{"Could not find tileset anim callback assignment in function body."};
 }
 
-/**
- * @brief Represents a discovered timer condition and its associated function call.
- */
+/// @brief Represents a discovered timer condition and its associated function call.
 struct TimerCondition {
     std::size_t frame_factor; // The X in timer % X
     std::size_t frame_offset; // The Y in timer % X == Y
     std::string called_func;  // The function called inside the condition block
 };
 
-/**
- * @brief Extracts timer conditions and associated function calls from a driver function.
- *
- * @details
- * Searches for patterns like: if (timer % X == Y) { ... func_call(...) ... }
- * Returns a vector of TimerCondition structs.
- *
- * @param body_tokens The driver function body tokens
- * @return Vector of timer conditions with their associated function calls
- */
+/// @brief Extracts timer conditions and associated function calls from a driver function.
+///
+/// @details
+/// Searches for patterns like: if (timer % X == Y) { ... func_call(...) ... }
+/// Returns a vector of TimerCondition structs.
+///
+/// @param body_tokens The driver function body tokens
+/// @return Vector of timer conditions with their associated function calls
 [[nodiscard]] std::vector<TimerCondition> extract_timer_conditions(const std::vector<Token> &body_tokens)
 {
     std::vector<TimerCondition> result;
@@ -284,9 +270,7 @@ struct TimerCondition {
     return result;
 }
 
-/**
- * @brief Represents animation data discovered from AppendTilesetAnimToBuffer calls.
- */
+/// @brief Represents animation data discovered from AppendTilesetAnimToBuffer calls.
 struct DiscoveredAnimData {
     // std::string anim_name_pascal; // PascalCase animation name
     std::size_t tile_offset{};
@@ -295,16 +279,14 @@ struct DiscoveredAnimData {
     std::size_t frame_offset{};
 };
 
-/**
- * @brief Extracts animation name from the first argument of AppendTilesetAnimToBuffer.
- *
- * @details
- * The first argument is typically something like: gTilesetAnims_General_Flower[i]
- * We need to extract the identifier before the array subscript.
- *
- * @param arg_tokens The tokens of the first argument
- * @return The identifier name, or an error if no identifier was found in the argument tokens
- */
+/// @brief Extracts animation name from the first argument of AppendTilesetAnimToBuffer.
+///
+/// @details
+/// The first argument is typically something like: gTilesetAnims_General_Flower[i]
+/// We need to extract the identifier before the array subscript.
+///
+/// @param arg_tokens The tokens of the first argument
+/// @return The identifier name, or an error if no identifier was found in the argument tokens
 [[nodiscard]] ChainableResult<std::string> extract_array_name_from_first_arg(const std::vector<Token> &arg_tokens)
 {
     // Look for an identifier followed by left_bracket
@@ -324,35 +306,32 @@ struct DiscoveredAnimData {
     return FormattableError{"No identifier found in first argument of AppendTilesetAnimToBuffer call."};
 }
 
-/**
- * @brief Holds parsed function definitions and a name-to-pointer lookup map.
- *
- * @details
- * The @c by_name map stores raw pointers into the @c definitions vector. Moving a @c std::vector transfers the internal
- * buffer pointer, so element addresses remain stable. Callers must keep the ParsedFunctions instance alive while using
- * @c by_name pointers.
- *
- * @invariant All pointers in @c by_name remain valid as long as @c definitions is not modified.
- */
+/// @brief Holds parsed function definitions and a name-to-pointer lookup map.
+///
+/// @details
+/// The @c by_name map stores raw pointers into the @c definitions vector. Moving a @c std::vector transfers the
+/// internal buffer pointer, so element addresses remain stable. Callers must keep the ParsedFunctions instance alive
+/// while using
+/// @c by_name pointers.
+///
+/// @invariant All pointers in @c by_name remain valid as long as @c definitions is not modified.
 struct ParsedFunctions {
     std::vector<FunctionDefinition> definitions;
     std::map<std::string, const FunctionDefinition *> by_name;
 };
 
-/**
- * @brief Step 1: Parses the callback function to find the driver function name.
- *
- * @details
- * Parses the callback function (e.g., InitTilesetAnim_General) and searches for a driver function assignment
- * (sPrimaryTilesetAnimCallback = ...) in the body. Returns the driver function name if found, or an empty string if
- * no callback function exists (no animations to process).
- *
- * @param c_parser The parser facade for the C file
- * @param callback_func_name The callback function name to search for
- * @param c_file_path Path to the C file (for error messages)
- * @param format Text formatter for error message styling
- * @return The driver function name, an empty string if no callback found, or an error
- */
+/// @brief Step 1: Parses the callback function to find the driver function name.
+///
+/// @details
+/// Parses the callback function (e.g., InitTilesetAnim_General) and searches for a driver function assignment
+/// (sPrimaryTilesetAnimCallback = ...) in the body. Returns the driver function name if found, or an empty string if
+/// no callback function exists (no animations to process).
+///
+/// @param c_parser The parser facade for the C file
+/// @param callback_func_name The callback function name to search for
+/// @param c_file_path Path to the C file (for error messages)
+/// @param format Text formatter for error message styling
+/// @return The driver function name, an empty string if no callback found, or an error
 [[nodiscard]] ChainableResult<std::string> step_1_find_driver_function(
     CParserFacade &c_parser,
     const std::string &callback_func_name,
@@ -391,19 +370,17 @@ struct ParsedFunctions {
     return std::move(driver_func_name_result).value();
 }
 
-/**
- * @brief Step 2: Parses the driver function and extracts timer conditions.
- *
- * @details
- * Parses the driver function (e.g., TilesetAnim_General) and extracts timer conditions of the form
- * @c if @c (timer @c % @c X @c == @c Y) along with associated function calls.
- *
- * @param c_parser The parser facade for the C file
- * @param driver_func_name The driver function name to parse
- * @param c_file_path Path to the C file (for error messages)
- * @param format Text formatter for error message styling
- * @return Timer conditions, or an error if the driver function is missing or has no timer conditions
- */
+/// @brief Step 2: Parses the driver function and extracts timer conditions.
+///
+/// @details
+/// Parses the driver function (e.g., TilesetAnim_General) and extracts timer conditions of the form
+/// @c if @c (timer @c % @c X @c == @c Y) along with associated function calls.
+///
+/// @param c_parser The parser facade for the C file
+/// @param driver_func_name The driver function name to parse
+/// @param c_file_path Path to the C file (for error messages)
+/// @param format Text formatter for error message styling
+/// @return Timer conditions, or an error if the driver function is missing or has no timer conditions
 [[nodiscard]] ChainableResult<std::vector<TimerCondition>> step_2_extract_timer_conditions(
     CParserFacade &c_parser,
     const std::string &driver_func_name,
@@ -438,18 +415,16 @@ struct ParsedFunctions {
     return timer_conditions;
 }
 
-/**
- * @brief Step 3: Parses all functions in the file and builds a name-to-pointer lookup map.
- *
- * @details
- * Parses every function definition in the C file and builds a map for O(1) lookup by name. The returned
- * ParsedFunctions struct owns the definitions vector; the @c by_name map stores raw pointers into it.
- *
- * @param c_parser The parser facade for the C file
- * @param c_file_path Path to the C file (for error messages)
- * @param format Text formatter for error message styling
- * @return ParsedFunctions with definitions and lookup map
- */
+/// @brief Step 3: Parses all functions in the file and builds a name-to-pointer lookup map.
+///
+/// @details
+/// Parses every function definition in the C file and builds a map for O(1) lookup by name. The returned
+/// ParsedFunctions struct owns the definitions vector; the @c by_name map stores raw pointers into it.
+///
+/// @param c_parser The parser facade for the C file
+/// @param c_file_path Path to the C file (for error messages)
+/// @param format Text formatter for error message styling
+/// @return ParsedFunctions with definitions and lookup map
 [[nodiscard]] ChainableResult<ParsedFunctions> step_3_build_function_map(
     CParserFacade &c_parser, const std::filesystem::path &c_file_path, const TextFormatter *format)
 {
@@ -470,20 +445,18 @@ struct ParsedFunctions {
     return parsed;
 }
 
-/**
- * @brief Step 4: Extracts animation data from queue functions found via timer conditions.
- *
- * @details
- * For each timer condition, looks up the called queue function in the function map, finds
- * @c AppendTilesetAnimToBuffer calls, and extracts animation name, tile offset, and tile count.
- *
- * @param timer_conditions Timer conditions from the driver function
- * @param func_map Function name to definition pointer map
- * @param pascal_case_tileset The tileset name in PascalCase
- * @param porytiles_managed Whether this uses the PorytilesManaged_ prefix
- * @param format Text formatter for error message styling
- * @return Map of DynamicCasedName animation name to discovered animation data, or an error
- */
+/// @brief Step 4: Extracts animation data from queue functions found via timer conditions.
+///
+/// @details
+/// For each timer condition, looks up the called queue function in the function map, finds
+/// @c AppendTilesetAnimToBuffer calls, and extracts animation name, tile offset, and tile count.
+///
+/// @param timer_conditions Timer conditions from the driver function
+/// @param func_map Function name to definition pointer map
+/// @param pascal_case_tileset The tileset name in PascalCase
+/// @param porytiles_managed Whether this uses the PorytilesManaged_ prefix
+/// @param format Text formatter for error message styling
+/// @return Map of DynamicCasedName animation name to discovered animation data, or an error
 [[nodiscard]] ChainableResult<std::map<DynamicCasedName, DiscoveredAnimData>> step_4_extract_animation_data(
     const std::vector<TimerCondition> &timer_conditions,
     const std::map<std::string, const FunctionDefinition *> &func_map,
@@ -585,20 +558,18 @@ struct ParsedFunctions {
     return discovered_anims;
 }
 
-/**
- * @brief Step 5: Parses frame pointer arrays with both g and s prefixes.
- *
- * @details
- * Searches for pointer array declarations matching the tileset's animation frame arrays. For non-porytiles-managed
- * tilesets, also searches with the @c sTilesetAnims_ prefix as a fallback.
- *
- * @param c_parser The parser facade for the C file
- * @param pascal_case_tileset The tileset name in PascalCase
- * @param porytiles_managed Whether this uses the PorytilesManaged_ prefix
- * @param c_file_path Path to the C file (for error messages)
- * @param format Text formatter for error message styling
- * @return Vector of array declarations matching the tileset's animation frame arrays
- */
+/// @brief Step 5: Parses frame pointer arrays with both g and s prefixes.
+///
+/// @details
+/// Searches for pointer array declarations matching the tileset's animation frame arrays. For non-porytiles-managed
+/// tilesets, also searches with the @c sTilesetAnims_ prefix as a fallback.
+///
+/// @param c_parser The parser facade for the C file
+/// @param pascal_case_tileset The tileset name in PascalCase
+/// @param porytiles_managed Whether this uses the PorytilesManaged_ prefix
+/// @param c_file_path Path to the C file (for error messages)
+/// @param format Text formatter for error message styling
+/// @return Vector of array declarations matching the tileset's animation frame arrays
 [[nodiscard]] ChainableResult<std::vector<ArrayDeclaration>> step_5_parse_frame_arrays(
     CParserFacade &c_parser,
     const std::string &pascal_case_tileset,
@@ -633,19 +604,17 @@ struct ParsedFunctions {
     return anim_frame_arrays_result;
 }
 
-/**
- * @brief Step 6: Matches discovered animations with frame arrays and builds the final AnimParams map.
- *
- * @details
- * For each discovered animation, finds the matching frame pointer array, extracts frame names and order, and
- * constructs an AnimParams. Returns an error if a frame array cannot be found for any discovered animation.
- *
- * @param discovered_anims Map of DynamicCasedName animation name to discovered animation data
- * @param frame_arrays Vector of parsed frame pointer array declarations
- * @param pascal_case_tileset The tileset name in PascalCase
- * @param porytiles_managed Whether this uses the PorytilesManaged_ prefix
- * @return Map of DynamicCasedName to AnimParams, or error if frame array not found
- */
+/// @brief Step 6: Matches discovered animations with frame arrays and builds the final AnimParams map.
+///
+/// @details
+/// For each discovered animation, finds the matching frame pointer array, extracts frame names and order, and
+/// constructs an AnimParams. Returns an error if a frame array cannot be found for any discovered animation.
+///
+/// @param discovered_anims Map of DynamicCasedName animation name to discovered animation data
+/// @param frame_arrays Vector of parsed frame pointer array declarations
+/// @param pascal_case_tileset The tileset name in PascalCase
+/// @param porytiles_managed Whether this uses the PorytilesManaged_ prefix
+/// @return Map of DynamicCasedName to AnimParams, or error if frame array not found
 [[nodiscard]] ChainableResult<std::map<DynamicCasedName, AnimParams>> step_6_build_animation_params(
     const std::map<DynamicCasedName, DiscoveredAnimData> &discovered_anims,
     const std::vector<ArrayDeclaration> &frame_arrays,

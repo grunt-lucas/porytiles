@@ -35,41 +35,35 @@ const std::filesystem::path porytiles_src_marker{"porytiles_src"};
 const std::filesystem::path porytiles_bin_marker{"porytiles_bin"};
 const std::filesystem::path porytiles_generated_marker{"porytiles_generated"};
 
-/**
- * @brief Categories for artifact destinations.
- *
- * @details
- * Artifacts are categorized to determine how they should be atomically committed:
- * - porytiles_src: Porytiles-format source assets (bottom.png, middle.png, etc.)
- * - porytiles_bin: Porymap-format binary assets (metatiles.bin, tiles.png, etc.)
- * - special: Files that live outside standard directories (generated_anim_code.h)
- */
+/// @brief Categories for artifact destinations.
+///
+/// @details
+/// Artifacts are categorized to determine how they should be atomically committed:
+/// - porytiles_src: Porytiles-format source assets (bottom.png, middle.png, etc.)
+/// - porytiles_bin: Porymap-format binary assets (metatiles.bin, tiles.png, etc.)
+/// - special: Files that live outside standard directories (generated_anim_code.h)
 enum class ArtifactCategory { porytiles_src, porytiles_bin, special };
 
-/**
- * @brief Parsed information about an artifact's destination.
- *
- * @details
- * Contains the category and the directory path that should be atomically moved. For porytiles_src/porytiles_bin
- * categories, `directory` is the path up to and including the marker directory. For special files, `directory` is the
- * parent directory of the file.
- */
+/// @brief Parsed information about an artifact's destination.
+///
+/// @details
+/// Contains the category and the directory path that should be atomically moved. For porytiles_src/porytiles_bin
+/// categories, `directory` is the path up to and including the marker directory. For special files, `directory` is the
+/// parent directory of the file.
 struct ArtifactPathInfo {
     ArtifactCategory category;
     std::filesystem::path directory; ///< The directory to atomically move
 };
 
-/**
- * @brief Categorizes an artifact key to determine its commit handling.
- *
- * @details
- * Parses the artifact key path to find marker directories (porytiles_src, porytiles_bin, or porytiles_generated) and
- * returns categorization info. The directory returned is the path up to and including the marker, which will be
- * atomically moved during commit.
- *
- * @param key_path The artifact key path (relative to project root)
- * @return ArtifactPathInfo with category and directory to move
- */
+/// @brief Categorizes an artifact key to determine its commit handling.
+///
+/// @details
+/// Parses the artifact key path to find marker directories (porytiles_src, porytiles_bin, or porytiles_generated) and
+/// returns categorization info. The directory returned is the path up to and including the marker, which will be
+/// atomically moved during commit.
+///
+/// @param key_path The artifact key path (relative to project root)
+/// @return ArtifactPathInfo with category and directory to move
 [[nodiscard]] ArtifactPathInfo categorize_artifact_key(const std::filesystem::path &key_path)
 {
     // Walk through path components to find marker directories
@@ -93,17 +87,15 @@ struct ArtifactPathInfo {
     return ArtifactPathInfo{ArtifactCategory::special, key_path.parent_path()};
 }
 
-/**
- * @brief Creates a unique temporary directory inside the project root.
- *
- * @details
- * Creates a tmpdir at {project_root}/.porytiles_tmp_{random_hex} to ensure
- * same-filesystem with project files, enabling atomic std::filesystem::rename().
- *
- * @param project_root The project root directory
- * @return Path to the newly created temporary directory
- * @post The returned path points to an existing, empty directory
- */
+/// @brief Creates a unique temporary directory inside the project root.
+///
+/// @details
+/// Creates a tmpdir at {project_root}/.porytiles_tmp_{random_hex} to ensure
+/// same-filesystem with project files, enabling atomic std::filesystem::rename().
+///
+/// @param project_root The project root directory
+/// @return Path to the newly created temporary directory
+/// @post The returned path points to an existing, empty directory
 [[nodiscard]] std::filesystem::path create_project_tmpdir(const std::filesystem::path &project_root)
 {
     int max_tries = 1000;
@@ -184,25 +176,23 @@ ChainableResult<void> save_porymap_anim_frame(
     return {};
 }
 
-/**
- * @brief Computes the staging path for an artifact and registers it for atomic commit.
- *
- * @details
- * This function categorizes the artifact key and determines how it should be staged:
- * - For porytiles_src/porytiles_bin artifacts: Registers the directory in staged_directories
- *   and returns a staging path that mirrors the relative structure under the directory.
- * - For special artifacts: Registers the file in staged_special_files and returns the staging path.
- *
- * The staging path maintains the relative structure of files within their category directory,
- * allowing the entire directory to be atomically moved during commit.
- *
- * @param transaction_root The root directory for the current transaction
- * @param project_root The project root directory
- * @param dest_key The artifact key (path relative to project root)
- * @param staged_directories Map to register staged directories
- * @param staged_special_files Vector to register special files
- * @return The path where the artifact should be written during the transaction
- */
+/// @brief Computes the staging path for an artifact and registers it for atomic commit.
+///
+/// @details
+/// This function categorizes the artifact key and determines how it should be staged:
+/// - For porytiles_src/porytiles_bin artifacts: Registers the directory in staged_directories
+///   and returns a staging path that mirrors the relative structure under the directory.
+/// - For special artifacts: Registers the file in staged_special_files and returns the staging path.
+///
+/// The staging path maintains the relative structure of files within their category directory,
+/// allowing the entire directory to be atomically moved during commit.
+///
+/// @param transaction_root The root directory for the current transaction
+/// @param project_root The project root directory
+/// @param dest_key The artifact key (path relative to project root)
+/// @param staged_directories Map to register staged directories
+/// @param staged_special_files Vector to register special files
+/// @return The path where the artifact should be written during the transaction
 template <typename StagedDirectory>
 ChainableResult<std::filesystem::path> compute_transaction_dest_path(
     const std::filesystem::path &transaction_root,
@@ -251,20 +241,18 @@ ChainableResult<std::filesystem::path> compute_transaction_dest_path(
     return staging_path;
 }
 
-/**
- * @brief Converts a vector of tiles into an image.
- *
- * @details
- * Creates an image with tiles arranged in a grid. If width_tiles and height_tiles are both non-zero, uses those
- * dimensions. Otherwise, falls back to a single-row layout for backward compatibility.
- *
- * @tparam PixelType The pixel type (Rgba32 or IndexPixel)
- * @param tiles The tiles to convert to an image
- * @param width_tiles Target width in tiles (0 = use single row)
- * @param height_tiles Target height in tiles (0 = use single row)
- * @pre If width_tiles and height_tiles are non-zero, width_tiles * height_tiles must equal tiles.size()
- * @return An image containing the tiles arranged in the specified grid
- */
+/// @brief Converts a vector of tiles into an image.
+///
+/// @details
+/// Creates an image with tiles arranged in a grid. If width_tiles and height_tiles are both non-zero, uses those
+/// dimensions. Otherwise, falls back to a single-row layout for backward compatibility.
+///
+/// @tparam PixelType The pixel type (Rgba32 or IndexPixel)
+/// @param tiles The tiles to convert to an image
+/// @param width_tiles Target width in tiles (0 = use single row)
+/// @param height_tiles Target height in tiles (0 = use single row)
+/// @pre If width_tiles and height_tiles are non-zero, width_tiles * height_tiles must equal tiles.size()
+/// @return An image containing the tiles arranged in the specified grid
 template <typename PixelType>
 Image<PixelType> tiles_to_image(
     const std::vector<PixelTile<PixelType>> &tiles, std::size_t width_tiles = 0, std::size_t height_tiles = 0)
@@ -320,31 +308,29 @@ Image<PixelType> tiles_to_image(
     return img;
 }
 
-/**
- * @brief Template helper for writing animation frames to PNG files.
- *
- * @details
- * This function unifies the logic for writing animation frames from both Porymap
- * (IndexPixel) and Porytiles (Rgba32) components. It handles both key frames and
- * regular numbered frames through the frame_index parameter.
- *
- * @tparam PixelType The pixel type (Rgba32 or IndexPixel)
- * @tparam StagedDirectory The staged directory struct type
- * @tparam ComponentGetter Callable returning a const reference to the tileset component
- * @tparam SaveFunc Callable that saves the image to a file
- * @param dest_key The artifact key for the destination PNG file
- * @param src The source tileset
- * @param anim_name The name of the animation
- * @param frame_name The name of the frame
- * @param transaction_root The transaction root directory
- * @param project_root The project root directory
- * @param staged_directories Map to register staged directories
- * @param staged_special_files Vector to register special files
- * @param component_getter Lambda to get the appropriate component from tileset
- * @param save_func Lambda to save the image (handles indexed vs RGBA saving)
- * @param component_name Name of the component for error messages
- * @return ChainableResult<void> indicating success or failure
- */
+/// @brief Template helper for writing animation frames to PNG files.
+///
+/// @details
+/// This function unifies the logic for writing animation frames from both Porymap
+/// (IndexPixel) and Porytiles (Rgba32) components. It handles both key frames and
+/// regular numbered frames through the frame_index parameter.
+///
+/// @tparam PixelType The pixel type (Rgba32 or IndexPixel)
+/// @tparam StagedDirectory The staged directory struct type
+/// @tparam ComponentGetter Callable returning a const reference to the tileset component
+/// @tparam SaveFunc Callable that saves the image to a file
+/// @param dest_key The artifact key for the destination PNG file
+/// @param src The source tileset
+/// @param anim_name The name of the animation
+/// @param frame_name The name of the frame
+/// @param transaction_root The transaction root directory
+/// @param project_root The project root directory
+/// @param staged_directories Map to register staged directories
+/// @param staged_special_files Vector to register special files
+/// @param component_getter Lambda to get the appropriate component from tileset
+/// @param save_func Lambda to save the image (handles indexed vs RGBA saving)
+/// @param component_name Name of the component for error messages
+/// @return ChainableResult<void> indicating success or failure
 template <SupportsTransparency PixelType, typename StagedDirectory, typename ComponentGetter, typename SaveFunc>
 ChainableResult<void> write_anim_frame_impl(
     const ArtifactKey &dest_key,
@@ -570,9 +556,7 @@ ChainableResult<void> ProjectTilesetArtifactWriter::rollback()
     }
 }
 
-/*
- * Porymap artifacts
- */
+// Porymap artifacts
 ChainableResult<void> ProjectTilesetArtifactWriter::write_metatiles_bin(const ArtifactKey &dest_key, const Tileset &src)
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -716,9 +700,7 @@ ProjectTilesetArtifactWriter::write_porymap_anim_params(const ArtifactKey &dest_
     return {};
 }
 
-/*
- * Porytiles artifacts
- */
+// Porytiles artifacts
 ChainableResult<void> ProjectTilesetArtifactWriter::write_bottom_png(const ArtifactKey &dest_key, const Tileset &src)
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -954,11 +936,9 @@ ProjectTilesetArtifactWriter::write_porytiles_anim_params(const ArtifactKey &des
     const auto &primary_overrides = src.porytiles_component().primary_anim_overrides();
 
     if (porytiles_anims.empty() && primary_overrides.empty()) {
-        /*
-         * Unlike in write_porymap_anim_params, we don't need to delete anything here. That's because anim.json is
-         * within porytiles_src dir, which is written using an atomic move. If the new porytiles_src dir doesn't contain
-         * an anim.json, the old one will get wiped by the commit() call.
-         */
+        // Unlike in write_porymap_anim_params, we don't need to delete anything here. That's because anim.json is
+        // within porytiles_src dir, which is written using an atomic move. If the new porytiles_src dir doesn't contain
+        // an anim.json, the old one will get wiped by the commit() call.
         return {};
     }
 

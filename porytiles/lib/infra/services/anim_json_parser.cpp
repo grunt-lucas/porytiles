@@ -68,17 +68,15 @@ using namespace porytiles;
     panic("unhandled Subtile value");
 }
 
-/**
- * @brief Converts a byte offset from a JSON parse error into a zero-based line index.
- *
- * @details
- * nlohmann::json reports parse errors with a byte offset. This helper reads the file and counts newlines up to that
- * offset to determine which line the error occurred on.
- *
- * @param json_path Path to the JSON file
- * @param byte_offset The byte offset from the parse error
- * @return Zero-based line index
- */
+/// @brief Converts a byte offset from a JSON parse error into a zero-based line index.
+///
+/// @details
+/// nlohmann::json reports parse errors with a byte offset. This helper reads the file and counts newlines up to that
+/// offset to determine which line the error occurred on.
+///
+/// @param json_path Path to the JSON file
+/// @param byte_offset The byte offset from the parse error
+/// @return Zero-based line index
 [[nodiscard]] std::size_t byte_offset_to_line_index(const std::filesystem::path &json_path, std::size_t byte_offset)
 {
     std::ifstream in{json_path};
@@ -98,17 +96,15 @@ using namespace porytiles;
     return line_index;
 }
 
-/**
- * @brief Finds the zero-based line index where a JSON key first appears in the file.
- *
- * @details
- * Scans the file line-by-line looking for the pattern `"key_name"` to approximate where a key is defined. This is used
- * for error reporting with FileHighlightPrinter since nlohmann::json doesn't track source locations.
- *
- * @param json_path Path to the JSON file
- * @param key_name The key to search for
- * @return Zero-based line index, or 0 if not found
- */
+/// @brief Finds the zero-based line index where a JSON key first appears in the file.
+///
+/// @details
+/// Scans the file line-by-line looking for the pattern `"key_name"` to approximate where a key is defined. This is used
+/// for error reporting with FileHighlightPrinter since nlohmann::json doesn't track source locations.
+///
+/// @param json_path Path to the JSON file
+/// @param key_name The key to search for
+/// @return Zero-based line index, or 0 if not found
 [[nodiscard]] std::size_t find_key_line_index(const std::filesystem::path &json_path, const std::string &key_name)
 {
     std::ifstream in{json_path};

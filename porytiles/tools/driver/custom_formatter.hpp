@@ -10,16 +10,14 @@
 
 namespace porytiles {
 
-/**
- * @brief Custom CLI11 formatter for cleaner help output.
- *
- * @details
- * This formatter customizes CLI11's default help output by:
- * - Hiding verbose type labels (REQUIRED, TEXT, INT, etc.)
- * - Using clean option group headers without "[Option Group: ...]" prefix
- * - Stripping verbose transformer descriptions from enum type names
- * - Adjusting column width for better alignment
- */
+/// @brief Custom CLI11 formatter for cleaner help output.
+///
+/// @details
+/// This formatter customizes CLI11's default help output by:
+/// - Hiding verbose type labels (REQUIRED, TEXT, INT, etc.)
+/// - Using clean option group headers without "[Option Group: ...]" prefix
+/// - Stripping verbose transformer descriptions from enum type names
+/// - Adjusting column width for better alignment
 class PorytilesFormatter : public CLI::Formatter {
   public:
     PorytilesFormatter() : CLI::Formatter()
@@ -35,12 +33,10 @@ class PorytilesFormatter : public CLI::Formatter {
         column_width(40);
     }
 
-    /**
-     * @brief Override to customize option group headers.
-     *
-     * @details
-     * Removes the "[Option Group: ...]" prefix and uses a clean "GroupName:" format.
-     */
+    /// @brief Override to customize option group headers.
+    ///
+    /// @details
+    /// Removes the "[Option Group: ...]" prefix and uses a clean "GroupName:" format.
     std::string make_group(std::string group, bool is_positional, std::vector<const CLI::Option *> opts) const override
     {
         if (opts.empty()) {
@@ -59,15 +55,13 @@ class PorytilesFormatter : public CLI::Formatter {
         return out.str();
     }
 
-    /**
-     * @brief Override to handle option groups (inline subcommands) with clean headers.
-     *
-     * @details
-     * CLI11 renders option groups as expanded subcommands. This override provides
-     * a cleaner format that doesn't use "[Option Group: ...]" style headers.
-     * It also filters out the help flag to avoid duplication and outputs options
-     * directly without intermediate group headers.
-     */
+    /// @brief Override to handle option groups (inline subcommands) with clean headers.
+    ///
+    /// @details
+    /// CLI11 renders option groups as expanded subcommands. This override provides
+    /// a cleaner format that doesn't use "[Option Group: ...]" style headers.
+    /// It also filters out the help flag to avoid duplication and outputs options
+    /// directly without intermediate group headers.
     std::string make_expanded(const CLI::App *sub, CLI::AppFormatMode mode) const override
     {
         std::stringstream out;
@@ -116,15 +110,13 @@ class PorytilesFormatter : public CLI::Formatter {
         return out.str();
     }
 
-    /**
-     * @brief Override to strip verbose transformer descriptions from type names.
-     *
-     * @details
-     * CLI11's CheckedTransformer appends verbose descriptions like
-     * ":value in {locked->locked,...} OR {locked,...}" after the type name.
-     * This override strips everything after the first colon to show just the
-     * clean type name like "{locked|patch|optimize}".
-     */
+    /// @brief Override to strip verbose transformer descriptions from type names.
+    ///
+    /// @details
+    /// CLI11's CheckedTransformer appends verbose descriptions like
+    /// ":value in {locked->locked,...} OR {locked,...}" after the type name.
+    /// This override strips everything after the first colon to show just the
+    /// clean type name like "{locked|patch|optimize}".
     std::string make_option_opts(const CLI::Option *opt) const override
     {
         std::stringstream out;

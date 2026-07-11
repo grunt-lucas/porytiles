@@ -6,16 +6,14 @@
 
 namespace porytiles {
 
-/**
- * @brief A manual override that maps a specific metatile entry to an animation subtile.
- *
- * @details
- * When using manual frame linking, users explicitly declare which metatile entries reference which animation subtiles.
- * Each override entry specifies the metatile position (id, layer, subtile), flip flags, palette index, and which
- * subtile within the animation frame to use.
- *
- * All fields are required when specifying overrides in anim.json.
- */
+/// @brief A manual override that maps a specific metatile entry to an animation subtile.
+///
+/// @details
+/// When using manual frame linking, users explicitly declare which metatile entries reference which animation subtiles.
+/// Each override entry specifies the metatile position (id, layer, subtile), flip flags, palette index, and which
+/// subtile within the animation frame to use.
+///
+/// All fields are required when specifying overrides in anim.json.
 struct AnimOverrideEntry {
     /// The metatile ID this override applies to (corresponds to JSON "id" field).
     std::size_t metatile_id;

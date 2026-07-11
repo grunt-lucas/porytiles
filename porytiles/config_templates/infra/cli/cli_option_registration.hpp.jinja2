@@ -14,17 +14,15 @@ namespace porytiles {
 
 {{ macros.autogen_warning() }}
 
-/**
- * @brief Registers all config options with a CLI11 App.
- *
- * @details
- * This function adds all config values as CLI options to the provided CLI::App. The options
- * are grouped under "Config Options" and will populate the corresponding fields in the
- * CliOptionStorage struct when parsed.
- *
- * @param app The CLI11 App to register options with
- * @param storage The storage struct that will hold parsed values
- */
+/// @brief Registers all config options with a CLI11 App.
+///
+/// @details
+/// This function adds all config values as CLI options to the provided CLI::App. The options
+/// are grouped under "Config Options" and will populate the corresponding fields in the
+/// CliOptionStorage struct when parsed.
+///
+/// @param app The CLI11 App to register options with
+/// @param storage The storage struct that will hold parsed values
 void register_config_options(CLI::App &app, CliOptionStorage &storage);
 
 } // namespace porytiles

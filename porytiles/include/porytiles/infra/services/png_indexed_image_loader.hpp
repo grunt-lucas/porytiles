@@ -10,12 +10,10 @@
 
 namespace porytiles {
 
-/**
- * @brief An image loader that reads PNG files to create an Image with an index pixel type.
- *
- * @details
- * This loader's implementation uses png++ wrapper for libpng to read PNG data and load it into an Image.
- */
+/// @brief An image loader that reads PNG files to create an Image with an index pixel type.
+///
+/// @details
+/// This loader's implementation uses png++ wrapper for libpng to read PNG data and load it into an Image.
 class PngIndexedImageLoader final {
   public:
     PngIndexedImageLoader() = default;

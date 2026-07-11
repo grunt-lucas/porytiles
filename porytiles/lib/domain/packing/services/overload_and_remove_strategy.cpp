@@ -23,9 +23,7 @@ namespace {
 
 using namespace porytiles;
 
-/**
- * @brief Extended tile info for the overload-and-remove algorithm.
- */
+/// @brief Extended tile info for the overload-and-remove algorithm.
 struct TileInfo {
     PackableTile tile;
     std::set<std::size_t> forbidden_palettes;
@@ -33,25 +31,23 @@ struct TileInfo {
     explicit TileInfo(PackableTile t) : tile{std::move(t)}, forbidden_palettes{} {}
 };
 
-/**
- * @brief Finds the best palette for a tile, excluding forbidden palettes.
- *
- * @details
- * Uses cached palette color counts to compute weighted cost efficiently. The weighted cost
- * measures how well the tile's colors overlap with colors already in the palette.
- * Lower cost means better overlap.
- *
- * When sharing metadata is provided, palettes that already contain a sibling from the same shape
- * group receive a cost penalty to steer siblings into different palettes.
- *
- * @param info The tile info with forbidden palette set
- * @param palettes The current set of packed palettes
- * @param force_assignment When true, returns the lowest-cost non-forbidden palette even if no overlap benefit exists.
- *     When false (default), returns nullopt if no palette offers overlap benefit, signaling the caller to create a new
- *     palette.
- * @param metadata Optional shape group metadata for sharing-aware cost adjustment (nullptr to disable)
- * @return Index of the best palette, or nullopt if none available (or no overlap benefit when not forcing)
- */
+/// @brief Finds the best palette for a tile, excluding forbidden palettes.
+///
+/// @details
+/// Uses cached palette color counts to compute weighted cost efficiently. The weighted cost
+/// measures how well the tile's colors overlap with colors already in the palette.
+/// Lower cost means better overlap.
+///
+/// When sharing metadata is provided, palettes that already contain a sibling from the same shape
+/// group receive a cost penalty to steer siblings into different palettes.
+///
+/// @param info The tile info with forbidden palette set
+/// @param palettes The current set of packed palettes
+/// @param force_assignment When true, returns the lowest-cost non-forbidden palette even if no overlap benefit exists.
+///     When false (default), returns nullopt if no palette offers overlap benefit, signaling the caller to create a new
+///     palette.
+/// @param metadata Optional shape group metadata for sharing-aware cost adjustment (nullptr to disable)
+/// @return Index of the best palette, or nullopt if none available (or no overlap benefit when not forcing)
 [[nodiscard]] std::optional<std::size_t> find_best_palette_excluding_forbidden(
     const TileInfo &info,
     const std::vector<PackedPalette> &palettes,
@@ -97,19 +93,17 @@ struct OarParams {
     std::uint64_t seed;
 };
 
-/**
- * @brief Builds the 17-entry preset matrix of O&R configurations.
- *
- * @details
- * Configurations escalate from cheapest to most expensive:
- *   1. single_ffd × 1 attempt (cheapest: one deterministic FFD pass)
- *   2-5. noisy_ffd × 20 attempts with 4 seeds
- *   6-9. random × 20 attempts with 4 seeds
- *   10-13. noisy_ffd × 75 attempts with 4 seeds
- *   14-17. random × 75 attempts with 4 seeds
- *
- * Worst-case total O&R attempts across all 17 entries: 1 + 4×20 + 4×20 + 4×75 + 4×75 = 761.
- */
+/// @brief Builds the 17-entry preset matrix of O&R configurations.
+///
+/// @details
+/// Configurations escalate from cheapest to most expensive:
+///   1. single_ffd × 1 attempt (cheapest: one deterministic FFD pass)
+///   2-5. noisy_ffd × 20 attempts with 4 seeds
+///   6-9. random × 20 attempts with 4 seeds
+///   10-13. noisy_ffd × 75 attempts with 4 seeds
+///   14-17. random × 75 attempts with 4 seeds
+///
+/// Worst-case total O&R attempts across all 17 entries: 1 + 4×20 + 4×20 + 4×75 + 4×75 = 761.
 [[nodiscard]] std::array<OarParams, 17> build_preset_matrix()
 {
     std::array<OarParams, 17> matrix{};
@@ -259,15 +253,13 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::try_pack(
         return output;
     }
 
-    /*
-     * Right now, we mix together the hints and regular tiles before sorting. Do we want this? I think it's probably ok,
-     * since hints still guarantee that colors in the same hint will be in the same palette. And if the user supplied
-     * hints that are larger than any individual tile, they'll go first as expected. However, I think it makes sense to
-     * allow regular tiles that are large to go before smaller hints, since this probably helps to find an optimal
-     * result -- that larger tile *has to* get put somewhere in order for a solution to be found. No sense placing the
-     * hint first, only to block ourselves from finding a possible solution down the line. In other words, the promised
-     * hint precondition is not violated, and we potentially get a better solution.
-     */
+    // Right now, we mix together the hints and regular tiles before sorting. Do we want this? I think it's probably ok,
+    // since hints still guarantee that colors in the same hint will be in the same palette. And if the user supplied
+    // hints that are larger than any individual tile, they'll go first as expected. However, I think it makes sense to
+    // allow regular tiles that are large to go before smaller hints, since this probably helps to find an optimal
+    // result -- that larger tile *has to* get put somewhere in order for a solution to be found. No sense placing the
+    // hint first, only to block ourselves from finding a possible solution down the line. In other words, the promised
+    // hint precondition is not violated, and we potentially get a better solution.
 
     // Order tiles based on shuffle strategy
     if (shuffle_seed.has_value()) {
@@ -293,11 +285,9 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::try_pack(
     TileInfo first_tile_info = std::move(tile_pool.front());
     tile_pool.pop_front();
 
-    /*
-     * Find or create a palette for the first tile. First, we try searching through the current state output pals. If we
-     * find one, use it! If we don't find one, then try checking a new one out from our PalettePool if one is available.
-     * If there is no pal available, fail.
-     */
+    // Find or create a palette for the first tile. First, we try searching through the current state output pals. If we
+    // find one, use it! If we don't find one, then try checking a new one out from our PalettePool if one is available.
+    // If there is no pal available, fail.
     bool first_assigned = false;
     for (std::size_t i = 0; i < output.pals_.size(); ++i) {
         if (output.pals_[i].can_fit(first_tile_info.tile.color_set())) {
@@ -350,13 +340,11 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::try_pack(
                 continue;
             }
 
-            /*
-             * Pool exhausted and no palette offers overlap benefit. Try two fallback strategies:
-             *
-             * 1. First-fit with can_fit: fast, no cascading removals. Succeeds when a palette has physical room.
-             * 2. Force-assignment with overload/remove: slower but more capable. Allows the overload/remove mechanism
-             *    to redistribute tiles. Termination guaranteed because forbidden sets grow monotonically.
-             */
+            // Pool exhausted and no palette offers overlap benefit. Try two fallback strategies:
+            //
+            // 1. First-fit with can_fit: fast, no cascading removals. Succeeds when a palette has physical room.
+            // 2. Force-assignment with overload/remove: slower but more capable. Allows the overload/remove mechanism
+            //    to redistribute tiles. Termination guaranteed because forbidden sets grow monotonically.
 
             // Fallback 1: strict first-fit (no overload)
             bool assigned = false;

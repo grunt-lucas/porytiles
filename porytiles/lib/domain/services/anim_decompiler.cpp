@@ -131,10 +131,8 @@ using namespace porytiles;
         }
     }
 
-    /*
-     * Now that we fully validated the representative pal, and we confirmed that all frame pals match, we can try to
-     * match the representative pal to one of the tileset pals.
-     */
+    // Now that we fully validated the representative pal, and we confirmed that all frame pals match, we can try to
+    // match the representative pal to one of the tileset pals.
     for (std::size_t pal_idx = 0; pal_idx < tileset_pals.size(); ++pal_idx) {
         bool matches = true;
         for (std::size_t slot = 1; slot < pal::max_size; ++slot) {
@@ -216,28 +214,26 @@ using namespace porytiles;
     }
 }
 
-/**
- * @brief Resolves the palette index for a single subtile using the given strategy.
- *
- * @details
- * Dispatches to the appropriate resolution logic based on the strategy: explicit palette index, scan local metatiles,
- * internal PNG palette matching, or scan all tilesets.
- *
- * @param anim_name The animation name (for diagnostics)
- * @param subtile_index The subtile index within the animation (0-based)
- * @param tile_index The absolute tile index in tiles.png
- * @param metatiles_bin The metatile entries to scan
- * @param strategy The per-subtile strategy config value
- * @param anim The animation (needed for internal_png_pal strategy)
- * @param pals The tileset palettes
- * @param tiles_png The tiles.png image
- * @param extrinsic_transparency The extrinsic transparency color
- * @param diag User diagnostics for reporting
- * @param pal_printer Palette printer for diagnostic output
- * @param tile_printer Tile printer for diagnostic output
- * @param internal_png_pal_cache Cached result from internal_png_pal_strategy (populated on first use)
- * @return The resolved palette index for this subtile
- */
+/// @brief Resolves the palette index for a single subtile using the given strategy.
+///
+/// @details
+/// Dispatches to the appropriate resolution logic based on the strategy: explicit palette index, scan local metatiles,
+/// internal PNG palette matching, or scan all tilesets.
+///
+/// @param anim_name The animation name (for diagnostics)
+/// @param subtile_index The subtile index within the animation (0-based)
+/// @param tile_index The absolute tile index in tiles.png
+/// @param metatiles_bin The metatile entries to scan
+/// @param strategy The per-subtile strategy config value
+/// @param anim The animation (needed for internal_png_pal strategy)
+/// @param pals The tileset palettes
+/// @param tiles_png The tiles.png image
+/// @param extrinsic_transparency The extrinsic transparency color
+/// @param diag User diagnostics for reporting
+/// @param pal_printer Palette printer for diagnostic output
+/// @param tile_printer Tile printer for diagnostic output
+/// @param internal_png_pal_cache Cached result from internal_png_pal_strategy (populated on first use)
+/// @return The resolved palette index for this subtile
 [[nodiscard]] ChainableResult<std::size_t> resolve_subtile_palette(
     const std::string &anim_name,
     std::size_t subtile_index,
@@ -293,12 +289,10 @@ using namespace porytiles;
         }
 
         if (found_for_subtile.size() > 1) {
-            /*
-             * A single tile index can be referenced by multiple metatile entries with different palette indices.
-             * This is valid GBA behavior. The hardware selects palette per metatile entry, not per tile.
-             *
-             * The multi_pal_strategy config determines how to handle this case.
-             */
+            // A single tile index can be referenced by multiple metatile entries with different palette indices.
+            // This is valid GBA behavior. The hardware selects palette per metatile entry, not per tile.
+            //
+            // The multi_pal_strategy config determines how to handle this case.
             std::string pal_list;
             for (const auto &pal_idx : found_for_subtile) {
                 if (!pal_list.empty()) {
@@ -476,21 +470,19 @@ using namespace porytiles;
     return per_tile_pals;
 }
 
-/**
- * @brief Checks whether any key frame tiles are duplicates, considering cross-range, inter-animation, and
- * intra-animation duplicates.
- *
- * @details
- * A duplicate is detected if a key frame tile's canonical form matches either:
- * - An inter-animation tile (another animation's key frame tile)
- * - An external tile (cross-range duplicate: animation tile matches a non-animation tile in tiles.png)
- * - An earlier key frame tile (intra-animation duplicate: two animation tiles are flip-equivalent)
- *
- * @param key_frame_tiles The animation key frame tiles to check
- * @param inter_anim_canonical_tiles Canonical forms of other animations' key frame tiles
- * @param external_canonical_tiles Canonical forms of all non-animation tiles in tiles.png
- * @return True if any duplicate is found
- */
+/// @brief Checks whether any key frame tiles are duplicates, considering cross-range, inter-animation, and
+/// intra-animation duplicates.
+///
+/// @details
+/// A duplicate is detected if a key frame tile's canonical form matches either:
+/// - An inter-animation tile (another animation's key frame tile)
+/// - An external tile (cross-range duplicate: animation tile matches a non-animation tile in tiles.png)
+/// - An earlier key frame tile (intra-animation duplicate: two animation tiles are flip-equivalent)
+///
+/// @param key_frame_tiles The animation key frame tiles to check
+/// @param inter_anim_canonical_tiles Canonical forms of other animations' key frame tiles
+/// @param external_canonical_tiles Canonical forms of all non-animation tiles in tiles.png
+/// @return True if any duplicate is found
 [[nodiscard]] bool has_duplicate_key_frame_tiles(
     const std::vector<PixelTile<IndexPixel>> &key_frame_tiles,
     const std::set<PixelTile<IndexPixel>> &inter_anim_canonical_tiles,
@@ -519,22 +511,20 @@ struct DuplicateInfo {
     std::vector<std::pair<std::size_t, std::size_t>> intra_anim_pairs;
 };
 
-/**
- * @brief Categorizes duplicate key frame tiles into inter-animation, cross-range, and intra-animation duplicates.
- *
- * @details
- * Inter-animation duplicates are key frame tiles whose canonical form matches another animation's key frame tile.
- * Cross-range duplicates are key frame tiles whose canonical form matches an external (non-animation) tile.
- * Intra-animation duplicates are pairs of key frame tiles that are flip-equivalent to each other.
- *
- * Inter-animation tiles are checked before cross-range tiles so that the more specific category wins when a tile
- * appears in both sets.
- *
- * @param key_frame_tiles The animation key frame tiles to categorize
- * @param inter_anim_canonical_tiles Canonical forms of other animations' key frame tiles
- * @param external_canonical_tiles Canonical forms of all non-animation tiles in tiles.png
- * @return DuplicateInfo with indices categorized by duplicate type
- */
+/// @brief Categorizes duplicate key frame tiles into inter-animation, cross-range, and intra-animation duplicates.
+///
+/// @details
+/// Inter-animation duplicates are key frame tiles whose canonical form matches another animation's key frame tile.
+/// Cross-range duplicates are key frame tiles whose canonical form matches an external (non-animation) tile.
+/// Intra-animation duplicates are pairs of key frame tiles that are flip-equivalent to each other.
+///
+/// Inter-animation tiles are checked before cross-range tiles so that the more specific category wins when a tile
+/// appears in both sets.
+///
+/// @param key_frame_tiles The animation key frame tiles to categorize
+/// @param inter_anim_canonical_tiles Canonical forms of other animations' key frame tiles
+/// @param external_canonical_tiles Canonical forms of all non-animation tiles in tiles.png
+/// @return DuplicateInfo with indices categorized by duplicate type
 [[nodiscard]] DuplicateInfo categorize_duplicate_key_frame_tiles(
     const std::vector<PixelTile<IndexPixel>> &key_frame_tiles,
     const std::set<PixelTile<IndexPixel>> &inter_anim_canonical_tiles,
@@ -566,24 +556,20 @@ struct DuplicateInfo {
     return info;
 }
 
-/**
- * @brief Backports mangle records to the tiles.png image in the Porymap component.
- *
- * @param component The Porymap component containing tiles_png to modify
- * @param base_tile_offset The tile offset of the animation in tiles.png
- * @param records The mangle records describing pixel changes
- */
+/// @brief Backports mangle records to the tiles.png image in the Porymap component.
+///
+/// @param component The Porymap component containing tiles_png to modify
+/// @param base_tile_offset The tile offset of the animation in tiles.png
+/// @param records The mangle records describing pixel changes
 void backport_mangles_to_tiles_png(
     PorymapTilesetComponent &component, std::size_t base_tile_offset, const std::set<TileMangleRecord> &records)
 {
     Image<IndexPixel> tiles_img = component.tiles_png();
     constexpr std::size_t tiles_per_row = metatile::metatiles_per_row * metatile::tiles_per_side;
 
-    /*
-     * Mangle records are non-overlapping: each targets a distinct tile_index (guaranteed by mangle_duplicates).
-     * Sequential application is therefore safe and order-independent, producing results consistent with the in-memory
-     * key frame tiles that were mangled during decompilation.
-     */
+    // Mangle records are non-overlapping: each targets a distinct tile_index (guaranteed by mangle_duplicates).
+    // Sequential application is therefore safe and order-independent, producing results consistent with the in-memory
+    // key frame tiles that were mangled during decompilation.
     for (const auto &record : records) {
         const std::size_t global_tile_idx = base_tile_offset + record.tile_index;
         const std::size_t tile_row = global_tile_idx / tiles_per_row;
@@ -651,12 +637,10 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
                 {FormatParam{anim.name(), Style::bold}, FormatParam{tile_offset, Style::bold}}, {}}};
     }
 
-    /*
-     * Build per-subtile palette resolution strategies using a three-tier cascade:
-     *   1. Per-tile (per_tile_pal_resolution_strategies[i]): most specific
-     *   2. Per-anim (pal_resolution_strategy): middle tier
-     *   3. Global (global_anim_pal_resolution_strategy): least specific fallback
-     */
+    // Build per-subtile palette resolution strategies using a three-tier cascade:
+    //   1. Per-tile (per_tile_pal_resolution_strategies[i]): most specific
+    //   2. Per-anim (pal_resolution_strategy): middle tier
+    //   3. Global (global_anim_pal_resolution_strategy): least specific fallback
     std::vector<ConfigValue<AnimPalResolutionStrategy>> per_subtile_strategies;
     per_subtile_strategies.reserve(tile_count);
 
@@ -709,9 +693,7 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
         }
     }
 
-    /*
-     * Compute the effective multi-pal subtile resolution strategy: per-anim override wins, otherwise global fallback.
-     */
+    // Compute the effective multi-pal subtile resolution strategy: per-anim override wins, otherwise global fallback.
     const ConfigValue<AnimMultiPalSubtileResolutionStrategy> effective_multi_pal_strategy =
         (anim_cfg_ptr != nullptr && anim_cfg_ptr->multi_pal_subtile_resolution_strategy.has_value())
             ? per_anim_overrides.derive(anim_cfg_ptr->multi_pal_subtile_resolution_strategy)
@@ -731,10 +713,8 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
         return FormattableError{err_msg};
     }
 
-    /*
-     * Manual mode: extract override entries from metatiles_bin and skip key frame generation.
-     * Regular frames are still decompiled using the per-subtile palette resolution cascade.
-     */
+    // Manual mode: extract override entries from metatiles_bin and skip key frame generation.
+    // Regular frames are still decompiled using the per-subtile palette resolution cascade.
     if (effective_linking == FrameLinking::manual) {
         std::vector<AnimOverrideEntry> overrides;
         const std::size_t num_metatiles = metatiles_bin.size() / metatile::entries_per_metatile_triple;
@@ -826,13 +806,11 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
     std::vector<PixelTile<IndexPixel>> key_frame_index_tiles =
         extract_tiles_from_image(tiles_png, tile_offset, tile_count);
 
-    /*
-     * Build canonical tile set for all tiles in tiles.png OUTSIDE the current animation's key frame range, then merge
-     * in inter-animation canonical tiles. The combined set is used by the mangler to avoid producing canonical
-     * collisions with any already-used tile. For duplicate *categorization* (inter-anim vs cross-range), the separate
-     * inter_anim_canonical_tiles parameter is checked first so that tiles appearing in both sets are correctly reported
-     * as inter-animation duplicates rather than cross-range duplicates.
-     */
+    // Build canonical tile set for all tiles in tiles.png OUTSIDE the current animation's key frame range, then merge
+    // in inter-animation canonical tiles. The combined set is used by the mangler to avoid producing canonical
+    // collisions with any already-used tile. For duplicate *categorization* (inter-anim vs cross-range), the separate
+    // inter_anim_canonical_tiles parameter is checked first so that tiles appearing in both sets are correctly reported
+    // as inter-animation duplicates rather than cross-range duplicates.
     const std::size_t total_tiles =
         (tiles_png.height() / tile::side_length_pix) * (tiles_png.width() / tile::side_length_pix);
     std::set<PixelTile<IndexPixel>> existing_canonical_tiles;
@@ -847,20 +825,16 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
 
     existing_canonical_tiles.insert(inter_anim_canonical_tiles.begin(), inter_anim_canonical_tiles.end());
 
-    /*
-     * Compute the effective key frame resolution strategy: per-anim override wins, otherwise global fallback.
-     */
+    // Compute the effective key frame resolution strategy: per-anim override wins, otherwise global fallback.
     const ConfigValue<AnimKeyFrameResolutionStrategy> effective_key_frame_strategy =
         (anim_cfg_ptr != nullptr && anim_cfg_ptr->key_frame_resolution_strategy.has_value())
             ? per_anim_overrides.derive(anim_cfg_ptr->key_frame_resolution_strategy)
             : global_anim_key_frame_resolution_strategy;
 
-    /*
-     * Check for duplicate key frame tiles using canonical (flip-equivalent) comparison. Detects:
-     * - Inter-animation duplicates: animation tile matches another animation's key frame tile
-     * - Cross-range duplicates: animation tile matches a non-animation tile in tiles.png
-     * - Intra-animation duplicates: two animation tiles are flip-equivalent to each other
-     */
+    // Check for duplicate key frame tiles using canonical (flip-equivalent) comparison. Detects:
+    // - Inter-animation duplicates: animation tile matches another animation's key frame tile
+    // - Cross-range duplicates: animation tile matches a non-animation tile in tiles.png
+    // - Intra-animation duplicates: two animation tiles are flip-equivalent to each other
     if (has_duplicate_key_frame_tiles(key_frame_index_tiles, inter_anim_canonical_tiles, existing_canonical_tiles)) {
         switch (effective_key_frame_strategy.value()) {
         case AnimKeyFrameResolutionStrategy::error: {

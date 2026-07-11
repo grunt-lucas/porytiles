@@ -10,9 +10,7 @@
 
 namespace porytiles {
 
-/**
- * @brief A collection of printer functions for the Palette and related types.
- */
+/// @brief A collection of printer functions for the Palette and related types.
 class PalettePrinter {
   public:
     virtual ~PalettePrinter() = default;

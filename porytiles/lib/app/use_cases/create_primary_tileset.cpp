@@ -35,13 +35,11 @@ ChainableResult<void> CreatePrimaryTileset::create(const std::string &tileset_na
     auto tileset =
         std::make_unique<Tileset>(tileset_name, std::move(porytiles_component), std::move(porymap_component));
 
-    /*
-     * Layer an override provider that forces the domain config values required for the sample-tileset recompile. The
-     * TilesetCreator bakes rgba_magenta into every sample tile as the transparency color, so we must force
-     * extrinsic_transparency to rgba_magenta regardless of the user's configured value. tiles/pals edit mode are
-     * forced to 'optimize' so the compiler generates fresh Porymap artifacts for the blank tileset. User infra
-     * settings (paths, etc.) are left intact because the override only touches the three fields set below.
-     */
+    // Layer an override provider that forces the domain config values required for the sample-tileset recompile. The
+    // TilesetCreator bakes rgba_magenta into every sample tile as the transparency color, so we must force
+    // extrinsic_transparency to rgba_magenta regardless of the user's configured value. tiles/pals edit mode are
+    // forced to 'optimize' so the compiler generates fresh Porymap artifacts for the blank tileset. User infra
+    // settings (paths, etc.) are left intact because the override only touches the three fields set below.
     auto create_override = std::make_unique<OverrideConfigProvider>(
         ConfigScopeType::tileset, tileset_name, "create-tileset internal sample compile");
     create_override->set_extrinsic_transparency(rgba_magenta);
