@@ -42,14 +42,14 @@ LayerValue<std::size_t> DefaultProvider::num_metatiles_total(
     return LayerValue<std::size_t>::valid(1024, "Number Of Metatiles Total", source_info);
 }
 
-LayerValue<std::size_t> DefaultProvider::num_pals_in_primary(
+LayerValue<std::size_t> DefaultProvider::num_palettes_in_primary(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::valid(6, "Number Of Palettes In Primary", source_info);
 }
 
-LayerValue<std::size_t>
-DefaultProvider::num_pals_total([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<std::size_t> DefaultProvider::num_palettes_total(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::size_t>::valid(13, "Number Of Palettes Total", source_info);
 }
@@ -78,20 +78,20 @@ DefaultProvider::tiles_edit_mode([[maybe_unused]] ConfigScopeType type, [[maybe_
     return LayerValue<ArtifactEditMode>::valid(ArtifactEditMode::optimize, "Tiles Edit Mode", source_info);
 }
 
-LayerValue<ArtifactEditMode>
-DefaultProvider::pals_edit_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<ArtifactEditMode> DefaultProvider::palettes_edit_mode(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<ArtifactEditMode>::valid(ArtifactEditMode::optimize, "Palettes Edit Mode", source_info);
 }
 
-LayerValue<bool> DefaultProvider::pal_hints_enabled(
+LayerValue<bool> DefaultProvider::palette_hints_enabled(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<bool>::valid(true, "Palette Hints Enabled", source_info);
 }
 
 LayerValue<std::vector<PaletteHint>>
-DefaultProvider::pal_hints([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+DefaultProvider::palette_hints([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::vector<PaletteHint>>::valid(std::vector<PaletteHint>{}, "Palette Hints", source_info);
 }
@@ -120,17 +120,19 @@ LayerValue<TileSharingAlignment> DefaultProvider::tile_sharing_alignment(
     return LayerValue<TileSharingAlignment>::valid(TileSharingAlignment::off, "Tile Sharing Alignment", source_info);
 }
 
-LayerValue<TilesPalMode>
-DefaultProvider::tiles_pal_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    return LayerValue<TilesPalMode>::valid(TilesPalMode::true_color, "Tiles Palette Mode", source_info);
-}
-
-LayerValue<AnimPalResolutionStrategy> DefaultProvider::global_anim_pal_resolution_strategy(
+LayerValue<TilesPaletteMode> DefaultProvider::tiles_palette_mode(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<AnimPalResolutionStrategy>::valid(
-        AnimPalResolutionStrategy::scan_local_metatiles, "Global Animation Palette Resolution Strategy", source_info);
+    return LayerValue<TilesPaletteMode>::valid(TilesPaletteMode::true_color, "Tiles Palette Mode", source_info);
+}
+
+LayerValue<AnimPaletteResolutionStrategy> DefaultProvider::global_anim_palette_resolution_strategy(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<AnimPaletteResolutionStrategy>::valid(
+        AnimPaletteResolutionStrategy::scan_local_metatiles,
+        "Global Animation Palette Resolution Strategy",
+        source_info);
 }
 
 LayerValue<AnimKeyFrameResolutionStrategy> DefaultProvider::global_anim_key_frame_resolution_strategy(
@@ -140,12 +142,13 @@ LayerValue<AnimKeyFrameResolutionStrategy> DefaultProvider::global_anim_key_fram
         AnimKeyFrameResolutionStrategy::error, "Global Animation Key Frame Resolution Strategy", source_info);
 }
 
-LayerValue<AnimMultiPalSubtileResolutionStrategy> DefaultProvider::global_anim_multi_pal_subtile_resolution_strategy(
+LayerValue<AnimMultiPaletteSubtileResolutionStrategy>
+DefaultProvider::global_anim_multi_palette_subtile_resolution_strategy(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<AnimMultiPalSubtileResolutionStrategy>::valid(
-        AnimMultiPalSubtileResolutionStrategy::error,
-        "Global Animation Multi-Pal Subtile Resolution Strategy",
+    return LayerValue<AnimMultiPaletteSubtileResolutionStrategy>::valid(
+        AnimMultiPaletteSubtileResolutionStrategy::error,
+        "Global Animation Multi-Palette Subtile Resolution Strategy",
         source_info);
 }
 

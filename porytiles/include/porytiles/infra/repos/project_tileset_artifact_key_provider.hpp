@@ -57,7 +57,7 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
     [[nodiscard]] ChainableResult<ArtifactKey> key_for_tiles_png(const std::string &tileset_name) const override;
 
     [[nodiscard]] ChainableResult<ArtifactKey>
-    key_for_porymap_pal_n(const std::string &tileset_name, std::size_t index) const override;
+    key_for_porymap_palette_n(const std::string &tileset_name, std::size_t index) const override;
 
     [[nodiscard]] ChainableResult<ArtifactKey> key_for_porymap_anim_frame(
         const std::string &tileset_name, const std::string &anim_name, const std::string &frame_name) const override;
@@ -79,7 +79,7 @@ class ProjectTilesetArtifactKeyProvider final : public TilesetArtifactKeyProvide
     [[nodiscard]] ChainableResult<ArtifactKey> key_for_attributes_csv(const std::string &tileset_name) const override;
 
     [[nodiscard]] ChainableResult<ArtifactKey>
-    key_for_porytiles_pal_n(const std::string &tileset_name, std::size_t index) const override;
+    key_for_porytiles_palette_n(const std::string &tileset_name, std::size_t index) const override;
 
     [[nodiscard]] ChainableResult<ArtifactKey> key_for_porytiles_anim_frame(
         const std::string &tileset_name, const std::string &anim_name, const std::string &frame_name) const override;

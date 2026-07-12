@@ -29,8 +29,8 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
 {
     // Unwrap config values
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, extrinsic_transparency, tileset.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_pals_in_primary, tileset.name(), std::unique_ptr<Tileset>);
-    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_pals_total, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_palettes_in_primary, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_palettes_total, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_metatiles_in_primary, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_tiles_in_primary, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_tiles_per_metatile, tileset.name(), std::unique_ptr<Tileset>);
@@ -55,10 +55,10 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
 
     auto new_porytiles_component = std::make_unique<PorytilesTilesetComponent>();
     std::size_t i = 0;
-    for (const auto &pal : tileset.porytiles_component().pals()) {
-        // Copy over Porytiles pals
-        if (pal.has_value()) {
-            new_porytiles_component->set_pal(i, pal.value());
+    for (const auto &palette : tileset.porytiles_component().palettes()) {
+        // Copy over Porytiles palettes
+        if (palette.has_value()) {
+            new_porytiles_component->set_palette(i, palette.value());
         }
         i++;
     }
@@ -80,7 +80,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
         // Accumulate canonical forms of previously-processed animations' key frame tiles for inter-animation detection
         std::set<PixelTile<IndexPixel>> inter_anim_canonical_tiles;
 
-        AnimDecompiler anim_decompiler{config_, diag_, tile_printer_, pal_printer_};
+        AnimDecompiler anim_decompiler{config_, diag_, tile_printer_, palette_printer_};
 
         for (const auto &index_pixel_anim : porymap_animations | std::views::values) {
             // Run animation decompilation
@@ -132,7 +132,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
     PT_TRY_ASSIGN_CHAIN_ERR(
         metatiles,
         metatile_decompiler.decompile_metatiles(
-            tilemap_entries, new_porymap_component->tiles_png(), tileset.porymap_component().pals()),
+            tilemap_entries, new_porymap_component->tiles_png(), tileset.porymap_component().palettes()),
         std::unique_ptr<Tileset>,
         std::format("Failed to decompile Porymap component for tileset '{}'.", tileset.name()));
 

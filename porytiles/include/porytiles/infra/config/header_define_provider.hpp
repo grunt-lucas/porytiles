@@ -89,9 +89,10 @@ class HeaderDefineProvider final : public ConfigProvider {
     num_metatiles_total(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<std::size_t>
-    num_pals_in_primary(ConfigScopeType type, const std::string &scope) const override;
+    num_palettes_in_primary(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<std::size_t> num_pals_total(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::size_t>
+    num_palettes_total(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<std::size_t>
     max_map_data_size(ConfigScopeType type, const std::string &scope) const override;

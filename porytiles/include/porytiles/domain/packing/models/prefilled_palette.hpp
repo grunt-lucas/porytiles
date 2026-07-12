@@ -46,14 +46,14 @@ class PrefilledPalette {
     /// @param fixed_colors The colors that are already locked in this palette
     /// @param occupied_slots The number of physical slots occupied in the palette (may differ from unique color count
     ///        if palette contains duplicate colors)
-    /// @param total_capacity The total number of color slots (default pal::max_size - 1)
+    /// @param total_capacity The total number of color slots (default palette::max_size - 1)
     /// @return A partially locked PrefilledPalette
     /// @pre occupied_slots <= total_capacity
     [[nodiscard]] static PrefilledPalette partially_locked(
         std::size_t hardware_index,
         ColorSet fixed_colors,
         std::size_t occupied_slots,
-        std::size_t total_capacity = pal::max_size - 1);
+        std::size_t total_capacity = palette::max_size - 1);
 
     [[nodiscard]] bool operator==(const PrefilledPalette &other) const
     {

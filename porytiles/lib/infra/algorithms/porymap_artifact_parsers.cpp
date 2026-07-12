@@ -97,12 +97,12 @@ ChainableResult<std::vector<TilemapEntry>> parse_metatiles_bin(const std::filesy
         // 12th bit is the vflip bit
         //
         // XXXX 0000 0000 0000
-        // top 4 bits are pal index
+        // top 4 bits are palette index
 
         entry.tile_index(entry_bits & 0x03FF);
         entry.h_flip((entry_bits >> 10) & 0x0001);
         entry.v_flip((entry_bits >> 11) & 0x0001);
-        entry.pal_index((entry_bits >> 12) & 0x000F);
+        entry.palette_index((entry_bits >> 12) & 0x000F);
 
         entries.push_back(std::move(entry));
     }
@@ -183,16 +183,16 @@ load_indexed_png(const std::filesystem::path &path, const PngIndexedImageLoader 
     return std::move(image_result.value());
 }
 
-ChainableResult<Palette<Rgba32, pal::max_size>>
-load_porymap_palette(const std::filesystem::path &path, const FilePalLoader &loader)
+ChainableResult<Palette<Rgba32, palette::max_size>>
+load_porymap_palette(const std::filesystem::path &path, const FilePaletteLoader &loader)
 {
-    auto pal_result = loader.load(path);
-    if (!pal_result.has_value()) {
-        return ChainableResult<Palette<Rgba32, pal::max_size>>{
+    auto palette_result = loader.load(path);
+    if (!palette_result.has_value()) {
+        return ChainableResult<Palette<Rgba32, palette::max_size>>{
             FormattableError{"Failed to load palette file: '{}'.", FormatParam{path.string(), Style::bold}},
-            pal_result};
+            palette_result};
     }
-    return pal_result.value();
+    return palette_result.value();
 }
 
 } // namespace porytiles

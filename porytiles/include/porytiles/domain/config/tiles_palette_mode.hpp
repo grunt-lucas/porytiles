@@ -20,14 +20,14 @@ namespace porytiles {
 ///
 /// @details
 /// Controls how tiles.png is rendered.
-enum class TilesPalMode {
+enum class TilesPaletteMode {
     /// @brief Render tiles with true colors from the palette.
     true_color,
     /// @brief Render tiles in greyscale (useful for debugging).
     greyscale
 };
 
-/// @brief Parses a string into a TilesPalMode with fuzzy matching.
+/// @brief Parses a string into a TilesPaletteMode with fuzzy matching.
 ///
 /// @details
 /// Performs parsing in two phases:
@@ -40,14 +40,14 @@ enum class TilesPalMode {
 ///
 /// @param str The string to parse
 /// @return The parsed value, or std::nullopt if the string is invalid
-[[nodiscard]] inline std::optional<TilesPalMode> tiles_pal_mode_from_str(const std::string &str)
+[[nodiscard]] inline std::optional<TilesPaletteMode> tiles_palette_mode_from_str(const std::string &str)
 {
     // Phase 1: Exact match against C++ constant names
     if (str == "true_color") {
-        return std::optional{TilesPalMode::true_color};
+        return std::optional{TilesPaletteMode::true_color};
     }
     if (str == "greyscale") {
-        return std::optional{TilesPalMode::greyscale};
+        return std::optional{TilesPaletteMode::greyscale};
     }
 
     // Phase 2: Case-insensitive fuzzy match
@@ -57,35 +57,35 @@ enum class TilesPalMode {
 
     // Fuzzy names for true_color
     if (lower_str == "true-color") {
-        return std::optional{TilesPalMode::true_color};
+        return std::optional{TilesPaletteMode::true_color};
     }
     if (lower_str == "true_color") {
-        return std::optional{TilesPalMode::true_color};
+        return std::optional{TilesPaletteMode::true_color};
     }
     if (lower_str == "truecolor") {
-        return std::optional{TilesPalMode::true_color};
+        return std::optional{TilesPaletteMode::true_color};
     }
     if (lower_str == "color") {
-        return std::optional{TilesPalMode::true_color};
+        return std::optional{TilesPaletteMode::true_color};
     }
     // Fuzzy names for greyscale
     if (lower_str == "greyscale") {
-        return std::optional{TilesPalMode::greyscale};
+        return std::optional{TilesPaletteMode::greyscale};
     }
     if (lower_str == "grayscale") {
-        return std::optional{TilesPalMode::greyscale};
+        return std::optional{TilesPaletteMode::greyscale};
     }
     if (lower_str == "grey") {
-        return std::optional{TilesPalMode::greyscale};
+        return std::optional{TilesPaletteMode::greyscale};
     }
     if (lower_str == "gray") {
-        return std::optional{TilesPalMode::greyscale};
+        return std::optional{TilesPaletteMode::greyscale};
     }
 
     return std::nullopt;
 }
 
-/// @brief Converts a TilesPalMode to its canonical string representation.
+/// @brief Converts a TilesPaletteMode to its canonical string representation.
 ///
 /// @details
 /// Returns the C++ constant name (snake_case). This is the canonical form used for
@@ -93,23 +93,23 @@ enum class TilesPalMode {
 ///
 /// @param m The value to convert
 /// @return The canonical snake_case string representation
-[[nodiscard]] inline std::string to_string(const TilesPalMode m)
+[[nodiscard]] inline std::string to_string(const TilesPaletteMode m)
 {
     switch (m) {
-    case TilesPalMode::true_color:
+    case TilesPaletteMode::true_color:
         return "true_color";
-    case TilesPalMode::greyscale:
+    case TilesPaletteMode::greyscale:
         return "greyscale";
     }
-    panic("unhandled TilesPalMode value");
+    panic("unhandled TilesPaletteMode value");
 }
 
-/// @brief Stream insertion operator for TilesPalMode.
+/// @brief Stream insertion operator for TilesPaletteMode.
 ///
 /// @param os The output stream
 /// @param m The value to output
 /// @return Reference to the output stream
-inline std::ostream &operator<<(std::ostream &os, const TilesPalMode m)
+inline std::ostream &operator<<(std::ostream &os, const TilesPaletteMode m)
 {
     return os << to_string(m);
 }
@@ -117,13 +117,13 @@ inline std::ostream &operator<<(std::ostream &os, const TilesPalMode m)
 } // namespace porytiles
 
 template <>
-struct std::formatter<porytiles::TilesPalMode> {
+struct std::formatter<porytiles::TilesPaletteMode> {
     constexpr auto parse(std::format_parse_context &ctx)
     {
         return ctx.begin();
     }
 
-    auto format(const porytiles::TilesPalMode &value, auto &ctx) const
+    auto format(const porytiles::TilesPaletteMode &value, auto &ctx) const
     {
         return std::format_to(ctx.out(), "{}", porytiles::to_string(value));
     }

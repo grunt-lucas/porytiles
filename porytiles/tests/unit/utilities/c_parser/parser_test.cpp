@@ -1026,7 +1026,7 @@ TEST_F(ParserTests, ParseStructVariableWithNestedBraces)
     auto result = parse_struct_variables(R"(
 const struct Tileset gTileset_General = {
     .metatiles = { 0, 1, 2 },
-    .palettes = { pal1, pal2 },
+    .palettes = { palette1, palette2 },
 };
 )");
     ASSERT_TRUE(result.has_value());

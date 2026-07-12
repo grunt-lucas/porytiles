@@ -14,13 +14,13 @@
 
 namespace porytiles {
 
-namespace pal {
+namespace palette {
 
 inline constexpr std::size_t max_size = 16;
 
-inline constexpr std::size_t num_pals = 16;
+inline constexpr std::size_t num_palettes = 16;
 
-} // namespace pal
+} // namespace palette
 
 /// @brief A generic palette container for colors that support transparency checking.
 ///
@@ -97,7 +97,7 @@ class Palette {
     explicit Palette(ColorType color)
     {
         if constexpr (N == 0) {
-            for (std::size_t i = 0; i < pal::max_size; i++) {
+            for (std::size_t i = 0; i < palette::max_size; i++) {
                 colors_.push_back(color);
             }
         }
@@ -222,7 +222,7 @@ class Palette {
     ///
     /// @pre Palette must have size >= 1
     /// @pre Slot 0 must not be a wildcard
-    /// @return The ColorType in pal slot 0
+    /// @return The ColorType in palette slot 0
     [[nodiscard]] ColorType slot_zero_color() const
     {
         if (size() == 0) {

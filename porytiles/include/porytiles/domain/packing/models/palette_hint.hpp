@@ -22,22 +22,22 @@ class PaletteHint {
     /// @brief Constructs a PaletteHint with a name and palette.
     ///
     /// @param name The name of this palette hint
-    /// @param pal The palette containing the hint colors
-    PaletteHint(std::string name, Palette<Rgba32> pal) : name_{std::move(name)}, pal_{std::move(pal)} {}
+    /// @param palette The palette containing the hint colors
+    PaletteHint(std::string name, Palette<Rgba32> palette) : name_{std::move(name)}, palette_{std::move(palette)} {}
 
     [[nodiscard]] const std::string &name() const
     {
         return name_;
     }
 
-    [[nodiscard]] const Palette<Rgba32> &pal() const
+    [[nodiscard]] const Palette<Rgba32> &palette() const
     {
-        return pal_;
+        return palette_;
     }
 
   private:
     std::string name_;
-    Palette<Rgba32> pal_;
+    Palette<Rgba32> palette_;
 };
 
 /// @brief Converts a PaletteHint to its string representation.

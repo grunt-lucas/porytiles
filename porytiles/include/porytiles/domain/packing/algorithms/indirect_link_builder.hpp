@@ -27,23 +27,25 @@ namespace porytiles {
 /// link generation into a multi-phase pipeline with diagnostic reporting.
 ///
 /// Algorithm per shape group:
-/// 1. Look up each member's palette from @p tile_pal_assignments (authoritative packing assignments)
+/// 1. Look up each member's palette from @p tile_palette_assignments (authoritative packing assignments)
 /// 2. Skip groups where fewer than 2 members resolve or all members are in the same palette
 /// 3. Pick a reference member using a conflict-minimization heuristic (fewest prefilled-slot conflicts)
 /// 4. For each non-reference member in a different palette, emit IndirectLink for each corresponding color pair
 ///    (identified by matching ShapeMask keys)
 ///
 /// @param shape_groups The analyzed shape groups from ShapeGroupAnalyzer.
-/// @param tile_pal_assignments Pre-computed mapping from combined tile index to hardware palette index. Built by the
+/// @param tile_palette_assignments Pre-computed mapping from combined tile index to hardware palette index. Built by
+/// the
 ///     packer from the authoritative packing assignments, ensuring consistency with eligibility determination.
-/// @param base_pals Base palettes built with sequential fill only (no links), used for slot mapping during reference
+/// @param base_palettes Base palettes built with sequential fill only (no links), used for slot mapping during
+/// reference
 ///     member selection heuristic.
-/// @param prefilled_pals The original prefilled input palettes (to detect locked slots during reference selection).
+/// @param prefilled_palettes The original prefilled input palettes (to detect locked slots during reference selection).
 /// @return Vector of IndirectLink instructions, potentially empty if no sharing opportunities exist.
 [[nodiscard]] std::vector<IndirectLink> build_indirect_links(
     const std::vector<ShapeGroup<Rgba32>> &shape_groups,
-    const std::map<std::size_t, std::size_t> &tile_pal_assignments,
-    const std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> &base_pals,
-    const std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> &prefilled_pals);
+    const std::map<std::size_t, std::size_t> &tile_palette_assignments,
+    const std::array<std::optional<Palette<Rgba32, palette::max_size>>, palette::num_palettes> &base_palettes,
+    const std::array<std::optional<Palette<Rgba32, palette::max_size>>, palette::num_palettes> &prefilled_palettes);
 
 } // namespace porytiles

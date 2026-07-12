@@ -105,7 +105,7 @@ class AnimKeyFrameMangler {
     [[nodiscard]] ChainableResult<MangleResult> mangle_duplicates(
         const std::string &anim_name,
         std::vector<PixelTile<IndexPixel>> tiles,
-        const std::vector<const Palette<Rgba32, pal::max_size> *> &palettes,
+        const std::vector<const Palette<Rgba32, palette::max_size> *> &palettes,
         const Rgba32 &extrinsic_transparency,
         const std::set<PixelTile<IndexPixel>> &existing_tiles) const;
 

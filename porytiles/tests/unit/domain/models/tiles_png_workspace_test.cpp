@@ -901,7 +901,7 @@ TEST(TilesPngWorkspaceTests, FindByColorMatchesDuplicateIndices)
     // They should still match because palette[7] == palette[14]
 
     // Set up a palette with duplicate colors
-    Palette<Rgba32, pal::max_size> palette{};
+    Palette<Rgba32, palette::max_size> palette{};
     palette.set(0, Rgba32{0, 0, 0, 255});        // Transparent slot (unused for color matching)
     palette.set(7, Rgba32{100, 150, 200, 255});  // Color at slot 7
     palette.set(14, Rgba32{100, 150, 200, 255}); // Same color at slot 14
@@ -933,7 +933,7 @@ TEST(TilesPngWorkspaceTests, FindByColorMatchesDuplicateIndices)
     std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_find;
     tiles_to_find.emplace_back(search_tile);
 
-    std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+    std::vector<const Palette<Rgba32, palette::max_size> *> palettes;
     palettes.push_back(&palette);
 
     // Should find the tile despite different indices, because colors match
@@ -945,7 +945,7 @@ TEST(TilesPngWorkspaceTests, FindByColorMatchesDuplicateIndices)
 TEST(TilesPngWorkspaceTests, FindByColorRejectsDifferentColors)
 {
     // Set up a palette with different colors at slots 7 and 14
-    Palette<Rgba32, pal::max_size> palette{};
+    Palette<Rgba32, palette::max_size> palette{};
     palette.set(0, Rgba32{0, 0, 0, 255});
     palette.set(7, Rgba32{100, 150, 200, 255}); // Color A at slot 7
     palette.set(14, Rgba32{200, 100, 50, 255}); // Different color B at slot 14
@@ -969,7 +969,7 @@ TEST(TilesPngWorkspaceTests, FindByColorRejectsDifferentColors)
     std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_find;
     tiles_to_find.emplace_back(search_tile);
 
-    std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+    std::vector<const Palette<Rgba32, palette::max_size> *> palettes;
     palettes.push_back(&palette);
 
     auto result = workspace.find_existing_contiguous_tiles_by_color(tiles_to_find, palettes);
@@ -979,7 +979,7 @@ TEST(TilesPngWorkspaceTests, FindByColorRejectsDifferentColors)
 TEST(TilesPngWorkspaceTests, FindByColorTransparentPixels)
 {
     // Transparency (index 0) should only match transparency, not other indices
-    Palette<Rgba32, pal::max_size> palette{};
+    Palette<Rgba32, palette::max_size> palette{};
     palette.set(0, Rgba32{0, 0, 0, 0}); // Transparent
     palette.set(1, Rgba32{100, 150, 200, 255});
 
@@ -1015,7 +1015,7 @@ TEST(TilesPngWorkspaceTests, FindByColorTransparentPixels)
     std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_find;
     tiles_to_find.emplace_back(search_tile);
 
-    std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+    std::vector<const Palette<Rgba32, palette::max_size> *> palettes;
     palettes.push_back(&palette);
 
     auto result = workspace.find_existing_contiguous_tiles_by_color(tiles_to_find, palettes);
@@ -1025,7 +1025,7 @@ TEST(TilesPngWorkspaceTests, FindByColorTransparentPixels)
 
 TEST(TilesPngWorkspaceTests, FindByColorTransparencyMismatch)
 {
-    Palette<Rgba32, pal::max_size> palette{};
+    Palette<Rgba32, palette::max_size> palette{};
     palette.set(0, Rgba32{0, 0, 0, 0});
     palette.set(1, Rgba32{100, 150, 200, 255});
 
@@ -1048,7 +1048,7 @@ TEST(TilesPngWorkspaceTests, FindByColorTransparencyMismatch)
     std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_find;
     tiles_to_find.emplace_back(search_tile);
 
-    std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+    std::vector<const Palette<Rgba32, palette::max_size> *> palettes;
     palettes.push_back(&palette);
 
     auto result = workspace.find_existing_contiguous_tiles_by_color(tiles_to_find, palettes);
@@ -1058,7 +1058,7 @@ TEST(TilesPngWorkspaceTests, FindByColorTransparencyMismatch)
 TEST(TilesPngWorkspaceTests, FindByColorContiguousSequence)
 {
     // Test finding a multi-tile contiguous sequence
-    Palette<Rgba32, pal::max_size> palette{};
+    Palette<Rgba32, palette::max_size> palette{};
     palette.set(0, Rgba32{0, 0, 0, 0});
     palette.set(1, Rgba32{10, 10, 10, 255});
     palette.set(2, Rgba32{20, 20, 20, 255});
@@ -1089,7 +1089,7 @@ TEST(TilesPngWorkspaceTests, FindByColorContiguousSequence)
 
     // Create search sequence
     std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_find;
-    std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+    std::vector<const Palette<Rgba32, palette::max_size> *> palettes;
 
     for (std::uint8_t idx : {1, 2, 3}) {
         PixelTile<IndexPixel> tile;
@@ -1107,7 +1107,7 @@ TEST(TilesPngWorkspaceTests, FindByColorContiguousSequence)
 
 TEST(TilesPngWorkspaceTests, FindByColorNulloptWhenMissing)
 {
-    Palette<Rgba32, pal::max_size> palette{};
+    Palette<Rgba32, palette::max_size> palette{};
     palette.set(0, Rgba32{0, 0, 0, 0});
     palette.set(1, Rgba32{10, 10, 10, 255});
     palette.set(5, Rgba32{50, 50, 50, 255});
@@ -1131,7 +1131,7 @@ TEST(TilesPngWorkspaceTests, FindByColorNulloptWhenMissing)
     std::vector<CanonicalPixelTile<IndexPixel>> tiles_to_find;
     tiles_to_find.emplace_back(search_tile);
 
-    std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+    std::vector<const Palette<Rgba32, palette::max_size> *> palettes;
     palettes.push_back(&palette);
 
     auto result = workspace.find_existing_contiguous_tiles_by_color(tiles_to_find, palettes);
@@ -1143,7 +1143,7 @@ TEST(TilesPngWorkspaceTests, FindByColorEmptySequence)
     TilesPngWorkspace workspace{10};
 
     std::vector<CanonicalPixelTile<IndexPixel>> empty_tiles;
-    std::vector<const Palette<Rgba32, pal::max_size> *> empty_palettes;
+    std::vector<const Palette<Rgba32, palette::max_size> *> empty_palettes;
 
     auto result = workspace.find_existing_contiguous_tiles_by_color(empty_tiles, empty_palettes);
     EXPECT_TRUE(result.has_value());
@@ -1160,7 +1160,7 @@ TEST(TilesPngWorkspaceTests, FindByColorPanicsMismatchedSizes)
     std::vector<CanonicalPixelTile<IndexPixel>> tiles;
     tiles.emplace_back(tile);
 
-    std::vector<const Palette<Rgba32, pal::max_size> *> palettes;
+    std::vector<const Palette<Rgba32, palette::max_size> *> palettes;
     // Intentionally leave palettes empty to cause mismatch
 
     ASSERT_DEATH(
@@ -1176,7 +1176,7 @@ TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorMatchesDuplicates)
     // They should still match because palette[7] == palette[14]
 
     // Set up a palette with duplicate colors
-    Palette<Rgba32, pal::max_size> palette{};
+    Palette<Rgba32, palette::max_size> palette{};
     palette.set(0, Rgba32{0, 0, 0, 255});        // Transparent slot (unused for color matching)
     palette.set(7, Rgba32{100, 150, 200, 255});  // Color at slot 7
     palette.set(14, Rgba32{100, 150, 200, 255}); // Same color at slot 14
@@ -1209,7 +1209,7 @@ TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorMatchesDuplicates)
 TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorRejectsDifferent)
 {
     // Set up a palette with different colors at slots 7 and 14
-    Palette<Rgba32, pal::max_size> palette{};
+    Palette<Rgba32, palette::max_size> palette{};
     palette.set(0, Rgba32{0, 0, 0, 255});
     palette.set(7, Rgba32{100, 150, 200, 255}); // Color A at slot 7
     palette.set(14, Rgba32{200, 100, 50, 255}); // Different color B at slot 14
@@ -1237,7 +1237,7 @@ TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorRejectsDifferent)
 
 TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorNulloptTransparent)
 {
-    Palette<Rgba32, pal::max_size> palette{};
+    Palette<Rgba32, palette::max_size> palette{};
     palette.set(0, Rgba32{0, 0, 0, 0});
     palette.set(1, Rgba32{100, 150, 200, 255});
 
@@ -1262,7 +1262,7 @@ TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorNulloptTransparent)
 
 TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorNulloptMissing)
 {
-    Palette<Rgba32, pal::max_size> palette{};
+    Palette<Rgba32, palette::max_size> palette{};
     palette.set(0, Rgba32{0, 0, 0, 0});
     palette.set(1, Rgba32{10, 10, 10, 255});
     palette.set(5, Rgba32{50, 50, 50, 255});
@@ -1291,7 +1291,7 @@ TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorNulloptMissing)
 TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorExactMatch)
 {
     // Even with exact indices (no duplicates), the color match should work
-    Palette<Rgba32, pal::max_size> palette{};
+    Palette<Rgba32, palette::max_size> palette{};
     palette.set(0, Rgba32{0, 0, 0, 0});
     palette.set(5, Rgba32{50, 100, 150, 255});
 
@@ -1320,7 +1320,7 @@ TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorExactMatch)
 TEST(TilesPngWorkspaceTests, FirstOccurrenceByColorTransparencyMismatch)
 {
     // Index 0 is special (transparent) and should only match other index 0 pixels
-    Palette<Rgba32, pal::max_size> palette{};
+    Palette<Rgba32, palette::max_size> palette{};
     palette.set(0, Rgba32{0, 0, 0, 0}); // Transparent
     palette.set(1, Rgba32{100, 150, 200, 255});
 

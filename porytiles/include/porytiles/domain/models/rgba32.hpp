@@ -137,7 +137,7 @@ constexpr Rgba32 rgba_lime{128, 255, 128, Rgba32::alpha_opaque};
 /// intermediate values are evenly spaced greyscale tones.
 ///
 /// @return A vector of 16 Rgba32 colors representing the greyscale palette
-inline std::vector<Rgba32> standard_greyscale_pal()
+inline std::vector<Rgba32> standard_greyscale_palette()
 {
     return {
         Rgba32{255, 255, 255, 255},

@@ -11,14 +11,14 @@ namespace porytiles {
 /// @brief A service interface that saves a fixed-length Palette to a given file.
 ///
 /// @details
-/// The FilePalSaver interface is file-format-agnostic. Different implementations can save to various pal file formats
-/// (e.g., JASC, .gbapal, etc.).
-class FilePalSaver {
+/// The FilePaletteSaver interface is file-format-agnostic. Different implementations can save to various palette file
+/// formats (e.g., JASC, .gbapal, etc.).
+class FilePaletteSaver {
   public:
-    virtual ~FilePalSaver() = default;
+    virtual ~FilePaletteSaver() = default;
 
     [[nodiscard]] virtual ChainableResult<void>
-    save(const Palette<Rgba32, pal::max_size> &pal, const std::filesystem::path &path) const = 0;
+    save(const Palette<Rgba32, palette::max_size> &palette, const std::filesystem::path &path) const = 0;
 };
 
 } // namespace porytiles

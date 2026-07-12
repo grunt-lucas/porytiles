@@ -24,7 +24,7 @@ struct AnimOverrideEntry {
     /// Zero-based index into the animation's tile range (tile_offset + frame_subtile = actual tile index).
     std::size_t frame_subtile;
     /// The palette index to use for this tile.
-    std::size_t pal_index;
+    std::size_t palette_index;
     /// Whether the tile is horizontally flipped.
     bool h_flip;
     /// Whether the tile is vertically flipped.

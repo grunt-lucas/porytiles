@@ -31,10 +31,11 @@ class PorymapTilesetComponent;
 /// The decompiler uses the tileset's palettes to look up the actual RGBA colors for each palette index. Since animation
 /// keyframe tiles may use any palette in the tileset, the decompiler requires access to all palettes.
 ///
-/// The correct palette for each animation is determined by the configured @c AnimPalResolutionStrategy, which drives
-/// the behavior from the start (strategy-first). Available strategies include direct palette selection (@c palette_00
-/// through @c palette_15), local metatile scanning (@c scan_local_metatiles), and PNG internal palette matching
-/// (@c internal_png_pal).
+/// The correct palette for each animation is determined by the configured @c AnimPaletteResolutionStrategy, which
+/// drives the behavior from the start (strategy-first). Available strategies include direct palette selection (@c
+/// palette_00 through @c palette_15), local metatile scanning (@c scan_local_metatiles), and PNG internal palette
+/// matching
+/// (@c internal_png_palette).
 ///
 /// Configuration values (extrinsic transparency, palette strategy, key frame strategy) are resolved internally from the
 /// provided @c DomainConfig, including per-animation palette strategy overrides.
@@ -44,8 +45,8 @@ class AnimDecompiler {
         gsl::not_null<const DomainConfig *> config,
         gsl::not_null<const UserDiagnostics *> diag,
         gsl::not_null<const TilePrinter *> tile_printer,
-        gsl::not_null<const PalettePrinter *> pal_printer)
-        : config_{config}, diag_{diag}, tile_printer_{tile_printer}, pal_printer_{pal_printer}
+        gsl::not_null<const PalettePrinter *> palette_printer)
+        : config_{config}, diag_{diag}, tile_printer_{tile_printer}, palette_printer_{palette_printer}
     {
     }
 
@@ -69,7 +70,8 @@ class AnimDecompiler {
     /// @param anim The indexed animation to decompile.
     /// @param inter_anim_canonical_tiles Canonical forms of previously-processed animations' key frame tiles, used to
     ///   detect inter-animation duplicates. Pass an empty set when processing the first animation.
-    /// @param porymap_component The Porymap component to read pals/metatiles/tiles from and backport tile changes to.
+    /// @param porymap_component The Porymap component to read palettes/metatiles/tiles from and backport tile changes
+    /// to.
     /// @return The decompiled RGBA animation with key frame and frames populated, or error.
     [[nodiscard]] ChainableResult<Animation<Rgba32>> decompile_animation(
         const std::string &tileset_name,
@@ -81,7 +83,7 @@ class AnimDecompiler {
     const DomainConfig *config_;
     const UserDiagnostics *diag_;
     const TilePrinter *tile_printer_;
-    const PalettePrinter *pal_printer_;
+    const PalettePrinter *palette_printer_;
 };
 
 } // namespace porytiles

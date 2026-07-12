@@ -69,7 +69,7 @@ HeaderDefineProvider::num_metatiles_total(ConfigScopeType /*type*/, const std::s
 }
 
 LayerValue<std::size_t>
-HeaderDefineProvider::num_pals_in_primary(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+HeaderDefineProvider::num_palettes_in_primary(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(
@@ -83,7 +83,7 @@ HeaderDefineProvider::num_pals_in_primary(ConfigScopeType /*type*/, const std::s
 }
 
 LayerValue<std::size_t>
-HeaderDefineProvider::num_pals_total(ConfigScopeType /*type*/, const std::string & /*scope*/) const
+HeaderDefineProvider::num_palettes_total(ConfigScopeType /*type*/, const std::string & /*scope*/) const
 {
     const auto header_path = project_root_ / header_relative_path_;
     return search_header_define<std::size_t>(

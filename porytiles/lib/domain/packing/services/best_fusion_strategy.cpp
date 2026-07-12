@@ -32,19 +32,19 @@ using namespace porytiles;
     double best_cost = std::numeric_limits<double>::max();
 
     for (std::size_t i = 0; i < palettes.size(); ++i) {
-        const auto &pal = palettes[i];
+        const auto &palette = palettes[i];
 
         // Skip palettes that can't fit the tile
-        if (!pal.can_fit(tile.color_set())) {
+        if (!palette.can_fit(tile.color_set())) {
             continue;
         }
 
         // Use fast metric function with cached color counts - O(colors) instead of O(tiles × colors)
-        double cost = compute_weighted_cost_in_palette_fast(tile.color_set(), pal);
+        double cost = compute_weighted_cost_in_palette_fast(tile.color_set(), palette);
 
         // Add sharing penalty to deprioritize palettes that already contain a shape group sibling
         if (metadata != nullptr) {
-            cost += compute_sharing_penalty(tile, pal, *metadata);
+            cost += compute_sharing_penalty(tile, palette, *metadata);
         }
 
         if (cost < best_cost) {
@@ -69,14 +69,14 @@ namespace porytiles {
 ChainableResult<PackingOutput> BestFusionStrategy::pack(const PackingInput &input) const
 {
     PackingOutput output;
-    PalettePool pal_pool = input.pal_pool_;
+    PalettePool palette_pool = input.palette_pool_;
 
     // Initialize output palettes from prefilled palettes
-    output.pals_ = initialize_packed_palettes(input.prefilled_pals_, pal_pool, input.pal_capacity_);
+    output.palettes_ = initialize_packed_palettes(input.prefilled_palettes_, palette_pool, input.palette_capacity_);
 
     // Create additional empty palettes from the rest of the available PalettePool slots
-    while (pal_pool.has_available_pal()) {
-        output.pals_.emplace_back(pal_pool.checkout(), input.pal_capacity_);
+    while (palette_pool.has_available_palette()) {
+        output.palettes_.emplace_back(palette_pool.checkout(), input.palette_capacity_);
     }
 
     // Extract shape group metadata pointer (nullptr when not sharing-aware)
@@ -87,30 +87,30 @@ ChainableResult<PackingOutput> BestFusionStrategy::pack(const PackingInput &inpu
     // Note: palette-local cost computation now uses cached color counts in PackedPalette,
     // eliminating the need for a separate tile_colors_map
     auto assign_tile = [&output, metadata](const PackableTile &tile) -> bool {
-        const auto maybe_best_idx = find_best_palette(tile, output.pals_, metadata);
+        const auto maybe_best_idx = find_best_palette(tile, output.palettes_, metadata);
 
         if (maybe_best_idx.has_value()) {
             // Add to existing palette
-            output.pals_[maybe_best_idx.value()].add_tile(tile);
-            output.tile_to_pal_[tile.id()] = output.pals_[maybe_best_idx.value()].hardware_index();
+            output.palettes_[maybe_best_idx.value()].add_tile(tile);
+            output.tile_to_palette_[tile.id()] = output.palettes_[maybe_best_idx.value()].hardware_index();
             return true;
         }
 
         // Try to find an empty palette
-        for (std::size_t i = 0; i < output.pals_.size(); ++i) {
-            if (output.pals_[i].color_count() == 0 && output.pals_[i].can_fit(tile.color_set())) {
-                output.pals_[i].add_tile(tile);
-                output.tile_to_pal_[tile.id()] = output.pals_[i].hardware_index();
+        for (std::size_t i = 0; i < output.palettes_.size(); ++i) {
+            if (output.palettes_[i].color_count() == 0 && output.palettes_[i].can_fit(tile.color_set())) {
+                output.palettes_[i].add_tile(tile);
+                output.tile_to_palette_[tile.id()] = output.palettes_[i].hardware_index();
                 return true;
             }
         }
 
         // Try to find ANY palette that can fit (even without good overlap).
         // Sibling avoidance is intentionally not applied here. Packing success takes priority over sharing.
-        for (std::size_t i = 0; i < output.pals_.size(); ++i) {
-            if (output.pals_[i].can_fit(tile.color_set())) {
-                output.pals_[i].add_tile(tile);
-                output.tile_to_pal_[tile.id()] = output.pals_[i].hardware_index();
+        for (std::size_t i = 0; i < output.palettes_.size(); ++i) {
+            if (output.palettes_[i].can_fit(tile.color_set())) {
+                output.palettes_[i].add_tile(tile);
+                output.tile_to_palette_[tile.id()] = output.palettes_[i].hardware_index();
                 return true;
             }
         }

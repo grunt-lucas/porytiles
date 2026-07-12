@@ -13,14 +13,14 @@
 
 #include "porytiles/app/config/primary_pairing_mode.hpp"
 #include "porytiles/domain/config/anim_key_frame_resolution_strategy.hpp"
-#include "porytiles/domain/config/anim_multi_pal_subtile_resolution_strategy.hpp"
-#include "porytiles/domain/config/anim_pal_resolution_strategy.hpp"
+#include "porytiles/domain/config/anim_multi_palette_subtile_resolution_strategy.hpp"
+#include "porytiles/domain/config/anim_palette_resolution_strategy.hpp"
 #include "porytiles/domain/config/artifact_edit_mode.hpp"
 #include "porytiles/domain/config/frame_linking.hpp"
 #include "porytiles/domain/config/packing_strategy_type.hpp"
 #include "porytiles/domain/config/tile_sharing_alignment.hpp"
 #include "porytiles/domain/config/tile_sharing_packing.hpp"
-#include "porytiles/domain/config/tiles_pal_mode.hpp"
+#include "porytiles/domain/config/tiles_palette_mode.hpp"
 #include "porytiles/domain/models/rgba32.hpp"
 #include "porytiles/infra/config/frlg_alternate_mask_mode.hpp"
 #include "porytiles/infra/config/layer_value.hpp"
@@ -230,58 +230,58 @@ parse_artifact_edit_mode(const std::optional<std::string> &raw_value, const std:
     return LayerValue<ArtifactEditMode>::invalid(error, option_name);
 }
 
-/// @brief Parses a TilesPalMode from a CLI string option.
+/// @brief Parses a TilesPaletteMode from a CLI string option.
 ///
 /// @details
-/// Uses the unified tiles_pal_mode_from_str() which provides fuzzy matching.
+/// Uses the unified tiles_palette_mode_from_str() which provides fuzzy matching.
 /// Returns LayerValue::invalid() for unrecognized values.
 ///
 /// @param raw_value The raw string value from CLI, or std::nullopt if not provided
 /// @param option_name The CLI option name for error messages
 /// @return LayerValue with parsed value, invalid error, or not_provided status
-LayerValue<TilesPalMode>
-parse_tiles_pal_mode(const std::optional<std::string> &raw_value, const std::string &option_name)
+LayerValue<TilesPaletteMode>
+parse_tiles_palette_mode(const std::optional<std::string> &raw_value, const std::string &option_name)
 {
     if (!raw_value.has_value()) {
-        return LayerValue<TilesPalMode>::not_provided();
+        return LayerValue<TilesPaletteMode>::not_provided();
     }
 
     const auto &str = raw_value.value();
-    const auto result = tiles_pal_mode_from_str(str);
+    const auto result = tiles_palette_mode_from_str(str);
 
     if (result.has_value()) {
-        return LayerValue<TilesPalMode>::valid(result.value(), option_name, "CLI");
+        return LayerValue<TilesPaletteMode>::valid(result.value(), option_name, "CLI");
     }
 
     const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
-    return LayerValue<TilesPalMode>::invalid(error, option_name);
+    return LayerValue<TilesPaletteMode>::invalid(error, option_name);
 }
 
-/// @brief Parses an AnimPalResolutionStrategy from a CLI string option.
+/// @brief Parses an AnimPaletteResolutionStrategy from a CLI string option.
 ///
 /// @details
-/// Uses the unified anim_pal_resolution_strategy_from_str() which provides fuzzy matching.
+/// Uses the unified anim_palette_resolution_strategy_from_str() which provides fuzzy matching.
 /// Returns LayerValue::invalid() for unrecognized values.
 ///
 /// @param raw_value The raw string value from CLI, or std::nullopt if not provided
 /// @param option_name The CLI option name for error messages
 /// @return LayerValue with parsed value, invalid error, or not_provided status
-LayerValue<AnimPalResolutionStrategy>
-parse_anim_pal_resolution_strategy(const std::optional<std::string> &raw_value, const std::string &option_name)
+LayerValue<AnimPaletteResolutionStrategy>
+parse_anim_palette_resolution_strategy(const std::optional<std::string> &raw_value, const std::string &option_name)
 {
     if (!raw_value.has_value()) {
-        return LayerValue<AnimPalResolutionStrategy>::not_provided();
+        return LayerValue<AnimPaletteResolutionStrategy>::not_provided();
     }
 
     const auto &str = raw_value.value();
-    const auto result = anim_pal_resolution_strategy_from_str(str);
+    const auto result = anim_palette_resolution_strategy_from_str(str);
 
     if (result.has_value()) {
-        return LayerValue<AnimPalResolutionStrategy>::valid(result.value(), option_name, "CLI");
+        return LayerValue<AnimPaletteResolutionStrategy>::valid(result.value(), option_name, "CLI");
     }
 
     const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
-    return LayerValue<AnimPalResolutionStrategy>::invalid(error, option_name);
+    return LayerValue<AnimPaletteResolutionStrategy>::invalid(error, option_name);
 }
 
 /// @brief Parses an AnimKeyFrameResolutionStrategy from a CLI string option.
@@ -311,31 +311,31 @@ parse_anim_key_frame_resolution_strategy(const std::optional<std::string> &raw_v
     return LayerValue<AnimKeyFrameResolutionStrategy>::invalid(error, option_name);
 }
 
-/// @brief Parses an AnimMultiPalSubtileResolutionStrategy value from a CLI option string.
+/// @brief Parses an AnimMultiPaletteSubtileResolutionStrategy value from a CLI option string.
 ///
 /// @details
-/// Uses the unified anim_multi_pal_subtile_resolution_strategy_from_str() which provides fuzzy matching.
+/// Uses the unified anim_multi_palette_subtile_resolution_strategy_from_str() which provides fuzzy matching.
 /// Returns LayerValue::invalid() for unrecognized values.
 ///
 /// @param raw_value The raw string value from CLI, or std::nullopt if not provided
 /// @param option_name The CLI option name for error messages
 /// @return LayerValue with parsed value, invalid error, or not_provided status
-LayerValue<AnimMultiPalSubtileResolutionStrategy> parse_anim_multi_pal_subtile_resolution_strategy(
+LayerValue<AnimMultiPaletteSubtileResolutionStrategy> parse_anim_multi_palette_subtile_resolution_strategy(
     const std::optional<std::string> &raw_value, const std::string &option_name)
 {
     if (!raw_value.has_value()) {
-        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::not_provided();
+        return LayerValue<AnimMultiPaletteSubtileResolutionStrategy>::not_provided();
     }
 
     const auto &str = raw_value.value();
-    const auto result = anim_multi_pal_subtile_resolution_strategy_from_str(str);
+    const auto result = anim_multi_palette_subtile_resolution_strategy_from_str(str);
 
     if (result.has_value()) {
-        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::valid(result.value(), option_name, "CLI");
+        return LayerValue<AnimMultiPaletteSubtileResolutionStrategy>::valid(result.value(), option_name, "CLI");
     }
 
     const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
-    return LayerValue<AnimMultiPalSubtileResolutionStrategy>::invalid(error, option_name);
+    return LayerValue<AnimMultiPaletteSubtileResolutionStrategy>::invalid(error, option_name);
 }
 
 /// @brief Parses a FrameLinking value from a CLI option string.

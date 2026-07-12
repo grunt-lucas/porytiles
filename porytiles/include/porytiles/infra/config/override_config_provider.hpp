@@ -41,23 +41,23 @@ class OverrideConfigProvider final : public ConfigProvider {
     void set_num_tiles_total(std::size_t value);
     void set_num_metatiles_in_primary(std::size_t value);
     void set_num_metatiles_total(std::size_t value);
-    void set_num_pals_in_primary(std::size_t value);
-    void set_num_pals_total(std::size_t value);
+    void set_num_palettes_in_primary(std::size_t value);
+    void set_num_palettes_total(std::size_t value);
     void set_max_map_data_size(std::size_t value);
     void set_num_tiles_per_metatile(std::size_t value);
     void set_extrinsic_transparency(Rgba32 value);
     void set_tiles_edit_mode(ArtifactEditMode value);
-    void set_pals_edit_mode(ArtifactEditMode value);
-    void set_pal_hints_enabled(bool value);
-    void set_pal_hints(std::vector<PaletteHint> value);
+    void set_palettes_edit_mode(ArtifactEditMode value);
+    void set_palette_hints_enabled(bool value);
+    void set_palette_hints(std::vector<PaletteHint> value);
     void set_packing_strategy(PackingStrategyType value);
     void set_packing_strategy_params(PackingStrategyParams value);
     void set_tile_sharing_packing(TileSharingPacking value);
     void set_tile_sharing_alignment(TileSharingAlignment value);
-    void set_tiles_pal_mode(TilesPalMode value);
-    void set_global_anim_pal_resolution_strategy(AnimPalResolutionStrategy value);
+    void set_tiles_palette_mode(TilesPaletteMode value);
+    void set_global_anim_palette_resolution_strategy(AnimPaletteResolutionStrategy value);
     void set_global_anim_key_frame_resolution_strategy(AnimKeyFrameResolutionStrategy value);
-    void set_global_anim_multi_pal_subtile_resolution_strategy(AnimMultiPalSubtileResolutionStrategy value);
+    void set_global_anim_multi_palette_subtile_resolution_strategy(AnimMultiPaletteSubtileResolutionStrategy value);
     void set_global_frame_linking(FrameLinking value);
     void set_per_anim_overrides(PerAnimOverrides value);
     void set_cross_tileset_anim_linking(bool value);
@@ -89,8 +89,9 @@ class OverrideConfigProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<std::size_t>
     num_metatiles_total(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<std::size_t>
-    num_pals_in_primary(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<std::size_t> num_pals_total(ConfigScopeType type, const std::string &scope) const override;
+    num_palettes_in_primary(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::size_t>
+    num_palettes_total(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<std::size_t>
     max_map_data_size(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<std::size_t>
@@ -100,10 +101,10 @@ class OverrideConfigProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<ArtifactEditMode>
     tiles_edit_mode(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<ArtifactEditMode>
-    pals_edit_mode(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<bool> pal_hints_enabled(ConfigScopeType type, const std::string &scope) const override;
+    palettes_edit_mode(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<bool> palette_hints_enabled(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<std::vector<PaletteHint>>
-    pal_hints(ConfigScopeType type, const std::string &scope) const override;
+    palette_hints(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<PackingStrategyType>
     packing_strategy(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<PackingStrategyParams>
@@ -112,14 +113,15 @@ class OverrideConfigProvider final : public ConfigProvider {
     tile_sharing_packing(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<TileSharingAlignment>
     tile_sharing_alignment(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<TilesPalMode>
-    tiles_pal_mode(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<AnimPalResolutionStrategy>
-    global_anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<TilesPaletteMode>
+    tiles_palette_mode(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<AnimPaletteResolutionStrategy>
+    global_anim_palette_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<AnimKeyFrameResolutionStrategy>
     global_anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<AnimMultiPalSubtileResolutionStrategy>
-    global_anim_multi_pal_subtile_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<AnimMultiPaletteSubtileResolutionStrategy>
+    global_anim_multi_palette_subtile_resolution_strategy(
+        ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<FrameLinking>
     global_frame_linking(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<PerAnimOverrides>
@@ -173,23 +175,24 @@ class OverrideConfigProvider final : public ConfigProvider {
     std::optional<std::size_t> num_tiles_total_override_;
     std::optional<std::size_t> num_metatiles_in_primary_override_;
     std::optional<std::size_t> num_metatiles_total_override_;
-    std::optional<std::size_t> num_pals_in_primary_override_;
-    std::optional<std::size_t> num_pals_total_override_;
+    std::optional<std::size_t> num_palettes_in_primary_override_;
+    std::optional<std::size_t> num_palettes_total_override_;
     std::optional<std::size_t> max_map_data_size_override_;
     std::optional<std::size_t> num_tiles_per_metatile_override_;
     std::optional<Rgba32> extrinsic_transparency_override_;
     std::optional<ArtifactEditMode> tiles_edit_mode_override_;
-    std::optional<ArtifactEditMode> pals_edit_mode_override_;
-    std::optional<bool> pal_hints_enabled_override_;
-    std::optional<std::vector<PaletteHint>> pal_hints_override_;
+    std::optional<ArtifactEditMode> palettes_edit_mode_override_;
+    std::optional<bool> palette_hints_enabled_override_;
+    std::optional<std::vector<PaletteHint>> palette_hints_override_;
     std::optional<PackingStrategyType> packing_strategy_override_;
     std::optional<PackingStrategyParams> packing_strategy_params_override_;
     std::optional<TileSharingPacking> tile_sharing_packing_override_;
     std::optional<TileSharingAlignment> tile_sharing_alignment_override_;
-    std::optional<TilesPalMode> tiles_pal_mode_override_;
-    std::optional<AnimPalResolutionStrategy> global_anim_pal_resolution_strategy_override_;
+    std::optional<TilesPaletteMode> tiles_palette_mode_override_;
+    std::optional<AnimPaletteResolutionStrategy> global_anim_palette_resolution_strategy_override_;
     std::optional<AnimKeyFrameResolutionStrategy> global_anim_key_frame_resolution_strategy_override_;
-    std::optional<AnimMultiPalSubtileResolutionStrategy> global_anim_multi_pal_subtile_resolution_strategy_override_;
+    std::optional<AnimMultiPaletteSubtileResolutionStrategy>
+        global_anim_multi_palette_subtile_resolution_strategy_override_;
     std::optional<FrameLinking> global_frame_linking_override_;
     std::optional<PerAnimOverrides> per_anim_overrides_override_;
     std::optional<bool> cross_tileset_anim_linking_override_;

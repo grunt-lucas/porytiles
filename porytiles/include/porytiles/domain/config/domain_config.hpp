@@ -4,7 +4,7 @@
 #include <string>
 
 #include "porytiles/domain/config/anim_key_frame_resolution_strategy.hpp"
-#include "porytiles/domain/config/anim_pal_resolution_strategy.hpp"
+#include "porytiles/domain/config/anim_palette_resolution_strategy.hpp"
 #include "porytiles/domain/config/artifact_edit_mode.hpp"
 #include "porytiles/domain/config/domain_config_validators.hpp"
 #include "porytiles/domain/config/packing_strategy_params.hpp"
@@ -12,7 +12,7 @@
 #include "porytiles/domain/config/per_anim_overrides.hpp"
 #include "porytiles/domain/config/tile_sharing_alignment.hpp"
 #include "porytiles/domain/config/tile_sharing_packing.hpp"
-#include "porytiles/domain/config/tiles_pal_mode.hpp"
+#include "porytiles/domain/config/tiles_palette_mode.hpp"
 #include "porytiles/domain/models/rgba32.hpp"
 #include "porytiles/domain/packing/models/palette_hint.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
@@ -126,9 +126,9 @@ class DomainConfig {
 
     // Public method with cross-field validation only (Tier 3)
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_pals_in_primary(ConfigScopeType type, const std::string &scope) const
+    num_palettes_in_primary(ConfigScopeType type, const std::string &scope) const
     {
-        auto validated_val = num_pals_in_primary_validated(type, scope);
+        auto validated_val = num_palettes_in_primary_validated(type, scope);
         // Apply cross-field validators
         if (validated_val.has_value()) {
             validated_val = compare_less_equal<std::size_t>(
@@ -136,9 +136,9 @@ class DomainConfig {
                 *this,
                 type,
                 scope,
-                "num_pals_total",
+                "num_palettes_total",
                 [](const DomainConfig &cfg, ConfigScopeType t, const std::string &s) {
-                    return cfg.num_pals_total_validated(t, s);
+                    return cfg.num_palettes_total_validated(t, s);
                 });
         }
         return validated_val;
@@ -146,9 +146,9 @@ class DomainConfig {
 
     // Public method with cross-field validation only (Tier 3)
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_pals_total(ConfigScopeType type, const std::string &scope) const
+    num_palettes_total(ConfigScopeType type, const std::string &scope) const
     {
-        auto validated_val = num_pals_total_validated(type, scope);
+        auto validated_val = num_palettes_total_validated(type, scope);
         // Apply cross-field validators
         if (validated_val.has_value()) {
             validated_val = compare_greater_equal<std::size_t>(
@@ -156,9 +156,9 @@ class DomainConfig {
                 *this,
                 type,
                 scope,
-                "num_pals_in_primary",
+                "num_palettes_in_primary",
                 [](const DomainConfig &cfg, ConfigScopeType t, const std::string &s) {
-                    return cfg.num_pals_in_primary_validated(t, s);
+                    return cfg.num_palettes_in_primary_validated(t, s);
                 });
         }
         return validated_val;
@@ -198,25 +198,25 @@ class DomainConfig {
 
     // Public method with cross-field validation only (Tier 3)
     [[nodiscard]] ChainableResult<ConfigValue<ArtifactEditMode>>
-    pals_edit_mode(ConfigScopeType type, const std::string &scope) const
+    palettes_edit_mode(ConfigScopeType type, const std::string &scope) const
     {
-        auto validated_val = pals_edit_mode_validated(type, scope);
+        auto validated_val = palettes_edit_mode_validated(type, scope);
         return validated_val;
     }
 
     // Public method with cross-field validation only (Tier 3)
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
-    pal_hints_enabled(ConfigScopeType type, const std::string &scope) const
+    palette_hints_enabled(ConfigScopeType type, const std::string &scope) const
     {
-        auto validated_val = pal_hints_enabled_validated(type, scope);
+        auto validated_val = palette_hints_enabled_validated(type, scope);
         return validated_val;
     }
 
     // Public method with cross-field validation only (Tier 3)
     [[nodiscard]] ChainableResult<ConfigValue<std::vector<PaletteHint>>>
-    pal_hints(ConfigScopeType type, const std::string &scope) const
+    palette_hints(ConfigScopeType type, const std::string &scope) const
     {
-        auto validated_val = pal_hints_validated(type, scope);
+        auto validated_val = palette_hints_validated(type, scope);
         return validated_val;
     }
 
@@ -265,18 +265,18 @@ class DomainConfig {
     }
 
     // Public method with cross-field validation only (Tier 3)
-    [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>>
-    tiles_pal_mode(ConfigScopeType type, const std::string &scope) const
+    [[nodiscard]] ChainableResult<ConfigValue<TilesPaletteMode>>
+    tiles_palette_mode(ConfigScopeType type, const std::string &scope) const
     {
-        auto validated_val = tiles_pal_mode_validated(type, scope);
+        auto validated_val = tiles_palette_mode_validated(type, scope);
         return validated_val;
     }
 
     // Public method with cross-field validation only (Tier 3)
-    [[nodiscard]] ChainableResult<ConfigValue<AnimPalResolutionStrategy>>
-    global_anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const
+    [[nodiscard]] ChainableResult<ConfigValue<AnimPaletteResolutionStrategy>>
+    global_anim_palette_resolution_strategy(ConfigScopeType type, const std::string &scope) const
     {
-        auto validated_val = global_anim_pal_resolution_strategy_validated(type, scope);
+        auto validated_val = global_anim_palette_resolution_strategy_validated(type, scope);
         return validated_val;
     }
 
@@ -289,10 +289,10 @@ class DomainConfig {
     }
 
     // Public method with cross-field validation only (Tier 3)
-    [[nodiscard]] ChainableResult<ConfigValue<AnimMultiPalSubtileResolutionStrategy>>
-    global_anim_multi_pal_subtile_resolution_strategy(ConfigScopeType type, const std::string &scope) const
+    [[nodiscard]] ChainableResult<ConfigValue<AnimMultiPaletteSubtileResolutionStrategy>>
+    global_anim_multi_palette_subtile_resolution_strategy(ConfigScopeType type, const std::string &scope) const
     {
-        auto validated_val = global_anim_multi_pal_subtile_resolution_strategy_validated(type, scope);
+        auto validated_val = global_anim_multi_palette_subtile_resolution_strategy_validated(type, scope);
         return validated_val;
     }
 
@@ -387,9 +387,9 @@ class DomainConfig {
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
-    num_pals_in_primary_validated(ConfigScopeType type, const std::string &scope) const
+    num_palettes_in_primary_validated(ConfigScopeType type, const std::string &scope) const
     {
-        auto raw_val = num_pals_in_primary_raw(type, scope);
+        auto raw_val = num_palettes_in_primary_raw(type, scope);
         // Apply validators in sequence
         if (raw_val.has_value()) {
             raw_val = size_t_val_greater_than_zero(raw_val.value());
@@ -399,13 +399,13 @@ class DomainConfig {
 
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
-    num_pals_in_primary_raw(ConfigScopeType type, const std::string &scope) const = 0;
+    num_palettes_in_primary_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
-    num_pals_total_validated(ConfigScopeType type, const std::string &scope) const
+    num_palettes_total_validated(ConfigScopeType type, const std::string &scope) const
     {
-        auto raw_val = num_pals_total_raw(type, scope);
+        auto raw_val = num_palettes_total_raw(type, scope);
         // Apply validators in sequence
         if (raw_val.has_value()) {
             raw_val = size_t_val_greater_than_zero(raw_val.value());
@@ -415,7 +415,7 @@ class DomainConfig {
 
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
-    num_pals_total_raw(ConfigScopeType type, const std::string &scope) const = 0;
+    num_palettes_total_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
@@ -479,39 +479,39 @@ class DomainConfig {
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<ArtifactEditMode>>
-    pals_edit_mode_validated(ConfigScopeType type, const std::string &scope) const
+    palettes_edit_mode_validated(ConfigScopeType type, const std::string &scope) const
     {
-        auto raw_val = pals_edit_mode_raw(type, scope);
+        auto raw_val = palettes_edit_mode_raw(type, scope);
         return raw_val;
     }
 
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<ArtifactEditMode>>
-    pals_edit_mode_raw(ConfigScopeType type, const std::string &scope) const = 0;
+    palettes_edit_mode_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
-    pal_hints_enabled_validated(ConfigScopeType type, const std::string &scope) const
+    palette_hints_enabled_validated(ConfigScopeType type, const std::string &scope) const
     {
-        auto raw_val = pal_hints_enabled_raw(type, scope);
+        auto raw_val = palette_hints_enabled_raw(type, scope);
         return raw_val;
     }
 
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
-    pal_hints_enabled_raw(ConfigScopeType type, const std::string &scope) const = 0;
+    palette_hints_enabled_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::vector<PaletteHint>>>
-    pal_hints_validated(ConfigScopeType type, const std::string &scope) const
+    palette_hints_validated(ConfigScopeType type, const std::string &scope) const
     {
-        auto raw_val = pal_hints_raw(type, scope);
+        auto raw_val = palette_hints_raw(type, scope);
         return raw_val;
     }
 
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::vector<PaletteHint>>>
-    pal_hints_raw(ConfigScopeType type, const std::string &scope) const = 0;
+    palette_hints_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<PackingStrategyType>>
@@ -562,28 +562,28 @@ class DomainConfig {
     tile_sharing_alignment_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
-    [[nodiscard]] virtual ChainableResult<ConfigValue<TilesPalMode>>
-    tiles_pal_mode_validated(ConfigScopeType type, const std::string &scope) const
+    [[nodiscard]] virtual ChainableResult<ConfigValue<TilesPaletteMode>>
+    tiles_palette_mode_validated(ConfigScopeType type, const std::string &scope) const
     {
-        auto raw_val = tiles_pal_mode_raw(type, scope);
+        auto raw_val = tiles_palette_mode_raw(type, scope);
         return raw_val;
     }
 
     // Protected virtual method that fetches raw value from provider (Tier 1)
-    [[nodiscard]] virtual ChainableResult<ConfigValue<TilesPalMode>>
-    tiles_pal_mode_raw(ConfigScopeType type, const std::string &scope) const = 0;
+    [[nodiscard]] virtual ChainableResult<ConfigValue<TilesPaletteMode>>
+    tiles_palette_mode_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
-    [[nodiscard]] virtual ChainableResult<ConfigValue<AnimPalResolutionStrategy>>
-    global_anim_pal_resolution_strategy_validated(ConfigScopeType type, const std::string &scope) const
+    [[nodiscard]] virtual ChainableResult<ConfigValue<AnimPaletteResolutionStrategy>>
+    global_anim_palette_resolution_strategy_validated(ConfigScopeType type, const std::string &scope) const
     {
-        auto raw_val = global_anim_pal_resolution_strategy_raw(type, scope);
+        auto raw_val = global_anim_palette_resolution_strategy_raw(type, scope);
         return raw_val;
     }
 
     // Protected virtual method that fetches raw value from provider (Tier 1)
-    [[nodiscard]] virtual ChainableResult<ConfigValue<AnimPalResolutionStrategy>>
-    global_anim_pal_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const = 0;
+    [[nodiscard]] virtual ChainableResult<ConfigValue<AnimPaletteResolutionStrategy>>
+    global_anim_palette_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<AnimKeyFrameResolutionStrategy>>
@@ -598,16 +598,17 @@ class DomainConfig {
     global_anim_key_frame_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
-    [[nodiscard]] virtual ChainableResult<ConfigValue<AnimMultiPalSubtileResolutionStrategy>>
-    global_anim_multi_pal_subtile_resolution_strategy_validated(ConfigScopeType type, const std::string &scope) const
+    [[nodiscard]] virtual ChainableResult<ConfigValue<AnimMultiPaletteSubtileResolutionStrategy>>
+    global_anim_multi_palette_subtile_resolution_strategy_validated(
+        ConfigScopeType type, const std::string &scope) const
     {
-        auto raw_val = global_anim_multi_pal_subtile_resolution_strategy_raw(type, scope);
+        auto raw_val = global_anim_multi_palette_subtile_resolution_strategy_raw(type, scope);
         return raw_val;
     }
 
     // Protected virtual method that fetches raw value from provider (Tier 1)
-    [[nodiscard]] virtual ChainableResult<ConfigValue<AnimMultiPalSubtileResolutionStrategy>>
-    global_anim_multi_pal_subtile_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const = 0;
+    [[nodiscard]] virtual ChainableResult<ConfigValue<AnimMultiPaletteSubtileResolutionStrategy>>
+    global_anim_multi_palette_subtile_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<FrameLinking>>

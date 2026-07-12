@@ -86,10 +86,10 @@ class PackableTile {
     ///
     /// @details
     /// Primary tiles participate in shape group analysis for cross-tileset tile sharing but are never packed by the
-    /// packer. Their palette assignment is fixed and embedded in @c pal_index.
+    /// packer. Their palette assignment is fixed and embedded in @c palette_index.
     struct PrimaryTileId {
         std::size_t tile_index;
-        std::size_t pal_index;
+        std::size_t palette_index;
         [[nodiscard]] auto operator<=>(const PrimaryTileId &) const = default;
         [[nodiscard]] bool operator==(const PrimaryTileId &) const = default;
     };
@@ -221,8 +221,8 @@ inline std::string to_string(const PackableTile::Id &id)
                 return "Anim(" + value.name + ", " + std::to_string(value.subtile_index) + ")";
             }
             else if constexpr (std::is_same_v<T, PackableTile::PrimaryTileId>) {
-                return "Primary(tile=" + std::to_string(value.tile_index) + ", pal=" + std::to_string(value.pal_index) +
-                       ")";
+                return "Primary(tile=" + std::to_string(value.tile_index) +
+                       ", palette=" + std::to_string(value.palette_index) + ")";
             }
             else {
                 static_assert(sizeof(T) == 0, "Unhandled PackableTile::Id variant alternative");
@@ -276,7 +276,7 @@ struct std::hash<porytiles::PackableTile::PrimaryTileId> {
     std::size_t operator()(const porytiles::PackableTile::PrimaryTileId &id) const noexcept
     {
         std::size_t seed = std::hash<std::size_t>{}(id.tile_index);
-        seed ^= std::hash<std::size_t>{}(id.pal_index) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
+        seed ^= std::hash<std::size_t>{}(id.palette_index) + 0x9e3779b9 + (seed << 6) + (seed >> 2);
         return seed;
     }
 };

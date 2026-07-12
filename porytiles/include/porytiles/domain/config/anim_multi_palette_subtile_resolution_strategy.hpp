@@ -25,7 +25,7 @@ namespace porytiles {
 /// cannot represent multiple palette variants in a single RGBA layer PNG. This enum determines
 /// how to handle such cases.
 ///
-enum class AnimMultiPalSubtileResolutionStrategy {
+enum class AnimMultiPaletteSubtileResolutionStrategy {
     /// @brief Emit a formatted error and fail decompilation.
     error,
     /// @brief Emit a warning and continue decompilation using the lowest palette index.
@@ -34,7 +34,7 @@ enum class AnimMultiPalSubtileResolutionStrategy {
     split
 };
 
-/// @brief Parses a string into a AnimMultiPalSubtileResolutionStrategy with fuzzy matching.
+/// @brief Parses a string into a AnimMultiPaletteSubtileResolutionStrategy with fuzzy matching.
 ///
 /// @details
 /// Performs parsing in two phases:
@@ -47,18 +47,18 @@ enum class AnimMultiPalSubtileResolutionStrategy {
 ///
 /// @param str The string to parse
 /// @return The parsed value, or std::nullopt if the string is invalid
-[[nodiscard]] inline std::optional<AnimMultiPalSubtileResolutionStrategy>
-anim_multi_pal_subtile_resolution_strategy_from_str(const std::string &str)
+[[nodiscard]] inline std::optional<AnimMultiPaletteSubtileResolutionStrategy>
+anim_multi_palette_subtile_resolution_strategy_from_str(const std::string &str)
 {
     // Phase 1: Exact match against C++ constant names
     if (str == "error") {
-        return std::optional{AnimMultiPalSubtileResolutionStrategy::error};
+        return std::optional{AnimMultiPaletteSubtileResolutionStrategy::error};
     }
     if (str == "warning") {
-        return std::optional{AnimMultiPalSubtileResolutionStrategy::warning};
+        return std::optional{AnimMultiPaletteSubtileResolutionStrategy::warning};
     }
     if (str == "split") {
-        return std::optional{AnimMultiPalSubtileResolutionStrategy::split};
+        return std::optional{AnimMultiPaletteSubtileResolutionStrategy::split};
     }
 
     // Phase 2: Case-insensitive fuzzy match
@@ -68,27 +68,27 @@ anim_multi_pal_subtile_resolution_strategy_from_str(const std::string &str)
 
     // Fuzzy names for error
     if (lower_str == "error") {
-        return std::optional{AnimMultiPalSubtileResolutionStrategy::error};
+        return std::optional{AnimMultiPaletteSubtileResolutionStrategy::error};
     }
     if (lower_str == "err") {
-        return std::optional{AnimMultiPalSubtileResolutionStrategy::error};
+        return std::optional{AnimMultiPaletteSubtileResolutionStrategy::error};
     }
     // Fuzzy names for warning
     if (lower_str == "warning") {
-        return std::optional{AnimMultiPalSubtileResolutionStrategy::warning};
+        return std::optional{AnimMultiPaletteSubtileResolutionStrategy::warning};
     }
     if (lower_str == "warn") {
-        return std::optional{AnimMultiPalSubtileResolutionStrategy::warning};
+        return std::optional{AnimMultiPaletteSubtileResolutionStrategy::warning};
     }
     // Fuzzy names for split
     if (lower_str == "split") {
-        return std::optional{AnimMultiPalSubtileResolutionStrategy::split};
+        return std::optional{AnimMultiPaletteSubtileResolutionStrategy::split};
     }
 
     return std::nullopt;
 }
 
-/// @brief Converts a AnimMultiPalSubtileResolutionStrategy to its canonical string representation.
+/// @brief Converts a AnimMultiPaletteSubtileResolutionStrategy to its canonical string representation.
 ///
 /// @details
 /// Returns the C++ constant name (snake_case). This is the canonical form used for
@@ -96,25 +96,25 @@ anim_multi_pal_subtile_resolution_strategy_from_str(const std::string &str)
 ///
 /// @param m The value to convert
 /// @return The canonical snake_case string representation
-[[nodiscard]] inline std::string to_string(const AnimMultiPalSubtileResolutionStrategy m)
+[[nodiscard]] inline std::string to_string(const AnimMultiPaletteSubtileResolutionStrategy m)
 {
     switch (m) {
-    case AnimMultiPalSubtileResolutionStrategy::error:
+    case AnimMultiPaletteSubtileResolutionStrategy::error:
         return "error";
-    case AnimMultiPalSubtileResolutionStrategy::warning:
+    case AnimMultiPaletteSubtileResolutionStrategy::warning:
         return "warning";
-    case AnimMultiPalSubtileResolutionStrategy::split:
+    case AnimMultiPaletteSubtileResolutionStrategy::split:
         return "split";
     }
-    panic("unhandled AnimMultiPalSubtileResolutionStrategy value");
+    panic("unhandled AnimMultiPaletteSubtileResolutionStrategy value");
 }
 
-/// @brief Stream insertion operator for AnimMultiPalSubtileResolutionStrategy.
+/// @brief Stream insertion operator for AnimMultiPaletteSubtileResolutionStrategy.
 ///
 /// @param os The output stream
 /// @param m The value to output
 /// @return Reference to the output stream
-inline std::ostream &operator<<(std::ostream &os, const AnimMultiPalSubtileResolutionStrategy m)
+inline std::ostream &operator<<(std::ostream &os, const AnimMultiPaletteSubtileResolutionStrategy m)
 {
     return os << to_string(m);
 }
@@ -122,13 +122,13 @@ inline std::ostream &operator<<(std::ostream &os, const AnimMultiPalSubtileResol
 } // namespace porytiles
 
 template <>
-struct std::formatter<porytiles::AnimMultiPalSubtileResolutionStrategy> {
+struct std::formatter<porytiles::AnimMultiPaletteSubtileResolutionStrategy> {
     constexpr auto parse(std::format_parse_context &ctx)
     {
         return ctx.begin();
     }
 
-    auto format(const porytiles::AnimMultiPalSubtileResolutionStrategy &value, auto &ctx) const
+    auto format(const porytiles::AnimMultiPaletteSubtileResolutionStrategy &value, auto &ctx) const
     {
         return std::format_to(ctx.out(), "{}", porytiles::to_string(value));
     }

@@ -44,18 +44,18 @@ LayerValue<std::size_t> CliOptionProvider::num_metatiles_total(
     return parse_size_t(storage_.num_metatiles_total, "--num-metatiles-total");
 }
 
-LayerValue<std::size_t> CliOptionProvider::num_pals_in_primary(
+LayerValue<std::size_t> CliOptionProvider::num_palettes_in_primary(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
-    return parse_size_t(storage_.num_pals_in_primary, "--num-pals-in-primary");
+    return parse_size_t(storage_.num_palettes_in_primary, "--num-pals-in-primary");
 }
 
-LayerValue<std::size_t> CliOptionProvider::num_pals_total(
+LayerValue<std::size_t> CliOptionProvider::num_palettes_total(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
-    return parse_size_t(storage_.num_pals_total, "--num-pals-total");
+    return parse_size_t(storage_.num_palettes_total, "--num-pals-total");
 }
 
 LayerValue<std::size_t> CliOptionProvider::max_map_data_size(
@@ -86,18 +86,18 @@ LayerValue<ArtifactEditMode> CliOptionProvider::tiles_edit_mode(
     return parse_artifact_edit_mode(storage_.tiles_edit_mode, "--tiles-edit-mode");
 }
 
-LayerValue<ArtifactEditMode> CliOptionProvider::pals_edit_mode(
+LayerValue<ArtifactEditMode> CliOptionProvider::palettes_edit_mode(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
-    return parse_artifact_edit_mode(storage_.pals_edit_mode, "--pals-edit-mode");
+    return parse_artifact_edit_mode(storage_.palettes_edit_mode, "--pals-edit-mode");
 }
 
-LayerValue<bool> CliOptionProvider::pal_hints_enabled(
+LayerValue<bool> CliOptionProvider::palette_hints_enabled(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
-    return parse_bool(storage_.pal_hints_enabled, "--pal-hints-enabled");
+    return parse_bool(storage_.palette_hints_enabled, "--pal-hints-enabled");
 }
 
 LayerValue<PackingStrategyType> CliOptionProvider::packing_strategy(
@@ -121,19 +121,19 @@ LayerValue<TileSharingAlignment> CliOptionProvider::tile_sharing_alignment(
     return parse_tile_sharing_alignment(storage_.tile_sharing_alignment, "--tile-sharing-alignment");
 }
 
-LayerValue<TilesPalMode> CliOptionProvider::tiles_pal_mode(
+LayerValue<TilesPaletteMode> CliOptionProvider::tiles_palette_mode(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
-    return parse_tiles_pal_mode(storage_.tiles_pal_mode, "--tiles-pal-mode");
+    return parse_tiles_palette_mode(storage_.tiles_palette_mode, "--tiles-pal-mode");
 }
 
-LayerValue<AnimPalResolutionStrategy> CliOptionProvider::global_anim_pal_resolution_strategy(
+LayerValue<AnimPaletteResolutionStrategy> CliOptionProvider::global_anim_palette_resolution_strategy(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
-    return parse_anim_pal_resolution_strategy(
-        storage_.global_anim_pal_resolution_strategy, "--anim-pal-resolution-strategy");
+    return parse_anim_palette_resolution_strategy(
+        storage_.global_anim_palette_resolution_strategy, "--anim-pal-resolution-strategy");
 }
 
 LayerValue<AnimKeyFrameResolutionStrategy> CliOptionProvider::global_anim_key_frame_resolution_strategy(
@@ -144,12 +144,13 @@ LayerValue<AnimKeyFrameResolutionStrategy> CliOptionProvider::global_anim_key_fr
         storage_.global_anim_key_frame_resolution_strategy, "--anim-key-frame-resolution-strategy");
 }
 
-LayerValue<AnimMultiPalSubtileResolutionStrategy> CliOptionProvider::global_anim_multi_pal_subtile_resolution_strategy(
+LayerValue<AnimMultiPaletteSubtileResolutionStrategy>
+CliOptionProvider::global_anim_multi_palette_subtile_resolution_strategy(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
-    return parse_anim_multi_pal_subtile_resolution_strategy(
-        storage_.global_anim_multi_pal_subtile_resolution_strategy, "--anim-multi-pal-subtile-resolution-strategy");
+    return parse_anim_multi_palette_subtile_resolution_strategy(
+        storage_.global_anim_multi_palette_subtile_resolution_strategy, "--anim-multi-pal-subtile-resolution-strategy");
 }
 
 LayerValue<FrameLinking> CliOptionProvider::global_frame_linking(

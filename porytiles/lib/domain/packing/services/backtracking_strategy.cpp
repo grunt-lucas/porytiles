@@ -117,34 +117,34 @@ struct BfsStateHash {
     });
 
     // Initialize palettes from prefilled + available pool slots
-    PalettePool pool = input.pal_pool_;
-    auto prefilled_pals = initialize_packed_palettes(input.prefilled_pals_, pool, input.pal_capacity_);
+    PalettePool pool = input.palette_pool_;
+    auto prefilled_palettes = initialize_packed_palettes(input.prefilled_palettes_, pool, input.palette_capacity_);
 
     // Build palette arrays: first prefilled, then empty slots from pool
-    for (const auto &pal : prefilled_pals) {
-        ctx.initial_palette_colors.push_back(pal.color_set());
-        ctx.palette_capacities.push_back(input.pal_capacity_);
-        ctx.hardware_indices.push_back(pal.hardware_index());
+    for (const auto &palette : prefilled_palettes) {
+        ctx.initial_palette_colors.push_back(palette.color_set());
+        ctx.palette_capacities.push_back(input.palette_capacity_);
+        ctx.hardware_indices.push_back(palette.hardware_index());
     }
 
     // Compute effective capacities for prefilled palettes
-    for (std::size_t i = 0; i < prefilled_pals.size(); ++i) {
+    for (std::size_t i = 0; i < prefilled_palettes.size(); ++i) {
         // Account for wasted slots from duplicate colors in prefilled palettes
-        for (const auto &prefilled_pal : input.prefilled_pals_) {
-            if (prefilled_pal.hardware_index() == ctx.hardware_indices[i]) {
-                const std::size_t unique_colors = color_set_count(prefilled_pal.fixed_colors());
-                const std::size_t occupied = prefilled_pal.occupied_slots();
+        for (const auto &prefilled_palette : input.prefilled_palettes_) {
+            if (prefilled_palette.hardware_index() == ctx.hardware_indices[i]) {
+                const std::size_t unique_colors = color_set_count(prefilled_palette.fixed_colors());
+                const std::size_t occupied = prefilled_palette.occupied_slots();
                 const std::size_t wasted = occupied - unique_colors;
-                ctx.palette_capacities[i] = input.pal_capacity_ - wasted;
+                ctx.palette_capacities[i] = input.palette_capacity_ - wasted;
                 break;
             }
         }
     }
 
-    while (pool.has_available_pal()) {
+    while (pool.has_available_palette()) {
         std::size_t hw_idx = pool.checkout();
         ctx.initial_palette_colors.emplace_back();
-        ctx.palette_capacities.push_back(input.pal_capacity_);
+        ctx.palette_capacities.push_back(input.palette_capacity_);
         ctx.hardware_indices.push_back(hw_idx);
     }
 
@@ -233,7 +233,7 @@ AssignResult assign_depth_first(
 
     // Build candidate list: (palette_index, intersection_size, color_set_count, has_sibling)
     struct Candidate {
-        std::size_t pal_index;
+        std::size_t palette_index;
         std::size_t isect_size;
         std::size_t cs_count;
         bool has_sibling;
@@ -294,8 +294,8 @@ AssignResult assign_depth_first(
 
     for (const auto &cand : candidates) {
         // Save/restore single palette (Porytiles1 copied the entire vector per branch)
-        ColorSet saved = palette_colors[cand.pal_index];
-        palette_colors[cand.pal_index] = color_set_union(palette_colors[cand.pal_index], tile_colors);
+        ColorSet saved = palette_colors[cand.palette_index];
+        palette_colors[cand.palette_index] = color_set_union(palette_colors[cand.palette_index], tile_colors);
 
         auto result = assign_depth_first(palette_colors, ctx, params, next_tile_index + 1, explored_nodes);
         if (result != AssignResult::no_solution) {
@@ -303,7 +303,7 @@ AssignResult assign_depth_first(
         }
 
         // Restore state (backtrack)
-        palette_colors[cand.pal_index] = saved;
+        palette_colors[cand.palette_index] = saved;
     }
 
     return AssignResult::no_solution;
@@ -381,7 +381,7 @@ AssignResult assign_breadth_first(
 
         // Build candidates
         struct Candidate {
-            std::size_t pal_index;
+            std::size_t palette_index;
             std::size_t isect_size;
             std::size_t cs_count;
             bool has_sibling;
@@ -445,8 +445,8 @@ AssignResult assign_breadth_first(
         for (const auto &cand : candidates) {
             BfsState next_state;
             next_state.palette_colors = current.palette_colors;
-            next_state.palette_colors[cand.pal_index] =
-                color_set_union(next_state.palette_colors[cand.pal_index], tile_colors);
+            next_state.palette_colors[cand.palette_index] =
+                color_set_union(next_state.palette_colors[cand.palette_index], tile_colors);
             next_state.next_tile_index = tile_idx + 1;
 
             if (cand.isect_size > 0) {
@@ -475,20 +475,20 @@ build_packing_output(const std::vector<ColorSet> &solution_colors, const SearchC
 
     // Create PackedPalettes
     for (std::size_t i = 0; i < ctx.hardware_indices.size(); ++i) {
-        PackedPalette pal{ctx.hardware_indices[i], ctx.palette_capacities[i]};
+        PackedPalette palette{ctx.hardware_indices[i], ctx.palette_capacities[i]};
 
         // Add system tile for prefilled palettes
-        for (const auto &prefilled : input.prefilled_pals_) {
+        for (const auto &prefilled : input.prefilled_palettes_) {
             if (prefilled.hardware_index() == ctx.hardware_indices[i] &&
                 color_set_count(prefilled.fixed_colors()) > 0) {
                 PackableTile system_tile{
                     PackableTile::PrefilledPaletteId{prefilled.hardware_index()}, prefilled.fixed_colors()};
-                pal.add_tile(system_tile);
+                palette.add_tile(system_tile);
                 break;
             }
         }
 
-        output.pals_.push_back(std::move(pal));
+        output.palettes_.push_back(std::move(palette));
     }
 
     // Assign each tile to the first palette whose solution colors are a superset
@@ -500,8 +500,8 @@ build_packing_output(const std::vector<ColorSet> &solution_colors, const SearchC
 
         for (std::size_t i = 0; i < solution_colors.size(); ++i) {
             if (is_subset(tile.color_set(), solution_colors[i])) {
-                output.pals_[i].add_tile(tile);
-                output.tile_to_pal_[tile.id()] = ctx.hardware_indices[i];
+                output.palettes_[i].add_tile(tile);
+                output.tile_to_palette_[tile.id()] = ctx.hardware_indices[i];
                 break;
             }
         }
@@ -514,19 +514,19 @@ build_packing_output(const std::vector<ColorSet> &solution_colors, const SearchC
 {
     PackingOutput output;
     for (std::size_t i = 0; i < ctx.hardware_indices.size(); ++i) {
-        PackedPalette pal{ctx.hardware_indices[i], ctx.palette_capacities[i]};
+        PackedPalette palette{ctx.hardware_indices[i], ctx.palette_capacities[i]};
 
-        for (const auto &prefilled : input.prefilled_pals_) {
+        for (const auto &prefilled : input.prefilled_palettes_) {
             if (prefilled.hardware_index() == ctx.hardware_indices[i] &&
                 color_set_count(prefilled.fixed_colors()) > 0) {
                 PackableTile system_tile{
                     PackableTile::PrefilledPaletteId{prefilled.hardware_index()}, prefilled.fixed_colors()};
-                pal.add_tile(system_tile);
+                palette.add_tile(system_tile);
                 break;
             }
         }
 
-        output.pals_.push_back(std::move(pal));
+        output.palettes_.push_back(std::move(palette));
     }
     return output;
 }

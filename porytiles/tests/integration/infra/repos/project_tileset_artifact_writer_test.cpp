@@ -23,7 +23,7 @@
 #include "porytiles/infra/repos/project_tileset_artifact_writer.hpp"
 #include "porytiles/infra/services/anim_code_generator.hpp"
 #include "porytiles/infra/services/anim_json_parser.hpp"
-#include "porytiles/infra/services/file_pal_saver.hpp"
+#include "porytiles/infra/services/file_palette_saver.hpp"
 #include "porytiles/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles/utilities/text/plain_text_formatter.hpp"
@@ -49,8 +49,8 @@ class MockPngRgbaImageSaver : public PngRgbaImageSaver {
 
 class MockPngIndexedImageSaver : public PngIndexedImageSaver {
   public:
-    [[nodiscard]] ChainableResult<void>
-    save_to_file(const Image<IndexPixel> &image, const std::filesystem::path &path, TilesPalMode mode) const override
+    [[nodiscard]] ChainableResult<void> save_to_file(
+        const Image<IndexPixel> &image, const std::filesystem::path &path, TilesPaletteMode mode) const override
     {
         std::ofstream out{path};
         out << "mock_indexed_image";
@@ -58,10 +58,10 @@ class MockPngIndexedImageSaver : public PngIndexedImageSaver {
     }
 };
 
-class MockFilePalSaver : public FilePalSaver {
+class MockFilePaletteSaver : public FilePaletteSaver {
   public:
     [[nodiscard]] ChainableResult<void>
-    save(const Palette<Rgba32, pal::max_size> &pal, const std::filesystem::path &path) const override
+    save(const Palette<Rgba32, palette::max_size> &palette, const std::filesystem::path &path) const override
     {
         std::ofstream out{path};
         out << "mock_palette";
@@ -200,7 +200,7 @@ Tileset create_test_tileset(const std::string &name)
     }
 
     for (int i = 0; i < 16; i++) {
-        porymap_component->set_pal(i, Palette<Rgba32, pal::max_size>{Rgba32{0, 0, 0, Rgba32::alpha_opaque}});
+        porymap_component->set_palette(i, Palette<Rgba32, palette::max_size>{Rgba32{0, 0, 0, Rgba32::alpha_opaque}});
     }
 
     for (int i = 0; i < 8; i++) {
@@ -271,7 +271,7 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
         infra_config_ = std::make_unique<MockInfraConfig>();
         png_rgba_saver_ = std::make_unique<MockPngRgbaImageSaver>();
         png_indexed_saver_ = std::make_unique<MockPngIndexedImageSaver>();
-        pal_saver_ = std::make_unique<MockFilePalSaver>();
+        palette_saver_ = std::make_unique<MockFilePaletteSaver>();
         anim_json_parser_ = std::make_unique<AnimJsonParser>(formatter_.get());
         anim_code_generator_ = std::make_unique<AnimCodeGenerator>();
 
@@ -288,7 +288,7 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
             diag_.get(),
             png_rgba_saver_.get(),
             png_indexed_saver_.get(),
-            pal_saver_.get(),
+            palette_saver_.get(),
             anim_json_parser_.get(),
             anim_code_generator_.get());
     }
@@ -334,7 +334,7 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
     std::unique_ptr<MockInfraConfig> infra_config_;
     std::unique_ptr<MockPngRgbaImageSaver> png_rgba_saver_;
     std::unique_ptr<MockPngIndexedImageSaver> png_indexed_saver_;
-    std::unique_ptr<MockFilePalSaver> pal_saver_;
+    std::unique_ptr<MockFilePaletteSaver> palette_saver_;
     std::unique_ptr<AnimJsonParser> anim_json_parser_;
     std::unique_ptr<AnimCodeGenerator> anim_code_generator_;
     Schema schema_ = make_emerald_schema();
@@ -578,7 +578,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, WriteMetatileAttributesBinFollowsSchem
             diag_.get(),
             png_rgba_saver_.get(),
             png_indexed_saver_.get(),
-            pal_saver_.get(),
+            palette_saver_.get(),
             anim_json_parser_.get(),
             anim_code_generator_.get()};
     };
@@ -631,7 +631,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, WritePalette)
 
     auto expected_file = test_root_ / "palette_0.pal";
     ArtifactKey key{"palette_0.pal"};
-    auto write_result = writer_->write_porymap_pal_n(key, tileset, 0);
+    auto write_result = writer_->write_porymap_palette_n(key, tileset, 0);
     ASSERT_TRUE(write_result.has_value());
 
     auto commit_result = writer_->commit();
@@ -807,7 +807,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, ProviderBackedFieldMissingFromProvider
         diag_.get(),
         png_rgba_saver_.get(),
         png_indexed_saver_.get(),
-        pal_saver_.get(),
+        palette_saver_.get(),
         anim_json_parser_.get(),
         anim_code_generator_.get()};
 
@@ -835,7 +835,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvMultiFieldSchemaRendersPr
         diag_.get(),
         png_rgba_saver_.get(),
         png_indexed_saver_.get(),
-        pal_saver_.get(),
+        palette_saver_.get(),
         anim_json_parser_.get(),
         anim_code_generator_.get()};
 
@@ -895,7 +895,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvNonzeroDefaultRendersDefa
         diag_.get(),
         png_rgba_saver_.get(),
         png_indexed_saver_.get(),
-        pal_saver_.get(),
+        palette_saver_.get(),
         anim_json_parser_.get(),
         anim_code_generator_.get()};
 

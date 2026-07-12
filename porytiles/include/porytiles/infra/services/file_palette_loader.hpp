@@ -11,16 +11,16 @@ namespace porytiles {
 /// @brief A service interface that loads a fixed-length Palette from a given file.
 ///
 /// @details
-/// The FilePalLoader interface is file-format-agnostic. Different implementations can load from various pal file
-/// formats (e.g., JASC, .gbapal, etc.).
-class FilePalLoader {
+/// The FilePaletteLoader interface is file-format-agnostic. Different implementations can load from various palette
+/// file formats (e.g., JASC, .gbapal, etc.).
+class FilePaletteLoader {
   public:
-    virtual ~FilePalLoader() = default;
+    virtual ~FilePaletteLoader() = default;
 
-    [[nodiscard]] virtual ChainableResult<Palette<Rgba32, pal::max_size>>
+    [[nodiscard]] virtual ChainableResult<Palette<Rgba32, palette::max_size>>
     load(const std::filesystem::path &path) const = 0;
 
-    [[nodiscard]] virtual ChainableResult<Palette<Rgba32, pal::max_size>>
+    [[nodiscard]] virtual ChainableResult<Palette<Rgba32, palette::max_size>>
     load_with_wildcards(const std::filesystem::path &path) const = 0;
 };
 

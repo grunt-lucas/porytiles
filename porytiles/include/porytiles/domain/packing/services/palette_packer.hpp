@@ -42,24 +42,25 @@ struct PackingParams {
     Rgba32 extrinsic_transparency_;
 
     /// @brief Existing palettes with locked and wildcarded colors (from PorytilesTilesetComponent)
-    std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> prefilled_pals_;
+    std::array<std::optional<Palette<Rgba32, palette::max_size>>, palette::num_palettes> prefilled_palettes_;
 
     /// @brief Priority tiles that guide packing (e.g., ensure certain colors group together)
     std::vector<PaletteHint> hints_;
 
     /// @brief Bitset specifying which hardware palettes are available for packing
-    std::bitset<pal::num_pals> available_pals_;
+    std::bitset<palette::num_palettes> available_palettes_;
 
     /// @brief A reconstructed RGBA tile from a compiled primary tileset, tagged with its first metatile slot location.
     ///
     /// @details
     /// Each PrimaryTileRef bundles a decoded pixel tile, its hardware palette assignment, and the coordinates of the
     /// first metatile slot (in the paired primary's triple-layerized metatile entries) where this (tile_index,
-    /// pal_index) pair was observed. The coordinates are used purely for diagnostic display; they let sharing remarks
-    /// reference primary tiles in the same @c "metatile 0x3(3)|middle|northwest(0)" form used for secondary tiles.
+    /// palette_index) pair was observed. The coordinates are used purely for diagnostic display; they let sharing
+    /// remarks reference primary tiles in the same @c "metatile 0x3(3)|middle|northwest(0)" form used for secondary
+    /// tiles.
     struct PrimaryTileRef {
         PixelTile<Rgba32> tile;
-        std::size_t pal_index;
+        std::size_t palette_index;
         std::size_t metatile_index;
         metatile::Layer layer;
         metatile::Subtile subtile;
@@ -106,13 +107,13 @@ struct PalettePacking {
     /// palette packer performed no assignments for that palette index; the corresponding palette in the Porymap
     /// component will be left untouched. For populated palettes, slot 0 contains the transparency color (preserved from
     /// input or defaulted), remaining slots contain packed colors, and unfilled slots contain Rgba32{0, 0, 0}.
-    std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> pals_;
+    std::array<std::optional<Palette<Rgba32, palette::max_size>>, palette::num_palettes> palettes_;
 
     /// @brief Maps regular tile ids to their assigned hardware palette indices.
     ///
     /// @details
     /// The key is the tile id (index). The value is the hardware palette index to which the tile was assigned.
-    std::map<std::size_t, std::size_t> tile_to_pal_;
+    std::map<std::size_t, std::size_t> tile_to_palette_;
 
     // Multi-palette anim palette mapping will be a separate future feature
 };
@@ -133,14 +134,15 @@ class PalettePacker {
     /// @param format TextFormatter for building diagnostic output
     /// @param diag UserDiagnostics for warnings and errors
     /// @param tile_printer TilePrinter for rendering tile ASCII art in diagnostics
-    /// @param pal_printer PalettePrinter for rendering palette diagnostics
+    /// @param palette_printer PalettePrinter for rendering palette diagnostics
     explicit PalettePacker(
         gsl::not_null<const PackingStrategy *> strategy,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag,
         gsl::not_null<const TilePrinter *> tile_printer,
-        gsl::not_null<const PalettePrinter *> pal_printer)
-        : strategy_{strategy}, format_{format}, diag_{diag}, tile_printer_{tile_printer}, pal_printer_{pal_printer}
+        gsl::not_null<const PalettePrinter *> palette_printer)
+        : strategy_{strategy}, format_{format}, diag_{diag}, tile_printer_{tile_printer},
+          palette_printer_{palette_printer}
     {
     }
 
@@ -160,7 +162,7 @@ class PalettePacker {
     /// 2. Converts palette hints to PackableTile hints
     /// 3. Converts input palettes from PorytilesTilesetComponent to PrefilledPalette constraints
     /// 4. Delegates to packing strategy
-    /// 5. Converts PackedPalette results back to Palette<Rgba32, pal::max_size>
+    /// 5. Converts PackedPalette results back to Palette<Rgba32, palette::max_size>
     ///
     /// @param params The packing input parameters
     ///
@@ -173,7 +175,7 @@ class PalettePacker {
     const TextFormatter *format_;
     const UserDiagnostics *diag_;
     const TilePrinter *tile_printer_;
-    const PalettePrinter *pal_printer_;
+    const PalettePrinter *palette_printer_;
 };
 
 } // namespace porytiles

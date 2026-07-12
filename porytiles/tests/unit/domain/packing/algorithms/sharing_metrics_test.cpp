@@ -24,13 +24,13 @@ PackableTile make_tile(PackableTile::Id id, std::initializer_list<std::size_t> c
 TEST(SharingMetricsTests, PaletteContainsSibling_NoGroupMembership_ReturnsFalse)
 {
     ShapeGroupMetadata metadata;
-    PackedPalette pal{0};
+    PackedPalette palette{0};
 
     auto tile = make_tile(PackableTile::RegularId{0}, {1, 2});
-    pal.add_tile(tile);
+    palette.add_tile(tile);
 
     // Tile not in any group
-    EXPECT_FALSE(palette_contains_sibling(PackableTile::RegularId{0}, pal, metadata));
+    EXPECT_FALSE(palette_contains_sibling(PackableTile::RegularId{0}, palette, metadata));
 }
 
 TEST(SharingMetricsTests, PaletteContainsSibling_NoSiblingInPalette_ReturnsFalse)
@@ -41,11 +41,11 @@ TEST(SharingMetricsTests, PaletteContainsSibling_NoSiblingInPalette_ReturnsFalse
     metadata.group_members = {{PackableTile::RegularId{0}, PackableTile::RegularId{1}}};
 
     // Palette only contains tile 0 (no sibling)
-    PackedPalette pal{0};
+    PackedPalette palette{0};
     auto tile0 = make_tile(PackableTile::RegularId{0}, {1, 2});
-    pal.add_tile(tile0);
+    palette.add_tile(tile0);
 
-    EXPECT_FALSE(palette_contains_sibling(PackableTile::RegularId{0}, pal, metadata));
+    EXPECT_FALSE(palette_contains_sibling(PackableTile::RegularId{0}, palette, metadata));
 }
 
 TEST(SharingMetricsTests, PaletteContainsSibling_SiblingPresent_ReturnsTrue)
@@ -56,21 +56,21 @@ TEST(SharingMetricsTests, PaletteContainsSibling_SiblingPresent_ReturnsTrue)
     metadata.group_members = {{PackableTile::RegularId{0}, PackableTile::RegularId{1}}};
 
     // Palette contains tile 0 (sibling of tile 1)
-    PackedPalette pal{0};
+    PackedPalette palette{0};
     auto tile0 = make_tile(PackableTile::RegularId{0}, {1, 2});
-    pal.add_tile(tile0);
+    palette.add_tile(tile0);
 
     // Checking for tile 1's siblings in the palette
-    EXPECT_TRUE(palette_contains_sibling(PackableTile::RegularId{1}, pal, metadata));
+    EXPECT_TRUE(palette_contains_sibling(PackableTile::RegularId{1}, palette, metadata));
 }
 
 TEST(SharingMetricsTests, ComputeSharingPenalty_NonGroupTile_ReturnsZero)
 {
     ShapeGroupMetadata metadata;
-    PackedPalette pal{0};
+    PackedPalette palette{0};
 
     auto tile = make_tile(PackableTile::RegularId{0}, {1, 2, 3});
-    EXPECT_DOUBLE_EQ(compute_sharing_penalty(tile, pal, metadata), 0.0);
+    EXPECT_DOUBLE_EQ(compute_sharing_penalty(tile, palette, metadata), 0.0);
 }
 
 TEST(SharingMetricsTests, ComputeSharingPenalty_NoSiblingInPalette_ReturnsZero)
@@ -80,10 +80,10 @@ TEST(SharingMetricsTests, ComputeSharingPenalty_NoSiblingInPalette_ReturnsZero)
     metadata.tile_id_to_group[PackableTile::RegularId{1}] = 0;
     metadata.group_members = {{PackableTile::RegularId{0}, PackableTile::RegularId{1}}};
 
-    PackedPalette pal{0};
+    PackedPalette palette{0};
     auto tile = make_tile(PackableTile::RegularId{0}, {1, 2, 3});
 
-    EXPECT_DOUBLE_EQ(compute_sharing_penalty(tile, pal, metadata), 0.0);
+    EXPECT_DOUBLE_EQ(compute_sharing_penalty(tile, palette, metadata), 0.0);
 }
 
 TEST(SharingMetricsTests, ComputeSharingPenalty_SiblingPresent_ReturnsPenalty)
@@ -93,13 +93,13 @@ TEST(SharingMetricsTests, ComputeSharingPenalty_SiblingPresent_ReturnsPenalty)
     metadata.tile_id_to_group[PackableTile::RegularId{1}] = 0;
     metadata.group_members = {{PackableTile::RegularId{0}, PackableTile::RegularId{1}}};
 
-    PackedPalette pal{0};
+    PackedPalette palette{0};
     auto tile0 = make_tile(PackableTile::RegularId{0}, {1, 2});
-    pal.add_tile(tile0);
+    palette.add_tile(tile0);
 
     // Tile 1 has 3 colors, default sharing_weight = 0.5
     auto tile1 = make_tile(PackableTile::RegularId{1}, {4, 5, 6});
-    EXPECT_DOUBLE_EQ(compute_sharing_penalty(tile1, pal, metadata), 0.5 * 3.0);
+    EXPECT_DOUBLE_EQ(compute_sharing_penalty(tile1, palette, metadata), 0.5 * 3.0);
 }
 
 TEST(SharingMetricsTests, ComputeSharingPenalty_CustomWeight)
@@ -109,10 +109,10 @@ TEST(SharingMetricsTests, ComputeSharingPenalty_CustomWeight)
     metadata.tile_id_to_group[PackableTile::RegularId{1}] = 0;
     metadata.group_members = {{PackableTile::RegularId{0}, PackableTile::RegularId{1}}};
 
-    PackedPalette pal{0};
+    PackedPalette palette{0};
     auto tile0 = make_tile(PackableTile::RegularId{0}, {1, 2});
-    pal.add_tile(tile0);
+    palette.add_tile(tile0);
 
     auto tile1 = make_tile(PackableTile::RegularId{1}, {4, 5, 6, 7});
-    EXPECT_DOUBLE_EQ(compute_sharing_penalty(tile1, pal, metadata, 0.75), 0.75 * 4.0);
+    EXPECT_DOUBLE_EQ(compute_sharing_penalty(tile1, palette, metadata, 0.75), 0.75 * 4.0);
 }

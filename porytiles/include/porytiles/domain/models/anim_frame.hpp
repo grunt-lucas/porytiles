@@ -86,9 +86,9 @@ class AnimFrame {
         return palette_.value();
     }
 
-    void palette(Palette<Rgba32> pal)
+    void palette(Palette<Rgba32> palette)
     {
-        palette_ = std::move(pal);
+        palette_ = std::move(palette);
     }
 
   private:

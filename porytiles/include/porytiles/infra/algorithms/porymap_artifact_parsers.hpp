@@ -11,7 +11,7 @@
 #include "porytiles/domain/models/palette.hpp"
 #include "porytiles/domain/models/rgba32.hpp"
 #include "porytiles/domain/models/tilemap_entry.hpp"
-#include "porytiles/infra/services/file_pal_loader.hpp"
+#include "porytiles/infra/services/file_palette_loader.hpp"
 #include "porytiles/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 
@@ -83,7 +83,7 @@ load_indexed_png(const std::filesystem::path &path, const PngIndexedImageLoader 
 /// @param loader The palette loader service to use
 /// @pre File must exist and be a valid palette file
 /// @return The loaded palette, or error if loading fails
-[[nodiscard]] ChainableResult<Palette<Rgba32, pal::max_size>>
-load_porymap_palette(const std::filesystem::path &path, const FilePalLoader &loader);
+[[nodiscard]] ChainableResult<Palette<Rgba32, palette::max_size>>
+load_porymap_palette(const std::filesystem::path &path, const FilePaletteLoader &loader);
 
 } // namespace porytiles

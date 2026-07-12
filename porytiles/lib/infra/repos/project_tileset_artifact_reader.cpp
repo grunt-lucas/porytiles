@@ -56,10 +56,10 @@ ChainableResult<void> import_porytiles_palette(
     const ArtifactKey &src_key,
     std::size_t index,
     const std::filesystem::path &project_root,
-    const FilePalLoader &loader)
+    const FilePaletteLoader &loader)
 {
-    if (index >= pal::num_pals) {
-        panic(std::format("invalid pal index {}: out of range", index));
+    if (index >= palette::num_palettes) {
+        panic(std::format("invalid palette index {}: out of range", index));
     }
 
     // Keys are relative to project_root, so prepend for file I/O
@@ -68,7 +68,7 @@ ChainableResult<void> import_porytiles_palette(
         loader.load_with_wildcards((project_root / src_key.key()).string()),
         void,
         "Failed to load palette file.");
-    dest.porytiles_component().set_pal(index, palette);
+    dest.porytiles_component().set_palette(index, palette);
 
     return {};
 }
@@ -191,14 +191,14 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_tiles_png(Tileset &dest
 }
 
 ChainableResult<void>
-ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const
+ProjectTilesetArtifactReader::read_porymap_palette_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const
 {
-    if (index >= pal::num_pals) {
-        panic(std::format("invalid pal index {}: out of range", index));
+    if (index >= palette::num_palettes) {
+        panic(std::format("invalid palette index {}: out of range", index));
     }
     // Keys are relative to project_root_, so prepend for file I/O
-    PT_TRY_ASSIGN_PASS_ERR(palette, load_porymap_palette(project_root_ / src_key.key(), *pal_loader_), void);
-    dest.porymap_component().set_pal(index, std::move(palette));
+    PT_TRY_ASSIGN_PASS_ERR(palette, load_porymap_palette(project_root_ / src_key.key(), *palette_loader_), void);
+    dest.porymap_component().set_palette(index, std::move(palette));
     return {};
 }
 
@@ -324,10 +324,10 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_attributes_csv(Tileset 
     return {};
 }
 
-ChainableResult<void>
-ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const
+ChainableResult<void> ProjectTilesetArtifactReader::read_porytiles_palette_n(
+    Tileset &dest, const ArtifactKey &src_key, std::size_t index) const
 {
-    PT_TRY_CALL_PASS_ERR(import_porytiles_palette(dest, src_key, index, project_root_, *pal_loader_), void);
+    PT_TRY_CALL_PASS_ERR(import_porytiles_palette(dest, src_key, index, project_root_, *palette_loader_), void);
     return {};
 }
 

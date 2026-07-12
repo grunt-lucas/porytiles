@@ -24,8 +24,8 @@ class PackedPalette {
     /// @brief Constructs a PackedPalette with a given index and capacity.
     ///
     /// @param hardware_index The hardware palette index (0-5 for primary, etc.)
-    /// @param capacity Maximum number of colors this palette can hold (default pal::max_size - 1, i.e. 15)
-    explicit PackedPalette(std::size_t hardware_index, std::size_t capacity = pal::max_size - 1);
+    /// @param capacity Maximum number of colors this palette can hold (default palette::max_size - 1, i.e. 15)
+    explicit PackedPalette(std::size_t hardware_index, std::size_t capacity = palette::max_size - 1);
 
     [[nodiscard]] bool operator==(const PackedPalette &other) const
     {

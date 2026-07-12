@@ -9,7 +9,7 @@
 
 namespace porytiles {
 
-inline constexpr std::size_t colors_per_pal = 16;
+inline constexpr std::size_t colors_per_palette = 16;
 
 /// @brief Represents a palette index value within a particular palette.
 ///
@@ -23,7 +23,7 @@ class PaletteIndex {
     // NOLINTNEXTLINE(google-explicit-constructor)
     PaletteIndex(std::size_t value) : value_{value}
     {
-        if (value >= colors_per_pal) {
+        if (value >= colors_per_palette) {
             panic("invalid PaletteIndex value " + std::to_string(value));
         }
     }

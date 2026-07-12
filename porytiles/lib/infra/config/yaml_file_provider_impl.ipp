@@ -11,8 +11,8 @@
 
 #include "porytiles/app/config/primary_pairing_mode.hpp"
 #include "porytiles/domain/config/anim_key_frame_resolution_strategy.hpp"
-#include "porytiles/domain/config/anim_multi_pal_subtile_resolution_strategy.hpp"
-#include "porytiles/domain/config/anim_pal_resolution_strategy.hpp"
+#include "porytiles/domain/config/anim_multi_palette_subtile_resolution_strategy.hpp"
+#include "porytiles/domain/config/anim_palette_resolution_strategy.hpp"
 #include "porytiles/domain/config/artifact_edit_mode.hpp"
 #include "porytiles/domain/config/frame_linking.hpp"
 #include "porytiles/domain/config/metatile_attribute_field_spec.hpp"
@@ -21,7 +21,7 @@
 #include "porytiles/domain/config/per_anim_overrides.hpp"
 #include "porytiles/domain/config/tile_sharing_alignment.hpp"
 #include "porytiles/domain/config/tile_sharing_packing.hpp"
-#include "porytiles/domain/config/tiles_pal_mode.hpp"
+#include "porytiles/domain/config/tiles_palette_mode.hpp"
 #include "porytiles/domain/packing/models/palette_hint.hpp"
 #include "porytiles/infra/config/config_provider.hpp"
 #include "porytiles/infra/config/frlg_alternate_mask_mode.hpp"
@@ -354,7 +354,7 @@ parse_rgba32(const TextFormatter *format, const YAML::Node &node, const std::str
     }
 }
 
-LayerValue<std::vector<PaletteHint>> parse_pal_hints(
+LayerValue<std::vector<PaletteHint>> parse_palette_hints(
     const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
     if (!node.IsDefined()) {
@@ -504,21 +504,21 @@ LayerValue<std::vector<std::string>> parse_string_vector(
     }
 }
 
-/// @brief Attempts to parse a TilesPalMode value from a YAML node.
+/// @brief Attempts to parse a TilesPaletteMode value from a YAML node.
 ///
 /// @details
-/// Expects a string value that matches one of the valid TilesPalMode YAML strings: "true_color" or "greyscale".
+/// Expects a string value that matches one of the valid TilesPaletteMode YAML strings: "true_color" or "greyscale".
 ///
 /// @param format The text formatter to use
 /// @param node The YAML node to parse
 /// @param key The configuration key name (for error messages)
 /// @param file_path The YAML file path (for source info)
 /// @return LayerValue containing the parsed value, error, or not_provided status
-LayerValue<TilesPalMode> parse_tiles_pal_mode(
+LayerValue<TilesPaletteMode> parse_tiles_palette_mode(
     const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
     if (!node.IsDefined()) {
-        return LayerValue<TilesPalMode>::not_provided();
+        return LayerValue<TilesPaletteMode>::not_provided();
     }
 
     try {
@@ -526,23 +526,23 @@ LayerValue<TilesPalMode> parse_tiles_pal_mode(
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         const auto node_value = node.as<std::string>();
-        const auto mode_opt = tiles_pal_mode_from_str(node_value);
+        const auto mode_opt = tiles_palette_mode_from_str(node_value);
 
         if (!mode_opt.has_value()) {
             const auto error = format->format(
                 "'{}' has invalid value '{}'", FormatParam{key, Style::bold}, FormatParam{node_value, Style::bold});
-            return LayerValue<TilesPalMode>::invalid(error, source, details);
+            return LayerValue<TilesPaletteMode>::invalid(error, source, details);
         }
 
-        return LayerValue<TilesPalMode>::valid(mode_opt.value(), key, source, details);
+        return LayerValue<TilesPaletteMode>::valid(mode_opt.value(), key, source, details);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
         const auto error =
-            format->format("Failed to parse '{}' as TilesPalMode: {}", FormatParam{key, Style::bold}, e.what());
+            format->format("Failed to parse '{}' as TilesPaletteMode: {}", FormatParam{key, Style::bold}, e.what());
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
-        return LayerValue<TilesPalMode>::invalid(error, source, details);
+        return LayerValue<TilesPaletteMode>::invalid(error, source, details);
     }
 }
 
@@ -578,11 +578,11 @@ LayerValue<ArtifactEditMode> parse_artifact_edit_mode(
     }
 }
 
-LayerValue<AnimPalResolutionStrategy> parse_anim_pal_resolution_strategy(
+LayerValue<AnimPaletteResolutionStrategy> parse_anim_palette_resolution_strategy(
     const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
     if (!node.IsDefined()) {
-        return LayerValue<AnimPalResolutionStrategy>::not_provided();
+        return LayerValue<AnimPaletteResolutionStrategy>::not_provided();
     }
 
     try {
@@ -590,23 +590,23 @@ LayerValue<AnimPalResolutionStrategy> parse_anim_pal_resolution_strategy(
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         const auto node_value = node.as<std::string>();
-        const auto mode_opt = anim_pal_resolution_strategy_from_str(node_value);
+        const auto mode_opt = anim_palette_resolution_strategy_from_str(node_value);
 
         if (!mode_opt.has_value()) {
             const auto error = format->format(
                 "'{}' has invalid value '{}'", FormatParam{key, Style::bold}, FormatParam{node_value, Style::bold});
-            return LayerValue<AnimPalResolutionStrategy>::invalid(error, source, details);
+            return LayerValue<AnimPaletteResolutionStrategy>::invalid(error, source, details);
         }
 
-        return LayerValue<AnimPalResolutionStrategy>::valid(mode_opt.value(), key, source, details);
+        return LayerValue<AnimPaletteResolutionStrategy>::valid(mode_opt.value(), key, source, details);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
         const auto error = format->format(
-            "Failed to parse '{}' as AnimPalResolutionStrategy: {}", FormatParam{key, Style::bold}, e.what());
+            "Failed to parse '{}' as AnimPaletteResolutionStrategy: {}", FormatParam{key, Style::bold}, e.what());
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
-        return LayerValue<AnimPalResolutionStrategy>::invalid(error, source, details);
+        return LayerValue<AnimPaletteResolutionStrategy>::invalid(error, source, details);
     }
 }
 
@@ -675,7 +675,7 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
             if (anim_node["palette_resolution_strategy"].IsDefined()) {
                 const auto &strategy_node = anim_node["palette_resolution_strategy"];
                 const auto strategy_str = strategy_node.as<std::string>();
-                const auto strategy_opt = anim_pal_resolution_strategy_from_str(strategy_str);
+                const auto strategy_opt = anim_palette_resolution_strategy_from_str(strategy_str);
                 if (!strategy_opt.has_value()) {
                     const auto strategy_mark = strategy_node.Mark();
                     const auto strategy_source = make_source_string(format, file_path, strategy_mark);
@@ -687,13 +687,13 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                         FormatParam{strategy_str, Style::bold});
                     return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
                 }
-                const auto pal_mark = strategy_node.Mark();
-                anim_config.pal_resolution_strategy = ConfigPODField{
+                const auto palette_mark = strategy_node.Mark();
+                anim_config.palette_resolution_strategy = ConfigPODField{
                     strategy_opt.value(),
                     key + "." + anim_name + ".palette_resolution_strategy",
                     "Animation Config (" + anim_name + ") per-anim strategy",
-                    make_source_string(format, file_path, pal_mark),
-                    make_source_details(format, file_path, pal_mark)};
+                    make_source_string(format, file_path, palette_mark),
+                    make_source_details(format, file_path, palette_mark)};
             }
 
             // Parse key_frame_resolution_strategy (optional scalar — per-anim override)
@@ -725,7 +725,7 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
             if (anim_node["multi_palette_subtile_resolution_strategy"].IsDefined()) {
                 const auto &strategy_node = anim_node["multi_palette_subtile_resolution_strategy"];
                 const auto strategy_str = strategy_node.as<std::string>();
-                const auto strategy_opt = anim_multi_pal_subtile_resolution_strategy_from_str(strategy_str);
+                const auto strategy_opt = anim_multi_palette_subtile_resolution_strategy_from_str(strategy_str);
                 if (!strategy_opt.has_value()) {
                     const auto strategy_mark = strategy_node.Mark();
                     const auto strategy_source = make_source_string(format, file_path, strategy_mark);
@@ -738,7 +738,7 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                     return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
                 }
                 const auto mps_mark = strategy_node.Mark();
-                anim_config.multi_pal_subtile_resolution_strategy = ConfigPODField{
+                anim_config.multi_palette_subtile_resolution_strategy = ConfigPODField{
                     strategy_opt.value(),
                     key + "." + anim_name + ".multi_palette_subtile_resolution_strategy",
                     "Animation Config (" + anim_name + ") multi_palette_subtile_resolution_strategy",
@@ -763,10 +763,10 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                 for (std::size_t i = 0; i < strategies_node.size(); ++i) {
                     const auto strategy_str = strategies_node[i].as<std::string>();
                     if (strategy_str == "_") {
-                        anim_config.per_tile_pal_resolution_strategies.emplace_back();
+                        anim_config.per_tile_palette_resolution_strategies.emplace_back();
                     }
                     else {
-                        const auto strategy_opt = anim_pal_resolution_strategy_from_str(strategy_str);
+                        const auto strategy_opt = anim_palette_resolution_strategy_from_str(strategy_str);
                         if (!strategy_opt.has_value()) {
                             const auto strategy_mark = strategies_node[i].Mark();
                             const auto strategy_source = make_source_string(format, file_path, strategy_mark);
@@ -781,7 +781,7 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                             return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
                         }
                         const auto tile_mark = strategies_node[i].Mark();
-                        anim_config.per_tile_pal_resolution_strategies.push_back(
+                        anim_config.per_tile_palette_resolution_strategies.push_back(
                             ConfigPODField{
                                 strategy_opt.value(),
                                 key + "." + anim_name + ".per_tile_palette_resolution_strategies[" + std::to_string(i) +
@@ -1200,11 +1200,11 @@ LayerValue<AnimKeyFrameResolutionStrategy> parse_anim_key_frame_resolution_strat
     }
 }
 
-LayerValue<AnimMultiPalSubtileResolutionStrategy> parse_anim_multi_pal_subtile_resolution_strategy(
+LayerValue<AnimMultiPaletteSubtileResolutionStrategy> parse_anim_multi_palette_subtile_resolution_strategy(
     const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
     if (!node.IsDefined()) {
-        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::not_provided();
+        return LayerValue<AnimMultiPaletteSubtileResolutionStrategy>::not_provided();
     }
 
     try {
@@ -1212,25 +1212,25 @@ LayerValue<AnimMultiPalSubtileResolutionStrategy> parse_anim_multi_pal_subtile_r
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         const auto node_value = node.as<std::string>();
-        const auto mode_opt = anim_multi_pal_subtile_resolution_strategy_from_str(node_value);
+        const auto mode_opt = anim_multi_palette_subtile_resolution_strategy_from_str(node_value);
 
         if (!mode_opt.has_value()) {
             const auto error = format->format(
                 "'{}' has invalid value '{}'.", FormatParam{key, Style::bold}, FormatParam{node_value, Style::bold});
-            return LayerValue<AnimMultiPalSubtileResolutionStrategy>::invalid(error, source, details);
+            return LayerValue<AnimMultiPaletteSubtileResolutionStrategy>::invalid(error, source, details);
         }
 
-        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::valid(mode_opt.value(), key, source, details);
+        return LayerValue<AnimMultiPaletteSubtileResolutionStrategy>::valid(mode_opt.value(), key, source, details);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
         const auto error = format->format(
-            "Failed to parse '{}' as AnimMultiPalSubtileResolutionStrategy: {}.",
+            "Failed to parse '{}' as AnimMultiPaletteSubtileResolutionStrategy: {}.",
             FormatParam{key, Style::bold},
             e.what());
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
-        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::invalid(error, source, details);
+        return LayerValue<AnimMultiPaletteSubtileResolutionStrategy>::invalid(error, source, details);
     }
 }
 

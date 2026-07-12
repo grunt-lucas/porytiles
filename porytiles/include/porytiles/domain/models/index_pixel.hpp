@@ -20,9 +20,9 @@ class IndexPixel {
     // NOLINTNEXTLINE(google-explicit-constructor)
     IndexPixel(std::size_t index) : index_{index}
     {
-        // No invariant check on `index_ < pal::max_size` here, because in true-color output mode we accept up to 8-bit
-        // index pixels. Even though pokeemerald only cares about the lower four bits, the upper four bits encode the
-        // pal index, which is what lets us save a non-greyscale png.
+        // No invariant check on `index_ < palette::max_size` here, because in true-color output mode we accept up to
+        // 8-bit index pixels. Even though pokeemerald only cares about the lower four bits, the upper four bits encode
+        // the palette index, which is what lets us save a non-greyscale png.
     }
 
     bool operator==(const IndexPixel &other) const = default;

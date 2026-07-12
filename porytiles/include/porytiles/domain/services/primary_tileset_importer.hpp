@@ -42,7 +42,7 @@ class PrimaryTilesetImporter {
     /// @pre Tileset entry must exist in src/data/tilesets/headers.h
     /// @pre Animation arrays in tileset_anims.c must follow gTilesetAnims_{TilesetName}_{AnimName} naming convention
     /// @return A ChainableResult containing a unique_ptr to the populated PorymapTilesetComponent on success
-    /// @post The returned component has tiles_png, pals, metatile_entries, and metatile_attributes populated
+    /// @post The returned component has tiles_png, palettes, metatile_entries, and metatile_attributes populated
     /// @post Animation frames are populated as Animation<IndexPixel> (key frames NOT extracted by this method)
     ///
     /// @see ProjectPrimaryTilesetImporter for the pokeemerald project-based implementation

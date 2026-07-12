@@ -133,9 +133,9 @@ ChainableResult<void> save_tiles_png(
     const PngIndexedImageSaver &saver,
     const Image<IndexPixel> &tiles_png,
     const std::filesystem::path &path,
-    TilesPalMode tiles_pal_mode)
+    TilesPaletteMode tiles_palette_mode)
 {
-    auto result = saver.save_to_file(tiles_png, path, tiles_pal_mode);
+    auto result = saver.save_to_file(tiles_png, path, tiles_palette_mode);
     if (!result.has_value()) {
         return result;
     }
@@ -148,7 +148,7 @@ ChainableResult<void> save_metatiles_bin(const std::vector<TilemapEntry> &entrie
     for (const auto &entry : entries) {
         const auto tile_value = static_cast<uint16_t>(
             (entry.tile_index() & 0x3ff) | ((entry.h_flip() & 1) << 10) | ((entry.v_flip() & 1) << 11) |
-            ((entry.pal_index() & 0xf) << 12));
+            ((entry.palette_index() & 0xf) << 12));
         out << static_cast<std::uint8_t>(tile_value);
         out << static_cast<std::uint8_t>(tile_value >> 8);
     }
@@ -156,10 +156,10 @@ ChainableResult<void> save_metatiles_bin(const std::vector<TilemapEntry> &entrie
     return {};
 }
 
-ChainableResult<void>
-save_palette(const Palette<Rgba32, pal::max_size> &pal, const std::filesystem::path &path, const FilePalSaver &saver)
+ChainableResult<void> save_palette(
+    const Palette<Rgba32, palette::max_size> &palette, const std::filesystem::path &path, const FilePaletteSaver &saver)
 {
-    PT_TRY_CALL_CHAIN_ERR(saver.save(pal, path), void, "'{}': Failed to save.", FormatParam(path.c_str()));
+    PT_TRY_CALL_CHAIN_ERR(saver.save(palette, path), void, "'{}': Failed to save.", FormatParam(path.c_str()));
     return {};
 }
 
@@ -167,9 +167,9 @@ ChainableResult<void> save_porymap_anim_frame(
     const PngIndexedImageSaver &saver,
     const Image<IndexPixel> &frame,
     const std::filesystem::path &path,
-    TilesPalMode tiles_pal_mode)
+    TilesPaletteMode tiles_palette_mode)
 {
-    auto result = saver.save_to_file(frame, path, tiles_pal_mode);
+    auto result = saver.save_to_file(frame, path, tiles_palette_mode);
     if (!result.has_value()) {
         return result;
     }
@@ -371,13 +371,13 @@ ChainableResult<void> write_anim_frame_impl(
 
     // Transfer palette from frame to image if present
     if (frame_ptr->has_palette()) {
-        const auto &pal = frame_ptr->palette();
-        std::vector<Rgba32> pal_vec;
-        pal_vec.reserve(pal.size());
-        for (std::size_t i = 0; i < pal.size(); ++i) {
-            pal_vec.push_back(pal.at(i));
+        const auto &palette = frame_ptr->palette();
+        std::vector<Rgba32> palette_vec;
+        palette_vec.reserve(palette.size());
+        for (std::size_t i = 0; i < palette.size(); ++i) {
+            palette_vec.push_back(palette.at(i));
         }
-        img.palette(std::move(pal_vec));
+        img.palette(std::move(palette_vec));
     }
 
     // Compute transaction path (keys are now relative to project_root)
@@ -590,16 +590,19 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_tiles_png(const Artifa
         void,
         "Failed to compute transaction dest path.");
     PT_TRY_ASSIGN_CHAIN_ERR(
-        tiles_pal_mode_config,
-        domain_config_->tiles_pal_mode(ConfigScopeType::tileset, src.name()),
+        tiles_palette_mode_config,
+        domain_config_->tiles_palette_mode(ConfigScopeType::tileset, src.name()),
         void,
-        "Failed to get tiles_pal_mode config.");
+        "Failed to get tiles_palette_mode config.");
     return save_tiles_png(
-        *png_indexed_saver_, src.porymap_component().tiles_png(), transaction_dest_path, tiles_pal_mode_config.value());
+        *png_indexed_saver_,
+        src.porymap_component().tiles_png(),
+        transaction_dest_path,
+        tiles_palette_mode_config.value());
 }
 
-ChainableResult<void>
-ProjectTilesetArtifactWriter::write_porymap_pal_n(const ArtifactKey &dest_key, const Tileset &src, std::size_t index)
+ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_palette_n(
+    const ArtifactKey &dest_key, const Tileset &src, std::size_t index)
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
@@ -607,21 +610,21 @@ ProjectTilesetArtifactWriter::write_porymap_pal_n(const ArtifactKey &dest_key, c
             transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
         void,
         "Failed to compute transaction dest path.");
-    const auto &pal = src.porymap_component().pal_at(index);
-    if (pal.has_any_wildcards()) {
+    const auto &palette = src.porymap_component().palette_at(index);
+    if (palette.has_any_wildcards()) {
         panic("attempted to save a Porymap palette containing wildcards");
     }
-    return save_palette(pal, transaction_dest_path, *pal_saver_);
+    return save_palette(palette, transaction_dest_path, *palette_saver_);
 }
 
 ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
     const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, const std::string &frame_name)
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
-        tiles_pal_mode_config,
-        domain_config_->tiles_pal_mode(ConfigScopeType::tileset, src.name()),
+        tiles_palette_mode_config,
+        domain_config_->tiles_palette_mode(ConfigScopeType::tileset, src.name()),
         void,
-        "Failed to get tiles_pal_mode config.");
+        "Failed to get tiles_palette_mode config.");
     return write_anim_frame_impl<IndexPixel>(
         dest_key,
         src,
@@ -632,8 +635,8 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
         staged_directories_,
         staged_special_files_,
         [](const Tileset &t) -> const auto & { return t.porymap_component(); },
-        [this, &tiles_pal_mode_config](const Image<IndexPixel> &img, const std::filesystem::path &path) {
-            return save_porymap_anim_frame(*png_indexed_saver_, img, path, tiles_pal_mode_config.value());
+        [this, &tiles_palette_mode_config](const Image<IndexPixel> &img, const std::filesystem::path &path) {
+            return save_porymap_anim_frame(*png_indexed_saver_, img, path, tiles_palette_mode_config.value());
         },
         "Porymap");
 }
@@ -892,10 +895,10 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
     return {};
 }
 
-ChainableResult<void>
-ProjectTilesetArtifactWriter::write_porytiles_pal_n(const ArtifactKey &dest_key, const Tileset &src, std::size_t index)
+ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_palette_n(
+    const ArtifactKey &dest_key, const Tileset &src, std::size_t index)
 {
-    if (src.porytiles_component().pal_at(index).has_value()) {
+    if (src.porytiles_component().palette_at(index).has_value()) {
         PT_TRY_ASSIGN_CHAIN_ERR(
             transaction_dest_path,
             compute_transaction_dest_path(
@@ -903,10 +906,11 @@ ProjectTilesetArtifactWriter::write_porytiles_pal_n(const ArtifactKey &dest_key,
             void,
             "Failed to compute transaction dest path.");
 
-        return save_palette(src.porytiles_component().pal_at(index).value(), transaction_dest_path, *pal_saver_);
+        return save_palette(
+            src.porytiles_component().palette_at(index).value(), transaction_dest_path, *palette_saver_);
     }
 
-    // No porytiles pal, do nothing
+    // No porytiles palette, do nothing
     return {};
 }
 

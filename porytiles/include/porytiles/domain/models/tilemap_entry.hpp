@@ -14,10 +14,10 @@ namespace porytiles {
 /// is, `TilemapEntry{}` produces an entry with tile_index=0, which refers to the canonical transparent tile.
 class TilemapEntry {
   public:
-    TilemapEntry() : tile_index_{0}, pal_index_{0}, h_flip_{false}, v_flip_{false} {}
+    TilemapEntry() : tile_index_{0}, palette_index_{0}, h_flip_{false}, v_flip_{false} {}
 
-    TilemapEntry(std::size_t tile_index, std::size_t pal_index, bool hflip, bool vflip)
-        : tile_index_{tile_index}, pal_index_{pal_index}, h_flip_{hflip}, v_flip_{vflip}
+    TilemapEntry(std::size_t tile_index, std::size_t palette_index, bool hflip, bool vflip)
+        : tile_index_{tile_index}, palette_index_{palette_index}, h_flip_{hflip}, v_flip_{vflip}
     {
     }
 
@@ -42,14 +42,14 @@ class TilemapEntry {
         tile_index_ = tile_index;
     }
 
-    [[nodiscard]] std::size_t pal_index() const
+    [[nodiscard]] std::size_t palette_index() const
     {
-        return pal_index_;
+        return palette_index_;
     }
 
-    void pal_index(std::size_t pal_index)
+    void palette_index(std::size_t palette_index)
     {
-        pal_index_ = pal_index;
+        palette_index_ = palette_index;
     }
 
     [[nodiscard]] bool h_flip() const
@@ -74,7 +74,7 @@ class TilemapEntry {
 
   private:
     std::size_t tile_index_;
-    std::size_t pal_index_;
+    std::size_t palette_index_;
     bool h_flip_;
     bool v_flip_;
 };

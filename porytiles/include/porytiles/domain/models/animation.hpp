@@ -260,7 +260,7 @@ class Animation {
                 composite_tile.set(pix_idx++, color);
             }
 
-            if (composite_tile.unique_nontransparent_colors(extrinsic_transparency).size() >= pal::max_size) {
+            if (composite_tile.unique_nontransparent_colors(extrinsic_transparency).size() >= palette::max_size) {
                 panic("composite tile had >= 16 colors");
             }
 

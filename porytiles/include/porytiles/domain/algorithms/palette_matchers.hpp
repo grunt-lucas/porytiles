@@ -38,7 +38,7 @@ struct PaletteMatchResult {
     std::vector<std::size_t> uncovered_pixel_indices;
 
     /// @brief The palette index of the match, useful in batch operations.
-    std::size_t pal_index = 0;
+    std::size_t palette_index = 0;
 };
 
 namespace details {
@@ -215,7 +215,7 @@ template <SupportsTransparency ColorType, typename PaletteContainer>
 
     for (std::size_t i = 0; i < palettes.size(); ++i) {
         auto result = match_tile_to_palette(tile, palettes[i], extrinsic);
-        result.pal_index = i;
+        result.palette_index = i;
 
         if (result.is_covered) {
             complete_matches.push_back(result);

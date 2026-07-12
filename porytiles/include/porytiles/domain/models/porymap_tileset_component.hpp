@@ -36,9 +36,9 @@ class PorymapTilesetComponent {
     /// @param attribute The MetatileAttribute to move into the vector.
     void push_back_attribute(MetatileAttribute attribute);
 
-    void set_pal(std::size_t pal_index, Palette<Rgba32, pal::max_size> pal);
+    void set_palette(std::size_t palette_index, Palette<Rgba32, palette::max_size> palette);
 
-    [[nodiscard]] const Palette<Rgba32, pal::max_size> &pal_at(std::size_t pal_index) const;
+    [[nodiscard]] const Palette<Rgba32, palette::max_size> &palette_at(std::size_t palette_index) const;
 
     [[nodiscard]] bool is_empty() const;
 
@@ -86,9 +86,9 @@ class PorymapTilesetComponent {
         tiles_png_ = tiles_png;
     }
 
-    [[nodiscard]] const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals() const
+    [[nodiscard]] const std::array<Palette<Rgba32, palette::max_size>, palette::num_palettes> &palettes() const
     {
-        return pals_;
+        return palettes_;
     }
 
     [[nodiscard]] const std::map<std::string, Animation<IndexPixel>> &anims() const
@@ -105,7 +105,7 @@ class PorymapTilesetComponent {
     std::vector<TilemapEntry> metatiles_bin_;
     std::vector<MetatileAttribute> metatile_attributes_;
     Image<IndexPixel> tiles_png_;
-    std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> pals_;
+    std::array<Palette<Rgba32, palette::max_size>, palette::num_palettes> palettes_;
     std::map<std::string, Animation<IndexPixel>> anims_;
 };
 

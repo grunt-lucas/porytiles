@@ -307,7 +307,7 @@ AsciiTilePrinter::print_tile(const PixelTile<Rgba32> &tile, const Rgba32 &extrin
 std::vector<std::string>
 AsciiTilePrinter::print_tile(const PixelTile<IndexPixel> &tile, const Rgba32 &extrinsic_transparency) const
 {
-    const auto greyscale_pal = standard_greyscale_pal();
+    const auto greyscale_palette = standard_greyscale_palette();
 
     std::vector<std::string> result{};
     std::stringstream ss{};
@@ -320,7 +320,7 @@ AsciiTilePrinter::print_tile(const PixelTile<IndexPixel> &tile, const Rgba32 &ex
             const auto index_pixel = tile.at(row, col);
             // Use color_index() to extract the lower 4 bits, which is always in range [0, 15].
             // This handles both standard 4-bit pixels and true-color encoded 8-bit pixels correctly.
-            const Rgba32 pixel_color = greyscale_pal[index_pixel.color_index()];
+            const Rgba32 pixel_color = greyscale_palette[index_pixel.color_index()];
             const auto color_style_bg = rgba_to_bg_style(pixel_color);
             ss << format_->format("{}", FormatParam{"  ", Style::bold | color_style_bg});
         }

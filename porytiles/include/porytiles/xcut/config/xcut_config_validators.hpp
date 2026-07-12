@@ -23,7 +23,7 @@
 ///
 /// **Layer-Specific Validators: When and Why?**
 ///
-/// When a validator needs to reference layer-specific types (e.g., TilesPalMode from the infra layer), it cannot be
+/// When a validator needs to reference layer-specific types (e.g., TilesPaletteMode from the infra layer), it cannot be
 /// defined here in xcut because that would require xcut to depend on a lower-level layer, creating a circular
 /// dependency. In these cases, the validator should be defined in a layer-specific header such as
 /// `app_config_validators.hpp`, `domain_config_validators.hpp`, or `infra_config_validators.hpp`.

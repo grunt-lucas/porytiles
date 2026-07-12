@@ -65,7 +65,7 @@ class UserDiagnostics {
     ///
     /// Example:
     /// ```C++
-    /// diag.remark("tile-assign", "Assigned tile {} to palette {}", tile_id, pal_idx);
+    /// diag.remark("tile-assign", "Assigned tile {} to palette {}", tile_id, palette_idx);
     /// ```
     ///
     /// @tparam FirstParam Type of the first format parameter

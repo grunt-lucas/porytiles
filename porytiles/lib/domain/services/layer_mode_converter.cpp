@@ -28,7 +28,7 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(c
     std::vector<TilemapEntry> result;
     result.reserve(num_metatiles * metatile::entries_per_metatile_triple);
 
-    // Create a transparent entry (tile_index = 0, pal_index = 0, no flips)
+    // Create a transparent entry (tile_index = 0, palette_index = 0, no flips)
     const TilemapEntry transparent{0, 0, false, false};
 
     for (std::size_t i = 0; i < num_metatiles; ++i) {

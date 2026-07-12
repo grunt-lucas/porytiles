@@ -19,9 +19,9 @@ using namespace porytiles;
 
 namespace {
 
-TilemapEntry create_test_entry(std::size_t tile_index, std::size_t pal_index = 0)
+TilemapEntry create_test_entry(std::size_t tile_index, std::size_t palette_index = 0)
 {
-    return TilemapEntry{tile_index, pal_index, false, false};
+    return TilemapEntry{tile_index, palette_index, false, false};
 }
 
 MetatileAttribute make_attribute(LayerType layer_type)
@@ -257,13 +257,13 @@ TEST_F(LayerModeConverterTests, TripleLayerizeMultipleMetatilesWithDifferentLaye
     }
 }
 
-TEST_F(LayerModeConverterTests, TripleLayerizePreservesNonZeroPalIndex)
+TEST_F(LayerModeConverterTests, TripleLayerizePreservesNonZeroPaletteIndex)
 {
     PorymapTilesetComponent component;
 
     // Add entries with different palette indices
     for (std::size_t i = 1; i <= 8; ++i) {
-        component.push_back_tilemap_entry(create_test_entry(i, i % 4)); // Use different pal indices
+        component.push_back_tilemap_entry(create_test_entry(i, i % 4)); // Use different palette indices
     }
     component.push_back_attribute(make_attribute(LayerType::normal));
 
@@ -274,7 +274,7 @@ TEST_F(LayerModeConverterTests, TripleLayerizePreservesNonZeroPalIndex)
 
     // Verify that the original entries preserve their palette indices
     for (std::size_t i = 4; i < 12; ++i) {
-        EXPECT_EQ(entries[i].pal_index(), (i - 3) % 4);
+        EXPECT_EQ(entries[i].palette_index(), (i - 3) % 4);
     }
 }
 
@@ -464,7 +464,7 @@ TEST_F(LayerModeConverterTests, RoundTripNormalLayerType)
     ASSERT_EQ(final_entries.size(), original_entries.size());
     for (std::size_t i = 0; i < original_entries.size(); ++i) {
         EXPECT_EQ(final_entries[i].tile_index(), original_entries[i].tile_index()) << "Mismatch at index " << i;
-        EXPECT_EQ(final_entries[i].pal_index(), original_entries[i].pal_index()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].palette_index(), original_entries[i].palette_index()) << "Mismatch at index " << i;
         EXPECT_EQ(final_entries[i].h_flip(), original_entries[i].h_flip()) << "Mismatch at index " << i;
         EXPECT_EQ(final_entries[i].v_flip(), original_entries[i].v_flip()) << "Mismatch at index " << i;
     }
@@ -492,7 +492,7 @@ TEST_F(LayerModeConverterTests, RoundTripCoveredLayerType)
     ASSERT_EQ(final_entries.size(), original_entries.size());
     for (std::size_t i = 0; i < original_entries.size(); ++i) {
         EXPECT_EQ(final_entries[i].tile_index(), original_entries[i].tile_index()) << "Mismatch at index " << i;
-        EXPECT_EQ(final_entries[i].pal_index(), original_entries[i].pal_index()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].palette_index(), original_entries[i].palette_index()) << "Mismatch at index " << i;
         EXPECT_EQ(final_entries[i].h_flip(), original_entries[i].h_flip()) << "Mismatch at index " << i;
         EXPECT_EQ(final_entries[i].v_flip(), original_entries[i].v_flip()) << "Mismatch at index " << i;
     }
@@ -520,7 +520,7 @@ TEST_F(LayerModeConverterTests, RoundTripSplitLayerType)
     ASSERT_EQ(final_entries.size(), original_entries.size());
     for (std::size_t i = 0; i < original_entries.size(); ++i) {
         EXPECT_EQ(final_entries[i].tile_index(), original_entries[i].tile_index()) << "Mismatch at index " << i;
-        EXPECT_EQ(final_entries[i].pal_index(), original_entries[i].pal_index()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].palette_index(), original_entries[i].palette_index()) << "Mismatch at index " << i;
         EXPECT_EQ(final_entries[i].h_flip(), original_entries[i].h_flip()) << "Mismatch at index " << i;
         EXPECT_EQ(final_entries[i].v_flip(), original_entries[i].v_flip()) << "Mismatch at index " << i;
     }
@@ -624,7 +624,7 @@ TEST_F(LayerModeConverterTests, RoundTripMultipleMetatiles)
     ASSERT_EQ(final_entries.size(), original_entries.size());
     for (std::size_t i = 0; i < original_entries.size(); ++i) {
         EXPECT_EQ(final_entries[i].tile_index(), original_entries[i].tile_index()) << "Mismatch at index " << i;
-        EXPECT_EQ(final_entries[i].pal_index(), original_entries[i].pal_index()) << "Mismatch at index " << i;
+        EXPECT_EQ(final_entries[i].palette_index(), original_entries[i].palette_index()) << "Mismatch at index " << i;
         EXPECT_EQ(final_entries[i].h_flip(), original_entries[i].h_flip()) << "Mismatch at index " << i;
         EXPECT_EQ(final_entries[i].v_flip(), original_entries[i].v_flip()) << "Mismatch at index " << i;
     }

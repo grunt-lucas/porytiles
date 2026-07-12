@@ -38,7 +38,7 @@ class TilesetArtifactKeyProvider {
     [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_tiles_png(const std::string &tileset_name) const = 0;
 
     [[nodiscard]] virtual ChainableResult<ArtifactKey>
-    key_for_porymap_pal_n(const std::string &tileset_name, std::size_t index) const = 0;
+    key_for_porymap_palette_n(const std::string &tileset_name, std::size_t index) const = 0;
 
     [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_porymap_anim_frame(
         const std::string &tileset_name, const std::string &anim_name, const std::string &frame_name) const = 0;
@@ -57,7 +57,7 @@ class TilesetArtifactKeyProvider {
     key_for_attributes_csv(const std::string &tileset_name) const = 0;
 
     [[nodiscard]] virtual ChainableResult<ArtifactKey>
-    key_for_porytiles_pal_n(const std::string &tileset_name, std::size_t index) const = 0;
+    key_for_porytiles_palette_n(const std::string &tileset_name, std::size_t index) const = 0;
 
     [[nodiscard]] virtual ChainableResult<ArtifactKey> key_for_porytiles_anim_frame(
         const std::string &tileset_name, const std::string &anim_name, const std::string &frame_name) const = 0;
@@ -173,14 +173,14 @@ class TilesetArtifactKeyProvider {
             result.push_back(tiles_png_key);
         }
 
-        for (std::size_t i = 0; i < pal::num_pals; i++) {
+        for (std::size_t i = 0; i < palette::num_palettes; i++) {
             PT_TRY_ASSIGN_CHAIN_ERR(
-                pal_key,
-                key_for_porymap_pal_n(tileset_name, i),
+                palette_key,
+                key_for_porymap_palette_n(tileset_name, i),
                 std::vector<ArtifactKey>,
                 "Failed to get Porymap artifact keys.");
-            if (artifact_exists(pal_key)) {
-                result.push_back(pal_key);
+            if (artifact_exists(palette_key)) {
+                result.push_back(palette_key);
             }
         }
 
@@ -268,10 +268,10 @@ class TilesetArtifactKeyProvider {
             result.push_back(attribute_csv_key);
         }
 
-        for (std::size_t i = 0; i < pal::num_pals; i++) {
+        for (std::size_t i = 0; i < palette::num_palettes; i++) {
             PT_TRY_ASSIGN_CHAIN_ERR(
                 override_key,
-                key_for_porytiles_pal_n(tileset_name, i),
+                key_for_porytiles_palette_n(tileset_name, i),
                 std::vector<ArtifactKey>,
                 "Failed to get Porytiles artifact keys.");
             if (artifact_exists(override_key)) {

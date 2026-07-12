@@ -34,8 +34,8 @@
 #include "porytiles/infra/services/attributes_csv_loader.hpp"
 #include "porytiles/infra/services/color_palette_printer.hpp"
 #include "porytiles/infra/services/incbin_declaration_appender.hpp"
-#include "porytiles/infra/services/jasc_pal_loader.hpp"
-#include "porytiles/infra/services/jasc_pal_saver.hpp"
+#include "porytiles/infra/services/jasc_palette_loader.hpp"
+#include "porytiles/infra/services/jasc_palette_saver.hpp"
 #include "porytiles/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles/infra/services/png_rgba_image_loader.hpp"
@@ -182,7 +182,7 @@ class TilesetCommandServices {
   public:
     TilesetCommandServices(TilesetCommandEnv &env, const std::string &tileset_name)
         : tile_printer{std::make_unique<AsciiTilePrinter>(env.text_formatter)},
-          pal_printer{std::make_unique<ColorPalettePrinter>(env.text_formatter)}, jasc_loader{env.text_formatter},
+          palette_printer{std::make_unique<ColorPalettePrinter>(env.text_formatter)}, jasc_loader{env.text_formatter},
           jasc_saver{env.text_formatter}, anim_json_parser{env.text_formatter},
           anim_code_parser{env.text_formatter, env.diag.get()},
           metadata_provider{env.project_root, env.text_formatter, env.diag.get()},
@@ -238,7 +238,12 @@ class TilesetCommandServices {
               &artifact_writer,
               env.diag.get()},
           compiler{
-              &env.config, &resolved.schema, env.text_formatter, env.diag.get(), tile_printer.get(), pal_printer.get()}
+              &env.config,
+              &resolved.schema,
+              env.text_formatter,
+              env.diag.get(),
+              tile_printer.get(),
+              palette_printer.get()}
     {
     }
 
@@ -248,13 +253,13 @@ class TilesetCommandServices {
     TilesetCommandServices &operator=(TilesetCommandServices &&) = delete;
 
     std::unique_ptr<TilePrinter> tile_printer;
-    std::unique_ptr<PalettePrinter> pal_printer;
+    std::unique_ptr<PalettePrinter> palette_printer;
     PngRgbaImageLoader png_rgba_loader{};
     PngIndexedImageLoader png_indexed_loader{};
     PngRgbaImageSaver png_rgba_saver{};
     PngIndexedImageSaver png_indexed_saver{};
-    JascPalLoader jasc_loader;
-    JascPalSaver jasc_saver;
+    JascPaletteLoader jasc_loader;
+    JascPaletteSaver jasc_saver;
     AnimJsonParser anim_json_parser;
     AnimCodeParser anim_code_parser;
     AnimCodeGenerator anim_code_generator{};

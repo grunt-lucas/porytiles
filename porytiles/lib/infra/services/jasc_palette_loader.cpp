@@ -1,4 +1,4 @@
-#include "porytiles/infra/services/jasc_pal_loader.hpp"
+#include "porytiles/infra/services/jasc_palette_loader.hpp"
 
 #include <expected>
 #include <filesystem>
@@ -15,7 +15,7 @@ using namespace porytiles;
 
 bool is_wildcard_marker(std::string_view line)
 {
-    // allow '-' for backwards compatibility with Porytiles1, when writing pals we'll always use '*'
+    // allow '-' for backwards compatibility with Porytiles1, when writing palettes we'll always use '*'
     return line == "*" || line == "-";
 }
 
@@ -77,7 +77,7 @@ ChainableResult<std::optional<Rgba32>> parse_jasc_line(std::string_view line, co
         Rgba32::alpha_opaque}};
 }
 
-ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
+ChainableResult<Palette<Rgba32, palette::max_size>> parse_jasc_file(
     const std::filesystem::path &path,
     bool allow_wildcards,
     const TextFormatter &format,
@@ -119,7 +119,7 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
         return FormattableError{std::move(err_lines)};
     }
 
-    Palette<Rgba32, pal::max_size> pal{};
+    Palette<Rgba32, palette::max_size> palette{};
 
     // First line of file *must* be "JASC-PAL"
     if (lines[0] != "JASC-PAL") {
@@ -160,13 +160,13 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
         return FormattableError{std::move(err_lines)};
     }
     const auto declared_size = declared_size_result.value();
-    if (declared_size != pal::max_size) {
+    if (declared_size != palette::max_size) {
         std::vector<std::string> err_lines{};
         err_lines.push_back(format.format(
             "{}:{}: expected declared size to be '{}', saw '{}'",
             FormatParam{path.string(), Style::bold},
             FormatParam{"3", Style::bold},
-            FormatParam{pal::max_size, Style::bold},
+            FormatParam{palette::max_size, Style::bold},
             FormatParam{declared_size, Style::bold}));
         err_lines.emplace_back();
         err_lines.append_range(file_printer.print(lines, std::vector<std::size_t>{2}));
@@ -187,12 +187,12 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
                 FormatParam{line_index + 1, Style::bold}));
             err_lines.emplace_back();
             err_lines.append_range(file_printer.print(lines, std::vector{line_index}));
-            return ChainableResult<Palette<Rgba32, pal::max_size>>{
+            return ChainableResult<Palette<Rgba32, palette::max_size>>{
                 FormattableError{std::move(err_lines)}, color_result};
         }
 
         if (const auto &maybe_color = color_result.value(); maybe_color.has_value()) {
-            pal.set(color_index, maybe_color.value());
+            palette.set(color_index, maybe_color.value());
         }
         else {
             // Wildcard marker encountered
@@ -206,7 +206,7 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
                 err_lines.append_range(file_printer.print(lines, std::vector{line_index}));
                 return FormattableError{std::move(err_lines)};
             }
-            pal.set_wildcard(color_index);
+            palette.set_wildcard(color_index);
         }
     }
 
@@ -222,20 +222,20 @@ ChainableResult<Palette<Rgba32, pal::max_size>> parse_jasc_file(
         return FormattableError{std::move(err_lines)};
     }
 
-    return pal;
+    return palette;
 }
 
 } // namespace
 
 namespace porytiles {
 
-ChainableResult<Palette<Rgba32, pal::max_size>>
-JascPalLoader::load_with_wildcards(const std::filesystem::path &path) const
+ChainableResult<Palette<Rgba32, palette::max_size>>
+JascPaletteLoader::load_with_wildcards(const std::filesystem::path &path) const
 {
     return parse_jasc_file(path, true, *format_, *file_printer_);
 }
 
-ChainableResult<Palette<Rgba32, pal::max_size>> JascPalLoader::load(const std::filesystem::path &path) const
+ChainableResult<Palette<Rgba32, palette::max_size>> JascPaletteLoader::load(const std::filesystem::path &path) const
 {
     return parse_jasc_file(path, false, *format_, *file_printer_);
 }

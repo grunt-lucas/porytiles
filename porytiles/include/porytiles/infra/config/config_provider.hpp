@@ -4,7 +4,7 @@
 
 #include "porytiles/app/config/primary_pairing_mode.hpp"
 #include "porytiles/domain/config/anim_key_frame_resolution_strategy.hpp"
-#include "porytiles/domain/config/anim_pal_resolution_strategy.hpp"
+#include "porytiles/domain/config/anim_palette_resolution_strategy.hpp"
 #include "porytiles/domain/config/artifact_edit_mode.hpp"
 #include "porytiles/domain/config/metatile_attribute_field_spec.hpp"
 #include "porytiles/domain/config/packing_strategy_params.hpp"
@@ -12,7 +12,7 @@
 #include "porytiles/domain/config/per_anim_overrides.hpp"
 #include "porytiles/domain/config/tile_sharing_alignment.hpp"
 #include "porytiles/domain/config/tile_sharing_packing.hpp"
-#include "porytiles/domain/config/tiles_pal_mode.hpp"
+#include "porytiles/domain/config/tiles_palette_mode.hpp"
 #include "porytiles/domain/models/rgba32.hpp"
 #include "porytiles/domain/packing/models/palette_hint.hpp"
 #include "porytiles/infra/config/frlg_alternate_mask_mode.hpp"
@@ -57,9 +57,10 @@ class ConfigProvider {
     num_metatiles_total(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<std::size_t>
-    num_pals_in_primary(ConfigScopeType type, const std::string &scope) const;
+    num_palettes_in_primary(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<std::size_t> num_pals_total(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::size_t>
+    num_palettes_total(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<std::size_t>
     max_map_data_size(ConfigScopeType type, const std::string &scope) const;
@@ -74,12 +75,12 @@ class ConfigProvider {
     tiles_edit_mode(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<ArtifactEditMode>
-    pals_edit_mode(ConfigScopeType type, const std::string &scope) const;
+    palettes_edit_mode(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<bool> pal_hints_enabled(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<bool> palette_hints_enabled(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<std::vector<PaletteHint>>
-    pal_hints(ConfigScopeType type, const std::string &scope) const;
+    palette_hints(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<PackingStrategyType>
     packing_strategy(ConfigScopeType type, const std::string &scope) const;
@@ -93,16 +94,17 @@ class ConfigProvider {
     [[nodiscard]] virtual LayerValue<TileSharingAlignment>
     tile_sharing_alignment(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<TilesPalMode> tiles_pal_mode(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<TilesPaletteMode>
+    tiles_palette_mode(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<AnimPalResolutionStrategy>
-    global_anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<AnimPaletteResolutionStrategy>
+    global_anim_palette_resolution_strategy(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<AnimKeyFrameResolutionStrategy>
     global_anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const;
 
-    [[nodiscard]] virtual LayerValue<AnimMultiPalSubtileResolutionStrategy>
-    global_anim_multi_pal_subtile_resolution_strategy(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<AnimMultiPaletteSubtileResolutionStrategy>
+    global_anim_multi_palette_subtile_resolution_strategy(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<FrameLinking>
     global_frame_linking(ConfigScopeType type, const std::string &scope) const;

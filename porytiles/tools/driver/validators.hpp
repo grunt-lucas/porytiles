@@ -7,7 +7,7 @@
 
 #include "CLI/CLI.hpp"
 
-#include "porytiles/domain/config/tiles_pal_mode.hpp"
+#include "porytiles/domain/config/tiles_palette_mode.hpp"
 #include "porytiles/utilities/parse_int.hpp"
 #include "porytiles/utilities/string_utils.hpp"
 

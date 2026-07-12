@@ -45,14 +45,14 @@ void OverrideConfigProvider::set_num_metatiles_total(std::size_t value)
     num_metatiles_total_override_ = std::move(value);
 }
 
-void OverrideConfigProvider::set_num_pals_in_primary(std::size_t value)
+void OverrideConfigProvider::set_num_palettes_in_primary(std::size_t value)
 {
-    num_pals_in_primary_override_ = std::move(value);
+    num_palettes_in_primary_override_ = std::move(value);
 }
 
-void OverrideConfigProvider::set_num_pals_total(std::size_t value)
+void OverrideConfigProvider::set_num_palettes_total(std::size_t value)
 {
-    num_pals_total_override_ = std::move(value);
+    num_palettes_total_override_ = std::move(value);
 }
 
 void OverrideConfigProvider::set_max_map_data_size(std::size_t value)
@@ -75,19 +75,19 @@ void OverrideConfigProvider::set_tiles_edit_mode(ArtifactEditMode value)
     tiles_edit_mode_override_ = std::move(value);
 }
 
-void OverrideConfigProvider::set_pals_edit_mode(ArtifactEditMode value)
+void OverrideConfigProvider::set_palettes_edit_mode(ArtifactEditMode value)
 {
-    pals_edit_mode_override_ = std::move(value);
+    palettes_edit_mode_override_ = std::move(value);
 }
 
-void OverrideConfigProvider::set_pal_hints_enabled(bool value)
+void OverrideConfigProvider::set_palette_hints_enabled(bool value)
 {
-    pal_hints_enabled_override_ = std::move(value);
+    palette_hints_enabled_override_ = std::move(value);
 }
 
-void OverrideConfigProvider::set_pal_hints(std::vector<PaletteHint> value)
+void OverrideConfigProvider::set_palette_hints(std::vector<PaletteHint> value)
 {
-    pal_hints_override_ = std::move(value);
+    palette_hints_override_ = std::move(value);
 }
 
 void OverrideConfigProvider::set_packing_strategy(PackingStrategyType value)
@@ -110,14 +110,14 @@ void OverrideConfigProvider::set_tile_sharing_alignment(TileSharingAlignment val
     tile_sharing_alignment_override_ = std::move(value);
 }
 
-void OverrideConfigProvider::set_tiles_pal_mode(TilesPalMode value)
+void OverrideConfigProvider::set_tiles_palette_mode(TilesPaletteMode value)
 {
-    tiles_pal_mode_override_ = std::move(value);
+    tiles_palette_mode_override_ = std::move(value);
 }
 
-void OverrideConfigProvider::set_global_anim_pal_resolution_strategy(AnimPalResolutionStrategy value)
+void OverrideConfigProvider::set_global_anim_palette_resolution_strategy(AnimPaletteResolutionStrategy value)
 {
-    global_anim_pal_resolution_strategy_override_ = std::move(value);
+    global_anim_palette_resolution_strategy_override_ = std::move(value);
 }
 
 void OverrideConfigProvider::set_global_anim_key_frame_resolution_strategy(AnimKeyFrameResolutionStrategy value)
@@ -125,10 +125,10 @@ void OverrideConfigProvider::set_global_anim_key_frame_resolution_strategy(AnimK
     global_anim_key_frame_resolution_strategy_override_ = std::move(value);
 }
 
-void OverrideConfigProvider::set_global_anim_multi_pal_subtile_resolution_strategy(
-    AnimMultiPalSubtileResolutionStrategy value)
+void OverrideConfigProvider::set_global_anim_multi_palette_subtile_resolution_strategy(
+    AnimMultiPaletteSubtileResolutionStrategy value)
 {
-    global_anim_multi_pal_subtile_resolution_strategy_override_ = std::move(value);
+    global_anim_multi_palette_subtile_resolution_strategy_override_ = std::move(value);
 }
 
 void OverrideConfigProvider::set_global_frame_linking(FrameLinking value)
@@ -273,20 +273,21 @@ OverrideConfigProvider::num_metatiles_total(ConfigScopeType type, const std::str
 }
 
 LayerValue<std::size_t>
-OverrideConfigProvider::num_pals_in_primary(ConfigScopeType type, const std::string &scope) const
+OverrideConfigProvider::num_palettes_in_primary(ConfigScopeType type, const std::string &scope) const
 {
-    if (!scope_matches(type, scope) || !num_pals_in_primary_override_.has_value()) {
+    if (!scope_matches(type, scope) || !num_palettes_in_primary_override_.has_value()) {
         return LayerValue<std::size_t>::not_provided();
     }
-    return LayerValue<std::size_t>::valid(num_pals_in_primary_override_.value(), "num_pals_in_primary", source_info_);
+    return LayerValue<std::size_t>::valid(
+        num_palettes_in_primary_override_.value(), "num_palettes_in_primary", source_info_);
 }
 
-LayerValue<std::size_t> OverrideConfigProvider::num_pals_total(ConfigScopeType type, const std::string &scope) const
+LayerValue<std::size_t> OverrideConfigProvider::num_palettes_total(ConfigScopeType type, const std::string &scope) const
 {
-    if (!scope_matches(type, scope) || !num_pals_total_override_.has_value()) {
+    if (!scope_matches(type, scope) || !num_palettes_total_override_.has_value()) {
         return LayerValue<std::size_t>::not_provided();
     }
-    return LayerValue<std::size_t>::valid(num_pals_total_override_.value(), "num_pals_total", source_info_);
+    return LayerValue<std::size_t>::valid(num_palettes_total_override_.value(), "num_palettes_total", source_info_);
 }
 
 LayerValue<std::size_t> OverrideConfigProvider::max_map_data_size(ConfigScopeType type, const std::string &scope) const
@@ -325,29 +326,30 @@ OverrideConfigProvider::tiles_edit_mode(ConfigScopeType type, const std::string 
 }
 
 LayerValue<ArtifactEditMode>
-OverrideConfigProvider::pals_edit_mode(ConfigScopeType type, const std::string &scope) const
+OverrideConfigProvider::palettes_edit_mode(ConfigScopeType type, const std::string &scope) const
 {
-    if (!scope_matches(type, scope) || !pals_edit_mode_override_.has_value()) {
+    if (!scope_matches(type, scope) || !palettes_edit_mode_override_.has_value()) {
         return LayerValue<ArtifactEditMode>::not_provided();
     }
-    return LayerValue<ArtifactEditMode>::valid(pals_edit_mode_override_.value(), "pals_edit_mode", source_info_);
+    return LayerValue<ArtifactEditMode>::valid(
+        palettes_edit_mode_override_.value(), "palettes_edit_mode", source_info_);
 }
 
-LayerValue<bool> OverrideConfigProvider::pal_hints_enabled(ConfigScopeType type, const std::string &scope) const
+LayerValue<bool> OverrideConfigProvider::palette_hints_enabled(ConfigScopeType type, const std::string &scope) const
 {
-    if (!scope_matches(type, scope) || !pal_hints_enabled_override_.has_value()) {
+    if (!scope_matches(type, scope) || !palette_hints_enabled_override_.has_value()) {
         return LayerValue<bool>::not_provided();
     }
-    return LayerValue<bool>::valid(pal_hints_enabled_override_.value(), "pal_hints_enabled", source_info_);
+    return LayerValue<bool>::valid(palette_hints_enabled_override_.value(), "palette_hints_enabled", source_info_);
 }
 
 LayerValue<std::vector<PaletteHint>>
-OverrideConfigProvider::pal_hints(ConfigScopeType type, const std::string &scope) const
+OverrideConfigProvider::palette_hints(ConfigScopeType type, const std::string &scope) const
 {
-    if (!scope_matches(type, scope) || !pal_hints_override_.has_value()) {
+    if (!scope_matches(type, scope) || !palette_hints_override_.has_value()) {
         return LayerValue<std::vector<PaletteHint>>::not_provided();
     }
-    return LayerValue<std::vector<PaletteHint>>::valid(pal_hints_override_.value(), "pal_hints", source_info_);
+    return LayerValue<std::vector<PaletteHint>>::valid(palette_hints_override_.value(), "palette_hints", source_info_);
 }
 
 LayerValue<PackingStrategyType>
@@ -389,22 +391,26 @@ OverrideConfigProvider::tile_sharing_alignment(ConfigScopeType type, const std::
         tile_sharing_alignment_override_.value(), "tile_sharing_alignment", source_info_);
 }
 
-LayerValue<TilesPalMode> OverrideConfigProvider::tiles_pal_mode(ConfigScopeType type, const std::string &scope) const
+LayerValue<TilesPaletteMode>
+OverrideConfigProvider::tiles_palette_mode(ConfigScopeType type, const std::string &scope) const
 {
-    if (!scope_matches(type, scope) || !tiles_pal_mode_override_.has_value()) {
-        return LayerValue<TilesPalMode>::not_provided();
+    if (!scope_matches(type, scope) || !tiles_palette_mode_override_.has_value()) {
+        return LayerValue<TilesPaletteMode>::not_provided();
     }
-    return LayerValue<TilesPalMode>::valid(tiles_pal_mode_override_.value(), "tiles_pal_mode", source_info_);
+    return LayerValue<TilesPaletteMode>::valid(
+        tiles_palette_mode_override_.value(), "tiles_palette_mode", source_info_);
 }
 
-LayerValue<AnimPalResolutionStrategy>
-OverrideConfigProvider::global_anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const
+LayerValue<AnimPaletteResolutionStrategy>
+OverrideConfigProvider::global_anim_palette_resolution_strategy(ConfigScopeType type, const std::string &scope) const
 {
-    if (!scope_matches(type, scope) || !global_anim_pal_resolution_strategy_override_.has_value()) {
-        return LayerValue<AnimPalResolutionStrategy>::not_provided();
+    if (!scope_matches(type, scope) || !global_anim_palette_resolution_strategy_override_.has_value()) {
+        return LayerValue<AnimPaletteResolutionStrategy>::not_provided();
     }
-    return LayerValue<AnimPalResolutionStrategy>::valid(
-        global_anim_pal_resolution_strategy_override_.value(), "global_anim_pal_resolution_strategy", source_info_);
+    return LayerValue<AnimPaletteResolutionStrategy>::valid(
+        global_anim_palette_resolution_strategy_override_.value(),
+        "global_anim_palette_resolution_strategy",
+        source_info_);
 }
 
 LayerValue<AnimKeyFrameResolutionStrategy>
@@ -419,16 +425,16 @@ OverrideConfigProvider::global_anim_key_frame_resolution_strategy(ConfigScopeTyp
         source_info_);
 }
 
-LayerValue<AnimMultiPalSubtileResolutionStrategy>
-OverrideConfigProvider::global_anim_multi_pal_subtile_resolution_strategy(
+LayerValue<AnimMultiPaletteSubtileResolutionStrategy>
+OverrideConfigProvider::global_anim_multi_palette_subtile_resolution_strategy(
     ConfigScopeType type, const std::string &scope) const
 {
-    if (!scope_matches(type, scope) || !global_anim_multi_pal_subtile_resolution_strategy_override_.has_value()) {
-        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::not_provided();
+    if (!scope_matches(type, scope) || !global_anim_multi_palette_subtile_resolution_strategy_override_.has_value()) {
+        return LayerValue<AnimMultiPaletteSubtileResolutionStrategy>::not_provided();
     }
-    return LayerValue<AnimMultiPalSubtileResolutionStrategy>::valid(
-        global_anim_multi_pal_subtile_resolution_strategy_override_.value(),
-        "global_anim_multi_pal_subtile_resolution_strategy",
+    return LayerValue<AnimMultiPaletteSubtileResolutionStrategy>::valid(
+        global_anim_multi_palette_subtile_resolution_strategy_override_.value(),
+        "global_anim_multi_palette_subtile_resolution_strategy",
         source_info_);
 }
 

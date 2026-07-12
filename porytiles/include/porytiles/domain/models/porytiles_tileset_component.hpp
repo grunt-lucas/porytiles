@@ -32,9 +32,9 @@ class PorytilesTilesetComponent {
 
     [[nodiscard]] std::optional<MetatileAttribute> get_attribute(std::size_t metatile_id) const;
 
-    void set_pal(std::size_t pal_index, Palette<Rgba32, pal::max_size> pal);
+    void set_palette(std::size_t palette_index, Palette<Rgba32, palette::max_size> palette);
 
-    [[nodiscard]] const std::optional<Palette<Rgba32, pal::max_size>> &pal_at(std::size_t pal_index) const;
+    [[nodiscard]] const std::optional<Palette<Rgba32, palette::max_size>> &palette_at(std::size_t palette_index) const;
 
     [[nodiscard]] bool is_empty() const;
 
@@ -87,9 +87,10 @@ class PorytilesTilesetComponent {
         return metatile_attributes_;
     }
 
-    [[nodiscard]] const std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> &pals() const
+    [[nodiscard]] const std::array<std::optional<Palette<Rgba32, palette::max_size>>, palette::num_palettes> &
+    palettes() const
     {
-        return pals_;
+        return palettes_;
     }
 
     [[nodiscard]] const std::map<std::string, Animation<Rgba32>> &anims() const
@@ -117,7 +118,7 @@ class PorytilesTilesetComponent {
     Image<Rgba32> middle_;
     Image<Rgba32> top_;
     std::map<std::size_t, MetatileAttribute> metatile_attributes_;
-    std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> pals_;
+    std::array<std::optional<Palette<Rgba32, palette::max_size>>, palette::num_palettes> palettes_;
     std::map<std::string, Animation<Rgba32>> anims_;
     std::map<std::string, std::vector<AnimOverrideEntry>> primary_anim_overrides_;
 };

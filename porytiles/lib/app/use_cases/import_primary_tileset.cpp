@@ -51,13 +51,13 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
     // palette slot containing the extrinsic transparency color) as a proper diagnostic at import time rather than
     // deferring the failure to a later compile.
     //
-    // The override provider forces tiles_edit_mode and pals_edit_mode to 'locked' without touching other user config.
-    // ET is intentionally NOT overridden here: it is a property of the Porymap palettes themselves and the user's
-    // configured value is the right thing to validate against.
+    // The override provider forces tiles_edit_mode and palettes_edit_mode to 'locked' without touching other user
+    // config. ET is intentionally NOT overridden here: it is a property of the Porymap palettes themselves and the
+    // user's configured value is the right thing to validate against.
     auto import_override = std::make_unique<OverrideConfigProvider>(
         ConfigScopeType::tileset, tileset_name, "import-tileset internal locked recompile");
     import_override->set_tiles_edit_mode(ArtifactEditMode::locked);
-    import_override->set_pals_edit_mode(ArtifactEditMode::locked);
+    import_override->set_palettes_edit_mode(ArtifactEditMode::locked);
     domain_config_->add_provider(std::move(import_override));
 
     PT_TRY_ASSIGN_CHAIN_ERR(

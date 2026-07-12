@@ -35,7 +35,11 @@ class DecompileTilesetCommand final : public Command {
         TilesetCommandServices services{env, tileset_name_};
 
         PrimaryTilesetDecompiler decompiler{
-            &env.config, env.text_formatter, env.diag.get(), services.tile_printer.get(), services.pal_printer.get()};
+            &env.config,
+            env.text_formatter,
+            env.diag.get(),
+            services.tile_printer.get(),
+            services.palette_printer.get()};
         DecompilePrimaryTileset decompile_use_case{
             &services.repo,
             &decompiler,

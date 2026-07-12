@@ -32,9 +32,9 @@ class TilesetCompiler {
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag,
         gsl::not_null<const TilePrinter *> tile_printer,
-        gsl::not_null<const PalettePrinter *> pal_printer)
+        gsl::not_null<const PalettePrinter *> palette_printer)
         : config_{config}, schema_{schema}, format_{format}, diag_{diag}, tile_printer_{tile_printer},
-          pal_printer_{pal_printer}
+          palette_printer_{palette_printer}
     {
     }
 
@@ -53,7 +53,7 @@ class TilesetCompiler {
     const TextFormatter *format_;
     const UserDiagnostics *diag_;
     const TilePrinter *tile_printer_;
-    const PalettePrinter *pal_printer_;
+    const PalettePrinter *palette_printer_;
 };
 
 } // namespace porytiles

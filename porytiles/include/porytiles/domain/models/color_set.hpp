@@ -12,7 +12,7 @@
 namespace porytiles {
 
 /// @brief Maximum allowable color count for GBA hardware.
-inline constexpr std::size_t num_colors = pal::max_size * pal::num_pals;
+inline constexpr std::size_t num_colors = palette::max_size * palette::num_palettes;
 
 /// @brief A set of colors represented as a bitset.
 ///

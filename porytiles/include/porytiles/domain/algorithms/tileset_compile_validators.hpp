@@ -40,7 +40,7 @@ struct TilesetCompileValidatorServices {
     const DomainConfig &config;
     const UserDiagnostics &diag;
     const TilePrinter &tile_printer;
-    const PalettePrinter &pal_printer;
+    const PalettePrinter &palette_printer;
 };
 
 namespace details {
@@ -175,7 +175,7 @@ inline void report_color_counts(
 {
     std::vector<std::string> color_lines;
     color_lines.emplace_back("color counts:");
-    auto counts = services.pal_printer.print_rgba_pal_counts(color_counts);
+    auto counts = services.palette_printer.print_rgba_palette_counts(color_counts);
     color_lines.append_range(counts);
     services.diag.error_note(tag, color_lines);
 }
@@ -257,27 +257,27 @@ inline void report_color_counts(
 ///
 /// @param services Common services parameter store.
 /// @param tileset_name The name of the tileset being validated (used for config lookup).
-/// @param pal The Porymap palette to validate.
-/// @param pal_index The index of this palette (0-12 typically), used for diagnostic messages.
+/// @param palette The Porymap palette to validate.
+/// @param palette_index The index of this palette (0-12 typically), used for diagnostic messages.
 /// @return Empty result on success, or FormattableError if extrinsic transparency appears in non-slot-0 positions.
-[[nodiscard]] inline ChainableResult<void> validate_porymap_pal(
+[[nodiscard]] inline ChainableResult<void> validate_porymap_palette(
     const TilesetCompileValidatorServices &services,
     const std::string &tileset_name,
-    const Palette<Rgba32, pal::max_size> &pal,
-    std::size_t pal_index)
+    const Palette<Rgba32, palette::max_size> &palette,
+    std::size_t palette_index)
 {
     PT_UNWRAP_TILESET_CONFIG_REF(services.config, extrinsic_transparency, tileset_name, void);
 
     bool hit_error = false;
-    const std::string filename = pal_filename(pal_index);
+    const std::string filename = palette_filename(palette_index);
     std::vector<std::size_t> violating_slots{};
 
-    if (pal.is_wildcard(0)) {
+    if (palette.is_wildcard(0)) {
         panic("unexpected wildcard in Porymap palette slot 0");
     }
 
     // Check 1: Slot 0 should match extrinsic transparency (warning only)
-    const Rgba32 slot0_color = pal.slot_zero_color();
+    const Rgba32 slot0_color = palette.slot_zero_color();
     if (!slot0_color.is_extrinsically_transparent(extrinsic_transparency)) {
         std::vector<std::string> warning_lines;
         warning_lines.emplace_back(services.diag.formatter().format(
@@ -291,11 +291,11 @@ inline void report_color_counts(
 
         services.diag.warning_note(
             "porymap-palette-slot-0",
-            build_porymap_pal_highlight_lines(
+            build_porymap_palette_highlight_lines(
                 services.diag.formatter(),
-                services.pal_printer,
+                services.palette_printer,
                 "reserved transparency slot",
-                pal,
+                palette,
                 filename,
                 std::vector<std::size_t>{0}));
         services.diag.warning_note(
@@ -303,11 +303,11 @@ inline void report_color_counts(
     }
 
     // Check 2: Non-slot-0 positions cannot contain extrinsic transparency
-    for (std::size_t slot = 1; slot < pal.size(); ++slot) {
-        if (pal.is_wildcard(slot)) {
+    for (std::size_t slot = 1; slot < palette.size(); ++slot) {
+        if (palette.is_wildcard(slot)) {
             panic("unexpected wildcard in Porymap palette");
         }
-        const Rgba32 color = pal.at(slot);
+        const Rgba32 color = palette.at(slot);
         if (color.is_extrinsically_transparent(extrinsic_transparency)) {
             hit_error = true;
             violating_slots.push_back(slot);
@@ -326,11 +326,11 @@ inline void report_color_counts(
         // Print the palette with violating slots highlighted
         services.diag.error_note(
             "porymap-palette-transparency",
-            build_porymap_pal_highlight_lines(
+            build_porymap_palette_highlight_lines(
                 services.diag.formatter(),
-                services.pal_printer,
+                services.palette_printer,
                 "slots with invalid extrinsic transparency",
-                pal,
+                palette,
                 filename,
                 violating_slots));
         services.diag.error_note(
@@ -358,24 +358,24 @@ inline void report_color_counts(
 ///
 /// @param services Common services parameter store.
 /// @param tileset_name The name of the tileset being validated (used for config lookup).
-/// @param pal The Porytiles override palette to validate.
-/// @param pal_index The index of this palette (0-12 typically), used for diagnostic messages.
+/// @param palette The Porytiles override palette to validate.
+/// @param palette_index The index of this palette (0-12 typically), used for diagnostic messages.
 /// @return Empty result on success, or FormattableError if extrinsic transparency appears in non-slot-0 positions.
-[[nodiscard]] inline ChainableResult<void> validate_porytiles_pal(
+[[nodiscard]] inline ChainableResult<void> validate_porytiles_palette(
     const TilesetCompileValidatorServices &services,
     const std::string &tileset_name,
-    const Palette<Rgba32, pal::max_size> &pal,
-    std::size_t pal_index)
+    const Palette<Rgba32, palette::max_size> &palette,
+    std::size_t palette_index)
 {
     PT_UNWRAP_TILESET_CONFIG_REF(services.config, extrinsic_transparency, tileset_name, void);
 
     bool hit_error = false;
-    const std::string filename = pal_filename(pal_index);
+    const std::string filename = palette_filename(palette_index);
     std::vector<std::size_t> violating_slots;
 
     // Check 1: Slot 0 should match extrinsic transparency (warning only)
-    if (!pal.is_wildcard(0)) {
-        const Rgba32 slot0_color = pal.slot_zero_color();
+    if (!palette.is_wildcard(0)) {
+        const Rgba32 slot0_color = palette.slot_zero_color();
         if (!slot0_color.is_extrinsically_transparent(extrinsic_transparency)) {
             // Build the warning text
             std::vector<std::string> warning_text;
@@ -391,11 +391,11 @@ inline void report_color_counts(
             // Print the palette and config notes.
             services.diag.warning_note(
                 "porytiles-palette-slot-0",
-                build_porytiles_pal_highlight_lines(
+                build_porytiles_palette_highlight_lines(
                     services.diag.formatter(),
-                    services.pal_printer,
+                    services.palette_printer,
                     "reserved transparency slot",
-                    pal,
+                    palette,
                     filename,
                     std::vector<std::size_t>{0}));
             services.diag.warning_note(
@@ -404,11 +404,11 @@ inline void report_color_counts(
     }
 
     // Check 2: Non-slot-0 positions cannot contain extrinsic transparency
-    for (std::size_t slot = 1; slot < pal.size(); ++slot) {
-        if (pal.is_wildcard(slot)) {
+    for (std::size_t slot = 1; slot < palette.size(); ++slot) {
+        if (palette.is_wildcard(slot)) {
             continue;
         }
-        const Rgba32 color = pal.at(slot);
+        const Rgba32 color = palette.at(slot);
         if (color.is_extrinsically_transparent(extrinsic_transparency)) {
             hit_error = true;
             violating_slots.push_back(slot);
@@ -427,11 +427,11 @@ inline void report_color_counts(
         // Print the palette and config notes
         services.diag.error_note(
             "porytiles-palette-transparency",
-            build_porytiles_pal_highlight_lines(
+            build_porytiles_palette_highlight_lines(
                 services.diag.formatter(),
-                services.pal_printer,
+                services.palette_printer,
                 "slots with invalid extrinsic transparency",
-                pal,
+                palette,
                 filename,
                 violating_slots));
         services.diag.error_note(
@@ -448,7 +448,8 @@ inline void report_color_counts(
 /// @details
 /// Performs three checks on a palette hint:
 ///
-/// 1. **Size check (error)**: Palette hints must have at most 15 colors (pal::max_size - 1), since slot 0 is reserved
+/// 1. **Size check (error)**: Palette hints must have at most 15 colors (palette::max_size - 1), since slot 0 is
+/// reserved
 ///    for transparency and hints don't include the transparency slot.
 ///
 /// 2. **Extrinsic transparency check (error)**: Palette hints must not contain the extrinsic transparency color at any
@@ -464,7 +465,7 @@ inline void report_color_counts(
 /// @param tileset_name The name of the tileset being validated (used for config lookup).
 /// @param hint The palette hint to validate.
 /// @return Empty result on success, or FormattableError if any validation check fails.
-[[nodiscard]] inline ChainableResult<void> validate_pal_hint(
+[[nodiscard]] inline ChainableResult<void> validate_palette_hint(
     const TilesetCompileValidatorServices &services, const std::string &tileset_name, const PaletteHint &hint)
 {
     PT_UNWRAP_TILESET_CONFIG_REF(services.config, extrinsic_transparency, tileset_name, void);
@@ -472,23 +473,23 @@ inline void report_color_counts(
     bool hit_any_error = false;
     const std::string &hint_name = hint.name();
 
-    if (hint.pal().size() >= pal::max_size) {
+    if (hint.palette().size() >= palette::max_size) {
         services.diag.error(
             "palette-hint-size-violation",
             services.diag.formatter().format(
                 "palette hint '{}' has size '{}', max allowed size is '{}'",
                 FormatParam{hint_name, Style::bold},
-                FormatParam{hint.pal().size(), Style::bold},
-                FormatParam{pal::max_size - 1, Style::bold}));
+                FormatParam{hint.palette().size(), Style::bold},
+                FormatParam{palette::max_size - 1, Style::bold}));
         services.diag.error_note(
             "palette-hint-size-violation",
-            build_pal_hint_highlight_lines(
+            build_palette_hint_highlight_lines(
                 services.diag.formatter(),
-                services.pal_printer,
+                services.palette_printer,
                 "invalid extra slots start here",
                 hint,
                 hint_name,
-                std::vector{pal::max_size}));
+                std::vector{palette::max_size}));
         return FormattableError{"Validation failed for palette hint '{}'.", FormatParam{hint_name, Style::bold}};
     }
 
@@ -496,11 +497,11 @@ inline void report_color_counts(
     std::vector<std::size_t> violating_slots{};
 
     // Check 1: Extrinsic transparency not allowed in hints
-    for (std::size_t slot = 0; slot < hint.pal().size(); ++slot) {
-        if (hint.pal().is_wildcard(slot)) {
+    for (std::size_t slot = 0; slot < hint.palette().size(); ++slot) {
+        if (hint.palette().is_wildcard(slot)) {
             continue;
         }
-        const Rgba32 color = hint.pal().at(slot);
+        const Rgba32 color = hint.palette().at(slot);
 
         if (color.is_extrinsically_transparent(extrinsic_transparency)) {
             hit_any_error = true;
@@ -518,9 +519,9 @@ inline void report_color_counts(
     if (!violating_slots.empty()) {
         services.diag.error_note(
             "palette-hint-transparency",
-            build_pal_hint_highlight_lines(
+            build_palette_hint_highlight_lines(
                 services.diag.formatter(),
-                services.pal_printer,
+                services.palette_printer,
                 "slots with invalid extrinsic transparency",
                 hint,
                 hint_name,
@@ -531,11 +532,11 @@ inline void report_color_counts(
     violating_slots.clear();
 
     // Check 2: No duplicate colors
-    for (std::size_t slot = 0; slot < hint.pal().size(); ++slot) {
-        if (hint.pal().is_wildcard(slot)) {
+    for (std::size_t slot = 0; slot < hint.palette().size(); ++slot) {
+        if (hint.palette().is_wildcard(slot)) {
             continue;
         }
-        const Rgba32 color = hint.pal().at(slot);
+        const Rgba32 color = hint.palette().at(slot);
 
         if (seen_colors.contains(color)) {
             hit_any_error = true;
@@ -554,9 +555,9 @@ inline void report_color_counts(
     if (!violating_slots.empty()) {
         services.diag.error_note(
             "palette-hint-duplicate-color",
-            build_pal_hint_highlight_lines(
+            build_palette_hint_highlight_lines(
                 services.diag.formatter(),
-                services.pal_printer,
+                services.palette_printer,
                 "slots with invalid duplicate colors",
                 hint,
                 hint_name,
@@ -832,11 +833,11 @@ inline void report_color_counts(
                         color_counts[pixel]++;
                     }
 
-                    if (color_counts.size() > pal::max_size - 1) {
+                    if (color_counts.size() > palette::max_size - 1) {
                         hit_error = true;
                         std::string error_message = services.diag.formatter().format(
                             "found {}th unique tile color: {}",
-                            FormatParam{pal::max_size},
+                            FormatParam{palette::max_size},
                             FormatParam{pixel.to_jasc_str(), Style::bold});
                         details::report_validation_error_in_metatile(
                             services,
@@ -874,11 +875,11 @@ inline void report_color_counts(
                         color_counts[pixel]++;
                     }
 
-                    if (color_counts.size() > pal::max_size - 1) {
+                    if (color_counts.size() > palette::max_size - 1) {
                         hit_error = true;
                         std::string error_message = services.diag.formatter().format(
                             "found {}th unique frame tile color: {}",
-                            FormatParam{pal::max_size},
+                            FormatParam{palette::max_size},
                             FormatParam{pixel.to_jasc_str(), Style::bold});
                         details::report_validation_error_in_anim(
                             services,
@@ -913,7 +914,7 @@ inline void report_color_counts(
 
     if (hit_error) {
         return FormattableError{
-            "Found tile(s) with more than {} unique non-transparent pixels.", FormatParam{pal::max_size - 1}};
+            "Found tile(s) with more than {} unique non-transparent pixels.", FormatParam{palette::max_size - 1}};
     }
 
     return {};
@@ -935,7 +936,7 @@ inline void report_color_counts(
 /// @param is_secondary Whether this is a secondary tileset (determines which palette limit to use).
 /// @param metatiles The metatiles to include in global color counting.
 /// @param anims The animations to include in global color counting.
-/// @param porytiles_pals User-specified Porytiles override palettes (may contain wildcards).
+/// @param porytiles_palettes User-specified Porytiles override palettes (may contain wildcards).
 /// @param hints User-specified palette hints for color grouping.
 /// @return Empty result on success, or FormattableError if the global color limit is exceeded.
 ///
@@ -946,15 +947,15 @@ inline void report_color_counts(
     bool is_secondary,
     const std::vector<Metatile<Rgba32>> &metatiles,
     const std::map<std::string, Animation<Rgba32>> &anims,
-    const std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> &porytiles_pals,
+    const std::array<std::optional<Palette<Rgba32, palette::max_size>>, palette::num_palettes> &porytiles_palettes,
     const std::vector<PaletteHint> &hints)
 {
     PT_UNWRAP_TILESET_CONFIG_REF(services.config, extrinsic_transparency, tileset_name, void);
-    PT_UNWRAP_TILESET_CONFIG_REF(services.config, num_pals_in_primary, tileset_name, void);
-    PT_UNWRAP_TILESET_CONFIG_REF(services.config, num_pals_total, tileset_name, void);
+    PT_UNWRAP_TILESET_CONFIG_REF(services.config, num_palettes_in_primary, tileset_name, void);
+    PT_UNWRAP_TILESET_CONFIG_REF(services.config, num_palettes_total, tileset_name, void);
 
-    ConfigValue<std::size_t> num_pals_cfg = is_secondary ? num_pals_total : num_pals_in_primary;
-    std::size_t count_max = num_pals_cfg.value() * (pal::max_size - 1);
+    ConfigValue<std::size_t> num_palettes_cfg = is_secondary ? num_palettes_total : num_palettes_in_primary;
+    std::size_t count_max = num_palettes_cfg.value() * (palette::max_size - 1);
 
     std::map<Rgba32, unsigned int> color_counts{};
     bool hit_first_violation = false;
@@ -979,7 +980,7 @@ inline void report_color_counts(
                         hit_first_violation = true;
                         std::string error_message = services.diag.formatter().format(
                             "found {}th globally unique color: {}",
-                            FormatParam{pal::max_size},
+                            FormatParam{palette::max_size},
                             FormatParam{pixel.to_jasc_str(), Style::bold});
                         details::report_validation_error_in_metatile(
                             services,
@@ -1021,7 +1022,7 @@ inline void report_color_counts(
                         hit_first_violation = true;
                         std::string error_message = services.diag.formatter().format(
                             "found {}th globally unique color: {}",
-                            FormatParam{pal::max_size},
+                            FormatParam{palette::max_size},
                             FormatParam{pixel.to_jasc_str(), Style::bold});
                         details::report_validation_error_in_anim(
                             services,
@@ -1050,27 +1051,27 @@ inline void report_color_counts(
         }
     }
 
-    // Finally, check Porytiles override pals and hints. We check these last, since we've now seen all colors in the
+    // Finally, check Porytiles override palettes and hints. We check these last, since we've now seen all colors in the
     // actual input assets. This allows us to warn the user if they've specified manual colors that never actually
     // appear in the input assets.
     std::set<Rgba32> unused_manual_colors{};
-    for (std::size_t pal_index = 0; pal_index < num_pals_cfg; ++pal_index) {
-        const std::string filename = pal_filename(pal_index);
+    for (std::size_t palette_index = 0; palette_index < num_palettes_cfg; ++palette_index) {
+        const std::string filename = palette_filename(palette_index);
 
-        if (porytiles_pals.at(pal_index).has_value()) {
-            const auto &pal = porytiles_pals.at(pal_index).value();
+        if (porytiles_palettes.at(palette_index).has_value()) {
+            const auto &palette = porytiles_palettes.at(palette_index).value();
             std::vector<std::size_t> unused_slots{};
 
-            for (std::size_t slot_index = 0; slot_index < pal.size(); ++slot_index) {
-                if (pal.is_wildcard(slot_index)) {
+            for (std::size_t slot_index = 0; slot_index < palette.size(); ++slot_index) {
+                if (palette.is_wildcard(slot_index)) {
                     continue;
                 }
 
-                const auto &pixel = pal.at(slot_index);
-                // Warn user for nontransparent pal colors that satisfy either:
+                const auto &pixel = palette.at(slot_index);
+                // Warn user for nontransparent palette colors that satisfy either:
                 //
-                // 1. The pal color is not present in color_counts, i.e. it wasn't seen in any input assets.
-                // 2. It's present in our unused_manual_colors set, which we update as we iterate over the pals.
+                // 1. The palette color is not present in color_counts, i.e. it wasn't seen in any input assets.
+                // 2. It's present in our unused_manual_colors set, which we update as we iterate over the palettes.
                 //
                 // Condition 2) is vital because it allows us to detect and report all instances of an unused color,
                 // even if it was duplicated multiple times in the manual palettes.
@@ -1092,56 +1093,56 @@ inline void report_color_counts(
                     color_counts[pixel]++;
                 }
 
-                // Print the first violation only, but we'll keep counting across the rest of the pals so we can
+                // Print the first violation only, but we'll keep counting across the rest of the palettes so we can
                 // give a final tally.
                 if (color_counts.size() > count_max && !hit_first_violation) {
                     hit_first_violation = true;
                     std::string error_message = services.diag.formatter().format(
                         "in Porytiles palette '{}': found {}th globally unique color: {}",
                         FormatParam{filename, Style::bold},
-                        FormatParam{pal::max_size},
+                        FormatParam{palette::max_size},
                         FormatParam{pixel.to_jasc_str(), Style::bold});
                     services.diag.error("global-color-count-violation", error_message);
                     std::vector<std::size_t> violating_slot{};
                     violating_slot.push_back(slot_index);
                     services.diag.error_note(
                         "global-color-count-violation",
-                        build_porytiles_pal_highlight_lines(
+                        build_porytiles_palette_highlight_lines(
                             services.diag.formatter(),
-                            services.pal_printer,
+                            services.palette_printer,
                             "violating slot",
-                            pal,
+                            palette,
                             filename,
                             violating_slot));
                 }
-            } // END: loop over all slots in override pal
+            } // END: loop over all slots in override palette
 
-            // Print note highlighting all unused slots in this pal
+            // Print note highlighting all unused slots in this palette
             if (!unused_slots.empty()) {
                 services.diag.warning_note(
                     "unused-manual-color",
-                    build_porytiles_pal_highlight_lines(
+                    build_porytiles_palette_highlight_lines(
                         services.diag.formatter(),
-                        services.pal_printer,
+                        services.palette_printer,
                         "slots with unused colors",
-                        pal,
+                        palette,
                         filename,
                         unused_slots));
             }
             unused_slots.clear();
         }
-    } // END: loop over all override pals
+    } // END: loop over all override palettes
 
     for (const auto &hint : hints) {
         std::vector<std::size_t> unused_slots{};
 
-        for (std::size_t slot_index = 0; slot_index < hint.pal().size(); ++slot_index) {
-            const auto &pixel = hint.pal().at(slot_index);
+        for (std::size_t slot_index = 0; slot_index < hint.palette().size(); ++slot_index) {
+            const auto &pixel = hint.palette().at(slot_index);
 
-            // Warn user for nontransparent pal colors that satisfy either:
+            // Warn user for nontransparent palette colors that satisfy either:
             //
-            // 1. The pal color is not present in color_counts, i.e. it wasn't seen in any input assets.
-            // 2. It's present in our unused_manual_colors set, which we update as we iterate over the pals.
+            // 1. The palette color is not present in color_counts, i.e. it wasn't seen in any input assets.
+            // 2. It's present in our unused_manual_colors set, which we update as we iterate over the palettes.
             //
             // Condition 2) is vital because it allows us to detect and report all instances of an unused color,
             // even if it was duplicated multiple times in the manual palettes.
@@ -1170,37 +1171,37 @@ inline void report_color_counts(
                 std::string error_message = services.diag.formatter().format(
                     "in palette hint '{}': found {}th globally unique color: {}",
                     FormatParam{hint.name(), Style::bold},
-                    FormatParam{pal::max_size},
+                    FormatParam{palette::max_size},
                     FormatParam{pixel.to_jasc_str(), Style::bold});
                 services.diag.error("global-color-count-violation", error_message);
                 std::vector<std::size_t> violating_slot{};
                 violating_slot.push_back(slot_index);
                 services.diag.error_note(
                     "global-color-count-violation",
-                    build_pal_hint_highlight_lines(
+                    build_palette_hint_highlight_lines(
                         services.diag.formatter(),
-                        services.pal_printer,
+                        services.palette_printer,
                         "violating slot",
                         hint,
                         hint.name(),
                         violating_slot));
             }
-        } // END: loop over all slots in pal hint
+        } // END: loop over all slots in palette hint
 
-        // Print note highlighting all unused slots in this pal
+        // Print note highlighting all unused slots in this palette
         if (!unused_slots.empty()) {
             services.diag.warning_note(
                 "unused-manual-color",
-                build_pal_hint_highlight_lines(
+                build_palette_hint_highlight_lines(
                     services.diag.formatter(),
-                    services.pal_printer,
+                    services.palette_printer,
                     "slots with unused colors",
                     hint,
                     hint.name(),
                     unused_slots));
         }
         unused_slots.clear();
-    } // END: loop over all pal hints
+    } // END: loop over all palette hints
 
     if (color_counts.size() > count_max) {
         services.diag.error(
@@ -1212,7 +1213,7 @@ inline void report_color_counts(
         details::report_color_counts("global-color-count-violation", services, color_counts);
         services.diag.error_note(
             "global-color-count-violation",
-            build_global_color_limit_lines(services.diag.formatter(), count_max, num_pals_cfg));
+            build_global_color_limit_lines(services.diag.formatter(), count_max, num_palettes_cfg));
         return FormattableError{
             "Found '{}' unique colors globally, limit is '{}'.",
             FormatParam{color_counts.size(), Style::bold},
@@ -1234,20 +1235,20 @@ inline void report_color_counts(
 /// @param tileset_name The name of the tileset being validated (used for config lookup).
 /// @param metatiles The metatiles to check for precision loss.
 /// @param anims The animations to check for precision loss.
-/// @param porytiles_pals User-specified Porytiles override palettes to check.
+/// @param porytiles_palettes User-specified Porytiles override palettes to check.
 /// @param hints User-specified palette hints to check.
-/// @param porymap_pals Optional existing Porymap palettes (relevant for pal:patch and pal:locked modes).
+/// @param porymap_palettes Optional existing Porymap palettes (relevant for palette:patch and palette:locked modes).
 /// @return Empty result on success, or FormattableError if critical precision loss is detected.
 ///
-/// @todo Implementation pending. Should check Porymap palettes in pal:patch and pal:locked modes.
+/// @todo Implementation pending. Should check Porymap palettes in palette:patch and palette:locked modes.
 [[nodiscard]] inline ChainableResult<void> validate_precision_loss(
     const TilesetCompileValidatorServices &services,
     const std::string &tileset_name,
     const std::vector<Metatile<Rgba32>> &metatiles,
     const std::map<std::string, Animation<Rgba32>> &anims,
-    const std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> &porytiles_pals,
+    const std::array<std::optional<Palette<Rgba32, palette::max_size>>, palette::num_palettes> &porytiles_palettes,
     const std::vector<PaletteHint> &hints,
-    const std::optional<std::array<Palette<Rgba32, pal::max_size>, pal::num_pals>> &porymap_pals)
+    const std::optional<std::array<Palette<Rgba32, palette::max_size>, palette::num_palettes>> &porymap_palettes)
 {
     return {};
 }
@@ -1456,7 +1457,7 @@ inline void report_color_counts(
                         }
 
                         // Record the first violation but continue counting for accurate totals
-                        if (color_counts.size() > pal::max_size - 1 && !found_violation) {
+                        if (color_counts.size() > palette::max_size - 1 && !found_violation) {
                             found_violation = true;
                             violation_frame_name = frame_name;
                             violation_tile = &tile;
@@ -1482,7 +1483,7 @@ inline void report_color_counts(
 
                 std::string error_message = services.diag.formatter().format(
                     "found {}th unique composite frame tile color: {}",
-                    FormatParam{pal::max_size},
+                    FormatParam{palette::max_size},
                     FormatParam{violation_pixel.to_jasc_str(), Style::bold});
                 details::report_validation_error_in_anim(
                     services,

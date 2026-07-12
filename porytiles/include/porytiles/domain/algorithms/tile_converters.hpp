@@ -104,8 +104,8 @@ template <SupportsTransparency ColorType, std::size_t N = 0, typename Transparen
     // Build a color-to-index map for efficient lookup
     // Note: palette.color_to_index_map() returns PaletteIndex, convert to std::size_t
     std::map<ColorType, std::size_t> color_to_index;
-    for (const auto &[color, pal_idx] : palette.color_to_index_map()) {
-        color_to_index[color] = pal_idx.value();
+    for (const auto &[color, palette_idx] : palette.color_to_index_map()) {
+        color_to_index[color] = palette_idx.value();
     }
 
     // Convert each pixel

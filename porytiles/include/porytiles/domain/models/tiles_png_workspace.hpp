@@ -229,7 +229,7 @@ class TilesPngWorkspace {
     /// @param palette The palette to use for color lookup
     /// @return The index of the tile's first occurrence if found, std::nullopt otherwise
     [[nodiscard]] std::optional<std::size_t> first_occurrence_of_by_color(
-        const CanonicalPixelTile<IndexPixel> &tile, const Palette<Rgba32, pal::max_size> &palette) const;
+        const CanonicalPixelTile<IndexPixel> &tile, const Palette<Rgba32, palette::max_size> &palette) const;
 
     /// @brief Retrieves the canonical tile at the specified index in the workspace.
     ///
@@ -410,7 +410,7 @@ class TilesPngWorkspace {
     /// @return The starting index if found contiguously, or std::nullopt if not found
     [[nodiscard]] std::optional<std::size_t> find_existing_contiguous_tiles_by_color(
         const std::vector<CanonicalPixelTile<IndexPixel>> &tiles,
-        const std::vector<const Palette<Rgba32, pal::max_size> *> &palettes) const;
+        const std::vector<const Palette<Rgba32, palette::max_size> *> &palettes) const;
 
     /// @brief Places tiles at specific positions for patch mode animation placement.
     ///

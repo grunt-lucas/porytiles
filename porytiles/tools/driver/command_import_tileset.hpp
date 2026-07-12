@@ -41,13 +41,17 @@ class ImportTilesetCommand final : public Command {
             env.text_formatter,
             env.diag.get(),
             services.tile_printer.get(),
-            services.pal_printer.get(),
+            services.palette_printer.get(),
             &services.metadata_provider,
             &services.png_indexed_loader,
             &services.jasc_loader,
         };
         PrimaryTilesetDecompiler decompiler{
-            &env.config, env.text_formatter, env.diag.get(), services.tile_printer.get(), services.pal_printer.get()};
+            &env.config,
+            env.text_formatter,
+            env.diag.get(),
+            services.tile_printer.get(),
+            services.palette_printer.get()};
         ImportPrimaryTileset import_use_case{
             &importer,
             &decompiler,

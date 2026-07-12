@@ -26,12 +26,12 @@ class PalettePool {
     /// corresponding bit set to 1 can be checked out.
     ///
     /// @param available_indexes Bitset where on-bits indicate available palette slots
-    explicit PalettePool(std::bitset<pal::num_pals> available_indexes);
+    explicit PalettePool(std::bitset<palette::num_palettes> available_indexes);
 
-    /// @brief Checks if there is at least one available pal that can be checked out.
+    /// @brief Checks if there is at least one available palette that can be checked out.
     ///
     /// @return true if a subsequent check_out() call will succeed, false otherwise
-    [[nodiscard]] bool has_available_pal() const
+    [[nodiscard]] bool has_available_palette() const
     {
         return (available_indexes_ & ~checked_out_).any();
     }
@@ -39,7 +39,7 @@ class PalettePool {
     /// @brief Checks if a specific index is available for checkout.
     ///
     /// @param hardware_index The hardware palette index to check
-    /// @pre index must be less than pal::num_pals
+    /// @pre index must be less than palette::num_palettes
     /// @return true if the index is in the pool and not currently checked out
     [[nodiscard]] bool is_available(std::size_t hardware_index) const;
 
@@ -61,7 +61,7 @@ class PalettePool {
     /// specific palette index is required (e.g., prefilled palettes).
     ///
     /// @param index The hardware palette index to check out
-    /// @pre index must be less than pal::num_pals
+    /// @pre index must be less than palette::num_palettes
     /// @pre is_available(index) must be true
     /// @post The index is marked as checked out
     /// @post The index is pushed onto the checkout stack
@@ -78,8 +78,8 @@ class PalettePool {
     void checkin();
 
   private:
-    std::bitset<pal::num_pals> available_indexes_;
-    std::bitset<pal::num_pals> checked_out_;
+    std::bitset<palette::num_palettes> available_indexes_;
+    std::bitset<palette::num_palettes> checked_out_;
     std::vector<std::size_t> checkout_stack_;
 };
 

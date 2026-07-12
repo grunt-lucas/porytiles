@@ -59,18 +59,18 @@ ProjectPrimaryTilesetImporter::import_porymap_component_from_vanilla(const std::
 
     // Step 5: Load palettes from the discovered palette paths
     const auto &palette_paths = artifact_paths.palette_paths();
-    for (std::size_t i = 0; i < palette_paths.size() && i < pal::num_pals; ++i) {
+    for (std::size_t i = 0; i < palette_paths.size() && i < palette::num_palettes; ++i) {
         // Convert .gbapal path to .pal by stripping all extensions and adding .pal
-        auto pal_path = strip_all_extensions(palette_paths[i]);
-        pal_path += ".pal";
+        auto palette_path = strip_all_extensions(palette_paths[i]);
+        palette_path += ".pal";
 
         PT_TRY_ASSIGN_CHAIN_ERR(
             palette,
-            load_porymap_palette(project_root_ / pal_path, *pal_loader_),
+            load_porymap_palette(project_root_ / palette_path, *palette_loader_),
             std::unique_ptr<PorymapTilesetComponent>,
-            format_->format("Failed to load palette {}.", FormatParam{pal_filename(i), Style::bold}));
+            format_->format("Failed to load palette {}.", FormatParam{palette_filename(i), Style::bold}));
 
-        porymap_component->set_pal(i, std::move(palette));
+        porymap_component->set_palette(i, std::move(palette));
     }
 
     // Step 6: Import animations using ProjectVanillaAnimImporter

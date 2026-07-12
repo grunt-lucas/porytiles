@@ -30,7 +30,7 @@ using namespace porytiles;
 bool tiles_color_equivalent(
     const PixelTile<IndexPixel> &expected,
     const PixelTile<IndexPixel> &actual,
-    const Palette<Rgba32, pal::max_size> &palette)
+    const Palette<Rgba32, palette::max_size> &palette)
 {
     // Convert both tiles to color space to handle duplicate palette entries, then re-canonicalize
     constexpr Rgba32 extrinsic{};
@@ -265,7 +265,7 @@ TilesPngWorkspace TilesPngWorkspace::for_secondary(
                 const std::size_t src_row = pixel_row_offset + pixel_row;
                 const std::size_t src_col = pixel_col_offset + pixel_col;
                 // Strip true-color encoding (upper nibble = palette index) to get raw color indices. Primary tiles.png
-                // stores pixels as (pal << 4 | color), but index_tile_from_color_tile() produces raw color indices
+                // stores pixels as (palette << 4 | color), but index_tile_from_color_tile() produces raw color indices
                 // (0-15). Using color_index() here ensures workspace tiles match what index_tile_from_color_tile()
                 // produces, enabling first_occurrence_of() deduplication.
                 const IndexPixel true_color_pixel = primary_tiles_png.at(src_row, src_col);
@@ -353,7 +353,7 @@ std::optional<std::size_t> TilesPngWorkspace::first_occurrence_of(const Canonica
 }
 
 std::optional<std::size_t> TilesPngWorkspace::first_occurrence_of_by_color(
-    const CanonicalPixelTile<IndexPixel> &tile, const Palette<Rgba32, pal::max_size> &palette) const
+    const CanonicalPixelTile<IndexPixel> &tile, const Palette<Rgba32, palette::max_size> &palette) const
 {
     if (tile.is_transparent()) {
         return std::nullopt;
@@ -503,7 +503,7 @@ std::optional<std::size_t> TilesPngWorkspace::find_contiguous_transparent_slots(
 
 std::optional<std::size_t> TilesPngWorkspace::find_existing_contiguous_tiles_by_color(
     const std::vector<CanonicalPixelTile<IndexPixel>> &tiles,
-    const std::vector<const Palette<Rgba32, pal::max_size> *> &palettes) const
+    const std::vector<const Palette<Rgba32, palette::max_size> *> &palettes) const
 {
     // Edge case: empty sequence is trivially found
     if (tiles.empty()) {

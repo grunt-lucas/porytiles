@@ -5,8 +5,8 @@ fieldmap:
   num_tiles_total: 1024
   num_metatiles_in_primary: 512
   num_metatiles_total: 1024
-  num_pals_in_primary: 6
-  num_pals_total: 13
+  num_palettes_in_primary: 6
+  num_palettes_total: 13
   max_map_data_size: 10240
   num_tiles_per_metatile: 8
 

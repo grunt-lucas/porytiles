@@ -3,7 +3,7 @@
 #include <filesystem>
 #include <memory>
 
-#include "porytiles/domain/config/tiles_pal_mode.hpp"
+#include "porytiles/domain/config/tiles_palette_mode.hpp"
 #include "porytiles/domain/models/image.hpp"
 #include "porytiles/domain/models/index_pixel.hpp"
 #include "porytiles/domain/models/rgba32.hpp"
@@ -100,7 +100,7 @@ TEST_F(PngIndexedImageSaverTests, SaveToInvalidPathFails)
     // Try to save to a non-existent directory without creating it
     const auto invalid_path = std::filesystem::path{"/non/existent/directory/test.png"};
 
-    auto result = saver_->save_to_file(image, invalid_path, TilesPalMode::true_color);
+    auto result = saver_->save_to_file(image, invalid_path, TilesPaletteMode::true_color);
     ASSERT_FALSE(result.has_value());
     auto details = result.error().details(PlainTextFormatter{});
     bool found = false;
@@ -118,7 +118,7 @@ TEST_F(PngIndexedImageSaverTests, SaveTrueColorMode)
     const auto image = create_test_image(4, 4);
     const auto file_path = get_tmp_path("test_save_true_color.png");
 
-    auto result = saver_->save_to_file(image, file_path, TilesPalMode::true_color);
+    auto result = saver_->save_to_file(image, file_path, TilesPaletteMode::true_color);
     ASSERT_TRUE(result.has_value());
 
     // Verify the file was created
@@ -131,7 +131,7 @@ TEST_F(PngIndexedImageSaverTests, SaveGreyscaleMode)
     const auto image = create_greyscale_test_image(4, 4);
     const auto file_path = get_tmp_path("test_save_greyscale.png");
 
-    auto result = saver_->save_to_file(image, file_path, TilesPalMode::greyscale);
+    auto result = saver_->save_to_file(image, file_path, TilesPaletteMode::greyscale);
     ASSERT_TRUE(result.has_value());
 
     // Verify the file was created
@@ -145,7 +145,7 @@ TEST_F(PngIndexedImageSaverTests, RoundTripTrueColor)
     const auto file_path = get_tmp_path("roundtrip_test_true_color.png");
 
     // Save the image
-    auto save_result = saver_->save_to_file(original_image, file_path, TilesPalMode::true_color);
+    auto save_result = saver_->save_to_file(original_image, file_path, TilesPaletteMode::true_color);
     ASSERT_TRUE(save_result.has_value());
 
     // Load it back
@@ -189,7 +189,7 @@ TEST_F(PngIndexedImageSaverTests, RoundTripGreyscale)
     const auto file_path = get_tmp_path("roundtrip_test_greyscale.png");
 
     // Save the image
-    auto save_result = saver_->save_to_file(original_image, file_path, TilesPalMode::greyscale);
+    auto save_result = saver_->save_to_file(original_image, file_path, TilesPaletteMode::greyscale);
     ASSERT_TRUE(save_result.has_value());
 
     // Load it back
@@ -205,7 +205,7 @@ TEST_F(PngIndexedImageSaverTests, RoundTripGreyscale)
 
     // Verify palette was loaded
     ASSERT_TRUE(loaded_image.palette().has_value()) << "Loaded image should have a palette";
-    // Note: greyscale mode uses standard_greyscale_pal(), not the original palette
+    // Note: greyscale mode uses standard_greyscale_palette(), not the original palette
 
     // Compare pixel indices
     for (std::size_t row = 0; row < original_image.height(); ++row) {
@@ -224,7 +224,7 @@ TEST_F(PngIndexedImageSaverTests, SmallImages)
     const auto image = create_test_image(1, 1);
     const auto file_path = get_tmp_path("small_image.png");
 
-    auto result = saver_->save_to_file(image, file_path, TilesPalMode::true_color);
+    auto result = saver_->save_to_file(image, file_path, TilesPaletteMode::true_color);
     ASSERT_TRUE(result.has_value());
 
     // Verify the file was created and has content
@@ -248,7 +248,7 @@ TEST_F(PngIndexedImageSaverTests, LargeImages)
     const auto image = create_test_image(width, height);
     const auto file_path = get_tmp_path("large_image.png");
 
-    auto result = saver_->save_to_file(image, file_path, TilesPalMode::true_color);
+    auto result = saver_->save_to_file(image, file_path, TilesPaletteMode::true_color);
     ASSERT_TRUE(result.has_value());
 
     // Verify the file was created and has a reasonable size
@@ -288,7 +288,7 @@ TEST_F(PngIndexedImageSaverTests, TransparencyHandling)
 
     const auto file_path = get_tmp_path("transparency_test.png");
 
-    auto save_result = saver_->save_to_file(image, file_path, TilesPalMode::true_color);
+    auto save_result = saver_->save_to_file(image, file_path, TilesPaletteMode::true_color);
     ASSERT_TRUE(save_result.has_value());
 
     // Load it back and verify transparency is preserved
@@ -322,13 +322,13 @@ TEST_F(PngIndexedImageSaverTests, OverwriteExisting)
     const auto file_path = get_tmp_path("overwrite_test.png");
 
     // Save first image
-    auto result1 = saver_->save_to_file(image1, file_path, TilesPalMode::true_color);
+    auto result1 = saver_->save_to_file(image1, file_path, TilesPaletteMode::true_color);
     ASSERT_TRUE(result1.has_value());
 
     const auto first_size = std::filesystem::file_size(file_path);
 
     // Save second image (should overwrite)
-    auto result2 = saver_->save_to_file(image2, file_path, TilesPalMode::true_color);
+    auto result2 = saver_->save_to_file(image2, file_path, TilesPaletteMode::true_color);
     ASSERT_TRUE(result2.has_value());
 
     const auto second_size = std::filesystem::file_size(file_path);
@@ -371,7 +371,7 @@ TEST_F(PngIndexedImageSaverTests, MaxPaletteSize)
 
     const auto file_path = get_tmp_path("max_palette_test.png");
 
-    auto save_result = saver_->save_to_file(image, file_path, TilesPalMode::true_color);
+    auto save_result = saver_->save_to_file(image, file_path, TilesPaletteMode::true_color);
     ASSERT_TRUE(save_result.has_value());
 
     // Load it back and verify all indices are preserved
@@ -416,7 +416,7 @@ TEST_F(PngIndexedImageSaverTests, ImageWithoutPalette)
     const auto file_path = get_tmp_path("no_palette_test.png");
 
     // This should handle the case gracefully (implementation may generate a default palette)
-    auto result = saver_->save_to_file(image, file_path, TilesPalMode::true_color);
+    auto result = saver_->save_to_file(image, file_path, TilesPaletteMode::true_color);
 
     // The result depends on the implementation - it might fail or create a default palette
     // We just verify it doesn't crash

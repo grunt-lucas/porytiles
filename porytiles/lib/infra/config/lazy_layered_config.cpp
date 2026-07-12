@@ -9,7 +9,7 @@
 #include <string>
 
 #include "porytiles/domain/algorithms/diagnostic_stencils.hpp"
-#include "porytiles/domain/config/tiles_pal_mode.hpp"
+#include "porytiles/domain/config/tiles_palette_mode.hpp"
 #include "porytiles/utilities/panic/panic.hpp"
 #include "porytiles/utilities/source_locations.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
@@ -123,29 +123,31 @@ void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, con
     dump_single_config_value(
         out, *format_, "Number Of Metatiles Total", num_metatiles_total_provenance_chain(type, scope));
     dump_single_config_value(
-        out, *format_, "Number Of Palettes In Primary", num_pals_in_primary_provenance_chain(type, scope));
-    dump_single_config_value(out, *format_, "Number Of Palettes Total", num_pals_total_provenance_chain(type, scope));
+        out, *format_, "Number Of Palettes In Primary", num_palettes_in_primary_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Number Of Palettes Total", num_palettes_total_provenance_chain(type, scope));
     dump_single_config_value(out, *format_, "Max Map Data Size", max_map_data_size_provenance_chain(type, scope));
     dump_single_config_value(
         out, *format_, "Number Of Tiles Per Metatile", num_tiles_per_metatile_provenance_chain(type, scope));
     dump_single_config_value(
         out, *format_, "Extrinsic Transparency", extrinsic_transparency_provenance_chain(type, scope));
     dump_single_config_value(out, *format_, "Tiles Edit Mode", tiles_edit_mode_provenance_chain(type, scope));
-    dump_single_config_value(out, *format_, "Palettes Edit Mode", pals_edit_mode_provenance_chain(type, scope));
-    dump_single_config_value(out, *format_, "Palette Hints Enabled", pal_hints_enabled_provenance_chain(type, scope));
-    dump_single_config_value(out, *format_, "Palette Hints", pal_hints_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Palettes Edit Mode", palettes_edit_mode_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Palette Hints Enabled", palette_hints_enabled_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Palette Hints", palette_hints_provenance_chain(type, scope));
     dump_single_config_value(out, *format_, "Packing Strategy", packing_strategy_provenance_chain(type, scope));
     dump_single_config_value(
         out, *format_, "Packing Strategy Params", packing_strategy_params_provenance_chain(type, scope));
     dump_single_config_value(out, *format_, "Tile Sharing Packing", tile_sharing_packing_provenance_chain(type, scope));
     dump_single_config_value(
         out, *format_, "Tile Sharing Alignment", tile_sharing_alignment_provenance_chain(type, scope));
-    dump_single_config_value(out, *format_, "Tiles Palette Mode", tiles_pal_mode_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Tiles Palette Mode", tiles_palette_mode_provenance_chain(type, scope));
     dump_single_config_value(
         out,
         *format_,
         "Global Animation Palette Resolution Strategy",
-        global_anim_pal_resolution_strategy_provenance_chain(type, scope));
+        global_anim_palette_resolution_strategy_provenance_chain(type, scope));
     dump_single_config_value(
         out,
         *format_,
@@ -154,8 +156,8 @@ void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, con
     dump_single_config_value(
         out,
         *format_,
-        "Global Animation Multi-Pal Subtile Resolution Strategy",
-        global_anim_multi_pal_subtile_resolution_strategy_provenance_chain(type, scope));
+        "Global Animation Multi-Palette Subtile Resolution Strategy",
+        global_anim_multi_palette_subtile_resolution_strategy_provenance_chain(type, scope));
     dump_single_config_value(out, *format_, "Global Frame Linking", global_frame_linking_provenance_chain(type, scope));
     dump_single_config_value(
         out, *format_, "Per-Animation Overrides", per_anim_overrides_provenance_chain(type, scope));
@@ -343,7 +345,7 @@ LazyLayeredConfig::num_metatiles_total_raw(ConfigScopeType type, const std::stri
 }
 
 ChainableResult<ConfigValue<std::size_t>>
-LazyLayeredConfig::num_pals_in_primary_raw(ConfigScopeType type, const std::string &scope) const
+LazyLayeredConfig::num_palettes_in_primary_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
@@ -351,12 +353,12 @@ LazyLayeredConfig::num_pals_in_primary_raw(ConfigScopeType type, const std::stri
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<std::size_t>(
         key, "Number Of Palettes In Primary", [&type, &scope](const ConfigProvider &provider) {
-            return provider.num_pals_in_primary(type, scope);
+            return provider.num_palettes_in_primary(type, scope);
         });
 }
 
 ChainableResult<ConfigValue<std::size_t>>
-LazyLayeredConfig::num_pals_total_raw(ConfigScopeType type, const std::string &scope) const
+LazyLayeredConfig::num_palettes_total_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
@@ -364,7 +366,7 @@ LazyLayeredConfig::num_pals_total_raw(ConfigScopeType type, const std::string &s
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<std::size_t>(
         key, "Number Of Palettes Total", [&type, &scope](const ConfigProvider &provider) {
-            return provider.num_pals_total(type, scope);
+            return provider.num_palettes_total(type, scope);
         });
 }
 
@@ -419,7 +421,7 @@ LazyLayeredConfig::tiles_edit_mode_raw(ConfigScopeType type, const std::string &
 }
 
 ChainableResult<ConfigValue<ArtifactEditMode>>
-LazyLayeredConfig::pals_edit_mode_raw(ConfigScopeType type, const std::string &scope) const
+LazyLayeredConfig::palettes_edit_mode_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
@@ -427,24 +429,24 @@ LazyLayeredConfig::pals_edit_mode_raw(ConfigScopeType type, const std::string &s
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<ArtifactEditMode>(
         key, "Palettes Edit Mode", [&type, &scope](const ConfigProvider &provider) {
-            return provider.pals_edit_mode(type, scope);
+            return provider.palettes_edit_mode(type, scope);
         });
 }
 
 ChainableResult<ConfigValue<bool>>
-LazyLayeredConfig::pal_hints_enabled_raw(ConfigScopeType type, const std::string &scope) const
+LazyLayeredConfig::palette_hints_enabled_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<bool>(key, "Palette Hints Enabled", [&type, &scope](const ConfigProvider &provider) {
-        return provider.pal_hints_enabled(type, scope);
+        return provider.palette_hints_enabled(type, scope);
     });
 }
 
 ChainableResult<ConfigValue<std::vector<PaletteHint>>>
-LazyLayeredConfig::pal_hints_raw(ConfigScopeType type, const std::string &scope) const
+LazyLayeredConfig::palette_hints_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
@@ -452,7 +454,7 @@ LazyLayeredConfig::pal_hints_raw(ConfigScopeType type, const std::string &scope)
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
     return resolve_config_value<std::vector<PaletteHint>>(
         key, "Palette Hints", [&type, &scope](const ConfigProvider &provider) {
-            return provider.pal_hints(type, scope);
+            return provider.palette_hints(type, scope);
         });
 }
 
@@ -508,29 +510,29 @@ LazyLayeredConfig::tile_sharing_alignment_raw(ConfigScopeType type, const std::s
         });
 }
 
-ChainableResult<ConfigValue<TilesPalMode>>
-LazyLayeredConfig::tiles_pal_mode_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<TilesPaletteMode>>
+LazyLayeredConfig::tiles_palette_mode_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<TilesPalMode>(
+    return resolve_config_value<TilesPaletteMode>(
         key, "Tiles Palette Mode", [&type, &scope](const ConfigProvider &provider) {
-            return provider.tiles_pal_mode(type, scope);
+            return provider.tiles_palette_mode(type, scope);
         });
 }
 
-ChainableResult<ConfigValue<AnimPalResolutionStrategy>>
-LazyLayeredConfig::global_anim_pal_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<AnimPaletteResolutionStrategy>>
+LazyLayeredConfig::global_anim_palette_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<AnimPalResolutionStrategy>(
+    return resolve_config_value<AnimPaletteResolutionStrategy>(
         key, "Global Animation Palette Resolution Strategy", [&type, &scope](const ConfigProvider &provider) {
-            return provider.global_anim_pal_resolution_strategy(type, scope);
+            return provider.global_anim_palette_resolution_strategy(type, scope);
         });
 }
 
@@ -547,17 +549,19 @@ LazyLayeredConfig::global_anim_key_frame_resolution_strategy_raw(ConfigScopeType
         });
 }
 
-ChainableResult<ConfigValue<AnimMultiPalSubtileResolutionStrategy>>
-LazyLayeredConfig::global_anim_multi_pal_subtile_resolution_strategy_raw(
+ChainableResult<ConfigValue<AnimMultiPaletteSubtileResolutionStrategy>>
+LazyLayeredConfig::global_anim_multi_palette_subtile_resolution_strategy_raw(
     ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<AnimMultiPalSubtileResolutionStrategy>(
-        key, "Global Animation Multi-Pal Subtile Resolution Strategy", [&type, &scope](const ConfigProvider &provider) {
-            return provider.global_anim_multi_pal_subtile_resolution_strategy(type, scope);
+    return resolve_config_value<AnimMultiPaletteSubtileResolutionStrategy>(
+        key,
+        "Global Animation Multi-Palette Subtile Resolution Strategy",
+        [&type, &scope](const ConfigProvider &provider) {
+            return provider.global_anim_multi_palette_subtile_resolution_strategy(type, scope);
         });
 }
 
@@ -861,17 +865,17 @@ LazyLayeredConfig::num_metatiles_total_provenance_chain(ConfigScopeType type, co
 }
 
 std::vector<ProvenanceChainLink<std::size_t>>
-LazyLayeredConfig::num_pals_in_primary_provenance_chain(ConfigScopeType type, const std::string &scope) const
+LazyLayeredConfig::num_palettes_in_primary_provenance_chain(ConfigScopeType type, const std::string &scope) const
 {
     return collect_provenance_chain<std::size_t>(
-        [&type, &scope](const ConfigProvider &provider) { return provider.num_pals_in_primary(type, scope); });
+        [&type, &scope](const ConfigProvider &provider) { return provider.num_palettes_in_primary(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<std::size_t>>
-LazyLayeredConfig::num_pals_total_provenance_chain(ConfigScopeType type, const std::string &scope) const
+LazyLayeredConfig::num_palettes_total_provenance_chain(ConfigScopeType type, const std::string &scope) const
 {
     return collect_provenance_chain<std::size_t>(
-        [&type, &scope](const ConfigProvider &provider) { return provider.num_pals_total(type, scope); });
+        [&type, &scope](const ConfigProvider &provider) { return provider.num_palettes_total(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<std::size_t>>
@@ -903,24 +907,24 @@ LazyLayeredConfig::tiles_edit_mode_provenance_chain(ConfigScopeType type, const 
 }
 
 std::vector<ProvenanceChainLink<ArtifactEditMode>>
-LazyLayeredConfig::pals_edit_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const
+LazyLayeredConfig::palettes_edit_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const
 {
     return collect_provenance_chain<ArtifactEditMode>(
-        [&type, &scope](const ConfigProvider &provider) { return provider.pals_edit_mode(type, scope); });
+        [&type, &scope](const ConfigProvider &provider) { return provider.palettes_edit_mode(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<bool>>
-LazyLayeredConfig::pal_hints_enabled_provenance_chain(ConfigScopeType type, const std::string &scope) const
+LazyLayeredConfig::palette_hints_enabled_provenance_chain(ConfigScopeType type, const std::string &scope) const
 {
     return collect_provenance_chain<bool>(
-        [&type, &scope](const ConfigProvider &provider) { return provider.pal_hints_enabled(type, scope); });
+        [&type, &scope](const ConfigProvider &provider) { return provider.palette_hints_enabled(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<std::vector<PaletteHint>>>
-LazyLayeredConfig::pal_hints_provenance_chain(ConfigScopeType type, const std::string &scope) const
+LazyLayeredConfig::palette_hints_provenance_chain(ConfigScopeType type, const std::string &scope) const
 {
     return collect_provenance_chain<std::vector<PaletteHint>>(
-        [&type, &scope](const ConfigProvider &provider) { return provider.pal_hints(type, scope); });
+        [&type, &scope](const ConfigProvider &provider) { return provider.palette_hints(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<PackingStrategyType>>
@@ -951,19 +955,19 @@ LazyLayeredConfig::tile_sharing_alignment_provenance_chain(ConfigScopeType type,
         [&type, &scope](const ConfigProvider &provider) { return provider.tile_sharing_alignment(type, scope); });
 }
 
-std::vector<ProvenanceChainLink<TilesPalMode>>
-LazyLayeredConfig::tiles_pal_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const
+std::vector<ProvenanceChainLink<TilesPaletteMode>>
+LazyLayeredConfig::tiles_palette_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const
 {
-    return collect_provenance_chain<TilesPalMode>(
-        [&type, &scope](const ConfigProvider &provider) { return provider.tiles_pal_mode(type, scope); });
+    return collect_provenance_chain<TilesPaletteMode>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.tiles_palette_mode(type, scope); });
 }
 
-std::vector<ProvenanceChainLink<AnimPalResolutionStrategy>>
-LazyLayeredConfig::global_anim_pal_resolution_strategy_provenance_chain(
+std::vector<ProvenanceChainLink<AnimPaletteResolutionStrategy>>
+LazyLayeredConfig::global_anim_palette_resolution_strategy_provenance_chain(
     ConfigScopeType type, const std::string &scope) const
 {
-    return collect_provenance_chain<AnimPalResolutionStrategy>([&type, &scope](const ConfigProvider &provider) {
-        return provider.global_anim_pal_resolution_strategy(type, scope);
+    return collect_provenance_chain<AnimPaletteResolutionStrategy>([&type, &scope](const ConfigProvider &provider) {
+        return provider.global_anim_palette_resolution_strategy(type, scope);
     });
 }
 
@@ -976,13 +980,13 @@ LazyLayeredConfig::global_anim_key_frame_resolution_strategy_provenance_chain(
     });
 }
 
-std::vector<ProvenanceChainLink<AnimMultiPalSubtileResolutionStrategy>>
-LazyLayeredConfig::global_anim_multi_pal_subtile_resolution_strategy_provenance_chain(
+std::vector<ProvenanceChainLink<AnimMultiPaletteSubtileResolutionStrategy>>
+LazyLayeredConfig::global_anim_multi_palette_subtile_resolution_strategy_provenance_chain(
     ConfigScopeType type, const std::string &scope) const
 {
-    return collect_provenance_chain<AnimMultiPalSubtileResolutionStrategy>(
+    return collect_provenance_chain<AnimMultiPaletteSubtileResolutionStrategy>(
         [&type, &scope](const ConfigProvider &provider) {
-            return provider.global_anim_multi_pal_subtile_resolution_strategy(type, scope);
+            return provider.global_anim_multi_palette_subtile_resolution_strategy(type, scope);
         });
 }
 

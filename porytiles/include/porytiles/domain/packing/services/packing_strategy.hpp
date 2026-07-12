@@ -32,7 +32,7 @@ struct PackingInput {
     /// @details
     /// These palettes represent hardware palettes that already have some colors assigned. The packer must work around
     /// these constraints when assigning tiles.
-    std::set<PrefilledPalette> prefilled_pals_{};
+    std::set<PrefilledPalette> prefilled_palettes_{};
 
     /// @brief A bitset marking which palettes are available for editing.
     ///
@@ -44,13 +44,13 @@ struct PackingInput {
     /// In some configurations, out-of-band palettes may be enabled for packing. This corresponds to the "Primary
     /// Palette Fixing" case (see topic_staging_area.md), a technique used in the community to expand available primary
     /// tileset colors without modifying fieldmap parameters.
-    PalettePool pal_pool_;
+    PalettePool palette_pool_;
 
     /// @brief Maximum number of colors per palette.
     ///
     /// @details
     /// GBA hardware palettes have 16 slots, but slot 0 is transparency, leaving 15 usable color slots. Default is 15.
-    std::size_t pal_capacity_ = pal::max_size - 1;
+    std::size_t palette_capacity_ = palette::max_size - 1;
 
     /// @brief Optional shape group metadata for sharing-aware packing.
     ///
@@ -70,14 +70,14 @@ struct PackingOutput {
     ///
     /// @details
     /// Each PackedPalette contains the accumulated colors and the map of tile IDs assigned to that palette.
-    std::vector<PackedPalette> pals_;
+    std::vector<PackedPalette> palettes_;
 
     /// @brief Maps tile IDs to their assigned hardware palette indices.
     ///
     /// @details
     /// This provides a quick lookup for finding which palette a specific tile was assigned to. The mapped value is the
     /// hardware palette index (i.e., `PackedPalette::hardware_index()`), NOT the index into the `palettes_` vector.
-    std::map<PackableTile::Id, std::size_t> tile_to_pal_;
+    std::map<PackableTile::Id, std::size_t> tile_to_palette_;
 };
 
 /// @brief Abstract interface for palette packing algorithms.

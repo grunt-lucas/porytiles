@@ -18,7 +18,7 @@
 #include "porytiles/infra/services/anim_code_parser.hpp"
 #include "porytiles/infra/services/anim_json_parser.hpp"
 #include "porytiles/infra/services/attributes_csv_loader.hpp"
-#include "porytiles/infra/services/jasc_pal_loader.hpp"
+#include "porytiles/infra/services/jasc_palette_loader.hpp"
 #include "porytiles/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles/infra/services/project_layout_metadata_provider.hpp"
@@ -92,7 +92,7 @@ class ProjectTilesetArtifactReaderTest : public ::testing::Test {
         TilesetAttributeSchemaCache cache;
         PngRgbaImageLoader png_rgba_loader{};
         PngIndexedImageLoader png_indexed_loader{};
-        JascPalLoader jasc_loader;
+        JascPaletteLoader jasc_loader;
         AnimJsonParser anim_json_parser;
         AnimCodeParser anim_code_parser;
         ProjectTilesetMetadataProvider metadata_provider;

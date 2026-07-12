@@ -10,9 +10,9 @@ namespace porytiles {
 
 std::vector<IndirectLink> build_indirect_links(
     const std::vector<ShapeGroup<Rgba32>> &shape_groups,
-    const std::map<std::size_t, std::size_t> &tile_pal_assignments,
-    const std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> &base_pals,
-    const std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> &prefilled_pals)
+    const std::map<std::size_t, std::size_t> &tile_palette_assignments,
+    const std::array<std::optional<Palette<Rgba32, palette::max_size>>, palette::num_palettes> &base_palettes,
+    const std::array<std::optional<Palette<Rgba32, palette::max_size>>, palette::num_palettes> &prefilled_palettes)
 {
     std::vector<IndirectLink> links;
 
@@ -22,7 +22,7 @@ std::vector<IndirectLink> build_indirect_links(
         // Resolve palette assignment for each member via authoritative packing assignments
         struct ResolvedMember {
             std::size_t member_idx;
-            std::size_t hw_pal_index;
+            std::size_t hw_palette_index;
             std::map<ShapeMask, Rgba32> colors;
         };
         std::vector<ResolvedMember> resolved;
@@ -30,10 +30,10 @@ std::vector<IndirectLink> build_indirect_links(
         for (std::size_t m = 0; m < group.members.size(); ++m) {
             const auto &member = group.members.at(m);
 
-            if (!tile_pal_assignments.contains(member.tile_index)) {
+            if (!tile_palette_assignments.contains(member.tile_index)) {
                 continue;
             }
-            std::size_t hw_index = tile_pal_assignments.at(member.tile_index);
+            std::size_t hw_index = tile_palette_assignments.at(member.tile_index);
             resolved.push_back(ResolvedMember{m, hw_index, member.colors});
         }
 
@@ -42,11 +42,11 @@ std::vector<IndirectLink> build_indirect_links(
         }
 
         // Check if members span multiple palettes
-        std::set<std::size_t> distinct_pals;
+        std::set<std::size_t> distinct_palettes;
         for (const auto &rm : resolved) {
-            distinct_pals.insert(rm.hw_pal_index);
+            distinct_palettes.insert(rm.hw_palette_index);
         }
-        if (distinct_pals.size() < 2) {
+        if (distinct_palettes.size() < 2) {
             continue;
         }
 
@@ -63,13 +63,13 @@ std::vector<IndirectLink> build_indirect_links(
 
         for (std::size_t candidate_ref = 0; candidate_ref < resolved.size(); ++candidate_ref) {
             const auto &candidate = resolved.at(candidate_ref);
-            const auto &candidate_pal = base_pals.at(candidate.hw_pal_index).value();
+            const auto &candidate_palette = base_palettes.at(candidate.hw_palette_index).value();
 
             // Build candidate reference's color -> slot mapping from base palette
             std::map<ShapeMask, std::size_t> candidate_mask_to_slot;
             for (const auto &[mask, color] : candidate.colors) {
-                for (std::size_t slot = 1; slot < pal::max_size; ++slot) {
-                    if (!candidate_pal.is_wildcard(slot) && candidate_pal.at(slot) == color) {
+                for (std::size_t slot = 1; slot < palette::max_size; ++slot) {
+                    if (!candidate_palette.is_wildcard(slot) && candidate_palette.at(slot) == color) {
                         candidate_mask_to_slot[mask] = slot;
                         break;
                     }
@@ -79,14 +79,14 @@ std::vector<IndirectLink> build_indirect_links(
             // Count conflicts: how many links would conflict with prefilled slots in other members' palettes?
             std::size_t conflicts = 0;
             for (std::size_t other = 0; other < resolved.size(); ++other) {
-                if (other == candidate_ref || resolved.at(other).hw_pal_index == candidate.hw_pal_index) {
+                if (other == candidate_ref || resolved.at(other).hw_palette_index == candidate.hw_palette_index) {
                     continue;
                 }
                 const auto &other_member = resolved.at(other);
-                if (!prefilled_pals.at(other_member.hw_pal_index).has_value()) {
+                if (!prefilled_palettes.at(other_member.hw_palette_index).has_value()) {
                     continue;
                 }
-                const auto &prefilled = prefilled_pals.at(other_member.hw_pal_index).value();
+                const auto &prefilled = prefilled_palettes.at(other_member.hw_palette_index).value();
 
                 for (const auto &[mask, other_color] : other_member.colors) {
                     if (!candidate_mask_to_slot.contains(mask)) {
@@ -113,7 +113,7 @@ std::vector<IndirectLink> build_indirect_links(
                 continue;
             }
             const auto &other = resolved.at(r);
-            if (other.hw_pal_index == ref.hw_pal_index) {
+            if (other.hw_palette_index == ref.hw_palette_index) {
                 continue;
             }
 
@@ -126,9 +126,9 @@ std::vector<IndirectLink> build_indirect_links(
 
                 links.push_back(
                     IndirectLink{
-                        .source_pal = other.hw_pal_index,
+                        .source_palette = other.hw_palette_index,
                         .source_color = other_color,
-                        .ref_pal = ref.hw_pal_index,
+                        .ref_palette = ref.hw_palette_index,
                         .ref_color = ref_color,
                         .source_group_index = group_idx,
                     });

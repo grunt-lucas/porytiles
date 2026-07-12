@@ -12,7 +12,7 @@
 
 #include "porytiles/app/config/app_config.hpp"
 #include "porytiles/domain/config/domain_config.hpp"
-#include "porytiles/domain/config/tiles_pal_mode.hpp"
+#include "porytiles/domain/config/tiles_palette_mode.hpp"
 #include "porytiles/domain/models/rgba32.hpp"
 #include "porytiles/domain/packing/models/palette_hint.hpp"
 #include "porytiles/infra/config/config_provider.hpp"
@@ -103,10 +103,10 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     num_metatiles_total_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_pals_in_primary_raw(ConfigScopeType type, const std::string &scope) const override;
+    num_palettes_in_primary_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_pals_total_raw(ConfigScopeType type, const std::string &scope) const override;
+    num_palettes_total_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
     max_map_data_size_raw(ConfigScopeType type, const std::string &scope) const override;
@@ -121,13 +121,13 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     tiles_edit_mode_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<ArtifactEditMode>>
-    pals_edit_mode_raw(ConfigScopeType type, const std::string &scope) const override;
+    palettes_edit_mode_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
-    pal_hints_enabled_raw(ConfigScopeType type, const std::string &scope) const override;
+    palette_hints_enabled_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<std::vector<PaletteHint>>>
-    pal_hints_raw(ConfigScopeType type, const std::string &scope) const override;
+    palette_hints_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<PackingStrategyType>>
     packing_strategy_raw(ConfigScopeType type, const std::string &scope) const override;
@@ -141,17 +141,17 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     [[nodiscard]] ChainableResult<ConfigValue<TileSharingAlignment>>
     tile_sharing_alignment_raw(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>>
-    tiles_pal_mode_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<TilesPaletteMode>>
+    tiles_palette_mode_raw(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] ChainableResult<ConfigValue<AnimPalResolutionStrategy>>
-    global_anim_pal_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] ChainableResult<ConfigValue<AnimPaletteResolutionStrategy>>
+    global_anim_palette_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<AnimKeyFrameResolutionStrategy>>
     global_anim_key_frame_resolution_strategy_raw(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] ChainableResult<ConfigValue<AnimMultiPalSubtileResolutionStrategy>>
-    global_anim_multi_pal_subtile_resolution_strategy_raw(
+    [[nodiscard]] ChainableResult<ConfigValue<AnimMultiPaletteSubtileResolutionStrategy>>
+    global_anim_multi_palette_subtile_resolution_strategy_raw(
         ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] ChainableResult<ConfigValue<FrameLinking>>
@@ -269,7 +269,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     [[nodiscard]] std::vector<ProvenanceChainLink<std::size_t>>
     num_metatiles_total_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
-    /// @brief Gets the full provenance chain for num_pals_in_primary.
+    /// @brief Gets the full provenance chain for num_palettes_in_primary.
     ///
     /// @details
     /// Returns what each provider in the chain would return for this config value, from highest priority to lowest.
@@ -280,9 +280,9 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     /// @param scope The scope identifier
     /// @return Vector of ProvenanceChainLink entries, one per provider
     [[nodiscard]] std::vector<ProvenanceChainLink<std::size_t>>
-    num_pals_in_primary_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+    num_palettes_in_primary_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
-    /// @brief Gets the full provenance chain for num_pals_total.
+    /// @brief Gets the full provenance chain for num_palettes_total.
     ///
     /// @details
     /// Returns what each provider in the chain would return for this config value, from highest priority to lowest.
@@ -293,7 +293,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     /// @param scope The scope identifier
     /// @return Vector of ProvenanceChainLink entries, one per provider
     [[nodiscard]] std::vector<ProvenanceChainLink<std::size_t>>
-    num_pals_total_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+    num_palettes_total_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
     /// @brief Gets the full provenance chain for max_map_data_size.
     ///
@@ -347,7 +347,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     [[nodiscard]] std::vector<ProvenanceChainLink<ArtifactEditMode>>
     tiles_edit_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
-    /// @brief Gets the full provenance chain for pals_edit_mode.
+    /// @brief Gets the full provenance chain for palettes_edit_mode.
     ///
     /// @details
     /// Returns what each provider in the chain would return for this config value, from highest priority to lowest.
@@ -358,9 +358,9 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     /// @param scope The scope identifier
     /// @return Vector of ProvenanceChainLink entries, one per provider
     [[nodiscard]] std::vector<ProvenanceChainLink<ArtifactEditMode>>
-    pals_edit_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+    palettes_edit_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
-    /// @brief Gets the full provenance chain for pal_hints_enabled.
+    /// @brief Gets the full provenance chain for palette_hints_enabled.
     ///
     /// @details
     /// Returns what each provider in the chain would return for this config value, from highest priority to lowest.
@@ -371,9 +371,9 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     /// @param scope The scope identifier
     /// @return Vector of ProvenanceChainLink entries, one per provider
     [[nodiscard]] std::vector<ProvenanceChainLink<bool>>
-    pal_hints_enabled_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+    palette_hints_enabled_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
-    /// @brief Gets the full provenance chain for pal_hints.
+    /// @brief Gets the full provenance chain for palette_hints.
     ///
     /// @details
     /// Returns what each provider in the chain would return for this config value, from highest priority to lowest.
@@ -384,7 +384,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     /// @param scope The scope identifier
     /// @return Vector of ProvenanceChainLink entries, one per provider
     [[nodiscard]] std::vector<ProvenanceChainLink<std::vector<PaletteHint>>>
-    pal_hints_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+    palette_hints_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
     /// @brief Gets the full provenance chain for packing_strategy.
     ///
@@ -438,7 +438,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     [[nodiscard]] std::vector<ProvenanceChainLink<TileSharingAlignment>>
     tile_sharing_alignment_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
-    /// @brief Gets the full provenance chain for tiles_pal_mode.
+    /// @brief Gets the full provenance chain for tiles_palette_mode.
     ///
     /// @details
     /// Returns what each provider in the chain would return for this config value, from highest priority to lowest.
@@ -448,10 +448,10 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     /// @param type The config scope type
     /// @param scope The scope identifier
     /// @return Vector of ProvenanceChainLink entries, one per provider
-    [[nodiscard]] std::vector<ProvenanceChainLink<TilesPalMode>>
-    tiles_pal_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] std::vector<ProvenanceChainLink<TilesPaletteMode>>
+    tiles_palette_mode_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
-    /// @brief Gets the full provenance chain for global_anim_pal_resolution_strategy.
+    /// @brief Gets the full provenance chain for global_anim_palette_resolution_strategy.
     ///
     /// @details
     /// Returns what each provider in the chain would return for this config value, from highest priority to lowest.
@@ -461,8 +461,8 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     /// @param type The config scope type
     /// @param scope The scope identifier
     /// @return Vector of ProvenanceChainLink entries, one per provider
-    [[nodiscard]] std::vector<ProvenanceChainLink<AnimPalResolutionStrategy>>
-    global_anim_pal_resolution_strategy_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] std::vector<ProvenanceChainLink<AnimPaletteResolutionStrategy>>
+    global_anim_palette_resolution_strategy_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
     /// @brief Gets the full provenance chain for global_anim_key_frame_resolution_strategy.
     ///
@@ -477,7 +477,7 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     [[nodiscard]] std::vector<ProvenanceChainLink<AnimKeyFrameResolutionStrategy>>
     global_anim_key_frame_resolution_strategy_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
-    /// @brief Gets the full provenance chain for global_anim_multi_pal_subtile_resolution_strategy.
+    /// @brief Gets the full provenance chain for global_anim_multi_palette_subtile_resolution_strategy.
     ///
     /// @details
     /// Returns what each provider in the chain would return for this config value, from highest priority to lowest.
@@ -487,8 +487,8 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     /// @param type The config scope type
     /// @param scope The scope identifier
     /// @return Vector of ProvenanceChainLink entries, one per provider
-    [[nodiscard]] std::vector<ProvenanceChainLink<AnimMultiPalSubtileResolutionStrategy>>
-    global_anim_multi_pal_subtile_resolution_strategy_provenance_chain(
+    [[nodiscard]] std::vector<ProvenanceChainLink<AnimMultiPaletteSubtileResolutionStrategy>>
+    global_anim_multi_palette_subtile_resolution_strategy_provenance_chain(
         ConfigScopeType type, const std::string &scope) const;
 
     /// @brief Gets the full provenance chain for global_frame_linking.

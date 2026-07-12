@@ -35,7 +35,7 @@ ChainableResult<void> append_incbin_declarations(
 {
     // Append INCBIN declarations to graphics.h
     PT_TRY_CALL_CHAIN_ERR(
-        incbin_appender->append_graphics_declarations(tileset_name, bin_path_base, pal::num_pals),
+        incbin_appender->append_graphics_declarations(tileset_name, bin_path_base, palette::num_palettes),
         void,
         "Failed to append graphics INCBIN declarations for '{}'.",
         FormatParam(tileset_name, Style::bold));

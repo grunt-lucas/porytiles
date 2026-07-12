@@ -39,9 +39,9 @@ struct PrefilledDestinationConflictDetail {
 /// identify which prefilled source colors are preventing link application and potentially rearrange or wildcard them.
 struct PrefilledSourceConflictDetail {
     std::size_t source_group_index;
-    std::size_t source_pal_index;
+    std::size_t source_palette_index;
     Rgba32 source_color;
-    std::size_t ref_pal_index;
+    std::size_t ref_palette_index;
     Rgba32 ref_color;
 
     auto operator<=>(const PrefilledSourceConflictDetail &) const = default;
@@ -56,10 +56,10 @@ struct PrefilledSourceConflictDetail {
 /// (either intra-palette or cross-palette) displaces a color from its resolved target slot after resolution.
 struct PostResolutionMismatchDetail {
     std::size_t source_group_index;
-    std::size_t source_pal_index;
+    std::size_t source_palette_index;
     Rgba32 source_color;
     std::size_t source_final_slot;
-    std::size_t ref_pal_index;
+    std::size_t ref_palette_index;
     Rgba32 ref_color;
     std::size_t ref_final_slot;
 
@@ -71,19 +71,19 @@ struct PostResolutionMismatchDetail {
 ///
 /// @details
 /// Captured in Phase 2 when an IndirectLink targets a source color that already has an IndirectPosition from a previous
-/// link with a *different* reference. The second link is silently dropped. Compatible links (same @c ref_pal and
+/// link with a *different* reference. The second link is silently dropped. Compatible links (same @c ref_palette and
 /// @c ref_color as the existing IndirectPosition) are detected and skipped without recording a failure.
 ///
 /// Records both sides of the conflict: the winning group's reference (already applied) and the losing group's wanted
 /// reference (dropped).
 struct FirstWriterWinsDetail {
     std::size_t source_group_index;
-    std::size_t source_pal_index;
+    std::size_t source_palette_index;
     Rgba32 source_color;
     std::size_t winning_group_index;
-    std::size_t winning_ref_pal_index;
+    std::size_t winning_ref_palette_index;
     Rgba32 winning_ref_color;
-    std::size_t losing_ref_pal_index;
+    std::size_t losing_ref_palette_index;
     Rgba32 losing_ref_color;
 
     auto operator<=>(const FirstWriterWinsDetail &) const = default;
@@ -128,7 +128,7 @@ struct AlignmentFailureCounts {
 /// non-wildcard slots become AbsolutePosition. Remaining colors from the PackedPalette start as UndeterminedPosition.
 ///
 /// **Phase 2: Apply Indirect links.** For each IndirectLink, if the source color is still Undetermined, set it to
-/// IndirectPosition{ref_pal, ref_color}. Already-Absolute or already-Indirect colors are skipped (first-writer-wins
+/// IndirectPosition{ref_palette, ref_color}. Already-Absolute or already-Indirect colors are skipped (first-writer-wins
 /// prevents cycles). No-op when @p indirect_links is empty.
 ///
 /// **Phase 3: Sequential fill (skip Indirect).** For each palette, collect slots already used by Absolute positions.
@@ -137,11 +137,11 @@ struct AlignmentFailureCounts {
 /// Absolute positions, enabling Indirect chain resolution in Phase 4.
 ///
 /// **Phase 4: Resolve Indirect chains with eviction.** For each Indirect color, follow the chain
-/// ref_pal[ref_color] until hitting an Absolute position. Cap at @c pal::num_pals iterations for cycle detection
-/// (panics on cycle or broken chain, both of which are internal invariant violations). Place the color at the resolved
-/// slot. If the target slot is occupied by a non-prefilled color, evict the occupant to the next free slot (panics if
-/// no free slot exists; Phase 3 guarantees one free slot per Indirect color). If the slot conflicts with a prefilled
-/// position, skip (best-effort). No-op when @p indirect_links is empty.
+/// ref_palette[ref_color] until hitting an Absolute position. Cap at @c palette::num_palettes iterations for cycle
+/// detection (panics on cycle or broken chain, both of which are internal invariant violations). Place the color at the
+/// resolved slot. If the target slot is occupied by a non-prefilled color, evict the occupant to the next free slot
+/// (panics if no free slot exists; Phase 3 guarantees one free slot per Indirect color). If the slot conflicts with a
+/// prefilled position, skip (best-effort). No-op when @p indirect_links is empty.
 ///
 /// **Phase 5: Fallback fill for unresolved Indirects.** Any Indirect colors that failed resolution in Phase 4
 /// (prefilled destination conflict) are assigned sequential free slots, identical to Phase 3's logic but targeting
@@ -154,17 +154,18 @@ struct AlignmentFailureCounts {
 /// The sequential fill iteration order matches the existing @c for_each_color + @c color_map path from the old
 /// @c build_output_palette to preserve identical palette layouts when no links are present (manual mode compatibility).
 ///
-/// @param packed_pals The packed palette results from the packer.
-/// @param prefilled_pals The original prefilled input palettes (locked slots).
+/// @param packed_palettes The packed palette results from the packer.
+/// @param prefilled_palettes The original prefilled input palettes (locked slots).
 /// @param color_map The color-to-index mapping for reverse lookup.
 /// @param default_slot_zero The default color for slot 0 if no prefilled palette exists.
 /// @param indirect_links The Indirect link instructions (empty for off mode).
 /// @param failure_counts Optional output pointer for alignment failure counters. When non-null, incremented at each
 ///     Phase 2, Phase 4, and Phase 5 skip point. Caller retains ownership.
 /// @return Array of optional palettes, indexed by hardware palette index.
-[[nodiscard]] std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_all_output_palettes(
-    const std::vector<PackedPalette> &packed_pals,
-    const std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> &prefilled_pals,
+[[nodiscard]] std::array<std::optional<Palette<Rgba32, palette::max_size>>, palette::num_palettes>
+build_all_output_palettes(
+    const std::vector<PackedPalette> &packed_palettes,
+    const std::array<std::optional<Palette<Rgba32, palette::max_size>>, palette::num_palettes> &prefilled_palettes,
     const ColorIndexMap<Rgba32> &color_map,
     const Rgba32 &default_slot_zero,
     const std::vector<IndirectLink> &indirect_links,

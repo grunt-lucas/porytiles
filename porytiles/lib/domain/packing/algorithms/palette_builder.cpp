@@ -23,16 +23,16 @@ struct PaletteBuildState {
 /// @details
 /// Follows the chain of IndirectPosition references across palettes until hitting an AbsolutePosition. Returns the
 /// resolved slot on success, std::nullopt if the chain hits an Undetermined position (reference palette not yet
-/// filled) or a broken reference. Panics on cycles (capped at pal::num_pals iterations).
+/// filled) or a broken reference. Panics on cycles (capped at palette::num_palettes iterations).
 [[nodiscard]] std::optional<std::size_t> try_resolve_indirect(
-    const IndirectPosition &start, const std::array<std::optional<PaletteBuildState>, pal::num_pals> &states)
+    const IndirectPosition &start, const std::array<std::optional<PaletteBuildState>, palette::num_palettes> &states)
 {
     IndirectPosition current = start;
-    for (std::size_t iter = 0; iter < pal::num_pals; ++iter) {
-        if (!states.at(current.ref_pal_index).has_value()) {
+    for (std::size_t iter = 0; iter < palette::num_palettes; ++iter) {
+        if (!states.at(current.ref_palette_index).has_value()) {
             return std::nullopt;
         }
-        const auto &ref_state = states.at(current.ref_pal_index).value();
+        const auto &ref_state = states.at(current.ref_palette_index).value();
         if (!ref_state.color_positions.contains(current.ref_color)) {
             return std::nullopt;
         }
@@ -54,33 +54,33 @@ struct PaletteBuildState {
 
 } // namespace
 
-std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_all_output_palettes(
-    const std::vector<PackedPalette> &packed_pals,
-    const std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> &prefilled_pals,
+std::array<std::optional<Palette<Rgba32, palette::max_size>>, palette::num_palettes> build_all_output_palettes(
+    const std::vector<PackedPalette> &packed_palettes,
+    const std::array<std::optional<Palette<Rgba32, palette::max_size>>, palette::num_palettes> &prefilled_palettes,
     const ColorIndexMap<Rgba32> &color_map,
     const Rgba32 &default_slot_zero,
     const std::vector<IndirectLink> &indirect_links,
     AlignmentFailureCounts *failure_counts)
 {
     // Build per-palette state indexed by hardware index
-    std::array<std::optional<PaletteBuildState>, pal::num_pals> states{};
+    std::array<std::optional<PaletteBuildState>, palette::num_palettes> states{};
 
     // Phase 1: Initialize position maps
-    for (const PackedPalette &packed_pal : packed_pals) {
-        const std::size_t hw = packed_pal.hardware_index();
-        if (hw >= pal::num_pals) {
+    for (const PackedPalette &packed_palette : packed_palettes) {
+        const std::size_t hw = packed_palette.hardware_index();
+        if (hw >= palette::num_palettes) {
             panic("invalid hardware index " + std::to_string(hw) + ": out of range");
         }
 
         PaletteBuildState state;
         state.hw_index = hw;
 
-        const Palette<Rgba32, pal::max_size> *prefilled_ptr =
-            prefilled_pals.at(hw).has_value() ? &prefilled_pals.at(hw).value() : nullptr;
+        const Palette<Rgba32, palette::max_size> *prefilled_ptr =
+            prefilled_palettes.at(hw).has_value() ? &prefilled_palettes.at(hw).value() : nullptr;
 
         // Track prefilled (locked) slots
         if (prefilled_ptr != nullptr) {
-            for (std::size_t i = 1; i < pal::max_size; ++i) {
+            for (std::size_t i = 1; i < palette::max_size; ++i) {
                 if (!prefilled_ptr->is_wildcard(i)) {
                     state.prefilled_slots.insert(i);
                 }
@@ -93,7 +93,7 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
 
         // Colors from prefilled slots are already placed
         if (prefilled_ptr != nullptr) {
-            for (std::size_t i = 1; i < pal::max_size; ++i) {
+            for (std::size_t i = 1; i < palette::max_size; ++i) {
                 if (!prefilled_ptr->is_wildcard(i)) {
                     already_placed_colors.insert(prefilled_ptr->at(i));
                     // Prefilled colors get Absolute positions at their locked slots
@@ -103,7 +103,7 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
         }
 
         // Remaining colors from the packed palette start as Undetermined
-        for_each_color(packed_pal.color_set(), [&](const std::size_t color_index) {
+        for_each_color(packed_palette.color_set(), [&](const std::size_t color_index) {
             const auto color_opt = color_map.color_at_index(ColorIndex{color_index});
             if (!color_opt.has_value()) {
                 panic("color_index " + std::to_string(color_index) + " not found in color map");
@@ -119,9 +119,9 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
 
     // Track successfully applied indirect links for post-resolution verification
     struct AppliedIndirect {
-        std::size_t source_pal;
+        std::size_t source_palette;
         Rgba32 source_color;
-        std::size_t ref_pal;
+        std::size_t ref_palette;
         Rgba32 ref_color;
         std::size_t source_group_index;
     };
@@ -129,10 +129,10 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
 
     // Phase 2: Apply Indirect links
     for (const auto &link : indirect_links) {
-        if (!states.at(link.source_pal).has_value()) {
+        if (!states.at(link.source_palette).has_value()) {
             continue;
         }
-        auto &state = states.at(link.source_pal).value();
+        auto &state = states.at(link.source_palette).value();
 
         if (!state.color_positions.contains(link.source_color)) {
             continue;
@@ -141,30 +141,34 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
         auto &position = state.color_positions.at(link.source_color);
         // First-writer-wins: only set Indirect on Undetermined positions (prevents cycles)
         if (std::holds_alternative<UndeterminedPosition>(position)) {
-            position = IndirectPosition{link.ref_pal, link.ref_color, link.source_group_index};
+            position = IndirectPosition{link.ref_palette, link.ref_color, link.source_group_index};
             // Don't record here. Phase 4 will record if resolution succeeds.
         }
         else if (std::holds_alternative<IndirectPosition>(position)) {
             const auto &existing = std::get<IndirectPosition>(position);
             // Compatible: same reference, no actual conflict
-            if (existing.ref_pal_index == link.ref_pal && existing.ref_color == link.ref_color) {
+            if (existing.ref_palette_index == link.ref_palette && existing.ref_color == link.ref_color) {
                 // The existing IndirectPosition already satisfies this link. Record for post-verification
                 // (Phase 4 will only record the winning group, so compatible groups need recording here)
                 applied_indirects.push_back(
                     AppliedIndirect{
-                        link.source_pal, link.source_color, link.ref_pal, link.ref_color, link.source_group_index});
+                        link.source_palette,
+                        link.source_color,
+                        link.ref_palette,
+                        link.ref_color,
+                        link.source_group_index});
                 continue;
             }
             if (failure_counts != nullptr) {
                 failure_counts->first_writer_wins_details.push_back(
                     FirstWriterWinsDetail{
                         .source_group_index = link.source_group_index,
-                        .source_pal_index = link.source_pal,
+                        .source_palette_index = link.source_palette,
                         .source_color = link.source_color,
                         .winning_group_index = existing.source_group_index,
-                        .winning_ref_pal_index = existing.ref_pal_index,
+                        .winning_ref_palette_index = existing.ref_palette_index,
                         .winning_ref_color = existing.ref_color,
-                        .losing_ref_pal_index = link.ref_pal,
+                        .losing_ref_palette_index = link.ref_palette,
                         .losing_ref_color = link.ref_color});
             }
         }
@@ -174,8 +178,8 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
             // alignment is naturally satisfied, so there is no conflict to report.
             bool naturally_aligned = false;
             const auto source_slot = std::get<AbsolutePosition>(position).slot;
-            if (states.at(link.ref_pal).has_value()) {
-                const auto &ref_state = states.at(link.ref_pal).value();
+            if (states.at(link.ref_palette).has_value()) {
+                const auto &ref_state = states.at(link.ref_palette).value();
                 if (ref_state.color_positions.contains(link.ref_color)) {
                     const auto &ref_position = ref_state.color_positions.at(link.ref_color);
                     if (std::holds_alternative<AbsolutePosition>(ref_position) &&
@@ -188,9 +192,9 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
                 failure_counts->prefilled_source_conflict_details.push_back(
                     PrefilledSourceConflictDetail{
                         .source_group_index = link.source_group_index,
-                        .source_pal_index = link.source_pal,
+                        .source_palette_index = link.source_palette,
                         .source_color = link.source_color,
-                        .ref_pal_index = link.ref_pal,
+                        .ref_palette_index = link.ref_palette,
                         .ref_color = link.ref_color});
             }
         }
@@ -222,10 +226,10 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
             if (!std::holds_alternative<UndeterminedPosition>(position)) {
                 continue;
             }
-            while (next_slot < pal::max_size && used_slots.contains(next_slot)) {
+            while (next_slot < palette::max_size && used_slots.contains(next_slot)) {
                 ++next_slot;
             }
-            if (next_slot < pal::max_size) {
+            if (next_slot < palette::max_size) {
                 position = AbsolutePosition{next_slot};
                 used_slots.insert(next_slot);
                 ++next_slot;
@@ -245,18 +249,18 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
     // This handles cross-palette Indirect dependencies (where palette A links to B and B links to A for different
     // shape groups) without deadlocking, because the reference colors are always Undetermined (not Indirect) and
     // were assigned Absolute positions in Phase 3.
-    for (std::size_t pal_index = 0; pal_index < states.size(); ++pal_index) {
-        if (!states.at(pal_index).has_value()) {
+    for (std::size_t palette_index = 0; palette_index < states.size(); ++palette_index) {
+        if (!states.at(palette_index).has_value()) {
             continue;
         }
-        auto &state = states.at(pal_index).value();
+        auto &state = states.at(palette_index).value();
 
         // Collect all Indirect colors and their resolved target slots
         struct IndirectResolution {
             Rgba32 color;
             std::size_t target_slot;
             std::size_t source_group_index;
-            std::size_t ref_pal_index;
+            std::size_t ref_palette_index;
             Rgba32 ref_color;
         };
         std::vector<IndirectResolution> resolutions;
@@ -270,7 +274,7 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
             auto resolved = try_resolve_indirect(indirect_pos, states);
             if (!resolved.has_value()) {
                 panic(
-                    "Indirect chain resolution returned nullopt for color in palette " + std::to_string(pal_index) +
+                    "Indirect chain resolution returned nullopt for color in palette " + std::to_string(palette_index) +
                     ": internal invariant violated");
             }
 
@@ -289,7 +293,7 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
                     failure_counts->prefilled_destination_conflict_details.push_back(
                         PrefilledDestinationConflictDetail{
                             .source_group_index = indirect_pos.source_group_index,
-                            .palette_index = pal_index,
+                            .palette_index = palette_index,
                             .target_slot = resolved.value(),
                             .blocked_color = color,
                             .locked_color = locked_color});
@@ -302,12 +306,13 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
                     color,
                     resolved.value(),
                     indirect_pos.source_group_index,
-                    indirect_pos.ref_pal_index,
+                    indirect_pos.ref_palette_index,
                     indirect_pos.ref_color});
         }
 
         // Apply resolutions with eviction
-        for (const auto &[indirect_color, target_slot, source_group_index, res_ref_pal, res_ref_color] : resolutions) {
+        for (const auto &[indirect_color, target_slot, source_group_index, res_ref_palette, res_ref_color] :
+             resolutions) {
             // Check if the target slot is occupied by a sequential-fill color
             Rgba32 evicted_color{};
             bool needs_eviction = false;
@@ -336,15 +341,15 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
                     }
                 }
                 std::size_t free_slot = 1;
-                while (free_slot < pal::max_size && all_used.contains(free_slot)) {
+                while (free_slot < palette::max_size && all_used.contains(free_slot)) {
                     ++free_slot;
                 }
-                if (free_slot < pal::max_size) {
+                if (free_slot < palette::max_size) {
                     state.color_positions.at(evicted_color) = AbsolutePosition{free_slot};
                 }
                 else {
                     panic(
-                        "no free slot for eviction in palette " + std::to_string(pal_index) +
+                        "no free slot for eviction in palette " + std::to_string(palette_index) +
                         ": internal invariant violated. Phase 3 guarantees one free slot per Indirect color.");
                 }
             }
@@ -354,7 +359,7 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
 
             // Record successfully resolved link for post-resolution verification
             applied_indirects.push_back(
-                AppliedIndirect{pal_index, indirect_color, res_ref_pal, res_ref_color, source_group_index});
+                AppliedIndirect{palette_index, indirect_color, res_ref_palette, res_ref_color, source_group_index});
         }
     }
 
@@ -384,10 +389,10 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
             if (!std::holds_alternative<IndirectPosition>(position)) {
                 continue;
             }
-            while (next_slot < pal::max_size && used_slots.contains(next_slot)) {
+            while (next_slot < palette::max_size && used_slots.contains(next_slot)) {
                 ++next_slot;
             }
-            if (next_slot < pal::max_size) {
+            if (next_slot < palette::max_size) {
                 position = AbsolutePosition{next_slot};
                 used_slots.insert(next_slot);
                 ++next_slot;
@@ -403,11 +408,11 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
     // Post-resolution verification: detect eviction displacement
     if (failure_counts != nullptr) {
         for (const auto &ai : applied_indirects) {
-            if (!states.at(ai.source_pal).has_value() || !states.at(ai.ref_pal).has_value()) {
+            if (!states.at(ai.source_palette).has_value() || !states.at(ai.ref_palette).has_value()) {
                 continue;
             }
-            const auto &source_state = states.at(ai.source_pal).value();
-            const auto &ref_state = states.at(ai.ref_pal).value();
+            const auto &source_state = states.at(ai.source_palette).value();
+            const auto &ref_state = states.at(ai.ref_palette).value();
 
             if (!source_state.color_positions.contains(ai.source_color) ||
                 !ref_state.color_positions.contains(ai.ref_color)) {
@@ -429,10 +434,10 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
                 failure_counts->post_resolution_mismatch_details.push_back(
                     PostResolutionMismatchDetail{
                         .source_group_index = ai.source_group_index,
-                        .source_pal_index = ai.source_pal,
+                        .source_palette_index = ai.source_palette,
                         .source_color = ai.source_color,
                         .source_final_slot = source_slot,
-                        .ref_pal_index = ai.ref_pal,
+                        .ref_palette_index = ai.ref_palette,
                         .ref_color = ai.ref_color,
                         .ref_final_slot = ref_slot});
             }
@@ -454,7 +459,7 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
     }
 
     // Phase 6: Build final palettes from resolved positions
-    std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> result{};
+    std::array<std::optional<Palette<Rgba32, palette::max_size>>, palette::num_palettes> result{};
 
     for (const auto &state_opt : states) {
         if (!state_opt.has_value()) {
@@ -463,11 +468,11 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
         const auto &state = state_opt.value();
         const std::size_t hw = state.hw_index;
 
-        Palette<Rgba32, pal::max_size> output{Rgba32{0, 0, 0, Rgba32::alpha_opaque}};
+        Palette<Rgba32, palette::max_size> output{Rgba32{0, 0, 0, Rgba32::alpha_opaque}};
 
         // Set slot 0
-        const Palette<Rgba32, pal::max_size> *prefilled_ptr =
-            prefilled_pals.at(hw).has_value() ? &prefilled_pals.at(hw).value() : nullptr;
+        const Palette<Rgba32, palette::max_size> *prefilled_ptr =
+            prefilled_palettes.at(hw).has_value() ? &prefilled_palettes.at(hw).value() : nullptr;
         if (prefilled_ptr != nullptr && !prefilled_ptr->is_wildcard(0)) {
             output.set(0, prefilled_ptr->at(0));
         }
@@ -477,7 +482,7 @@ std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> build_a
 
         // Place prefilled slots
         if (prefilled_ptr != nullptr) {
-            for (std::size_t i = 1; i < pal::max_size; ++i) {
+            for (std::size_t i = 1; i < palette::max_size; ++i) {
                 if (!prefilled_ptr->is_wildcard(i)) {
                     output.set(i, prefilled_ptr->at(i));
                 }

@@ -4,7 +4,7 @@
 #include <filesystem>
 #include <memory>
 
-#include "porytiles/domain/config/tiles_pal_mode.hpp"
+#include "porytiles/domain/config/tiles_palette_mode.hpp"
 #include "porytiles/domain/models/image.hpp"
 #include "porytiles/domain/models/index_pixel.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
@@ -21,7 +21,7 @@ class PngIndexedImageSaver {
     virtual ~PngIndexedImageSaver() = default;
 
     [[nodiscard]] virtual ChainableResult<void>
-    save_to_file(const Image<IndexPixel> &image, const std::filesystem::path &path, TilesPalMode mode) const;
+    save_to_file(const Image<IndexPixel> &image, const std::filesystem::path &path, TilesPaletteMode mode) const;
 };
 
 } // namespace porytiles

@@ -138,9 +138,9 @@ class Image {
         return palette_;
     }
 
-    void palette(std::vector<Rgba32> pal)
+    void palette(std::vector<Rgba32> palette)
     {
-        palette_ = std::move(pal);
+        palette_ = std::move(palette);
     }
 
   private:

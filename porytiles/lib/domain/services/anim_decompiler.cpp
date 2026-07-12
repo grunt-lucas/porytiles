@@ -14,8 +14,8 @@
 #include "porytiles/domain/algorithms/tile_converters.hpp"
 #include "porytiles/domain/algorithms/tile_extractors.hpp"
 #include "porytiles/domain/config/anim_key_frame_resolution_strategy.hpp"
-#include "porytiles/domain/config/anim_multi_pal_subtile_resolution_strategy.hpp"
-#include "porytiles/domain/config/anim_pal_resolution_strategy.hpp"
+#include "porytiles/domain/config/anim_multi_palette_subtile_resolution_strategy.hpp"
+#include "porytiles/domain/config/anim_palette_resolution_strategy.hpp"
 #include "porytiles/domain/config/frame_linking.hpp"
 #include "porytiles/domain/config/per_anim_overrides.hpp"
 #include "porytiles/domain/models/anim_frame.hpp"
@@ -37,37 +37,37 @@ namespace {
 
 using namespace porytiles;
 
-[[nodiscard]] ChainableResult<std::size_t> internal_png_pal_strategy(
+[[nodiscard]] ChainableResult<std::size_t> internal_png_palette_strategy(
     const Animation<IndexPixel> &anim,
-    const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &tileset_pals,
+    const std::array<Palette<Rgba32, palette::max_size>, palette::num_palettes> &tileset_palettes,
     const ConfigValue<Rgba32> &extrinsic_transparency,
     const UserDiagnostics &diag,
-    const PalettePrinter &pal_printer)
+    const PalettePrinter &palette_printer)
 {
     if (!anim.has_frames()) {
         panic("anim '" + anim.name() + "' has no frames");
     }
 
     const auto &representative_frame = anim.frames().begin()->second;
-    const auto &representative_pal = representative_frame.palette();
+    const auto &representative_palette = representative_frame.palette();
 
-    // Representative pal must have exactly 16 colors to match GBA palette format
-    if (representative_pal.size() != pal::max_size) {
+    // Representative palette must have exactly 16 colors to match GBA palette format
+    if (representative_palette.size() != palette::max_size) {
         std::vector<std::string> err_msg{};
         err_msg.emplace_back(diag.formatter().format(
             "Representative frame '{}' internal palette size '{}': must be '{}'.",
             FormatParam{representative_frame.frame_name(), Style::bold},
-            FormatParam{representative_pal.size(), Style::bold},
-            FormatParam{pal::max_size, Style::bold}));
+            FormatParam{representative_palette.size(), Style::bold},
+            FormatParam{palette::max_size, Style::bold}));
         err_msg.emplace_back("");
-        err_msg.append_range(pal_printer.print_rgba_pal(representative_pal));
+        err_msg.append_range(palette_printer.print_rgba_palette(representative_palette));
         return FormattableError{err_msg};
     }
 
-    // Check for extrinsic transparency in non-slot-0 positions in representative pal
+    // Check for extrinsic transparency in non-slot-0 positions in representative palette
     std::vector<std::size_t> extrinsic_transparency_slots;
-    for (std::size_t slot = 1; slot < pal::max_size; ++slot) {
-        const Rgba32 &color = representative_pal.at(slot);
+    for (std::size_t slot = 1; slot < palette::max_size; ++slot) {
+        const Rgba32 &color = representative_palette.at(slot);
         if (color.is_extrinsically_transparent(extrinsic_transparency)) {
             extrinsic_transparency_slots.push_back(slot);
         }
@@ -92,7 +92,7 @@ using namespace porytiles;
         err_msg.emplace_back("Either correct the PNG palette or change the extrinsic transparency setting.");
         err_msg.emplace_back("");
         err_msg.append_range(
-            pal_printer.print_rgba_pal_with_highlights(representative_pal, extrinsic_transparency_slots));
+            palette_printer.print_rgba_palette_with_highlights(representative_palette, extrinsic_transparency_slots));
         err_msg.append_range(format_config_note_with_separator(diag.formatter(), extrinsic_transparency));
         return FormattableError{err_msg};
     }
@@ -102,11 +102,11 @@ using namespace porytiles;
         if (&frame == &representative_frame) {
             continue;
         }
-        const auto &frame_pal = frame.palette();
-        bool palettes_match = (frame_pal.size() == representative_pal.size());
+        const auto &frame_palette = frame.palette();
+        bool palettes_match = (frame_palette.size() == representative_palette.size());
         if (palettes_match) {
-            for (std::size_t slot = 0; slot < representative_pal.size(); ++slot) {
-                if (frame_pal.at(slot) != representative_pal.at(slot)) {
+            for (std::size_t slot = 0; slot < representative_palette.size(); ++slot) {
+                if (frame_palette.at(slot) != representative_palette.at(slot)) {
                     palettes_match = false;
                     break;
                 }
@@ -123,28 +123,28 @@ using namespace porytiles;
             err_msg.emplace_back("");
             err_msg.emplace_back(diag.formatter().format(
                 "Representative frame '{}' palette:", FormatParam{representative_frame.frame_name(), Style::bold}));
-            err_msg.append_range(pal_printer.print_rgba_pal(representative_pal));
+            err_msg.append_range(palette_printer.print_rgba_palette(representative_palette));
             err_msg.emplace_back("");
             err_msg.emplace_back(diag.formatter().format("Frame '{}' palette:", FormatParam{frame_name, Style::bold}));
-            err_msg.append_range(pal_printer.print_rgba_pal(frame_pal));
+            err_msg.append_range(palette_printer.print_rgba_palette(frame_palette));
             return FormattableError{err_msg};
         }
     }
 
-    // Now that we fully validated the representative pal, and we confirmed that all frame pals match, we can try to
-    // match the representative pal to one of the tileset pals.
-    for (std::size_t pal_idx = 0; pal_idx < tileset_pals.size(); ++pal_idx) {
+    // Now that we fully validated the representative palette, and we confirmed that all frame palettes match, we can
+    // try to match the representative palette to one of the tileset palettes.
+    for (std::size_t palette_idx = 0; palette_idx < tileset_palettes.size(); ++palette_idx) {
         bool matches = true;
-        for (std::size_t slot = 1; slot < pal::max_size; ++slot) {
-            const Rgba32 &png_pal_color = representative_pal.at(slot);
+        for (std::size_t slot = 1; slot < palette::max_size; ++slot) {
+            const Rgba32 &png_palette_color = representative_palette.at(slot);
 
             // This should never happen, we returned early above if we hit this
-            if (png_pal_color.is_transparent(extrinsic_transparency)) {
-                panic("png_pal slot " + std::to_string(slot) + " is extrinsically transparent");
+            if (png_palette_color.is_transparent(extrinsic_transparency)) {
+                panic("png_palette slot " + std::to_string(slot) + " is extrinsically transparent");
             }
 
-            const Rgba32 &tileset_color = tileset_pals[pal_idx].at(slot);
-            if (png_pal_color != tileset_color) {
+            const Rgba32 &tileset_color = tileset_palettes[palette_idx].at(slot);
+            if (png_palette_color != tileset_color) {
                 matches = false;
                 break;
             }
@@ -157,11 +157,11 @@ using namespace porytiles;
                 "Animation '{}' representative frame '{}' internal palette matched Porymap palette '{}':",
                 FormatParam{anim.name(), Style::bold},
                 FormatParam{representative_frame.frame_name(), Style::bold},
-                FormatParam{pal_filename(pal_idx), Style::bold}));
+                FormatParam{palette_filename(palette_idx), Style::bold}));
             remark_lines.emplace_back("");
-            remark_lines.append_range(pal_printer.print_rgba_pal(tileset_pals[pal_idx]));
+            remark_lines.append_range(palette_printer.print_rgba_palette(tileset_palettes[palette_idx]));
             diag.remark("animation-palette-resolution-strategy", remark_lines);
-            return pal_idx;
+            return palette_idx;
         }
     }
 
@@ -170,44 +170,44 @@ using namespace porytiles;
         "Failed to find matching palette for internal palette of representative frame '{}'.",
         FormatParam{representative_frame.frame_name(), Style::bold}));
     err_msg.emplace_back("");
-    err_msg.append_range(pal_printer.print_rgba_pal(representative_pal));
+    err_msg.append_range(palette_printer.print_rgba_palette(representative_palette));
     return FormattableError{err_msg};
 }
 
-[[nodiscard]] std::optional<std::size_t> extract_pal_index(AnimPalResolutionStrategy strategy)
+[[nodiscard]] std::optional<std::size_t> extract_palette_index(AnimPaletteResolutionStrategy strategy)
 {
     switch (strategy) {
-    case AnimPalResolutionStrategy::palette_00:
+    case AnimPaletteResolutionStrategy::palette_00:
         return 0;
-    case AnimPalResolutionStrategy::palette_01:
+    case AnimPaletteResolutionStrategy::palette_01:
         return 1;
-    case AnimPalResolutionStrategy::palette_02:
+    case AnimPaletteResolutionStrategy::palette_02:
         return 2;
-    case AnimPalResolutionStrategy::palette_03:
+    case AnimPaletteResolutionStrategy::palette_03:
         return 3;
-    case AnimPalResolutionStrategy::palette_04:
+    case AnimPaletteResolutionStrategy::palette_04:
         return 4;
-    case AnimPalResolutionStrategy::palette_05:
+    case AnimPaletteResolutionStrategy::palette_05:
         return 5;
-    case AnimPalResolutionStrategy::palette_06:
+    case AnimPaletteResolutionStrategy::palette_06:
         return 6;
-    case AnimPalResolutionStrategy::palette_07:
+    case AnimPaletteResolutionStrategy::palette_07:
         return 7;
-    case AnimPalResolutionStrategy::palette_08:
+    case AnimPaletteResolutionStrategy::palette_08:
         return 8;
-    case AnimPalResolutionStrategy::palette_09:
+    case AnimPaletteResolutionStrategy::palette_09:
         return 9;
-    case AnimPalResolutionStrategy::palette_10:
+    case AnimPaletteResolutionStrategy::palette_10:
         return 10;
-    case AnimPalResolutionStrategy::palette_11:
+    case AnimPaletteResolutionStrategy::palette_11:
         return 11;
-    case AnimPalResolutionStrategy::palette_12:
+    case AnimPaletteResolutionStrategy::palette_12:
         return 12;
-    case AnimPalResolutionStrategy::palette_13:
+    case AnimPaletteResolutionStrategy::palette_13:
         return 13;
-    case AnimPalResolutionStrategy::palette_14:
+    case AnimPaletteResolutionStrategy::palette_14:
         return 14;
-    case AnimPalResolutionStrategy::palette_15:
+    case AnimPaletteResolutionStrategy::palette_15:
         return 15;
     default:
         return std::nullopt;
@@ -225,52 +225,52 @@ using namespace porytiles;
 /// @param tile_index The absolute tile index in tiles.png
 /// @param metatiles_bin The metatile entries to scan
 /// @param strategy The per-subtile strategy config value
-/// @param anim The animation (needed for internal_png_pal strategy)
-/// @param pals The tileset palettes
+/// @param anim The animation (needed for internal_png_palette strategy)
+/// @param palettes The tileset palettes
 /// @param tiles_png The tiles.png image
 /// @param extrinsic_transparency The extrinsic transparency color
 /// @param diag User diagnostics for reporting
-/// @param pal_printer Palette printer for diagnostic output
+/// @param palette_printer Palette printer for diagnostic output
 /// @param tile_printer Tile printer for diagnostic output
-/// @param internal_png_pal_cache Cached result from internal_png_pal_strategy (populated on first use)
+/// @param internal_png_palette_cache Cached result from internal_png_palette_strategy (populated on first use)
 /// @return The resolved palette index for this subtile
 [[nodiscard]] ChainableResult<std::size_t> resolve_subtile_palette(
     const std::string &anim_name,
     std::size_t subtile_index,
     std::size_t tile_index,
     std::span<const TilemapEntry> metatiles_bin,
-    const ConfigValue<AnimPalResolutionStrategy> &strategy,
-    const ConfigValue<AnimMultiPalSubtileResolutionStrategy> &multi_pal_strategy,
+    const ConfigValue<AnimPaletteResolutionStrategy> &strategy,
+    const ConfigValue<AnimMultiPaletteSubtileResolutionStrategy> &multi_palette_strategy,
     const Animation<IndexPixel> &anim,
-    const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals,
+    const std::array<Palette<Rgba32, palette::max_size>, palette::num_palettes> &palettes,
     const Image<IndexPixel> &tiles_png,
     const ConfigValue<Rgba32> &extrinsic_transparency,
     const UserDiagnostics &diag,
-    const PalettePrinter &pal_printer,
+    const PalettePrinter &palette_printer,
     const TilePrinter &tile_printer,
-    std::optional<std::size_t> &internal_png_pal_cache)
+    std::optional<std::size_t> &internal_png_palette_cache)
 {
-    // Check pal_N strategies first: direct palette index assignment
-    const auto explicit_pal = extract_pal_index(strategy.value());
-    if (explicit_pal.has_value()) {
+    // Check the palette_00..palette_15 strategies first: direct palette index assignment
+    const auto explicit_palette = extract_palette_index(strategy.value());
+    if (explicit_palette.has_value()) {
         diag.remark(
             "animation-palette-resolution-strategy",
             {diag.formatter().format(
                 "Animation '{}' subtile {} using explicit palette '{}'.",
                 FormatParam{anim_name, Style::bold},
                 FormatParam{subtile_index, Style::bold},
-                FormatParam{pal_filename(*explicit_pal), Style::bold})});
+                FormatParam{palette_filename(*explicit_palette), Style::bold})});
         diag.remark_note("animation-palette-resolution-strategy", format_config_note(diag.formatter(), strategy));
-        return *explicit_pal;
+        return *explicit_palette;
     }
 
     switch (strategy.value()) {
-    case AnimPalResolutionStrategy::scan_local_metatiles: {
+    case AnimPaletteResolutionStrategy::scan_local_metatiles: {
         std::set<std::size_t> found_for_subtile{};
 
         for (const auto &entry : metatiles_bin) {
             if (entry.tile_index() == tile_index) {
-                found_for_subtile.insert(entry.pal_index());
+                found_for_subtile.insert(entry.palette_index());
             }
         }
 
@@ -292,34 +292,34 @@ using namespace porytiles;
             // A single tile index can be referenced by multiple metatile entries with different palette indices.
             // This is valid GBA behavior. The hardware selects palette per metatile entry, not per tile.
             //
-            // The multi_pal_strategy config determines how to handle this case.
-            std::string pal_list;
-            for (const auto &pal_idx : found_for_subtile) {
-                if (!pal_list.empty()) {
-                    pal_list += ", ";
+            // The multi_palette_strategy config determines how to handle this case.
+            std::string palette_list;
+            for (const auto &palette_idx : found_for_subtile) {
+                if (!palette_list.empty()) {
+                    palette_list += ", ";
                 }
-                pal_list += pal_filename(pal_idx);
+                palette_list += palette_filename(palette_idx);
             }
 
-            switch (multi_pal_strategy.value()) {
-            case AnimMultiPalSubtileResolutionStrategy::error: {
+            switch (multi_palette_strategy.value()) {
+            case AnimMultiPaletteSubtileResolutionStrategy::error: {
                 std::vector<std::string> err_msg;
                 err_msg.push_back(diag.formatter().format(
                     "Animation '{}' subtile {} at tile index '{}' is referenced with multiple palettes: {}.",
                     FormatParam{anim_name, Style::bold},
                     FormatParam{subtile_index, Style::bold},
                     FormatParam{tile_index, Style::bold},
-                    FormatParam{pal_list, Style::bold}));
+                    FormatParam{palette_list, Style::bold}));
                 err_msg.emplace_back(
                     "Picking one palette arbitrarily would produce incorrect RGBA output in the layer PNGs.");
 
                 const PixelTile<IndexPixel> index_tile = extract_single_tile(tiles_png, tile_index);
                 err_msg.emplace_back("");
-                for (const auto &pal_idx : found_for_subtile) {
-                    const PixelTile<Rgba32> rgba_tile =
-                        color_tile_from_index_tile(index_tile, pals.at(pal_idx), extrinsic_transparency.value());
+                for (const auto &palette_idx : found_for_subtile) {
+                    const PixelTile<Rgba32> rgba_tile = color_tile_from_index_tile(
+                        index_tile, palettes.at(palette_idx), extrinsic_transparency.value());
                     err_msg.push_back(diag.formatter().format(
-                        "Tile under palette '{}':", FormatParam{pal_filename(pal_idx), Style::bold}));
+                        "Tile under palette '{}':", FormatParam{palette_filename(palette_idx), Style::bold}));
                     err_msg.append_range(tile_printer.print_tile(rgba_tile, extrinsic_transparency.value()));
                 }
 
@@ -330,8 +330,8 @@ using namespace porytiles;
                 err_msg.append_range(format_config_note_with_separator(diag.formatter(), strategy));
                 return FormattableError{err_msg};
             }
-            case AnimMultiPalSubtileResolutionStrategy::warning: {
-                const std::size_t chosen_pal = *found_for_subtile.begin();
+            case AnimMultiPaletteSubtileResolutionStrategy::warning: {
+                const std::size_t chosen_palette = *found_for_subtile.begin();
 
                 std::vector<std::string> warn_msg;
                 warn_msg.push_back(diag.formatter().format(
@@ -339,73 +339,74 @@ using namespace porytiles;
                     FormatParam{anim_name, Style::bold},
                     FormatParam{subtile_index, Style::bold},
                     FormatParam{tile_index, Style::bold},
-                    FormatParam{pal_list, Style::bold}));
+                    FormatParam{palette_list, Style::bold}));
                 warn_msg.push_back(diag.formatter().format(
                     "Using palette '{}'. Set 'frame_linking: manual' to handle palette assignment via overrides.",
-                    FormatParam{pal_filename(chosen_pal), Style::bold}));
+                    FormatParam{palette_filename(chosen_palette), Style::bold}));
 
                 const PixelTile<IndexPixel> warn_index_tile = extract_single_tile(tiles_png, tile_index);
                 warn_msg.emplace_back("");
-                for (const auto &pal_idx : found_for_subtile) {
-                    const PixelTile<Rgba32> rgba_tile =
-                        color_tile_from_index_tile(warn_index_tile, pals.at(pal_idx), extrinsic_transparency.value());
+                for (const auto &palette_idx : found_for_subtile) {
+                    const PixelTile<Rgba32> rgba_tile = color_tile_from_index_tile(
+                        warn_index_tile, palettes.at(palette_idx), extrinsic_transparency.value());
                     warn_msg.push_back(diag.formatter().format(
-                        "Tile under palette '{}':", FormatParam{pal_filename(pal_idx), Style::bold}));
+                        "Tile under palette '{}':", FormatParam{palette_filename(palette_idx), Style::bold}));
                     warn_msg.append_range(tile_printer.print_tile(rgba_tile, extrinsic_transparency.value()));
                 }
 
-                warn_msg.append_range(format_config_note_with_separator(diag.formatter(), multi_pal_strategy));
+                warn_msg.append_range(format_config_note_with_separator(diag.formatter(), multi_palette_strategy));
                 diag.warning("animation-multi-pal-subtile", warn_msg);
 
-                return chosen_pal;
+                return chosen_palette;
             }
-            case AnimMultiPalSubtileResolutionStrategy::split:
-                return FormattableError{"The 'split' mode for multi-pal subtile resolution is not yet implemented."};
+            case AnimMultiPaletteSubtileResolutionStrategy::split:
+                return FormattableError{
+                    "The 'split' mode for multi-palette subtile resolution is not yet implemented."};
             }
         }
 
         return *found_for_subtile.begin();
     }
 
-    case AnimPalResolutionStrategy::internal_png_pal: {
-        if (internal_png_pal_cache.has_value()) {
-            return *internal_png_pal_cache;
+    case AnimPaletteResolutionStrategy::internal_png_palette: {
+        if (internal_png_palette_cache.has_value()) {
+            return *internal_png_palette_cache;
         }
         std::vector<std::string> err_msg{};
         err_msg.emplace_back(diag.formatter().format(
             "Palette resolution strategy '{}' failed.",
-            FormatParam{to_string(AnimPalResolutionStrategy::internal_png_pal), Style::bold}));
+            FormatParam{to_string(AnimPaletteResolutionStrategy::internal_png_palette), Style::bold}));
         err_msg.append_range(format_config_note_with_separator(diag.formatter(), strategy));
         PT_TRY_ASSIGN_CHAIN_ERR(
             match,
-            internal_png_pal_strategy(anim, pals, extrinsic_transparency, diag, pal_printer),
+            internal_png_palette_strategy(anim, palettes, extrinsic_transparency, diag, palette_printer),
             std::size_t,
             err_msg);
-        internal_png_pal_cache = match;
+        internal_png_palette_cache = match;
         return match;
     }
 
-    case AnimPalResolutionStrategy::scan_all_tilesets:
+    case AnimPaletteResolutionStrategy::scan_all_tilesets:
         panic("scan_all_tilesets not yet implemented");
 
     default:
-        panic("unhandled AnimPalResolutionStrategy value");
+        panic("unhandled AnimPaletteResolutionStrategy value");
     }
 }
 
-[[nodiscard]] ChainableResult<std::vector<std::size_t>> find_pals_for_anim_tiles(
+[[nodiscard]] ChainableResult<std::vector<std::size_t>> find_palettes_for_anim_tiles(
     const std::string &anim_name,
     std::size_t tile_offset,
     std::size_t tile_count,
     std::span<const TilemapEntry> metatiles_bin,
-    const std::vector<ConfigValue<AnimPalResolutionStrategy>> &per_subtile_strategies,
-    const ConfigValue<AnimMultiPalSubtileResolutionStrategy> &multi_pal_strategy,
+    const std::vector<ConfigValue<AnimPaletteResolutionStrategy>> &per_subtile_strategies,
+    const ConfigValue<AnimMultiPaletteSubtileResolutionStrategy> &multi_palette_strategy,
     const Animation<IndexPixel> &anim,
-    const std::array<Palette<Rgba32, pal::max_size>, pal::num_pals> &pals,
+    const std::array<Palette<Rgba32, palette::max_size>, palette::num_palettes> &palettes,
     const Image<IndexPixel> &tiles_png,
     const ConfigValue<Rgba32> &extrinsic_transparency,
     const UserDiagnostics &diag,
-    const PalettePrinter &pal_printer,
+    const PalettePrinter &palette_printer,
     const TilePrinter &tile_printer)
 {
     if (per_subtile_strategies.size() != tile_count) {
@@ -414,60 +415,60 @@ using namespace porytiles;
             std::to_string(tile_count));
     }
 
-    std::vector<std::size_t> per_tile_pals(tile_count);
-    std::optional<std::size_t> internal_png_pal_cache;
+    std::vector<std::size_t> per_tile_palettes(tile_count);
+    std::optional<std::size_t> internal_png_palette_cache;
 
     for (std::size_t i = 0; i < tile_count; ++i) {
         const std::size_t tile_index = tile_offset + i;
         PT_TRY_ASSIGN_CHAIN_ERR(
-            pal_idx,
+            palette_idx,
             resolve_subtile_palette(
                 anim_name,
                 i,
                 tile_index,
                 metatiles_bin,
                 per_subtile_strategies[i],
-                multi_pal_strategy,
+                multi_palette_strategy,
                 anim,
-                pals,
+                palettes,
                 tiles_png,
                 extrinsic_transparency,
                 diag,
-                pal_printer,
+                palette_printer,
                 tile_printer,
-                internal_png_pal_cache),
+                internal_png_palette_cache),
             std::vector<std::size_t>,
             diag.formatter().format(
                 "Failed to resolve palette for animation '{}' subtile {}.",
                 FormatParam{anim_name, Style::bold},
                 FormatParam{i, Style::bold}));
-        per_tile_pals[i] = pal_idx;
+        per_tile_palettes[i] = palette_idx;
     }
 
     // Emit a remark if multiple distinct palettes are used across subtiles
     if (tile_count > 1) {
-        const std::size_t first_pal = per_tile_pals.at(0);
+        const std::size_t first_palette = per_tile_palettes.at(0);
         const bool uses_multiple_palettes =
-            !std::ranges::all_of(per_tile_pals, [&](std::size_t idx) { return idx == first_pal; });
+            !std::ranges::all_of(per_tile_palettes, [&](std::size_t idx) { return idx == first_palette; });
         if (uses_multiple_palettes) {
-            std::set<std::size_t> unique_pals{per_tile_pals.begin(), per_tile_pals.end()};
-            std::string pal_list;
-            for (const auto &pal_idx : unique_pals) {
-                if (!pal_list.empty()) {
-                    pal_list += ", ";
+            std::set<std::size_t> unique_palettes{per_tile_palettes.begin(), per_tile_palettes.end()};
+            std::string palette_list;
+            for (const auto &palette_idx : unique_palettes) {
+                if (!palette_list.empty()) {
+                    palette_list += ", ";
                 }
-                pal_list += pal_filename(pal_idx);
+                palette_list += palette_filename(palette_idx);
             }
             diag.remark(
                 "animation-palette-resolution-strategy",
                 {diag.formatter().format(
                     "Animation '{}' uses multiple palettes across subtiles: {}.",
                     FormatParam{anim_name, Style::bold},
-                    FormatParam{pal_list, Style::bold})});
+                    FormatParam{palette_list, Style::bold})});
         }
     }
 
-    return per_tile_pals;
+    return per_tile_palettes;
 }
 
 /// @brief Checks whether any key frame tiles are duplicates, considering cross-range, inter-animation, and
@@ -599,15 +600,15 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
 {
     // Unwrap config values
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, extrinsic_transparency, tileset_name, Animation<Rgba32>);
-    PT_UNWRAP_TILESET_CONFIG_PTR(config_, global_anim_pal_resolution_strategy, tileset_name, Animation<Rgba32>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, global_anim_palette_resolution_strategy, tileset_name, Animation<Rgba32>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, global_anim_key_frame_resolution_strategy, tileset_name, Animation<Rgba32>);
     PT_UNWRAP_TILESET_CONFIG_PTR(
-        config_, global_anim_multi_pal_subtile_resolution_strategy, tileset_name, Animation<Rgba32>);
+        config_, global_anim_multi_palette_subtile_resolution_strategy, tileset_name, Animation<Rgba32>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, global_frame_linking, tileset_name, Animation<Rgba32>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, per_anim_overrides, tileset_name, Animation<Rgba32>);
 
     // Read data from porymap_component
-    const auto &pals = porymap_component.pals();
+    const auto &palettes = porymap_component.palettes();
     const auto &metatiles_bin = porymap_component.metatiles_bin();
     const auto &tiles_png = porymap_component.tiles_png();
 
@@ -638,10 +639,10 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
     }
 
     // Build per-subtile palette resolution strategies using a three-tier cascade:
-    //   1. Per-tile (per_tile_pal_resolution_strategies[i]): most specific
-    //   2. Per-anim (pal_resolution_strategy): middle tier
-    //   3. Global (global_anim_pal_resolution_strategy): least specific fallback
-    std::vector<ConfigValue<AnimPalResolutionStrategy>> per_subtile_strategies;
+    //   1. Per-tile (per_tile_palette_resolution_strategies[i]): most specific
+    //   2. Per-anim (palette_resolution_strategy): middle tier
+    //   3. Global (global_anim_palette_resolution_strategy): least specific fallback
+    std::vector<ConfigValue<AnimPaletteResolutionStrategy>> per_subtile_strategies;
     per_subtile_strategies.reserve(tile_count);
 
     const auto &configs_map = per_anim_overrides.value();
@@ -652,12 +653,13 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
         const PerAnimOverride &anim_cfg = *anim_cfg_ptr;
 
         // Determine the "effective default" for this animation: per-anim if set, otherwise global
-        const ConfigValue<AnimPalResolutionStrategy> effective_default =
-            anim_cfg.pal_resolution_strategy.has_value() ? per_anim_overrides.derive(anim_cfg.pal_resolution_strategy)
-                                                         : global_anim_pal_resolution_strategy;
+        const ConfigValue<AnimPaletteResolutionStrategy> effective_default =
+            anim_cfg.palette_resolution_strategy.has_value()
+                ? per_anim_overrides.derive(anim_cfg.palette_resolution_strategy)
+                : global_anim_palette_resolution_strategy;
 
-        if (!anim_cfg.per_tile_pal_resolution_strategies.empty()) {
-            if (anim_cfg.per_tile_pal_resolution_strategies.size() != tile_count) {
+        if (!anim_cfg.per_tile_palette_resolution_strategies.empty()) {
+            if (anim_cfg.per_tile_palette_resolution_strategies.size() != tile_count) {
                 return FormattableError{
                     std::vector<std::string>{
                         "Animation '{}' config 'per_tile_palette_resolution_strategies' has '{}' entries, but "
@@ -665,14 +667,14 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
                         "The per_tile_palette_resolution_strategies list must have exactly one entry per subtile."},
                     std::vector<std::vector<FormatParam>>{
                         {FormatParam{anim.name(), Style::bold},
-                         FormatParam{anim_cfg.per_tile_pal_resolution_strategies.size(), Style::bold},
+                         FormatParam{anim_cfg.per_tile_palette_resolution_strategies.size(), Style::bold},
                          FormatParam{tile_count, Style::bold}},
                         {}}};
             }
             for (std::size_t i = 0; i < tile_count; ++i) {
-                if (anim_cfg.per_tile_pal_resolution_strategies[i].has_value()) {
+                if (anim_cfg.per_tile_palette_resolution_strategies[i].has_value()) {
                     per_subtile_strategies.push_back(
-                        per_anim_overrides.derive(anim_cfg.per_tile_pal_resolution_strategies[i]));
+                        per_anim_overrides.derive(anim_cfg.per_tile_palette_resolution_strategies[i]));
                 }
                 else {
                     per_subtile_strategies.push_back(effective_default);
@@ -689,15 +691,16 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
     else {
         // No AnimConfig for this animation. Use global for all subtiles
         for (std::size_t i = 0; i < tile_count; ++i) {
-            per_subtile_strategies.push_back(global_anim_pal_resolution_strategy);
+            per_subtile_strategies.push_back(global_anim_palette_resolution_strategy);
         }
     }
 
-    // Compute the effective multi-pal subtile resolution strategy: per-anim override wins, otherwise global fallback.
-    const ConfigValue<AnimMultiPalSubtileResolutionStrategy> effective_multi_pal_strategy =
-        (anim_cfg_ptr != nullptr && anim_cfg_ptr->multi_pal_subtile_resolution_strategy.has_value())
-            ? per_anim_overrides.derive(anim_cfg_ptr->multi_pal_subtile_resolution_strategy)
-            : global_anim_multi_pal_subtile_resolution_strategy;
+    // Compute the effective multi-palette subtile resolution strategy: per-anim override wins, otherwise global
+    // fallback.
+    const ConfigValue<AnimMultiPaletteSubtileResolutionStrategy> effective_multi_palette_strategy =
+        (anim_cfg_ptr != nullptr && anim_cfg_ptr->multi_palette_subtile_resolution_strategy.has_value())
+            ? per_anim_overrides.derive(anim_cfg_ptr->multi_palette_subtile_resolution_strategy)
+            : global_anim_multi_palette_subtile_resolution_strategy;
 
     // Resolve effective FrameLinking for this animation
     const ConfigValue<FrameLinking> effective_linking = (anim_cfg_ptr != nullptr && anim_cfg_ptr->linking.has_value())
@@ -729,7 +732,7 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
                             layer,
                             subtile,
                             entry.tile_index() - tile_offset,
-                            entry.pal_index(),
+                            entry.palette_index(),
                             entry.h_flip(),
                             entry.v_flip()});
                 }
@@ -742,20 +745,20 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
 
         // Decompile regular frames using per-subtile palette resolution
         PT_TRY_ASSIGN_CHAIN_ERR(
-            manual_pal_indices,
-            find_pals_for_anim_tiles(
+            manual_palette_indices,
+            find_palettes_for_anim_tiles(
                 anim.name(),
                 tile_offset,
                 tile_count,
                 metatiles_bin,
                 per_subtile_strategies,
-                effective_multi_pal_strategy,
+                effective_multi_palette_strategy,
                 anim,
-                pals,
+                palettes,
                 tiles_png,
                 extrinsic_transparency,
                 *diag_,
-                *pal_printer_,
+                *palette_printer_,
                 *tile_printer_),
             Animation<Rgba32>,
             diag_->formatter().format(
@@ -766,7 +769,7 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
             rgba_tiles.reserve(frame.tiles().size());
             for (std::size_t i = 0; i < frame.tiles().size(); ++i) {
                 rgba_tiles.push_back(color_tile_from_index_tile(
-                    frame.tiles()[i], pals.at(manual_pal_indices[i]), extrinsic_transparency.value()));
+                    frame.tiles()[i], palettes.at(manual_palette_indices[i]), extrinsic_transparency.value()));
             }
             AnimFrame rgba_frame{frame.frame_name(), std::move(rgba_tiles)};
             result.put_frame(frame.frame_name(), std::move(rgba_frame));
@@ -777,29 +780,29 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
 
     // Recover per-subtile palette indices
     PT_TRY_ASSIGN_CHAIN_ERR(
-        pal_indices,
-        find_pals_for_anim_tiles(
+        palette_indices,
+        find_palettes_for_anim_tiles(
             anim.name(),
             tile_offset,
             tile_count,
             metatiles_bin,
             per_subtile_strategies,
-            effective_multi_pal_strategy,
+            effective_multi_palette_strategy,
             anim,
-            pals,
+            palettes,
             tiles_png,
             extrinsic_transparency,
             *diag_,
-            *pal_printer_,
+            *palette_printer_,
             *tile_printer_),
         Animation<Rgba32>,
         diag_->formatter().format("Failed to find palette for animation '{}'.", FormatParam{anim.name(), Style::bold}));
 
     // Build per-tile palette pointer vector for the mangler and conversion
-    std::vector<const Palette<Rgba32, pal::max_size> *> pal_ptrs;
-    pal_ptrs.reserve(pal_indices.size());
-    for (std::size_t idx : pal_indices) {
-        pal_ptrs.push_back(&pals.at(idx));
+    std::vector<const Palette<Rgba32, palette::max_size> *> palette_ptrs;
+    palette_ptrs.reserve(palette_indices.size());
+    for (std::size_t idx : palette_indices) {
+        palette_ptrs.push_back(&palettes.at(idx));
     }
 
     // Extract key frame tiles from tiles.png
@@ -877,7 +880,7 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
                 mangler.mangle_duplicates(
                     anim.name(),
                     std::move(key_frame_index_tiles),
-                    pal_ptrs,
+                    palette_ptrs,
                     extrinsic_transparency.value(),
                     existing_canonical_tiles),
                 Animation<Rgba32>,
@@ -903,7 +906,7 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
     key_frame_rgba_tiles.reserve(key_frame_index_tiles.size());
     for (std::size_t i = 0; i < key_frame_index_tiles.size(); ++i) {
         key_frame_rgba_tiles.push_back(color_tile_from_index_tile(
-            key_frame_index_tiles[i], pals.at(pal_indices[i]), extrinsic_transparency.value()));
+            key_frame_index_tiles[i], palettes.at(palette_indices[i]), extrinsic_transparency.value()));
     }
 
     // Set the key frame on the result
@@ -921,8 +924,8 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
         rgba_tiles.reserve(frame.tiles().size());
 
         for (std::size_t i = 0; i < frame.tiles().size(); ++i) {
-            rgba_tiles.push_back(
-                color_tile_from_index_tile(frame.tiles()[i], pals.at(pal_indices[i]), extrinsic_transparency.value()));
+            rgba_tiles.push_back(color_tile_from_index_tile(
+                frame.tiles()[i], palettes.at(palette_indices[i]), extrinsic_transparency.value()));
         }
 
         AnimFrame rgba_frame{frame.frame_name(), std::move(rgba_tiles)};

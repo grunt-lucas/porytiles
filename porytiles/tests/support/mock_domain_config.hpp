@@ -23,24 +23,25 @@ class MockDomainConfig : public DomainConfig {
     std::size_t num_tiles_total = 1024;
     std::size_t num_metatiles_in_primary = 512;
     std::size_t num_metatiles_total = 1024;
-    std::size_t num_pals_in_primary = 6;
-    std::size_t num_pals_total = 13;
+    std::size_t num_palettes_in_primary = 6;
+    std::size_t num_palettes_total = 13;
     std::size_t max_map_data_size = 10240;
     std::size_t num_tiles_per_metatile = 8;
     Rgba32 extrinsic_transparency = rgba_magenta;
     ArtifactEditMode tiles_edit_mode = ArtifactEditMode::optimize;
-    ArtifactEditMode pals_edit_mode = ArtifactEditMode::optimize;
-    bool pal_hints_enabled = true;
-    std::vector<PaletteHint> pal_hints = std::vector<PaletteHint>{};
+    ArtifactEditMode palettes_edit_mode = ArtifactEditMode::optimize;
+    bool palette_hints_enabled = true;
+    std::vector<PaletteHint> palette_hints = std::vector<PaletteHint>{};
     PackingStrategyType packing_strategy = PackingStrategyType::backtracking;
     PackingStrategyParams packing_strategy_params = PackingStrategyParams{};
     TileSharingPacking tile_sharing_packing = TileSharingPacking::off;
     TileSharingAlignment tile_sharing_alignment = TileSharingAlignment::off;
-    TilesPalMode tiles_pal_mode = TilesPalMode::true_color;
-    AnimPalResolutionStrategy global_anim_pal_resolution_strategy = AnimPalResolutionStrategy::scan_local_metatiles;
+    TilesPaletteMode tiles_palette_mode = TilesPaletteMode::true_color;
+    AnimPaletteResolutionStrategy global_anim_palette_resolution_strategy =
+        AnimPaletteResolutionStrategy::scan_local_metatiles;
     AnimKeyFrameResolutionStrategy global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
-    AnimMultiPalSubtileResolutionStrategy global_anim_multi_pal_subtile_resolution_strategy =
-        AnimMultiPalSubtileResolutionStrategy::error;
+    AnimMultiPaletteSubtileResolutionStrategy global_anim_multi_palette_subtile_resolution_strategy =
+        AnimMultiPaletteSubtileResolutionStrategy::error;
     FrameLinking global_frame_linking = FrameLinking::automatic;
     PerAnimOverrides per_anim_overrides = PerAnimOverrides{};
     bool cross_tileset_anim_linking = true;
@@ -72,15 +73,16 @@ class MockDomainConfig : public DomainConfig {
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_pals_in_primary_raw(ConfigScopeType, const std::string &) const override
+    num_palettes_in_primary_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{num_pals_in_primary, "Number Of Palettes In Primary", "num_pals_in_primary", "mock", {}};
+        return ConfigValue{
+            num_palettes_in_primary, "Number Of Palettes In Primary", "num_palettes_in_primary", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
-    num_pals_total_raw(ConfigScopeType, const std::string &) const override
+    num_palettes_total_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{num_pals_total, "Number Of Palettes Total", "num_pals_total", "mock", {}};
+        return ConfigValue{num_palettes_total, "Number Of Palettes Total", "num_palettes_total", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
@@ -109,21 +111,21 @@ class MockDomainConfig : public DomainConfig {
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<ArtifactEditMode>>
-    pals_edit_mode_raw(ConfigScopeType, const std::string &) const override
+    palettes_edit_mode_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{pals_edit_mode, "Palettes Edit Mode", "pals_edit_mode", "mock", {}};
+        return ConfigValue{palettes_edit_mode, "Palettes Edit Mode", "palettes_edit_mode", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
-    pal_hints_enabled_raw(ConfigScopeType, const std::string &) const override
+    palette_hints_enabled_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{pal_hints_enabled, "Palette Hints Enabled", "pal_hints_enabled", "mock", {}};
+        return ConfigValue{palette_hints_enabled, "Palette Hints Enabled", "palette_hints_enabled", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<std::vector<PaletteHint>>>
-    pal_hints_raw(ConfigScopeType, const std::string &) const override
+    palette_hints_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{pal_hints, "Palette Hints", "pal_hints", "mock", {}};
+        return ConfigValue{palette_hints, "Palette Hints", "palette_hints", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<PackingStrategyType>>
@@ -150,19 +152,19 @@ class MockDomainConfig : public DomainConfig {
         return ConfigValue{tile_sharing_alignment, "Tile Sharing Alignment", "tile_sharing_alignment", "mock", {}};
     }
 
-    [[nodiscard]] ChainableResult<ConfigValue<TilesPalMode>>
-    tiles_pal_mode_raw(ConfigScopeType, const std::string &) const override
+    [[nodiscard]] ChainableResult<ConfigValue<TilesPaletteMode>>
+    tiles_palette_mode_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{tiles_pal_mode, "Tiles Palette Mode", "tiles_pal_mode", "mock", {}};
+        return ConfigValue{tiles_palette_mode, "Tiles Palette Mode", "tiles_palette_mode", "mock", {}};
     }
 
-    [[nodiscard]] ChainableResult<ConfigValue<AnimPalResolutionStrategy>>
-    global_anim_pal_resolution_strategy_raw(ConfigScopeType, const std::string &) const override
+    [[nodiscard]] ChainableResult<ConfigValue<AnimPaletteResolutionStrategy>>
+    global_anim_palette_resolution_strategy_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{
-            global_anim_pal_resolution_strategy,
+            global_anim_palette_resolution_strategy,
             "Global Animation Palette Resolution Strategy",
-            "global_anim_pal_resolution_strategy",
+            "global_anim_palette_resolution_strategy",
             "mock",
             {}};
     }
@@ -178,13 +180,13 @@ class MockDomainConfig : public DomainConfig {
             {}};
     }
 
-    [[nodiscard]] ChainableResult<ConfigValue<AnimMultiPalSubtileResolutionStrategy>>
-    global_anim_multi_pal_subtile_resolution_strategy_raw(ConfigScopeType, const std::string &) const override
+    [[nodiscard]] ChainableResult<ConfigValue<AnimMultiPaletteSubtileResolutionStrategy>>
+    global_anim_multi_palette_subtile_resolution_strategy_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{
-            global_anim_multi_pal_subtile_resolution_strategy,
-            "Global Animation Multi-Pal Subtile Resolution Strategy",
-            "global_anim_multi_pal_subtile_resolution_strategy",
+            global_anim_multi_palette_subtile_resolution_strategy,
+            "Global Animation Multi-Palette Subtile Resolution Strategy",
+            "global_anim_multi_palette_subtile_resolution_strategy",
             "mock",
             {}};
     }

@@ -4,14 +4,14 @@
 
 namespace porytiles {
 
-PalettePool::PalettePool(std::bitset<pal::num_pals> available_indexes)
+PalettePool::PalettePool(std::bitset<palette::num_palettes> available_indexes)
     : available_indexes_{available_indexes}, checked_out_{}, checkout_stack_{}
 {
 }
 
 bool PalettePool::is_available(std::size_t hardware_index) const
 {
-    if (hardware_index >= pal::num_pals) {
+    if (hardware_index >= palette::num_palettes) {
         panic("index out of bounds");
     }
     return available_indexes_.test(hardware_index) && !checked_out_.test(hardware_index);
@@ -19,12 +19,12 @@ bool PalettePool::is_available(std::size_t hardware_index) const
 
 std::size_t PalettePool::checkout()
 {
-    if (!has_available_pal()) {
+    if (!has_available_palette()) {
         panic("called with no available indexes");
     }
 
     // Find the lowest available index that is not checked out
-    for (std::size_t i = 0; i < pal::num_pals; ++i) {
+    for (std::size_t i = 0; i < palette::num_palettes; ++i) {
         if (available_indexes_.test(i) && !checked_out_.test(i)) {
             checked_out_.set(i);
             checkout_stack_.push_back(i);

@@ -9,7 +9,7 @@
 #include "porytiles/infra/services/anim_code_parser.hpp"
 #include "porytiles/infra/services/anim_json_parser.hpp"
 #include "porytiles/infra/services/attributes_csv_loader.hpp"
-#include "porytiles/infra/services/file_pal_loader.hpp"
+#include "porytiles/infra/services/file_palette_loader.hpp"
 #include "porytiles/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles/infra/services/project_tileset_metadata_provider.hpp"
@@ -35,13 +35,13 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
         gsl::not_null<const TilesetAttributeSchemaCache *> schema_cache,
         gsl::not_null<const PngRgbaImageLoader *> png_rgba_loader,
         gsl::not_null<const PngIndexedImageLoader *> png_indexed_loader,
-        gsl::not_null<const FilePalLoader *> pal_loader,
+        gsl::not_null<const FilePaletteLoader *> palette_loader,
         gsl::not_null<const AttributesCsvLoader *> attributes_csv_loader,
         gsl::not_null<const AnimJsonParser *> anim_json_parser,
         gsl::not_null<const AnimCodeParser *> anim_code_parser,
         gsl::not_null<const ProjectTilesetMetadataProvider *> metadata_provider)
         : project_root_{std::move(project_root)}, schema_cache_{schema_cache}, png_rgba_loader_{png_rgba_loader},
-          png_indexed_loader_{png_indexed_loader}, pal_loader_{pal_loader},
+          png_indexed_loader_{png_indexed_loader}, palette_loader_{palette_loader},
           attributes_csv_loader_{attributes_csv_loader}, anim_json_parser_{anim_json_parser},
           anim_code_parser_{anim_code_parser}, metadata_provider_{metadata_provider}
     {
@@ -56,7 +56,7 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
     [[nodiscard]] ChainableResult<void> read_tiles_png(Tileset &dest, const ArtifactKey &src_key) const override;
 
     [[nodiscard]] ChainableResult<void>
-    read_porymap_pal_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const override;
+    read_porymap_palette_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const override;
 
     [[nodiscard]] ChainableResult<void> read_porymap_anim(
         Tileset &dest,
@@ -74,7 +74,7 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
     [[nodiscard]] ChainableResult<void> read_attributes_csv(Tileset &dest, const ArtifactKey &src_key) const override;
 
     [[nodiscard]] ChainableResult<void>
-    read_porytiles_pal_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const override;
+    read_porytiles_palette_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const override;
 
     [[nodiscard]] ChainableResult<void> read_porytiles_anim(
         Tileset &dest,
@@ -91,7 +91,7 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
     const TilesetAttributeSchemaCache *schema_cache_;
     const PngRgbaImageLoader *png_rgba_loader_;
     const PngIndexedImageLoader *png_indexed_loader_;
-    const FilePalLoader *pal_loader_;
+    const FilePaletteLoader *palette_loader_;
     const AttributesCsvLoader *attributes_csv_loader_;
     const AnimJsonParser *anim_json_parser_;
     const AnimCodeParser *anim_code_parser_;

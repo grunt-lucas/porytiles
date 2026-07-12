@@ -117,11 +117,11 @@ class ColorIndexMap {
     ///
     /// This overload is only available for pixel types that support intrinsic transparency (e.g., IndexPixel).
     ///
-    /// @param pal The palette to extract colors from
-    void add_pal(const Palette<PixelType, pal::max_size> &pal)
+    /// @param palette The palette to extract colors from
+    void add_palette(const Palette<PixelType, palette::max_size> &palette)
         requires requires(const PixelType &p) { p.is_transparent(); }
     {
-        add_colors_from_pal_impl(pal, [](const PixelType &p) { return p.is_transparent(); });
+        add_colors_from_palette_impl(palette, [](const PixelType &p) { return p.is_transparent(); });
     }
 
     /// @brief Adds colors from a fixed-size palette to the mapping using extrinsic transparency.
@@ -133,12 +133,12 @@ class ColorIndexMap {
     ///
     /// This overload is only available for pixel types that support extrinsic transparency (e.g., Rgba32).
     ///
-    /// @param pal The palette to extract colors from
+    /// @param palette The palette to extract colors from
     /// @param extrinsic The extrinsic transparency value used for transparency filtering
-    void add_pal(const Palette<PixelType, pal::max_size> &pal, const PixelType &extrinsic)
+    void add_palette(const Palette<PixelType, palette::max_size> &palette, const PixelType &extrinsic)
         requires requires(const PixelType &p) { p.is_transparent(p); }
     {
-        add_colors_from_pal_impl(pal, [&extrinsic](const PixelType &p) { return p.is_transparent(extrinsic); });
+        add_colors_from_palette_impl(palette, [&extrinsic](const PixelType &p) { return p.is_transparent(extrinsic); });
     }
 
     /// @brief Adds colors from a dynamic palette to the mapping using intrinsic transparency.
@@ -150,11 +150,11 @@ class ColorIndexMap {
     ///
     /// This overload is only available for pixel types that support intrinsic transparency (e.g., IndexPixel).
     ///
-    /// @param pal The palette to extract colors from
-    void add_pal(const Palette<PixelType> &pal)
+    /// @param palette The palette to extract colors from
+    void add_palette(const Palette<PixelType> &palette)
         requires requires(const PixelType &p) { p.is_transparent(); }
     {
-        add_colors_from_pal_impl(pal, [](const PixelType &p) { return p.is_transparent(); });
+        add_colors_from_palette_impl(palette, [](const PixelType &p) { return p.is_transparent(); });
     }
 
     /// @brief Adds colors from a dynamic palette to the mapping using extrinsic transparency.
@@ -166,12 +166,12 @@ class ColorIndexMap {
     ///
     /// This overload is only available for pixel types that support extrinsic transparency (e.g., Rgba32).
     ///
-    /// @param pal The palette to extract colors from
+    /// @param palette The palette to extract colors from
     /// @param extrinsic The extrinsic transparency value used for transparency filtering
-    void add_pal(const Palette<PixelType> &pal, const PixelType &extrinsic)
+    void add_palette(const Palette<PixelType> &palette, const PixelType &extrinsic)
         requires requires(const PixelType &p) { p.is_transparent(p); }
     {
-        add_colors_from_pal_impl(pal, [&extrinsic](const PixelType &p) { return p.is_transparent(extrinsic); });
+        add_colors_from_palette_impl(palette, [&extrinsic](const PixelType &p) { return p.is_transparent(extrinsic); });
     }
 
     /// @brief Adds colors from an animation to the mapping using intrinsic transparency.
@@ -292,14 +292,14 @@ class ColorIndexMap {
     ///
     /// @tparam N The size template parameter of the palette (0 for dynamic, > 0 for fixed)
     /// @tparam TransparencyPredicate A callable type that takes a PixelType and returns bool
-    /// @param pal The palette to extract colors from
+    /// @param palette The palette to extract colors from
     /// @param is_transparent_pred A predicate function that returns true if a color is transparent
     template <std::size_t N, typename TransparencyPredicate>
-    void add_colors_from_pal_impl(const Palette<PixelType, N> &pal, TransparencyPredicate is_transparent_pred)
+    void add_colors_from_palette_impl(const Palette<PixelType, N> &palette, TransparencyPredicate is_transparent_pred)
     {
         auto color_index = size();
-        for (std::size_t i = 0; i < pal.size(); i++) {
-            auto color_opt = pal.at_optional(i);
+        for (std::size_t i = 0; i < palette.size(); i++) {
+            auto color_opt = palette.at_optional(i);
             if (!color_opt.has_value()) {
                 continue; // Skip wildcards
             }

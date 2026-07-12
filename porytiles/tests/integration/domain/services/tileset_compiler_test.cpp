@@ -67,19 +67,19 @@ Animation<Rgba32> make_rgba_animation(const std::string &name, const Rgba32 &col
 }
 
 // Builds a concrete (non-wildcard) Porymap palette whose slot 0 holds the mock extrinsic transparency color
-// (rgba_magenta). Default-constructed Porymap palettes are all-wildcard and make validate_porymap_pal panic during
+// (rgba_magenta). Default-constructed Porymap palettes are all-wildcard and make validate_porymap_palette panic during
 // input validation of the paired primary, so a paired-primary fixture must supply concrete palettes.
-Palette<Rgba32, pal::max_size> make_concrete_porymap_pal()
+Palette<Rgba32, palette::max_size> make_concrete_porymap_palette()
 {
-    Palette<Rgba32, pal::max_size> pal{rgba_black};
-    pal.set(0, rgba_magenta);
-    return pal;
+    Palette<Rgba32, palette::max_size> palette{rgba_black};
+    palette.set(0, rgba_magenta);
+    return palette;
 }
 
 // Builds a minimal "compiled" primary tileset carrying one animation named anim_name.
 //
 // The Porytiles component holds the RGBA animation (with a key frame) so the secondary's cross-tileset registration
-// passes both stale-primary checks. The Porymap component holds concrete palettes 0..num_pals-1 (so paired-primary
+// passes both stale-primary checks. The Porymap component holds concrete palettes 0..num_palettes-1 (so paired-primary
 // palette validation passes) plus a name-only Animation<IndexPixel> of the same name (the other stale-primary check).
 // The animation color is also placed in a non-slot-0 position of Porymap palette 0 so a cross-tileset primary anim
 // whose subtile is unreferenced by any metatile can still resolve its palette via the RGBA fallback path.
@@ -91,20 +91,20 @@ Tileset build_compiled_primary_with_anim(
     const std::string &name,
     const std::string &anim_name,
     const Rgba32 &color,
-    std::size_t num_pals,
+    std::size_t num_palettes,
     std::size_t porymap_anim_tile_count = 0)
 {
     auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
     porytiles_component->add_anim(make_rgba_animation(anim_name, color));
 
     auto porymap_component = std::make_unique<PorymapTilesetComponent>();
-    for (std::size_t i = 0; i < num_pals; ++i) {
-        Palette<Rgba32, pal::max_size> pal = make_concrete_porymap_pal();
+    for (std::size_t i = 0; i < num_palettes; ++i) {
+        Palette<Rgba32, palette::max_size> palette = make_concrete_porymap_palette();
         if (i == 0) {
             // Place the anim color so the unreferenced primary subtile resolves via RGBA palette fallback.
-            pal.set(1, color);
+            palette.set(1, color);
         }
-        porymap_component->set_pal(i, pal);
+        porymap_component->set_palette(i, palette);
     }
     if (porymap_anim_tile_count != 0) {
         AnimParams porymap_params;
@@ -153,13 +153,13 @@ class TilesetCompilerTestBase : public ::testing::Test {
         diag_ = std::make_unique<BufferedUserDiagnostics>();
         formatter_ = std::make_unique<PlainTextFormatter>();
         tile_printer_ = std::make_unique<AsciiTilePrinter>(formatter_.get());
-        pal_printer_ = std::make_unique<ColorPalettePrinter>(formatter_.get());
+        palette_printer_ = std::make_unique<ColorPalettePrinter>(formatter_.get());
     }
 
     [[nodiscard]] std::unique_ptr<TilesetCompiler> make_compiler() const
     {
         return std::make_unique<TilesetCompiler>(
-            &config_, &schema_, formatter_.get(), diag_.get(), tile_printer_.get(), pal_printer_.get());
+            &config_, &schema_, formatter_.get(), diag_.get(), tile_printer_.get(), palette_printer_.get());
     }
 
     template <typename T>
@@ -178,7 +178,7 @@ class TilesetCompilerTestBase : public ::testing::Test {
     std::unique_ptr<BufferedUserDiagnostics> diag_;
     std::unique_ptr<PlainTextFormatter> formatter_;
     std::unique_ptr<AsciiTilePrinter> tile_printer_;
-    std::unique_ptr<ColorPalettePrinter> pal_printer_;
+    std::unique_ptr<ColorPalettePrinter> palette_printer_;
     MockDomainConfig config_;
     // The stock emerald shape: a single behavior field in a 2-byte attribute.
     Schema schema_ = std::move(Schema::create({Field{"behavior", 0x00FF}}, 2)).value();
@@ -209,10 +209,10 @@ TEST_F(TilesetCompilerAttributeDefaultTests, AbsentAttributeMaterializesNonzeroS
 
 class TilesetCompilerModeComboTests : public TilesetCompilerTestBase {};
 
-TEST_F(TilesetCompilerModeComboTests, PrimaryRejectsPalsOptimizeWithTilesLocked)
+TEST_F(TilesetCompilerModeComboTests, PrimaryRejectsPalettesOptimizeWithTilesLocked)
 {
     config_.tiles_edit_mode = ArtifactEditMode::locked;
-    config_.pals_edit_mode = ArtifactEditMode::optimize;
+    config_.palettes_edit_mode = ArtifactEditMode::optimize;
 
     auto tileset = build_empty_tileset("test_primary");
     auto compiler = make_compiler();
@@ -227,9 +227,9 @@ TEST_F(TilesetCompilerModeComboTests, PrimaryRejectsPalsOptimizeWithTilesLocked)
         << "Expected tileset name in error, got: " << error_text;
 }
 
-TEST_F(TilesetCompilerModeComboTests, PrimaryRejectsPalsPatchAsUnimplemented)
+TEST_F(TilesetCompilerModeComboTests, PrimaryRejectsPalettesPatchAsUnimplemented)
 {
-    config_.pals_edit_mode = ArtifactEditMode::patch;
+    config_.palettes_edit_mode = ArtifactEditMode::patch;
 
     auto tileset = build_empty_tileset("test_primary");
     auto compiler = make_compiler();
@@ -246,7 +246,7 @@ TEST_F(TilesetCompilerModeComboTests, PrimaryRejectsPalsPatchAsUnimplemented)
 TEST_F(TilesetCompilerModeComboTests, SecondaryRejectsTilesNonOptimize)
 {
     config_.tiles_edit_mode = ArtifactEditMode::locked;
-    config_.pals_edit_mode = ArtifactEditMode::optimize;
+    config_.palettes_edit_mode = ArtifactEditMode::optimize;
 
     auto tileset = build_empty_tileset("test_secondary");
     auto compiler = make_compiler();
@@ -262,10 +262,10 @@ TEST_F(TilesetCompilerModeComboTests, SecondaryRejectsTilesNonOptimize)
     EXPECT_NE(error_text.find("locked"), std::string::npos) << "Expected 'locked' in error, got: " << error_text;
 }
 
-TEST_F(TilesetCompilerModeComboTests, SecondaryRejectsPalsNonOptimize)
+TEST_F(TilesetCompilerModeComboTests, SecondaryRejectsPalettesNonOptimize)
 {
     config_.tiles_edit_mode = ArtifactEditMode::optimize;
-    config_.pals_edit_mode = ArtifactEditMode::locked;
+    config_.palettes_edit_mode = ArtifactEditMode::locked;
 
     auto tileset = build_empty_tileset("test_secondary");
     auto compiler = make_compiler();
@@ -274,8 +274,8 @@ TEST_F(TilesetCompilerModeComboTests, SecondaryRejectsPalsNonOptimize)
 
     ASSERT_FALSE(result.has_value());
     const std::string error_text = join_error_chain(result);
-    EXPECT_NE(error_text.find("does not yet support pals edit mode"), std::string::npos)
-        << "Expected 'does not yet support pals edit mode' in error, got: " << error_text;
+    EXPECT_NE(error_text.find("does not yet support palettes edit mode"), std::string::npos)
+        << "Expected 'does not yet support palettes edit mode' in error, got: " << error_text;
     EXPECT_NE(error_text.find("test_secondary"), std::string::npos)
         << "Expected tileset name in error, got: " << error_text;
     EXPECT_NE(error_text.find("locked"), std::string::npos) << "Expected 'locked' in error, got: " << error_text;
@@ -289,7 +289,8 @@ TEST_F(TilesetCompilerCrossTilesetAnimTests, SecondarySameNamedAnimAsPrimaryRepo
 {
     config_.cross_tileset_anim_linking = true;
 
-    auto primary = build_compiled_primary_with_anim("test_primary", "flower", rgba_blue, config_.num_pals_in_primary);
+    auto primary =
+        build_compiled_primary_with_anim("test_primary", "flower", rgba_blue, config_.num_palettes_in_primary);
 
     auto secondary = build_empty_tileset("test_secondary");
     secondary.porytiles_component().add_anim(make_rgba_animation("flower", rgba_red));
@@ -313,7 +314,8 @@ TEST_F(TilesetCompilerCrossTilesetAnimTests, SecondarySameNamedAnimCompilesWhenL
 {
     config_.cross_tileset_anim_linking = false;
 
-    auto primary = build_compiled_primary_with_anim("test_primary", "flower", rgba_blue, config_.num_pals_in_primary);
+    auto primary =
+        build_compiled_primary_with_anim("test_primary", "flower", rgba_blue, config_.num_palettes_in_primary);
 
     auto secondary = build_empty_tileset("test_secondary");
     secondary.porytiles_component().add_anim(make_rgba_animation("flower", rgba_red));
@@ -331,7 +333,8 @@ TEST_F(TilesetCompilerCrossTilesetAnimTests, DistinctlyNamedSecondaryAnimDoesNot
 {
     config_.cross_tileset_anim_linking = true;
 
-    auto primary = build_compiled_primary_with_anim("test_primary", "flower", rgba_blue, config_.num_pals_in_primary);
+    auto primary =
+        build_compiled_primary_with_anim("test_primary", "flower", rgba_blue, config_.num_palettes_in_primary);
 
     auto secondary = build_empty_tileset("test_secondary");
     secondary.porytiles_component().add_anim(make_rgba_animation("flower_cave", rgba_red));
@@ -363,7 +366,7 @@ TEST_F(TilesetCompilerOverrideValidationTests, ManualOverrideApplies)
             .layer = metatile::Layer::middle,
             .subtile = metatile::Subtile::northwest,
             .frame_subtile = 0,
-            .pal_index = 0,
+            .palette_index = 0,
             .h_flip = true,
             .v_flip = false}});
 
@@ -400,7 +403,7 @@ TEST_F(TilesetCompilerOverrideValidationTests, ManualFrameSubtileOobReportsError
             .layer = metatile::Layer::middle,
             .subtile = metatile::Subtile::northwest,
             .frame_subtile = 5,
-            .pal_index = 0,
+            .palette_index = 0,
             .h_flip = false,
             .v_flip = false}});
 
@@ -426,7 +429,7 @@ TEST_F(TilesetCompilerOverrideValidationTests, ManualMetatileOobReportsError)
             .layer = metatile::Layer::middle,
             .subtile = metatile::Subtile::northwest,
             .frame_subtile = 0,
-            .pal_index = 0,
+            .palette_index = 0,
             .h_flip = false,
             .v_flip = false}});
 
@@ -439,7 +442,7 @@ TEST_F(TilesetCompilerOverrideValidationTests, ManualMetatileOobReportsError)
     EXPECT_EQ(diag_->error_tag_counts().at("manual-metatile-oob"), 1U);
 }
 
-TEST_F(TilesetCompilerOverrideValidationTests, ManualPalIndexUnencodableReportsError)
+TEST_F(TilesetCompilerOverrideValidationTests, ManualPaletteIndexUnencodableReportsError)
 {
     config_.global_frame_linking = FrameLinking::manual;
 
@@ -453,7 +456,7 @@ TEST_F(TilesetCompilerOverrideValidationTests, ManualPalIndexUnencodableReportsE
             .layer = metatile::Layer::middle,
             .subtile = metatile::Subtile::northwest,
             .frame_subtile = 0,
-            .pal_index = 16,
+            .palette_index = 16,
             .h_flip = false,
             .v_flip = false}});
 
@@ -465,7 +468,7 @@ TEST_F(TilesetCompilerOverrideValidationTests, ManualPalIndexUnencodableReportsE
     EXPECT_EQ(diag_->error_tag_counts().at("manual-pal-index-oob"), 1U);
 }
 
-TEST_F(TilesetCompilerOverrideValidationTests, ManualPalIndexUnconfiguredReportsWarning)
+TEST_F(TilesetCompilerOverrideValidationTests, ManualPaletteIndexUnconfiguredReportsWarning)
 {
     config_.global_frame_linking = FrameLinking::manual;
 
@@ -479,7 +482,7 @@ TEST_F(TilesetCompilerOverrideValidationTests, ManualPalIndexUnconfiguredReports
             .layer = metatile::Layer::middle,
             .subtile = metatile::Subtile::northwest,
             .frame_subtile = 0,
-            .pal_index = 14,
+            .palette_index = 14,
             .h_flip = false,
             .v_flip = false}});
 
@@ -491,10 +494,10 @@ TEST_F(TilesetCompilerOverrideValidationTests, ManualPalIndexUnconfiguredReports
     EXPECT_EQ(diag_->warning_tag_counts().at("manual-pal-index-unused"), 1U);
     EXPECT_TRUE(diag_->error_tag_counts().empty());
 
-    // A pal_index past the configured count is encodable, so the entry still applies.
+    // A palette_index past the configured count is encodable, so the entry still applies.
     const auto &bin = result.value()->porymap_component().metatiles_bin();
     ASSERT_FALSE(bin.empty());
-    EXPECT_EQ(bin.at(0).pal_index(), 14U);
+    EXPECT_EQ(bin.at(0).palette_index(), 14U);
 }
 
 TEST_F(TilesetCompilerOverrideValidationTests, ManualDualDropReportsWarning)
@@ -511,7 +514,7 @@ TEST_F(TilesetCompilerOverrideValidationTests, ManualDualDropReportsWarning)
             .layer = metatile::Layer::bottom,
             .subtile = metatile::Subtile::northwest,
             .frame_subtile = 0,
-            .pal_index = 0,
+            .palette_index = 0,
             .h_flip = false,
             .v_flip = false}});
 
@@ -548,7 +551,7 @@ TEST_F(TilesetCompilerOverrideValidationTests, ManualBottomOverrideSurvivesExpli
             .layer = metatile::Layer::bottom,
             .subtile = metatile::Subtile::northwest,
             .frame_subtile = 0,
-            .pal_index = 0,
+            .palette_index = 0,
             .h_flip = false,
             .v_flip = false}});
 
@@ -582,7 +585,7 @@ TEST_F(TilesetCompilerOverrideValidationTests, ManualOverrideOnExplicitlyDropped
             .layer = metatile::Layer::top,
             .subtile = metatile::Subtile::northwest,
             .frame_subtile = 0,
-            .pal_index = 0,
+            .palette_index = 0,
             .h_flip = false,
             .v_flip = false}});
 
@@ -609,7 +612,7 @@ TEST_F(TilesetCompilerOverrideValidationTests, ManualBottomOverrideAppliesInTrip
             .layer = metatile::Layer::bottom,
             .subtile = metatile::Subtile::northwest,
             .frame_subtile = 0,
-            .pal_index = 0,
+            .palette_index = 0,
             .h_flip = false,
             .v_flip = false}});
 
@@ -629,7 +632,7 @@ TEST_F(TilesetCompilerOverrideValidationTests, ManualBottomOverrideAppliesInTrip
 TEST_F(TilesetCompilerOverrideValidationTests, PrimaryReferencesFrameSubtileOobReportsError)
 {
     auto primary = build_compiled_primary_with_anim(
-        "test_primary", "flower", rgba_blue, config_.num_pals_in_primary, /*porymap_anim_tile_count=*/1);
+        "test_primary", "flower", rgba_blue, config_.num_palettes_in_primary, /*porymap_anim_tile_count=*/1);
 
     auto secondary = build_empty_tileset("test_secondary");
     secondary.porytiles_component().primary_anim_overrides(
@@ -639,7 +642,7 @@ TEST_F(TilesetCompilerOverrideValidationTests, PrimaryReferencesFrameSubtileOobR
               .layer = metatile::Layer::middle,
               .subtile = metatile::Subtile::northwest,
               .frame_subtile = 5,
-              .pal_index = 0,
+              .palette_index = 0,
               .h_flip = false,
               .v_flip = false}}}});
 
@@ -654,7 +657,7 @@ TEST_F(TilesetCompilerOverrideValidationTests, PrimaryReferencesFrameSubtileOobR
 TEST_F(TilesetCompilerOverrideValidationTests, PrimaryReferencesMetatileOobReportsError)
 {
     auto primary = build_compiled_primary_with_anim(
-        "test_primary", "flower", rgba_blue, config_.num_pals_in_primary, /*porymap_anim_tile_count=*/1);
+        "test_primary", "flower", rgba_blue, config_.num_palettes_in_primary, /*porymap_anim_tile_count=*/1);
 
     // A secondary with zero metatiles makes metatile_id 0 out of range.
     auto secondary = build_empty_tileset("test_secondary");
@@ -665,7 +668,7 @@ TEST_F(TilesetCompilerOverrideValidationTests, PrimaryReferencesMetatileOobRepor
               .layer = metatile::Layer::middle,
               .subtile = metatile::Subtile::northwest,
               .frame_subtile = 0,
-              .pal_index = 0,
+              .palette_index = 0,
               .h_flip = false,
               .v_flip = false}}}});
 
@@ -677,10 +680,10 @@ TEST_F(TilesetCompilerOverrideValidationTests, PrimaryReferencesMetatileOobRepor
     EXPECT_EQ(diag_->error_tag_counts().at("primary-references-metatile-oob"), 1U);
 }
 
-TEST_F(TilesetCompilerOverrideValidationTests, PrimaryReferencesPalIndexUnencodableReportsError)
+TEST_F(TilesetCompilerOverrideValidationTests, PrimaryReferencesPaletteIndexUnencodableReportsError)
 {
     auto primary = build_compiled_primary_with_anim(
-        "test_primary", "flower", rgba_blue, config_.num_pals_in_primary, /*porymap_anim_tile_count=*/1);
+        "test_primary", "flower", rgba_blue, config_.num_palettes_in_primary, /*porymap_anim_tile_count=*/1);
 
     auto secondary = build_single_metatile_tileset("test_secondary", rgba_green);
     secondary.porytiles_component().primary_anim_overrides(
@@ -690,7 +693,7 @@ TEST_F(TilesetCompilerOverrideValidationTests, PrimaryReferencesPalIndexUnencoda
               .layer = metatile::Layer::middle,
               .subtile = metatile::Subtile::northwest,
               .frame_subtile = 0,
-              .pal_index = 16,
+              .palette_index = 16,
               .h_flip = false,
               .v_flip = false}}}});
 
@@ -702,10 +705,10 @@ TEST_F(TilesetCompilerOverrideValidationTests, PrimaryReferencesPalIndexUnencoda
     EXPECT_EQ(diag_->error_tag_counts().at("primary-references-pal-index-oob"), 1U);
 }
 
-TEST_F(TilesetCompilerOverrideValidationTests, PrimaryReferencesPalIndexUnconfiguredReportsWarning)
+TEST_F(TilesetCompilerOverrideValidationTests, PrimaryReferencesPaletteIndexUnconfiguredReportsWarning)
 {
     auto primary = build_compiled_primary_with_anim(
-        "test_primary", "flower", rgba_blue, config_.num_pals_in_primary, /*porymap_anim_tile_count=*/1);
+        "test_primary", "flower", rgba_blue, config_.num_palettes_in_primary, /*porymap_anim_tile_count=*/1);
 
     auto secondary = build_single_metatile_tileset("test_secondary", rgba_green);
     secondary.porytiles_component().primary_anim_overrides(
@@ -715,7 +718,7 @@ TEST_F(TilesetCompilerOverrideValidationTests, PrimaryReferencesPalIndexUnconfig
               .layer = metatile::Layer::middle,
               .subtile = metatile::Subtile::northwest,
               .frame_subtile = 0,
-              .pal_index = 14,
+              .palette_index = 14,
               .h_flip = false,
               .v_flip = false}}}});
 
@@ -731,7 +734,7 @@ TEST_F(TilesetCompilerOverrideValidationTests, PrimaryReferencesPalIndexUnconfig
 TEST_F(TilesetCompilerOverrideValidationTests, PrimaryReferencesDualDropReportsWarning)
 {
     auto primary = build_compiled_primary_with_anim(
-        "test_primary", "flower", rgba_blue, config_.num_pals_in_primary, /*porymap_anim_tile_count=*/1);
+        "test_primary", "flower", rgba_blue, config_.num_palettes_in_primary, /*porymap_anim_tile_count=*/1);
 
     auto secondary = build_single_metatile_tileset("test_secondary", rgba_green);
     secondary.porytiles_component().primary_anim_overrides(
@@ -741,7 +744,7 @@ TEST_F(TilesetCompilerOverrideValidationTests, PrimaryReferencesDualDropReportsW
               .layer = metatile::Layer::bottom,
               .subtile = metatile::Subtile::northwest,
               .frame_subtile = 0,
-              .pal_index = 0,
+              .palette_index = 0,
               .h_flip = false,
               .v_flip = false}}}});
 

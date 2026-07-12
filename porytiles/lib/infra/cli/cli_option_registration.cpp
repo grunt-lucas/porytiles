@@ -41,13 +41,13 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
     // Number Of Palettes In Primary (std::size_t, captured as string, parsed by CliOptionProvider)
     config_group->add_option(
         "--num-pals-in-primary",
-        storage.num_pals_in_primary,
+        storage.num_palettes_in_primary,
         "Number Of Palettes In Primary - The NUM_PALS_IN_PRIMARY setting from include/fieldmap.h.");
 
     // Number Of Palettes Total (std::size_t, captured as string, parsed by CliOptionProvider)
     config_group->add_option(
         "--num-pals-total",
-        storage.num_pals_total,
+        storage.num_palettes_total,
         "Number Of Palettes Total - The NUM_PALS_TOTAL setting from include/fieldmap.h.");
 
     // Max Map Data Size (std::size_t, captured as string, parsed by CliOptionProvider)
@@ -83,7 +83,7 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
     config_group
         ->add_option(
             "--pals-edit-mode",
-            storage.pals_edit_mode,
+            storage.palettes_edit_mode,
             "Palettes Edit Mode - The allowed edit mode for the palettes/ artifacts.")
         ->type_name("{locked|patch|optimize}");
 
@@ -92,10 +92,10 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
         "--pal-hints-enabled,!--no-pal-hints-enabled",
         [&storage](std::int64_t count) {
             if (count > 0) {
-                storage.pal_hints_enabled = "true";
+                storage.palette_hints_enabled = "true";
             }
             else if (count < 0) {
-                storage.pal_hints_enabled = "false";
+                storage.palette_hints_enabled = "false";
             }
             // count == 0 means neither flag was provided, leave optional empty
         },
@@ -125,26 +125,26 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
             "Tile Sharing Alignment - Controls palette slot alignment strategy for tile sharing.")
         ->type_name("{off|greedy|optimal}");
 
-    // Tiles Palette Mode (enum TilesPalMode, captured as string, parsed by CliOptionProvider)
+    // Tiles Palette Mode (enum TilesPaletteMode, captured as string, parsed by CliOptionProvider)
     config_group
         ->add_option(
             "--tiles-pal-mode",
-            storage.tiles_pal_mode,
+            storage.tiles_palette_mode,
             "Tiles Palette Mode - The color mode to use when saving the tiles.png artifact.")
         ->type_name("{true-color|greyscale}");
 
-    // Global Animation Palette Resolution Strategy (enum AnimPalResolutionStrategy, captured as string, parsed by
+    // Global Animation Palette Resolution Strategy (enum AnimPaletteResolutionStrategy, captured as string, parsed by
     // CliOptionProvider)
     config_group
         ->add_option(
             "--anim-pal-resolution-strategy",
-            storage.global_anim_pal_resolution_strategy,
+            storage.global_anim_palette_resolution_strategy,
             "Global Animation Palette Resolution Strategy - The global strategy for determining which palette to use "
             "when decompiling animation tiles.")
         ->type_name(
             "{scan-local-metatiles|palette-00|palette-01|palette-02|palette-03|palette-04|palette-05|palette-06|"
             "palette-07|palette-08|palette-09|palette-10|palette-11|palette-12|palette-13|palette-14|palette-15|"
-            "internal-png-pal|scan-all-tilesets}");
+            "internal-png-palette|scan-all-tilesets}");
 
     // Global Animation Key Frame Resolution Strategy (enum AnimKeyFrameResolutionStrategy, captured as string, parsed
     // by CliOptionProvider)
@@ -156,13 +156,13 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
             "duplicate key frame subtiles.")
         ->type_name("{error|warning|mangle}");
 
-    // Global Animation Multi-Pal Subtile Resolution Strategy (enum AnimMultiPalSubtileResolutionStrategy, captured as
-    // string, parsed by CliOptionProvider)
+    // Global Animation Multi-Palette Subtile Resolution Strategy (enum AnimMultiPaletteSubtileResolutionStrategy,
+    // captured as string, parsed by CliOptionProvider)
     config_group
         ->add_option(
             "--anim-multi-pal-subtile-resolution-strategy",
-            storage.global_anim_multi_pal_subtile_resolution_strategy,
-            "Global Animation Multi-Pal Subtile Resolution Strategy - The strategy for handling animation subtiles "
+            storage.global_anim_multi_palette_subtile_resolution_strategy,
+            "Global Animation Multi-Palette Subtile Resolution Strategy - The strategy for handling animation subtiles "
             "referenced with multiple palettes.")
         ->type_name("{error|warning|split}");
 

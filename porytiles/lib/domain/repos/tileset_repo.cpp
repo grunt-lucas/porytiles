@@ -46,12 +46,12 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
         return ChainableResult<void>{failed, result};
     }
 
-    for (std::size_t i = 0; i < pal::num_pals; i++) {
+    for (std::size_t i = 0; i < palette::num_palettes; i++) {
         PT_TRY_ASSIGN_CHAIN_ERR(
-            pal_key, key_provider_->key_for_porymap_pal_n(tileset.name(), i), void, "Tileset save failed.");
-        if (auto result = writer_->write_porymap_pal_n(pal_key, tileset, i); !result.has_value()) {
+            palette_key, key_provider_->key_for_porymap_palette_n(tileset.name(), i), void, "Tileset save failed.");
+        if (auto result = writer_->write_porymap_palette_n(palette_key, tileset, i); !result.has_value()) {
             std::ignore = writer_->rollback();
-            auto failed = FormattableError{"Save failed for '{}'.", FormatParam{pal_key.key(), Style::bold}};
+            auto failed = FormattableError{"Save failed for '{}'.", FormatParam{palette_key.key(), Style::bold}};
             return ChainableResult<void>{failed, result};
         }
     }
@@ -117,12 +117,16 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
         return ChainableResult<void>{failed, result};
     }
 
-    for (std::size_t i = 0; i < pal::num_pals; i++) {
+    for (std::size_t i = 0; i < palette::num_palettes; i++) {
         PT_TRY_ASSIGN_CHAIN_ERR(
-            porytiles_pal_key, key_provider_->key_for_porytiles_pal_n(tileset.name(), i), void, "Tileset save failed.");
-        if (auto result = writer_->write_porytiles_pal_n(porytiles_pal_key, tileset, i); !result.has_value()) {
+            porytiles_palette_key,
+            key_provider_->key_for_porytiles_palette_n(tileset.name(), i),
+            void,
+            "Tileset save failed.");
+        if (auto result = writer_->write_porytiles_palette_n(porytiles_palette_key, tileset, i); !result.has_value()) {
             std::ignore = writer_->rollback();
-            auto failed = FormattableError{"Save failed for '{}'.", FormatParam{porytiles_pal_key.key(), Style::bold}};
+            auto failed =
+                FormattableError{"Save failed for '{}'.", FormatParam{porytiles_palette_key.key(), Style::bold}};
             return ChainableResult<void>{failed, result};
         }
     }
@@ -253,23 +257,25 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         "Failed to read artifact '{}'.",
         FormatParam(tiles_png_key.key(), Style::bold));
 
-    for (std::size_t i = 0; i < pal::num_pals; i++) {
+    for (std::size_t i = 0; i < palette::num_palettes; i++) {
         PT_TRY_ASSIGN_CHAIN_ERR(
-            pal_key,
-            key_provider_->key_for_porymap_pal_n(tileset->name(), i),
+            palette_key,
+            key_provider_->key_for_porymap_palette_n(tileset->name(), i),
             std::unique_ptr<Tileset>,
             diag_->formatter().format("Failed to load tileset '{}'.", FormatParam{tileset->name(), Style::bold}));
-        if (!key_provider_->artifact_exists(pal_key)) {
+        if (!key_provider_->artifact_exists(palette_key)) {
             diag_->error(
-                missing_required_artifact_tag, missing_required_artifact_msg, FormatParam{pal_key.key(), Style::bold});
+                missing_required_artifact_tag,
+                missing_required_artifact_msg,
+                FormatParam{palette_key.key(), Style::bold});
             fail_at_exit = true;
             continue;
         }
         PT_TRY_CALL_CHAIN_ERR(
-            reader_->read_porymap_pal_n(*tileset, pal_key, i),
+            reader_->read_porymap_palette_n(*tileset, palette_key, i),
             std::unique_ptr<Tileset>,
             "Failed to read artifact '{}'.",
-            FormatParam(pal_key.key(), Style::bold));
+            FormatParam(palette_key.key(), Style::bold));
     }
 
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -372,15 +378,15 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         diag_->warning_note(missing_optional_artifact_tag, "All attributes will receive default or inferred values.");
     }
 
-    for (std::size_t i = 0; i < pal::num_pals; i++) {
+    for (std::size_t i = 0; i < palette::num_palettes; i++) {
         PT_TRY_ASSIGN_CHAIN_ERR(
             override_key,
-            key_provider_->key_for_porytiles_pal_n(tileset->name(), i),
+            key_provider_->key_for_porytiles_palette_n(tileset->name(), i),
             std::unique_ptr<Tileset>,
             diag_->formatter().format("Failed to load tileset '{}'.", FormatParam{tileset->name(), Style::bold}));
         if (key_provider_->artifact_exists(override_key)) {
             PT_TRY_CALL_CHAIN_ERR(
-                reader_->read_porytiles_pal_n(*tileset, override_key, i),
+                reader_->read_porytiles_palette_n(*tileset, override_key, i),
                 std::unique_ptr<Tileset>,
                 "Failed to read artifact '{}'.",
                 FormatParam(override_key.key(), Style::bold));

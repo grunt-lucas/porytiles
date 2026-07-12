@@ -362,13 +362,13 @@ template <typename T>
 ///
 /// @details
 /// This function formats a palette index as a two-digit padded number with the ".pal" extension. For example,
-/// `pal_filename(3)` returns `"03.pal"`, `pal_filename(12)` returns `"12.pal"`.
+/// `palette_filename(3)` returns `"03.pal"`, `palette_filename(12)` returns `"12.pal"`.
 ///
-/// @param pal_index The palette index to format
+/// @param palette_index The palette index to format
 /// @return A string in the format "XX.pal" where XX is the zero-padded index
-[[nodiscard]] inline std::string pal_filename(std::size_t pal_index)
+[[nodiscard]] inline std::string palette_filename(std::size_t palette_index)
 {
-    return pad_two_digits(pal_index) + ".pal";
+    return pad_two_digits(palette_index) + ".pal";
 }
 
 /// @brief Extracts the Pascal-case tileset short name from the full name.

@@ -114,7 +114,7 @@ LayerValue<std::size_t> YamlFileProvider::num_metatiles_total(ConfigScopeType ty
         "fieldmap.num_metatiles_total");
 }
 
-LayerValue<std::size_t> YamlFileProvider::num_pals_in_primary(ConfigScopeType type, const std::string &scope) const
+LayerValue<std::size_t> YamlFileProvider::num_palettes_in_primary(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
@@ -125,13 +125,13 @@ LayerValue<std::size_t> YamlFileProvider::num_pals_in_primary(ConfigScopeType ty
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["fieldmap"]["num_pals_in_primary"]; },
+        [](const YAML::Node &doc) { return doc["fieldmap"]["num_palettes_in_primary"]; },
         parse_size_t,
-        "fieldmap.num_pals_in_primary",
-        "fieldmap.num_pals_in_primary");
+        "fieldmap.num_palettes_in_primary",
+        "fieldmap.num_palettes_in_primary");
 }
 
-LayerValue<std::size_t> YamlFileProvider::num_pals_total(ConfigScopeType type, const std::string &scope) const
+LayerValue<std::size_t> YamlFileProvider::num_palettes_total(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
@@ -142,10 +142,10 @@ LayerValue<std::size_t> YamlFileProvider::num_pals_total(ConfigScopeType type, c
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["fieldmap"]["num_pals_total"]; },
+        [](const YAML::Node &doc) { return doc["fieldmap"]["num_palettes_total"]; },
         parse_size_t,
-        "fieldmap.num_pals_total",
-        "fieldmap.num_pals_total");
+        "fieldmap.num_palettes_total",
+        "fieldmap.num_palettes_total");
 }
 
 LayerValue<std::size_t> YamlFileProvider::max_map_data_size(ConfigScopeType type, const std::string &scope) const
@@ -215,7 +215,7 @@ LayerValue<ArtifactEditMode> YamlFileProvider::tiles_edit_mode(ConfigScopeType t
         "tileset.tiles.edit_mode");
 }
 
-LayerValue<ArtifactEditMode> YamlFileProvider::pals_edit_mode(ConfigScopeType type, const std::string &scope) const
+LayerValue<ArtifactEditMode> YamlFileProvider::palettes_edit_mode(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
@@ -232,7 +232,7 @@ LayerValue<ArtifactEditMode> YamlFileProvider::pals_edit_mode(ConfigScopeType ty
         "tileset.palettes.edit_mode");
 }
 
-LayerValue<bool> YamlFileProvider::pal_hints_enabled(ConfigScopeType type, const std::string &scope) const
+LayerValue<bool> YamlFileProvider::palette_hints_enabled(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
@@ -248,7 +248,8 @@ LayerValue<bool> YamlFileProvider::pal_hints_enabled(ConfigScopeType type, const
         "tileset.palettes.packing.hints_enabled");
 }
 
-LayerValue<std::vector<PaletteHint>> YamlFileProvider::pal_hints(ConfigScopeType type, const std::string &scope) const
+LayerValue<std::vector<PaletteHint>>
+YamlFileProvider::palette_hints(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
@@ -260,7 +261,7 @@ LayerValue<std::vector<PaletteHint>> YamlFileProvider::pal_hints(ConfigScopeType
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["tileset"]["palettes"]["packing"]["hints"]; },
-        parse_pal_hints,
+        parse_palette_hints,
         "tileset.palettes.packing.hints",
         "tileset.palettes.packing.hints");
 }
@@ -336,37 +337,37 @@ YamlFileProvider::tile_sharing_alignment(ConfigScopeType type, const std::string
         "tileset.tiles.sharing.alignment");
 }
 
-LayerValue<TilesPalMode> YamlFileProvider::tiles_pal_mode(ConfigScopeType type, const std::string &scope) const
+LayerValue<TilesPaletteMode> YamlFileProvider::tiles_palette_mode(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<TilesPalMode>::invalid(
+        return LayerValue<TilesPaletteMode>::invalid(
             paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
-    return search_config_files<TilesPalMode>(
+    return search_config_files<TilesPaletteMode>(
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["tileset"]["tiles"]["palette_mode"]; },
-        parse_tiles_pal_mode,
+        parse_tiles_palette_mode,
         "tileset.tiles.palette_mode",
         "tileset.tiles.palette_mode");
 }
 
-LayerValue<AnimPalResolutionStrategy>
-YamlFileProvider::global_anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const
+LayerValue<AnimPaletteResolutionStrategy>
+YamlFileProvider::global_anim_palette_resolution_strategy(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<AnimPalResolutionStrategy>::invalid(
+        return LayerValue<AnimPaletteResolutionStrategy>::invalid(
             paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
-    return search_config_files<AnimPalResolutionStrategy>(
+    return search_config_files<AnimPaletteResolutionStrategy>(
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["tileset"]["animations"]["palette_resolution_strategy"]; },
-        parse_anim_pal_resolution_strategy,
+        parse_anim_palette_resolution_strategy,
         "tileset.animations.palette_resolution_strategy",
         "tileset.animations.palette_resolution_strategy");
 }
@@ -389,20 +390,21 @@ YamlFileProvider::global_anim_key_frame_resolution_strategy(ConfigScopeType type
         "tileset.animations.key_frame_resolution_strategy");
 }
 
-LayerValue<AnimMultiPalSubtileResolutionStrategy> YamlFileProvider::global_anim_multi_pal_subtile_resolution_strategy(
+LayerValue<AnimMultiPaletteSubtileResolutionStrategy>
+YamlFileProvider::global_anim_multi_palette_subtile_resolution_strategy(
     ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::invalid(
+        return LayerValue<AnimMultiPaletteSubtileResolutionStrategy>::invalid(
             paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
-    return search_config_files<AnimMultiPalSubtileResolutionStrategy>(
+    return search_config_files<AnimMultiPaletteSubtileResolutionStrategy>(
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
         [](const YAML::Node &doc) { return doc["tileset"]["animations"]["multi_palette_subtile_resolution_strategy"]; },
-        parse_anim_multi_pal_subtile_resolution_strategy,
+        parse_anim_multi_palette_subtile_resolution_strategy,
         "tileset.animations.multi_palette_subtile_resolution_strategy",
         "tileset.animations.multi_palette_subtile_resolution_strategy");
 }

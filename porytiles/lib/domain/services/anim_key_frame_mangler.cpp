@@ -132,7 +132,7 @@ int color_distance_squared(const Rgba32 &a, const Rgba32 &b)
 /// @param palette The palette to look up actual RGB values
 /// @return A vector of alternative color indices sorted by distance (closest first), empty if no alternatives exist
 [[nodiscard]] std::vector<std::size_t>
-find_alternative_colors_sorted(std::size_t current_color_index, const Palette<Rgba32, pal::max_size> &palette)
+find_alternative_colors_sorted(std::size_t current_color_index, const Palette<Rgba32, palette::max_size> &palette)
 {
     struct ColorCandidate {
         std::size_t index;
@@ -143,7 +143,7 @@ find_alternative_colors_sorted(std::size_t current_color_index, const Palette<Rg
     std::vector<ColorCandidate> candidates;
 
     // Search ALL palette colors (1-15), not just those in the tile
-    for (std::size_t candidate_index = 1; candidate_index < pal::max_size; ++candidate_index) {
+    for (std::size_t candidate_index = 1; candidate_index < palette::max_size; ++candidate_index) {
         if (candidate_index == current_color_index) {
             continue;
         }
@@ -201,7 +201,7 @@ find_alternative_colors_sorted(std::size_t current_color_index, const Palette<Rg
 std::optional<std::pair<PixelTile<IndexPixel>, TileMangleRecord>> try_mangle_tile(
     const PixelTile<IndexPixel> &tile,
     std::size_t tile_index,
-    const Palette<Rgba32, pal::max_size> &palette,
+    const Palette<Rgba32, palette::max_size> &palette,
     const std::set<PixelTile<IndexPixel>> &all_existing_canonical_tiles)
 {
     // Phase 1: single-pixel swaps (preferred, minimal visual impact)
@@ -290,7 +290,7 @@ AnimKeyFrameMangler::AnimKeyFrameMangler(
 ChainableResult<MangleResult> AnimKeyFrameMangler::mangle_duplicates(
     const std::string &anim_name,
     std::vector<PixelTile<IndexPixel>> tiles,
-    const std::vector<const Palette<Rgba32, pal::max_size> *> &palettes,
+    const std::vector<const Palette<Rgba32, palette::max_size> *> &palettes,
     const Rgba32 &extrinsic_transparency,
     const std::set<PixelTile<IndexPixel>> &existing_canonical_tiles) const
 {

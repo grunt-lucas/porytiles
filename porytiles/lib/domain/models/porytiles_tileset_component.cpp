@@ -27,20 +27,21 @@ std::optional<MetatileAttribute> PorytilesTilesetComponent::get_attribute(std::s
     return std::nullopt;
 }
 
-void PorytilesTilesetComponent::set_pal(std::size_t pal_index, Palette<Rgba32, pal::max_size> pal)
+void PorytilesTilesetComponent::set_palette(std::size_t palette_index, Palette<Rgba32, palette::max_size> palette)
 {
-    if (pal_index >= pal::num_pals) {
-        panic(std::format("invalid pal index {}: out of range", pal_index));
+    if (palette_index >= palette::num_palettes) {
+        panic(std::format("invalid palette index {}: out of range", palette_index));
     }
-    pals_[pal_index] = std::move(pal);
+    palettes_[palette_index] = std::move(palette);
 }
 
-const std::optional<Palette<Rgba32, pal::max_size>> &PorytilesTilesetComponent::pal_at(std::size_t pal_index) const
+const std::optional<Palette<Rgba32, palette::max_size>> &
+PorytilesTilesetComponent::palette_at(std::size_t palette_index) const
 {
-    if (pal_index >= pal::num_pals) {
-        panic(std::format("invalid pal index {}: out of range", pal_index));
+    if (palette_index >= palette::num_palettes) {
+        panic(std::format("invalid palette index {}: out of range", palette_index));
     }
-    return pals_[pal_index];
+    return palettes_[palette_index];
 }
 
 bool PorytilesTilesetComponent::is_empty() const

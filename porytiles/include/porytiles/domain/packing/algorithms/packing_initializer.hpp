@@ -22,11 +22,11 @@ namespace porytiles {
 /// After this function returns, the caller can use the modified palette pool for strategy-specific initialization
 /// (e.g., creating empty palettes for remaining slots).
 ///
-/// @param prefilled_pals The prefilled palettes to initialize from
-/// @param pal_pool The palette pool; available slots for prefilled palettes will be checked out
-/// @param pal_capacity The base capacity for each palette (typically 15 for GBA hardware)
+/// @param prefilled_palettes The prefilled palettes to initialize from
+/// @param palette_pool The palette pool; available slots for prefilled palettes will be checked out
+/// @param palette_capacity The base capacity for each palette (typically 15 for GBA hardware)
 /// @return Vector of initialized PackedPalette objects for the prefilled palettes
 [[nodiscard]] std::vector<PackedPalette> initialize_packed_palettes(
-    const std::set<PrefilledPalette> &prefilled_pals, PalettePool &pal_pool, std::size_t pal_capacity);
+    const std::set<PrefilledPalette> &prefilled_palettes, PalettePool &palette_pool, std::size_t palette_capacity);
 
 } // namespace porytiles

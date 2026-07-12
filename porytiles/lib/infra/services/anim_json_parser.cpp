@@ -148,7 +148,7 @@ parse_override_entries(const std::string &context_name, const nlohmann::json &ov
         entry.subtile = *subtile_opt;
 
         entry.frame_subtile = entry_node.at("frame_subtile").get<std::size_t>();
-        entry.pal_index = entry_node.at("pal_index").get<std::size_t>();
+        entry.palette_index = entry_node.at("palette_index").get<std::size_t>();
         entry.h_flip = entry_node.at("hflip").get<bool>();
         entry.v_flip = entry_node.at("vflip").get<bool>();
 
@@ -166,7 +166,7 @@ parse_override_entries(const std::string &context_name, const nlohmann::json &ov
         obj["layer"] = metatile::to_string(entry.layer);
         obj["subtile"] = subtile_to_json_string(entry.subtile);
         obj["frame_subtile"] = entry.frame_subtile;
-        obj["pal_index"] = entry.pal_index;
+        obj["palette_index"] = entry.palette_index;
         obj["hflip"] = entry.h_flip;
         obj["vflip"] = entry.v_flip;
         overrides_array.push_back(std::move(obj));

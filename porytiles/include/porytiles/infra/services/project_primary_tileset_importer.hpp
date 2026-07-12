@@ -4,7 +4,7 @@
 
 #include "porytiles/domain/models/metatile_attribute_schema.hpp"
 #include "porytiles/domain/services/primary_tileset_importer.hpp"
-#include "porytiles/infra/services/file_pal_loader.hpp"
+#include "porytiles/infra/services/file_palette_loader.hpp"
 #include "porytiles/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles/infra/services/project_tileset_metadata_provider.hpp"
 
@@ -41,10 +41,10 @@ class ProjectPrimaryTilesetImporter : public PrimaryTilesetImporter {
     /// @param format Text formatter for error message styling
     /// @param diag User diagnostics for warnings and informational messages
     /// @param tile_printer Tile visualization service for diagnostic output
-    /// @param pal_printer Palette visualization service for diagnostic output
+    /// @param palette_printer Palette visualization service for diagnostic output
     /// @param metadata_provider Provider for resolving tileset metadata and artifact paths
     /// @param png_loader Loader for indexed PNG files (tiles.png)
-    /// @param pal_loader Loader for palette files
+    /// @param palette_loader Loader for palette files
     explicit ProjectPrimaryTilesetImporter(
         std::filesystem::path project_root,
         gsl::not_null<const Schema *> schema,
@@ -52,13 +52,13 @@ class ProjectPrimaryTilesetImporter : public PrimaryTilesetImporter {
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag,
         gsl::not_null<const TilePrinter *> tile_printer,
-        gsl::not_null<const PalettePrinter *> pal_printer,
+        gsl::not_null<const PalettePrinter *> palette_printer,
         gsl::not_null<const ProjectTilesetMetadataProvider *> metadata_provider,
         gsl::not_null<const PngIndexedImageLoader *> png_loader,
-        gsl::not_null<const FilePalLoader *> pal_loader)
+        gsl::not_null<const FilePaletteLoader *> palette_loader)
         : project_root_{std::move(project_root)}, schema_{schema}, config_{config}, format_{format}, diag_{diag},
-          tile_printer_{tile_printer}, pal_printer_{pal_printer}, metadata_provider_{metadata_provider},
-          png_loader_{png_loader}, pal_loader_{pal_loader}
+          tile_printer_{tile_printer}, palette_printer_{palette_printer}, metadata_provider_{metadata_provider},
+          png_loader_{png_loader}, palette_loader_{palette_loader}
     {
     }
 
@@ -86,10 +86,10 @@ class ProjectPrimaryTilesetImporter : public PrimaryTilesetImporter {
     const TextFormatter *format_;
     const UserDiagnostics *diag_;
     const TilePrinter *tile_printer_;
-    const PalettePrinter *pal_printer_;
+    const PalettePrinter *palette_printer_;
     const ProjectTilesetMetadataProvider *metadata_provider_;
     const PngIndexedImageLoader *png_loader_;
-    const FilePalLoader *pal_loader_;
+    const FilePaletteLoader *palette_loader_;
 };
 
 } // namespace porytiles

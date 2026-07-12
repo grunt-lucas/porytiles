@@ -114,8 +114,8 @@ enum_types:
         fuzzy_names: [ never, "false", "no", "off" ]
         brief: Never select the FRLG alternate masks; use the primary masks.
 
-  - cpp_type: TilesPalMode
-    header_path: porytiles/domain/config/tiles_pal_mode.hpp
+  - cpp_type: TilesPaletteMode
+    header_path: porytiles/domain/config/tiles_palette_mode.hpp
     brief: Controls how tiles.png is rendered.
     enum_values:
       - name: true_color
@@ -127,8 +127,8 @@ enum_types:
         fuzzy_names: [ greyscale, grayscale, grey, gray ]
         brief: Render tiles in greyscale (useful for debugging).
 
-  - cpp_type: AnimPalResolutionStrategy
-    header_path: porytiles/domain/config/anim_pal_resolution_strategy.hpp
+  - cpp_type: AnimPaletteResolutionStrategy
+    header_path: porytiles/domain/config/anim_palette_resolution_strategy.hpp
     brief: Strategy for determining which palette to use when decompiling animation tiles.
     details: |
       When decompiling animation tiles, the decompiler needs to know which tileset palette to use for
@@ -203,7 +203,7 @@ enum_types:
         cli_completion_name: palette-15
         fuzzy_names: [ palette-15, palette_15, palette15, pal-15, pal_15, pal15 ]
         brief: Use palette 15 directly.
-      - name: internal_png_pal
+      - name: internal_png_palette
         cli_completion_name: internal-png-palette
         fuzzy_names: [ internal-png-palette, internal_png_palette, internal-png-pal, internal_png_pal, internalpngpal ]
         brief: Use the Porymap-component frame PNG internal palette, if present.
@@ -376,8 +376,8 @@ enum_types:
         fuzzy_names: [ random ]
         brief: FFD first, then fully random shuffles (original behavior).
 
-  - cpp_type: AnimMultiPalSubtileResolutionStrategy
-    header_path: porytiles/domain/config/anim_multi_pal_subtile_resolution_strategy.hpp
+  - cpp_type: AnimMultiPaletteSubtileResolutionStrategy
+    header_path: porytiles/domain/config/anim_multi_palette_subtile_resolution_strategy.hpp
     brief: Strategy for handling animation subtiles referenced with multiple palettes.
     details: |
       When decompiling animations using the scan_local_metatiles strategy, a single tile index
@@ -454,8 +454,8 @@ config_values:
     cross_field_validators: [ compare_greater_equal:num_metatiles_in_primary ]
 
   - canonical_name: Number Of Palettes In Primary
-    symbol: num_pals_in_primary
-    yaml_path: fieldmap.num_pals_in_primary
+    symbol: num_palettes_in_primary
+    yaml_path: fieldmap.num_palettes_in_primary
     header_define: NUM_PALS_IN_PRIMARY
     cli_option: num-pals-in-primary
     cli_desc: The NUM_PALS_IN_PRIMARY setting from include/fieldmap.h.
@@ -464,11 +464,11 @@ config_values:
     parser: parse_size_t
     default_value: "6"
     validators: [ size_t_val_greater_than_zero ]
-    cross_field_validators: [ compare_less_equal:num_pals_total ]
+    cross_field_validators: [ compare_less_equal:num_palettes_total ]
 
   - canonical_name: Number Of Palettes Total
-    symbol: num_pals_total
-    yaml_path: fieldmap.num_pals_total
+    symbol: num_palettes_total
+    yaml_path: fieldmap.num_palettes_total
     header_define: NUM_PALS_TOTAL
     cli_option: num-pals-total
     cli_desc: The NUM_PALS_TOTAL setting from include/fieldmap.h.
@@ -477,7 +477,7 @@ config_values:
     parser: parse_size_t
     default_value: "13"
     validators: [ size_t_val_greater_than_zero ]
-    cross_field_validators: [ compare_greater_equal:num_pals_in_primary ]
+    cross_field_validators: [ compare_greater_equal:num_palettes_in_primary ]
 
   - canonical_name: Max Map Data Size
     symbol: max_map_data_size
@@ -530,7 +530,7 @@ config_values:
     cross_field_validators: [ ]
 
   - canonical_name: Palettes Edit Mode
-    symbol: pals_edit_mode
+    symbol: palettes_edit_mode
     yaml_path: tileset.palettes.edit_mode
     cli_option: pals-edit-mode
     cli_desc: The allowed edit mode for the palettes/ artifacts.
@@ -542,7 +542,7 @@ config_values:
     cross_field_validators: [ ]
 
   - canonical_name: Palette Hints Enabled
-    symbol: pal_hints_enabled
+    symbol: palette_hints_enabled
     yaml_path: tileset.palettes.packing.hints_enabled
     cli_option: pal-hints-enabled
     cli_desc: Enable configured palette hints.
@@ -554,12 +554,12 @@ config_values:
     cross_field_validators: [ ]
 
   - canonical_name: Palette Hints
-    symbol: pal_hints
+    symbol: palette_hints
     yaml_path: tileset.palettes.packing.hints
     yaml_only: true  # Too complex for non-YAML providers (std::vector<PaletteHint>)
     layer: domain
     type: std::vector<PaletteHint>
-    parser: parse_pal_hints
+    parser: parse_palette_hints
     default_value: "std::vector<PaletteHint>{}"
     validators: [ ]
     cross_field_validators: [ ]
@@ -613,26 +613,26 @@ config_values:
     cross_field_validators: [ ]
 
   - canonical_name: Tiles Palette Mode
-    symbol: tiles_pal_mode
+    symbol: tiles_palette_mode
     yaml_path: tileset.tiles.palette_mode
     cli_option: tiles-pal-mode
     cli_desc: The color mode to use when saving the tiles.png artifact.
     layer: domain
-    type: TilesPalMode
-    parser: parse_tiles_pal_mode
-    default_value: "TilesPalMode::true_color"
+    type: TilesPaletteMode
+    parser: parse_tiles_palette_mode
+    default_value: "TilesPaletteMode::true_color"
     validators: [ ]
     cross_field_validators: [ ]
 
   - canonical_name: Global Animation Palette Resolution Strategy
-    symbol: global_anim_pal_resolution_strategy
+    symbol: global_anim_palette_resolution_strategy
     yaml_path: tileset.animations.palette_resolution_strategy
     cli_option: anim-pal-resolution-strategy
     cli_desc: The global strategy for determining which palette to use when decompiling animation tiles.
     layer: domain
-    type: AnimPalResolutionStrategy
-    parser: parse_anim_pal_resolution_strategy
-    default_value: "AnimPalResolutionStrategy::scan_local_metatiles"
+    type: AnimPaletteResolutionStrategy
+    parser: parse_anim_palette_resolution_strategy
+    default_value: "AnimPaletteResolutionStrategy::scan_local_metatiles"
     validators: [ ]
     cross_field_validators: [ ]
 
@@ -648,15 +648,15 @@ config_values:
     validators: [ ]
     cross_field_validators: [ ]
 
-  - canonical_name: Global Animation Multi-Pal Subtile Resolution Strategy
-    symbol: global_anim_multi_pal_subtile_resolution_strategy
+  - canonical_name: Global Animation Multi-Palette Subtile Resolution Strategy
+    symbol: global_anim_multi_palette_subtile_resolution_strategy
     yaml_path: tileset.animations.multi_palette_subtile_resolution_strategy
     cli_option: anim-multi-pal-subtile-resolution-strategy
     cli_desc: The strategy for handling animation subtiles referenced with multiple palettes.
     layer: domain
-    type: AnimMultiPalSubtileResolutionStrategy
-    parser: parse_anim_multi_pal_subtile_resolution_strategy
-    default_value: "AnimMultiPalSubtileResolutionStrategy::error"
+    type: AnimMultiPaletteSubtileResolutionStrategy
+    parser: parse_anim_multi_palette_subtile_resolution_strategy
+    default_value: "AnimMultiPaletteSubtileResolutionStrategy::error"
     validators: [ ]
     cross_field_validators: [ ]
 

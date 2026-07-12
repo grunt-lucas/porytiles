@@ -88,9 +88,10 @@ class YamlFileProvider final : public ConfigProvider {
     num_metatiles_total(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<std::size_t>
-    num_pals_in_primary(ConfigScopeType type, const std::string &scope) const override;
+    num_palettes_in_primary(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<std::size_t> num_pals_total(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::size_t>
+    num_palettes_total(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<std::size_t>
     max_map_data_size(ConfigScopeType type, const std::string &scope) const override;
@@ -105,12 +106,12 @@ class YamlFileProvider final : public ConfigProvider {
     tiles_edit_mode(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<ArtifactEditMode>
-    pals_edit_mode(ConfigScopeType type, const std::string &scope) const override;
+    palettes_edit_mode(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<bool> pal_hints_enabled(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<bool> palette_hints_enabled(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<std::vector<PaletteHint>>
-    pal_hints(ConfigScopeType type, const std::string &scope) const override;
+    palette_hints(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<PackingStrategyType>
     packing_strategy(ConfigScopeType type, const std::string &scope) const override;
@@ -124,17 +125,18 @@ class YamlFileProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<TileSharingAlignment>
     tile_sharing_alignment(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<TilesPalMode>
-    tiles_pal_mode(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<TilesPaletteMode>
+    tiles_palette_mode(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<AnimPalResolutionStrategy>
-    global_anim_pal_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<AnimPaletteResolutionStrategy>
+    global_anim_palette_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<AnimKeyFrameResolutionStrategy>
     global_anim_key_frame_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<AnimMultiPalSubtileResolutionStrategy>
-    global_anim_multi_pal_subtile_resolution_strategy(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<AnimMultiPaletteSubtileResolutionStrategy>
+    global_anim_multi_palette_subtile_resolution_strategy(
+        ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<FrameLinking>
     global_frame_linking(ConfigScopeType type, const std::string &scope) const override;

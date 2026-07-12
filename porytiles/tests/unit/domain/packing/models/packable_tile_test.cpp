@@ -47,7 +47,7 @@ TEST(PackableTileTests, PrimaryTileIdToString)
     PackableTile::Id id = PackableTile::PrimaryTileId{7, 2};
     auto str = to_string(id);
 
-    EXPECT_EQ(str, "Primary(tile=7, pal=2)");
+    EXPECT_EQ(str, "Primary(tile=7, palette=2)");
 }
 
 TEST(PackableTileTests, PrimaryTileIdConstruction)
@@ -61,7 +61,7 @@ TEST(PackableTileTests, PrimaryTileIdConstruction)
     EXPECT_TRUE(std::holds_alternative<PackableTile::PrimaryTileId>(tile.id()));
     auto primary_id = std::get<PackableTile::PrimaryTileId>(tile.id());
     EXPECT_EQ(primary_id.tile_index, 10);
-    EXPECT_EQ(primary_id.pal_index, 5);
+    EXPECT_EQ(primary_id.palette_index, 5);
     EXPECT_EQ(tile.color_count(), 2);
 }
 
