@@ -130,7 +130,8 @@ class MetatileAttributeParserTest : public ::testing::Test {
 TEST_F(MetatileAttributeParserTest, ParsesFireredLayoutFields)
 {
     const Schema schema = make_firered_schema();
-    // behavior=0x1AB, terrain=17, attr_2=9, attr_3=33, encounter=5, attr_5=2, layer=split(2), attr_7=1
+    // behavior=0x1AB, terrain=17, attribute_2=9, attribute_3=33, encounter=5, attribute_5=2, layer=split(2),
+    // attribute_7=1
     const std::uint32_t raw =
         (0x1ABu) | (17u << 9) | (9u << 14) | (33u << 18) | (5u << 24) | (2u << 27) | (2u << 29) | (1u << 31);
     write_bytes(test_file_, le32(raw));
@@ -140,14 +141,14 @@ TEST_F(MetatileAttributeParserTest, ParsesFireredLayoutFields)
     ASSERT_EQ(result.value().size(), 1);
 
     const auto &attribute = result.value()[0];
-    EXPECT_EQ(attribute.field(attr::field_behavior), 0x1ABu);
-    EXPECT_EQ(attribute.field(attr::field_terrain), 17u);
-    EXPECT_EQ(attribute.field(attr::field_attribute_2), 9u);
-    EXPECT_EQ(attribute.field(attr::field_attribute_3), 33u);
-    EXPECT_EQ(attribute.field(attr::field_encounter_type), 5u);
-    EXPECT_EQ(attribute.field(attr::field_attribute_5), 2u);
+    EXPECT_EQ(attribute.field(attribute::field_behavior), 0x1ABu);
+    EXPECT_EQ(attribute.field(attribute::field_terrain), 17u);
+    EXPECT_EQ(attribute.field(attribute::field_attribute_2), 9u);
+    EXPECT_EQ(attribute.field(attribute::field_attribute_3), 33u);
+    EXPECT_EQ(attribute.field(attribute::field_encounter_type), 5u);
+    EXPECT_EQ(attribute.field(attribute::field_attribute_5), 2u);
     EXPECT_EQ(attribute.layer_type(), LayerType::split);
-    EXPECT_EQ(attribute.field(attr::field_attribute_7), 1u);
+    EXPECT_EQ(attribute.field(attribute::field_attribute_7), 1u);
 }
 
 TEST_F(MetatileAttributeParserTest, ParsesEmeraldLayoutFields)
@@ -160,9 +161,9 @@ TEST_F(MetatileAttributeParserTest, ParsesEmeraldLayoutFields)
     ASSERT_TRUE(result.has_value());
     ASSERT_EQ(result.value().size(), 2);
 
-    EXPECT_EQ(result.value()[0].field(attr::field_behavior), 0x42u);
+    EXPECT_EQ(result.value()[0].field(attribute::field_behavior), 0x42u);
     EXPECT_EQ(result.value()[0].layer_type(), LayerType::normal);
-    EXPECT_EQ(result.value()[1].field(attr::field_behavior), 0xFFu);
+    EXPECT_EQ(result.value()[1].field(attribute::field_behavior), 0xFFu);
     EXPECT_EQ(result.value()[1].layer_type(), LayerType::covered);
 }
 
@@ -204,21 +205,21 @@ TEST_F(MetatileAttributeParserTest, CustomSchemaRoundTripsThroughSaveAndParse)
 {
     const Schema schema = make_custom_schema();
 
-    MetatileAttribute attr_0{};
-    attr_0.field("low_nibble", 0xF);
-    attr_0.field("mid_field", 0xFF);
-    attr_0.field("defaulted", 3);
-    attr_0.field("top_bit", 0);
-    attr_0.layer_type(LayerType::covered);
+    MetatileAttribute attribute_0{};
+    attribute_0.field("low_nibble", 0xF);
+    attribute_0.field("mid_field", 0xFF);
+    attribute_0.field("defaulted", 3);
+    attribute_0.field("top_bit", 0);
+    attribute_0.layer_type(LayerType::covered);
 
-    MetatileAttribute attr_1{};
-    attr_1.field("low_nibble", 0);
-    attr_1.field("mid_field", 0);
-    attr_1.field("defaulted", 0); // explicit 0 beats the nonzero default and must survive the round trip
-    attr_1.field("top_bit", 1);
-    attr_1.layer_type(LayerType::normal);
+    MetatileAttribute attribute_1{};
+    attribute_1.field("low_nibble", 0);
+    attribute_1.field("mid_field", 0);
+    attribute_1.field("defaulted", 0); // explicit 0 beats the nonzero default and must survive the round trip
+    attribute_1.field("top_bit", 1);
+    attribute_1.layer_type(LayerType::normal);
 
-    ASSERT_TRUE(save_metatile_attributes_bin({attr_0, attr_1}, test_file_, schema).has_value());
+    ASSERT_TRUE(save_metatile_attributes_bin({attribute_0, attribute_1}, test_file_, schema).has_value());
 
     auto result = parse_metatile_attributes(test_file_, schema);
     ASSERT_TRUE(result.has_value());
@@ -244,7 +245,7 @@ TEST_F(MetatileAttributeParserTest, EmeraldLayoutRoundTripsThroughSaveAndParse)
     const Schema schema = make_emerald_schema();
 
     MetatileAttribute attribute{};
-    attribute.field(attr::field_behavior, 0x21);
+    attribute.field(attribute::field_behavior, 0x21);
     attribute.layer_type(LayerType::split);
 
     ASSERT_TRUE(save_metatile_attributes_bin({attribute}, test_file_, schema).has_value());
@@ -252,7 +253,7 @@ TEST_F(MetatileAttributeParserTest, EmeraldLayoutRoundTripsThroughSaveAndParse)
     auto result = parse_metatile_attributes(test_file_, schema);
     ASSERT_TRUE(result.has_value());
     ASSERT_EQ(result.value().size(), 1);
-    EXPECT_EQ(result.value()[0].field(attr::field_behavior), 0x21u);
+    EXPECT_EQ(result.value()[0].field(attribute::field_behavior), 0x21u);
     EXPECT_EQ(result.value()[0].layer_type(), LayerType::split);
 }
 
@@ -262,7 +263,7 @@ TEST_F(MetatileAttributeParserTest, DisabledLayerTypeRoundTripsAsNormal)
     ASSERT_EQ(schema.layer_type_mask(), 0u);
 
     MetatileAttribute attribute{};
-    attribute.field(attr::field_behavior, 0x21);
+    attribute.field(attribute::field_behavior, 0x21);
     attribute.layer_type(LayerType::split); // dropped when packing, because the layer type is disabled
 
     ASSERT_TRUE(save_metatile_attributes_bin({attribute}, test_file_, schema).has_value());
@@ -272,7 +273,7 @@ TEST_F(MetatileAttributeParserTest, DisabledLayerTypeRoundTripsAsNormal)
     auto result = parse_metatile_attributes(test_file_, schema);
     ASSERT_TRUE(result.has_value());
     ASSERT_EQ(result.value().size(), 1);
-    EXPECT_EQ(result.value()[0].field(attr::field_behavior), 0x21u);
+    EXPECT_EQ(result.value()[0].field(attribute::field_behavior), 0x21u);
     EXPECT_EQ(result.value()[0].layer_type(), LayerType::normal);
 }
 
@@ -285,14 +286,14 @@ TEST_F(MetatileAttributeParserTest, DisabledLayerTypeIgnoresUnusedHighBits)
     auto result = parse_metatile_attributes(test_file_, schema);
     ASSERT_TRUE(result.has_value());
     ASSERT_EQ(result.value().size(), 1);
-    EXPECT_EQ(result.value()[0].field(attr::field_behavior), 0x07u);
+    EXPECT_EQ(result.value()[0].field(attribute::field_behavior), 0x07u);
     EXPECT_EQ(result.value()[0].layer_type(), LayerType::normal);
 }
 
 TEST_F(MetatileAttributeParserTest, OneByteSchemaRoundTrips)
 {
     const Schema schema = make_one_byte_schema();
-    ASSERT_EQ(schema.attr_bytes(), 1u);
+    ASSERT_EQ(schema.attribute_bytes(), 1u);
 
     MetatileAttribute a0{};
     a0.field("behavior", 0x5);
@@ -314,7 +315,7 @@ TEST_F(MetatileAttributeParserTest, OneByteSchemaRoundTrips)
     EXPECT_EQ(result.value()[1].field("terrain"), 0x3u);
 }
 
-TEST_F(MetatileAttributeParserTest, ErrorOnSizeNotMultipleOfAttrBytes)
+TEST_F(MetatileAttributeParserTest, ErrorOnSizeNotMultipleOfAttributeBytes)
 {
     // 5 bytes is not a multiple of the firered schema's 4-byte width.
     write_bytes(test_file_, {0x00, 0x00, 0x00, 0x00, 0x01});

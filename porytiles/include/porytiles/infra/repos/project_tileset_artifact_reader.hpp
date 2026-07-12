@@ -13,7 +13,7 @@
 #include "porytiles/infra/services/png_indexed_image_loader.hpp"
 #include "porytiles/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles/infra/services/project_tileset_metadata_provider.hpp"
-#include "porytiles/infra/services/tileset_attr_schema_cache.hpp"
+#include "porytiles/infra/services/tileset_attribute_schema_cache.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 
 namespace porytiles {
@@ -25,13 +25,14 @@ namespace porytiles {
 /// operates within the context of a Pokémon Gen III decompilation project on the local filesystem.
 ///
 /// Metatile attribute artifacts decode against the owning tileset's schema, looked up through the injected
-/// TilesetAttrSchemaCache by the destination tileset's name. This matters when a command reads a tileset other than its
-/// target: compiling a secondary loads the paired primary's artifacts, and the primary can resolve a different schema.
+/// TilesetAttributeSchemaCache by the destination tileset's name. This matters when a command reads a tileset other
+/// than its target: compiling a secondary loads the paired primary's artifacts, and the primary can resolve a different
+/// schema.
 class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
   public:
     ProjectTilesetArtifactReader(
         std::filesystem::path project_root,
-        gsl::not_null<const TilesetAttrSchemaCache *> schema_cache,
+        gsl::not_null<const TilesetAttributeSchemaCache *> schema_cache,
         gsl::not_null<const PngRgbaImageLoader *> png_rgba_loader,
         gsl::not_null<const PngIndexedImageLoader *> png_indexed_loader,
         gsl::not_null<const FilePalLoader *> pal_loader,
@@ -87,7 +88,7 @@ class ProjectTilesetArtifactReader final : public TilesetArtifactReader {
 
   private:
     const std::filesystem::path project_root_;
-    const TilesetAttrSchemaCache *schema_cache_;
+    const TilesetAttributeSchemaCache *schema_cache_;
     const PngRgbaImageLoader *png_rgba_loader_;
     const PngIndexedImageLoader *png_indexed_loader_;
     const FilePalLoader *pal_loader_;

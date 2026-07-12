@@ -6,7 +6,7 @@
 #include <utility>
 #include <vector>
 
-#include "porytiles/infra/config/metatile_attr_inference.hpp"
+#include "porytiles/infra/config/metatile_attribute_inference.hpp"
 #include "porytiles/utilities/c_parser/c_parser_facade.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
 
@@ -117,7 +117,7 @@ MetatileAttributeConfigProvider::compute(ConfigScopeType type, const std::string
     const auto &header_defines = defines_result.value().defines;
     const auto &header_enums = enums_result.value().enums;
 
-    MetatileAttrScan scan;
+    MetatileAttributeScan scan;
     scan.ambiguous_defines = defines_result.value().ambiguous_values;
     std::unordered_map<std::string, std::int64_t> seeds;
 
@@ -162,7 +162,7 @@ MetatileAttributeConfigProvider::compute(ConfigScopeType type, const std::string
 
     const auto detected_size = metatiles_provider_.detect();
     if (detected_size.state == ValidationState::valid && detected_size.value.has_value()) {
-        scan.detected_attr_size = detected_size.value.value();
+        scan.detected_attribute_size = detected_size.value.value();
     }
 
     // Surface recoverable scan warnings (conflicting redefinitions in undecidable regions, etc.).
@@ -170,7 +170,7 @@ MetatileAttributeConfigProvider::compute(ConfigScopeType type, const std::string
         diagnostics_->warning(diagnostic_tag, warning);
     }
 
-    auto inference = infer_metatile_attr_fields(scan, format_);
+    auto inference = infer_metatile_attribute_fields(scan, format_);
     for (const auto &warning : inference.warnings) {
         diagnostics_->warning(diagnostic_tag, warning);
     }
@@ -189,24 +189,24 @@ MetatileAttributeConfigProvider::inference_for(ConfigScopeType type, const std::
     return cached_results_.emplace(cache_key, compute(type, scope)).first->second;
 }
 
-LayerValue<MetatileAttrFieldSpecs>
-MetatileAttributeConfigProvider::metatile_attr_fields(ConfigScopeType type, const std::string &scope) const
+LayerValue<MetatileAttributeFieldSpecs>
+MetatileAttributeConfigProvider::metatile_attribute_fields(ConfigScopeType type, const std::string &scope) const
 {
     const CachedInference &cached = inference_for(type, scope);
     if (!cached.provided) {
-        return LayerValue<MetatileAttrFieldSpecs>::not_provided();
+        return LayerValue<MetatileAttributeFieldSpecs>::not_provided();
     }
 
     switch (cached.result.status) {
-    case AttrInferenceStatus::valid:
-        return LayerValue<MetatileAttrFieldSpecs>::valid(
+    case AttributeInferenceStatus::valid:
+        return LayerValue<MetatileAttributeFieldSpecs>::valid(
             cached.result.fields, "MetatileAttributeConfigProvider", cached.source);
-    case AttrInferenceStatus::invalid:
-        return LayerValue<MetatileAttrFieldSpecs>::invalid(cached.result.error_message, cached.source);
-    case AttrInferenceStatus::not_provided:
-        return LayerValue<MetatileAttrFieldSpecs>::not_provided();
+    case AttributeInferenceStatus::invalid:
+        return LayerValue<MetatileAttributeFieldSpecs>::invalid(cached.result.error_message, cached.source);
+    case AttributeInferenceStatus::not_provided:
+        return LayerValue<MetatileAttributeFieldSpecs>::not_provided();
     }
-    return LayerValue<MetatileAttrFieldSpecs>::not_provided();
+    return LayerValue<MetatileAttributeFieldSpecs>::not_provided();
 }
 
 LayerValue<std::optional<std::uint32_t>>

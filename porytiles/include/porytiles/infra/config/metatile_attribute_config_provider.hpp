@@ -8,10 +8,10 @@
 
 #include "gsl/pointers"
 
-#include "porytiles/domain/config/metatile_attr_field_spec.hpp"
+#include "porytiles/domain/config/metatile_attribute_field_spec.hpp"
 #include "porytiles/infra/config/config_provider.hpp"
 #include "porytiles/infra/config/layer_value.hpp"
-#include "porytiles/infra/config/metatile_attr_inference.hpp"
+#include "porytiles/infra/config/metatile_attribute_inference.hpp"
 #include "porytiles/infra/config/metatiles_header_provider.hpp"
 #include "porytiles/utilities/text/text_formatter.hpp"
 #include "porytiles/xcut/diagnostics/user_diagnostics.hpp"
@@ -21,13 +21,13 @@ namespace porytiles {
 /// @brief A ConfigProvider that synthesizes a metatile attribute field schema from a decomp project's own headers.
 ///
 /// @details
-/// When a user has not written an explicit @c metatile_attr_fields config, this provider reads the project's
+/// When a user has not written an explicit @c metatile_attribute_fields config, this provider reads the project's
 /// @c include/global.fieldmap.h, @c src/fieldmap.c, and @c include/constants/metatile_behaviors.h and infers the field
 /// schema the user could have written by hand. It sits in the provider chain below the explicit YAML provider so a
 /// hand-written schema always wins.
 ///
 /// The provider performs the file I/O and hands the gathered facts to the pure inference in
-/// metatile_attr_inference.hpp. Inference warnings and conflicts are routed to the user diagnostics. The result is
+/// metatile_attribute_inference.hpp. Inference warnings and conflicts are routed to the user diagnostics. The result is
 /// computed once per config scope and cached under a @c type:scope key (mirroring LazyLayeredConfig), so inference
 /// warnings are emitted a single time per scope. Every command uses a single scope per run, so there is no visible
 /// duplication in practice.
@@ -61,8 +61,8 @@ class MetatileAttributeConfigProvider final : public ConfigProvider {
 
     [[nodiscard]] std::string name() const override;
 
-    [[nodiscard]] LayerValue<MetatileAttrFieldSpecs>
-    metatile_attr_fields(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<MetatileAttributeFieldSpecs>
+    metatile_attribute_fields(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<std::optional<std::uint32_t>>
     metatile_layer_type_mask(ConfigScopeType type, const std::string &scope) const override;
@@ -79,7 +79,7 @@ class MetatileAttributeConfigProvider final : public ConfigProvider {
     /// when there is no fieldmap header to infer from (or it could not be scanned), in which case every value defers.
     struct CachedInference {
         bool provided{false};
-        MetatileAttrInferenceResult result;
+        MetatileAttributeInferenceResult result;
         std::string source; ///< provenance source key (the fieldmap header path)
     };
 

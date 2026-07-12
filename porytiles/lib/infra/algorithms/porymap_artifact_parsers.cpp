@@ -113,29 +113,29 @@ ChainableResult<std::vector<TilemapEntry>> parse_metatiles_bin(const std::filesy
 ChainableResult<std::vector<MetatileAttribute>>
 parse_metatile_attributes(const std::filesystem::path &path, const Schema &schema)
 {
-    std::ifstream metatile_attr_bin{path, std::ios::binary};
-    if (!metatile_attr_bin) {
+    std::ifstream metatile_attribute_bin{path, std::ios::binary};
+    if (!metatile_attribute_bin) {
         return FormattableError{
             "Failed to open metatile_attributes.bin: '{}'.", FormatParam{path.string(), Style::bold}};
     }
 
-    const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attr_bin), {}};
+    const std::vector<unsigned char> data_buf{std::istreambuf_iterator(metatile_attribute_bin), {}};
 
-    const std::size_t attr_bytes = schema.attr_bytes();
-    if (data_buf.size() % attr_bytes != 0) {
+    const std::size_t attribute_bytes = schema.attribute_bytes();
+    if (data_buf.size() % attribute_bytes != 0) {
         return FormattableError{
             "Size of metatile_attributes.bin is not a multiple of {} bytes, possibly corrupted.",
-            FormatParam{attr_bytes, Style::bold}};
+            FormatParam{attribute_bytes, Style::bold}};
     }
 
     std::vector<MetatileAttribute> attributes;
-    const std::size_t metatile_count = data_buf.size() / attr_bytes;
+    const std::size_t metatile_count = data_buf.size() / attribute_bytes;
     attributes.reserve(metatile_count);
 
     for (std::size_t metatile_index = 0; metatile_index < metatile_count; metatile_index++) {
-        const std::size_t base = metatile_index * attr_bytes;
+        const std::size_t base = metatile_index * attribute_bytes;
         std::uint32_t raw = 0;
-        for (std::size_t byte_index = 0; byte_index < attr_bytes; byte_index++) {
+        for (std::size_t byte_index = 0; byte_index < attribute_bytes; byte_index++) {
             raw |= static_cast<std::uint32_t>(data_buf.at(base + byte_index)) << (byte_index * 8);
         }
 
@@ -160,10 +160,10 @@ ChainableResult<void> save_metatile_attributes_bin(
             "Failed to open metatile_attributes.bin for writing: '{}'.", FormatParam{path.string(), Style::bold}};
     }
 
-    const std::size_t attr_bytes = schema.attr_bytes();
+    const std::size_t attribute_bytes = schema.attribute_bytes();
     for (const auto &attribute : attributes) {
         const std::uint32_t raw = pack_metatile_attribute(attribute, schema);
-        for (std::size_t byte_index = 0; byte_index < attr_bytes; byte_index++) {
+        for (std::size_t byte_index = 0; byte_index < attribute_bytes; byte_index++) {
             out << static_cast<std::uint8_t>(raw >> (byte_index * 8));
         }
     }

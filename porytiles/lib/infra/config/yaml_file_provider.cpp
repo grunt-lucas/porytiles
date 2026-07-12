@@ -653,40 +653,40 @@ YamlFileProvider::tileset_paths_secondary_bin(ConfigScopeType type, const std::s
         "tileset.paths.secondary.bin");
 }
 
-LayerValue<MetatileAttrFieldSpecs>
-YamlFileProvider::metatile_attr_fields(ConfigScopeType type, const std::string &scope) const
+LayerValue<MetatileAttributeFieldSpecs>
+YamlFileProvider::metatile_attribute_fields(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<MetatileAttrFieldSpecs>::invalid(
+        return LayerValue<MetatileAttributeFieldSpecs>::invalid(
             paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
-    return search_config_files<MetatileAttrFieldSpecs>(
+    return search_config_files<MetatileAttributeFieldSpecs>(
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["fieldmap"]["metatile_attr_fields"]; },
-        parse_metatile_attr_fields,
-        "fieldmap.metatile_attr_fields",
-        "fieldmap.metatile_attr_fields");
+        [](const YAML::Node &doc) { return doc["fieldmap"]["metatile_attribute_fields"]; },
+        parse_metatile_attribute_fields,
+        "fieldmap.metatile_attribute_fields",
+        "fieldmap.metatile_attribute_fields");
 }
 
-LayerValue<MetatileAttrFieldOverrides>
-YamlFileProvider::metatile_attr_field_overrides(ConfigScopeType type, const std::string &scope) const
+LayerValue<MetatileAttributeFieldOverrides>
+YamlFileProvider::metatile_attribute_field_overrides(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<MetatileAttrFieldOverrides>::invalid(
+        return LayerValue<MetatileAttributeFieldOverrides>::invalid(
             paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
-    return search_config_files<MetatileAttrFieldOverrides>(
+    return search_config_files<MetatileAttributeFieldOverrides>(
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["fieldmap"]["metatile_attr_field_overrides"]; },
-        parse_metatile_attr_field_overrides,
-        "fieldmap.metatile_attr_field_overrides",
-        "fieldmap.metatile_attr_field_overrides");
+        [](const YAML::Node &doc) { return doc["fieldmap"]["metatile_attribute_field_overrides"]; },
+        parse_metatile_attribute_field_overrides,
+        "fieldmap.metatile_attribute_field_overrides",
+        "fieldmap.metatile_attribute_field_overrides");
 }
 
 LayerValue<bool> YamlFileProvider::write_layer_type_column(ConfigScopeType type, const std::string &scope) const

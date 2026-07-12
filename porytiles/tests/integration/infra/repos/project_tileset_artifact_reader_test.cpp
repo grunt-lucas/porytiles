@@ -23,8 +23,8 @@
 #include "porytiles/infra/services/png_rgba_image_loader.hpp"
 #include "porytiles/infra/services/project_layout_metadata_provider.hpp"
 #include "porytiles/infra/services/project_tileset_metadata_provider.hpp"
-#include "porytiles/infra/services/tileset_attr_schema_cache.hpp"
-#include "porytiles/infra/services/tileset_attr_schema_resolver.hpp"
+#include "porytiles/infra/services/tileset_attribute_schema_cache.hpp"
+#include "porytiles/infra/services/tileset_attribute_schema_resolver.hpp"
 #include "porytiles/utilities/text/plain_text_formatter.hpp"
 #include "porytiles/xcut/diagnostics/buffered_user_diagnostics.hpp"
 #include "support/mock_infra_config.hpp"
@@ -36,7 +36,7 @@ namespace {
 // FRLG layout widens behavior to 0x01FF and adds terrain.
 constexpr auto kDivergentFieldsYaml = R"(
 fieldmap:
-  metatile_attr_fields:
+  metatile_attribute_fields:
     - name: behavior
       mask: 0x00FF
       frlg_mask: 0x01FF
@@ -88,8 +88,8 @@ class ProjectTilesetArtifactReaderTest : public ::testing::Test {
         LazyLayeredConfig config;
         ProjectLayoutMetadataProvider layout_metadata;
         MetatilesHeaderProvider metatiles_header;
-        TilesetAttrSchemaResolver resolver;
-        TilesetAttrSchemaCache cache;
+        TilesetAttributeSchemaResolver resolver;
+        TilesetAttributeSchemaCache cache;
         PngRgbaImageLoader png_rgba_loader{};
         PngIndexedImageLoader png_indexed_loader{};
         JascPalLoader jasc_loader;

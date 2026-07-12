@@ -1,4 +1,4 @@
-#include "porytiles/infra/services/tileset_attr_schema_resolver.hpp"
+#include "porytiles/infra/services/tileset_attribute_schema_resolver.hpp"
 
 #include <filesystem>
 #include <fstream>
@@ -24,7 +24,7 @@ namespace {
 // while layer_type is FRLG-only and its mask reaches bit 16.
 constexpr auto kFieldsYaml = R"(
 fieldmap:
-  metatile_attr_fields:
+  metatile_attribute_fields:
     - name: behavior
       mask: 0x00FF
       frlg_mask: 0x01FF
@@ -34,7 +34,7 @@ fieldmap:
 
 constexpr auto kTilesetName = "gTileset_Test";
 
-class TilesetAttrSchemaResolverTest : public ::testing::Test {
+class TilesetAttributeSchemaResolverTest : public ::testing::Test {
   protected:
     std::filesystem::path project_root_;
     PlainTextFormatter formatter_;
@@ -76,7 +76,7 @@ class TilesetAttrSchemaResolverTest : public ::testing::Test {
         out << content;
     }
 
-    [[nodiscard]] ChainableResult<ResolvedTilesetAttrSchema> resolve(const std::string &tileset_name)
+    [[nodiscard]] ChainableResult<ResolvedTilesetAttributeSchema> resolve(const std::string &tileset_name)
     {
         std::vector<std::unique_ptr<ConfigProvider>> providers;
         providers.push_back(std::make_unique<YamlFileProvider>(&formatter_, &diag_, project_root_));
@@ -85,7 +85,7 @@ class TilesetAttrSchemaResolverTest : public ::testing::Test {
 
         ProjectLayoutMetadataProvider layout_metadata{project_root_, &formatter_, &diag_};
         MetatilesHeaderProvider metatiles_header{project_root_, &formatter_};
-        TilesetAttrSchemaResolver resolver{&config, &layout_metadata, &metatiles_header, &formatter_, &diag_};
+        TilesetAttributeSchemaResolver resolver{&config, &layout_metadata, &metatiles_header, &formatter_, &diag_};
         return resolver.resolve(tileset_name);
     }
 
@@ -110,7 +110,7 @@ class TilesetAttrSchemaResolverTest : public ::testing::Test {
 })";
     }
 
-    [[nodiscard]] std::string error_text(const ChainableResult<ResolvedTilesetAttrSchema> &result)
+    [[nodiscard]] std::string error_text(const ChainableResult<ResolvedTilesetAttributeSchema> &result)
     {
         std::string text;
         for (const auto &err : result.chain()) {
@@ -133,7 +133,7 @@ class TilesetAttrSchemaResolverTest : public ::testing::Test {
     }
 };
 
-TEST_F(TilesetAttrSchemaResolverTest, AutomaticFrlgSignalResolvesFrlgWidenedToFourBytes)
+TEST_F(TilesetAttributeSchemaResolverTest, AutomaticFrlgSignalResolvesFrlgWidenedToFourBytes)
 {
     write_config(kFieldsYaml);
     write_layouts(layout_json(kTilesetName, R"(,
@@ -141,33 +141,33 @@ TEST_F(TilesetAttrSchemaResolverTest, AutomaticFrlgSignalResolvesFrlgWidenedToFo
 
     const auto result = resolve(kTilesetName);
     ASSERT_TRUE(result.has_value()) << error_text(result);
-    EXPECT_EQ(result.value().layout, AttrSchemaLayout::frlg);
-    EXPECT_EQ(result.value().attr_bytes, 4U);
+    EXPECT_EQ(result.value().layout, AttributeSchemaLayout::frlg);
+    EXPECT_EQ(result.value().attribute_bytes, 4U);
 }
 
-TEST_F(TilesetAttrSchemaResolverTest, NoLayoutsJsonResolvesPrimary)
+TEST_F(TilesetAttributeSchemaResolverTest, NoLayoutsJsonResolvesPrimary)
 {
     write_config(kFieldsYaml);
     // No layouts.json written.
 
     const auto result = resolve(kTilesetName);
     ASSERT_TRUE(result.has_value()) << error_text(result);
-    EXPECT_EQ(result.value().layout, AttrSchemaLayout::primary);
-    EXPECT_EQ(result.value().attr_bytes, 2U);
+    EXPECT_EQ(result.value().layout, AttributeSchemaLayout::primary);
+    EXPECT_EQ(result.value().attribute_bytes, 2U);
 }
 
-TEST_F(TilesetAttrSchemaResolverTest, AlwaysBeatsSignal)
+TEST_F(TilesetAttributeSchemaResolverTest, AlwaysBeatsSignal)
 {
     write_config(std::string{kFieldsYaml} + "  use_frlg_alternate_masks: always\n");
     // No layouts.json, so automatic would resolve primary; always forces frlg.
 
     const auto result = resolve(kTilesetName);
     ASSERT_TRUE(result.has_value()) << error_text(result);
-    EXPECT_EQ(result.value().layout, AttrSchemaLayout::frlg);
-    EXPECT_EQ(result.value().attr_bytes, 4U);
+    EXPECT_EQ(result.value().layout, AttributeSchemaLayout::frlg);
+    EXPECT_EQ(result.value().attribute_bytes, 4U);
 }
 
-TEST_F(TilesetAttrSchemaResolverTest, NeverBeatsSignal)
+TEST_F(TilesetAttributeSchemaResolverTest, NeverBeatsSignal)
 {
     write_config(std::string{kFieldsYaml} + "  use_frlg_alternate_masks: never\n");
     write_layouts(layout_json(kTilesetName, R"(,
@@ -175,11 +175,11 @@ TEST_F(TilesetAttrSchemaResolverTest, NeverBeatsSignal)
 
     const auto result = resolve(kTilesetName);
     ASSERT_TRUE(result.has_value()) << error_text(result);
-    EXPECT_EQ(result.value().layout, AttrSchemaLayout::primary);
-    EXPECT_EQ(result.value().attr_bytes, 2U);
+    EXPECT_EQ(result.value().layout, AttributeSchemaLayout::primary);
+    EXPECT_EQ(result.value().attribute_bytes, 2U);
 }
 
-TEST_F(TilesetAttrSchemaResolverTest, MixedUsageErrorsMentioningEscapeHatch)
+TEST_F(TilesetAttributeSchemaResolverTest, MixedUsageErrorsMentioningEscapeHatch)
 {
     write_config(kFieldsYaml);
     write_layouts(std::string{R"({
@@ -211,7 +211,7 @@ TEST_F(TilesetAttrSchemaResolverTest, MixedUsageErrorsMentioningEscapeHatch)
     EXPECT_NE(error_text(result).find("use_frlg_alternate_masks"), std::string::npos) << error_text(result);
 }
 
-TEST_F(TilesetAttrSchemaResolverTest, DetectedU32WidthResolvesFourBytesForPrimaryMasks)
+TEST_F(TilesetAttributeSchemaResolverTest, DetectedU32WidthResolvesFourBytesForPrimaryMasks)
 {
     // metatiles.h declares u32 attributes, so even a small-mask primary layout resolves to a 4-byte width.
     write_config(kFieldsYaml);
@@ -221,11 +221,11 @@ TEST_F(TilesetAttrSchemaResolverTest, DetectedU32WidthResolvesFourBytesForPrimar
 
     const auto result = resolve(kTilesetName);
     ASSERT_TRUE(result.has_value()) << error_text(result);
-    EXPECT_EQ(result.value().layout, AttrSchemaLayout::primary);
-    EXPECT_EQ(result.value().attr_bytes, 4U);
+    EXPECT_EQ(result.value().layout, AttributeSchemaLayout::primary);
+    EXPECT_EQ(result.value().attribute_bytes, 4U);
 }
 
-TEST_F(TilesetAttrSchemaResolverTest, DeclaredU16WithFrlgLayoutResolvesFourBytes)
+TEST_F(TilesetAttributeSchemaResolverTest, DeclaredU16WithFrlgLayoutResolvesFourBytes)
 {
     // metatiles.h authoritatively declares u16 (2 bytes), but the FRLG layout is read through the engine's hardcoded
     // 'const u32 *' accessor, so the declaration does not constrain the FRLG entry width: it only has to match the
@@ -238,13 +238,13 @@ TEST_F(TilesetAttrSchemaResolverTest, DeclaredU16WithFrlgLayoutResolvesFourBytes
 
     const auto result = resolve(kTilesetName);
     ASSERT_TRUE(result.has_value()) << error_text(result);
-    EXPECT_EQ(result.value().layout, AttrSchemaLayout::frlg);
-    EXPECT_EQ(result.value().attr_bytes, 4U);
+    EXPECT_EQ(result.value().layout, AttributeSchemaLayout::frlg);
+    EXPECT_EQ(result.value().attribute_bytes, 4U);
     EXPECT_EQ(result.value().declaration_bytes, 2U);
     EXPECT_TRUE(remark_text_contains("metatiles.h")) << "expected a width-override remark naming metatiles.h";
 }
 
-TEST_F(TilesetAttrSchemaResolverTest, AutomaticFrlgSignalWithDeclaredU16ResolvesFourBytes)
+TEST_F(TilesetAttributeSchemaResolverTest, AutomaticFrlgSignalWithDeclaredU16ResolvesFourBytes)
 {
     // The stock-expansion regression: a u16 metatiles.h plus a layouts.json that references the tileset only from frlg
     // layouts. Automatic mode selects the FRLG layout, which must resolve 4 bytes with a remark instead of the old
@@ -258,12 +258,12 @@ TEST_F(TilesetAttrSchemaResolverTest, AutomaticFrlgSignalWithDeclaredU16Resolves
 
     const auto result = resolve(kTilesetName);
     ASSERT_TRUE(result.has_value()) << error_text(result);
-    EXPECT_EQ(result.value().layout, AttrSchemaLayout::frlg);
-    EXPECT_EQ(result.value().attr_bytes, 4U);
+    EXPECT_EQ(result.value().layout, AttributeSchemaLayout::frlg);
+    EXPECT_EQ(result.value().attribute_bytes, 4U);
     EXPECT_TRUE(remark_text_contains("metatiles.h")) << "expected a width-override remark naming metatiles.h";
 }
 
-TEST_F(TilesetAttrSchemaResolverTest, DeclaredU16WithWidePrimaryLayerMaskStillFatal)
+TEST_F(TilesetAttributeSchemaResolverTest, DeclaredU16WithWidePrimaryLayerMaskStillFatal)
 {
     // The primary layout keeps the authoritative-width fatal: there the declared type IS the engine's read stride, so
     // a 4-byte layer mask on a u16 project is a misconfiguration, not a hidden width.
@@ -279,7 +279,7 @@ TEST_F(TilesetAttrSchemaResolverTest, DeclaredU16WithWidePrimaryLayerMaskStillFa
     EXPECT_NE(text.find("layer-type mask"), std::string::npos) << text; // names the offending mask
 }
 
-TEST_F(TilesetAttrSchemaResolverTest, MixedU16U32DeclarationsAreFatal)
+TEST_F(TilesetAttributeSchemaResolverTest, MixedU16U32DeclarationsAreFatal)
 {
     write_config(kFieldsYaml);
     write_metatiles_header(
@@ -293,7 +293,7 @@ TEST_F(TilesetAttrSchemaResolverTest, MixedU16U32DeclarationsAreFatal)
     EXPECT_NE(error_text(result).find("Mixed"), std::string::npos) << error_text(result);
 }
 
-TEST_F(TilesetAttrSchemaResolverTest, UndetectableWidthWarnsAndAssumesTwoBytes)
+TEST_F(TilesetAttributeSchemaResolverTest, UndetectableWidthWarnsAndAssumesTwoBytes)
 {
     write_config(kFieldsYaml);
     // No metatiles.h written: the width cannot be detected. A real 4-byte project with only low-bit masks would get
@@ -301,11 +301,11 @@ TEST_F(TilesetAttrSchemaResolverTest, UndetectableWidthWarnsAndAssumesTwoBytes)
 
     const auto result = resolve(kTilesetName);
     ASSERT_TRUE(result.has_value()) << error_text(result);
-    EXPECT_EQ(result.value().attr_bytes, 2U);
+    EXPECT_EQ(result.value().attribute_bytes, 2U);
     EXPECT_TRUE(diag_.warning_tag_counts().contains("metatile-attr-schema"));
 }
 
-TEST_F(TilesetAttrSchemaResolverTest, DetectedWidthDoesNotWarn)
+TEST_F(TilesetAttributeSchemaResolverTest, DetectedWidthDoesNotWarn)
 {
     write_config(kFieldsYaml);
     write_metatiles_header(
@@ -314,11 +314,11 @@ TEST_F(TilesetAttrSchemaResolverTest, DetectedWidthDoesNotWarn)
 
     const auto result = resolve(kTilesetName);
     ASSERT_TRUE(result.has_value()) << error_text(result);
-    EXPECT_EQ(result.value().attr_bytes, 2U);
+    EXPECT_EQ(result.value().attribute_bytes, 2U);
     EXPECT_FALSE(diag_.warning_tag_counts().contains("metatile-attr-schema"));
 }
 
-TEST_F(TilesetAttrSchemaResolverTest, MalformedLayoutsJsonWarnsAndFallsBackToPrimary)
+TEST_F(TilesetAttributeSchemaResolverTest, MalformedLayoutsJsonWarnsAndFallsBackToPrimary)
 {
     write_config(kFieldsYaml);
     write_layouts("{ this is not valid json ]");
@@ -326,11 +326,11 @@ TEST_F(TilesetAttrSchemaResolverTest, MalformedLayoutsJsonWarnsAndFallsBackToPri
     const auto result = resolve(kTilesetName);
     // A malformed layouts.json is a soft failure: warn and assume the primary layout rather than blocking resolution.
     ASSERT_TRUE(result.has_value()) << error_text(result);
-    EXPECT_EQ(result.value().layout, AttrSchemaLayout::primary);
+    EXPECT_EQ(result.value().layout, AttributeSchemaLayout::primary);
     EXPECT_TRUE(diag_.warning_tag_counts().contains("frlg-alternate-masks"));
 }
 
-TEST_F(TilesetAttrSchemaResolverTest, NonStringLayoutsTableLabelWarnsAndFallsBackToPrimary)
+TEST_F(TilesetAttributeSchemaResolverTest, NonStringLayoutsTableLabelWarnsAndFallsBackToPrimary)
 {
     write_config(kFieldsYaml);
     // Syntactically valid JSON whose layouts_table_label has the wrong type. This must take the same warn-and-fall-back
@@ -339,22 +339,22 @@ TEST_F(TilesetAttrSchemaResolverTest, NonStringLayoutsTableLabelWarnsAndFallsBac
 
     const auto result = resolve(kTilesetName);
     ASSERT_TRUE(result.has_value()) << error_text(result);
-    EXPECT_EQ(result.value().layout, AttrSchemaLayout::primary);
+    EXPECT_EQ(result.value().layout, AttributeSchemaLayout::primary);
     EXPECT_TRUE(diag_.warning_tag_counts().contains("frlg-alternate-masks"));
 }
 
-TEST_F(TilesetAttrSchemaResolverTest, NonArrayLayoutsFieldWarnsAndFallsBackToPrimary)
+TEST_F(TilesetAttributeSchemaResolverTest, NonArrayLayoutsFieldWarnsAndFallsBackToPrimary)
 {
     write_config(kFieldsYaml);
     write_layouts(R"({ "layouts_table_label": "gMapLayouts", "layouts": { "id": "LAYOUT_TEST" } })");
 
     const auto result = resolve(kTilesetName);
     ASSERT_TRUE(result.has_value()) << error_text(result);
-    EXPECT_EQ(result.value().layout, AttrSchemaLayout::primary);
+    EXPECT_EQ(result.value().layout, AttributeSchemaLayout::primary);
     EXPECT_TRUE(diag_.warning_tag_counts().contains("frlg-alternate-masks"));
 }
 
-TEST_F(TilesetAttrSchemaResolverTest, InvalidLayoutVersionValueIsFatal)
+TEST_F(TilesetAttributeSchemaResolverTest, InvalidLayoutVersionValueIsFatal)
 {
     write_config(kFieldsYaml);
     // A well-formed layouts.json but a typo'd layout_version for the queried tileset must not silently mean emerald.
@@ -369,23 +369,23 @@ TEST_F(TilesetAttrSchemaResolverTest, InvalidLayoutVersionValueIsFatal)
 // A minimal single-field config whose behavior mask fits either layout in two bytes, isolating layer-mask behavior.
 constexpr auto kSimpleFieldsYaml = R"(
 fieldmap:
-  metatile_attr_fields:
+  metatile_attribute_fields:
     - name: behavior
       mask: 0x00FF
       frlg_mask: 0x01FF
 )";
 
-TEST_F(TilesetAttrSchemaResolverTest, ExplicitPrimaryLayerMaskOverridesConvention)
+TEST_F(TilesetAttributeSchemaResolverTest, ExplicitPrimaryLayerMaskOverridesConvention)
 {
     write_config(std::string{kSimpleFieldsYaml} + "  metatile_layer_type_mask: 0x0300\n");
 
     const auto result = resolve(kTilesetName);
     ASSERT_TRUE(result.has_value()) << error_text(result);
-    EXPECT_EQ(result.value().layout, AttrSchemaLayout::primary);
+    EXPECT_EQ(result.value().layout, AttributeSchemaLayout::primary);
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0x0300U);
 }
 
-TEST_F(TilesetAttrSchemaResolverTest, ZeroLayerMaskDisablesLayerType)
+TEST_F(TilesetAttributeSchemaResolverTest, ZeroLayerMaskDisablesLayerType)
 {
     write_config(std::string{kSimpleFieldsYaml} + "  metatile_layer_type_mask: 0x0\n");
 
@@ -394,7 +394,7 @@ TEST_F(TilesetAttrSchemaResolverTest, ZeroLayerMaskDisablesLayerType)
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0U);
 }
 
-TEST_F(TilesetAttrSchemaResolverTest, FrlgLayoutSelectsFrlgLayerMask)
+TEST_F(TilesetAttributeSchemaResolverTest, FrlgLayoutSelectsFrlgLayerMask)
 {
     // Both layer masks are configured; forcing the FRLG layout must pick the FRLG value and widen the word to 4 bytes.
     write_config(
@@ -403,12 +403,12 @@ TEST_F(TilesetAttrSchemaResolverTest, FrlgLayoutSelectsFrlgLayerMask)
 
     const auto result = resolve(kTilesetName);
     ASSERT_TRUE(result.has_value()) << error_text(result);
-    EXPECT_EQ(result.value().layout, AttrSchemaLayout::frlg);
+    EXPECT_EQ(result.value().layout, AttributeSchemaLayout::frlg);
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0x60000000U);
-    EXPECT_EQ(result.value().attr_bytes, 4U);
+    EXPECT_EQ(result.value().attribute_bytes, 4U);
 }
 
-TEST_F(TilesetAttrSchemaResolverTest, PrimaryLayoutSelectsPrimaryLayerMask)
+TEST_F(TilesetAttributeSchemaResolverTest, PrimaryLayoutSelectsPrimaryLayerMask)
 {
     // Same config, but forcing the primary layout must pick the primary value and stay two bytes.
     write_config(
@@ -417,9 +417,9 @@ TEST_F(TilesetAttrSchemaResolverTest, PrimaryLayoutSelectsPrimaryLayerMask)
 
     const auto result = resolve(kTilesetName);
     ASSERT_TRUE(result.has_value()) << error_text(result);
-    EXPECT_EQ(result.value().layout, AttrSchemaLayout::primary);
+    EXPECT_EQ(result.value().layout, AttributeSchemaLayout::primary);
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0xF000U);
-    EXPECT_EQ(result.value().attr_bytes, 2U);
+    EXPECT_EQ(result.value().attribute_bytes, 2U);
 }
 
 } // namespace

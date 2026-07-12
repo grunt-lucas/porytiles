@@ -29,7 +29,7 @@ const std::filesystem::path porytiles_pals{"palettes"};
 const std::filesystem::path porymap_pals{"palettes"};
 const std::filesystem::path anim_json{"anim.json"};
 const std::filesystem::path metatiles_bin{"metatiles.bin"};
-const std::filesystem::path attrs_bin{"metatile_attributes.bin"};
+const std::filesystem::path attributes_bin{"metatile_attributes.bin"};
 const std::filesystem::path tiles_png{"tiles.png"};
 
 /// @brief Scans a directory for subdirectories and validates their names are snake_case.
@@ -152,7 +152,7 @@ ProjectTilesetArtifactKeyProvider::key_for_metatile_attributes_bin(const std::st
     auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
     const std::string snake_tileset_dir = extract_tileset_cased_name(tileset_name).to_snake_case();
     std::filesystem::path path =
-        std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_bin / attrs_bin;
+        std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_bin / attributes_bin;
 
     return ArtifactKey{path.string()};
 }

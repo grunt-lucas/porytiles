@@ -45,8 +45,8 @@
 #include "porytiles/infra/services/project_tileset_anims_modifier.hpp"
 #include "porytiles/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles/infra/services/project_tileset_metadata_writer.hpp"
-#include "porytiles/infra/services/tileset_attr_schema_cache.hpp"
-#include "porytiles/infra/services/tileset_attr_schema_resolver.hpp"
+#include "porytiles/infra/services/tileset_attribute_schema_cache.hpp"
+#include "porytiles/infra/services/tileset_attribute_schema_resolver.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 #include "porytiles/utilities/text/terminal_width.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
@@ -264,12 +264,12 @@ class TilesetCommandServices {
     IncbinDeclarationAppender incbin_appender;
     ProjectTilesetAnimsModifier tileset_anims_modifier;
     MetatilesHeaderProvider metatiles_header;
-    TilesetAttrSchemaResolver schema_resolver;
-    TilesetAttrSchemaCache schema_cache;
+    TilesetAttributeSchemaResolver schema_resolver;
+    TilesetAttributeSchemaCache schema_cache;
     // The command target's cache entry, resolved fail-fast at construction. resolved and provider_map alias into it
     // for the consumers (and commands) that operate on the target tileset only.
-    const TilesetAttrSchemaCache::Entry *target_entry;
-    const ResolvedTilesetAttrSchema &resolved;
+    const TilesetAttributeSchemaCache::Entry *target_entry;
+    const ResolvedTilesetAttributeSchema &resolved;
     const ProviderMap &provider_map;
     ProjectPorytilesTilesetManager tileset_manager;
     AttributesCsvLoader attributes_csv_loader;
@@ -281,8 +281,8 @@ class TilesetCommandServices {
     TilesetCompiler compiler;
 
   private:
-    [[nodiscard]] static const TilesetAttrSchemaCache::Entry *entry_or_fail(
-        const TilesetAttrSchemaCache &schema_cache, const std::string &tileset_name, const UserDiagnostics &diag)
+    [[nodiscard]] static const TilesetAttributeSchemaCache::Entry *entry_or_fail(
+        const TilesetAttributeSchemaCache &schema_cache, const std::string &tileset_name, const UserDiagnostics &diag)
     {
         auto entry_result = schema_cache.entry(tileset_name);
         if (!entry_result.has_value()) {

@@ -25,18 +25,18 @@ namespace porytiles {
 /// @c mask is the primary-layout bit mask; when absent, the field is alternate-only. @c frlg_mask is the FRLG-layout
 /// mask stored for per-tileset layout selection (see issue #283). @c default_value is the value used when the field is
 /// absent from a metatile. @c provider optionally points the field at the header that declares its value names.
-struct MetatileAttrFieldSpec {
+struct MetatileAttributeFieldSpec {
     std::string name;
     std::optional<std::uint32_t> mask;
     std::optional<std::uint32_t> frlg_mask;
     std::optional<std::uint32_t> default_value;
     std::optional<ProviderSpec> provider;
 
-    bool operator==(const MetatileAttrFieldSpec &) const = default;
+    bool operator==(const MetatileAttributeFieldSpec &) const = default;
 };
 
 /// @brief An ordered list of metatile attribute field specs; order is display/declaration order.
-using MetatileAttrFieldSpecs = std::vector<MetatileAttrFieldSpec>;
+using MetatileAttributeFieldSpecs = std::vector<MetatileAttributeFieldSpec>;
 
 /// @brief A partial override of a field's provider spec.
 ///
@@ -59,17 +59,17 @@ struct ProviderSpecOverride {
 /// @details
 /// Present scalar members replace the baseline field's value; absent members fall through. @c provider is itself a
 /// partial override: nullopt means "do not touch the provider", while a present value adjusts (or removes) it.
-struct MetatileAttrFieldOverride {
+struct MetatileAttributeFieldOverride {
     std::optional<std::uint32_t> mask;
     std::optional<std::uint32_t> frlg_mask;
     std::optional<std::uint32_t> default_value;
     std::optional<ProviderSpecOverride> provider;
 
-    bool operator==(const MetatileAttrFieldOverride &) const = default;
+    bool operator==(const MetatileAttributeFieldOverride &) const = default;
 };
 
 /// @brief A map from field name to its override; applied at schema load time.
-using MetatileAttrFieldOverrides = std::map<std::string, MetatileAttrFieldOverride>;
+using MetatileAttributeFieldOverrides = std::map<std::string, MetatileAttributeFieldOverride>;
 
 namespace detail {
 
@@ -91,7 +91,7 @@ namespace detail {
 } // namespace detail
 
 /// @brief Converts one field spec to a human-readable string.
-[[nodiscard]] inline std::string to_string(const MetatileAttrFieldSpec &spec)
+[[nodiscard]] inline std::string to_string(const MetatileAttributeFieldSpec &spec)
 {
     std::string result = std::format(
         "{}={{mask={}, frlg_mask={}, default={}",
@@ -107,7 +107,7 @@ namespace detail {
 }
 
 /// @brief Converts a field spec list to a human-readable string.
-[[nodiscard]] inline std::string to_string(const MetatileAttrFieldSpecs &specs)
+[[nodiscard]] inline std::string to_string(const MetatileAttributeFieldSpecs &specs)
 {
     if (specs.empty()) {
         return "[]";
@@ -125,13 +125,13 @@ namespace detail {
     return result;
 }
 
-inline std::ostream &operator<<(std::ostream &os, const MetatileAttrFieldSpecs &specs)
+inline std::ostream &operator<<(std::ostream &os, const MetatileAttributeFieldSpecs &specs)
 {
     return os << to_string(specs);
 }
 
 /// @brief Converts one field override to a human-readable string.
-[[nodiscard]] inline std::string to_string(const MetatileAttrFieldOverride &override_value)
+[[nodiscard]] inline std::string to_string(const MetatileAttributeFieldOverride &override_value)
 {
     std::string result = std::format(
         "{{mask={}, frlg_mask={}, default={}",
@@ -151,7 +151,7 @@ inline std::ostream &operator<<(std::ostream &os, const MetatileAttrFieldSpecs &
 }
 
 /// @brief Converts a field override map to a human-readable string.
-[[nodiscard]] inline std::string to_string(const MetatileAttrFieldOverrides &overrides)
+[[nodiscard]] inline std::string to_string(const MetatileAttributeFieldOverrides &overrides)
 {
     if (overrides.empty()) {
         return "{}";
@@ -169,7 +169,7 @@ inline std::ostream &operator<<(std::ostream &os, const MetatileAttrFieldSpecs &
     return result;
 }
 
-inline std::ostream &operator<<(std::ostream &os, const MetatileAttrFieldOverrides &overrides)
+inline std::ostream &operator<<(std::ostream &os, const MetatileAttributeFieldOverrides &overrides)
 {
     return os << to_string(overrides);
 }
@@ -177,26 +177,26 @@ inline std::ostream &operator<<(std::ostream &os, const MetatileAttrFieldOverrid
 } // namespace porytiles
 
 template <>
-struct std::formatter<porytiles::MetatileAttrFieldSpecs> {
+struct std::formatter<porytiles::MetatileAttributeFieldSpecs> {
     constexpr auto parse(std::format_parse_context &ctx)
     {
         return ctx.begin();
     }
 
-    auto format(const porytiles::MetatileAttrFieldSpecs &value, auto &ctx) const
+    auto format(const porytiles::MetatileAttributeFieldSpecs &value, auto &ctx) const
     {
         return std::format_to(ctx.out(), "{}", porytiles::to_string(value));
     }
 };
 
 template <>
-struct std::formatter<porytiles::MetatileAttrFieldOverrides> {
+struct std::formatter<porytiles::MetatileAttributeFieldOverrides> {
     constexpr auto parse(std::format_parse_context &ctx)
     {
         return ctx.begin();
     }
 
-    auto format(const porytiles::MetatileAttrFieldOverrides &value, auto &ctx) const
+    auto format(const porytiles::MetatileAttributeFieldOverrides &value, auto &ctx) const
     {
         return std::format_to(ctx.out(), "{}", porytiles::to_string(value));
     }

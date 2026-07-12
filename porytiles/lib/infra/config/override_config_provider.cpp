@@ -201,14 +201,14 @@ void OverrideConfigProvider::set_tileset_paths_secondary_bin(std::string value)
     tileset_paths_secondary_bin_override_ = std::move(value);
 }
 
-void OverrideConfigProvider::set_metatile_attr_fields(MetatileAttrFieldSpecs value)
+void OverrideConfigProvider::set_metatile_attribute_fields(MetatileAttributeFieldSpecs value)
 {
-    metatile_attr_fields_override_ = std::move(value);
+    metatile_attribute_fields_override_ = std::move(value);
 }
 
-void OverrideConfigProvider::set_metatile_attr_field_overrides(MetatileAttrFieldOverrides value)
+void OverrideConfigProvider::set_metatile_attribute_field_overrides(MetatileAttributeFieldOverrides value)
 {
-    metatile_attr_field_overrides_override_ = std::move(value);
+    metatile_attribute_field_overrides_override_ = std::move(value);
 }
 
 void OverrideConfigProvider::set_write_layer_type_column(bool value)
@@ -570,24 +570,24 @@ OverrideConfigProvider::tileset_paths_secondary_bin(ConfigScopeType type, const 
         tileset_paths_secondary_bin_override_.value(), "tileset_paths_secondary_bin", source_info_);
 }
 
-LayerValue<MetatileAttrFieldSpecs>
-OverrideConfigProvider::metatile_attr_fields(ConfigScopeType type, const std::string &scope) const
+LayerValue<MetatileAttributeFieldSpecs>
+OverrideConfigProvider::metatile_attribute_fields(ConfigScopeType type, const std::string &scope) const
 {
-    if (!scope_matches(type, scope) || !metatile_attr_fields_override_.has_value()) {
-        return LayerValue<MetatileAttrFieldSpecs>::not_provided();
+    if (!scope_matches(type, scope) || !metatile_attribute_fields_override_.has_value()) {
+        return LayerValue<MetatileAttributeFieldSpecs>::not_provided();
     }
-    return LayerValue<MetatileAttrFieldSpecs>::valid(
-        metatile_attr_fields_override_.value(), "metatile_attr_fields", source_info_);
+    return LayerValue<MetatileAttributeFieldSpecs>::valid(
+        metatile_attribute_fields_override_.value(), "metatile_attribute_fields", source_info_);
 }
 
-LayerValue<MetatileAttrFieldOverrides>
-OverrideConfigProvider::metatile_attr_field_overrides(ConfigScopeType type, const std::string &scope) const
+LayerValue<MetatileAttributeFieldOverrides>
+OverrideConfigProvider::metatile_attribute_field_overrides(ConfigScopeType type, const std::string &scope) const
 {
-    if (!scope_matches(type, scope) || !metatile_attr_field_overrides_override_.has_value()) {
-        return LayerValue<MetatileAttrFieldOverrides>::not_provided();
+    if (!scope_matches(type, scope) || !metatile_attribute_field_overrides_override_.has_value()) {
+        return LayerValue<MetatileAttributeFieldOverrides>::not_provided();
     }
-    return LayerValue<MetatileAttrFieldOverrides>::valid(
-        metatile_attr_field_overrides_override_.value(), "metatile_attr_field_overrides", source_info_);
+    return LayerValue<MetatileAttributeFieldOverrides>::valid(
+        metatile_attribute_field_overrides_override_.value(), "metatile_attribute_field_overrides", source_info_);
 }
 
 LayerValue<bool> OverrideConfigProvider::write_layer_type_column(ConfigScopeType type, const std::string &scope) const

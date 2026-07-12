@@ -1,4 +1,4 @@
-#include "porytiles/infra/services/tileset_attr_schema_cache.hpp"
+#include "porytiles/infra/services/tileset_attribute_schema_cache.hpp"
 
 #include <string>
 #include <utility>
@@ -7,8 +7,8 @@
 
 namespace porytiles {
 
-ChainableResult<const TilesetAttrSchemaCache::Entry *>
-TilesetAttrSchemaCache::entry(const std::string &tileset_name) const
+ChainableResult<const TilesetAttributeSchemaCache::Entry *>
+TilesetAttributeSchemaCache::entry(const std::string &tileset_name) const
 {
     if (const auto it = cache_.find(tileset_name); it != cache_.end()) {
         return &it->second;

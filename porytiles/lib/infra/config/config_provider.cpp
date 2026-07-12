@@ -217,16 +217,16 @@ LayerValue<std::string> ConfigProvider::tileset_paths_secondary_bin(
     return LayerValue<std::string>::not_provided();
 }
 
-LayerValue<MetatileAttrFieldSpecs> ConfigProvider::metatile_attr_fields(
+LayerValue<MetatileAttributeFieldSpecs> ConfigProvider::metatile_attribute_fields(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<MetatileAttrFieldSpecs>::not_provided();
+    return LayerValue<MetatileAttributeFieldSpecs>::not_provided();
 }
 
-LayerValue<MetatileAttrFieldOverrides> ConfigProvider::metatile_attr_field_overrides(
+LayerValue<MetatileAttributeFieldOverrides> ConfigProvider::metatile_attribute_field_overrides(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<MetatileAttrFieldOverrides>::not_provided();
+    return LayerValue<MetatileAttributeFieldOverrides>::not_provided();
 }
 
 LayerValue<bool> ConfigProvider::write_layer_type_column(

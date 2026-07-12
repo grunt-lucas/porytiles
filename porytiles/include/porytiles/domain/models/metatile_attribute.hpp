@@ -12,7 +12,7 @@
 
 namespace porytiles {
 
-namespace attr {
+namespace attribute {
 
 // Field-name constants for the stock decomp attribute layouts. These are the names the schema inference
 // produces when it scans a stock emerald- or firered-family header, so code and tests that address those
@@ -25,7 +25,7 @@ constexpr std::string_view field_encounter_type = "encounter_type";
 constexpr std::string_view field_attribute_5 = "attribute_5";
 constexpr std::string_view field_attribute_7 = "attribute_7";
 
-} // namespace attr
+} // namespace attribute
 
 /// @brief The attributes of a single metatile, modeled as a map of named field values.
 ///

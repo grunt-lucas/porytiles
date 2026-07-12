@@ -2936,7 +2936,7 @@ TilesetCreator::create_sample_primary_porytiles_component(const std::string &til
     if (behavior_result.has_value()) {
         MetatileAttribute attribute{};
         attribute.layer_type(LayerType::normal);
-        attribute.field(attr::field_behavior, behavior_result.value());
+        attribute.field(attribute::field_behavior, behavior_result.value());
         component->insert_attribute(3, std::move(attribute));
     }
 

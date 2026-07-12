@@ -535,9 +535,9 @@ TEST_F(TilesetCompilerOverrideValidationTests, ManualBottomOverrideSurvivesExpli
     auto tileset = build_single_metatile_tileset("test_primary", rgba_green);
 
     // Pin metatile 0 to 'covered' via the source Porytiles attribute, exactly as an explicit layer_type CSV cell would.
-    MetatileAttribute attr_0{};
-    attr_0.explicit_layer_type(LayerType::covered);
-    tileset.porytiles_component().insert_attribute(0, attr_0);
+    MetatileAttribute attribute_0{};
+    attribute_0.explicit_layer_type(LayerType::covered);
+    tileset.porytiles_component().insert_attribute(0, attribute_0);
 
     add_manual_anim(
         tileset,
@@ -569,9 +569,9 @@ TEST_F(TilesetCompilerOverrideValidationTests, ManualOverrideOnExplicitlyDropped
 
     auto tileset = build_single_metatile_tileset("test_primary", rgba_green);
 
-    MetatileAttribute attr_0{};
-    attr_0.explicit_layer_type(LayerType::covered);
-    tileset.porytiles_component().insert_attribute(0, attr_0);
+    MetatileAttribute attribute_0{};
+    attribute_0.explicit_layer_type(LayerType::covered);
+    tileset.porytiles_component().insert_attribute(0, attribute_0);
 
     add_manual_anim(
         tileset,

@@ -35,7 +35,7 @@ namespace porytiles {
 /// @brief Parses a metatile_attributes.bin file according to a metatile attribute schema.
 ///
 /// @details
-/// Reads a binary file containing schema.attr_bytes() bytes per attribute entry, little-endian. Each
+/// Reads a binary file containing schema.attribute_bytes() bytes per attribute entry, little-endian. Each
 /// schema field's value is extracted through its mask and offset, and the structural layer type is
 /// extracted through the schema's layer_type_mask(). The schema is the sole authority on the layout;
 /// this function carries no hardcoded masks.
@@ -43,7 +43,7 @@ namespace porytiles {
 /// @param path Absolute path to the metatile_attributes.bin file
 /// @param schema The attribute schema describing the binary layout
 /// @pre File must exist and be readable
-/// @pre File size must be a multiple of schema.attr_bytes()
+/// @pre File size must be a multiple of schema.attribute_bytes()
 /// @return Vector of parsed MetatileAttribute objects, or error if file is invalid/corrupted
 [[nodiscard]] ChainableResult<std::vector<MetatileAttribute>>
 parse_metatile_attributes(const std::filesystem::path &path, const Schema &schema);
@@ -53,7 +53,7 @@ parse_metatile_attributes(const std::filesystem::path &path, const Schema &schem
 /// @details
 /// The inverse of parse_metatile_attributes: each attribute's schema fields and structural layer type
 /// are packed into a single word through the schema's masks and offsets, then written as
-/// schema.attr_bytes() bytes, little-endian.
+/// schema.attribute_bytes() bytes, little-endian.
 ///
 /// @param attributes The attributes to write, in metatile order
 /// @param path Absolute path of the metatile_attributes.bin file to write

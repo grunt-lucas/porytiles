@@ -249,7 +249,7 @@ classify_incbin_lookup(const std::map<std::string, IncbinDeclaration> &incbin_va
         const auto &tiles_incbin = incbin_vars.at(metadata.tiles_var());
         const auto &palettes_incbin = incbin_vars.at(metadata.palettes_var());
         const auto &metatiles_incbin = incbin_vars.at(metadata.metatiles_var());
-        const auto &attrs_incbin = incbin_vars.at(metadata.metatile_attributes_var());
+        const auto &attributes_incbin = incbin_vars.at(metadata.metatile_attributes_var());
 
         std::vector<std::filesystem::path> palette_paths;
         palette_paths.reserve(palettes_incbin.paths().size());
@@ -263,7 +263,7 @@ classify_incbin_lookup(const std::map<std::string, IncbinDeclaration> &incbin_va
                 std::filesystem::path{tiles_incbin.paths().front()},
                 std::move(palette_paths),
                 std::filesystem::path{metatiles_incbin.paths().front()},
-                std::filesystem::path{attrs_incbin.paths().front()}});
+                std::filesystem::path{attributes_incbin.paths().front()}});
     }
 
     artifact_paths_parsed = true;

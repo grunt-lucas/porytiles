@@ -9,7 +9,7 @@
 #include "CLI/CLI.hpp"
 
 #include "porytiles/domain/models/metatile_attribute_schema.hpp"
-#include "porytiles/domain/services/metatile_attr_schema_loader.hpp"
+#include "porytiles/domain/services/metatile_attribute_schema_loader.hpp"
 #include "porytiles/infra/cli/cli_option_registration.hpp"
 #include "porytiles/infra/cli/cli_option_storage.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
@@ -45,14 +45,14 @@ class DumpTilesetConfigCommand final : public Command {
         // dump deliberately resolves against the unfiltered stderr diagnostics so nothing is hidden from the dump.
         ProjectLayoutMetadataProvider layout_metadata_provider{env.project_root, text_formatter, &env.stderr_diag};
         MetatilesHeaderProvider metatiles_header{env.project_root, text_formatter};
-        TilesetAttrSchemaResolver schema_resolver{
+        TilesetAttributeSchemaResolver schema_resolver{
             &env.config, &layout_metadata_provider, &metatiles_header, text_formatter, &env.stderr_diag};
         auto resolved_result = schema_resolver.resolve(tileset_name_);
         if (!resolved_result.has_value()) {
             env.stderr_diag.fatal(resolved_result);
             throw CLI::RuntimeError{1};
         }
-        const ResolvedTilesetAttrSchema &resolved = resolved_result.value();
+        const ResolvedTilesetAttributeSchema &resolved = resolved_result.value();
 
         std::ostream &out = std::cout;
         const std::string section_title = "Resolved Metatile Attribute Schema";
@@ -65,7 +65,7 @@ class DumpTilesetConfigCommand final : public Command {
 
         out << "  "
             << text_formatter->format(
-                   "Attribute size: {} bytes", FormatParam{std::to_string(resolved.attr_bytes), Style::bold})
+                   "Attribute size: {} bytes", FormatParam{std::to_string(resolved.attribute_bytes), Style::bold})
             << "\n\n";
 
         out << "  " << text_formatter->style("Fields:", Style::faint) << "\n";
@@ -89,7 +89,7 @@ class DumpTilesetConfigCommand final : public Command {
         }
 
         // Fields excluded for the chosen layout: they carry a mask for the other layout but not this one.
-        const bool frlg = resolved.layout == AttrSchemaLayout::frlg;
+        const bool frlg = resolved.layout == AttributeSchemaLayout::frlg;
         std::vector<std::string> excluded;
         for (const auto &spec : resolved.resolved_specs) {
             const bool has_selected = frlg ? spec.frlg_mask.has_value() : spec.mask.has_value();

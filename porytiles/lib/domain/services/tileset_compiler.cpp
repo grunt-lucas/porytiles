@@ -887,10 +887,10 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
         else {
             layer_type = LayerType::normal;
         }
-        const auto maybe_porytiles_attr = tileset_.porytiles_component().get_attribute(i);
-        MetatileAttribute new_attr{};
-        if (maybe_porytiles_attr.has_value()) {
-            new_attr = maybe_porytiles_attr.value();
+        const auto maybe_porytiles_attribute = tileset_.porytiles_component().get_attribute(i);
+        MetatileAttribute new_attribute{};
+        if (maybe_porytiles_attribute.has_value()) {
+            new_attribute = maybe_porytiles_attribute.value();
         }
         else {
             // A metatile with no stored attribute (e.g. a CSV row omitted as all-default) materializes from the
@@ -898,12 +898,12 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
             // under a schema with nonzero defaults: the omitted row reloads as an absent attribute here and comes
             // back as exactly the defaults it was omitted for.
             for (const Field &field : schema_.fields()) {
-                new_attr.field(field.name(), field.default_value());
+                new_attribute.field(field.name(), field.default_value());
             }
         }
         // An explicit override wins uniformly, including triple mode: the user owns those rows.
-        new_attr.layer_type(new_attr.explicit_layer_type().value_or(layer_type));
-        new_porymap_component_->push_back_attribute(new_attr);
+        new_attribute.layer_type(new_attribute.explicit_layer_type().value_or(layer_type));
+        new_porymap_component_->push_back_attribute(new_attribute);
     }
 
     // Export tiles in original form
@@ -1990,9 +1990,9 @@ std::vector<std::optional<LayerType>> CompilerTask::gather_explicit_layer_types(
     std::vector<std::optional<LayerType>> explicit_layer_types;
     explicit_layer_types.reserve(porytiles_metatiles_.size());
     for (std::size_t i = 0; i < porytiles_metatiles_.size(); i++) {
-        const auto maybe_attr = tileset_.porytiles_component().get_attribute(i);
+        const auto maybe_attribute = tileset_.porytiles_component().get_attribute(i);
         explicit_layer_types.push_back(
-            maybe_attr.has_value() ? maybe_attr.value().explicit_layer_type() : std::nullopt);
+            maybe_attribute.has_value() ? maybe_attribute.value().explicit_layer_type() : std::nullopt);
     }
     return explicit_layer_types;
 }

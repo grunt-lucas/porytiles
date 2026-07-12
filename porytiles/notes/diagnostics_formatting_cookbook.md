@@ -272,7 +272,7 @@ std::ranges::copy(
 diag_->remark("anim-key-frame-mangle", remark_lines);
 ```
 
-> _From `TilesetAttrSchemaResolver::resolve` and `AnimKeyFrameMangler`._
+> _From `TilesetAttributeSchemaResolver::resolve` and `AnimKeyFrameMangler`._
 
 ### 4.2 Remark Notes
 

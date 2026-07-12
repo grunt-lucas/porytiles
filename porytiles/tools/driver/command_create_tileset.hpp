@@ -38,11 +38,11 @@ class CreateTilesetCommand final : public Command {
         // Setup creator. The creator seeds its sample art with a behavior constant name, so it needs the
         // behavior field's provider. A schema without a provider-backed behavior field cannot support creation, so fail
         // fast here rather than letting the creator resolve names against nothing.
-        const auto behavior_provider_it = services.provider_map.find(attr::field_behavior);
+        const auto behavior_provider_it = services.provider_map.find(attribute::field_behavior);
         if (behavior_provider_it == services.provider_map.end()) {
             const auto no_behavior_err = ChainableResult<void>{FormattableError{
                 "Cannot create a tileset: the resolved attribute schema has no provider-backed '{}' field.",
-                FormatParam{std::string{attr::field_behavior}, Style::bold}}};
+                FormatParam{std::string{attribute::field_behavior}, Style::bold}}};
             env.diag->fatal(no_behavior_err);
             throw CLI::RuntimeError{1};
         }

@@ -176,8 +176,8 @@ ProjectTilesetArtifactReader::read_metatile_attributes_bin(Tileset &dest, const 
         parse_metatile_attributes(path, schema_entry->resolved.schema),
         void,
         "Failed to read metatile_attributes.bin.");
-    for (auto &attr : attributes) {
-        dest.porymap_component().push_back_attribute(std::move(attr));
+    for (auto &attribute : attributes) {
+        dest.porymap_component().push_back_attribute(std::move(attribute));
     }
     return {};
 }

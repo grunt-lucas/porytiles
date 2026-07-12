@@ -14,7 +14,7 @@
 namespace porytiles {
 namespace {
 
-class YamlFileProviderMetatileAttrTest : public ::testing::Test {
+class YamlFileProviderMetatileAttributeTest : public ::testing::Test {
   protected:
     std::filesystem::path project_root_;
     PlainTextFormatter formatter_;
@@ -42,11 +42,11 @@ class YamlFileProviderMetatileAttrTest : public ::testing::Test {
     }
 };
 
-TEST_F(YamlFileProviderMetatileAttrTest, FieldsListRoundTripWithHexMasksAndBothFormatSpellings)
+TEST_F(YamlFileProviderMetatileAttributeTest, FieldsListRoundTripWithHexMasksAndBothFormatSpellings)
 {
     write_config(R"(
 fieldmap:
-  metatile_attr_fields:
+  metatile_attribute_fields:
     - name: behavior
       mask: 0x00FF
       frlg_mask: 0x1FF
@@ -66,7 +66,7 @@ fieldmap:
 )");
 
     YamlFileProvider provider{nullptr, project_root_};
-    const auto result = provider.metatile_attr_fields(ConfigScopeType::tileset, "test");
+    const auto result = provider.metatile_attribute_fields(ConfigScopeType::tileset, "test");
     ASSERT_EQ(result.state, ValidationState::valid);
     ASSERT_TRUE(result.value.has_value());
     const auto &specs = result.value.value();
@@ -91,11 +91,11 @@ fieldmap:
     EXPECT_EQ(specs[1].provider->format, HeaderFormat::enums_only);
 }
 
-TEST_F(YamlFileProviderMetatileAttrTest, OverridesRoundTripIncludingProviderNull)
+TEST_F(YamlFileProviderMetatileAttributeTest, OverridesRoundTripIncludingProviderNull)
 {
     write_config(R"(
 fieldmap:
-  metatile_attr_field_overrides:
+  metatile_attribute_field_overrides:
     behavior:
       mask: 0x01FF
     terrain:
@@ -108,7 +108,7 @@ fieldmap:
 )");
 
     YamlFileProvider provider{nullptr, project_root_};
-    const auto result = provider.metatile_attr_field_overrides(ConfigScopeType::tileset, "test");
+    const auto result = provider.metatile_attribute_field_overrides(ConfigScopeType::tileset, "test");
     ASSERT_EQ(result.state, ValidationState::valid);
     ASSERT_TRUE(result.value.has_value());
     const auto &overrides = result.value.value();
@@ -129,37 +129,37 @@ fieldmap:
     EXPECT_TRUE(overrides.at("layer").provider->skipped->contains("X"));
 }
 
-TEST_F(YamlFileProviderMetatileAttrTest, MalformedMaskIsInvalidWithMessage)
+TEST_F(YamlFileProviderMetatileAttributeTest, MalformedMaskIsInvalidWithMessage)
 {
     write_config(R"(
 fieldmap:
-  metatile_attr_fields:
+  metatile_attribute_fields:
     - name: behavior
       mask: not_a_number
 )");
 
     YamlFileProvider provider{nullptr, project_root_};
-    const auto result = provider.metatile_attr_fields(ConfigScopeType::tileset, "test");
+    const auto result = provider.metatile_attribute_fields(ConfigScopeType::tileset, "test");
     EXPECT_EQ(result.state, ValidationState::invalid);
     EXPECT_FALSE(result.error_message.empty());
 }
 
-TEST_F(YamlFileProviderMetatileAttrTest, UnknownFieldKeyIsInvalid)
+TEST_F(YamlFileProviderMetatileAttributeTest, UnknownFieldKeyIsInvalid)
 {
     write_config(R"(
 fieldmap:
-  metatile_attr_fields:
+  metatile_attribute_fields:
     - name: behavior
       msak: 0x00FF
 )");
 
     YamlFileProvider provider{nullptr, project_root_};
-    const auto result = provider.metatile_attr_fields(ConfigScopeType::tileset, "test");
+    const auto result = provider.metatile_attribute_fields(ConfigScopeType::tileset, "test");
     EXPECT_EQ(result.state, ValidationState::invalid);
     EXPECT_NE(result.error_message.find("msak"), std::string::npos);
 }
 
-TEST_F(YamlFileProviderMetatileAttrTest, WriteLayerTypeColumnBoolParses)
+TEST_F(YamlFileProviderMetatileAttributeTest, WriteLayerTypeColumnBoolParses)
 {
     write_config(R"(
 fieldmap:
@@ -173,7 +173,7 @@ fieldmap:
     EXPECT_TRUE(result.value.value());
 }
 
-TEST_F(YamlFileProviderMetatileAttrTest, UseFrlgAlternateMasksEnumSpellingsParse)
+TEST_F(YamlFileProviderMetatileAttributeTest, UseFrlgAlternateMasksEnumSpellingsParse)
 {
     write_config(R"(
 fieldmap:
@@ -187,7 +187,7 @@ fieldmap:
     EXPECT_EQ(result.value.value(), FrlgAlternateMaskMode::always);
 }
 
-TEST_F(YamlFileProviderMetatileAttrTest, UseFrlgAlternateMasksBoolTrueMapsToAlways)
+TEST_F(YamlFileProviderMetatileAttributeTest, UseFrlgAlternateMasksBoolTrueMapsToAlways)
 {
     write_config(R"(
 fieldmap:
@@ -200,7 +200,7 @@ fieldmap:
     EXPECT_EQ(result.value.value(), FrlgAlternateMaskMode::always);
 }
 
-TEST_F(YamlFileProviderMetatileAttrTest, UseFrlgAlternateMasksBoolFalseMapsToNever)
+TEST_F(YamlFileProviderMetatileAttributeTest, UseFrlgAlternateMasksBoolFalseMapsToNever)
 {
     write_config(R"(
 fieldmap:
@@ -213,7 +213,7 @@ fieldmap:
     EXPECT_EQ(result.value.value(), FrlgAlternateMaskMode::never);
 }
 
-TEST_F(YamlFileProviderMetatileAttrTest, UseFrlgAlternateMasksGarbageIsInvalid)
+TEST_F(YamlFileProviderMetatileAttributeTest, UseFrlgAlternateMasksGarbageIsInvalid)
 {
     write_config(R"(
 fieldmap:
@@ -225,7 +225,7 @@ fieldmap:
     EXPECT_EQ(result.state, ValidationState::invalid);
 }
 
-TEST_F(YamlFileProviderMetatileAttrTest, BothNewKeysPassUnknownKeyValidation)
+TEST_F(YamlFileProviderMetatileAttributeTest, BothNewKeysPassUnknownKeyValidation)
 {
     write_config(R"(
 fieldmap:
@@ -238,11 +238,11 @@ fieldmap:
     EXPECT_FALSE(provider.preload_and_validate(ConfigScopeType::tileset, "test"));
 }
 
-TEST_F(YamlFileProviderMetatileAttrTest, RemovedBaseGameKeysFailUnknownKeyValidation)
+TEST_F(YamlFileProviderMetatileAttributeTest, RemovedBaseGameKeysFailUnknownKeyValidation)
 {
     // base_game and metatile_attribute_size were removed in the base-game-decomposition work (issue #285): the layout
-    // is now inferred from the target decomp and configured through metatile_attr_fields. A config that still sets a
-    // stale key must fail validation so an upgrading user gets a clear error instead of a silently ignored setting.
+    // is now inferred from the target decomp and configured through metatile_attribute_fields. A config that still sets
+    // a stale key must fail validation so an upgrading user gets a clear error instead of a silently ignored setting.
     write_config(R"(
 fieldmap:
   base_game: pokeemerald

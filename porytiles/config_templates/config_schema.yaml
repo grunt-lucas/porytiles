@@ -556,7 +556,6 @@ config_values:
   - canonical_name: Palette Hints
     symbol: pal_hints
     yaml_path: tileset.palettes.packing.hints
-    cli_option: pal-hints
     yaml_only: true  # Too complex for non-YAML providers (std::vector<PaletteHint>)
     layer: domain
     type: std::vector<PaletteHint>
@@ -580,7 +579,6 @@ config_values:
   - canonical_name: Packing Strategy Params
     symbol: packing_strategy_params
     yaml_path: tileset.palettes.packing.strategy_params
-    cli_option: packing-strategy-params
     yaml_only: true
     yaml_is_map: true
     layer: domain
@@ -677,7 +675,6 @@ config_values:
   - canonical_name: Per-Animation Overrides
     symbol: per_anim_overrides
     yaml_path: tileset.animations.per_animation_overrides
-    cli_option: per-anim-overrides
     yaml_only: true
     yaml_is_map: true
     layer: domain
@@ -841,27 +838,25 @@ config_values:
     cross_field_validators: [ ]
 
   - canonical_name: Metatile Attribute Fields
-    symbol: metatile_attr_fields
-    yaml_path: fieldmap.metatile_attr_fields
-    cli_option: metatile-attr-fields
-    yaml_only: true  # Too complex for non-YAML providers (MetatileAttrFieldSpecs)
+    symbol: metatile_attribute_fields
+    yaml_path: fieldmap.metatile_attribute_fields
+    yaml_only: true  # Too complex for non-YAML providers (MetatileAttributeFieldSpecs)
     layer: infra
-    type: MetatileAttrFieldSpecs
-    parser: parse_metatile_attr_fields
-    default_value: "MetatileAttrFieldSpecs{}"
+    type: MetatileAttributeFieldSpecs
+    parser: parse_metatile_attribute_fields
+    default_value: "MetatileAttributeFieldSpecs{}"
     validators: [ ]
     cross_field_validators: [ ]
 
   - canonical_name: Metatile Attribute Field Overrides
-    symbol: metatile_attr_field_overrides
-    yaml_path: fieldmap.metatile_attr_field_overrides
-    cli_option: metatile-attr-field-overrides
+    symbol: metatile_attribute_field_overrides
+    yaml_path: fieldmap.metatile_attribute_field_overrides
     yaml_only: true
     yaml_is_map: true
     layer: infra
-    type: MetatileAttrFieldOverrides
-    parser: parse_metatile_attr_field_overrides
-    default_value: "MetatileAttrFieldOverrides{}"
+    type: MetatileAttributeFieldOverrides
+    parser: parse_metatile_attribute_field_overrides
+    default_value: "MetatileAttributeFieldOverrides{}"
     validators: [ ]
     cross_field_validators: [ ]
 

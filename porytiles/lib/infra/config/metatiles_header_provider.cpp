@@ -30,7 +30,7 @@ const std::filesystem::path metatiles_rel_path = std::filesystem::path{"src"} / 
 /// Reading the struct field type would require parsing the fields of a C struct type definition, which the C parser
 /// facade does not currently do.
 [[nodiscard]] LayerValue<std::size_t>
-detect_attr_size(const std::filesystem::path &metatiles_path, const TextFormatter *format)
+detect_attribute_size(const std::filesystem::path &metatiles_path, const TextFormatter *format)
 {
     if (!std::filesystem::exists(metatiles_path)) {
         return LayerValue<std::size_t>::not_provided();
@@ -78,8 +78,8 @@ detect_attr_size(const std::filesystem::path &metatiles_path, const TextFormatte
             source_info);
     }
 
-    const std::size_t attr_size = found_u32 ? 4 : (found_u16 ? 2 : 1);
-    return LayerValue<std::size_t>::valid(attr_size, "MetatilesHeaderProvider", source_info);
+    const std::size_t attribute_size = found_u32 ? 4 : (found_u16 ? 2 : 1);
+    return LayerValue<std::size_t>::valid(attribute_size, "MetatilesHeaderProvider", source_info);
 }
 
 } // namespace
@@ -89,7 +89,7 @@ namespace porytiles {
 LayerValue<std::size_t> MetatilesHeaderProvider::detect() const
 {
     if (!cached_result_.has_value()) {
-        cached_result_ = detect_attr_size(project_root_ / metatiles_rel_path, format_);
+        cached_result_ = detect_attribute_size(project_root_ / metatiles_rel_path, format_);
     }
     return cached_result_.value();
 }

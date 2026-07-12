@@ -22,8 +22,8 @@ class MockInfraConfig : public InfraConfig {
     std::string tileset_paths_primary_bin = "data/tilesets/primary";
     std::string tileset_paths_secondary_src = "data/tilesets/secondary";
     std::string tileset_paths_secondary_bin = "data/tilesets/secondary";
-    MetatileAttrFieldSpecs metatile_attr_fields = MetatileAttrFieldSpecs{};
-    MetatileAttrFieldOverrides metatile_attr_field_overrides = MetatileAttrFieldOverrides{};
+    MetatileAttributeFieldSpecs metatile_attribute_fields = MetatileAttributeFieldSpecs{};
+    MetatileAttributeFieldOverrides metatile_attribute_field_overrides = MetatileAttributeFieldOverrides{};
     bool write_layer_type_column = false;
     FrlgAlternateMaskMode use_frlg_alternate_masks = FrlgAlternateMaskMode::automatic;
     std::optional<std::uint32_t> metatile_layer_type_mask = std::nullopt;
@@ -59,19 +59,20 @@ class MockInfraConfig : public InfraConfig {
             tileset_paths_secondary_bin, "Tileset Paths Secondary Bin", "tileset_paths_secondary_bin", "mock", {}};
     }
 
-    [[nodiscard]] ChainableResult<ConfigValue<MetatileAttrFieldSpecs>>
-    metatile_attr_fields_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{metatile_attr_fields, "Metatile Attribute Fields", "metatile_attr_fields", "mock", {}};
-    }
-
-    [[nodiscard]] ChainableResult<ConfigValue<MetatileAttrFieldOverrides>>
-    metatile_attr_field_overrides_raw(ConfigScopeType, const std::string &) const override
+    [[nodiscard]] ChainableResult<ConfigValue<MetatileAttributeFieldSpecs>>
+    metatile_attribute_fields_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{
-            metatile_attr_field_overrides,
+            metatile_attribute_fields, "Metatile Attribute Fields", "metatile_attribute_fields", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<MetatileAttributeFieldOverrides>>
+    metatile_attribute_field_overrides_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{
+            metatile_attribute_field_overrides,
             "Metatile Attribute Field Overrides",
-            "metatile_attr_field_overrides",
+            "metatile_attribute_field_overrides",
             "mock",
             {}};
     }

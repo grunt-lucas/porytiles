@@ -156,12 +156,12 @@ class TilesetArtifactKeyProvider {
         }
 
         PT_TRY_ASSIGN_CHAIN_ERR(
-            attr_key,
+            attribute_key,
             key_for_metatile_attributes_bin(tileset_name),
             std::vector<ArtifactKey>,
             "Failed to get Porymap artifact keys.");
-        if (artifact_exists(attr_key)) {
-            result.push_back(attr_key);
+        if (artifact_exists(attribute_key)) {
+            result.push_back(attribute_key);
         }
 
         PT_TRY_ASSIGN_CHAIN_ERR(
@@ -260,12 +260,12 @@ class TilesetArtifactKeyProvider {
         }
 
         PT_TRY_ASSIGN_CHAIN_ERR(
-            attr_csv_key,
+            attribute_csv_key,
             key_for_attributes_csv(tileset_name),
             std::vector<ArtifactKey>,
             "Failed to get Porytiles artifact keys.");
-        if (artifact_exists(attr_csv_key)) {
-            result.push_back(attr_csv_key);
+        if (artifact_exists(attribute_csv_key)) {
+            result.push_back(attribute_csv_key);
         }
 
         for (std::size_t i = 0; i < pal::num_pals; i++) {

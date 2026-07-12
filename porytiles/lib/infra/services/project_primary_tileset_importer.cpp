@@ -41,8 +41,8 @@ ProjectPrimaryTilesetImporter::import_porymap_component_from_vanilla(const std::
         std::unique_ptr<PorymapTilesetComponent>,
         "Failed to parse metatile_attributes.bin.");
 
-    for (auto &attr : attributes) {
-        porymap_component->push_back_attribute(std::move(attr));
+    for (auto &attribute : attributes) {
+        porymap_component->push_back_attribute(std::move(attribute));
     }
 
     // Step 4: Load tiles.png (strip all extensions like .4bpp.smol, then add .png)

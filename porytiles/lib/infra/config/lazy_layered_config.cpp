@@ -182,12 +182,12 @@ void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, con
     dump_single_config_value(
         out, *format_, "Tileset Paths Secondary Bin", tileset_paths_secondary_bin_provenance_chain(type, scope));
     dump_single_config_value(
-        out, *format_, "Metatile Attribute Fields", metatile_attr_fields_provenance_chain(type, scope));
+        out, *format_, "Metatile Attribute Fields", metatile_attribute_fields_provenance_chain(type, scope));
     dump_single_config_value(
         out,
         *format_,
         "Metatile Attribute Field Overrides",
-        metatile_attr_field_overrides_provenance_chain(type, scope));
+        metatile_attribute_field_overrides_provenance_chain(type, scope));
     dump_single_config_value(
         out, *format_, "Write Layer Type Column", write_layer_type_column_provenance_chain(type, scope));
     dump_single_config_value(
@@ -742,29 +742,29 @@ LazyLayeredConfig::tileset_paths_secondary_bin_raw(ConfigScopeType type, const s
         });
 }
 
-ChainableResult<ConfigValue<MetatileAttrFieldSpecs>>
-LazyLayeredConfig::metatile_attr_fields_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<MetatileAttributeFieldSpecs>>
+LazyLayeredConfig::metatile_attribute_fields_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<MetatileAttrFieldSpecs>(
+    return resolve_config_value<MetatileAttributeFieldSpecs>(
         key, "Metatile Attribute Fields", [&type, &scope](const ConfigProvider &provider) {
-            return provider.metatile_attr_fields(type, scope);
+            return provider.metatile_attribute_fields(type, scope);
         });
 }
 
-ChainableResult<ConfigValue<MetatileAttrFieldOverrides>>
-LazyLayeredConfig::metatile_attr_field_overrides_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<MetatileAttributeFieldOverrides>>
+LazyLayeredConfig::metatile_attribute_field_overrides_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<MetatileAttrFieldOverrides>(
+    return resolve_config_value<MetatileAttributeFieldOverrides>(
         key, "Metatile Attribute Field Overrides", [&type, &scope](const ConfigProvider &provider) {
-            return provider.metatile_attr_field_overrides(type, scope);
+            return provider.metatile_attribute_field_overrides(type, scope);
         });
 }
 
@@ -1084,18 +1084,19 @@ LazyLayeredConfig::tileset_paths_secondary_bin_provenance_chain(ConfigScopeType 
         [&type, &scope](const ConfigProvider &provider) { return provider.tileset_paths_secondary_bin(type, scope); });
 }
 
-std::vector<ProvenanceChainLink<MetatileAttrFieldSpecs>>
-LazyLayeredConfig::metatile_attr_fields_provenance_chain(ConfigScopeType type, const std::string &scope) const
+std::vector<ProvenanceChainLink<MetatileAttributeFieldSpecs>>
+LazyLayeredConfig::metatile_attribute_fields_provenance_chain(ConfigScopeType type, const std::string &scope) const
 {
-    return collect_provenance_chain<MetatileAttrFieldSpecs>(
-        [&type, &scope](const ConfigProvider &provider) { return provider.metatile_attr_fields(type, scope); });
+    return collect_provenance_chain<MetatileAttributeFieldSpecs>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.metatile_attribute_fields(type, scope); });
 }
 
-std::vector<ProvenanceChainLink<MetatileAttrFieldOverrides>>
-LazyLayeredConfig::metatile_attr_field_overrides_provenance_chain(ConfigScopeType type, const std::string &scope) const
+std::vector<ProvenanceChainLink<MetatileAttributeFieldOverrides>>
+LazyLayeredConfig::metatile_attribute_field_overrides_provenance_chain(
+    ConfigScopeType type, const std::string &scope) const
 {
-    return collect_provenance_chain<MetatileAttrFieldOverrides>([&type, &scope](const ConfigProvider &provider) {
-        return provider.metatile_attr_field_overrides(type, scope);
+    return collect_provenance_chain<MetatileAttributeFieldOverrides>([&type, &scope](const ConfigProvider &provider) {
+        return provider.metatile_attribute_field_overrides(type, scope);
     });
 }
 

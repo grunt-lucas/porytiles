@@ -18,21 +18,21 @@ TEST(MetatileAttributeTest, DefaultConstructedHasNormalLayerTypeAndNoFields)
 TEST(MetatileAttributeTest, UnsetFieldReadsZero)
 {
     MetatileAttribute attribute{};
-    EXPECT_EQ(attribute.field(attr::field_behavior), 0u);
-    EXPECT_EQ(attribute.field(attr::field_terrain), 0u);
-    EXPECT_EQ(attribute.field(attr::field_attribute_7), 0u);
+    EXPECT_EQ(attribute.field(attribute::field_behavior), 0u);
+    EXPECT_EQ(attribute.field(attribute::field_terrain), 0u);
+    EXPECT_EQ(attribute.field(attribute::field_attribute_7), 0u);
 }
 
 TEST(MetatileAttributeTest, SetFieldInsertsThenOverwrites)
 {
     MetatileAttribute attribute{};
 
-    attribute.field(attr::field_behavior, 42);
-    EXPECT_EQ(attribute.field(attr::field_behavior), 42u);
+    attribute.field(attribute::field_behavior, 42);
+    EXPECT_EQ(attribute.field(attribute::field_behavior), 42u);
     EXPECT_EQ(attribute.fields().size(), 1u);
 
-    attribute.field(attr::field_behavior, 511);
-    EXPECT_EQ(attribute.field(attr::field_behavior), 511u);
+    attribute.field(attribute::field_behavior, 511);
+    EXPECT_EQ(attribute.field(attribute::field_behavior), 511u);
     EXPECT_EQ(attribute.fields().size(), 1u);
 }
 
@@ -88,9 +88,9 @@ TEST(MetatileAttributeTest, ExplicitLayerTypeSurvivesCopy)
 TEST(MetatileAttributeTest, FieldsIterateInDeterministicOrder)
 {
     MetatileAttribute attribute{};
-    attribute.field(attr::field_terrain, 1);
-    attribute.field(attr::field_behavior, 2);
-    attribute.field(attr::field_encounter_type, 3);
+    attribute.field(attribute::field_terrain, 1);
+    attribute.field(attribute::field_behavior, 2);
+    attribute.field(attribute::field_encounter_type, 3);
 
     // std::map with std::less<> keeps keys sorted, so iteration order is stable regardless of insertion order.
     std::vector<std::string> names;
@@ -99,6 +99,8 @@ TEST(MetatileAttributeTest, FieldsIterateInDeterministicOrder)
     }
 
     const std::vector<std::string> expected{
-        std::string{attr::field_behavior}, std::string{attr::field_encounter_type}, std::string{attr::field_terrain}};
+        std::string{attribute::field_behavior},
+        std::string{attribute::field_encounter_type},
+        std::string{attribute::field_terrain}};
     EXPECT_EQ(names, expected);
 }

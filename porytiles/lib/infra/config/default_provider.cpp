@@ -238,18 +238,18 @@ LayerValue<std::string> DefaultProvider::tileset_paths_secondary_bin(
     return LayerValue<std::string>::valid("data/tilesets/secondary", "Tileset Paths Secondary Bin", source_info);
 }
 
-LayerValue<MetatileAttrFieldSpecs> DefaultProvider::metatile_attr_fields(
+LayerValue<MetatileAttributeFieldSpecs> DefaultProvider::metatile_attribute_fields(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<MetatileAttrFieldSpecs>::valid(
-        MetatileAttrFieldSpecs{}, "Metatile Attribute Fields", source_info);
+    return LayerValue<MetatileAttributeFieldSpecs>::valid(
+        MetatileAttributeFieldSpecs{}, "Metatile Attribute Fields", source_info);
 }
 
-LayerValue<MetatileAttrFieldOverrides> DefaultProvider::metatile_attr_field_overrides(
+LayerValue<MetatileAttributeFieldOverrides> DefaultProvider::metatile_attribute_field_overrides(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<MetatileAttrFieldOverrides>::valid(
-        MetatileAttrFieldOverrides{}, "Metatile Attribute Field Overrides", source_info);
+    return LayerValue<MetatileAttributeFieldOverrides>::valid(
+        MetatileAttributeFieldOverrides{}, "Metatile Attribute Field Overrides", source_info);
 }
 
 LayerValue<bool> DefaultProvider::write_layer_type_column(

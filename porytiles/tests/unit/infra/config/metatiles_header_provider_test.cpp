@@ -131,7 +131,8 @@ TEST_F(MetatilesHeaderProviderTest, MissingFileReturnsNotProvided)
 TEST_F(MetatilesHeaderProviderTest, NoAttributeLinesReturnsNotProvided)
 {
     temp_dir_ = create_test_project(
-        "no_attrs", "const u16 gMetatiles_General[] = INCBIN_U16(\"data/tilesets/primary/general/metatiles.bin\");\n");
+        "no_attributes",
+        "const u16 gMetatiles_General[] = INCBIN_U16(\"data/tilesets/primary/general/metatiles.bin\");\n");
 
     MetatilesHeaderProvider provider{temp_dir_, formatter_.get()};
     auto result = provider.detect();

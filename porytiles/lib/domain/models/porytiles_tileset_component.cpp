@@ -14,7 +14,7 @@ namespace porytiles {
 void PorytilesTilesetComponent::insert_attribute(std::size_t metatile_id, MetatileAttribute attribute)
 {
     if (metatile_attributes_.contains(metatile_id)) {
-        panic("id " + std::to_string(metatile_id) + " already exists in attr map");
+        panic("id " + std::to_string(metatile_id) + " already exists in attribute map");
     }
     metatile_attributes_.insert({metatile_id, std::move(attribute)});
 }

@@ -3,7 +3,7 @@
 #include <memory>
 #include <string>
 
-#include "porytiles/domain/config/metatile_attr_field_spec.hpp"
+#include "porytiles/domain/config/metatile_attribute_field_spec.hpp"
 #include "porytiles/infra/config/frlg_alternate_mask_mode.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
@@ -67,18 +67,18 @@ class InfraConfig {
     }
 
     // Public method with cross-field validation only (Tier 3)
-    [[nodiscard]] ChainableResult<ConfigValue<MetatileAttrFieldSpecs>>
-    metatile_attr_fields(ConfigScopeType type, const std::string &scope) const
+    [[nodiscard]] ChainableResult<ConfigValue<MetatileAttributeFieldSpecs>>
+    metatile_attribute_fields(ConfigScopeType type, const std::string &scope) const
     {
-        auto validated_val = metatile_attr_fields_validated(type, scope);
+        auto validated_val = metatile_attribute_fields_validated(type, scope);
         return validated_val;
     }
 
     // Public method with cross-field validation only (Tier 3)
-    [[nodiscard]] ChainableResult<ConfigValue<MetatileAttrFieldOverrides>>
-    metatile_attr_field_overrides(ConfigScopeType type, const std::string &scope) const
+    [[nodiscard]] ChainableResult<ConfigValue<MetatileAttributeFieldOverrides>>
+    metatile_attribute_field_overrides(ConfigScopeType type, const std::string &scope) const
     {
-        auto validated_val = metatile_attr_field_overrides_validated(type, scope);
+        auto validated_val = metatile_attribute_field_overrides_validated(type, scope);
         return validated_val;
     }
 
@@ -172,28 +172,28 @@ class InfraConfig {
     tileset_paths_secondary_bin_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
-    [[nodiscard]] virtual ChainableResult<ConfigValue<MetatileAttrFieldSpecs>>
-    metatile_attr_fields_validated(ConfigScopeType type, const std::string &scope) const
+    [[nodiscard]] virtual ChainableResult<ConfigValue<MetatileAttributeFieldSpecs>>
+    metatile_attribute_fields_validated(ConfigScopeType type, const std::string &scope) const
     {
-        auto raw_val = metatile_attr_fields_raw(type, scope);
+        auto raw_val = metatile_attribute_fields_raw(type, scope);
         return raw_val;
     }
 
     // Protected virtual method that fetches raw value from provider (Tier 1)
-    [[nodiscard]] virtual ChainableResult<ConfigValue<MetatileAttrFieldSpecs>>
-    metatile_attr_fields_raw(ConfigScopeType type, const std::string &scope) const = 0;
+    [[nodiscard]] virtual ChainableResult<ConfigValue<MetatileAttributeFieldSpecs>>
+    metatile_attribute_fields_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
-    [[nodiscard]] virtual ChainableResult<ConfigValue<MetatileAttrFieldOverrides>>
-    metatile_attr_field_overrides_validated(ConfigScopeType type, const std::string &scope) const
+    [[nodiscard]] virtual ChainableResult<ConfigValue<MetatileAttributeFieldOverrides>>
+    metatile_attribute_field_overrides_validated(ConfigScopeType type, const std::string &scope) const
     {
-        auto raw_val = metatile_attr_field_overrides_raw(type, scope);
+        auto raw_val = metatile_attribute_field_overrides_raw(type, scope);
         return raw_val;
     }
 
     // Protected virtual method that fetches raw value from provider (Tier 1)
-    [[nodiscard]] virtual ChainableResult<ConfigValue<MetatileAttrFieldOverrides>>
-    metatile_attr_field_overrides_raw(ConfigScopeType type, const std::string &scope) const = 0;
+    [[nodiscard]] virtual ChainableResult<ConfigValue<MetatileAttributeFieldOverrides>>
+    metatile_attribute_field_overrides_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>

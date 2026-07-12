@@ -1,4 +1,4 @@
-#include "porytiles/infra/config/metatile_attr_inference.hpp"
+#include "porytiles/infra/config/metatile_attribute_inference.hpp"
 
 #include <algorithm>
 #include <bit>
@@ -41,7 +41,7 @@ constexpr const char *fieldmap_header = "include/global.fieldmap.h";
     return !text.empty() && std::all_of(text.begin(), text.end(), [](unsigned char c) { return std::isdigit(c) != 0; });
 }
 
-[[nodiscard]] bool any_enum_member_has_prefix(const MetatileAttrScan &scan, const std::string &prefix)
+[[nodiscard]] bool any_enum_member_has_prefix(const MetatileAttributeScan &scan, const std::string &prefix)
 {
     return std::any_of(scan.enum_members.begin(), scan.enum_members.end(), [&](const InferenceEnumMember &member) {
         return member.name.starts_with(prefix);
@@ -64,10 +64,10 @@ struct FieldMasks {
 
 } // namespace
 
-MetatileAttrInferenceResult
-infer_metatile_attr_fields(const MetatileAttrScan &scan, gsl::not_null<const TextFormatter *> format)
+MetatileAttributeInferenceResult
+infer_metatile_attribute_fields(const MetatileAttributeScan &scan, gsl::not_null<const TextFormatter *> format)
 {
-    MetatileAttrInferenceResult result;
+    MetatileAttributeInferenceResult result;
 
     // --- Phase A: gather suffixes and masks ---
 
@@ -79,11 +79,11 @@ infer_metatile_attr_fields(const MetatileAttrScan &scan, gsl::not_null<const Tex
         if (!body.ends_with(mask_define_suffix) && !body.ends_with(frlg_mask_define_suffix)) {
             continue;
         }
-        result.status = AttrInferenceStatus::invalid;
+        result.status = AttributeInferenceStatus::invalid;
         result.error_message = format->format(
             "Metatile attribute mask define '{}' has conflicting values in a conditional Porytiles could not "
             "evaluate. Porytiles cannot infer a safe attribute layout from that definition. Set the mask explicitly "
-            "with metatile_attr_field_overrides or declare metatile_attr_fields in your Porytiles config.",
+            "with metatile_attribute_field_overrides or declare metatile_attribute_fields in your Porytiles config.",
             FormatParam{name, Style::bold});
         return result;
     }
@@ -166,7 +166,7 @@ infer_metatile_attr_fields(const MetatileAttrScan &scan, gsl::not_null<const Tex
 
     if (ordered_suffixes.empty()) {
         // Nothing attribute-related was found anywhere; defer to other providers.
-        result.status = AttrInferenceStatus::not_provided;
+        result.status = AttributeInferenceStatus::not_provided;
         return result;
     }
 
@@ -210,7 +210,7 @@ infer_metatile_attr_fields(const MetatileAttrScan &scan, gsl::not_null<const Tex
     // --- Phase B and C: name, attach providers, and fill or reject masks ---
 
     // The stock two-byte layout exception applies when the whole discovered field set is exactly behavior + layer.
-    const bool behavior_only_two_byte = scan.detected_attr_size == 2 && ordered_suffixes.size() == 2 &&
+    const bool behavior_only_two_byte = scan.detected_attribute_size == 2 && ordered_suffixes.size() == 2 &&
                                         seen_suffixes.contains("BEHAVIOR") && seen_suffixes.contains("LAYER_TYPE");
 
     for (auto &fm : field_masks) {
@@ -274,13 +274,14 @@ infer_metatile_attr_fields(const MetatileAttrScan &scan, gsl::not_null<const Tex
                 fm.primary = 0x00FFU; // stock two-byte layout: behavior occupies the low byte
             }
             else {
-                result.status = AttrInferenceStatus::invalid;
+                result.status = AttributeInferenceStatus::invalid;
                 result.error_message = format->format(
                     "could not determine a bit mask for metatile attribute field '{}'. The base game declares this "
                     "field but exposes no mask for it. Provide one of: restore the sMetatileAttrMasks[] table under "
                     "its "
                     "exact name in src/fieldmap.c; add a METATILE_ATTR_{}_MASK #define in {}; or set the mask "
-                    "explicitly via metatile_attr_field_overrides (or a full metatile_attr_fields list) in your "
+                    "explicitly via metatile_attribute_field_overrides (or a full metatile_attribute_fields list) in "
+                    "your "
                     "Porytiles config.",
                     FormatParam{field_name, Style::bold},
                     FormatParam{suffix},
@@ -306,7 +307,7 @@ infer_metatile_attr_fields(const MetatileAttrScan &scan, gsl::not_null<const Tex
             }
         }
 
-        MetatileAttrFieldSpec spec;
+        MetatileAttributeFieldSpec spec;
         spec.name = std::move(field_name);
         spec.mask = fm.primary;
         spec.frlg_mask = fm.frlg;
@@ -316,11 +317,11 @@ infer_metatile_attr_fields(const MetatileAttrScan &scan, gsl::not_null<const Tex
 
     if (result.fields.empty()) {
         // Every discovered suffix was structural (e.g. only LAYER_TYPE); nothing usable to provide.
-        result.status = AttrInferenceStatus::not_provided;
+        result.status = AttributeInferenceStatus::not_provided;
         return result;
     }
 
-    result.status = AttrInferenceStatus::valid;
+    result.status = AttributeInferenceStatus::valid;
     return result;
 }
 

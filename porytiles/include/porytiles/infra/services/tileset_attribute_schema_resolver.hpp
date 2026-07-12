@@ -4,7 +4,7 @@
 
 #include "gsl/pointers"
 
-#include "porytiles/domain/services/metatile_attr_schema_loader.hpp"
+#include "porytiles/domain/services/metatile_attribute_schema_loader.hpp"
 #include "porytiles/infra/config/lazy_layered_config.hpp"
 #include "porytiles/infra/config/metatiles_header_provider.hpp"
 #include "porytiles/infra/services/project_layout_metadata_provider.hpp"
@@ -17,9 +17,9 @@ namespace porytiles {
 /// @brief Resolves the metatile attribute schema for a single tileset, choosing the primary or FRLG layout.
 ///
 /// @details
-/// This is the infra-layer adapter that gathers the inputs to the pure domain resolve_tileset_attr_schema: it fetches
-/// the field specs, overrides, and the FRLG mask mode from config at tileset scope, detects the attribute byte width
-/// from the project's metatiles.h, decides which layout applies, and reports its reasoning through the user
+/// This is the infra-layer adapter that gathers the inputs to the pure domain resolve_tileset_attribute_schema: it
+/// fetches the field specs, overrides, and the FRLG mask mode from config at tileset scope, detects the attribute byte
+/// width from the project's metatiles.h, decides which layout applies, and reports its reasoning through the user
 /// diagnostics.
 ///
 /// Layout selection follows use_frlg_alternate_masks: @c always and @c never force the choice, while @c automatic
@@ -31,9 +31,9 @@ namespace porytiles {
 /// The attribute byte width comes from the injected MetatilesHeaderProvider: a project with no detectable width
 /// defaults to 2 bytes, mixed u16/u32 declarations are a hard error, and the resolved width may be widened past the
 /// detected value to cover the selected masks.
-class TilesetAttrSchemaResolver {
+class TilesetAttributeSchemaResolver {
   public:
-    TilesetAttrSchemaResolver(
+    TilesetAttributeSchemaResolver(
         gsl::not_null<const LazyLayeredConfig *> config,
         gsl::not_null<const ProjectLayoutMetadataProvider *> layout_metadata,
         gsl::not_null<const MetatilesHeaderProvider *> metatiles,
@@ -44,7 +44,7 @@ class TilesetAttrSchemaResolver {
     ///
     /// @param tileset_name The tileset label, used as both config scope and the layouts.json tileset reference.
     /// @return The resolved schema, or a hard error (mixed layout usage, invalid layout_version, or an invalid layout).
-    [[nodiscard]] ChainableResult<ResolvedTilesetAttrSchema> resolve(const std::string &tileset_name) const;
+    [[nodiscard]] ChainableResult<ResolvedTilesetAttributeSchema> resolve(const std::string &tileset_name) const;
 
   private:
     const LazyLayeredConfig *config_;

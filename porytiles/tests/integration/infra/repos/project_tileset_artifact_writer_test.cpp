@@ -220,10 +220,10 @@ Tileset create_sparse_two_metatile_tileset(const std::string &name)
     porytiles_component->top(Image<Rgba32>{32, 16});
 
     // Only metatile 0 has a stored attribute: a non-default behavior and an explicit "covered" layer type.
-    MetatileAttribute attr_0{};
-    attr_0.field(attr::field_behavior, 5);
-    attr_0.explicit_layer_type(LayerType::covered);
-    porytiles_component->insert_attribute(0, attr_0);
+    MetatileAttribute attribute_0{};
+    attribute_0.field(attribute::field_behavior, 5);
+    attribute_0.explicit_layer_type(LayerType::covered);
+    porytiles_component->insert_attribute(0, attribute_0);
 
     auto porymap_component = std::make_unique<PorymapTilesetComponent>();
     porymap_component->tiles_png(create_test_indexed_image());
@@ -242,10 +242,10 @@ Tileset create_two_metatile_tileset_with_inferred_layer_type(const std::string &
     porytiles_component->top(Image<Rgba32>{32, 16});
 
     // Non-default behavior so the row is meaningful, and a non-'normal' layer type set the inferred way (no explicit).
-    MetatileAttribute attr_0{};
-    attr_0.field(attr::field_behavior, 5);
-    attr_0.layer_type(LayerType::covered);
-    porytiles_component->insert_attribute(0, attr_0);
+    MetatileAttribute attribute_0{};
+    attribute_0.field(attribute::field_behavior, 5);
+    attribute_0.layer_type(LayerType::covered);
+    porytiles_component->insert_attribute(0, attribute_0);
 
     auto porymap_component = std::make_unique<PorymapTilesetComponent>();
     porymap_component->tiles_png(create_test_indexed_image());
@@ -562,7 +562,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, WriteMetatileAttributesBin)
     ASSERT_EQ(std::filesystem::file_size(expected_file), 16);
 }
 
-// A metatile_attr_field_overrides mask change must reach metatile_attributes.bin, not just the CSV: the same
+// A metatile_attribute_field_overrides mask change must reach metatile_attributes.bin, not just the CSV: the same
 // attribute written under two schemas differing only in the behavior mask produces different bytes, each matching
 // the schema's layout exactly.
 TEST_F(ProjectTilesetArtifactWriterTests, WriteMetatileAttributesBinFollowsSchemaMasks)
@@ -587,7 +587,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, WriteMetatileAttributesBinFollowsSchem
         auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
         auto porymap_component = std::make_unique<PorymapTilesetComponent>();
         MetatileAttribute attribute{};
-        attribute.field(attr::field_behavior, 5);
+        attribute.field(attribute::field_behavior, 5);
         porymap_component->push_back_attribute(attribute);
         return Tileset{"test_tileset", std::move(porytiles_component), std::move(porymap_component)};
     };
@@ -845,12 +845,12 @@ TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvMultiFieldSchemaRendersPr
     porytiles_component->top(Image<Rgba32>{32, 16});
 
     // Metatile 0 mixes provider-backed and raw non-defaults; metatile 1 is all-default and must be omitted.
-    MetatileAttribute attr_0{};
-    attr_0.field(attr::field_behavior, 2);
-    attr_0.field(attr::field_terrain, 1);
-    attr_0.field(attr::field_attribute_3, 5);
-    attr_0.field(attr::field_encounter_type, 1);
-    porytiles_component->insert_attribute(0, attr_0);
+    MetatileAttribute attribute_0{};
+    attribute_0.field(attribute::field_behavior, 2);
+    attribute_0.field(attribute::field_terrain, 1);
+    attribute_0.field(attribute::field_attribute_3, 5);
+    attribute_0.field(attribute::field_encounter_type, 1);
+    porytiles_component->insert_attribute(0, attribute_0);
     porytiles_component->insert_attribute(1, MetatileAttribute{});
 
     auto porymap_component = std::make_unique<PorymapTilesetComponent>();
@@ -905,15 +905,15 @@ TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvNonzeroDefaultRendersDefa
     porytiles_component->top(Image<Rgba32>{32, 16});
 
     // Metatile 0: behavior stored, 'pad' absent -> its cell renders the default 3.
-    MetatileAttribute attr_0{};
-    attr_0.field(attr::field_behavior, 2);
-    porytiles_component->insert_attribute(0, attr_0);
+    MetatileAttribute attribute_0{};
+    attribute_0.field(attribute::field_behavior, 2);
+    porytiles_component->insert_attribute(0, attribute_0);
 
     // Metatile 1: behavior absent (effective 0 = default) and 'pad' stored as its default 3 -> all-default, so the
     // row is omitted; the compiler rematerializes it from the schema defaults on the next compile.
-    MetatileAttribute attr_1{};
-    attr_1.field("pad", 3);
-    porytiles_component->insert_attribute(1, attr_1);
+    MetatileAttribute attribute_1{};
+    attribute_1.field("pad", 3);
+    porytiles_component->insert_attribute(1, attribute_1);
 
     auto porymap_component = std::make_unique<PorymapTilesetComponent>();
     porymap_component->tiles_png(create_test_indexed_image());

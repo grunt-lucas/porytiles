@@ -31,10 +31,10 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     }
 
     PT_TRY_ASSIGN_CHAIN_ERR(
-        attr_key, key_provider_->key_for_metatile_attributes_bin(tileset.name()), void, "Tileset save failed.");
-    if (auto result = writer_->write_metatile_attributes_bin(attr_key, tileset); !result.has_value()) {
+        attribute_key, key_provider_->key_for_metatile_attributes_bin(tileset.name()), void, "Tileset save failed.");
+    if (auto result = writer_->write_metatile_attributes_bin(attribute_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
-        auto failed = FormattableError{"Save failed for '{}'.", FormatParam{attr_key.key(), Style::bold}};
+        auto failed = FormattableError{"Save failed for '{}'.", FormatParam{attribute_key.key(), Style::bold}};
         return ChainableResult<void>{failed, result};
     }
 
@@ -110,10 +110,10 @@ ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
     }
 
     PT_TRY_ASSIGN_CHAIN_ERR(
-        attr_csv_key, key_provider_->key_for_attributes_csv(tileset.name()), void, "Tileset save failed.");
-    if (auto result = writer_->write_attributes_csv(attr_csv_key, tileset); !result.has_value()) {
+        attribute_csv_key, key_provider_->key_for_attributes_csv(tileset.name()), void, "Tileset save failed.");
+    if (auto result = writer_->write_attributes_csv(attribute_csv_key, tileset); !result.has_value()) {
         std::ignore = writer_->rollback();
-        auto failed = FormattableError{"Save failed for '{}'.", FormatParam{attr_csv_key.key(), Style::bold}};
+        auto failed = FormattableError{"Save failed for '{}'.", FormatParam{attribute_csv_key.key(), Style::bold}};
         return ChainableResult<void>{failed, result};
     }
 
@@ -226,18 +226,18 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
         FormatParam(metatiles_key.key(), Style::bold));
 
     PT_TRY_ASSIGN_CHAIN_ERR(
-        attr_key,
+        attribute_key,
         key_provider_->key_for_metatile_attributes_bin(tileset->name()),
         std::unique_ptr<Tileset>,
         diag_->formatter().format("Failed to load tileset '{}'.", FormatParam{tileset->name(), Style::bold}));
-    if (!key_provider_->artifact_exists(attr_key)) {
-        return FormattableError{missing_required_artifact_msg, FormatParam{attr_key.key(), Style::bold}};
+    if (!key_provider_->artifact_exists(attribute_key)) {
+        return FormattableError{missing_required_artifact_msg, FormatParam{attribute_key.key(), Style::bold}};
     }
     PT_TRY_CALL_CHAIN_ERR(
-        reader_->read_metatile_attributes_bin(*tileset, attr_key),
+        reader_->read_metatile_attributes_bin(*tileset, attribute_key),
         std::unique_ptr<Tileset>,
         "Failed to read artifact: '{}'.",
-        FormatParam(attr_key.key(), Style::bold));
+        FormatParam(attribute_key.key(), Style::bold));
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         tiles_png_key,
@@ -353,20 +353,22 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
     }
 
     PT_TRY_ASSIGN_CHAIN_ERR(
-        attr_csv_key,
+        attribute_csv_key,
         key_provider_->key_for_attributes_csv(tileset->name()),
         std::unique_ptr<Tileset>,
         diag_->formatter().format("Failed to load tileset '{}'.", FormatParam{tileset->name(), Style::bold}));
-    if (key_provider_->artifact_exists(attr_csv_key)) {
+    if (key_provider_->artifact_exists(attribute_csv_key)) {
         PT_TRY_CALL_CHAIN_ERR(
-            reader_->read_attributes_csv(*tileset, attr_csv_key),
+            reader_->read_attributes_csv(*tileset, attribute_csv_key),
             std::unique_ptr<Tileset>,
             "Failed to read artifact '{}'.",
-            FormatParam(attr_csv_key.key(), Style::bold));
+            FormatParam(attribute_csv_key.key(), Style::bold));
     }
     else {
         diag_->warning(
-            missing_optional_artifact_tag, missing_optional_artifact_msg, FormatParam{attr_csv_key.key(), Style::bold});
+            missing_optional_artifact_tag,
+            missing_optional_artifact_msg,
+            FormatParam{attribute_csv_key.key(), Style::bold});
         diag_->warning_note(missing_optional_artifact_tag, "All attributes will receive default or inferred values.");
     }
 

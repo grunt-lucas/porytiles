@@ -52,7 +52,7 @@ fieldmap:
   #   - prefix: the shared name prefix of the constants
   #   - skipped: constant names to ignore while scanning the header
   #   - format: defines-only, enums-only, or [default] either
-  metatile_attr_fields:
+  metatile_attribute_fields:
     - name: behavior
       mask: 0x00FF
       frlg_mask: 0x000001FF
@@ -72,12 +72,12 @@ fieldmap:
       default: 0
 
   # Adjust individual attribute fields without redeclaring the whole layout.
-  # Overrides merge onto the baseline fields (the metatile_attr_fields list above, or the
+  # Overrides merge onto the baseline fields (the metatile_attribute_fields list above, or the
   # inferred fields when that list is omitted). Keys are field names; members you set
   # (mask, frlg_mask, default, provider) replace the baseline value, and members you omit
   # fall through. Setting provider members adjusts just those members; "provider: null"
   # removes the provider entirely, turning the field's CSV column into raw integers.
-  metatile_attr_field_overrides:
+  metatile_attribute_field_overrides:
     # Enter terrain values as raw integers instead of TILE_TERRAIN_ names
     terrain:
       provider: null

@@ -231,21 +231,23 @@ class Schema {
     /// size, or a user-facing error is returned.
     ///
     /// @param fields The fields making up the layout, in the order they should be preserved
-    /// @param attr_bytes The attribute size in bytes the layout is validated against
+    /// @param attribute_bytes The attribute size in bytes the layout is validated against
     /// @param layer_type_mask An explicit layer_type mask (0 disables it), or nullopt to use the size-based default
-    /// @pre @p attr_bytes must be 1, 2, or 4.
+    /// @pre @p attribute_bytes must be 1, 2, or 4.
     /// @return A validated Schema, or an error describing the first layout rule violation
     [[nodiscard]] static ChainableResult<Schema> create(
-        std::vector<Field> fields, std::size_t attr_bytes, std::optional<std::uint32_t> layer_type_mask = std::nullopt);
+        std::vector<Field> fields,
+        std::size_t attribute_bytes,
+        std::optional<std::uint32_t> layer_type_mask = std::nullopt);
 
     [[nodiscard]] const std::vector<Field> &fields() const
     {
         return fields_;
     }
 
-    [[nodiscard]] std::size_t attr_bytes() const
+    [[nodiscard]] std::size_t attribute_bytes() const
     {
-        return attr_bytes_;
+        return attribute_bytes_;
     }
 
     /// @brief Returns the mask of the layer_type bits within the packed attribute word.
@@ -275,13 +277,13 @@ class Schema {
     }
 
   private:
-    Schema(std::vector<Field> fields, std::size_t attr_bytes, std::uint32_t layer_type_mask)
-        : fields_{std::move(fields)}, attr_bytes_{attr_bytes}, layer_type_mask_{layer_type_mask}
+    Schema(std::vector<Field> fields, std::size_t attribute_bytes, std::uint32_t layer_type_mask)
+        : fields_{std::move(fields)}, attribute_bytes_{attribute_bytes}, layer_type_mask_{layer_type_mask}
     {
     }
 
     std::vector<Field> fields_;
-    std::size_t attr_bytes_;
+    std::size_t attribute_bytes_;
     std::uint32_t layer_type_mask_;
 };
 

@@ -43,9 +43,9 @@ bool is_contiguous(std::uint32_t mask)
 /// no vanilla 1-byte layer-type position). Porymap defaults to the same masks, though it selects them by
 /// base game version rather than by width. This helper is the single named home for that default;
 /// Schema::create uses it only as the fallback when the caller passes std::nullopt.
-std::uint32_t structural_layer_type_mask(std::size_t attr_bytes)
+std::uint32_t structural_layer_type_mask(std::size_t attribute_bytes)
 {
-    switch (attr_bytes) {
+    switch (attribute_bytes) {
     case 4:
         return 0x60000000U;
     case 2:
@@ -68,15 +68,15 @@ EnumSpec ProviderSpec::to_enum_spec(std::string field_display_name, std::uint32_
 }
 
 ChainableResult<Schema>
-Schema::create(std::vector<Field> fields, std::size_t attr_bytes, std::optional<std::uint32_t> layer_type_mask)
+Schema::create(std::vector<Field> fields, std::size_t attribute_bytes, std::optional<std::uint32_t> layer_type_mask)
 {
     assert_or_panic(
-        attr_bytes == 1 || attr_bytes == 2 || attr_bytes == 4,
+        attribute_bytes == 1 || attribute_bytes == 2 || attribute_bytes == 4,
         "Schema::create requires a 1-byte, 2-byte, or 4-byte attribute size");
 
     // An explicit mask (including 0, which disables the layer type) wins; otherwise fall back to the size-based
     // default.
-    const std::uint32_t ltm = layer_type_mask.value_or(structural_layer_type_mask(attr_bytes));
+    const std::uint32_t ltm = layer_type_mask.value_or(structural_layer_type_mask(attribute_bytes));
 
     // A non-zero layer_type mask is itself part of the layout, so it must obey the same shape rules as a field. A
     // zero mask means the layer type is disabled, so these checks are skipped and it never overlaps anything.
@@ -86,11 +86,11 @@ Schema::create(std::vector<Field> fields, std::size_t attr_bytes, std::optional<
                 "The layer type mask '{}' must be a single contiguous run of bits.",
                 FormatParam{hex_string(ltm), Style::bold}};
         }
-        if (static_cast<std::size_t>(std::bit_width(ltm)) > attr_bytes * 8) {
+        if (static_cast<std::size_t>(std::bit_width(ltm)) > attribute_bytes * 8) {
             return FormattableError{
                 "The layer type mask '{}' extends beyond the '{}'-byte metatile attribute size.",
                 FormatParam{hex_string(ltm), Style::bold},
-                FormatParam{attr_bytes, Style::bold}};
+                FormatParam{attribute_bytes, Style::bold}};
         }
     }
 
@@ -118,12 +118,12 @@ Schema::create(std::vector<Field> fields, std::size_t attr_bytes, std::optional<
                 FormatParam{hex_string(mask), Style::bold}};
         }
 
-        if (static_cast<std::size_t>(std::bit_width(mask)) > attr_bytes * 8) {
+        if (static_cast<std::size_t>(std::bit_width(mask)) > attribute_bytes * 8) {
             return FormattableError{
                 "Field '{}' has mask '{}', which extends beyond the '{}'-byte metatile attribute size.",
                 FormatParam{field.name(), Style::bold},
                 FormatParam{hex_string(mask), Style::bold},
-                FormatParam{attr_bytes, Style::bold}};
+                FormatParam{attribute_bytes, Style::bold}};
         }
 
         if (ltm != 0 && (mask & ltm) != 0) {
@@ -132,7 +132,7 @@ Schema::create(std::vector<Field> fields, std::size_t attr_bytes, std::optional<
                 FormatParam{field.name(), Style::bold},
                 FormatParam{hex_string(mask), Style::bold},
                 FormatParam{hex_string(ltm), Style::bold},
-                FormatParam{attr_bytes, Style::bold}};
+                FormatParam{attribute_bytes, Style::bold}};
         }
 
         if (field.default_value() > field.max_value()) {
@@ -159,7 +159,7 @@ Schema::create(std::vector<Field> fields, std::size_t attr_bytes, std::optional<
         seen_names.insert(field.name());
     }
 
-    return Schema{std::move(fields), attr_bytes, ltm};
+    return Schema{std::move(fields), attribute_bytes, ltm};
 }
 
 } // namespace porytiles

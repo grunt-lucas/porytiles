@@ -11,22 +11,23 @@
 namespace porytiles {
 namespace {
 
-class MetatileAttrProviderTest : public ::testing::Test {
+class MetatileAttributeProviderTest : public ::testing::Test {
   protected:
     PlainTextFormatter formatter_;
     BufferedUserDiagnostics diagnostics_;
 
-    [[nodiscard]] const MetatileAttrFieldSpec *find(const MetatileAttrFieldSpecs &specs, const std::string &name)
+    [[nodiscard]] const MetatileAttributeFieldSpec *
+    find(const MetatileAttributeFieldSpecs &specs, const std::string &name)
     {
-        auto it =
-            std::find_if(specs.begin(), specs.end(), [&](const MetatileAttrFieldSpec &s) { return s.name == name; });
+        auto it = std::find_if(
+            specs.begin(), specs.end(), [&](const MetatileAttributeFieldSpec &s) { return s.name == name; });
         return it == specs.end() ? nullptr : &*it;
     }
 };
 
 // --- Testbed acceptance tests: run against the local decomp checkouts when they are present. ---
 
-TEST_F(MetatileAttrProviderTest, PokeemeraldAcceptance)
+TEST_F(MetatileAttributeProviderTest, PokeemeraldAcceptance)
 {
     const std::filesystem::path root = "./pokeemerald";
     if (!std::filesystem::exists(root)) {
@@ -34,7 +35,7 @@ TEST_F(MetatileAttrProviderTest, PokeemeraldAcceptance)
     }
 
     MetatileAttributeConfigProvider provider{root, &formatter_, &diagnostics_};
-    const auto result = provider.metatile_attr_fields(ConfigScopeType::tileset, "general");
+    const auto result = provider.metatile_attribute_fields(ConfigScopeType::tileset, "general");
     ASSERT_EQ(result.state, ValidationState::valid) << result.error_message;
     ASSERT_EQ(result.value->size(), 1U);
     const auto *behavior = find(result.value.value(), "behavior");
@@ -44,7 +45,7 @@ TEST_F(MetatileAttrProviderTest, PokeemeraldAcceptance)
     EXPECT_EQ(behavior->provider->prefix, "MB_");
 }
 
-TEST_F(MetatileAttrProviderTest, PokefireredAcceptance)
+TEST_F(MetatileAttributeProviderTest, PokefireredAcceptance)
 {
     const std::filesystem::path root = "./pokefirered";
     if (!std::filesystem::exists(root)) {
@@ -52,7 +53,7 @@ TEST_F(MetatileAttrProviderTest, PokefireredAcceptance)
     }
 
     MetatileAttributeConfigProvider provider{root, &formatter_, &diagnostics_};
-    const auto result = provider.metatile_attr_fields(ConfigScopeType::tileset, "general");
+    const auto result = provider.metatile_attribute_fields(ConfigScopeType::tileset, "general");
     ASSERT_EQ(result.state, ValidationState::valid) << result.error_message;
     const auto &specs = result.value.value();
     ASSERT_EQ(specs.size(), 7U);
@@ -72,7 +73,7 @@ TEST_F(MetatileAttrProviderTest, PokefireredAcceptance)
     EXPECT_EQ(find(specs, "encounter_type")->provider->prefix, "TILE_ENCOUNTER_");
 }
 
-TEST_F(MetatileAttrProviderTest, PokeemeraldExpansionAcceptance)
+TEST_F(MetatileAttributeProviderTest, PokeemeraldExpansionAcceptance)
 {
     const std::filesystem::path root = "./pokeemerald-expansion";
     if (!std::filesystem::exists(root)) {
@@ -80,7 +81,7 @@ TEST_F(MetatileAttrProviderTest, PokeemeraldExpansionAcceptance)
     }
 
     MetatileAttributeConfigProvider provider{root, &formatter_, &diagnostics_};
-    const auto result = provider.metatile_attr_fields(ConfigScopeType::tileset, "general");
+    const auto result = provider.metatile_attribute_fields(ConfigScopeType::tileset, "general");
     ASSERT_EQ(result.state, ValidationState::valid) << result.error_message;
     const auto &specs = result.value.value();
     ASSERT_EQ(specs.size(), 7U);
@@ -104,12 +105,12 @@ TEST_F(MetatileAttrProviderTest, PokeemeraldExpansionAcceptance)
 
 // --- Fixture acceptance tests: trimmed replicas checked in under resources/, always available. ---
 
-const std::filesystem::path fixture_base = "resources/tests/integration/infra/config/metatile_attr_inference";
+const std::filesystem::path fixture_base = "resources/tests/integration/infra/config/metatile_attribute_inference";
 
-TEST_F(MetatileAttrProviderTest, FixtureEmerald)
+TEST_F(MetatileAttributeProviderTest, FixtureEmerald)
 {
     MetatileAttributeConfigProvider provider{fixture_base / "emerald", &formatter_, &diagnostics_};
-    const auto result = provider.metatile_attr_fields(ConfigScopeType::tileset, "general");
+    const auto result = provider.metatile_attribute_fields(ConfigScopeType::tileset, "general");
     ASSERT_EQ(result.state, ValidationState::valid) << result.error_message;
     ASSERT_EQ(result.value->size(), 1U);
     EXPECT_EQ(find(result.value.value(), "behavior")->mask.value(), 0x00FFU);
@@ -128,10 +129,10 @@ TEST_F(MetatileAttrProviderTest, FixtureEmerald)
         ValidationState::not_provided);
 }
 
-TEST_F(MetatileAttrProviderTest, FixtureFirered)
+TEST_F(MetatileAttributeProviderTest, FixtureFirered)
 {
     MetatileAttributeConfigProvider provider{fixture_base / "firered", &formatter_, &diagnostics_};
-    const auto result = provider.metatile_attr_fields(ConfigScopeType::tileset, "general");
+    const auto result = provider.metatile_attribute_fields(ConfigScopeType::tileset, "general");
     ASSERT_EQ(result.state, ValidationState::valid) << result.error_message;
     const auto &specs = result.value.value();
     ASSERT_EQ(specs.size(), 7U);
@@ -146,10 +147,10 @@ TEST_F(MetatileAttrProviderTest, FixtureFirered)
     EXPECT_EQ(mask.value.value().value(), 0x60000000U);
 }
 
-TEST_F(MetatileAttrProviderTest, FixtureCustomLayerMask)
+TEST_F(MetatileAttributeProviderTest, FixtureCustomLayerMask)
 {
     MetatileAttributeConfigProvider provider{fixture_base / "custom_layer", &formatter_, &diagnostics_};
-    const auto result = provider.metatile_attr_fields(ConfigScopeType::tileset, "general");
+    const auto result = provider.metatile_attribute_fields(ConfigScopeType::tileset, "general");
     ASSERT_EQ(result.state, ValidationState::valid) << result.error_message;
 
     // The custom 0x0C00 layer mask must be sourced verbatim, not silently replaced by the 0xF000 convention.
@@ -159,10 +160,10 @@ TEST_F(MetatileAttrProviderTest, FixtureCustomLayerMask)
     EXPECT_EQ(mask.value.value().value(), 0x0C00U);
 }
 
-TEST_F(MetatileAttrProviderTest, FixtureOneByteHasNoLayerMask)
+TEST_F(MetatileAttributeProviderTest, FixtureOneByteHasNoLayerMask)
 {
     MetatileAttributeConfigProvider provider{fixture_base / "one_byte", &formatter_, &diagnostics_};
-    const auto result = provider.metatile_attr_fields(ConfigScopeType::tileset, "general");
+    const auto result = provider.metatile_attribute_fields(ConfigScopeType::tileset, "general");
     ASSERT_EQ(result.state, ValidationState::valid) << result.error_message;
     ASSERT_EQ(result.value->size(), 1U);
     EXPECT_EQ(find(result.value.value(), "behavior")->mask.value(), 0x0FU);
@@ -173,10 +174,10 @@ TEST_F(MetatileAttrProviderTest, FixtureOneByteHasNoLayerMask)
         provider.metatile_layer_type_mask(ConfigScopeType::tileset, "general").state, ValidationState::not_provided);
 }
 
-TEST_F(MetatileAttrProviderTest, FixtureExpansionIgnoresDecoyTable)
+TEST_F(MetatileAttributeProviderTest, FixtureExpansionIgnoresDecoyTable)
 {
     MetatileAttributeConfigProvider provider{fixture_base / "expansion", &formatter_, &diagnostics_};
-    const auto result = provider.metatile_attr_fields(ConfigScopeType::tileset, "general");
+    const auto result = provider.metatile_attribute_fields(ConfigScopeType::tileset, "general");
     ASSERT_EQ(result.state, ValidationState::valid) << result.error_message;
     const auto &specs = result.value.value();
     ASSERT_EQ(specs.size(), 7U);
@@ -188,40 +189,40 @@ TEST_F(MetatileAttrProviderTest, FixtureExpansionIgnoresDecoyTable)
     EXPECT_EQ(find(specs, "terrain")->frlg_mask.value(), 0x3E00U);
 }
 
-TEST_F(MetatileAttrProviderTest, MissingFieldmapHeaderIsNotProvided)
+TEST_F(MetatileAttributeProviderTest, MissingFieldmapHeaderIsNotProvided)
 {
     MetatileAttributeConfigProvider provider{fixture_base / "does_not_exist", &formatter_, &diagnostics_};
-    const auto result = provider.metatile_attr_fields(ConfigScopeType::tileset, "general");
+    const auto result = provider.metatile_attribute_fields(ConfigScopeType::tileset, "general");
     EXPECT_EQ(result.state, ValidationState::not_provided);
 }
 
-TEST_F(MetatileAttrProviderTest, WarningsRoutedToDiagnosticsAndComputedOnce)
+TEST_F(MetatileAttributeProviderTest, WarningsRoutedToDiagnosticsAndComputedOnce)
 {
     MetatileAttributeConfigProvider provider{fixture_base / "warns", &formatter_, &diagnostics_};
 
-    const auto first = provider.metatile_attr_fields(ConfigScopeType::tileset, "general");
+    const auto first = provider.metatile_attribute_fields(ConfigScopeType::tileset, "general");
     ASSERT_EQ(first.state, ValidationState::valid) << first.error_message;
     EXPECT_EQ(find(first.value.value(), "behavior")->mask.value(), 0x00FFU); // mask wins over the bad shift
     const std::size_t warnings_after_first = diagnostics_.warnings().size();
     EXPECT_GT(warnings_after_first, 0U);
 
     // A second query is served from cache, so no additional warnings are emitted.
-    const auto second = provider.metatile_attr_fields(ConfigScopeType::tileset, "general");
+    const auto second = provider.metatile_attribute_fields(ConfigScopeType::tileset, "general");
     ASSERT_EQ(second.state, ValidationState::valid);
     EXPECT_EQ(diagnostics_.warnings().size(), warnings_after_first);
 }
 
-TEST_F(MetatileAttrProviderTest, DifferentScopesComputeIndependently)
+TEST_F(MetatileAttributeProviderTest, DifferentScopesComputeIndependently)
 {
     MetatileAttributeConfigProvider provider{fixture_base / "warns", &formatter_, &diagnostics_};
 
     // The cache is keyed by type:scope, so a query under a second scope recomputes and re-emits the warnings.
-    const auto first = provider.metatile_attr_fields(ConfigScopeType::tileset, "general");
+    const auto first = provider.metatile_attribute_fields(ConfigScopeType::tileset, "general");
     ASSERT_EQ(first.state, ValidationState::valid) << first.error_message;
     const std::size_t warnings_after_first = diagnostics_.warnings().size();
     EXPECT_GT(warnings_after_first, 0U);
 
-    const auto second = provider.metatile_attr_fields(ConfigScopeType::tileset, "building");
+    const auto second = provider.metatile_attribute_fields(ConfigScopeType::tileset, "building");
     ASSERT_EQ(second.state, ValidationState::valid);
     EXPECT_EQ(diagnostics_.warnings().size(), warnings_after_first * 2);
 }

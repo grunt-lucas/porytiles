@@ -177,11 +177,11 @@ class YamlFileProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<std::string>
     tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<MetatileAttrFieldSpecs>
-    metatile_attr_fields(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<MetatileAttributeFieldSpecs>
+    metatile_attribute_fields(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<MetatileAttrFieldOverrides>
-    metatile_attr_field_overrides(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<MetatileAttributeFieldOverrides>
+    metatile_attribute_field_overrides(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<bool>
     write_layer_type_column(ConfigScopeType type, const std::string &scope) const override;

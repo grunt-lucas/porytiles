@@ -232,43 +232,43 @@ TEST_F(IncbinDeclarationAppenderTest_VanillaStock, GeneratesCorrectSnakeCasePath
         << "snake_case path conversion not working correctly";
 }
 
-TEST_F(IncbinDeclarationAppenderTest_VanillaStock, AppendsMetatilesDeclarationsWithU16AttrSize)
+TEST_F(IncbinDeclarationAppenderTest_VanillaStock, AppendsMetatilesDeclarationsWithU16AttributeSize)
 {
     auto result = appender_->append_metatiles_declarations("gTileset_General", "data/tilesets/primary", 2);
     ASSERT_TRUE(result.has_value()) << "append_metatiles_declarations failed";
 
     const std::string content = read_file_contents(metatiles_path());
 
-    // Verify u16 type and INCBIN_U16 macro for attr size 2
+    // Verify u16 type and INCBIN_U16 macro for attribute size 2
     EXPECT_NE(content.find("const u16 gMetatileAttributes_PorytilesManaged_General"), std::string::npos)
         << "const u16 attribute declaration not found";
-    EXPECT_NE(content.find("INCBIN_U16"), std::string::npos) << "INCBIN_U16 not found for attr size 2";
+    EXPECT_NE(content.find("INCBIN_U16"), std::string::npos) << "INCBIN_U16 not found for attribute size 2";
 }
 
-TEST_F(IncbinDeclarationAppenderTest_VanillaStock, AppendsMetatilesDeclarationsWithU32AttrSize)
+TEST_F(IncbinDeclarationAppenderTest_VanillaStock, AppendsMetatilesDeclarationsWithU32AttributeSize)
 {
     auto result = appender_->append_metatiles_declarations("gTileset_General", "data/tilesets/primary", 4);
     ASSERT_TRUE(result.has_value()) << "append_metatiles_declarations failed";
 
     const std::string content = read_file_contents(metatiles_path());
 
-    // Verify u32 type and INCBIN_U32 macro for attr size 4
+    // Verify u32 type and INCBIN_U32 macro for attribute size 4
     EXPECT_NE(content.find("const u32 gMetatileAttributes_PorytilesManaged_General"), std::string::npos)
-        << "const u32 attribute declaration not found for attr size 4";
-    EXPECT_NE(content.find("INCBIN_U32"), std::string::npos) << "INCBIN_U32 not found for attr size 4";
+        << "const u32 attribute declaration not found for attribute size 4";
+    EXPECT_NE(content.find("INCBIN_U32"), std::string::npos) << "INCBIN_U32 not found for attribute size 4";
 }
 
-TEST_F(IncbinDeclarationAppenderTest_VanillaStock, AppendsMetatilesDeclarationsWithU8AttrSize)
+TEST_F(IncbinDeclarationAppenderTest_VanillaStock, AppendsMetatilesDeclarationsWithU8AttributeSize)
 {
     auto result = appender_->append_metatiles_declarations("gTileset_General", "data/tilesets/primary", 1);
     ASSERT_TRUE(result.has_value()) << "append_metatiles_declarations failed";
 
     const std::string content = read_file_contents(metatiles_path());
 
-    // Verify u8 type and INCBIN_U8 macro for attr size 1 (Porymap 1-byte attribute parity).
+    // Verify u8 type and INCBIN_U8 macro for attribute size 1 (Porymap 1-byte attribute parity).
     EXPECT_NE(content.find("const u8 gMetatileAttributes_PorytilesManaged_General"), std::string::npos)
-        << "const u8 attribute declaration not found for attr size 1";
-    EXPECT_NE(content.find("INCBIN_U8"), std::string::npos) << "INCBIN_U8 not found for attr size 1";
+        << "const u8 attribute declaration not found for attribute size 1";
+    EXPECT_NE(content.find("INCBIN_U8"), std::string::npos) << "INCBIN_U8 not found for attribute size 1";
 }
 
 TEST_F(IncbinDeclarationAppenderTest_ExpansionFrlgStock, AppendsGraphicsDeclarationsAfterFrlgBlock)

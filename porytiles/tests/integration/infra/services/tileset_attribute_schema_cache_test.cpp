@@ -1,4 +1,4 @@
-#include "porytiles/infra/services/tileset_attr_schema_cache.hpp"
+#include "porytiles/infra/services/tileset_attribute_schema_cache.hpp"
 
 #include <filesystem>
 #include <fstream>
@@ -13,7 +13,7 @@
 #include "porytiles/infra/config/metatiles_header_provider.hpp"
 #include "porytiles/infra/config/yaml_file_provider.hpp"
 #include "porytiles/infra/services/project_layout_metadata_provider.hpp"
-#include "porytiles/infra/services/tileset_attr_schema_resolver.hpp"
+#include "porytiles/infra/services/tileset_attribute_schema_resolver.hpp"
 #include "porytiles/utilities/text/plain_text_formatter.hpp"
 #include "porytiles/xcut/diagnostics/buffered_user_diagnostics.hpp"
 
@@ -24,7 +24,7 @@ namespace {
 // adds terrain.
 constexpr auto kDivergentFieldsYaml = R"(
 fieldmap:
-  metatile_attr_fields:
+  metatile_attribute_fields:
     - name: behavior
       mask: 0x00FF
       frlg_mask: 0x01FF
@@ -32,7 +32,7 @@ fieldmap:
       frlg_mask: 0x0E00
 )";
 
-class TilesetAttrSchemaCacheTest : public ::testing::Test {
+class TilesetAttributeSchemaCacheTest : public ::testing::Test {
   protected:
     std::filesystem::path project_root_;
     PlainTextFormatter formatter_;
@@ -60,8 +60,8 @@ class TilesetAttrSchemaCacheTest : public ::testing::Test {
         LazyLayeredConfig config;
         ProjectLayoutMetadataProvider layout_metadata;
         MetatilesHeaderProvider metatiles_header;
-        TilesetAttrSchemaResolver resolver;
-        TilesetAttrSchemaCache cache;
+        TilesetAttributeSchemaResolver resolver;
+        TilesetAttributeSchemaCache cache;
     };
 
     void SetUp() override
@@ -94,7 +94,7 @@ class TilesetAttrSchemaCacheTest : public ::testing::Test {
         out << yaml;
     }
 
-    [[nodiscard]] std::string error_text(const ChainableResult<const TilesetAttrSchemaCache::Entry *> &result)
+    [[nodiscard]] std::string error_text(const ChainableResult<const TilesetAttributeSchemaCache::Entry *> &result)
     {
         std::string text;
         for (const auto &err : result.chain()) {
@@ -105,7 +105,7 @@ class TilesetAttrSchemaCacheTest : public ::testing::Test {
     }
 };
 
-TEST_F(TilesetAttrSchemaCacheTest, EntryResolvesOnceAndReturnsStablePointer)
+TEST_F(TilesetAttributeSchemaCacheTest, EntryResolvesOnceAndReturnsStablePointer)
 {
     write_config(kDivergentFieldsYaml);
     Harness harness{project_root_, &formatter_, &diag_};
@@ -124,7 +124,7 @@ TEST_F(TilesetAttrSchemaCacheTest, EntryResolvesOnceAndReturnsStablePointer)
 
 // The reason the cache exists: two tilesets in the same project can resolve different schemas, and each entry must
 // reflect its own tileset's resolution rather than whichever tileset was resolved first.
-TEST_F(TilesetAttrSchemaCacheTest, TilesetsResolveTheirOwnSchemas)
+TEST_F(TilesetAttributeSchemaCacheTest, TilesetsResolveTheirOwnSchemas)
 {
     write_config(kDivergentFieldsYaml);
     write_tileset_config("gTileset_Secondary", "fieldmap:\n  use_frlg_alternate_masks: always\n");
@@ -135,20 +135,20 @@ TEST_F(TilesetAttrSchemaCacheTest, TilesetsResolveTheirOwnSchemas)
     const auto secondary = harness.cache.entry("gTileset_Secondary");
     ASSERT_TRUE(secondary.has_value()) << error_text(secondary);
 
-    EXPECT_EQ(primary.value()->resolved.layout, AttrSchemaLayout::primary);
+    EXPECT_EQ(primary.value()->resolved.layout, AttributeSchemaLayout::primary);
     ASSERT_EQ(primary.value()->resolved.schema.fields().size(), 1U);
     EXPECT_EQ(primary.value()->resolved.schema.fields()[0].name(), "behavior");
 
-    EXPECT_EQ(secondary.value()->resolved.layout, AttrSchemaLayout::frlg);
+    EXPECT_EQ(secondary.value()->resolved.layout, AttributeSchemaLayout::frlg);
     ASSERT_EQ(secondary.value()->resolved.schema.fields().size(), 2U);
     EXPECT_EQ(secondary.value()->resolved.schema.fields()[1].name(), "terrain");
 }
 
-TEST_F(TilesetAttrSchemaCacheTest, EntryProvidersUpholdTheMembershipContract)
+TEST_F(TilesetAttributeSchemaCacheTest, EntryProvidersUpholdTheMembershipContract)
 {
     write_config(R"(
 fieldmap:
-  metatile_attr_fields:
+  metatile_attribute_fields:
     - name: behavior
       mask: 0x00FF
       provider:
@@ -168,12 +168,12 @@ fieldmap:
     EXPECT_FALSE(entry.value()->providers.contains("terrain"));
 }
 
-TEST_F(TilesetAttrSchemaCacheTest, ResolutionFailurePropagates)
+TEST_F(TilesetAttributeSchemaCacheTest, ResolutionFailurePropagates)
 {
     // A field with neither mask is a hard resolution error.
     write_config(R"(
 fieldmap:
-  metatile_attr_fields:
+  metatile_attribute_fields:
     - name: broken
 )");
     Harness harness{project_root_, &formatter_, &diag_};

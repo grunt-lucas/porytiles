@@ -9,7 +9,7 @@
 
 #include "gsl/pointers"
 
-#include "porytiles/domain/config/metatile_attr_field_spec.hpp"
+#include "porytiles/domain/config/metatile_attribute_field_spec.hpp"
 
 namespace porytiles {
 
@@ -44,23 +44,23 @@ struct InferenceArrayEntry {
 /// @brief The raw facts a project exposes about its metatile attribute layout.
 ///
 /// @details
-/// This is the pure, I/O-free input to infer_metatile_attr_fields. The provider gathers these facts from the project's
-/// headers and source, then hands them to inference. Inference never reads files; every decision follows from this
-/// struct.
-struct MetatileAttrScan {
+/// This is the pure, I/O-free input to infer_metatile_attribute_fields. The provider gathers these facts from the
+/// project's headers and source, then hands them to inference. Inference never reads files; every decision follows from
+/// this struct.
+struct MetatileAttributeScan {
     std::vector<InferenceEnumMember> enum_members; ///< all enum members from the fieldmap header, in declaration order
     std::vector<InferenceDefine> defines;          ///< all integer defines from the fieldmap header
     std::unordered_set<std::string>
         ambiguous_defines; ///< mask defines with conflicting values in an undecidable conditional branch
     std::vector<InferenceArrayEntry> masks_array; ///< entries of the exact-name sMetatileAttrMasks table (may be empty)
     std::vector<InferenceArrayEntry>
-        shifts_array;                     ///< entries of the exact-name sMetatileAttrShifts table (may be empty)
-    std::size_t detected_attr_size{2};    ///< attribute byte size detected from the metatiles header (2 or 4)
-    bool behaviors_header_present{false}; ///< the behaviors header exists and declares at least one MB_ name
+        shifts_array;                       ///< entries of the exact-name sMetatileAttrShifts table (may be empty)
+    std::size_t detected_attribute_size{2}; ///< attribute byte size detected from the metatiles header (2 or 4)
+    bool behaviors_header_present{false};   ///< the behaviors header exists and declares at least one MB_ name
 };
 
 /// @brief The outcome kind of an inference run.
-enum class AttrInferenceStatus {
+enum class AttributeInferenceStatus {
     valid,        ///< a usable field set was inferred
     invalid,      ///< the project declares fields but a mask could not be determined (fatal at resolution time)
     not_provided, ///< nothing attribute-related was found; other providers should be consulted
@@ -77,9 +77,9 @@ enum class AttrInferenceStatus {
 /// primary and FRLG-alternate values respectively), when one was found. The layer type is never emitted as a field,
 /// but its mask is now surfaced so downstream resolution can honor a base game's custom layer-type position instead of
 /// assuming the size-based default. Either is @c std::nullopt when the base game declares no mask for that layout.
-struct MetatileAttrInferenceResult {
-    AttrInferenceStatus status{AttrInferenceStatus::not_provided};
-    MetatileAttrFieldSpecs fields;
+struct MetatileAttributeInferenceResult {
+    AttributeInferenceStatus status{AttributeInferenceStatus::not_provided};
+    MetatileAttributeFieldSpecs fields;
     std::string error_message;
     std::vector<std::string> warnings;
     std::optional<std::uint32_t> layer_type_mask;
@@ -101,7 +101,7 @@ struct MetatileAttrInferenceResult {
 /// @param scan The raw facts gathered from the project
 /// @param format The formatter used to style diagnostic text
 /// @return The inferred field set, an actionable error, or a not-provided outcome
-[[nodiscard]] MetatileAttrInferenceResult
-infer_metatile_attr_fields(const MetatileAttrScan &scan, gsl::not_null<const TextFormatter *> format);
+[[nodiscard]] MetatileAttributeInferenceResult
+infer_metatile_attribute_fields(const MetatileAttributeScan &scan, gsl::not_null<const TextFormatter *> format);
 
 } // namespace porytiles

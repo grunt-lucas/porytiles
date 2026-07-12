@@ -1,4 +1,4 @@
-#include "porytiles/infra/services/tileset_attr_schema_resolver.hpp"
+#include "porytiles/infra/services/tileset_attribute_schema_resolver.hpp"
 
 #include <cstdint>
 #include <format>
@@ -10,7 +10,7 @@
 
 namespace porytiles {
 
-TilesetAttrSchemaResolver::TilesetAttrSchemaResolver(
+TilesetAttributeSchemaResolver::TilesetAttributeSchemaResolver(
     gsl::not_null<const LazyLayeredConfig *> config,
     gsl::not_null<const ProjectLayoutMetadataProvider *> layout_metadata,
     gsl::not_null<const MetatilesHeaderProvider *> metatiles,
@@ -20,29 +20,32 @@ TilesetAttrSchemaResolver::TilesetAttrSchemaResolver(
 {
 }
 
-ChainableResult<ResolvedTilesetAttrSchema> TilesetAttrSchemaResolver::resolve(const std::string &tileset_name) const
+ChainableResult<ResolvedTilesetAttributeSchema>
+TilesetAttributeSchemaResolver::resolve(const std::string &tileset_name) const
 {
     PT_TRY_ASSIGN_PASS_ERR(
-        fields_cv, config_->metatile_attr_fields(ConfigScopeType::tileset, tileset_name), ResolvedTilesetAttrSchema);
+        fields_cv,
+        config_->metatile_attribute_fields(ConfigScopeType::tileset, tileset_name),
+        ResolvedTilesetAttributeSchema);
     PT_TRY_ASSIGN_PASS_ERR(
         overrides_cv,
-        config_->metatile_attr_field_overrides(ConfigScopeType::tileset, tileset_name),
-        ResolvedTilesetAttrSchema);
+        config_->metatile_attribute_field_overrides(ConfigScopeType::tileset, tileset_name),
+        ResolvedTilesetAttributeSchema);
     PT_TRY_ASSIGN_PASS_ERR(
         frlg_mode_cv,
         config_->use_frlg_alternate_masks(ConfigScopeType::tileset, tileset_name),
-        ResolvedTilesetAttrSchema);
+        ResolvedTilesetAttributeSchema);
     PT_TRY_ASSIGN_PASS_ERR(
         layer_mask_cv,
         config_->metatile_layer_type_mask(ConfigScopeType::tileset, tileset_name),
-        ResolvedTilesetAttrSchema);
+        ResolvedTilesetAttributeSchema);
     PT_TRY_ASSIGN_PASS_ERR(
         layer_mask_frlg_cv,
         config_->metatile_layer_type_mask_frlg(ConfigScopeType::tileset, tileset_name),
-        ResolvedTilesetAttrSchema);
+        ResolvedTilesetAttributeSchema);
 
-    const MetatileAttrFieldSpecs fields = fields_cv.value();
-    const MetatileAttrFieldOverrides overrides = overrides_cv.value();
+    const MetatileAttributeFieldSpecs fields = fields_cv.value();
+    const MetatileAttributeFieldOverrides overrides = overrides_cv.value();
     const FrlgAlternateMaskMode frlg_mode = frlg_mode_cv.value();
     const std::optional<std::uint32_t> layer_mask_primary = layer_mask_cv.value();
     const std::optional<std::uint32_t> layer_mask_frlg = layer_mask_frlg_cv.value();
@@ -69,15 +72,16 @@ ChainableResult<ResolvedTilesetAttrSchema> TilesetAttrSchemaResolver::resolve(co
             FormatParam{2});
     }
     const bool detected_width_is_authoritative = detected.state == ValidationState::valid;
-    const std::size_t detected_attr_bytes = detected_width_is_authoritative ? detected.value.value() : std::size_t{2};
+    const std::size_t detected_attribute_bytes =
+        detected_width_is_authoritative ? detected.value.value() : std::size_t{2};
 
-    AttrSchemaLayout layout = AttrSchemaLayout::primary;
+    AttributeSchemaLayout layout = AttributeSchemaLayout::primary;
     switch (frlg_mode) {
     case FrlgAlternateMaskMode::always:
-        layout = AttrSchemaLayout::frlg;
+        layout = AttributeSchemaLayout::frlg;
         break;
     case FrlgAlternateMaskMode::never:
-        layout = AttrSchemaLayout::primary;
+        layout = AttributeSchemaLayout::primary;
         break;
     case FrlgAlternateMaskMode::automatic: {
         auto usage_result = layout_metadata_->layout_version_usage(tileset_name);
@@ -91,16 +95,16 @@ ChainableResult<ResolvedTilesetAttrSchema> TilesetAttrSchemaResolver::resolve(co
                     "Porytiles could not read 'data/layouts/layouts.json' to determine FRLG-ness for tileset '{}' and "
                     "assumed the primary attribute layout. Set use_frlg_alternate_masks explicitly to silence this.",
                     FormatParam{tileset_name, Style::bold});
-                layout = AttrSchemaLayout::primary;
+                layout = AttributeSchemaLayout::primary;
                 break;
             }
             // The file parses, so the error is the invalid layout_version value. Surface it as fatal.
-            return ChainableResult<ResolvedTilesetAttrSchema>{FormattableError{}, usage_result};
+            return ChainableResult<ResolvedTilesetAttributeSchema>{FormattableError{}, usage_result};
         }
 
         switch (usage_result.value()) {
         case TilesetLayoutVersionUsage::frlg_only:
-            layout = AttrSchemaLayout::frlg;
+            layout = AttributeSchemaLayout::frlg;
             diag_->remark(
                 "frlg-alternate-masks",
                 "Tileset '{}' is referenced only by frlg layouts in 'data/layouts/layouts.json', so Porytiles "
@@ -109,7 +113,7 @@ ChainableResult<ResolvedTilesetAttrSchema> TilesetAttrSchemaResolver::resolve(co
             break;
         case TilesetLayoutVersionUsage::emerald_only:
         case TilesetLayoutVersionUsage::unreferenced:
-            layout = AttrSchemaLayout::primary;
+            layout = AttributeSchemaLayout::primary;
             break;
         case TilesetLayoutVersionUsage::mixed:
             return FormattableError{format_->format(
@@ -126,20 +130,20 @@ ChainableResult<ResolvedTilesetAttrSchema> TilesetAttrSchemaResolver::resolve(co
     // The layer-type mask follows the same primary/FRLG selection as the fields: the FRLG value for the FRLG layout,
     // the primary value otherwise. An unset (nullopt) value lets the size-based default apply in Schema::create.
     const std::optional<std::uint32_t> layer_mask_opt =
-        layout == AttrSchemaLayout::frlg ? layer_mask_frlg : layer_mask_primary;
+        layout == AttributeSchemaLayout::frlg ? layer_mask_frlg : layer_mask_primary;
 
-    auto resolved = resolve_tileset_attr_schema(
-        fields, overrides, layout, detected_attr_bytes, detected_width_is_authoritative, layer_mask_opt, format_);
+    auto resolved = resolve_tileset_attribute_schema(
+        fields, overrides, layout, detected_attribute_bytes, detected_width_is_authoritative, layer_mask_opt, format_);
     if (resolved.has_value()) {
         // A declared width narrower than 4 is expected on expansion (FRLG tilesets declared 'const u16' but read as
         // 4-byte words), yet surprising enough to be worth a remark when the frlg layout overrides it.
-        if (layout == AttrSchemaLayout::frlg && detected_width_is_authoritative && detected_attr_bytes != 4) {
+        if (layout == AttributeSchemaLayout::frlg && detected_width_is_authoritative && detected_attribute_bytes != 4) {
             diag_->remark(
                 "metatile-attr-schema",
                 "Although 'src/data/tilesets/metatiles.h' declares {}-byte attributes, tileset '{}' uses the FRLG "
                 "attribute layout, which the engine reads as 4-byte words at runtime, so Porytiles resolved 4-byte "
                 "attributes.",
-                FormatParam{detected_attr_bytes, Style::bold},
+                FormatParam{detected_attribute_bytes, Style::bold},
                 FormatParam{tileset_name, Style::bold});
         }
         // Summarize the resolved schema so the user can see what layout the data-driven resolution landed on. This is
@@ -158,7 +162,7 @@ ChainableResult<ResolvedTilesetAttrSchema> TilesetAttrSchemaResolver::resolve(co
         diag_->remark(
             "metatile-attr-schema",
             "Porytiles resolved {}-byte metatile attributes for tileset '{}' with fields: {} ({}).",
-            FormatParam{resolved.value().attr_bytes, Style::bold},
+            FormatParam{resolved.value().attribute_bytes, Style::bold},
             FormatParam{tileset_name, Style::bold},
             FormatParam{field_names, Style::bold},
             FormatParam{layer_type_note, Style::bold});

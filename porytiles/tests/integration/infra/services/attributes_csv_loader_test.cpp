@@ -185,17 +185,17 @@ TEST_F(AttributesCsvLoaderTest, LoadValidCsvReturnsCorrectAttributes)
 
     // Check metatile 0: MB_NORMAL (0x00)
     ASSERT_TRUE(attributes.contains(0));
-    EXPECT_EQ(attributes.at(0).field(attr::field_behavior), 0x00u);
+    EXPECT_EQ(attributes.at(0).field(attribute::field_behavior), 0x00u);
     EXPECT_EQ(attributes.at(0).layer_type(), LayerType::normal);
 
     // Check metatile 1: MB_TALL_GRASS (0x02)
     ASSERT_TRUE(attributes.contains(1));
-    EXPECT_EQ(attributes.at(1).field(attr::field_behavior), 0x02u);
+    EXPECT_EQ(attributes.at(1).field(attribute::field_behavior), 0x02u);
     EXPECT_EQ(attributes.at(1).layer_type(), LayerType::normal);
 
     // Check metatile 2: MB_DEEP_WATER (0x12)
     ASSERT_TRUE(attributes.contains(2));
-    EXPECT_EQ(attributes.at(2).field(attr::field_behavior), 0x12u);
+    EXPECT_EQ(attributes.at(2).field(attribute::field_behavior), 0x12u);
     EXPECT_EQ(attributes.at(2).layer_type(), LayerType::normal);
 }
 
@@ -211,24 +211,24 @@ TEST_F(AttributesCsvLoaderTest, LoadValidFireredCsvReturnsCorrectAttributes)
 
     // Check metatile 0: MB_NORMAL, TILE_TERRAIN_NORMAL (0), TILE_ENCOUNTER_NONE (0), raw fields 0
     ASSERT_TRUE(attributes.contains(0));
-    EXPECT_EQ(attributes.at(0).field(attr::field_behavior), 0x00u);
-    EXPECT_EQ(attributes.at(0).field(attr::field_terrain), 0u);
-    EXPECT_EQ(attributes.at(0).field(attr::field_encounter_type), 0u);
-    EXPECT_EQ(attributes.at(0).field(attr::field_attribute_2), 0u);
-    EXPECT_EQ(attributes.at(0).field(attr::field_attribute_7), 0u);
+    EXPECT_EQ(attributes.at(0).field(attribute::field_behavior), 0x00u);
+    EXPECT_EQ(attributes.at(0).field(attribute::field_terrain), 0u);
+    EXPECT_EQ(attributes.at(0).field(attribute::field_encounter_type), 0u);
+    EXPECT_EQ(attributes.at(0).field(attribute::field_attribute_2), 0u);
+    EXPECT_EQ(attributes.at(0).field(attribute::field_attribute_7), 0u);
     EXPECT_EQ(attributes.at(0).layer_type(), LayerType::normal);
 
     // Check metatile 1: MB_TALL_GRASS, TILE_TERRAIN_GRASS (1), TILE_ENCOUNTER_LAND (1)
     ASSERT_TRUE(attributes.contains(1));
-    EXPECT_EQ(attributes.at(1).field(attr::field_behavior), 0x02u);
-    EXPECT_EQ(attributes.at(1).field(attr::field_terrain), 1u);
-    EXPECT_EQ(attributes.at(1).field(attr::field_encounter_type), 1u);
+    EXPECT_EQ(attributes.at(1).field(attribute::field_behavior), 0x02u);
+    EXPECT_EQ(attributes.at(1).field(attribute::field_terrain), 1u);
+    EXPECT_EQ(attributes.at(1).field(attribute::field_encounter_type), 1u);
 
     // Check metatile 2: MB_DEEP_WATER, TILE_TERRAIN_WATER (2), TILE_ENCOUNTER_WATER (2)
     ASSERT_TRUE(attributes.contains(2));
-    EXPECT_EQ(attributes.at(2).field(attr::field_behavior), 0x12u);
-    EXPECT_EQ(attributes.at(2).field(attr::field_terrain), 2u);
-    EXPECT_EQ(attributes.at(2).field(attr::field_encounter_type), 2u);
+    EXPECT_EQ(attributes.at(2).field(attribute::field_behavior), 0x12u);
+    EXPECT_EQ(attributes.at(2).field(attribute::field_terrain), 2u);
+    EXPECT_EQ(attributes.at(2).field(attribute::field_encounter_type), 2u);
 }
 
 TEST_F(AttributesCsvLoaderTest, LoadNonExistentFileReturnsError)

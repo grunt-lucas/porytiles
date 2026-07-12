@@ -110,7 +110,7 @@ TEST(MetatileAttributeSchemaTest, CreateAcceptsFireredLayout)
     ASSERT_TRUE(result.has_value());
 
     const Schema &schema = result.value();
-    EXPECT_EQ(schema.attr_bytes(), 4u);
+    EXPECT_EQ(schema.attribute_bytes(), 4u);
 
     ASSERT_EQ(schema.fields().size(), 7u);
     EXPECT_EQ(schema.fields()[0].name(), "behavior");
@@ -138,7 +138,7 @@ TEST(MetatileAttributeSchemaTest, CreateAcceptsWidestMasksOutsideLayerTypeBits)
     ASSERT_TRUE(four_byte_result.has_value());
 }
 
-TEST(MetatileAttributeSchemaTest, LayerTypeMaskDerivedFromAttrBytes)
+TEST(MetatileAttributeSchemaTest, LayerTypeMaskDerivedFromAttributeBytes)
 {
     std::vector<Field> two_byte_fields;
     two_byte_fields.emplace_back("behavior", 0x00FF);
@@ -337,7 +337,7 @@ TEST(MetatileAttributeSchemaTest, OneByteSchemaDisablesLayerTypeByConvention)
     fields.emplace_back("behavior", 0x00FF);
     auto result = Schema::create(std::move(fields), 1);
     ASSERT_TRUE(result.has_value());
-    EXPECT_EQ(result.value().attr_bytes(), 1u);
+    EXPECT_EQ(result.value().attribute_bytes(), 1u);
     // No vanilla 1-byte layer-type position exists, so the convention disables it.
     EXPECT_EQ(result.value().layer_type_mask(), 0U);
 }
