@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <string>
 #include <vector>
 
@@ -25,9 +26,18 @@ namespace porytiles {
 /// guidelines to aid reading
 /// - **Error Chain Visualization**: Fatal errors are displayed with tree-like formatting using Unicode box-drawing
 /// characters to show error hierarchy
+/// - **Auto-Wrap**: Message bodies are wrapped to a configured column width so long lines fit the user's terminal,
+/// while any explicit line breaks the caller supplied (each element of the lines vector) are still honored
 class StderrStyledUserDiagnostics final : public UserDiagnostics {
   public:
-    explicit StderrStyledUserDiagnostics(const gsl::not_null<TextFormatter *> format) : UserDiagnostics{format} {}
+    /// @brief Constructs the printer, optionally enabling auto-wrap at @p wrap_width columns.
+    ///
+    /// @param format The text formatter used to style output
+    /// @param wrap_width The terminal column width to wrap message bodies to; 0 disables wrapping
+    explicit StderrStyledUserDiagnostics(const gsl::not_null<TextFormatter *> format, const std::size_t wrap_width = 0)
+        : UserDiagnostics{format}, wrap_width_{wrap_width}
+    {
+    }
 
     /// @brief Display a multi-line tagged informational remark to stderr.
     ///
@@ -123,6 +133,9 @@ class StderrStyledUserDiagnostics final : public UserDiagnostics {
 
   private:
     void emit_note_impl(const std::string &tag, const std::vector<std::string> &lines) const;
+
+    /// @brief Column width for wrapping message bodies; 0 disables wrapping.
+    std::size_t wrap_width_;
 };
 
 } // namespace porytiles

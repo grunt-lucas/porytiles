@@ -47,9 +47,13 @@ class Command {
         return *app_;
     }
 
-  protected:
+  private:
+    /// @brief The command's entry point, invoked through the CLI11 callback registered by the constructor.
+    ///
+    /// @details
+    /// Deliberately private, here and in the overrides: Run() assumes CLI11 parsing already populated the command's
+    /// option storage, so nothing outside the parse flow should be able to call it.
     virtual void Run() = 0;
 
-  private:
     CLI::App *app_;
 };

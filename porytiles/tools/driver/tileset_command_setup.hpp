@@ -9,6 +9,7 @@
 
 #include "CLI/CLI.hpp"
 #include "fruit/fruit.h"
+#include "gsl/pointers"
 
 #include "porytiles/domain/repos/tileset_repo.hpp"
 #include "porytiles/domain/services/palette_printer.hpp"
@@ -47,6 +48,7 @@
 #include "porytiles/infra/services/tileset_attr_schema_cache.hpp"
 #include "porytiles/infra/services/tileset_attr_schema_resolver.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
+#include "porytiles/utilities/text/terminal_width.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
 #include "porytiles/xcut/di/components.hpp"
 #include "porytiles/xcut/diagnostics/diagnostic_tag_filter.hpp"
@@ -56,23 +58,56 @@
 
 namespace porytiles {
 
-/// @brief The config and diagnostics bootstrap every tileset command runs before doing anything else.
+/// @brief Bootstrap class so every tileset command can share common config and diagnostic setup.
 ///
 /// @details
-/// Owns the formatter injector, the unfiltered stderr diagnostics used during config loading, the layered config
-/// (CLI options over YAML over header defines over defaults), and the filtered diagnostics built from the config's
-/// diagnostic include/exclude patterns. Construction eagerly validates the YAML config files for the tileset scope
-/// and fails the command (fatal diagnostic plus CLI::RuntimeError) on validation errors, exactly like the inline
-/// bootstrap it replaces.
+/// Owns the formatter injector, the unfiltered stderr diagnostics used during config loading, the layered config,
+/// and the filtered diagnostics built from the config's diagnostic include/exclude patterns. Construction eagerly
+/// validates the YAML config files for the tileset scope and fails the command on validation errors.
 ///
-/// Members hold pointers into earlier members, so the env is pinned to its construction site: not copyable, not
-/// movable. Commands construct it once on the stack and keep it alive for the whole run.
+/// Members hold pointers into earlier members, so the class is not copyable and not movable. Commands should construct
+/// it once on the stack.
 class TilesetCommandEnv {
+  private:
+    /// @brief The layered config's provider list bundled with a typed handle to the YamlFileProvider inside it.
+    ///
+    /// @details
+    /// make_provider_chain returns both pieces together so the constructor can hand ownership of the list to config
+    /// while keeping the typed handle it needs for YAML validation. The handle points at the provider owned by the
+    /// list (and, after construction, by config), so it stays valid for the env's whole lifetime.
+    struct ProviderChain {
+        std::vector<std::unique_ptr<ConfigProvider>> providers;
+        gsl::not_null<YamlFileProvider *> yaml_provider;
+    };
+
+    [[nodiscard]] static ProviderChain make_provider_chain(
+        const std::filesystem::path &project_root,
+        const CliOptionStorage &cli_storage,
+        TextFormatter *text_formatter,
+        StderrStyledUserDiagnostics *stderr_diag)
+    {
+        // Layered configuration: CLI options have highest priority.
+        std::vector<std::unique_ptr<ConfigProvider>> providers{};
+        providers.push_back(std::make_unique<CliOptionProvider>(cli_storage));
+        providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, stderr_diag, project_root));
+        // Take the handle from the owning slot so its provenance is the list itself, not a moved-from local.
+        auto *yaml_provider = static_cast<YamlFileProvider *>(providers.back().get());
+        providers.push_back(
+            std::make_unique<HeaderDefineProvider>(
+                project_root, std::filesystem::path{"include/fieldmap.h"}, text_formatter));
+        providers.push_back(
+            std::make_unique<MetatileAttributeConfigProvider>(project_root, text_formatter, stderr_diag));
+        providers.push_back(std::make_unique<DefaultProvider>());
+        return {std::move(providers), yaml_provider};
+    }
+
   public:
     TilesetCommandEnv(std::filesystem::path root, const std::string &tileset_name, const CliOptionStorage &cli_storage)
         : project_root{std::move(root)}, injector{di::get_formatter_component, !isatty(STDERR_FILENO)},
-          text_formatter{injector.get<TextFormatter *>()}, stderr_diag{text_formatter},
-          config{text_formatter, make_providers(yaml_provider, project_root, cli_storage, text_formatter, &stderr_diag)}
+          text_formatter{injector.get<TextFormatter *>()},
+          stderr_diag{text_formatter, resolve_terminal_width(STDERR_FILENO)},
+          provider_chain{make_provider_chain(project_root, cli_storage, text_formatter, &stderr_diag)},
+          yaml_provider{provider_chain.yaml_provider}, config{text_formatter, std::move(provider_chain.providers)}
     {
         // Eagerly validate all YAML config files for unknown keys
         if (yaml_provider->preload_and_validate(ConfigScopeType::tileset, tileset_name)) {
@@ -115,33 +150,17 @@ class TilesetCommandEnv {
     fruit::Injector<TextFormatter> injector;
     TextFormatter *text_formatter;
     StderrStyledUserDiagnostics stderr_diag;
-    // Set by make_providers during config's initialization; declared before config so the assignment sticks.
-    YamlFileProvider *yaml_provider = nullptr;
-    LazyLayeredConfig config;
-    std::unique_ptr<FilteredUserDiagnostics> diag;
 
   private:
-    [[nodiscard]] static std::vector<std::unique_ptr<ConfigProvider>> make_providers(
-        YamlFileProvider *&yaml_provider_out,
-        const std::filesystem::path &project_root,
-        const CliOptionStorage &cli_storage,
-        TextFormatter *text_formatter,
-        StderrStyledUserDiagnostics *stderr_diag)
-    {
-        // Layered configuration: CLI options have highest priority.
-        std::vector<std::unique_ptr<ConfigProvider>> providers{};
-        providers.push_back(std::make_unique<CliOptionProvider>(cli_storage));
-        auto yaml_provider = std::make_unique<YamlFileProvider>(text_formatter, stderr_diag, project_root);
-        yaml_provider_out = yaml_provider.get();
-        providers.push_back(std::move(yaml_provider));
-        providers.push_back(
-            std::make_unique<HeaderDefineProvider>(
-                project_root, std::filesystem::path{"include/fieldmap.h"}, text_formatter));
-        providers.push_back(
-            std::make_unique<MetatileAttributeConfigProvider>(project_root, text_formatter, stderr_diag));
-        providers.push_back(std::make_unique<DefaultProvider>());
-        return providers;
-    }
+    // Bridges make_provider_chain's single return value across two member initializers: yaml_provider copies the
+    // handle, config takes ownership of the vector. After construction the providers vector is moved-from and empty.
+    ProviderChain provider_chain;
+
+  public:
+    // Typed handle to the YamlFileProvider owned by config's provider list, needed for eager YAML validation.
+    gsl::not_null<YamlFileProvider *> yaml_provider;
+    LazyLayeredConfig config;
+    std::unique_ptr<FilteredUserDiagnostics> diag;
 };
 
 /// @brief The schema-driven service graph shared by the compile, create, import, and decompile commands.

@@ -1357,8 +1357,8 @@ inline void report_color_counts(
                 services.diag.error_note(
                     "transparent-key-frame",
                     std::vector<std::string>{
-                        "Key frame tiles cannot be fully transparent because they would be",
-                        "indistinguishable from the actual transparent tile on the layer PNGs."});
+                        "Key frame tiles cannot be fully transparent because they would be indistinguishable "
+                        "from the actual transparent tile on the layer PNGs."});
             }
         }
     }
@@ -1412,8 +1412,9 @@ inline void report_color_counts(
                     "   - anim '{}' subtile {}", FormatParam{anim_name, Style::bold}, FormatParam{tile_idx}));
             }
             note_lines.emplace_back("");
-            note_lines.emplace_back("Each key frame tile must be unique so that Porytiles can");
-            note_lines.emplace_back("identify which animation a tile belongs to at runtime.");
+            note_lines.emplace_back(
+                "Each key frame tile must be unique so that Porytiles can identify which "
+                "animation a tile belongs to at runtime.");
             services.diag.error_note("duplicate-key-frame", note_lines);
         }
     }
@@ -1496,9 +1497,10 @@ inline void report_color_counts(
                     extrinsic_transparency);
 
                 std::vector<std::string> note_lines;
-                note_lines.emplace_back("The composite frame aggregates all colors across all animation frames");
-                note_lines.emplace_back("for each tile position. Since the palette index is fixed for the");
-                note_lines.emplace_back("entire animation lifecycle, each composite tile cannot exceed 15 colors.");
+                note_lines.emplace_back(
+                    "The composite frame aggregates all colors across all animation frames for each tile position. "
+                    "Since the palette index is fixed for the entire animation lifecycle, each composite tile cannot "
+                    "exceed 15 colors.");
                 services.diag.error_note("composite-color-count-violation", note_lines);
 
                 // Print all frame tiles at this position to show what's contributing colors

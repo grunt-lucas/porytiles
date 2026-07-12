@@ -486,7 +486,8 @@ ChainableResult<void> CompilerTask::pipeline_step_process_porytiles_input()
             tileset_.porytiles_component().middle(),
             tileset_.porytiles_component().top()),
         void,
-        "failed to metatileize input layer images for " + tileset_.name());
+        format_.format(
+            "Failed to metatileize input layer images for tileset '{}'.", FormatParam{tileset_.name(), Style::bold}));
     porytiles_metatiles_ = std::move(metatiles);
 
     // Decompose Porytiles metatiles and generate canonical versions
@@ -506,7 +507,9 @@ ChainableResult<void> CompilerTask::pipeline_step_process_porymap_input()
         tilemap_entries,
         layer_mode_converter.triple_layerize(tileset_.porymap_component()),
         void,
-        std::format("Failed to triple-layerize Porymap component for tileset '{}'.", tileset_.name()));
+        format_.format(
+            "Failed to triple-layerize Porymap component for tileset '{}'.",
+            FormatParam{tileset_.name(), Style::bold}));
     porymap_tilemap_entries_ = std::move(tilemap_entries);
 
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -514,7 +517,8 @@ ChainableResult<void> CompilerTask::pipeline_step_process_porymap_input()
         metatile_decompiler.decompile_metatiles(
             porymap_tilemap_entries_, tileset_.porymap_component().tiles_png(), tileset_.porymap_component().pals()),
         void,
-        std::format("Failed to decompile Porymap component for tileset '{}'.", tileset_.name()));
+        format_.format(
+            "Failed to decompile Porymap component for tileset '{}'.", FormatParam{tileset_.name(), Style::bold}));
     porymap_metatiles_ = std::move(metatiles);
 
     // We don't need to run any validation (including size validation) on porymap_metatiles here. We're going to
@@ -539,13 +543,11 @@ ChainableResult<void> CompilerTask::pipeline_step_validate_input()
     if (is_secondary() && tiles_edit_mode_ != ArtifactEditMode::optimize) {
         std::vector<std::string> err_msg{};
         err_msg.emplace_back(format_.format(
-            "Secondary compilation of tileset '{}' does not yet support tiles edit mode '{}'.",
+            "Secondary compilation of tileset '{}' does not yet support tiles edit mode '{}'. For now, only '{}' is "
+            "supported for secondary tilesets. Support for '{}' and '{}' is planned for a future update.",
             FormatParam{tileset_.name(), Style::bold},
-            FormatParam{to_string(tiles_edit_mode_.value()), Style::bold}));
-        err_msg.emplace_back(format_.format(
-            "For now, only '{}' is supported for secondary tilesets.", FormatParam{"optimize", Style::bold}));
-        err_msg.emplace_back(format_.format(
-            "Support for '{}' and '{}' is planned for a future update.",
+            FormatParam{to_string(tiles_edit_mode_.value()), Style::bold},
+            FormatParam{"optimize", Style::bold},
             FormatParam{"locked", Style::bold},
             FormatParam{"patch", Style::bold}));
         err_msg.append_range(format_config_note_with_separator(format_, tiles_edit_mode_));
@@ -555,13 +557,11 @@ ChainableResult<void> CompilerTask::pipeline_step_validate_input()
     if (is_secondary() && pals_edit_mode_ != ArtifactEditMode::optimize) {
         std::vector<std::string> err_msg{};
         err_msg.emplace_back(format_.format(
-            "Secondary compilation of tileset '{}' does not yet support pals edit mode '{}'.",
+            "Secondary compilation of tileset '{}' does not yet support pals edit mode '{}'. For now, only '{}' is "
+            "supported for secondary tilesets. Support for '{}' and '{}' is planned for a future update.",
             FormatParam{tileset_.name(), Style::bold},
-            FormatParam{to_string(pals_edit_mode_.value()), Style::bold}));
-        err_msg.emplace_back(format_.format(
-            "For now, only '{}' is supported for secondary tilesets.", FormatParam{"optimize", Style::bold}));
-        err_msg.emplace_back(format_.format(
-            "Support for '{}' and '{}' is planned for a future update.",
+            FormatParam{to_string(pals_edit_mode_.value()), Style::bold},
+            FormatParam{"optimize", Style::bold},
             FormatParam{"locked", Style::bold},
             FormatParam{"patch", Style::bold}));
         err_msg.append_range(format_config_note_with_separator(format_, pals_edit_mode_));
@@ -581,13 +581,12 @@ ChainableResult<void> CompilerTask::pipeline_step_validate_input()
     if (pals_edit_mode_ == ArtifactEditMode::optimize && tiles_edit_mode_ == ArtifactEditMode::locked) {
         std::vector<std::string> err_msg{};
         err_msg.emplace_back(format_.format(
-            "Tileset '{}' uses palettes edit mode '{}' with tiles edit mode '{}', which is not a valid combination.",
+            "Tileset '{}' uses palettes edit mode '{}' with tiles edit mode '{}', which is not a valid combination. "
+            "Tiles are fundamentally dependent on palettes, so optimizing palettes while keeping tiles locked is "
+            "not coherent.",
             FormatParam{tileset_.name(), Style::bold},
             FormatParam{"optimize", Style::bold},
             FormatParam{"locked", Style::bold}));
-        err_msg.emplace_back(
-            "Tiles are fundamentally dependent on palettes, so optimizing palettes while keeping "
-            "tiles locked is not coherent.");
         err_msg.append_range(format_config_note(format_, pals_edit_mode_));
         err_msg.append_range(format_config_note_with_separator(format_, tiles_edit_mode_));
         return FormattableError{err_msg};
@@ -1181,7 +1180,7 @@ ChainableResult<void> CompilerTask::pipeline_helper_run_pal_packing()
         color_index_map,
         pipeline_helper_build_color_index_map(pal_hints_.value(), color_count_limit),
         void,
-        std::format("Failed to build color index map for tileset '{}'.", tileset_.name()));
+        format_.format("Failed to build color index map for tileset '{}'.", FormatParam{tileset_.name(), Style::bold}));
 
     PT_UNWRAP_TILESET_CONFIG_REF(config_, packing_strategy, tileset_.name(), void);
     PT_UNWRAP_TILESET_CONFIG_REF(config_, packing_strategy_params, tileset_.name(), void);
@@ -1808,8 +1807,8 @@ ChainableResult<void> CompilerTask::pipeline_helper_register_animations()
                                 FormatParam{i},
                                 FormatParam{abs_tile_index}),
                             "Cannot determine the correct palette index for cross-tileset linking.",
-                            "Recompile the primary tileset, or verify that all primary animation subtiles",
-                            "are used in at least one primary metatile."}};
+                            "Recompile the primary tileset, or verify that all primary animation subtiles are used "
+                            "in at least one primary metatile."}};
                     }
                 }
             }

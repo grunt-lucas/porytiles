@@ -30,6 +30,7 @@ class DumpTilesetConfigCommand final : public Command {
         porytiles::register_config_options(cmd, cli_storage_);
     }
 
+  private:
     void Run() override
     {
         using namespace porytiles;
@@ -106,7 +107,6 @@ class DumpTilesetConfigCommand final : public Command {
         out << "\n";
     }
 
-  private:
     static constexpr auto kCommandName = "dump-tileset-config";
     static constexpr auto kCommandDesc = "Dump the full configuration provenance chain for a tileset.";
     static constexpr auto kCommandGroup = "UTILITIES";

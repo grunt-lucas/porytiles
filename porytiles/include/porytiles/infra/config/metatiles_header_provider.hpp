@@ -27,6 +27,10 @@ namespace porytiles {
 ///
 /// The file is read lazily on first access and the result is cached.
 class MetatilesHeaderProvider final {
+    // TODO: this class is an oddball. It's in infra/config with a *Provider moniker, but it's not actually a
+    // ConfigProvider. It's used by MetatileAttributeConfigProvider, which is a real provider. It's also used by
+    // TilesetAttrSchemaResolver. So this class really feels like in belongs in infra/services, except it has a
+    // LayerValue return type on detect, which makes in an infra/config candidate. I think this is a smell.
   public:
     /// @brief Constructs a MetatilesHeaderProvider.
     ///
