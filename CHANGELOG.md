@@ -27,6 +27,8 @@ and to its issue too when one was filed
 
 - Added a fully configurable metatile attribute schema, replacing the hardcoded `BaseGame` (Emerald vs. FireRed/LeafGreen) system. Attribute layout, bit masks, and per-field enum sources are now handled by the config system, inferred from the project's own headers by default or declared explicitly via `metatile_attr_fields`, with per-tileset overrides for FRLG's alternate mask layout and layer type - [#341](https://github.com/grunt-lucas/porytiles/pull/341)
 
+- Added auto-wrap support for all diagnostic messages to simplify internal callsites. On the user side, diagnostics now dynamically wrap based on terminal width (as reported by ioctl). This can be overridden via the standard `COLUMNS` environment var. - [#342](https://github.com/grunt-lucas/porytiles/pull/342)
+
 ## [1.0.0] - 2026-06-05
 
 First stable release of Porytiles.
