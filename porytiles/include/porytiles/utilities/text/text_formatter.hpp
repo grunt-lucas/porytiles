@@ -464,11 +464,7 @@ class FormatParam {
 /// - style(): Apply Style flags to individual text strings
 /// - format(): Substitute styled FormatParams into format strings using fmtlib syntax
 ///
-/// Implementations:
-/// - PlainTextFormatter: Returns text unchanged, stripping all styles (for non-TTY/files)
-/// - AnsiStyledTextFormatter: Applies ANSI escape codes for terminal colors (for TTY)
-///
-/// This class integrates with the error reporting system through FormattableError and UserDiagnostics to provide
+/// The class integrates with the error reporting system through FormattableError and UserDiagnostics to provide
 /// adaptive styling for diagnostic messages.
 class TextFormatter {
   public:
