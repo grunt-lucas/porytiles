@@ -241,6 +241,19 @@ LayerValue<std::string> DefaultProvider::tileset_paths_secondary_bin(
     return LayerValue<std::string>::valid("data/tilesets/secondary", "Tileset Paths Secondary Bin", source_info);
 }
 
+LayerValue<std::optional<std::size_t>> DefaultProvider::metatile_attribute_size(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::optional<std::size_t>>::valid(std::nullopt, "Metatile Attribute Size", source_info);
+}
+
+LayerValue<std::optional<std::size_t>> DefaultProvider::metatile_attribute_declaration_size(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::optional<std::size_t>>::valid(
+        std::nullopt, "Metatile Attribute Declaration Size", source_info);
+}
+
 LayerValue<MetatileAttributeFieldSpecs> DefaultProvider::metatile_attribute_fields(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
@@ -261,23 +274,10 @@ LayerValue<bool> DefaultProvider::write_layer_type_column(
     return LayerValue<bool>::valid(false, "Write Layer Type Column", source_info);
 }
 
-LayerValue<FrlgAlternateMaskMode> DefaultProvider::use_frlg_alternate_masks(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    return LayerValue<FrlgAlternateMaskMode>::valid(
-        FrlgAlternateMaskMode::automatic, "Use FRLG Alternate Masks", source_info);
-}
-
 LayerValue<std::optional<std::uint32_t>> DefaultProvider::metatile_layer_type_mask(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::optional<std::uint32_t>>::valid(std::nullopt, "Metatile Layer Type Mask", source_info);
-}
-
-LayerValue<std::optional<std::uint32_t>> DefaultProvider::metatile_layer_type_mask_frlg(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    return LayerValue<std::optional<std::uint32_t>>::valid(std::nullopt, "Metatile Layer Type Mask FRLG", source_info);
 }
 
 LayerValue<bool> DefaultProvider::tileset_animations_wire_anim_code(

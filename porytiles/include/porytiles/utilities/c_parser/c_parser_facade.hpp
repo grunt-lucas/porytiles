@@ -17,6 +17,7 @@
 #include "porytiles/utilities/c_parser/function_definition.hpp"
 #include "porytiles/utilities/c_parser/incbin_declaration.hpp"
 #include "porytiles/utilities/c_parser/parser.hpp"
+#include "porytiles/utilities/c_parser/struct_definition.hpp"
 #include "porytiles/utilities/c_parser/struct_initializer_declaration.hpp"
 #include "porytiles/utilities/c_parser/struct_variable_declaration.hpp"
 #include "porytiles/utilities/c_parser/token.hpp"
@@ -233,6 +234,33 @@ class CParserFacade {
     /// @return A vector of StructInitializerDeclaration on success, or an error chain on failure
     [[nodiscard]] ChainableResult<std::vector<StructInitializerDeclaration>>
     parse_struct_initializers(const std::optional<std::string> &name_prefix = std::nullopt);
+
+    /// @brief Parses struct type definitions from the file.
+    ///
+    /// @details
+    /// Loads the file (if not already loaded), tokenizes it, and extracts named struct definitions with their
+    /// pattern-matchable member declarations. Members outside the simple declarator shape (pointer-to-array members,
+    /// array members, multiple declarators) are skipped tolerantly; see Parser::parse_struct_definitions().
+    ///
+    /// This is used to read the pointed-to type of `struct Tileset::metatileAttributes` from a project's
+    /// `include/global.fieldmap.h`:
+    /// @code
+    /// struct Tileset
+    /// {
+    ///     /*0x00*/ u8 isCompressed:1;
+    ///     /*0x10*/ const u16 *metatileAttributes;
+    ///     /*0x14*/ TilesetCB callback;
+    /// };
+    /// @endcode
+    ///
+    /// On error (file not found, lexer error, parser error), returns a ChainableResult containing a FormattableError
+    /// with multi-line source context highlighting.
+    ///
+    /// @param name_filter Optional exact struct tag name to filter by. If provided, only definitions whose name
+    ///        equals the filter are returned. For example, "Tileset" selects just the Tileset definition.
+    /// @return A vector of StructDefinition on success, or an error chain on failure
+    [[nodiscard]] ChainableResult<std::vector<StructDefinition>>
+    parse_struct_definitions(const std::optional<std::string> &name_filter = std::nullopt);
 
     /// @brief Parses INCBIN array declarations from the file.
     ///

@@ -8,8 +8,8 @@
 
 #include "CLI/CLI.hpp"
 
+#include "porytiles/domain/algorithms/metatile_attribute_schema_reconciler.hpp"
 #include "porytiles/domain/models/metatile_attribute_schema.hpp"
-#include "porytiles/domain/services/metatile_attribute_schema_loader.hpp"
 #include "porytiles/infra/cli/cli_option_registration.hpp"
 #include "porytiles/infra/cli/cli_option_storage.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
@@ -22,7 +22,7 @@
 class DumpTilesetConfigCommand final : public Command {
   public:
     explicit DumpTilesetConfigCommand(CLI::App &parent_app)
-        : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+        : Command{parent_app, command_name, command_desc, command_group}
     {
         CLI::App &cmd = get_app();
         cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to dump config for")->required();
@@ -35,24 +35,36 @@ class DumpTilesetConfigCommand final : public Command {
     {
         using namespace porytiles;
 
-        TilesetCommandEnv env{project_root_opt_.project_root(), tileset_name_, cli_storage_};
+        TilesetCommandEnv env{project_root_opt_.project_root(), cli_storage_};
         auto *text_formatter = env.text_formatter;
+
+        // Env failures report through the unfiltered stderr diagnostics: the filtered sink is not built until
+        // initialize() succeeds.
+        const auto env_result = env.initialize(tileset_name_);
+        if (!env_result.has_value()) {
+            const auto env_fail_result = ChainableResult<void>{
+                FormattableError{"Failed to dump config for tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
+                env_result};
+            env.stderr_diag.fatal(env_fail_result);
+            throw CLI::RuntimeError{1};
+        }
 
         env.config.dump_config(std::cout, ConfigScopeType::tileset, tileset_name_);
 
-        // Resolve and print the per-tileset attribute schema, mirroring the resolver setup every other command uses
-        // (size detection from metatiles.h, layout selection, and mask-driven widening). Unlike the other commands,
-        // dump deliberately resolves against the unfiltered stderr diagnostics so nothing is hidden from the dump.
-        ProjectLayoutMetadataProvider layout_metadata_provider{env.project_root, text_formatter, &env.stderr_diag};
-        MetatilesHeaderProvider metatiles_header{env.project_root, text_formatter};
-        TilesetAttributeSchemaResolver schema_resolver{
-            &env.config, &layout_metadata_provider, &metatiles_header, text_formatter, &env.stderr_diag};
+        // Resolve and print the invocation's attribute schema, mirroring the resolver setup every other command uses
+        // (config fetch, fieldmap scan, inference, and reconciliation).
+        MetatileAttributeSchemaResolver schema_resolver{env.project_root, &env.config, text_formatter, env.diag.get()};
         auto resolved_result = schema_resolver.resolve(tileset_name_);
         if (!resolved_result.has_value()) {
-            env.stderr_diag.fatal(resolved_result);
+            const auto fail_result = ChainableResult<void>{
+                FormattableError{
+                    "Failed to resolve the metatile attribute schema for tileset '{}'.",
+                    FormatParam{tileset_name_, Style::bold}},
+                resolved_result};
+            env.diag->fatal(fail_result);
             throw CLI::RuntimeError{1};
         }
-        const ResolvedTilesetAttributeSchema &resolved = resolved_result.value();
+        const LoadedMetatileAttributeSchema &resolved = resolved_result.value();
 
         std::ostream &out = std::cout;
         const std::string section_title = "Resolved Metatile Attribute Schema";
@@ -60,13 +72,25 @@ class DumpTilesetConfigCommand final : public Command {
         out << text_formatter->style(std::string(section_title.size(), '='), Style::faint) << "\n\n";
 
         out << "  "
-            << text_formatter->format("Layout: {}", FormatParam{to_string(resolved.layout), Style::cyan | Style::bold})
+            << text_formatter->format(
+                   "Attribute size: {} bytes ({})",
+                   FormatParam{std::to_string(resolved.attribute_bytes), Style::bold},
+                   FormatParam{resolved.size_origin})
             << "\n";
 
         out << "  "
             << text_formatter->format(
-                   "Attribute size: {} bytes", FormatParam{std::to_string(resolved.attribute_bytes), Style::bold})
-            << "\n\n";
+                   "Declaration size: {} bytes (const u{}, {})",
+                   FormatParam{std::to_string(resolved.declaration_bytes), Style::bold},
+                   FormatParam{std::to_string(resolved.declaration_bytes * 8)},
+                   FormatParam{resolved.declaration_origin})
+            << "\n";
+
+        if (!resolved.fields_origin.empty()) {
+            out << "  " << text_formatter->format("Fields from: {}", FormatParam{resolved.fields_origin, Style::bold})
+                << "\n";
+        }
+        out << "\n";
 
         out << "  " << text_formatter->style("Fields:", Style::faint) << "\n";
         for (const Field &field : resolved.schema.fields()) {
@@ -87,29 +111,12 @@ class DumpTilesetConfigCommand final : public Command {
                        FormatParam{std::to_string(field.default_value())})
                 << provider_desc << "\n";
         }
-
-        // Fields excluded for the chosen layout: they carry a mask for the other layout but not this one.
-        const bool frlg = resolved.layout == AttributeSchemaLayout::frlg;
-        std::vector<std::string> excluded;
-        for (const auto &spec : resolved.resolved_specs) {
-            const bool has_selected = frlg ? spec.frlg_mask.has_value() : spec.mask.has_value();
-            if (!has_selected) {
-                excluded.push_back(spec.name);
-            }
-        }
-        if (!excluded.empty()) {
-            std::string joined;
-            for (std::size_t i = 0; i < excluded.size(); ++i) {
-                joined += (i == 0 ? "" : ", ") + excluded.at(i);
-            }
-            out << "\n  " << text_formatter->style("Excluded for this layout: " + joined, Style::faint) << "\n";
-        }
         out << "\n";
     }
 
-    static constexpr auto kCommandName = "dump-tileset-config";
-    static constexpr auto kCommandDesc = "Dump the full configuration provenance chain for a tileset.";
-    static constexpr auto kCommandGroup = "UTILITIES";
+    static constexpr auto command_name = "dump-tileset-config";
+    static constexpr auto command_desc = "Dump the full configuration provenance chain for a tileset.";
+    static constexpr auto command_group = "UTILITIES";
     std::string tileset_name_;
     OptProjectRoot project_root_opt_;
     porytiles::CliOptionStorage cli_storage_;

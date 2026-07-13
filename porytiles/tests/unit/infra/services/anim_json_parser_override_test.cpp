@@ -18,20 +18,20 @@ using namespace porytiles;
 
 namespace {
 
-const std::filesystem::path kTestDir = std::filesystem::temp_directory_path() / "porytiles_test_anim_json_parser";
+const std::filesystem::path test_dir = std::filesystem::temp_directory_path() / "porytiles_test_anim_json_parser";
 
 class AnimJsonParserOverrideTest : public ::testing::Test {
   protected:
     void SetUp() override
     {
-        std::filesystem::create_directories(kTestDir);
+        std::filesystem::create_directories(test_dir);
         formatter_ = std::make_unique<PlainTextFormatter>();
         parser_ = std::make_unique<AnimJsonParser>(formatter_.get());
     }
 
     void TearDown() override
     {
-        std::filesystem::remove_all(kTestDir);
+        std::filesystem::remove_all(test_dir);
     }
 
     void write_json_file(const std::filesystem::path &path, const std::string &content)
@@ -46,7 +46,7 @@ class AnimJsonParserOverrideTest : public ::testing::Test {
 
 TEST_F(AnimJsonParserOverrideTest, ParseOverridesFromJson)
 {
-    const auto json_path = kTestDir / "anim.json";
+    const auto json_path = test_dir / "anim.json";
     write_json_file(json_path, R"({
   "water": {
     "frame_factor": 16,
@@ -105,7 +105,7 @@ TEST_F(AnimJsonParserOverrideTest, ParseOverridesFromJson)
 
 TEST_F(AnimJsonParserOverrideTest, ParseEmptyOverrides)
 {
-    const auto json_path = kTestDir / "anim.json";
+    const auto json_path = test_dir / "anim.json";
     write_json_file(json_path, R"({
   "flower": {
     "frames": ["0", "1"],
@@ -123,7 +123,7 @@ TEST_F(AnimJsonParserOverrideTest, ParseEmptyOverrides)
 
 TEST_F(AnimJsonParserOverrideTest, ParseAnimationWithoutOverrides)
 {
-    const auto json_path = kTestDir / "anim.json";
+    const auto json_path = test_dir / "anim.json";
     write_json_file(json_path, R"({
   "flower": {
     "frame_factor": 8,
@@ -141,7 +141,7 @@ TEST_F(AnimJsonParserOverrideTest, ParseAnimationWithoutOverrides)
 
 TEST_F(AnimJsonParserOverrideTest, ParseAllLayerValues)
 {
-    const auto json_path = kTestDir / "anim.json";
+    const auto json_path = test_dir / "anim.json";
     write_json_file(json_path, R"({
   "water": {
     "frames": ["0"],
@@ -165,7 +165,7 @@ TEST_F(AnimJsonParserOverrideTest, ParseAllLayerValues)
 
 TEST_F(AnimJsonParserOverrideTest, ParseAllSubtileValues)
 {
-    const auto json_path = kTestDir / "anim.json";
+    const auto json_path = test_dir / "anim.json";
     write_json_file(json_path, R"({
   "water": {
     "frames": ["0"],
@@ -220,7 +220,7 @@ TEST_F(AnimJsonParserOverrideTest, RoundTripOverrides)
     params.overrides(std::move(overrides));
 
     // Write to file
-    const auto json_path = kTestDir / "round_trip.json";
+    const auto json_path = test_dir / "round_trip.json";
     std::map<DynamicCasedName, AnimParams> params_map;
     params_map.insert({DynamicCasedName{"water"}, std::move(params)});
 
@@ -261,7 +261,7 @@ TEST_F(AnimJsonParserOverrideTest, NoOverridesWhenEmpty)
     params.frame_names({DynamicCasedName{"0"}, DynamicCasedName{"1"}});
     params.frame_order({DynamicCasedName{"0"}, DynamicCasedName{"1"}});
 
-    const auto json_path = kTestDir / "no_overrides.json";
+    const auto json_path = test_dir / "no_overrides.json";
     std::map<DynamicCasedName, AnimParams> params_map;
     params_map.insert({DynamicCasedName{"flower"}, std::move(params)});
 
@@ -293,7 +293,7 @@ TEST_F(AnimJsonParserOverrideTest, OverrideFieldsInCanonicalOrder)
             .v_flip = false});
     params.overrides(std::move(overrides));
 
-    const auto json_path = kTestDir / "field_order.json";
+    const auto json_path = test_dir / "field_order.json";
     std::map<DynamicCasedName, AnimParams> params_map;
     params_map.insert({DynamicCasedName{"water"}, std::move(params)});
 
@@ -323,7 +323,7 @@ TEST_F(AnimJsonParserOverrideTest, OverrideFieldsInCanonicalOrder)
 
 TEST_F(AnimJsonParserOverrideTest, ParsePrimaryReferences)
 {
-    const auto json_path = kTestDir / "anim.json";
+    const auto json_path = test_dir / "anim.json";
     write_json_file(json_path, R"({
   "primary_references": {
     "water": {
@@ -380,7 +380,7 @@ TEST_F(AnimJsonParserOverrideTest, ParsePrimaryReferences)
 
 TEST_F(AnimJsonParserOverrideTest, ParsePrimaryReferencesAbsent)
 {
-    const auto json_path = kTestDir / "anim.json";
+    const auto json_path = test_dir / "anim.json";
     write_json_file(json_path, R"({
   "flower": {
     "frames": ["0", "1"]
@@ -394,7 +394,7 @@ TEST_F(AnimJsonParserOverrideTest, ParsePrimaryReferencesAbsent)
 
 TEST_F(AnimJsonParserOverrideTest, ParsePrimaryReferencesCoexistWithAnimations)
 {
-    const auto json_path = kTestDir / "anim.json";
+    const auto json_path = test_dir / "anim.json";
     write_json_file(json_path, R"({
   "flower": {
     "frame_factor": 8,
@@ -425,7 +425,7 @@ TEST_F(AnimJsonParserOverrideTest, ParsePrimaryReferencesCoexistWithAnimations)
 
 TEST_F(AnimJsonParserOverrideTest, PrimaryReferencesNotTreatedAsAnimation)
 {
-    const auto json_path = kTestDir / "anim.json";
+    const auto json_path = test_dir / "anim.json";
     write_json_file(json_path, R"({
   "primary_references": {
     "water": {
@@ -473,7 +473,7 @@ TEST_F(AnimJsonParserOverrideTest, RoundTripPrimaryReferences)
             .v_flip = false}};
 
     // Write
-    const auto json_path = kTestDir / "round_trip_primary_refs.json";
+    const auto json_path = test_dir / "round_trip_primary_refs.json";
     auto write_result = parser_->write(json_path, params_map, primary_refs);
     ASSERT_TRUE(write_result.has_value());
 
@@ -522,7 +522,7 @@ TEST_F(AnimJsonParserOverrideTest, PrimaryReferencesOmittedWhenEmpty)
     params_map.insert({DynamicCasedName{"flower"}, std::move(params)});
 
     // Write with empty primary_references
-    const auto json_path = kTestDir / "no_primary_refs.json";
+    const auto json_path = test_dir / "no_primary_refs.json";
     std::map<DynamicCasedName, std::vector<AnimOverrideEntry>> empty_refs;
     auto write_result = parser_->write(json_path, params_map, empty_refs);
     ASSERT_TRUE(write_result.has_value());

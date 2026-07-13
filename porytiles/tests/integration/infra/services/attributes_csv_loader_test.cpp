@@ -169,7 +169,7 @@ class AttributesCsvLoaderTest : public ::testing::Test {
 };
 
 // The tileset scope passed to load(); MockInfraConfig ignores the scope and returns its member values.
-constexpr auto kTilesetScope = "gTileset_Test";
+constexpr auto tileset_scope = "gTileset_Test";
 
 } // namespace
 
@@ -177,7 +177,7 @@ TEST_F(AttributesCsvLoaderTest, LoadValidCsvReturnsCorrectAttributes)
 {
     const BoundLoader loader = emerald_loader();
 
-    auto result = loader.load(test_resources_dir / "valid.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "valid.csv", tileset_scope);
     ASSERT_TRUE(result.has_value()) << "Expected successful load";
 
     const auto &attributes = result.value();
@@ -203,7 +203,7 @@ TEST_F(AttributesCsvLoaderTest, LoadValidFireredCsvReturnsCorrectAttributes)
 {
     const BoundLoader loader = firered_loader();
 
-    auto result = loader.load(test_resources_dir / "valid_firered.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "valid_firered.csv", tileset_scope);
     ASSERT_TRUE(result.has_value()) << "Expected successful load";
 
     const auto &attributes = result.value();
@@ -235,7 +235,7 @@ TEST_F(AttributesCsvLoaderTest, LoadNonExistentFileReturnsError)
 {
     const BoundLoader loader = emerald_loader();
 
-    auto result = loader.load(test_resources_dir / "does_not_exist.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "does_not_exist.csv", tileset_scope);
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -247,7 +247,7 @@ TEST_F(AttributesCsvLoaderTest, LoadEmptyFileReturnsError)
 {
     const BoundLoader loader = emerald_loader();
 
-    auto result = loader.load(test_resources_dir / "empty.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "empty.csv", tileset_scope);
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -261,7 +261,7 @@ TEST_F(AttributesCsvLoaderTest, LoadInvalidHeaderSingleColumnReturnsError)
 {
     const BoundLoader loader = emerald_loader();
 
-    auto result = loader.load(test_resources_dir / "invalid_header_single_column.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "invalid_header_single_column.csv", tileset_scope);
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -275,7 +275,7 @@ TEST_F(AttributesCsvLoaderTest, LoadInvalidHeaderWrongNamesReturnsError)
 {
     const BoundLoader loader = emerald_loader();
 
-    auto result = loader.load(test_resources_dir / "invalid_header_wrong_names.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "invalid_header_wrong_names.csv", tileset_scope);
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -291,7 +291,7 @@ TEST_F(AttributesCsvLoaderTest, LoadFireredCsvWithEmeraldSchemaReturnsError)
 {
     const BoundLoader loader = emerald_loader();
 
-    auto result = loader.load(test_resources_dir / "valid_firered.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "valid_firered.csv", tileset_scope);
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -305,7 +305,7 @@ TEST_F(AttributesCsvLoaderTest, LoadEmeraldCsvWithFireredSchemaReturnsError)
 {
     const BoundLoader loader = firered_loader();
 
-    auto result = loader.load(test_resources_dir / "valid.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "valid.csv", tileset_scope);
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -317,7 +317,7 @@ TEST_F(AttributesCsvLoaderTest, LoadInvalidIdNotIntegerReturnsErrorWithContext)
 {
     const BoundLoader loader = emerald_loader();
 
-    auto result = loader.load(test_resources_dir / "invalid_id_not_integer.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "invalid_id_not_integer.csv", tileset_scope);
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = join_error_chain(result);
@@ -331,7 +331,7 @@ TEST_F(AttributesCsvLoaderTest, LoadNegativeIdReturnsErrorWithContext)
 {
     const BoundLoader loader = emerald_loader();
 
-    auto result = loader.load(test_resources_dir / "negative_id.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "negative_id.csv", tileset_scope);
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = join_error_chain(result);
@@ -343,7 +343,7 @@ TEST_F(AttributesCsvLoaderTest, LoadMissingColumnsReturnsErrorWithContext)
 {
     const BoundLoader loader = emerald_loader();
 
-    auto result = loader.load(test_resources_dir / "missing_columns.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "missing_columns.csv", tileset_scope);
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = join_error_chain(result);
@@ -357,7 +357,7 @@ TEST_F(AttributesCsvLoaderTest, LoadRowWithExtraCellsReturnsErrorWithContext)
 
     // The header matches the schema, but a data row carries an extra trailing cell. That cell must fail the load like
     // the header path's unexpected-column check, not silently vanish.
-    auto result = loader.load(test_resources_dir / "row_extra_columns.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "row_extra_columns.csv", tileset_scope);
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = join_error_chain(result);
@@ -371,7 +371,7 @@ TEST_F(AttributesCsvLoaderTest, LoadRowWithExtraCellsAfterLayerTypeReturnsError)
     const BoundLoader loader = emerald_loader();
 
     // With a layer_type column present, the cap is one wider; a cell beyond it still fails.
-    auto result = loader.load(test_resources_dir / "layer_type_row_extra_columns.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "layer_type_row_extra_columns.csv", tileset_scope);
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = join_error_chain(result);
@@ -383,7 +383,7 @@ TEST_F(AttributesCsvLoaderTest, LoadDuplicateIdReturnsErrorWithBothLocations)
 {
     const BoundLoader loader = emerald_loader();
 
-    auto result = loader.load(test_resources_dir / "duplicate_id.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "duplicate_id.csv", tileset_scope);
     EXPECT_FALSE(result.has_value());
 
     std::string error_text = result.chain().back()->join(formatter_);
@@ -405,7 +405,7 @@ TEST_F(AttributesCsvLoaderTest, LoadUnknownBehaviorReturnsErrorWithContext)
 {
     const BoundLoader loader = emerald_loader();
 
-    auto result = loader.load(test_resources_dir / "unknown_behavior.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "unknown_behavior.csv", tileset_scope);
     EXPECT_FALSE(result.has_value());
 
     std::string full_error_text = join_error_chain(result);
@@ -425,7 +425,7 @@ TEST_F(AttributesCsvLoaderTest, ProviderBackedFieldMissingFromProviderMapPanics)
 
     EXPECT_DEATH(
         std::ignore =
-            loader.load(test_resources_dir / "valid_firered.csv", firered_schema_, missing_terrain, kTilesetScope),
+            loader.load(test_resources_dir / "valid_firered.csv", firered_schema_, missing_terrain, tileset_scope),
         "no provider was built");
 }
 
@@ -433,7 +433,7 @@ TEST_F(AttributesCsvLoaderTest, LoadFireredCsvUnknownTerrainTypeReturnsError)
 {
     const BoundLoader loader = firered_loader();
 
-    auto result = loader.load(test_resources_dir / "firered_unknown_terrain.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "firered_unknown_terrain.csv", tileset_scope);
     EXPECT_FALSE(result.has_value());
 
     std::string full_error_text = join_error_chain(result);
@@ -447,7 +447,7 @@ TEST_F(AttributesCsvLoaderTest, LoadFireredCsvUnknownEncounterTypeReturnsError)
 {
     const BoundLoader loader = firered_loader();
 
-    auto result = loader.load(test_resources_dir / "firered_unknown_encounter.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "firered_unknown_encounter.csv", tileset_scope);
     EXPECT_FALSE(result.has_value());
 
     std::string full_error_text = join_error_chain(result);
@@ -461,7 +461,7 @@ TEST_F(AttributesCsvLoaderTest, LoadFireredCsvRowTooFewColumnsReturnsError)
 {
     const BoundLoader loader = firered_loader();
 
-    auto result = loader.load(test_resources_dir / "firered_row_too_few_columns.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "firered_row_too_few_columns.csv", tileset_scope);
     EXPECT_FALSE(result.has_value());
 
     std::string full_error_text = join_error_chain(result);
@@ -475,7 +475,7 @@ TEST_F(AttributesCsvLoaderTest, LoadFireredCsvRawFieldTooLargeReturnsError)
 {
     const BoundLoader loader = firered_loader();
 
-    auto result = loader.load(test_resources_dir / "firered_raw_field_too_large.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "firered_raw_field_too_large.csv", tileset_scope);
     EXPECT_FALSE(result.has_value());
 
     std::string full_error_text = join_error_chain(result);
@@ -487,7 +487,7 @@ TEST_F(AttributesCsvLoaderTest, LoadFireredCsvRawFieldNotIntegerReturnsError)
 {
     const BoundLoader loader = firered_loader();
 
-    auto result = loader.load(test_resources_dir / "firered_raw_field_not_integer.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "firered_raw_field_not_integer.csv", tileset_scope);
     EXPECT_FALSE(result.has_value());
 
     std::string full_error_text = join_error_chain(result);
@@ -505,7 +505,7 @@ TEST_F(AttributesCsvLoaderTest, LoadWideRawFieldLargeValueSucceeds)
     ProviderMap no_providers{};
     AttributesCsvLoader loader{&formatter_, &config_, &diag_};
 
-    auto result = loader.load(test_resources_dir / "wide_raw_field.csv", wide_schema, no_providers, kTilesetScope);
+    auto result = loader.load(test_resources_dir / "wide_raw_field.csv", wide_schema, no_providers, tileset_scope);
     ASSERT_TRUE(result.has_value()) << join_error_chain(result);
     EXPECT_EQ(result.value().at(0).field("wide"), 500000000u);
 }
@@ -515,7 +515,7 @@ TEST_F(AttributesCsvLoaderTest, LayerTypeColumnKnobOnAppliesFilledCellsAndLeaves
     config_.write_layer_type_column = true;
     const BoundLoader loader = emerald_loader();
 
-    auto result = loader.load(test_resources_dir / "valid_layer_type.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "valid_layer_type.csv", tileset_scope);
     ASSERT_TRUE(result.has_value());
     const auto &attributes = result.value();
 
@@ -540,7 +540,7 @@ TEST_F(AttributesCsvLoaderTest, LayerTypeColumnKnobOnAppliesForMultiFieldSchema)
     config_.write_layer_type_column = true;
     const BoundLoader loader = firered_loader();
 
-    auto result = loader.load(test_resources_dir / "valid_firered_layer_type.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "valid_firered_layer_type.csv", tileset_scope);
     ASSERT_TRUE(result.has_value());
     const auto &attributes = result.value();
 
@@ -555,7 +555,7 @@ TEST_F(AttributesCsvLoaderTest, LayerTypeColumnKnobOffWarnsOnceAndIgnoresValues)
     // Default MockInfraConfig has write_layer_type_column = false.
     const BoundLoader loader = emerald_loader();
 
-    auto result = loader.load(test_resources_dir / "valid_layer_type.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "valid_layer_type.csv", tileset_scope);
     ASSERT_TRUE(result.has_value());
     const auto &attributes = result.value();
 
@@ -573,7 +573,7 @@ TEST_F(AttributesCsvLoaderTest, LayerTypeColumnKnobOnWithNoColumnNoWarning)
     config_.write_layer_type_column = true;
     const BoundLoader loader = emerald_loader();
 
-    auto result = loader.load(test_resources_dir / "valid.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "valid.csv", tileset_scope);
     ASSERT_TRUE(result.has_value());
     EXPECT_FALSE(result.value().at(0).explicit_layer_type().has_value());
     EXPECT_FALSE(diag_.warning_tag_counts().contains("layer-type-column"));
@@ -584,7 +584,7 @@ TEST_F(AttributesCsvLoaderTest, LayerTypeColumnKnobOnBadTokenErrorsWithFileConte
     config_.write_layer_type_column = true;
     const BoundLoader loader = emerald_loader();
 
-    auto result = loader.load(test_resources_dir / "invalid_layer_type_token.csv", kTilesetScope);
+    auto result = loader.load(test_resources_dir / "invalid_layer_type_token.csv", tileset_scope);
     ASSERT_FALSE(result.has_value());
 
     std::string full_error_text = join_error_chain(result);

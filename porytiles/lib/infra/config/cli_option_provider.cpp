@@ -244,6 +244,20 @@ LayerValue<std::string> CliOptionProvider::tileset_paths_secondary_bin(
     return parse_string(storage_.tileset_paths_secondary_bin, "--tileset-paths-secondary-bin");
 }
 
+LayerValue<std::optional<std::size_t>> CliOptionProvider::metatile_attribute_size(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_optional_size_t(storage_.metatile_attribute_size, "--metatile-attribute-size");
+}
+
+LayerValue<std::optional<std::size_t>> CliOptionProvider::metatile_attribute_declaration_size(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_optional_size_t(storage_.metatile_attribute_declaration_size, "--metatile-attribute-declaration-size");
+}
+
 LayerValue<bool> CliOptionProvider::write_layer_type_column(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
@@ -251,25 +265,11 @@ LayerValue<bool> CliOptionProvider::write_layer_type_column(
     return parse_bool(storage_.write_layer_type_column, "--write-layer-type-column");
 }
 
-LayerValue<FrlgAlternateMaskMode> CliOptionProvider::use_frlg_alternate_masks(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    // All types use parse functions for uniform error handling
-    return parse_frlg_alternate_mask_mode(storage_.use_frlg_alternate_masks, "--use-frlg-alternate-masks");
-}
-
 LayerValue<std::optional<std::uint32_t>> CliOptionProvider::metatile_layer_type_mask(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     // All types use parse functions for uniform error handling
     return parse_layer_type_mask(storage_.metatile_layer_type_mask, "--metatile-layer-type-mask");
-}
-
-LayerValue<std::optional<std::uint32_t>> CliOptionProvider::metatile_layer_type_mask_frlg(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    // All types use parse functions for uniform error handling
-    return parse_layer_type_mask(storage_.metatile_layer_type_mask_frlg, "--metatile-layer-type-mask-frlg");
 }
 
 LayerValue<bool> CliOptionProvider::tileset_animations_wire_anim_code(

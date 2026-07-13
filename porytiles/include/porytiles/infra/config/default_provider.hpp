@@ -125,6 +125,12 @@ class DefaultProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<std::string>
     tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const override;
 
+    [[nodiscard]] LayerValue<std::optional<std::size_t>>
+    metatile_attribute_size(ConfigScopeType type, const std::string &scope) const override;
+
+    [[nodiscard]] LayerValue<std::optional<std::size_t>>
+    metatile_attribute_declaration_size(ConfigScopeType type, const std::string &scope) const override;
+
     [[nodiscard]] LayerValue<MetatileAttributeFieldSpecs>
     metatile_attribute_fields(ConfigScopeType type, const std::string &scope) const override;
 
@@ -134,14 +140,8 @@ class DefaultProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<bool>
     write_layer_type_column(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<FrlgAlternateMaskMode>
-    use_frlg_alternate_masks(ConfigScopeType type, const std::string &scope) const override;
-
     [[nodiscard]] LayerValue<std::optional<std::uint32_t>>
     metatile_layer_type_mask(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<std::optional<std::uint32_t>>
-    metatile_layer_type_mask_frlg(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<bool>
     tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const override;

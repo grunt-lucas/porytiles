@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <cstdint>
 #include <format>
 #include <optional>
@@ -23,6 +24,28 @@ struct std::formatter<std::optional<std::uint32_t>> {
     {
         if (value.has_value()) {
             return std::format_to(ctx.out(), "0x{:X}", value.value());
+        }
+        return std::format_to(ctx.out(), "unset");
+    }
+};
+
+/// @brief Formats an optional size config value for display.
+///
+/// @details
+/// Companion to the optional mask formatter above, for config values typed std::optional<std::size_t> (currently the
+/// metatile attribute declaration size). An engaged value is a plain byte count, so it renders as decimal; an unset
+/// value renders as the literal "unset" (meaning "fall back to the related size value").
+template <>
+struct std::formatter<std::optional<std::size_t>> {
+    constexpr auto parse(std::format_parse_context &ctx)
+    {
+        return ctx.begin();
+    }
+
+    auto format(const std::optional<std::size_t> &value, auto &ctx) const
+    {
+        if (value.has_value()) {
+            return std::format_to(ctx.out(), "{}", value.value());
         }
         return std::format_to(ctx.out(), "unset");
     }

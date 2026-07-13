@@ -27,7 +27,7 @@
 /// completion results. All errors are silently ignored.
 class ListTilesetsCommand final : public Command {
   public:
-    explicit ListTilesetsCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+    explicit ListTilesetsCommand(CLI::App &parent_app) : Command{parent_app, command_name, command_desc, command_group}
     {
         CLI::App &cmd = get_app();
 
@@ -94,9 +94,9 @@ class ListTilesetsCommand final : public Command {
         }
     }
 
-    static constexpr auto kCommandName = "list-tilesets";
-    static constexpr auto kCommandDesc = "List tilesets in the project.";
-    static constexpr auto kCommandGroup = "UTILITIES";
+    static constexpr auto command_name = "list-tilesets";
+    static constexpr auto command_desc = "List tilesets in the project.";
+    static constexpr auto command_group = "UTILITIES";
 
     std::string project_root_;
     std::string filter_;

@@ -6,7 +6,6 @@
 
 #include "gtest/gtest.h"
 
-#include "porytiles/infra/config/frlg_alternate_mask_mode.hpp"
 #include "porytiles/utilities/text/plain_text_formatter.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
 #include "porytiles/xcut/diagnostics/buffered_user_diagnostics.hpp"
@@ -49,7 +48,6 @@ fieldmap:
   metatile_attribute_fields:
     - name: behavior
       mask: 0x00FF
-      frlg_mask: 0x1FF
       default: 0
       provider:
         header: include/constants/metatile_behaviors.h
@@ -75,8 +73,6 @@ fieldmap:
     EXPECT_EQ(specs[0].name, "behavior");
     ASSERT_TRUE(specs[0].mask.has_value());
     EXPECT_EQ(specs[0].mask.value(), 0x00FFU);
-    ASSERT_TRUE(specs[0].frlg_mask.has_value());
-    EXPECT_EQ(specs[0].frlg_mask.value(), 0x1FFU);
     ASSERT_TRUE(specs[0].default_value.has_value());
     EXPECT_EQ(specs[0].default_value.value(), 0U);
     ASSERT_TRUE(specs[0].provider.has_value());
@@ -173,64 +169,12 @@ fieldmap:
     EXPECT_TRUE(result.value.value());
 }
 
-TEST_F(YamlFileProviderMetatileAttributeTest, UseFrlgAlternateMasksEnumSpellingsParse)
-{
-    write_config(R"(
-fieldmap:
-  use_frlg_alternate_masks: always
-)");
-
-    YamlFileProvider provider{nullptr, project_root_};
-    const auto result = provider.use_frlg_alternate_masks(ConfigScopeType::tileset, "test");
-    ASSERT_EQ(result.state, ValidationState::valid);
-    ASSERT_TRUE(result.value.has_value());
-    EXPECT_EQ(result.value.value(), FrlgAlternateMaskMode::always);
-}
-
-TEST_F(YamlFileProviderMetatileAttributeTest, UseFrlgAlternateMasksBoolTrueMapsToAlways)
-{
-    write_config(R"(
-fieldmap:
-  use_frlg_alternate_masks: true
-)");
-
-    YamlFileProvider provider{nullptr, project_root_};
-    const auto result = provider.use_frlg_alternate_masks(ConfigScopeType::tileset, "test");
-    ASSERT_EQ(result.state, ValidationState::valid);
-    EXPECT_EQ(result.value.value(), FrlgAlternateMaskMode::always);
-}
-
-TEST_F(YamlFileProviderMetatileAttributeTest, UseFrlgAlternateMasksBoolFalseMapsToNever)
-{
-    write_config(R"(
-fieldmap:
-  use_frlg_alternate_masks: false
-)");
-
-    YamlFileProvider provider{nullptr, project_root_};
-    const auto result = provider.use_frlg_alternate_masks(ConfigScopeType::tileset, "test");
-    ASSERT_EQ(result.state, ValidationState::valid);
-    EXPECT_EQ(result.value.value(), FrlgAlternateMaskMode::never);
-}
-
-TEST_F(YamlFileProviderMetatileAttributeTest, UseFrlgAlternateMasksGarbageIsInvalid)
-{
-    write_config(R"(
-fieldmap:
-  use_frlg_alternate_masks: sideways
-)");
-
-    YamlFileProvider provider{nullptr, project_root_};
-    const auto result = provider.use_frlg_alternate_masks(ConfigScopeType::tileset, "test");
-    EXPECT_EQ(result.state, ValidationState::invalid);
-}
-
-TEST_F(YamlFileProviderMetatileAttributeTest, BothNewKeysPassUnknownKeyValidation)
+TEST_F(YamlFileProviderMetatileAttributeTest, KnownFieldmapKeysPassUnknownKeyValidation)
 {
     write_config(R"(
 fieldmap:
   write_layer_type_column: true
-  use_frlg_alternate_masks: automatic
+  metatile_attribute_declaration_size: 2
 )");
 
     YamlFileProvider provider{nullptr, project_root_};
@@ -238,23 +182,92 @@ fieldmap:
     EXPECT_FALSE(provider.preload_and_validate(ConfigScopeType::tileset, "test"));
 }
 
+TEST_F(YamlFileProviderMetatileAttributeTest, DeclarationSizeParses)
+{
+    write_config(R"(
+fieldmap:
+  metatile_attribute_declaration_size: 2
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.metatile_attribute_declaration_size(ConfigScopeType::tileset, "test");
+    ASSERT_EQ(result.state, ValidationState::valid);
+    ASSERT_TRUE(result.value.has_value());
+    ASSERT_TRUE(result.value.value().has_value());
+    EXPECT_EQ(result.value.value().value(), 2U);
+}
+
+TEST_F(YamlFileProviderMetatileAttributeTest, DeclarationSizeAbsentIsNotProvided)
+{
+    write_config(R"(
+fieldmap:
+  write_layer_type_column: true
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.metatile_attribute_declaration_size(ConfigScopeType::tileset, "test");
+    EXPECT_EQ(result.state, ValidationState::not_provided);
+}
+
+TEST_F(YamlFileProviderMetatileAttributeTest, DeclarationSizeGarbageIsInvalid)
+{
+    write_config(R"(
+fieldmap:
+  metatile_attribute_declaration_size: wide
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.metatile_attribute_declaration_size(ConfigScopeType::tileset, "test");
+    EXPECT_EQ(result.state, ValidationState::invalid);
+}
+
+TEST_F(YamlFileProviderMetatileAttributeTest, RemovedFrlgKeysFailUnknownKeyValidation)
+{
+    // use_frlg_alternate_masks and metatile_layer_type_mask_frlg were removed with the one-schema-per-project rework:
+    // the FRLG-ness of an expansion build is chosen with metatile_attribute_size, not per-tileset layout selection.
+    // A config that still sets the stale keys must fail validation so an upgrading user gets a clear error.
+    write_config(R"(
+fieldmap:
+  use_frlg_alternate_masks: always
+  metatile_layer_type_mask_frlg: 0x60000000
+)");
+
+    BufferedUserDiagnostics diag;
+    YamlFileProvider provider{&diag, project_root_};
+    // preload_and_validate returns true on validation failure; the keys are now unknown.
+    EXPECT_TRUE(provider.preload_and_validate(ConfigScopeType::tileset, "test"));
+}
+
 TEST_F(YamlFileProviderMetatileAttributeTest, RemovedBaseGameKeysFailUnknownKeyValidation)
 {
-    // base_game and metatile_attribute_size were removed in the base-game-decomposition work (issue #285): the layout
-    // is now inferred from the target decomp and configured through metatile_attribute_fields. A config that still sets
-    // a stale key must fail validation so an upgrading user gets a clear error instead of a silently ignored setting.
+    // base_game was removed in the base-game-decomposition work (issue #285): the layout is now inferred from the
+    // target decomp and configured through metatile_attribute_fields. A config that still sets the stale key must
+    // fail validation so an upgrading user gets a clear error instead of a silently ignored setting.
     write_config(R"(
 fieldmap:
   base_game: pokeemerald
-  metatile_attribute_size: 2
 )");
 
     // Validation only runs when a real diagnostics sink is present: with a null diagnostics the provider skips the
     // unknown-key check entirely, so the negative case needs a live sink to exercise it.
     BufferedUserDiagnostics diag;
     YamlFileProvider provider{&diag, project_root_};
-    // preload_and_validate returns true on validation failure; both keys are now unknown.
+    // preload_and_validate returns true on validation failure; the key is now unknown.
     EXPECT_TRUE(provider.preload_and_validate(ConfigScopeType::tileset, "test"));
+}
+
+TEST_F(YamlFileProviderMetatileAttributeTest, ReintroducedMetatileAttributeSizeKeyPassesValidation)
+{
+    // metatile_attribute_size was removed alongside base_game in issue #285 but reintroduced as an explicit override
+    // on top of the mask-layout inference (issue #336), so it must validate as a known key again.
+    write_config(R"(
+fieldmap:
+  metatile_attribute_size: 4
+)");
+
+    BufferedUserDiagnostics diag;
+    YamlFileProvider provider{&diag, project_root_};
+    EXPECT_FALSE(provider.preload_and_validate(ConfigScopeType::tileset, "test"));
 }
 
 } // namespace

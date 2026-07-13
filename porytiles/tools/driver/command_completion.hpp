@@ -24,7 +24,7 @@
 /// - create-tileset: no completion (user provides new name)
 class CompletionCommand final : public Command {
   public:
-    explicit CompletionCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+    explicit CompletionCommand(CLI::App &parent_app) : Command{parent_app, command_name, command_desc, command_group}
     {
         CLI::App &cmd = get_app();
         cmd.add_option("<shell>", shell_, "Shell type: bash, zsh, or fish")->required();
@@ -49,9 +49,9 @@ class CompletionCommand final : public Command {
         }
     }
 
-    static constexpr auto kCommandName = "completion";
-    static constexpr auto kCommandDesc = "Generate shell completion scripts.";
-    static constexpr auto kCommandGroup = "UTILITIES";
+    static constexpr auto command_name = "completion";
+    static constexpr auto command_desc = "Generate shell completion scripts.";
+    static constexpr auto command_group = "UTILITIES";
     std::string shell_;
 
     void output_bash_completion()

@@ -15,7 +15,6 @@
 #include "porytiles/domain/config/tiles_palette_mode.hpp"
 #include "porytiles/domain/models/rgba32.hpp"
 #include "porytiles/domain/packing/models/palette_hint.hpp"
-#include "porytiles/infra/config/frlg_alternate_mask_mode.hpp"
 #include "porytiles/infra/config/layer_value.hpp"
 #include "porytiles/infra/config/optional_mask_format.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
@@ -146,18 +145,18 @@ class ConfigProvider {
     tileset_paths_secondary_src(ConfigScopeType type, const std::string &scope) const;
     [[nodiscard]] virtual LayerValue<std::string>
     tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::optional<std::size_t>>
+    metatile_attribute_size(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<std::optional<std::size_t>>
+    metatile_attribute_declaration_size(ConfigScopeType type, const std::string &scope) const;
     [[nodiscard]] virtual LayerValue<MetatileAttributeFieldSpecs>
     metatile_attribute_fields(ConfigScopeType type, const std::string &scope) const;
     [[nodiscard]] virtual LayerValue<MetatileAttributeFieldOverrides>
     metatile_attribute_field_overrides(ConfigScopeType type, const std::string &scope) const;
     [[nodiscard]] virtual LayerValue<bool>
     write_layer_type_column(ConfigScopeType type, const std::string &scope) const;
-    [[nodiscard]] virtual LayerValue<FrlgAlternateMaskMode>
-    use_frlg_alternate_masks(ConfigScopeType type, const std::string &scope) const;
     [[nodiscard]] virtual LayerValue<std::optional<std::uint32_t>>
     metatile_layer_type_mask(ConfigScopeType type, const std::string &scope) const;
-    [[nodiscard]] virtual LayerValue<std::optional<std::uint32_t>>
-    metatile_layer_type_mask_frlg(ConfigScopeType type, const std::string &scope) const;
     [[nodiscard]] virtual LayerValue<bool>
     tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const;
 };

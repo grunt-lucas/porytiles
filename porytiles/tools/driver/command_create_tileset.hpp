@@ -17,7 +17,7 @@
 
 class CreateTilesetCommand final : public Command {
   public:
-    explicit CreateTilesetCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+    explicit CreateTilesetCommand(CLI::App &parent_app) : Command{parent_app, command_name, command_desc, command_group}
     {
         CLI::App &cmd = get_app();
         cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to create (e.g., gTileset_MyTileset)")
@@ -32,8 +32,28 @@ class CreateTilesetCommand final : public Command {
     {
         using namespace porytiles;
 
-        TilesetCommandEnv env{project_root_opt_.project_root(), tileset_name_, cli_storage_};
-        TilesetCommandServices services{env, tileset_name_};
+        TilesetCommandEnv env{project_root_opt_.project_root(), cli_storage_};
+
+        // Env initialization and schema resolution can fail, so they run first and their failures chain and report
+        // through the unfiltered stderr diagnostics.
+        const auto env_result = env.initialize(tileset_name_);
+        if (!env_result.has_value()) {
+            const auto env_fail_result = ChainableResult<void>{
+                FormattableError{"Failed to create tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
+                env_result};
+            env.stderr_diag.fatal(env_fail_result);
+            throw CLI::RuntimeError{1};
+        }
+
+        auto attribute_context = resolve_attribute_context(env, tileset_name_);
+        if (!attribute_context.has_value()) {
+            const auto fail_result = ChainableResult<void>{
+                FormattableError{"Failed to create tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
+                attribute_context};
+            env.diag->fatal(fail_result);
+            throw CLI::RuntimeError{1};
+        }
+        TilesetCommandServices services{env, std::move(attribute_context).value()};
 
         // Setup creator. The creator seeds its sample art with a behavior constant name, so it needs the
         // behavior field's provider. A schema without a provider-backed behavior field cannot support creation, so fail
@@ -84,9 +104,9 @@ class CreateTilesetCommand final : public Command {
         }
     }
 
-    static constexpr auto kCommandName = "create-tileset";
-    static constexpr auto kCommandDesc = "Create a new Porytiles-managed tileset from scratch.";
-    static constexpr auto kCommandGroup = "COMMANDS";
+    static constexpr auto command_name = "create-tileset";
+    static constexpr auto command_desc = "Create a new Porytiles-managed tileset from scratch.";
+    static constexpr auto command_group = "COMMANDS";
     std::string tileset_name_;
     bool secondary_ = false;
     OptProjectRoot project_root_opt_;

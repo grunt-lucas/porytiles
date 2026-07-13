@@ -237,35 +237,35 @@ struct CliOptionMeta {
             {},
             false},
         CliOptionMeta{
+            "metatile-attribute-size",
+            "Metatile Attribute Size - Pins the size in bytes of each metatile attribute entry (1, 2, or 4). When "
+            "unset, Porytiles derives the size from the attribute masks the project declares; must be set explicitly "
+            "on projects that declare more than one mask layout (pokeemerald-expansion), one value per build flavor. "
+            "Project-global.",
+            "integer",
+            {},
+            false},
+        CliOptionMeta{
+            "metatile-attribute-declaration-size",
+            "Metatile Attribute Declaration Size - The declared element width in bytes (1, 2, or 4) for generated "
+            "gMetatileAttributes_* C declarations (const uN / INCBIN_UN). Defaults to the metatile attribute size. "
+            "Normally inferred from struct Tileset's metatileAttributes member in include/global.fieldmap.h; set this "
+            "only when that inference is impossible or wrong. Project-global.",
+            "integer",
+            {},
+            false},
+        CliOptionMeta{
             "write-layer-type-column",
             "Write Layer Type Column - Emit and honor a layer_type column in the metatile attributes CSV.",
             "bool",
             {},
             true},
         CliOptionMeta{
-            "use-frlg-alternate-masks",
-            "Use FRLG Alternate Masks - Whether to select the FireRed/LeafGreen alternate metatile attribute masks for "
-            "a tileset: automatic (cross-reference layouts.json), always, or never. true/false are accepted as aliases "
-            "for always/never. Intended to be set at tileset scope in porytiles/tilesets/<name>/config.yaml.",
-            "enum",
-            {"automatic", "always", "never"},
-            false},
-        CliOptionMeta{
             "metatile-layer-type-mask",
             "Metatile Layer Type Mask - Bit mask (a hex literal like 0xF000) for the layer-type bits of a metatile "
             "attribute. A mask of 0 disables the layer type, so every metatile is Normal and no layer-type bits are "
-            "written. When unset, Porytiles infers the mask from the base game (METATILE_ATTR_LAYER_MASK / "
-            "sMetatileAttrMasks) and falls back to the size-based default. Intended to be set at tileset scope in "
-            "porytiles/tilesets/<name>/config.yaml.",
-            "string",
-            {},
-            false},
-        CliOptionMeta{
-            "metatile-layer-type-mask-frlg",
-            "Metatile Layer Type Mask FRLG - Bit mask (a hex literal like 0x60000000) for the layer-type bits under "
-            "the FireRed/LeafGreen alternate attribute layout. A mask of 0 disables the layer type. When unset, "
-            "Porytiles infers the mask from the base game and falls back to the size-based default. Intended to be set "
-            "at tileset scope in porytiles/tilesets/<name>/config.yaml.",
+            "written. When unset, Porytiles uses the layer-type mask of the inferred mask layout "
+            "(METATILE_ATTR_LAYER_MASK / sMetatileAttrMasks) and falls back to the size-based default. Project-global.",
             "string",
             {},
             false},

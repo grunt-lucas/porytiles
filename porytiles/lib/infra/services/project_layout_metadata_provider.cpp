@@ -109,18 +109,6 @@ const std::filesystem::path layouts_json_rel_path = std::filesystem::path{"data"
             auto border_fp = std::filesystem::path{entry.at("border_filepath").get<std::string>()};
             auto blockdata_fp = std::filesystem::path{entry.at("blockdata_filepath").get<std::string>()};
 
-            // layout_version is optional. Emerald-family layouts usually omit it; FRLG decomps set it to "frlg". A
-            // string value is stored verbatim. A present-but-non-string value (number, null, object) is stored as its
-            // JSON text so layout_version_usage rejects it as an invalid value rather than silently reading it as
-            // Emerald; schema width must not ride on a typo. Validation stays in layout_version_usage, where the value
-            // actually drives schema width, so an unrelated layout's bad value cannot brick commands that never consult
-            // FRLG-ness.
-            std::optional<std::string> layout_version;
-            if (entry.contains("layout_version")) {
-                const auto &version_node = entry.at("layout_version");
-                layout_version = version_node.is_string() ? version_node.get<std::string>() : version_node.dump();
-            }
-
             const auto idx = entries.size();
             entries.push_back(
                 ProjectLayoutMetadata{
@@ -131,8 +119,7 @@ const std::filesystem::path layouts_json_rel_path = std::filesystem::path{"data"
                     std::move(primary_tileset),
                     std::move(secondary_tileset),
                     std::move(border_fp),
-                    std::move(blockdata_fp),
-                    std::move(layout_version)});
+                    std::move(blockdata_fp)});
 
             index.emplace(entries.at(idx).id(), idx);
             index.emplace(entries.at(idx).name(), idx);
@@ -309,61 +296,6 @@ ChainableResult<std::string> ProjectLayoutMetadataProvider::layouts_table_label(
         std::string,
         "Failed to get layouts table label.");
     return layouts_table_label_;
-}
-
-ChainableResult<TilesetLayoutVersionUsage>
-ProjectLayoutMetadataProvider::layout_version_usage(const std::string &tileset_label) const
-{
-    // Missing layouts.json is not an error here: a project without layouts simply has no FRLG signal, so the tileset is
-    // unreferenced. Check existence before parsing so we do not surface a "failed to open" error for this case.
-    const auto layouts_path = project_root_ / layouts_json_rel_path;
-    if (!std::filesystem::exists(layouts_path)) {
-        return TilesetLayoutVersionUsage::unreferenced;
-    }
-
-    PT_TRY_CALL_CHAIN_ERR(
-        ensure_layouts_parsed(
-            project_root_, layouts_parsed_, layouts_table_label_, layout_entries_, layout_index_, format_),
-        TilesetLayoutVersionUsage,
-        "Failed to classify layout_version usage.");
-
-    bool saw_emerald = false;
-    bool saw_frlg = false;
-    for (const auto &entry : layout_entries_) {
-        if (entry.primary_tileset() != tileset_label && entry.secondary_tileset() != tileset_label) {
-            continue;
-        }
-
-        const auto &version = entry.layout_version();
-        if (!version.has_value() || version.value() == "emerald") {
-            saw_emerald = true;
-        }
-        else if (version.value() == "frlg") {
-            saw_frlg = true;
-        }
-        else {
-            return FormattableError{format_->format(
-                "Layout '{}' references tileset '{}' with invalid 'layout_version' value '{}'. Valid values are '{}' "
-                "and "
-                "'{}'.",
-                FormatParam{entry.name(), Style::bold},
-                FormatParam{tileset_label, Style::bold},
-                FormatParam{version.value(), Style::bold},
-                FormatParam{std::string{"emerald"}, Style::bold},
-                FormatParam{std::string{"frlg"}, Style::bold})};
-        }
-    }
-
-    if (saw_emerald && saw_frlg) {
-        return TilesetLayoutVersionUsage::mixed;
-    }
-    if (saw_frlg) {
-        return TilesetLayoutVersionUsage::frlg_only;
-    }
-    if (saw_emerald) {
-        return TilesetLayoutVersionUsage::emerald_only;
-    }
-    return TilesetLayoutVersionUsage::unreferenced;
 }
 
 ChainableResult<std::filesystem::path>

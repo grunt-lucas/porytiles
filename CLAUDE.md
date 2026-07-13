@@ -68,12 +68,15 @@ There is also a `pokefirered` testbed at `./pokefirered`, and a `pokeemerald` at
 
 `gTileset_General` is the usual smoke test for changes. Stock expansion assets do not
 import or compile cleanly with defaults, so use these exact flag sets. Without them the
-import fails and you get stuck.
+import fails and you get stuck. Expansion declares both metatile attribute mask layouts
+(emerald and FRLG), so `--metatile-attribute-size` is required there: 2 selects the
+emerald flavor, 4 the FRLG flavor.
 
 Import:
 
 ```bash
 porytiles import-tileset gTileset_General \
+  --metatile-attribute-size 2 \
   --anim-pal-resolution-strategy palette-04 \
   --anim-key-frame-resolution-strategy mangle \
   --diagnostic-remarks-exclude '.*' \
@@ -85,6 +88,7 @@ Compile:
 
 ```bash
 porytiles compile-tileset gTileset_General \
+  --metatile-attribute-size 2 \
   --extrinsic-transparency 1,2,3 \
   --no-verify-checksums \
   --diagnostic-remarks-exclude '.*' \

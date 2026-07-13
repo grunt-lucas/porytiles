@@ -218,6 +218,18 @@ LayerValue<std::string> ConfigProvider::tileset_paths_secondary_bin(
     return LayerValue<std::string>::not_provided();
 }
 
+LayerValue<std::optional<std::size_t>> ConfigProvider::metatile_attribute_size(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::optional<std::size_t>>::not_provided();
+}
+
+LayerValue<std::optional<std::size_t>> ConfigProvider::metatile_attribute_declaration_size(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::optional<std::size_t>>::not_provided();
+}
+
 LayerValue<MetatileAttributeFieldSpecs> ConfigProvider::metatile_attribute_fields(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
@@ -236,19 +248,7 @@ LayerValue<bool> ConfigProvider::write_layer_type_column(
     return LayerValue<bool>::not_provided();
 }
 
-LayerValue<FrlgAlternateMaskMode> ConfigProvider::use_frlg_alternate_masks(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    return LayerValue<FrlgAlternateMaskMode>::not_provided();
-}
-
 LayerValue<std::optional<std::uint32_t>> ConfigProvider::metatile_layer_type_mask(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    return LayerValue<std::optional<std::uint32_t>>::not_provided();
-}
-
-LayerValue<std::optional<std::uint32_t>> ConfigProvider::metatile_layer_type_mask_frlg(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<std::optional<std::uint32_t>>::not_provided();

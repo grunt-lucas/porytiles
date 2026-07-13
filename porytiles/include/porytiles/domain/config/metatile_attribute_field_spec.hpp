@@ -17,18 +17,15 @@ namespace porytiles {
 /// @brief A user-authored (or inferred) description of one metatile attribute field.
 ///
 /// @details
-/// This is the raw config-layer value that feeds the schema loader. Unlike the validated domain Field, a spec may be
-/// incomplete: a field with only a @c frlg_mask and no primary @c mask is an alternate-layout-only field, valid at the
-/// config layer but excluded from the primary Schema. The loader turns the specs into a validated Schema and resolves
-/// any overrides.
+/// This is the raw config-layer value that feeds the schema loader. The loader turns the specs into a validated
+/// Schema and resolves any overrides.
 ///
-/// @c mask is the primary-layout bit mask; when absent, the field is alternate-only. @c frlg_mask is the FRLG-layout
-/// mask stored for per-tileset layout selection (see issue #283). @c default_value is the value used when the field is
-/// absent from a metatile. @c provider optionally points the field at the header that declares its value names.
+/// @c mask is the field's bit mask; it is optional at the parse layer so an override merge can supply it, but a fully
+/// merged spec without one is rejected by the loader. @c default_value is the value used when the field is absent
+/// from a metatile. @c provider optionally points the field at the header that declares its value names.
 struct MetatileAttributeFieldSpec {
     std::string name;
     std::optional<std::uint32_t> mask;
-    std::optional<std::uint32_t> frlg_mask;
     std::optional<std::uint32_t> default_value;
     std::optional<ProviderSpec> provider;
 
@@ -61,7 +58,6 @@ struct ProviderSpecOverride {
 /// partial override: nullopt means "do not touch the provider", while a present value adjusts (or removes) it.
 struct MetatileAttributeFieldOverride {
     std::optional<std::uint32_t> mask;
-    std::optional<std::uint32_t> frlg_mask;
     std::optional<std::uint32_t> default_value;
     std::optional<ProviderSpecOverride> provider;
 
@@ -94,10 +90,9 @@ namespace detail {
 [[nodiscard]] inline std::string to_string(const MetatileAttributeFieldSpec &spec)
 {
     std::string result = std::format(
-        "{}={{mask={}, frlg_mask={}, default={}",
+        "{}={{mask={}, default={}",
         spec.name,
         detail::format_optional_mask(spec.mask),
-        detail::format_optional_mask(spec.frlg_mask),
         detail::format_optional_mask(spec.default_value));
     if (spec.provider.has_value()) {
         result += ", provider=" + detail::format_provider_spec(spec.provider.value());
@@ -134,9 +129,8 @@ inline std::ostream &operator<<(std::ostream &os, const MetatileAttributeFieldSp
 [[nodiscard]] inline std::string to_string(const MetatileAttributeFieldOverride &override_value)
 {
     std::string result = std::format(
-        "{{mask={}, frlg_mask={}, default={}",
+        "{{mask={}, default={}",
         detail::format_optional_mask(override_value.mask),
-        detail::format_optional_mask(override_value.frlg_mask),
         detail::format_optional_mask(override_value.default_value));
     if (override_value.provider.has_value()) {
         if (override_value.provider->remove) {

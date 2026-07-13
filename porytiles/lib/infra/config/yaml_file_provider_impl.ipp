@@ -24,7 +24,6 @@
 #include "porytiles/domain/config/tiles_palette_mode.hpp"
 #include "porytiles/domain/packing/models/palette_hint.hpp"
 #include "porytiles/infra/config/config_provider.hpp"
-#include "porytiles/infra/config/frlg_alternate_mask_mode.hpp"
 #include "porytiles/infra/config/valid_yaml_paths.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 #include "porytiles/utilities/text/file_highlight_printer.hpp"
@@ -235,6 +234,41 @@ parse_size_t(const TextFormatter *format, const YAML::Node &node, const std::str
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<std::size_t>::invalid(error, source, details);
+    }
+}
+
+/// @brief Attempts to parse an optional std::size_t value from a YAML node.
+///
+/// @details
+/// Same parsing rules as parse_size_t, but the value type is std::optional<std::size_t>: an undefined node is
+/// not_provided (so the DefaultProvider's std::nullopt applies), and a present key always yields an engaged optional.
+///
+/// @param format The text formatter to use
+/// @param node The YAML node to parse
+/// @param key The configuration key name (for error messages)
+/// @param file_path The YAML file path (for source info)
+/// @return LayerValue containing the parsed value, error, or not_provided status
+LayerValue<std::optional<std::size_t>> parse_optional_size_t(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<std::optional<std::size_t>>::not_provided();
+    }
+
+    try {
+        const auto value = node.as<std::size_t>();
+        const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<std::optional<std::size_t>>::valid(std::optional<std::size_t>{value}, key, source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error =
+            format->format("Failed to parse '{}' as integer: {}", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<std::optional<std::size_t>>::invalid(error, source, details);
     }
 }
 
@@ -873,7 +907,7 @@ LayerValue<MetatileAttributeFieldSpecs> parse_metatile_attribute_fields(
                 details);
         }
 
-        const std::unordered_set<std::string> field_keys{"name", "mask", "frlg_mask", "default", "provider"};
+        const std::unordered_set<std::string> field_keys{"name", "mask", "default", "provider"};
         const std::unordered_set<std::string> provider_keys{"header", "prefix", "skipped", "format"};
 
         MetatileAttributeFieldSpecs specs;
@@ -913,7 +947,7 @@ LayerValue<MetatileAttributeFieldSpecs> parse_metatile_attribute_fields(
 
             for (const auto &[member, target] :
                  std::initializer_list<std::pair<const char *, std::optional<std::uint32_t> *>>{
-                     {"mask", &spec.mask}, {"frlg_mask", &spec.frlg_mask}, {"default", &spec.default_value}}) {
+                     {"mask", &spec.mask}, {"default", &spec.default_value}}) {
                 if (field_node[member].IsDefined()) {
                     const auto text = field_node[member].as<std::string>();
                     const auto parsed = parse_mask_scalar(text);
@@ -1030,7 +1064,7 @@ LayerValue<MetatileAttributeFieldOverrides> parse_metatile_attribute_field_overr
                 details);
         }
 
-        const std::unordered_set<std::string> override_keys{"mask", "frlg_mask", "default", "provider"};
+        const std::unordered_set<std::string> override_keys{"mask", "default", "provider"};
         const std::unordered_set<std::string> provider_keys{"header", "prefix", "skipped", "format"};
 
         MetatileAttributeFieldOverrides overrides;
@@ -1064,9 +1098,7 @@ LayerValue<MetatileAttributeFieldOverrides> parse_metatile_attribute_field_overr
             MetatileAttributeFieldOverride override_value;
             for (const auto &[member, target] :
                  std::initializer_list<std::pair<const char *, std::optional<std::uint32_t> *>>{
-                     {"mask", &override_value.mask},
-                     {"frlg_mask", &override_value.frlg_mask},
-                     {"default", &override_value.default_value}}) {
+                     {"mask", &override_value.mask}, {"default", &override_value.default_value}}) {
                 if (override_node[member].IsDefined()) {
                     const auto text = override_node[member].as<std::string>();
                     const auto parsed = parse_mask_scalar(text);
@@ -1391,49 +1423,6 @@ LayerValue<PrimaryPairingMode> parse_primary_pairing_mode(
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<PrimaryPairingMode>::invalid(error, source, details);
-    }
-}
-
-LayerValue<FrlgAlternateMaskMode> parse_frlg_alternate_mask_mode(
-    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
-{
-    if (!node.IsDefined()) {
-        return LayerValue<FrlgAlternateMaskMode>::not_provided();
-    }
-
-    const auto mark = node.Mark();
-    const auto source = make_source_string(format, file_path, mark);
-    const auto details = make_source_details(format, file_path, mark);
-
-    // Accept a YAML boolean as an alias: true maps to always, false maps to never. yaml-cpp throws
-    // a YAML::Exception for a non-boolean scalar, in which case we fall back to fuzzy string parsing.
-    try {
-        const auto bool_value = node.as<bool>();
-        return LayerValue<FrlgAlternateMaskMode>::valid(
-            bool_value ? FrlgAlternateMaskMode::always : FrlgAlternateMaskMode::never, key, source, details);
-    }
-    catch (const YAML::Exception &) {
-        // Not a boolean scalar; fall through to string parsing below.
-    }
-
-    try {
-        const auto node_value = node.as<std::string>();
-        const auto mode_opt = frlg_alternate_mask_mode_from_str(node_value);
-
-        if (!mode_opt.has_value()) {
-            const auto error = format->format(
-                "'{}' has invalid value '{}'. Valid values are true, false, automatic, always, or never.",
-                FormatParam{key, Style::bold},
-                FormatParam{node_value, Style::bold});
-            return LayerValue<FrlgAlternateMaskMode>::invalid(error, source, details);
-        }
-
-        return LayerValue<FrlgAlternateMaskMode>::valid(mode_opt.value(), key, source, details);
-    }
-    catch (const YAML::Exception &e) {
-        const auto error = format->format(
-            "Failed to parse '{}' as FrlgAlternateMaskMode: {}.", FormatParam{key, Style::bold}, e.what());
-        return LayerValue<FrlgAlternateMaskMode>::invalid(error, source, details);
     }
 }
 
