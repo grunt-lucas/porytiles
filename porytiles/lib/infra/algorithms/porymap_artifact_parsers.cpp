@@ -9,48 +9,45 @@ namespace {
 
 using namespace porytiles;
 
-/// @brief Packs one attribute's schema fields and structural layer type into a single word.
+/// @brief Packs one attribute's schema fields, including the layer type, into a single word.
 ///
 /// @details
-/// Every mask and offset comes from the schema; this function carries no layout literals. A field absent
-/// from the attribute packs its schema default, the same effective-value rule the attributes CSV writer
-/// applies, so the binary and CSV renderings of one attribute always agree. Field values are masked after
-/// shifting, so a stored value wider than its field cannot bleed into neighboring bits. A schema whose
-/// layer_type mask is 0 has the layer type disabled, so its bits are left unset.
+/// Every mask and offset comes from the schema; this function carries no layout literals. A value field
+/// absent from the attribute packs its schema default, the same effective-value rule the attributes CSV
+/// writer applies, so the binary and CSV renderings of one attribute always agree. Field values are masked
+/// after shifting, so a stored value wider than its field cannot bleed into neighboring bits. The
+/// layer_type-role field packs the attribute's layer type, whose value Porytiles manages rather than the
+/// fields map; a schema with no role field packs no layer bits at all.
 [[nodiscard]] std::uint32_t pack_metatile_attribute(const MetatileAttribute &attribute, const Schema &schema)
 {
     std::uint32_t raw = 0;
     for (const Field &field : schema.fields()) {
-        const std::uint32_t value =
-            attribute.fields().contains(field.name()) ? attribute.field(field.name()) : field.default_value();
+        const std::uint32_t value = field.packs_layer_type() ? static_cast<std::uint32_t>(attribute.layer_type())
+                                    : attribute.fields().contains(field.name()) ? attribute.field(field.name())
+                                                                                : field.default_value();
         raw |= (value << field.offset()) & field.mask();
-    }
-    if (schema.layer_type_mask() != 0) {
-        raw |= (static_cast<std::uint32_t>(attribute.layer_type()) << schema.layer_type_offset()) &
-               schema.layer_type_mask();
     }
     return raw;
 }
 
-/// @brief Unpacks a single attribute word into schema field values and a structural layer type.
+/// @brief Unpacks a single attribute word into schema field values and the layer type.
 ///
 /// @details
-/// The inverse of pack_metatile_attribute. Every schema field is set explicitly (a zero bit pattern
-/// stores an explicit 0), matching what the binary genuinely encodes. When the schema's layer_type mask
-/// is 0 the layer type is disabled: no bits are read and the attribute keeps the default LayerType::normal.
-/// Otherwise the layer type bits must decode to a known LayerType; an out-of-range value is a parse error.
+/// The inverse of pack_metatile_attribute. Every value field is set explicitly (a zero bit pattern stores
+/// an explicit 0), matching what the binary genuinely encodes. The layer_type-role field decodes into the
+/// attribute's layer type, never into the fields map, and its bits must decode to a known LayerType; an
+/// out-of-range value is a parse error. A schema with no role field reads no layer bits, so the attribute
+/// keeps the default LayerType::normal.
 [[nodiscard]] ChainableResult<MetatileAttribute> unpack_metatile_attribute(std::uint32_t raw, const Schema &schema)
 {
     MetatileAttribute attribute{};
-    for (const Field &field : schema.fields()) {
+    for (const Field &field : schema.value_fields()) {
         attribute.field(field.name(), (raw & field.mask()) >> field.offset());
     }
 
-    if (schema.layer_type_mask() != 0) {
+    if (const Field *layer_field = schema.layer_type_field(); layer_field != nullptr) {
         PT_TRY_ASSIGN_PASS_ERR(
-            layer_type,
-            layer_type_from_int((raw & schema.layer_type_mask()) >> schema.layer_type_offset()),
-            MetatileAttribute);
+            layer_type, layer_type_from_int((raw & layer_field->mask()) >> layer_field->offset()), MetatileAttribute);
         attribute.layer_type(layer_type);
     }
 

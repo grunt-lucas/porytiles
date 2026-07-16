@@ -762,9 +762,11 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
             "Failed to open file for writing: '{}'.", FormatParam{transaction_dest_path.string(), Style::bold}};
     }
 
-    // Write header: id plus every schema field name in schema order, with the optional trailing layer_type column.
+    // Write header: id plus every schema value field name in schema order, with the optional trailing layer_type
+    // column. The layer_type-role field is not a value column; the CSV addresses the layer type only through the
+    // trailing pin column.
     std::string header = "id";
-    for (const Field &field : schema_->fields()) {
+    for (const Field &field : schema_->value_fields()) {
         header += "," + field.name();
     }
     if (write_layer_type_column) {
@@ -785,7 +787,7 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
     auto render_fields = [&](const MetatileAttribute &attribute,
                              std::size_t metatile_id) -> ChainableResult<std::string> {
         std::string cells{};
-        for (const Field &field : schema_->fields()) {
+        for (const Field &field : schema_->value_fields()) {
             if (!cells.empty()) {
                 cells += ",";
             }
@@ -811,9 +813,9 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
         return cells;
     };
 
-    // A row is all-default only when every field's effective value equals its schema default.
+    // A row is all-default only when every value field's effective value equals its schema default.
     auto is_all_default = [&](const MetatileAttribute &attribute) -> bool {
-        for (const Field &field : schema_->fields()) {
+        for (const Field &field : schema_->value_fields()) {
             if (effective_value(attribute, field) != field.default_value()) {
                 return false;
             }
@@ -869,7 +871,7 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
     // comes from the Porytiles layer image dimensions, the same source LayerImageMetatileizer uses.
     const std::size_t layer_metatile_count = metatile::metatile_count(src.porytiles_component().bottom());
     MetatileAttribute default_attribute{}; // all-default fields, no explicit layer type (blank cell)
-    for (const Field &field : schema_->fields()) {
+    for (const Field &field : schema_->value_fields()) {
         default_attribute.field(field.name(), field.default_value());
     }
 

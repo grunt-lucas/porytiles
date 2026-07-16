@@ -74,10 +74,9 @@ class OverrideConfigProvider final : public ConfigProvider {
     void set_tileset_paths_secondary_bin(std::string value);
     void set_metatile_attribute_size(std::optional<std::size_t> value);
     void set_metatile_attribute_declaration_size(std::optional<std::size_t> value);
-    void set_metatile_attribute_fields(MetatileAttributeFieldSpecs value);
+    void set_metatile_attribute_fields(MetatileAttributeFieldDefinitions value);
     void set_metatile_attribute_field_overrides(MetatileAttributeFieldOverrides value);
     void set_write_layer_type_column(bool value);
-    void set_metatile_layer_type_mask(std::optional<std::uint32_t> value);
     void set_tileset_animations_wire_anim_code(bool value);
 
     [[nodiscard]] LayerValue<std::size_t>
@@ -153,14 +152,12 @@ class OverrideConfigProvider final : public ConfigProvider {
     metatile_attribute_size(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<std::optional<std::size_t>>
     metatile_attribute_declaration_size(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<MetatileAttributeFieldSpecs>
+    [[nodiscard]] LayerValue<MetatileAttributeFieldDefinitions>
     metatile_attribute_fields(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<MetatileAttributeFieldOverrides>
     metatile_attribute_field_overrides(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<bool>
     write_layer_type_column(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<std::optional<std::uint32_t>>
-    metatile_layer_type_mask(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<bool>
     tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const override;
 
@@ -209,10 +206,9 @@ class OverrideConfigProvider final : public ConfigProvider {
     std::optional<std::string> tileset_paths_secondary_bin_override_;
     std::optional<std::optional<std::size_t>> metatile_attribute_size_override_;
     std::optional<std::optional<std::size_t>> metatile_attribute_declaration_size_override_;
-    std::optional<MetatileAttributeFieldSpecs> metatile_attribute_fields_override_;
+    std::optional<MetatileAttributeFieldDefinitions> metatile_attribute_fields_override_;
     std::optional<MetatileAttributeFieldOverrides> metatile_attribute_field_overrides_override_;
     std::optional<bool> write_layer_type_column_override_;
-    std::optional<std::optional<std::uint32_t>> metatile_layer_type_mask_override_;
     std::optional<bool> tileset_animations_wire_anim_code_override_;
 };
 

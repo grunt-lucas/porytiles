@@ -254,11 +254,11 @@ LayerValue<std::optional<std::size_t>> DefaultProvider::metatile_attribute_decla
         std::nullopt, "Metatile Attribute Declaration Size", source_info);
 }
 
-LayerValue<MetatileAttributeFieldSpecs> DefaultProvider::metatile_attribute_fields(
+LayerValue<MetatileAttributeFieldDefinitions> DefaultProvider::metatile_attribute_fields(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<MetatileAttributeFieldSpecs>::valid(
-        MetatileAttributeFieldSpecs{}, "Metatile Attribute Fields", source_info);
+    return LayerValue<MetatileAttributeFieldDefinitions>::valid(
+        MetatileAttributeFieldDefinitions{}, "Metatile Attribute Fields", source_info);
 }
 
 LayerValue<MetatileAttributeFieldOverrides> DefaultProvider::metatile_attribute_field_overrides(
@@ -272,12 +272,6 @@ LayerValue<bool> DefaultProvider::write_layer_type_column(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
     return LayerValue<bool>::valid(false, "Write Layer Type Column", source_info);
-}
-
-LayerValue<std::optional<std::uint32_t>> DefaultProvider::metatile_layer_type_mask(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    return LayerValue<std::optional<std::uint32_t>>::valid(std::nullopt, "Metatile Layer Type Mask", source_info);
 }
 
 LayerValue<bool> DefaultProvider::tileset_animations_wire_anim_code(

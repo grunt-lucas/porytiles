@@ -185,7 +185,7 @@ class YamlFileProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<std::optional<std::size_t>>
     metatile_attribute_declaration_size(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<MetatileAttributeFieldSpecs>
+    [[nodiscard]] LayerValue<MetatileAttributeFieldDefinitions>
     metatile_attribute_fields(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<MetatileAttributeFieldOverrides>
@@ -193,9 +193,6 @@ class YamlFileProvider final : public ConfigProvider {
 
     [[nodiscard]] LayerValue<bool>
     write_layer_type_column(ConfigScopeType type, const std::string &scope) const override;
-
-    [[nodiscard]] LayerValue<std::optional<std::uint32_t>>
-    metatile_layer_type_mask(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<bool>
     tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const override;

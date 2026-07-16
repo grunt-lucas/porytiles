@@ -57,32 +57,41 @@ class StubEnumMapProvider final : public EnumMapProvider {
     std::string noun_;
 };
 
-// The ProviderSpec contents are irrelevant here (the tests stub the ProviderMap directly); the spec's presence is what
-// marks a field provider-backed.
-ProviderSpec dummy_provider_spec()
+// The ProviderDefinition contents are irrelevant here (the tests stub the ProviderMap directly); the definition's
+// presence is what marks a field provider-backed.
+ProviderDefinition dummy_provider_definition()
 {
-    return ProviderSpec{.header = "include/dummy.h", .prefix = "DUMMY_"};
+    return ProviderDefinition{.header = "include/dummy.h", .prefix = "DUMMY_"};
 }
 
-// The stock emerald shape: a single provider-backed behavior field in a 2-byte attribute.
+// The stock emerald shape: a provider-backed behavior field plus the layer_type-role field, in a 2-byte attribute.
+// The role field must never surface as a value column, so every test against this schema also proves the loader
+// excludes it from the expected header and row shape.
 Schema make_emerald_schema()
 {
-    auto result = Schema::create({Field{"behavior", 0x00FF, 0, dummy_provider_spec()}}, 2);
+    auto result = Schema::create(
+        {
+            Field{"behavior", 0x00FF, 0, dummy_provider_definition()},
+            Field{"layer_type", 0xF000, 0, std::nullopt, FieldRole::layer_type},
+        },
+        2);
     return std::move(result).value();
 }
 
-// The stock firered shape: seven fields in a 4-byte attribute, three provider-backed and four raw. Masks match the
-// FRLG attribute bit layout from fieldmap.c (layer_type is structural and never a schema field).
+// The stock firered shape: eight fields in a 4-byte attribute, three provider-backed, four raw, and the
+// layer_type-role field at bits 29-30 (never a value column). Masks match the FRLG attribute bit layout from
+// fieldmap.c.
 Schema make_firered_schema()
 {
     auto result = Schema::create(
         {
-            Field{"behavior", 0x000001FF, 0, dummy_provider_spec()},
-            Field{"terrain", 0x00003E00, 0, dummy_provider_spec()},
+            Field{"behavior", 0x000001FF, 0, dummy_provider_definition()},
+            Field{"terrain", 0x00003E00, 0, dummy_provider_definition()},
             Field{"attribute_2", 0x0003C000},
             Field{"attribute_3", 0x00FC0000},
-            Field{"encounter_type", 0x07000000, 0, dummy_provider_spec()},
+            Field{"encounter_type", 0x07000000, 0, dummy_provider_definition()},
             Field{"attribute_5", 0x18000000},
+            Field{"layer_type", 0x60000000, 0, std::nullopt, FieldRole::layer_type},
             Field{"attribute_7", 0x80000000},
         },
         4);

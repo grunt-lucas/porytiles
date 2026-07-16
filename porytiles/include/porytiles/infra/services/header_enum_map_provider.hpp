@@ -22,8 +22,8 @@ namespace porytiles {
 ///
 /// @details
 /// One provider serves one field. What field it serves, which header it reads, the shared name prefix, the names to
-/// skip, and the acceptable declaration styles all come from the EnumSpec passed at construction, so a single class
-/// covers behavior, terrain, encounter, and any future field. Two declaration styles are understood:
+/// skip, and the acceptable declaration styles all come from the EnumDefinition passed at construction, so a single
+/// class covers behavior, terrain, encounter, and any future field. Two declaration styles are understood:
 ///
 /// Define format:
 /// ```
@@ -38,28 +38,29 @@ namespace porytiles {
 /// ```
 ///
 /// In the enum format, values are assigned sequentially starting from 0. Both formats support decimal and hexadecimal
-/// values (for define format). The EnumSpec's HeaderFormat selects which styles are read: defines only, enums only, or
-/// either (defines first, then enums). During the scan, names that lack the spec's prefix, names in the spec's skip
-/// set, and values that exceed the field's maximum are silently ignored, so an unrelated or over-wide constant in a
-/// shared header is simply not a mapping. The provider loads lazily on first lookup and caches the result.
+/// values (for define format). The EnumDefinition's HeaderFormat selects which styles are read: defines only, enums
+/// only, or either (defines first, then enums). During the scan, names that lack the definition's prefix, names in the
+/// definition's skip set, and values that exceed the field's maximum are silently ignored, so an unrelated or over-wide
+/// constant in a shared header is simply not a mapping. The provider loads lazily on first lookup and caches the
+/// result.
 class HeaderEnumMapProvider final : public EnumMapProvider {
   public:
     /// @brief Constructs a provider that will load from the specified header file.
     ///
     /// @details
     /// The provider reads mappings from the given header lazily when first accessed via lookup(), then caches them for
-    /// subsequent lookups. The EnumSpec fully determines what is scanned and how.
+    /// subsequent lookups. The EnumDefinition fully determines what is scanned and how.
     ///
     /// @param header_path The path to the header declaring this field's value names
-    /// @param spec The resolved description of the field's prefix, cap, skip set, format, and display name
+    /// @param definition The resolved description of the field's prefix, cap, skip set, format, and display name
     /// @param format The text formatter for styled output
     /// @param diag The user diagnostics for error reporting
     HeaderEnumMapProvider(
         std::filesystem::path header_path,
-        EnumSpec spec,
+        EnumDefinition definition,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag)
-        : header_path_{std::move(header_path)}, spec_{std::move(spec)}, format_{format}, diag_{diag}
+        : header_path_{std::move(header_path)}, definition_{std::move(definition)}, format_{format}, diag_{diag}
     {
     }
 
@@ -75,9 +76,9 @@ class HeaderEnumMapProvider final : public EnumMapProvider {
     ///
     /// @details
     /// Uses duck typing to accept any entry type with name(), int_value(), and position() methods. Entries whose name
-    /// lacks the spec's prefix, are in the spec's skip set, or whose value falls outside the field's range are filtered
-    /// out (returning success without inserting). Otherwise it checks for duplicate names and values, and on a
-    /// duplicate produces a rich error showing both source locations.
+    /// lacks the definition's prefix, are in the definition's skip set, or whose value falls outside the field's range
+    /// are filtered out (returning success without inserting). Otherwise it checks for duplicate names and values, and
+    /// on a duplicate produces a rich error showing both source locations.
     ///
     /// This template is defined in the .cpp file since it is only used internally with DefineStatement and EnumMember
     /// types.
@@ -90,7 +91,7 @@ class HeaderEnumMapProvider final : public EnumMapProvider {
     ChainableResult<void> try_add_entry(const Entry &entry) const;
 
     std::filesystem::path header_path_;
-    EnumSpec spec_;
+    EnumDefinition definition_;
     const TextFormatter *format_;
     const UserDiagnostics *diag_;
     mutable bool loaded_{false};
@@ -105,10 +106,11 @@ class HeaderEnumMapProvider final : public EnumMapProvider {
 /// @brief Builds a header provider for every provider-backed field in a schema.
 ///
 /// @details
-/// Walks the schema's fields and, for each field with a provider spec, constructs a HeaderEnumMapProvider from the
-/// spec's header (resolved against @p project_root) and the EnumSpec derived via ProviderSpec::to_enum_spec. The
-/// returned map upholds the ProviderMap membership contract: it contains exactly the schema's has_provider() fields,
-/// keyed by field name, so has_provider() and map membership stay equivalent for consumers.
+/// Walks the schema's fields and, for each field with a provider definition, constructs a HeaderEnumMapProvider from
+/// the definition's header (resolved against @p project_root) and the EnumDefinition derived via
+/// ProviderDefinition::to_enum_definition. The returned map upholds the ProviderMap membership contract: it contains
+/// exactly the schema's has_provider() fields, keyed by field name, so has_provider() and map membership stay
+/// equivalent for consumers.
 ///
 /// Providers load lazily, so building the map does no file I/O; a bad header path surfaces on first lookup.
 ///

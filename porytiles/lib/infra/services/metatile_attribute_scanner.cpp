@@ -11,15 +11,10 @@ namespace porytiles {
 
 namespace {
 
-const std::filesystem::path fieldmap_header_rel = std::filesystem::path{"include"} / "global.fieldmap.h";
-const std::filesystem::path fieldmap_source_rel = std::filesystem::path{"src"} / "fieldmap.c";
-const std::filesystem::path behaviors_header_rel =
-    std::filesystem::path{"include"} / "constants" / "metatile_behaviors.h";
-
-constexpr const char *masks_array_name = "sMetatileAttrMasks";
-constexpr const char *shifts_array_name = "sMetatileAttrShifts";
-constexpr const char *tileset_struct_name = "Tileset";
-constexpr const char *attributes_member_name = "metatileAttributes";
+constexpr auto masks_array_name = "sMetatileAttrMasks";
+constexpr auto shifts_array_name = "sMetatileAttrShifts";
+constexpr auto tileset_struct_name = "Tileset";
+constexpr auto attributes_member_name = "metatileAttributes";
 
 [[nodiscard]] std::vector<InferenceArrayEntry> to_inference_entries(const std::vector<IndexedArrayEntry> &entries)
 {
@@ -88,14 +83,21 @@ constexpr const char *attributes_member_name = "metatileAttributes";
 } // namespace
 
 MetatileAttributeScanner::MetatileAttributeScanner(
-    std::filesystem::path project_root, gsl::not_null<const TextFormatter *> format)
-    : project_root_{std::move(project_root)}, format_{format}
+    std::filesystem::path project_root,
+    gsl::not_null<const TextFormatter *> format,
+    gsl::not_null<const UserDiagnostics *> diag)
+    : project_root_{std::move(project_root)}, format_{format}, diag_{diag}
 {
 }
 
-MetatileAttributeScanOutcome MetatileAttributeScanner::scan_project() const
+MetatileAttributeScanResult MetatileAttributeScanner::scan_project() const
 {
-    MetatileAttributeScanOutcome outcome;
+    const std::filesystem::path fieldmap_header_rel = std::filesystem::path{"include"} / "global.fieldmap.h";
+    const std::filesystem::path fieldmap_source_rel = std::filesystem::path{"src"} / "fieldmap.c";
+    const std::filesystem::path behaviors_header_rel =
+        std::filesystem::path{"include"} / "constants" / "metatile_behaviors.h";
+
+    MetatileAttributeScanResult outcome;
 
     const auto fieldmap_header = project_root_ / fieldmap_header_rel;
     outcome.source = fieldmap_header.string();
@@ -107,16 +109,18 @@ MetatileAttributeScanOutcome MetatileAttributeScanner::scan_project() const
     CParserFacade header_facade{fieldmap_header, format_};
     auto defines_result = header_facade.parse_defines_tolerant();
     if (!defines_result.has_value()) {
-        outcome.warnings.push_back(format_->format(
+        diag_->warning(
+            metatile_attr_inference_tag,
             "Could not scan '{}' for attribute masks; skipping schema inference.",
-            FormatParam{fieldmap_header.string(), Style::bold}));
+            FormatParam{fieldmap_header.string(), Style::bold});
         return outcome;
     }
     auto enums_result = header_facade.parse_enums_tolerant();
     if (!enums_result.has_value()) {
-        outcome.warnings.push_back(format_->format(
+        diag_->warning(
+            metatile_attr_inference_tag,
             "Could not scan '{}' for the attribute enum; skipping schema inference.",
-            FormatParam{fieldmap_header.string(), Style::bold}));
+            FormatParam{fieldmap_header.string(), Style::bold});
         return outcome;
     }
 
@@ -147,8 +151,7 @@ MetatileAttributeScanOutcome MetatileAttributeScanner::scan_project() const
     const auto fieldmap_source = project_root_ / fieldmap_source_rel;
     if (std::filesystem::exists(fieldmap_source)) {
         CParserFacade source_facade{fieldmap_source, format_, seeds};
-        auto arrays = source_facade.parse_indexed_arrays();
-        if (arrays.has_value()) {
+        if (auto arrays = source_facade.parse_indexed_arrays(); arrays.has_value()) {
             for (const auto &array : arrays.value()) {
                 if (array.name == masks_array_name) {
                     outcome.scan.masks_array = to_inference_entries(array.entries);
@@ -160,25 +163,26 @@ MetatileAttributeScanOutcome MetatileAttributeScanner::scan_project() const
         }
         else {
             // The table file is present but could not be lexed or parsed. Unlike a missing table (which states
-            // nothing about the layout), a present-but-unparseable one is worth surfacing as data: without it the
-            // header defines alone drive inference, and a table-driven project would otherwise be told its masks are
+            // nothing about the layout), a present-but-unparseable one is worth surfacing: without it the header
+            // defines alone drive inference, and a table-driven project would otherwise be told its masks are
             // missing and advised to restore a table that already exists.
-            outcome.warnings.push_back(format_->format(
+            diag_->warning(
+                metatile_attr_inference_tag,
                 "Could not scan '{}' for the metatile attribute mask and shift tables; continuing from the header "
                 "defines only.",
-                FormatParam{fieldmap_source.string(), Style::bold}));
+                FormatParam{fieldmap_source.string(), Style::bold});
         }
-        // Surface the source file's scan warnings too, matching how the header facade's warnings are gathered below.
+        // Surface the source file's scan warnings too, matching how the header facade's warnings are emitted below.
         for (const auto &warning : source_facade.scan_warnings()) {
-            outcome.warnings.push_back(warning);
+            diag_->warning(metatile_attr_inference_tag, warning);
         }
     }
 
     outcome.scan.behaviors_header_present = behaviors_header_has_entries(project_root_ / behaviors_header_rel, format_);
 
-    // Gather recoverable scan warnings (conflicting redefinitions in undecidable regions, etc.).
+    // Surface the recoverable scan warnings (conflicting redefinitions in undecidable regions, etc.).
     for (const auto &warning : header_facade.scan_warnings()) {
-        outcome.warnings.push_back(warning);
+        diag_->warning(metatile_attr_inference_tag, warning);
     }
 
     // The raw pointed-to type of struct Tileset's metatileAttributes member, from the same header. A failed struct

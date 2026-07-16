@@ -4,10 +4,12 @@
 #include <filesystem>
 #include <optional>
 #include <string>
+#include <vector>
 
 #include <gtest/gtest.h>
 
 #include "porytiles/utilities/text/plain_text_formatter.hpp"
+#include "porytiles/xcut/diagnostics/buffered_user_diagnostics.hpp"
 
 namespace porytiles {
 namespace {
@@ -15,6 +17,17 @@ namespace {
 class MetatileAttributeScannerTest : public ::testing::Test {
   protected:
     PlainTextFormatter formatter_;
+    BufferedUserDiagnostics diag_;
+
+    // The buffered warnings flattened to one line per emitted line, so tests can probe their text directly.
+    [[nodiscard]] std::vector<std::string> warning_lines() const
+    {
+        std::vector<std::string> lines;
+        for (const auto &warning : diag_.warnings()) {
+            lines.insert(lines.end(), warning.begin(), warning.end());
+        }
+        return lines;
+    }
 
     [[nodiscard]] static std::optional<std::uint32_t>
     define_value(const MetatileAttributeScan &scan, const std::string &name)
@@ -42,7 +55,7 @@ const std::filesystem::path fixture_base = "resources/tests/integration/infra/se
 // struct member's element type is captured as the raw type name, and the absent mask table stays empty.
 TEST_F(MetatileAttributeScannerTest, FixtureEmeraldRawFacts)
 {
-    MetatileAttributeScanner scanner{fixture_base / "emerald", &formatter_};
+    MetatileAttributeScanner scanner{fixture_base / "emerald", &formatter_, &diag_};
     const auto outcome = scanner.scan_project();
 
     ASSERT_TRUE(outcome.fieldmap_present);
@@ -54,14 +67,14 @@ TEST_F(MetatileAttributeScannerTest, FixtureEmeraldRawFacts)
     EXPECT_TRUE(outcome.scan.behaviors_header_present);
     EXPECT_EQ(outcome.scan.attributes_element_type, "u16");
     // The unresolvable backslash-continuation define is skipped tolerantly, not warned about.
-    EXPECT_TRUE(outcome.warnings.empty());
+    EXPECT_TRUE(diag_.warnings().empty());
 }
 
 // The firered fixture's exact-name mask/shift tables are read entry by entry, and struct Tileset declares a u32
 // pointer.
 TEST_F(MetatileAttributeScannerTest, FixtureFireredRawFacts)
 {
-    MetatileAttributeScanner scanner{fixture_base / "firered", &formatter_};
+    MetatileAttributeScanner scanner{fixture_base / "firered", &formatter_, &diag_};
     const auto outcome = scanner.scan_project();
 
     ASSERT_TRUE(outcome.fieldmap_present);
@@ -79,7 +92,7 @@ TEST_F(MetatileAttributeScannerTest, FixtureFireredRawFacts)
 // _FRLG macro entries resolve through the header's symbols, and the decoy sMetatileAttrMasksEmerald is ignored.
 TEST_F(MetatileAttributeScannerTest, FixtureExpansionSeedsMacrosAndIgnoresDecoyTable)
 {
-    MetatileAttributeScanner scanner{fixture_base / "expansion", &formatter_};
+    MetatileAttributeScanner scanner{fixture_base / "expansion", &formatter_, &diag_};
     const auto outcome = scanner.scan_project();
 
     ASSERT_TRUE(outcome.fieldmap_present);
@@ -92,17 +105,19 @@ TEST_F(MetatileAttributeScannerTest, FixtureExpansionSeedsMacrosAndIgnoresDecoyT
     EXPECT_FALSE(outcome.scan.attributes_element_type.has_value());
 }
 
-// A conflicting redefinition inside an undecidable conditional is returned as data: the name lands in the ambiguous
-// set and the recoverable warning rides in the outcome instead of hitting a sink.
-TEST_F(MetatileAttributeScannerTest, FixtureAmbiguousReturnsWarningsAsData)
+// A conflicting redefinition inside an undecidable conditional lands in the ambiguous set as a raw fact, and the
+// recoverable warning about it reaches the diagnostics sink under the inference tag.
+TEST_F(MetatileAttributeScannerTest, FixtureAmbiguousWarnsAboutTheConflictingRedefinition)
 {
-    MetatileAttributeScanner scanner{fixture_base / "ambiguous", &formatter_};
+    MetatileAttributeScanner scanner{fixture_base / "ambiguous", &formatter_, &diag_};
     const auto outcome = scanner.scan_project();
 
     ASSERT_TRUE(outcome.fieldmap_present);
     EXPECT_TRUE(outcome.scan.ambiguous_defines.contains("METATILE_ATTR_BEHAVIOR_MASK"));
-    ASSERT_FALSE(outcome.warnings.empty());
-    EXPECT_NE(outcome.warnings.front().find("METATILE_ATTR_BEHAVIOR_MASK"), std::string::npos);
+    const auto lines = warning_lines();
+    ASSERT_FALSE(lines.empty());
+    EXPECT_EQ(diag_.warning_tag_counts().at(metatile_attr_inference_tag), diag_.warnings().size());
+    EXPECT_NE(lines.front().find("METATILE_ATTR_BEHAVIOR_MASK"), std::string::npos);
 }
 
 // A present-but-unparseable src/fieldmap.c is surfaced as a warning, not silently swallowed: the header still parses
@@ -110,7 +125,7 @@ TEST_F(MetatileAttributeScannerTest, FixtureAmbiguousReturnsWarningsAsData)
 // instead of leaving the tables silently empty as if the file were missing.
 TEST_F(MetatileAttributeScannerTest, PresentButUnparseableSourceTableWarns)
 {
-    MetatileAttributeScanner scanner{fixture_base / "bad_source", &formatter_};
+    MetatileAttributeScanner scanner{fixture_base / "bad_source", &formatter_, &diag_};
     const auto outcome = scanner.scan_project();
 
     ASSERT_TRUE(outcome.fieldmap_present);
@@ -119,8 +134,9 @@ TEST_F(MetatileAttributeScannerTest, PresentButUnparseableSourceTableWarns)
     // The unparseable table leaves the arrays empty but must not do so quietly.
     EXPECT_TRUE(outcome.scan.masks_array.empty());
     EXPECT_TRUE(outcome.scan.shifts_array.empty());
-    const bool warned = std::any_of(outcome.warnings.begin(), outcome.warnings.end(), [](const std::string &warning) {
-        return warning.find("fieldmap.c") != std::string::npos;
+    const auto lines = warning_lines();
+    const bool warned = std::any_of(lines.begin(), lines.end(), [](const std::string &line) {
+        return line.find("fieldmap.c") != std::string::npos;
     });
     EXPECT_TRUE(warned);
 }
@@ -129,7 +145,7 @@ TEST_F(MetatileAttributeScannerTest, PresentButUnparseableSourceTableWarns)
 // still counts as present: the check accepts either declaration form.
 TEST_F(MetatileAttributeScannerTest, FixtureEnumOnlyBehaviorsHeaderIsPresent)
 {
-    MetatileAttributeScanner scanner{fixture_base / "warns", &formatter_};
+    MetatileAttributeScanner scanner{fixture_base / "warns", &formatter_, &diag_};
     const auto outcome = scanner.scan_project();
 
     ASSERT_TRUE(outcome.fieldmap_present);
@@ -139,13 +155,13 @@ TEST_F(MetatileAttributeScannerTest, FixtureEnumOnlyBehaviorsHeaderIsPresent)
 // A tree with no fieldmap header states nothing: not present, no facts, no warnings.
 TEST_F(MetatileAttributeScannerTest, MissingTreeIsNotPresent)
 {
-    MetatileAttributeScanner scanner{fixture_base / "does_not_exist", &formatter_};
+    MetatileAttributeScanner scanner{fixture_base / "does_not_exist", &formatter_, &diag_};
     const auto outcome = scanner.scan_project();
 
     EXPECT_FALSE(outcome.fieldmap_present);
     EXPECT_TRUE(outcome.scan.defines.empty());
     EXPECT_TRUE(outcome.scan.enum_members.empty());
-    EXPECT_TRUE(outcome.warnings.empty());
+    EXPECT_TRUE(diag_.warnings().empty());
 }
 
 // --- Testbed acceptance skims: run against the local decomp checkouts when they are present. ---
@@ -157,7 +173,7 @@ TEST_F(MetatileAttributeScannerTest, PokeemeraldAcceptance)
         GTEST_SKIP() << "pokeemerald testbed not present";
     }
 
-    MetatileAttributeScanner scanner{root, &formatter_};
+    MetatileAttributeScanner scanner{root, &formatter_, &diag_};
     const auto outcome = scanner.scan_project();
 
     ASSERT_TRUE(outcome.fieldmap_present);
@@ -173,7 +189,7 @@ TEST_F(MetatileAttributeScannerTest, PokefireredAcceptance)
         GTEST_SKIP() << "pokefirered testbed not present";
     }
 
-    MetatileAttributeScanner scanner{root, &formatter_};
+    MetatileAttributeScanner scanner{root, &formatter_, &diag_};
     const auto outcome = scanner.scan_project();
 
     ASSERT_TRUE(outcome.fieldmap_present);
@@ -189,7 +205,7 @@ TEST_F(MetatileAttributeScannerTest, PokeemeraldExpansionAcceptance)
         GTEST_SKIP() << "pokeemerald-expansion testbed not present";
     }
 
-    MetatileAttributeScanner scanner{root, &formatter_};
+    MetatileAttributeScanner scanner{root, &formatter_, &diag_};
     const auto outcome = scanner.scan_project();
 
     ASSERT_TRUE(outcome.fieldmap_present);

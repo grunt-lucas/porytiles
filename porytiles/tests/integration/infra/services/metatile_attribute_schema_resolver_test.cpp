@@ -43,9 +43,9 @@ constexpr auto dual_defines = R"(
 )";
 
 // Like emerald_defines, but with the layer-type bits moved off the vanilla position. Every stock decomp
-// declares exactly the mask that structural_layer_type_mask() would default to for its width (0xF000 at two
-// bytes, 0x60000000 at four), which makes an inferred mask and the size-based default indistinguishable.
-// 0x0F00 is still contiguous and still fits two bytes, so only its provenance differs.
+// declares the vanilla mask for its width (0xF000 at two bytes, 0x60000000 at four), so a relocated mask is
+// the shape that proves the resolved position really came from the project's source. 0x0F00 is still
+// contiguous and still fits two bytes, so only its provenance differs.
 constexpr auto relocated_layer_defines = R"(
 #define METATILE_ATTR_BEHAVIOR_MASK 0x00FF
 #define METATILE_ATTR_LAYER_MASK    0x0F00
@@ -148,8 +148,8 @@ class MetatileAttributeSchemaResolverTest : public ::testing::Test {
 
 TEST_F(MetatileAttributeSchemaResolverTest, SizeInferredFromSingleCandidateSet)
 {
-    // No explicit config at all: the single candidate set answers the size (authoritative, so no assumed-width
-    // warning) and selection picks it.
+    // No explicit config at all: the single candidate set is selected and its masks answer the size, so no
+    // warnings ride along.
     write_fieldmap_header(emerald_defines);
 
     const auto result = resolve(test_tileset_name);
@@ -159,13 +159,13 @@ TEST_F(MetatileAttributeSchemaResolverTest, SizeInferredFromSingleCandidateSet)
     ASSERT_NE(schema_field(result.value().schema, "behavior"), nullptr);
     EXPECT_EQ(schema_field(result.value().schema, "behavior")->mask(), 0x00FFU);
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0xF000U);
-    EXPECT_FALSE(diag_.warning_tag_counts().contains("metatile-attr-schema"));
+    EXPECT_FALSE(diag_.warning_tag_counts().contains(metatile_attr_schema_tag));
 }
 
-TEST_F(MetatileAttributeSchemaResolverTest, SynthesizedCandidateSelectedUnderDefaultedSize)
+TEST_F(MetatileAttributeSchemaResolverTest, EnumOnlyProjectWithNoMasksIsFatal)
 {
-    // A stock-shaped project with no masks anywhere: the synthesized behavior-only set never drives size inference,
-    // so the size stays the warned-about default of 2, which then selects the synthesized set (required 2).
+    // A project declaring the attribute enum but no masks anywhere: there is nothing to infer a layout from, and
+    // the old synthesized behavior-only completion is gone, so this is a fatal, actionable error.
     write_fieldmap_header(R"(
 enum
 {
@@ -176,12 +176,11 @@ enum
 )");
 
     const auto result = resolve(test_tileset_name);
-    ASSERT_TRUE(result.has_value()) << error_text(result);
-    EXPECT_EQ(result.value().attribute_bytes, 2U);
-    ASSERT_EQ(result.value().schema.fields().size(), 1U);
-    EXPECT_EQ(result.value().schema.fields().front().name(), "behavior");
-    EXPECT_EQ(result.value().schema.fields().front().mask(), 0x00FFU);
-    EXPECT_TRUE(diag_.warning_tag_counts().contains("metatile-attr-schema"));
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("behavior"), std::string::npos) << text;
+    EXPECT_NE(text.find("METATILE_ATTR_BEHAVIOR_MASK"), std::string::npos) << text;
+    EXPECT_NE(text.find("metatile_attribute_fields"), std::string::npos) << text;
 }
 
 TEST_F(MetatileAttributeSchemaResolverTest, MultipleCandidateSetsRequireExplicitSize)
@@ -231,18 +230,18 @@ TEST_F(MetatileAttributeSchemaResolverTest, CandidateLayerMaskSelectedBySize)
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0x60000000U);
 }
 
-TEST_F(MetatileAttributeSchemaResolverTest, NoCandidateMatchesSizeErrors)
+TEST_F(MetatileAttributeSchemaResolverTest, SingleCandidateUnderWiderKnobSelectsAndWarns)
 {
-    // One 2-byte candidate but an explicit size of 4: selection fails, listing the candidates with their widths and
-    // pointing at the explicit-fields escape hatch.
+    // One 2-byte candidate under an explicit size of 4: the layout still selects (there is nothing else it could
+    // be), and the knob being wider than anything the project declares draws a warning.
     write_fieldmap_header(emerald_defines);
     write_config("fieldmap:\n  metatile_attribute_size: 4\n");
 
     const auto result = resolve(test_tileset_name);
-    ASSERT_FALSE(result.has_value());
-    const auto text = error_text(result);
-    EXPECT_NE(text.find("(2 bytes)"), std::string::npos) << text;
-    EXPECT_NE(text.find("metatile_attribute_fields"), std::string::npos) << text;
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().attribute_bytes, 4U);
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0xF000U);
+    EXPECT_TRUE(diag_.warning_tag_counts().contains(metatile_attr_schema_tag));
 }
 
 TEST_F(MetatileAttributeSchemaResolverTest, MultipleCandidatesSameWidthErrors)
@@ -266,7 +265,8 @@ TEST_F(MetatileAttributeSchemaResolverTest, MultipleCandidatesSameWidthErrors)
 
 TEST_F(MetatileAttributeSchemaResolverTest, ExplicitFieldsSkipSelection)
 {
-    // Explicit fields are the truth: the inferred candidate's behavior mask is ignored in favor of the config.
+    // Explicit fields are the truth: the inferred candidate's masks are ignored in favor of the config, the width
+    // derives from the explicit masks, and the disagreement with the source draws the mismatch warning.
     write_fieldmap_header(emerald_defines);
     write_config(R"(
 fieldmap:
@@ -280,8 +280,9 @@ fieldmap:
     ASSERT_EQ(result.value().schema.fields().size(), 1U);
     EXPECT_EQ(result.value().schema.fields().front().name(), "custom");
     EXPECT_NE(result.value().fields_origin.find("explicit metatile_attribute_fields"), std::string::npos);
-    // The size still comes from the inferred candidate set (authoritative 2 bytes).
-    EXPECT_EQ(result.value().attribute_bytes, 2U);
+    EXPECT_EQ(result.value().attribute_bytes, 1U); // 0x00F0 fits one byte
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0U);
+    EXPECT_TRUE(diag_.warning_tag_counts().contains(metatile_attr_schema_tag));
 }
 
 TEST_F(MetatileAttributeSchemaResolverTest, AmbiguousConditionalDefineIsFatalEvenWithExplicitSize)
@@ -331,6 +332,7 @@ enum
     write_fieldmap_source(R"(
 static const u32 sMetatileAttrMasks[METATILE_ATTRIBUTE_COUNT] = {
     [METATILE_ATTRIBUTE_BEHAVIOR] = 0x00ff,
+    [METATILE_ATTRIBUTE_LAYER_TYPE] = 0xf000,
 };
 
 static const u8 sMetatileAttrShifts[METATILE_ATTRIBUTE_COUNT] = {
@@ -340,7 +342,7 @@ static const u8 sMetatileAttrShifts[METATILE_ATTRIBUTE_COUNT] = {
 
     const auto result = resolve(test_tileset_name);
     ASSERT_TRUE(result.has_value()) << error_text(result);
-    EXPECT_TRUE(diag_.warning_tag_counts().contains("metatile-attr-inference"));
+    EXPECT_TRUE(diag_.warning_tag_counts().contains(metatile_attr_inference_tag));
 }
 
 // --- Explicit masks and sizes. ---
@@ -363,45 +365,62 @@ fieldmap:
     EXPECT_NE(text.find("metatile attribute size"), std::string::npos) << text;
 }
 
-TEST_F(MetatileAttributeSchemaResolverTest, ExplicitLayerMaskOverridesSelectedCandidate)
+TEST_F(MetatileAttributeSchemaResolverTest, LayerTypeOverrideRelocatesInferredRoleField)
 {
-    // The candidate's structural layer mask (0xF000) yields to an explicit knob.
+    // The layer_type role field participates in the uniform override machinery: overriding its mask relocates the
+    // inferred candidate's layer bits (0xF000 becomes 0x0300).
     write_fieldmap_header(emerald_defines);
-    write_config("fieldmap:\n  metatile_layer_type_mask: 0x0300\n");
+    write_config(R"(
+fieldmap:
+  metatile_attribute_field_overrides:
+    layer_type:
+      mask: 0x0300
+)");
 
     const auto result = resolve(test_tileset_name);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0x0300U);
 }
 
-TEST_F(MetatileAttributeSchemaResolverTest, ZeroLayerMaskDisablesLayerType)
+TEST_F(MetatileAttributeSchemaResolverTest, ExplicitFieldsWithoutRoleFieldDisableLayerType)
 {
-    write_config(std::string{explicit_fields_yaml} + "  metatile_layer_type_mask: 0x0\n");
+    // No disable syntax exists: omitting the role field from an explicit layout is what disables layer types.
+    write_config(explicit_fields_yaml);
 
     const auto result = resolve(test_tileset_name);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0U);
+    EXPECT_EQ(result.value().schema.layer_type_field(), nullptr);
 }
 
-TEST_F(MetatileAttributeSchemaResolverTest, RelocatedLayerMaskSurvivesInferredFields)
+TEST_F(MetatileAttributeSchemaResolverTest, ExplicitRoleFieldCarriesTheLayerType)
 {
-    // Baseline for RelocatedLayerMaskSurvivesExplicitFields: with the fields inferred, the project's own
-    // relocated mask is what lands, not the 0xF000 the size-based default would supply.
-    write_fieldmap_header(relocated_layer_defines);
+    // The end-to-end shape of the new syntax: `role: layer_type` in the YAML field list marks the field that
+    // receives layer-type values, at whatever mask the user declares.
+    write_config(R"(
+fieldmap:
+  metatile_attribute_fields:
+    - name: behavior
+      mask: 0x00FF
+    - name: layer_type
+      mask: 0x0F00
+      role: layer_type
+)");
 
     const auto result = resolve(test_tileset_name);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0x0F00U);
+    ASSERT_NE(result.value().schema.layer_type_field(), nullptr);
+    EXPECT_EQ(result.value().schema.layer_type_field()->name(), "layer_type");
+    // The role field is not a value column.
+    EXPECT_EQ(result.value().schema.value_fields().size(), 1U);
 }
 
-TEST_F(MetatileAttributeSchemaResolverTest, RelocatedLayerMaskSurvivesExplicitFields)
+TEST_F(MetatileAttributeSchemaResolverTest, RelocatedLayerMaskComesFromTheSource)
 {
-    // Regression: the inferred layer mask used to be read only inside the branch that runs when the fields
-    // were also inferred, so declaring metatile_attribute_fields silently moved the layer-type bits to the
-    // vanilla 0xF000 default. The two keys are unrelated, and an explicit field list must not relocate the
-    // layer type. Paired with RelocatedLayerMaskSurvivesInferredFields: both origins must agree.
+    // With the fields inferred, the project's own relocated mask is what lands: there is no vanilla-position
+    // default anywhere for it to fall back to.
     write_fieldmap_header(relocated_layer_defines);
-    write_config(explicit_fields_yaml);
 
     const auto result = resolve(test_tileset_name);
     ASSERT_TRUE(result.has_value()) << error_text(result);
@@ -411,9 +430,8 @@ TEST_F(MetatileAttributeSchemaResolverTest, RelocatedLayerMaskSurvivesExplicitFi
 TEST_F(MetatileAttributeSchemaResolverTest, ExplicitFieldsRescueUnusableInferredMasks)
 {
     // Both inference failures name metatile_attribute_fields as the remedy, so declaring it has to actually
-    // rescue the resolve. Selection is consulted for the layer mask even on this path, and it must stay
-    // non-fatal here or the advice those errors give would not work. With no usable set the mask falls back
-    // to the size-based default.
+    // rescue the resolve. The explicit layout is trusted as-is: with no role field declared, layer types are
+    // disabled (there is no size-based default anymore).
     write_fieldmap_header(R"(
 #if SOME_UNKNOWN_FLAG
 #define METATILE_ATTR_BEHAVIOR_MASK 0x00FF
@@ -426,7 +444,7 @@ TEST_F(MetatileAttributeSchemaResolverTest, ExplicitFieldsRescueUnusableInferred
 
     const auto result = resolve(test_tileset_name);
     ASSERT_TRUE(result.has_value()) << error_text(result);
-    EXPECT_EQ(result.value().schema.layer_type_mask(), 0xF000U);
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0U);
 }
 
 TEST_F(MetatileAttributeSchemaResolverTest, CliSizeOverridesYaml)
@@ -443,44 +461,58 @@ TEST_F(MetatileAttributeSchemaResolverTest, CliSizeOverridesYaml)
     EXPECT_EQ(result.value().declaration_bytes, 1U);
 }
 
-TEST_F(MetatileAttributeSchemaResolverTest, KnobIsAuthoritativeNoSilentWidening)
+TEST_F(MetatileAttributeSchemaResolverTest, RoleFieldMaskExceedingKnobIsFatal)
 {
-    // An explicit size is as authoritative as an inferred one: a mask that needs a wider word is a fatal
-    // misconfiguration, not a hidden width.
-    write_config(
-        std::string{explicit_fields_yaml} + "  metatile_attribute_size: 2\n" +
-        "  metatile_layer_type_mask: 0x60000000\n");
+    // An explicit size is the read stride: a role-field mask that needs a wider word is a fatal
+    // misconfiguration, not a hidden widen.
+    write_config(R"(
+fieldmap:
+  metatile_attribute_size: 2
+  metatile_attribute_fields:
+    - name: behavior
+      mask: 0x00FF
+    - name: layer_type
+      mask: 0x60000000
+      role: layer_type
+)");
 
     const auto result = resolve(test_tileset_name);
     ASSERT_FALSE(result.has_value());
     const auto text = error_text(result);
-    EXPECT_NE(text.find("layer-type mask"), std::string::npos) << text; // names the offending mask
+    EXPECT_NE(text.find("layer_type"), std::string::npos) << text; // names the offending mask
     EXPECT_NE(text.find("metatile attribute size"), std::string::npos) << text;
 }
 
-TEST_F(MetatileAttributeSchemaResolverTest, DefaultWidthStillWidensFromMasks)
+TEST_F(MetatileAttributeSchemaResolverTest, WideRoleFieldMaskDerivesFourByteWidth)
 {
-    // With no header and no knob, the defaulted width is only an assumption, so a wide mask silently widens the word
-    // and the resolver warns about the assumed width.
-    write_config(std::string{explicit_fields_yaml} + "  metatile_layer_type_mask: 0x60000000\n");
-    // No fieldmap header written.
+    // No header and no knob: the width follows the merged masks, so a 4-byte role mask makes a 4-byte layout
+    // with nothing to warn about.
+    write_config(R"(
+fieldmap:
+  metatile_attribute_fields:
+    - name: behavior
+      mask: 0x00FF
+    - name: layer_type
+      mask: 0x60000000
+      role: layer_type
+)");
 
     const auto result = resolve(test_tileset_name);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().attribute_bytes, 4U);
-    EXPECT_TRUE(diag_.warning_tag_counts().contains("metatile-attr-schema"));
+    EXPECT_FALSE(diag_.warning_tag_counts().contains(metatile_attr_schema_tag));
 }
 
-TEST_F(MetatileAttributeSchemaResolverTest, UndetectableWidthWarnsAndAssumesTwoBytes)
+TEST_F(MetatileAttributeSchemaResolverTest, NoHeaderDerivesWidthFromExplicitMasks)
 {
     write_config(explicit_fields_yaml);
-    // No fieldmap header written: the width cannot be inferred. A real 4-byte project with only low-bit masks would
-    // get the wrong layout here, so the resolver must say what it assumed instead of silently landing on 2 bytes.
+    // No fieldmap header written: the explicit masks are the only width evidence, and 0x00FF fits one byte.
 
     const auto result = resolve(test_tileset_name);
     ASSERT_TRUE(result.has_value()) << error_text(result);
-    EXPECT_EQ(result.value().attribute_bytes, 2U);
-    EXPECT_TRUE(diag_.warning_tag_counts().contains("metatile-attr-schema"));
+    EXPECT_EQ(result.value().attribute_bytes, 1U);
+    EXPECT_EQ(result.value().declaration_bytes, 1U);
+    EXPECT_FALSE(diag_.warning_tag_counts().contains(metatile_attr_schema_tag));
 }
 
 TEST_F(MetatileAttributeSchemaResolverTest, InvalidKnobValueIsFatal)
@@ -534,6 +566,53 @@ struct Tileset
     EXPECT_EQ(result.value().declaration_bytes, 4U);
 }
 
+TEST_F(MetatileAttributeSchemaResolverTest, MaskWidthBelowScannedDeclarationIsFatal)
+{
+    // Every mask sits in the low byte, but struct Tileset stores attributes in a u16 array. Masks prove a minimum
+    // width, never the width itself, so the two facts conflict and only the explicit knob can resolve which width
+    // the project actually reads.
+    write_fieldmap_header(R"(
+#define METATILE_ATTR_BEHAVIOR_MASK 0x003F
+#define METATILE_ATTR_LAYER_MASK    0x00C0
+
+struct Tileset
+{
+    /*0x10*/ const u16 *metatileAttributes;
+};
+)");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("struct Tileset"), std::string::npos) << text;
+    EXPECT_NE(text.find("fieldmap.metatile_attribute_size"), std::string::npos) << text;
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, KnobResolvesMaskVersusDeclarationConflict)
+{
+    // The same shape as MaskWidthBelowScannedDeclarationIsFatal, with the knob supplying the answer. The scanned
+    // declaration corroborates the knob, so no wider-knob warning fires.
+    write_fieldmap_header(R"(
+#define METATILE_ATTR_BEHAVIOR_MASK 0x003F
+#define METATILE_ATTR_LAYER_MASK    0x00C0
+
+struct Tileset
+{
+    /*0x10*/ const u16 *metatileAttributes;
+};
+)");
+    write_config("fieldmap:\n  metatile_attribute_size: 2\n");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().attribute_bytes, 2U);
+    EXPECT_EQ(result.value().declaration_bytes, 2U);
+    ASSERT_NE(schema_field(result.value().schema, "behavior"), nullptr);
+    EXPECT_EQ(schema_field(result.value().schema, "behavior")->mask(), 0x003FU);
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0x00C0U);
+    EXPECT_FALSE(diag_.warning_tag_counts().contains(metatile_attr_schema_tag));
+}
+
 TEST_F(MetatileAttributeSchemaResolverTest, UnsetDeclarationSizeMatchesAttributeBytes)
 {
     // No struct Tileset and no knob: the declaration width follows the resolved attribute width.
@@ -569,7 +648,7 @@ TEST_F(MetatileAttributeSchemaResolverTest, AcceptanceCaseAPokeemeraldZeroConfig
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().attribute_bytes, 2U);
     EXPECT_EQ(result.value().declaration_bytes, 2U);
-    ASSERT_EQ(result.value().schema.fields().size(), 1U);
+    ASSERT_EQ(result.value().schema.fields().size(), 2U);
     EXPECT_EQ(result.value().schema.fields().front().name(), "behavior");
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0xF000U);
 }
@@ -585,7 +664,7 @@ TEST_F(MetatileAttributeSchemaResolverTest, AcceptanceCaseBPokefireredZeroConfig
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().attribute_bytes, 4U);
     EXPECT_EQ(result.value().declaration_bytes, 4U);
-    EXPECT_EQ(result.value().schema.fields().size(), 7U);
+    EXPECT_EQ(result.value().schema.fields().size(), 8U);
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0x60000000U);
 }
 
@@ -602,7 +681,7 @@ TEST_F(MetatileAttributeSchemaResolverTest, AcceptanceCaseCExpansionEmeraldFlavo
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().attribute_bytes, 2U);
     EXPECT_EQ(result.value().declaration_bytes, 2U);
-    ASSERT_EQ(result.value().schema.fields().size(), 1U);
+    ASSERT_EQ(result.value().schema.fields().size(), 2U);
     EXPECT_EQ(result.value().schema.fields().front().name(), "behavior");
     EXPECT_EQ(result.value().schema.fields().front().mask(), 0x00FFU);
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0xF000U);
@@ -622,7 +701,7 @@ TEST_F(MetatileAttributeSchemaResolverTest, AcceptanceCaseDExpansionFrlgFlavor)
     EXPECT_EQ(result.value().attribute_bytes, 4U);
     // struct Tileset declares 'const u16 *metatileAttributes' even for the FRLG flavor.
     EXPECT_EQ(result.value().declaration_bytes, 2U);
-    EXPECT_EQ(result.value().schema.fields().size(), 7U);
+    EXPECT_EQ(result.value().schema.fields().size(), 8U);
     ASSERT_NE(schema_field(result.value().schema, "behavior"), nullptr);
     EXPECT_EQ(schema_field(result.value().schema, "behavior")->mask(), 0x1FFU);
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0x60000000U);

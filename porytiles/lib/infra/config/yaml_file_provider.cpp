@@ -691,15 +691,15 @@ YamlFileProvider::metatile_attribute_declaration_size(ConfigScopeType type, cons
         "fieldmap.metatile_attribute_declaration_size");
 }
 
-LayerValue<MetatileAttributeFieldSpecs>
+LayerValue<MetatileAttributeFieldDefinitions>
 YamlFileProvider::metatile_attribute_fields(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<MetatileAttributeFieldSpecs>::invalid(
+        return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
             paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
-    return search_config_files<MetatileAttributeFieldSpecs>(
+    return search_config_files<MetatileAttributeFieldDefinitions>(
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
@@ -741,24 +741,6 @@ LayerValue<bool> YamlFileProvider::write_layer_type_column(ConfigScopeType type,
         parse_bool,
         "fieldmap.write_layer_type_column",
         "fieldmap.write_layer_type_column");
-}
-
-LayerValue<std::optional<std::uint32_t>>
-YamlFileProvider::metatile_layer_type_mask(ConfigScopeType type, const std::string &scope) const
-{
-    auto paths_result = get_config_path_chain(project_root_, type, scope);
-    if (!paths_result.has_value()) {
-        return LayerValue<std::optional<std::uint32_t>>::invalid(
-            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
-    }
-    return search_config_files<std::optional<std::uint32_t>>(
-        format_,
-        paths_result.value(),
-        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["fieldmap"]["metatile_layer_type_mask"]; },
-        parse_layer_type_mask,
-        "fieldmap.metatile_layer_type_mask",
-        "fieldmap.metatile_layer_type_mask");
 }
 
 LayerValue<bool>

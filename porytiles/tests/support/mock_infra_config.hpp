@@ -24,10 +24,9 @@ class MockInfraConfig : public InfraConfig {
     std::string tileset_paths_secondary_bin = "data/tilesets/secondary";
     std::optional<std::size_t> metatile_attribute_size = std::nullopt;
     std::optional<std::size_t> metatile_attribute_declaration_size = std::nullopt;
-    MetatileAttributeFieldSpecs metatile_attribute_fields = MetatileAttributeFieldSpecs{};
+    MetatileAttributeFieldDefinitions metatile_attribute_fields = MetatileAttributeFieldDefinitions{};
     MetatileAttributeFieldOverrides metatile_attribute_field_overrides = MetatileAttributeFieldOverrides{};
     bool write_layer_type_column = false;
-    std::optional<std::uint32_t> metatile_layer_type_mask = std::nullopt;
     bool tileset_animations_wire_anim_code = true;
 
   protected:
@@ -76,7 +75,7 @@ class MockInfraConfig : public InfraConfig {
             {}};
     }
 
-    [[nodiscard]] ChainableResult<ConfigValue<MetatileAttributeFieldSpecs>>
+    [[nodiscard]] ChainableResult<ConfigValue<MetatileAttributeFieldDefinitions>>
     metatile_attribute_fields_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{
@@ -98,13 +97,6 @@ class MockInfraConfig : public InfraConfig {
     write_layer_type_column_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{write_layer_type_column, "Write Layer Type Column", "write_layer_type_column", "mock", {}};
-    }
-
-    [[nodiscard]] ChainableResult<ConfigValue<std::optional<std::uint32_t>>>
-    metatile_layer_type_mask_raw(ConfigScopeType, const std::string &) const override
-    {
-        return ConfigValue{
-            metatile_layer_type_mask, "Metatile Layer Type Mask", "metatile_layer_type_mask", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<bool>>

@@ -4,11 +4,13 @@
 #include <cstddef>
 #include <cstdint>
 #include <format>
+#include <optional>
 #include <string>
 #include <unordered_set>
 #include <utility>
 #include <vector>
 
+#include "porytiles/domain/models/metatile_attribute.hpp"
 #include "porytiles/utilities/panic/panic.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 #include "porytiles/utilities/text/text_formatter.hpp"
@@ -34,32 +36,11 @@ bool is_contiguous(std::uint32_t mask)
     return std::popcount(mask) == std::bit_width(mask) - std::countr_zero(mask);
 }
 
-/// @brief Returns the size-based default layer_type mask for the given attribute width.
-///
-/// @details
-/// When no explicit layer_type mask is configured or inferred, Porytiles falls back to the vanilla games'
-/// layer-type positions keyed on the total attribute width: bits 12-15 in a 2-byte attribute word (the RSE
-/// position), bits 29-30 in a 4-byte word (the FRLG position), and disabled (0) in a 1-byte word (there is
-/// no vanilla 1-byte layer-type position). Porymap defaults to the same masks, though it selects them by
-/// base game version rather than by width. This helper is the single named home for that default;
-/// Schema::create uses it only as the fallback when the caller passes std::nullopt.
-std::uint32_t structural_layer_type_mask(std::size_t attribute_bytes)
-{
-    switch (attribute_bytes) {
-    case 4:
-        return 0x60000000U;
-    case 2:
-        return 0x0000F000U;
-    default: // 1-byte: no vanilla layer-type convention, so disabled
-        return 0U;
-    }
-}
-
 } // namespace
 
-EnumSpec ProviderSpec::to_enum_spec(std::string field_display_name, std::uint32_t max_value) const
+EnumDefinition ProviderDefinition::to_enum_definition(std::string field_display_name, std::uint32_t max_value) const
 {
-    return EnumSpec{
+    return EnumDefinition{
         .prefix = prefix,
         .max_value = max_value,
         .skipped = skipped,
@@ -67,34 +48,14 @@ EnumSpec ProviderSpec::to_enum_spec(std::string field_display_name, std::uint32_
         .field_display_name = std::move(field_display_name)};
 }
 
-ChainableResult<Schema>
-Schema::create(std::vector<Field> fields, std::size_t attribute_bytes, std::optional<std::uint32_t> layer_type_mask)
+ChainableResult<Schema> Schema::create(std::vector<Field> fields, std::size_t attribute_bytes)
 {
     assert_or_panic(
         attribute_bytes == 1 || attribute_bytes == 2 || attribute_bytes == 4,
         "Schema::create requires a 1-byte, 2-byte, or 4-byte attribute size");
 
-    // An explicit mask (including 0, which disables the layer type) wins; otherwise fall back to the size-based
-    // default.
-    const std::uint32_t ltm = layer_type_mask.value_or(structural_layer_type_mask(attribute_bytes));
-
-    // A non-zero layer_type mask is itself part of the layout, so it must obey the same shape rules as a field. A
-    // zero mask means the layer type is disabled, so these checks are skipped and it never overlaps anything.
-    if (ltm != 0) {
-        if (!is_contiguous(ltm)) {
-            return FormattableError{
-                "The layer type mask '{}' must be a single contiguous run of bits.",
-                FormatParam{hex_string(ltm), Style::bold}};
-        }
-        if (static_cast<std::size_t>(std::bit_width(ltm)) > attribute_bytes * 8) {
-            return FormattableError{
-                "The layer type mask '{}' extends beyond the '{}'-byte metatile attribute size.",
-                FormatParam{hex_string(ltm), Style::bold},
-                FormatParam{attribute_bytes, Style::bold}};
-        }
-    }
-
     std::unordered_set<std::string> seen_names;
+    std::optional<std::size_t> layer_type_index;
 
     for (std::size_t i = 0; i < fields.size(); ++i) {
         const Field &field = fields[i];
@@ -126,15 +87,6 @@ Schema::create(std::vector<Field> fields, std::size_t attribute_bytes, std::opti
                 FormatParam{attribute_bytes, Style::bold}};
         }
 
-        if (ltm != 0 && (mask & ltm) != 0) {
-            return FormattableError{
-                "Field '{}' has mask '{}', which overlaps the layer type bits '{}' of a {}-byte metatile attribute.",
-                FormatParam{field.name(), Style::bold},
-                FormatParam{hex_string(mask), Style::bold},
-                FormatParam{hex_string(ltm), Style::bold},
-                FormatParam{attribute_bytes, Style::bold}};
-        }
-
         if (field.default_value() > field.max_value()) {
             return FormattableError{
                 "Field '{}' has default value '{}', which does not fit in its {}-bit mask '{}'.",
@@ -142,6 +94,39 @@ Schema::create(std::vector<Field> fields, std::size_t attribute_bytes, std::opti
                 FormatParam{field.default_value(), Style::bold},
                 FormatParam{field.width()},
                 FormatParam{hex_string(mask), Style::bold}};
+        }
+
+        // The layer_type role marks the one field whose values Porytiles manages (compile-time inference or a CSV
+        // pin), so a provider or a default on it can never take effect and a second role field would be ambiguous.
+        if (field.packs_layer_type()) {
+            if (layer_type_index.has_value()) {
+                return FormattableError{
+                    "Field '{}' carries the layer_type role, but field '{}' already carries it. Only one field may "
+                    "pack the layer type.",
+                    FormatParam{field.name(), Style::bold},
+                    FormatParam{fields[layer_type_index.value()].name(), Style::bold}};
+            }
+            if (field.has_provider()) {
+                return FormattableError{
+                    "Field '{}' carries the layer_type role, so it cannot have a value provider: its values are "
+                    "managed by Porytiles.",
+                    FormatParam{field.name(), Style::bold}};
+            }
+            if (field.default_value() != 0) {
+                return FormattableError{
+                    "Field '{}' carries the layer_type role, so it cannot have a default value: its values are "
+                    "managed by Porytiles.",
+                    FormatParam{field.name(), Style::bold}};
+            }
+            layer_type_index = i;
+        }
+        else if (field.name() == attribute::field_layer_type) {
+            // The attributes CSV detects its trailing pin column by this exact name, so a plain value field named
+            // "layer_type" would collide with that contract.
+            return FormattableError{
+                "Field '{}' does not carry the layer_type role. That name is reserved for the field that packs the "
+                "layer type; mark the field with 'role: layer_type' or rename it.",
+                FormatParam{field.name(), Style::bold}};
         }
 
         for (std::size_t j = 0; j < i; ++j) {
@@ -159,7 +144,7 @@ Schema::create(std::vector<Field> fields, std::size_t attribute_bytes, std::opti
         seen_names.insert(field.name());
     }
 
-    return Schema{std::move(fields), attribute_bytes, ltm};
+    return Schema{std::move(fields), attribute_bytes, layer_type_index};
 }
 
 } // namespace porytiles

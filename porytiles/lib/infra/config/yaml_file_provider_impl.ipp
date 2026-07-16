@@ -15,7 +15,7 @@
 #include "porytiles/domain/config/anim_palette_resolution_strategy.hpp"
 #include "porytiles/domain/config/artifact_edit_mode.hpp"
 #include "porytiles/domain/config/frame_linking.hpp"
-#include "porytiles/domain/config/metatile_attribute_field_spec.hpp"
+#include "porytiles/domain/config/metatile_attribute_field_definition.hpp"
 #include "porytiles/domain/config/packing_strategy_params.hpp"
 #include "porytiles/domain/config/packing_strategy_type.hpp"
 #include "porytiles/domain/config/per_anim_overrides.hpp"
@@ -874,6 +874,15 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
     return std::nullopt;
 }
 
+// The only field role today is layer_type; unknown role names are rejected at the parse layer.
+[[nodiscard]] std::optional<FieldRole> field_role_from_config_str(const std::string &text)
+{
+    if (text == "layer_type") {
+        return FieldRole::layer_type;
+    }
+    return std::nullopt;
+}
+
 // Returns the first key of a YAML map that is not in the allowed set, or nullopt if all keys are known. Sequence
 // children of config values bypass the global unknown-key validator, so field/override entries police their own keys.
 [[nodiscard]] std::optional<std::string>
@@ -888,11 +897,11 @@ first_unknown_key(const YAML::Node &map_node, const std::unordered_set<std::stri
     return std::nullopt;
 }
 
-LayerValue<MetatileAttributeFieldSpecs> parse_metatile_attribute_fields(
+LayerValue<MetatileAttributeFieldDefinitions> parse_metatile_attribute_fields(
     const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
     if (!node.IsDefined()) {
-        return LayerValue<MetatileAttributeFieldSpecs>::not_provided();
+        return LayerValue<MetatileAttributeFieldDefinitions>::not_provided();
     }
 
     try {
@@ -901,16 +910,16 @@ LayerValue<MetatileAttributeFieldSpecs> parse_metatile_attribute_fields(
         const auto details = make_source_details(format, file_path, mark);
 
         if (!node.IsSequence()) {
-            return LayerValue<MetatileAttributeFieldSpecs>::invalid(
+            return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
                 format->format("'{}' must be a sequence of field definitions.", FormatParam{key, Style::bold}),
                 source,
                 details);
         }
 
-        const std::unordered_set<std::string> field_keys{"name", "mask", "default", "provider"};
+        const std::unordered_set<std::string> field_keys{"name", "mask", "default", "provider", "role"};
         const std::unordered_set<std::string> provider_keys{"header", "prefix", "skipped", "format"};
 
-        MetatileAttributeFieldSpecs specs;
+        MetatileAttributeFieldDefinitions definitions;
         for (std::size_t i = 0; i < node.size(); ++i) {
             const auto &field_node = node[i];
             const auto field_mark = field_node.Mark();
@@ -918,13 +927,13 @@ LayerValue<MetatileAttributeFieldSpecs> parse_metatile_attribute_fields(
             const auto field_details = make_source_details(format, file_path, field_mark);
 
             if (!field_node.IsMap()) {
-                return LayerValue<MetatileAttributeFieldSpecs>::invalid(
+                return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
                     format->format("'{}[{}]' must be a map.", FormatParam{key, Style::bold}, FormatParam{i}),
                     field_source,
                     field_details);
             }
             if (auto unknown = first_unknown_key(field_node, field_keys); unknown.has_value()) {
-                return LayerValue<MetatileAttributeFieldSpecs>::invalid(
+                return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
                     format->format(
                         "'{}[{}]' has unknown key '{}'.",
                         FormatParam{key, Style::bold},
@@ -934,25 +943,25 @@ LayerValue<MetatileAttributeFieldSpecs> parse_metatile_attribute_fields(
                     field_details);
             }
 
-            MetatileAttributeFieldSpec spec;
+            MetatileAttributeFieldDefinition definition;
             const auto name_node = field_node["name"];
             if (!name_node.IsDefined()) {
-                return LayerValue<MetatileAttributeFieldSpecs>::invalid(
+                return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
                     format->format(
                         "'{}[{}]' is missing required 'name' field.", FormatParam{key, Style::bold}, FormatParam{i}),
                     field_source,
                     field_details);
             }
-            spec.name = name_node.as<std::string>();
+            definition.name = name_node.as<std::string>();
 
             for (const auto &[member, target] :
                  std::initializer_list<std::pair<const char *, std::optional<std::uint32_t> *>>{
-                     {"mask", &spec.mask}, {"default", &spec.default_value}}) {
+                     {"mask", &definition.mask}, {"default", &definition.default_value}}) {
                 if (field_node[member].IsDefined()) {
                     const auto text = field_node[member].as<std::string>();
                     const auto parsed = parse_mask_scalar(text);
                     if (!parsed.has_value()) {
-                        return LayerValue<MetatileAttributeFieldSpecs>::invalid(
+                        return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
                             format->format(
                                 "'{}[{}].{}' is not a valid 32-bit integer: '{}'.",
                                 FormatParam{key, Style::bold},
@@ -969,14 +978,14 @@ LayerValue<MetatileAttributeFieldSpecs> parse_metatile_attribute_fields(
             if (field_node["provider"].IsDefined()) {
                 const auto &provider_node = field_node["provider"];
                 if (!provider_node.IsMap()) {
-                    return LayerValue<MetatileAttributeFieldSpecs>::invalid(
+                    return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
                         format->format(
                             "'{}[{}].provider' must be a map.", FormatParam{key, Style::bold}, FormatParam{i}),
                         field_source,
                         field_details);
                 }
                 if (auto unknown = first_unknown_key(provider_node, provider_keys); unknown.has_value()) {
-                    return LayerValue<MetatileAttributeFieldSpecs>::invalid(
+                    return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
                         format->format(
                             "'{}[{}].provider' has unknown key '{}'.",
                             FormatParam{key, Style::bold},
@@ -986,9 +995,9 @@ LayerValue<MetatileAttributeFieldSpecs> parse_metatile_attribute_fields(
                         field_details);
                 }
 
-                ProviderSpec provider;
+                ProviderDefinition provider;
                 if (!provider_node["header"].IsDefined() || !provider_node["prefix"].IsDefined()) {
-                    return LayerValue<MetatileAttributeFieldSpecs>::invalid(
+                    return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
                         format->format(
                             "'{}[{}].provider' requires both 'header' and 'prefix'.",
                             FormatParam{key, Style::bold},
@@ -1000,7 +1009,7 @@ LayerValue<MetatileAttributeFieldSpecs> parse_metatile_attribute_fields(
                 provider.prefix = provider_node["prefix"].as<std::string>();
                 if (provider_node["skipped"].IsDefined()) {
                     if (!provider_node["skipped"].IsSequence()) {
-                        return LayerValue<MetatileAttributeFieldSpecs>::invalid(
+                        return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
                             format->format(
                                 "'{}[{}].provider.skipped' must be a sequence.",
                                 FormatParam{key, Style::bold},
@@ -1016,7 +1025,7 @@ LayerValue<MetatileAttributeFieldSpecs> parse_metatile_attribute_fields(
                     const auto fmt_str = provider_node["format"].as<std::string>();
                     const auto fmt = header_format_from_config_str(fmt_str);
                     if (!fmt.has_value()) {
-                        return LayerValue<MetatileAttributeFieldSpecs>::invalid(
+                        return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
                             format->format(
                                 "'{}[{}].provider.format' has invalid value '{}'.",
                                 FormatParam{key, Style::bold},
@@ -1027,13 +1036,31 @@ LayerValue<MetatileAttributeFieldSpecs> parse_metatile_attribute_fields(
                     }
                     provider.format = fmt.value();
                 }
-                spec.provider = std::move(provider);
+                definition.provider = std::move(provider);
             }
 
-            specs.push_back(std::move(spec));
+            if (field_node["role"].IsDefined() && !field_node["role"].IsNull()) {
+                // `role: null` on a definition is accepted for symmetry with overrides and means the same as omitting
+                // it.
+                const auto role_str = field_node["role"].as<std::string>();
+                const auto role = field_role_from_config_str(role_str);
+                if (!role.has_value()) {
+                    return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
+                        format->format(
+                            "'{}[{}].role' has invalid value '{}'; the only role is 'layer_type'.",
+                            FormatParam{key, Style::bold},
+                            FormatParam{i},
+                            FormatParam{role_str, Style::bold}),
+                        field_source,
+                        field_details);
+                }
+                definition.role = role;
+            }
+
+            definitions.push_back(std::move(definition));
         }
 
-        return LayerValue<MetatileAttributeFieldSpecs>::valid(std::move(specs), key, source, details);
+        return LayerValue<MetatileAttributeFieldDefinitions>::valid(std::move(definitions), key, source, details);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
@@ -1041,7 +1068,7 @@ LayerValue<MetatileAttributeFieldSpecs> parse_metatile_attribute_fields(
             "Failed to parse '{}' as metatile attribute fields: {}.", FormatParam{key, Style::bold}, e.what());
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
-        return LayerValue<MetatileAttributeFieldSpecs>::invalid(error, source, details);
+        return LayerValue<MetatileAttributeFieldDefinitions>::invalid(error, source, details);
     }
 }
 
@@ -1064,7 +1091,7 @@ LayerValue<MetatileAttributeFieldOverrides> parse_metatile_attribute_field_overr
                 details);
         }
 
-        const std::unordered_set<std::string> override_keys{"mask", "default", "provider"};
+        const std::unordered_set<std::string> override_keys{"mask", "default", "provider", "role"};
         const std::unordered_set<std::string> provider_keys{"header", "prefix", "skipped", "format"};
 
         MetatileAttributeFieldOverrides overrides;
@@ -1119,7 +1146,7 @@ LayerValue<MetatileAttributeFieldOverrides> parse_metatile_attribute_field_overr
 
             if (override_node["provider"].IsDefined()) {
                 const auto &provider_node = override_node["provider"];
-                ProviderSpecOverride provider_override;
+                ProviderDefinitionOverride provider_override;
                 if (provider_node.IsNull()) {
                     // `provider: null` removes the provider entirely, turning the field into a raw field.
                     provider_override.remove = true;
@@ -1183,6 +1210,30 @@ LayerValue<MetatileAttributeFieldOverrides> parse_metatile_attribute_field_overr
                         field_details);
                 }
                 override_value.provider = std::move(provider_override);
+            }
+
+            if (override_node["role"].IsDefined()) {
+                const auto &role_node = override_node["role"];
+                if (role_node.IsNull()) {
+                    // `role: null` clears the baseline field's role.
+                    override_value.role = std::optional<FieldRole>{std::nullopt};
+                }
+                else {
+                    const auto role_str = role_node.as<std::string>();
+                    const auto role = field_role_from_config_str(role_str);
+                    if (!role.has_value()) {
+                        return LayerValue<MetatileAttributeFieldOverrides>::invalid(
+                            format->format(
+                                "'{}' override for '{}' has invalid 'role' value '{}'; the only role is "
+                                "'layer_type'.",
+                                FormatParam{key, Style::bold},
+                                FormatParam{field_name, Style::bold},
+                                FormatParam{role_str, Style::bold}),
+                            field_source,
+                            field_details);
+                    }
+                    override_value.role = role;
+                }
             }
 
             overrides[field_name] = std::move(override_value);
@@ -1423,42 +1474,6 @@ LayerValue<PrimaryPairingMode> parse_primary_pairing_mode(
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<PrimaryPairingMode>::invalid(error, source, details);
-    }
-}
-
-// Parses an optional layer-type mask written as a scalar. A parsed value (including 0, which disables the layer type)
-// yields a present optional; an absent node yields not_provided so the inference provider and size-based default can
-// supply it. The scalar is parsed as a string so hex/decimal/octal literals all work regardless of yaml-cpp's numeric
-// handling.
-LayerValue<std::optional<std::uint32_t>> parse_layer_type_mask(
-    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
-{
-    if (!node.IsDefined()) {
-        return LayerValue<std::optional<std::uint32_t>>::not_provided();
-    }
-
-    const auto mark = node.Mark();
-    const auto source = make_source_string(format, file_path, mark);
-    const auto details = make_source_details(format, file_path, mark);
-
-    try {
-        const auto text = node.as<std::string>();
-        const auto parsed = parse_mask_scalar(text);
-        if (!parsed.has_value()) {
-            const auto error = format->format(
-                "'{}' has invalid value '{}'. Expected a 32-bit integer mask (for example 0xF000); use 0 to disable "
-                "the layer type.",
-                FormatParam{key, Style::bold},
-                FormatParam{text, Style::bold});
-            return LayerValue<std::optional<std::uint32_t>>::invalid(error, source, details);
-        }
-        return LayerValue<std::optional<std::uint32_t>>::valid(
-            std::optional<std::uint32_t>{parsed.value()}, key, source, details);
-    }
-    catch (const YAML::Exception &e) {
-        const auto error =
-            format->format("Failed to parse '{}' as a layer type mask: {}.", FormatParam{key, Style::bold}, e.what());
-        return LayerValue<std::optional<std::uint32_t>>::invalid(error, source, details);
     }
 }
 

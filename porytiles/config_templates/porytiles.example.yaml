@@ -10,47 +10,36 @@ fieldmap:
   max_map_data_size: 10240
   num_tiles_per_metatile: 8
 
-  # The metatile attribute schema keys below (metatile_attribute_size, metatile_attribute_declaration_size,
-  # metatile_attribute_fields, metatile_attribute_field_overrides, metatile_layer_type_mask) describe a single
-  # project-wide attribute layout. Set them here in the project config, not in a per-tileset config: the resolved
-  # schema decodes every tileset a command reads, including a secondary's paired primary, so a per-tileset override
-  # would change how a shared primary is read. write_layer_type_column is the exception; it is safe per tileset
-  # because it only affects the attributes.csv column, not the binary layout.
-
-  # Pins the size in bytes of each metatile attribute entry (1, 2, or 4). When unset, Porytiles derives
-  # the size from the attribute masks the project declares; projects that declare more than one mask
-  # layout (pokeemerald-expansion) must set it explicitly, one value per build flavor.
+  # Pins the size in bytes of each metatile attribute entry (1, 2, or 4). When unset, Porytiles derives the size from
+  # the resolved attribute field masks. Projects that declare more than one mask layout (pokeemerald-expansion) must set
+  # it explicitly, as must projects whose struct Tileset declaration is wider than the masks need.
   metatile_attribute_size: 2
 
-  # The declared element width in bytes (1, 2, or 4) for the gMetatileAttributes_* C
-  # declarations Porytiles generates (const u8 / INCBIN_U8, const u16 / INCBIN_U16, const u32 / INCBIN_U32).
+  # The declared element width in bytes (1, 2, or 4) for the gMetatileAttributes_* C declarations Porytiles generates
+  # (const u8 / INCBIN_U8, const u16 / INCBIN_U16, const u32 / INCBIN_U32).
   metatile_attribute_declaration_size: 2
 
-  # Emit and honor a trailing "layer_type" column in the metatile attributes CSV. When true, a filled cell
-  # ("normal", "covered", or "split") pins that metatile's layer type, and a blank cell means auto/inferred.
-  # When false (the default), any layer_type column present is ignored (with a warning) and layer types
-  # are inferred.
+  # Emit and honor a trailing "layer_type" column in the metatile attributes CSV. When true, a filled cell ("normal",
+  # "covered", or "split") pins that metatile's layer type, and a blank cell means auto/inferred. When false (the
+  # default), any layer_type column present is ignored (with a warning) and layer types are inferred.
   write_layer_type_column: false
 
-  # Bit mask for the layer-type bits of a metatile attribute, written as a hex literal.
-  # A mask of 0x0 disables the layer type: every metatile is Normal and no layer-type bits
-  # are written.
-  metatile_layer_type_mask: 0xF000
-
-  # Declare the metatile attribute field layout explicitly, replacing schema inference.
-  # Declare the list yourself only when your layout has diverged beyond what inference
-  # can describe. Each field takes:
+  # Declare the metatile attribute field layout explicitly, replacing schema inference. Declare the list yourself only
+  # when your layout isn't obvious from the code, and the inference fails. Each field takes:
   # - name: the attributes.csv column header
-  # - mask: the bits the field occupies in the packed attribute value (a single contiguous
-  #     run of bits; fields must not overlap each other or the layer type bits)
-  # - default: optional value for metatiles with no attributes.csv row (0 when omitted)
-  # - provider: optional; where the field's named constants live. With a provider, the
-  #     field's CSV column takes constant names (e.g. MB_TALL_GRASS); without one it takes
-  #     plain integers.
+  # - mask: the bits the field occupies in the packed attribute value (a single contiguous run of bits; fields must not
+  #         overlap each other)
+  # - default: optional integer value for metatiles with no attributes.csv row (0 when omitted)
+  # - provider: optional; where the field's named constants live. With a provider, the field's CSV column takes constant
+  #             names (e.g. MB_TALL_GRASS); without one it takes plain integers.
   #   - header: C header path, relative to the project root
-  #   - prefix: the shared name prefix of the constants
+  #   - prefix: the shared name prefix of the constants, e.g. pokeemerald behaviors have "MB_" like "MB_TALL_GRASS"
   #   - skipped: constant names to ignore while scanning the header
   #   - format: defines-only, enums-only, or [default] either
+  # - role: "layer_type" marks the field that holds the layer-type bits. At most one field may carry the role; a role
+  #         field takes no default and no provider, and it gets no data column in attributes.csv (Porytiles computes its
+  #         value at compile time; the optional pin column controlled by write_layer_type_column above is a separate
+  #         mechanism). Omit the role field entirely to disable layer types.
   metatile_attribute_fields:
     - name: behavior
       mask: 0x00FF
@@ -62,13 +51,16 @@ fieldmap:
     - name: light_level
       mask: 0x0E00
       default: 0
+    - name: layer_type
+      mask: 0xF000
+      role: layer_type
 
-  # Adjust individual attribute fields without redeclaring the whole layout.
-  # Overrides merge onto the baseline fields (the metatile_attribute_fields list above, or the
-  # inferred fields when that list is omitted). Keys are field names; members you set
-  # (mask, default, provider) replace the baseline value, and members you omit fall through.
-  # Setting provider members adjusts just those members; "provider: null" removes the provider
-  # entirely, turning the field's CSV column into raw integers.
+  # Adjust individual attribute fields without redeclaring the whole layout. Overrides merge onto the baseline fields
+  # (the metatile_attribute_fields list above, or the inferred fields when that list is omitted). Keys are field names;
+  # members you set (mask, default, provider, role) replace the baseline value, and members you omit fall through.
+  # Setting provider members adjusts just those members; "provider: null" removes the provider entirely, turning the
+  # field's CSV column into raw integers. "role: null" clears a field's role, and "role: layer_type" sets it. Overrides
+  # apply per field, so moving the role means clearing it on one field and setting it on another.
   metatile_attribute_field_overrides:
     # Enter behavior values as raw integers instead of MB_ names
     behavior:
@@ -203,7 +195,8 @@ tileset:
     # Strategy for determining how to resolve duplicate key frame subtile errors when decompiling an animation.
     # Available strategies:
     # - [default] error: error out and display violating duplicate pairs
-    # - warning: warn about violating duplicate pairs and continue decompilation (noting that subsequent compilation will fail if no action is taken)
+    # - warning: warn about violating duplicate pairs and continue decompilation (noting that subsequent compilation
+    #            will fail if no action is taken)
     # - mangle: run the AnimTileMangler to minimally de-dupe tiles
     key_frame_resolution_strategy: warning
 

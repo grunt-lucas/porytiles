@@ -265,13 +265,6 @@ LayerValue<bool> CliOptionProvider::write_layer_type_column(
     return parse_bool(storage_.write_layer_type_column, "--write-layer-type-column");
 }
 
-LayerValue<std::optional<std::uint32_t>> CliOptionProvider::metatile_layer_type_mask(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    // All types use parse functions for uniform error handling
-    return parse_layer_type_mask(storage_.metatile_layer_type_mask, "--metatile-layer-type-mask");
-}
-
 LayerValue<bool> CliOptionProvider::tileset_animations_wire_anim_code(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

@@ -155,6 +155,96 @@ fieldmap:
     EXPECT_NE(result.error_message.find("msak"), std::string::npos);
 }
 
+TEST_F(YamlFileProviderMetatileAttributeTest, RoleKeyParsesOnFieldSpecs)
+{
+    write_config(R"(
+fieldmap:
+  metatile_attribute_fields:
+    - name: behavior
+      mask: 0x00FF
+    - name: layer_type
+      mask: 0xF000
+      role: layer_type
+    - name: extra
+      mask: 0x0F00
+      role: null
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.metatile_attribute_fields(ConfigScopeType::tileset, "test");
+    ASSERT_EQ(result.state, ValidationState::valid);
+    const auto &specs = result.value.value();
+    ASSERT_EQ(specs.size(), 3U);
+    EXPECT_FALSE(specs[0].role.has_value());
+    EXPECT_EQ(specs[1].role, FieldRole::layer_type);
+    // `role: null` on a spec means the same as omitting the key.
+    EXPECT_FALSE(specs[2].role.has_value());
+}
+
+TEST_F(YamlFileProviderMetatileAttributeTest, InvalidRoleValueOnFieldIsInvalid)
+{
+    write_config(R"(
+fieldmap:
+  metatile_attribute_fields:
+    - name: behavior
+      mask: 0x00FF
+      role: banana
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.metatile_attribute_fields(ConfigScopeType::tileset, "test");
+    EXPECT_EQ(result.state, ValidationState::invalid);
+    EXPECT_NE(result.error_message.find("banana"), std::string::npos);
+    EXPECT_NE(result.error_message.find("layer_type"), std::string::npos);
+}
+
+TEST_F(YamlFileProviderMetatileAttributeTest, RoleKeyParsesOnOverridesIncludingNull)
+{
+    write_config(R"(
+fieldmap:
+  metatile_attribute_field_overrides:
+    high:
+      role: layer_type
+    lt_bits:
+      role: null
+    behavior:
+      mask: 0x01FF
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.metatile_attribute_field_overrides(ConfigScopeType::tileset, "test");
+    ASSERT_EQ(result.state, ValidationState::valid);
+    const auto &overrides = result.value.value();
+    ASSERT_EQ(overrides.size(), 3U);
+
+    // `role: layer_type` sets the role.
+    ASSERT_TRUE(overrides.at("high").role.has_value());
+    EXPECT_EQ(overrides.at("high").role.value(), FieldRole::layer_type);
+
+    // `role: null` clears the role: the outer optional is present, the inner one empty.
+    ASSERT_TRUE(overrides.at("lt_bits").role.has_value());
+    EXPECT_FALSE(overrides.at("lt_bits").role->has_value());
+
+    // An absent role key leaves the baseline untouched.
+    EXPECT_FALSE(overrides.at("behavior").role.has_value());
+}
+
+TEST_F(YamlFileProviderMetatileAttributeTest, InvalidRoleValueOnOverrideIsInvalid)
+{
+    write_config(R"(
+fieldmap:
+  metatile_attribute_field_overrides:
+    behavior:
+      role: banana
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.metatile_attribute_field_overrides(ConfigScopeType::tileset, "test");
+    EXPECT_EQ(result.state, ValidationState::invalid);
+    EXPECT_NE(result.error_message.find("banana"), std::string::npos);
+    EXPECT_NE(result.error_message.find("layer_type"), std::string::npos);
+}
+
 TEST_F(YamlFileProviderMetatileAttributeTest, WriteLayerTypeColumnBoolParses)
 {
     write_config(R"(
@@ -250,6 +340,22 @@ fieldmap:
 
     // Validation only runs when a real diagnostics sink is present: with a null diagnostics the provider skips the
     // unknown-key check entirely, so the negative case needs a live sink to exercise it.
+    BufferedUserDiagnostics diag;
+    YamlFileProvider provider{&diag, project_root_};
+    // preload_and_validate returns true on validation failure; the key is now unknown.
+    EXPECT_TRUE(provider.preload_and_validate(ConfigScopeType::tileset, "test"));
+}
+
+TEST_F(YamlFileProviderMetatileAttributeTest, RemovedLayerTypeMaskKeyFailsUnknownKeyValidation)
+{
+    // metatile_layer_type_mask was removed when layer_type became a first-class schema field (issue #336): the mask
+    // now comes from the inferred or explicit field carrying "role: layer_type". A config that still sets the stale
+    // key must fail validation so an upgrading user gets a clear error instead of a silently ignored setting.
+    write_config(R"(
+fieldmap:
+  metatile_layer_type_mask: 0xF000
+)");
+
     BufferedUserDiagnostics diag;
     YamlFileProvider provider{&diag, project_root_};
     // preload_and_validate returns true on validation failure; the key is now unknown.

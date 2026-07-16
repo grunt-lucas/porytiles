@@ -8,7 +8,9 @@
 #include <unordered_set>
 #include <utility>
 
+#include "porytiles/domain/models/metatile_attribute.hpp"
 #include "porytiles/utilities/text/text_formatter.hpp"
+#include "porytiles/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles {
 
@@ -23,8 +25,7 @@ constexpr const char *fieldmap_header = "include/global.fieldmap.h";
 
 [[nodiscard]] std::string to_lower(std::string text)
 {
-    std::transform(
-        text.begin(), text.end(), text.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
+    std::ranges::transform(text, text.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
     return text;
 }
 
@@ -60,26 +61,31 @@ struct SuffixMasks {
 // computed once per suffix and shared by every candidate set that includes the field.
 struct FieldNaming {
     std::string name;
-    std::optional<ProviderSpec> provider;
+    std::optional<ProviderDefinition> provider;
 };
 
-[[nodiscard]] FieldNaming name_field(
-    const std::string &suffix,
-    const MetatileAttributeScan &scan,
-    gsl::not_null<const TextFormatter *> format,
-    std::vector<std::string> &warnings)
+[[nodiscard]] FieldNaming
+name_field(const std::string &suffix, const MetatileAttributeScan &scan, gsl::not_null<const UserDiagnostics *> diag)
 {
     FieldNaming naming;
+
+    if (suffix == "LAYER_TYPE") {
+        // The layer_type field's values are managed by Porytiles (FieldRole::layer_type), so its name is hardcoded
+        // rather than derived and it never gets a value provider.
+        naming.name = std::string{attribute::field_layer_type};
+        return naming;
+    }
 
     if (suffix == "BEHAVIOR") {
         naming.name = "behavior";
         if (scan.behaviors_header_present) {
-            naming.provider = ProviderSpec{behaviors_header, "MB_", {"MB_INVALID"}, HeaderFormat::either};
+            naming.provider = ProviderDefinition{behaviors_header, "MB_", {"MB_INVALID"}, HeaderFormat::either};
         }
         else {
-            warnings.push_back(format->format(
+            diag->warning(
+                metatile_attr_inference_tag,
                 "no behavior constants found in {}; leaving the behavior field without a value provider",
-                FormatParam{behaviors_header, Style::bold}));
+                FormatParam{behaviors_header, Style::bold});
         }
     }
     else if (is_all_digits(suffix)) {
@@ -92,7 +98,7 @@ struct FieldNaming {
             probe = "TILE_" + suffix.substr(0, suffix.size() - std::string_view{"_TYPE"}.size()) + "_";
         }
         if (any_enum_member_has_prefix(scan, probe)) {
-            naming.provider = ProviderSpec{fieldmap_header, probe, {}, HeaderFormat::enums_only};
+            naming.provider = ProviderDefinition{fieldmap_header, probe, {}, HeaderFormat::enums_only};
         }
     }
 
@@ -120,24 +126,23 @@ struct FieldNaming {
     return std::nullopt;
 }
 
-// The smallest of 1, 2, or 4 bytes that covers every mask in a candidate set (fields and layer type).
+// The smallest of 1, 2, or 4 bytes that covers every mask in a candidate set. The layer-type field is an
+// ordinary member of the set, so its mask participates like any other.
 [[nodiscard]] std::size_t required_bytes_for(const MetatileAttributeCandidateSet &candidate)
 {
     std::size_t required_bits = 0;
     for (const auto &field : candidate.fields) {
         required_bits = std::max(required_bits, static_cast<std::size_t>(std::bit_width(field.mask.value())));
     }
-    if (candidate.layer_type_mask.has_value()) {
-        required_bits =
-            std::max(required_bits, static_cast<std::size_t>(std::bit_width(candidate.layer_type_mask.value())));
-    }
     return required_bits <= 8 ? 1U : (required_bits <= 16 ? 2U : 4U);
 }
 
 } // namespace
 
-MetatileAttributeInferenceResult
-infer_metatile_attribute_candidates(const MetatileAttributeScan &scan, gsl::not_null<const TextFormatter *> format)
+MetatileAttributeInferenceResult infer_metatile_attribute_candidates(
+    const MetatileAttributeScan &scan,
+    gsl::not_null<const TextFormatter *> format,
+    gsl::not_null<const UserDiagnostics *> diag)
 {
     MetatileAttributeInferenceResult result;
 
@@ -254,34 +259,10 @@ infer_metatile_attribute_candidates(const MetatileAttributeScan &scan, gsl::not_
 
     std::unordered_map<std::string, FieldNaming> namings;
     for (const auto &suffix : ordered_suffixes) {
-        if (suffix == "LAYER_TYPE") {
-            continue; // structural, never emitted as a field
-        }
-        namings.emplace(suffix, name_field(suffix, scan, format, result.warnings));
+        namings.emplace(suffix, name_field(suffix, scan, diag));
     }
 
-    // --- Phase C: group masks into candidate sets, filling or rejecting fields with no mask ---
-
-    // The stock two-byte layout exception: a project declaring exactly BEHAVIOR and LAYER_TYPE with no masks anywhere
-    // is completed as one synthesized candidate (behavior in the low byte, two-byte word). The gate is structural
-    // rather than size-based: with no masks there is nothing to infer a size from, and every real stock project that
-    // hits this shape is the two-byte emerald family.
-    const bool behavior_only_stock = ordered_suffixes.size() == 2 && seen_suffixes.contains("BEHAVIOR") &&
-                                     seen_suffixes.contains("LAYER_TYPE") && masks.empty();
-    if (behavior_only_stock) {
-        MetatileAttributeCandidateSet candidate;
-        candidate.origin = "the stock two-byte behavior-only layout (assumed)";
-        MetatileAttributeFieldSpec spec;
-        spec.name = namings.at("BEHAVIOR").name;
-        spec.mask = 0x00FFU; // stock two-byte layout: behavior occupies the low byte
-        spec.provider = namings.at("BEHAVIOR").provider;
-        candidate.fields.push_back(std::move(spec));
-        candidate.required_bytes = 2;
-        candidate.synthesized = true;
-        result.candidates.push_back(std::move(candidate));
-        result.status = AttributeInferenceStatus::valid;
-        return result;
-    }
+    // --- Phase C: group masks into candidate sets, rejecting fields with no mask in any set ---
 
     // Describes one candidate set being assembled: which per-suffix mask slot feeds it and what to call it.
     struct SetPlan {
@@ -329,20 +310,22 @@ infer_metatile_attribute_candidates(const MetatileAttributeScan &scan, gsl::not_
             continue;
         }
         const SuffixMasks &m = it->second;
-        const std::string display_name = suffix == "LAYER_TYPE" ? "layer_type" : namings.at(suffix).name;
+        const std::string &display_name = namings.at(suffix).name;
         if (any_frlg_define) {
             if (m.frlg_define.has_value() && m.array_value.has_value() &&
                 m.frlg_define.value() != m.array_value.value()) {
-                result.warnings.push_back(format->format(
+                diag->warning(
+                    metatile_attr_inference_tag,
                     "field '{}' FRLG mask define disagrees with the mask table; using the define",
-                    FormatParam{display_name, Style::bold}));
+                    FormatParam{display_name, Style::bold});
             }
         }
         else if (
             m.bare_define.has_value() && m.array_value.has_value() && m.bare_define.value() != m.array_value.value()) {
-            result.warnings.push_back(format->format(
+            diag->warning(
+                metatile_attr_inference_tag,
                 "field '{}' mask define disagrees with the mask table; using the define",
-                FormatParam{display_name, Style::bold}));
+                FormatParam{display_name, Style::bold});
         }
     }
 
@@ -363,35 +346,36 @@ infer_metatile_attribute_candidates(const MetatileAttributeScan &scan, gsl::not_
         }
         const auto expected = static_cast<std::uint32_t>(std::countr_zero(mask_for_check.value()));
         if (shift != expected) {
-            const std::string display_name = suffix == "LAYER_TYPE" ? "layer_type" : namings.at(suffix).name;
-            result.warnings.push_back(format->format(
+            const std::string &display_name = namings.at(suffix).name;
+            diag->warning(
+                metatile_attr_inference_tag,
                 "field '{}' shift table entry ({}) does not match its mask offset ({}); using the mask",
                 FormatParam{display_name, Style::bold},
                 FormatParam{shift},
-                FormatParam{expected}));
+                FormatParam{expected});
         }
     }
 
     // Assemble the sets. A suffix missing a mask in one set is simply excluded from that set, but a suffix missing a
-    // mask in every set means the project declares a field it exposes no mask for, which is fatal.
+    // mask in every set means the project declares a field it exposes no mask for, which is fatal. The layer_type
+    // field is covered like any other; its suggested define spelling follows the emerald family's
+    // METATILE_ATTR_LAYER_MASK rather than the normalized LAYER_TYPE suffix.
     for (const auto &suffix : ordered_suffixes) {
-        if (suffix == "LAYER_TYPE") {
-            continue; // handled below, per set
-        }
         const auto it = masks.find(suffix);
         const SuffixMasks m = (it != masks.end()) ? it->second : SuffixMasks{};
         const bool covered = std::any_of(
             plans.begin(), plans.end(), [&](const SetPlan &plan) { return mask_for(m, plan.frlg).has_value(); });
         if (!covered) {
+            const std::string define_stem = suffix == "LAYER_TYPE" ? "LAYER" : suffix;
             result.status = AttributeInferenceStatus::invalid;
             result.error_message = format->format(
-                "could not determine a bit mask for metatile attribute field '{}'. The base game declares this "
+                "Could not determine a bit mask for metatile attribute field '{}'. The base game declares this "
                 "field but exposes no mask for it. Provide one of: restore the sMetatileAttrMasks[] table under its "
                 "exact name in src/fieldmap.c; add a METATILE_ATTR_{}_MASK #define in {}; or set the mask "
                 "explicitly via metatile_attribute_field_overrides (or a full metatile_attribute_fields list) in "
                 "your Porytiles config.",
                 FormatParam{namings.at(suffix).name, Style::bold},
-                FormatParam{suffix},
+                FormatParam{define_stem},
                 FormatParam{fieldmap_header, Style::bold});
             return result;
         }
@@ -400,33 +384,36 @@ infer_metatile_attribute_candidates(const MetatileAttributeScan &scan, gsl::not_
     for (const auto &plan : plans) {
         MetatileAttributeCandidateSet candidate;
         candidate.origin = plan.origin;
+        bool any_value_field = false;
         for (const auto &suffix : ordered_suffixes) {
             const auto it = masks.find(suffix);
             const SuffixMasks m = (it != masks.end()) ? it->second : SuffixMasks{};
             const auto mask = mask_for(m, plan.frlg);
-            if (suffix == "LAYER_TYPE") {
-                candidate.layer_type_mask = mask;
-                continue;
-            }
             if (!mask.has_value()) {
                 continue; // excluded from this set; another set covers it
             }
             const FieldNaming &naming = namings.at(suffix);
-            MetatileAttributeFieldSpec spec;
-            spec.name = naming.name;
-            spec.mask = mask;
-            spec.provider = naming.provider;
-            candidate.fields.push_back(std::move(spec));
+            MetatileAttributeFieldDefinition definition;
+            definition.name = naming.name;
+            definition.mask = mask;
+            definition.provider = naming.provider;
+            if (suffix == "LAYER_TYPE") {
+                definition.role = FieldRole::layer_type;
+            }
+            else {
+                any_value_field = true;
+            }
+            candidate.fields.push_back(std::move(definition));
         }
-        if (candidate.fields.empty()) {
-            continue; // a set with no fields (e.g. only a layer mask on one side) is not a usable layout
+        if (!any_value_field) {
+            continue; // a set with nothing beyond the layer-type role field is not a usable layout
         }
         candidate.required_bytes = required_bytes_for(candidate);
         result.candidates.push_back(std::move(candidate));
     }
 
     if (result.candidates.empty()) {
-        // Every discovered suffix was structural (e.g. only LAYER_TYPE); nothing usable to provide.
+        // Every discovered suffix was the managed layer_type; nothing usable to provide.
         result.status = AttributeInferenceStatus::not_provided;
         return result;
     }

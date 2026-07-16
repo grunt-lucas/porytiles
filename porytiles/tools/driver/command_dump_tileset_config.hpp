@@ -1,17 +1,13 @@
 #pragma once
 
-#include <format>
 #include <iostream>
-#include <ostream>
 #include <string>
-#include <vector>
 
 #include "CLI/CLI.hpp"
 
-#include "porytiles/domain/algorithms/metatile_attribute_schema_reconciler.hpp"
-#include "porytiles/domain/models/metatile_attribute_schema.hpp"
 #include "porytiles/infra/cli/cli_option_registration.hpp"
 #include "porytiles/infra/cli/cli_option_storage.hpp"
+#include "porytiles/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
 
@@ -26,6 +22,10 @@ class DumpTilesetConfigCommand final : public Command {
     {
         CLI::App &cmd = get_app();
         cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to dump config for")->required();
+        cmd.add_flag(
+            "--allow-missing-tileset",
+            allow_missing_tileset_,
+            "Dump config even when the tileset does not exist, to preview what a new tileset would inherit.");
         project_root_opt_.RegisterOpt(cmd);
         porytiles::register_config_options(cmd, cli_storage_);
     }
@@ -36,10 +36,9 @@ class DumpTilesetConfigCommand final : public Command {
         using namespace porytiles;
 
         TilesetCommandEnv env{project_root_opt_.project_root(), cli_storage_};
-        auto *text_formatter = env.text_formatter;
 
-        // Env failures report through the unfiltered stderr diagnostics: the filtered sink is not built until
-        // initialize() succeeds.
+        // Env failures report through the unfiltered stderr diagnostics: the filtered diagnostics handle is not built
+        // until initialize() succeeds.
         const auto env_result = env.initialize(tileset_name_);
         if (!env_result.has_value()) {
             const auto env_fail_result = ChainableResult<void>{
@@ -49,75 +48,29 @@ class DumpTilesetConfigCommand final : public Command {
             throw CLI::RuntimeError{1};
         }
 
-        env.config.dump_config(std::cout, ConfigScopeType::tileset, tileset_name_);
-
-        // Resolve and print the invocation's attribute schema, mirroring the resolver setup every other command uses
-        // (config fetch, fieldmap scan, inference, and reconciliation).
-        MetatileAttributeSchemaResolver schema_resolver{env.project_root, &env.config, text_formatter, env.diag.get()};
-        auto resolved_result = schema_resolver.resolve(tileset_name_);
-        if (!resolved_result.has_value()) {
-            const auto fail_result = ChainableResult<void>{
-                FormattableError{
-                    "Failed to resolve the metatile attribute schema for tileset '{}'.",
-                    FormatParam{tileset_name_, Style::bold}},
-                resolved_result};
-            env.diag->fatal(fail_result);
-            throw CLI::RuntimeError{1};
-        }
-        const LoadedMetatileAttributeSchema &resolved = resolved_result.value();
-
-        std::ostream &out = std::cout;
-        const std::string section_title = "Resolved Metatile Attribute Schema";
-        out << text_formatter->style(section_title, Style::bold) << "\n";
-        out << text_formatter->style(std::string(section_title.size(), '='), Style::faint) << "\n\n";
-
-        out << "  "
-            << text_formatter->format(
-                   "Attribute size: {} bytes ({})",
-                   FormatParam{std::to_string(resolved.attribute_bytes), Style::bold},
-                   FormatParam{resolved.size_origin})
-            << "\n";
-
-        out << "  "
-            << text_formatter->format(
-                   "Declaration size: {} bytes (const u{}, {})",
-                   FormatParam{std::to_string(resolved.declaration_bytes), Style::bold},
-                   FormatParam{std::to_string(resolved.declaration_bytes * 8)},
-                   FormatParam{resolved.declaration_origin})
-            << "\n";
-
-        if (!resolved.fields_origin.empty()) {
-            out << "  " << text_formatter->format("Fields from: {}", FormatParam{resolved.fields_origin, Style::bold})
-                << "\n";
-        }
-        out << "\n";
-
-        out << "  " << text_formatter->style("Fields:", Style::faint) << "\n";
-        for (const Field &field : resolved.schema.fields()) {
-            std::string provider_desc;
-            if (field.has_provider()) {
-                provider_desc = text_formatter->format(
-                    " provider={} ({})",
-                    FormatParam{field.provider_spec().header.string()},
-                    FormatParam{field.provider_spec().prefix});
+        // Verify the tileset exists before dumping: a misspelled name would otherwise dump a plausible-looking
+        // chain of project-level values. --allow-missing-tileset skips the check for previewing the config a
+        // not-yet-created tileset would inherit.
+        if (!allow_missing_tileset_) {
+            ProjectTilesetMetadataProvider metadata_provider{env.project_root, env.text_formatter, env.diag.get()};
+            if (!metadata_provider.exists(tileset_name_)) {
+                const auto not_found_err = ChainableResult<void>{FormattableError{
+                    "Tileset '{}' does not exist. Pass '{}' to dump its config anyway.",
+                    FormatParam{tileset_name_, Style::bold},
+                    FormatParam{"--allow-missing-tileset", Style::bold}}};
+                env.diag->fatal(not_found_err);
+                throw CLI::RuntimeError{1};
             }
-            out << "    "
-                << text_formatter->format(
-                       "{}  mask={}  offset={} width={}  default={}",
-                       FormatParam{field.name(), Style::bold},
-                       FormatParam{std::format("0x{:X}", field.mask())},
-                       FormatParam{std::to_string(field.offset())},
-                       FormatParam{std::to_string(field.width())},
-                       FormatParam{std::to_string(field.default_value())})
-                << provider_desc << "\n";
         }
-        out << "\n";
+
+        env.config.dump_config(std::cout, ConfigScopeType::tileset, tileset_name_);
     }
 
     static constexpr auto command_name = "dump-tileset-config";
     static constexpr auto command_desc = "Dump the full configuration provenance chain for a tileset.";
     static constexpr auto command_group = "UTILITIES";
     std::string tileset_name_;
+    bool allow_missing_tileset_{false};
     OptProjectRoot project_root_opt_;
     porytiles::CliOptionStorage cli_storage_;
 };

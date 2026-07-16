@@ -211,7 +211,7 @@ void OverrideConfigProvider::set_metatile_attribute_declaration_size(std::option
     metatile_attribute_declaration_size_override_ = std::move(value);
 }
 
-void OverrideConfigProvider::set_metatile_attribute_fields(MetatileAttributeFieldSpecs value)
+void OverrideConfigProvider::set_metatile_attribute_fields(MetatileAttributeFieldDefinitions value)
 {
     metatile_attribute_fields_override_ = std::move(value);
 }
@@ -224,11 +224,6 @@ void OverrideConfigProvider::set_metatile_attribute_field_overrides(MetatileAttr
 void OverrideConfigProvider::set_write_layer_type_column(bool value)
 {
     write_layer_type_column_override_ = std::move(value);
-}
-
-void OverrideConfigProvider::set_metatile_layer_type_mask(std::optional<std::uint32_t> value)
-{
-    metatile_layer_type_mask_override_ = std::move(value);
 }
 
 void OverrideConfigProvider::set_tileset_animations_wire_anim_code(bool value)
@@ -596,13 +591,13 @@ OverrideConfigProvider::metatile_attribute_declaration_size(ConfigScopeType type
         metatile_attribute_declaration_size_override_.value(), "metatile_attribute_declaration_size", source_info_);
 }
 
-LayerValue<MetatileAttributeFieldSpecs>
+LayerValue<MetatileAttributeFieldDefinitions>
 OverrideConfigProvider::metatile_attribute_fields(ConfigScopeType type, const std::string &scope) const
 {
     if (!scope_matches(type, scope) || !metatile_attribute_fields_override_.has_value()) {
-        return LayerValue<MetatileAttributeFieldSpecs>::not_provided();
+        return LayerValue<MetatileAttributeFieldDefinitions>::not_provided();
     }
-    return LayerValue<MetatileAttributeFieldSpecs>::valid(
+    return LayerValue<MetatileAttributeFieldDefinitions>::valid(
         metatile_attribute_fields_override_.value(), "metatile_attribute_fields", source_info_);
 }
 
@@ -622,16 +617,6 @@ LayerValue<bool> OverrideConfigProvider::write_layer_type_column(ConfigScopeType
         return LayerValue<bool>::not_provided();
     }
     return LayerValue<bool>::valid(write_layer_type_column_override_.value(), "write_layer_type_column", source_info_);
-}
-
-LayerValue<std::optional<std::uint32_t>>
-OverrideConfigProvider::metatile_layer_type_mask(ConfigScopeType type, const std::string &scope) const
-{
-    if (!scope_matches(type, scope) || !metatile_layer_type_mask_override_.has_value()) {
-        return LayerValue<std::optional<std::uint32_t>>::not_provided();
-    }
-    return LayerValue<std::optional<std::uint32_t>>::valid(
-        metatile_layer_type_mask_override_.value(), "metatile_layer_type_mask", source_info_);
 }
 
 LayerValue<bool>

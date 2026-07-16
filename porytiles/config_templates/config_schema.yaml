@@ -50,7 +50,7 @@
 #     The default IS the answer when nothing else provides one; consumers use the resolved value directly.
 #
 #   - An OVERRIDE KNOB has an optional type and a std::nullopt default (e.g. metatile_attribute_size,
-#     metatile_attribute_declaration_size, metatile_layer_type_mask). Here nullopt is a definite answer:
+#     metatile_attribute_declaration_size). Here nullopt is a definite answer:
 #     "the user did not pin this value". Exactly one consumer, the domain reconciler
 #     (reconcile_metatile_attribute_schema), interprets that absence, by deriving the value from project
 #     facts or falling back to a documented assumption. No provider may "helpfully" fill an override knob
@@ -832,9 +832,9 @@ config_values:
     cli_option: metatile-attribute-size
     cli_desc: >-
       Pins the size in bytes of each metatile attribute entry (1, 2, or 4). When unset, Porytiles
-      derives the size from the attribute masks the project declares; must be set explicitly on
-      projects that declare more than one mask layout (pokeemerald-expansion), one value per build
-      flavor. Project-global.
+      derives the size from the resolved attribute field masks. Must be set explicitly on projects
+      that declare more than one mask layout (pokeemerald-expansion), one value per build flavor,
+      and on projects whose struct Tileset declaration is wider than the masks need. Project-global.
     layer: infra
     type: std::optional<std::size_t>
     parser: parse_optional_size_t
@@ -861,11 +861,11 @@ config_values:
   - canonical_name: Metatile Attribute Fields
     symbol: metatile_attribute_fields
     yaml_path: fieldmap.metatile_attribute_fields
-    yaml_only: true  # Too complex for non-YAML providers (MetatileAttributeFieldSpecs)
+    yaml_only: true  # Too complex for non-YAML providers (MetatileAttributeFieldDefinitions)
     layer: infra
-    type: MetatileAttributeFieldSpecs
+    type: MetatileAttributeFieldDefinitions
     parser: parse_metatile_attribute_fields
-    default_value: "MetatileAttributeFieldSpecs{}"
+    default_value: "MetatileAttributeFieldDefinitions{}"
     validators: [ ]
     cross_field_validators: [ ]
 
@@ -890,22 +890,6 @@ config_values:
     type: bool
     parser: parse_bool
     default_value: "false"
-    validators: [ ]
-    cross_field_validators: [ ]
-
-  - canonical_name: Metatile Layer Type Mask
-    symbol: metatile_layer_type_mask
-    yaml_path: fieldmap.metatile_layer_type_mask
-    cli_option: metatile-layer-type-mask
-    cli_desc: >-
-      Bit mask (a hex literal like 0xF000) for the layer-type bits of a metatile attribute. A mask of 0
-      disables the layer type, so every metatile is Normal and no layer-type bits are written. When unset,
-      Porytiles uses the layer-type mask of the inferred mask layout (METATILE_ATTR_LAYER_MASK /
-      sMetatileAttrMasks) and falls back to the size-based default. Project-global.
-    layer: infra
-    type: std::optional<std::uint32_t>
-    parser: parse_layer_type_mask
-    default_value: "std::nullopt"
     validators: [ ]
     cross_field_validators: [ ]
 

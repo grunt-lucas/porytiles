@@ -57,7 +57,6 @@ struct CliOptionStorage {
     std::optional<std::string> metatile_attribute_size;
     std::optional<std::string> metatile_attribute_declaration_size;
     std::optional<std::string> write_layer_type_column;
-    std::optional<std::string> metatile_layer_type_mask;
     std::optional<std::string> tileset_animations_wire_anim_code;
 };
 

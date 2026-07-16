@@ -6,7 +6,7 @@
 #include "gsl/pointers"
 
 #include "porytiles/domain/algorithms/metatile_attribute_schema_reconciler.hpp"
-#include "porytiles/infra/config/lazy_layered_config.hpp"
+#include "porytiles/infra/config/infra_config.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 #include "porytiles/utilities/text/text_formatter.hpp"
 #include "porytiles/xcut/diagnostics/user_diagnostics.hpp"
@@ -27,15 +27,15 @@ namespace porytiles {
 /// 4. Reconcile the inference with the user inputs (reconcile_metatile_attribute_schema), which decides the width,
 ///    the field set, the layer mask, and the declaration width, and reports how.
 ///
-/// Scan and inference warnings drain to the diagnostics sink under the "metatile-attr-inference" tag, and the
-/// reconciler's notes under "metatile-attr-schema" (before the result is checked, so the assumed-width warning
-/// survives onto the error path). The caller supplies the filtered sink, so all of these respect the user's
-/// diagnostic include/exclude patterns.
+/// Every step emits its own non-fatal diagnostics directly: the scan and inference under the
+/// "metatile-attribute-inference" tag, the reconciler under "metatile-attribute-schema". Emitting at the point of
+/// detection means anything decided before a later fatal still reaches the user. The caller supplies the filtered sink,
+/// so all of these respect the user's diagnostic include/exclude patterns.
 class MetatileAttributeSchemaResolver {
   public:
     MetatileAttributeSchemaResolver(
         std::filesystem::path project_root,
-        gsl::not_null<const LazyLayeredConfig *> config,
+        gsl::not_null<const InfraConfig *> config,
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const UserDiagnostics *> diag);
 
@@ -52,7 +52,7 @@ class MetatileAttributeSchemaResolver {
 
   private:
     std::filesystem::path project_root_;
-    const LazyLayeredConfig *config_;
+    const InfraConfig *config_;
     const TextFormatter *format_;
     const UserDiagnostics *diag_;
 };

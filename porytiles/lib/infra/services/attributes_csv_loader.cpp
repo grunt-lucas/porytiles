@@ -20,15 +20,19 @@ using namespace porytiles;
 
 struct CsvRow {
     std::size_t metatile_id;
-    std::vector<std::string> field_cells;        // one trimmed cell per schema field, in schema order
+    std::vector<std::string> field_cells;        // one trimmed cell per schema value field, in schema order
     std::optional<std::string> layer_type_token; // raw layer_type cell, nullopt when the column or cell is blank
 };
 
-/// @brief Renders the header row the schema expects: id plus every field name in schema order.
+/// @brief Renders the header row the schema expects: id plus every value field name in schema order.
+///
+/// @details
+/// The layer_type-role field is not a value column; the CSV addresses the layer type only through the
+/// optional trailing pin column, which is detected separately.
 [[nodiscard]] std::string expected_header_string(const Schema &schema)
 {
     std::string header = "id";
-    for (const Field &field : schema.fields()) {
+    for (const Field &field : schema.value_fields()) {
         header += "," + field.name();
     }
     return header;
@@ -68,7 +72,7 @@ ChainableResult<CsvRow> parse_csv_row(
     const FileHighlightPrinter &file_printer,
     bool has_layer_type_column)
 {
-    const std::size_t field_count = schema.fields().size();
+    const std::size_t field_count = schema.value_fields().size();
     auto columns = split(line, ",");
 
     if (columns.size() < 1 + field_count) {
@@ -187,7 +191,7 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
         trim(col);
     }
 
-    const std::size_t field_count = schema.fields().size();
+    const std::size_t field_count = schema.value_fields().size();
     auto make_header_error = [&](const std::string &message) -> FormattableError {
         std::vector<std::string> err_lines{};
         err_lines.push_back(message);
@@ -199,7 +203,7 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
     };
 
     for (std::size_t i = 0; i <= field_count; ++i) {
-        const std::string &expected_column = i == 0 ? "id" : schema.fields()[i - 1].name();
+        const std::string &expected_column = i == 0 ? "id" : schema.value_fields()[i - 1].name();
         if (i >= header_columns.size()) {
             return make_header_error(format.format(
                 "{}:{}: invalid header: missing column '{}' at position {}",
@@ -386,7 +390,7 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
         MetatileAttribute attribute{};
         attribute.layer_type(LayerType::normal);
         for (std::size_t i = 0; i < field_count; ++i) {
-            const Field &field = schema.fields()[i];
+            const Field &field = schema.value_fields()[i];
             auto value_result = resolve_field_cell(field, row.field_cells[i], line_index);
             if (!value_result.has_value()) {
                 return ChainableResult<std::map<std::size_t, MetatileAttribute>>{

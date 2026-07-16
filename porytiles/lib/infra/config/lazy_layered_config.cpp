@@ -200,8 +200,6 @@ void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, con
     dump_single_config_value(
         out, *format_, "Write Layer Type Column", write_layer_type_column_provenance_chain(type, scope));
     dump_single_config_value(
-        out, *format_, "Metatile Layer Type Mask", metatile_layer_type_mask_provenance_chain(type, scope));
-    dump_single_config_value(
         out,
         *format_,
         "Tileset Animations Wire Anim Code",
@@ -775,14 +773,14 @@ LazyLayeredConfig::metatile_attribute_declaration_size_raw(ConfigScopeType type,
         });
 }
 
-ChainableResult<ConfigValue<MetatileAttributeFieldSpecs>>
+ChainableResult<ConfigValue<MetatileAttributeFieldDefinitions>>
 LazyLayeredConfig::metatile_attribute_fields_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<MetatileAttributeFieldSpecs>(
+    return resolve_config_value<MetatileAttributeFieldDefinitions>(
         key, "Metatile Attribute Fields", [&type, &scope](const ConfigProvider &provider) {
             return provider.metatile_attribute_fields(type, scope);
         });
@@ -811,19 +809,6 @@ LazyLayeredConfig::write_layer_type_column_raw(ConfigScopeType type, const std::
     return resolve_config_value<bool>(key, "Write Layer Type Column", [&type, &scope](const ConfigProvider &provider) {
         return provider.write_layer_type_column(type, scope);
     });
-}
-
-ChainableResult<ConfigValue<std::optional<std::uint32_t>>>
-LazyLayeredConfig::metatile_layer_type_mask_raw(ConfigScopeType type, const std::string &scope) const
-{
-    const auto name = extract_function_name();
-    // Strip the _raw suffix from the function name for cache key
-    const auto base_name = name.substr(0, name.size() - 4);
-    const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<std::optional<std::uint32_t>>(
-        key, "Metatile Layer Type Mask", [&type, &scope](const ConfigProvider &provider) {
-            return provider.metatile_layer_type_mask(type, scope);
-        });
 }
 
 ChainableResult<ConfigValue<bool>>
@@ -1107,10 +1092,10 @@ LazyLayeredConfig::metatile_attribute_declaration_size_provenance_chain(
     });
 }
 
-std::vector<ProvenanceChainLink<MetatileAttributeFieldSpecs>>
+std::vector<ProvenanceChainLink<MetatileAttributeFieldDefinitions>>
 LazyLayeredConfig::metatile_attribute_fields_provenance_chain(ConfigScopeType type, const std::string &scope) const
 {
-    return collect_provenance_chain<MetatileAttributeFieldSpecs>(
+    return collect_provenance_chain<MetatileAttributeFieldDefinitions>(
         [&type, &scope](const ConfigProvider &provider) { return provider.metatile_attribute_fields(type, scope); });
 }
 
@@ -1128,13 +1113,6 @@ LazyLayeredConfig::write_layer_type_column_provenance_chain(ConfigScopeType type
 {
     return collect_provenance_chain<bool>(
         [&type, &scope](const ConfigProvider &provider) { return provider.write_layer_type_column(type, scope); });
-}
-
-std::vector<ProvenanceChainLink<std::optional<std::uint32_t>>>
-LazyLayeredConfig::metatile_layer_type_mask_provenance_chain(ConfigScopeType type, const std::string &scope) const
-{
-    return collect_provenance_chain<std::optional<std::uint32_t>>(
-        [&type, &scope](const ConfigProvider &provider) { return provider.metatile_layer_type_mask(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<bool>> LazyLayeredConfig::tileset_animations_wire_anim_code_provenance_chain(

@@ -6,7 +6,7 @@
 #include "porytiles/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles/domain/config/anim_palette_resolution_strategy.hpp"
 #include "porytiles/domain/config/artifact_edit_mode.hpp"
-#include "porytiles/domain/config/metatile_attribute_field_spec.hpp"
+#include "porytiles/domain/config/metatile_attribute_field_definition.hpp"
 #include "porytiles/domain/config/packing_strategy_params.hpp"
 #include "porytiles/domain/config/packing_strategy_type.hpp"
 #include "porytiles/domain/config/per_anim_overrides.hpp"
@@ -149,14 +149,12 @@ class ConfigProvider {
     metatile_attribute_size(ConfigScopeType type, const std::string &scope) const;
     [[nodiscard]] virtual LayerValue<std::optional<std::size_t>>
     metatile_attribute_declaration_size(ConfigScopeType type, const std::string &scope) const;
-    [[nodiscard]] virtual LayerValue<MetatileAttributeFieldSpecs>
+    [[nodiscard]] virtual LayerValue<MetatileAttributeFieldDefinitions>
     metatile_attribute_fields(ConfigScopeType type, const std::string &scope) const;
     [[nodiscard]] virtual LayerValue<MetatileAttributeFieldOverrides>
     metatile_attribute_field_overrides(ConfigScopeType type, const std::string &scope) const;
     [[nodiscard]] virtual LayerValue<bool>
     write_layer_type_column(ConfigScopeType type, const std::string &scope) const;
-    [[nodiscard]] virtual LayerValue<std::optional<std::uint32_t>>
-    metatile_layer_type_mask(ConfigScopeType type, const std::string &scope) const;
     [[nodiscard]] virtual LayerValue<bool>
     tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const;
 };
