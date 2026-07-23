@@ -506,6 +506,21 @@ config_values:
     validators: [ rgba_alpha_component_opaque ]
     cross_field_validators: [ ]
 
+  - canonical_name: Ignore Triple Layer Content
+    symbol: ignore_triple_layer_content
+    yaml_path: tileset.ignore_triple_layer_content
+    cli_option: ignore-triple-layer-content
+    cli_desc: >-
+      Demote the triple-layer-content-in-dual-mode error to a warning. When on, a metatile with content on all three
+      layers compiles in dual mode by dropping one layer group instead of failing. The dropped layer follows the
+      metatile's effective layer type: a 'layer_type' role pin if you set one, otherwise the bottom layer.
+    layer: domain
+    type: bool
+    parser: parse_bool
+    default_value: "false"
+    validators: [ ]
+    cross_field_validators: [ ]
+
   - canonical_name: Tiles Edit Mode
     symbol: tiles_edit_mode
     yaml_path: tileset.tiles.edit_mode
@@ -707,8 +722,8 @@ config_values:
     type: PrimaryPairingMode
     parser: parse_primary_pairing_mode
     default_value: "PrimaryPairingMode::automatic"
-    validators: []
-    cross_field_validators: []
+    validators: [ ]
+    cross_field_validators: [ ]
 
   - canonical_name: Primary Pairing Partners
     symbol: primary_pairing_partners
@@ -719,8 +734,8 @@ config_values:
     type: "std::vector<std::string>"
     parser: parse_string_vector
     default_value: "std::vector<std::string>{}"
-    validators: []
-    cross_field_validators: []
+    validators: [ ]
+    cross_field_validators: [ ]
 
   # Note: Unlike verify_checksums (consumed by app-layer use cases), the diagnostic filter values below are "meta-config"
   # — they are only consumed at the composition root (tools/driver/ commands) to wire the FilteredUserDiagnostics
@@ -738,8 +753,8 @@ config_values:
     type: std::vector<std::string>
     parser: parse_string_vector
     default_value: "std::vector<std::string>{}"
-    validators: []
-    cross_field_validators: []
+    validators: [ ]
+    cross_field_validators: [ ]
 
   - canonical_name: Diagnostic Warnings Include
     symbol: diagnostic_warnings_include
@@ -750,8 +765,8 @@ config_values:
     type: std::vector<std::string>
     parser: parse_string_vector
     default_value: "std::vector<std::string>{}"
-    validators: []
-    cross_field_validators: []
+    validators: [ ]
+    cross_field_validators: [ ]
 
   - canonical_name: Diagnostic Remarks Exclude
     symbol: diagnostic_remarks_exclude
@@ -762,8 +777,8 @@ config_values:
     type: std::vector<std::string>
     parser: parse_string_vector
     default_value: "std::vector<std::string>{}"
-    validators: []
-    cross_field_validators: []
+    validators: [ ]
+    cross_field_validators: [ ]
 
   - canonical_name: Diagnostic Remarks Include
     symbol: diagnostic_remarks_include
@@ -774,8 +789,8 @@ config_values:
     type: std::vector<std::string>
     parser: parse_string_vector
     default_value: "std::vector<std::string>{}"
-    validators: []
-    cross_field_validators: []
+    validators: [ ]
+    cross_field_validators: [ ]
 
   # Infrastructure Layer Configuration Values
   - canonical_name: Tileset Paths Primary Source
@@ -881,15 +896,14 @@ config_values:
     validators: [ ]
     cross_field_validators: [ ]
 
-  - canonical_name: Write Layer Type Column
-    symbol: write_layer_type_column
-    yaml_path: fieldmap.write_layer_type_column
-    cli_option: write-layer-type-column
-    cli_desc: Emit and honor a layer_type column in the metatile attributes CSV.
+  - canonical_name: Role Pins
+    symbol: role_pins
+    yaml_path: fieldmap.role_pins
+    yaml_only: true  # Too complex for non-YAML providers (RolePinDefinitions)
     layer: infra
-    type: bool
-    parser: parse_bool
-    default_value: "false"
+    type: RolePinDefinitions
+    parser: parse_role_pins
+    default_value: "RolePinDefinitions{}"
     validators: [ ]
     cross_field_validators: [ ]
 

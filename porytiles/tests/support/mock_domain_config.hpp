@@ -28,6 +28,7 @@ class MockDomainConfig : public DomainConfig {
     std::size_t max_map_data_size = 10240;
     std::size_t num_tiles_per_metatile = 8;
     Rgba32 extrinsic_transparency = rgba_magenta;
+    bool ignore_triple_layer_content = false;
     ArtifactEditMode tiles_edit_mode = ArtifactEditMode::optimize;
     ArtifactEditMode palettes_edit_mode = ArtifactEditMode::optimize;
     bool palette_hints_enabled = true;
@@ -102,6 +103,13 @@ class MockDomainConfig : public DomainConfig {
     extrinsic_transparency_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{extrinsic_transparency, "Extrinsic Transparency", "extrinsic_transparency", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    ignore_triple_layer_content_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{
+            ignore_triple_layer_content, "Ignore Triple Layer Content", "ignore_triple_layer_content", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<ArtifactEditMode>>

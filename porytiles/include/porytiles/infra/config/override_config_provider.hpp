@@ -46,6 +46,7 @@ class OverrideConfigProvider final : public ConfigProvider {
     void set_max_map_data_size(std::size_t value);
     void set_num_tiles_per_metatile(std::size_t value);
     void set_extrinsic_transparency(Rgba32 value);
+    void set_ignore_triple_layer_content(bool value);
     void set_tiles_edit_mode(ArtifactEditMode value);
     void set_palettes_edit_mode(ArtifactEditMode value);
     void set_palette_hints_enabled(bool value);
@@ -76,7 +77,7 @@ class OverrideConfigProvider final : public ConfigProvider {
     void set_metatile_attribute_declaration_size(std::optional<std::size_t> value);
     void set_metatile_attribute_fields(MetatileAttributeFieldDefinitions value);
     void set_metatile_attribute_field_overrides(MetatileAttributeFieldOverrides value);
-    void set_write_layer_type_column(bool value);
+    void set_role_pins(RolePinDefinitions value);
     void set_tileset_animations_wire_anim_code(bool value);
 
     [[nodiscard]] LayerValue<std::size_t>
@@ -97,6 +98,8 @@ class OverrideConfigProvider final : public ConfigProvider {
     num_tiles_per_metatile(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<Rgba32>
     extrinsic_transparency(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<bool>
+    ignore_triple_layer_content(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<ArtifactEditMode>
     tiles_edit_mode(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<ArtifactEditMode>
@@ -156,8 +159,8 @@ class OverrideConfigProvider final : public ConfigProvider {
     metatile_attribute_fields(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<MetatileAttributeFieldOverrides>
     metatile_attribute_field_overrides(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<bool>
-    write_layer_type_column(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<RolePinDefinitions>
+    role_pins(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<bool>
     tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const override;
 
@@ -177,6 +180,7 @@ class OverrideConfigProvider final : public ConfigProvider {
     std::optional<std::size_t> max_map_data_size_override_;
     std::optional<std::size_t> num_tiles_per_metatile_override_;
     std::optional<Rgba32> extrinsic_transparency_override_;
+    std::optional<bool> ignore_triple_layer_content_override_;
     std::optional<ArtifactEditMode> tiles_edit_mode_override_;
     std::optional<ArtifactEditMode> palettes_edit_mode_override_;
     std::optional<bool> palette_hints_enabled_override_;
@@ -208,7 +212,7 @@ class OverrideConfigProvider final : public ConfigProvider {
     std::optional<std::optional<std::size_t>> metatile_attribute_declaration_size_override_;
     std::optional<MetatileAttributeFieldDefinitions> metatile_attribute_fields_override_;
     std::optional<MetatileAttributeFieldOverrides> metatile_attribute_field_overrides_override_;
-    std::optional<bool> write_layer_type_column_override_;
+    std::optional<RolePinDefinitions> role_pins_override_;
     std::optional<bool> tileset_animations_wire_anim_code_override_;
 };
 

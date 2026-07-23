@@ -288,15 +288,20 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_top_png(Tileset &dest, 
 
 ChainableResult<void> ProjectTilesetArtifactReader::read_attributes_csv(Tileset &dest, const ArtifactKey &src_key) const
 {
-    // The CSV still loads under the owning tileset's name (dest.name()): the schema is project-global, but
-    // per-tileset formatting knobs like write_layer_type_column resolve at that tileset's config scope.
-    // Keys are relative to project_root_, so prepend for file I/O
+    // The CSV still loads using the owning tileset's name. The schema is supposed to be project-global, but per-tileset
+    // formatting config like role_pins resolves at that tileset's config scope.
     PT_TRY_ASSIGN_PASS_ERR(
-        attributes,
+        load_result,
         attributes_csv_loader_->load((project_root_ / src_key.key()).string(), *schema_, *provider_map_, dest.name()),
         void);
-    for (const auto &[metatile_id, attribute] : attributes) {
+    for (const auto &[metatile_id, attribute] : load_result.attributes) {
         dest.porytiles_component().insert_attribute(metatile_id, attribute);
+    }
+    // Record, per role, whether the active pin column was present. The decompiler's round-trip merge reads this to
+    // decide between preserving prior pin state (column present) and pinning every row (column absent).
+    for (const auto &[role, present] : load_result.active_pin_column_present) {
+        dest.porytiles_component().prior_pin_column_state(
+            role, present ? PriorPinColumnState::column_present : PriorPinColumnState::column_absent);
     }
     return {};
 }

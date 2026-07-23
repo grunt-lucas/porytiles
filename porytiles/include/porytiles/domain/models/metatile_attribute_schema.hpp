@@ -74,6 +74,23 @@ enum class FieldRole { layer_type };
     panic("unhandled FieldRole value");
 }
 
+/// @brief Parses a FieldRole from its string form, or nullopt when the name is not a known role.
+///
+/// @details
+/// Matches a role name (as written in YAML) to a FieldRole. Both the field/override parsers and the role_pins parser
+/// route through this function, so a new role only needs to be added here. The only role today is layer_type; any other
+/// name yields nullopt so callers can reject it.
+///
+/// @param text The role name to match
+/// @return The matching FieldRole, or std::nullopt when @p text names no known role
+[[nodiscard]] inline std::optional<FieldRole> field_role_from_string(const std::string &text)
+{
+    if (text == "layer_type") {
+        return FieldRole::layer_type;
+    }
+    return std::nullopt;
+}
+
 /// @brief Stream insertion operator for FieldRole.
 ///
 /// @param os The output stream
@@ -292,11 +309,11 @@ class Schema {
     /// @brief Returns the fields that hold plain per-metatile values, excluding the layer_type-role field.
     ///
     /// @details
-    /// This is the field list the attributes CSV is built from: one value column per entry, in schema
-    /// order. The layer_type-role field never appears here because its values are managed by Porytiles
-    /// (compile-time inference or a CSV pin through the separate trailing layer_type column), not entered
-    /// as a value column. Code that renders, parses, or defaults per-field values should iterate this
-    /// list; code that needs the full packed layout (binary pack/unpack, schema dumps) iterates fields().
+    /// This is the field list the attributes CSV is built from: one value column per entry, in schema  order. The
+    /// layer_type-role field never appears here because its values are managed by Porytiles (compile-time inference or
+    /// a CSV pin through the separate trailing layer_type column), not entered as a value column. Code that renders,
+    /// parses, or defaults per-field values should iterate this list; code that needs the full packed layout (binary
+    /// pack/unpack, schema dumps) iterates fields().
     ///
     /// @return The non-role fields, in schema order
     [[nodiscard]] const std::vector<Field> &value_fields() const

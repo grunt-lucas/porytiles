@@ -99,11 +99,13 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(c
         const auto &metatile = source_metatiles[i];
         const std::size_t input_offset = i * metatile::entries_per_metatile_triple;
 
-        // Check precondition: no metatile should have implied LayerMode::triple
+        // Implied-triple metatiles are legal input here: validate_layer_mode is the gate, and with
+        // ignore_triple_layer_content on it lets them through to be reduced by dropping a layer group. infer_layer_type
+        // has no meaningful answer for an implied-triple metatile, so it falls back to 'normal' (which drops the bottom
+        // group). An explicit pin still wins over that fallback, so the drop logic below is unchanged; the only
+        // difference is the enriched warning when such a metatile drops visible content.
         const LayerMode layer_mode = metatile.infer_layer_mode(extrinsic_transparency_);
-        if (layer_mode == LayerMode::triple) {
-            panic("metatile " + std::to_string(i) + " has implied LayerMode::triple, cannot dual_layerize");
-        }
+        const bool is_implied_triple = layer_mode == LayerMode::triple;
 
         // An explicit override wins over inference and drives which layer group is dropped.
         const LayerType inferred = metatile.infer_layer_type(extrinsic_transparency_);
@@ -123,12 +125,19 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(c
             }
         }
         if (drops_visible) {
-            diag_->warning(
-                "layer-type-column",
-                "metatile {}: layer type '{}' drops a layer that contains visible tiles; those tiles will be "
+            std::vector<std::string> lines;
+            lines.push_back(diag_->formatter().format(
+                "Metatile {}: layer type '{}' drops a layer that contains visible tiles. Those tiles will be "
                 "discarded.",
                 FormatParam{i},
-                FormatParam{layer_type_csv_token(layer_type), Style::bold});
+                FormatParam{layer_type_csv_token(layer_type), Style::bold}));
+            if (is_implied_triple) {
+                lines.push_back(diag_->formatter().format(
+                    "This metatile has content on all three layers. Pin its layer type via a '{}' layer_type pin to "
+                    "control which layer is dropped.",
+                    FormatParam{"fieldmap.role_pins", Style::bold}));
+            }
+            diag_->warning("dual-layer-drop", lines);
         }
 
         switch (layer_type) {

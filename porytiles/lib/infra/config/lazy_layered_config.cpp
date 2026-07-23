@@ -131,6 +131,8 @@ void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, con
         out, *format_, "Number Of Tiles Per Metatile", num_tiles_per_metatile_provenance_chain(type, scope));
     dump_single_config_value(
         out, *format_, "Extrinsic Transparency", extrinsic_transparency_provenance_chain(type, scope));
+    dump_single_config_value(
+        out, *format_, "Ignore Triple Layer Content", ignore_triple_layer_content_provenance_chain(type, scope));
     dump_single_config_value(out, *format_, "Tiles Edit Mode", tiles_edit_mode_provenance_chain(type, scope));
     dump_single_config_value(out, *format_, "Palettes Edit Mode", palettes_edit_mode_provenance_chain(type, scope));
     dump_single_config_value(
@@ -197,8 +199,7 @@ void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, con
         *format_,
         "Metatile Attribute Field Overrides",
         metatile_attribute_field_overrides_provenance_chain(type, scope));
-    dump_single_config_value(
-        out, *format_, "Write Layer Type Column", write_layer_type_column_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Role Pins", role_pins_provenance_chain(type, scope));
     dump_single_config_value(
         out,
         *format_,
@@ -406,6 +407,19 @@ LazyLayeredConfig::extrinsic_transparency_raw(ConfigScopeType type, const std::s
     return resolve_config_value<Rgba32>(key, "Extrinsic Transparency", [&type, &scope](const ConfigProvider &provider) {
         return provider.extrinsic_transparency(type, scope);
     });
+}
+
+ChainableResult<ConfigValue<bool>>
+LazyLayeredConfig::ignore_triple_layer_content_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<bool>(
+        key, "Ignore Triple Layer Content", [&type, &scope](const ConfigProvider &provider) {
+            return provider.ignore_triple_layer_content(type, scope);
+        });
 }
 
 ChainableResult<ConfigValue<ArtifactEditMode>>
@@ -799,16 +813,15 @@ LazyLayeredConfig::metatile_attribute_field_overrides_raw(ConfigScopeType type, 
         });
 }
 
-ChainableResult<ConfigValue<bool>>
-LazyLayeredConfig::write_layer_type_column_raw(ConfigScopeType type, const std::string &scope) const
+ChainableResult<ConfigValue<RolePinDefinitions>>
+LazyLayeredConfig::role_pins_raw(ConfigScopeType type, const std::string &scope) const
 {
     const auto name = extract_function_name();
     // Strip the _raw suffix from the function name for cache key
     const auto base_name = name.substr(0, name.size() - 4);
     const auto key = to_string(type) + ":" + scope + ":" + base_name;
-    return resolve_config_value<bool>(key, "Write Layer Type Column", [&type, &scope](const ConfigProvider &provider) {
-        return provider.write_layer_type_column(type, scope);
-    });
+    return resolve_config_value<RolePinDefinitions>(
+        key, "Role Pins", [&type, &scope](const ConfigProvider &provider) { return provider.role_pins(type, scope); });
 }
 
 ChainableResult<ConfigValue<bool>>
@@ -885,6 +898,13 @@ LazyLayeredConfig::extrinsic_transparency_provenance_chain(ConfigScopeType type,
 {
     return collect_provenance_chain<Rgba32>(
         [&type, &scope](const ConfigProvider &provider) { return provider.extrinsic_transparency(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<bool>>
+LazyLayeredConfig::ignore_triple_layer_content_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<bool>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.ignore_triple_layer_content(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<ArtifactEditMode>>
@@ -1108,11 +1128,11 @@ LazyLayeredConfig::metatile_attribute_field_overrides_provenance_chain(
     });
 }
 
-std::vector<ProvenanceChainLink<bool>>
-LazyLayeredConfig::write_layer_type_column_provenance_chain(ConfigScopeType type, const std::string &scope) const
+std::vector<ProvenanceChainLink<RolePinDefinitions>>
+LazyLayeredConfig::role_pins_provenance_chain(ConfigScopeType type, const std::string &scope) const
 {
-    return collect_provenance_chain<bool>(
-        [&type, &scope](const ConfigProvider &provider) { return provider.write_layer_type_column(type, scope); });
+    return collect_provenance_chain<RolePinDefinitions>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.role_pins(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<bool>> LazyLayeredConfig::tileset_animations_wire_anim_code_provenance_chain(

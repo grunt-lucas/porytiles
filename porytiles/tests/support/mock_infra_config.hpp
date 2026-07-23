@@ -26,7 +26,7 @@ class MockInfraConfig : public InfraConfig {
     std::optional<std::size_t> metatile_attribute_declaration_size = std::nullopt;
     MetatileAttributeFieldDefinitions metatile_attribute_fields = MetatileAttributeFieldDefinitions{};
     MetatileAttributeFieldOverrides metatile_attribute_field_overrides = MetatileAttributeFieldOverrides{};
-    bool write_layer_type_column = false;
+    RolePinDefinitions role_pins = RolePinDefinitions{};
     bool tileset_animations_wire_anim_code = true;
 
   protected:
@@ -93,10 +93,10 @@ class MockInfraConfig : public InfraConfig {
             {}};
     }
 
-    [[nodiscard]] ChainableResult<ConfigValue<bool>>
-    write_layer_type_column_raw(ConfigScopeType, const std::string &) const override
+    [[nodiscard]] ChainableResult<ConfigValue<RolePinDefinitions>>
+    role_pins_raw(ConfigScopeType, const std::string &) const override
     {
-        return ConfigValue{write_layer_type_column, "Write Layer Type Column", "write_layer_type_column", "mock", {}};
+        return ConfigValue{role_pins, "Role Pins", "role_pins", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<bool>>

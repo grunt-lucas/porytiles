@@ -48,26 +48,39 @@ class LayerModeConverter {
     ///
     /// @details
     /// Converts triple-layer metatiles (12 entries per metatile) to dual-layer metatiles (8 entries per metatile) by
-    /// removing transparent tilemap entries based on each metatile's inferred LayerType. This is the inverse operation
-    /// of triple_layerize().
+    /// dropping one 4-entry layer group per metatile, selected by the metatile's effective LayerType. When every
+    /// dropped group is transparent (the case for entries produced by triple_layerize() from dual-compatible content),
+    /// this is the exact inverse of triple_layerize().
     ///
-    /// The conversion strategy depends on the metatile's inferred LayerType:
-    /// - normal: Removes the first 4 transparent entries, keeps the last 8 entries
-    /// - covered: Keeps the first 8 entries, removes the last 4 transparent entries
-    /// - split: Keeps the first 4 entries, removes the middle 4 transparent entries, keeps the last 4 entries
+    /// The conversion strategy depends on the metatile's effective LayerType:
+    /// - normal: Removes the first 4 entries, keeps the last 8 entries
+    /// - covered: Keeps the first 8 entries, removes the last 4 entries
+    /// - split: Keeps the first 4 entries, removes the middle 4 entries, keeps the last 4 entries
     ///
-    /// When @p explicit_layer_types supplies a value for a metatile, that value overrides the inferred layer type and
-    /// therefore selects which 8 of the 12 entries survive. If dropping the layer chosen by the override would discard
-    /// an entry that references a visible (non-transparent) tile, a warning is emitted (tag @c layer-type-column). The
-    /// check inspects the actual tilemap entries at reduction time (after manual animation overrides), not the source
-    /// RGBA transparency, so it catches entries made visible by post-inference overrides.
+    /// "Effective LayerType" is resolved per metatile via the following cascade:
+    /// 1. An explicit `explicit_layer_types` value (a fieldmap.role_pins layer_type pin) wins if present.
+    /// 2. Otherwise infer_layer_type() classifies dual-representable content as normal, covered, or split by which two
+    ///    layers hold content.
+    /// 3. For genuinely triple content (all three layers visible) there is nothing meaningful to infer, so
+    ///    infer_layer_type() falls back to normal. This is a fallback, not a classification, and it drops the bottom
+    ///    group.
+    ///
+    /// If the dropped group contains an entry that references a visible (non-transparent) tile, a warning is emitted
+    /// (tag `dual-layer-drop`). The check inspects the actual tilemap entries at reduction time (after manual
+    /// animation overrides), not the source RGBA transparency, so it catches entries made visible by post-inference
+    /// overrides.
+    ///
+    /// A metatile with implied triple-layer content (all three layers visible at some subtile) is legal input:
+    /// validate_layer_mode gates such content behind the ignore_triple_layer_content option. When it reaches this
+    /// function it has no inferable layer type (tier 3), so without a pin the fallback to normal drops its bottom
+    /// group; the `dual-layer-drop` warning carries a role-pins hint so the user can pin a different group to keep
+    /// instead.
     ///
     /// @param entries The triple-layer tilemap entries to convert
     /// @param source_metatiles The source metatiles used to infer layer types
     /// @param explicit_layer_types Per-metatile explicit layer-type overrides; an empty vector (or a nullopt element)
     /// means "infer this metatile's layer type".
     /// @pre The entries vector contains triple-layer entries (size must equal source_metatiles.size() * 12)
-    /// @pre No metatile in source_metatiles has implied LayerMode::triple
     /// @return A dual-layerized TilemapEntry vector
     [[nodiscard]] std::vector<TilemapEntry> dual_layerize(
         const std::vector<TilemapEntry> &entries,

@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include "porytiles/domain/config/role_pin_definition.hpp"
 #include "porytiles/domain/models/image.hpp"
 #include "porytiles/domain/models/index_pixel.hpp"
 #include "porytiles/domain/models/metatile_attribute.hpp"
@@ -727,9 +728,9 @@ TEST_F(ProjectTilesetArtifactWriterTests, TransactionSequence)
     ASSERT_TRUE(std::filesystem::exists(test_root_ / "trans3.png"));
 }
 
-TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvKnobOnEmitsOneRowPerMetatileWithSynthesizedDefaults)
+TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvRolePinEmitsOneRowPerMetatileWithSynthesizedDefaults)
 {
-    infra_config_->write_layer_type_column = true;
+    infra_config_->role_pins = RolePinDefinitions{{FieldRole::layer_type, std::nullopt}};
     auto tileset = create_sparse_two_metatile_tileset("test_tileset");
 
     ASSERT_TRUE(writer_->begin_transaction().has_value());
@@ -743,12 +744,49 @@ TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvKnobOnEmitsOneRowPerMetat
     EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), expected);
 }
 
-TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvKnobOnEmitsBlankCellForInferredLayerType)
+// A custom pin column name (role_pins column: my_layer_type) shows up as the trailing header, with the same per-row
+// cells the default name would produce.
+TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvRolePinCustomColumnNameInHeader)
+{
+    infra_config_->role_pins = RolePinDefinitions{{FieldRole::layer_type, "my_layer_type"}};
+    auto tileset = create_sparse_two_metatile_tileset("test_tileset");
+
+    ASSERT_TRUE(writer_->begin_transaction().has_value());
+    ArtifactKey key{"attributes.csv"};
+    auto write_result = writer_->write_attributes_csv(key, tileset);
+    ASSERT_TRUE(write_result.has_value()) << write_result.error().join(PlainTextFormatter{});
+    ASSERT_TRUE(writer_->commit().has_value());
+
+    const std::string expected = "id,behavior,my_layer_type\n0,MB_NORMAL,covered\n1,MB_NORMAL,\n";
+    EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), expected);
+}
+
+// A role pin whose effective column collides with a value field name is a hard error, caught by
+// validate_role_pins_against_schema before any file is written.
+TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvRolePinCollidingWithValueFieldIsError)
+{
+    infra_config_->role_pins = RolePinDefinitions{{FieldRole::layer_type, "behavior"}};
+    auto tileset = create_sparse_two_metatile_tileset("test_tileset");
+
+    ASSERT_TRUE(writer_->begin_transaction().has_value());
+    ArtifactKey key{"attributes.csv"};
+    auto write_result = writer_->write_attributes_csv(key, tileset);
+    ASSERT_FALSE(write_result.has_value());
+    std::string error_text;
+    for (const auto &err : write_result.chain()) {
+        error_text += err->join(PlainTextFormatter{});
+        error_text += "\n";
+    }
+    EXPECT_NE(error_text.find("collides"), std::string::npos) << error_text;
+    EXPECT_NE(error_text.find("behavior"), std::string::npos) << error_text;
+}
+
+TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvRolePinEmitsBlankCellForInferredLayerType)
 {
     // Regression: a present attribute whose layer type was set the inferred way (not pinned via explicit_layer_type)
     // must emit a BLANK layer_type cell. If the writer keyed off layer_type() instead of explicit_layer_type(), it
     // would pin this row as "covered", and the next compile would wrongly treat the auto row as a user override.
-    infra_config_->write_layer_type_column = true;
+    infra_config_->role_pins = RolePinDefinitions{{FieldRole::layer_type, std::nullopt}};
     auto tileset = create_two_metatile_tileset_with_inferred_layer_type("test_tileset");
 
     ASSERT_TRUE(writer_->begin_transaction().has_value());
@@ -762,9 +800,9 @@ TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvKnobOnEmitsBlankCellForIn
     EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), expected);
 }
 
-TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvKnobOffIsByteIdenticalToHistoricalOutput)
+TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvNoRolePinsIsByteIdenticalToHistoricalOutput)
 {
-    // Default MockInfraConfig has write_layer_type_column = false.
+    // Default MockInfraConfig has role_pins empty.
     auto tileset = create_sparse_two_metatile_tileset("test_tileset");
 
     ASSERT_TRUE(writer_->begin_transaction().has_value());
@@ -935,5 +973,41 @@ TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvNonzeroDefaultRendersDefa
     ASSERT_TRUE(writer.commit().has_value());
 
     const std::string expected = "id,behavior,pad\n0,MB_TALL_GRASS,3\n";
+    EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), expected);
+}
+
+// A schema may carry zero value fields (here, only the role-bearing layer_type field). With the role pinned, each id
+// cell is followed directly by the pin cell; a bare comma between them would add a phantom empty column the loader
+// then rejects as a row wider than the header.
+TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvRolePinRoleOnlySchemaEmitsIdThenPinCell)
+{
+    infra_config_->role_pins = RolePinDefinitions{{FieldRole::layer_type, std::nullopt}};
+    Schema role_only_schema =
+        std::move(Schema::create({Field{"layer_type", 0xF000, 0, std::nullopt, FieldRole::layer_type}}, 2)).value();
+    ProviderMap empty_providers{};
+    ProjectTilesetArtifactWriter writer{
+        domain_config_.get(),
+        infra_config_.get(),
+        test_root_,
+        &role_only_schema,
+        &empty_providers,
+        formatter_.get(),
+        diag_.get(),
+        png_rgba_saver_.get(),
+        png_indexed_saver_.get(),
+        palette_saver_.get(),
+        anim_json_parser_.get(),
+        anim_code_generator_.get()};
+
+    auto tileset = create_sparse_two_metatile_tileset("test_tileset");
+
+    ASSERT_TRUE(writer.begin_transaction().has_value());
+    ArtifactKey key{"attributes.csv"};
+    auto write_result = writer.write_attributes_csv(key, tileset);
+    ASSERT_TRUE(write_result.has_value()) << write_result.error().join(PlainTextFormatter{});
+    ASSERT_TRUE(writer.commit().has_value());
+
+    // Metatile 0 carries an explicit "covered" pin; synthesized metatile 1 gets a blank pin cell.
+    const std::string expected = "id,layer_type\n0,covered\n1,\n";
     EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), expected);
 }

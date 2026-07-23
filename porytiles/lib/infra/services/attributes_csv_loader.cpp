@@ -6,8 +6,10 @@
 #include <optional>
 #include <string>
 #include <unordered_map>
+#include <unordered_set>
 #include <vector>
 
+#include "porytiles/domain/config/role_pin_definition.hpp"
 #include "porytiles/domain/models/layer.hpp"
 #include "porytiles/utilities/panic/panic.hpp"
 #include "porytiles/utilities/parse_int.hpp"
@@ -38,18 +40,19 @@ struct CsvRow {
     return header;
 }
 
-/// @brief Extracts the trimmed layer_type cell at a fixed column index, or nullopt when the cell is blank/absent.
+/// @brief Extracts the trimmed layer_type cell at the active pin column index, or nullopt when blank/absent.
 ///
 /// @details
-/// The split() helper keeps trailing empty fields, so a blank cell arrives as an empty string; a row that simply omits
-/// the trailing comma has fewer columns than @p index. Both cases mean "no explicit layer type" and map to nullopt.
+/// `index` is the column the active layer_type pin resolves to (nullopt when the layer type is not pinned). The
+/// split() helper keeps trailing empty fields, so a blank cell arrives as an empty string; a row that simply omits the
+/// trailing comma has fewer columns than `index`. All of these mean "no explicit layer type" and map to nullopt.
 [[nodiscard]] std::optional<std::string>
-extract_layer_type_token(const std::vector<std::string> &columns, bool has_layer_type_column, std::size_t index)
+extract_layer_type_token(const std::vector<std::string> &columns, std::optional<std::size_t> index)
 {
-    if (!has_layer_type_column || columns.size() <= index) {
+    if (!index.has_value() || columns.size() <= index.value()) {
         return std::nullopt;
     }
-    std::string token = columns[index];
+    std::string token = columns[index.value()];
     trim(token);
     if (token.empty()) {
         return std::nullopt;
@@ -70,7 +73,8 @@ ChainableResult<CsvRow> parse_csv_row(
     const Schema &schema,
     const TextFormatter &format,
     const FileHighlightPrinter &file_printer,
-    bool has_layer_type_column)
+    std::size_t max_columns,
+    std::optional<std::size_t> layer_type_token_index)
 {
     const std::size_t field_count = schema.value_fields().size();
     auto columns = split(line, ",");
@@ -90,17 +94,15 @@ ChainableResult<CsvRow> parse_csv_row(
     }
 
     // The row-level mirror of the header's unexpected-column check: a data row wider than the header shape means the
-    // CSV was written for a wider schema, and its extra cells must fail loudly instead of being silently dropped.
-    const std::size_t max_columns = 1 + field_count + (has_layer_type_column ? 1 : 0);
+    // CSV was written for a wider schema, and its extra cells must fail loudly instead of being silently dropped. The
+    // header derives @p max_columns as id + value fields + the recognized trailing pin columns.
     if (columns.size() > max_columns) {
         std::vector<std::string> err_lines{};
         err_lines.push_back(format.format(
-            "{}:{}: expected at most {} columns ({}{}), found {}",
+            "{}:{}: expected at most {} columns, found {}",
             FormatParam{path.string(), Style::bold},
             FormatParam{line_index + 1, Style::bold},
             FormatParam{max_columns},
-            FormatParam{expected_header_string(schema)},
-            FormatParam{has_layer_type_column ? ",layer_type" : ""},
             FormatParam{columns.size()}));
         err_lines.emplace_back();
         err_lines.append_range(file_printer.print(all_lines, std::vector{line_index}));
@@ -143,11 +145,12 @@ ChainableResult<CsvRow> parse_csv_row(
         field_cells.push_back(columns[1 + i]);
     }
 
-    // The layer_type column, when present, sits directly after the schema fields.
+    // The active layer_type pin column may sit anywhere in the trailing region (a stale pin column can precede it), so
+    // its column index is resolved from the header and passed in rather than assumed adjacent to the fields.
     return CsvRow{
         static_cast<std::size_t>(id_result.value()),
         std::move(field_cells),
-        extract_layer_type_token(columns, has_layer_type_column, 1 + field_count)};
+        extract_layer_type_token(columns, layer_type_token_index)};
 }
 
 ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
@@ -156,7 +159,8 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
     const ProviderMap &providers,
     const TextFormatter &format,
     const FileHighlightPrinter &file_printer,
-    bool write_layer_type_column,
+    const RolePinDefinitions &role_pins,
+    std::map<FieldRole, bool> &active_pin_column_present,
     const UserDiagnostics &diag)
 {
     if (!exists(path)) {
@@ -223,48 +227,84 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
         }
     }
 
-    // Detect an optional trailing layer_type column directly after the schema fields. We always detect it; the knob
-    // decides whether its values are applied.
-    const std::size_t layer_type_index = 1 + field_count;
-    const bool has_layer_type_column =
-        header_columns.size() > layer_type_index && header_columns[layer_type_index] == "layer_type";
+    // Classify the trailing columns after the value fields. Each configured role pin contributes one active column
+    // (named by effective_pin_column_name), whose cells are applied. A column matching a known role's default name but
+    // not currently active is a stale pin column: its values are ignored, with a one-time warning. Anything else is a
+    // schema mismatch (a CSV written for a wider schema) and fails loudly.
+    const RolePinDefinition *layer_type_pin = find_role_pin(role_pins, FieldRole::layer_type);
+    const std::optional<std::string> active_layer_type_column =
+        layer_type_pin != nullptr ? std::optional<std::string>{effective_pin_column_name(*layer_type_pin)}
+                                  : std::nullopt;
 
-    // Any trailing column other than the optional layer_type is a schema mismatch, not a tolerated extra: a CSV written
-    // for a wider schema (more fields than this tileset resolves) must fail loudly instead of silently dropping its
-    // extra fields.
-    const std::size_t first_unexpected_index = layer_type_index + (has_layer_type_column ? 1 : 0);
-    if (header_columns.size() > first_unexpected_index) {
+    std::optional<std::size_t> layer_type_apply_index;
+    std::optional<std::string> ignored_role_pin_column;
+    std::unordered_set<std::string> seen_trailing;
+    for (std::size_t j = 1 + field_count; j < header_columns.size(); ++j) {
+        const std::string &column = header_columns[j];
+        const bool is_new = seen_trailing.insert(column).second;
+        const bool is_active_layer_type =
+            active_layer_type_column.has_value() && column == active_layer_type_column.value();
+
+        if (is_new && is_active_layer_type) {
+            layer_type_apply_index = j;
+            continue;
+        }
+        if (is_new && field_role_from_string(column).has_value()) {
+            // A known role's default name that is not the active column: a stale pin column, ignored with a warning.
+            if (!ignored_role_pin_column.has_value()) {
+                ignored_role_pin_column = column;
+            }
+            continue;
+        }
+        // Anything else (an unknown name, or a repeated trailing column) is a schema mismatch and fails loudly.
         return make_header_error(format.format(
             "{}:{}: invalid header: unexpected column '{}' at position {}",
             FormatParam{path.string(), Style::bold},
             FormatParam{"1", Style::bold},
-            FormatParam{header_columns[first_unexpected_index], Style::bold},
-            FormatParam{first_unexpected_index + 1}));
+            FormatParam{column, Style::bold},
+            FormatParam{j + 1}));
     }
 
-    // Knob off but the column is present: ignore the values and say so once for the whole file.
-    if (has_layer_type_column && !write_layer_type_column) {
-        diag.warning(
-            "layer-type-column",
-            std::vector<std::string>{
-                format.format(
-                    "{}: a layer_type column is present but write_layer_type_column is off; its values are ignored and "
-                    "layer types will be inferred.",
-                    FormatParam{path.string(), Style::bold}),
-                format.format(
-                    "set {} to apply the column.",
-                    FormatParam{"fieldmap.write_layer_type_column: true", Style::bold})});
+    const std::size_t max_columns = header_columns.size();
+
+    // Record, per configured role, whether its active pin column was present in the header. The reader maps this onto
+    // the component so the decompiler's round-trip merge knows whether to preserve prior pin state (column present) or
+    // pin every row (column absent). A stale ignored column does not count as present.
+    for (const RolePinDefinition &pin : role_pins) {
+        active_pin_column_present[pin.role] = (pin.role == FieldRole::layer_type) && layer_type_apply_index.has_value();
+    }
+
+    // A stale pin column is present but not active: ignore its values and say so once for the whole file.
+    if (ignored_role_pin_column.has_value()) {
+        std::vector<std::string> warn_lines{};
+        warn_lines.push_back(format.format(
+            "{}: a '{}' column is present but no active role pin uses it; its values are ignored and the layer type "
+            "will be inferred.",
+            FormatParam{path.string(), Style::bold},
+            FormatParam{ignored_role_pin_column.value(), Style::bold}));
+        if (active_layer_type_column.has_value()) {
+            warn_lines.push_back(format.format(
+                "the layer_type role is pinned as column '{}'; rename this column to match, or remove it.",
+                FormatParam{active_layer_type_column.value(), Style::bold}));
+        }
+        else {
+            warn_lines.push_back(format.format(
+                "add a {} entry for the layer_type role to apply the column.",
+                FormatParam{"fieldmap.role_pins", Style::bold}));
+        }
+        diag.warning("role-pin-column", warn_lines);
     }
 
     // Parse data rows (starting at index 1)
     std::map<std::size_t, MetatileAttribute> result{};
     std::unordered_map<std::size_t, std::size_t> id_to_line_index{};
 
-    // Applies a filled layer_type cell as an explicit override, when the column is present and the knob is on. A blank
-    // cell (nullopt token) leaves the layer type inferred. A bad token is a hard error with file context.
+    // Applies a filled layer_type cell as an explicit override. The token is only populated from the active pin
+    // column, so a nullopt token (blank cell, or no active column) leaves the layer type inferred. A bad token is a
+    // hard error with file context.
     auto apply_explicit_layer_type =
         [&](MetatileAttribute &attribute, const CsvRow &row, std::size_t line_index) -> ChainableResult<void> {
-        if (!has_layer_type_column || !write_layer_type_column || !row.layer_type_token.has_value()) {
+        if (!row.layer_type_token.has_value()) {
             return {};
         }
         auto layer_type = layer_type_from_csv_token(row.layer_type_token.value());
@@ -348,8 +388,8 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
             continue;
         }
 
-        ChainableResult<CsvRow> row_result =
-            parse_csv_row(line, line_index, path, lines, schema, format, file_printer, has_layer_type_column);
+        ChainableResult<CsvRow> row_result = parse_csv_row(
+            line, line_index, path, lines, schema, format, file_printer, max_columns, layer_type_apply_index);
 
         if (!row_result.has_value()) {
             return ChainableResult<std::map<std::size_t, MetatileAttribute>>{
@@ -412,23 +452,35 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
 
 namespace porytiles {
 
-ChainableResult<std::map<std::size_t, MetatileAttribute>> AttributesCsvLoader::load(
+ChainableResult<AttributesCsvLoadResult> AttributesCsvLoader::load(
     const std::filesystem::path &path,
     const Schema &schema,
     const ProviderMap &providers,
     const std::string &tileset_name) const
 {
-    // Resolve the knob under the file's owning tileset scope. When compiling a secondary, the paired primary's CSV
-    // loads through this same loader with the primary's name, so its knob resolves under the primary's config. (The
+    // Resolve the role pins under the file's owning tileset scope. When compiling a secondary, the paired primary's CSV
+    // loads through this same loader with the primary's name, so its config resolves under the primary's scope. (The
     // result type has a comma, so it cannot go through the PT_TRY_ASSIGN macros; unwrap by hand.)
-    auto write_layer_type_column_cv = config_->write_layer_type_column(ConfigScopeType::tileset, tileset_name);
-    if (!write_layer_type_column_cv.has_value()) {
-        return ChainableResult<std::map<std::size_t, MetatileAttribute>>{
-            FormattableError{"Failed to resolve write_layer_type_column."}, write_layer_type_column_cv};
+    auto role_pins_cv = config_->role_pins(ConfigScopeType::tileset, tileset_name);
+    if (!role_pins_cv.has_value()) {
+        return ChainableResult<AttributesCsvLoadResult>{FormattableError{"Failed to resolve role_pins."}, role_pins_cv};
+    }
+    const RolePinDefinitions &role_pins = role_pins_cv.value();
+
+    // Schema-dependent role-pin validation (column colliding with "id" or a value field) runs here, where the resolved
+    // schema is in hand. The schema-independent checks already ran in the YAML parser.
+    if (auto validated = validate_role_pins_against_schema(role_pins, schema, *format_); !validated.has_value()) {
+        return ChainableResult<AttributesCsvLoadResult>{FormattableError{"Invalid role pins."}, validated};
     }
 
-    return parse_attributes_csv(
-        path, schema, providers, *format_, *file_printer_, write_layer_type_column_cv.value(), *diag_);
+    std::map<FieldRole, bool> active_pin_column_present;
+    auto parsed = parse_attributes_csv(
+        path, schema, providers, *format_, *file_printer_, role_pins, active_pin_column_present, *diag_);
+    if (!parsed.has_value()) {
+        return ChainableResult<AttributesCsvLoadResult>{FormattableError{"Failed to load attributes CSV."}, parsed};
+    }
+
+    return AttributesCsvLoadResult{std::move(parsed).value(), std::move(active_pin_column_present)};
 }
 
 } // namespace porytiles

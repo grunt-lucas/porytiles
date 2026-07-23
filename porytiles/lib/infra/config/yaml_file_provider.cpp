@@ -198,6 +198,22 @@ LayerValue<Rgba32> YamlFileProvider::extrinsic_transparency(ConfigScopeType type
         "tileset.extrinsic_transparency");
 }
 
+LayerValue<bool> YamlFileProvider::ignore_triple_layer_content(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<bool>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<bool>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["ignore_triple_layer_content"]; },
+        parse_bool,
+        "tileset.ignore_triple_layer_content",
+        "tileset.ignore_triple_layer_content");
+}
+
 LayerValue<ArtifactEditMode> YamlFileProvider::tiles_edit_mode(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
@@ -727,20 +743,21 @@ YamlFileProvider::metatile_attribute_field_overrides(ConfigScopeType type, const
         "fieldmap.metatile_attribute_field_overrides");
 }
 
-LayerValue<bool> YamlFileProvider::write_layer_type_column(ConfigScopeType type, const std::string &scope) const
+LayerValue<RolePinDefinitions> YamlFileProvider::role_pins(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<bool>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+        return LayerValue<RolePinDefinitions>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
-    return search_config_files<bool>(
+    return search_config_files<RolePinDefinitions>(
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["fieldmap"]["write_layer_type_column"]; },
-        parse_bool,
-        "fieldmap.write_layer_type_column",
-        "fieldmap.write_layer_type_column");
+        [](const YAML::Node &doc) { return doc["fieldmap"]["role_pins"]; },
+        parse_role_pins,
+        "fieldmap.role_pins",
+        "fieldmap.role_pins");
 }
 
 LayerValue<bool>

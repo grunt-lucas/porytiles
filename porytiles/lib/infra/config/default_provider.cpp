@@ -72,6 +72,12 @@ LayerValue<Rgba32> DefaultProvider::extrinsic_transparency(
     return LayerValue<Rgba32>::valid(rgba_magenta, "Extrinsic Transparency", source_info);
 }
 
+LayerValue<bool> DefaultProvider::ignore_triple_layer_content(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<bool>::valid(false, "Ignore Triple Layer Content", source_info);
+}
+
 LayerValue<ArtifactEditMode>
 DefaultProvider::tiles_edit_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
@@ -268,10 +274,10 @@ LayerValue<MetatileAttributeFieldOverrides> DefaultProvider::metatile_attribute_
         MetatileAttributeFieldOverrides{}, "Metatile Attribute Field Overrides", source_info);
 }
 
-LayerValue<bool> DefaultProvider::write_layer_type_column(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<RolePinDefinitions>
+DefaultProvider::role_pins([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<bool>::valid(false, "Write Layer Type Column", source_info);
+    return LayerValue<RolePinDefinitions>::valid(RolePinDefinitions{}, "Role Pins", source_info);
 }
 
 LayerValue<bool> DefaultProvider::tileset_animations_wire_anim_code(

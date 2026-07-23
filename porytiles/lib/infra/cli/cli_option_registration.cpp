@@ -71,6 +71,23 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
             "R,G,B,A, values 0-255)")
         ->type_name("R,G,B[,A]");
 
+    // Ignore Triple Layer Content (bool with --flag/--no-flag, captured as "true"/"false" string)
+    config_group->add_flag(
+        "--ignore-triple-layer-content,!--no-ignore-triple-layer-content",
+        [&storage](std::int64_t count) {
+            if (count > 0) {
+                storage.ignore_triple_layer_content = "true";
+            }
+            else if (count < 0) {
+                storage.ignore_triple_layer_content = "false";
+            }
+            // count == 0 means neither flag was provided, leave optional empty
+        },
+        "Ignore Triple Layer Content - Demote the triple-layer-content-in-dual-mode error to a warning. When on, a "
+        "metatile with content on all three layers compiles in dual mode by dropping one layer group instead of "
+        "failing. The dropped layer follows the metatile's effective layer type: a 'layer_type' role pin if you set "
+        "one, otherwise the bottom layer.");
+
     // Tiles Edit Mode (enum ArtifactEditMode, captured as string, parsed by CliOptionProvider)
     config_group
         ->add_option(
@@ -282,20 +299,6 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
         "gMetatileAttributes_* C declarations (const uN / INCBIN_UN). Defaults to the metatile attribute size. "
         "Normally inferred from struct Tileset's metatileAttributes member in include/global.fieldmap.h; set this only "
         "when that inference is impossible or wrong. Project-global.");
-
-    // Write Layer Type Column (bool with --flag/--no-flag, captured as "true"/"false" string)
-    config_group->add_flag(
-        "--write-layer-type-column,!--no-write-layer-type-column",
-        [&storage](std::int64_t count) {
-            if (count > 0) {
-                storage.write_layer_type_column = "true";
-            }
-            else if (count < 0) {
-                storage.write_layer_type_column = "false";
-            }
-            // count == 0 means neither flag was provided, leave optional empty
-        },
-        "Write Layer Type Column - Emit and honor a layer_type column in the metatile attributes CSV.");
 
     // Tileset Animations Wire Anim Code (bool with --flag/--no-flag, captured as "true"/"false" string)
     config_group->add_flag(

@@ -79,6 +79,13 @@ LayerValue<Rgba32> CliOptionProvider::extrinsic_transparency(
     return parse_rgba32(storage_.extrinsic_transparency, "--extrinsic-transparency");
 }
 
+LayerValue<bool> CliOptionProvider::ignore_triple_layer_content(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_bool(storage_.ignore_triple_layer_content, "--ignore-triple-layer-content");
+}
+
 LayerValue<ArtifactEditMode> CliOptionProvider::tiles_edit_mode(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
@@ -256,13 +263,6 @@ LayerValue<std::optional<std::size_t>> CliOptionProvider::metatile_attribute_dec
 {
     // All types use parse functions for uniform error handling
     return parse_optional_size_t(storage_.metatile_attribute_declaration_size, "--metatile-attribute-declaration-size");
-}
-
-LayerValue<bool> CliOptionProvider::write_layer_type_column(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    // All types use parse functions for uniform error handling
-    return parse_bool(storage_.write_layer_type_column, "--write-layer-type-column");
 }
 
 LayerValue<bool> CliOptionProvider::tileset_animations_wire_anim_code(

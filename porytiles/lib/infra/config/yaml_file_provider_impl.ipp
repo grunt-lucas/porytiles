@@ -19,6 +19,7 @@
 #include "porytiles/domain/config/packing_strategy_params.hpp"
 #include "porytiles/domain/config/packing_strategy_type.hpp"
 #include "porytiles/domain/config/per_anim_overrides.hpp"
+#include "porytiles/domain/config/role_pin_definition.hpp"
 #include "porytiles/domain/config/tile_sharing_alignment.hpp"
 #include "porytiles/domain/config/tile_sharing_packing.hpp"
 #include "porytiles/domain/config/tiles_palette_mode.hpp"
@@ -26,6 +27,7 @@
 #include "porytiles/infra/config/config_provider.hpp"
 #include "porytiles/infra/config/valid_yaml_paths.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
+#include "porytiles/utilities/string_utils.hpp"
 #include "porytiles/utilities/text/file_highlight_printer.hpp"
 #include "porytiles/utilities/text/text_formatter.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
@@ -874,13 +876,11 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
     return std::nullopt;
 }
 
-// The only field role today is layer_type; unknown role names are rejected at the parse layer.
+// Role-name matching lives in one place (field_role_from_string next to the FieldRole enum); this thin wrapper keeps
+// the parse-layer call sites reading naturally. Unknown role names are rejected at the parse layer.
 [[nodiscard]] std::optional<FieldRole> field_role_from_config_str(const std::string &text)
 {
-    if (text == "layer_type") {
-        return FieldRole::layer_type;
-    }
-    return std::nullopt;
+    return field_role_from_string(text);
 }
 
 // Returns the first key of a YAML map that is not in the allowed set, or nullopt if all keys are known. Sequence
@@ -1248,6 +1248,162 @@ LayerValue<MetatileAttributeFieldOverrides> parse_metatile_attribute_field_overr
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<MetatileAttributeFieldOverrides>::invalid(error, source, details);
+    }
+}
+
+LayerValue<RolePinDefinitions> parse_role_pins(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<RolePinDefinitions>::not_provided();
+    }
+
+    try {
+        const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+
+        if (!node.IsSequence()) {
+            return LayerValue<RolePinDefinitions>::invalid(
+                format->format("'{}' must be a sequence of role pin definitions.", FormatParam{key, Style::bold}),
+                source,
+                details);
+        }
+
+        const std::unordered_set<std::string> pin_keys{"role", "column"};
+
+        RolePinDefinitions definitions;
+        // All schema-independent checks live here: a role may be pinned at most once, no two entries may resolve to
+        // the same effective column name, and no entry may resolve to the reserved "id" column. The schema-dependent
+        // check (column colliding with a value field) runs later in validate_role_pins_against_schema.
+        std::unordered_set<std::string> seen_roles;
+        std::unordered_set<std::string> seen_columns;
+        for (std::size_t i = 0; i < node.size(); ++i) {
+            const auto &pin_node = node[i];
+            const auto pin_mark = pin_node.Mark();
+            const auto pin_source = make_source_string(format, file_path, pin_mark);
+            const auto pin_details = make_source_details(format, file_path, pin_mark);
+
+            if (!pin_node.IsMap()) {
+                return LayerValue<RolePinDefinitions>::invalid(
+                    format->format("'{}[{}]' must be a map.", FormatParam{key, Style::bold}, FormatParam{i}),
+                    pin_source,
+                    pin_details);
+            }
+            if (auto unknown = first_unknown_key(pin_node, pin_keys); unknown.has_value()) {
+                return LayerValue<RolePinDefinitions>::invalid(
+                    format->format(
+                        "'{}[{}]' has unknown key '{}'.",
+                        FormatParam{key, Style::bold},
+                        FormatParam{i},
+                        FormatParam{unknown.value(), Style::bold}),
+                    pin_source,
+                    pin_details);
+            }
+
+            const auto role_node = pin_node["role"];
+            if (!role_node.IsDefined()) {
+                return LayerValue<RolePinDefinitions>::invalid(
+                    format->format(
+                        "'{}[{}]' is missing required 'role' field.", FormatParam{key, Style::bold}, FormatParam{i}),
+                    pin_source,
+                    pin_details);
+            }
+            const auto role_str = role_node.as<std::string>();
+            const auto role = field_role_from_config_str(role_str);
+            if (!role.has_value()) {
+                return LayerValue<RolePinDefinitions>::invalid(
+                    format->format(
+                        "'{}[{}].role' has invalid value '{}'; the only role is 'layer_type'.",
+                        FormatParam{key, Style::bold},
+                        FormatParam{i},
+                        FormatParam{role_str, Style::bold}),
+                    pin_source,
+                    pin_details);
+            }
+            if (!seen_roles.insert(role_str).second) {
+                return LayerValue<RolePinDefinitions>::invalid(
+                    format->format(
+                        "'{}[{}]' repeats role '{}'; each role may be pinned at most once.",
+                        FormatParam{key, Style::bold},
+                        FormatParam{i},
+                        FormatParam{role_str, Style::bold}),
+                    pin_source,
+                    pin_details);
+            }
+
+            RolePinDefinition definition;
+            definition.role = role.value();
+
+            if (pin_node["column"].IsDefined()) {
+                auto column = pin_node["column"].as<std::string>();
+                if (column.empty()) {
+                    return LayerValue<RolePinDefinitions>::invalid(
+                        format->format(
+                            "'{}[{}].column' must not be empty.", FormatParam{key, Style::bold}, FormatParam{i}),
+                        pin_source,
+                        pin_details);
+                }
+                // The name becomes a literal CSV header cell, so the CSV's own structural characters cannot appear in
+                // it, and the loader matches header cells with surrounding whitespace stripped, so a name with edge
+                // whitespace could never match its own column on the way back in.
+                if (column.find_first_of(",\r\n") != std::string::npos) {
+                    return LayerValue<RolePinDefinitions>::invalid(
+                        format->format(
+                            "'{}[{}].column' must not contain commas or line breaks.",
+                            FormatParam{key, Style::bold},
+                            FormatParam{i}),
+                        pin_source,
+                        pin_details);
+                }
+                std::string trimmed = column;
+                trim(trimmed);
+                if (trimmed != column) {
+                    return LayerValue<RolePinDefinitions>::invalid(
+                        format->format(
+                            "'{}[{}].column' must not have leading or trailing whitespace.",
+                            FormatParam{key, Style::bold},
+                            FormatParam{i}),
+                        pin_source,
+                        pin_details);
+                }
+                definition.column = std::move(column);
+            }
+
+            const auto effective_column = effective_pin_column_name(definition);
+            if (effective_column == "id") {
+                return LayerValue<RolePinDefinitions>::invalid(
+                    format->format(
+                        "'{}[{}]' resolves to column '{}', which is reserved for the metatile id column.",
+                        FormatParam{key, Style::bold},
+                        FormatParam{i},
+                        FormatParam{"id", Style::bold}),
+                    pin_source,
+                    pin_details);
+            }
+            if (!seen_columns.insert(effective_column).second) {
+                return LayerValue<RolePinDefinitions>::invalid(
+                    format->format(
+                        "'{}[{}]' resolves to column '{}', which collides with another role pin.",
+                        FormatParam{key, Style::bold},
+                        FormatParam{i},
+                        FormatParam{effective_column, Style::bold}),
+                    pin_source,
+                    pin_details);
+            }
+
+            definitions.push_back(std::move(definition));
+        }
+
+        return LayerValue<RolePinDefinitions>::valid(std::move(definitions), key, source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error =
+            format->format("Failed to parse '{}' as role pins: {}.", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<RolePinDefinitions>::invalid(error, source, details);
     }
 }
 

@@ -34,6 +34,9 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
         void,
         "Import job failed for '{}'.",
         FormatParam(tileset_name, Style::bold));
+    // A blank Porytiles component carries no prior attributes.csv state, so its layer_type pin state defaults to
+    // no_csv. The decompiler below reads that as "pin every row from the bin", which is exactly what a from-scratch
+    // import should be doing. Since import always clobbers porytiles_src/, there is no prior CSV to preserve.
     auto blank_porytiles_component = std::make_unique<PorytilesTilesetComponent>();
     auto tileset = std::make_unique<Tileset>(
         tileset_name, std::move(blank_porytiles_component), std::move(imported_porymap_component));

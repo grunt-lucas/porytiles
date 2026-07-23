@@ -19,10 +19,13 @@ fieldmap:
   # (const u8 / INCBIN_U8, const u16 / INCBIN_U16, const u32 / INCBIN_U32).
   metatile_attribute_declaration_size: 2
 
-  # Emit and honor a trailing "layer_type" column in the metatile attributes CSV. When true, a filled cell ("normal",
-  # "covered", or "split") pins that metatile's layer type, and a blank cell means auto/inferred. When false (the
-  # default), any layer_type column present is ignored (with a warning) and layer types are inferred.
-  write_layer_type_column: false
+  # Give a schema role its own trailing pin column in attributes.csv, so its per-metatile values can be pinned in the
+  # CSV rather than automatically inferred. A blank cell keeps inference for that row. Each entry takes:
+  # - role: the role to pin
+  # - column: optional column header name, defaults to the role name when omitted
+  role_pins:
+    - role: layer_type
+      column: my_layer_type   # optional custom CSV header
 
   # Declare the metatile attribute field layout explicitly, replacing schema inference. Declare the list yourself only
   # when your layout isn't obvious from the code, and the inference fails. Each field takes:
@@ -37,9 +40,7 @@ fieldmap:
   #   - skipped: constant names to ignore while scanning the header
   #   - format: defines-only, enums-only, or [default] either
   # - role: "layer_type" marks the field that holds the layer-type bits. At most one field may carry the role; a role
-  #         field takes no default and no provider, and it gets no data column in attributes.csv (Porytiles computes its
-  #         value at compile time; the optional pin column controlled by write_layer_type_column above is a separate
-  #         mechanism). Omit the role field entirely to disable layer types.
+  #         field takes no default and no provider, and it gets no data column in attributes.csv unless pinned, see above.
   metatile_attribute_fields:
     - name: behavior
       mask: 0x00FF
@@ -82,6 +83,12 @@ verify_checksums: true
 
 tileset:
   extrinsic_transparency: [ 255, 0, 255 ]
+
+  # A metatile with non-transparent content on all three layers cannot be represented in a dual-layer tileset. By
+  # default this is a hard error. Set this to true to force compilation. You'll instead get warnings for violating
+  # metatiles, and one layer group is dropped from each. Which group is dropped follows the metatile's effective layer
+  # type: a layer_type pin if you set one (see above), otherwise a fallback that drops the bottom layer.
+  ignore_triple_layer_content: false
 
   # Configure where Porytiles-managed tileset artifacts are stored.
   # These paths are relative to the project root.

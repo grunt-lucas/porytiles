@@ -10,6 +10,7 @@
 #include "porytiles/domain/config/packing_strategy_params.hpp"
 #include "porytiles/domain/config/packing_strategy_type.hpp"
 #include "porytiles/domain/config/per_anim_overrides.hpp"
+#include "porytiles/domain/config/role_pin_definition.hpp"
 #include "porytiles/domain/config/tile_sharing_alignment.hpp"
 #include "porytiles/domain/config/tile_sharing_packing.hpp"
 #include "porytiles/domain/config/tiles_palette_mode.hpp"
@@ -69,6 +70,9 @@ class ConfigProvider {
 
     [[nodiscard]] virtual LayerValue<Rgba32>
     extrinsic_transparency(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<bool>
+    ignore_triple_layer_content(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<ArtifactEditMode>
     tiles_edit_mode(ConfigScopeType type, const std::string &scope) const;
@@ -153,8 +157,8 @@ class ConfigProvider {
     metatile_attribute_fields(ConfigScopeType type, const std::string &scope) const;
     [[nodiscard]] virtual LayerValue<MetatileAttributeFieldOverrides>
     metatile_attribute_field_overrides(ConfigScopeType type, const std::string &scope) const;
-    [[nodiscard]] virtual LayerValue<bool>
-    write_layer_type_column(ConfigScopeType type, const std::string &scope) const;
+    [[nodiscard]] virtual LayerValue<RolePinDefinitions>
+    role_pins(ConfigScopeType type, const std::string &scope) const;
     [[nodiscard]] virtual LayerValue<bool>
     tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const;
 };

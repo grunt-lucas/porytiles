@@ -6,6 +6,7 @@
 
 #include "gtest/gtest.h"
 
+#include "porytiles/domain/config/role_pin_definition.hpp"
 #include "porytiles/utilities/text/plain_text_formatter.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
 #include "porytiles/xcut/diagnostics/buffered_user_diagnostics.hpp"
@@ -245,31 +246,251 @@ fieldmap:
     EXPECT_NE(result.error_message.find("layer_type"), std::string::npos);
 }
 
-TEST_F(YamlFileProviderMetatileAttributeTest, WriteLayerTypeColumnBoolParses)
+TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsParsesRoleOnlyAndRoleWithColumn)
+{
+    // The role-only entry lives in the project-wide config; the role-with-column entry lives in a tileset-scoped
+    // config. Distinct files dodge the process-wide YAML cache, which is keyed by path.
+    write_config(R"(
+fieldmap:
+  role_pins:
+    - role: layer_type
+)");
+    const auto tileset_dir = project_root_ / "porytiles" / "tilesets" / "custom";
+    std::filesystem::create_directories(tileset_dir);
+    std::ofstream{tileset_dir / "config.yaml"} << R"(
+fieldmap:
+  role_pins:
+    - role: layer_type
+      column: my_layer_type
+)";
+
+    YamlFileProvider provider{nullptr, project_root_};
+
+    const auto role_only = provider.role_pins(ConfigScopeType::tileset, "test");
+    ASSERT_EQ(role_only.state, ValidationState::valid);
+    ASSERT_TRUE(role_only.value.has_value());
+    ASSERT_EQ(role_only.value.value().size(), 1U);
+    EXPECT_EQ(role_only.value.value()[0].role, FieldRole::layer_type);
+    EXPECT_FALSE(role_only.value.value()[0].column.has_value());
+    EXPECT_EQ(effective_pin_column_name(role_only.value.value()[0]), "layer_type");
+
+    const auto with_column = provider.role_pins(ConfigScopeType::tileset, "custom");
+    ASSERT_EQ(with_column.state, ValidationState::valid);
+    ASSERT_TRUE(with_column.value.has_value());
+    ASSERT_EQ(with_column.value.value().size(), 1U);
+    EXPECT_EQ(with_column.value.value()[0].role, FieldRole::layer_type);
+    ASSERT_TRUE(with_column.value.value()[0].column.has_value());
+    EXPECT_EQ(with_column.value.value()[0].column.value(), "my_layer_type");
+    EXPECT_EQ(effective_pin_column_name(with_column.value.value()[0]), "my_layer_type");
+}
+
+TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsUnknownRoleIsInvalid)
 {
     write_config(R"(
 fieldmap:
-  write_layer_type_column: true
+  role_pins:
+    - role: banana
 )");
 
     YamlFileProvider provider{nullptr, project_root_};
-    const auto result = provider.write_layer_type_column(ConfigScopeType::tileset, "test");
-    ASSERT_EQ(result.state, ValidationState::valid);
-    ASSERT_TRUE(result.value.has_value());
-    EXPECT_TRUE(result.value.value());
+    const auto result = provider.role_pins(ConfigScopeType::tileset, "test");
+    EXPECT_EQ(result.state, ValidationState::invalid);
+    EXPECT_NE(result.error_message.find("banana"), std::string::npos);
+    EXPECT_NE(result.error_message.find("layer_type"), std::string::npos);
+}
+
+TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsUnknownKeyIsInvalid)
+{
+    write_config(R"(
+fieldmap:
+  role_pins:
+    - role: layer_type
+      colunm: foo
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.role_pins(ConfigScopeType::tileset, "test");
+    EXPECT_EQ(result.state, ValidationState::invalid);
+    EXPECT_NE(result.error_message.find("colunm"), std::string::npos);
+}
+
+TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsMissingRoleIsInvalid)
+{
+    write_config(R"(
+fieldmap:
+  role_pins:
+    - column: foo
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.role_pins(ConfigScopeType::tileset, "test");
+    EXPECT_EQ(result.state, ValidationState::invalid);
+    EXPECT_NE(result.error_message.find("role"), std::string::npos);
+}
+
+TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsDuplicateRoleIsInvalid)
+{
+    write_config(R"(
+fieldmap:
+  role_pins:
+    - role: layer_type
+    - role: layer_type
+      column: other
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.role_pins(ConfigScopeType::tileset, "test");
+    EXPECT_EQ(result.state, ValidationState::invalid);
+    EXPECT_NE(result.error_message.find("layer_type"), std::string::npos);
+}
+
+TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsColumnIdIsInvalid)
+{
+    write_config(R"(
+fieldmap:
+  role_pins:
+    - role: layer_type
+      column: id
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.role_pins(ConfigScopeType::tileset, "test");
+    EXPECT_EQ(result.state, ValidationState::invalid);
+    EXPECT_NE(result.error_message.find("id"), std::string::npos);
+}
+
+TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsColumnEmptyIsInvalid)
+{
+    write_config(R"(
+fieldmap:
+  role_pins:
+    - role: layer_type
+      column: ""
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.role_pins(ConfigScopeType::tileset, "test");
+    EXPECT_EQ(result.state, ValidationState::invalid);
+    EXPECT_NE(result.error_message.find("empty"), std::string::npos);
+}
+
+// The column name is written verbatim as a CSV header cell, so a comma would split it into two columns on reload.
+TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsColumnWithCommaIsInvalid)
+{
+    write_config(R"(
+fieldmap:
+  role_pins:
+    - role: layer_type
+      column: "foo,bar"
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.role_pins(ConfigScopeType::tileset, "test");
+    EXPECT_EQ(result.state, ValidationState::invalid);
+    EXPECT_NE(result.error_message.find("commas or line breaks"), std::string::npos);
+}
+
+// A line break in the header cell would corrupt the CSV's line structure.
+TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsColumnWithLineBreakIsInvalid)
+{
+    write_config(R"(
+fieldmap:
+  role_pins:
+    - role: layer_type
+      column: "foo\nbar"
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.role_pins(ConfigScopeType::tileset, "test");
+    EXPECT_EQ(result.state, ValidationState::invalid);
+    EXPECT_NE(result.error_message.find("commas or line breaks"), std::string::npos);
+}
+
+// The loader strips surrounding whitespace from header cells, so an edge-whitespace name could never match its own
+// column on the way back in.
+TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsColumnEdgeWhitespaceIsInvalid)
+{
+    write_config(R"(
+fieldmap:
+  role_pins:
+    - role: layer_type
+      column: " layer "
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.role_pins(ConfigScopeType::tileset, "test");
+    EXPECT_EQ(result.state, ValidationState::invalid);
+    EXPECT_NE(result.error_message.find("whitespace"), std::string::npos);
+}
+
+TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsColumnWhitespaceOnlyIsInvalid)
+{
+    write_config(R"(
+fieldmap:
+  role_pins:
+    - role: layer_type
+      column: "   "
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.role_pins(ConfigScopeType::tileset, "test");
+    EXPECT_EQ(result.state, ValidationState::invalid);
+    EXPECT_NE(result.error_message.find("whitespace"), std::string::npos);
+}
+
+TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsNotSequenceIsInvalid)
+{
+    write_config(R"(
+fieldmap:
+  role_pins:
+    role: layer_type
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.role_pins(ConfigScopeType::tileset, "test");
+    EXPECT_EQ(result.state, ValidationState::invalid);
+}
+
+TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsAbsentIsNotProvided)
+{
+    write_config(R"(
+fieldmap:
+  metatile_attribute_declaration_size: 2
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.role_pins(ConfigScopeType::tileset, "test");
+    EXPECT_EQ(result.state, ValidationState::not_provided);
 }
 
 TEST_F(YamlFileProviderMetatileAttributeTest, KnownFieldmapKeysPassUnknownKeyValidation)
 {
     write_config(R"(
 fieldmap:
-  write_layer_type_column: true
+  role_pins:
+    - role: layer_type
   metatile_attribute_declaration_size: 2
 )");
 
     YamlFileProvider provider{nullptr, project_root_};
     // preload_and_validate returns true on validation failure (e.g. an unknown key). Both keys are known, so it passes.
     EXPECT_FALSE(provider.preload_and_validate(ConfigScopeType::tileset, "test"));
+}
+
+TEST_F(YamlFileProviderMetatileAttributeTest, RemovedWriteLayerTypeColumnKeyFailsUnknownKeyValidation)
+{
+    // write_layer_type_column was replaced by fieldmap.role_pins (issue #336): the pin column is now enabled
+    // generically per role. A config that still sets the stale key must fail validation so an upgrading user gets a
+    // clear error instead of a silently ignored setting.
+    write_config(R"(
+fieldmap:
+  write_layer_type_column: true
+)");
+
+    BufferedUserDiagnostics diag;
+    YamlFileProvider provider{&diag, project_root_};
+    // preload_and_validate returns true on validation failure; the key is now unknown.
+    EXPECT_TRUE(provider.preload_and_validate(ConfigScopeType::tileset, "test"));
 }
 
 TEST_F(YamlFileProviderMetatileAttributeTest, DeclarationSizeParses)
@@ -291,7 +512,7 @@ TEST_F(YamlFileProviderMetatileAttributeTest, DeclarationSizeAbsentIsNotProvided
 {
     write_config(R"(
 fieldmap:
-  write_layer_type_column: true
+  metatile_attribute_size: 2
 )");
 
     YamlFileProvider provider{nullptr, project_root_};

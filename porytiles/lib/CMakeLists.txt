@@ -87,7 +87,12 @@ FetchContent_MakeAvailable(cli11_proj)
 ##############################################
 
 FILE(GLOB_RECURSE CppSources CONFIGURE_DEPENDS *.cpp)
-add_library(PorytilesLib STATIC ${CppSources})
+# Headers are listed as target sources purely so IDEs register them as project
+# files (CMake ignores .hpp for compilation). Without this, the include/ tree is
+# only ever an include *path*, and IDEs bucket it as external/library headers
+# that stay hidden from project-scoped search.
+FILE(GLOB_RECURSE PorytilesHeaders CONFIGURE_DEPENDS ${PORYTILES_INCLUDE_DIR}/*.hpp)
+add_library(PorytilesLib STATIC ${CppSources} ${PorytilesHeaders})
 set(CANONICAL_LIB_NAME "porytiles")
 set_target_properties(PorytilesLib PROPERTIES OUTPUT_NAME "${CANONICAL_LIB_NAME}")
 

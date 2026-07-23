@@ -48,6 +48,9 @@ class DefaultProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<Rgba32>
     extrinsic_transparency(ConfigScopeType type, const std::string &scope) const override;
 
+    [[nodiscard]] LayerValue<bool>
+    ignore_triple_layer_content(ConfigScopeType type, const std::string &scope) const override;
+
     [[nodiscard]] LayerValue<ArtifactEditMode>
     tiles_edit_mode(ConfigScopeType type, const std::string &scope) const override;
 
@@ -137,8 +140,8 @@ class DefaultProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<MetatileAttributeFieldOverrides>
     metatile_attribute_field_overrides(ConfigScopeType type, const std::string &scope) const override;
 
-    [[nodiscard]] LayerValue<bool>
-    write_layer_type_column(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<RolePinDefinitions>
+    role_pins(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<bool>
     tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const override;

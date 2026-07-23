@@ -70,6 +70,11 @@ void OverrideConfigProvider::set_extrinsic_transparency(Rgba32 value)
     extrinsic_transparency_override_ = std::move(value);
 }
 
+void OverrideConfigProvider::set_ignore_triple_layer_content(bool value)
+{
+    ignore_triple_layer_content_override_ = std::move(value);
+}
+
 void OverrideConfigProvider::set_tiles_edit_mode(ArtifactEditMode value)
 {
     tiles_edit_mode_override_ = std::move(value);
@@ -221,9 +226,9 @@ void OverrideConfigProvider::set_metatile_attribute_field_overrides(MetatileAttr
     metatile_attribute_field_overrides_override_ = std::move(value);
 }
 
-void OverrideConfigProvider::set_write_layer_type_column(bool value)
+void OverrideConfigProvider::set_role_pins(RolePinDefinitions value)
 {
-    write_layer_type_column_override_ = std::move(value);
+    role_pins_override_ = std::move(value);
 }
 
 void OverrideConfigProvider::set_tileset_animations_wire_anim_code(bool value)
@@ -309,6 +314,16 @@ LayerValue<Rgba32> OverrideConfigProvider::extrinsic_transparency(ConfigScopeTyp
         return LayerValue<Rgba32>::not_provided();
     }
     return LayerValue<Rgba32>::valid(extrinsic_transparency_override_.value(), "extrinsic_transparency", source_info_);
+}
+
+LayerValue<bool>
+OverrideConfigProvider::ignore_triple_layer_content(ConfigScopeType type, const std::string &scope) const
+{
+    if (!scope_matches(type, scope) || !ignore_triple_layer_content_override_.has_value()) {
+        return LayerValue<bool>::not_provided();
+    }
+    return LayerValue<bool>::valid(
+        ignore_triple_layer_content_override_.value(), "ignore_triple_layer_content", source_info_);
 }
 
 LayerValue<ArtifactEditMode>
@@ -611,12 +626,12 @@ OverrideConfigProvider::metatile_attribute_field_overrides(ConfigScopeType type,
         metatile_attribute_field_overrides_override_.value(), "metatile_attribute_field_overrides", source_info_);
 }
 
-LayerValue<bool> OverrideConfigProvider::write_layer_type_column(ConfigScopeType type, const std::string &scope) const
+LayerValue<RolePinDefinitions> OverrideConfigProvider::role_pins(ConfigScopeType type, const std::string &scope) const
 {
-    if (!scope_matches(type, scope) || !write_layer_type_column_override_.has_value()) {
-        return LayerValue<bool>::not_provided();
+    if (!scope_matches(type, scope) || !role_pins_override_.has_value()) {
+        return LayerValue<RolePinDefinitions>::not_provided();
     }
-    return LayerValue<bool>::valid(write_layer_type_column_override_.value(), "write_layer_type_column", source_info_);
+    return LayerValue<RolePinDefinitions>::valid(role_pins_override_.value(), "role_pins", source_info_);
 }
 
 LayerValue<bool>

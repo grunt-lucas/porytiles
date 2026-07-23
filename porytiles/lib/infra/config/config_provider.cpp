@@ -61,6 +61,12 @@ LayerValue<Rgba32> ConfigProvider::extrinsic_transparency(
     return LayerValue<Rgba32>::not_provided();
 }
 
+LayerValue<bool> ConfigProvider::ignore_triple_layer_content(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<bool>::not_provided();
+}
+
 LayerValue<ArtifactEditMode>
 ConfigProvider::tiles_edit_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
@@ -242,10 +248,10 @@ LayerValue<MetatileAttributeFieldOverrides> ConfigProvider::metatile_attribute_f
     return LayerValue<MetatileAttributeFieldOverrides>::not_provided();
 }
 
-LayerValue<bool> ConfigProvider::write_layer_type_column(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<RolePinDefinitions>
+ConfigProvider::role_pins([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<bool>::not_provided();
+    return LayerValue<RolePinDefinitions>::not_provided();
 }
 
 LayerValue<bool> ConfigProvider::tileset_animations_wire_anim_code(

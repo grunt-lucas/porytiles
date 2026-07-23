@@ -189,6 +189,14 @@ class DomainConfig {
     }
 
     // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    ignore_triple_layer_content(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = ignore_triple_layer_content_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
     [[nodiscard]] ChainableResult<ConfigValue<ArtifactEditMode>>
     tiles_edit_mode(ConfigScopeType type, const std::string &scope) const
     {
@@ -464,6 +472,18 @@ class DomainConfig {
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<Rgba32>>
     extrinsic_transparency_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
+    ignore_triple_layer_content_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = ignore_triple_layer_content_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
+    ignore_triple_layer_content_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<ArtifactEditMode>>

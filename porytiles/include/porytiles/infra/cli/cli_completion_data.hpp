@@ -81,6 +81,15 @@ struct CliOptionMeta {
             {},
             false},
         CliOptionMeta{
+            "ignore-triple-layer-content",
+            "Ignore Triple Layer Content - Demote the triple-layer-content-in-dual-mode error to a warning. When on, a "
+            "metatile with content on all three layers compiles in dual mode by dropping one layer group instead of "
+            "failing. The dropped layer follows the metatile's effective layer type: a 'layer_type' role pin if you "
+            "set one, otherwise the bottom layer.",
+            "bool",
+            {},
+            true},
+        CliOptionMeta{
             "tiles-edit-mode",
             "Tiles Edit Mode - The allowed edit mode for the tiles.png artifact.",
             "enum",
@@ -254,12 +263,6 @@ struct CliOptionMeta {
             "integer",
             {},
             false},
-        CliOptionMeta{
-            "write-layer-type-column",
-            "Write Layer Type Column - Emit and honor a layer_type column in the metatile attributes CSV.",
-            "bool",
-            {},
-            true},
         CliOptionMeta{
             "tileset-animations-wire-anim-code",
             "Tileset Animations Wire Anim Code - Enable or disable automatic animation code wiring.",

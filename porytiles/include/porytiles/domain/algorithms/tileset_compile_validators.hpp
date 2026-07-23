@@ -707,6 +707,7 @@ inline void report_color_counts(
 {
     PT_UNWRAP_TILESET_CONFIG_REF(services.config, extrinsic_transparency, tileset_name, void);
     PT_UNWRAP_TILESET_CONFIG_REF(services.config, num_tiles_per_metatile, tileset_name, void);
+    PT_UNWRAP_TILESET_CONFIG_REF(services.config, ignore_triple_layer_content, tileset_name, void);
     auto configured_layer_mode = layer_mode_from_val(num_tiles_per_metatile);
 
     // If layer mode is triple, just return
@@ -714,14 +715,16 @@ inline void report_color_counts(
         return {};
     }
 
+    // With ignore on, triple content in dual mode is a warning, not an error
+    const bool ignore_triple = ignore_triple_layer_content.value();
+
     bool hit_error = false;
+    bool hit_violation = false;
     std::size_t metatile_index = 0;
 
     for (const auto &metatile : metatiles) {
-        // Determine the implied layer mode for this metatile
-        // Check each of the 4 tile positions (northwest, northeast, southwest, southeast)
-        bool found_triple_layer_region = false;
-
+        // Check each of the 4 tile positions (northwest, northeast, southwest, southeast) independently: a subtile is
+        // a triple-layer region only when all three of its own layers carry content, regardless of its siblings.
         for (std::size_t subtile_idx = 0; subtile_idx < metatile::tiles_per_metatile_layer; ++subtile_idx) {
             const auto &bottom_tile = metatile.bottom(subtile_idx);
             const auto &middle_tile = metatile.middle(subtile_idx);
@@ -734,16 +737,13 @@ inline void report_color_counts(
             const bool top_has_opaque = !top_tile.is_transparent(extrinsic_transparency.value());
 
             // If all three layers have opaque pixels in this tile position, this is a triple-layer region
-            if (bottom_has_opaque && middle_has_opaque && top_has_opaque) {
-                found_triple_layer_region = true;
-            }
+            const bool triple_layer_region = bottom_has_opaque && middle_has_opaque && top_has_opaque;
 
-            const LayerMode implied_mode = found_triple_layer_region ? LayerMode::triple : LayerMode::dual;
-
-            // Error condition if implied mode is triple for a dual-layer compilation
-            if (implied_mode == LayerMode::triple && configured_layer_mode == LayerMode::dual) {
-                hit_error = true;
-                std::vector errors = {services.diag.formatter().format(
+            // Violation if the subtile is a triple-layer region in a dual-layer compilation. The
+            // ignore_triple_layer_content config decides whether it generates a hard error or a warning.
+            if (triple_layer_region && configured_layer_mode == LayerMode::dual) {
+                hit_violation = true;
+                std::vector lines = {services.diag.formatter().format(
                     "{}: {}",
                     FormatParam{
                         metatile::message_header(services.diag.formatter(), metatile_index, subtile), Style::bold},
@@ -754,10 +754,16 @@ inline void report_color_counts(
                     metatile, metatile::Layer::middle, subtile, extrinsic_transparency);
                 std::vector top_highlight = services.tile_printer.print_metatile_tile_highlight(
                     metatile, metatile::Layer::top, subtile, extrinsic_transparency);
-                errors.append_range(bottom_highlight);
-                errors.append_range(middle_highlight);
-                errors.append_range(top_highlight);
-                services.diag.error("layer-mode-violation", errors);
+                lines.append_range(bottom_highlight);
+                lines.append_range(middle_highlight);
+                lines.append_range(top_highlight);
+                if (ignore_triple) {
+                    services.diag.warning("layer-mode-violation", lines);
+                }
+                else {
+                    hit_error = true;
+                    services.diag.error("layer-mode-violation", lines);
+                }
             }
         }
 
@@ -781,11 +787,30 @@ inline void report_color_counts(
         note_text.push_back(services.diag.formatter().format(
             "   - follow the steps here: {}",
             FormatParam{"https://github.com/pret/pokeemerald/wiki/Triple-layer-metatiles", Style::underline}));
+        note_text.emplace_back("");
+        note_text.push_back(services.diag.formatter().format(
+            "Alternatively, set '{}' to force compilation in dual-layer mode. Porytiles will then default all "
+            "metatiles to '{}' unless an explicit layer_type pin is provided.",
+            FormatParam{ignore_triple_layer_content.canonical_name(), Style::bold},
+            FormatParam{to_string(LayerType::normal), Style::bold}));
 
         // Emit note
         services.diag.error_note("layer-mode-violation", note_text);
 
         return FormattableError{"Found metatile(s) with mismatched implied layer mode."};
+    }
+
+    // Config ignore_triple_layer_content on and at least one metatile had triple content: warn once that the dual
+    // conversion will drop a layer group per offending metatile.
+    if (hit_violation) {
+        std::vector<std::string> note_text;
+        note_text.push_back(services.diag.formatter().format(
+            "Porytiles will drop a layer per offending metatile, either by respecting a layer_type pin or by forcing "
+            "each to layer type '{}'. This violation was explicitly downgraded from error to warning by:",
+            FormatParam{to_string(LayerType::normal), Style::bold}));
+        note_text.emplace_back("");
+        note_text.append_range(format_config_note(services.diag.formatter(), ignore_triple_layer_content));
+        services.diag.warning_note("layer-mode-violation", note_text);
     }
 
     return {};
