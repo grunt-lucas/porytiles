@@ -154,7 +154,8 @@ class DumpAttributeSchemaCommand final : public Command {
         if (resolved.schema.layer_type_field() == nullptr) {
             out << "    "
                 << text_formatter->format(
-                       "{}", FormatParam{"(no layer_type field: layer types are disabled)", Style::faint})
+                       "{}",
+                       FormatParam{"(no field carries the layer_type role: layer types are disabled)", Style::faint})
                 << "\n";
         }
         out << "\n";

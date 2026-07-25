@@ -34,6 +34,9 @@ struct CsvRow {
 [[nodiscard]] std::string expected_header_string(const Schema &schema)
 {
     std::string header = "id";
+    // TODO: this should probably show pins too. Right now, if I use schema.fields(), the pin column prints without the
+    // "pin::" prefix. In #350 we'll fix the order dependency, and we should introduce a way to fetch pins from the
+    // schema so we can solve the problem here.
     for (const Field &field : schema.value_fields()) {
         header += "," + field.name();
     }
@@ -188,8 +191,8 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
     }
 
     // Cross-check the header line (index 0) against the resolved schema: the columns must be 'id' followed by every
-    // schema field name in schema order, then at most an optional trailing layer_type column. Anything missing,
-    // mis-ordered, or extra is a schema mismatch and fails with a diagnostic naming the column and its position.
+    // schema field name in schema order, then any number of "pin::<role>" pin columns. Anything missing, mis-ordered,
+    // or extra is a schema mismatch and fails with a diagnostic naming the column and its position.
     auto header_columns = split(lines[0], ",");
     for (auto &col : header_columns) {
         trim(col);
@@ -199,8 +202,9 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
     auto make_header_error = [&](const std::string &message) -> FormattableError {
         std::vector<std::string> err_lines{};
         err_lines.push_back(message);
+        err_lines.emplace_back();
         err_lines.push_back(format.format(
-            "expected header (from the resolved attribute schema): '{}'", FormatParam{expected_header, Style::bold}));
+            "Based on resolved attribute schema, expected header: '{}'", FormatParam{expected_header, Style::bold}));
         err_lines.emplace_back();
         err_lines.append_range(file_printer.print(lines, std::vector<std::size_t>{0}));
         return FormattableError{std::move(err_lines)};
@@ -227,42 +231,60 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
         }
     }
 
-    // Classify the trailing columns after the value fields. Each configured role pin contributes one active column
-    // (named by effective_pin_column_name), whose cells are applied. A column matching a known role's default name but
-    // not currently active is a stale pin column: its values are ignored, with a one-time warning. Anything else is a
-    // schema mismatch (a CSV written for a wider schema) and fails loudly.
-    const RolePinDefinition *layer_type_pin = find_role_pin(role_pins, FieldRole::layer_type);
-    const std::optional<std::string> active_layer_type_column =
-        layer_type_pin != nullptr ? std::optional<std::string>{effective_pin_column_name(*layer_type_pin)}
-                                  : std::nullopt;
-
+    // Classify the trailing columns after the value fields. A column's kind is read off its name, never its position.
+    // In a future update, we'll make it so that the CSV header row is not order dependent. Right now, you can't mix
+    // pins together with the regular fields.
     std::optional<std::size_t> layer_type_apply_index;
     std::optional<std::string> ignored_role_pin_column;
     std::unordered_set<std::string> seen_trailing;
     for (std::size_t j = 1 + field_count; j < header_columns.size(); ++j) {
         const std::string &column = header_columns[j];
-        const bool is_new = seen_trailing.insert(column).second;
-        const bool is_active_layer_type =
-            active_layer_type_column.has_value() && column == active_layer_type_column.value();
 
-        if (is_new && is_active_layer_type) {
-            layer_type_apply_index = j;
-            continue;
+        if (!seen_trailing.insert(column).second) {
+            return make_header_error(format.format(
+                "{}:{}: invalid header: duplicate column '{}' at position {}",
+                FormatParam{path.string(), Style::bold},
+                FormatParam{"1", Style::bold},
+                FormatParam{column, Style::bold},
+                FormatParam{j + 1}));
         }
-        if (is_new && field_role_from_string(column).has_value()) {
-            // A known role's default name that is not the active column: a stale pin column, ignored with a warning.
+
+        if (!is_pin_column_name(column)) {
+            // Invalid non-pin column present in the "pin region". Again, we should move away from this artificial
+            // trailing-pin-region concept. For now, we need to error here.
+            return make_header_error(format.format(
+                "{}:{}: invalid header: unexpected column '{}' at position {}",
+                FormatParam{path.string(), Style::bold},
+                FormatParam{"1", Style::bold},
+                FormatParam{column, Style::bold},
+                FormatParam{j + 1}));
+        }
+
+        const auto role = role_from_pin_column_name(column);
+        if (!role.has_value()) {
+            return make_header_error(format.format(
+                "{}:{}: invalid header: pin column '{}' at position {} names no known role; the only role is '{}'",
+                FormatParam{path.string(), Style::bold},
+                FormatParam{"1", Style::bold},
+                FormatParam{column, Style::bold},
+                FormatParam{j + 1},
+                FormatParam{to_string(FieldRole::layer_type), Style::bold}));
+        }
+
+        if (find_role_pin(role_pins, role.value()) == nullptr) {
+            // A well-formed pin column for a role that is not currently pinned: a stale column left behind after the
+            // pin was turned off. Its cells are ignored, with a one-time warning.
             if (!ignored_role_pin_column.has_value()) {
                 ignored_role_pin_column = column;
             }
             continue;
         }
-        // Anything else (an unknown name, or a repeated trailing column) is a schema mismatch and fails loudly.
-        return make_header_error(format.format(
-            "{}:{}: invalid header: unexpected column '{}' at position {}",
-            FormatParam{path.string(), Style::bold},
-            FormatParam{"1", Style::bold},
-            FormatParam{column, Style::bold},
-            FormatParam{j + 1}));
+
+        switch (role.value()) {
+        case FieldRole::layer_type:
+            layer_type_apply_index = j;
+            break;
+        }
     }
 
     const std::size_t max_columns = header_columns.size();
@@ -278,20 +300,13 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
     if (ignored_role_pin_column.has_value()) {
         std::vector<std::string> warn_lines{};
         warn_lines.push_back(format.format(
-            "{}: a '{}' column is present but no active role pin uses it; its values are ignored and the layer type "
+            "{}: a '{}' column is present but no active role pin uses it. Its values are ignored and the layer type "
             "will be inferred.",
             FormatParam{path.string(), Style::bold},
             FormatParam{ignored_role_pin_column.value(), Style::bold}));
-        if (active_layer_type_column.has_value()) {
-            warn_lines.push_back(format.format(
-                "the layer_type role is pinned as column '{}'; rename this column to match, or remove it.",
-                FormatParam{active_layer_type_column.value(), Style::bold}));
-        }
-        else {
-            warn_lines.push_back(format.format(
-                "add a {} entry for the layer_type role to apply the column.",
-                FormatParam{"fieldmap.role_pins", Style::bold}));
-        }
+        warn_lines.push_back(format.format(
+            "Add a {} entry for the layer_type role to apply the column, or remove the column.",
+            FormatParam{"fieldmap.role_pins", Style::bold}));
         diag.warning("role-pin-column", warn_lines);
     }
 
@@ -466,12 +481,6 @@ ChainableResult<AttributesCsvLoadResult> AttributesCsvLoader::load(
         return ChainableResult<AttributesCsvLoadResult>{FormattableError{"Failed to resolve role_pins."}, role_pins_cv};
     }
     const RolePinDefinitions &role_pins = role_pins_cv.value();
-
-    // Schema-dependent role-pin validation (column colliding with "id" or a value field) runs here, where the resolved
-    // schema is in hand. The schema-independent checks already ran in the YAML parser.
-    if (auto validated = validate_role_pins_against_schema(role_pins, schema, *format_); !validated.has_value()) {
-        return ChainableResult<AttributesCsvLoadResult>{FormattableError{"Invalid role pins."}, validated};
-    }
 
     std::map<FieldRole, bool> active_pin_column_present;
     auto parsed = parse_attributes_csv(

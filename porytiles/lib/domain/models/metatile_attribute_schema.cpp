@@ -65,6 +65,19 @@ ChainableResult<Schema> Schema::create(std::vector<Field> fields, std::size_t at
                 "Field '{}' is defined more than once in the schema.", FormatParam{field.name(), Style::bold}};
         }
 
+        // The attributes CSV header partitions its columns by name: pin_column_prefix marks a role pin column,
+        // everything else is a value column. That partition is a property of the schema, so the schema is where it is
+        // enforced. This is not the old rule that reserved the bare name "layer_type": that one blocked a name
+        // Porytiles' own inference produces, on behalf of a CSV detail the domain layer could not see. This one
+        // reserves a namespace no C macro suffix can reach, and every field name outside it stays available.
+        if (is_pin_column_name(field.name())) {
+            return FormattableError{
+                "Field '{}' starts with '{}', which is reserved for the attributes.csv role pin columns. Choose a "
+                "field name outside that namespace.",
+                FormatParam{field.name(), Style::bold},
+                FormatParam{std::string{pin_column_prefix}, Style::bold}};
+        }
+
         if (mask == 0) {
             return FormattableError{
                 "Field '{}' has a zero mask: a field must occupy at least one bit.",

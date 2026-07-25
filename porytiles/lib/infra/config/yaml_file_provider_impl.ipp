@@ -1270,14 +1270,12 @@ LayerValue<RolePinDefinitions> parse_role_pins(
                 details);
         }
 
-        const std::unordered_set<std::string> pin_keys{"role", "column"};
+        const std::unordered_set<std::string> pin_keys{"role"};
 
         RolePinDefinitions definitions;
-        // All schema-independent checks live here: a role may be pinned at most once, no two entries may resolve to
-        // the same effective column name, and no entry may resolve to the reserved "id" column. The schema-dependent
-        // check (column colliding with a value field) runs later in validate_role_pins_against_schema.
+        // A role may be pinned at most once. That is the only cross-entry rule left: a pin column's header is fixed at
+        // pin_column_name(role), so one role means one column and there is nothing else two entries could collide on.
         std::unordered_set<std::string> seen_roles;
-        std::unordered_set<std::string> seen_columns;
         for (std::size_t i = 0; i < node.size(); ++i) {
             const auto &pin_node = node[i];
             const auto pin_mark = pin_node.Mark();
@@ -1334,65 +1332,7 @@ LayerValue<RolePinDefinitions> parse_role_pins(
 
             RolePinDefinition definition;
             definition.role = role.value();
-
-            if (pin_node["column"].IsDefined()) {
-                auto column = pin_node["column"].as<std::string>();
-                if (column.empty()) {
-                    return LayerValue<RolePinDefinitions>::invalid(
-                        format->format(
-                            "'{}[{}].column' must not be empty.", FormatParam{key, Style::bold}, FormatParam{i}),
-                        pin_source,
-                        pin_details);
-                }
-                // The name becomes a literal CSV header cell, so the CSV's own structural characters cannot appear in
-                // it, and the loader matches header cells with surrounding whitespace stripped, so a name with edge
-                // whitespace could never match its own column on the way back in.
-                if (column.find_first_of(",\r\n") != std::string::npos) {
-                    return LayerValue<RolePinDefinitions>::invalid(
-                        format->format(
-                            "'{}[{}].column' must not contain commas or line breaks.",
-                            FormatParam{key, Style::bold},
-                            FormatParam{i}),
-                        pin_source,
-                        pin_details);
-                }
-                std::string trimmed = column;
-                trim(trimmed);
-                if (trimmed != column) {
-                    return LayerValue<RolePinDefinitions>::invalid(
-                        format->format(
-                            "'{}[{}].column' must not have leading or trailing whitespace.",
-                            FormatParam{key, Style::bold},
-                            FormatParam{i}),
-                        pin_source,
-                        pin_details);
-                }
-                definition.column = std::move(column);
-            }
-
-            const auto effective_column = effective_pin_column_name(definition);
-            if (effective_column == "id") {
-                return LayerValue<RolePinDefinitions>::invalid(
-                    format->format(
-                        "'{}[{}]' resolves to column '{}', which is reserved for the metatile id column.",
-                        FormatParam{key, Style::bold},
-                        FormatParam{i},
-                        FormatParam{"id", Style::bold}),
-                    pin_source,
-                    pin_details);
-            }
-            if (!seen_columns.insert(effective_column).second) {
-                return LayerValue<RolePinDefinitions>::invalid(
-                    format->format(
-                        "'{}[{}]' resolves to column '{}', which collides with another role pin.",
-                        FormatParam{key, Style::bold},
-                        FormatParam{i},
-                        FormatParam{effective_column, Style::bold}),
-                    pin_source,
-                    pin_details);
-            }
-
-            definitions.push_back(std::move(definition));
+            definitions.push_back(definition);
         }
 
         return LayerValue<RolePinDefinitions>::valid(std::move(definitions), key, source, details);

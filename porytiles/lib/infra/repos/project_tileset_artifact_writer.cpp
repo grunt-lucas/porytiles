@@ -751,9 +751,6 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
         "Failed to resolve role_pins.");
     const RolePinDefinitions &role_pins = role_pins_cv.value();
 
-    // Role-pin validation runs here, mirroring the loader.
-    PT_TRY_CALL_CHAIN_ERR(validate_role_pins_against_schema(role_pins, *schema_, *format_), void, "Invalid role pins.");
-
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
         compute_transaction_dest_path(
@@ -768,14 +765,15 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
     }
 
     // Write header: id plus every schema value field name in schema order, then one trailing pin column per role pin in
-    // config order (header from effective_pin_column_name). A role-bearing field is not a true value column; the CSV
-    // addresses a role's per-metatile value only through its pin column.
+    // config order. A pin column's name is fixed at "pin::<role>", so the header records which columns are pin columns
+    // and the loader never has to infer that from a column's position. A role-bearing field is not a true value column;
+    // the CSV addresses a role's per-metatile value only through its pin column.
     std::string header = "id";
     for (const Field &field : schema_->value_fields()) {
         header += "," + field.name();
     }
     for (const RolePinDefinition &pin : role_pins) {
-        header += "," + effective_pin_column_name(pin);
+        header += "," + pin_column_name(pin.role);
     }
     out << header << "\n";
 

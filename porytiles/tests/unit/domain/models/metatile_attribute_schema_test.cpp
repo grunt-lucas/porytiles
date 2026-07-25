@@ -403,6 +403,44 @@ TEST(MetatileAttributeSchemaTest, RejectsDuplicateName)
     EXPECT_NE(result.error().join(formatter).find("behavior"), std::string::npos);
 }
 
+// The "pin::" namespace belongs to the attributes CSV's role pin columns. A field allowed to claim a name in it would
+// put two different kinds of column under one name, which is the ambiguity the prefix exists to rule out.
+TEST(MetatileAttributeSchemaTest, RejectsFieldNameInTheReservedPinNamespace)
+{
+    PlainTextFormatter formatter;
+    std::vector<Field> fields;
+    fields.emplace_back("pin::layer_type", 0x00FF);
+
+    auto result = Schema::create(std::move(fields), 2);
+    ASSERT_FALSE(result.has_value());
+    const std::string error = result.error().join(formatter);
+    EXPECT_NE(error.find("pin::layer_type"), std::string::npos) << error;
+    EXPECT_NE(error.find("reserved"), std::string::npos) << error;
+}
+
+// The rule is the namespace, not the roles in it: any prefixed name is out, even one whose suffix names nothing.
+TEST(MetatileAttributeSchemaTest, RejectsFieldNameInThePinNamespaceWithUnknownSuffix)
+{
+    PlainTextFormatter formatter;
+    std::vector<Field> fields;
+    fields.emplace_back("pin::anything", 0x00FF);
+
+    auto result = Schema::create(std::move(fields), 2);
+    ASSERT_FALSE(result.has_value());
+    EXPECT_NE(result.error().join(formatter).find("pin::anything"), std::string::npos);
+}
+
+// Only the exact prefix is reserved. A name that merely starts with "pin" is an ordinary field name.
+TEST(MetatileAttributeSchemaTest, AcceptsFieldNameStartingWithPinButNotThePrefix)
+{
+    std::vector<Field> fields;
+    fields.emplace_back("pinball", 0x00FF);
+
+    auto result = Schema::create(std::move(fields), 2);
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(result.value().value_fields().front().name(), "pinball");
+}
+
 TEST(MetatileAttributeSchemaTest, OneByteSchemaAcceptsALayerTypeRoleField)
 {
     std::vector<Field> fields;
@@ -413,6 +451,28 @@ TEST(MetatileAttributeSchemaTest, OneByteSchemaAcceptsALayerTypeRoleField)
     EXPECT_EQ(result.value().attribute_bytes(), 1u);
     EXPECT_EQ(result.value().layer_type_mask(), 0x30U);
     EXPECT_EQ(result.value().layer_type_offset(), 4u);
+}
+
+// The pin column naming helpers are the whole basis for classifying an attributes.csv header column, so the round trip
+// and both nullopt cases are pinned down here rather than left to the loader's tests.
+TEST(MetatileAttributeSchemaTest, PinColumnNameRoundTrips)
+{
+    EXPECT_EQ(pin_column_name(FieldRole::layer_type), "pin::layer_type");
+    EXPECT_TRUE(is_pin_column_name("pin::layer_type"));
+    ASSERT_TRUE(role_from_pin_column_name("pin::layer_type").has_value());
+    EXPECT_EQ(role_from_pin_column_name("pin::layer_type").value(), FieldRole::layer_type);
+}
+
+TEST(MetatileAttributeSchemaTest, RoleFromPinColumnNameRejectsNonPinAndUnknownRole)
+{
+    // Outside the namespace: not a pin column at all.
+    EXPECT_FALSE(is_pin_column_name("layer_type"));
+    EXPECT_FALSE(role_from_pin_column_name("layer_type").has_value());
+    EXPECT_FALSE(role_from_pin_column_name("behavior").has_value());
+
+    // Inside the namespace, but the suffix names no role.
+    EXPECT_TRUE(is_pin_column_name("pin::banana"));
+    EXPECT_FALSE(role_from_pin_column_name("pin::banana").has_value());
 }
 
 TEST(MetatileAttributeSchemaTest, HeaderFormatToString)

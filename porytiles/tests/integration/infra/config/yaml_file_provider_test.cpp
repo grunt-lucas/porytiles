@@ -246,23 +246,15 @@ fieldmap:
     EXPECT_NE(result.error_message.find("layer_type"), std::string::npos);
 }
 
-TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsParsesRoleOnlyAndRoleWithColumn)
+// 'role' is the whole of a role pin entry: the CSV header it produces is fixed at pin_column_name(role), so there is
+// nothing else to configure.
+TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsParsesRoleOnlyEntry)
 {
-    // The role-only entry lives in the project-wide config; the role-with-column entry lives in a tileset-scoped
-    // config. Distinct files dodge the process-wide YAML cache, which is keyed by path.
     write_config(R"(
 fieldmap:
   role_pins:
     - role: layer_type
 )");
-    const auto tileset_dir = project_root_ / "porytiles" / "tilesets" / "custom";
-    std::filesystem::create_directories(tileset_dir);
-    std::ofstream{tileset_dir / "config.yaml"} << R"(
-fieldmap:
-  role_pins:
-    - role: layer_type
-      column: my_layer_type
-)";
 
     YamlFileProvider provider{nullptr, project_root_};
 
@@ -271,17 +263,7 @@ fieldmap:
     ASSERT_TRUE(role_only.value.has_value());
     ASSERT_EQ(role_only.value.value().size(), 1U);
     EXPECT_EQ(role_only.value.value()[0].role, FieldRole::layer_type);
-    EXPECT_FALSE(role_only.value.value()[0].column.has_value());
-    EXPECT_EQ(effective_pin_column_name(role_only.value.value()[0]), "layer_type");
-
-    const auto with_column = provider.role_pins(ConfigScopeType::tileset, "custom");
-    ASSERT_EQ(with_column.state, ValidationState::valid);
-    ASSERT_TRUE(with_column.value.has_value());
-    ASSERT_EQ(with_column.value.value().size(), 1U);
-    EXPECT_EQ(with_column.value.value()[0].role, FieldRole::layer_type);
-    ASSERT_TRUE(with_column.value.value()[0].column.has_value());
-    EXPECT_EQ(with_column.value.value()[0].column.value(), "my_layer_type");
-    EXPECT_EQ(effective_pin_column_name(with_column.value.value()[0]), "my_layer_type");
+    EXPECT_EQ(pin_column_name(role_only.value.value()[0].role), "pin::layer_type");
 }
 
 TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsUnknownRoleIsInvalid)
@@ -319,7 +301,7 @@ TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsMissingRoleIsInvalid)
     write_config(R"(
 fieldmap:
   role_pins:
-    - column: foo
+    - {}
 )");
 
     YamlFileProvider provider{nullptr, project_root_};
@@ -335,7 +317,6 @@ fieldmap:
   role_pins:
     - role: layer_type
     - role: layer_type
-      column: other
 )");
 
     YamlFileProvider provider{nullptr, project_root_};
@@ -344,98 +325,22 @@ fieldmap:
     EXPECT_NE(result.error_message.find("layer_type"), std::string::npos);
 }
 
-TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsColumnIdIsInvalid)
+// 'column' used to name a role pin's CSV header. The header is no longer configurable, so the key is gone and reads
+// like any other typo.
+TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsColumnKeyIsInvalid)
 {
     write_config(R"(
 fieldmap:
   role_pins:
     - role: layer_type
-      column: id
+      column: my_layer_type
 )");
 
     YamlFileProvider provider{nullptr, project_root_};
     const auto result = provider.role_pins(ConfigScopeType::tileset, "test");
     EXPECT_EQ(result.state, ValidationState::invalid);
-    EXPECT_NE(result.error_message.find("id"), std::string::npos);
-}
-
-TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsColumnEmptyIsInvalid)
-{
-    write_config(R"(
-fieldmap:
-  role_pins:
-    - role: layer_type
-      column: ""
-)");
-
-    YamlFileProvider provider{nullptr, project_root_};
-    const auto result = provider.role_pins(ConfigScopeType::tileset, "test");
-    EXPECT_EQ(result.state, ValidationState::invalid);
-    EXPECT_NE(result.error_message.find("empty"), std::string::npos);
-}
-
-// The column name is written verbatim as a CSV header cell, so a comma would split it into two columns on reload.
-TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsColumnWithCommaIsInvalid)
-{
-    write_config(R"(
-fieldmap:
-  role_pins:
-    - role: layer_type
-      column: "foo,bar"
-)");
-
-    YamlFileProvider provider{nullptr, project_root_};
-    const auto result = provider.role_pins(ConfigScopeType::tileset, "test");
-    EXPECT_EQ(result.state, ValidationState::invalid);
-    EXPECT_NE(result.error_message.find("commas or line breaks"), std::string::npos);
-}
-
-// A line break in the header cell would corrupt the CSV's line structure.
-TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsColumnWithLineBreakIsInvalid)
-{
-    write_config(R"(
-fieldmap:
-  role_pins:
-    - role: layer_type
-      column: "foo\nbar"
-)");
-
-    YamlFileProvider provider{nullptr, project_root_};
-    const auto result = provider.role_pins(ConfigScopeType::tileset, "test");
-    EXPECT_EQ(result.state, ValidationState::invalid);
-    EXPECT_NE(result.error_message.find("commas or line breaks"), std::string::npos);
-}
-
-// The loader strips surrounding whitespace from header cells, so an edge-whitespace name could never match its own
-// column on the way back in.
-TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsColumnEdgeWhitespaceIsInvalid)
-{
-    write_config(R"(
-fieldmap:
-  role_pins:
-    - role: layer_type
-      column: " layer "
-)");
-
-    YamlFileProvider provider{nullptr, project_root_};
-    const auto result = provider.role_pins(ConfigScopeType::tileset, "test");
-    EXPECT_EQ(result.state, ValidationState::invalid);
-    EXPECT_NE(result.error_message.find("whitespace"), std::string::npos);
-}
-
-TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsColumnWhitespaceOnlyIsInvalid)
-{
-    write_config(R"(
-fieldmap:
-  role_pins:
-    - role: layer_type
-      column: "   "
-)");
-
-    YamlFileProvider provider{nullptr, project_root_};
-    const auto result = provider.role_pins(ConfigScopeType::tileset, "test");
-    EXPECT_EQ(result.state, ValidationState::invalid);
-    EXPECT_NE(result.error_message.find("whitespace"), std::string::npos);
+    EXPECT_NE(result.error_message.find("unknown key"), std::string::npos);
+    EXPECT_NE(result.error_message.find("column"), std::string::npos);
 }
 
 TEST_F(YamlFileProviderMetatileAttributeTest, RolePinsNotSequenceIsInvalid)

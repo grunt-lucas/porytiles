@@ -377,7 +377,7 @@ TEST_F(AttributesCsvLoaderTest, LoadRowWithExtraCellsReturnsErrorWithContext)
 
 TEST_F(AttributesCsvLoaderTest, LoadRowWithExtraCellsAfterLayerTypeReturnsError)
 {
-    config_.role_pins = RolePinDefinitions{{FieldRole::layer_type, std::nullopt}};
+    config_.role_pins = RolePinDefinitions{{FieldRole::layer_type}};
     const BoundLoader loader = emerald_loader();
 
     // With a layer_type pin column present, the cap is one wider; a cell beyond it still fails.
@@ -522,7 +522,7 @@ TEST_F(AttributesCsvLoaderTest, LoadWideRawFieldLargeValueSucceeds)
 
 TEST_F(AttributesCsvLoaderTest, RolePinLayerTypeAppliesFilledCellsAndLeavesBlankInferred)
 {
-    config_.role_pins = RolePinDefinitions{{FieldRole::layer_type, std::nullopt}};
+    config_.role_pins = RolePinDefinitions{{FieldRole::layer_type}};
     const BoundLoader loader = emerald_loader();
 
     auto result = loader.load(test_resources_dir / "valid_layer_type.csv", tileset_scope);
@@ -550,7 +550,7 @@ TEST_F(AttributesCsvLoaderTest, RolePinLayerTypeAppliesFilledCellsAndLeavesBlank
 
 TEST_F(AttributesCsvLoaderTest, RolePinLayerTypeAppliesForMultiFieldSchema)
 {
-    config_.role_pins = RolePinDefinitions{{FieldRole::layer_type, std::nullopt}};
+    config_.role_pins = RolePinDefinitions{{FieldRole::layer_type}};
     const BoundLoader loader = firered_loader();
 
     auto result = loader.load(test_resources_dir / "valid_firered_layer_type.csv", tileset_scope);
@@ -563,29 +563,25 @@ TEST_F(AttributesCsvLoaderTest, RolePinLayerTypeAppliesForMultiFieldSchema)
     EXPECT_EQ(attributes.at(2).explicit_layer_type().value(), LayerType::split);
 }
 
-// A custom pin column name (role_pins column: my_layer_type) is honored: the CSV names the trailing column
-// my_layer_type and its cells pin the layer type just like the default "layer_type" name would.
-TEST_F(AttributesCsvLoaderTest, RolePinLayerTypeCustomColumnNameApplies)
+// A trailing column outside the "pin::" namespace cannot be a pin column whatever the config says, so it can only be a
+// value column the resolved schema does not declare: a schema mismatch, and a hard error.
+TEST_F(AttributesCsvLoaderTest, UnprefixedTrailingColumnIsSchemaMismatchError)
 {
-    config_.role_pins = RolePinDefinitions{{FieldRole::layer_type, "my_layer_type"}};
+    config_.role_pins = RolePinDefinitions{{FieldRole::layer_type}};
     const BoundLoader loader = emerald_loader();
 
-    auto result = loader.load(test_resources_dir / "valid_custom_pin_column.csv", tileset_scope);
-    ASSERT_TRUE(result.has_value()) << join_error_chain(result);
-    const auto &attributes = result.value().attributes;
+    auto result = loader.load(test_resources_dir / "unprefixed_trailing_column.csv", tileset_scope);
+    ASSERT_FALSE(result.has_value());
 
-    ASSERT_TRUE(attributes.at(0).explicit_layer_type().has_value());
-    EXPECT_EQ(attributes.at(0).explicit_layer_type().value(), LayerType::covered);
-    EXPECT_FALSE(attributes.at(1).explicit_layer_type().has_value());
-    EXPECT_EQ(attributes.at(2).explicit_layer_type().value(), LayerType::split);
-    EXPECT_FALSE(diag_.warning_tag_counts().contains("role-pin-column"));
+    const std::string error_text = join_error_chain(result);
+    EXPECT_NE(error_text.find("unexpected column 'my_layer_type' at position 3"), std::string::npos) << error_text;
 }
 
 // A schema may carry zero value fields (here, only the role-bearing layer_type field): the CSV is then just the id
 // column plus the pin column, which is exactly what the writer emits for such a schema.
 TEST_F(AttributesCsvLoaderTest, RolePinLayerTypeRoleOnlySchemaApplies)
 {
-    config_.role_pins = RolePinDefinitions{{FieldRole::layer_type, std::nullopt}};
+    config_.role_pins = RolePinDefinitions{{FieldRole::layer_type}};
     Schema role_only_schema =
         std::move(Schema::create({Field{"layer_type", 0xF000, 0, std::nullopt, FieldRole::layer_type}}, 2)).value();
     ProviderMap empty_providers{};
@@ -601,43 +597,40 @@ TEST_F(AttributesCsvLoaderTest, RolePinLayerTypeRoleOnlySchemaApplies)
     EXPECT_TRUE(result.value().active_pin_column_present.at(FieldRole::layer_type));
 }
 
-// A stale "layer_type" column is present while the layer_type role is pinned under a different name (my_layer_type).
-// The stale column is not active, so its values are ignored and a single role-pin-column warning fires.
-TEST_F(AttributesCsvLoaderTest, StaleLayerTypeColumnUnderCustomPinNameWarnsAndIgnoresValues)
+// The same pin column twice is a malformed header: the second occurrence has no meaning, and silently picking one
+// would make the file's behavior depend on which. It fails on its own message, before any pin classification.
+TEST_F(AttributesCsvLoaderTest, DuplicatePinColumnIsError)
 {
-    config_.role_pins = RolePinDefinitions{{FieldRole::layer_type, "my_layer_type"}};
+    config_.role_pins = RolePinDefinitions{{FieldRole::layer_type}};
     const BoundLoader loader = emerald_loader();
 
-    auto result = loader.load(test_resources_dir / "valid_layer_type.csv", tileset_scope);
-    ASSERT_TRUE(result.has_value()) << join_error_chain(result);
-    const auto &attributes = result.value().attributes;
-
-    // The stale "layer_type" column's values are ignored: nothing is pinned.
-    EXPECT_FALSE(attributes.at(0).explicit_layer_type().has_value());
-    EXPECT_EQ(attributes.at(0).layer_type(), LayerType::normal);
-
-    ASSERT_TRUE(diag_.warning_tag_counts().contains("role-pin-column"));
-    EXPECT_EQ(diag_.warning_tag_counts().at("role-pin-column"), 1u);
-}
-
-// A role pin whose effective column collides with a schema value field name is a hard error, caught by
-// validate_role_pins_against_schema before any parsing.
-TEST_F(AttributesCsvLoaderTest, RolePinColumnCollidingWithValueFieldIsError)
-{
-    config_.role_pins = RolePinDefinitions{{FieldRole::layer_type, "behavior"}};
-    const BoundLoader loader = emerald_loader();
-
-    auto result = loader.load(test_resources_dir / "valid.csv", tileset_scope);
+    auto result = loader.load(test_resources_dir / "duplicate_trailing_column.csv", tileset_scope);
     ASSERT_FALSE(result.has_value());
 
-    std::string full_error_text = join_error_chain(result);
-    EXPECT_NE(full_error_text.find("collides"), std::string::npos) << full_error_text;
-    EXPECT_NE(full_error_text.find("behavior"), std::string::npos) << full_error_text;
+    const std::string error_text = join_error_chain(result);
+    EXPECT_NE(error_text.find("duplicate column 'pin::layer_type' at position 4"), std::string::npos) << error_text;
 }
 
+// A prefixed column whose suffix names no role is unambiguously a pin column, just a broken one, so the error names
+// the unrecognized role rather than reporting a schema mismatch.
+TEST_F(AttributesCsvLoaderTest, UnknownPinRoleColumnIsError)
+{
+    config_.role_pins = RolePinDefinitions{{FieldRole::layer_type}};
+    const BoundLoader loader = emerald_loader();
+
+    auto result = loader.load(test_resources_dir / "unknown_pin_role_column.csv", tileset_scope);
+    ASSERT_FALSE(result.has_value());
+
+    const std::string error_text = join_error_chain(result);
+    EXPECT_NE(error_text.find("pin column 'pin::not_a_role'"), std::string::npos) << error_text;
+    EXPECT_NE(error_text.find("names no known role"), std::string::npos) << error_text;
+}
+
+// Turning a role pin off must not brick the CSV the decompiler already wrote. The column is still recognizable as a
+// pin column by name alone, so it is ignored with a warning rather than failing the load.
 TEST_F(AttributesCsvLoaderTest, StaleLayerTypeColumnWithoutRolePinWarnsOnceAndIgnoresValues)
 {
-    // Default MockInfraConfig has role_pins empty, so the "layer_type" column is a stale/ignored column.
+    // Default MockInfraConfig has role_pins empty, so the "pin::layer_type" column is a stale/ignored column.
     const BoundLoader loader = emerald_loader();
 
     auto result = loader.load(test_resources_dir / "valid_layer_type.csv", tileset_scope);
@@ -655,7 +648,7 @@ TEST_F(AttributesCsvLoaderTest, StaleLayerTypeColumnWithoutRolePinWarnsOnceAndIg
 
 TEST_F(AttributesCsvLoaderTest, RolePinLayerTypeWithNoColumnNoWarning)
 {
-    config_.role_pins = RolePinDefinitions{{FieldRole::layer_type, std::nullopt}};
+    config_.role_pins = RolePinDefinitions{{FieldRole::layer_type}};
     const BoundLoader loader = emerald_loader();
 
     auto result = loader.load(test_resources_dir / "valid.csv", tileset_scope);
@@ -668,7 +661,7 @@ TEST_F(AttributesCsvLoaderTest, RolePinLayerTypeWithNoColumnNoWarning)
 
 TEST_F(AttributesCsvLoaderTest, RolePinLayerTypeBadTokenErrorsWithFileContext)
 {
-    config_.role_pins = RolePinDefinitions{{FieldRole::layer_type, std::nullopt}};
+    config_.role_pins = RolePinDefinitions{{FieldRole::layer_type}};
     const BoundLoader loader = emerald_loader();
 
     auto result = loader.load(test_resources_dir / "invalid_layer_type_token.csv", tileset_scope);
@@ -691,7 +684,7 @@ TEST_F(AttributesCsvLoaderTest, RolePinsResolveUnderTheScopePassedToLoad)
         {
             RolePinDefinitions pins{};
             if (scope == "gTileset_Primary") {
-                pins.push_back(RolePinDefinition{FieldRole::layer_type, std::nullopt});
+                pins.push_back(RolePinDefinition{FieldRole::layer_type});
             }
             return ConfigValue{pins, "Role Pins", "role_pins", "mock", {}};
         }

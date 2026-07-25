@@ -8,6 +8,7 @@
 #include <optional>
 #include <ostream>
 #include <string>
+#include <string_view>
 #include <unordered_set>
 #include <utility>
 #include <vector>
@@ -57,8 +58,9 @@ inline std::ostream &operator<<(std::ostream &os, const HeaderFormat format)
 /// @details
 /// Most fields are plain values: the attributes CSV supplies them and the compiler packs them as written.  A role marks
 /// a field whose values Porytiles can manage itself. The only role today is layer_type: the field that receives each
-/// metatile's layer type (inferred at compile time, or pinned via the CSV's trailing layer_type column). A role-bearing
-/// field never has a value provider or a default, and it is excluded from the normal attributes CSV columns.
+/// metatile's layer type (inferred at compile time, or pinned via the CSV's trailing "pin::layer_type" column). A
+/// role-bearing field never has a value provider or a default, and it is excluded from the normal attributes CSV
+/// columns (unless explicitly pinned).
 enum class FieldRole { layer_type };
 
 /// @brief Converts FieldRole to string representation.
@@ -99,6 +101,54 @@ enum class FieldRole { layer_type };
 inline std::ostream &operator<<(std::ostream &os, const FieldRole role)
 {
     return os << to_string(role);
+}
+
+/// @brief The reserved prefix marking an attributes.csv header column as a role pin column.
+///
+/// @details
+/// The CSV header holds two kinds of column: value columns, one per schema value field, and pin columns, one per
+/// configured role pin. This prefix is what tells them apart. A column's kind is read off its name alone, so it never
+/// depends on the schema that happens to be resolved at the time, and the partition holds even for a CSV written under
+/// a different config. "::" cannot appear in a C identifier, so a field name derived from a header constant can never
+/// wander into this namespace by accident; Schema::create rejects the ones that try on purpose.
+inline constexpr std::string_view pin_column_prefix = "pin::";
+
+/// @brief Returns the one legal attributes.csv column name for a role's pin column.
+///
+/// @details
+/// A role's pin column name is fixed, not user-chosen, which is what makes the loader's classification total: a pin
+/// column either carries this exact name or it is not that role's pin column.
+///
+/// @param role The role whose pin column is being named
+/// @return The reserved prefix followed by the role's string form, e.g. "pin::layer_type"
+[[nodiscard]] inline std::string pin_column_name(FieldRole role)
+{
+    return std::string{pin_column_prefix} + to_string(role);
+}
+
+/// @brief Reports whether a column name sits in the reserved pin namespace.
+///
+/// @param name The header column name to test
+/// @return true when @p name begins with pin_column_prefix
+[[nodiscard]] inline bool is_pin_column_name(const std::string &name)
+{
+    return name.starts_with(pin_column_prefix);
+}
+
+/// @brief Parses the role out of a pin column name.
+///
+/// @details
+/// Returns nullopt for two different situations the caller must distinguish itself: a name outside the pin namespace
+/// (use is_pin_column_name to tell), and a prefixed name whose suffix is not a known role.
+///
+/// @param name The header column name to parse
+/// @return The named role, or std::nullopt when @p name is not a pin column for a known role
+[[nodiscard]] inline std::optional<FieldRole> role_from_pin_column_name(const std::string &name)
+{
+    if (!is_pin_column_name(name)) {
+        return std::nullopt;
+    }
+    return field_role_from_string(name.substr(pin_column_prefix.size()));
 }
 
 struct EnumDefinition;
@@ -243,7 +293,7 @@ class Field {
     /// @details
     /// The layer_type-role field receives each metatile's layer type when attributes are packed. Its
     /// per-metatile value comes from MetatileAttribute::layer_type() (inferred at compile time or pinned
-    /// through the CSV's trailing layer_type column), never from a normal CSV value column.
+    /// through the CSV's trailing "pin::layer_type" column), never from a normal CSV value column.
     ///
     /// @return true when the field's role is FieldRole::layer_type
     [[nodiscard]] bool packs_layer_type() const
@@ -272,28 +322,27 @@ class Field {
 /// @brief A validated metatile attribute layout: an ordered set of non-overlapping fields.
 ///
 /// @details
-/// A Schema is the single source of truth for how a packed attribute word is laid out. It owns the
-/// fields that make up an attribute word and the byte size those fields were validated against. Schemas
-/// can only be built through Schema::create, which enforces the layout rules, so any Schema in hand is
-/// known to be well-formed: every field has a contiguous non-zero mask that fits the attribute size, no
-/// two fields overlap, no name repeats, and every default fits its field.
+/// A Schema is the single source of truth for how a packed attribute word is laid out. It owns the fields that make up
+/// an attribute word and the byte size those fields were validated against. Schemas can only be built through
+/// Schema::create, which enforces the layout rules, so any Schema in hand is known to be well-formed: every field has a
+/// contiguous non-zero mask that fits the attribute size, no two fields overlap, no name repeats, and every default
+/// fits its field.
 ///
-/// The layer type is an ordinary field carrying FieldRole::layer_type (see FieldRole). At most one field
-/// may carry the role, and a schema without one has the layer type disabled: every metatile reads back as
-/// LayerType::normal and no layer-type bits are packed. The role field's per-metatile value is managed by
-/// Porytiles (compile-time inference or a CSV pin), so it is excluded from value_fields(), the field list
-/// the attributes CSV columns are built from.
+/// The layer type is an ordinary field carrying FieldRole::layer_type (see FieldRole). At most one field may carry the
+/// role, and a schema without one has the layer type disabled: every metatile reads back as LayerType::normal and no
+/// layer-type bits are packed. The role field's per-metatile value is managed by Porytiles (compile-time inference or a
+/// CSV pin), so it is excluded from value_fields(), the field list the attributes CSV columns are built from.
 class Schema {
   public:
     /// @brief Validates a set of fields against an attribute size and builds a Schema.
     ///
     /// @details
-    /// Runs a single fail-fast pass over the fields in the given order. For each field the duplicate-name
-    /// check runs first, then the intra-field rules (zero mask, non-contiguous mask, mask beyond the
-    /// attribute size, default value too large), then the layer_type-role rules (at most one role field;
-    /// no provider or default on it; the name "layer_type" requires the role), then the cross-field
-    /// overlap check against the fields already seen. The first violation wins and is returned as the
-    /// error; on success the fields are stored in the order given.
+    /// Runs a single fail-fast pass over the fields in the given order. For each field the name checks run first
+    /// (duplicate name, name in the reserved pin_column_prefix namespace), then the intra-field rules (zero mask,
+    /// non-contiguous mask, mask beyond the attribute size, default value too large), then the layer_type-role rules
+    /// (at most one role field; no provider or default on it), then the cross-field overlap check against the fields
+    /// already seen. The first violation wins and is returned as the error; on success the fields are stored in the
+    /// order given.
     ///
     /// @param fields The fields making up the layout, in the order they should be preserved
     /// @param attribute_bytes The attribute size in bytes the layout is validated against
@@ -309,11 +358,11 @@ class Schema {
     /// @brief Returns the fields that hold plain per-metatile values, excluding the layer_type-role field.
     ///
     /// @details
-    /// This is the field list the attributes CSV is built from: one value column per entry, in schema  order. The
-    /// layer_type-role field never appears here because its values are managed by Porytiles (compile-time inference or
-    /// a CSV pin through the separate trailing layer_type column), not entered as a value column. Code that renders,
-    /// parses, or defaults per-field values should iterate this list; code that needs the full packed layout (binary
-    /// pack/unpack, schema dumps) iterates fields().
+    /// This is the field list the attributes CSV is built from: one value column per entry, in schema order. The
+    /// layer_type role field never appears here because its values are managed by Porytiles (compile-time inference or
+    /// a CSV pin through the separate trailing "pin::layer_type" column), not entered as a value column. Code that
+    /// renders, parses, or defaults per-field values should iterate this list; code that needs the full packed layout
+    /// (binary pack/unpack, schema dumps) iterates fields().
     ///
     /// @return The non-role fields, in schema order
     [[nodiscard]] const std::vector<Field> &value_fields() const

@@ -96,8 +96,8 @@ class ProjectTilesetArtifactReaderTest : public ::testing::Test {
 // The layer_type role is pinned and the CSV carries its active pin column: the reader records column_present.
 TEST_F(ProjectTilesetArtifactReaderTest, RecordsColumnPresentWhenActivePinColumnInCsv)
 {
-    config_.role_pins = RolePinDefinitions{{FieldRole::layer_type, std::nullopt}};
-    write_csv("id,behavior,layer_type\n0,0,covered\n1,1,\n");
+    config_.role_pins = RolePinDefinitions{{FieldRole::layer_type}};
+    write_csv("id,behavior,pin::layer_type\n0,0,covered\n1,1,\n");
 
     Tileset dest = make_dest();
     const auto result = make_reader().read_attributes_csv(dest, ArtifactKey{"attributes.csv"});
@@ -110,7 +110,7 @@ TEST_F(ProjectTilesetArtifactReaderTest, RecordsColumnPresentWhenActivePinColumn
 // The layer_type role is pinned but the CSV lacks the pin column: the reader records column_absent.
 TEST_F(ProjectTilesetArtifactReaderTest, RecordsColumnAbsentWhenActivePinColumnMissing)
 {
-    config_.role_pins = RolePinDefinitions{{FieldRole::layer_type, std::nullopt}};
+    config_.role_pins = RolePinDefinitions{{FieldRole::layer_type}};
     write_csv("id,behavior\n0,0\n1,1\n");
 
     Tileset dest = make_dest();

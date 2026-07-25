@@ -71,14 +71,8 @@ class AttributesCsvLoader {
     /// MetatileAttribute. All attributes are created with LayerType::normal.
     ///
     /// The schema and providers must belong to the tileset that owns the CSV: when compiling a secondary, the paired
-    /// primary's CSV parses against the primary's own resolved schema, which can differ from the secondary's. The
-    /// provider map must uphold the ProviderMap membership contract for the schema (one provider per has_provider()
-    /// field); a provider-backed field missing from the map is an internal invariant violation and panics rather than
-    /// degrading to raw parsing.
-    ///
-    /// A trailing pin column is honored only when a role_pins config entry makes it active. A filled cell pins the
-    /// attribute's value and a blank cell leaves it inferred. A stale pin column that matches a role's default name but
-    /// is not active is ignored, with a single warning emitted for the file.
+    /// primary's CSV parses against the primary's own resolved schema, which can differ from the secondary's. A
+    /// provider-backed field missing from the ProviderMap is an internal invariant violation and panics.
     ///
     /// @param path The path to the attributes CSV file
     /// @param schema The owning tileset's resolved attribute schema the CSV columns are validated and parsed against

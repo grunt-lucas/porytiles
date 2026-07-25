@@ -19,13 +19,13 @@ fieldmap:
   # (const u8 / INCBIN_U8, const u16 / INCBIN_U16, const u32 / INCBIN_U32).
   metatile_attribute_declaration_size: 2
 
-  # Give a schema role its own trailing pin column in attributes.csv, so its per-metatile values can be pinned in the
-  # CSV rather than automatically inferred. A blank cell keeps inference for that row. Each entry takes:
-  # - role: the role to pin
-  # - column: optional column header name, defaults to the role name when omitted
+  # Give a schema role its own pin column in attributes.csv, so its per-metatile values can be pinned in the CSV rather
+  # than automatically inferred. A blank cell keeps the inferred value for that row. Each entry takes one field:
+  #   - role: the role to pin (layer_type is currently the only supported role)
+  # The column's header must be "pin::<role>", e.g. "pin::layer_type". The "pin::" prefix is reserved. It marks a
+  # column as a pin column rather than a regular attribute field.
   role_pins:
     - role: layer_type
-      column: my_layer_type   # optional custom CSV header
 
   # Declare the metatile attribute field layout explicitly, replacing schema inference. Declare the list yourself only
   # when your layout isn't obvious from the code, and the inference fails. Each field takes:
