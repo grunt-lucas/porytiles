@@ -25,8 +25,9 @@ constexpr std::string_view field_encounter_type = "encounter_type";
 constexpr std::string_view field_attribute_5 = "attribute_5";
 constexpr std::string_view field_attribute_7 = "attribute_7";
 
-// The name inference gives the field carrying FieldRole::layer_type, and the reserved header name of the
-// attributes.csv's trailing pinned layer type column. A schema field may only use this name when it carries the role.
+// The name that schema inference assigns to the field carrying FieldRole::layer_type. The name carries no special
+// meaning to the schema. A field named "layer_type" without the role is an ordinary value field, which is what clearing
+// the role with `role: null` produces.
 constexpr std::string_view field_layer_type = "layer_type";
 
 } // namespace attribute

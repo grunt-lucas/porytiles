@@ -273,16 +273,17 @@ TEST(MetatileAttributeSchemaTest, RejectsDefaultOnLayerTypeRoleField)
     EXPECT_NE(result.error().join(formatter).find("default"), std::string::npos);
 }
 
-TEST(MetatileAttributeSchemaTest, RejectsLayerTypeNameWithoutTheRole)
+TEST(MetatileAttributeSchemaTest, AcceptsLayerTypeNameWithoutTheRole)
 {
-    // The attributes CSV detects its trailing pin column by this exact name, so a plain value field cannot
-    // use it.
-    PlainTextFormatter formatter;
+    // The name is not reserved: clearing the role with `role: null` on an inferred layout leaves a field still named
+    // "layer_type", and it becomes an ordinary value field with a raw integer CSV column.
     std::vector<Field> fields;
     fields.emplace_back("layer_type", 0xF000);
     auto result = Schema::create(std::move(fields), 2);
-    ASSERT_FALSE(result.has_value());
-    EXPECT_NE(result.error().join(formatter).find("reserved"), std::string::npos);
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(result.value().layer_type_field(), nullptr);
+    EXPECT_EQ(result.value().value_fields().size(), 1U);
+    EXPECT_EQ(result.value().value_fields().front().name(), "layer_type");
 }
 
 TEST(MetatileAttributeSchemaTest, CreateAcceptsWidestMasksAroundTheRoleField)

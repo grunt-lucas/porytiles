@@ -10,7 +10,6 @@
 #include <utility>
 #include <vector>
 
-#include "porytiles/domain/models/metatile_attribute.hpp"
 #include "porytiles/utilities/panic/panic.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 #include "porytiles/utilities/text/text_formatter.hpp"
@@ -119,14 +118,6 @@ ChainableResult<Schema> Schema::create(std::vector<Field> fields, std::size_t at
                     FormatParam{field.name(), Style::bold}};
             }
             layer_type_index = i;
-        }
-        else if (field.name() == attribute::field_layer_type) {
-            // The attributes CSV detects its trailing pin column by this exact name, so a plain value field named
-            // "layer_type" would collide with that contract.
-            return FormattableError{
-                "Field '{}' does not carry the layer_type role. That name is reserved for the field that packs the "
-                "layer type; mark the field with 'role: layer_type' or rename it.",
-                FormatParam{field.name(), Style::bold}};
         }
 
         for (std::size_t j = 0; j < i; ++j) {

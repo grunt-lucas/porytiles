@@ -871,17 +871,32 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, FieldWithNoMaskIsError)
 
 TEST_F(MetatileAttributeSchemaReconcilerTest, FieldsFailingSchemaValidationAreFatalAndKeepDiagnostics)
 {
-    // The likely real-world shape of this mistake: a user declares a field named layer_type but forgets the role
-    // marker. The merged definitions pass the merge checks and fail Schema::create, and anything emitted before the
-    // failure (here the mismatch warning, since the role difference disagrees with inference) must survive.
+    // The merged definitions pass the merge checks and fail Schema::create (here on overlapping masks), and anything
+    // emitted before the failure (the mismatch warning, since the fields disagree with inference) must survive.
     auto inputs = bare_inputs();
-    inputs.fields = {definition("behavior", 0x00FF), definition("layer_type", 0xF000)};
+    inputs.fields = {definition("behavior", 0x00FF), definition("overlaps", 0x000F)};
     const auto result = reconcile_metatile_attribute_schema(emerald_inference(), inputs, &formatter_, &diag_);
     ASSERT_FALSE(result.has_value());
     const auto text = error_text(result);
     EXPECT_NE(text.find("do not form a valid layout"), std::string::npos) << text;
-    EXPECT_NE(text.find("does not carry the layer_type role"), std::string::npos) << text;
+    EXPECT_NE(text.find("overlaps"), std::string::npos) << text;
     EXPECT_EQ(diag_.warnings().size(), 1U);
+}
+
+TEST_F(MetatileAttributeSchemaReconcilerTest, LayerTypeNameWithoutTheRoleWarnsRatherThanFailing)
+{
+    // The likely real-world shape of the mistake: a user declares a field named layer_type but forgets the role
+    // marker. Schema::create does not reserve the name, so this resolves to a schema with no role field. The
+    // config-versus-inference mismatch warning is what tells the user their layout disagrees with the project source.
+    auto inputs = bare_inputs();
+    inputs.fields = {definition("behavior", 0x00FF), definition("layer_type", 0xF000)};
+    const auto result = reconcile_metatile_attribute_schema(emerald_inference(), inputs, &formatter_, &diag_);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().schema.layer_type_field(), nullptr);
+    EXPECT_EQ(result.value().schema.value_fields().size(), 2U);
+    ASSERT_EQ(diag_.warnings().size(), 1U);
+    EXPECT_NE(warning_text(0).find("carries the layer_type role only in the source"), std::string::npos)
+        << warning_text(0);
 }
 
 TEST_F(MetatileAttributeSchemaReconcilerTest, OneByteMasksDeriveOneByteWidth)
