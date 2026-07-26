@@ -1,12 +1,9 @@
 #pragma once
 
-#include <cstddef>
 #include <format>
 #include <iostream>
 #include <ostream>
 #include <string>
-#include <unistd.h>
-#include <vector>
 
 #include "CLI/CLI.hpp"
 
@@ -16,8 +13,6 @@
 #include "porytiles/infra/cli/cli_option_storage.hpp"
 #include "porytiles/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
-#include "porytiles/utilities/text/terminal_width.hpp"
-#include "porytiles/utilities/text/text_wrap.hpp"
 #include "porytiles/xcut/diagnostics/null_user_diagnostics.hpp"
 
 #include "command.hpp"
@@ -81,31 +76,24 @@ class DumpAttributeSchemaCommand final : public Command {
         MetatileAttributeSchemaResolver schema_resolver{env.project_root, &env.config, text_formatter, &null_diag};
         auto resolved_result = schema_resolver.resolve(tileset_name_);
 
+        // A resolution failure is the same hard error that aborts compile and import: an ambiguous attribute size, a
+        // mask selection failure, or an invalid field. It reports as a fatal on stderr and exits nonzero rather than
+        // printing to stdout, since there is no schema to dump and a script checking the exit code must not read the
+        // failure as success.
+        if (!resolved_result.has_value()) {
+            const auto resolve_fail_result = ChainableResult<void>{
+                FormattableError{
+                    "Failed to dump attribute schema for tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
+                resolved_result};
+            env.diag->fatal(resolve_fail_result);
+            throw CLI::RuntimeError{1};
+        }
+        const LoadedMetatileAttributeSchema &resolved = resolved_result.value();
+
         std::ostream &out = std::cout;
         const std::string section_title = "Resolved Metatile Attribute Schema";
         out << text_formatter->style(section_title, Style::bold) << "\n";
         out << text_formatter->style(std::string(section_title.size(), '='), Style::faint) << "\n\n";
-
-        if (!resolved_result.has_value()) {
-            constexpr std::size_t indent_columns = 2;
-            const std::size_t wrap_width = resolve_terminal_width(STDOUT_FILENO);
-            const std::size_t body_width =
-                wrap_width == 0 ? 0 : (wrap_width > indent_columns ? wrap_width - indent_columns : 1);
-            out << "  " << text_formatter->style("No schema could be resolved:", Style::bold) << "\n\n";
-            for (const auto &err : resolved_result.chain()) {
-                for (const std::string &line : err->details(*text_formatter)) {
-                    if (line.empty()) {
-                        continue;
-                    }
-                    for (const std::string &physical : wrap_ansi_line(line, body_width)) {
-                        out << "  " << physical << "\n";
-                    }
-                }
-            }
-            out << "\n";
-            return;
-        }
-        const LoadedMetatileAttributeSchema &resolved = resolved_result.value();
 
         out << "  "
             << text_formatter->format(
