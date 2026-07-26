@@ -789,8 +789,8 @@ inline void report_color_counts(
             FormatParam{"https://github.com/pret/pokeemerald/wiki/Triple-layer-metatiles", Style::underline}));
         note_text.emplace_back("");
         note_text.push_back(services.diag.formatter().format(
-            "Alternatively, set '{}' to force compilation in dual-layer mode. Porytiles will then default all "
-            "metatiles to '{}' unless an explicit layer_type pin is provided.",
+            "Alternatively, set '{}' to force compilation in dual-layer mode. Porytiles will then drop a layer per "
+            "offending metatile, either by respecting a layer_type pin or by forcing each to layer type '{}'.",
             FormatParam{ignore_triple_layer_content.canonical_name(), Style::bold},
             FormatParam{to_string(LayerType::normal), Style::bold}));
 
