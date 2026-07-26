@@ -50,12 +50,17 @@ TEST_F(MetatileAttributeInferenceTest, EmeraldDefinesOnly)
     MetatileAttributeScan scan;
     scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}, {"METATILE_ATTR_LAYER_MASK", 0xF000}};
     scan.behaviors_header_present = true;
+    scan.header_source = "include/global.fieldmap.h";
 
     const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
     ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
     ASSERT_EQ(result.candidates.size(), 1U);
     const auto &candidate = result.candidates.front();
     EXPECT_EQ(candidate.required_bytes, 2U);
+
+    // Defines only: the header is the sole mask source, and no absent table is named.
+    EXPECT_EQ(candidate.origin, "the METATILE_ATTR_*_MASK defines");
+    EXPECT_EQ(candidate.source, "include/global.fieldmap.h");
 
     ASSERT_EQ(candidate.fields.size(), 2U);
     const auto *behavior = find(candidate.fields, "behavior");
@@ -104,12 +109,19 @@ TEST_F(MetatileAttributeInferenceTest, FireredEnumPlusMaskTable)
         {"METATILE_ATTRIBUTE_7", 0x80000000},
     };
     scan.behaviors_header_present = true;
+    scan.header_source = "include/global.fieldmap.h";
+    scan.masks_table_source = "src/fieldmap.c";
 
     const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
     ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
     ASSERT_EQ(result.candidates.size(), 1U);
     const auto &candidate = result.candidates.front();
     EXPECT_EQ(candidate.required_bytes, 4U);
+
+    // Every mask came from the table, so the set names only the table's file. The header holds the enum, but it
+    // declares no mask, and the width provenance downstream must not point users at it.
+    EXPECT_EQ(candidate.origin, "the sMetatileAttrMasks table");
+    EXPECT_EQ(candidate.source, "src/fieldmap.c");
 
     // All 8 fields in enum declaration order, layer_type among them at its declared position.
     ASSERT_EQ(candidate.fields.size(), 8U);
@@ -182,6 +194,8 @@ TEST_F(MetatileAttributeInferenceTest, ExpansionDualLayout)
         {"METATILE_ATTRIBUTE_7", 0x80000000},
     };
     scan.behaviors_header_present = true;
+    scan.header_source = "include/global.fieldmap.h";
+    scan.masks_table_source = "src/fieldmap.c";
 
     const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
     ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
@@ -190,6 +204,9 @@ TEST_F(MetatileAttributeInferenceTest, ExpansionDualLayout)
     // The bare-define set comes first: behavior plus the emerald layer_type role field, 2 bytes.
     const auto &bare = result.candidates[0];
     EXPECT_EQ(bare.required_bytes, 2U);
+    // The bare set draws on the header alone; the FRLG set draws on both files and lists them in prose order.
+    EXPECT_EQ(bare.source, "include/global.fieldmap.h");
+    EXPECT_EQ(result.candidates[1].source, "include/global.fieldmap.h, src/fieldmap.c");
     ASSERT_EQ(bare.fields.size(), 2U);
     EXPECT_EQ(bare.fields[0].name, "behavior");
     EXPECT_EQ(bare.fields[0].mask.value(), 0x00FFU);
@@ -210,6 +227,63 @@ TEST_F(MetatileAttributeInferenceTest, ExpansionDualLayout)
     ASSERT_NE(frlg_layer, nullptr);
     EXPECT_EQ(frlg_layer->mask.value(), 0x60000000U);
     EXPECT_EQ(frlg_layer->role, FieldRole::layer_type);
+}
+
+// A project with both define flavors but no mask table must not claim a table it never read: the FRLG set names the
+// defines only, and its source list holds just the header.
+TEST_F(MetatileAttributeInferenceTest, DualLayoutWithoutAMaskTableNamesOnlyTheDefines)
+{
+    MetatileAttributeScan scan;
+    scan.defines = {
+        {"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF},
+        {"METATILE_ATTR_LAYER_MASK", 0xF000},
+        {"METATILE_ATTR_BEHAVIOR_MASK_FRLG", 0x000001FF},
+        {"METATILE_ATTR_LAYER_MASK_FRLG", 0x60000000},
+    };
+    scan.behaviors_header_present = true;
+    scan.header_source = "include/global.fieldmap.h";
+
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
+    ASSERT_EQ(result.candidates.size(), 2U);
+    EXPECT_EQ(result.candidates[1].origin, "the METATILE_ATTR_*_MASK_FRLG defines");
+    EXPECT_EQ(result.candidates[1].source, "include/global.fieldmap.h");
+}
+
+// A partially recorded scan lists only the paths it has. The origin still names both sources, since both really did
+// contribute masks, but the unrecorded one contributes no path rather than an empty entry.
+TEST_F(MetatileAttributeInferenceTest, PartiallyRecordedScanPathsListOnlyWhatIsKnown)
+{
+    MetatileAttributeScan scan;
+    scan.enum_members = {
+        enum_member("METATILE_ATTRIBUTE_BEHAVIOR", 0),
+        enum_member("METATILE_ATTRIBUTE_LAYER_TYPE", 1),
+        enum_member("METATILE_ATTRIBUTE_COUNT", 2),
+    };
+    scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}};
+    scan.masks_array = {{"METATILE_ATTRIBUTE_LAYER_TYPE", 0x0000F000}};
+    scan.behaviors_header_present = true;
+    scan.header_source = "include/global.fieldmap.h";
+
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
+    ASSERT_EQ(result.candidates.size(), 1U);
+    EXPECT_EQ(result.candidates.front().origin, "the METATILE_ATTR_*_MASK defines and the sMetatileAttrMasks table");
+    EXPECT_EQ(result.candidates.front().source, "include/global.fieldmap.h");
+}
+
+// A scan that recorded no paths yields candidates with no source, so the reconciler can drop the parenthetical
+// instead of printing an empty one.
+TEST_F(MetatileAttributeInferenceTest, UnrecordedScanPathsYieldNoCandidateSource)
+{
+    MetatileAttributeScan scan;
+    scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}, {"METATILE_ATTR_LAYER_MASK", 0xF000}};
+    scan.behaviors_header_present = true;
+
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
+    ASSERT_EQ(result.candidates.size(), 1U);
+    EXPECT_TRUE(result.candidates.front().source.empty());
 }
 
 // A base game whose LAYER_MASK is a custom value (not the vanilla position) has that exact value captured on the

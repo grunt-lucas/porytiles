@@ -100,7 +100,7 @@ MetatileAttributeScanResult MetatileAttributeScanner::scan_project() const
     MetatileAttributeScanResult outcome;
 
     const auto fieldmap_header = project_root_ / fieldmap_header_rel;
-    outcome.source = fieldmap_header.string();
+    outcome.scan.header_source = fieldmap_header.string();
     if (!std::filesystem::exists(fieldmap_header)) {
         // No fieldmap header: the project states nothing about its attribute layout.
         return outcome;
@@ -155,6 +155,9 @@ MetatileAttributeScanResult MetatileAttributeScanner::scan_project() const
             for (const auto &array : arrays.value()) {
                 if (array.name == masks_array_name) {
                     outcome.scan.masks_array = to_inference_entries(array.entries);
+                    // Recorded only when the table is actually found, so nothing downstream can point a user at a
+                    // file that contributed no masks.
+                    outcome.scan.masks_table_source = fieldmap_source.string();
                 }
                 else if (array.name == shifts_array_name) {
                     outcome.scan.shifts_array = to_inference_entries(array.entries);

@@ -48,8 +48,10 @@ struct LoadedMetatileAttributeSchema {
 /// Every member reflects what the user actually said, never a derived fact: @c fields is the explicit
 /// metatile_attribute_fields list (empty means not declared), @c attribute_size is the explicit width knob (nullopt
 /// means the user did not pin the width), and @c declaration_size is the matching declaration-width knob. The
-/// @c *_source strings are the config provenance descriptions used in origin text and errors, and @c scan_source is
-/// the fieldmap header path the inference facts came from.
+/// @c *_source strings are the config provenance descriptions used in origin text and errors, and
+/// @c fieldmap_header_source is the fieldmap header path, which backs the struct Tileset declaration origin only.
+/// Mask provenance does not come from here: the masks may live in src/fieldmap.c instead, so each candidate set
+/// carries its own @c source.
 struct MetatileAttributeConfigInputs {
     MetatileAttributeFieldDefinitions fields;
     std::string fields_source;
@@ -57,7 +59,7 @@ struct MetatileAttributeConfigInputs {
     std::optional<std::size_t> attribute_size;
     std::string attribute_size_source;
     std::optional<std::size_t> declaration_size;
-    std::string scan_source;
+    std::string fieldmap_header_source;
 };
 
 /// @brief Reconciles the inferred metatile attribute facts with the user's config into a loaded schema.

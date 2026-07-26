@@ -36,11 +36,17 @@ class MetatileAttributeSchemaReconcilerTest : public ::testing::Test {
         return field_definition;
     }
 
-    [[nodiscard]] static MetatileAttributeCandidateSet
-    candidate(std::string origin, MetatileAttributeFieldDefinitions fields, std::size_t required_bytes)
+    // Candidates carry their own source paths; the default stands in for the common header-only layout, and the
+    // table-backed cases pass their own.
+    [[nodiscard]] static MetatileAttributeCandidateSet candidate(
+        std::string origin,
+        MetatileAttributeFieldDefinitions fields,
+        std::size_t required_bytes,
+        std::string source = "include/global.fieldmap.h")
     {
         MetatileAttributeCandidateSet set;
         set.origin = std::move(origin);
+        set.source = std::move(source);
         set.fields = std::move(fields);
         set.required_bytes = required_bytes;
         return set;
@@ -70,7 +76,22 @@ class MetatileAttributeSchemaReconcilerTest : public ::testing::Test {
         inference.candidates.push_back(candidate(
             "the METATILE_ATTR_*_MASK_FRLG defines and the sMetatileAttrMasks table",
             {definition("behavior", 0x01FF), definition("terrain", 0x3E00), role_definition("layer_type", 0x60000000)},
-            4));
+            4,
+            "include/global.fieldmap.h, src/fieldmap.c"));
+        return inference;
+    }
+
+    // The firered shape: one 4-byte candidate whose masks came only from the src/fieldmap.c table, since the project
+    // declares no METATILE_ATTR_*_MASK defines at all.
+    [[nodiscard]] static MetatileAttributeInferenceResult firered_inference()
+    {
+        MetatileAttributeInferenceResult inference;
+        inference.status = AttributeInferenceStatus::valid;
+        inference.candidates.push_back(candidate(
+            "the sMetatileAttrMasks table",
+            {definition("behavior", 0x01FF), role_definition("layer_type", 0x60000000)},
+            4,
+            "src/fieldmap.c"));
         return inference;
     }
 
@@ -87,7 +108,7 @@ class MetatileAttributeSchemaReconcilerTest : public ::testing::Test {
         MetatileAttributeConfigInputs inputs;
         inputs.fields_source = "porytiles/config.yaml";
         inputs.attribute_size_source = "CLI option";
-        inputs.scan_source = "include/global.fieldmap.h";
+        inputs.fieldmap_header_source = "include/global.fieldmap.h";
         return inputs;
     }
 
@@ -175,6 +196,47 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, UniqueCandidateSelectedAndWidthFol
     // The selection remark, then the resolved-layout remark.
     ASSERT_EQ(diag_.remarks().size(), 2U);
     EXPECT_NE(remark_text(0).find("selected the metatile attribute mask layout"), std::string::npos);
+}
+
+// The width provenance names the files the selected layout's masks actually came from. A firered-shaped project keeps
+// its masks in the src/fieldmap.c table, so the note must point there rather than at the fieldmap header, which is
+// only where the declaration was read from.
+TEST_F(MetatileAttributeSchemaReconcilerTest, InferredSizeOriginNamesTheFileTheMasksCameFrom)
+{
+    const auto result = reconcile_metatile_attribute_schema(firered_inference(), bare_inputs(), &formatter_, &diag_);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().size_origin, "inferred from the sMetatileAttrMasks table (src/fieldmap.c)");
+    EXPECT_EQ(result.value().size_origin.find("global.fieldmap.h"), std::string::npos);
+}
+
+// A candidate that names both sources lists both paths, in the same order the prose names them.
+TEST_F(MetatileAttributeSchemaReconcilerTest, InferredSizeOriginListsEverySourceTheLayoutUsed)
+{
+    MetatileAttributeInferenceResult inference;
+    inference.status = AttributeInferenceStatus::valid;
+    inference.candidates.push_back(candidate(
+        "the METATILE_ATTR_*_MASK defines and the sMetatileAttrMasks table",
+        {definition("behavior", 0x00FF)},
+        1,
+        "include/global.fieldmap.h, src/fieldmap.c"));
+    const auto result = reconcile_metatile_attribute_schema(inference, bare_inputs(), &formatter_, &diag_);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(
+        result.value().size_origin,
+        "inferred from the METATILE_ATTR_*_MASK defines and the sMetatileAttrMasks table (include/global.fieldmap.h, "
+        "src/fieldmap.c)");
+}
+
+// A candidate with no recorded source drops the parenthetical rather than printing an empty one.
+TEST_F(MetatileAttributeSchemaReconcilerTest, InferredSizeOriginOmitsAnEmptySourceList)
+{
+    MetatileAttributeInferenceResult inference;
+    inference.status = AttributeInferenceStatus::valid;
+    inference.candidates.push_back(
+        candidate("the METATILE_ATTR_*_MASK defines", {definition("behavior", 0x00FF)}, 1, ""));
+    const auto result = reconcile_metatile_attribute_schema(inference, bare_inputs(), &formatter_, &diag_);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().size_origin, "inferred from the METATILE_ATTR_*_MASK defines");
 }
 
 TEST_F(MetatileAttributeSchemaReconcilerTest, PinnedSizeSelectsTheExactWidthMatch)
@@ -515,7 +577,8 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, ScannedDeclarationNarrowerThanMask
     inference.candidates.push_back(candidate(
         "the METATILE_ATTR_*_MASK_FRLG defines and the sMetatileAttrMasks table",
         {definition("behavior", 0x01FF), role_definition("layer_type", 0x60000000)},
-        4));
+        4,
+        "include/global.fieldmap.h, src/fieldmap.c"));
     inference.declaration_size = 2;
     const auto result = reconcile_metatile_attribute_schema(inference, bare_inputs(), &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
@@ -579,7 +642,8 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, DeclarationPrecedenceUserBeatsStru
     inference.candidates.push_back(candidate(
         "the METATILE_ATTR_*_MASK_FRLG defines and the sMetatileAttrMasks table",
         {definition("behavior", 0x01FF), role_definition("layer_type", 0x60000000)},
-        4));
+        4,
+        "include/global.fieldmap.h, src/fieldmap.c"));
     inference.declaration_size = 2;
     auto inputs = bare_inputs();
     const auto from_struct = reconcile_metatile_attribute_schema(inference, inputs, &formatter_, &diag_);

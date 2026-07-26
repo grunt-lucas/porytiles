@@ -56,7 +56,7 @@ MetatileAttributeSchemaResolver::resolve(const std::string &tileset_name) const
     inputs.attribute_size = size_cv.value();
     inputs.attribute_size_source = size_cv.source();
     inputs.declaration_size = declaration_cv.value();
-    inputs.scan_source = outcome.source;
+    inputs.fieldmap_header_source = outcome.scan.header_source;
 
     return reconcile_metatile_attribute_schema(inference, inputs, format_, diag_);
 }

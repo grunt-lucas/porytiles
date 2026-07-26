@@ -50,6 +50,19 @@ constexpr const char *fieldmap_header = "include/global.fieldmap.h";
     });
 }
 
+// Joins the file paths that fed one candidate set, skipping any the scan did not record. A set names only the files
+// its origin prose names, so the two stay in agreement.
+[[nodiscard]] std::string join_sources(const std::string &first, const std::string &second)
+{
+    if (first.empty()) {
+        return second;
+    }
+    if (second.empty()) {
+        return first;
+    }
+    return first + ", " + second;
+}
+
 // Per-suffix mask facts collected in Phase A before the sets are grouped.
 struct SuffixMasks {
     std::optional<std::uint32_t> bare_define;
@@ -264,30 +277,46 @@ MetatileAttributeInferenceResult infer_metatile_attribute_candidates(
 
     // --- Phase C: group masks into candidate sets, rejecting fields with no mask in any set ---
 
-    // Describes one candidate set being assembled: which per-suffix mask slot feeds it and what to call it.
+    // Describes one candidate set being assembled: which per-suffix mask slot feeds it, what to call it, and which
+    // files it was read from. The masks live in two different files (the header defines and the src/fieldmap.c table),
+    // so the paths are decided here, next to the prose naming those same sources.
     struct SetPlan {
         std::string origin;
+        std::string source;
         bool frlg; // true selects frlg_define ?? array_value, false selects the bare define (?? array when single)
     };
     std::vector<SetPlan> plans;
     if (any_frlg_define) {
         // Dual layout: bare defines are one set; FRLG defines (plus the table, which describes the FRLG layout in
         // these projects) are the other.
-        plans.push_back(SetPlan{"the bare METATILE_ATTR_*_MASK defines", false});
-        plans.push_back(SetPlan{"the METATILE_ATTR_*_MASK_FRLG defines and the sMetatileAttrMasks table", true});
+        plans.push_back(SetPlan{"the bare METATILE_ATTR_*_MASK defines", scan.header_source, false});
+        if (any_array_value) {
+            plans.push_back(
+                SetPlan{
+                    "the METATILE_ATTR_*_MASK_FRLG defines and the sMetatileAttrMasks table",
+                    join_sources(scan.header_source, scan.masks_table_source),
+                    true});
+        }
+        else {
+            plans.push_back(SetPlan{"the METATILE_ATTR_*_MASK_FRLG defines", scan.header_source, true});
+        }
     }
     else {
         std::string origin;
+        std::string source;
         if (any_bare_define && any_array_value) {
             origin = "the METATILE_ATTR_*_MASK defines and the sMetatileAttrMasks table";
+            source = join_sources(scan.header_source, scan.masks_table_source);
         }
         else if (any_bare_define) {
             origin = "the METATILE_ATTR_*_MASK defines";
+            source = scan.header_source;
         }
         else {
             origin = "the sMetatileAttrMasks table";
+            source = scan.masks_table_source;
         }
-        plans.push_back(SetPlan{std::move(origin), false});
+        plans.push_back(SetPlan{std::move(origin), std::move(source), false});
     }
 
     // Resolve the mask one set selects for one suffix. In a dual-layout project the bare define alone is the primary
@@ -384,6 +413,7 @@ MetatileAttributeInferenceResult infer_metatile_attribute_candidates(
     for (const auto &plan : plans) {
         MetatileAttributeCandidateSet candidate;
         candidate.origin = plan.origin;
+        candidate.source = plan.source;
         bool any_value_field = false;
         for (const auto &suffix : ordered_suffixes) {
             const auto it = masks.find(suffix);

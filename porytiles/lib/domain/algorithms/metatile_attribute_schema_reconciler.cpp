@@ -175,6 +175,17 @@ build_schema(const MetatileAttributeFieldDefinitions &resolved, std::size_t attr
     return described;
 }
 
+// Renders the width provenance of a selected inferred layout. The paths come from the candidate rather than from the
+// fieldmap header, since a layout's masks may have been read from the src/fieldmap.c table instead (pokefirered
+// declares no mask defines at all).
+[[nodiscard]] std::string describe_inferred_size_origin(const MetatileAttributeCandidateSet &selected)
+{
+    if (selected.source.empty()) {
+        return std::format("inferred from {}", selected.origin);
+    }
+    return std::format("inferred from {} ({})", selected.origin, selected.source);
+}
+
 // The candidate sets a pinned width can hold, split into exact width matches and narrower fits. The pointers alias
 // the candidates vector, so it must outlive them.
 struct SizeMatches {
@@ -429,7 +440,7 @@ ChainableResult<LoadedMetatileAttributeSchema> reconcile_metatile_attribute_sche
         attribute_bytes = width.bytes;
         size_origin =
             selected != nullptr
-                ? std::format("inferred from {} ({})", selected->origin, inputs.scan_source)
+                ? describe_inferred_size_origin(*selected)
                 : std::format("derived from the explicit metatile_attribute_fields masks ({})", inputs.fields_source);
         if (inference.declaration_size.has_value() && inference.declaration_size.value() > attribute_bytes) {
             return FormattableError{format->format(
@@ -454,7 +465,8 @@ ChainableResult<LoadedMetatileAttributeSchema> reconcile_metatile_attribute_sche
         declaration_size = inference.declaration_size;
         declaration_origin =
             declaration_size.has_value()
-                ? std::format("inferred from struct Tileset's metatileAttributes member ({})", inputs.scan_source)
+                ? std::format(
+                      "inferred from struct Tileset's metatileAttributes member ({})", inputs.fieldmap_header_source)
                 : "matches the resolved attribute size";
     }
     const std::size_t declaration_bytes = declaration_size.value_or(attribute_bytes);

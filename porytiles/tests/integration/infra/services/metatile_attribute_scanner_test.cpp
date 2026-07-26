@@ -59,11 +59,13 @@ TEST_F(MetatileAttributeScannerTest, FixtureEmeraldRawFacts)
     const auto outcome = scanner.scan_project();
 
     ASSERT_TRUE(outcome.fieldmap_present);
-    EXPECT_NE(outcome.source.find("global.fieldmap.h"), std::string::npos);
+    EXPECT_NE(outcome.scan.header_source.find("global.fieldmap.h"), std::string::npos);
     EXPECT_EQ(define_value(outcome.scan, "METATILE_ATTR_BEHAVIOR_MASK"), 0x00FFU);
     EXPECT_EQ(define_value(outcome.scan, "METATILE_ATTR_LAYER_MASK"), 0xF000U);
     EXPECT_TRUE(outcome.scan.masks_array.empty());
     EXPECT_TRUE(outcome.scan.shifts_array.empty());
+    // No mask table was read, so no path claims one.
+    EXPECT_TRUE(outcome.scan.masks_table_source.empty());
     EXPECT_TRUE(outcome.scan.behaviors_header_present);
     EXPECT_EQ(outcome.scan.attributes_element_type, "u16");
     // The unresolvable backslash-continuation define is skipped tolerantly, not warned about.
@@ -86,6 +88,9 @@ TEST_F(MetatileAttributeScannerTest, FixtureFireredRawFacts)
     EXPECT_EQ(outcome.scan.shifts_array.back().value, 31U);
     EXPECT_TRUE(has_enum_member(outcome.scan, "METATILE_ATTRIBUTE_ENCOUNTER_TYPE"));
     EXPECT_EQ(outcome.scan.attributes_element_type, "u32");
+    // The masks came from the source file, not the header, and the recorded path says so.
+    EXPECT_NE(outcome.scan.masks_table_source.find("fieldmap.c"), std::string::npos);
+    EXPECT_NE(outcome.scan.header_source.find("global.fieldmap.h"), std::string::npos);
 }
 
 // The expansion fixture proves the cross-file seeding and the exact-name rule at the raw-fact level: the table's
@@ -134,6 +139,8 @@ TEST_F(MetatileAttributeScannerTest, PresentButUnparseableSourceTableWarns)
     // The unparseable table leaves the arrays empty but must not do so quietly.
     EXPECT_TRUE(outcome.scan.masks_array.empty());
     EXPECT_TRUE(outcome.scan.shifts_array.empty());
+    // The file exists but yielded no masks, so it is not recorded as a mask source.
+    EXPECT_TRUE(outcome.scan.masks_table_source.empty());
     const auto lines = warning_lines();
     const bool warned = std::any_of(lines.begin(), lines.end(), [](const std::string &line) {
         return line.find("fieldmap.c") != std::string::npos;
@@ -196,6 +203,7 @@ TEST_F(MetatileAttributeScannerTest, PokefireredAcceptance)
     ASSERT_EQ(outcome.scan.masks_array.size(), 8U);
     EXPECT_TRUE(outcome.scan.behaviors_header_present);
     EXPECT_EQ(outcome.scan.attributes_element_type, "u32");
+    EXPECT_EQ(outcome.scan.masks_table_source, (root / "src" / "fieldmap.c").string());
 }
 
 TEST_F(MetatileAttributeScannerTest, PokeemeraldExpansionAcceptance)

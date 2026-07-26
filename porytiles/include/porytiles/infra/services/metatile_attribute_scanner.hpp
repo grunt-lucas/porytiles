@@ -16,12 +16,10 @@ namespace porytiles {
 /// @details
 /// `fieldmap_present` is true when the fieldmap header exists and both scans over it succeeded; when it is false,
 /// `scan` holds no usable facts and downstream inference should be skipped. `scan` carries the raw facts for
-/// `infer_metatile_attribute_candidates`. `source` is the fieldmap header path, used as the provenance/origin string
-/// for values derived from the scan.
+/// `infer_metatile_attribute_candidates`, including the path each family of facts was read from.
 struct MetatileAttributeScanResult {
     bool fieldmap_present{false};
     MetatileAttributeScan scan;
-    std::string source;
 };
 
 /// @brief Scans a decomp project's fieldmap sources for the raw metatile attribute facts.
@@ -58,7 +56,7 @@ class MetatileAttributeScanner {
     /// Recoverable scan problems (an unreadable file, a conflicting redefinition in an undecidable region) are emitted
     /// to diagnostics under the "metatile-attribute-inference" tag.
     ///
-    /// @return The scan outcome: the raw facts and the provenance source
+    /// @return The scan outcome: the raw facts and the paths they were read from
     [[nodiscard]] MetatileAttributeScanResult scan_project() const;
 
   private:

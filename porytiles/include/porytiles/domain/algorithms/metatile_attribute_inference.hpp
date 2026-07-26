@@ -62,6 +62,8 @@ struct MetatileAttributeScan {
     bool behaviors_header_present{false}; ///< the behaviors header exists and declares at least one MB_ name
     std::optional<std::string>
         attributes_element_type; ///< raw pointed-to type of struct Tileset's metatileAttributes member, when declared
+    std::string header_source;   ///< path of the fieldmap header the defines, enum members, and struct came from
+    std::string masks_table_source; ///< path of the file the mask table came from, empty when no table was read
 };
 
 /// @brief One complete metatile attribute mask layout a project declares.
@@ -70,12 +72,15 @@ struct MetatileAttributeScan {
 /// A project exposes one candidate set per discovered mask layout: the bare METATILE_ATTR_*_MASK defines (merged with
 /// the sMetatileAttrMasks table when no FRLG defines exist) form one set, and the *_MASK_FRLG defines plus the table
 /// form another. @c origin is a human-readable description of where the set's masks came from, used in size-selection
-/// errors and dump output. @c fields is the set's field definitions (single-mask, display order); the layer-type field,
-/// when the layout declares its mask, appears here as an ordinary definition named "layer_type" carrying
-/// FieldRole::layer_type, and a set with no field beyond that role field is discarded as unusable. @c required_bytes
-/// is the smallest of 1, 2, or 4 bytes that covers every mask in the set.
+/// errors and dump output. @c source is the matching file path list: exactly the files @c origin names, comma
+/// separated, so the two never disagree (a table-only layout points at src/fieldmap.c, not the fieldmap header). It
+/// is empty when the scan recorded no paths. @c fields is the set's field definitions (single-mask, display order);
+/// the layer-type field, when the layout declares its mask, appears here as an ordinary definition named "layer_type"
+/// carrying FieldRole::layer_type, and a set with no field beyond that role field is discarded as unusable.
+/// @c required_bytes is the smallest of 1, 2, or 4 bytes that covers every mask in the set.
 struct MetatileAttributeCandidateSet {
     std::string origin;
+    std::string source;
     MetatileAttributeFieldDefinitions fields;
     std::size_t required_bytes{2};
 };
