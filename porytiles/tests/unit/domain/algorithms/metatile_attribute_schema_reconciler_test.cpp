@@ -179,6 +179,18 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, DualLayoutStillFatalWithScannedDec
     EXPECT_NE(error_text(result).find("more than one metatile attribute mask layout"), std::string::npos);
 }
 
+// The gate must key on the candidate count alone. The two-or-more selection path below reads the width knob
+// unconditionally, and that read is only safe because every multi-candidate result without a knob is stopped here, no
+// matter what status the caller paired the candidates with.
+TEST_F(MetatileAttributeSchemaReconcilerTest, DualLayoutGateIgnoresTheInferenceStatus)
+{
+    auto inference = dual_inference();
+    inference.status = AttributeInferenceStatus::not_provided;
+    const auto result = reconcile_metatile_attribute_schema(inference, bare_inputs(), &formatter_, &diag_);
+    ASSERT_FALSE(result.has_value());
+    EXPECT_NE(error_text(result).find("more than one metatile attribute mask layout"), std::string::npos);
+}
+
 // --- Selection from inference. ---
 
 TEST_F(MetatileAttributeSchemaReconcilerTest, UniqueCandidateSelectedAndWidthFollowsItsMasks)

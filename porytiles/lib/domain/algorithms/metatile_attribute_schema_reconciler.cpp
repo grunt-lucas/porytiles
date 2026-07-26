@@ -275,12 +275,11 @@ ChainableResult<LoadedMetatileAttributeSchema> reconcile_metatile_attribute_sche
     gsl::not_null<const TextFormatter *> format,
     gsl::not_null<const UserDiagnostics *> diag)
 {
-    // More than one inferred mask layout (stock pokeemerald-expansion holds both build flavors) with no explicit
-    // width knob is fatal before anything else, even when the fields are explicit: no project file records which
-    // flavor the build uses (it is a make argument), the width is the read stride shared by every tileset, and
-    // guessing it wrong silently corrupts every attribute the project compiles.
-    if (inference.status == AttributeInferenceStatus::valid && inference.candidates.size() >= 2 &&
-        !inputs.attribute_size.has_value()) {
+    // More than one inferred mask layout (pokeemerald-expansion holds both build flavors) with no explicit width
+    // setting is fatal before anything else, even when the fields are explicit. No project file records which flavor
+    // the build uses (it is a make argument), the width is the attribute size shared by every tileset, and guessing it
+    // wrong silently corrupts the attributes.
+    if (inference.candidates.size() >= 2 && !inputs.attribute_size.has_value()) {
         return FormattableError{format->format(
             "Porytiles found more than one metatile attribute mask layout in this project ({} ({} bytes) and {} "
             "({} bytes)), so it cannot infer the attribute size. Set 'fieldmap.metatile_attribute_size' in "
