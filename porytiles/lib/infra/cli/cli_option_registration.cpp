@@ -296,9 +296,10 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
         "--metatile-attribute-declaration-size",
         storage.metatile_attribute_declaration_size,
         "Metatile Attribute Declaration Size - The declared element width in bytes (1, 2, or 4) for generated "
-        "gMetatileAttributes_* C declarations (const uN / INCBIN_UN). Defaults to the metatile attribute size. "
-        "Normally inferred from struct Tileset's metatileAttributes member in include/global.fieldmap.h; set this only "
-        "when that inference is impossible or wrong. Project-global.");
+        "gMetatileAttributes_* C declarations (const uN / INCBIN_UN). Normally inferred from struct Tileset's "
+        "metatileAttributes member in include/global.fieldmap.h. Required when that declaration is missing, "
+        "unreadable, or not a pointer to u8, u16, or u32, since nothing else in a project implies this width. "
+        "Project-global.");
 
     // Tileset Animations Wire Anim Code (bool with --flag/--no-flag, captured as "true"/"false" string)
     config_group->add_flag(

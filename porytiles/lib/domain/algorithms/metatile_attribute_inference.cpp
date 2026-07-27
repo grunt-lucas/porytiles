@@ -132,25 +132,27 @@ name_field(const std::string &suffix, const MetatileAttributeScan &scan, gsl::no
     return naming;
 }
 
-// Maps the pointed-to type of struct Tileset's metatileAttributes member to a declared element width. Every base
-// game declares the member as 'const uN *metatileAttributes' (u16 on pokeemerald and expansion, u32 on pokefirered);
-// anything else (missing declaration, unknown type) yields nullopt so the downstream default ("match the attribute
-// size") applies.
-[[nodiscard]] std::optional<std::size_t> declaration_size_from(const std::optional<std::string> &element_type)
+// Maps struct Tileset's metatileAttributes declarator to a declared element width. Every base game declares the member
+// as 'const uN *metatileAttributes' (u16 on pokeemerald and expansion, u32 on pokefirered). A declarator that is not a
+// single pointer to u8, u16, or u32 names no width the engine can read, so the width stays unset and reconciliation
+// rules on what to do about it. The scan travels along either way, so the ruling can quote the declaration.
+[[nodiscard]] InferredAttributeDeclaration interpret_declaration(const AttributeDeclarationScan &scan)
 {
-    if (!element_type.has_value()) {
-        return std::nullopt;
+    InferredAttributeDeclaration declaration;
+    declaration.scan = scan;
+    if (scan.source != AttributeDeclarationSource::declared || scan.pointer_depth != 1) {
+        return declaration;
     }
-    if (element_type.value() == "u8") {
-        return 1;
+    if (scan.element_type == "u8") {
+        declaration.size = 1;
     }
-    if (element_type.value() == "u16") {
-        return 2;
+    else if (scan.element_type == "u16") {
+        declaration.size = 2;
     }
-    if (element_type.value() == "u32") {
-        return 4;
+    else if (scan.element_type == "u32") {
+        declaration.size = 4;
     }
-    return std::nullopt;
+    return declaration;
 }
 
 // The smallest of 1, 2, or 4 bytes that covers every mask in a candidate set. The layer-type field is an
@@ -166,6 +168,22 @@ name_field(const std::string &suffix, const MetatileAttributeScan &scan, gsl::no
 
 } // namespace
 
+std::string to_declaration_string(const AttributeDeclarationScan &scan)
+{
+    if (scan.source != AttributeDeclarationSource::declared) {
+        return {};
+    }
+    std::string text;
+    if (scan.is_const) {
+        text += "const ";
+    }
+    text += scan.element_type;
+    text += ' ';
+    text.append(scan.pointer_depth, '*');
+    text += "metatileAttributes";
+    return text;
+}
+
 MetatileAttributeInferenceResult infer_metatile_attribute_candidates(
     const MetatileAttributeScan &scan,
     gsl::not_null<const TextFormatter *> format,
@@ -175,7 +193,7 @@ MetatileAttributeInferenceResult infer_metatile_attribute_candidates(
 
     // The declaration width is a project fact independent of the mask layout, so it is mapped up front and survives
     // every status, including the early invalid returns below.
-    result.declaration_size = declaration_size_from(scan.attributes_element_type);
+    result.declaration = interpret_declaration(scan.declaration);
 
     // --- Phase A: gather suffixes and masks ---
 

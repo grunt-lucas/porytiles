@@ -13,6 +13,7 @@
 #include <utility>
 #include <vector>
 
+#include "porytiles/utilities/panic/panic.hpp"
 #include "porytiles/utilities/text/text_formatter.hpp"
 #include "porytiles/xcut/diagnostics/user_diagnostics.hpp"
 
@@ -278,6 +279,41 @@ match_candidates_to_size(const std::vector<MetatileAttributeCandidateSet> &candi
     return joined;
 }
 
+// Says what the project's sources failed to state about the declared element width. Each reason names the specific
+// thing that is absent or unusable: the width has no second source, so a user who is told only that Porytiles could
+// not work it out has nowhere to go looking.
+[[nodiscard]] std::string describe_undeclared_width(
+    const AttributeDeclarationScan &scan, const std::string &header_source, const TextFormatter *format)
+{
+    switch (scan.source) {
+    case AttributeDeclarationSource::no_fieldmap_header:
+        return format->format(
+            "This project has no '{}', so nothing in it declares the element type of struct Tileset's "
+            "metatileAttributes member.",
+            FormatParam{header_source, Style::bold});
+    case AttributeDeclarationSource::header_unreadable:
+        return format->format(
+            "'{}' could not be read, so the element type of struct Tileset's metatileAttributes member is unknown.",
+            FormatParam{header_source, Style::bold});
+    case AttributeDeclarationSource::no_tileset_struct:
+        return format->format(
+            "'{}' declares no 'struct Tileset', so nothing declares the element type of its metatileAttributes "
+            "member.",
+            FormatParam{header_source, Style::bold});
+    case AttributeDeclarationSource::no_attributes_member:
+        return format->format(
+            "'struct Tileset' in '{}' declares no 'metatileAttributes' pointer member.",
+            FormatParam{header_source, Style::bold});
+    case AttributeDeclarationSource::declared:
+        return format->format(
+            "'struct Tileset' in '{}' declares '{}', and the engine reads metatile attribute arrays only as u8, u16, "
+            "or u32.",
+            FormatParam{header_source, Style::bold},
+            FormatParam{to_declaration_string(scan), Style::bold});
+    }
+    panic("unhandled AttributeDeclarationSource value");
+}
+
 } // namespace
 
 ChainableResult<LoadedMetatileAttributeSchema> reconcile_metatile_attribute_schema(
@@ -435,7 +471,7 @@ ChainableResult<LoadedMetatileAttributeSchema> reconcile_metatile_attribute_sche
         // A knob wider than both the merged masks and the scanned declaration width is legal (the unused high bits
         // simply stay zero) but suspicious enough to flag. When the scanned declaration corroborates the knob there
         // is nothing to say.
-        if (attribute_bytes > std::max(width.bytes, inference.declaration_size.value_or(0))) {
+        if (attribute_bytes > std::max(width.bytes, inference.declaration.size.value_or(0))) {
             diag->warning(
                 metatile_attr_schema_tag,
                 "The metatile attribute size is set to {} bytes (from {}), which is wider than anything the "
@@ -453,7 +489,7 @@ ChainableResult<LoadedMetatileAttributeSchema> reconcile_metatile_attribute_sche
             selected != nullptr
                 ? describe_inferred_size_origin(*selected)
                 : std::format("derived from the explicit metatile_attribute_fields masks ({})", inputs.fields_source);
-        if (inference.declaration_size.has_value() && inference.declaration_size.value() > attribute_bytes) {
+        if (inference.declaration.size.has_value() && inference.declaration.size.value() > attribute_bytes) {
             return FormattableError{format->format(
                 "The resolved metatile attribute field masks need only {}-byte attributes, but struct Tileset "
                 "declares its metatileAttributes member with a {}-byte element type. Masks prove a minimum "
@@ -462,25 +498,32 @@ ChainableResult<LoadedMetatileAttributeSchema> reconcile_metatile_attribute_sche
                 "'fieldmap.metatile_attribute_size' in porytiles/config.yaml (or pass "
                 "--metatile-attribute-size) to pin the width.",
                 FormatParam{attribute_bytes, Style::bold},
-                FormatParam{inference.declaration_size.value(), Style::bold})};
+                FormatParam{inference.declaration.size.value(), Style::bold})};
         }
     }
 
-    // Declaration width precedence: the explicit knob beats the width scanned from struct Tileset's declaration,
-    // which beats the resolved attribute width. Generated C declarations can legitimately be narrower than the
-    // attribute width (expansion's FRLG build declares 'const u16' arrays read as 4-byte words), so the two widths
-    // stay decoupled.
+    // Declaration width: the explicit knob when set, otherwise struct Tileset's declaration. There is no third
+    // source. The attribute width above can be derived when the knob is unset because the masks independently bound
+    // it, but no mask says anything about the element type the arrays are declared with, and the two widths are
+    // genuinely different numbers on real projects (expansion's FRLG build declares 'const u16' arrays that are read
+    // as 4-byte words). Defaulting the declaration width to the attribute width would therefore not be a derivation,
+    // it would be a guess, and the value it guesses is written straight into the project's C headers.
     std::optional<std::size_t> declaration_size = inputs.declaration_size;
     std::string declaration_origin = "explicit metatile_attribute_declaration_size";
     if (!declaration_size.has_value()) {
-        declaration_size = inference.declaration_size;
+        if (!inference.declaration.size.has_value()) {
+            return FormattableError{format->format(
+                "{} Porytiles needs that width to declare the generated gMetatileAttributes_* arrays, and nothing "
+                "else in the project implies it. Set 'fieldmap.metatile_attribute_declaration_size' in "
+                "porytiles/config.yaml (or pass --metatile-attribute-declaration-size) to state it.",
+                FormatParam{
+                    describe_undeclared_width(inference.declaration.scan, inputs.fieldmap_header_source, format)})};
+        }
+        declaration_size = inference.declaration.size;
         declaration_origin =
-            declaration_size.has_value()
-                ? std::format(
-                      "inferred from struct Tileset's metatileAttributes member ({})", inputs.fieldmap_header_source)
-                : "matches the resolved attribute size";
+            std::format("inferred from struct Tileset's metatileAttributes member ({})", inputs.fieldmap_header_source);
     }
-    const std::size_t declaration_bytes = declaration_size.value_or(attribute_bytes);
+    const std::size_t declaration_bytes = declaration_size.value();
 
     auto schema_result = build_schema(resolved, attribute_bytes);
     if (!schema_result.has_value()) {

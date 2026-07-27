@@ -63,22 +63,28 @@ constexpr auto attributes_member_name = "metatileAttributes";
     return false;
 }
 
-// Extracts the raw pointed-to type of struct Tileset's metatileAttributes member. Every base game declares the
-// member as 'const uN *metatileAttributes'; anything else (missing struct, missing member, non-pointer) yields
-// nullopt. What the type name means is the domain's call, not the scanner's.
-[[nodiscard]] std::optional<std::string> attributes_element_type_from(const std::vector<StructDefinition> &defs)
+// Locates struct Tileset's metatileAttributes member and records the declarator it was written with. Every base game
+// declares the member as 'const uN *metatileAttributes', but this reports whatever is actually there, including a type
+// nobody recognizes: what the declarator means is the domain's call, not the scanner's. A member whose declarator the
+// parser cannot pattern-match at all never reaches here, so it reads as no member.
+[[nodiscard]] AttributeDeclarationScan declaration_from(const std::vector<StructDefinition> &defs)
 {
+    bool saw_tileset_struct = false;
     for (const auto &def : defs) {
         if (def.name != tileset_struct_name) {
             continue;
         }
+        saw_tileset_struct = true;
         for (const auto &member : def.members) {
-            if (member.member_name == attributes_member_name && member.pointer_depth == 1) {
-                return member.type_name;
+            if (member.member_name == attributes_member_name) {
+                return AttributeDeclarationScan{
+                    AttributeDeclarationSource::declared, member.type_name, member.pointer_depth, member.is_const};
             }
         }
     }
-    return std::nullopt;
+    return AttributeDeclarationScan{
+        saw_tileset_struct ? AttributeDeclarationSource::no_attributes_member
+                           : AttributeDeclarationSource::no_tileset_struct};
 }
 
 } // namespace
@@ -104,6 +110,7 @@ MetatileAttributeScan MetatileAttributeScanner::scan_project() const
     scan.header_source = fieldmap_header.string();
     if (!std::filesystem::exists(fieldmap_header)) {
         // No fieldmap header: the project states nothing about its attribute layout.
+        scan.declaration.source = AttributeDeclarationSource::no_fieldmap_header;
         return scan;
     }
 
@@ -115,6 +122,7 @@ MetatileAttributeScan MetatileAttributeScanner::scan_project() const
             "Could not scan '{}' for attribute masks; skipping schema inference.",
             FormatParam{fieldmap_header.string(), Style::bold});
         scan.unreadable_sources.push_back(fieldmap_header.string());
+        scan.declaration.source = AttributeDeclarationSource::header_unreadable;
         return scan;
     }
     // Both tolerant scans fail only on a load or lex failure, and both run over the same cached content, so the enum
@@ -189,12 +197,15 @@ MetatileAttributeScan MetatileAttributeScanner::scan_project() const
         diag_->warning(metatile_attr_inference_tag, warning);
     }
 
-    // The raw pointed-to type of struct Tileset's metatileAttributes member, from the same header. A failed struct
-    // scan is not an error: the type simply stays unset.
+    // struct Tileset's metatileAttributes declaration, from the same header. The struct scan fails only on a load or
+    // lex failure, and both already succeeded on this facade's cached content, so it cannot fail here. Asserted rather
+    // than handled for the same reason as the enum scan above, and with more at stake: the declaration width has no
+    // second source, so quietly recording "this project declares no struct Tileset" would send the user hunting
+    // through a header that declares one perfectly well.
     auto struct_defs = header_facade.parse_struct_definitions(std::string{tileset_struct_name});
-    if (struct_defs.has_value()) {
-        scan.attributes_element_type = attributes_element_type_from(struct_defs.value());
-    }
+    assert_or_panic(
+        struct_defs.has_value(), "struct scan failed on a fieldmap header whose define scan already succeeded");
+    scan.declaration = declaration_from(struct_defs.value());
 
     return scan;
 }

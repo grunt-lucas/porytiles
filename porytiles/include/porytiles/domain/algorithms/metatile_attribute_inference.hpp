@@ -45,6 +45,45 @@ struct InferenceArrayEntry {
     std::optional<std::uint32_t> value;
 };
 
+/// @brief What the scan found where struct Tileset's metatileAttributes member should be.
+///
+/// @details
+/// The scanner reports what it saw, never what it means: @c declared says a member of that name exists and records the
+/// declarator it was written with, leaving it to the domain to decide whether that declarator names a width Porytiles
+/// can read.
+enum class AttributeDeclarationSource {
+    no_fieldmap_header,   ///< the project has no include/global.fieldmap.h
+    header_unreadable,    ///< the fieldmap header exists but could not be scanned
+    no_tileset_struct,    ///< the header was scanned and declares no struct Tileset
+    no_attributes_member, ///< struct Tileset declares no metatileAttributes member
+    declared,             ///< the member is declared, and the declarator fields describe how
+};
+
+/// @brief struct Tileset's metatileAttributes declaration, as the project wrote it.
+///
+/// @details
+/// The declarator fields carry meaning only when @c source is @c declared. @c element_type is the pointed-to type
+/// spelling (@c u16 on pokeemerald, @c u32 on pokefirered, anything at all on a project that renamed it),
+/// @c pointer_depth is the number of stars on the declarator, and @c is_const records a const-qualified pointee.
+/// Together they reconstruct the declaration for a diagnostic without the scanner having to judge it.
+struct AttributeDeclarationScan {
+    AttributeDeclarationSource source{AttributeDeclarationSource::no_fieldmap_header};
+    std::string element_type;
+    std::size_t pointer_depth{0};
+    bool is_const{false};
+};
+
+/// @brief Renders a declared metatileAttributes member the way the project wrote it.
+///
+/// @details
+/// Rebuilds the declarator from the scan ("const u16 *metatileAttributes"), so a diagnostic can quote the line the
+/// user has to go and look at rather than describe it. Only a scan whose source is @c declared has a declarator to
+/// render; every other source yields an empty string.
+///
+/// @param scan The declaration the scan recorded
+/// @return The reconstructed declaration, or an empty string when nothing was declared
+[[nodiscard]] std::string to_declaration_string(const AttributeDeclarationScan &scan);
+
 /// @brief The raw facts a project exposes about its metatile attribute layout.
 ///
 /// @details
@@ -60,9 +99,8 @@ struct MetatileAttributeScan {
     std::vector<InferenceArrayEntry>
         shifts_array;                     ///< entries of the exact-name sMetatileAttrShifts table (may be empty)
     bool behaviors_header_present{false}; ///< the behaviors header exists and declares at least one MB_ name
-    std::optional<std::string>
-        attributes_element_type; ///< raw pointed-to type of struct Tileset's metatileAttributes member, when declared
-    std::string header_source;   ///< path of the fieldmap header the defines, enum members, and struct came from
+    AttributeDeclarationScan declaration; ///< struct Tileset's metatileAttributes declaration, or why there is none
+    std::string header_source;      ///< path of the fieldmap header the defines, enum members, and struct came from
     std::string masks_table_source; ///< path of the file the mask table came from, empty when no table was read
     std::vector<std::string>
         unreadable_sources; ///< files that exist but could not be read, so whatever they declare is missing above
@@ -94,19 +132,31 @@ enum class AttributeInferenceStatus {
     not_provided, ///< nothing attribute-related was found; other providers should be consulted
 };
 
+/// @brief The declared element width of a project's metatile attribute arrays, and the declaration behind it.
+///
+/// @details
+/// @c scan is the declaration the project wrote, carried through so a diagnostic can quote it. @c size is the width it
+/// maps to, set only for a single-pointer @c u8, @c u16, or @c u32 element. Every other declarator, and every source
+/// with no declaration at all, leaves it unset. Unset is not a default: the declaration width has no second witness
+/// (unlike the attribute width, which the masks independently bound), so resolution is fatal unless the user pins the
+/// width with the declaration-size knob.
+struct InferredAttributeDeclaration {
+    AttributeDeclarationScan scan;
+    std::optional<std::size_t> size;
+};
+
 /// @brief The result of an inference run.
 ///
 /// @details
 /// @c candidates is populated only when @c status is valid; a project with both bare and FRLG mask defines yields two
 /// sets (bare defines first). @c error_message carries the actionable diagnostic when @c status is invalid. @c
-/// declaration_size is the declared element width mapped from the scan's attributes_element_type (u8/u16/u32 map to
-/// 1/2/4; anything else stays nullopt); it is populated regardless of status, since the struct declaration is a
-/// project fact independent of whether a mask layout could be inferred.
+/// declaration is the declared element width and the declaration it was read from; it is populated regardless of
+/// status, since the struct declaration is a project fact independent of whether a mask layout could be inferred.
 struct MetatileAttributeInferenceResult {
     AttributeInferenceStatus status{AttributeInferenceStatus::not_provided};
     std::vector<MetatileAttributeCandidateSet> candidates;
     std::string error_message;
-    std::optional<std::size_t> declaration_size;
+    InferredAttributeDeclaration declaration;
 };
 
 /// @brief Infers the metatile attribute mask candidate sets from a project's raw fieldmap facts.

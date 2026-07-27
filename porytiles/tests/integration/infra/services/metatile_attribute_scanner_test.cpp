@@ -66,7 +66,7 @@ TEST_F(MetatileAttributeScannerTest, FixtureEmeraldRawFacts)
     // No mask table was read, so no path claims one.
     EXPECT_TRUE(scan.masks_table_source.empty());
     EXPECT_TRUE(scan.behaviors_header_present);
-    EXPECT_EQ(scan.attributes_element_type, "u16");
+    EXPECT_EQ(to_declaration_string(scan.declaration), "const u16 *metatileAttributes");
     // The unresolvable backslash-continuation define is skipped tolerantly, not warned about.
     EXPECT_TRUE(diag_.warnings().empty());
 }
@@ -85,7 +85,7 @@ TEST_F(MetatileAttributeScannerTest, FixtureFireredRawFacts)
     EXPECT_EQ(scan.shifts_array.back().index_name, "METATILE_ATTRIBUTE_7");
     EXPECT_EQ(scan.shifts_array.back().value, 31U);
     EXPECT_TRUE(has_enum_member(scan, "METATILE_ATTRIBUTE_ENCOUNTER_TYPE"));
-    EXPECT_EQ(scan.attributes_element_type, "u32");
+    EXPECT_EQ(to_declaration_string(scan.declaration), "const u32 *metatileAttributes");
     // The masks came from the source file, not the header, and the recorded path says so.
     EXPECT_NE(scan.masks_table_source.find("fieldmap.c"), std::string::npos);
     EXPECT_NE(scan.header_source.find("global.fieldmap.h"), std::string::npos);
@@ -103,8 +103,9 @@ TEST_F(MetatileAttributeScannerTest, FixtureExpansionSeedsMacrosAndIgnoresDecoyT
     EXPECT_EQ(scan.masks_array.front().index_name, "METATILE_ATTRIBUTE_BEHAVIOR");
     // Seeded from the header's METATILE_ATTR_BEHAVIOR_MASK_FRLG, not the decoy table's 0xFF.
     EXPECT_EQ(scan.masks_array.front().value, 0x1FFU);
-    // No struct Tileset in this fixture, so the element type stays unset.
-    EXPECT_FALSE(scan.attributes_element_type.has_value());
+    // No struct Tileset in this fixture, and the scan says exactly that rather than just coming back empty.
+    EXPECT_EQ(scan.declaration.source, AttributeDeclarationSource::no_tileset_struct);
+    EXPECT_TRUE(to_declaration_string(scan.declaration).empty());
 }
 
 // A conflicting redefinition inside an undecidable conditional lands in the ambiguous set as a raw fact, and the
@@ -157,11 +158,36 @@ TEST_F(MetatileAttributeScannerTest, PresentButUnparseableHeaderIsRecordedAsUnre
     EXPECT_TRUE(scan.defines.empty());
     ASSERT_EQ(scan.unreadable_sources.size(), 1U);
     EXPECT_NE(scan.unreadable_sources.front().find("global.fieldmap.h"), std::string::npos);
+    // The declaration is unknown for a reason worth naming: the header that would have declared it never parsed.
+    EXPECT_EQ(scan.declaration.source, AttributeDeclarationSource::header_unreadable);
     const auto lines = warning_lines();
     const bool warned = std::any_of(lines.begin(), lines.end(), [](const std::string &line) {
         return line.find("global.fieldmap.h") != std::string::npos;
     });
     EXPECT_TRUE(warned);
+}
+
+// A struct Tileset whose metatileAttributes member is declared through a typedef. The scanner does not know or care
+// which type names denote a width; it records the declarator as written so the domain can rule on it and quote it.
+TEST_F(MetatileAttributeScannerTest, TypedefElementTypeIsRecordedVerbatim)
+{
+    MetatileAttributeScanner scanner{fixture_base / "typedef_declaration", &formatter_, &diag_};
+    const auto scan = scanner.scan_project();
+
+    EXPECT_EQ(scan.declaration.source, AttributeDeclarationSource::declared);
+    EXPECT_EQ(scan.declaration.element_type, "MetatileAttr");
+    EXPECT_EQ(to_declaration_string(scan.declaration), "const MetatileAttr *metatileAttributes");
+}
+
+// struct Tileset present but with no metatileAttributes member. This is a distinct fact from a missing struct, and
+// the scan keeps them apart so the eventual error can point at the right thing.
+TEST_F(MetatileAttributeScannerTest, StructWithoutTheMemberIsDistinctFromNoStruct)
+{
+    MetatileAttributeScanner scanner{fixture_base / "no_attributes_member", &formatter_, &diag_};
+    const auto scan = scanner.scan_project();
+
+    EXPECT_EQ(scan.declaration.source, AttributeDeclarationSource::no_attributes_member);
+    EXPECT_TRUE(to_declaration_string(scan.declaration).empty());
 }
 
 // A behaviors header declaring its MB_ names as enum members only (stock pokeemerald style, no MB_ defines at all)
@@ -184,6 +210,7 @@ TEST_F(MetatileAttributeScannerTest, MissingTreeStatesNothing)
     EXPECT_TRUE(scan.defines.empty());
     EXPECT_TRUE(scan.enum_members.empty());
     EXPECT_TRUE(scan.unreadable_sources.empty());
+    EXPECT_EQ(scan.declaration.source, AttributeDeclarationSource::no_fieldmap_header);
     EXPECT_TRUE(diag_.warnings().empty());
 }
 
@@ -201,7 +228,7 @@ TEST_F(MetatileAttributeScannerTest, PokeemeraldAcceptance)
 
     EXPECT_EQ(define_value(scan, "METATILE_ATTR_BEHAVIOR_MASK"), 0x00FFU);
     EXPECT_TRUE(scan.behaviors_header_present);
-    EXPECT_EQ(scan.attributes_element_type, "u16");
+    EXPECT_EQ(to_declaration_string(scan.declaration), "const u16 *metatileAttributes");
 }
 
 TEST_F(MetatileAttributeScannerTest, PokefireredAcceptance)
@@ -216,7 +243,7 @@ TEST_F(MetatileAttributeScannerTest, PokefireredAcceptance)
 
     ASSERT_EQ(scan.masks_array.size(), 8U);
     EXPECT_TRUE(scan.behaviors_header_present);
-    EXPECT_EQ(scan.attributes_element_type, "u32");
+    EXPECT_EQ(to_declaration_string(scan.declaration), "const u32 *metatileAttributes");
     EXPECT_EQ(scan.masks_table_source, (root / "src" / "fieldmap.c").string());
 }
 
@@ -233,7 +260,7 @@ TEST_F(MetatileAttributeScannerTest, PokeemeraldExpansionAcceptance)
     // Both mask layouts are declared: bare and FRLG defines side by side.
     EXPECT_TRUE(define_value(scan, "METATILE_ATTR_BEHAVIOR_MASK").has_value());
     EXPECT_TRUE(define_value(scan, "METATILE_ATTR_BEHAVIOR_MASK_FRLG").has_value());
-    EXPECT_EQ(scan.attributes_element_type, "u16");
+    EXPECT_EQ(to_declaration_string(scan.declaration), "const u16 *metatileAttributes");
 }
 
 } // namespace

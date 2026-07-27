@@ -620,43 +620,88 @@ TEST_F(MetatileAttributeInferenceTest, LayerOnlyLayoutIsNotProvided)
     EXPECT_TRUE(result.candidates.empty());
 }
 
-// The declaration width maps from the scanned element type of struct Tileset's metatileAttributes member: u8/u16/u32
-// map to 1/2/4, anything else stays nullopt so the downstream "match the attribute size" default applies.
+// The declaration width maps from the scanned declarator of struct Tileset's metatileAttributes member: single
+// pointers to u8/u16/u32 map to 1/2/4. Anything else names no width the engine can read and stays unset, which
+// reconciliation treats as fatal rather than filling in.
 TEST_F(MetatileAttributeInferenceTest, DeclarationSizeMapsFromElementType)
 {
     MetatileAttributeScan scan;
     scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}};
     scan.behaviors_header_present = true;
+    scan.declaration = {AttributeDeclarationSource::declared, "u8", 1, true};
 
-    scan.attributes_element_type = "u8";
-    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_, &diag_).declaration_size, 1U);
-    scan.attributes_element_type = "u16";
-    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_, &diag_).declaration_size, 2U);
-    scan.attributes_element_type = "u32";
-    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_, &diag_).declaration_size, 4U);
-    scan.attributes_element_type = "u64";
-    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_, &diag_).declaration_size, std::nullopt);
-    scan.attributes_element_type = std::nullopt;
-    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_, &diag_).declaration_size, std::nullopt);
+    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_, &diag_).declaration.size, 1U);
+    scan.declaration.element_type = "u16";
+    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_, &diag_).declaration.size, 2U);
+    scan.declaration.element_type = "u32";
+    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_, &diag_).declaration.size, 4U);
+    scan.declaration.element_type = "u64";
+    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_, &diag_).declaration.size, std::nullopt);
 }
 
-// The declaration width is a project fact independent of the mask layout, so it survives every status: an invalid
+// A width only comes from a single pointer. A value member or a pointer-to-pointer of a known type is still a
+// declaration Porytiles cannot read a stride out of, so the width stays unset for reconciliation to rule on.
+TEST_F(MetatileAttributeInferenceTest, DeclarationSizeRequiresASinglePointer)
+{
+    MetatileAttributeScan scan;
+    scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}};
+    scan.behaviors_header_present = true;
+
+    scan.declaration = {AttributeDeclarationSource::declared, "u16", 0, true};
+    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_, &diag_).declaration.size, std::nullopt);
+    scan.declaration.pointer_depth = 2;
+    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_, &diag_).declaration.size, std::nullopt);
+}
+
+// Every source with no declaration behind it leaves the width unset, and the source travels through untouched so the
+// eventual error can name which of them happened.
+TEST_F(MetatileAttributeInferenceTest, UndeclaredSourcesCarryThroughWithNoWidth)
+{
+    for (const auto source :
+         {AttributeDeclarationSource::no_fieldmap_header,
+          AttributeDeclarationSource::header_unreadable,
+          AttributeDeclarationSource::no_tileset_struct,
+          AttributeDeclarationSource::no_attributes_member}) {
+        MetatileAttributeScan scan;
+        scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}};
+        scan.behaviors_header_present = true;
+        scan.declaration.source = source;
+
+        const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+        EXPECT_EQ(result.declaration.size, std::nullopt);
+        EXPECT_EQ(result.declaration.scan.source, source);
+    }
+}
+
+// The declaration is a project fact independent of the mask layout, so it survives every status: an invalid
 // inference (ambiguous conditional define) and a not-provided inference both still carry it.
 TEST_F(MetatileAttributeInferenceTest, DeclarationSizeSurvivesInvalidAndNotProvided)
 {
     MetatileAttributeScan invalid_scan;
     invalid_scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}};
     invalid_scan.ambiguous_defines.insert("METATILE_ATTR_BEHAVIOR_MASK");
-    invalid_scan.attributes_element_type = "u16";
+    invalid_scan.declaration = {AttributeDeclarationSource::declared, "u16", 1, true};
     const auto invalid_result = infer_metatile_attribute_candidates(invalid_scan, &formatter_, &diag_);
     ASSERT_EQ(invalid_result.status, AttributeInferenceStatus::invalid);
-    EXPECT_EQ(invalid_result.declaration_size, 2U);
+    EXPECT_EQ(invalid_result.declaration.size, 2U);
 
     MetatileAttributeScan empty_scan;
-    empty_scan.attributes_element_type = "u32";
+    empty_scan.declaration = {AttributeDeclarationSource::declared, "u32", 1, true};
     const auto empty_result = infer_metatile_attribute_candidates(empty_scan, &formatter_, &diag_);
     ASSERT_EQ(empty_result.status, AttributeInferenceStatus::not_provided);
-    EXPECT_EQ(empty_result.declaration_size, 4U);
+    EXPECT_EQ(empty_result.declaration.size, 4U);
+}
+
+// The rendered declaration is what the error quotes, so it has to come back exactly as the project wrote it,
+// const qualifier and stars included.
+TEST_F(MetatileAttributeInferenceTest, DeclarationRendersAsWritten)
+{
+    EXPECT_EQ(
+        to_declaration_string({AttributeDeclarationSource::declared, "u16", 1, true}), "const u16 *metatileAttributes");
+    EXPECT_EQ(
+        to_declaration_string({AttributeDeclarationSource::declared, "MetatileAttr", 2, false}),
+        "MetatileAttr **metatileAttributes");
+    EXPECT_TRUE(to_declaration_string({AttributeDeclarationSource::no_tileset_struct, "", 0, false}).empty());
 }
 
 } // namespace

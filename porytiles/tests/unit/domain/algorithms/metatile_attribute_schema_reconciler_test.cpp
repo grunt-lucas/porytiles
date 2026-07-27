@@ -52,11 +52,24 @@ class MetatileAttributeSchemaReconcilerTest : public ::testing::Test {
         return set;
     }
 
+    // A struct Tileset declaring 'const uN *metatileAttributes', the shape every stock decomp has. The declaration
+    // width has no second source, so a case that is not about the declaration still has to supply one; the realistic
+    // inference builders below carry the width their project really declares.
+    [[nodiscard]] static InferredAttributeDeclaration declared(std::size_t bytes)
+    {
+        InferredAttributeDeclaration declaration;
+        declaration.scan = {
+            AttributeDeclarationSource::declared, bytes == 1 ? "u8" : (bytes == 2 ? "u16" : "u32"), 1, true};
+        declaration.size = bytes;
+        return declaration;
+    }
+
     // The emerald shape: one 2-byte candidate (behavior 0x00FF plus the layer_type role field at 0xF000).
     [[nodiscard]] static MetatileAttributeInferenceResult emerald_inference()
     {
         MetatileAttributeInferenceResult inference;
         inference.status = AttributeInferenceStatus::valid;
+        inference.declaration = declared(2);
         inference.candidates.push_back(candidate(
             "the METATILE_ATTR_*_MASK defines",
             {definition("behavior", 0x00FF), role_definition("layer_type", 0xF000)},
@@ -64,11 +77,12 @@ class MetatileAttributeSchemaReconcilerTest : public ::testing::Test {
         return inference;
     }
 
-    // The expansion shape: the bare 2-byte set and the FRLG 4-byte set.
+    // The expansion shape: the bare 2-byte set and the FRLG 4-byte set. Expansion declares 'const u16' for both.
     [[nodiscard]] static MetatileAttributeInferenceResult dual_inference()
     {
         MetatileAttributeInferenceResult inference;
         inference.status = AttributeInferenceStatus::valid;
+        inference.declaration = declared(2);
         inference.candidates.push_back(candidate(
             "the bare METATILE_ATTR_*_MASK defines",
             {definition("behavior", 0x00FF), role_definition("layer_type", 0xF000)},
@@ -87,6 +101,7 @@ class MetatileAttributeSchemaReconcilerTest : public ::testing::Test {
     {
         MetatileAttributeInferenceResult inference;
         inference.status = AttributeInferenceStatus::valid;
+        inference.declaration = declared(4);
         inference.candidates.push_back(candidate(
             "the sMetatileAttrMasks table",
             {definition("behavior", 0x01FF), role_definition("layer_type", 0x60000000)},
@@ -95,11 +110,34 @@ class MetatileAttributeSchemaReconcilerTest : public ::testing::Test {
         return inference;
     }
 
+    // The emerald mask layout on a project that declares a different element width. Cases whose explicit config
+    // fields derive a narrower width need the declaration to agree with them, or the mask-versus-declaration
+    // conflict fires first and they end up testing that instead of what they meant to.
+    [[nodiscard]] static MetatileAttributeInferenceResult emerald_inference_declaring(std::size_t bytes)
+    {
+        auto inference = emerald_inference();
+        inference.declaration = declared(bytes);
+        return inference;
+    }
+
+    // A project whose header states no mask layout but declares struct Tileset the usual way. Explicit config fields
+    // do not erase the project's header, so this, not a blank result, is the shape an explicit-fields case has. The
+    // 1-byte element can never be wider than a derived attribute width, so these cases stay about the fields they
+    // are testing.
+    [[nodiscard]] static MetatileAttributeInferenceResult declaration_only_inference()
+    {
+        MetatileAttributeInferenceResult inference;
+        inference.declaration = declared(1);
+        return inference;
+    }
+
     [[nodiscard]] static MetatileAttributeInferenceResult invalid_inference()
     {
         MetatileAttributeInferenceResult inference;
         inference.status = AttributeInferenceStatus::invalid;
         inference.error_message = "mask define has conflicting values in a conditional";
+        // Masks that cannot be read say nothing about struct Tileset, which the project still declares.
+        inference.declaration = declared(1);
         return inference;
     }
 
@@ -173,7 +211,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, DualLayoutStillFatalWithScannedDec
     // The scanned declaration must not soften the dual-layout ambiguity: the width is the read stride, and no
     // project file records which build flavor the user targets.
     auto inference = dual_inference();
-    inference.declaration_size = 2;
+    inference.declaration = declared(2);
     const auto result = reconcile_metatile_attribute_schema(inference, bare_inputs(), &formatter_, &diag_);
     ASSERT_FALSE(result.has_value());
     EXPECT_NE(error_text(result).find("more than one metatile attribute mask layout"), std::string::npos);
@@ -225,6 +263,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, InferredSizeOriginNamesTheFileTheM
 TEST_F(MetatileAttributeSchemaReconcilerTest, InferredSizeOriginListsEverySourceTheLayoutUsed)
 {
     MetatileAttributeInferenceResult inference;
+    inference.declaration = declared(1);
     inference.status = AttributeInferenceStatus::valid;
     inference.candidates.push_back(candidate(
         "the METATILE_ATTR_*_MASK defines and the sMetatileAttrMasks table",
@@ -243,6 +282,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, InferredSizeOriginListsEverySource
 TEST_F(MetatileAttributeSchemaReconcilerTest, InferredSizeOriginOmitsAnEmptySourceList)
 {
     MetatileAttributeInferenceResult inference;
+    inference.declaration = declared(1);
     inference.status = AttributeInferenceStatus::valid;
     inference.candidates.push_back(
         candidate("the METATILE_ATTR_*_MASK defines", {definition("behavior", 0x00FF)}, 1, ""));
@@ -267,6 +307,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, PinnedSizeSelectsTheExactWidthMatc
 TEST_F(MetatileAttributeSchemaReconcilerTest, MultipleCandidatesMatchingPinnedSizeIsFatal)
 {
     MetatileAttributeInferenceResult inference;
+    inference.declaration = declared(1);
     inference.status = AttributeInferenceStatus::valid;
     inference.candidates.push_back(
         candidate("the bare defines", {definition("behavior", 0x00FF), role_definition("layer_type", 0xF000)}, 2));
@@ -284,6 +325,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, MultipleCandidatesMatchingPinnedSi
 TEST_F(MetatileAttributeSchemaReconcilerTest, UniqueNarrowerFitSelectedUnderWiderKnob)
 {
     MetatileAttributeInferenceResult inference;
+    inference.declaration = declared(1);
     inference.status = AttributeInferenceStatus::valid;
     inference.candidates.push_back(candidate("the one-byte defines", {definition("behavior", 0x00FF)}, 1));
     inference.candidates.push_back(
@@ -301,6 +343,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, UniqueNarrowerFitSelectedUnderWide
 TEST_F(MetatileAttributeSchemaReconcilerTest, MultipleNarrowerFitsUnderPinnedSizeIsFatal)
 {
     MetatileAttributeInferenceResult inference;
+    inference.declaration = declared(1);
     inference.status = AttributeInferenceStatus::valid;
     inference.candidates.push_back(
         candidate("the bare defines", {definition("behavior", 0x00FF), role_definition("layer_type", 0xF000)}, 2));
@@ -363,7 +406,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, InvalidInferenceIsFatalOnInferredP
 TEST_F(MetatileAttributeSchemaReconcilerTest, NoCandidatesAndNoFieldsIsFatal)
 {
     const auto result =
-        reconcile_metatile_attribute_schema(MetatileAttributeInferenceResult{}, bare_inputs(), &formatter_, &diag_);
+        reconcile_metatile_attribute_schema(declaration_only_inference(), bare_inputs(), &formatter_, &diag_);
     ASSERT_FALSE(result.has_value());
     const auto text = error_text(result);
     EXPECT_NE(text.find("No metatile attribute fields are configured"), std::string::npos) << text;
@@ -377,7 +420,8 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, ExplicitFieldsAreTheTruthAndSkipAd
 {
     auto inputs = bare_inputs();
     inputs.fields = {definition("custom", 0x00F0)};
-    const auto result = reconcile_metatile_attribute_schema(emerald_inference(), inputs, &formatter_, &diag_);
+    const auto result =
+        reconcile_metatile_attribute_schema(emerald_inference_declaring(1), inputs, &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     ASSERT_EQ(result.value().schema.fields().size(), 1U);
     EXPECT_EQ(result.value().schema.fields().front().name(), "custom");
@@ -451,6 +495,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, MismatchComparisonUnderPinnedSizeF
 {
     // No candidate matches the knob exactly, but exactly one fits within it: that candidate anchors the comparison.
     MetatileAttributeInferenceResult inference;
+    inference.declaration = declared(1);
     inference.status = AttributeInferenceStatus::valid;
     inference.candidates.push_back(candidate("the METATILE_ATTR_*_MASK defines", {definition("behavior", 0x003F)}, 1));
     inference.candidates.push_back(candidate(
@@ -471,7 +516,8 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, ExplicitFieldsWithoutRoleFieldDisa
 {
     auto inputs = bare_inputs();
     inputs.fields = {definition("behavior", 0x00FF)};
-    const auto result = reconcile_metatile_attribute_schema(emerald_inference(), inputs, &formatter_, &diag_);
+    const auto result =
+        reconcile_metatile_attribute_schema(emerald_inference_declaring(1), inputs, &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     // Omitting the role field means layer types are disabled; the inferred layer mask is never inherited.
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0U);
@@ -495,8 +541,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, ExplicitFieldsDeriveWidthFromMasks
 {
     auto inputs = bare_inputs();
     inputs.fields = {definition("wide", 0x30000)};
-    const auto result =
-        reconcile_metatile_attribute_schema(MetatileAttributeInferenceResult{}, inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().attribute_bytes, 4U);
     EXPECT_EQ(diag_.warnings().size(), 0U);
@@ -511,8 +556,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, MaskExceedingPinnedWidthIsFatal)
     auto inputs = bare_inputs();
     inputs.fields = {definition("wide", 0x30000)};
     inputs.attribute_size = 2;
-    const auto result =
-        reconcile_metatile_attribute_schema(MetatileAttributeInferenceResult{}, inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
     ASSERT_FALSE(result.has_value());
     const auto text = error_text(result);
     EXPECT_NE(text.find("wide"), std::string::npos) << text;
@@ -525,8 +569,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, WiderKnobThanMasksWarns)
     auto inputs = bare_inputs();
     inputs.fields = {definition("behavior", 0x00FF)};
     inputs.attribute_size = 2;
-    const auto result =
-        reconcile_metatile_attribute_schema(MetatileAttributeInferenceResult{}, inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().attribute_bytes, 2U);
     ASSERT_EQ(diag_.warnings().size(), 1U);
@@ -538,7 +581,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, WiderKnobThanMasksWarns)
 TEST_F(MetatileAttributeSchemaReconcilerTest, WiderKnobWarningSuppressedWhenScannedDeclarationCorroborates)
 {
     MetatileAttributeInferenceResult inference;
-    inference.declaration_size = 2; // struct Tileset declares a u16 element, corroborating the knob
+    inference.declaration = declared(2); // struct Tileset declares a u16 element, corroborating the knob
     auto inputs = bare_inputs();
     inputs.fields = {definition("behavior", 0x00FF)};
     inputs.attribute_size = 2;
@@ -552,7 +595,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, PinnedSizeIgnoresWiderScannedDecla
 {
     // An explicit width is the user's truth: the scanned declaration only feeds the declaration width.
     auto inference = emerald_inference();
-    inference.declaration_size = 4;
+    inference.declaration = declared(4);
     auto inputs = bare_inputs();
     inputs.attribute_size = 2;
     const auto result = reconcile_metatile_attribute_schema(inference, inputs, &formatter_, &diag_);
@@ -573,7 +616,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, ScannedDeclarationWiderThanMaskWid
     MetatileAttributeInferenceResult inference;
     inference.status = AttributeInferenceStatus::valid;
     inference.candidates.push_back(candidate("the METATILE_ATTR_*_MASK defines", {definition("behavior", 0x00FF)}, 1));
-    inference.declaration_size = 2;
+    inference.declaration = declared(2);
     const auto result = reconcile_metatile_attribute_schema(inference, bare_inputs(), &formatter_, &diag_);
     ASSERT_FALSE(result.has_value());
     const auto text = error_text(result);
@@ -594,7 +637,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, ScannedDeclarationNarrowerThanMask
         {definition("behavior", 0x01FF), role_definition("layer_type", 0x60000000)},
         4,
         "include/global.fieldmap.h, src/fieldmap.c"));
-    inference.declaration_size = 2;
+    inference.declaration = declared(2);
     const auto result = reconcile_metatile_attribute_schema(inference, bare_inputs(), &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().attribute_bytes, 4U);
@@ -606,7 +649,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, ScannedDeclarationEqualToMaskWidth
 {
     // The stock pokeemerald shape: masks and declaration agree at 2 bytes, so nothing conflicts and nothing warns.
     auto inference = emerald_inference();
-    inference.declaration_size = 2;
+    inference.declaration = declared(2);
     const auto result = reconcile_metatile_attribute_schema(inference, bare_inputs(), &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().attribute_bytes, 2U);
@@ -621,7 +664,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, OverrideWideningPastScannedDeclara
     MetatileAttributeInferenceResult inference;
     inference.status = AttributeInferenceStatus::valid;
     inference.candidates.push_back(candidate("the METATILE_ATTR_*_MASK defines", {definition("behavior", 0x00FF)}, 1));
-    inference.declaration_size = 2;
+    inference.declaration = declared(2);
     auto inputs = bare_inputs();
     inputs.overrides["behavior"] = MetatileAttributeFieldOverride{0x30000U, std::nullopt, std::nullopt, std::nullopt};
     const auto result = reconcile_metatile_attribute_schema(inference, inputs, &formatter_, &diag_);
@@ -635,6 +678,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, ExplicitDeclarationKnobDoesNotWide
 {
     // The declaration-size knob controls generated C declarations only; it never feeds the width decision.
     MetatileAttributeInferenceResult inference;
+    inference.declaration = declared(1);
     inference.status = AttributeInferenceStatus::valid;
     inference.candidates.push_back(candidate("the METATILE_ATTR_*_MASK defines", {definition("behavior", 0x00FF)}, 1));
     auto inputs = bare_inputs();
@@ -659,7 +703,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, DeclarationPrecedenceUserBeatsStru
         {definition("behavior", 0x01FF), role_definition("layer_type", 0x60000000)},
         4,
         "include/global.fieldmap.h, src/fieldmap.c"));
-    inference.declaration_size = 2;
+    inference.declaration = declared(2);
     auto inputs = bare_inputs();
     const auto from_struct = reconcile_metatile_attribute_schema(inference, inputs, &formatter_, &diag_);
     ASSERT_TRUE(from_struct.has_value()) << error_text(from_struct);
@@ -674,21 +718,28 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, DeclarationPrecedenceUserBeatsStru
     EXPECT_EQ(from_knob.value().declaration_bytes, 1U);
     EXPECT_NE(from_knob.value().declaration_origin.find("explicit"), std::string::npos);
 
-    // Neither set: the declaration width follows the resolved attribute width.
-    const auto fallback = reconcile_metatile_attribute_schema(emerald_inference(), bare_inputs(), &formatter_, &diag_);
-    ASSERT_TRUE(fallback.has_value()) << error_text(fallback);
-    EXPECT_EQ(fallback.value().declaration_bytes, 2U);
-    EXPECT_NE(fallback.value().declaration_origin.find("matches"), std::string::npos);
+    // Neither set: there is no third source to fall back on, so this is fatal rather than tracking the attribute
+    // width. The masks bound the attribute width and say nothing whatsoever about the declared element type.
+    auto undeclared = emerald_inference();
+    undeclared.declaration = {};
+    const auto no_source = reconcile_metatile_attribute_schema(undeclared, bare_inputs(), &formatter_, &diag_);
+    ASSERT_FALSE(no_source.has_value());
+    EXPECT_NE(error_text(no_source).find("metatile-attribute-declaration-size"), std::string::npos);
 }
 
-TEST_F(MetatileAttributeSchemaReconcilerTest, DeclarationFallbackTracksMaskDerivedWidth)
+// The masks resolving cleanly is not evidence about the declared element type. A layout that derives its width
+// without help still stops when nothing declares what the arrays are made of.
+TEST_F(MetatileAttributeSchemaReconcilerTest, ResolvedMasksDoNotSupplyTheDeclarationWidth)
 {
     auto inputs = bare_inputs();
     inputs.fields = {definition("wide", 0x30000)};
     const auto result =
         reconcile_metatile_attribute_schema(MetatileAttributeInferenceResult{}, inputs, &formatter_, &diag_);
-    ASSERT_TRUE(result.has_value()) << error_text(result);
-    EXPECT_EQ(result.value().declaration_bytes, 4U);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("metatile-attribute-declaration-size"), std::string::npos) << text;
+    // The width the masks derived must not leak into the message as if it settled anything.
+    EXPECT_EQ(text.find("4 bytes"), std::string::npos) << text;
 }
 
 TEST_F(MetatileAttributeSchemaReconcilerTest, ExplicitDeclarationSizeNarrowerThanWidthKept)
@@ -706,14 +757,78 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, ExplicitDeclarationSizeNarrowerTha
     EXPECT_EQ(result.value().declaration_bytes, 2U);
 }
 
+// Each way of failing to declare the width gets its own message. "Porytiles could not work out the declaration
+// width" is true of all five and useful for none of them: the user has to be told which file to open and what is
+// wrong with it.
+TEST_F(MetatileAttributeSchemaReconcilerTest, EachUndeclaredSourceNamesWhatItFound)
+{
+    struct Case {
+        AttributeDeclarationSource source;
+        std::string expected;
+    };
+    const std::vector<Case> cases{
+        {AttributeDeclarationSource::no_fieldmap_header, "has no 'include/global.fieldmap.h'"},
+        {AttributeDeclarationSource::header_unreadable, "could not be read"},
+        {AttributeDeclarationSource::no_tileset_struct, "declares no 'struct Tileset'"},
+        {AttributeDeclarationSource::no_attributes_member, "declares no 'metatileAttributes' pointer member"},
+    };
+
+    for (const auto &test_case : cases) {
+        auto inference = emerald_inference();
+        inference.declaration = {};
+        inference.declaration.scan.source = test_case.source;
+        const auto result = reconcile_metatile_attribute_schema(inference, bare_inputs(), &formatter_, &diag_);
+        ASSERT_FALSE(result.has_value());
+        const auto text = error_text(result);
+        EXPECT_NE(text.find(test_case.expected), std::string::npos) << text;
+        EXPECT_NE(text.find("include/global.fieldmap.h"), std::string::npos) << text;
+        EXPECT_NE(text.find("metatile-attribute-declaration-size"), std::string::npos) << text;
+    }
+}
+
+// An element type nobody recognizes is the case most likely to bite a fork that renamed the type behind a typedef.
+// The error quotes the declaration verbatim so the user can match it against the line in their header.
+TEST_F(MetatileAttributeSchemaReconcilerTest, UnrecognizedElementTypeQuotesTheDeclaration)
+{
+    auto inference = emerald_inference();
+    inference.declaration = {};
+    inference.declaration.scan = {AttributeDeclarationSource::declared, "MetatileAttr", 1, true};
+    const auto result = reconcile_metatile_attribute_schema(inference, bare_inputs(), &formatter_, &diag_);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("const MetatileAttr *metatileAttributes"), std::string::npos) << text;
+    EXPECT_NE(text.find("u8, u16, or u32"), std::string::npos) << text;
+    EXPECT_NE(text.find("metatile-attribute-declaration-size"), std::string::npos) << text;
+}
+
+// The knob is the stated escape hatch, so it has to actually work from every one of these dead ends.
+TEST_F(MetatileAttributeSchemaReconcilerTest, DeclarationKnobRescuesEveryUndeclaredSource)
+{
+    for (const auto source :
+         {AttributeDeclarationSource::no_fieldmap_header,
+          AttributeDeclarationSource::header_unreadable,
+          AttributeDeclarationSource::no_tileset_struct,
+          AttributeDeclarationSource::no_attributes_member,
+          AttributeDeclarationSource::declared}) {
+        auto inference = emerald_inference();
+        inference.declaration = {};
+        inference.declaration.scan.source = source;
+        auto inputs = bare_inputs();
+        inputs.declaration_size = 4;
+        const auto result = reconcile_metatile_attribute_schema(inference, inputs, &formatter_, &diag_);
+        ASSERT_TRUE(result.has_value()) << error_text(result);
+        EXPECT_EQ(result.value().declaration_bytes, 4U);
+        EXPECT_EQ(result.value().declaration_origin, "explicit metatile_attribute_declaration_size");
+    }
+}
+
 // --- The layer_type role field through the uniform field machinery. ---
 
 TEST_F(MetatileAttributeSchemaReconcilerTest, RoleFieldMaskParticipatesInWidthDerivation)
 {
     auto inputs = bare_inputs();
     inputs.fields = {definition("behavior", 0x00FF), role_definition("layer_type", 0x60000000)};
-    const auto result =
-        reconcile_metatile_attribute_schema(MetatileAttributeInferenceResult{}, inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().attribute_bytes, 4U);
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0x60000000U);
@@ -724,8 +839,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, RoleFieldMaskExceedingPinnedWidthI
     auto inputs = bare_inputs();
     inputs.fields = {definition("behavior", 0x00FF), role_definition("layer_type", 0x60000000)};
     inputs.attribute_size = 2;
-    const auto result =
-        reconcile_metatile_attribute_schema(MetatileAttributeInferenceResult{}, inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
     ASSERT_FALSE(result.has_value());
     const auto text = error_text(result);
     EXPECT_NE(text.find("metatile attribute size"), std::string::npos) << text;
@@ -739,8 +853,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, PinnedWidthThatCoversMasksSucceeds
     auto inputs = bare_inputs();
     inputs.fields = {definition("behavior", 0x00FF), role_definition("layer_type", 0x60000000)};
     inputs.attribute_size = 4;
-    const auto result =
-        reconcile_metatile_attribute_schema(MetatileAttributeInferenceResult{}, inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().attribute_bytes, 4U);
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0x60000000U);
@@ -764,8 +877,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, RoleOverrideMovesTheRoleToAnotherF
     MetatileAttributeFieldOverride role_override;
     role_override.role = std::optional<FieldRole>{FieldRole::layer_type};
     inputs.overrides["high"] = role_override;
-    const auto result =
-        reconcile_metatile_attribute_schema(MetatileAttributeInferenceResult{}, inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0xF000U);
     ASSERT_NE(result.value().schema.layer_type_field(), nullptr);
@@ -779,8 +891,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, RoleOverrideClearsTheRole)
     MetatileAttributeFieldOverride role_override;
     role_override.role = std::optional<FieldRole>{std::nullopt}; // role: null
     inputs.overrides["lt_bits"] = role_override;
-    const auto result =
-        reconcile_metatile_attribute_schema(MetatileAttributeInferenceResult{}, inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     // With the role cleared, lt_bits is an ordinary value field and layer types are disabled.
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0U);
@@ -805,8 +916,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, BuildsSchemaFromMaskFields)
 {
     auto inputs = bare_inputs();
     inputs.fields = {definition("behavior", 0x00FF), definition("extra", 0x0F00)};
-    const auto result =
-        reconcile_metatile_attribute_schema(MetatileAttributeInferenceResult{}, inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     // Exactly the configured fields: no role field is ever synthesized behind the user's back.
     EXPECT_EQ(result.value().schema.fields().size(), 2U);
@@ -820,8 +930,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, MaskOverrideReplacesExplicitBaseli
     auto inputs = bare_inputs();
     inputs.fields = {definition("behavior", 0x00FF)};
     inputs.overrides["behavior"] = MetatileAttributeFieldOverride{0x01FFU, std::nullopt, std::nullopt, std::nullopt};
-    const auto result =
-        reconcile_metatile_attribute_schema(MetatileAttributeInferenceResult{}, inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().schema.fields().front().mask(), 0x01FFU);
 }
@@ -836,8 +945,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, ProviderRemovalDropsProvider)
     override_value.provider = ProviderDefinitionOverride{.remove = true};
     inputs.overrides["behavior"] = override_value;
 
-    const auto result =
-        reconcile_metatile_attribute_schema(MetatileAttributeInferenceResult{}, inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_FALSE(result.value().schema.fields().front().has_provider());
 }
@@ -855,8 +963,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, ProviderPartialOverrideReplacesPre
     override_value.provider = provider_override;
     inputs.overrides["behavior"] = override_value;
 
-    const auto result =
-        reconcile_metatile_attribute_schema(MetatileAttributeInferenceResult{}, inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     const auto &merged = result.value().schema.fields().front().provider_definition();
     EXPECT_EQ(merged.prefix, "NEW_");
@@ -889,8 +996,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, ProviderOverrideReplacesHeaderAndF
     override_value.provider = provider_override;
     inputs.overrides["behavior"] = override_value;
 
-    const auto result =
-        reconcile_metatile_attribute_schema(MetatileAttributeInferenceResult{}, inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     const auto &merged = result.value().schema.fields().front().provider_definition();
     EXPECT_EQ(merged.header, "new.h");
@@ -908,8 +1014,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, ProviderOverrideOntoRawFieldLackin
     override_value.provider = provider_override;
     inputs.overrides["terrain"] = override_value;
 
-    const auto result =
-        reconcile_metatile_attribute_schema(MetatileAttributeInferenceResult{}, inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
     ASSERT_FALSE(result.has_value());
     EXPECT_NE(error_text(result).find("header"), std::string::npos);
 }
@@ -920,8 +1025,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, UnknownOverrideNameIsErrorListingA
     inputs.fields = {definition("behavior", 0x00FF), definition("terrain", 0x3E00)};
     inputs.overrides["nonexistent"] = MetatileAttributeFieldOverride{0x1U, std::nullopt, std::nullopt, std::nullopt};
 
-    const auto result =
-        reconcile_metatile_attribute_schema(MetatileAttributeInferenceResult{}, inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
     ASSERT_FALSE(result.has_value());
     const auto text = error_text(result);
     EXPECT_NE(text.find("nonexistent"), std::string::npos);
@@ -932,8 +1036,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, DuplicateBaselineNameIsError)
 {
     auto inputs = bare_inputs();
     inputs.fields = {definition("behavior", 0x00FF), definition("behavior", 0x0F00)};
-    const auto result =
-        reconcile_metatile_attribute_schema(MetatileAttributeInferenceResult{}, inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
     ASSERT_FALSE(result.has_value());
     EXPECT_NE(error_text(result).find("more than once"), std::string::npos);
 }
@@ -942,8 +1045,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, FieldWithNoMaskIsError)
 {
     auto inputs = bare_inputs();
     inputs.fields = {MetatileAttributeFieldDefinition{"behavior", std::nullopt, std::nullopt, std::nullopt}};
-    const auto result =
-        reconcile_metatile_attribute_schema(MetatileAttributeInferenceResult{}, inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
     ASSERT_FALSE(result.has_value());
     EXPECT_NE(error_text(result).find("no mask"), std::string::npos);
 }
@@ -954,7 +1056,8 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, FieldsFailingSchemaValidationAreFa
     // emitted before the failure (the mismatch warning, since the fields disagree with inference) must survive.
     auto inputs = bare_inputs();
     inputs.fields = {definition("behavior", 0x00FF), definition("overlaps", 0x000F)};
-    const auto result = reconcile_metatile_attribute_schema(emerald_inference(), inputs, &formatter_, &diag_);
+    const auto result =
+        reconcile_metatile_attribute_schema(emerald_inference_declaring(1), inputs, &formatter_, &diag_);
     ASSERT_FALSE(result.has_value());
     const auto text = error_text(result);
     EXPECT_NE(text.find("do not form a valid layout"), std::string::npos) << text;
@@ -985,8 +1088,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, OneByteMasksDeriveOneByteWidth)
     // No floor: a layout whose masks all fit one byte is a one-byte layout.
     auto inputs = bare_inputs();
     inputs.fields = {definition("behavior", 0x0F)};
-    const auto result =
-        reconcile_metatile_attribute_schema(MetatileAttributeInferenceResult{}, inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().attribute_bytes, 1U);
 }
@@ -998,7 +1100,8 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, WarningOrderIsMismatchThenWiderKno
     auto inputs = bare_inputs();
     inputs.fields = {definition("custom", 0x00F0)};
     inputs.attribute_size = 2; // wider than the 1 byte the mask needs
-    const auto result = reconcile_metatile_attribute_schema(emerald_inference(), inputs, &formatter_, &diag_);
+    const auto result =
+        reconcile_metatile_attribute_schema(emerald_inference_declaring(1), inputs, &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     ASSERT_EQ(diag_.warnings().size(), 2U);
     EXPECT_NE(warning_text(0).find("do not match"), std::string::npos);

@@ -49,7 +49,8 @@ struct LoadedMetatileAttributeSchema {
 /// metatile_attribute_fields list (empty means not declared), @c attribute_size is the explicit width knob (nullopt
 /// means the user did not pin the width), and @c declaration_size is the matching declaration-width knob. The
 /// @c *_source strings are the config provenance descriptions used in origin text and errors, and
-/// @c fieldmap_header_source is the fieldmap header path, which backs the struct Tileset declaration origin only.
+/// @c fieldmap_header_source is the fieldmap header path, which backs the struct Tileset declaration origin and the
+/// error naming what that header failed to declare.
 /// Mask provenance does not come from here: the masks may live in src/fieldmap.c instead, so each candidate set
 /// carries its own @c source.
 struct MetatileAttributeConfigInputs {
@@ -84,8 +85,10 @@ struct MetatileAttributeConfigInputs {
 ///    than both the merged masks and the scanned declaration width draws a warning. With no knob the width is
 ///    the smallest of 1, 2, or 4 bytes covering the merged masks, and a scanned struct Tileset declaration wider
 ///    than that is fatal (masks prove a minimum width, never the width itself, so the knob must disambiguate).
-/// 5. Declaration width: the explicit knob, else the width inferred from struct Tileset's declaration, else the
-///    resolved attribute width.
+/// 5. Declaration width: the explicit knob, else the width inferred from struct Tileset's declaration. There is no
+///    third source. Unlike the attribute width, which the masks independently bound, nothing else in a project implies
+///    the element type its attribute arrays are declared with, so a declaration that is missing, unreadable, or not a
+///    pointer to u8/u16/u32 is fatal, naming what was found and the knob that settles it.
 ///
 /// The loaded schema's origin strings (fields, size, declaration) are filled here. A final remark summarizes the
 /// resolved layout.
