@@ -23,6 +23,20 @@ constexpr const char *frlg_mask_define_suffix = "_MASK_FRLG";
 constexpr const char *behaviors_header = "include/constants/metatile_behaviors.h";
 constexpr const char *fieldmap_header = "include/global.fieldmap.h";
 
+// Turns the scan's unreadable-source list into prose. The list is short (at most the fieldmap header and its source
+// file), so every path is named rather than summarized.
+[[nodiscard]] std::string join_unreadable(const std::vector<std::string> &sources)
+{
+    std::string joined;
+    for (const auto &source : sources) {
+        if (!joined.empty()) {
+            joined += ", ";
+        }
+        joined += "'" + source + "'";
+    }
+    return joined;
+}
+
 [[nodiscard]] std::string to_lower(std::string text)
 {
     std::ranges::transform(text, text.begin(), [](unsigned char c) { return static_cast<char>(std::tolower(c)); });
@@ -262,10 +276,27 @@ MetatileAttributeInferenceResult infer_metatile_attribute_candidates(
         shifts[suffix] = entry.value.value();
     }
 
+    // A file the scan could not read is the likely reason nothing usable turned up, so it is reported as such rather
+    // than as "this project declares no masks": the masks may well be sitting in the file, unread. Both no-candidate
+    // exits below route through here. The message stands on its own rather than deferring to the scanner's warning
+    // about the same file, since that warning is subject to the user's diagnostic filters and this is not.
+    const auto no_usable_layout = [&]() -> MetatileAttributeInferenceResult & {
+        if (scan.unreadable_sources.empty()) {
+            result.status = AttributeInferenceStatus::not_provided;
+            return result;
+        }
+        result.status = AttributeInferenceStatus::invalid;
+        result.error_message = format->format(
+            "Porytiles could not read {}, so it has no metatile attribute masks to infer a layout from, and no "
+            "metatile_attribute_fields list is configured to stand in for them. Fix those files so Porytiles can "
+            "scan them, or declare the layout explicitly with metatile_attribute_fields in your Porytiles config.",
+            FormatParam{join_unreadable(scan.unreadable_sources), Style::bold});
+        return result;
+    };
+
     if (ordered_suffixes.empty()) {
         // Nothing attribute-related was found anywhere; defer to other providers.
-        result.status = AttributeInferenceStatus::not_provided;
-        return result;
+        return no_usable_layout();
     }
 
     // --- Phase B: name each suffix and attach providers (layout-independent, shared by all sets) ---
@@ -444,8 +475,7 @@ MetatileAttributeInferenceResult infer_metatile_attribute_candidates(
 
     if (result.candidates.empty()) {
         // Every discovered suffix was the managed layer_type; nothing usable to provide.
-        result.status = AttributeInferenceStatus::not_provided;
-        return result;
+        return no_usable_layout();
     }
 
     result.status = AttributeInferenceStatus::valid;

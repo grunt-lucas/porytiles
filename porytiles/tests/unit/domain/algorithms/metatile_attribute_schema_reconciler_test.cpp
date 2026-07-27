@@ -427,7 +427,10 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, MismatchWarningFlagsRoleDifference
     ASSERT_TRUE(result.has_value()) << error_text(result);
     ASSERT_EQ(diag_.warnings().size(), 1U);
     const auto warning = warning_text(0);
-    EXPECT_NE(warning.find("'behavior' carries the layer_type role only in the config"), std::string::npos) << warning;
+    // Both sides of the role difference are named, so the prose stays correct once a second FieldRole exists.
+    EXPECT_NE(
+        warning.find("'behavior' has the layer_type role in the config but no role in the source"), std::string::npos)
+        << warning;
 }
 
 TEST_F(MetatileAttributeSchemaReconcilerTest, MismatchComparisonUnderPinnedSizeUsesTheExactWidthCandidate)
@@ -971,7 +974,9 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, LayerTypeNameWithoutTheRoleWarnsRa
     EXPECT_EQ(result.value().schema.layer_type_field(), nullptr);
     EXPECT_EQ(result.value().schema.value_fields().size(), 2U);
     ASSERT_EQ(diag_.warnings().size(), 1U);
-    EXPECT_NE(warning_text(0).find("carries the layer_type role only in the source"), std::string::npos)
+    EXPECT_NE(
+        warning_text(0).find("'layer_type' has no role in the config but the layer_type role in the source"),
+        std::string::npos)
         << warning_text(0);
 }
 

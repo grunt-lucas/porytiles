@@ -64,6 +64,8 @@ struct MetatileAttributeScan {
         attributes_element_type; ///< raw pointed-to type of struct Tileset's metatileAttributes member, when declared
     std::string header_source;   ///< path of the fieldmap header the defines, enum members, and struct came from
     std::string masks_table_source; ///< path of the file the mask table came from, empty when no table was read
+    std::vector<std::string>
+        unreadable_sources; ///< files that exist but could not be read, so whatever they declare is missing above
 };
 
 /// @brief One complete metatile attribute mask layout a project declares.
@@ -88,7 +90,7 @@ struct MetatileAttributeCandidateSet {
 /// @brief The outcome kind of an inference run.
 enum class AttributeInferenceStatus {
     valid,        ///< one or more usable candidate sets were inferred
-    invalid,      ///< the project declares fields but a mask could not be determined (fatal at resolution time)
+    invalid,      ///< no layout could be determined from what the project declares (fatal at resolution time)
     not_provided, ///< nothing attribute-related was found; other providers should be consulted
 };
 
@@ -121,6 +123,10 @@ struct MetatileAttributeInferenceResult {
 /// - Phase C rejects any field with no mask in any set: a project that declares a field but exposes no mask for it
 ///   gets a fatal, actionable error. There are no assumed completions; either the masks are readable or the user
 ///   must declare the layout explicitly.
+///
+/// An outcome with no usable candidate set is `not_provided` only when the scan read everything it looked at. When the
+/// scan lists unreadable sources, the same outcome is `invalid` instead, with an error saying the masks could not be
+/// read: a project whose fieldmap files failed to scan must not be told it declares no masks.
 ///
 /// Non-fatal findings (a missing behavior constants header, a mask define disagreeing with the mask table, a shift
 /// table entry disagreeing with its mask) are emitted to `diag` under the "metatile-attribute-inference" tag as they

@@ -17,7 +17,7 @@
 #include "porytiles/domain/models/rgba32.hpp"
 #include "porytiles/domain/packing/models/palette_hint.hpp"
 #include "porytiles/infra/config/layer_value.hpp"
-#include "porytiles/infra/config/optional_mask_format.hpp"
+#include "porytiles/infra/config/optional_size_format.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
 
 namespace porytiles {

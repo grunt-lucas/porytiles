@@ -526,6 +526,50 @@ TEST_F(MetatileAttributeInferenceTest, NothingFoundIsNotProvided)
     EXPECT_TRUE(result.candidates.empty());
 }
 
+// The same empty outcome means something different when a file the scan looked at could not be read: the project may
+// well declare masks, they just did not reach inference. That is an error about the unreadable file, not a report
+// that the project declares nothing.
+TEST_F(MetatileAttributeInferenceTest, NothingFoundWithAnUnreadableSourceIsInvalid)
+{
+    MetatileAttributeScan scan;
+    scan.unreadable_sources = {"include/global.fieldmap.h"};
+
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    EXPECT_EQ(result.status, AttributeInferenceStatus::invalid);
+    EXPECT_TRUE(result.candidates.empty());
+    EXPECT_NE(result.error_message.find("could not read"), std::string::npos) << result.error_message;
+    EXPECT_NE(result.error_message.find("include/global.fieldmap.h"), std::string::npos) << result.error_message;
+    EXPECT_NE(result.error_message.find("metatile_attribute_fields"), std::string::npos) << result.error_message;
+}
+
+// The unreadable-source rule covers the degenerate-layout exit too: the header parsed and declared the layer mask,
+// but the mask table that would have supplied the value fields is the file that failed to read.
+TEST_F(MetatileAttributeInferenceTest, LayerOnlyLayoutWithAnUnreadableSourceIsInvalid)
+{
+    MetatileAttributeScan scan;
+    scan.defines = {{"METATILE_ATTR_LAYER_MASK", 0xF000}};
+    scan.behaviors_header_present = true;
+    scan.unreadable_sources = {"src/fieldmap.c"};
+
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    EXPECT_EQ(result.status, AttributeInferenceStatus::invalid);
+    EXPECT_NE(result.error_message.find("src/fieldmap.c"), std::string::npos) << result.error_message;
+}
+
+// An unreadable source is only relevant when nothing usable was inferred. When the readable files carry a complete
+// layout, the unreadable one is already covered by its own warning and must not turn a valid result into an error.
+TEST_F(MetatileAttributeInferenceTest, UnreadableSourceDoesNotSpoilAnOtherwiseValidLayout)
+{
+    MetatileAttributeScan scan;
+    scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}};
+    scan.behaviors_header_present = true;
+    scan.unreadable_sources = {"src/fieldmap.c"};
+
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    EXPECT_EQ(result.status, AttributeInferenceStatus::valid);
+    ASSERT_EQ(result.candidates.size(), 1U);
+}
+
 // A single one-byte mask yields a one-byte candidate: required_bytes follows the widest mask, not a floor of 2.
 TEST_F(MetatileAttributeInferenceTest, OneByteMaskYieldsOneByteCandidate)
 {

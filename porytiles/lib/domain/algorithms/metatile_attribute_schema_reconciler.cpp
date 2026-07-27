@@ -20,6 +20,16 @@ namespace porytiles {
 
 namespace {
 
+// Names a field's role for diff prose. Written to read as the object of "has X", so a role-less field says so in
+// words rather than leaving the reader to infer it from the other side of the comparison.
+[[nodiscard]] std::string describe_role(const std::optional<FieldRole> &role)
+{
+    if (!role.has_value()) {
+        return "no role";
+    }
+    return std::format("the {} role", to_string(role.value()));
+}
+
 [[nodiscard]] std::string join_names(const MetatileAttributeFieldDefinitions &fields)
 {
     std::string joined;
@@ -246,9 +256,10 @@ match_candidates_to_size(const std::vector<MetatileAttributeCandidateSet> &candi
         if (field.role != other.role) {
             diffs.push_back(
                 std::format(
-                    "'{}' carries the layer_type role only in the {}",
+                    "'{}' has {} in the config but {} in the source",
                     field.name,
-                    field.role.has_value() ? "config" : "source"));
+                    describe_role(field.role),
+                    describe_role(other.role)));
         }
     }
     for (const auto &field : inferred) {
@@ -327,8 +338,9 @@ ChainableResult<LoadedMetatileAttributeSchema> reconcile_metatile_attribute_sche
         }
     }
     else if (inference.status == AttributeInferenceStatus::invalid) {
-        // The masks themselves are unusable (e.g. an undecidable conditional) and there are no explicit fields to
-        // fall back on, so resolution cannot proceed even when an explicit size pinned the width.
+        // The masks are unusable (an undecidable conditional, a declared field with no mask) or could not be read at
+        // all, and there are no explicit fields to fall back on, so resolution cannot proceed even when an explicit
+        // size pinned the width. Inference already phrased the reason, so it passes through verbatim.
         return FormattableError{inference.error_message};
     }
     else if (inference.candidates.empty()) {

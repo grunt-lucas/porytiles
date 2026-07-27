@@ -38,16 +38,15 @@ MetatileAttributeSchemaResolver::resolve(const std::string &tileset_name) const
         config_->metatile_attribute_declaration_size(ConfigScopeType::tileset, tileset_name),
         LoadedMetatileAttributeSchema);
 
-    // Gather the project's raw fieldmap facts and run the inference process. A missing fieldmap header is not an error:
-    // the default-constructed inference just reports nothing was found, and the reconciler falls back to the user's
-    // inputs and the documented assumptions.
+    // Gather the project's raw fieldmap facts and run the inference process. Inference runs on whatever the scan
+    // gathered, including nothing at all: a missing fieldmap header is not an error, and it simply reports that
+    // nothing was found so the reconciler can fall back to the user's inputs. Running it even when the scan came up
+    // empty is what lets a file that exists but could not be read be reported as such, rather than as a project that
+    // declares no masks.
     MetatileAttributeScanner scanner{project_root_, format_, diag_};
-    const auto outcome = scanner.scan_project();
+    const auto scan = scanner.scan_project();
 
-    MetatileAttributeInferenceResult inference{};
-    if (outcome.fieldmap_present) {
-        inference = infer_metatile_attribute_candidates(outcome.scan, format_, diag_);
-    }
+    const auto inference = infer_metatile_attribute_candidates(scan, format_, diag_);
 
     MetatileAttributeConfigInputs inputs;
     inputs.fields = fields_cv.value();
@@ -56,7 +55,7 @@ MetatileAttributeSchemaResolver::resolve(const std::string &tileset_name) const
     inputs.attribute_size = size_cv.value();
     inputs.attribute_size_source = size_cv.source();
     inputs.declaration_size = declaration_cv.value();
-    inputs.fieldmap_header_source = outcome.scan.header_source;
+    inputs.fieldmap_header_source = scan.header_source;
 
     return reconcile_metatile_attribute_schema(inference, inputs, format_, diag_);
 }

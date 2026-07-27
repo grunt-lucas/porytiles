@@ -183,6 +183,40 @@ enum
     EXPECT_NE(text.find("metatile_attribute_fields"), std::string::npos) << text;
 }
 
+TEST_F(MetatileAttributeSchemaResolverTest, UnparseableHeaderIsFatalAboutTheFileNotTheMasks)
+{
+    // The header declares masks but cannot be scanned (unterminated block comment). Telling the user Porytiles
+    // "found no mask layout" and to "make sure those masks exist" would send them looking for masks that are right
+    // there in the file, so the fatal has to be about the file it could not read.
+    write_fieldmap_header(R"(
+#define METATILE_ATTR_BEHAVIOR_MASK 0x00FF /* unterminated block comment
+#define METATILE_ATTR_LAYER_MASK    0xF000
+)");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("could not read"), std::string::npos) << text;
+    EXPECT_NE(text.find("global.fieldmap.h"), std::string::npos) << text;
+    EXPECT_NE(text.find("metatile_attribute_fields"), std::string::npos) << text;
+    EXPECT_EQ(text.find("Make sure those masks exist"), std::string::npos) << text;
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, UnparseableHeaderStillDefersToExplicitFields)
+{
+    // A user who declared the layout does not need the header at all, so an unreadable one stays a warning. The
+    // fatal above is specifically about having nothing to fall back on.
+    write_config(explicit_fields_yaml);
+    write_fieldmap_header(R"(
+#define METATILE_ATTR_BEHAVIOR_MASK 0x00FF /* unterminated block comment
+)");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    ASSERT_NE(schema_field(result.value().schema, "behavior"), nullptr);
+    EXPECT_EQ(schema_field(result.value().schema, "behavior")->mask(), 0x00FFU);
+}
+
 TEST_F(MetatileAttributeSchemaResolverTest, MultipleCandidateSetsRequireExplicitSize)
 {
     // Two mask layouts and nothing choosing between them: fatal, naming the explicit size knob.

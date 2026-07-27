@@ -6,6 +6,7 @@
 #include <utility>
 
 #include "porytiles/utilities/c_parser/c_parser_facade.hpp"
+#include "porytiles/utilities/panic/panic.hpp"
 
 namespace porytiles {
 
@@ -90,20 +91,20 @@ MetatileAttributeScanner::MetatileAttributeScanner(
 {
 }
 
-MetatileAttributeScanResult MetatileAttributeScanner::scan_project() const
+MetatileAttributeScan MetatileAttributeScanner::scan_project() const
 {
     const std::filesystem::path fieldmap_header_rel = std::filesystem::path{"include"} / "global.fieldmap.h";
     const std::filesystem::path fieldmap_source_rel = std::filesystem::path{"src"} / "fieldmap.c";
     const std::filesystem::path behaviors_header_rel =
         std::filesystem::path{"include"} / "constants" / "metatile_behaviors.h";
 
-    MetatileAttributeScanResult outcome;
+    MetatileAttributeScan scan;
 
     const auto fieldmap_header = project_root_ / fieldmap_header_rel;
-    outcome.scan.header_source = fieldmap_header.string();
+    scan.header_source = fieldmap_header.string();
     if (!std::filesystem::exists(fieldmap_header)) {
         // No fieldmap header: the project states nothing about its attribute layout.
-        return outcome;
+        return scan;
     }
 
     CParserFacade header_facade{fieldmap_header, format_};
@@ -113,33 +114,32 @@ MetatileAttributeScanResult MetatileAttributeScanner::scan_project() const
             metatile_attr_inference_tag,
             "Could not scan '{}' for attribute masks; skipping schema inference.",
             FormatParam{fieldmap_header.string(), Style::bold});
-        return outcome;
+        scan.unreadable_sources.push_back(fieldmap_header.string());
+        return scan;
     }
+    // Both tolerant scans fail only on a load or lex failure, and both run over the same cached content, so the enum
+    // scan cannot fail once the define scan has succeeded on this facade. Asserted rather than handled: a graceful
+    // branch here would be untestable, and if the facade ever grows a failure mode the two scans do not share, a
+    // silent "the project declares no attribute enum" is the worst way to find out.
     auto enums_result = header_facade.parse_enums_tolerant();
-    if (!enums_result.has_value()) {
-        diag_->warning(
-            metatile_attr_inference_tag,
-            "Could not scan '{}' for the attribute enum; skipping schema inference.",
-            FormatParam{fieldmap_header.string(), Style::bold});
-        return outcome;
-    }
+    assert_or_panic(
+        enums_result.has_value(), "enum scan failed on a fieldmap header whose define scan already succeeded");
 
     const auto &header_defines = defines_result.value().defines;
     const auto &header_enums = enums_result.value().enums;
 
-    outcome.scan.ambiguous_defines = defines_result.value().ambiguous_values;
+    scan.ambiguous_defines = defines_result.value().ambiguous_values;
     std::unordered_map<std::string, std::int64_t> seeds;
 
     for (const auto &define : header_defines) {
         if (define.has_int_value()) {
-            outcome.scan.defines.push_back(
-                InferenceDefine{define.name(), static_cast<std::uint32_t>(define.int_value())});
+            scan.defines.push_back(InferenceDefine{define.name(), static_cast<std::uint32_t>(define.int_value())});
             seeds[define.name()] = define.int_value();
         }
     }
     for (const auto &decl : header_enums) {
         for (const auto &member : decl.members) {
-            outcome.scan.enum_members.push_back(InferenceEnumMember{member.name, member.value});
+            scan.enum_members.push_back(InferenceEnumMember{member.name, member.value});
             if (member.value.has_value()) {
                 seeds[member.name] = member.value.value();
             }
@@ -154,13 +154,13 @@ MetatileAttributeScanResult MetatileAttributeScanner::scan_project() const
         if (auto arrays = source_facade.parse_indexed_arrays(); arrays.has_value()) {
             for (const auto &array : arrays.value()) {
                 if (array.name == masks_array_name) {
-                    outcome.scan.masks_array = to_inference_entries(array.entries);
+                    scan.masks_array = to_inference_entries(array.entries);
                     // Recorded only when the table is actually found, so nothing downstream can point a user at a
                     // file that contributed no masks.
-                    outcome.scan.masks_table_source = fieldmap_source.string();
+                    scan.masks_table_source = fieldmap_source.string();
                 }
                 else if (array.name == shifts_array_name) {
-                    outcome.scan.shifts_array = to_inference_entries(array.entries);
+                    scan.shifts_array = to_inference_entries(array.entries);
                 }
             }
         }
@@ -174,6 +174,7 @@ MetatileAttributeScanResult MetatileAttributeScanner::scan_project() const
                 "Could not scan '{}' for the metatile attribute mask and shift tables; continuing from the header "
                 "defines only.",
                 FormatParam{fieldmap_source.string(), Style::bold});
+            scan.unreadable_sources.push_back(fieldmap_source.string());
         }
         // Surface the source file's scan warnings too, matching how the header facade's warnings are emitted below.
         for (const auto &warning : source_facade.scan_warnings()) {
@@ -181,7 +182,7 @@ MetatileAttributeScanResult MetatileAttributeScanner::scan_project() const
         }
     }
 
-    outcome.scan.behaviors_header_present = behaviors_header_has_entries(project_root_ / behaviors_header_rel, format_);
+    scan.behaviors_header_present = behaviors_header_has_entries(project_root_ / behaviors_header_rel, format_);
 
     // Surface the recoverable scan warnings (conflicting redefinitions in undecidable regions, etc.).
     for (const auto &warning : header_facade.scan_warnings()) {
@@ -192,11 +193,10 @@ MetatileAttributeScanResult MetatileAttributeScanner::scan_project() const
     // scan is not an error: the type simply stays unset.
     auto struct_defs = header_facade.parse_struct_definitions(std::string{tileset_struct_name});
     if (struct_defs.has_value()) {
-        outcome.scan.attributes_element_type = attributes_element_type_from(struct_defs.value());
+        scan.attributes_element_type = attributes_element_type_from(struct_defs.value());
     }
 
-    outcome.fieldmap_present = true;
-    return outcome;
+    return scan;
 }
 
 } // namespace porytiles
