@@ -287,9 +287,10 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
         "--metatile-attribute-size",
         storage.metatile_attribute_size,
         "Metatile Attribute Size - Pins the size in bytes of each metatile attribute entry (1, 2, or 4). When unset, "
-        "Porytiles derives the size from the resolved attribute field masks. Must be set explicitly on projects that "
-        "declare more than one mask layout (pokeemerald-expansion), one value per build flavor, and on projects whose "
-        "struct Tileset declaration is wider than the masks need. Project-global.");
+        "Porytiles derives the size from the resolved attribute field masks, which struct Tileset's declared element "
+        "width must corroborate exactly. Must be set explicitly on projects that declare more than one mask layout "
+        "(pokeemerald-expansion), one value per build flavor, and on projects whose masks and struct Tileset "
+        "declaration disagree or whose declaration is unusable. Project-global.");
 
     // Metatile Attribute Declaration Size (optional std::size_t, captured as string, parsed by CliOptionProvider)
     config_group->add_option(

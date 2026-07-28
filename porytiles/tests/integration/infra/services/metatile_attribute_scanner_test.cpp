@@ -65,7 +65,8 @@ TEST_F(MetatileAttributeScannerTest, FixtureEmeraldRawFacts)
     EXPECT_TRUE(scan.shifts_array.empty());
     // No mask table was read, so no path claims one.
     EXPECT_TRUE(scan.masks_table_source.empty());
-    EXPECT_TRUE(scan.behaviors_header_present);
+    EXPECT_EQ(scan.behaviors_header.source, BehaviorsHeaderSource::declared);
+    EXPECT_NE(scan.behaviors_header.path.find("metatile_behaviors.h"), std::string::npos);
     EXPECT_EQ(to_declaration_string(scan.declaration), "const u16 *metatileAttributes");
     // The unresolvable backslash-continuation define is skipped tolerantly, not warned about.
     EXPECT_TRUE(diag_.warnings().empty());
@@ -191,13 +192,41 @@ TEST_F(MetatileAttributeScannerTest, StructWithoutTheMemberIsDistinctFromNoStruc
 }
 
 // A behaviors header declaring its MB_ names as enum members only (stock pokeemerald style, no MB_ defines at all)
-// still counts as present: the check accepts either declaration form.
-TEST_F(MetatileAttributeScannerTest, FixtureEnumOnlyBehaviorsHeaderIsPresent)
+// still counts as declared: the check accepts either declaration form. The fixture also carries a shift table entry
+// disagreeing with its mask; the scanner reports both raw facts and judges neither, so the disagreement simply
+// lands in the arrays for inference to record as a conflict.
+TEST_F(MetatileAttributeScannerTest, FixtureShiftConflictRawFacts)
 {
-    MetatileAttributeScanner scanner{fixture_base / "warns", &formatter_, &diag_};
+    MetatileAttributeScanner scanner{fixture_base / "shift_conflict", &formatter_, &diag_};
     const auto scan = scanner.scan_project();
 
-    EXPECT_TRUE(scan.behaviors_header_present);
+    EXPECT_EQ(scan.behaviors_header.source, BehaviorsHeaderSource::declared);
+    ASSERT_EQ(scan.masks_array.size(), 1U);
+    EXPECT_EQ(scan.masks_array.front().value, 0x00FFU);
+    ASSERT_EQ(scan.shifts_array.size(), 1U);
+    EXPECT_EQ(scan.shifts_array.front().value, 4U); // disagrees with the mask's offset 0; not the scanner's problem
+}
+
+// A present-but-unparseable behaviors header is recorded as unreadable, never flattened into "declares no MB_ name":
+// the header may declare plenty, and the eventual error must send the user to fix the file, not to add constants a
+// file already has.
+TEST_F(MetatileAttributeScannerTest, PresentButUnparseableBehaviorsHeaderIsRecordedAsUnreadable)
+{
+    MetatileAttributeScanner scanner{fixture_base / "bad_behaviors", &formatter_, &diag_};
+    const auto scan = scanner.scan_project();
+
+    // The fieldmap header itself is fine; only the behaviors header failed.
+    EXPECT_EQ(define_value(scan, "METATILE_ATTR_BEHAVIOR_MASK"), 0x00FFU);
+    EXPECT_EQ(scan.behaviors_header.source, BehaviorsHeaderSource::unreadable);
+    EXPECT_NE(scan.behaviors_header.path.find("metatile_behaviors.h"), std::string::npos);
+    // Recorded as unreadable alongside a warning, matching how an unparseable src/fieldmap.c is handled.
+    ASSERT_EQ(scan.unreadable_sources.size(), 1U);
+    EXPECT_NE(scan.unreadable_sources.front().find("metatile_behaviors.h"), std::string::npos);
+    const auto lines = warning_lines();
+    const bool warned = std::any_of(lines.begin(), lines.end(), [](const std::string &line) {
+        return line.find("metatile_behaviors.h") != std::string::npos;
+    });
+    EXPECT_TRUE(warned);
 }
 
 // A tree with no fieldmap header states nothing: no facts, nothing recorded as unreadable, no warnings. The empty
@@ -227,7 +256,7 @@ TEST_F(MetatileAttributeScannerTest, PokeemeraldAcceptance)
     const auto scan = scanner.scan_project();
 
     EXPECT_EQ(define_value(scan, "METATILE_ATTR_BEHAVIOR_MASK"), 0x00FFU);
-    EXPECT_TRUE(scan.behaviors_header_present);
+    EXPECT_EQ(scan.behaviors_header.source, BehaviorsHeaderSource::declared);
     EXPECT_EQ(to_declaration_string(scan.declaration), "const u16 *metatileAttributes");
 }
 
@@ -242,7 +271,7 @@ TEST_F(MetatileAttributeScannerTest, PokefireredAcceptance)
     const auto scan = scanner.scan_project();
 
     ASSERT_EQ(scan.masks_array.size(), 8U);
-    EXPECT_TRUE(scan.behaviors_header_present);
+    EXPECT_EQ(scan.behaviors_header.source, BehaviorsHeaderSource::declared);
     EXPECT_EQ(to_declaration_string(scan.declaration), "const u32 *metatileAttributes");
     EXPECT_EQ(scan.masks_table_source, (root / "src" / "fieldmap.c").string());
 }

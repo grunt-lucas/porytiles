@@ -121,13 +121,13 @@ class MetatileAttributeSchemaReconcilerTest : public ::testing::Test {
     }
 
     // A project whose header states no mask layout but declares struct Tileset the usual way. Explicit config fields
-    // do not erase the project's header, so this, not a blank result, is the shape an explicit-fields case has. The
-    // 1-byte element can never be wider than a derived attribute width, so these cases stay about the fields they
-    // are testing.
-    [[nodiscard]] static MetatileAttributeInferenceResult declaration_only_inference()
+    // do not erase the project's header, so this, not a blank result, is the shape an explicit-fields case has. With
+    // no explicit size knob the declared element width must equal the width the case's masks derive, so each case
+    // passes the width its masks actually need.
+    [[nodiscard]] static MetatileAttributeInferenceResult declaration_only_inference(std::size_t bytes = 1)
     {
         MetatileAttributeInferenceResult inference;
-        inference.declaration = declared(1);
+        inference.declaration = declared(bytes);
         return inference;
     }
 
@@ -541,7 +541,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, ExplicitFieldsDeriveWidthFromMasks
 {
     auto inputs = bare_inputs();
     inputs.fields = {definition("wide", 0x30000)};
-    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(4), inputs, &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().attribute_bytes, 4U);
     EXPECT_EQ(diag_.warnings().size(), 0U);
@@ -626,9 +626,11 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, ScannedDeclarationWiderThanMaskWid
     EXPECT_EQ(diag_.remarks().size(), 1U);
 }
 
-// Expansion deliberately decouples the two widths, packing 4-byte FRLG entries into a 'const u16' array. A
-// declaration narrower than the mask-derived width is fine and only feeds the declaration width.
-TEST_F(MetatileAttributeSchemaReconcilerTest, ScannedDeclarationNarrowerThanMaskWidthCannotNarrow)
+// Expansion deliberately decouples the two widths, packing 4-byte FRLG entries into a 'const u16' array, which is
+// exactly why a narrower declaration cannot pass silently: masks prove a minimum width, never the width itself, so
+// a declaration disagreeing in either direction means the project's own sources do not settle the read stride. On
+// real expansion the size knob is already mandatory (dual layout); this single-candidate shape must demand it too.
+TEST_F(MetatileAttributeSchemaReconcilerTest, ScannedDeclarationNarrowerThanMaskWidthIsFatalWithoutTheKnob)
 {
     MetatileAttributeInferenceResult inference;
     inference.status = AttributeInferenceStatus::valid;
@@ -639,10 +641,20 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, ScannedDeclarationNarrowerThanMask
         "include/global.fieldmap.h, src/fieldmap.c"));
     inference.declaration = declared(2);
     const auto result = reconcile_metatile_attribute_schema(inference, bare_inputs(), &formatter_, &diag_);
-    ASSERT_TRUE(result.has_value()) << error_text(result);
-    EXPECT_EQ(result.value().attribute_bytes, 4U);
-    EXPECT_EQ(result.value().declaration_bytes, 2U);
-    EXPECT_EQ(diag_.warnings().size(), 0U);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("4-byte"), std::string::npos) << text;
+    EXPECT_NE(text.find("2-byte"), std::string::npos) << text;
+    EXPECT_NE(text.find("struct Tileset"), std::string::npos) << text;
+    EXPECT_NE(text.find("fieldmap.metatile_attribute_size"), std::string::npos) << text;
+
+    // The knob is the named escape hatch, so it has to actually rescue this shape (the expansion FRLG build).
+    auto inputs = bare_inputs();
+    inputs.attribute_size = 4;
+    const auto rescued = reconcile_metatile_attribute_schema(inference, inputs, &formatter_, &diag_);
+    ASSERT_TRUE(rescued.has_value()) << error_text(rescued);
+    EXPECT_EQ(rescued.value().attribute_bytes, 4U);
+    EXPECT_EQ(rescued.value().declaration_bytes, 2U);
 }
 
 TEST_F(MetatileAttributeSchemaReconcilerTest, ScannedDeclarationEqualToMaskWidthAddsNoWarning)
@@ -657,10 +669,29 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, ScannedDeclarationEqualToMaskWidth
     EXPECT_NE(result.value().size_origin.find("METATILE_ATTR_*_MASK defines"), std::string::npos);
 }
 
-TEST_F(MetatileAttributeSchemaReconcilerTest, OverrideWideningPastScannedDeclarationResolvesTheConflict)
+TEST_F(MetatileAttributeSchemaReconcilerTest, OverrideWideningToTheDeclaredWidthResolvesTheConflict)
 {
-    // The width follows the merged (post-override) masks: an override that widens past the scanned declaration
-    // leaves nothing in conflict, so no knob is required.
+    // The equality check runs against the merged (post-override) masks: the inferred 1-byte mask alone would
+    // disagree with the u16 declaration, but an override widening the field to the declared width leaves the two
+    // witnesses in agreement, so no knob is required.
+    MetatileAttributeInferenceResult inference;
+    inference.status = AttributeInferenceStatus::valid;
+    inference.candidates.push_back(candidate("the METATILE_ATTR_*_MASK defines", {definition("behavior", 0x00FF)}, 1));
+    inference.declaration = declared(2);
+    auto inputs = bare_inputs();
+    inputs.overrides["behavior"] = MetatileAttributeFieldOverride{0x0FFFU, std::nullopt, std::nullopt, std::nullopt};
+    const auto result = reconcile_metatile_attribute_schema(inference, inputs, &formatter_, &diag_);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().attribute_bytes, 2U);
+    EXPECT_EQ(result.value().declaration_bytes, 2U);
+    EXPECT_EQ(diag_.warnings().size(), 0U);
+}
+
+TEST_F(MetatileAttributeSchemaReconcilerTest, OverrideWideningPastScannedDeclarationIsFatalWithoutTheKnob)
+{
+    // An override that widens past the scanned declaration re-creates the disagreement in the other direction, and
+    // the equality rule stops it just the same: nothing states whether the project reads the declared or the
+    // widened word.
     MetatileAttributeInferenceResult inference;
     inference.status = AttributeInferenceStatus::valid;
     inference.candidates.push_back(candidate("the METATILE_ATTR_*_MASK defines", {definition("behavior", 0x00FF)}, 1));
@@ -668,10 +699,11 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, OverrideWideningPastScannedDeclara
     auto inputs = bare_inputs();
     inputs.overrides["behavior"] = MetatileAttributeFieldOverride{0x30000U, std::nullopt, std::nullopt, std::nullopt};
     const auto result = reconcile_metatile_attribute_schema(inference, inputs, &formatter_, &diag_);
-    ASSERT_TRUE(result.has_value()) << error_text(result);
-    EXPECT_EQ(result.value().attribute_bytes, 4U);
-    EXPECT_EQ(result.value().declaration_bytes, 2U);
-    EXPECT_EQ(diag_.warnings().size(), 0U);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("4-byte"), std::string::npos) << text;
+    EXPECT_NE(text.find("2-byte"), std::string::npos) << text;
+    EXPECT_NE(text.find("fieldmap.metatile_attribute_size"), std::string::npos) << text;
 }
 
 TEST_F(MetatileAttributeSchemaReconcilerTest, ExplicitDeclarationKnobDoesNotWidenDerivedWidth)
@@ -695,7 +727,8 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, ExplicitDeclarationKnobDoesNotWide
 TEST_F(MetatileAttributeSchemaReconcilerTest, DeclarationPrecedenceUserBeatsStructBeatsWidth)
 {
     // Struct-inferred beats the width fallback. The declaration is narrower than the mask width (expansion's FRLG
-    // shape), so it cannot influence the width decision.
+    // shape), so the size knob is set the way that shape requires, and the declaration feeds only the declaration
+    // width.
     MetatileAttributeInferenceResult inference;
     inference.status = AttributeInferenceStatus::valid;
     inference.candidates.push_back(candidate(
@@ -705,6 +738,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, DeclarationPrecedenceUserBeatsStru
         "include/global.fieldmap.h, src/fieldmap.c"));
     inference.declaration = declared(2);
     auto inputs = bare_inputs();
+    inputs.attribute_size = 4;
     const auto from_struct = reconcile_metatile_attribute_schema(inference, inputs, &formatter_, &diag_);
     ASSERT_TRUE(from_struct.has_value()) << error_text(from_struct);
     EXPECT_EQ(from_struct.value().attribute_bytes, 4U);
@@ -725,6 +759,24 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, DeclarationPrecedenceUserBeatsStru
     const auto no_source = reconcile_metatile_attribute_schema(undeclared, bare_inputs(), &formatter_, &diag_);
     ASSERT_FALSE(no_source.has_value());
     EXPECT_NE(error_text(no_source).find("metatile-attribute-declaration-size"), std::string::npos);
+}
+
+// With the size knob pinned, the no-knob equality rule never runs, so an absent declaration survives to the
+// declaration-width step and draws that step's own fatal: the knob settles the read stride but says nothing about
+// the element type the generated arrays should be declared with.
+TEST_F(MetatileAttributeSchemaReconcilerTest, PinnedSizeStillRequiresADeclarationWidthSource)
+{
+    auto inference = emerald_inference();
+    inference.declaration = {};
+    inference.declaration.scan.source = AttributeDeclarationSource::no_tileset_struct;
+    auto inputs = bare_inputs();
+    inputs.attribute_size = 2;
+    const auto result = reconcile_metatile_attribute_schema(inference, inputs, &formatter_, &diag_);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("declares no 'struct Tileset'"), std::string::npos) << text;
+    EXPECT_NE(text.find("gMetatileAttributes_*"), std::string::npos) << text;
+    EXPECT_NE(text.find("metatile-attribute-declaration-size"), std::string::npos) << text;
 }
 
 // The masks resolving cleanly is not evidence about the declared element type. A layout that derives its width
@@ -801,7 +853,9 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, UnrecognizedElementTypeQuotesTheDe
     EXPECT_NE(text.find("metatile-attribute-declaration-size"), std::string::npos) << text;
 }
 
-// The knob is the stated escape hatch, so it has to actually work from every one of these dead ends.
+// The knob is the stated escape hatch, so it has to actually work from every one of these dead ends. An unusable
+// declaration also removes the width corroboration the no-knob rule demands, so the size knob rides along; the
+// declaration knob is what these cases are about.
 TEST_F(MetatileAttributeSchemaReconcilerTest, DeclarationKnobRescuesEveryUndeclaredSource)
 {
     for (const auto source :
@@ -814,6 +868,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, DeclarationKnobRescuesEveryUndecla
         inference.declaration = {};
         inference.declaration.scan.source = source;
         auto inputs = bare_inputs();
+        inputs.attribute_size = 2;
         inputs.declaration_size = 4;
         const auto result = reconcile_metatile_attribute_schema(inference, inputs, &formatter_, &diag_);
         ASSERT_TRUE(result.has_value()) << error_text(result);
@@ -828,7 +883,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, RoleFieldMaskParticipatesInWidthDe
 {
     auto inputs = bare_inputs();
     inputs.fields = {definition("behavior", 0x00FF), role_definition("layer_type", 0x60000000)};
-    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(4), inputs, &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().attribute_bytes, 4U);
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0x60000000U);
@@ -877,7 +932,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, RoleOverrideMovesTheRoleToAnotherF
     MetatileAttributeFieldOverride role_override;
     role_override.role = std::optional<FieldRole>{FieldRole::layer_type};
     inputs.overrides["high"] = role_override;
-    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(2), inputs, &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0xF000U);
     ASSERT_NE(result.value().schema.layer_type_field(), nullptr);
@@ -891,7 +946,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, RoleOverrideClearsTheRole)
     MetatileAttributeFieldOverride role_override;
     role_override.role = std::optional<FieldRole>{std::nullopt}; // role: null
     inputs.overrides["lt_bits"] = role_override;
-    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(2), inputs, &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     // With the role cleared, lt_bits is an ordinary value field and layer types are disabled.
     EXPECT_EQ(result.value().schema.layer_type_mask(), 0U);
@@ -916,7 +971,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, BuildsSchemaFromMaskFields)
 {
     auto inputs = bare_inputs();
     inputs.fields = {definition("behavior", 0x00FF), definition("extra", 0x0F00)};
-    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(2), inputs, &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     // Exactly the configured fields: no role field is ever synthesized behind the user's back.
     EXPECT_EQ(result.value().schema.fields().size(), 2U);
@@ -930,7 +985,7 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, MaskOverrideReplacesExplicitBaseli
     auto inputs = bare_inputs();
     inputs.fields = {definition("behavior", 0x00FF)};
     inputs.overrides["behavior"] = MetatileAttributeFieldOverride{0x01FFU, std::nullopt, std::nullopt, std::nullopt};
-    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
+    const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(2), inputs, &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().schema.fields().front().mask(), 0x01FFU);
 }
@@ -1091,6 +1146,226 @@ TEST_F(MetatileAttributeSchemaReconcilerTest, OneByteMasksDeriveOneByteWidth)
     const auto result = reconcile_metatile_attribute_schema(declaration_only_inference(), inputs, &formatter_, &diag_);
     ASSERT_TRUE(result.has_value()) << error_text(result);
     EXPECT_EQ(result.value().attribute_bytes, 1U);
+}
+
+// --- The inference conflict ruling. ---
+
+// Every fact inference could not settle is fatal by default, and each kind's message names the specific absent or
+// contradictory thing plus the override that settles it. "The field could not be resolved" would be true of all six
+// and useful for none.
+TEST_F(MetatileAttributeSchemaReconcilerTest, EachConflictKindIsFatalNamingTheSettlingOverride)
+{
+    struct Case {
+        InferredFieldConflict conflict;
+        std::string expected;
+    };
+    const std::vector<Case> cases{
+        {{"behavior", FieldConflictKind::provider_behaviors_absent, "include/constants/metatile_behaviors.h", {}, {}},
+         "has no"},
+        {{"behavior",
+          FieldConflictKind::provider_behaviors_unreadable,
+          "include/constants/metatile_behaviors.h",
+          {},
+          {}},
+         "could not be read"},
+        {{"behavior",
+          FieldConflictKind::provider_behaviors_no_constants,
+          "include/constants/metatile_behaviors.h",
+          {},
+          {}},
+         "declares no MB_ name"},
+        {{"behavior", FieldConflictKind::provider_no_matching_enum, "TILE_TERRAIN_", {}, {}}, "TILE_TERRAIN_"},
+        {{"behavior", FieldConflictKind::mask_define_vs_table, {}, 0x00FF, 0x01FF}, "0x1FF"},
+        {{"behavior", FieldConflictKind::shift_vs_mask, {}, 4, 0}, "shift 4"},
+    };
+
+    for (const auto &test_case : cases) {
+        auto inference = emerald_inference();
+        inference.candidates.front().conflicts.push_back(test_case.conflict);
+        const auto result = reconcile_metatile_attribute_schema(inference, bare_inputs(), &formatter_, &diag_);
+        ASSERT_FALSE(result.has_value());
+        const auto text = error_text(result);
+        EXPECT_NE(text.find("behavior"), std::string::npos) << text;
+        EXPECT_NE(text.find(test_case.expected), std::string::npos) << text;
+        EXPECT_NE(text.find("metatile_attribute_field_overrides"), std::string::npos) << text;
+    }
+}
+
+TEST_F(MetatileAttributeSchemaReconcilerTest, ProviderOverrideSilencesAProviderConflict)
+{
+    auto inference = emerald_inference();
+    inference.candidates.front().conflicts.push_back(
+        InferredFieldConflict{
+            "behavior",
+            FieldConflictKind::provider_behaviors_absent,
+            "include/constants/metatile_behaviors.h",
+            {},
+            {}});
+    auto inputs = bare_inputs();
+    MetatileAttributeFieldOverride override_value;
+    ProviderDefinitionOverride provider_override;
+    provider_override.header = "include/constants/custom_behaviors.h";
+    provider_override.prefix = "MB_";
+    override_value.provider = provider_override;
+    inputs.overrides["behavior"] = override_value;
+
+    const auto result = reconcile_metatile_attribute_schema(inference, inputs, &formatter_, &diag_);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    ASSERT_TRUE(result.value().schema.fields().front().has_provider());
+}
+
+TEST_F(MetatileAttributeSchemaReconcilerTest, ProviderNullSilencesAProviderConflict)
+{
+    // `provider: null` is the deliberate choice of raw values, which is exactly what the old warning-and-continue
+    // path silently assumed. Stated, it settles the conflict; unstated, the same outcome is a guess and fatal.
+    auto inference = emerald_inference();
+    inference.candidates.front().conflicts.push_back(
+        InferredFieldConflict{
+            "behavior",
+            FieldConflictKind::provider_behaviors_absent,
+            "include/constants/metatile_behaviors.h",
+            {},
+            {}});
+    auto inputs = bare_inputs();
+    MetatileAttributeFieldOverride override_value;
+    override_value.provider = ProviderDefinitionOverride{.remove = true};
+    inputs.overrides["behavior"] = override_value;
+
+    const auto result = reconcile_metatile_attribute_schema(inference, inputs, &formatter_, &diag_);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_FALSE(result.value().schema.fields().front().has_provider());
+}
+
+TEST_F(MetatileAttributeSchemaReconcilerTest, MaskOverrideDoesNotSilenceAProviderConflict)
+{
+    // A stated mask says nothing about where the field's value names live, so it must not excuse a provider hunt.
+    auto inference = emerald_inference();
+    inference.candidates.front().conflicts.push_back(
+        InferredFieldConflict{
+            "behavior",
+            FieldConflictKind::provider_behaviors_absent,
+            "include/constants/metatile_behaviors.h",
+            {},
+            {}});
+    auto inputs = bare_inputs();
+    inputs.overrides["behavior"] = MetatileAttributeFieldOverride{0x00FFU, std::nullopt, std::nullopt, std::nullopt};
+
+    const auto result = reconcile_metatile_attribute_schema(inference, inputs, &formatter_, &diag_);
+    ASSERT_FALSE(result.has_value());
+    EXPECT_NE(error_text(result).find("metatile_behaviors.h"), std::string::npos);
+}
+
+TEST_F(MetatileAttributeSchemaReconcilerTest, MaskOverrideSilencesMaskAndShiftConflicts)
+{
+    // A stated mask is the fact both disputes are about: it settles which bits the field occupies, so both the
+    // define-versus-table and the shift-versus-mask disagreement dissolve under it.
+    auto inference = emerald_inference();
+    inference.candidates.front().conflicts.push_back(
+        InferredFieldConflict{"behavior", FieldConflictKind::mask_define_vs_table, {}, 0x00FF, 0x01FF});
+    inference.candidates.front().conflicts.push_back(
+        InferredFieldConflict{"behavior", FieldConflictKind::shift_vs_mask, {}, 4, 0});
+    auto inputs = bare_inputs();
+    inputs.overrides["behavior"] = MetatileAttributeFieldOverride{0x00FFU, std::nullopt, std::nullopt, std::nullopt};
+
+    const auto result = reconcile_metatile_attribute_schema(inference, inputs, &formatter_, &diag_);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().schema.fields().front().mask(), 0x00FFU);
+}
+
+TEST_F(MetatileAttributeSchemaReconcilerTest, ProviderOverrideDoesNotSilenceAShiftConflict)
+{
+    auto inference = emerald_inference();
+    inference.candidates.front().conflicts.push_back(
+        InferredFieldConflict{"behavior", FieldConflictKind::shift_vs_mask, {}, 4, 0});
+    auto inputs = bare_inputs();
+    MetatileAttributeFieldOverride override_value;
+    override_value.provider = ProviderDefinitionOverride{.remove = true};
+    inputs.overrides["behavior"] = override_value;
+
+    const auto result = reconcile_metatile_attribute_schema(inference, inputs, &formatter_, &diag_);
+    ASSERT_FALSE(result.has_value());
+    EXPECT_NE(error_text(result).find("shift"), std::string::npos);
+}
+
+TEST_F(MetatileAttributeSchemaReconcilerTest, ExplicitFieldsBypassTheConflictRuling)
+{
+    // Explicit metatile_attribute_fields are the truth and inference is never consulted for their content, so
+    // nothing inference failed to settle is in play.
+    auto inference = emerald_inference();
+    inference.candidates.front().conflicts.push_back(
+        InferredFieldConflict{
+            "behavior",
+            FieldConflictKind::provider_behaviors_absent,
+            "include/constants/metatile_behaviors.h",
+            {},
+            {}});
+    auto inputs = bare_inputs();
+    inputs.fields = {definition("behavior", 0x00FF), role_definition("layer_type", 0xF000)};
+
+    const auto result = reconcile_metatile_attribute_schema(inference, inputs, &formatter_, &diag_);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(diag_.warnings().size(), 0U);
+}
+
+TEST_F(MetatileAttributeSchemaReconcilerTest, OnlyTheSelectedSetsConflictsAreRuledOn)
+{
+    // The bare and FRLG sets carry different masks, so a conflict in one need not exist in the other. Selecting the
+    // clean set must not trip over the other set's conflict, and selecting the conflicted set must stop.
+    auto inference = dual_inference();
+    inference.candidates[1].conflicts.push_back(
+        InferredFieldConflict{"behavior", FieldConflictKind::mask_define_vs_table, {}, 0x01FF, 0x03FF});
+
+    auto inputs = bare_inputs();
+    inputs.attribute_size = 2; // selects the clean bare set
+    const auto clean = reconcile_metatile_attribute_schema(inference, inputs, &formatter_, &diag_);
+    ASSERT_TRUE(clean.has_value()) << error_text(clean);
+
+    inputs.attribute_size = 4; // selects the conflicted FRLG set
+    const auto conflicted = reconcile_metatile_attribute_schema(inference, inputs, &formatter_, &diag_);
+    ASSERT_FALSE(conflicted.has_value());
+    EXPECT_NE(error_text(conflicted).find("sMetatileAttrMasks"), std::string::npos);
+}
+
+// --- Width: the no-knob equality rule's absent branch. ---
+
+TEST_F(MetatileAttributeSchemaReconcilerTest, AbsentDeclarationWithoutKnobsIsFatalNamingBothKnobs)
+{
+    // With no size knob, struct Tileset's declaration is the only witness that can corroborate the mask-derived
+    // width, so its absence stops resolution. The same missing declaration also starves the generated array
+    // declarations, so the one message names both knobs rather than doling them out one fatal at a time.
+    auto inference = emerald_inference();
+    inference.declaration = {};
+    inference.declaration.scan.source = AttributeDeclarationSource::no_tileset_struct;
+    const auto result = reconcile_metatile_attribute_schema(inference, bare_inputs(), &formatter_, &diag_);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("declares no 'struct Tileset'"), std::string::npos) << text;
+    EXPECT_NE(text.find("fieldmap.metatile_attribute_size"), std::string::npos) << text;
+    EXPECT_NE(text.find("metatile-attribute-declaration-size"), std::string::npos) << text;
+}
+
+TEST_F(MetatileAttributeSchemaReconcilerTest, AbsentDeclarationWithPinnedDeclarationSizeStillNeedsTheSizeKnob)
+{
+    // The previously silent hole: the declaration-size knob supplies the generated declarations' width but says
+    // nothing about the read stride, so the attribute width would rest on masks alone. Fatal, naming the size knob;
+    // the declaration-size knob is not re-demanded, since the user already stated it.
+    auto inference = emerald_inference();
+    inference.declaration = {};
+    inference.declaration.scan.source = AttributeDeclarationSource::no_tileset_struct;
+    auto inputs = bare_inputs();
+    inputs.declaration_size = 2;
+    const auto result = reconcile_metatile_attribute_schema(inference, inputs, &formatter_, &diag_);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("fieldmap.metatile_attribute_size"), std::string::npos) << text;
+    EXPECT_EQ(text.find("also needed"), std::string::npos) << text;
+
+    // The named knob rescues it.
+    inputs.attribute_size = 2;
+    const auto rescued = reconcile_metatile_attribute_schema(inference, inputs, &formatter_, &diag_);
+    ASSERT_TRUE(rescued.has_value()) << error_text(rescued);
+    EXPECT_EQ(rescued.value().attribute_bytes, 2U);
+    EXPECT_EQ(rescued.value().declaration_bytes, 2U);
 }
 
 // --- Diagnostics: contents and order. ---

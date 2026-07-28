@@ -314,6 +314,92 @@ match_candidates_to_size(const std::vector<MetatileAttributeCandidateSet> &candi
     panic("unhandled AttributeDeclarationSource value");
 }
 
+// Says what inference could not settle about one field of the selected layout, and names the override that settles
+// it. Each kind names the specific thing that is absent or contradictory: the fact has no other witness in the
+// project, so a user told only that the field could not be resolved has nowhere to go looking.
+[[nodiscard]] std::string describe_field_conflict(
+    const InferredFieldConflict &conflict, const std::string &header_source, const TextFormatter *format)
+{
+    switch (conflict.kind) {
+    case FieldConflictKind::provider_behaviors_absent:
+        return format->format(
+            "Metatile attribute field '{}' takes its value names from the behavior constants header, but this "
+            "project has no '{}'. Porytiles will not silently fall back to raw numeric values. Restore the header, "
+            "or state the field's provider (or 'provider: null' to use raw values deliberately) via "
+            "metatile_attribute_field_overrides in your Porytiles config.",
+            FormatParam{conflict.field_name, Style::bold},
+            FormatParam{conflict.probed, Style::bold});
+    case FieldConflictKind::provider_behaviors_unreadable:
+        return format->format(
+            "Metatile attribute field '{}' takes its value names from the behavior constants header, but '{}' could "
+            "not be read, so whatever it declares is unknown. Fix the header so Porytiles can scan it, or state the "
+            "field's provider (or 'provider: null' to use raw values deliberately) via "
+            "metatile_attribute_field_overrides in your Porytiles config.",
+            FormatParam{conflict.field_name, Style::bold},
+            FormatParam{conflict.probed, Style::bold});
+    case FieldConflictKind::provider_behaviors_no_constants:
+        return format->format(
+            "Metatile attribute field '{}' takes its value names from the behavior constants header, but '{}' "
+            "declares no MB_ name. Porytiles will not silently fall back to raw numeric values. Declare the "
+            "constants there, or state the field's provider (or 'provider: null' to use raw values deliberately) "
+            "via metatile_attribute_field_overrides in your Porytiles config.",
+            FormatParam{conflict.field_name, Style::bold},
+            FormatParam{conflict.probed, Style::bold});
+    case FieldConflictKind::provider_no_matching_enum:
+        return format->format(
+            "Metatile attribute field '{}' should take its value names from a '{}' enum, but '{}' declares no enum "
+            "member with that prefix. Porytiles will not silently fall back to raw numeric values. Declare the enum, "
+            "or state the field's provider (or 'provider: null' to use raw values deliberately) via "
+            "metatile_attribute_field_overrides in your Porytiles config.",
+            FormatParam{conflict.field_name, Style::bold},
+            FormatParam{conflict.probed, Style::bold},
+            FormatParam{header_source, Style::bold});
+    case FieldConflictKind::mask_define_vs_table:
+        return format->format(
+            "Metatile attribute field '{}' has mask {} from its METATILE_ATTR define but {} from the "
+            "sMetatileAttrMasks table. The project states two different masks for the same field, so it does not in "
+            "fact state one, and packing with the wrong mask silently corrupts every attribute word. Make the two "
+            "sources agree, or set the field's mask via metatile_attribute_field_overrides in your Porytiles config.",
+            FormatParam{conflict.field_name, Style::bold},
+            FormatParam{std::format("0x{:X}", conflict.declared.value()), Style::bold},
+            FormatParam{std::format("0x{:X}", conflict.alternate.value()), Style::bold});
+    case FieldConflictKind::shift_vs_mask:
+        return format->format(
+            "Metatile attribute field '{}' declares shift {}, but its mask places the field at bit offset {}. The "
+            "engine unpacks attribute values with the declared shift while Porytiles packs them at the mask's "
+            "offset, so a value written with this layout would not read back as itself. Make the shift match the "
+            "mask, or set the field's mask via metatile_attribute_field_overrides in your Porytiles config.",
+            FormatParam{conflict.field_name, Style::bold},
+            FormatParam{conflict.declared.value()},
+            FormatParam{conflict.alternate.value()});
+    }
+    panic("unhandled FieldConflictKind value");
+}
+
+// True when the user's override for the conflicted field speaks to the conflicted fact. The check reads the raw
+// overrides rather than the merged result: only the stated override can distinguish "the user chose raw values"
+// (provider: null) from "inference never found a provider", which is the difference between a settled fact and a
+// guess.
+[[nodiscard]] bool
+override_settles_conflict(const InferredFieldConflict &conflict, const MetatileAttributeFieldOverrides &overrides)
+{
+    const auto it = overrides.find(conflict.field_name);
+    if (it == overrides.end()) {
+        return false;
+    }
+    switch (conflict.kind) {
+    case FieldConflictKind::provider_behaviors_absent:
+    case FieldConflictKind::provider_behaviors_unreadable:
+    case FieldConflictKind::provider_behaviors_no_constants:
+    case FieldConflictKind::provider_no_matching_enum:
+        return it->second.provider.has_value();
+    case FieldConflictKind::mask_define_vs_table:
+    case FieldConflictKind::shift_vs_mask:
+        return it->second.mask.has_value();
+    }
+    panic("unhandled FieldConflictKind value");
+}
+
 } // namespace
 
 ChainableResult<LoadedMetatileAttributeSchema> reconcile_metatile_attribute_schema(
@@ -446,6 +532,20 @@ ChainableResult<LoadedMetatileAttributeSchema> reconcile_metatile_attribute_sche
     }
     MetatileAttributeFieldDefinitions resolved = std::move(merged_result).value();
 
+    // Rule on the selected layout's inference conflicts: each fact inference could not settle is fatal unless the
+    // user's override for that field speaks to it (a stated provider, including provider: null, settles a provider
+    // hunt; a stated mask settles a mask or shift dispute). The ruling happens here rather than in inference because
+    // inference runs before the overrides exist, so a fatal raised there would make the escape hatch unreachable.
+    // Explicit metatile_attribute_fields skip this entirely: inference was never consulted for their content, so
+    // nothing it failed to settle is in play (selected is null on that path).
+    if (selected != nullptr) {
+        for (const InferredFieldConflict &conflict : selected->conflicts) {
+            if (!override_settles_conflict(conflict, inputs.overrides)) {
+                return FormattableError{describe_field_conflict(conflict, inputs.fieldmap_header_source, format)};
+            }
+        }
+    }
+
     // Resolve the width. The explicit knob is authoritative when set; otherwise the merged masks are the sole
     // evidence, and a wider scanned declaration contradicts them fatally (masks prove a minimum width, never the
     // width itself, and an attribute entry is never narrower than the element type it is stored in).
@@ -489,14 +589,37 @@ ChainableResult<LoadedMetatileAttributeSchema> reconcile_metatile_attribute_sche
             selected != nullptr
                 ? describe_inferred_size_origin(*selected)
                 : std::format("derived from the explicit metatile_attribute_fields masks ({})", inputs.fields_source);
-        if (inference.declaration.size.has_value() && inference.declaration.size.value() > attribute_bytes) {
+        // With no explicit knob, the masks and struct Tileset's declaration must agree exactly. Masks prove a
+        // minimum width, never the width itself, so the declaration is the only corroborating witness: a missing
+        // one leaves the width resting on masks alone, and a disagreeing one (in either direction; expansion's FRLG
+        // build deliberately reads a wider word than it declares) means the project's own sources do not settle
+        // which width the build reads.
+        if (!inference.declaration.size.has_value()) {
+            std::string message = format->format(
+                "{} Without an explicit metatile attribute size, that declaration is the only fact that can "
+                "corroborate the width the resolved field masks imply, so Porytiles cannot confirm the width this "
+                "project reads. Set 'fieldmap.metatile_attribute_size' in porytiles/config.yaml (or pass "
+                "--metatile-attribute-size) to state it.",
+                FormatParam{
+                    describe_undeclared_width(inference.declaration.scan, inputs.fieldmap_header_source, format)});
+            if (!inputs.declaration_size.has_value()) {
+                // The same missing declaration also leaves the generated array declarations without a width, so the
+                // user is told about both knobs in one round trip rather than hitting the second fatal after fixing
+                // the first.
+                message += " Without a usable declaration, 'fieldmap.metatile_attribute_declaration_size' "
+                           "(--metatile-attribute-declaration-size) is also needed for the generated "
+                           "gMetatileAttributes_* declarations.";
+            }
+            return FormattableError{std::move(message)};
+        }
+        if (inference.declaration.size.value() != attribute_bytes) {
             return FormattableError{format->format(
-                "The resolved metatile attribute field masks need only {}-byte attributes, but struct Tileset "
-                "declares its metatileAttributes member with a {}-byte element type. Masks prove a minimum "
-                "width, never the width itself, and an attribute entry is never narrower than the element it is "
-                "stored in, so Porytiles cannot tell which width this project reads. Set "
-                "'fieldmap.metatile_attribute_size' in porytiles/config.yaml (or pass "
-                "--metatile-attribute-size) to pin the width.",
+                "The resolved metatile attribute field masks need {}-byte attributes, but struct Tileset declares "
+                "its metatileAttributes member with a {}-byte element type. Masks prove a minimum width, never the "
+                "width itself, and a project may legitimately read a different word size than it declares "
+                "(pokeemerald-expansion's FRLG build reads 4-byte words from 'const u16' arrays), so Porytiles "
+                "cannot tell which width this project reads. Set 'fieldmap.metatile_attribute_size' in "
+                "porytiles/config.yaml (or pass --metatile-attribute-size) to pin the width.",
                 FormatParam{attribute_bytes, Style::bold},
                 FormatParam{inference.declaration.size.value(), Style::bold})};
         }

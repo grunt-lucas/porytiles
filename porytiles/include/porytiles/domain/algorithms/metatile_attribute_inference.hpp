@@ -14,9 +14,8 @@
 namespace porytiles {
 
 class TextFormatter;
-class UserDiagnostics;
 
-/// @brief The diagnostic tag the inference and its infra-layer scanner emit their warnings under.
+/// @brief The diagnostic tag the infra-layer scanner emits its warnings under.
 inline constexpr auto metatile_attr_inference_tag = "metatile-attribute-inference";
 
 /// @brief One enum member gathered from a base game's fieldmap header.
@@ -43,6 +42,26 @@ struct InferenceDefine {
 struct InferenceArrayEntry {
     std::string index_name;
     std::optional<std::uint32_t> value;
+};
+
+/// @brief What the scan found where the behavior constants header should be.
+///
+/// @details
+/// The scanner reports what it saw, never what it means. The distinction between @c absent and @c unreadable matters
+/// downstream: a project with no header genuinely declares no behavior constants, while a header that failed to scan
+/// may declare plenty, and telling the user "no constants were found" in the latter case would send them looking at a
+/// file that is full of them.
+enum class BehaviorsHeaderSource {
+    absent,       ///< the project has no include/constants/metatile_behaviors.h
+    unreadable,   ///< the header exists but could not be scanned
+    no_constants, ///< the header was scanned and declares no MB_ name
+    declared,     ///< the header declares at least one MB_ name
+};
+
+/// @brief The behavior constants header, as the scan found it.
+struct BehaviorsHeaderScan {
+    BehaviorsHeaderSource source{BehaviorsHeaderSource::absent};
+    std::string path; ///< the path looked at, so a diagnostic can name it
 };
 
 /// @brief What the scan found where struct Tileset's metatileAttributes member should be.
@@ -98,12 +117,45 @@ struct MetatileAttributeScan {
     std::vector<InferenceArrayEntry> masks_array; ///< entries of the exact-name sMetatileAttrMasks table (may be empty)
     std::vector<InferenceArrayEntry>
         shifts_array;                     ///< entries of the exact-name sMetatileAttrShifts table (may be empty)
-    bool behaviors_header_present{false}; ///< the behaviors header exists and declares at least one MB_ name
+    BehaviorsHeaderScan behaviors_header; ///< the behavior constants header, or why there is none
     AttributeDeclarationScan declaration; ///< struct Tileset's metatileAttributes declaration, or why there is none
     std::string header_source;      ///< path of the fieldmap header the defines, enum members, and struct came from
     std::string masks_table_source; ///< path of the file the mask table came from, empty when no table was read
     std::vector<std::string>
         unreadable_sources; ///< files that exist but could not be read, so whatever they declare is missing above
+};
+
+/// @brief Why one inferred field could not be settled from the project's sources alone.
+///
+/// @details
+/// The provider kinds record a field whose value-name provider could not be located: the behavior field's constants
+/// header is absent, unreadable, or empty, or a named field's @c TILE_<X>_ enum probe found nothing. The remaining
+/// kinds record two project sources contradicting each other about the same fact: a mask define disagreeing with the
+/// mask table entry, or a declared shift (define or table entry) disagreeing with the offset its mask implies.
+enum class FieldConflictKind {
+    provider_behaviors_absent,       ///< the behavior constants header does not exist
+    provider_behaviors_unreadable,   ///< the behavior constants header exists but could not be scanned
+    provider_behaviors_no_constants, ///< the header was scanned and declares no MB_ name
+    provider_no_matching_enum,       ///< no enum member with the probed prefix exists in the fieldmap header
+    mask_define_vs_table,            ///< the field's mask define and mask table entry disagree
+    shift_vs_mask,                   ///< the field's declared shift and its mask's bit offset disagree
+};
+
+/// @brief One unsettled fact about one inferred field, carried out of inference for the reconciler to rule on.
+///
+/// @details
+/// Inference cannot rule on these itself: it runs before the user's field overrides are merged, and an override can
+/// legitimately settle any of them (a stated mask ends a mask or shift dispute, a stated provider, including
+/// `provider: null`, ends a provider hunt). The reconciler, which sees the overrides, turns each conflict fatal
+/// unless the matching override speaks to it. @c probed is the header path (behavior provider kinds) or the enum
+/// prefix (the named-probe kind); @c declared and @c alternate carry the two disagreeing values for the mask and
+/// shift kinds (define mask versus table mask, declared shift versus the shift the mask implies).
+struct InferredFieldConflict {
+    std::string field_name;
+    FieldConflictKind kind;
+    std::string probed;                     ///< header path or enum prefix (provider kinds only)
+    std::optional<std::uint32_t> declared;  ///< define mask, or the declared shift
+    std::optional<std::uint32_t> alternate; ///< table mask, or the shift the mask implies
 };
 
 /// @brief One complete metatile attribute mask layout a project declares.
@@ -118,11 +170,15 @@ struct MetatileAttributeScan {
 /// the layer-type field, when the layout declares its mask, appears here as an ordinary definition named "layer_type"
 /// carrying FieldRole::layer_type, and a set with no field beyond that role field is discarded as unusable.
 /// @c required_bytes is the smallest of 1, 2, or 4 bytes that covers every mask in the set.
+/// @c conflicts lists the facts inference could not settle for this set's fields (see InferredFieldConflict); the
+/// list is per-set because the bare and FRLG layouts carry different masks, so a conflict in one need not exist in
+/// the other, and only the selected set's conflicts should ever matter.
 struct MetatileAttributeCandidateSet {
     std::string origin;
     std::string source;
     MetatileAttributeFieldDefinitions fields;
     std::size_t required_bytes{2};
+    std::vector<InferredFieldConflict> conflicts;
 };
 
 /// @brief The outcome kind of an inference run.
@@ -166,7 +222,8 @@ struct MetatileAttributeInferenceResult {
 /// - Phase A gathers the field suffixes and per-suffix masks from the attribute enum, the `METATILE_ATTR_*_MASK`
 ///   defines, and the sMetatileAttrMasks table, then groups them into candidate sets: when `*_MASK_FRLG` defines are
 ///   present the bare defines form one set and the FRLG defines (plus the table) form another; otherwise everything
-///   merges into a single set, with the define winning over a disagreeing table entry (warned).
+///   merges into a single set, with the define winning over a disagreeing table entry (the disagreement is recorded
+///   as a conflict on the set for the reconciler to rule on).
 /// - Phase B names each field and attaches a value-name provider (behavior constants, terrain/encounter enums) where
 ///   one can be located. The LAYER_TYPE suffix always names the field "layer_type" and never gets a provider: its
 ///   values are managed by Porytiles, and the emitted definition carries `FieldRole::layer_type`.
@@ -178,17 +235,16 @@ struct MetatileAttributeInferenceResult {
 /// scan lists unreadable sources, the same outcome is `invalid` instead, with an error saying the masks could not be
 /// read: a project whose fieldmap files failed to scan must not be told it declares no masks.
 ///
-/// Non-fatal findings (a missing behavior constants header, a mask define disagreeing with the mask table, a shift
-/// table entry disagreeing with its mask) are emitted to `diag` under the "metatile-attribute-inference" tag as they
-/// are discovered.
+/// Facts inference could not settle for a set's fields (a missing or unreadable behavior constants header, a named
+/// field whose value-name enum probe found nothing, a mask define disagreeing with the mask table, a declared shift
+/// disagreeing with its mask's offset) are recorded on that set's conflict list rather than diagnosed here.
+/// Inference runs before the user's field overrides are merged, so it cannot know which conflicts an override
+/// settles; the reconciler rules on the selected set's conflicts once the overrides are in view.
 ///
 /// @param scan The raw facts gathered from the project
-/// @param format The formatter used to style diagnostic text
-/// @param diag The sink the non-fatal warnings are emitted to
+/// @param format The formatter used to style error text
 /// @return The inferred candidate sets, an actionable error, or a not-provided outcome
-[[nodiscard]] MetatileAttributeInferenceResult infer_metatile_attribute_candidates(
-    const MetatileAttributeScan &scan,
-    gsl::not_null<const TextFormatter *> format,
-    gsl::not_null<const UserDiagnostics *> diag);
+[[nodiscard]] MetatileAttributeInferenceResult
+infer_metatile_attribute_candidates(const MetatileAttributeScan &scan, gsl::not_null<const TextFormatter *> format);
 
 } // namespace porytiles

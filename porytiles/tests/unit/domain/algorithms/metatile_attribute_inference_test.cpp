@@ -3,12 +3,12 @@
 #include <algorithm>
 #include <optional>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include <gtest/gtest.h>
 
 #include "porytiles/utilities/text/plain_text_formatter.hpp"
-#include "porytiles/xcut/diagnostics/buffered_user_diagnostics.hpp"
 
 namespace porytiles {
 namespace {
@@ -16,17 +16,6 @@ namespace {
 class MetatileAttributeInferenceTest : public ::testing::Test {
   protected:
     PlainTextFormatter formatter_;
-    BufferedUserDiagnostics diag_;
-
-    // True when some buffered warning line contains the given text. Warnings are buffered as line vectors, so the
-    // probe has to walk both levels.
-    [[nodiscard]] bool warned_about(const std::string &text) const
-    {
-        return std::any_of(diag_.warnings().begin(), diag_.warnings().end(), [&](const std::vector<std::string> &w) {
-            return std::any_of(
-                w.begin(), w.end(), [&](const std::string &line) { return line.find(text) != std::string::npos; });
-        });
-    }
 
     [[nodiscard]] const MetatileAttributeFieldDefinition *
     find(const MetatileAttributeFieldDefinitions &definitions, const std::string &name)
@@ -41,6 +30,16 @@ class MetatileAttributeInferenceTest : public ::testing::Test {
     {
         return InferenceEnumMember{name, value};
     }
+
+    [[nodiscard]] static const InferredFieldConflict *
+    find_conflict(const MetatileAttributeCandidateSet &candidate, const std::string &field, FieldConflictKind kind)
+    {
+        auto it =
+            std::find_if(candidate.conflicts.begin(), candidate.conflicts.end(), [&](const InferredFieldConflict &c) {
+                return c.field_name == field && c.kind == kind;
+            });
+        return it == candidate.conflicts.end() ? nullptr : &*it;
+    }
 };
 
 // Stock pokeemerald: mask defines only (behavior + layer), behavior constants present. One candidate set whose
@@ -49,10 +48,10 @@ TEST_F(MetatileAttributeInferenceTest, EmeraldDefinesOnly)
 {
     MetatileAttributeScan scan;
     scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}, {"METATILE_ATTR_LAYER_MASK", 0xF000}};
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
     scan.header_source = "include/global.fieldmap.h";
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
     ASSERT_EQ(result.candidates.size(), 1U);
     const auto &candidate = result.candidates.front();
@@ -77,6 +76,9 @@ TEST_F(MetatileAttributeInferenceTest, EmeraldDefinesOnly)
     EXPECT_EQ(layer->mask.value(), 0xF000U);
     EXPECT_EQ(layer->role, FieldRole::layer_type);
     EXPECT_FALSE(layer->provider.has_value());
+
+    // Every fact settled cleanly, so nothing rides along for the reconciler to rule on.
+    EXPECT_TRUE(candidate.conflicts.empty());
 }
 
 // Stock pokefirered: the declaration enum plus the sMetatileAttrMasks table. One candidate set requiring 4 bytes.
@@ -108,11 +110,11 @@ TEST_F(MetatileAttributeInferenceTest, FireredEnumPlusMaskTable)
         {"METATILE_ATTRIBUTE_LAYER_TYPE", 0x60000000},
         {"METATILE_ATTRIBUTE_7", 0x80000000},
     };
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
     scan.header_source = "include/global.fieldmap.h";
     scan.masks_table_source = "src/fieldmap.c";
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
     ASSERT_EQ(result.candidates.size(), 1U);
     const auto &candidate = result.candidates.front();
@@ -157,6 +159,10 @@ TEST_F(MetatileAttributeInferenceTest, FireredEnumPlusMaskTable)
     EXPECT_EQ(layer->mask.value(), 0x60000000U);
     EXPECT_EQ(layer->role, FieldRole::layer_type);
     EXPECT_FALSE(layer->provider.has_value());
+
+    // The numeric-suffix fields state that they have no name and no constants: nothing was inferred for them, so
+    // nothing failed and they carry no provider conflict. No conflicts anywhere on the set.
+    EXPECT_TRUE(candidate.conflicts.empty());
 }
 
 // pokeemerald-expansion: both mask layouts declared. Two candidate sets: the bare defines (behavior + layer_type,
@@ -193,11 +199,11 @@ TEST_F(MetatileAttributeInferenceTest, ExpansionDualLayout)
         {"METATILE_ATTRIBUTE_LAYER_TYPE", 0x60000000},
         {"METATILE_ATTRIBUTE_7", 0x80000000},
     };
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
     scan.header_source = "include/global.fieldmap.h";
     scan.masks_table_source = "src/fieldmap.c";
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
     ASSERT_EQ(result.candidates.size(), 2U);
 
@@ -240,10 +246,10 @@ TEST_F(MetatileAttributeInferenceTest, DualLayoutWithoutAMaskTableNamesOnlyTheDe
         {"METATILE_ATTR_BEHAVIOR_MASK_FRLG", 0x000001FF},
         {"METATILE_ATTR_LAYER_MASK_FRLG", 0x60000000},
     };
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
     scan.header_source = "include/global.fieldmap.h";
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
     ASSERT_EQ(result.candidates.size(), 2U);
     EXPECT_EQ(result.candidates[1].origin, "the METATILE_ATTR_*_MASK_FRLG defines");
@@ -262,10 +268,10 @@ TEST_F(MetatileAttributeInferenceTest, PartiallyRecordedScanPathsListOnlyWhatIsK
     };
     scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}};
     scan.masks_array = {{"METATILE_ATTRIBUTE_LAYER_TYPE", 0x0000F000}};
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
     scan.header_source = "include/global.fieldmap.h";
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
     ASSERT_EQ(result.candidates.size(), 1U);
     EXPECT_EQ(result.candidates.front().origin, "the METATILE_ATTR_*_MASK defines and the sMetatileAttrMasks table");
@@ -278,9 +284,9 @@ TEST_F(MetatileAttributeInferenceTest, UnrecordedScanPathsYieldNoCandidateSource
 {
     MetatileAttributeScan scan;
     scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}, {"METATILE_ATTR_LAYER_MASK", 0xF000}};
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
     ASSERT_EQ(result.candidates.size(), 1U);
     EXPECT_TRUE(result.candidates.front().source.empty());
@@ -292,9 +298,9 @@ TEST_F(MetatileAttributeInferenceTest, CustomLayerMaskCaptured)
 {
     MetatileAttributeScan scan;
     scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}, {"METATILE_ATTR_LAYER_MASK", 0x0300}};
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
     ASSERT_EQ(result.candidates.size(), 1U);
     const auto *layer = find(result.candidates.front().fields, "layer_type");
@@ -320,9 +326,9 @@ TEST_F(MetatileAttributeInferenceTest, AbsentLayerFieldYieldsNoRoleField)
         {"METATILE_ATTRIBUTE_BEHAVIOR", 0x000000FF},
         {"METATILE_ATTRIBUTE_TERRAIN", 0x00000F00},
     };
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
     ASSERT_EQ(result.candidates.size(), 1U);
     EXPECT_EQ(find(result.candidates.front().fields, "layer_type"), nullptr);
@@ -342,9 +348,9 @@ TEST_F(MetatileAttributeInferenceTest, BehaviorOnlyWithNoMasksIsInvalid)
         enum_member("METATILE_ATTRIBUTE_LAYER_TYPE", 1),
         enum_member("METATILE_ATTRIBUTE_COUNT", 2),
     };
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     ASSERT_EQ(result.status, AttributeInferenceStatus::invalid);
     EXPECT_NE(result.error_message.find("behavior"), std::string::npos);
     EXPECT_NE(result.error_message.find("METATILE_ATTR_BEHAVIOR_MASK"), std::string::npos);
@@ -362,9 +368,9 @@ TEST_F(MetatileAttributeInferenceTest, MissingLayerMaskIsInvalidWithEmeraldDefin
         enum_member("METATILE_ATTRIBUTE_COUNT", 2),
     };
     scan.masks_array = {{"METATILE_ATTRIBUTE_BEHAVIOR", 0x00FF}}; // layer_type has no mask anywhere
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     ASSERT_EQ(result.status, AttributeInferenceStatus::invalid);
     EXPECT_NE(result.error_message.find("layer_type"), std::string::npos);
     EXPECT_NE(result.error_message.find("METATILE_ATTR_LAYER_MASK"), std::string::npos);
@@ -382,9 +388,9 @@ TEST_F(MetatileAttributeInferenceTest, MultiFieldMissingMaskIsInvalid)
         enum_member("METATILE_ATTRIBUTE_COUNT", 3),
     };
     scan.masks_array = {{"METATILE_ATTRIBUTE_BEHAVIOR", 0x1FF}}; // terrain has no mask
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     ASSERT_EQ(result.status, AttributeInferenceStatus::invalid);
     EXPECT_NE(result.error_message.find("terrain"), std::string::npos);
     // The diagnostic names all three escape hatches.
@@ -399,9 +405,9 @@ TEST_F(MetatileAttributeInferenceTest, LayerNormalization)
 {
     MetatileAttributeScan scan;
     scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}, {"METATILE_ATTR_LAYER_MASK", 0xF000}};
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
     ASSERT_EQ(result.candidates.size(), 1U);
     const auto &fields = result.candidates.front().fields;
@@ -413,25 +419,113 @@ TEST_F(MetatileAttributeInferenceTest, LayerNormalization)
     EXPECT_EQ(find(fields, "layer"), nullptr);
 }
 
-// When the behaviors header has no entries, the behavior field is emitted without a provider, plus a warning.
-TEST_F(MetatileAttributeInferenceTest, EmptyBehaviorsHeaderFallsBackToRaw)
+// When the behaviors header is absent, the behavior field is emitted without a provider and the candidate carries a
+// conflict record. Inference does not rule on it: whether the missing provider is fatal depends on the user's
+// overrides, which only the reconciler can see.
+TEST_F(MetatileAttributeInferenceTest, AbsentBehaviorsHeaderIsRecordedAsConflict)
 {
     MetatileAttributeScan scan;
     scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}, {"METATILE_ATTR_LAYER_MASK", 0xF000}};
-    scan.behaviors_header_present = false;
+    scan.behaviors_header = {BehaviorsHeaderSource::absent, "include/constants/metatile_behaviors.h"};
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
     ASSERT_EQ(result.candidates.size(), 1U);
-    ASSERT_EQ(result.candidates.front().fields.size(), 2U); // behavior plus the layer_type role field
-    EXPECT_EQ(result.candidates.front().fields[0].name, "behavior");
-    EXPECT_FALSE(result.candidates.front().fields[0].provider.has_value());
-    EXPECT_EQ(diag_.warning_tag_counts().at(metatile_attr_inference_tag), 1U);
-    EXPECT_TRUE(warned_about("no behavior constants found in"));
+    const auto &candidate = result.candidates.front();
+    ASSERT_EQ(candidate.fields.size(), 2U); // behavior plus the layer_type role field
+    EXPECT_EQ(candidate.fields[0].name, "behavior");
+    EXPECT_FALSE(candidate.fields[0].provider.has_value());
+    ASSERT_EQ(candidate.conflicts.size(), 1U);
+    const auto *conflict = find_conflict(candidate, "behavior", FieldConflictKind::provider_behaviors_absent);
+    ASSERT_NE(conflict, nullptr);
+    EXPECT_EQ(conflict->probed, "include/constants/metatile_behaviors.h");
 }
 
-// A shift table entry that disagrees with the mask offset produces a warning but does not fail.
-TEST_F(MetatileAttributeInferenceTest, ShiftMismatchWarns)
+// The unreadable and no-constants header states each carry their own conflict kind, so the eventual error can say
+// which one happened: "declares no MB_ name" is false of a header that never lexed.
+TEST_F(MetatileAttributeInferenceTest, UnreadableAndEmptyBehaviorsHeadersCarryDistinctConflictKinds)
+{
+    for (const auto [source, kind] : {
+             std::pair{BehaviorsHeaderSource::unreadable, FieldConflictKind::provider_behaviors_unreadable},
+             std::pair{BehaviorsHeaderSource::no_constants, FieldConflictKind::provider_behaviors_no_constants},
+         }) {
+        MetatileAttributeScan scan;
+        scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}};
+        scan.behaviors_header = {source, "include/constants/metatile_behaviors.h"};
+
+        const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
+        ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
+        ASSERT_EQ(result.candidates.size(), 1U);
+        ASSERT_EQ(result.candidates.front().conflicts.size(), 1U);
+        EXPECT_NE(find_conflict(result.candidates.front(), "behavior", kind), nullptr);
+    }
+}
+
+// A scan that recorded no behaviors-header path still yields a conflict naming the canonical relative path, so the
+// eventual diagnostic never prints an empty file name.
+TEST_F(MetatileAttributeInferenceTest, BehaviorsConflictFallsBackToTheCanonicalPath)
+{
+    MetatileAttributeScan scan;
+    scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}};
+    scan.behaviors_header.source = BehaviorsHeaderSource::absent; // no path recorded
+
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
+    ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
+    ASSERT_EQ(result.candidates.size(), 1U);
+    const auto *conflict =
+        find_conflict(result.candidates.front(), "behavior", FieldConflictKind::provider_behaviors_absent);
+    ASSERT_NE(conflict, nullptr);
+    EXPECT_EQ(conflict->probed, "include/constants/metatile_behaviors.h");
+}
+
+// A named field whose TILE_<X>_ enum probe finds nothing is recorded as a conflict naming the probed prefix. This
+// path was completely silent before conflicts existed.
+TEST_F(MetatileAttributeInferenceTest, NamedFieldWithNoMatchingEnumIsRecordedAsConflict)
+{
+    MetatileAttributeScan scan;
+    scan.enum_members = {
+        enum_member("METATILE_ATTRIBUTE_BEHAVIOR", 0),
+        enum_member("METATILE_ATTRIBUTE_TERRAIN", 1),
+        enum_member("METATILE_ATTRIBUTE_COUNT", 2),
+        // No TILE_TERRAIN_* member anywhere.
+    };
+    scan.masks_array = {{"METATILE_ATTRIBUTE_BEHAVIOR", 0x00FF}, {"METATILE_ATTRIBUTE_TERRAIN", 0x0F00}};
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
+
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
+    ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
+    ASSERT_EQ(result.candidates.size(), 1U);
+    const auto &candidate = result.candidates.front();
+    EXPECT_FALSE(find(candidate.fields, "terrain")->provider.has_value());
+    ASSERT_EQ(candidate.conflicts.size(), 1U);
+    const auto *conflict = find_conflict(candidate, "terrain", FieldConflictKind::provider_no_matching_enum);
+    ASSERT_NE(conflict, nullptr);
+    EXPECT_EQ(conflict->probed, "TILE_TERRAIN_");
+}
+
+// A _TYPE field records the stripped retry probe, the last prefix actually looked for.
+TEST_F(MetatileAttributeInferenceTest, TypeSuffixProbeConflictNamesTheRetriedPrefix)
+{
+    MetatileAttributeScan scan;
+    scan.enum_members = {
+        enum_member("METATILE_ATTRIBUTE_BEHAVIOR", 0),
+        enum_member("METATILE_ATTRIBUTE_ENCOUNTER_TYPE", 1),
+        enum_member("METATILE_ATTRIBUTE_COUNT", 2),
+    };
+    scan.masks_array = {{"METATILE_ATTRIBUTE_BEHAVIOR", 0x00FF}, {"METATILE_ATTRIBUTE_ENCOUNTER_TYPE", 0x0F00}};
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
+
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
+    ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
+    const auto *conflict =
+        find_conflict(result.candidates.front(), "encounter_type", FieldConflictKind::provider_no_matching_enum);
+    ASSERT_NE(conflict, nullptr);
+    EXPECT_EQ(conflict->probed, "TILE_ENCOUNTER_");
+}
+
+// A shift table entry that disagrees with the mask offset is recorded as a conflict; the mask still resolves the
+// field, since inference does not rule.
+TEST_F(MetatileAttributeInferenceTest, ShiftTableMismatchIsRecordedAsConflict)
 {
     MetatileAttributeScan scan;
     scan.enum_members = {
@@ -441,18 +535,92 @@ TEST_F(MetatileAttributeInferenceTest, ShiftMismatchWarns)
     };
     scan.masks_array = {{"METATILE_ATTRIBUTE_BEHAVIOR", 0x00FF}, {"METATILE_ATTRIBUTE_LAYER_TYPE", 0xF000}};
     scan.shifts_array = {{"METATILE_ATTRIBUTE_BEHAVIOR", 4}}; // wrong: 0x00FF has offset 0
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
     ASSERT_EQ(result.candidates.size(), 1U);
-    EXPECT_EQ(result.candidates.front().fields[0].mask.value(), 0x00FFU); // mask wins
-    EXPECT_EQ(diag_.warning_tag_counts().at(metatile_attr_inference_tag), 1U);
-    EXPECT_TRUE(warned_about("shift table entry (4) does not match its mask offset (0)"));
+    const auto &candidate = result.candidates.front();
+    EXPECT_EQ(candidate.fields[0].mask.value(), 0x00FFU);
+    ASSERT_EQ(candidate.conflicts.size(), 1U);
+    const auto *conflict = find_conflict(candidate, "behavior", FieldConflictKind::shift_vs_mask);
+    ASSERT_NE(conflict, nullptr);
+    EXPECT_EQ(conflict->declared, 4U);
+    EXPECT_EQ(conflict->alternate, 0U);
 }
 
-// Single layout: when a mask define and the mask table disagree, the define wins and a warning is emitted.
-TEST_F(MetatileAttributeInferenceTest, SingleLayoutDefineVsTableConflictDefineWins)
+// The METATILE_ATTR_*_SHIFT defines are cross-checked against their masks the same way the shift table is. This form
+// (stock pokeemerald and expansion) was checked nowhere before.
+TEST_F(MetatileAttributeInferenceTest, ShiftDefineMismatchIsRecordedAsConflict)
+{
+    MetatileAttributeScan scan;
+    scan.defines = {
+        {"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF},
+        {"METATILE_ATTR_BEHAVIOR_SHIFT", 0},
+        {"METATILE_ATTR_LAYER_MASK", 0xF000},
+        {"METATILE_ATTR_LAYER_SHIFT", 8}, // wrong: 0xF000 has offset 12
+    };
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
+
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
+    ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
+    ASSERT_EQ(result.candidates.size(), 1U);
+    const auto &candidate = result.candidates.front();
+    ASSERT_EQ(candidate.conflicts.size(), 1U);
+    // The LAYER stem normalizes to the layer_type field, matching how the mask define names it.
+    const auto *conflict = find_conflict(candidate, "layer_type", FieldConflictKind::shift_vs_mask);
+    ASSERT_NE(conflict, nullptr);
+    EXPECT_EQ(conflict->declared, 8U);
+    EXPECT_EQ(conflict->alternate, 12U);
+}
+
+// Matching shift defines are the stock pokeemerald shape and must pass silently.
+TEST_F(MetatileAttributeInferenceTest, MatchingShiftDefinesRecordNoConflict)
+{
+    MetatileAttributeScan scan;
+    scan.defines = {
+        {"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF},
+        {"METATILE_ATTR_BEHAVIOR_SHIFT", 0},
+        {"METATILE_ATTR_LAYER_MASK", 0xF000},
+        {"METATILE_ATTR_LAYER_SHIFT", 12},
+    };
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
+
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
+    ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
+    ASSERT_EQ(result.candidates.size(), 1U);
+    EXPECT_TRUE(result.candidates.front().conflicts.empty());
+}
+
+// In a dual layout, a bare shift define pairs with the bare mask and a _SHIFT_FRLG define pairs with the FRLG mask.
+// Each conflict lands only on the set whose mask it disagrees with.
+TEST_F(MetatileAttributeInferenceTest, ShiftDefinePairingFollowsTheLayoutSplit)
+{
+    MetatileAttributeScan scan;
+    scan.defines = {
+        {"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF},
+        {"METATILE_ATTR_BEHAVIOR_SHIFT", 0}, // matches the bare mask
+        {"METATILE_ATTR_BEHAVIOR_MASK_FRLG", 0x03FE},
+        {"METATILE_ATTR_BEHAVIOR_SHIFT_FRLG", 0}, // wrong: 0x03FE has offset 1
+        {"METATILE_ATTR_LAYER_MASK", 0xF000},
+        {"METATILE_ATTR_LAYER_MASK_FRLG", 0x60000000},
+    };
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
+
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
+    ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
+    ASSERT_EQ(result.candidates.size(), 2U);
+    EXPECT_TRUE(result.candidates[0].conflicts.empty()); // the bare set's shift matches
+    ASSERT_EQ(result.candidates[1].conflicts.size(), 1U);
+    const auto *conflict = find_conflict(result.candidates[1], "behavior", FieldConflictKind::shift_vs_mask);
+    ASSERT_NE(conflict, nullptr);
+    EXPECT_EQ(conflict->declared, 0U);
+    EXPECT_EQ(conflict->alternate, 1U);
+}
+
+// Single layout: when a mask define and the mask table disagree, the define still wins the mask, and the
+// disagreement is recorded as a conflict carrying both values.
+TEST_F(MetatileAttributeInferenceTest, SingleLayoutDefineVsTableConflictIsRecorded)
 {
     MetatileAttributeScan scan;
     scan.enum_members = {
@@ -465,18 +633,23 @@ TEST_F(MetatileAttributeInferenceTest, SingleLayoutDefineVsTableConflictDefineWi
         {"METATILE_ATTRIBUTE_BEHAVIOR", 0x01FF}, // disagrees with the define
         {"METATILE_ATTRIBUTE_LAYER_TYPE", 0xF000},
     };
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
     ASSERT_EQ(result.candidates.size(), 1U);
-    EXPECT_EQ(find(result.candidates.front().fields, "behavior")->mask.value(), 0x00FFU); // define wins
-    EXPECT_EQ(diag_.warning_tag_counts().at(metatile_attr_inference_tag), 1U);
-    EXPECT_TRUE(warned_about("field 'behavior' mask define disagrees with the mask table"));
+    const auto &candidate = result.candidates.front();
+    EXPECT_EQ(find(candidate.fields, "behavior")->mask.value(), 0x00FFU); // define wins
+    ASSERT_EQ(candidate.conflicts.size(), 1U);
+    const auto *conflict = find_conflict(candidate, "behavior", FieldConflictKind::mask_define_vs_table);
+    ASSERT_NE(conflict, nullptr);
+    EXPECT_EQ(conflict->declared, 0x00FFU);
+    EXPECT_EQ(conflict->alternate, 0x01FFU);
 }
 
-// Dual layout: when the FRLG define and the FRLG-valued table disagree, the define wins and a warning is emitted.
-TEST_F(MetatileAttributeInferenceTest, DualLayoutFrlgDefineVsTableConflictDefineWins)
+// Dual layout: a FRLG define disagreeing with the FRLG-valued table is a conflict on the FRLG set only. The bare set
+// never consults the table, so it stays clean.
+TEST_F(MetatileAttributeInferenceTest, DualLayoutFrlgDefineVsTableConflictIsRecordedOnTheFrlgSet)
 {
     MetatileAttributeScan scan;
     scan.enum_members = {
@@ -491,15 +664,19 @@ TEST_F(MetatileAttributeInferenceTest, DualLayoutFrlgDefineVsTableConflictDefine
         {"METATILE_ATTR_LAYER_MASK_FRLG", 0x60000000},
     };
     scan.masks_array = {{"METATILE_ATTRIBUTE_BEHAVIOR", 0x03FF}}; // disagrees with the FRLG define
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
     ASSERT_EQ(result.candidates.size(), 2U);
     EXPECT_EQ(find(result.candidates[0].fields, "behavior")->mask.value(), 0x00FFU);
     EXPECT_EQ(find(result.candidates[1].fields, "behavior")->mask.value(), 0x1FFU); // FRLG define wins over the table
-    EXPECT_EQ(diag_.warning_tag_counts().at(metatile_attr_inference_tag), 1U);
-    EXPECT_TRUE(warned_about("field 'behavior' FRLG mask define disagrees with the mask table"));
+    EXPECT_TRUE(result.candidates[0].conflicts.empty());
+    ASSERT_EQ(result.candidates[1].conflicts.size(), 1U);
+    const auto *conflict = find_conflict(result.candidates[1], "behavior", FieldConflictKind::mask_define_vs_table);
+    ASSERT_NE(conflict, nullptr);
+    EXPECT_EQ(conflict->declared, 0x01FFU);
+    EXPECT_EQ(conflict->alternate, 0x03FFU);
 }
 
 TEST_F(MetatileAttributeInferenceTest, AmbiguousConditionalMaskIsInvalid)
@@ -507,9 +684,9 @@ TEST_F(MetatileAttributeInferenceTest, AmbiguousConditionalMaskIsInvalid)
     MetatileAttributeScan scan;
     scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}};
     scan.ambiguous_defines.insert("METATILE_ATTR_BEHAVIOR_MASK");
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     EXPECT_EQ(result.status, AttributeInferenceStatus::invalid);
     EXPECT_NE(result.error_message.find("METATILE_ATTR_BEHAVIOR_MASK"), std::string::npos);
     EXPECT_NE(result.error_message.find("metatile_attribute_field_overrides"), std::string::npos);
@@ -521,7 +698,7 @@ TEST_F(MetatileAttributeInferenceTest, NothingFoundIsNotProvided)
     MetatileAttributeScan scan;
     scan.enum_members = {enum_member("SOME_UNRELATED_ENUM_MEMBER", 0)};
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     EXPECT_EQ(result.status, AttributeInferenceStatus::not_provided);
     EXPECT_TRUE(result.candidates.empty());
 }
@@ -534,7 +711,7 @@ TEST_F(MetatileAttributeInferenceTest, NothingFoundWithAnUnreadableSourceIsInval
     MetatileAttributeScan scan;
     scan.unreadable_sources = {"include/global.fieldmap.h"};
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     EXPECT_EQ(result.status, AttributeInferenceStatus::invalid);
     EXPECT_TRUE(result.candidates.empty());
     EXPECT_NE(result.error_message.find("could not read"), std::string::npos) << result.error_message;
@@ -548,10 +725,10 @@ TEST_F(MetatileAttributeInferenceTest, LayerOnlyLayoutWithAnUnreadableSourceIsIn
 {
     MetatileAttributeScan scan;
     scan.defines = {{"METATILE_ATTR_LAYER_MASK", 0xF000}};
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
     scan.unreadable_sources = {"src/fieldmap.c"};
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     EXPECT_EQ(result.status, AttributeInferenceStatus::invalid);
     EXPECT_NE(result.error_message.find("src/fieldmap.c"), std::string::npos) << result.error_message;
 }
@@ -562,10 +739,10 @@ TEST_F(MetatileAttributeInferenceTest, UnreadableSourceDoesNotSpoilAnOtherwiseVa
 {
     MetatileAttributeScan scan;
     scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}};
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
     scan.unreadable_sources = {"src/fieldmap.c"};
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     EXPECT_EQ(result.status, AttributeInferenceStatus::valid);
     ASSERT_EQ(result.candidates.size(), 1U);
 }
@@ -575,9 +752,9 @@ TEST_F(MetatileAttributeInferenceTest, OneByteMaskYieldsOneByteCandidate)
 {
     MetatileAttributeScan scan;
     scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x0F}};
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
     ASSERT_EQ(result.candidates.size(), 1U);
     EXPECT_EQ(result.candidates.front().required_bytes, 1U);
@@ -596,9 +773,9 @@ TEST_F(MetatileAttributeInferenceTest, LayerTypeRoleFieldNeverGetsAProvider)
         enum_member("TILE_LAYER_TYPE_NORMAL", 0),
     };
     scan.masks_array = {{"METATILE_ATTRIBUTE_BEHAVIOR", 0x00FF}, {"METATILE_ATTRIBUTE_LAYER_TYPE", 0xF000}};
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
     ASSERT_EQ(result.candidates.size(), 1U);
     const auto *layer = find(result.candidates.front().fields, "layer_type");
@@ -613,9 +790,9 @@ TEST_F(MetatileAttributeInferenceTest, LayerOnlyLayoutIsNotProvided)
 {
     MetatileAttributeScan scan;
     scan.defines = {{"METATILE_ATTR_LAYER_MASK", 0xF000}};
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
 
-    const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
     EXPECT_EQ(result.status, AttributeInferenceStatus::not_provided);
     EXPECT_TRUE(result.candidates.empty());
 }
@@ -627,16 +804,16 @@ TEST_F(MetatileAttributeInferenceTest, DeclarationSizeMapsFromElementType)
 {
     MetatileAttributeScan scan;
     scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}};
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
     scan.declaration = {AttributeDeclarationSource::declared, "u8", 1, true};
 
-    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_, &diag_).declaration.size, 1U);
+    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_).declaration.size, 1U);
     scan.declaration.element_type = "u16";
-    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_, &diag_).declaration.size, 2U);
+    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_).declaration.size, 2U);
     scan.declaration.element_type = "u32";
-    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_, &diag_).declaration.size, 4U);
+    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_).declaration.size, 4U);
     scan.declaration.element_type = "u64";
-    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_, &diag_).declaration.size, std::nullopt);
+    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_).declaration.size, std::nullopt);
 }
 
 // A width only comes from a single pointer. A value member or a pointer-to-pointer of a known type is still a
@@ -645,12 +822,12 @@ TEST_F(MetatileAttributeInferenceTest, DeclarationSizeRequiresASinglePointer)
 {
     MetatileAttributeScan scan;
     scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}};
-    scan.behaviors_header_present = true;
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
 
     scan.declaration = {AttributeDeclarationSource::declared, "u16", 0, true};
-    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_, &diag_).declaration.size, std::nullopt);
+    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_).declaration.size, std::nullopt);
     scan.declaration.pointer_depth = 2;
-    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_, &diag_).declaration.size, std::nullopt);
+    EXPECT_EQ(infer_metatile_attribute_candidates(scan, &formatter_).declaration.size, std::nullopt);
 }
 
 // Every source with no declaration behind it leaves the width unset, and the source travels through untouched so the
@@ -664,10 +841,10 @@ TEST_F(MetatileAttributeInferenceTest, UndeclaredSourcesCarryThroughWithNoWidth)
           AttributeDeclarationSource::no_attributes_member}) {
         MetatileAttributeScan scan;
         scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}};
-        scan.behaviors_header_present = true;
+        scan.behaviors_header.source = BehaviorsHeaderSource::declared;
         scan.declaration.source = source;
 
-        const auto result = infer_metatile_attribute_candidates(scan, &formatter_, &diag_);
+        const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
         EXPECT_EQ(result.declaration.size, std::nullopt);
         EXPECT_EQ(result.declaration.scan.source, source);
     }
@@ -681,13 +858,13 @@ TEST_F(MetatileAttributeInferenceTest, DeclarationSizeSurvivesInvalidAndNotProvi
     invalid_scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF}};
     invalid_scan.ambiguous_defines.insert("METATILE_ATTR_BEHAVIOR_MASK");
     invalid_scan.declaration = {AttributeDeclarationSource::declared, "u16", 1, true};
-    const auto invalid_result = infer_metatile_attribute_candidates(invalid_scan, &formatter_, &diag_);
+    const auto invalid_result = infer_metatile_attribute_candidates(invalid_scan, &formatter_);
     ASSERT_EQ(invalid_result.status, AttributeInferenceStatus::invalid);
     EXPECT_EQ(invalid_result.declaration.size, 2U);
 
     MetatileAttributeScan empty_scan;
     empty_scan.declaration = {AttributeDeclarationSource::declared, "u32", 1, true};
-    const auto empty_result = infer_metatile_attribute_candidates(empty_scan, &formatter_, &diag_);
+    const auto empty_result = infer_metatile_attribute_candidates(empty_scan, &formatter_);
     ASSERT_EQ(empty_result.status, AttributeInferenceStatus::not_provided);
     EXPECT_EQ(empty_result.declaration.size, 4U);
 }

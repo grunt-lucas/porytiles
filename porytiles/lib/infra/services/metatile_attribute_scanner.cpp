@@ -31,12 +31,17 @@ constexpr auto attributes_member_name = "metatileAttributes";
     return out;
 }
 
-// The behaviors header may declare its MB_ constants as #defines (pokefirered) or as enum members (pokeemerald). The
-// field is considered to have a usable value provider when either form yields at least one MB_ name.
-[[nodiscard]] bool behaviors_header_has_entries(const std::filesystem::path &path, const TextFormatter *format)
+// The behaviors header may declare its MB_ constants as #defines (pokefirered) or as enum members (pokeemerald), so
+// both forms are scanned. The scan reports what it found, never what it means: an absent header, one that failed to
+// scan, one with no MB_ name, and one declaring at least one are four distinct facts, and the domain decides what
+// each of them implies for the behavior field's value provider.
+[[nodiscard]] BehaviorsHeaderScan scan_behaviors_header(const std::filesystem::path &path, const TextFormatter *format)
 {
+    BehaviorsHeaderScan scan;
+    scan.path = path.string();
     if (!std::filesystem::exists(path)) {
-        return false;
+        scan.source = BehaviorsHeaderSource::absent;
+        return scan;
     }
     CParserFacade facade{path, format};
 
@@ -44,7 +49,8 @@ constexpr auto attributes_member_name = "metatileAttributes";
     if (defines.has_value()) {
         for (const auto &define : defines.value().defines) {
             if (define.name().starts_with("MB_")) {
-                return true;
+                scan.source = BehaviorsHeaderSource::declared;
+                return scan;
             }
         }
     }
@@ -54,13 +60,18 @@ constexpr auto attributes_member_name = "metatileAttributes";
         for (const auto &decl : enums.value().enums) {
             for (const auto &member : decl.members) {
                 if (member.name.starts_with("MB_")) {
-                    return true;
+                    scan.source = BehaviorsHeaderSource::declared;
+                    return scan;
                 }
             }
         }
     }
 
-    return false;
+    // Both tolerant scans fail only on a load or lex failure. A header that could not be scanned at all may declare
+    // any number of MB_ names, so it must not be flattened into "declares none".
+    scan.source = (!defines.has_value() && !enums.has_value()) ? BehaviorsHeaderSource::unreadable
+                                                               : BehaviorsHeaderSource::no_constants;
+    return scan;
 }
 
 // Locates struct Tileset's metatileAttributes member and records the declarator it was written with. Every base game
@@ -190,7 +201,16 @@ MetatileAttributeScan MetatileAttributeScanner::scan_project() const
         }
     }
 
-    scan.behaviors_header_present = behaviors_header_has_entries(project_root_ / behaviors_header_rel, format_);
+    scan.behaviors_header = scan_behaviors_header(project_root_ / behaviors_header_rel, format_);
+    if (scan.behaviors_header.source == BehaviorsHeaderSource::unreadable) {
+        // Matches the fieldmap source handling above: a file that exists but could not be scanned is warned about and
+        // listed as unreadable, so the missing facts are never mistaken for facts the project failed to state.
+        diag_->warning(
+            metatile_attr_inference_tag,
+            "Could not scan '{}' for behavior constants.",
+            FormatParam{scan.behaviors_header.path, Style::bold});
+        scan.unreadable_sources.push_back(scan.behaviors_header.path);
+    }
 
     // Surface the recoverable scan warnings (conflicting redefinitions in undecidable regions, etc.).
     for (const auto &warning : header_facade.scan_warnings()) {

@@ -10,7 +10,6 @@
 
 #include "porytiles/domain/models/metatile_attribute.hpp"
 #include "porytiles/utilities/text/text_formatter.hpp"
-#include "porytiles/xcut/diagnostics/user_diagnostics.hpp"
 
 namespace porytiles {
 
@@ -20,6 +19,8 @@ constexpr const char *attribute_enum_prefix = "METATILE_ATTRIBUTE_";
 constexpr const char *mask_define_prefix = "METATILE_ATTR_";
 constexpr const char *mask_define_suffix = "_MASK";
 constexpr const char *frlg_mask_define_suffix = "_MASK_FRLG";
+constexpr const char *shift_define_suffix = "_SHIFT";
+constexpr const char *frlg_shift_define_suffix = "_SHIFT_FRLG";
 constexpr const char *behaviors_header = "include/constants/metatile_behaviors.h";
 constexpr const char *fieldmap_header = "include/global.fieldmap.h";
 
@@ -77,22 +78,26 @@ constexpr const char *fieldmap_header = "include/global.fieldmap.h";
     return first + ", " + second;
 }
 
-// Per-suffix mask facts collected in Phase A before the sets are grouped.
+// Per-suffix mask and shift facts collected in Phase A before the sets are grouped.
 struct SuffixMasks {
     std::optional<std::uint32_t> bare_define;
     std::optional<std::uint32_t> frlg_define;
     std::optional<std::uint32_t> array_value;
+    std::optional<std::uint32_t> bare_shift_define;
+    std::optional<std::uint32_t> frlg_shift_define;
 };
 
-// Phase B naming: the display name and optional value-name provider for one suffix. Layout-independent, so it is
-// computed once per suffix and shared by every candidate set that includes the field.
+// Phase B naming: the display name, optional value-name provider, and optional provider conflict for one suffix.
+// Layout-independent, so it is computed once per suffix and shared by every candidate set that includes the field.
+// A conflict is recorded rather than diagnosed: inference runs before the user's overrides are merged, so whether a
+// missing provider is fatal is the reconciler's call, not this function's.
 struct FieldNaming {
     std::string name;
     std::optional<ProviderDefinition> provider;
+    std::optional<InferredFieldConflict> conflict;
 };
 
-[[nodiscard]] FieldNaming
-name_field(const std::string &suffix, const MetatileAttributeScan &scan, gsl::not_null<const UserDiagnostics *> diag)
+[[nodiscard]] FieldNaming name_field(const std::string &suffix, const MetatileAttributeScan &scan)
 {
     FieldNaming naming;
 
@@ -105,17 +110,39 @@ name_field(const std::string &suffix, const MetatileAttributeScan &scan, gsl::no
 
     if (suffix == "BEHAVIOR") {
         naming.name = "behavior";
-        if (scan.behaviors_header_present) {
+        // Diagnostics name the path the scan actually looked at; the canonical relative path stands in when the scan
+        // recorded none (a unit-test scan, or a scan that never reached the behaviors header).
+        const std::string behaviors_path =
+            scan.behaviors_header.path.empty() ? std::string{behaviors_header} : scan.behaviors_header.path;
+        switch (scan.behaviors_header.source) {
+        case BehaviorsHeaderSource::declared:
             naming.provider = ProviderDefinition{behaviors_header, "MB_", {"MB_INVALID"}, HeaderFormat::either};
-        }
-        else {
-            diag->warning(
-                metatile_attr_inference_tag,
-                "no behavior constants found in {}; leaving the behavior field without a value provider",
-                FormatParam{behaviors_header, Style::bold});
+            break;
+        case BehaviorsHeaderSource::absent:
+            naming.conflict = InferredFieldConflict{
+                naming.name, FieldConflictKind::provider_behaviors_absent, behaviors_path, std::nullopt, std::nullopt};
+            break;
+        case BehaviorsHeaderSource::unreadable:
+            naming.conflict = InferredFieldConflict{
+                naming.name,
+                FieldConflictKind::provider_behaviors_unreadable,
+                behaviors_path,
+                std::nullopt,
+                std::nullopt};
+            break;
+        case BehaviorsHeaderSource::no_constants:
+            naming.conflict = InferredFieldConflict{
+                naming.name,
+                FieldConflictKind::provider_behaviors_no_constants,
+                behaviors_path,
+                std::nullopt,
+                std::nullopt};
+            break;
         }
     }
     else if (is_all_digits(suffix)) {
+        // A purely numeric suffix (METATILE_ATTRIBUTE_2) is the project stating the field has no name and no
+        // constants. Nothing was inferred, so nothing failed: no provider and no conflict.
         naming.name = "attribute_" + suffix;
     }
     else {
@@ -126,6 +153,10 @@ name_field(const std::string &suffix, const MetatileAttributeScan &scan, gsl::no
         }
         if (any_enum_member_has_prefix(scan, probe)) {
             naming.provider = ProviderDefinition{fieldmap_header, probe, {}, HeaderFormat::enums_only};
+        }
+        else {
+            naming.conflict = InferredFieldConflict{
+                naming.name, FieldConflictKind::provider_no_matching_enum, probe, std::nullopt, std::nullopt};
         }
     }
 
@@ -184,10 +215,8 @@ std::string to_declaration_string(const AttributeDeclarationScan &scan)
     return text;
 }
 
-MetatileAttributeInferenceResult infer_metatile_attribute_candidates(
-    const MetatileAttributeScan &scan,
-    gsl::not_null<const TextFormatter *> format,
-    gsl::not_null<const UserDiagnostics *> diag)
+MetatileAttributeInferenceResult
+infer_metatile_attribute_candidates(const MetatileAttributeScan &scan, gsl::not_null<const TextFormatter *> format)
 {
     MetatileAttributeInferenceResult result;
 
@@ -244,12 +273,22 @@ MetatileAttributeInferenceResult infer_metatile_attribute_candidates(
         const std::string body = define.name.substr(std::string_view{mask_define_prefix}.size());
         std::string suffix;
         bool is_frlg = false;
+        bool is_shift = false;
         if (body.ends_with(frlg_mask_define_suffix)) {
             suffix = body.substr(0, body.size() - std::string_view{frlg_mask_define_suffix}.size());
             is_frlg = true;
         }
         else if (body.ends_with(mask_define_suffix)) {
             suffix = body.substr(0, body.size() - std::string_view{mask_define_suffix}.size());
+        }
+        else if (body.ends_with(frlg_shift_define_suffix)) {
+            suffix = body.substr(0, body.size() - std::string_view{frlg_shift_define_suffix}.size());
+            is_frlg = true;
+            is_shift = true;
+        }
+        else if (body.ends_with(shift_define_suffix)) {
+            suffix = body.substr(0, body.size() - std::string_view{shift_define_suffix}.size());
+            is_shift = true;
         }
         else {
             continue;
@@ -258,6 +297,17 @@ MetatileAttributeInferenceResult infer_metatile_attribute_candidates(
             continue;
         }
         suffix = normalize_suffix(suffix);
+        if (is_shift) {
+            // A shift define is a cross-check on its mask, never a field source: it is recorded for the conflict
+            // checks below but does not introduce a suffix.
+            if (is_frlg) {
+                masks[suffix].frlg_shift_define = define.value;
+            }
+            else {
+                masks[suffix].bare_shift_define = define.value;
+            }
+            continue;
+        }
         if (is_frlg) {
             masks[suffix].frlg_define = define.value;
             any_frlg_define = true;
@@ -321,7 +371,7 @@ MetatileAttributeInferenceResult infer_metatile_attribute_candidates(
 
     std::unordered_map<std::string, FieldNaming> namings;
     for (const auto &suffix : ordered_suffixes) {
-        namings.emplace(suffix, name_field(suffix, scan, diag));
+        namings.emplace(suffix, name_field(suffix, scan));
     }
 
     // --- Phase C: group masks into candidate sets, rejecting fields with no mask in any set ---
@@ -380,59 +430,46 @@ MetatileAttributeInferenceResult infer_metatile_attribute_candidates(
         return m.bare_define.has_value() ? m.bare_define : m.array_value;
     };
 
-    // Emit the mask-conflict warnings once (not per set): in a dual layout the table pairs with the FRLG defines, in
-    // a single layout it pairs with the bare defines.
-    for (const auto &suffix : ordered_suffixes) {
-        const auto it = masks.find(suffix);
-        if (it == masks.end()) {
-            continue;
+    // Records the facts inference could not settle for one field of one set. The pairing rules mirror how the masks
+    // themselves are resolved: in a dual layout the mask/shift tables and the _FRLG defines describe the FRLG set
+    // while the bare defines describe the bare set; in a single layout everything pairs with the one merged set.
+    const auto collect_conflicts = [&](const std::string &suffix,
+                                       const SuffixMasks &m,
+                                       std::uint32_t resolved_mask,
+                                       bool frlg,
+                                       std::vector<InferredFieldConflict> &conflicts) {
+        const FieldNaming &naming = namings.at(suffix);
+        if (naming.conflict.has_value()) {
+            conflicts.push_back(naming.conflict.value());
         }
-        const SuffixMasks &m = it->second;
-        const std::string &display_name = namings.at(suffix).name;
-        if (any_frlg_define) {
-            if (m.frlg_define.has_value() && m.array_value.has_value() &&
-                m.frlg_define.value() != m.array_value.value()) {
-                diag->warning(
-                    metatile_attr_inference_tag,
-                    "field '{}' FRLG mask define disagrees with the mask table; using the define",
-                    FormatParam{display_name, Style::bold});
+
+        // A mask define disagreeing with the mask table: the project states two different masks for the same field,
+        // so it does not in fact state one. Only the set the table feeds can carry this conflict.
+        const auto &paired_define = frlg ? m.frlg_define : m.bare_define;
+        if (frlg == any_frlg_define && paired_define.has_value() && m.array_value.has_value() &&
+            paired_define.value() != m.array_value.value()) {
+            conflicts.push_back(
+                InferredFieldConflict{
+                    naming.name, FieldConflictKind::mask_define_vs_table, {}, paired_define, m.array_value});
+        }
+
+        // Declared shifts must equal the resolved mask's low-bit offset: the engine unpacks with the shift while
+        // Porytiles packs at the mask offset, so a disagreement means every written value reads back wrong.
+        const auto expected = static_cast<std::uint32_t>(std::countr_zero(resolved_mask));
+        const auto &shift_define = frlg ? m.frlg_shift_define : m.bare_shift_define;
+        if (shift_define.has_value() && shift_define.value() != expected) {
+            conflicts.push_back(
+                InferredFieldConflict{naming.name, FieldConflictKind::shift_vs_mask, {}, shift_define, expected});
+        }
+        // The shift table pairs with whichever set the mask table feeds (the FRLG set in a dual layout).
+        if (frlg == any_frlg_define) {
+            if (const auto shift_it = shifts.find(suffix); shift_it != shifts.end() && shift_it->second != expected) {
+                conflicts.push_back(
+                    InferredFieldConflict{
+                        naming.name, FieldConflictKind::shift_vs_mask, {}, shift_it->second, expected});
             }
         }
-        else if (
-            m.bare_define.has_value() && m.array_value.has_value() && m.bare_define.value() != m.array_value.value()) {
-            diag->warning(
-                metatile_attr_inference_tag,
-                "field '{}' mask define disagrees with the mask table; using the define",
-                FormatParam{display_name, Style::bold});
-        }
-    }
-
-    // Shift table cross-check: the recorded shift should equal the mask's low-bit offset. The
-    // sMetatileAttrMasks/sMetatileAttrShifts tables describe the FRLG layout in a dual-layout project, so the shift
-    // is checked against that set's mask; a single-layout project checks the merged mask.
-    for (const auto &[suffix, shift] : shifts) {
-        if (!seen_suffixes.contains(suffix)) {
-            continue; // table-only suffixes never become fields, so their shifts are not cross-checked
-        }
-        const auto it = masks.find(suffix);
-        if (it == masks.end()) {
-            continue;
-        }
-        const auto mask_for_check = mask_for(it->second, any_frlg_define);
-        if (!mask_for_check.has_value()) {
-            continue;
-        }
-        const auto expected = static_cast<std::uint32_t>(std::countr_zero(mask_for_check.value()));
-        if (shift != expected) {
-            const std::string &display_name = namings.at(suffix).name;
-            diag->warning(
-                metatile_attr_inference_tag,
-                "field '{}' shift table entry ({}) does not match its mask offset ({}); using the mask",
-                FormatParam{display_name, Style::bold},
-                FormatParam{shift},
-                FormatParam{expected});
-        }
-    }
+    };
 
     // Assemble the sets. A suffix missing a mask in one set is simply excluded from that set, but a suffix missing a
     // mask in every set means the project declares a field it exposes no mask for, which is fatal. The layer_type
@@ -471,6 +508,7 @@ MetatileAttributeInferenceResult infer_metatile_attribute_candidates(
             if (!mask.has_value()) {
                 continue; // excluded from this set; another set covers it
             }
+            collect_conflicts(suffix, m, mask.value(), plan.frlg, candidate.conflicts);
             const FieldNaming &naming = namings.at(suffix);
             MetatileAttributeFieldDefinition definition;
             definition.name = naming.name;

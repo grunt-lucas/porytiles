@@ -20,8 +20,9 @@ namespace porytiles {
 ///   pointed-to type of `struct Tileset`'s `metatileAttributes` member.
 /// - `src/fieldmap.c`: the exact-name `sMetatileAttrMasks` and `sMetatileAttrShifts` tables, seeded with the header's
 ///   symbols so FRLG-macro entries resolve. A missing file or missing table simply leaves the tables empty.
-/// - `include/constants/metatile_behaviors.h`: whether it declares at least one `MB_` name (as #defines on
-///   pokefirered, enum members on pokeemerald).
+/// - `include/constants/metatile_behaviors.h`: what sits where the behavior constants header should be, as a
+///   four-way fact (absent, unreadable, scanned but declaring no `MB_` name, or declaring at least one, whether as
+///   #defines on pokefirered or enum members on pokeemerald) plus the path looked at.
 ///
 /// What the facts mean (candidate mask layouts, field names, widths) is decided by the domain inference and
 /// reconciliation. A missing fieldmap header is not an error: the scan simply comes back empty and the caller can

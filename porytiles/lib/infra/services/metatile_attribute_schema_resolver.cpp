@@ -46,7 +46,7 @@ MetatileAttributeSchemaResolver::resolve(const std::string &tileset_name) const
     MetatileAttributeScanner scanner{project_root_, format_, diag_};
     const auto scan = scanner.scan_project();
 
-    const auto inference = infer_metatile_attribute_candidates(scan, format_, diag_);
+    const auto inference = infer_metatile_attribute_candidates(scan, format_);
 
     MetatileAttributeConfigInputs inputs;
     inputs.fields = fields_cv.value();
