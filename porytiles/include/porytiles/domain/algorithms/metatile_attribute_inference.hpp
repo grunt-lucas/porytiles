@@ -208,11 +208,15 @@ struct InferredAttributeDeclaration {
 /// sets (bare defines first). @c error_message carries the actionable diagnostic when @c status is invalid. @c
 /// declaration is the declared element width and the declaration it was read from; it is populated regardless of
 /// status, since the struct declaration is a project fact independent of whether a mask layout could be inferred.
+/// @c unrecognized_defines holds the METATILE_ATTR_ prefixed defines whose suffix is one inference does not read, in
+/// the order the scan supplied them. It is populated regardless of status as well: a dropped define may be exactly why
+/// a layout came out the way it did, so the caller reports it even on a run that fails for an unrelated reason.
 struct MetatileAttributeInferenceResult {
     AttributeInferenceStatus status{AttributeInferenceStatus::not_provided};
     std::vector<MetatileAttributeCandidateSet> candidates;
     std::string error_message;
     InferredAttributeDeclaration declaration;
+    std::vector<std::string> unrecognized_defines;
 };
 
 /// @brief Infers the metatile attribute mask candidate sets from a project's raw fieldmap facts.
@@ -223,7 +227,10 @@ struct MetatileAttributeInferenceResult {
 ///   defines, and the sMetatileAttrMasks table, then groups them into candidate sets: when `*_MASK_FRLG` defines are
 ///   present the bare defines form one set and the FRLG defines (plus the table) form another; otherwise everything
 ///   merges into a single set, with the define winning over a disagreeing table entry (the disagreement is recorded
-///   as a conflict on the set for the reconciler to rule on).
+///   as a conflict on the set for the reconciler to rule on). The four suffixes Phase A reads are `_MASK`,
+///   `_MASK_FRLG`, `_SHIFT`, and `_SHIFT_FRLG`; `_MASK_FRLG` is the only signal that produces a second candidate set,
+///   so two is the most a project can ever yield. A `METATILE_ATTR_` prefixed define spelled any other way is
+///   recorded in `unrecognized_defines` and contributes nothing.
 /// - Phase B names each field and attaches a value-name provider (behavior constants, terrain/encounter enums) where
 ///   one can be located. The LAYER_TYPE suffix always names the field "layer_type" and never gets a provider: its
 ///   values are managed by Porytiles, and the emitted definition carries `FieldRole::layer_type`.

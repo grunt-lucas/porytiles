@@ -5,6 +5,7 @@
 #include "porytiles/domain/algorithms/metatile_attribute_inference.hpp"
 #include "porytiles/domain/algorithms/metatile_attribute_schema_reconciler.hpp"
 #include "porytiles/infra/services/metatile_attribute_scanner.hpp"
+#include "porytiles/utilities/string_utils.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
 
 namespace porytiles {
@@ -47,6 +48,20 @@ MetatileAttributeSchemaResolver::resolve(const std::string &tileset_name) const
     const auto scan = scanner.scan_project();
 
     const auto inference = infer_metatile_attribute_candidates(scan, format_);
+
+    // Warn about the attribute defines inference had no rule for, before reconciliation can fail for its own reasons:
+    // an ignored define may be exactly why the resulting layout is missing a field, and that is worth knowing whether
+    // or not resolution goes on to succeed.
+    if (!inference.unrecognized_defines.empty()) {
+        diag_->warning(
+            metatile_attr_inference_tag,
+            "Ignoring {} in '{}'. Porytiles reads attribute masks from the METATILE_ATTR_*_MASK and "
+            "METATILE_ATTR_*_MASK_FRLG spellings, and their bit offsets from METATILE_ATTR_*_SHIFT and "
+            "METATILE_ATTR_*_SHIFT_FRLG. Declare the layout with metatile_attribute_fields in your Porytiles config "
+            "if these defines describe one.",
+            FormatParam{join_quoted(inference.unrecognized_defines), Style::bold},
+            FormatParam{scan.header_source, Style::bold});
+    }
 
     MetatileAttributeConfigInputs inputs;
     inputs.fields = fields_cv.value();

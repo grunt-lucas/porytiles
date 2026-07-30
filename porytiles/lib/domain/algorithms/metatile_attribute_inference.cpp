@@ -9,6 +9,7 @@
 #include <utility>
 
 #include "porytiles/domain/models/metatile_attribute.hpp"
+#include "porytiles/utilities/string_utils.hpp"
 #include "porytiles/utilities/text/text_formatter.hpp"
 
 namespace porytiles {
@@ -23,20 +24,6 @@ constexpr const char *shift_define_suffix = "_SHIFT";
 constexpr const char *frlg_shift_define_suffix = "_SHIFT_FRLG";
 constexpr const char *behaviors_header = "include/constants/metatile_behaviors.h";
 constexpr const char *fieldmap_header = "include/global.fieldmap.h";
-
-// Turns the scan's unreadable-source list into prose. The list is short (at most the fieldmap header and its source
-// file), so every path is named rather than summarized.
-[[nodiscard]] std::string join_unreadable(const std::vector<std::string> &sources)
-{
-    std::string joined;
-    for (const auto &source : sources) {
-        if (!joined.empty()) {
-            joined += ", ";
-        }
-        joined += "'" + source + "'";
-    }
-    return joined;
-}
 
 [[nodiscard]] std::string to_lower(std::string text)
 {
@@ -291,6 +278,10 @@ infer_metatile_attribute_candidates(const MetatileAttributeScan &scan, gsl::not_
             is_shift = true;
         }
         else {
+            // A define carrying the attribute prefix with a suffix none of the four branches above read. Recorded so
+            // the caller can say it was ignored: a user who spells a mask METATILE_ATTR_BEHAVIOR_MASK_RSE gets a
+            // layout built without it, and dropping it in silence reads as Porytiles having accepted it.
+            result.unrecognized_defines.push_back(define.name);
             continue;
         }
         if (suffix.empty()) {
@@ -358,7 +349,9 @@ infer_metatile_attribute_candidates(const MetatileAttributeScan &scan, gsl::not_
             "Porytiles could not read {}, so it has no metatile attribute masks to infer a layout from, and no "
             "metatile_attribute_fields list is configured to stand in for them. Fix those files so Porytiles can "
             "scan them, or declare the layout explicitly with metatile_attribute_fields in your Porytiles config.",
-            FormatParam{join_unreadable(scan.unreadable_sources), Style::bold});
+            // The list is short (at most the fieldmap header, its source file, and the behaviors header), so every
+            // path is named rather than summarized.
+            FormatParam{join_quoted(scan.unreadable_sources), Style::bold});
         return result;
     };
 

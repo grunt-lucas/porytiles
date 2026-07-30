@@ -414,13 +414,12 @@ ChainableResult<LoadedMetatileAttributeSchema> reconcile_metatile_attribute_sche
     // wrong silently corrupts the attributes.
     if (inference.candidates.size() >= 2 && !inputs.attribute_size.has_value()) {
         return FormattableError{format->format(
-            "Porytiles found more than one metatile attribute mask layout in this project ({} ({} bytes) and {} "
-            "({} bytes)), so it cannot infer the attribute size. Set 'fieldmap.metatile_attribute_size' in "
-            "porytiles/config.yaml (or pass --metatile-attribute-size) to choose the layout this build uses.",
-            FormatParam{inference.candidates.at(0).origin, Style::bold},
-            FormatParam{inference.candidates.at(0).required_bytes},
-            FormatParam{inference.candidates.at(1).origin, Style::bold},
-            FormatParam{inference.candidates.at(1).required_bytes})};
+            "Porytiles found more than one metatile attribute mask layout in this project ({}), so it cannot infer "
+            "the attribute size. Set 'fieldmap.metatile_attribute_size' in porytiles/config.yaml (or pass "
+            "--metatile-attribute-size) to choose the layout this build uses.",
+            // Every candidate is listed rather than the first two, matching the selection errors further down: the
+            // user needs the full set of widths to know which value to pin.
+            FormatParam{describe_candidates(inference.candidates), Style::bold})};
     }
 
     // Decide the field set. Explicit fields are the truth and inference is never consulted for their content;

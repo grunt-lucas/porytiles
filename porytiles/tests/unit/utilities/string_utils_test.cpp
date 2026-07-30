@@ -140,6 +140,29 @@ TEST_F(StringUtilsTest, TrimPrefix)
     EXPECT_EQ(trim_prefix("Hello_World", "Hello_"), "World");
 }
 
+TEST_F(StringUtilsTest, JoinQuoted)
+{
+    // No values yields an empty string rather than stray quotes or a delimiter, so a caller can drop the whole clause
+    // by testing the result for emptiness.
+    EXPECT_EQ(join_quoted({}), "");
+
+    // A single value gets its quotes but no delimiter.
+    EXPECT_EQ(join_quoted({"only"}), "'only'");
+
+    EXPECT_EQ(join_quoted({"a.c", "b.h"}), "'a.c', 'b.h'");
+    EXPECT_EQ(join_quoted({"x", "y", "z"}), "'x', 'y', 'z'");
+
+    // The delimiter replaces the default without affecting the quoting.
+    EXPECT_EQ(join_quoted({"x", "y"}, " and "), "'x' and 'y'");
+    EXPECT_EQ(join_quoted({"x", "y"}, ""), "'x''y'");
+
+    // Values are quoted verbatim: an empty value still yields a quoted empty pair, so the count of quoted items always
+    // matches the count of values.
+    EXPECT_EQ(join_quoted({""}), "''");
+    EXPECT_EQ(join_quoted({"", "b"}), "'', 'b'");
+    EXPECT_EQ(join_quoted({"has space", "has'quote"}), "'has space', 'has'quote'");
+}
+
 TEST_F(StringUtilsTest, ExtractTilesetCasedNameWithPrefix)
 {
     auto result = extract_tileset_cased_name("gTileset_General");

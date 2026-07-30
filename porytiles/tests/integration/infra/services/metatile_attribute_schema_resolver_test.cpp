@@ -436,6 +436,46 @@ static const u32 sMetatileAttrMasks[METATILE_ATTRIBUTE_COUNT] = { /* unterminate
     EXPECT_TRUE(diag_.warning_tag_counts().contains(metatile_attr_inference_tag));
 }
 
+TEST_F(MetatileAttributeSchemaResolverTest, UnrecognizedAttributeDefineSpellingsAreWarnedAbout)
+{
+    // A user inventing a third flavor suffix gets a layout built without those defines. The resolve still succeeds on
+    // the recognized ones, so the warning is the only thing that tells them their defines were passed over.
+    write_fieldmap_header(std::string{emerald_defines} + R"(
+#define METATILE_ATTR_BEHAVIOR_MASK_RSE 0x01FF
+#define METATILE_ATTR_LAYER_MASK_RSE    0x60000000
+)");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+
+    // The recognized emerald defines decided the layout: an _RSE suffix is not a second candidate, so the resolve is
+    // the ordinary single-layout one and needs no size knob to disambiguate.
+    EXPECT_EQ(result.value().attribute_bytes, 2U);
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0xF000U);
+
+    ASSERT_TRUE(diag_.warning_tag_counts().contains(metatile_attr_inference_tag));
+    std::string warnings;
+    for (const auto &lines : diag_.warnings()) {
+        for (const auto &line : lines) {
+            warnings += line;
+            warnings += "\n";
+        }
+    }
+    EXPECT_NE(warnings.find("METATILE_ATTR_BEHAVIOR_MASK_RSE"), std::string::npos) << warnings;
+    EXPECT_NE(warnings.find("METATILE_ATTR_LAYER_MASK_RSE"), std::string::npos) << warnings;
+    EXPECT_NE(warnings.find("metatile_attribute_fields"), std::string::npos) << warnings;
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, StockDefinesDrawNoUnrecognizedSpellingWarning)
+{
+    // Every spelling a stock project uses must stay quiet, or the warning above would fire on every real project.
+    write_fieldmap_header(emerald_defines);
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_FALSE(diag_.warning_tag_counts().contains(metatile_attr_inference_tag));
+}
+
 // --- Fields inference could not settle: fatal unless an override speaks to the fact. ---
 
 TEST_F(MetatileAttributeSchemaResolverTest, MissingBehaviorsHeaderIsFatalNamingTheOverride)

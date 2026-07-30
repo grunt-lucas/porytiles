@@ -679,6 +679,71 @@ TEST_F(MetatileAttributeInferenceTest, DualLayoutFrlgDefineVsTableConflictIsReco
     EXPECT_EQ(conflict->alternate, 0x03FFU);
 }
 
+// The four suffixes inference reads are _MASK, _MASK_FRLG, _SHIFT, and _SHIFT_FRLG. A METATILE_ATTR_ define spelled
+// any other way contributes nothing, and it is recorded so the caller can say so: a user who invents a third flavor
+// suffix would otherwise get a layout silently built without it.
+TEST_F(MetatileAttributeInferenceTest, UnrecognizedAttributeDefineSpellingsAreRecorded)
+{
+    MetatileAttributeScan scan;
+    scan.defines = {
+        {"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF},
+        {"METATILE_ATTR_LAYER_MASK", 0xF000},
+        {"METATILE_ATTR_BEHAVIOR_MASK_RSE", 0x01FF},
+        {"METATILE_ATTR_LAYER_SHIFT_RSE", 29},
+        {"METATILE_ATTR_SOMETHING_ELSE", 7}};
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
+
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
+
+    // The recognized defines still produce their layout, untouched by the unreadable spellings alongside them.
+    ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
+    ASSERT_EQ(result.candidates.size(), 1U);
+    EXPECT_EQ(result.candidates.front().required_bytes, 2U);
+    ASSERT_EQ(result.candidates.front().fields.size(), 2U);
+
+    // Only the unread spellings are recorded, in the order the scan supplied them. An _RSE suffix is not a second
+    // layout: _MASK_FRLG is the only signal that splits the candidates, so this stays a one-candidate project.
+    EXPECT_EQ(
+        result.unrecognized_defines,
+        (std::vector<std::string>{
+            "METATILE_ATTR_BEHAVIOR_MASK_RSE", "METATILE_ATTR_LAYER_SHIFT_RSE", "METATILE_ATTR_SOMETHING_ELSE"}));
+}
+
+// The four recognized spellings must never be reported as ignored, or every stock project would draw the warning.
+// The scan is Expansion's own header: all eight defines, which is every recognized spelling at once.
+TEST_F(MetatileAttributeInferenceTest, RecognizedAttributeDefineSpellingsAreNotRecordedAsUnrecognized)
+{
+    MetatileAttributeScan scan;
+    scan.defines = {
+        {"METATILE_ATTR_BEHAVIOR_MASK", 0x00FF},
+        {"METATILE_ATTR_LAYER_MASK", 0xF000},
+        {"METATILE_ATTR_BEHAVIOR_SHIFT", 0},
+        {"METATILE_ATTR_LAYER_SHIFT", 12},
+        {"METATILE_ATTR_BEHAVIOR_MASK_FRLG", 0x000001FF},
+        {"METATILE_ATTR_LAYER_MASK_FRLG", 0x60000000},
+        {"METATILE_ATTR_BEHAVIOR_SHIFT_FRLG", 0},
+        {"METATILE_ATTR_LAYER_SHIFT_FRLG", 29}};
+    scan.behaviors_header.source = BehaviorsHeaderSource::declared;
+
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
+    ASSERT_EQ(result.status, AttributeInferenceStatus::valid);
+    ASSERT_EQ(result.candidates.size(), 2U);
+    EXPECT_TRUE(result.unrecognized_defines.empty());
+}
+
+// The record survives an outcome that yields no layout at all. An ignored define may be the very reason nothing was
+// found, so the caller must be able to report it on a run that fails for its own reasons.
+TEST_F(MetatileAttributeInferenceTest, UnrecognizedDefinesSurviveANotProvidedOutcome)
+{
+    MetatileAttributeScan scan;
+    scan.defines = {{"METATILE_ATTR_BEHAVIOR_MASK_RSE", 0x01FF}};
+
+    const auto result = infer_metatile_attribute_candidates(scan, &formatter_);
+    EXPECT_EQ(result.status, AttributeInferenceStatus::not_provided);
+    EXPECT_TRUE(result.candidates.empty());
+    EXPECT_EQ(result.unrecognized_defines, (std::vector<std::string>{"METATILE_ATTR_BEHAVIOR_MASK_RSE"}));
+}
+
 TEST_F(MetatileAttributeInferenceTest, AmbiguousConditionalMaskIsInvalid)
 {
     MetatileAttributeScan scan;

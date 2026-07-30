@@ -22,15 +22,18 @@ namespace porytiles {
 ///    layered config. These are pure user inputs: the CLI, YAML, and defaults chain never derives a value, so an
 ///    unset override knob arrives here as nullopt meaning exactly "the user did not pin this".
 /// 2. Scan the project's fieldmap sources for raw facts (MetatileAttributeScanner).
-/// 3. Run the pure domain inference over the facts (infer_metatile_attribute_candidates), skipped when there is no
-///    fieldmap header to scan.
+/// 3. Run the pure domain inference over the facts (infer_metatile_attribute_candidates). It runs on whatever the scan
+///    gathered, including nothing at all, which is what lets a fieldmap file that exists but could not be read be
+///    reported as unreadable rather than as a project that declares no masks.
 /// 4. Reconcile the inference with the user inputs (reconcile_metatile_attribute_schema), which decides the width,
 ///    the field set, the layer mask, and the declaration width, and reports how.
 ///
 /// Each step emits its own non-fatal diagnostics directly. The scan emits under the "metatile-attribute-inference" tag,
 /// and the reconciler under "metatile-attribute-schema". Inference itself emits nothing: facts it cannot settle travel
 /// as conflict records on the candidate sets, and the reconciler turns each one fatal unless an override speaks to
-/// it. Emitting at the point of detection means anything decided before a later fatal still reaches the user. The
+/// it. Its one advisory output, the list of METATILE_ATTR_ prefixed defines whose spelling it has no rule for, is
+/// warned about here between steps 3 and 4, under the scan's tag and before any reconciliation error can end the run.
+/// Emitting at the point of detection means anything decided before a later fatal still reaches the user. The
 /// caller supplies the filtered sink, so the non-fatal diagnostics respect the user's diagnostic include/exclude
 /// patterns.
 class MetatileAttributeSchemaResolver {
