@@ -68,15 +68,16 @@ class AnimDecompiler {
     ///
     /// @param tileset_name The name of the tileset being decompiled (used for config scoping).
     /// @param anim The indexed animation to decompile.
-    /// @param inter_anim_canonical_tiles Canonical forms of previously-processed animations' key frame tiles, used to
-    ///   detect inter-animation duplicates. Pass an empty set when processing the first animation.
+    /// @param inter_anim_canonical_tiles Canonical forms of previously-processed animations' key frame
+    ///   tiles, converted to rgba format under a pre-specifided palette. Used to detect inter-animation duplicates.
+    ///   Pass an empty set when processing the first animation.
     /// @param porymap_component The Porymap component to read palettes/metatiles/tiles from and backport tile changes
     /// to.
     /// @return The decompiled RGBA animation with key frame and frames populated, or error.
     [[nodiscard]] ChainableResult<Animation<Rgba32>> decompile_animation(
         const std::string &tileset_name,
         const Animation<IndexPixel> &anim,
-        const std::set<PixelTile<IndexPixel>> &inter_anim_canonical_tiles,
+        const std::set<PixelTile<Rgba32>> &inter_anim_canonical_tiles,
         PorymapTilesetComponent &porymap_component) const;
 
   private:

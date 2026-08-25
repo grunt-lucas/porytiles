@@ -2,6 +2,7 @@
 
 #include <map>
 
+#include "porytiles/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles/domain/models/color_index.hpp"
 #include "porytiles/domain/models/color_index_map.hpp"
 #include "porytiles/domain/models/index_pixel.hpp"
@@ -458,6 +459,29 @@ template <SupportsTransparency ColorType, std::size_t N = 0>
 {
     return details::index_tile_from_color_tile_impl(
         tile, palette, [&extrinsic](const ColorType &c) { return c.is_transparent(extrinsic); });
+}
+
+/// @brief Converts a PixelTile<IndexPixel> to its canonical color form using a palette (extrinsic transparency).
+///
+/// @details
+/// Converts an @p index_tile to a color tile via @c color_tile_from_index_tile, then canonicalizes the result. Because
+/// the comparison space is now color, two index tiles referencing different palette slots holding the same color
+/// produce equal results. Use this whenever tiles must be compared under color equivalence, not index equivalence.
+///
+/// @tparam ColorType The color type of the palette and output tile, must support extrinsic transparency
+/// @param index_tile The PixelTile containing IndexPixel values to convert
+/// @param palette The Palette containing the colors to reference
+/// @param extrinsic The extrinsic transparency color to use for index 0 pixels
+/// @pre palette is not empty
+/// @pre All non-zero indices in index_tile are within the bounds of the palette [1, palette.size())
+/// @return The canonical (lexicographically minimal flip orientation) color decode of @p index_tile
+template <SupportsTransparency ColorType, std::size_t N = 0>
+[[nodiscard]] PixelTile<ColorType> canonical_color_tile_from_index_tile(
+    const PixelTile<IndexPixel> &index_tile, const Palette<ColorType, N> &palette, const ColorType &extrinsic)
+    requires requires(const ColorType &c) { c.is_transparent(c); }
+{
+    const CanonicalPixelTile<ColorType> canonical{color_tile_from_index_tile(index_tile, palette, extrinsic)};
+    return static_cast<const PixelTile<ColorType> &>(canonical);
 }
 
 } // namespace porytiles
