@@ -8,10 +8,8 @@
 #include <set>
 #include <vector>
 
-#include "porytiles/domain/algorithms/tile_extractors.hpp"
 #include "porytiles/domain/config/per_anim_overrides.hpp"
 #include "porytiles/domain/models/canonical_pixel_tile.hpp"
-#include "porytiles/domain/models/index_pixel.hpp"
 #include "porytiles/domain/models/pixel_tile.hpp"
 #include "porytiles/domain/models/rgba32.hpp"
 #include "porytiles/domain/models/tileset.hpp"
@@ -77,8 +75,9 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
     new_porymap_component->metatiles_bin(tilemap_entries);
 
     if (const auto &porymap_animations = tileset.porymap_component().anims(); !porymap_animations.empty()) {
-        // Accumulate canonical forms of previously-processed animations' key frame tiles for inter-animation detection
-        std::set<PixelTile<IndexPixel>> inter_anim_canonical_tiles;
+        // Save canonical resolved RGBA forms of previously-processed animation key frame tiles for inter-animation
+        // duplicate detection
+        std::set<PixelTile<Rgba32>> inter_anim_canonical_tiles;
 
         AnimDecompiler anim_decompiler{config_, diag_, tile_printer_, palette_printer_};
 
@@ -92,20 +91,16 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
                 diag_->formatter().format(
                     "Failed to decompile animation '{}'.", FormatParam{index_pixel_anim.name(), Style::bold}));
 
-            // After successful decompilation, extract canonical tiles from this animation's (potentially mangled) key
-            // frame range in tiles.png and add them to the accumulator for inter-animation duplicate detection.
-            const std::size_t anim_tile_offset = index_pixel_anim.params().tile_offset();
-            if (anim_tile_offset == 0) {
-                // Unreachable.
-                panic("anim '" + index_pixel_anim.name() + "' offset is 0");
-            }
-            const std::size_t anim_tile_count = index_pixel_anim.params().tile_count();
-            const auto anim_tiles =
-                extract_tiles_from_image(new_porymap_component->tiles_png(), anim_tile_offset, anim_tile_count);
-            for (const auto &t : anim_tiles) {
-                const CanonicalPixelTile canonical{t};
-                const PixelTile<IndexPixel> &base = canonical;
-                inter_anim_canonical_tiles.insert(base);
+            // After successful decompilation, record this animation's key frame tiles (post-mangle: the decompiler
+            // resolves them after any mangling) for inter-animation duplicate detection in later animations.
+            // Manual-linked animations aren't handled here, they have no key frames. Their tiles.png range is
+            // still covered by the cross-range duplicate check inside decompile_animation.
+            if (rgba_anim.has_key_frame()) {
+                for (const auto &t : rgba_anim.key_frame().tiles()) {
+                    const CanonicalPixelTile<Rgba32> canonical{t};
+                    const PixelTile<Rgba32> &base = canonical;
+                    inter_anim_canonical_tiles.insert(base);
+                }
             }
 
             new_porytiles_component->add_anim(std::move(rgba_anim));

@@ -6,6 +6,7 @@
 #include <string>
 #include <vector>
 
+#include "porytiles/domain/algorithms/tile_converters.hpp"
 #include "porytiles/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles/domain/config/anim_multi_palette_subtile_resolution_strategy.hpp"
 #include "porytiles/domain/config/per_anim_override.hpp"
@@ -142,6 +143,19 @@ PorymapTilesetComponent build_porymap_component(
     component.metatiles_bin(metatiles);
     component.tiles_png(tiles_png);
     return component;
+}
+
+/// @brief Builds an inter-animation duplicate detection set: the canonical decoded RGBA forms of @p tiles.
+std::set<PixelTile<Rgba32>> make_inter_anim_rgba_set(
+    const std::vector<PixelTile<IndexPixel>> &tiles,
+    const Palette<Rgba32, palette::max_size> &palette,
+    const Rgba32 &extrinsic_transparency)
+{
+    std::set<PixelTile<Rgba32>> result;
+    for (const auto &tile : tiles) {
+        result.insert(canonical_color_tile_from_index_tile(tile, palette, extrinsic_transparency));
+    }
+    return result;
 }
 
 } // namespace
@@ -334,12 +348,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimationExactDup
     auto component = build_porymap_component(palettes_, metatiles, tiles_png);
 
     // Simulate water's canonical tiles already processed
-    std::set<PixelTile<IndexPixel>> inter_anim_tiles;
-    {
-        const CanonicalPixelTile canonical{shared_tile};
-        const PixelTile<IndexPixel> &base = canonical;
-        inter_anim_tiles.insert(base);
-    }
+    const auto inter_anim_tiles = make_inter_anim_rgba_set({shared_tile}, palette_, config_.extrinsic_transparency);
 
     // Ocean animation at tile offset 2
     auto ocean_anim = create_test_animation("ocean", 2, 1, {shared_tile}, palette_);
@@ -382,12 +391,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimationFlipEqui
     auto component = build_porymap_component(palettes_, metatiles, tiles_png);
 
     // Simulate water's canonical tiles already processed
-    std::set<PixelTile<IndexPixel>> inter_anim_tiles;
-    {
-        const CanonicalPixelTile canonical{water_tile};
-        const PixelTile<IndexPixel> &base = canonical;
-        inter_anim_tiles.insert(base);
-    }
+    const auto inter_anim_tiles = make_inter_anim_rgba_set({water_tile}, palette_, config_.extrinsic_transparency);
 
     auto ocean_anim = create_test_animation("ocean", 2, 1, {ocean_tile}, palette_);
 
@@ -426,12 +430,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldDetectInterAnimDuplicateWhen
     auto component = build_porymap_component(palettes_, metatiles, tiles_png);
 
     // Simulate water's canonical tiles from a previous decompilation
-    std::set<PixelTile<IndexPixel>> inter_anim_tiles;
-    {
-        const CanonicalPixelTile canonical{water_tile};
-        const PixelTile<IndexPixel> &base = canonical;
-        inter_anim_tiles.insert(base);
-    }
+    const auto inter_anim_tiles = make_inter_anim_rgba_set({water_tile}, palette_, config_.extrinsic_transparency);
 
     // Ocean animation at tile offset 1
     auto ocean_anim = create_test_animation("ocean", 1, 1, {ocean_tile}, palette_);
@@ -468,12 +467,7 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldNotMiscategorizeInterAnimAsC
     auto component = build_porymap_component(palettes_, metatiles, tiles_png);
 
     // Water's canonical tiles already processed (same as shared_tile)
-    std::set<PixelTile<IndexPixel>> inter_anim_tiles;
-    {
-        const CanonicalPixelTile canonical{shared_tile};
-        const PixelTile<IndexPixel> &base = canonical;
-        inter_anim_tiles.insert(base);
-    }
+    const auto inter_anim_tiles = make_inter_anim_rgba_set({shared_tile}, palette_, config_.extrinsic_transparency);
 
     auto ocean_anim = create_test_animation("ocean", 1, 1, {shared_tile}, palette_);
 
@@ -490,6 +484,54 @@ TEST_F(AnimDecompilerDuplicateDetectionTests, shouldNotMiscategorizeInterAnimAsC
         << "Error should mention 'another animation's key frame tile', got: " << error_text;
     EXPECT_TRUE(error_text.find("non-animation tile") == std::string::npos)
         << "Error should NOT mention 'non-animation tile', got: " << error_text;
+}
+
+TEST_F(AnimDecompilerDuplicateDetectionTests, DetectsColorIdenticalKeyFramesAcrossDuplicateSlots)
+{
+    // Slot 9 duplicates slot 2's color, so a solid slot-2 tile and a solid slot-9 tile differ in index space but
+    // decode to identical colors. Compile-side key frame validation compares decoded colors, so the importer must
+    // treat these as duplicates too.
+    palette_.set(9, palette_.at(2));
+    palettes_[0] = palette_;
+
+    PixelTile<IndexPixel> solid_slot_2;
+    PixelTile<IndexPixel> solid_slot_9;
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        solid_slot_2.set(i, IndexPixel{2});
+        solid_slot_9.set(i, IndexPixel{9});
+    }
+    ASSERT_NE(solid_slot_2, solid_slot_9);
+
+    const auto unique_non_anim = create_two_color_tile(5, 6);
+    const auto tiles_png = build_tiles_png({unique_non_anim, solid_slot_2, solid_slot_9});
+
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}, TilemapEntry{2, 0, false, false}};
+    auto anim = create_test_animation("test_anim", 1, 2, {solid_slot_2, solid_slot_9}, palette_);
+    auto component = build_porymap_component(palettes_, metatiles, tiles_png);
+
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::error;
+    AnimDecompiler error_decompiler{&config_, diag_.get(), tile_printer_.get(), palette_printer_.get()};
+
+    auto error_result = error_decompiler.decompile_animation("test_tileset", anim, {}, component);
+
+    EXPECT_FALSE(error_result.has_value()) << "Should detect color-identical key frame tiles across duplicate slots";
+
+    config_.global_anim_key_frame_resolution_strategy = AnimKeyFrameResolutionStrategy::mangle;
+    AnimDecompiler mangle_decompiler{&config_, diag_.get(), tile_printer_.get(), palette_printer_.get()};
+
+    auto mangle_result = mangle_decompiler.decompile_animation("test_tileset", anim, {}, component);
+
+    ASSERT_TRUE(mangle_result.has_value()) << "Mangle strategy should resolve color-identical duplicate";
+
+    // The decompiled key frame tiles must be distinct in canonical decoded RGBA space, since that is how compile-side
+    // key frame validation compares them
+    const auto &key_frame_tiles = mangle_result.value().key_frame().tiles();
+    ASSERT_EQ(key_frame_tiles.size(), 2);
+    const CanonicalPixelTile<Rgba32> canonical_0{key_frame_tiles[0]};
+    const CanonicalPixelTile<Rgba32> canonical_1{key_frame_tiles[1]};
+    const PixelTile<Rgba32> &base_0 = canonical_0;
+    const PixelTile<Rgba32> &base_1 = canonical_1;
+    EXPECT_NE(base_0, base_1);
 }
 
 namespace {

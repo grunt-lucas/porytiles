@@ -32,15 +32,9 @@ bool tiles_color_equivalent(
     const PixelTile<IndexPixel> &actual,
     const Palette<Rgba32, palette::max_size> &palette)
 {
-    // Convert both tiles to color space to handle duplicate palette entries, then re-canonicalize
     constexpr Rgba32 extrinsic{};
-    const auto expected_rgba = color_tile_from_index_tile(expected, palette, extrinsic);
-    const auto actual_rgba = color_tile_from_index_tile(actual, palette, extrinsic);
-    const CanonicalPixelTile canonical_expected{expected_rgba};
-    const CanonicalPixelTile canonical_actual{actual_rgba};
-    const PixelTile<Rgba32> &canonical_expected_pixel = canonical_expected;
-    const PixelTile<Rgba32> &canonical_actual_pixel = canonical_actual;
-    return canonical_expected_pixel == canonical_actual_pixel;
+    return canonical_color_tile_from_index_tile(expected, palette, extrinsic) ==
+           canonical_color_tile_from_index_tile(actual, palette, extrinsic);
 }
 
 /// @brief Helper function to export a range of workspace tiles with optional flip transformations.

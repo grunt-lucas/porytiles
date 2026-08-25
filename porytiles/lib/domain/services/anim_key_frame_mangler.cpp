@@ -10,11 +10,11 @@
 #include <vector>
 
 #include "porytiles/domain/algorithms/tile_converters.hpp"
-#include "porytiles/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles/domain/models/index_pixel.hpp"
 #include "porytiles/domain/models/palette.hpp"
 #include "porytiles/domain/models/pixel_tile.hpp"
 #include "porytiles/domain/models/rgba32.hpp"
+#include "porytiles/utilities/panic/panic.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 #include "porytiles/utilities/result/error.hpp"
 #include "porytiles/utilities/text/text_formatter.hpp"
@@ -24,7 +24,6 @@ namespace {
 using namespace porytiles;
 
 // Pixel priority order for mangling (least visually impactful first)
-// Corners: (0,0), (0,7), (7,0), (7,7) -> indices 0, 7, 56, 63
 // Corners: (0,0), (0,7), (7,0), (7,7) -> indices 0, 7, 56, 63
 // Top edge: 1-6
 // Left edge: 8, 16, 24, 32, 40, 48
@@ -108,10 +107,6 @@ constexpr std::array<std::size_t, tile::size_pix> pixel_priority_order = {
 /// @details
 /// Uses squared Euclidean distance in RGB space. Squared distance avoids the sqrt operation and is sufficient for
 /// comparison purposes.
-///
-/// @param a First color
-/// @param b Second color
-/// @return Squared RGB distance
 int color_distance_squared(const Rgba32 &a, const Rgba32 &b)
 {
     const int dr = static_cast<int>(a.red()) - static_cast<int>(b.red());
@@ -120,26 +115,31 @@ int color_distance_squared(const Rgba32 &a, const Rgba32 &b)
     return dr * dr + dg * dg + db * db;
 }
 
-/// @brief Finds all alternative colors in the palette, sorted by RGB distance (ascending).
+/// @brief Finds usable alternative colors in the palette, sorted by RGB distance (ascending).
 ///
 /// @details
-/// Searches through all palette colors (indices 1-15) excluding the current color and returns all alternative color
-/// indices sorted by squared RGB distance from the current color. Ties in distance are broken by index (ascending) for
-/// deterministic ordering. This allows the mangler to try multiple alternatives at each pixel position, greatly
-/// expanding the mangle search space for symmetric tiles like solid-color tiles.
+/// Searches palette slots 1-15, excluding the current slot, and returns the alternatives sorted by squared RGB
+/// distance from the current pixel's resolved color. Ties in distance are broken by index (ascending) for
+/// deterministic ordering.
 ///
-/// @param current_color_index The current color index to find alternatives for
-/// @param palette The palette to look up actual RGB values
-/// @return A vector of alternative color indices sorted by distance (closest first), empty if no alternatives exist
-[[nodiscard]] std::vector<std::size_t>
-find_alternative_colors_sorted(std::size_t current_color_index, const Palette<Rgba32, palette::max_size> &palette)
+/// Two kinds of slots are excluded because swapping to them cannot produce a usable mangle:
+/// - Slots at RGB distance 0 from the current color. The swapped tile would resolve to the same colors as the
+///   original, so it would still collide with the tile it was supposed to become distinct from.
+/// - Transparent slots (intrinsically transparent, or holding the extrinsic transparency color). The swapped pixel
+///   would resolve to a transparent pixel, and a recompile would map it back to index 0 instead of the swapped slot,
+///   so the mangle would not survive a round trip through key.png.
+[[nodiscard]] std::vector<std::size_t> find_alternative_colors_sorted(
+    std::size_t current_color_index,
+    const Palette<Rgba32, palette::max_size> &palette,
+    const Rgba32 &extrinsic_transparency)
 {
     struct ColorCandidate {
         std::size_t index;
         int distance;
     };
 
-    const Rgba32 current_color = palette.at(current_color_index);
+    // A color index of 0 resolves to the extrinsic transparency color, not to the color stored in palette slot 0
+    const Rgba32 current_color = (current_color_index == 0) ? extrinsic_transparency : palette.at(current_color_index);
     std::vector<ColorCandidate> candidates;
 
     // Search ALL palette colors (1-15), not just those in the tile
@@ -149,7 +149,15 @@ find_alternative_colors_sorted(std::size_t current_color_index, const Palette<Rg
         }
 
         const Rgba32 candidate_color = palette.at(candidate_index);
+        if (candidate_color.is_transparent(extrinsic_transparency)) {
+            continue;
+        }
+
         const int distance = color_distance_squared(current_color, candidate_color);
+        if (distance == 0) {
+            continue;
+        }
+
         candidates.push_back({candidate_index, distance});
     }
 
@@ -169,10 +177,6 @@ find_alternative_colors_sorted(std::size_t current_color_index, const Palette<Rg
 }
 
 /// @brief Constructs a mangled IndexPixel preserving the palette index (upper 4 bits).
-///
-/// @param original_palette_index The palette index from the original pixel
-/// @param alt_color The new color index to swap to
-/// @return The constructed IndexPixel
 [[nodiscard]] IndexPixel make_mangled_pixel(std::size_t original_palette_index, std::size_t alt_color)
 {
     return IndexPixel{(original_palette_index << 4) | alt_color};
@@ -190,26 +194,31 @@ find_alternative_colors_sorted(std::size_t current_color_index, const Palette<Rg
 /// many duplicates), tries swapping two pixels simultaneously. The first pixel is chosen at the least visible position,
 /// paired with each subsequent pixel position, exhausting all color combinations at each pair.
 ///
-/// Uniqueness is checked against canonical forms to ensure tiles that are flip-equivalent are also treated as
-/// duplicates.
-///
-/// @param tile The tile to mangle
-/// @param tile_index The index of the tile in the animation
-/// @param palette The palette for color similarity calculations
-/// @param all_existing_canonical_tiles Set of canonical base tiles that the result must be unique against
-/// @return A pair of (mangled tile, mangle record), or nullopt if no valid mangle was found
+/// Uniqueness is checked on the canonical resolved RGBA form of each candidate, against both the caller-provided
+/// existing tiles and the tiles already processed in the current batch. Comparing resolved colors (rather than palette
+/// slot indices) means palette slots holding duplicate colors cannot produce a candidate that looks identical to an
+/// existing tile, and canonical comparison rejects flip-equivalent candidates.
 std::optional<std::pair<PixelTile<IndexPixel>, TileMangleRecord>> try_mangle_tile(
     const PixelTile<IndexPixel> &tile,
     std::size_t tile_index,
     const Palette<Rgba32, palette::max_size> &palette,
-    const std::set<PixelTile<IndexPixel>> &all_existing_canonical_tiles)
+    const Rgba32 &extrinsic_transparency,
+    const std::set<PixelTile<Rgba32>> &existing_canonical_rgba_tiles,
+    const std::set<PixelTile<Rgba32>> &batch_canonical_rgba_tiles)
 {
+    const auto candidate_is_unique = [&](const PixelTile<IndexPixel> &candidate_tile) {
+        const PixelTile<Rgba32> candidate_base =
+            canonical_color_tile_from_index_tile(candidate_tile, palette, extrinsic_transparency);
+        return !existing_canonical_rgba_tiles.contains(candidate_base) &&
+               !batch_canonical_rgba_tiles.contains(candidate_base);
+    };
+
     // Phase 1: single-pixel swaps (preferred, minimal visual impact)
     for (std::size_t pixel_index : pixel_priority_order) {
         const IndexPixel original_pixel = tile.at(pixel_index);
 
         const std::vector<std::size_t> alternatives =
-            find_alternative_colors_sorted(original_pixel.color_index(), palette);
+            find_alternative_colors_sorted(original_pixel.color_index(), palette, extrinsic_transparency);
 
         for (const std::size_t alt_color : alternatives) {
             const IndexPixel mangled_pixel = make_mangled_pixel(original_pixel.palette_index(), alt_color);
@@ -217,9 +226,7 @@ std::optional<std::pair<PixelTile<IndexPixel>, TileMangleRecord>> try_mangle_til
             PixelTile<IndexPixel> candidate_tile = tile;
             candidate_tile.set(pixel_index, mangled_pixel);
 
-            CanonicalPixelTile<IndexPixel> canonical_candidate{candidate_tile};
-            const PixelTile<IndexPixel> &candidate_base = canonical_candidate;
-            if (!all_existing_canonical_tiles.contains(candidate_base)) {
+            if (candidate_is_unique(candidate_tile)) {
                 TileMangleRecord record{
                     .tile_index = tile_index,
                     .pixel_changes = {PixelMangleChange{
@@ -237,14 +244,14 @@ std::optional<std::pair<PixelTile<IndexPixel>, TileMangleRecord>> try_mangle_til
         const IndexPixel p1_original = tile.at(p1);
 
         const std::vector<std::size_t> p1_alternatives =
-            find_alternative_colors_sorted(p1_original.color_index(), palette);
+            find_alternative_colors_sorted(p1_original.color_index(), palette, extrinsic_transparency);
 
         for (std::size_t p2_idx = p1_idx + 1; p2_idx < pixel_priority_order.size(); ++p2_idx) {
             const std::size_t p2 = pixel_priority_order[p2_idx];
             const IndexPixel p2_original = tile.at(p2);
 
             const std::vector<std::size_t> p2_alternatives =
-                find_alternative_colors_sorted(p2_original.color_index(), palette);
+                find_alternative_colors_sorted(p2_original.color_index(), palette, extrinsic_transparency);
 
             for (const std::size_t p1_alt : p1_alternatives) {
                 const IndexPixel p1_mangled = make_mangled_pixel(p1_original.palette_index(), p1_alt);
@@ -256,9 +263,7 @@ std::optional<std::pair<PixelTile<IndexPixel>, TileMangleRecord>> try_mangle_til
                     candidate_tile.set(p1, p1_mangled);
                     candidate_tile.set(p2, p2_mangled);
 
-                    CanonicalPixelTile<IndexPixel> canonical_candidate{candidate_tile};
-                    const PixelTile<IndexPixel> &candidate_base = canonical_candidate;
-                    if (!all_existing_canonical_tiles.contains(candidate_base)) {
+                    if (candidate_is_unique(candidate_tile)) {
                         TileMangleRecord record{
                             .tile_index = tile_index,
                             .pixel_changes = {
@@ -292,22 +297,27 @@ ChainableResult<MangleResult> AnimKeyFrameMangler::mangle_duplicates(
     std::vector<PixelTile<IndexPixel>> tiles,
     const std::vector<const Palette<Rgba32, palette::max_size> *> &palettes,
     const Rgba32 &extrinsic_transparency,
-    const std::set<PixelTile<IndexPixel>> &existing_canonical_tiles) const
+    const std::vector<const std::set<PixelTile<Rgba32>> *> &existing_canonical_rgba_tiles) const
 {
     if (palettes.size() != tiles.size()) {
         panic("palettes size " + std::to_string(palettes.size()) + " != tiles size " + std::to_string(tiles.size()));
+    }
+    if (existing_canonical_rgba_tiles.size() != tiles.size()) {
+        panic(
+            "existing_canonical_rgba_tiles size " + std::to_string(existing_canonical_rgba_tiles.size()) +
+            " != tiles size " + std::to_string(tiles.size()));
     }
 
     MangleResult result;
     result.tiles = std::move(tiles);
 
-    // Build a set of all canonical tiles we need to be unique against. This includes the input existing_canonical_tiles
-    // plus tiles we've already processed. Using canonical forms ensures tiles that are flip-equivalent are treated as
-    // duplicates.
-    std::set<PixelTile<IndexPixel>> all_canonical_tiles = existing_canonical_tiles;
+    // Canonical resolved RGBA forms of the tiles processed so far in this batch. Together with the caller-provided
+    // per-tile existing sets, this is the universe each tile must be unique against. Working on resolved colors means
+    // tiles that reference different palette slots holding the same color are still treated as duplicates.
+    std::set<PixelTile<Rgba32>> batch_canonical_rgba_tiles;
 
-    // Map to track which canonical tiles we've seen at which indices (for duplicate detection)
-    std::map<PixelTile<IndexPixel>, std::size_t> canonical_first_occurrence;
+    // Map to track which canonical resolved tiles we've seen at which indices (for duplicate detection)
+    std::map<PixelTile<Rgba32>, std::size_t> canonical_first_occurrence;
 
     // Each tile index is visited exactly once. A tile is mangled at most once, producing at most one TileMangleRecord.
     // This guarantees that mangle_records contains non-overlapping entries (no two records share the same tile_index),
@@ -315,21 +325,25 @@ ChainableResult<MangleResult> AnimKeyFrameMangler::mangle_duplicates(
     for (std::size_t i = 0; i < result.tiles.size(); ++i) {
         PixelTile<IndexPixel> &current_tile = result.tiles[i];
 
-        // Canonicalize the current tile for duplicate checking
-        CanonicalPixelTile canonical_current{current_tile};
-        const PixelTile<IndexPixel> &current_base = canonical_current;
+        // Canonical resolved form of the current tile for duplicate checking
+        const PixelTile<Rgba32> current_base =
+            canonical_color_tile_from_index_tile(current_tile, *palettes[i], extrinsic_transparency);
 
-        // Check if this tile is a duplicate (either of existing_canonical_tiles or a previous tile in this batch)
-        auto it = canonical_first_occurrence.find(current_base);
-        const bool is_duplicate_of_previous = it != canonical_first_occurrence.end();
+        // Check if this tile is a duplicate (either of the existing tiles or a previous tile in this batch)
+        const bool is_duplicate_of_previous = canonical_first_occurrence.contains(current_base);
         const bool is_duplicate_of_existing =
-            existing_canonical_tiles.contains(current_base) && !is_duplicate_of_previous;
+            existing_canonical_rgba_tiles[i]->contains(current_base) && !is_duplicate_of_previous;
 
         if (is_duplicate_of_previous || is_duplicate_of_existing) {
             // Need to mangle this tile
             const PixelTile<IndexPixel> original_tile = current_tile;
-            const std::optional<std::pair<PixelTile<IndexPixel>, TileMangleRecord>> mangle_result =
-                try_mangle_tile(current_tile, i, *palettes[i], all_canonical_tiles);
+            const std::optional<std::pair<PixelTile<IndexPixel>, TileMangleRecord>> mangle_result = try_mangle_tile(
+                current_tile,
+                i,
+                *palettes[i],
+                extrinsic_transparency,
+                *existing_canonical_rgba_tiles[i],
+                batch_canonical_rgba_tiles);
 
             if (!mangle_result.has_value()) {
                 // Could not mangle the tile - this is an error
@@ -341,6 +355,7 @@ ChainableResult<MangleResult> AnimKeyFrameMangler::mangle_duplicates(
                 err_msg.emplace_back();
                 err_msg.emplace_back("The tile could not be modified to be unique. This may occur if:");
                 err_msg.emplace_back("  - All possible pixel swaps still produce duplicate tiles");
+                err_msg.emplace_back("  - The palette does not contain enough distinct opaque colors");
                 return FormattableError{err_msg};
             }
 
@@ -377,11 +392,11 @@ ChainableResult<MangleResult> AnimKeyFrameMangler::mangle_duplicates(
             diag_->remark("anim-key-frame-mangle", remark_lines);
         }
 
-        // Re-canonicalize after potential mangle and add to tracking sets
-        CanonicalPixelTile final_canonical{current_tile};
-        const PixelTile<IndexPixel> &final_base = final_canonical;
+        // Re-canonicalize after potential mangle and add to the trackers
+        const PixelTile<Rgba32> final_base =
+            canonical_color_tile_from_index_tile(current_tile, *palettes[i], extrinsic_transparency);
         canonical_first_occurrence.emplace(final_base, i);
-        all_canonical_tiles.insert(final_base);
+        batch_canonical_rgba_tiles.insert(final_base);
     }
 
     return result;

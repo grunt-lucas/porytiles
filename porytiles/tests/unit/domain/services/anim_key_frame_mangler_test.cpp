@@ -4,6 +4,7 @@
 #include <string>
 #include <vector>
 
+#include "porytiles/domain/algorithms/tile_converters.hpp"
 #include "porytiles/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles/domain/models/index_pixel.hpp"
 #include "porytiles/domain/models/palette.hpp"
@@ -66,6 +67,22 @@ make_uniform_palette_ptrs(const Palette<Rgba32, palette::max_size> &palette, std
     return std::vector<const Palette<Rgba32, palette::max_size> *>(count, &palette);
 }
 
+std::set<PixelTile<Rgba32>> make_canonical_rgba_set(
+    const std::vector<PixelTile<IndexPixel>> &tiles, const Palette<Rgba32, palette::max_size> &palette)
+{
+    std::set<PixelTile<Rgba32>> result;
+    for (const auto &tile : tiles) {
+        result.insert(canonical_color_tile_from_index_tile(tile, palette, Rgba32{}));
+    }
+    return result;
+}
+
+std::vector<const std::set<PixelTile<Rgba32>> *>
+make_existing_ptrs(const std::set<PixelTile<Rgba32>> &existing, std::size_t count)
+{
+    return std::vector<const std::set<PixelTile<Rgba32>> *>(count, &existing);
+}
+
 } // namespace
 
 class AnimKeyFrameManglerTests : public ::testing::Test {
@@ -92,13 +109,17 @@ TEST_F(AnimKeyFrameManglerTests, shouldPassthroughWhenNoDuplicates)
     tiles.push_back(create_two_color_tile(3, 4)); // Blue corners, yellow fill
     tiles.push_back(create_two_color_tile(5, 6)); // Cyan corners, magenta fill
 
-    std::set<PixelTile<IndexPixel>> existing_tiles;
+    std::set<PixelTile<Rgba32>> existing_tiles;
 
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
     const auto result = mangler.mangle_duplicates(
-        "test_anim", tiles, make_uniform_palette_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
+        "test_anim",
+        tiles,
+        make_uniform_palette_ptrs(palette_, tiles.size()),
+        Rgba32{},
+        make_existing_ptrs(existing_tiles, tiles.size()));
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -118,13 +139,17 @@ TEST_F(AnimKeyFrameManglerTests, shouldMangleSimpleDuplicatePair)
     tiles.push_back(original_tile);
     tiles.push_back(original_tile); // Duplicate!
 
-    std::set<PixelTile<IndexPixel>> existing_tiles;
+    std::set<PixelTile<Rgba32>> existing_tiles;
 
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
     const auto result = mangler.mangle_duplicates(
-        "test_anim", tiles, make_uniform_palette_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
+        "test_anim",
+        tiles,
+        make_uniform_palette_ptrs(palette_, tiles.size()),
+        Rgba32{},
+        make_existing_ptrs(existing_tiles, tiles.size()));
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -156,13 +181,17 @@ TEST_F(AnimKeyFrameManglerTests, shouldMangleMultipleDuplicatesOfSameTile)
     tiles.push_back(original_tile); // First duplicate
     tiles.push_back(original_tile); // Second duplicate
 
-    std::set<PixelTile<IndexPixel>> existing_tiles;
+    std::set<PixelTile<Rgba32>> existing_tiles;
 
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
     const auto result = mangler.mangle_duplicates(
-        "test_anim", tiles, make_uniform_palette_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
+        "test_anim",
+        tiles,
+        make_uniform_palette_ptrs(palette_, tiles.size()),
+        Rgba32{},
+        make_existing_ptrs(existing_tiles, tiles.size()));
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -188,14 +217,17 @@ TEST_F(AnimKeyFrameManglerTests, shouldAvoidDuplicatingExistingTiles)
     auto preexisting_tile = original_tile;
     preexisting_tile.set(0, IndexPixel{2}); // Change corner from red to green
 
-    std::set<PixelTile<IndexPixel>> existing_tiles;
-    existing_tiles.insert(preexisting_tile);
+    const auto existing_tiles = make_canonical_rgba_set({preexisting_tile}, palette_);
 
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
     const auto result = mangler.mangle_duplicates(
-        "test_anim", tiles, make_uniform_palette_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
+        "test_anim",
+        tiles,
+        make_uniform_palette_ptrs(palette_, tiles.size()),
+        Rgba32{},
+        make_existing_ptrs(existing_tiles, tiles.size()));
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -203,9 +235,11 @@ TEST_F(AnimKeyFrameManglerTests, shouldAvoidDuplicatingExistingTiles)
     // The mangled tile should NOT match the preexisting tile
     EXPECT_NE(result.value().tiles[1], preexisting_tile);
 
-    // Both result tiles should be unique against existing_tiles too
-    EXPECT_EQ(existing_tiles.find(result.value().tiles[0]), existing_tiles.end());
-    // Note: tiles[0] equals original_tile which is already NOT in existing_tiles (only preexisting_tile is)
+    // Both result tiles should be unique against existing_tiles too (compared in decoded RGBA space)
+    EXPECT_FALSE(
+        existing_tiles.contains(canonical_color_tile_from_index_tile(result.value().tiles[0], palette_, Rgba32{})));
+    EXPECT_FALSE(
+        existing_tiles.contains(canonical_color_tile_from_index_tile(result.value().tiles[1], palette_, Rgba32{})));
 }
 
 TEST_F(AnimKeyFrameManglerTests, shouldNotMangleIntoCollisionWithExistingCanonicalTile)
@@ -223,19 +257,19 @@ TEST_F(AnimKeyFrameManglerTests, shouldNotMangleIntoCollisionWithExistingCanonic
     auto naive_mangle_tile = original_tile;
     naive_mangle_tile.set(0, IndexPixel{8}); // What the mangler's first attempt would produce
 
-    // Insert the canonical form of this naive mangle into existing tiles,
+    // Insert the canonical decoded form of this naive mangle into existing tiles,
     // simulating an unrelated tile in tiles.png that happens to match
-    CanonicalPixelTile<IndexPixel> naive_canonical{naive_mangle_tile};
-    const PixelTile<IndexPixel> &naive_base = naive_canonical;
-
-    std::set<PixelTile<IndexPixel>> existing_canonical_tiles;
-    existing_canonical_tiles.insert(naive_base);
+    const auto existing_canonical_tiles = make_canonical_rgba_set({naive_mangle_tile}, palette_);
 
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
     const auto result = mangler.mangle_duplicates(
-        "test_anim", tiles, make_uniform_palette_ptrs(palette_, tiles.size()), Rgba32{}, existing_canonical_tiles);
+        "test_anim",
+        tiles,
+        make_uniform_palette_ptrs(palette_, tiles.size()),
+        Rgba32{},
+        make_existing_ptrs(existing_canonical_tiles, tiles.size()));
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -246,10 +280,9 @@ TEST_F(AnimKeyFrameManglerTests, shouldNotMangleIntoCollisionWithExistingCanonic
     // The mangled tile should still be different from the original
     EXPECT_NE(result.value().tiles[1], original_tile);
 
-    // The canonical form of the mangled tile should not collide with existing_canonical_tiles
-    CanonicalPixelTile<IndexPixel> result_canonical{result.value().tiles[1]};
-    const PixelTile<IndexPixel> &result_base = result_canonical;
-    EXPECT_EQ(existing_canonical_tiles.find(result_base), existing_canonical_tiles.end());
+    // The canonical decoded form of the mangled tile should not collide with existing_canonical_tiles
+    EXPECT_FALSE(existing_canonical_tiles.contains(
+        canonical_color_tile_from_index_tile(result.value().tiles[1], palette_, Rgba32{})));
 }
 
 TEST_F(AnimKeyFrameManglerTests, shouldPreservePaletteIndex)
@@ -271,13 +304,17 @@ TEST_F(AnimKeyFrameManglerTests, shouldPreservePaletteIndex)
     tiles.push_back(tile);
     tiles.push_back(tile); // Duplicate
 
-    std::set<PixelTile<IndexPixel>> existing_tiles;
+    std::set<PixelTile<Rgba32>> existing_tiles;
 
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
     const auto result = mangler.mangle_duplicates(
-        "test_anim", tiles, make_uniform_palette_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
+        "test_anim",
+        tiles,
+        make_uniform_palette_ptrs(palette_, tiles.size()),
+        Rgba32{},
+        make_existing_ptrs(existing_tiles, tiles.size()));
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -297,13 +334,17 @@ TEST_F(AnimKeyFrameManglerTests, shouldEmitRemarkWhenMangling)
     tiles.push_back(tile);
     tiles.push_back(tile); // Duplicate
 
-    std::set<PixelTile<IndexPixel>> existing_tiles;
+    std::set<PixelTile<Rgba32>> existing_tiles;
 
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
     const auto result = mangler.mangle_duplicates(
-        "test_anim", tiles, make_uniform_palette_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
+        "test_anim",
+        tiles,
+        make_uniform_palette_ptrs(palette_, tiles.size()),
+        Rgba32{},
+        make_existing_ptrs(existing_tiles, tiles.size()));
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -327,13 +368,17 @@ TEST_F(AnimKeyFrameManglerTests, shouldMangleSolidColorTile)
     tiles.push_back(tile);
     tiles.push_back(tile); // Duplicate
 
-    std::set<PixelTile<IndexPixel>> existing_tiles;
+    std::set<PixelTile<Rgba32>> existing_tiles;
 
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
     const auto result = mangler.mangle_duplicates(
-        "test_anim", tiles, make_uniform_palette_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
+        "test_anim",
+        tiles,
+        make_uniform_palette_ptrs(palette_, tiles.size()),
+        Rgba32{},
+        make_existing_ptrs(existing_tiles, tiles.size()));
 
     // assert - should SUCCEED by introducing a different palette color
     ASSERT_TRUE(result.has_value());
@@ -364,13 +409,17 @@ TEST_F(AnimKeyFrameManglerTests, shouldHandleMostlyTransparentTiles)
     tiles.push_back(tile);
     tiles.push_back(tile); // Duplicate
 
-    std::set<PixelTile<IndexPixel>> existing_tiles;
+    std::set<PixelTile<Rgba32>> existing_tiles;
 
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
     const auto result = mangler.mangle_duplicates(
-        "test_anim", tiles, make_uniform_palette_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
+        "test_anim",
+        tiles,
+        make_uniform_palette_ptrs(palette_, tiles.size()),
+        Rgba32{},
+        make_existing_ptrs(existing_tiles, tiles.size()));
 
     // assert - should succeed; the mangler can mangle any pixel (including transparent ones)
     ASSERT_TRUE(result.has_value());
@@ -390,13 +439,17 @@ TEST_F(AnimKeyFrameManglerTests, shouldMangleFullyTransparentTiles)
     tiles.push_back(tile);
     tiles.push_back(tile); // Duplicate
 
-    std::set<PixelTile<IndexPixel>> existing_tiles;
+    std::set<PixelTile<Rgba32>> existing_tiles;
 
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
     const auto result = mangler.mangle_duplicates(
-        "test_anim", tiles, make_uniform_palette_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
+        "test_anim",
+        tiles,
+        make_uniform_palette_ptrs(palette_, tiles.size()),
+        Rgba32{},
+        make_existing_ptrs(existing_tiles, tiles.size()));
 
     // assert - should succeed by swapping a transparent pixel to a non-transparent color
     ASSERT_TRUE(result.has_value());
@@ -418,13 +471,17 @@ TEST_F(AnimKeyFrameManglerTests, shouldMakeMangledRecordsAccurate)
     tiles.push_back(original_tile);
     tiles.push_back(original_tile); // Duplicate
 
-    std::set<PixelTile<IndexPixel>> existing_tiles;
+    std::set<PixelTile<Rgba32>> existing_tiles;
 
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
     const auto result = mangler.mangle_duplicates(
-        "test_anim", tiles, make_uniform_palette_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
+        "test_anim",
+        tiles,
+        make_uniform_palette_ptrs(palette_, tiles.size()),
+        Rgba32{},
+        make_existing_ptrs(existing_tiles, tiles.size()));
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -474,13 +531,17 @@ TEST_F(AnimKeyFrameManglerTests, shouldTreatFlipEquivalentTilesAsDuplicates)
 
     // Pass empty existing_canonical_tiles - the mangler will detect the duplicate
     // within the batch itself using canonical comparison
-    std::set<PixelTile<IndexPixel>> existing_canonical_tiles;
+    std::set<PixelTile<Rgba32>> existing_canonical_tiles;
 
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
     const auto result = mangler.mangle_duplicates(
-        "test_anim", tiles, make_uniform_palette_ptrs(palette_, tiles.size()), Rgba32{}, existing_canonical_tiles);
+        "test_anim",
+        tiles,
+        make_uniform_palette_ptrs(palette_, tiles.size()),
+        Rgba32{},
+        make_existing_ptrs(existing_canonical_tiles, tiles.size()));
 
     // assert
     ASSERT_TRUE(result.has_value());
@@ -513,13 +574,17 @@ TEST_F(AnimKeyFrameManglerTests, shouldMangleManySolidColorDuplicates)
         tiles.push_back(tile);
     }
 
-    std::set<PixelTile<IndexPixel>> existing_tiles;
+    std::set<PixelTile<Rgba32>> existing_tiles;
 
     AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
 
     // act
     const auto result = mangler.mangle_duplicates(
-        "test_anim", tiles, make_uniform_palette_ptrs(palette_, tiles.size()), Rgba32{}, existing_tiles);
+        "test_anim",
+        tiles,
+        make_uniform_palette_ptrs(palette_, tiles.size()),
+        Rgba32{},
+        make_existing_ptrs(existing_tiles, tiles.size()));
 
     // assert - should succeed with the expanded search space
     ASSERT_TRUE(result.has_value());
@@ -532,5 +597,78 @@ TEST_F(AnimKeyFrameManglerTests, shouldMangleManySolidColorDuplicates)
         CanonicalPixelTile<IndexPixel> canonical{t};
         const PixelTile<IndexPixel> &base = canonical;
         EXPECT_TRUE(canonical_tiles.insert(base).second) << "Found duplicate canonical tile after mangling";
+    }
+}
+
+TEST_F(AnimKeyFrameManglerTests, MangleAvoidsDuplicateColorSlots)
+{
+    // Slot 9 duplicates slot 2's color. The closest alternative to green (distance 0) is slot 9, but swapping to it
+    // would leave the decoded tile unchanged, so the mangler must pick a slot with a genuinely different color.
+    auto palette = create_test_palette();
+    palette.set(9, palette.at(2));
+
+    PixelTile<IndexPixel> tile;
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        tile.set(i, IndexPixel{2}); // Solid green
+    }
+
+    std::vector<PixelTile<IndexPixel>> tiles;
+    tiles.push_back(tile);
+    tiles.push_back(tile); // Duplicate
+
+    std::set<PixelTile<Rgba32>> existing_tiles;
+
+    AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
+
+    const auto result = mangler.mangle_duplicates(
+        "test_anim",
+        tiles,
+        make_uniform_palette_ptrs(palette, tiles.size()),
+        Rgba32{},
+        make_existing_ptrs(existing_tiles, tiles.size()));
+
+    ASSERT_TRUE(result.has_value());
+    EXPECT_EQ(result.value().mangle_records.size(), 1);
+
+    // The decoded tiles must differ; index-only uniqueness (e.g. swapping slot 2 for its color-identical slot 9) is
+    // not enough
+    const auto decoded_0 = canonical_color_tile_from_index_tile(result.value().tiles[0], palette, Rgba32{});
+    const auto decoded_1 = canonical_color_tile_from_index_tile(result.value().tiles[1], palette, Rgba32{});
+    EXPECT_NE(decoded_0, decoded_1);
+}
+
+TEST_F(AnimKeyFrameManglerTests, MangleSkipsExtrinsicTransparencyColor)
+{
+    // Extrinsic transparency equals slot 9's color, the closest alternative to a solid slot-8 tile. Swapping to slot
+    // 9 would decode to a transparent pixel that recompiles to index 0, so the mangler must skip it.
+    const Rgba32 extrinsic = palette_.at(9);
+
+    PixelTile<IndexPixel> tile;
+    for (std::size_t i = 0; i < tile::size_pix; ++i) {
+        tile.set(i, IndexPixel{8}); // Solid grey
+    }
+
+    std::vector<PixelTile<IndexPixel>> tiles;
+    tiles.push_back(tile);
+    tiles.push_back(tile); // Duplicate
+
+    std::set<PixelTile<Rgba32>> existing_tiles;
+
+    AnimKeyFrameMangler mangler{diag_.get(), tile_printer_.get()};
+
+    const auto result = mangler.mangle_duplicates(
+        "test_anim",
+        tiles,
+        make_uniform_palette_ptrs(palette_, tiles.size()),
+        extrinsic,
+        make_existing_ptrs(existing_tiles, tiles.size()));
+
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().mangle_records.size(), 1);
+
+    // No mangled pixel may decode to the extrinsic transparency color
+    const auto &record = *result.value().mangle_records.begin();
+    for (const auto &change : record.pixel_changes) {
+        EXPECT_FALSE(palette_.at(change.mangled_pixel.color_index()).is_transparent(extrinsic));
     }
 }

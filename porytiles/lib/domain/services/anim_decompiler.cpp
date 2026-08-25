@@ -20,7 +20,6 @@
 #include "porytiles/domain/config/per_anim_overrides.hpp"
 #include "porytiles/domain/models/anim_frame.hpp"
 #include "porytiles/domain/models/anim_override_entry.hpp"
-#include "porytiles/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles/domain/models/image.hpp"
 #include "porytiles/domain/models/pixel_tile.hpp"
 #include "porytiles/domain/models/porymap_tileset_component.hpp"
@@ -471,80 +470,48 @@ using namespace porytiles;
     return per_tile_palettes;
 }
 
-/// @brief Checks whether any key frame tiles are duplicates, considering cross-range, inter-animation, and
-/// intra-animation duplicates.
-///
-/// @details
-/// A duplicate is detected if a key frame tile's canonical form matches either:
-/// - An inter-animation tile (another animation's key frame tile)
-/// - An external tile (cross-range duplicate: animation tile matches a non-animation tile in tiles.png)
-/// - An earlier key frame tile (intra-animation duplicate: two animation tiles are flip-equivalent)
-///
-/// @param key_frame_tiles The animation key frame tiles to check
-/// @param inter_anim_canonical_tiles Canonical forms of other animations' key frame tiles
-/// @param external_canonical_tiles Canonical forms of all non-animation tiles in tiles.png
-/// @return True if any duplicate is found
-[[nodiscard]] bool has_duplicate_key_frame_tiles(
-    const std::vector<PixelTile<IndexPixel>> &key_frame_tiles,
-    const std::set<PixelTile<IndexPixel>> &inter_anim_canonical_tiles,
-    const std::set<PixelTile<IndexPixel>> &external_canonical_tiles)
-{
-    std::set<PixelTile<IndexPixel>> seen;
-    for (const auto &tile : key_frame_tiles) {
-        const CanonicalPixelTile canonical{tile};
-        const PixelTile<IndexPixel> &base = canonical;
-        if (inter_anim_canonical_tiles.contains(base)) {
-            return true;
-        }
-        if (external_canonical_tiles.contains(base)) {
-            return true;
-        }
-        if (!seen.insert(base).second) {
-            return true;
-        }
-    }
-    return false;
-}
-
 struct DuplicateInfo {
     std::vector<std::size_t> inter_anim_indices;
     std::vector<std::size_t> cross_range_indices;
     std::vector<std::pair<std::size_t, std::size_t>> intra_anim_pairs;
+
+    [[nodiscard]] bool any() const
+    {
+        return !inter_anim_indices.empty() || !cross_range_indices.empty() || !intra_anim_pairs.empty();
+    }
 };
 
 /// @brief Categorizes duplicate key frame tiles into inter-animation, cross-range, and intra-animation duplicates.
 ///
 /// @details
-/// Inter-animation duplicates are key frame tiles whose canonical form matches another animation's key frame tile.
-/// Cross-range duplicates are key frame tiles whose canonical form matches an external (non-animation) tile.
-/// Intra-animation duplicates are pairs of key frame tiles that are flip-equivalent to each other.
+/// Inter-animation duplicates are key frame tiles matching another animation's key frame tile. Cross-range duplicates
+/// are key frame tiles matching an external (non-animation) tile in tiles.png, decoded under the subtile's own
+/// palette. Intra-animation duplicates are pairs of key frame tiles matching each other.
 ///
 /// Inter-animation tiles are checked before cross-range tiles so that the more specific category wins when a tile
 /// appears in both sets.
 ///
-/// @param key_frame_tiles The animation key frame tiles to categorize
-/// @param inter_anim_canonical_tiles Canonical forms of other animations' key frame tiles
-/// @param external_canonical_tiles Canonical forms of all non-animation tiles in tiles.png
-/// @return DuplicateInfo with indices categorized by duplicate type
+/// All comparison happens on canonical decoded RGBA tiles, matching how the compile pipeline compares key frame tiles,
+/// i.e. by the rgba form. Two index tiles that reference different palette slots holding the same color are therefore
+/// duplicates, as are flip-equivalent tiles.
 [[nodiscard]] DuplicateInfo categorize_duplicate_key_frame_tiles(
-    const std::vector<PixelTile<IndexPixel>> &key_frame_tiles,
-    const std::set<PixelTile<IndexPixel>> &inter_anim_canonical_tiles,
-    const std::set<PixelTile<IndexPixel>> &external_canonical_tiles)
+    const std::vector<PixelTile<Rgba32>> &key_frame_canonical_rgba_tiles,
+    const std::set<PixelTile<Rgba32>> &inter_anim_canonical_tiles,
+    const std::vector<const std::set<PixelTile<Rgba32>> *> &external_canonical_rgba_tiles)
 {
     DuplicateInfo info;
 
-    // Map from canonical base tile to first index seen
-    std::map<PixelTile<IndexPixel>, std::size_t> seen;
+    // Map from canonical decoded tile to first index seen
+    std::map<PixelTile<Rgba32>, std::size_t> seen;
 
-    for (std::size_t i = 0; i < key_frame_tiles.size(); ++i) {
-        const CanonicalPixelTile canonical{key_frame_tiles[i]};
-        const PixelTile<IndexPixel> &base = canonical;
+    for (std::size_t i = 0; i < key_frame_canonical_rgba_tiles.size(); ++i) {
+        const PixelTile<Rgba32> &base = key_frame_canonical_rgba_tiles[i];
 
         // Check inter-animation before cross-range (more specific category wins)
         if (inter_anim_canonical_tiles.contains(base)) {
             info.inter_anim_indices.push_back(i);
         }
-        else if (external_canonical_tiles.contains(base)) {
+        else if (external_canonical_rgba_tiles[i]->contains(base)) {
             info.cross_range_indices.push_back(i);
         }
 
@@ -595,7 +562,7 @@ namespace porytiles {
 ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
     const std::string &tileset_name,
     const Animation<IndexPixel> &anim,
-    const std::set<PixelTile<IndexPixel>> &inter_anim_canonical_tiles,
+    const std::set<PixelTile<Rgba32>> &inter_anim_canonical_tiles,
     PorymapTilesetComponent &porymap_component) const
 {
     // Unwrap config values
@@ -809,24 +776,52 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
     std::vector<PixelTile<IndexPixel>> key_frame_index_tiles =
         extract_tiles_from_image(tiles_png, tile_offset, tile_count);
 
-    // Build canonical tile set for all tiles in tiles.png OUTSIDE the current animation's key frame range, then merge
-    // in inter-animation canonical tiles. The combined set is used by the mangler to avoid producing canonical
-    // collisions with any already-used tile. For duplicate *categorization* (inter-anim vs cross-range), the separate
-    // inter_anim_canonical_tiles parameter is checked first so that tiles appearing in both sets are correctly reported
-    // as inter-animation duplicates rather than cross-range duplicates.
-    const std::size_t total_tiles =
-        (tiles_png.height() / tile::side_length_pix) * (tiles_png.width() / tile::side_length_pix);
-    std::set<PixelTile<IndexPixel>> existing_canonical_tiles;
-    for (std::size_t i = 0; i < total_tiles; ++i) {
-        if (i >= tile_offset && i < tile_offset + tile_count) {
-            continue;
-        }
-        const CanonicalPixelTile canonical{extract_single_tile(tiles_png, i)};
-        const PixelTile<IndexPixel> &base = canonical;
-        existing_canonical_tiles.insert(base);
+    // Decode each key frame subtile to its canonical RGBA form. Duplicate detection and mangling both operate on
+    // decoded colors because the compile-side key frame validation compares key.png tiles by color: two index tiles
+    // that reference different palette slots holding the same color are duplicates there, even though they differ in
+    // index space.
+    std::vector<PixelTile<Rgba32>> key_frame_canonical_rgba_tiles;
+    key_frame_canonical_rgba_tiles.reserve(tile_count);
+    for (std::size_t i = 0; i < key_frame_index_tiles.size(); ++i) {
+        key_frame_canonical_rgba_tiles.push_back(canonical_color_tile_from_index_tile(
+            key_frame_index_tiles[i], *palette_ptrs[i], extrinsic_transparency.value()));
     }
 
-    existing_canonical_tiles.insert(inter_anim_canonical_tiles.begin(), inter_anim_canonical_tiles.end());
+    // Build, per distinct subtile palette, the canonical RGBA forms of all tiles.png tiles OUTSIDE the current
+    // animation's key frame range. Tiles carry no palette of their own in tiles.png, so each one is resolved under the
+    // palettes this animation's subtiles actually use: subtile i is compared against external tiles resolved under
+    // subtile i's palette.
+    const std::size_t total_tiles =
+        (tiles_png.height() / tile::side_length_pix) * (tiles_png.width() / tile::side_length_pix);
+    const std::set<std::size_t> distinct_palette_indices{palette_indices.begin(), palette_indices.end()};
+    std::map<std::size_t, std::set<PixelTile<Rgba32>>> external_rgba_by_palette;
+    for (const std::size_t palette_idx : distinct_palette_indices) {
+        auto &tile_set = external_rgba_by_palette[palette_idx];
+        for (std::size_t i = 0; i < total_tiles; ++i) {
+            if (i >= tile_offset && i < tile_offset + tile_count) {
+                continue;
+            }
+            tile_set.insert(canonical_color_tile_from_index_tile(
+                extract_single_tile(tiles_png, i), palettes.at(palette_idx), extrinsic_transparency.value()));
+        }
+    }
+
+    // Combined per-palette sets (external plus inter-animation) back the mangler's uniqueness checks. The
+    // external-only sets stay separate so duplicate categorization can distinguish cross-range duplicates from
+    // inter-animation duplicates.
+    std::map<std::size_t, std::set<PixelTile<Rgba32>>> combined_rgba_by_palette = external_rgba_by_palette;
+    for (auto &tile_set : combined_rgba_by_palette | std::views::values) {
+        tile_set.insert(inter_anim_canonical_tiles.begin(), inter_anim_canonical_tiles.end());
+    }
+
+    std::vector<const std::set<PixelTile<Rgba32>> *> external_per_subtile;
+    std::vector<const std::set<PixelTile<Rgba32>> *> combined_per_subtile;
+    external_per_subtile.reserve(tile_count);
+    combined_per_subtile.reserve(tile_count);
+    for (const std::size_t palette_idx : palette_indices) {
+        external_per_subtile.push_back(&external_rgba_by_palette.at(palette_idx));
+        combined_per_subtile.push_back(&combined_rgba_by_palette.at(palette_idx));
+    }
 
     // Compute the effective key frame resolution strategy: per-anim override wins, otherwise global fallback.
     const ConfigValue<AnimKeyFrameResolutionStrategy> effective_key_frame_strategy =
@@ -834,35 +829,34 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
             ? per_anim_overrides.derive(anim_cfg_ptr->key_frame_resolution_strategy)
             : global_anim_key_frame_resolution_strategy;
 
-    // Check for duplicate key frame tiles using canonical (flip-equivalent) comparison. Detects:
+    // Detect duplicate key frame tiles on canonical decoded RGBA forms. Detects:
     // - Inter-animation duplicates: animation tile matches another animation's key frame tile
     // - Cross-range duplicates: animation tile matches a non-animation tile in tiles.png
-    // - Intra-animation duplicates: two animation tiles are flip-equivalent to each other
-    if (has_duplicate_key_frame_tiles(key_frame_index_tiles, inter_anim_canonical_tiles, existing_canonical_tiles)) {
+    // - Intra-animation duplicates: two animation tiles match each other
+    const auto dup_info = categorize_duplicate_key_frame_tiles(
+        key_frame_canonical_rgba_tiles, inter_anim_canonical_tiles, external_per_subtile);
+    if (dup_info.any()) {
         switch (effective_key_frame_strategy.value()) {
         case AnimKeyFrameResolutionStrategy::error: {
-            const auto dup_info = categorize_duplicate_key_frame_tiles(
-                key_frame_index_tiles, inter_anim_canonical_tiles, existing_canonical_tiles);
             std::vector<std::string> err_msg{};
             err_msg.emplace_back(diag_->formatter().format(
-                "Animation '{}' has duplicate key frame tiles (flip-equivalent tiles are considered duplicates):",
-                FormatParam{anim.name(), Style::bold}));
+                "Animation '{}' has duplicate key frame tiles:", FormatParam{anim.name(), Style::bold}));
             for (const auto &idx : dup_info.inter_anim_indices) {
                 err_msg.emplace_back(diag_->formatter().format(
-                    "  - Tile {} is flip-equivalent to another animation's key frame tile.",
-                    FormatParam{idx, Style::bold}));
+                    "  - Tile {} matches another animation's key frame tile.", FormatParam{idx, Style::bold}));
             }
             for (const auto &idx : dup_info.cross_range_indices) {
                 err_msg.emplace_back(diag_->formatter().format(
-                    "  - Tile {} is flip-equivalent to a non-animation tile in tiles.png.",
-                    FormatParam{idx, Style::bold}));
+                    "  - Tile {} matches a non-animation tile in tiles.png.", FormatParam{idx, Style::bold}));
             }
             for (const auto &[i, j] : dup_info.intra_anim_pairs) {
                 err_msg.emplace_back(diag_->formatter().format(
-                    "  - Tile {} and tile {} are flip-equivalent.",
-                    FormatParam{i, Style::bold},
-                    FormatParam{j, Style::bold}));
+                    "  - Tile {} and tile {} match.", FormatParam{i, Style::bold}, FormatParam{j, Style::bold}));
             }
+            err_msg.emplace_back("");
+            err_msg.emplace_back(
+                "Tiles are compared by resolved color: flip-equivalent tiles, and tiles that reference different "
+                "palette slots holding the same color, count as duplicates.");
             err_msg.emplace_back("");
             err_msg.emplace_back("Consider using 'mangle' strategy to auto-resolve.");
             err_msg.append_range(format_config_note_with_separator(diag_->formatter(), effective_key_frame_strategy));
@@ -882,7 +876,7 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
                     std::move(key_frame_index_tiles),
                     palette_ptrs,
                     extrinsic_transparency.value(),
-                    existing_canonical_tiles),
+                    combined_per_subtile),
                 Animation<Rgba32>,
                 diag_->formatter().format(
                     "Failed to mangle duplicate key frame tiles for animation '{}'.",
