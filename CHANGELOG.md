@@ -29,6 +29,8 @@ and to its issue too when one was filed
 
 - Added auto-wrap support for all diagnostic messages to simplify internal callsites. On the user side, diagnostics now dynamically wrap based on terminal width (as reported by ioctl). This can be overridden via the standard `COLUMNS` environment var. - [#342](https://github.com/grunt-lucas/porytiles/pull/342)
 
+- When importing, duplicate key frame detection and mangling now operate using canonical RGBA tiles instead of by pal slot indices. - [#352](https://github.com/grunt-lucas/porytiles/pull/352)
+
 ## [1.0.0] - 2026-06-05
 
 First stable release of Porytiles.
