@@ -480,7 +480,7 @@ TEST_CASE("emitMetatilesBin should emit metatiles.bin as expected based on setti
 
     // Check metatiles.bin bytes are as expected
     CHECK(bytes[0] == 1);
-    CHECK(bytes[1] == 32);
+    CHECK(bytes[1] == 0);
     CHECK(bytes[2] == 0);
     CHECK(bytes[3] == 0);
     CHECK(bytes[4] == 0);

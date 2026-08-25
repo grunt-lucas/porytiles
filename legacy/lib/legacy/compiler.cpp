@@ -1743,8 +1743,8 @@ TEST_CASE("assign should correctly assign all normalized palettes or fail if imp
         CHECK(porytiles_legacy::assignDepthFirst(ctx, porytiles_legacy::CompilerMode::PRIMARY, state, solution, {}, unassigned,
                                            {}) == porytiles_legacy::AssignResult::SUCCESS);
         CHECK(solution.size() == SOLUTION_SIZE);
-        CHECK(solution.at(0).first.count() == 11);
-        CHECK(solution.at(1).first.count() == 12);
+        CHECK(solution.at(0).first.count() == 12);
+        CHECK(solution.at(1).first.count() == 11);
         CHECK(solution.at(2).first.count() == 14);
         CHECK(solution.at(3).first.count() == 14);
         CHECK(solution.at(4).first.count() == 15);
@@ -1914,17 +1914,17 @@ TEST_CASE("compile function should fill out primary CompiledTileset struct with 
     CHECK(compiledPrimary->paletteIndexesOfTile.size() == 16);
     CHECK(compiledPrimary->paletteIndexesOfTile[0] == 0);
     CHECK(compiledPrimary->paletteIndexesOfTile[1] == 2);
-    CHECK(compiledPrimary->paletteIndexesOfTile[2] == 1);
-    CHECK(compiledPrimary->paletteIndexesOfTile[3] == 1);
-    CHECK(compiledPrimary->paletteIndexesOfTile[4] == 0);
+    CHECK(compiledPrimary->paletteIndexesOfTile[2] == 0);
+    CHECK(compiledPrimary->paletteIndexesOfTile[3] == 0);
+    CHECK(compiledPrimary->paletteIndexesOfTile[4] == 1);
 
     // Check that compiled palettes are as expected
     CHECK(compiledPrimary->palettes.size() == ctx.fieldmapConfig.numPalettesInPrimary);
     CHECK(compiledPrimary->palettes.at(0).colors[0] == porytiles_legacy::rgbaToBgr(ctx.compilerConfig.transparencyColor));
-    CHECK(compiledPrimary->palettes.at(0).colors[1] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_WHITE));
+    CHECK(compiledPrimary->palettes.at(0).colors[1] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_GREEN));
+    CHECK(compiledPrimary->palettes.at(0).colors[2] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_BLUE));
     CHECK(compiledPrimary->palettes.at(1).colors[0] == porytiles_legacy::rgbaToBgr(ctx.compilerConfig.transparencyColor));
-    CHECK(compiledPrimary->palettes.at(1).colors[1] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_GREEN));
-    CHECK(compiledPrimary->palettes.at(1).colors[2] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_BLUE));
+    CHECK(compiledPrimary->palettes.at(1).colors[1] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_WHITE));
     CHECK(compiledPrimary->palettes.at(2).colors[0] == porytiles_legacy::rgbaToBgr(ctx.compilerConfig.transparencyColor));
     CHECK(compiledPrimary->palettes.at(2).colors[1] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_RED));
     CHECK(compiledPrimary->palettes.at(2).colors[2] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_YELLOW));
@@ -1951,7 +1951,7 @@ TEST_CASE("compile function should fill out primary CompiledTileset struct with 
     CHECK_FALSE(compiledPrimary->metatileEntries[3].hFlip);
     CHECK(compiledPrimary->metatileEntries[3].vFlip);
     CHECK(compiledPrimary->metatileEntries[3].tileIndex == 2);
-    CHECK(compiledPrimary->metatileEntries[3].paletteIndex == 1);
+    CHECK(compiledPrimary->metatileEntries[3].paletteIndex == 0);
 
     CHECK_FALSE(compiledPrimary->metatileEntries[4].hFlip);
     CHECK_FALSE(compiledPrimary->metatileEntries[4].vFlip);
@@ -1966,7 +1966,7 @@ TEST_CASE("compile function should fill out primary CompiledTileset struct with 
     CHECK_FALSE(compiledPrimary->metatileEntries[6].hFlip);
     CHECK_FALSE(compiledPrimary->metatileEntries[6].vFlip);
     CHECK(compiledPrimary->metatileEntries[6].tileIndex == 3);
-    CHECK(compiledPrimary->metatileEntries[6].paletteIndex == 1);
+    CHECK(compiledPrimary->metatileEntries[6].paletteIndex == 0);
 
     CHECK_FALSE(compiledPrimary->metatileEntries[7].hFlip);
     CHECK_FALSE(compiledPrimary->metatileEntries[7].vFlip);
@@ -1981,7 +1981,7 @@ TEST_CASE("compile function should fill out primary CompiledTileset struct with 
     CHECK_FALSE(compiledPrimary->metatileEntries[9].hFlip);
     CHECK_FALSE(compiledPrimary->metatileEntries[9].vFlip);
     CHECK(compiledPrimary->metatileEntries[9].tileIndex == 4);
-    CHECK(compiledPrimary->metatileEntries[9].paletteIndex == 0);
+    CHECK(compiledPrimary->metatileEntries[9].paletteIndex == 1);
 
     CHECK_FALSE(compiledPrimary->metatileEntries[10].hFlip);
     CHECK_FALSE(compiledPrimary->metatileEntries[10].vFlip);
@@ -2066,29 +2066,29 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
 
     // Check that paletteIndexesOfTile are correct
     CHECK(compiledSecondary->paletteIndexesOfTile[0] == 2);
-    CHECK(compiledSecondary->paletteIndexesOfTile[1] == 3);
-    CHECK(compiledSecondary->paletteIndexesOfTile[2] == 3);
-    CHECK(compiledSecondary->paletteIndexesOfTile[3] == 3);
-    CHECK(compiledSecondary->paletteIndexesOfTile[4] == 3);
-    CHECK(compiledSecondary->paletteIndexesOfTile[5] == 5);
+    CHECK(compiledSecondary->paletteIndexesOfTile[1] == 5);
+    CHECK(compiledSecondary->paletteIndexesOfTile[2] == 5);
+    CHECK(compiledSecondary->paletteIndexesOfTile[3] == 5);
+    CHECK(compiledSecondary->paletteIndexesOfTile[4] == 5);
+    CHECK(compiledSecondary->paletteIndexesOfTile[5] == 3);
 
     // Check that compiled palettes are as expected
     CHECK(compiledSecondary->palettes.at(0).colors[0] == porytiles_legacy::rgbaToBgr(ctx.compilerConfig.transparencyColor));
-    CHECK(compiledSecondary->palettes.at(0).colors[1] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_WHITE));
+    CHECK(compiledSecondary->palettes.at(0).colors[1] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_GREEN));
+    CHECK(compiledSecondary->palettes.at(0).colors[2] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_BLUE));
     CHECK(compiledSecondary->palettes.at(1).colors[0] == porytiles_legacy::rgbaToBgr(ctx.compilerConfig.transparencyColor));
-    CHECK(compiledSecondary->palettes.at(1).colors[1] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_GREEN));
-    CHECK(compiledSecondary->palettes.at(1).colors[2] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_BLUE));
+    CHECK(compiledSecondary->palettes.at(1).colors[1] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_WHITE));
     CHECK(compiledSecondary->palettes.at(2).colors[0] == porytiles_legacy::rgbaToBgr(ctx.compilerConfig.transparencyColor));
     CHECK(compiledSecondary->palettes.at(2).colors[1] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_RED));
     CHECK(compiledSecondary->palettes.at(2).colors[2] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_YELLOW));
     CHECK(compiledSecondary->palettes.at(3).colors[0] == porytiles_legacy::rgbaToBgr(ctx.compilerConfig.transparencyColor));
-    CHECK(compiledSecondary->palettes.at(3).colors[1] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_BLUE));
-    CHECK(compiledSecondary->palettes.at(3).colors[2] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_CYAN));
-    CHECK(compiledSecondary->palettes.at(3).colors[3] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_PURPLE));
-    CHECK(compiledSecondary->palettes.at(3).colors[4] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_LIME));
+    CHECK(compiledSecondary->palettes.at(3).colors[1] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_GREY));
     CHECK(compiledSecondary->palettes.at(4).colors[0] == porytiles_legacy::rgbaToBgr(ctx.compilerConfig.transparencyColor));
     CHECK(compiledSecondary->palettes.at(5).colors[0] == porytiles_legacy::rgbaToBgr(ctx.compilerConfig.transparencyColor));
-    CHECK(compiledSecondary->palettes.at(5).colors[1] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_GREY));
+    CHECK(compiledSecondary->palettes.at(5).colors[1] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_BLUE));
+    CHECK(compiledSecondary->palettes.at(5).colors[2] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_CYAN));
+    CHECK(compiledSecondary->palettes.at(5).colors[3] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_PURPLE));
+    CHECK(compiledSecondary->palettes.at(5).colors[4] == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA_LIME));
 
     // Check that all metatile entries are correct
     CHECK(compiledSecondary->metatileEntries.size() ==
@@ -2107,7 +2107,7 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
     CHECK_FALSE(compiledSecondary->metatileEntries[2].hFlip);
     CHECK_FALSE(compiledSecondary->metatileEntries[2].vFlip);
     CHECK(compiledSecondary->metatileEntries[2].tileIndex == 1 + ctx.fieldmapConfig.numTilesInPrimary);
-    CHECK(compiledSecondary->metatileEntries[2].paletteIndex == 3);
+    CHECK(compiledSecondary->metatileEntries[2].paletteIndex == 5);
 
     CHECK_FALSE(compiledSecondary->metatileEntries[3].hFlip);
     CHECK_FALSE(compiledSecondary->metatileEntries[3].vFlip);
@@ -2122,12 +2122,12 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
     CHECK_FALSE(compiledSecondary->metatileEntries[5].hFlip);
     CHECK_FALSE(compiledSecondary->metatileEntries[5].vFlip);
     CHECK(compiledSecondary->metatileEntries[5].tileIndex == 2 + ctx.fieldmapConfig.numTilesInPrimary);
-    CHECK(compiledSecondary->metatileEntries[5].paletteIndex == 3);
+    CHECK(compiledSecondary->metatileEntries[5].paletteIndex == 5);
 
     CHECK_FALSE(compiledSecondary->metatileEntries[6].hFlip);
     CHECK_FALSE(compiledSecondary->metatileEntries[6].vFlip);
     CHECK(compiledSecondary->metatileEntries[6].tileIndex == 3 + ctx.fieldmapConfig.numTilesInPrimary);
-    CHECK(compiledSecondary->metatileEntries[6].paletteIndex == 3);
+    CHECK(compiledSecondary->metatileEntries[6].paletteIndex == 5);
 
     CHECK_FALSE(compiledSecondary->metatileEntries[7].hFlip);
     CHECK_FALSE(compiledSecondary->metatileEntries[7].vFlip);
@@ -2137,7 +2137,7 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
     CHECK_FALSE(compiledSecondary->metatileEntries[8].hFlip);
     CHECK_FALSE(compiledSecondary->metatileEntries[8].vFlip);
     CHECK(compiledSecondary->metatileEntries[8].tileIndex == 4 + ctx.fieldmapConfig.numTilesInPrimary);
-    CHECK(compiledSecondary->metatileEntries[8].paletteIndex == 3);
+    CHECK(compiledSecondary->metatileEntries[8].paletteIndex == 5);
 
     CHECK_FALSE(compiledSecondary->metatileEntries[9].hFlip);
     CHECK_FALSE(compiledSecondary->metatileEntries[9].vFlip);
@@ -2152,7 +2152,7 @@ TEST_CASE("compile function should fill out secondary CompiledTileset struct wit
     CHECK(compiledSecondary->metatileEntries[11].hFlip);
     CHECK(compiledSecondary->metatileEntries[11].vFlip);
     CHECK(compiledSecondary->metatileEntries[11].tileIndex == 5 + ctx.fieldmapConfig.numTilesInPrimary);
-    CHECK(compiledSecondary->metatileEntries[11].paletteIndex == 5);
+    CHECK(compiledSecondary->metatileEntries[11].paletteIndex == 3);
 
     for (std::size_t index = ctx.fieldmapConfig.numTilesPerMetatile;
          index < porytiles_legacy::METATILES_IN_ROW * ctx.fieldmapConfig.numTilesPerMetatile; index++) {
@@ -2261,15 +2261,15 @@ TEST_CASE("compile function should correctly compile primary set with animated t
     // Check that paletteIndexesOfTile is correct
     CHECK(compiledPrimary->paletteIndexesOfTile.size() == 16);
     CHECK(compiledPrimary->paletteIndexesOfTile[0] == 0);
-    CHECK(compiledPrimary->paletteIndexesOfTile[1] == 2);
-    CHECK(compiledPrimary->paletteIndexesOfTile[2] == 2);
-    CHECK(compiledPrimary->paletteIndexesOfTile[3] == 2);
-    CHECK(compiledPrimary->paletteIndexesOfTile[4] == 2);
-    CHECK(compiledPrimary->paletteIndexesOfTile[5] == 1);
-    CHECK(compiledPrimary->paletteIndexesOfTile[6] == 2);
-    CHECK(compiledPrimary->paletteIndexesOfTile[7] == 2);
-    CHECK(compiledPrimary->paletteIndexesOfTile[8] == 2);
-    CHECK(compiledPrimary->paletteIndexesOfTile[9] == 2);
+    CHECK(compiledPrimary->paletteIndexesOfTile[1] == 0);
+    CHECK(compiledPrimary->paletteIndexesOfTile[2] == 0);
+    CHECK(compiledPrimary->paletteIndexesOfTile[3] == 0);
+    CHECK(compiledPrimary->paletteIndexesOfTile[4] == 0);
+    CHECK(compiledPrimary->paletteIndexesOfTile[5] == 2);
+    CHECK(compiledPrimary->paletteIndexesOfTile[6] == 0);
+    CHECK(compiledPrimary->paletteIndexesOfTile[7] == 0);
+    CHECK(compiledPrimary->paletteIndexesOfTile[8] == 0);
+    CHECK(compiledPrimary->paletteIndexesOfTile[9] == 0);
 
     // Check that all metatile entries are correct
     CHECK(compiledPrimary->metatileEntries.size() ==
@@ -2296,19 +2296,19 @@ TEST_CASE("compile function should correctly compile primary set with animated t
     CHECK(compiledPrimary->metatileEntries[4].hFlip);
     CHECK(compiledPrimary->metatileEntries[4].vFlip);
     CHECK(compiledPrimary->metatileEntries[4].tileIndex == 6);
-    CHECK(compiledPrimary->metatileEntries[4].paletteIndex == 2);
+    CHECK(compiledPrimary->metatileEntries[4].paletteIndex == 0);
     CHECK(compiledPrimary->metatileEntries[5].hFlip);
     CHECK(compiledPrimary->metatileEntries[5].vFlip);
     CHECK(compiledPrimary->metatileEntries[5].tileIndex == 7);
-    CHECK(compiledPrimary->metatileEntries[5].paletteIndex == 2);
+    CHECK(compiledPrimary->metatileEntries[5].paletteIndex == 0);
     CHECK_FALSE(compiledPrimary->metatileEntries[6].hFlip);
     CHECK(compiledPrimary->metatileEntries[6].vFlip);
     CHECK(compiledPrimary->metatileEntries[6].tileIndex == 8);
-    CHECK(compiledPrimary->metatileEntries[6].paletteIndex == 2);
+    CHECK(compiledPrimary->metatileEntries[6].paletteIndex == 0);
     CHECK(compiledPrimary->metatileEntries[7].hFlip);
     CHECK(compiledPrimary->metatileEntries[7].vFlip);
     CHECK(compiledPrimary->metatileEntries[7].tileIndex == 9);
-    CHECK(compiledPrimary->metatileEntries[7].paletteIndex == 2);
+    CHECK(compiledPrimary->metatileEntries[7].paletteIndex == 0);
     // Metatile 0 top
     CHECK_FALSE(compiledPrimary->metatileEntries[8].hFlip);
     CHECK_FALSE(compiledPrimary->metatileEntries[8].vFlip);
@@ -2331,36 +2331,36 @@ TEST_CASE("compile function should correctly compile primary set with animated t
     CHECK(compiledPrimary->metatileEntries[12].hFlip);
     CHECK(compiledPrimary->metatileEntries[12].vFlip);
     CHECK(compiledPrimary->metatileEntries[12].tileIndex == 6);
-    CHECK(compiledPrimary->metatileEntries[12].paletteIndex == 2);
+    CHECK(compiledPrimary->metatileEntries[12].paletteIndex == 0);
     CHECK(compiledPrimary->metatileEntries[13].hFlip);
     CHECK(compiledPrimary->metatileEntries[13].vFlip);
     CHECK(compiledPrimary->metatileEntries[13].tileIndex == 7);
-    CHECK(compiledPrimary->metatileEntries[13].paletteIndex == 2);
+    CHECK(compiledPrimary->metatileEntries[13].paletteIndex == 0);
     CHECK_FALSE(compiledPrimary->metatileEntries[14].hFlip);
     CHECK(compiledPrimary->metatileEntries[14].vFlip);
     CHECK(compiledPrimary->metatileEntries[14].tileIndex == 8);
-    CHECK(compiledPrimary->metatileEntries[14].paletteIndex == 2);
+    CHECK(compiledPrimary->metatileEntries[14].paletteIndex == 0);
     CHECK(compiledPrimary->metatileEntries[15].hFlip);
     CHECK(compiledPrimary->metatileEntries[15].vFlip);
     CHECK(compiledPrimary->metatileEntries[15].tileIndex == 9);
-    CHECK(compiledPrimary->metatileEntries[15].paletteIndex == 2);
+    CHECK(compiledPrimary->metatileEntries[15].paletteIndex == 0);
     // Metatile 1 middle
     CHECK_FALSE(compiledPrimary->metatileEntries[16].hFlip);
     CHECK_FALSE(compiledPrimary->metatileEntries[16].vFlip);
     CHECK(compiledPrimary->metatileEntries[16].tileIndex == 1);
-    CHECK(compiledPrimary->metatileEntries[16].paletteIndex == 2);
+    CHECK(compiledPrimary->metatileEntries[16].paletteIndex == 0);
     CHECK_FALSE(compiledPrimary->metatileEntries[17].hFlip);
     CHECK_FALSE(compiledPrimary->metatileEntries[17].vFlip);
     CHECK(compiledPrimary->metatileEntries[17].tileIndex == 2);
-    CHECK(compiledPrimary->metatileEntries[17].paletteIndex == 2);
+    CHECK(compiledPrimary->metatileEntries[17].paletteIndex == 0);
     CHECK_FALSE(compiledPrimary->metatileEntries[18].hFlip);
     CHECK(compiledPrimary->metatileEntries[18].vFlip);
     CHECK(compiledPrimary->metatileEntries[18].tileIndex == 3);
-    CHECK(compiledPrimary->metatileEntries[18].paletteIndex == 2);
+    CHECK(compiledPrimary->metatileEntries[18].paletteIndex == 0);
     CHECK(compiledPrimary->metatileEntries[19].hFlip);
     CHECK(compiledPrimary->metatileEntries[19].vFlip);
     CHECK(compiledPrimary->metatileEntries[19].tileIndex == 4);
-    CHECK(compiledPrimary->metatileEntries[19].paletteIndex == 2);
+    CHECK(compiledPrimary->metatileEntries[19].paletteIndex == 0);
     // Metatile 1 top is blank, don't bother testing
 
     // Metatile 2 bottom is blank, don't bother testing
@@ -2368,19 +2368,19 @@ TEST_CASE("compile function should correctly compile primary set with animated t
     CHECK_FALSE(compiledPrimary->metatileEntries[28].hFlip);
     CHECK(compiledPrimary->metatileEntries[28].vFlip);
     CHECK(compiledPrimary->metatileEntries[28].tileIndex == 5);
-    CHECK(compiledPrimary->metatileEntries[28].paletteIndex == 1);
+    CHECK(compiledPrimary->metatileEntries[28].paletteIndex == 2);
     CHECK_FALSE(compiledPrimary->metatileEntries[29].hFlip);
     CHECK(compiledPrimary->metatileEntries[29].vFlip);
     CHECK(compiledPrimary->metatileEntries[29].tileIndex == 5);
-    CHECK(compiledPrimary->metatileEntries[29].paletteIndex == 1);
+    CHECK(compiledPrimary->metatileEntries[29].paletteIndex == 2);
     CHECK_FALSE(compiledPrimary->metatileEntries[30].hFlip);
     CHECK(compiledPrimary->metatileEntries[30].vFlip);
     CHECK(compiledPrimary->metatileEntries[30].tileIndex == 5);
-    CHECK(compiledPrimary->metatileEntries[30].paletteIndex == 1);
+    CHECK(compiledPrimary->metatileEntries[30].paletteIndex == 2);
     CHECK_FALSE(compiledPrimary->metatileEntries[31].hFlip);
     CHECK(compiledPrimary->metatileEntries[31].vFlip);
     CHECK(compiledPrimary->metatileEntries[31].tileIndex == 5);
-    CHECK(compiledPrimary->metatileEntries[31].paletteIndex == 1);
+    CHECK(compiledPrimary->metatileEntries[31].paletteIndex == 2);
     // Metatile 2 top is blank, don't bother testing
 
     // Verify integrity of anims structure
@@ -2553,19 +2553,19 @@ TEST_CASE("compile function should correctly compile secondary set with animated
     CHECK_FALSE(compiledSecondary->metatileEntries[4].hFlip);
     CHECK(compiledSecondary->metatileEntries[4].vFlip);
     CHECK(compiledSecondary->metatileEntries[4].tileIndex == 5);
-    CHECK(compiledSecondary->metatileEntries[4].paletteIndex == 1);
+    CHECK(compiledSecondary->metatileEntries[4].paletteIndex == 2);
     CHECK_FALSE(compiledSecondary->metatileEntries[5].hFlip);
     CHECK(compiledSecondary->metatileEntries[5].vFlip);
     CHECK(compiledSecondary->metatileEntries[5].tileIndex == 5);
-    CHECK(compiledSecondary->metatileEntries[5].paletteIndex == 1);
+    CHECK(compiledSecondary->metatileEntries[5].paletteIndex == 2);
     CHECK_FALSE(compiledSecondary->metatileEntries[6].hFlip);
     CHECK(compiledSecondary->metatileEntries[6].vFlip);
     CHECK(compiledSecondary->metatileEntries[6].tileIndex == 5);
-    CHECK(compiledSecondary->metatileEntries[6].paletteIndex == 1);
+    CHECK(compiledSecondary->metatileEntries[6].paletteIndex == 2);
     CHECK_FALSE(compiledSecondary->metatileEntries[7].hFlip);
     CHECK(compiledSecondary->metatileEntries[7].vFlip);
     CHECK(compiledSecondary->metatileEntries[7].tileIndex == 5);
-    CHECK(compiledSecondary->metatileEntries[7].paletteIndex == 1);
+    CHECK(compiledSecondary->metatileEntries[7].paletteIndex == 2);
     // Metatile 0 top
     CHECK_FALSE(compiledSecondary->metatileEntries[8].hFlip);
     CHECK_FALSE(compiledSecondary->metatileEntries[8].vFlip);
@@ -2588,19 +2588,19 @@ TEST_CASE("compile function should correctly compile secondary set with animated
     CHECK(compiledSecondary->metatileEntries[12].hFlip);
     CHECK(compiledSecondary->metatileEntries[12].vFlip);
     CHECK(compiledSecondary->metatileEntries[12].tileIndex == 6);
-    CHECK(compiledSecondary->metatileEntries[12].paletteIndex == 2);
+    CHECK(compiledSecondary->metatileEntries[12].paletteIndex == 0);
     CHECK(compiledSecondary->metatileEntries[13].hFlip);
     CHECK(compiledSecondary->metatileEntries[13].vFlip);
     CHECK(compiledSecondary->metatileEntries[13].tileIndex == 7);
-    CHECK(compiledSecondary->metatileEntries[13].paletteIndex == 2);
+    CHECK(compiledSecondary->metatileEntries[13].paletteIndex == 0);
     CHECK_FALSE(compiledSecondary->metatileEntries[14].hFlip);
     CHECK(compiledSecondary->metatileEntries[14].vFlip);
     CHECK(compiledSecondary->metatileEntries[14].tileIndex == 8);
-    CHECK(compiledSecondary->metatileEntries[14].paletteIndex == 2);
+    CHECK(compiledSecondary->metatileEntries[14].paletteIndex == 0);
     CHECK(compiledSecondary->metatileEntries[15].hFlip);
     CHECK(compiledSecondary->metatileEntries[15].vFlip);
     CHECK(compiledSecondary->metatileEntries[15].tileIndex == 9);
-    CHECK(compiledSecondary->metatileEntries[15].paletteIndex == 2);
+    CHECK(compiledSecondary->metatileEntries[15].paletteIndex == 0);
     // Metatile 1 middle
     CHECK_FALSE(compiledSecondary->metatileEntries[16].hFlip);
     CHECK_FALSE(compiledSecondary->metatileEntries[16].vFlip);
@@ -2707,28 +2707,28 @@ TEST_CASE("primer tiles should change output of primary compile function") {
         porytiles_legacy::compile(ctx, porytiles_legacy::CompilerMode::PRIMARY, decompiled, palettePrimers, {}, {});
 
     // Confirm compiled with primer is as expected
-    for (std::size_t i = 0; i < 3; i++) {
+    CHECK(compiledPrimer->palettes.at(0).colors.at(0) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{255, 0, 255}));
+    CHECK(compiledPrimer->palettes.at(0).colors.at(1) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{255, 255, 0}));
+    CHECK(compiledPrimer->palettes.at(0).colors.at(2) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{255, 0, 0}));
+    CHECK(compiledPrimer->palettes.at(0).colors.at(3) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 255, 255}));
+    CHECK(compiledPrimer->palettes.at(0).colors.at(4) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 255, 0}));
+    CHECK(compiledPrimer->palettes.at(0).colors.at(5) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 0, 0}));
+    CHECK(compiledPrimer->palettes.at(0).colors.at(6) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 0, 255}));
+    CHECK(compiledPrimer->palettes.at(0).colors.at(7) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{128, 128, 128}));
+    CHECK(compiledPrimer->palettes.at(0).colors.at(8) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{255, 255, 255}));
+    CHECK(compiledPrimer->palettes.at(0).colors.at(9) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 0, 0}));
+    CHECK(compiledPrimer->palettes.at(0).colors.at(10) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 0, 0}));
+    CHECK(compiledPrimer->palettes.at(0).colors.at(11) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 0, 0}));
+    CHECK(compiledPrimer->palettes.at(0).colors.at(12) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 0, 0}));
+    CHECK(compiledPrimer->palettes.at(0).colors.at(13) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 0, 0}));
+    CHECK(compiledPrimer->palettes.at(0).colors.at(14) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 0, 0}));
+    CHECK(compiledPrimer->palettes.at(0).colors.at(15) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 0, 0}));
+    for (std::size_t i = 1; i < 4; i++) {
         CHECK(compiledPrimer->palettes.at(i).colors.at(0) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{255, 0, 255}));
         for (std::size_t j = 1; j < porytiles_legacy::PAL_SIZE; j++) {
             CHECK(compiledPrimer->palettes.at(i).colors.at(j) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 0, 0}));
         }
     }
-    CHECK(compiledPrimer->palettes.at(3).colors.at(0) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{255, 0, 255}));
-    CHECK(compiledPrimer->palettes.at(3).colors.at(1) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{255, 255, 0}));
-    CHECK(compiledPrimer->palettes.at(3).colors.at(2) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{255, 0, 0}));
-    CHECK(compiledPrimer->palettes.at(3).colors.at(3) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 255, 255}));
-    CHECK(compiledPrimer->palettes.at(3).colors.at(4) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 255, 0}));
-    CHECK(compiledPrimer->palettes.at(3).colors.at(5) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 0, 0}));
-    CHECK(compiledPrimer->palettes.at(3).colors.at(6) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 0, 255}));
-    CHECK(compiledPrimer->palettes.at(3).colors.at(7) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{128, 128, 128}));
-    CHECK(compiledPrimer->palettes.at(3).colors.at(8) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{255, 255, 255}));
-    CHECK(compiledPrimer->palettes.at(3).colors.at(9) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 0, 0}));
-    CHECK(compiledPrimer->palettes.at(3).colors.at(10) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 0, 0}));
-    CHECK(compiledPrimer->palettes.at(3).colors.at(11) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 0, 0}));
-    CHECK(compiledPrimer->palettes.at(3).colors.at(12) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 0, 0}));
-    CHECK(compiledPrimer->palettes.at(3).colors.at(13) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 0, 0}));
-    CHECK(compiledPrimer->palettes.at(3).colors.at(14) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 0, 0}));
-    CHECK(compiledPrimer->palettes.at(3).colors.at(15) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{0, 0, 0}));
 }
 
 TEST_CASE("overrides should change output of primary compile function") {
@@ -2804,21 +2804,21 @@ TEST_CASE("overrides should change output of primary compile function") {
     CHECK(compiledNoOverrides->sizeBeforePadding == 53);
 
     // Confirm compiled no override is as expected
-    // Without overrides, the grass greens end up in pal 0
+    // Without overrides, the grass greens end up in pal 1
     CHECK(compiledNoOverrides->palettes.at(0).colors.at(0) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{255, 0, 255}));
     CHECK(compiledNoOverrides->palettes.at(0).colors.at(1) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{112, 192, 160}));
-    CHECK(compiledNoOverrides->palettes.at(0).colors.at(2) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{64, 176, 128}));
-    CHECK(compiledNoOverrides->palettes.at(0).colors.at(3) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{160, 208, 192}));
+    CHECK(compiledNoOverrides->palettes.at(0).colors.at(2) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{200, 64, 80}));
+    CHECK(compiledNoOverrides->palettes.at(0).colors.at(3) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{232, 144, 112}));
 
-    // Pals 1 and 2 contain a smattering of the mart/center colors
     CHECK(compiledNoOverrides->palettes.at(1).colors.at(0) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{255, 0, 255}));
-    CHECK(compiledNoOverrides->palettes.at(1).colors.at(1) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{200, 64, 80}));
-    CHECK(compiledNoOverrides->palettes.at(1).colors.at(2) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{248, 184, 128}));
-    CHECK(compiledNoOverrides->palettes.at(1).colors.at(3) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{232, 144, 112}));
+    CHECK(compiledNoOverrides->palettes.at(1).colors.at(1) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{112, 192, 160}));
+    CHECK(compiledNoOverrides->palettes.at(1).colors.at(2) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{64, 176, 128}));
+    CHECK(compiledNoOverrides->palettes.at(1).colors.at(3) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{160, 208, 192}));
 
+    // Pals 0 and 2 contain a smattering of the mart/center colors
     CHECK(compiledNoOverrides->palettes.at(2).colors.at(0) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{255, 0, 255}));
-    CHECK(compiledNoOverrides->palettes.at(2).colors.at(1) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{112, 192, 160}));
-    CHECK(compiledNoOverrides->palettes.at(2).colors.at(2) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{200, 64, 80}));
+    CHECK(compiledNoOverrides->palettes.at(2).colors.at(1) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{200, 64, 80}));
+    CHECK(compiledNoOverrides->palettes.at(2).colors.at(2) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{248, 184, 128}));
     CHECK(compiledNoOverrides->palettes.at(2).colors.at(3) == porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{232, 144, 112}));
 
     // Compile with overrides
@@ -2984,35 +2984,35 @@ TEST_CASE("overrides should change output of secondary compile function") {
     // Without overrides, there should be 12 actual tiles
     CHECK(compiledSecondaryNoOverrides->sizeBeforePadding == 12);
 
-    // Without overrides, the flower colors end up in pal 3
+    // Without overrides, pal 3 contains the tree colors
     CHECK(compiledSecondaryNoOverrides->palettes.at(3).colors.at(0) ==
           porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{255, 0, 255}));
     CHECK(compiledSecondaryNoOverrides->palettes.at(3).colors.at(1) ==
-          porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{64, 96, 64}));
+          porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{32, 96, 24}));
     CHECK(compiledSecondaryNoOverrides->palettes.at(3).colors.at(2) ==
-          porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{184, 96, 112}));
+          porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{176, 248, 144}));
     CHECK(compiledSecondaryNoOverrides->palettes.at(3).colors.at(3) ==
-          porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{248, 144, 112}));
+          porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{56, 152, 88}));
 
-    // Pal 4 contains the tree colors
+    // Pal 4 contains the log colors
     CHECK(compiledSecondaryNoOverrides->palettes.at(4).colors.at(0) ==
           porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{255, 0, 255}));
     CHECK(compiledSecondaryNoOverrides->palettes.at(4).colors.at(1) ==
-          porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{32, 96, 24}));
+          porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{112, 64, 64}));
     CHECK(compiledSecondaryNoOverrides->palettes.at(4).colors.at(2) ==
-          porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{176, 248, 144}));
+          porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{216, 184, 152}));
     CHECK(compiledSecondaryNoOverrides->palettes.at(4).colors.at(3) ==
-          porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{56, 152, 88}));
+          porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{176, 136, 128}));
 
-    // Pal 5 contains the log colors
+    // Pal 5 contains the flower colors
     CHECK(compiledSecondaryNoOverrides->palettes.at(5).colors.at(0) ==
           porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{255, 0, 255}));
     CHECK(compiledSecondaryNoOverrides->palettes.at(5).colors.at(1) ==
-          porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{112, 64, 64}));
+          porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{64, 96, 64}));
     CHECK(compiledSecondaryNoOverrides->palettes.at(5).colors.at(2) ==
-          porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{216, 184, 152}));
+          porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{184, 96, 112}));
     CHECK(compiledSecondaryNoOverrides->palettes.at(5).colors.at(3) ==
-          porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{176, 136, 128}));
+          porytiles_legacy::rgbaToBgr(porytiles_legacy::RGBA32{248, 144, 112}));
 
     // Compile with overrides
     auto compiledSecondaryOverrides = porytiles_legacy::compile(ctx, porytiles_legacy::CompilerMode::SECONDARY, decompiledSecondary,

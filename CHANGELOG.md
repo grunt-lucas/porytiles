@@ -33,6 +33,8 @@ and to its issue too when one was filed
 
 - Changed the Linux release binaries (`porytiles`, `porytiles-legacy`, and the bundled test executables) to be fully statically linked, which currently includes glibc, libpng, and zlib. Porytiles no longer fails to start on distros with an older system glibc (e.g. `GLIBC_2.38' not found` on WSL Ubuntu 22.04). - [#353](https://github.com/grunt-lucas/porytiles/pull/353)
 
+- Backported a DFS/BFS algorithm improvement into legacy Porytiles. - [#355](https://github.com/grunt-lucas/porytiles/pull/355)
+
 ## [1.0.0] - 2026-06-05
 
 First stable release of Porytiles.
