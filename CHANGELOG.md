@@ -31,7 +31,7 @@ and to its issue too when one was filed
 
 - When importing, duplicate key frame detection and mangling now operate using canonical RGBA tiles instead of by pal slot indices. - [#352](https://github.com/grunt-lucas/porytiles/pull/352)
 
-- Changed the Linux release binaries (`porytiles`, `porytiles-legacy`, and the bundled test executables) to be fully statically linked, which currently includes glibc, libpng, and zlib. Porytiles no longer fails to start on distros with an older system glibc (e.g. `GLIBC_2.38' not found` on WSL Ubuntu 22.04). - [#345](https://github.com/grunt-lucas/porytiles/issues/345)
+- Changed the Linux release binaries (`porytiles`, `porytiles-legacy`, and the bundled test executables) to be fully statically linked, which currently includes glibc, libpng, and zlib. Porytiles no longer fails to start on distros with an older system glibc (e.g. `GLIBC_2.38' not found` on WSL Ubuntu 22.04). - [#353](https://github.com/grunt-lucas/porytiles/pull/353)
 
 ## [1.0.0] - 2026-06-05
 
