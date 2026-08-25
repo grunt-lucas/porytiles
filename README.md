@@ -55,9 +55,10 @@ and updates the `porytiles` Homebrew formula.
 The [CHANGELOG](./CHANGELOG.md) lists what changed in each release.
 
 **Snapshot releases** are published automatically on every push to `develop`.
-They generate the rolling `snapshot` GitHub release and update the `porytiles-snapshot` Homebrew formula.
-Snapshots are for users who want the latest changes;
-they are not considered stable and the tag is force-replaced on every push.
+Each one gets its own `snapshot-<utc-timestamp>` GitHub release
+and repoints the `porytiles-snapshot` Homebrew formula at that tag.
+Snapshots are for users who want the latest changes, as they are not considered stable.
+Only the newest snapshot is retained: you can't re-install previous snapshots. 
 
 Install the latest versioned release via Homebrew:
 ```sh
@@ -66,7 +67,8 @@ brew install grunt-lucas/porytiles/porytiles
 
 Install the latest rolling snapshot via Homebrew:
 ```sh
-brew install grunt-lucas/porytiles/porytiles-snapshot
+# Make sure to use `brew update` before installing snapshots so you don't confuse brew into installing an old deleted release
+brew update && brew install grunt-lucas/porytiles/porytiles-snapshot
 ```
 
 Alternatively, download platform-specific zip files directly from the
