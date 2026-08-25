@@ -23,10 +23,22 @@ runs:
         if [ -z "$BUILD_DATE" ]; then
           BUILD_DATE="$(date -u +'%Y.%m.%dT%H:%M:%S+00:00')"
         fi
+
+        # See https://github.com/grunt-lucas/porytiles/issues/345 for why
+        # we static link here.
+        MULTIARCH="$(dpkg-architecture -qDEB_HOST_MULTIARCH)"
+        PNG_STATIC_LIB="/usr/lib/${MULTIARCH}/libpng.a"
+        if [ ! -e "$PNG_STATIC_LIB" ]; then
+          echo "ERROR: $PNG_STATIC_LIB not found; is libpng-dev installed?" >&2
+          exit 1
+        fi
+
         cmake -B build \
           -DCMAKE_BUILD_TYPE=Release \
           -DCMAKE_CXX_FLAGS="-stdlib=libc++" \
-          -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -static-libstdc++" \
+          -DCMAKE_EXE_LINKER_FLAGS="-stdlib=libc++ -static-libstdc++ -static" \
+          -DPNG_LIBRARY="$PNG_STATIC_LIB" \
+          -DZLIB_USE_STATIC_LIBS=ON \
           -DPORYTILES_BUILD_VERSION_="${{ inputs.build-version }}" \
           -DPORYTILES_BUILD_DATE_="$BUILD_DATE"
         cd build
@@ -35,3 +47,23 @@ runs:
         objdump -p ./legacy/tools/driver/porytiles-legacy
         file ./porytiles/tools/driver/porytiles
         objdump -p ./porytiles/tools/driver/porytiles
+
+    - name: Verify executables are statically linked
+      shell: bash
+      run: |
+        status=0
+        for bin in \
+          ./build/legacy/tools/driver/porytiles-legacy \
+          ./build/porytiles/tools/driver/porytiles \
+          ./build/legacy/tests/LegacyTests \
+          ./build/porytiles/tests/PorytilesUnitTests \
+          ./build/porytiles/tests/PorytilesIntegrationTests; do
+          file "$bin"
+          # `ldd` exits nonzero on a static executable, output is informational only
+          ldd "$bin" || true
+          if ! file "$bin" | grep -q "statically linked"; then
+            echo "ERROR: $bin is not statically linked" >&2
+            status=1
+          fi
+        done
+        exit "$status"
