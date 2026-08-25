@@ -12,6 +12,17 @@
 
 namespace porytiles_legacy {
 
+/*
+ * True if every color in 'toAssign' is already present in one of the given palettes. That means this tile (ColorSet)
+ * doesn't need any new color assignments. The covering palette will satisfy it when tiles are mapped to palettes later
+ * in the compilation pipeline.
+ */
+static bool coveredByAnyPalette(const ColorSet &toAssign, const std::vector<ColorSet> &palettes) {
+    return std::ranges::any_of(palettes, [&toAssign](const ColorSet &palette) {
+        return (palette.first | toAssign.first).count() == palette.first.count();
+    });
+}
+
 AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, AssignState &state,
                               std::vector<ColorSet> &solution, const std::vector<ColorSet> &primaryPalettes,
                               const std::vector<ColorSet> &unassigneds,
@@ -56,33 +67,22 @@ AssignResult assignDepthFirst(PorytilesContext &ctx, CompilerMode compilerMode, 
     }
 
     /*
-     * If we are assigning a secondary set, we'll want to first check if any of the primary palettes satisfy the color
-     * constraints for this particular tile. That way we can just use the primary palette, since those are available for
-     * secondary tiles to freely use.
+     * We can take a shortcut here. If 'toAssign' colors are completely covered by either a primary palette or one of
+     * the current logical pals, then we know its tile can be satisfied without adding any new colors. We can just
+     * move down the recursion tree without updating the logicalPalettes. We don't need to do the candidate loop logic
+     * below, which would just be wasted effort.
+     *
+     * If we hit a failure somewhere down in the recursive branch, we know that this failure couldn't have been avoided
+     * if we had fallen down to the candidate loop logic. While that logic could technically explore new parts of the
+     * tree, they would be explicitly worse parts where we are shrinking other palette capacities. Plus, we'd waste
+     * tons of time re-exploring subtrees that this recursive call already explored.
      */
-    if (!primaryPalettes.empty()) {
-        for (std::size_t i = 0; i < primaryPalettes.size(); i++) {
-            const ColorSet &palette = primaryPalettes.at(i);
-            if ((palette.first | toAssign.first).count() == palette.first.count()) {
-                /*
-                 * This case triggers if 'toAssign' shares all its colors with one of the palettes from the primary
-                 * tileset. In that case, we will just reuse that palette when we make the tile in a later step. So we
-                 * can prep a recursive call to assign with an unchanged state (other than removing 'toAssign')
-                 */
-                std::vector<ColorSet> hardwarePalettesCopy;
-                std::ranges::copy(state.logicalPalettes, std::back_inserter(hardwarePalettesCopy));
-                AssignState updatedState = {hardwarePalettesCopy, newUnassignedCount, newUnassignedPrimerCount};
-
-                AssignResult result = assignDepthFirst(ctx, compilerMode, updatedState, solution, primaryPalettes,
-                                                       unassigneds, unassignedPrimers);
-                if (result == AssignResult::SUCCESS) {
-                    return AssignResult::SUCCESS;
-                }
-                if (result == AssignResult::EXPLORE_CUTOFF_REACHED) {
-                    return AssignResult::EXPLORE_CUTOFF_REACHED;
-                }
-            }
-        }
+    if (coveredByAnyPalette(toAssign, primaryPalettes) || coveredByAnyPalette(toAssign, state.logicalPalettes)) {
+        std::vector<ColorSet> hardwarePalettesCopy;
+        std::ranges::copy(state.logicalPalettes, std::back_inserter(hardwarePalettesCopy));
+        AssignState updatedState = {hardwarePalettesCopy, newUnassignedCount, newUnassignedPrimerCount};
+        return assignDepthFirst(ctx, compilerMode, updatedState, solution, primaryPalettes, unassigneds,
+                                unassignedPrimers);
     }
 
     /*
@@ -221,26 +221,18 @@ AssignResult assignBreadthFirst(PorytilesContext &ctx, CompilerMode compilerMode
             Panic("reached bad else clause in palette_assignment::assignDepthFirst");
         }
 
-        bool foundPrimaryMatch = false;
-        if (!primaryPalettes.empty()) {
-            for (std::size_t i = 0; i < primaryPalettes.size(); i++) {
-                const ColorSet &palette = primaryPalettes.at(i);
-                if ((palette.first | toAssign.first).count() == palette.first.count()) {
-                    std::vector<ColorSet> hardwarePalettesCopy;
-                    std::ranges::copy(currentState.logicalPalettes, std::back_inserter(hardwarePalettesCopy));
-                    AssignState updatedState = {hardwarePalettesCopy, newUnassignedCount, newUnassignedPrimerCount};
-                    stateQueue.push_back(updatedState);
-                    visitedStates.insert(updatedState);
-                    foundPrimaryMatch = true;
-                }
-            }
-        }
-
         /*
-         * If we found a matching primary palette for the current assignment, go ahead and skip ahead to the next
-         * toAssign. No need to process anything further for this toAssign.
+         * Same shortcut here as the depth-first-search shortcut. See comment there.
          */
-        if (foundPrimaryMatch) {
+        if (coveredByAnyPalette(toAssign, primaryPalettes) ||
+            coveredByAnyPalette(toAssign, currentState.logicalPalettes)) {
+            std::vector<ColorSet> hardwarePalettesCopy;
+            std::ranges::copy(currentState.logicalPalettes, std::back_inserter(hardwarePalettesCopy));
+            AssignState updatedState = {hardwarePalettesCopy, newUnassignedCount, newUnassignedPrimerCount};
+            if (!visitedStates.contains(updatedState)) {
+                stateQueue.push_back(updatedState);
+                visitedStates.insert(updatedState);
+            }
             continue;
         }
 
