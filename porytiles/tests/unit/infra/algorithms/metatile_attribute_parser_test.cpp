@@ -16,14 +16,20 @@ using namespace porytiles;
 
 namespace {
 
-// The stock emerald shape: a single behavior field in a 2-byte attribute (layer_type is structural, bits 12-15).
+// Builds the field carrying FieldRole::layer_type at the given mask.
+Field layer_type_field(std::uint32_t mask)
+{
+    return Field{"layer_type", mask, 0, std::nullopt, FieldRole::layer_type};
+}
+
+// The stock emerald shape: a behavior field plus the layer_type-role field at bits 12-15, in a 2-byte attribute.
 Schema make_emerald_schema()
 {
-    auto result = Schema::create({Field{"behavior", 0x00FF}}, 2);
+    auto result = Schema::create({Field{"behavior", 0x00FF}, layer_type_field(0xF000)}, 2);
     return std::move(result).value();
 }
 
-// The stock firered shape: seven fields in a 4-byte attribute (layer_type is structural, bits 29-30).
+// The stock firered shape: eight fields in a 4-byte attribute, with the layer_type-role field at bits 29-30.
 Schema make_firered_schema()
 {
     auto result = Schema::create(
@@ -34,6 +40,7 @@ Schema make_firered_schema()
             Field{"attribute_3", 0x00FC0000},
             Field{"encounter_type", 0x07000000},
             Field{"attribute_5", 0x18000000},
+            layer_type_field(0x60000000),
             Field{"attribute_7", 0x80000000},
         },
         4);
@@ -49,20 +56,22 @@ Schema make_custom_schema()
             Field{"low_nibble", 0x0000000F},
             Field{"mid_field", 0x0007F800},    // bits 11-18
             Field{"defaulted", 0x00300000, 2}, // bits 20-21, nonzero default
+            layer_type_field(0x60000000),      // bits 29-30
             Field{"top_bit", 0x80000000},      // bit 31
         },
         4);
     return std::move(result).value();
 }
 
-// A 2-byte schema with the layer type disabled (explicit mask 0): layer bits are neither written nor read.
+// A 2-byte schema with the layer type disabled (no layer_type-role field): layer bits are neither written nor read.
 Schema make_layer_disabled_schema()
 {
-    auto result = Schema::create({Field{"behavior", 0x00FF}}, 2, std::optional<std::uint32_t>{0U});
+    auto result = Schema::create({Field{"behavior", 0x00FF}}, 2);
     return std::move(result).value();
 }
 
-// A 1-byte schema (behavior in bits 0-3, terrain in bits 4-5). The layer type is disabled by the 1-byte convention.
+// A 1-byte schema (behavior in bits 0-3, terrain in bits 4-5) with no layer_type-role field, so the layer type is
+// disabled.
 Schema make_one_byte_schema()
 {
     auto result = Schema::create({Field{"behavior", 0x0F}, Field{"terrain", 0x30}}, 1);
@@ -176,7 +185,7 @@ TEST_F(MetatileAttributeParserTest, SaveWritesExactBytesForCustomSchema)
     attribute.field("mid_field", 0x55);
     attribute.field("defaulted", 1);
     attribute.field("top_bit", 1);
-    attribute.layer_type(LayerType::split); // structural bits 29-30 = 2
+    attribute.layer_type(LayerType::split); // layer_type-role bits 29-30 = 2
 
     auto save_result = save_metatile_attributes_bin({attribute}, test_file_, schema);
     ASSERT_TRUE(save_result.has_value());

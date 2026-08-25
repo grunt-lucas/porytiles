@@ -198,6 +198,22 @@ LayerValue<Rgba32> YamlFileProvider::extrinsic_transparency(ConfigScopeType type
         "tileset.extrinsic_transparency");
 }
 
+LayerValue<bool> YamlFileProvider::ignore_triple_layer_content(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<bool>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<bool>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["ignore_triple_layer_content"]; },
+        parse_bool,
+        "tileset.ignore_triple_layer_content",
+        "tileset.ignore_triple_layer_content");
+}
+
 LayerValue<ArtifactEditMode> YamlFileProvider::tiles_edit_mode(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
@@ -655,15 +671,51 @@ YamlFileProvider::tileset_paths_secondary_bin(ConfigScopeType type, const std::s
         "tileset.paths.secondary.bin");
 }
 
-LayerValue<MetatileAttributeFieldSpecs>
+LayerValue<std::optional<std::size_t>>
+YamlFileProvider::metatile_attribute_size(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::optional<std::size_t>>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<std::optional<std::size_t>>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["fieldmap"]["metatile_attribute_size"]; },
+        parse_optional_size_t,
+        "fieldmap.metatile_attribute_size",
+        "fieldmap.metatile_attribute_size");
+}
+
+LayerValue<std::optional<std::size_t>>
+YamlFileProvider::metatile_attribute_declaration_size(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<std::optional<std::size_t>>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<std::optional<std::size_t>>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["fieldmap"]["metatile_attribute_declaration_size"]; },
+        parse_optional_size_t,
+        "fieldmap.metatile_attribute_declaration_size",
+        "fieldmap.metatile_attribute_declaration_size");
+}
+
+LayerValue<MetatileAttributeFieldDefinitions>
 YamlFileProvider::metatile_attribute_fields(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<MetatileAttributeFieldSpecs>::invalid(
+        return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
             paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
-    return search_config_files<MetatileAttributeFieldSpecs>(
+    return search_config_files<MetatileAttributeFieldDefinitions>(
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
@@ -691,74 +743,21 @@ YamlFileProvider::metatile_attribute_field_overrides(ConfigScopeType type, const
         "fieldmap.metatile_attribute_field_overrides");
 }
 
-LayerValue<bool> YamlFileProvider::write_layer_type_column(ConfigScopeType type, const std::string &scope) const
+LayerValue<RolePinDefinitions> YamlFileProvider::role_pins(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);
     if (!paths_result.has_value()) {
-        return LayerValue<bool>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
-    }
-    return search_config_files<bool>(
-        format_,
-        paths_result.value(),
-        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["fieldmap"]["write_layer_type_column"]; },
-        parse_bool,
-        "fieldmap.write_layer_type_column",
-        "fieldmap.write_layer_type_column");
-}
-
-LayerValue<FrlgAlternateMaskMode>
-YamlFileProvider::use_frlg_alternate_masks(ConfigScopeType type, const std::string &scope) const
-{
-    auto paths_result = get_config_path_chain(project_root_, type, scope);
-    if (!paths_result.has_value()) {
-        return LayerValue<FrlgAlternateMaskMode>::invalid(
+        return LayerValue<RolePinDefinitions>::invalid(
             paths_result.error().join(PlainTextFormatter{}), "config path resolution");
     }
-    return search_config_files<FrlgAlternateMaskMode>(
+    return search_config_files<RolePinDefinitions>(
         format_,
         paths_result.value(),
         [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["fieldmap"]["use_frlg_alternate_masks"]; },
-        parse_frlg_alternate_mask_mode,
-        "fieldmap.use_frlg_alternate_masks",
-        "fieldmap.use_frlg_alternate_masks");
-}
-
-LayerValue<std::optional<std::uint32_t>>
-YamlFileProvider::metatile_layer_type_mask(ConfigScopeType type, const std::string &scope) const
-{
-    auto paths_result = get_config_path_chain(project_root_, type, scope);
-    if (!paths_result.has_value()) {
-        return LayerValue<std::optional<std::uint32_t>>::invalid(
-            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
-    }
-    return search_config_files<std::optional<std::uint32_t>>(
-        format_,
-        paths_result.value(),
-        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["fieldmap"]["metatile_layer_type_mask"]; },
-        parse_layer_type_mask,
-        "fieldmap.metatile_layer_type_mask",
-        "fieldmap.metatile_layer_type_mask");
-}
-
-LayerValue<std::optional<std::uint32_t>>
-YamlFileProvider::metatile_layer_type_mask_frlg(ConfigScopeType type, const std::string &scope) const
-{
-    auto paths_result = get_config_path_chain(project_root_, type, scope);
-    if (!paths_result.has_value()) {
-        return LayerValue<std::optional<std::uint32_t>>::invalid(
-            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
-    }
-    return search_config_files<std::optional<std::uint32_t>>(
-        format_,
-        paths_result.value(),
-        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
-        [](const YAML::Node &doc) { return doc["fieldmap"]["metatile_layer_type_mask_frlg"]; },
-        parse_layer_type_mask,
-        "fieldmap.metatile_layer_type_mask_frlg",
-        "fieldmap.metatile_layer_type_mask_frlg");
+        [](const YAML::Node &doc) { return doc["fieldmap"]["role_pins"]; },
+        parse_role_pins,
+        "fieldmap.role_pins",
+        "fieldmap.role_pins");
 }
 
 LayerValue<bool>

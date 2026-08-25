@@ -417,6 +417,46 @@ CParserFacade::parse_struct_initializers(const std::optional<std::string> &name_
     return structs;
 }
 
+ChainableResult<std::vector<StructDefinition>>
+CParserFacade::parse_struct_definitions(const std::optional<std::string> &name_filter)
+{
+    auto load_result = ensure_loaded();
+    if (!load_result.has_value()) {
+        return ChainableResult<std::vector<StructDefinition>>{
+            FormattableError{format_->format(
+                "{}: failed to parse struct definitions", FormatParam{file_path_.string(), Style::bold})},
+            load_result};
+    }
+
+    // Lex the content
+    Lexer lexer{format_, content_, context_.get()};
+    auto lex_result = lexer.lex();
+    if (!lex_result.has_value()) {
+        return ChainableResult<std::vector<StructDefinition>>{
+            FormattableError{format_->format(
+                "{}: failed to parse struct definitions", FormatParam{file_path_.string(), Style::bold})},
+            lex_result};
+    }
+
+    // Parse the tokens
+    auto parser = make_seeded_parser(std::move(lex_result).value());
+    auto parse_result = parser.parse_struct_definitions();
+    if (!parse_result.has_value()) {
+        return ChainableResult<std::vector<StructDefinition>>{
+            FormattableError{format_->format(
+                "{}: failed to parse struct definitions", FormatParam{file_path_.string(), Style::bold})},
+            parse_result};
+    }
+
+    // Apply exact-name filter if provided
+    auto definitions = std::move(parse_result).value();
+    if (name_filter.has_value()) {
+        std::erase_if(definitions, [&](const StructDefinition &def) { return def.name != name_filter.value(); });
+    }
+
+    return definitions;
+}
+
 ChainableResult<std::vector<IncbinDeclaration>>
 CParserFacade::parse_incbin_arrays(const std::optional<std::string> &name_prefix)
 {

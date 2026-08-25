@@ -14,11 +14,11 @@ namespace porytiles {
 
 class ProjectVanillaAnimImporterTest : public ::testing::Test {
   protected:
-    static constexpr auto kTestProjectRoot = "resources/tests/integration/shared/repos/pokeemerald_vanilla_stock";
+    static constexpr auto test_project_root = "resources/tests/integration/shared/repos/pokeemerald_vanilla_stock";
 
     PlainTextFormatter formatter_{};
     BufferedUserDiagnostics diag_{};
-    ProjectVanillaAnimImporter importer_{std::filesystem::path{kTestProjectRoot}, &formatter_, &diag_};
+    ProjectVanillaAnimImporter importer_{std::filesystem::path{test_project_root}, &formatter_, &diag_};
 };
 
 TEST_F(ProjectVanillaAnimImporterTest, ImportAnimationsDiscoversAllAnimationsForGeneralTileset)

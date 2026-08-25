@@ -18,7 +18,7 @@
 
 class ImportTilesetCommand final : public Command {
   public:
-    explicit ImportTilesetCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+    explicit ImportTilesetCommand(CLI::App &parent_app) : Command{parent_app, command_name, command_desc, command_group}
     {
         CLI::App &cmd = get_app();
         cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to import")->required();
@@ -31,8 +31,28 @@ class ImportTilesetCommand final : public Command {
     {
         using namespace porytiles;
 
-        TilesetCommandEnv env{project_root_opt_.project_root(), tileset_name_, cli_storage_};
-        TilesetCommandServices services{env, tileset_name_};
+        TilesetCommandEnv env{project_root_opt_.project_root(), cli_storage_};
+
+        // Env initialization and schema resolution can fail, so they run first and their failures chain and report
+        // through the unfiltered stderr diagnostics.
+        const auto env_result = env.initialize(tileset_name_);
+        if (!env_result.has_value()) {
+            const auto env_fail_result = ChainableResult<void>{
+                FormattableError{"Failed to import tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
+                env_result};
+            env.stderr_diag.fatal(env_fail_result);
+            throw CLI::RuntimeError{1};
+        }
+
+        auto attribute_context = resolve_attribute_context(env, tileset_name_);
+        if (!attribute_context.has_value()) {
+            const auto fail_result = ChainableResult<void>{
+                FormattableError{"Failed to import tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
+                attribute_context};
+            env.diag->fatal(fail_result);
+            throw CLI::RuntimeError{1};
+        }
+        TilesetCommandServices services{env, std::move(attribute_context).value()};
 
         ProjectPrimaryTilesetImporter importer{
             env.project_root,
@@ -74,9 +94,9 @@ class ImportTilesetCommand final : public Command {
         }
     }
 
-    static constexpr auto kCommandName = "import-tileset";
-    static constexpr auto kCommandDesc = "Import a pre-existing tileset into Porytiles.";
-    static constexpr auto kCommandGroup = "COMMANDS";
+    static constexpr auto command_name = "import-tileset";
+    static constexpr auto command_desc = "Import a pre-existing tileset into Porytiles.";
+    static constexpr auto command_group = "COMMANDS";
     std::string tileset_name_;
     OptProjectRoot project_root_opt_;
     porytiles::CliOptionStorage cli_storage_;

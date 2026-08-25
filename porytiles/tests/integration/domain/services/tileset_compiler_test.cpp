@@ -133,6 +133,39 @@ Tileset build_single_metatile_tileset(const std::string &name, const Rgba32 &mid
     return Tileset{name, std::move(porytiles_component), std::move(porymap_component)};
 }
 
+// Builds a primary tileset with one metatile whose bottom, middle, and top layers each carry distinct solid content:
+// an implied-triple metatile. Dual-mode compilation rejects it unless ignore_triple_layer_content is on, and the
+// distinct per-layer colors let a test tell which layer group survived the drop.
+Tileset build_triple_content_tileset(const std::string &name)
+{
+    auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
+    porytiles_component->bottom(Image<Rgba32>{16, 16, Rgba32{255, 0, 0, 255}});
+    porytiles_component->middle(Image<Rgba32>{16, 16, Rgba32{0, 255, 0, 255}});
+    porytiles_component->top(Image<Rgba32>{16, 16, Rgba32{0, 0, 255, 255}});
+
+    auto porymap_component = std::make_unique<PorymapTilesetComponent>();
+    return Tileset{name, std::move(porytiles_component), std::move(porymap_component)};
+}
+
+// Builds a primary tileset with one metatile where only the northwest 8x8 subtile has content on all three layers;
+// the other three subtiles have a transparent top layer and are dual-compatible.
+Tileset build_single_subtile_triple_content_tileset(const std::string &name)
+{
+    auto porytiles_component = std::make_unique<PorytilesTilesetComponent>();
+    porytiles_component->bottom(Image<Rgba32>{16, 16, Rgba32{255, 0, 0, 255}});
+    porytiles_component->middle(Image<Rgba32>{16, 16, Rgba32{0, 255, 0, 255}});
+    Image<Rgba32> top{16, 16, rgba_magenta};
+    for (std::size_t row = 0; row < 8; ++row) {
+        for (std::size_t col = 0; col < 8; ++col) {
+            top.set(row, col, Rgba32{0, 0, 255, 255});
+        }
+    }
+    porytiles_component->top(std::move(top));
+
+    auto porymap_component = std::make_unique<PorymapTilesetComponent>();
+    return Tileset{name, std::move(porytiles_component), std::move(porymap_component)};
+}
+
 // Adds a manual-frame-linking RGBA animation (tile_count 1) carrying the given override entries to a tileset.
 void add_manual_anim(
     Tileset &tileset, const std::string &anim_name, const Rgba32 &color, std::vector<AnimOverrideEntry> overrides)
@@ -205,6 +238,88 @@ TEST_F(TilesetCompilerAttributeDefaultTests, AbsentAttributeMaterializesNonzeroS
     ASSERT_EQ(attributes.size(), 1U);
     // The metatile carried no attribute, so it materializes from the schema default (0x05), not all-zero.
     EXPECT_EQ(attributes[0].field("behavior"), 0x05U);
+}
+
+class TilesetCompilerTripleContentTests : public TilesetCompilerTestBase {};
+
+// Off by default: a metatile with content on all three layers is a hard error in dual mode, and the error note points
+// at the escape hatch as an alternative to enabling triple-layer metatiles.
+TEST_F(TilesetCompilerTripleContentTests, DualModeTripleContentErrorsWithoutFlag)
+{
+    auto tileset = build_triple_content_tileset("test_primary");
+    auto compiler = make_compiler();
+
+    auto result = compiler->compile(tileset, false, nullptr);
+    ASSERT_FALSE(result.has_value());
+    EXPECT_TRUE(diag_->error_tag_counts().contains("layer-mode-violation"));
+
+    std::string note_text;
+    for (const auto &note : diag_->error_notes()) {
+        for (const auto &line : note) {
+            note_text += line;
+        }
+    }
+    EXPECT_NE(note_text.find("Ignore Triple Layer Content"), std::string::npos) << note_text;
+}
+
+// With the escape hatch on, the same input compiles: it warns, drops one layer group, and emits a dual-size metatiles
+// bin.
+TEST_F(TilesetCompilerTripleContentTests, DualModeTripleContentCompilesWithFlagAndWarns)
+{
+    config_.ignore_triple_layer_content = true;
+    auto tileset = build_triple_content_tileset("test_primary");
+    auto compiler = make_compiler();
+
+    auto result = compiler->compile(tileset, false, nullptr);
+    ASSERT_TRUE(result.has_value()) << join_error_chain(result);
+    EXPECT_TRUE(diag_->warning_tag_counts().contains("layer-mode-violation"));
+    EXPECT_EQ(result.value()->porymap_component().metatiles_bin().size(), metatile::entries_per_metatile_dual);
+}
+
+// The effective layer type controls which group drops: an unpinned metatile infers 'normal' (drops the bottom group),
+// while pinning 'covered' drops the top group, so the two compiles produce different metatiles bins.
+TEST_F(TilesetCompilerTripleContentTests, DualModeTripleContentPinControlsDroppedGroup)
+{
+    config_.ignore_triple_layer_content = true;
+
+    auto unpinned = build_triple_content_tileset("test_primary");
+    auto unpinned_result = make_compiler()->compile(unpinned, false, nullptr);
+    ASSERT_TRUE(unpinned_result.has_value()) << join_error_chain(unpinned_result);
+    const auto unpinned_bin = unpinned_result.value()->porymap_component().metatiles_bin();
+
+    auto pinned = build_triple_content_tileset("test_primary");
+    MetatileAttribute pinned_attribute{};
+    pinned_attribute.explicit_layer_type(LayerType::covered);
+    pinned.porytiles_component().insert_attribute(0, pinned_attribute);
+    auto pinned_result = make_compiler()->compile(pinned, false, nullptr);
+    ASSERT_TRUE(pinned_result.has_value()) << join_error_chain(pinned_result);
+    const auto pinned_bin = pinned_result.value()->porymap_component().metatiles_bin();
+
+    ASSERT_EQ(unpinned_bin.size(), pinned_bin.size());
+    // The solid-color tiles dedup to one indexed tile each and differ by palette, so the surviving groups show up as
+    // different palette references (not different tile indices).
+    bool differs = false;
+    for (std::size_t i = 0; i < unpinned_bin.size(); ++i) {
+        if (unpinned_bin[i].tile_index() != pinned_bin[i].tile_index() ||
+            unpinned_bin[i].palette_index() != pinned_bin[i].palette_index()) {
+            differs = true;
+            break;
+        }
+    }
+    EXPECT_TRUE(differs);
+}
+
+// The violation check is per-subtile: with triple content only in the northwest subtile, exactly one diagnostic
+// fires. A latched per-metatile flag would falsely report the northeast, southwest, and southeast subtiles too.
+TEST_F(TilesetCompilerTripleContentTests, DualModeSingleSubtileTripleContentReportsOnlyThatSubtile)
+{
+    auto tileset = build_single_subtile_triple_content_tileset("test_primary");
+    auto compiler = make_compiler();
+
+    auto result = compiler->compile(tileset, false, nullptr);
+    ASSERT_FALSE(result.has_value());
+    ASSERT_TRUE(diag_->error_tag_counts().contains("layer-mode-violation"));
+    EXPECT_EQ(diag_->error_tag_counts().at("layer-mode-violation"), 1U);
 }
 
 class TilesetCompilerModeComboTests : public TilesetCompilerTestBase {};

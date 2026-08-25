@@ -16,11 +16,11 @@ namespace {
 
 const std::filesystem::path test_resources_dir = "resources/tests/integration/infra/services/enum_headers";
 
-// A behavior-equivalent spec: the exact prefix, cap, and format the old dedicated behavior provider used,
+// A behavior-equivalent definition: the exact prefix, cap, and format the old dedicated behavior provider used,
 // so the ported behavior cases below exercise identical semantics through the consolidated provider.
-EnumSpec behavior_spec()
+EnumDefinition behavior_definition()
 {
-    return EnumSpec{
+    return EnumDefinition{
         .prefix = "MB_",
         .max_value = std::numeric_limits<std::uint16_t>::max(),
         .skipped = {},
@@ -28,10 +28,10 @@ EnumSpec behavior_spec()
         .field_display_name = "behavior"};
 }
 
-// Terrain and encounter specs mirror the stock FireRed layout: sequential enum members, tight caps.
-EnumSpec terrain_spec()
+// Terrain and encounter definitions mirror the stock FireRed layout: sequential enum members, tight caps.
+EnumDefinition terrain_definition()
 {
-    return EnumSpec{
+    return EnumDefinition{
         .prefix = "TILE_TERRAIN_",
         .max_value = 0x1F,
         .skipped = {},
@@ -39,9 +39,9 @@ EnumSpec terrain_spec()
         .field_display_name = "terrain"};
 }
 
-EnumSpec encounter_spec()
+EnumDefinition encounter_definition()
 {
-    return EnumSpec{
+    return EnumDefinition{
         .prefix = "TILE_ENCOUNTER_",
         .max_value = 0x07,
         .skipped = {},
@@ -58,12 +58,12 @@ class HeaderEnumMapProviderTest : public ::testing::Test {
 } // namespace
 
 // The following cases are ported from the old header_behavior_map_provider_test.cpp. They run the stock
-// behavior spec through the consolidated provider and must behave identically to the dedicated class.
+// behavior definition through the consolidated provider and must behave identically to the dedicated class.
 
 TEST_F(HeaderEnumMapProviderTest, DefineFormatParsesHexValues)
 {
     HeaderEnumMapProvider provider{
-        test_resources_dir / "metatile_behaviors_define.h", behavior_spec(), &formatter_, &diag_};
+        test_resources_dir / "metatile_behaviors_define.h", behavior_definition(), &formatter_, &diag_};
 
     auto normal = provider.lookup("MB_NORMAL");
     ASSERT_TRUE(normal.has_value());
@@ -89,7 +89,7 @@ TEST_F(HeaderEnumMapProviderTest, DefineFormatParsesHexValues)
 TEST_F(HeaderEnumMapProviderTest, DefineFormatAllowsMbInvalid)
 {
     HeaderEnumMapProvider provider{
-        test_resources_dir / "metatile_behaviors_define.h", behavior_spec(), &formatter_, &diag_};
+        test_resources_dir / "metatile_behaviors_define.h", behavior_definition(), &formatter_, &diag_};
 
     auto invalid = provider.lookup("MB_INVALID");
     ASSERT_TRUE(invalid.has_value());
@@ -99,7 +99,7 @@ TEST_F(HeaderEnumMapProviderTest, DefineFormatAllowsMbInvalid)
 TEST_F(HeaderEnumMapProviderTest, DefineFormatHandlesAbridgedFile)
 {
     HeaderEnumMapProvider provider{
-        test_resources_dir / "metatile_behaviors_abridged.h", behavior_spec(), &formatter_, &diag_};
+        test_resources_dir / "metatile_behaviors_abridged.h", behavior_definition(), &formatter_, &diag_};
 
     auto normal = provider.lookup("MB_NORMAL");
     ASSERT_TRUE(normal.has_value());
@@ -117,7 +117,7 @@ TEST_F(HeaderEnumMapProviderTest, DefineFormatHandlesAbridgedFile)
 TEST_F(HeaderEnumMapProviderTest, EnumFormatParsesCounterBasedValues)
 {
     HeaderEnumMapProvider provider{
-        test_resources_dir / "metatile_behaviors_enum.h", behavior_spec(), &formatter_, &diag_};
+        test_resources_dir / "metatile_behaviors_enum.h", behavior_definition(), &formatter_, &diag_};
 
     auto normal = provider.lookup("MB_NORMAL");
     ASSERT_TRUE(normal.has_value());
@@ -139,7 +139,7 @@ TEST_F(HeaderEnumMapProviderTest, EnumFormatParsesCounterBasedValues)
 TEST_F(HeaderEnumMapProviderTest, EnumFormatResolvesSameHeaderDefinesAndPriorMembers)
 {
     HeaderEnumMapProvider provider{
-        test_resources_dir / "metatile_behaviors_enum_references.h", behavior_spec(), &formatter_, &diag_};
+        test_resources_dir / "metatile_behaviors_enum_references.h", behavior_definition(), &formatter_, &diag_};
 
     auto normal = provider.lookup("MB_NORMAL");
     ASSERT_TRUE(normal.has_value());
@@ -153,7 +153,7 @@ TEST_F(HeaderEnumMapProviderTest, EnumFormatResolvesSameHeaderDefinesAndPriorMem
 TEST_F(HeaderEnumMapProviderTest, EnumFormatHandlesCommentsAfterComma)
 {
     HeaderEnumMapProvider provider{
-        test_resources_dir / "metatile_behaviors_enum.h", behavior_spec(), &formatter_, &diag_};
+        test_resources_dir / "metatile_behaviors_enum.h", behavior_definition(), &formatter_, &diag_};
 
     auto interior_deep_water = provider.lookup("MB_INTERIOR_DEEP_WATER");
     ASSERT_TRUE(interior_deep_water.has_value());
@@ -163,7 +163,7 @@ TEST_F(HeaderEnumMapProviderTest, EnumFormatHandlesCommentsAfterComma)
 TEST_F(HeaderEnumMapProviderTest, EnumFormatAllowsMbInvalid)
 {
     HeaderEnumMapProvider provider{
-        test_resources_dir / "metatile_behaviors_enum.h", behavior_spec(), &formatter_, &diag_};
+        test_resources_dir / "metatile_behaviors_enum.h", behavior_definition(), &formatter_, &diag_};
 
     // MB_INVALID is defined as UCHAR_MAX via #define, not in the enum. With HeaderFormat::either it still loads.
     auto invalid = provider.lookup("MB_INVALID");
@@ -174,7 +174,7 @@ TEST_F(HeaderEnumMapProviderTest, EnumFormatAllowsMbInvalid)
 TEST_F(HeaderEnumMapProviderTest, EnumFormatParsesHigherIndexValues)
 {
     HeaderEnumMapProvider provider{
-        test_resources_dir / "metatile_behaviors_enum.h", behavior_spec(), &formatter_, &diag_};
+        test_resources_dir / "metatile_behaviors_enum.h", behavior_definition(), &formatter_, &diag_};
 
     auto muddy_slope = provider.lookup("MB_MUDDY_SLOPE");
     ASSERT_TRUE(muddy_slope.has_value());
@@ -183,7 +183,7 @@ TEST_F(HeaderEnumMapProviderTest, EnumFormatParsesHigherIndexValues)
 
 TEST_F(HeaderEnumMapProviderTest, NonExistentFileReturnsErrorOnLookup)
 {
-    HeaderEnumMapProvider provider{test_resources_dir / "does_not_exist.h", behavior_spec(), &formatter_, &diag_};
+    HeaderEnumMapProvider provider{test_resources_dir / "does_not_exist.h", behavior_definition(), &formatter_, &diag_};
 
     auto result = provider.lookup("MB_NORMAL");
     EXPECT_FALSE(result.has_value());
@@ -192,7 +192,7 @@ TEST_F(HeaderEnumMapProviderTest, NonExistentFileReturnsErrorOnLookup)
 TEST_F(HeaderEnumMapProviderTest, UnknownBehaviorReturnsError)
 {
     HeaderEnumMapProvider provider{
-        test_resources_dir / "metatile_behaviors_define.h", behavior_spec(), &formatter_, &diag_};
+        test_resources_dir / "metatile_behaviors_define.h", behavior_definition(), &formatter_, &diag_};
 
     auto result = provider.lookup("MB_DOES_NOT_EXIST");
     EXPECT_FALSE(result.has_value());
@@ -207,7 +207,7 @@ TEST_F(HeaderEnumMapProviderTest, UnknownBehaviorReturnsError)
 TEST_F(HeaderEnumMapProviderTest, EmptyFileReturnsErrorOnLookup)
 {
     HeaderEnumMapProvider provider{
-        test_resources_dir / "metatile_behaviors_empty.h", behavior_spec(), &formatter_, &diag_};
+        test_resources_dir / "metatile_behaviors_empty.h", behavior_definition(), &formatter_, &diag_};
 
     auto result = provider.lookup("MB_NORMAL");
     EXPECT_FALSE(result.has_value());
@@ -216,7 +216,7 @@ TEST_F(HeaderEnumMapProviderTest, EmptyFileReturnsErrorOnLookup)
 TEST_F(HeaderEnumMapProviderTest, ReverseLookupDefineFormat)
 {
     HeaderEnumMapProvider provider{
-        test_resources_dir / "metatile_behaviors_define.h", behavior_spec(), &formatter_, &diag_};
+        test_resources_dir / "metatile_behaviors_define.h", behavior_definition(), &formatter_, &diag_};
 
     auto normal = provider.lookup(static_cast<std::uint32_t>(0x00));
     ASSERT_TRUE(normal.has_value());
@@ -238,7 +238,7 @@ TEST_F(HeaderEnumMapProviderTest, ReverseLookupDefineFormat)
 TEST_F(HeaderEnumMapProviderTest, ReverseLookupEnumFormat)
 {
     HeaderEnumMapProvider provider{
-        test_resources_dir / "metatile_behaviors_enum.h", behavior_spec(), &formatter_, &diag_};
+        test_resources_dir / "metatile_behaviors_enum.h", behavior_definition(), &formatter_, &diag_};
 
     auto normal = provider.lookup(static_cast<std::uint32_t>(0));
     ASSERT_TRUE(normal.has_value());
@@ -256,7 +256,7 @@ TEST_F(HeaderEnumMapProviderTest, ReverseLookupEnumFormat)
 TEST_F(HeaderEnumMapProviderTest, ReverseLookupUnknownValueReturnsError)
 {
     HeaderEnumMapProvider provider{
-        test_resources_dir / "metatile_behaviors_abridged.h", behavior_spec(), &formatter_, &diag_};
+        test_resources_dir / "metatile_behaviors_abridged.h", behavior_definition(), &formatter_, &diag_};
 
     auto result = provider.lookup(static_cast<std::uint32_t>(0xFF));
     EXPECT_FALSE(result.has_value());
@@ -267,7 +267,7 @@ TEST_F(HeaderEnumMapProviderTest, ReverseLookupUnknownValueReturnsError)
 
 TEST_F(HeaderEnumMapProviderTest, ReverseLookupNonExistentFileReturnsError)
 {
-    HeaderEnumMapProvider provider{test_resources_dir / "does_not_exist.h", behavior_spec(), &formatter_, &diag_};
+    HeaderEnumMapProvider provider{test_resources_dir / "does_not_exist.h", behavior_definition(), &formatter_, &diag_};
 
     auto result = provider.lookup(static_cast<std::uint32_t>(0x00));
     EXPECT_FALSE(result.has_value());
@@ -276,7 +276,7 @@ TEST_F(HeaderEnumMapProviderTest, ReverseLookupNonExistentFileReturnsError)
 TEST_F(HeaderEnumMapProviderTest, ReverseLookupEmptyFileReturnsError)
 {
     HeaderEnumMapProvider provider{
-        test_resources_dir / "metatile_behaviors_empty.h", behavior_spec(), &formatter_, &diag_};
+        test_resources_dir / "metatile_behaviors_empty.h", behavior_definition(), &formatter_, &diag_};
 
     auto result = provider.lookup(static_cast<std::uint32_t>(0x00));
     EXPECT_FALSE(result.has_value());
@@ -285,7 +285,7 @@ TEST_F(HeaderEnumMapProviderTest, ReverseLookupEmptyFileReturnsError)
 TEST_F(HeaderEnumMapProviderTest, BidirectionalLookupIsConsistent)
 {
     HeaderEnumMapProvider provider{
-        test_resources_dir / "metatile_behaviors_define.h", behavior_spec(), &formatter_, &diag_};
+        test_resources_dir / "metatile_behaviors_define.h", behavior_definition(), &formatter_, &diag_};
 
     auto value = provider.lookup("MB_TALL_GRASS");
     ASSERT_TRUE(value.has_value());
@@ -298,7 +298,7 @@ TEST_F(HeaderEnumMapProviderTest, BidirectionalLookupIsConsistent)
 TEST_F(HeaderEnumMapProviderTest, DuplicateNameReturnsErrorWithSourceLocations)
 {
     HeaderEnumMapProvider provider{
-        test_resources_dir / "metatile_behaviors_duplicate_name.h", behavior_spec(), &formatter_, &diag_};
+        test_resources_dir / "metatile_behaviors_duplicate_name.h", behavior_definition(), &formatter_, &diag_};
 
     auto result = provider.lookup("MB_NORMAL");
     EXPECT_FALSE(result.has_value());
@@ -317,7 +317,7 @@ TEST_F(HeaderEnumMapProviderTest, DuplicateNameReturnsErrorWithSourceLocations)
 TEST_F(HeaderEnumMapProviderTest, DuplicateValueReturnsErrorWithSourceLocations)
 {
     HeaderEnumMapProvider provider{
-        test_resources_dir / "metatile_behaviors_duplicate_value.h", behavior_spec(), &formatter_, &diag_};
+        test_resources_dir / "metatile_behaviors_duplicate_value.h", behavior_definition(), &formatter_, &diag_};
 
     auto result = provider.lookup("MB_NORMAL");
     EXPECT_FALSE(result.has_value());
@@ -342,7 +342,7 @@ TEST_F(HeaderEnumMapProviderTest, EnumsOnlyResolvesTerrainSequentiallyAndIgnores
 {
     // fieldmap_enums.h carries a function-like METATILE_ID(...) define alongside the enums. An enums_only
     // provider never touches parse_defines(), so that complex define cannot derail the load.
-    HeaderEnumMapProvider provider{test_resources_dir / "fieldmap_enums.h", terrain_spec(), &formatter_, &diag_};
+    HeaderEnumMapProvider provider{test_resources_dir / "fieldmap_enums.h", terrain_definition(), &formatter_, &diag_};
 
     auto normal = provider.lookup("TILE_TERRAIN_NORMAL");
     ASSERT_TRUE(normal.has_value());
@@ -365,7 +365,8 @@ TEST_F(HeaderEnumMapProviderTest, SharedHeaderEncounterResolvesOnlyItsPrefix)
 {
     // Second provider over the same file. Terrain and encounter enums both start at 0, but the prefix
     // filter keeps each provider to its own field, so the value 0 maps to only one name here.
-    HeaderEnumMapProvider provider{test_resources_dir / "fieldmap_enums.h", encounter_spec(), &formatter_, &diag_};
+    HeaderEnumMapProvider provider{
+        test_resources_dir / "fieldmap_enums.h", encounter_definition(), &formatter_, &diag_};
 
     auto none = provider.lookup("TILE_ENCOUNTER_NONE");
     ASSERT_TRUE(none.has_value());
@@ -391,9 +392,9 @@ TEST_F(HeaderEnumMapProviderTest, SharedHeaderEncounterResolvesOnlyItsPrefix)
 
 TEST_F(HeaderEnumMapProviderTest, DefinesOnlyResolvesDefinesAndIgnoresEnumMembers)
 {
-    EnumSpec spec = behavior_spec();
-    spec.format = HeaderFormat::defines_only;
-    HeaderEnumMapProvider provider{test_resources_dir / "metatile_behaviors_enum.h", spec, &formatter_, &diag_};
+    EnumDefinition definition = behavior_definition();
+    definition.format = HeaderFormat::defines_only;
+    HeaderEnumMapProvider provider{test_resources_dir / "metatile_behaviors_enum.h", definition, &formatter_, &diag_};
 
     // MB_INVALID is the only #define in the enum-format file; the enum members must stay invisible.
     auto invalid = provider.lookup("MB_INVALID");
@@ -406,9 +407,9 @@ TEST_F(HeaderEnumMapProviderTest, DefinesOnlyResolvesDefinesAndIgnoresEnumMember
 
 TEST_F(HeaderEnumMapProviderTest, SkippedSetExcludesNamedEntries)
 {
-    EnumSpec spec = behavior_spec();
-    spec.skipped = {"MB_TALL_GRASS"};
-    HeaderEnumMapProvider provider{test_resources_dir / "metatile_behaviors_define.h", spec, &formatter_, &diag_};
+    EnumDefinition definition = behavior_definition();
+    definition.skipped = {"MB_TALL_GRASS"};
+    HeaderEnumMapProvider provider{test_resources_dir / "metatile_behaviors_define.h", definition, &formatter_, &diag_};
 
     auto tall_grass = provider.lookup("MB_TALL_GRASS");
     EXPECT_FALSE(tall_grass.has_value());
@@ -429,9 +430,9 @@ TEST_F(HeaderEnumMapProviderTest, SkippedSetExcludesNamedEntries)
 
 TEST_F(HeaderEnumMapProviderTest, OutOfRangeValueFailsLoadNamingConstantAndField)
 {
-    EnumSpec spec = behavior_spec();
-    spec.max_value = 0x12;
-    HeaderEnumMapProvider provider{test_resources_dir / "metatile_behaviors_define.h", spec, &formatter_, &diag_};
+    EnumDefinition definition = behavior_definition();
+    definition.max_value = 0x12;
+    HeaderEnumMapProvider provider{test_resources_dir / "metatile_behaviors_define.h", definition, &formatter_, &diag_};
 
     // MB_WATERFALL (0x13) is the first define past the cap. It must fail the whole load with a diagnostic naming the
     // offending constant and the field, not silently vanish and resurface later as a "no such name" lookup failure.
@@ -456,7 +457,7 @@ TEST_F(HeaderEnumMapProviderTest, OutOfRangeValueFailsLoadNamingConstantAndField
 TEST_F(HeaderEnumMapProviderTest, EnumsOnlyMissingFileReturnsError)
 {
     // An enums_only provider skips the define scan and fails in the enum scan when the header is absent.
-    HeaderEnumMapProvider provider{test_resources_dir / "does_not_exist.h", terrain_spec(), &formatter_, &diag_};
+    HeaderEnumMapProvider provider{test_resources_dir / "does_not_exist.h", terrain_definition(), &formatter_, &diag_};
 
     auto result = provider.lookup("TILE_TERRAIN_NORMAL");
     EXPECT_FALSE(result.has_value());
@@ -470,7 +471,7 @@ TEST_F(HeaderEnumMapProviderTest, DuplicateInEnumFormatReturnsError)
     // The duplicate lives among enum members, so the failure is raised from the enum scan loop rather
     // than the define scan loop.
     HeaderEnumMapProvider provider{
-        test_resources_dir / "metatile_behaviors_duplicate_enum.h", behavior_spec(), &formatter_, &diag_};
+        test_resources_dir / "metatile_behaviors_duplicate_enum.h", behavior_definition(), &formatter_, &diag_};
 
     auto result = provider.lookup("MB_NORMAL");
     EXPECT_FALSE(result.has_value());
@@ -486,7 +487,7 @@ TEST_F(HeaderEnumMapProviderTest, SecondLookupAfterLoadFailureReportsCachedFailu
     // Once a load fails, the provider caches the failure: a later lookup short-circuits instead of
     // re-parsing the file.
     HeaderEnumMapProvider provider{
-        test_resources_dir / "metatile_behaviors_duplicate_name.h", behavior_spec(), &formatter_, &diag_};
+        test_resources_dir / "metatile_behaviors_duplicate_name.h", behavior_definition(), &formatter_, &diag_};
 
     auto first = provider.lookup("MB_NORMAL");
     EXPECT_FALSE(first.has_value());
@@ -501,7 +502,7 @@ TEST_F(HeaderEnumMapProviderTest, SecondLookupAfterLoadFailureReportsCachedFailu
 
 TEST_F(HeaderEnumMapProviderTest, DiagnosticsCarryFieldDisplayName)
 {
-    HeaderEnumMapProvider provider{test_resources_dir / "fieldmap_enums.h", terrain_spec(), &formatter_, &diag_};
+    HeaderEnumMapProvider provider{test_resources_dir / "fieldmap_enums.h", terrain_definition(), &formatter_, &diag_};
 
     // Prefix-mismatch message names the field.
     auto mismatch = provider.lookup("MB_NORMAL");
@@ -523,9 +524,9 @@ TEST_F(HeaderEnumMapProviderTest, DiagnosticsCarryFieldDisplayName)
 TEST_F(HeaderEnumMapProviderTest, EmptyMatchDiagnosticNamesFieldPrefixAndHeader)
 {
     // A behavior provider over a header holding only TILE_ names finds nothing matching its prefix. The diagnostic
-    // must name the field, the declared prefix, and the header, so the user can tell whether the spec or the header
-    // is the thing to fix.
-    HeaderEnumMapProvider provider{test_resources_dir / "fieldmap_enums.h", behavior_spec(), &formatter_, &diag_};
+    // must name the field, the declared prefix, and the header, so the user can tell whether the definition or the
+    // header is the thing to fix.
+    HeaderEnumMapProvider provider{test_resources_dir / "fieldmap_enums.h", behavior_definition(), &formatter_, &diag_};
 
     auto result = provider.lookup("MB_NORMAL");
     ASSERT_FALSE(result.has_value());
@@ -549,14 +550,14 @@ TEST_F(HeaderEnumMapProviderTest, EmptyMatchDiagnosticNamesFieldPrefixAndHeader)
 TEST_F(HeaderEnumMapProviderTest, BuildProviderMapContainsExactlyProviderBackedFields)
 {
     // build_provider_map upholds the ProviderMap membership contract: exactly the schema's has_provider() fields get
-    // an entry, keyed by field name, and the built provider resolves names against the spec's header end to end.
+    // an entry, keyed by field name, and the built provider resolves names against the definition's header end to end.
     auto schema_result = Schema::create(
         {
             Field{
                 "behavior",
                 0x00FF,
                 0,
-                ProviderSpec{.header = test_resources_dir / "metatile_behaviors_define.h", .prefix = "MB_"}},
+                ProviderDefinition{.header = test_resources_dir / "metatile_behaviors_define.h", .prefix = "MB_"}},
             Field{"raw_field", 0x0F00},
         },
         2);

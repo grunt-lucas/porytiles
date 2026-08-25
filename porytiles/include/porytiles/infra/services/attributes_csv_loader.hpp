@@ -18,6 +18,19 @@
 
 namespace porytiles {
 
+/// @brief The result of loading an attributes CSV: the per-metatile attributes plus the per-role pin-column.
+///
+/// @details
+/// `attributes` maps metatile id to its parsed attribute. `active_pin_column_present` has one entry per configured
+/// role pin: true when that role's active pin column was present in the CSV header, false when it was absent. A stale
+/// column matching a role's default name but not currently active does not count as present. The artifact reader turns
+/// these facts into each role's PriorPinColumnState on the loaded component, which the decompiler's round-trip merge
+/// then consumes.
+struct AttributesCsvLoadResult {
+    std::map<std::size_t, MetatileAttribute> attributes;
+    std::map<FieldRole, bool> active_pin_column_present;
+};
+
 /// @brief A service that loads metatile attributes from a CSV file.
 ///
 /// @details
@@ -40,8 +53,8 @@ class AttributesCsvLoader {
     /// @brief Constructs an AttributesCsvLoader with required dependencies.
     ///
     /// @param format The text formatter for styled output
-    /// @param config The config used to resolve the write_layer_type_column knob at tileset scope
-    /// @param diag The diagnostics sink for the "column ignored" warning when the knob is off
+    /// @param config A pointer to the InfraConfig for the loader
+    /// @param diag A pointer to the UserDiagnostics for the loader
     AttributesCsvLoader(
         gsl::not_null<const TextFormatter *> format,
         gsl::not_null<const InfraConfig *> config,
@@ -58,24 +71,17 @@ class AttributesCsvLoader {
     /// MetatileAttribute. All attributes are created with LayerType::normal.
     ///
     /// The schema and providers must belong to the tileset that owns the CSV: when compiling a secondary, the paired
-    /// primary's CSV parses against the primary's own resolved schema, which can differ from the secondary's. The
-    /// provider map must uphold the ProviderMap membership contract for the schema (one provider per has_provider()
-    /// field); a provider-backed field missing from the map is an internal invariant violation and panics rather than
-    /// degrading to raw parsing.
-    ///
-    /// When a @c layer_type column is present, its handling depends on the write_layer_type_column knob resolved at the
-    /// scope of @p tileset_name: with the knob on, a filled cell pins the attribute's layer type and a blank cell
-    /// leaves it inferred; with the knob off, the column is ignored and a single warning is emitted for the file.
+    /// primary's CSV parses against the primary's own resolved schema, which can differ from the secondary's. A
+    /// provider-backed field missing from the ProviderMap is an internal invariant violation and panics.
     ///
     /// @param path The path to the attributes CSV file
     /// @param schema The owning tileset's resolved attribute schema the CSV columns are validated and parsed against
     /// @param providers The provider map holding one provider per provider-backed schema field
-    /// @param tileset_name The tileset whose config scope resolves the write_layer_type_column knob. When compiling a
-    /// secondary this is the primary's name for the primary's CSV, so the knob resolves under the file's owning
-    /// tileset.
+    /// @param tileset_name The tileset whose config scope resolves the role_pins. When compiling a secondary this is
+    /// the primary's name for the primary's CSV, so the config resolves under the file's owning tileset.
     /// @pre File must exist and be readable
     /// @return Map of metatile IDs to their attributes, or an error with file context
-    [[nodiscard]] ChainableResult<std::map<std::size_t, MetatileAttribute>> load(
+    [[nodiscard]] ChainableResult<AttributesCsvLoadResult> load(
         const std::filesystem::path &path,
         const Schema &schema,
         const ProviderMap &providers,

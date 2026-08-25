@@ -72,6 +72,12 @@ LayerValue<Rgba32> DefaultProvider::extrinsic_transparency(
     return LayerValue<Rgba32>::valid(rgba_magenta, "Extrinsic Transparency", source_info);
 }
 
+LayerValue<bool> DefaultProvider::ignore_triple_layer_content(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<bool>::valid(false, "Ignore Triple Layer Content", source_info);
+}
+
 LayerValue<ArtifactEditMode>
 DefaultProvider::tiles_edit_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
@@ -241,11 +247,24 @@ LayerValue<std::string> DefaultProvider::tileset_paths_secondary_bin(
     return LayerValue<std::string>::valid("data/tilesets/secondary", "Tileset Paths Secondary Bin", source_info);
 }
 
-LayerValue<MetatileAttributeFieldSpecs> DefaultProvider::metatile_attribute_fields(
+LayerValue<std::optional<std::size_t>> DefaultProvider::metatile_attribute_size(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<MetatileAttributeFieldSpecs>::valid(
-        MetatileAttributeFieldSpecs{}, "Metatile Attribute Fields", source_info);
+    return LayerValue<std::optional<std::size_t>>::valid(std::nullopt, "Metatile Attribute Size", source_info);
+}
+
+LayerValue<std::optional<std::size_t>> DefaultProvider::metatile_attribute_declaration_size(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::optional<std::size_t>>::valid(
+        std::nullopt, "Metatile Attribute Declaration Size", source_info);
+}
+
+LayerValue<MetatileAttributeFieldDefinitions> DefaultProvider::metatile_attribute_fields(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<MetatileAttributeFieldDefinitions>::valid(
+        MetatileAttributeFieldDefinitions{}, "Metatile Attribute Fields", source_info);
 }
 
 LayerValue<MetatileAttributeFieldOverrides> DefaultProvider::metatile_attribute_field_overrides(
@@ -255,29 +274,10 @@ LayerValue<MetatileAttributeFieldOverrides> DefaultProvider::metatile_attribute_
         MetatileAttributeFieldOverrides{}, "Metatile Attribute Field Overrides", source_info);
 }
 
-LayerValue<bool> DefaultProvider::write_layer_type_column(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<RolePinDefinitions>
+DefaultProvider::role_pins([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<bool>::valid(false, "Write Layer Type Column", source_info);
-}
-
-LayerValue<FrlgAlternateMaskMode> DefaultProvider::use_frlg_alternate_masks(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    return LayerValue<FrlgAlternateMaskMode>::valid(
-        FrlgAlternateMaskMode::automatic, "Use FRLG Alternate Masks", source_info);
-}
-
-LayerValue<std::optional<std::uint32_t>> DefaultProvider::metatile_layer_type_mask(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    return LayerValue<std::optional<std::uint32_t>>::valid(std::nullopt, "Metatile Layer Type Mask", source_info);
-}
-
-LayerValue<std::optional<std::uint32_t>> DefaultProvider::metatile_layer_type_mask_frlg(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    return LayerValue<std::optional<std::uint32_t>>::valid(std::nullopt, "Metatile Layer Type Mask FRLG", source_info);
+    return LayerValue<RolePinDefinitions>::valid(RolePinDefinitions{}, "Role Pins", source_info);
 }
 
 LayerValue<bool> DefaultProvider::tileset_animations_wire_anim_code(

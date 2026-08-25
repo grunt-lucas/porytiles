@@ -61,6 +61,12 @@ LayerValue<Rgba32> ConfigProvider::extrinsic_transparency(
     return LayerValue<Rgba32>::not_provided();
 }
 
+LayerValue<bool> ConfigProvider::ignore_triple_layer_content(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<bool>::not_provided();
+}
+
 LayerValue<ArtifactEditMode>
 ConfigProvider::tiles_edit_mode([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
@@ -218,10 +224,22 @@ LayerValue<std::string> ConfigProvider::tileset_paths_secondary_bin(
     return LayerValue<std::string>::not_provided();
 }
 
-LayerValue<MetatileAttributeFieldSpecs> ConfigProvider::metatile_attribute_fields(
+LayerValue<std::optional<std::size_t>> ConfigProvider::metatile_attribute_size(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<MetatileAttributeFieldSpecs>::not_provided();
+    return LayerValue<std::optional<std::size_t>>::not_provided();
+}
+
+LayerValue<std::optional<std::size_t>> ConfigProvider::metatile_attribute_declaration_size(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<std::optional<std::size_t>>::not_provided();
+}
+
+LayerValue<MetatileAttributeFieldDefinitions> ConfigProvider::metatile_attribute_fields(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<MetatileAttributeFieldDefinitions>::not_provided();
 }
 
 LayerValue<MetatileAttributeFieldOverrides> ConfigProvider::metatile_attribute_field_overrides(
@@ -230,28 +248,10 @@ LayerValue<MetatileAttributeFieldOverrides> ConfigProvider::metatile_attribute_f
     return LayerValue<MetatileAttributeFieldOverrides>::not_provided();
 }
 
-LayerValue<bool> ConfigProvider::write_layer_type_column(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+LayerValue<RolePinDefinitions>
+ConfigProvider::role_pins([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
-    return LayerValue<bool>::not_provided();
-}
-
-LayerValue<FrlgAlternateMaskMode> ConfigProvider::use_frlg_alternate_masks(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    return LayerValue<FrlgAlternateMaskMode>::not_provided();
-}
-
-LayerValue<std::optional<std::uint32_t>> ConfigProvider::metatile_layer_type_mask(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    return LayerValue<std::optional<std::uint32_t>>::not_provided();
-}
-
-LayerValue<std::optional<std::uint32_t>> ConfigProvider::metatile_layer_type_mask_frlg(
-    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
-{
-    return LayerValue<std::optional<std::uint32_t>>::not_provided();
+    return LayerValue<RolePinDefinitions>::not_provided();
 }
 
 LayerValue<bool> ConfigProvider::tileset_animations_wire_anim_code(

@@ -18,7 +18,7 @@
 class CompileTilesetCommand final : public Command {
   public:
     explicit CompileTilesetCommand(CLI::App &parent_app)
-        : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+        : Command{parent_app, command_name, command_desc, command_group}
     {
         CLI::App &cmd = get_app();
         cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to compile")->required();
@@ -31,8 +31,28 @@ class CompileTilesetCommand final : public Command {
     {
         using namespace porytiles;
 
-        TilesetCommandEnv env{project_root_opt_.project_root(), tileset_name_, cli_storage_};
-        TilesetCommandServices services{env, tileset_name_};
+        TilesetCommandEnv env{project_root_opt_.project_root(), cli_storage_};
+
+        // Env initialization and schema resolution can fail, so they run first and their failures chain and report
+        // through the unfiltered stderr diagnostics.
+        const auto env_result = env.initialize(tileset_name_);
+        if (!env_result.has_value()) {
+            const auto env_fail_result = ChainableResult<void>{
+                FormattableError{"Failed to compile tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
+                env_result};
+            env.stderr_diag.fatal(env_fail_result);
+            throw CLI::RuntimeError{1};
+        }
+
+        auto attribute_context = resolve_attribute_context(env, tileset_name_);
+        if (!attribute_context.has_value()) {
+            const auto fail_result = ChainableResult<void>{
+                FormattableError{"Failed to compile tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
+                attribute_context};
+            env.diag->fatal(fail_result);
+            throw CLI::RuntimeError{1};
+        }
+        TilesetCommandServices services{env, std::move(attribute_context).value()};
 
         // Verify the tileset exists in the project before proceeding
         if (!services.metadata_provider.exists(tileset_name_)) {
@@ -45,7 +65,10 @@ class CompileTilesetCommand final : public Command {
         // Detect primary vs secondary and dispatch to the correct use case
         auto is_secondary_result = services.metadata_provider.is_secondary(tileset_name_);
         if (!is_secondary_result.has_value()) {
-            env.diag->fatal(is_secondary_result);
+            const auto fail_result = ChainableResult<void>{
+                FormattableError{"Failed to compile tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
+                is_secondary_result};
+            env.diag->fatal(fail_result);
             throw CLI::RuntimeError{1};
         }
 
@@ -82,10 +105,10 @@ class CompileTilesetCommand final : public Command {
         }
     }
 
-    static constexpr auto kCommandName = "compile-tileset";
-    static constexpr auto kCommandDesc =
+    static constexpr auto command_name = "compile-tileset";
+    static constexpr auto command_desc =
         "Compile a tileset -- update the Porymap assets to match the Porytiles assets.";
-    static constexpr auto kCommandGroup = "COMMANDS";
+    static constexpr auto command_group = "COMMANDS";
     std::string tileset_name_;
     OptProjectRoot project_root_opt_;
     porytiles::CliOptionStorage cli_storage_;

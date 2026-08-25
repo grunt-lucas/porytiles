@@ -42,6 +42,20 @@
 #     - Defined in xcut/config/config_validators.hpp or <layer>/config/<layer>_config_validators.hpp
 #     - Reference syntax: "<validator_func_name>:<field_name>"
 #     - Example: [compare_greater_than:num_tiles_primary]
+#
+# Settings vs. override knobs:
+#   Every entry is one of two kinds, distinguished by its type and default:
+#
+#   - A SETTING has a plain type and a static default (e.g. num_tiles_in_primary: std::size_t, default 512).
+#     The default IS the answer when nothing else provides one; consumers use the resolved value directly.
+#
+#   - An OVERRIDE KNOB has an optional type and a std::nullopt default (e.g. metatile_attribute_size,
+#     metatile_attribute_declaration_size). Here nullopt is a definite answer:
+#     "the user did not pin this value". Exactly one consumer, the domain reconciler
+#     (reconcile_metatile_attribute_schema), interprets that absence, by deriving the value from project
+#     facts or falling back to a documented assumption. No provider may "helpfully" fill an override knob
+#     with a derived value: a ConfigProvider reads stated values (a CLI flag, a YAML key, a header #define);
+#     it never derives one. Derivation belongs in the domain, where it can see every other resolved value.
 
 # ============================================================================
 # Enum Type Definitions
@@ -88,31 +102,6 @@ enum_types:
         cli_completion_name: optimize
         fuzzy_names: [ optimize ]
         brief: The Porytiles1 behavior; artifact is cleared and packed optimally.
-
-  - cpp_type: FrlgAlternateMaskMode
-    header_path: porytiles/infra/config/frlg_alternate_mask_mode.hpp
-    brief: Controls whether the FireRed/LeafGreen alternate metatile attribute masks are selected for a tileset.
-    details: |
-      FireRed and LeafGreen pack metatile attributes differently than Ruby/Sapphire/Emerald: the fields
-      use different bit masks and the layout is typically four bytes wide instead of two. This mode controls
-      whether Porytiles selects those alternate masks when resolving a tileset's attribute schema. In
-      automatic mode, Porytiles cross-references data/layouts/layouts.json and reads each layout's
-      layout_version to decide per tileset. The always and never values force an explicit choice, which is useful
-      when a tileset has no layouts.json entry or is referenced by both emerald and frlg layouts. This key
-      is intended to be set at the tileset scope.
-    enum_values:
-      - name: automatic
-        cli_completion_name: automatic
-        fuzzy_names: [ automatic, auto ]
-        brief: Cross-reference layouts.json layout_version to decide the masks per tileset.
-      - name: always
-        cli_completion_name: always
-        fuzzy_names: [ always, "true", "yes", "on" ]
-        brief: Always select the FRLG alternate masks for this tileset.
-      - name: never
-        cli_completion_name: never
-        fuzzy_names: [ never, "false", "no", "off" ]
-        brief: Never select the FRLG alternate masks; use the primary masks.
 
   - cpp_type: TilesPaletteMode
     header_path: porytiles/domain/config/tiles_palette_mode.hpp
@@ -517,6 +506,21 @@ config_values:
     validators: [ rgba_alpha_component_opaque ]
     cross_field_validators: [ ]
 
+  - canonical_name: Ignore Triple Layer Content
+    symbol: ignore_triple_layer_content
+    yaml_path: tileset.ignore_triple_layer_content
+    cli_option: ignore-triple-layer-content
+    cli_desc: >-
+      Demote the triple-layer-content-in-dual-mode error to a warning. When on, a metatile with content on all three
+      layers compiles in dual mode by dropping one layer group instead of failing. The dropped layer follows the
+      metatile's effective layer type: a 'layer_type' role pin if you set one, otherwise the bottom layer.
+    layer: domain
+    type: bool
+    parser: parse_bool
+    default_value: "false"
+    validators: [ ]
+    cross_field_validators: [ ]
+
   - canonical_name: Tiles Edit Mode
     symbol: tiles_edit_mode
     yaml_path: tileset.tiles.edit_mode
@@ -718,8 +722,8 @@ config_values:
     type: PrimaryPairingMode
     parser: parse_primary_pairing_mode
     default_value: "PrimaryPairingMode::automatic"
-    validators: []
-    cross_field_validators: []
+    validators: [ ]
+    cross_field_validators: [ ]
 
   - canonical_name: Primary Pairing Partners
     symbol: primary_pairing_partners
@@ -730,8 +734,8 @@ config_values:
     type: "std::vector<std::string>"
     parser: parse_string_vector
     default_value: "std::vector<std::string>{}"
-    validators: []
-    cross_field_validators: []
+    validators: [ ]
+    cross_field_validators: [ ]
 
   # Note: Unlike verify_checksums (consumed by app-layer use cases), the diagnostic filter values below are "meta-config"
   # — they are only consumed at the composition root (tools/driver/ commands) to wire the FilteredUserDiagnostics
@@ -749,8 +753,8 @@ config_values:
     type: std::vector<std::string>
     parser: parse_string_vector
     default_value: "std::vector<std::string>{}"
-    validators: []
-    cross_field_validators: []
+    validators: [ ]
+    cross_field_validators: [ ]
 
   - canonical_name: Diagnostic Warnings Include
     symbol: diagnostic_warnings_include
@@ -761,8 +765,8 @@ config_values:
     type: std::vector<std::string>
     parser: parse_string_vector
     default_value: "std::vector<std::string>{}"
-    validators: []
-    cross_field_validators: []
+    validators: [ ]
+    cross_field_validators: [ ]
 
   - canonical_name: Diagnostic Remarks Exclude
     symbol: diagnostic_remarks_exclude
@@ -773,8 +777,8 @@ config_values:
     type: std::vector<std::string>
     parser: parse_string_vector
     default_value: "std::vector<std::string>{}"
-    validators: []
-    cross_field_validators: []
+    validators: [ ]
+    cross_field_validators: [ ]
 
   - canonical_name: Diagnostic Remarks Include
     symbol: diagnostic_remarks_include
@@ -785,8 +789,8 @@ config_values:
     type: std::vector<std::string>
     parser: parse_string_vector
     default_value: "std::vector<std::string>{}"
-    validators: []
-    cross_field_validators: []
+    validators: [ ]
+    cross_field_validators: [ ]
 
   # Infrastructure Layer Configuration Values
   - canonical_name: Tileset Paths Primary Source
@@ -837,14 +841,49 @@ config_values:
     validators: [ ]
     cross_field_validators: [ ]
 
+  - canonical_name: Metatile Attribute Size
+    symbol: metatile_attribute_size
+    yaml_path: fieldmap.metatile_attribute_size
+    cli_option: metatile-attribute-size
+    cli_desc: >-
+      Pins the size in bytes of each metatile attribute entry (1, 2, or 4). When unset, Porytiles
+      derives the size from the resolved attribute field masks, which struct Tileset's declared
+      element width must corroborate exactly. Must be set explicitly on projects that declare more
+      than one mask layout (pokeemerald-expansion), one value per build flavor, and on projects
+      whose masks and struct Tileset declaration disagree or whose declaration is unusable.
+      Project-global.
+    layer: infra
+    type: std::optional<std::size_t>
+    parser: parse_optional_size_t
+    default_value: "std::nullopt"
+    validators: [ optional_size_t_val_one_two_or_four ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Metatile Attribute Declaration Size
+    symbol: metatile_attribute_declaration_size
+    yaml_path: fieldmap.metatile_attribute_declaration_size
+    cli_option: metatile-attribute-declaration-size
+    cli_desc: >-
+      The declared element width in bytes (1, 2, or 4) for generated gMetatileAttributes_* C
+      declarations (const uN / INCBIN_UN). Normally inferred from struct Tileset's
+      metatileAttributes member in include/global.fieldmap.h. Required when that declaration is
+      missing, unreadable, or not a pointer to u8, u16, or u32, since nothing else in a project
+      implies this width. Project-global.
+    layer: infra
+    type: std::optional<std::size_t>
+    parser: parse_optional_size_t
+    default_value: "std::nullopt"
+    validators: [ optional_size_t_val_one_two_or_four ]
+    cross_field_validators: [ ]
+
   - canonical_name: Metatile Attribute Fields
     symbol: metatile_attribute_fields
     yaml_path: fieldmap.metatile_attribute_fields
-    yaml_only: true  # Too complex for non-YAML providers (MetatileAttributeFieldSpecs)
+    yaml_only: true  # Too complex for non-YAML providers (MetatileAttributeFieldDefinitions)
     layer: infra
-    type: MetatileAttributeFieldSpecs
+    type: MetatileAttributeFieldDefinitions
     parser: parse_metatile_attribute_fields
-    default_value: "MetatileAttributeFieldSpecs{}"
+    default_value: "MetatileAttributeFieldDefinitions{}"
     validators: [ ]
     cross_field_validators: [ ]
 
@@ -860,64 +899,14 @@ config_values:
     validators: [ ]
     cross_field_validators: [ ]
 
-  - canonical_name: Write Layer Type Column
-    symbol: write_layer_type_column
-    yaml_path: fieldmap.write_layer_type_column
-    cli_option: write-layer-type-column
-    cli_desc: Emit and honor a layer_type column in the metatile attributes CSV.
+  - canonical_name: Role Pins
+    symbol: role_pins
+    yaml_path: fieldmap.role_pins
+    yaml_only: true  # Too complex for non-YAML providers (RolePinDefinitions)
     layer: infra
-    type: bool
-    parser: parse_bool
-    default_value: "false"
-    validators: [ ]
-    cross_field_validators: [ ]
-
-  - canonical_name: Use FRLG Alternate Masks
-    symbol: use_frlg_alternate_masks
-    yaml_path: fieldmap.use_frlg_alternate_masks
-    cli_option: use-frlg-alternate-masks
-    cli_desc: >-
-      Whether to select the FireRed/LeafGreen alternate metatile attribute masks for a tileset:
-      automatic (cross-reference layouts.json), always, or never. true/false are accepted as
-      aliases for always/never. Intended to be set at tileset scope in
-      porytiles/tilesets/<name>/config.yaml.
-    layer: infra
-    type: FrlgAlternateMaskMode
-    parser: parse_frlg_alternate_mask_mode
-    default_value: "FrlgAlternateMaskMode::automatic"
-    validators: [ ]
-    cross_field_validators: [ ]
-
-  - canonical_name: Metatile Layer Type Mask
-    symbol: metatile_layer_type_mask
-    yaml_path: fieldmap.metatile_layer_type_mask
-    cli_option: metatile-layer-type-mask
-    cli_desc: >-
-      Bit mask (a hex literal like 0xF000) for the layer-type bits of a metatile attribute. A mask of 0
-      disables the layer type, so every metatile is Normal and no layer-type bits are written. When unset,
-      Porytiles infers the mask from the base game (METATILE_ATTR_LAYER_MASK / sMetatileAttrMasks) and
-      falls back to the size-based default. Intended to be set at tileset scope in
-      porytiles/tilesets/<name>/config.yaml.
-    layer: infra
-    type: std::optional<std::uint32_t>
-    parser: parse_layer_type_mask
-    default_value: "std::nullopt"
-    validators: [ ]
-    cross_field_validators: [ ]
-
-  - canonical_name: Metatile Layer Type Mask FRLG
-    symbol: metatile_layer_type_mask_frlg
-    yaml_path: fieldmap.metatile_layer_type_mask_frlg
-    cli_option: metatile-layer-type-mask-frlg
-    cli_desc: >-
-      Bit mask (a hex literal like 0x60000000) for the layer-type bits under the FireRed/LeafGreen
-      alternate attribute layout. A mask of 0 disables the layer type. When unset, Porytiles infers the
-      mask from the base game and falls back to the size-based default. Intended to be set at tileset scope in
-      porytiles/tilesets/<name>/config.yaml.
-    layer: infra
-    type: std::optional<std::uint32_t>
-    parser: parse_layer_type_mask
-    default_value: "std::nullopt"
+    type: RolePinDefinitions
+    parser: parse_role_pins
+    default_value: "RolePinDefinitions{}"
     validators: [ ]
     cross_field_validators: [ ]
 

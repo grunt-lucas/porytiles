@@ -27,6 +27,17 @@ std::optional<MetatileAttribute> PorytilesTilesetComponent::get_attribute(std::s
     return std::nullopt;
 }
 
+PriorPinColumnState PorytilesTilesetComponent::prior_pin_column_state(FieldRole role) const
+{
+    const auto it = prior_pin_column_states_.find(role);
+    return it != prior_pin_column_states_.end() ? it->second : PriorPinColumnState::no_csv;
+}
+
+void PorytilesTilesetComponent::prior_pin_column_state(FieldRole role, PriorPinColumnState state)
+{
+    prior_pin_column_states_[role] = state;
+}
+
 void PorytilesTilesetComponent::set_palette(std::size_t palette_index, Palette<Rgba32, palette::max_size> palette)
 {
     if (palette_index >= palette::num_palettes) {

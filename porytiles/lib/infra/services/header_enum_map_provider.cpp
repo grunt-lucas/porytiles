@@ -60,12 +60,12 @@ ChainableResult<void> HeaderEnumMapProvider::try_add_entry(const Entry &entry) c
     const auto &name = entry.name();
 
     // Filter: must start with the configured prefix
-    if (!name.starts_with(spec_.prefix)) {
+    if (!name.starts_with(definition_.prefix)) {
         return {};
     }
 
-    // Filter: skip names the spec excludes
-    if (spec_.skipped.contains(name)) {
+    // Filter: skip names the definition excludes
+    if (definition_.skipped.contains(name)) {
         return {};
     }
 
@@ -75,7 +75,7 @@ ChainableResult<void> HeaderEnumMapProvider::try_add_entry(const Entry &entry) c
     // A parsed value outside the field's range is a hard error, not a name to drop quietly. Dropping it would resurface
     // later as a baffling "no such name" lookup failure; the real problem is that the field's mask is too narrow for
     // the header's constants (or the name is a sentinel that belongs in the skipped set).
-    if (raw_value < 0 || raw_value > spec_.max_value) {
+    if (raw_value < 0 || raw_value > definition_.max_value) {
         load_failed_ = true;
         std::vector<std::string> lines;
         FileHighlightPrinter printer{format_};
@@ -87,8 +87,8 @@ ChainableResult<void> HeaderEnumMapProvider::try_add_entry(const Entry &entry) c
             new_pos.column,
             FormatParam{name, Style::bold},
             FormatParam{raw_value, Style::bold},
-            FormatParam{std::bit_width(spec_.max_value)},
-            FormatParam{spec_.field_display_name, Style::bold}));
+            FormatParam{std::bit_width(definition_.max_value)},
+            FormatParam{definition_.field_display_name, Style::bold}));
 
         assert_or_panic(new_pos.line > 0, "new_pos.line must be positive (1-based)");
         assert_or_panic(new_pos.line <= driver_->file_lines().size(), "new_pos.line exceeds file bounds");
@@ -119,7 +119,7 @@ ChainableResult<void> HeaderEnumMapProvider::try_add_entry(const Entry &entry) c
                 FormatParam{header_path_, Style::bold},
                 new_pos.line,
                 new_pos.column,
-                FormatParam{spec_.field_display_name},
+                FormatParam{definition_.field_display_name},
                 FormatParam{name, Style::bold}),
             new_pos,
             format_->format(
@@ -140,7 +140,7 @@ ChainableResult<void> HeaderEnumMapProvider::try_add_entry(const Entry &entry) c
                 FormatParam{header_path_, Style::bold},
                 new_pos.line,
                 new_pos.column,
-                FormatParam{spec_.field_display_name},
+                FormatParam{definition_.field_display_name},
                 FormatParam{value, Style::bold},
                 FormatParam{orig_name, Style::bold},
                 FormatParam{name, Style::bold}),
@@ -166,19 +166,19 @@ ChainableResult<void> HeaderEnumMapProvider::try_add_entry(const Entry &entry) c
 
 ChainableResult<std::uint32_t> HeaderEnumMapProvider::lookup(const std::string &name) const
 {
-    if (!name.starts_with(spec_.prefix)) {
+    if (!name.starts_with(definition_.prefix)) {
         return FormattableError{
             "Invalid {} name '{}': expected prefix '{}'.",
-            FormatParam{spec_.field_display_name},
+            FormatParam{definition_.field_display_name},
             FormatParam{name, Style::bold},
-            FormatParam{spec_.prefix, Style::bold}};
+            FormatParam{definition_.prefix, Style::bold}};
     }
 
     auto load_result = ensure_loaded();
     if (!load_result.has_value()) {
         return ChainableResult<std::uint32_t>{
             FormattableError{
-                "Provider lookup for field '{}' failed.", FormatParam{spec_.field_display_name, Style::bold}},
+                "Provider lookup for field '{}' failed.", FormatParam{definition_.field_display_name, Style::bold}},
             load_result};
     }
 
@@ -186,7 +186,7 @@ ChainableResult<std::uint32_t> HeaderEnumMapProvider::lookup(const std::string &
     if (it == name_to_value_.end()) {
         return FormattableError{
             "No {} named '{}' exists in '{}'.",
-            FormatParam{spec_.field_display_name},
+            FormatParam{definition_.field_display_name},
             FormatParam{name, Style::bold},
             FormatParam{header_path_.string(), Style::bold}};
     }
@@ -199,7 +199,7 @@ ChainableResult<std::string> HeaderEnumMapProvider::lookup(std::uint32_t value) 
     if (!load_result.has_value()) {
         return ChainableResult<std::string>{
             FormattableError{
-                "Provider lookup for field '{}' failed.", FormatParam{spec_.field_display_name, Style::bold}},
+                "Provider lookup for field '{}' failed.", FormatParam{definition_.field_display_name, Style::bold}},
             load_result};
     }
 
@@ -207,7 +207,7 @@ ChainableResult<std::string> HeaderEnumMapProvider::lookup(std::uint32_t value) 
     if (it == value_to_name_.end()) {
         return FormattableError{
             "No {} with value '{}' exists in '{}'.",
-            FormatParam{spec_.field_display_name},
+            FormatParam{definition_.field_display_name},
             FormatParam{value, Style::bold},
             FormatParam{header_path_.string(), Style::bold}};
     }
@@ -220,7 +220,7 @@ ChainableResult<void> HeaderEnumMapProvider::ensure_loaded() const
         if (load_failed_) {
             return FormattableError{
                 "Header file for field '{}' previously failed to load.",
-                FormatParam{spec_.field_display_name, Style::bold}};
+                FormatParam{definition_.field_display_name, Style::bold}};
         }
         return {};
     }
@@ -231,7 +231,7 @@ ChainableResult<void> HeaderEnumMapProvider::ensure_loaded() const
     driver_ = std::make_unique<CParserFacade>(header_path_, format_);
 
     // Parse #define statements when the format admits them
-    if (spec_.format == HeaderFormat::defines_only || spec_.format == HeaderFormat::either) {
+    if (definition_.format == HeaderFormat::defines_only || definition_.format == HeaderFormat::either) {
         auto defines_result = driver_->parse_defines();
         if (!defines_result.has_value()) {
             load_failed_ = true;
@@ -249,7 +249,7 @@ ChainableResult<void> HeaderEnumMapProvider::ensure_loaded() const
     }
 
     // Parse enum declarations when the format admits them
-    if (spec_.format == HeaderFormat::enums_only || spec_.format == HeaderFormat::either) {
+    if (definition_.format == HeaderFormat::enums_only || definition_.format == HeaderFormat::either) {
         auto enums_result = driver_->parse_enums();
         if (!enums_result.has_value()) {
             load_failed_ = true;
@@ -269,8 +269,8 @@ ChainableResult<void> HeaderEnumMapProvider::ensure_loaded() const
         load_failed_ = true;
         return FormattableError{
             "Field '{}' declared provider prefix '{}' in '{}' but no matching names were found.",
-            FormatParam{spec_.field_display_name, Style::bold},
-            FormatParam{spec_.prefix, Style::bold},
+            FormatParam{definition_.field_display_name, Style::bold},
+            FormatParam{definition_.prefix, Style::bold},
             FormatParam{header_path_.string(), Style::bold}};
     }
 
@@ -290,11 +290,14 @@ ProviderMap build_provider_map(
         if (!field.has_provider()) {
             continue;
         }
-        const ProviderSpec &spec = field.provider_spec();
+        const ProviderDefinition &definition = field.provider_definition();
         providers.emplace(
             field.name(),
             std::make_unique<HeaderEnumMapProvider>(
-                project_root / spec.header, spec.to_enum_spec(field.name(), field.max_value()), format, diag));
+                project_root / definition.header,
+                definition.to_enum_definition(field.name(), field.max_value()),
+                format,
+                diag));
     }
     return providers;
 }

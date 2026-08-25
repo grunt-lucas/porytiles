@@ -1649,6 +1649,150 @@ ChainableResult<std::vector<StructInitializerDeclaration>> Parser::parse_struct_
     return structs;
 }
 
+ChainableResult<std::vector<StructDefinition>> Parser::parse_struct_definitions()
+{
+    std::vector<StructDefinition> definitions;
+
+    // Reset position to beginning
+    current_ = 0;
+
+    while (!is_at_end()) {
+        // Skip newlines
+        while (check(TokenType::newline)) {
+            advance();
+        }
+
+        if (is_at_end()) {
+            break;
+        }
+
+        // Look for pattern: struct TYPE { members... } [;]
+        std::size_t scan_start = current_;
+
+        if (!check(TokenType::identifier) || peek().text() != "struct") {
+            if (current_ == scan_start) {
+                advance();
+            }
+            continue;
+        }
+        advance(); // consume 'struct'
+
+        // Get the struct tag name
+        if (!check(TokenType::identifier)) {
+            continue;
+        }
+        std::string struct_name = peek().text();
+        SourcePosition name_pos = peek().position();
+        advance(); // consume tag name
+
+        // Skip any newlines before '{'
+        while (check(TokenType::newline)) {
+            advance();
+        }
+
+        // A definition has a member body; anything else (forward declaration, variable declaration, struct-typed
+        // member of an enclosing scan) is not a definition and is left for the outer loop to skip past.
+        if (!check(TokenType::left_brace)) {
+            continue;
+        }
+
+        std::vector<Token> body_tokens = collect_brace_contents(tokens_, current_);
+        current_ = skip_balanced_braces(tokens_, current_);
+        if (check(TokenType::semicolon)) {
+            advance();
+        }
+
+        // Split the body into member declarations at depth-0 semicolons, dropping newlines and preprocessor
+        // directive lines so a conditional inside the body cannot poison the neighboring members.
+        std::vector<std::vector<Token>> member_runs;
+        std::vector<Token> run;
+        int nesting_depth = 0;
+        for (std::size_t i = 0; i < body_tokens.size(); ++i) {
+            const Token &tok = body_tokens[i];
+            if (tok.is(TokenType::hash) && run.empty()) {
+                while (i < body_tokens.size() && !body_tokens[i].is(TokenType::newline)) {
+                    ++i;
+                }
+                continue;
+            }
+            if (tok.is(TokenType::newline)) {
+                continue;
+            }
+            if (tok.is(TokenType::left_brace)) {
+                ++nesting_depth;
+            }
+            else if (tok.is(TokenType::right_brace)) {
+                --nesting_depth;
+            }
+            if (tok.is(TokenType::semicolon) && nesting_depth == 0) {
+                if (!run.empty()) {
+                    member_runs.push_back(std::move(run));
+                    run.clear();
+                }
+                continue;
+            }
+            run.push_back(tok);
+        }
+
+        // Pattern-match each member against the simple declarator shape; anything else is skipped tolerantly.
+        std::vector<StructMemberDeclaration> members;
+        for (const auto &member_tokens : member_runs) {
+            std::size_t pos = 0;
+            bool is_const = false;
+
+            if (pos < member_tokens.size() && member_tokens[pos].is(TokenType::identifier) &&
+                member_tokens[pos].text() == "const") {
+                is_const = true;
+                ++pos;
+            }
+            // A `struct TYPE` member's type is the tag name, not the keyword.
+            if (pos < member_tokens.size() && member_tokens[pos].is(TokenType::identifier) &&
+                member_tokens[pos].text() == "struct") {
+                ++pos;
+            }
+            if (pos >= member_tokens.size() || !member_tokens[pos].is(TokenType::identifier)) {
+                continue;
+            }
+            std::string type_name = member_tokens[pos].text();
+            ++pos;
+            // East-const spelling (`u16 const *`) qualifies the same declaration.
+            if (pos < member_tokens.size() && member_tokens[pos].is(TokenType::identifier) &&
+                member_tokens[pos].text() == "const") {
+                is_const = true;
+                ++pos;
+            }
+            std::size_t pointer_depth = 0;
+            while (pos < member_tokens.size() && member_tokens[pos].is(TokenType::star)) {
+                ++pointer_depth;
+                ++pos;
+            }
+            if (pos >= member_tokens.size() || !member_tokens[pos].is(TokenType::identifier)) {
+                continue;
+            }
+            std::string member_name = member_tokens[pos].text();
+            SourcePosition member_pos = member_tokens[pos].position();
+            ++pos;
+            // Consume a bitfield width (`:1` or `:MACRO`); the width itself is not recorded.
+            if (pos + 1 < member_tokens.size() && member_tokens[pos].is(TokenType::colon) &&
+                (member_tokens[pos + 1].is(TokenType::integer_literal) ||
+                 member_tokens[pos + 1].is(TokenType::identifier))) {
+                pos += 2;
+            }
+            if (pos != member_tokens.size()) {
+                continue; // leftover tokens: array suffix, second declarator, or another unsupported shape
+            }
+
+            members.push_back(
+                StructMemberDeclaration{
+                    std::move(type_name), pointer_depth, std::move(member_name), is_const, member_pos});
+        }
+
+        definitions.push_back(StructDefinition{std::move(struct_name), std::move(members), name_pos});
+    }
+
+    return definitions;
+}
+
 ChainableResult<std::vector<IncbinDeclaration>> Parser::parse_incbin_arrays()
 {
     std::vector<IncbinDeclaration> incbins;

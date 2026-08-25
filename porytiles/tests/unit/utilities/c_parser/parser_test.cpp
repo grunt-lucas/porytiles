@@ -70,6 +70,17 @@ class ParserTests : public ::testing::Test {
         return parser.parse_struct_variables();
     }
 
+    [[nodiscard]] ChainableResult<std::vector<StructDefinition>> parse_struct_definitions(const std::string &source)
+    {
+        Lexer lexer{&formatter_, source};
+        auto tokens_result = lexer.lex();
+        if (!tokens_result.has_value()) {
+            return ChainableResult<std::vector<StructDefinition>>{tokens_result};
+        }
+        Parser parser{&formatter_, std::move(tokens_result).value()};
+        return parser.parse_struct_definitions();
+    }
+
     [[nodiscard]] ChainableResult<std::vector<IncbinDeclaration>> parse_incbin_arrays(const std::string &source)
     {
         Lexer lexer{&formatter_, source};
@@ -1606,6 +1617,148 @@ TEST_F(ParserTests, ConditionalComparisonExpressionIsDecidable)
     EXPECT_FALSE(has_define(result.value(), "BRANCH_ONE"));
     EXPECT_TRUE(has_define(result.value(), "BRANCH_TWO"));
     EXPECT_FALSE(has_define(result.value(), "BRANCH_ELSE"));
+}
+
+TEST_F(ParserTests, StructDefinitionParsesEmeraldShapedTileset)
+{
+    // The pokeemerald shape: plain bool8 members, offset comments, a pointer-to-array member (skipped), and a
+    // typedef'd callback member.
+    auto result = parse_struct_definitions(R"(
+struct Tileset
+{
+    /*0x00*/ bool8 isCompressed;
+    /*0x01*/ bool8 isSecondary;
+    /*0x04*/ const u32 *tiles;
+    /*0x08*/ const u16 (*palettes)[16];
+    /*0x0C*/ const u16 *metatiles;
+    /*0x10*/ const u16 *metatileAttributes;
+    /*0x14*/ TilesetCB callback;
+};
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1U);
+    const StructDefinition &def = result.value().front();
+    EXPECT_EQ(def.name, "Tileset");
+    // The pointer-to-array palettes member is unparseable and skipped; six members survive.
+    ASSERT_EQ(def.members.size(), 6U);
+    EXPECT_EQ(def.members[0].member_name, "isCompressed");
+    EXPECT_EQ(def.members[0].type_name, "bool8");
+    EXPECT_EQ(def.members[0].pointer_depth, 0U);
+    EXPECT_FALSE(def.members[0].is_const);
+    const StructMemberDeclaration &attrs = def.members[4];
+    EXPECT_EQ(attrs.member_name, "metatileAttributes");
+    EXPECT_EQ(attrs.type_name, "u16");
+    EXPECT_EQ(attrs.pointer_depth, 1U);
+    EXPECT_TRUE(attrs.is_const);
+    EXPECT_EQ(def.members[5].member_name, "callback");
+    EXPECT_EQ(def.members[5].type_name, "TilesetCB");
+}
+
+TEST_F(ParserTests, StructDefinitionParsesExpansionShapedBitfields)
+{
+    // The expansion shape adds bitfield members with trailing comments.
+    auto result = parse_struct_definitions(R"(
+struct Tileset
+{
+    /*0x00*/ u8 isCompressed:1;
+    /*0x00*/ u8 swapPalettes:7; // Bitmask determining whether palette has an alternate, night-time palette
+    /*0x01*/ bool8 isSecondary;
+    /*0x10*/ const u16 *metatileAttributes;
+    /*0x14*/ TilesetCB callback;
+};
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1U);
+    const StructDefinition &def = result.value().front();
+    ASSERT_EQ(def.members.size(), 5U);
+    EXPECT_EQ(def.members[0].member_name, "isCompressed");
+    EXPECT_EQ(def.members[0].type_name, "u8");
+    EXPECT_EQ(def.members[1].member_name, "swapPalettes");
+    EXPECT_EQ(def.members[3].member_name, "metatileAttributes");
+    EXPECT_EQ(def.members[3].pointer_depth, 1U);
+}
+
+TEST_F(ParserTests, StructDefinitionParsesFireredShapedU32Attributes)
+{
+    // The pokefirered shape declares metatileAttributes as 'const u32 *' and places it after the callback.
+    auto result = parse_struct_definitions(R"(
+struct Tileset
+{
+    /*0x00*/ bool8 isCompressed:1;
+    /*0x10*/ TilesetCB callback;
+    /*0x14*/ const u32 *metatileAttributes;
+};
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1U);
+    const StructDefinition &def = result.value().front();
+    ASSERT_EQ(def.members.size(), 3U);
+    EXPECT_EQ(def.members[2].member_name, "metatileAttributes");
+    EXPECT_EQ(def.members[2].type_name, "u32");
+    EXPECT_EQ(def.members[2].pointer_depth, 1U);
+    EXPECT_TRUE(def.members[2].is_const);
+}
+
+TEST_F(ParserTests, StructDefinitionCapturesStructTypedMembers)
+{
+    // A 'struct TYPE' member records the tag name as its type, as in MapLayout's tileset pointers.
+    auto result = parse_struct_definitions(R"(
+struct MapLayout
+{
+    /*0x00*/ s32 width;
+    /*0x10*/ const struct Tileset *primaryTileset;
+};
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1U);
+    const StructDefinition &def = result.value().front();
+    ASSERT_EQ(def.members.size(), 2U);
+    EXPECT_EQ(def.members[1].member_name, "primaryTileset");
+    EXPECT_EQ(def.members[1].type_name, "Tileset");
+    EXPECT_EQ(def.members[1].pointer_depth, 1U);
+}
+
+TEST_F(ParserTests, StructDefinitionSkipsVariableDeclarationsAndForwardDeclarations)
+{
+    // A struct variable declaration and a forward declaration are not type definitions.
+    auto result = parse_struct_definitions(R"(
+struct Tileset;
+const struct Tileset gTileset_General = {
+    .isCompressed = TRUE,
+};
+struct Real { u8 field; };
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1U);
+    EXPECT_EQ(result.value().front().name, "Real");
+    ASSERT_EQ(result.value().front().members.size(), 1U);
+    EXPECT_EQ(result.value().front().members.front().member_name, "field");
+}
+
+TEST_F(ParserTests, StructDefinitionIgnoresDirectivesAndUnsupportedMembers)
+{
+    // Preprocessor lines inside the body are dropped, and array members / multiple declarators are skipped without
+    // poisoning their neighbors.
+    auto result = parse_struct_definitions(R"(
+struct Mixed
+{
+    u8 before;
+#if SOME_FLAG
+    u8 conditional;
+#endif
+    u8 data[16];
+    u8 a, b;
+    const u16 *after;
+};
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1U);
+    const StructDefinition &def = result.value().front();
+    ASSERT_EQ(def.members.size(), 3U);
+    EXPECT_EQ(def.members[0].member_name, "before");
+    EXPECT_EQ(def.members[1].member_name, "conditional");
+    EXPECT_EQ(def.members[2].member_name, "after");
+    EXPECT_EQ(def.members[2].pointer_depth, 1U);
 }
 
 TEST_F(ParserTests, ConditionalLogicalExpressionIsDecidable)

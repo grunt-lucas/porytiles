@@ -24,7 +24,7 @@
 /// - create-tileset: no completion (user provides new name)
 class CompletionCommand final : public Command {
   public:
-    explicit CompletionCommand(CLI::App &parent_app) : Command{parent_app, kCommandName, kCommandDesc, kCommandGroup}
+    explicit CompletionCommand(CLI::App &parent_app) : Command{parent_app, command_name, command_desc, command_group}
     {
         CLI::App &cmd = get_app();
         cmd.add_option("<shell>", shell_, "Shell type: bash, zsh, or fish")->required();
@@ -49,10 +49,49 @@ class CompletionCommand final : public Command {
         }
     }
 
-    static constexpr auto kCommandName = "completion";
-    static constexpr auto kCommandDesc = "Generate shell completion scripts.";
-    static constexpr auto kCommandGroup = "UTILITIES";
+    static constexpr auto command_name = "completion";
+    static constexpr auto command_desc = "Generate shell completion scripts.";
+    static constexpr auto command_group = "UTILITIES";
     std::string shell_;
+
+    /// @brief Escapes text for embedding inside a single-quoted fish string.
+    ///
+    /// @details
+    /// Fish single quotes allow backslash escapes for the quote character and the backslash itself, so both get a
+    /// leading backslash. Option descriptions flow through here: an apostrophe in a description would otherwise
+    /// close the quoted string early and leave the whole script unparseable.
+    [[nodiscard]] static std::string escape_fish_single_quoted(const std::string &text)
+    {
+        std::string escaped;
+        escaped.reserve(text.size());
+        for (const char c : text) {
+            if (c == '\'' || c == '\\') {
+                escaped += '\\';
+            }
+            escaped += c;
+        }
+        return escaped;
+    }
+
+    /// @brief Escapes text for embedding inside a single-quoted zsh string.
+    ///
+    /// @details
+    /// POSIX-style single quotes have no in-quote escapes, so a literal quote becomes '\'': close the string, emit
+    /// an escaped quote, reopen the string.
+    [[nodiscard]] static std::string escape_zsh_single_quoted(const std::string &text)
+    {
+        std::string escaped;
+        escaped.reserve(text.size());
+        for (const char c : text) {
+            if (c == '\'') {
+                escaped += "'\\''";
+            }
+            else {
+                escaped += c;
+            }
+        }
+        return escaped;
+    }
 
     void output_bash_completion()
     {
@@ -102,8 +141,8 @@ class CompletionCommand final : public Command {
         std::cout << "    subcommand=\"\"\n";
         std::cout << "    for ((i=1; i < COMP_CWORD; i++)); do\n";
         std::cout << "        case \"${COMP_WORDS[i]}\" in\n";
-        std::cout << "            compile-tileset|create-tileset|decompile-tileset|dump-tileset-config|"
-                     "import-tileset|list-tilesets|completion)\n";
+        std::cout << "            compile-tileset|create-tileset|decompile-tileset|dump-attribute-schema|"
+                     "dump-tileset-config|import-tileset|list-tilesets|completion)\n";
         std::cout << "                subcommand=\"${COMP_WORDS[i]}\"\n";
         std::cout << "                break\n";
         std::cout << "                ;;\n";
@@ -112,8 +151,8 @@ class CompletionCommand final : public Command {
         std::cout << "\n";
 
         std::cout << "    # Main commands\n";
-        std::cout << "    local commands=\"compile-tileset create-tileset decompile-tileset dump-tileset-config "
-                     "import-tileset list-tilesets completion\"\n";
+        std::cout << "    local commands=\"compile-tileset create-tileset decompile-tileset dump-attribute-schema "
+                     "dump-tileset-config import-tileset list-tilesets completion\"\n";
         std::cout << "\n";
         std::cout << "    # Config options\n";
         std::cout << "    local config_opts=\"";
@@ -175,6 +214,9 @@ class CompletionCommand final : public Command {
         std::cout << "        local extra_opts=\"\"\n";
         std::cout << "        if [[ \"$subcommand\" == \"create-tileset\" ]]; then\n";
         std::cout << "            extra_opts=\"--secondary\"\n";
+        std::cout << "        elif [[ \"$subcommand\" == \"dump-attribute-schema\" || \"$subcommand\" == "
+                     "\"dump-tileset-config\" ]]; then\n";
+        std::cout << "            extra_opts=\"--allow-missing-tileset\"\n";
         std::cout << "        fi\n";
         std::cout << "        COMPREPLY=( $(compgen -W \"${config_opts} ${extra_opts}\" -- ${cur}) )\n";
         std::cout << "        return 0\n";
@@ -188,8 +230,8 @@ class CompletionCommand final : public Command {
         std::cout << "            # Only managed tilesets\n";
         std::cout << "            COMPREPLY=( $(_porytiles_complete_tilesets managed) )\n";
         std::cout << "            ;;\n";
-        std::cout << "        dump-tileset-config)\n";
-        std::cout << "            # All tilesets (config can be dumped for any)\n";
+        std::cout << "        dump-attribute-schema|dump-tileset-config)\n";
+        std::cout << "            # All tilesets (config and schema can be dumped for any)\n";
         std::cout << "            COMPREPLY=( $(_porytiles_complete_tilesets all) )\n";
         std::cout << "            ;;\n";
         std::cout << "        import-tileset)\n";
@@ -262,6 +304,7 @@ class CompletionCommand final : public Command {
         std::cout << "        'compile-tileset:Compile a tileset'\n";
         std::cout << "        'create-tileset:Create a new tileset'\n";
         std::cout << "        'decompile-tileset:Decompile a tileset'\n";
+        std::cout << "        'dump-attribute-schema:Dump the resolved metatile attribute schema for a tileset'\n";
         std::cout << "        'dump-tileset-config:Dump the full configuration provenance chain for a tileset'\n";
         std::cout << "        'import-tileset:Import a pre-existing tileset'\n";
         std::cout << "        'list-tilesets:List tileset names in the project'\n";
@@ -275,7 +318,8 @@ class CompletionCommand final : public Command {
 
         auto meta = porytiles::get_cli_option_metadata();
         for (const auto &opt : meta) {
-            std::cout << "        '--" << opt.long_name << "[" << opt.description << "]";
+            const std::string description = escape_zsh_single_quoted(opt.description);
+            std::cout << "        '--" << opt.long_name << "[" << description << "]";
             if (!opt.choices.empty()) {
                 std::cout << ":choice:(";
                 for (std::size_t i = 0; i < opt.choices.size(); ++i) {
@@ -288,7 +332,7 @@ class CompletionCommand final : public Command {
             }
             std::cout << "'\n";
             if (opt.has_negation) {
-                std::cout << "        '--no-" << opt.long_name << "[Disable " << opt.description << "]'\n";
+                std::cout << "        '--no-" << opt.long_name << "[Disable " << description << "]'\n";
             }
         }
 
@@ -313,9 +357,11 @@ class CompletionCommand final : public Command {
         std::cout
             << "                    [[ \"$state\" == tileset_managed ]] && _porytiles_complete_tilesets managed\n";
         std::cout << "                    ;;\n";
-        std::cout << "                dump-tileset-config)\n";
+        std::cout << "                dump-attribute-schema|dump-tileset-config)\n";
         std::cout << "                    _arguments \\\n";
         std::cout << "                        $config_opts \\\n";
+        std::cout << "                        '--allow-missing-tileset[Do not error when the tileset does not "
+                     "exist]' \\\n";
         std::cout << "                        '1:tileset:->tileset_all'\n";
         std::cout << "                    [[ \"$state\" == tileset_all ]] && _porytiles_complete_tilesets all\n";
         std::cout << "                    ;;\n";
@@ -400,8 +446,8 @@ class CompletionCommand final : public Command {
         std::cout << "    set -l cmd (commandline -opc)\n";
         std::cout << "    for word in $cmd[2..-1]\n";
         std::cout << "        switch $word\n";
-        std::cout << "            case compile-tileset create-tileset decompile-tileset dump-tileset-config "
-                     "import-tileset list-tilesets completion\n";
+        std::cout << "            case compile-tileset create-tileset decompile-tileset dump-attribute-schema "
+                     "dump-tileset-config import-tileset list-tilesets completion\n";
         std::cout << "                return 1\n";
         std::cout << "        end\n";
         std::cout << "    end\n";
@@ -428,6 +474,8 @@ class CompletionCommand final : public Command {
                      "tileset'\n";
         std::cout << "complete -c porytiles -f -n __porytiles_needs_subcommand -a decompile-tileset -d 'Decompile a "
                      "tileset'\n";
+        std::cout << "complete -c porytiles -f -n __porytiles_needs_subcommand -a dump-attribute-schema -d 'Dump the "
+                     "resolved metatile attribute schema for a tileset'\n";
         std::cout << "complete -c porytiles -f -n __porytiles_needs_subcommand -a dump-tileset-config -d 'Dump the "
                      "full configuration provenance chain for a tileset'\n";
         std::cout << "complete -c porytiles -f -n __porytiles_needs_subcommand -a import-tileset -d 'Import a "
@@ -450,6 +498,8 @@ class CompletionCommand final : public Command {
                      "'(__porytiles_complete_tilesets managed)'\n";
         std::cout << "complete -c porytiles -f -n '__porytiles_using_subcommand decompile-tileset' -a "
                      "'(__porytiles_complete_tilesets managed)'\n";
+        std::cout << "complete -c porytiles -f -n '__porytiles_using_subcommand dump-attribute-schema' -a "
+                     "'(__porytiles_complete_tilesets all)'\n";
         std::cout << "complete -c porytiles -f -n '__porytiles_using_subcommand dump-tileset-config' -a "
                      "'(__porytiles_complete_tilesets all)'\n";
         std::cout << "complete -c porytiles -f -n '__porytiles_using_subcommand import-tileset' -a "
@@ -460,6 +510,14 @@ class CompletionCommand final : public Command {
         std::cout << "# Options for create-tileset subcommand\n";
         std::cout << "complete -c porytiles -f -n '__porytiles_using_subcommand create-tileset' -l secondary -d "
                      "'Create a secondary tileset instead of a primary'\n";
+        std::cout << "\n";
+
+        // Options for the dump subcommands
+        std::cout << "# Options for the dump subcommands\n";
+        std::cout << "complete -c porytiles -f -n '__porytiles_using_subcommand dump-attribute-schema' -l "
+                     "allow-missing-tileset -d 'Do not error when the tileset does not exist'\n";
+        std::cout << "complete -c porytiles -f -n '__porytiles_using_subcommand dump-tileset-config' -l "
+                     "allow-missing-tileset -d 'Do not error when the tileset does not exist'\n";
         std::cout << "\n";
 
         // Options for list-tilesets subcommand
@@ -480,7 +538,8 @@ class CompletionCommand final : public Command {
 
         auto meta = porytiles::get_cli_option_metadata();
         for (const auto &opt : meta) {
-            std::cout << "complete -c porytiles -f -l " << opt.long_name << " -d '" << opt.description << "'";
+            const std::string description = escape_fish_single_quoted(opt.description);
+            std::cout << "complete -c porytiles -f -l " << opt.long_name << " -d '" << description << "'";
             if (!opt.choices.empty()) {
                 std::cout << " -xa '";
                 for (std::size_t i = 0; i < opt.choices.size(); ++i) {
@@ -493,7 +552,7 @@ class CompletionCommand final : public Command {
             }
             std::cout << "\n";
             if (opt.has_negation) {
-                std::cout << "complete -c porytiles -f -l no-" << opt.long_name << " -d 'Disable " << opt.description
+                std::cout << "complete -c porytiles -f -l no-" << opt.long_name << " -d 'Disable " << description
                           << "'\n";
             }
         }

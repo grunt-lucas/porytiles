@@ -13,6 +13,7 @@
 #include <sstream>
 #include <string>
 
+#include "porytiles/domain/config/role_pin_definition.hpp"
 #include "porytiles/domain/models/metatile.hpp"
 #include "porytiles/domain/models/metatile_attribute.hpp"
 #include "porytiles/domain/models/metatile_attribute_schema.hpp"
@@ -146,11 +147,12 @@ ChainableResult<void> save_metatiles_bin(const std::vector<TilemapEntry> &entrie
 {
     std::ofstream out{path};
     for (const auto &entry : entries) {
+        // TODO: metatiles are a fixed format, these magic numbers could probably live somewhere else
         const auto tile_value = static_cast<uint16_t>(
-            (entry.tile_index() & 0x3ff) | ((entry.h_flip() & 1) << 10) | ((entry.v_flip() & 1) << 11) |
-            ((entry.palette_index() & 0xf) << 12));
+            (entry.tile_index() & 0x3ffu) | ((entry.h_flip() & 1u) << 10u) | ((entry.v_flip() & 1u) << 11u) |
+            ((entry.palette_index() & 0xfu) << 12u));
         out << static_cast<std::uint8_t>(tile_value);
-        out << static_cast<std::uint8_t>(tile_value >> 8);
+        out << static_cast<std::uint8_t>(tile_value >> 8u);
     }
     out.flush();
     return {};
@@ -743,11 +745,11 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
     const auto &attributes = src.porytiles_component().metatile_attributes();
 
     PT_TRY_ASSIGN_CHAIN_ERR(
-        write_layer_type_column_cv,
-        infra_config_->write_layer_type_column(ConfigScopeType::tileset, src.name()),
+        role_pins_cv,
+        infra_config_->role_pins(ConfigScopeType::tileset, src.name()),
         void,
-        "Failed to resolve write_layer_type_column.");
-    const bool write_layer_type_column = write_layer_type_column_cv.value();
+        "Failed to resolve role_pins.");
+    const RolePinDefinitions &role_pins = role_pins_cv.value();
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
@@ -762,13 +764,16 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
             "Failed to open file for writing: '{}'.", FormatParam{transaction_dest_path.string(), Style::bold}};
     }
 
-    // Write header: id plus every schema field name in schema order, with the optional trailing layer_type column.
+    // Write header: id plus every schema value field name in schema order, then one trailing pin column per role pin in
+    // config order. A pin column's name is fixed at "pin::<role>", so the header records which columns are pin columns
+    // and the loader never has to infer that from a column's position. A role-bearing field is not a true value column;
+    // the CSV addresses a role's per-metatile value only through its pin column.
     std::string header = "id";
-    for (const Field &field : schema_->fields()) {
+    for (const Field &field : schema_->value_fields()) {
         header += "," + field.name();
     }
-    if (write_layer_type_column) {
-        header += ",layer_type";
+    for (const RolePinDefinition &pin : role_pins) {
+        header += "," + pin_column_name(pin.role);
     }
     out << header << "\n";
 
@@ -785,7 +790,7 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
     auto render_fields = [&](const MetatileAttribute &attribute,
                              std::size_t metatile_id) -> ChainableResult<std::string> {
         std::string cells{};
-        for (const Field &field : schema_->fields()) {
+        for (const Field &field : schema_->value_fields()) {
             if (!cells.empty()) {
                 cells += ",";
             }
@@ -811,9 +816,9 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
         return cells;
     };
 
-    // A row is all-default only when every field's effective value equals its schema default.
+    // A row is all-default only when every value field's effective value equals its schema default.
     auto is_all_default = [&](const MetatileAttribute &attribute) -> bool {
-        for (const Field &field : schema_->fields()) {
+        for (const Field &field : schema_->value_fields()) {
             if (effective_value(attribute, field) != field.default_value()) {
                 return false;
             }
@@ -826,8 +831,8 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
     // exactly the values the row was omitted for.
     auto omit_row = [&](const MetatileAttribute &attribute) -> bool { return is_all_default(attribute); };
 
-    if (!write_layer_type_column) {
-        // Knob off: byte-identical to the historical output. Skip all-default rows, and if none survive write only
+    if (role_pins.empty()) {
+        // No role pins: byte-identical to the historical output. Skip all-default rows, and if none survive write only
         // the header.
         std::size_t non_default_count = 0;
         for (const auto &attribute : attributes | std::views::values) {
@@ -853,32 +858,54 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
         return {};
     }
 
-    // Renders the trailing layer_type cell for one attribute. Only an explicitly pinned layer type emits a token; an
-    // inferred/auto layer type (the default, and everything a bin parser or decompiler produces) emits a blank cell.
-    // This is what keeps the "blank = auto" workflow intact across a load/save round-trip: a row the user left blank
-    // carries no explicit layer type, so it must not be written back as a pinned token that the next compile would then
-    // treat as an override.
-    auto render_layer_type_cell = [](const MetatileAttribute &attribute) -> std::string {
-        return attribute.explicit_layer_type().has_value()
-                   ? layer_type_csv_token(attribute.explicit_layer_type().value())
-                   : std::string{};
+    // Renders one pin cell for a role. Only an explicitly pinned value emits a token; an inferred/auto value (the
+    // default, and everything a bin parser or decompiler produces) emits a blank cell. This keeps the "blank = auto"
+    // workflow intact across a load/save round-trip. A row the user left blank carries no explicit value, so it must
+    // not be written back as a pinned token that the next compile would then treat as an override.
+    auto render_pin_cell = [](FieldRole role, const MetatileAttribute &attribute) -> std::string {
+        switch (role) {
+        case FieldRole::layer_type:
+            return attribute.explicit_layer_type().has_value()
+                       ? layer_type_csv_token(attribute.explicit_layer_type().value())
+                       : std::string{};
+        }
+        panic("write_attributes_csv: unhandled FieldRole in role pin cell rendering");
     };
 
-    // Knob on: emit one row per metatile so every metatile has a layer_type slot the user can fill. The attribute map
-    // can be sparse (tileset creation stores only some ids), so materialize a default row for any missing id. Row count
-    // comes from the Porytiles layer image dimensions, the same source LayerImageMetatileizer uses.
+    // Renders the trailing pin cells for one attribute, one per role pin in config order, each preceded by a comma.
+    auto render_pin_cells = [&](const MetatileAttribute &attribute) -> std::string {
+        std::string cells{};
+        for (const RolePinDefinition &pin : role_pins) {
+            cells += "," + render_pin_cell(pin.role, attribute);
+        }
+        return cells;
+    };
+
+    // Role pins configured: emit one row per metatile so every metatile has a pin slot the user can fill. The attribute
+    // map can be sparse (tileset creation stores only some ids), so materialize a default row for any missing id. Row
+    // count comes from the Porytiles layer image dimensions, the same source LayerImageMetatileizer uses.
     const std::size_t layer_metatile_count = metatile::metatile_count(src.porytiles_component().bottom());
     MetatileAttribute default_attribute{}; // all-default fields, no explicit layer type (blank cell)
-    for (const Field &field : schema_->fields()) {
+    for (const Field &field : schema_->value_fields()) {
         default_attribute.field(field.name(), field.default_value());
     }
+
+    // A schema may carry zero value fields (only the role-bearing field, or nothing at all), in which case the id cell
+    // is followed directly by the pin cells; a bare comma there would add a phantom empty column
+    auto emit_row = [&](std::size_t metatile_id, const std::string &fields_str, const MetatileAttribute &attribute) {
+        out << metatile_id;
+        if (!fields_str.empty()) {
+            out << "," << fields_str;
+        }
+        out << render_pin_cells(attribute) << "\n";
+    };
 
     for (std::size_t metatile_id = 0; metatile_id < layer_metatile_count; ++metatile_id) {
         const auto it = attributes.find(metatile_id);
         const MetatileAttribute &attribute = it != attributes.end() ? it->second : default_attribute;
 
         PT_TRY_ASSIGN_PASS_ERR(fields_str, render_fields(attribute, metatile_id), void);
-        out << metatile_id << "," << fields_str << "," << render_layer_type_cell(attribute) << "\n";
+        emit_row(metatile_id, fields_str, attribute);
     }
 
     // Inconsistent input: emit any stored ids at or beyond the derived count so no stored attribute is silently
@@ -888,7 +915,7 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
             continue;
         }
         PT_TRY_ASSIGN_PASS_ERR(fields_str, render_fields(attribute, metatile_id), void);
-        out << metatile_id << "," << fields_str << "," << render_layer_type_cell(attribute) << "\n";
+        emit_row(metatile_id, fields_str, attribute);
     }
 
     out.flush();

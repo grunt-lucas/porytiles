@@ -7,7 +7,7 @@
 /// @details
 /// This header provides a collection of common string operations used throughout the Porytiles codebase, including:
 /// - Whitespace trimming and line ending normalization
-/// - String splitting and tokenization
+/// - String splitting, tokenization, and joining
 /// - Case conversion (PascalCase, snake_case, lowercase)
 /// - Numeric formatting (hexadecimal, zero-padded digits)
 /// - Regular expression matching utilities
@@ -20,6 +20,7 @@
 #include <ranges>
 #include <regex>
 #include <string>
+#include <vector>
 
 #include "porytiles/utilities/dynamic_cased_name.hpp"
 #include "porytiles/utilities/panic/panic.hpp"
@@ -110,6 +111,34 @@ inline void trim(std::string &string)
     }
     result.push_back(input);
     return result;
+}
+
+/// @brief Joins strings into a delimited list, wrapping each element in single quotes.
+///
+/// @details
+/// This function renders a list of names for a user-facing message. The single quotes match the diagnostic style rule
+/// that highlightable items (file names, symbol names, config keys) appear quoted, so a joined list reads the same as
+/// the individually quoted items elsewhere in the same message. An empty input yields an empty string.
+///
+/// @param values The strings to quote and join
+/// @param delimiter The separator placed between elements
+/// @return The joined list, or an empty string when there are no values
+///
+/// @par Examples
+/// - `join_quoted({"a.c", "b.h"})` -> `"'a.c', 'b.h'"`
+/// - `join_quoted({"only"})` -> `"'only'"`
+/// - `join_quoted({})` -> `""`
+[[nodiscard]] inline std::string
+join_quoted(const std::vector<std::string> &values, const std::string &delimiter = ", ")
+{
+    std::string joined;
+    for (const auto &value : values) {
+        if (!joined.empty()) {
+            joined += delimiter;
+        }
+        joined += "'" + value + "'";
+    }
+    return joined;
 }
 
 /// @brief Removes line ending characters from a string in-place.

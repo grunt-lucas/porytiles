@@ -43,6 +43,7 @@
 
 #include <cstddef>
 #include <functional>
+#include <optional>
 #include <string>
 #include <vector>
 
@@ -106,6 +107,61 @@ size_t_val_eight_or_twelve(const ConfigValue<std::size_t> &val)
         err_text.append_range(format_text);
         params.append_range(format_params);
         return FormattableError{err_text, params};
+    }
+    return val;
+}
+
+/// @brief Validates that a size_t config value is 1, 2, or 4.
+///
+/// @param val The config value to validate
+/// @return ChainableResult containing either the original value or a FormattableError if validation fails
+/// @post If successful, the returned value is guaranteed to be 1, 2, or 4
+[[nodiscard]] inline ChainableResult<ConfigValue<std::size_t>>
+size_t_val_one_two_or_four(const ConfigValue<std::size_t> &val)
+{
+    if (val != 1 && val != 2 && val != 4) {
+        std::vector<std::string> err_text{};
+        std::vector<std::vector<FormatParam>> params{};
+
+        err_text.emplace_back("'{}' must be '{}', '{}', or '{}'.");
+        params.emplace_back(
+            std::vector{
+                FormatParam{val.canonical_name(), Style::bold},
+                FormatParam{"1", Style::bold},
+                FormatParam{"2", Style::bold},
+                FormatParam{"4", Style::bold}});
+        err_text.emplace_back("");
+        params.emplace_back();
+
+        auto [format_text, format_params] = val.format_data();
+        err_text.append_range(format_text);
+        params.append_range(format_params);
+        return FormattableError{err_text, params};
+    }
+    return val;
+}
+
+/// @brief Validates that an optional size_t config value, when set, is 1, 2, or 4.
+///
+/// @details
+/// An unset optional is valid by definition (it means "fall back to the related size value"). A present value is
+/// unwrapped and checked through size_t_val_one_two_or_four, so the two validators always agree on the accepted set
+/// and the error wording.
+///
+/// @param val The config value to validate
+/// @return ChainableResult containing either the original value or a FormattableError if validation fails
+/// @post If successful, the returned value is unset or guaranteed to be 1, 2, or 4
+[[nodiscard]] inline ChainableResult<ConfigValue<std::optional<std::size_t>>>
+optional_size_t_val_one_two_or_four(const ConfigValue<std::optional<std::size_t>> &val)
+{
+    if (!val.value().has_value()) {
+        return val;
+    }
+    const ConfigValue<std::size_t> present{
+        val.value().value(), val.canonical_name(), val.source_key(), val.source(), val.source_details()};
+    auto checked = size_t_val_one_two_or_four(present);
+    if (!checked.has_value()) {
+        return checked.error();
     }
     return val;
 }

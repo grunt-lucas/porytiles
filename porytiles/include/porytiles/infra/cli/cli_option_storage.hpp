@@ -31,6 +31,7 @@ struct CliOptionStorage {
     std::optional<std::string> max_map_data_size;
     std::optional<std::string> num_tiles_per_metatile;
     std::optional<std::string> extrinsic_transparency;
+    std::optional<std::string> ignore_triple_layer_content;
     std::optional<std::string> tiles_edit_mode;
     std::optional<std::string> palettes_edit_mode;
     std::optional<std::string> palette_hints_enabled;
@@ -54,10 +55,8 @@ struct CliOptionStorage {
     std::optional<std::string> tileset_paths_primary_bin;
     std::optional<std::string> tileset_paths_secondary_src;
     std::optional<std::string> tileset_paths_secondary_bin;
-    std::optional<std::string> write_layer_type_column;
-    std::optional<std::string> use_frlg_alternate_masks;
-    std::optional<std::string> metatile_layer_type_mask;
-    std::optional<std::string> metatile_layer_type_mask_frlg;
+    std::optional<std::string> metatile_attribute_size;
+    std::optional<std::string> metatile_attribute_declaration_size;
     std::optional<std::string> tileset_animations_wire_anim_code;
 };
 

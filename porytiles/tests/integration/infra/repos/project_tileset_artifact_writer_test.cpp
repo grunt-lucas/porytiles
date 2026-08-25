@@ -9,6 +9,7 @@
 #include <utility>
 #include <vector>
 
+#include "porytiles/domain/config/role_pin_definition.hpp"
 #include "porytiles/domain/models/image.hpp"
 #include "porytiles/domain/models/index_pixel.hpp"
 #include "porytiles/domain/models/metatile_attribute.hpp"
@@ -118,17 +119,24 @@ class StubEnumMapProvider final : public EnumMapProvider {
     std::unordered_map<std::uint32_t, std::string> value_to_name_{};
 };
 
-// The ProviderSpec contents are irrelevant here (the tests stub the ProviderMap directly); the spec's presence is what
-// marks a field provider-backed.
-ProviderSpec dummy_provider_spec()
+// The ProviderDefinition contents are irrelevant here (the tests stub the ProviderMap directly); the definition's
+// presence is what marks a field provider-backed.
+ProviderDefinition dummy_provider_definition()
 {
-    return ProviderSpec{.header = "include/dummy.h", .prefix = "DUMMY_"};
+    return ProviderDefinition{.header = "include/dummy.h", .prefix = "DUMMY_"};
 }
 
-// The stock emerald shape: a single provider-backed behavior field in a 2-byte attribute.
+// The stock emerald shape: a provider-backed behavior field plus the layer_type-role field, in a 2-byte attribute.
+// The role field must never surface as a value column, so every CSV test against this schema also proves the writer
+// excludes it from the header and cells.
 Schema make_emerald_schema()
 {
-    auto result = Schema::create({Field{"behavior", 0x00FF, 0, dummy_provider_spec()}}, 2);
+    auto result = Schema::create(
+        {
+            Field{"behavior", 0x00FF, 0, dummy_provider_definition()},
+            Field{"layer_type", 0xF000, 0, std::nullopt, FieldRole::layer_type},
+        },
+        2);
     return std::move(result).value();
 }
 
@@ -139,18 +147,20 @@ ProviderMap make_emerald_provider_map()
     return providers;
 }
 
-// The stock firered shape: seven fields in a 4-byte attribute, three provider-backed and four raw. Masks match the
-// FRLG attribute bit layout from fieldmap.c (layer_type is structural and never a schema field).
+// The stock firered shape: eight fields in a 4-byte attribute, three provider-backed, four raw, and the
+// layer_type-role field at bits 29-30 (never a value column). Masks match the FRLG attribute bit layout from
+// fieldmap.c.
 Schema make_firered_schema()
 {
     auto result = Schema::create(
         {
-            Field{"behavior", 0x000001FF, 0, dummy_provider_spec()},
-            Field{"terrain", 0x00003E00, 0, dummy_provider_spec()},
+            Field{"behavior", 0x000001FF, 0, dummy_provider_definition()},
+            Field{"terrain", 0x00003E00, 0, dummy_provider_definition()},
             Field{"attribute_2", 0x0003C000},
             Field{"attribute_3", 0x00FC0000},
-            Field{"encounter_type", 0x07000000, 0, dummy_provider_spec()},
+            Field{"encounter_type", 0x07000000, 0, dummy_provider_definition()},
             Field{"attribute_5", 0x18000000},
+            Field{"layer_type", 0x60000000, 0, std::nullopt, FieldRole::layer_type},
             Field{"attribute_7", 0x80000000},
         },
         4);
@@ -718,9 +728,9 @@ TEST_F(ProjectTilesetArtifactWriterTests, TransactionSequence)
     ASSERT_TRUE(std::filesystem::exists(test_root_ / "trans3.png"));
 }
 
-TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvKnobOnEmitsOneRowPerMetatileWithSynthesizedDefaults)
+TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvRolePinEmitsOneRowPerMetatileWithSynthesizedDefaults)
 {
-    infra_config_->write_layer_type_column = true;
+    infra_config_->role_pins = RolePinDefinitions{{FieldRole::layer_type}};
     auto tileset = create_sparse_two_metatile_tileset("test_tileset");
 
     ASSERT_TRUE(writer_->begin_transaction().has_value());
@@ -729,17 +739,18 @@ TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvKnobOnEmitsOneRowPerMetat
     ASSERT_TRUE(write_result.has_value()) << write_result.error().join(PlainTextFormatter{});
     ASSERT_TRUE(writer_->commit().has_value());
 
-    // Header gains layer_type. Present metatile 0 emits its "covered" token; synthesized metatile 1 emits a blank cell.
-    const std::string expected = "id,behavior,layer_type\n0,MB_NORMAL,covered\n1,MB_NORMAL,\n";
+    // Header gains the pin column under its reserved name. Present metatile 0 emits its "covered" token; synthesized
+    // metatile 1 emits a blank cell.
+    const std::string expected = "id,behavior,pin::layer_type\n0,MB_NORMAL,covered\n1,MB_NORMAL,\n";
     EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), expected);
 }
 
-TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvKnobOnEmitsBlankCellForInferredLayerType)
+TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvRolePinEmitsBlankCellForInferredLayerType)
 {
     // Regression: a present attribute whose layer type was set the inferred way (not pinned via explicit_layer_type)
     // must emit a BLANK layer_type cell. If the writer keyed off layer_type() instead of explicit_layer_type(), it
     // would pin this row as "covered", and the next compile would wrongly treat the auto row as a user override.
-    infra_config_->write_layer_type_column = true;
+    infra_config_->role_pins = RolePinDefinitions{{FieldRole::layer_type}};
     auto tileset = create_two_metatile_tileset_with_inferred_layer_type("test_tileset");
 
     ASSERT_TRUE(writer_->begin_transaction().has_value());
@@ -749,13 +760,13 @@ TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvKnobOnEmitsBlankCellForIn
     ASSERT_TRUE(writer_->commit().has_value());
 
     // Both cells blank despite metatile 0's non-'normal' layer_type(): neither row carries an explicit pin.
-    const std::string expected = "id,behavior,layer_type\n0,MB_NORMAL,\n1,MB_NORMAL,\n";
+    const std::string expected = "id,behavior,pin::layer_type\n0,MB_NORMAL,\n1,MB_NORMAL,\n";
     EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), expected);
 }
 
-TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvKnobOffIsByteIdenticalToHistoricalOutput)
+TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvNoRolePinsIsByteIdenticalToHistoricalOutput)
 {
-    // Default MockInfraConfig has write_layer_type_column = false.
+    // Default MockInfraConfig has role_pins empty.
     auto tileset = create_sparse_two_metatile_tileset("test_tileset");
 
     ASSERT_TRUE(writer_->begin_transaction().has_value());
@@ -875,7 +886,7 @@ TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvNonzeroDefaultRendersDefa
 {
     auto schema_result = Schema::create(
         {
-            Field{"behavior", 0x00FF, 0, dummy_provider_spec()},
+            Field{"behavior", 0x00FF, 0, dummy_provider_definition()},
             Field{"pad", 0x0F00, 3},
         },
         2);
@@ -926,5 +937,41 @@ TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvNonzeroDefaultRendersDefa
     ASSERT_TRUE(writer.commit().has_value());
 
     const std::string expected = "id,behavior,pad\n0,MB_TALL_GRASS,3\n";
+    EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), expected);
+}
+
+// A schema may carry zero value fields (here, only the role-bearing layer_type field). With the role pinned, each id
+// cell is followed directly by the pin cell; a bare comma between them would add a phantom empty column the loader
+// then rejects as a row wider than the header.
+TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvRolePinRoleOnlySchemaEmitsIdThenPinCell)
+{
+    infra_config_->role_pins = RolePinDefinitions{{FieldRole::layer_type}};
+    Schema role_only_schema =
+        std::move(Schema::create({Field{"layer_type", 0xF000, 0, std::nullopt, FieldRole::layer_type}}, 2)).value();
+    ProviderMap empty_providers{};
+    ProjectTilesetArtifactWriter writer{
+        domain_config_.get(),
+        infra_config_.get(),
+        test_root_,
+        &role_only_schema,
+        &empty_providers,
+        formatter_.get(),
+        diag_.get(),
+        png_rgba_saver_.get(),
+        png_indexed_saver_.get(),
+        palette_saver_.get(),
+        anim_json_parser_.get(),
+        anim_code_generator_.get()};
+
+    auto tileset = create_sparse_two_metatile_tileset("test_tileset");
+
+    ASSERT_TRUE(writer.begin_transaction().has_value());
+    ArtifactKey key{"attributes.csv"};
+    auto write_result = writer.write_attributes_csv(key, tileset);
+    ASSERT_TRUE(write_result.has_value()) << write_result.error().join(PlainTextFormatter{});
+    ASSERT_TRUE(writer.commit().has_value());
+
+    // Metatile 0 carries an explicit "covered" pin; synthesized metatile 1 gets a blank pin cell.
+    const std::string expected = "id,pin::layer_type\n0,covered\n1,\n";
     EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), expected);
 }

@@ -8,6 +8,7 @@
 #include <set>
 #include <vector>
 
+#include "porytiles/domain/algorithms/role_pin_round_trip.hpp"
 #include "porytiles/domain/config/per_anim_overrides.hpp"
 #include "porytiles/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles/domain/models/pixel_tile.hpp"
@@ -61,10 +62,20 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
         i++;
     }
 
-    // Copy metatile attributes from Porymap component to Porytiles component
+    // Copy metatile attributes from Porymap component to Porytiles component, applying the layer_type pin round-trip.
+    // Each bin-decoded attribute is unpinned. Whether it gets pinned (and thus survives as an explicit CSV value) is
+    // decided from the prior attributes.csv state recorded on the loaded component. On a fresh import (no
+    // CSV) the state defaults to no_csv, so every row is pinned from the bin.
+    const PriorPinColumnState prior_pin_state =
+        tileset.porytiles_component().prior_pin_column_state(FieldRole::layer_type);
     const auto &porymap_attributes = tileset.porymap_component().metatile_attributes_bin();
     for (std::size_t metatile_id = 0; metatile_id < porymap_attributes.size(); metatile_id++) {
-        new_porytiles_component->insert_attribute(metatile_id, porymap_attributes[metatile_id]);
+        new_porytiles_component->insert_attribute(
+            metatile_id,
+            merge_prior_layer_type_pin(
+                porymap_attributes[metatile_id],
+                prior_pin_state,
+                tileset.porytiles_component().get_attribute(metatile_id)));
     }
 
     // Decompile animations from Porymap component to Porytiles component.

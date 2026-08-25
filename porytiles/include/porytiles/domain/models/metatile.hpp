@@ -12,7 +12,7 @@
 namespace porytiles {
 
 // Forward-declared to keep this widely-included header free of the Image header. metatile_count is a template, so the
-// definition only needs Image complete at the call site.
+// definition only needs a complete Image template at the call site.
 template <typename PixelType>
 class Image;
 

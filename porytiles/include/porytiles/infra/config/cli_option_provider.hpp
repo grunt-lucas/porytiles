@@ -46,6 +46,8 @@ class CliOptionProvider final : public ConfigProvider {
     num_tiles_per_metatile(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<Rgba32>
     extrinsic_transparency(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<bool>
+    ignore_triple_layer_content(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<ArtifactEditMode>
     tiles_edit_mode(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<ArtifactEditMode>
@@ -95,14 +97,10 @@ class CliOptionProvider final : public ConfigProvider {
     tileset_paths_secondary_src(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<std::string>
     tileset_paths_secondary_bin(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<bool>
-    write_layer_type_column(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<FrlgAlternateMaskMode>
-    use_frlg_alternate_masks(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<std::optional<std::uint32_t>>
-    metatile_layer_type_mask(ConfigScopeType type, const std::string &scope) const override;
-    [[nodiscard]] LayerValue<std::optional<std::uint32_t>>
-    metatile_layer_type_mask_frlg(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::optional<std::size_t>>
+    metatile_attribute_size(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<std::optional<std::size_t>>
+    metatile_attribute_declaration_size(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<bool>
     tileset_animations_wire_anim_code(ConfigScopeType type, const std::string &scope) const override;
 

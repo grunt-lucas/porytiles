@@ -908,8 +908,9 @@ std::unique_ptr<Tileset> CompilerTask::pipeline_step_assemble_output()
             // A metatile with no stored attribute (e.g. a CSV row omitted as all-default) materializes from the
             // schema defaults, not from all-zero fields. This is what lets the CSV writer omit all-default rows even
             // under a schema with nonzero defaults: the omitted row reloads as an absent attribute here and comes
-            // back as exactly the defaults it was omitted for.
-            for (const Field &field : schema_.fields()) {
+            // back as exactly the defaults it was omitted for. Only value fields materialize: the layer_type-role
+            // field's value is managed through layer_type(), never the fields map.
+            for (const Field &field : schema_.value_fields()) {
                 new_attribute.field(field.name(), field.default_value());
             }
         }

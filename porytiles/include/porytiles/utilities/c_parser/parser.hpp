@@ -17,6 +17,7 @@
 #include "porytiles/utilities/c_parser/incbin_declaration.hpp"
 #include "porytiles/utilities/c_parser/indexed_array_declaration.hpp"
 #include "porytiles/utilities/c_parser/source_position.hpp"
+#include "porytiles/utilities/c_parser/struct_definition.hpp"
 #include "porytiles/utilities/c_parser/struct_initializer_declaration.hpp"
 #include "porytiles/utilities/c_parser/struct_variable_declaration.hpp"
 #include "porytiles/utilities/c_parser/token.hpp"
@@ -213,6 +214,27 @@ class Parser {
     ///
     /// @return A vector of StructInitializerDeclaration on success, or an error on failure
     [[nodiscard]] ChainableResult<std::vector<StructInitializerDeclaration>> parse_struct_initializers();
+
+    /// @brief Parses struct type definitions from the token stream.
+    ///
+    /// @details
+    /// Scans through the token stream looking for named struct definitions matching the pattern:
+    /// @code
+    /// struct TYPE { members... } [;]
+    /// @endcode
+    ///
+    /// Each member body is scanned tolerantly: members matching the simple declarator shape
+    /// `[const] TYPE [*...] NAME [: WIDTH];` are captured (including `struct TYPE` members and bitfields, whose
+    /// widths are consumed but not recorded), while anything else (pointer-to-array members like
+    /// `const u16 (*palettes)[16]`, array members, multiple declarators) is skipped without aborting the scan.
+    /// Preprocessor directive lines inside the body are ignored. Forward declarations and anonymous typedef structs
+    /// are not captured.
+    ///
+    /// This is used to read the pointed-to type of `struct Tileset::metatileAttributes` from a project's
+    /// `include/global.fieldmap.h`.
+    ///
+    /// @return A vector of StructDefinition on success, or an error on failure
+    [[nodiscard]] ChainableResult<std::vector<StructDefinition>> parse_struct_definitions();
 
     /// @brief Parses INCBIN array declarations from the token stream.
     ///

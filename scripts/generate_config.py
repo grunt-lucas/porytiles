@@ -69,6 +69,77 @@ def extract_yaml_map_prefixes(config_values):
     return sorted(prefixes)
 
 
+# Non-enum types the CLI templates know how to register. Enum types are handled separately, via
+# enum_type_map. This list must stay in sync with the type dispatch chains in
+# infra/cli/cli_option_registration.cpp.jinja2 and infra/cli/cli_completion_data.hpp.jinja2.
+#
+# The dispatch chains match on the literal spelling of the type, so a new spelling of an
+# already-handled concept (e.g. std::optional<std::size_t> next to std::optional<std::uint32_t>)
+# is a new case. Registration would emit a skip comment and completion would emit nothing at all,
+# producing a flag that is missing from --help and rejected when passed. validate_cli_option_types()
+# turns that into a generation error instead.
+CLI_HANDLED_TYPES = [
+    "bool",
+    "std::vector<std::string>",
+    "std::size_t",
+    "std::string",
+    "std::optional<std::size_t>",
+    "std::optional<std::uint32_t>",
+    "Rgba32",
+]
+
+
+def validate_cli_option_types(config_values, enum_type_map):
+    """
+    Fail generation if a config value would get a CLI flag that the templates cannot register.
+
+    Every config value without yaml_only: true is expected to declare a cli_option and to have a
+    type the CLI templates dispatch on. A type outside CLI_HANDLED_TYPES and outside enum_type_map
+    is silently skipped by those templates, so catch it here where the error is actionable.
+    """
+    for config_value in config_values:
+        if config_value.get("yaml_only"):
+            continue
+
+        name = config_value.get("symbol", config_value.get("canonical_name", "<unnamed config value>"))
+        value_type = config_value.get("type")
+
+        if not config_value.get("cli_option"):
+            print(
+                f"Error: Config value '{name}' is missing required 'cli_option' field",
+                file=sys.stderr,
+            )
+            print(
+                "  Hint: Add a 'cli_option', or mark the value 'yaml_only: true' if it has no CLI flag",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        if value_type not in CLI_HANDLED_TYPES and value_type not in enum_type_map:
+            print(
+                f"Error: Config value '{name}' declares cli_option "
+                f"'{config_value['cli_option']}' but its type '{value_type}' is not handled "
+                f"by the CLI templates",
+                file=sys.stderr,
+            )
+            print(
+                f"  Hint: Handled types are: {', '.join(CLI_HANDLED_TYPES)}, or any enum in enum_types",
+                file=sys.stderr,
+            )
+            print(
+                "  Hint: To support a new type, add a branch to the dispatch chains in "
+                "infra/cli/cli_option_registration.cpp.jinja2 and infra/cli/cli_completion_data.hpp.jinja2, "
+                "add the accessor to infra/config/cli_option_provider.cpp.jinja2, then list the type in "
+                "CLI_HANDLED_TYPES",
+                file=sys.stderr,
+            )
+            print(
+                "  Hint: Or mark the value 'yaml_only: true' if it should not have a CLI flag",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+
 def process_enum_types(schema):
     """
     Process enum_types from schema to compute derived fields and create lookup map.
@@ -259,6 +330,10 @@ def generate_config_files(run_formatter=True):
     enum_type_map = process_enum_types(schema)
     schema["enum_type_map"] = enum_type_map
     print(f"Processed {len(enum_type_map)} enum types")
+
+    # Runs after enum processing because enum types are valid CLI option types
+    validate_cli_option_types(schema["config_values"], enum_type_map)
+    print("Validated CLI option types")
 
     # Setup Jinja2 environment with new template directory
     template_dir = project_root / "porytiles" / "config_templates"

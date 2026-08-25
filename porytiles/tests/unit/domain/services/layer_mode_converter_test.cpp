@@ -96,6 +96,17 @@ Metatile<Rgba32> create_metatile_with_layer_type(LayerType layer_type)
     return metatile;
 }
 
+// A metatile with non-transparent content on all three layers of subtile 0: an implied-triple metatile, which
+// dual_layerize accepts only because validate_layer_mode (with ignore_triple_layer_content on) let it through.
+Metatile<Rgba32> create_triple_content_metatile()
+{
+    Metatile<Rgba32> metatile{};
+    metatile.set_bottom(0, create_nontransparent_rgba_tile());
+    metatile.set_middle(0, create_nontransparent_rgba_tile());
+    metatile.set_top(0, create_nontransparent_rgba_tile());
+    return metatile;
+}
+
 } // namespace
 
 class LayerModeConverterTests : public ::testing::Test {
@@ -559,8 +570,60 @@ TEST_F(LayerModeConverterTests, ExplicitOverrideDroppingVisibleTilesWarns)
     std::ignore = converter_->dual_layerize(triple_entries, source_metatiles, explicit_layer_types);
 
     const auto &counts = diag_->warning_tag_counts();
-    ASSERT_TRUE(counts.contains("layer-type-column"));
-    EXPECT_EQ(counts.at("layer-type-column"), 1u);
+    ASSERT_TRUE(counts.contains("dual-layer-drop"));
+    EXPECT_EQ(counts.at("dual-layer-drop"), 1u);
+}
+
+// An implied-triple metatile (content on all three layers) with no pin is legal input now that validate_layer_mode
+// gates it. infer_layer_type yields 'normal', so dual_layerize drops the bottom group (entries 0-3) and warns, and
+// because the metatile is implied-triple the warning carries the role_pins hint.
+TEST_F(LayerModeConverterTests, DualLayerizeImpliedTripleNoPinDropsBottomGroupAndWarns)
+{
+    std::vector<TilemapEntry> triple_entries;
+    for (std::size_t i = 1; i <= metatile::entries_per_metatile_triple; ++i) {
+        triple_entries.push_back(create_test_entry(i));
+    }
+    std::vector<Metatile<Rgba32>> source_metatiles{create_triple_content_metatile()};
+    std::vector<std::optional<LayerType>> explicit_layer_types{std::nullopt};
+
+    const auto result = converter_->dual_layerize(triple_entries, source_metatiles, explicit_layer_types);
+
+    // 'normal' drops the first 4 entries; the surviving 8 are entries 4..11.
+    ASSERT_EQ(result.size(), metatile::entries_per_metatile_dual);
+    for (std::size_t j = 0; j < metatile::entries_per_metatile_dual; ++j) {
+        EXPECT_EQ(result[j].tile_index(), triple_entries[j + 4].tile_index());
+    }
+
+    ASSERT_TRUE(diag_->warning_tag_counts().contains("dual-layer-drop"));
+    // The warning mentions role_pins because the metatile is implied-triple.
+    std::string warning_text;
+    for (const auto &warning : diag_->warnings()) {
+        for (const auto &line : warning) {
+            warning_text += line;
+        }
+    }
+    EXPECT_NE(warning_text.find("role_pins"), std::string::npos) << warning_text;
+}
+
+// A pin overrides inference: pinning 'covered' on the implied-triple metatile drops the top group (entries 8-11).
+TEST_F(LayerModeConverterTests, DualLayerizeImpliedTriplePinnedCoveredDropsTopGroupAndWarns)
+{
+    std::vector<TilemapEntry> triple_entries;
+    for (std::size_t i = 1; i <= metatile::entries_per_metatile_triple; ++i) {
+        triple_entries.push_back(create_test_entry(i));
+    }
+    std::vector<Metatile<Rgba32>> source_metatiles{create_triple_content_metatile()};
+    std::vector<std::optional<LayerType>> explicit_layer_types{LayerType::covered};
+
+    const auto result = converter_->dual_layerize(triple_entries, source_metatiles, explicit_layer_types);
+
+    // 'covered' keeps the first 8 entries and drops the last 4.
+    ASSERT_EQ(result.size(), metatile::entries_per_metatile_dual);
+    for (std::size_t j = 0; j < metatile::entries_per_metatile_dual; ++j) {
+        EXPECT_EQ(result[j].tile_index(), triple_entries[j].tile_index());
+    }
+
+    ASSERT_TRUE(diag_->warning_tag_counts().contains("dual-layer-drop"));
 }
 
 TEST_F(LayerModeConverterTests, DroppingOnlyTransparentEntriesDoesNotWarn)
@@ -579,7 +642,7 @@ TEST_F(LayerModeConverterTests, DroppingOnlyTransparentEntriesDoesNotWarn)
 
     std::ignore = converter_->dual_layerize(triple_entries, source_metatiles, explicit_layer_types);
 
-    EXPECT_FALSE(diag_->warning_tag_counts().contains("layer-type-column"));
+    EXPECT_FALSE(diag_->warning_tag_counts().contains("dual-layer-drop"));
 }
 
 TEST_F(LayerModeConverterTests, RoundTripMultipleMetatiles)

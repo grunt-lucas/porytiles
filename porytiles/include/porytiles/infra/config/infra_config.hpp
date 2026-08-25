@@ -3,8 +3,8 @@
 #include <memory>
 #include <string>
 
-#include "porytiles/domain/config/metatile_attribute_field_spec.hpp"
-#include "porytiles/infra/config/frlg_alternate_mask_mode.hpp"
+#include "porytiles/domain/config/metatile_attribute_field_definition.hpp"
+#include "porytiles/domain/config/role_pin_definition.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
 #include "porytiles/xcut/config/config_value.hpp"
@@ -67,7 +67,23 @@ class InfraConfig {
     }
 
     // Public method with cross-field validation only (Tier 3)
-    [[nodiscard]] ChainableResult<ConfigValue<MetatileAttributeFieldSpecs>>
+    [[nodiscard]] ChainableResult<ConfigValue<std::optional<std::size_t>>>
+    metatile_attribute_size(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = metatile_attribute_size_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<std::optional<std::size_t>>>
+    metatile_attribute_declaration_size(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = metatile_attribute_declaration_size_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<MetatileAttributeFieldDefinitions>>
     metatile_attribute_fields(ConfigScopeType type, const std::string &scope) const
     {
         auto validated_val = metatile_attribute_fields_validated(type, scope);
@@ -83,34 +99,10 @@ class InfraConfig {
     }
 
     // Public method with cross-field validation only (Tier 3)
-    [[nodiscard]] ChainableResult<ConfigValue<bool>>
-    write_layer_type_column(ConfigScopeType type, const std::string &scope) const
+    [[nodiscard]] ChainableResult<ConfigValue<RolePinDefinitions>>
+    role_pins(ConfigScopeType type, const std::string &scope) const
     {
-        auto validated_val = write_layer_type_column_validated(type, scope);
-        return validated_val;
-    }
-
-    // Public method with cross-field validation only (Tier 3)
-    [[nodiscard]] ChainableResult<ConfigValue<FrlgAlternateMaskMode>>
-    use_frlg_alternate_masks(ConfigScopeType type, const std::string &scope) const
-    {
-        auto validated_val = use_frlg_alternate_masks_validated(type, scope);
-        return validated_val;
-    }
-
-    // Public method with cross-field validation only (Tier 3)
-    [[nodiscard]] ChainableResult<ConfigValue<std::optional<std::uint32_t>>>
-    metatile_layer_type_mask(ConfigScopeType type, const std::string &scope) const
-    {
-        auto validated_val = metatile_layer_type_mask_validated(type, scope);
-        return validated_val;
-    }
-
-    // Public method with cross-field validation only (Tier 3)
-    [[nodiscard]] ChainableResult<ConfigValue<std::optional<std::uint32_t>>>
-    metatile_layer_type_mask_frlg(ConfigScopeType type, const std::string &scope) const
-    {
-        auto validated_val = metatile_layer_type_mask_frlg_validated(type, scope);
+        auto validated_val = role_pins_validated(type, scope);
         return validated_val;
     }
 
@@ -172,7 +164,39 @@ class InfraConfig {
     tileset_paths_secondary_bin_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
-    [[nodiscard]] virtual ChainableResult<ConfigValue<MetatileAttributeFieldSpecs>>
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::optional<std::size_t>>>
+    metatile_attribute_size_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = metatile_attribute_size_raw(type, scope);
+        // Apply validators in sequence
+        if (raw_val.has_value()) {
+            raw_val = optional_size_t_val_one_two_or_four(raw_val.value());
+        }
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::optional<std::size_t>>>
+    metatile_attribute_size_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::optional<std::size_t>>>
+    metatile_attribute_declaration_size_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = metatile_attribute_declaration_size_raw(type, scope);
+        // Apply validators in sequence
+        if (raw_val.has_value()) {
+            raw_val = optional_size_t_val_one_two_or_four(raw_val.value());
+        }
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<std::optional<std::size_t>>>
+    metatile_attribute_declaration_size_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<MetatileAttributeFieldDefinitions>>
     metatile_attribute_fields_validated(ConfigScopeType type, const std::string &scope) const
     {
         auto raw_val = metatile_attribute_fields_raw(type, scope);
@@ -180,7 +204,7 @@ class InfraConfig {
     }
 
     // Protected virtual method that fetches raw value from provider (Tier 1)
-    [[nodiscard]] virtual ChainableResult<ConfigValue<MetatileAttributeFieldSpecs>>
+    [[nodiscard]] virtual ChainableResult<ConfigValue<MetatileAttributeFieldDefinitions>>
     metatile_attribute_fields_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
@@ -196,52 +220,16 @@ class InfraConfig {
     metatile_attribute_field_overrides_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
-    [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
-    write_layer_type_column_validated(ConfigScopeType type, const std::string &scope) const
+    [[nodiscard]] virtual ChainableResult<ConfigValue<RolePinDefinitions>>
+    role_pins_validated(ConfigScopeType type, const std::string &scope) const
     {
-        auto raw_val = write_layer_type_column_raw(type, scope);
+        auto raw_val = role_pins_raw(type, scope);
         return raw_val;
     }
 
     // Protected virtual method that fetches raw value from provider (Tier 1)
-    [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
-    write_layer_type_column_raw(ConfigScopeType type, const std::string &scope) const = 0;
-
-    // Protected method with single-value validation only (Tier 2)
-    [[nodiscard]] virtual ChainableResult<ConfigValue<FrlgAlternateMaskMode>>
-    use_frlg_alternate_masks_validated(ConfigScopeType type, const std::string &scope) const
-    {
-        auto raw_val = use_frlg_alternate_masks_raw(type, scope);
-        return raw_val;
-    }
-
-    // Protected virtual method that fetches raw value from provider (Tier 1)
-    [[nodiscard]] virtual ChainableResult<ConfigValue<FrlgAlternateMaskMode>>
-    use_frlg_alternate_masks_raw(ConfigScopeType type, const std::string &scope) const = 0;
-
-    // Protected method with single-value validation only (Tier 2)
-    [[nodiscard]] virtual ChainableResult<ConfigValue<std::optional<std::uint32_t>>>
-    metatile_layer_type_mask_validated(ConfigScopeType type, const std::string &scope) const
-    {
-        auto raw_val = metatile_layer_type_mask_raw(type, scope);
-        return raw_val;
-    }
-
-    // Protected virtual method that fetches raw value from provider (Tier 1)
-    [[nodiscard]] virtual ChainableResult<ConfigValue<std::optional<std::uint32_t>>>
-    metatile_layer_type_mask_raw(ConfigScopeType type, const std::string &scope) const = 0;
-
-    // Protected method with single-value validation only (Tier 2)
-    [[nodiscard]] virtual ChainableResult<ConfigValue<std::optional<std::uint32_t>>>
-    metatile_layer_type_mask_frlg_validated(ConfigScopeType type, const std::string &scope) const
-    {
-        auto raw_val = metatile_layer_type_mask_frlg_raw(type, scope);
-        return raw_val;
-    }
-
-    // Protected virtual method that fetches raw value from provider (Tier 1)
-    [[nodiscard]] virtual ChainableResult<ConfigValue<std::optional<std::uint32_t>>>
-    metatile_layer_type_mask_frlg_raw(ConfigScopeType type, const std::string &scope) const = 0;
+    [[nodiscard]] virtual ChainableResult<ConfigValue<RolePinDefinitions>>
+    role_pins_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
