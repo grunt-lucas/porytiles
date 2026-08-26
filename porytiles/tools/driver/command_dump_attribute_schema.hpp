@@ -13,8 +13,6 @@
 #include "porytiles/infra/cli/cli_option_storage.hpp"
 #include "porytiles/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
-#include "porytiles/xcut/diagnostics/diagnostic_tag_filter.hpp"
-#include "porytiles/xcut/diagnostics/filtered_user_diagnostics.hpp"
 
 #include "command.hpp"
 #include "option.hpp"
@@ -70,14 +68,11 @@ class DumpAttributeSchemaCommand final : public Command {
             }
         }
 
-        // Run the same resolver setup every other command uses, with its remarks suppressed: the dump reports the
-        // resolved layout and its provenance on stdout, so a remark restating that would only interleave with it.
-        // Warnings are not in the dump and are kept: a mask define disagreeing with the mask table, or a fieldmap file
-        // that could not be read, is the whole reason a dump looks wrong or fails, and dropping it leaves the user
-        // with no way to find out why.
-        FilteredUserDiagnostics dump_diag{
-            text_formatter, env.diag.get(), DiagnosticTagFilter{{}, {}}, DiagnosticTagFilter{{".*"}, {}}};
-        MetatileAttributeSchemaResolver schema_resolver{env.project_root, &env.config, text_formatter, &dump_diag};
+        // Resolve the schema with the users configured diagnostic settings. Users who opted in to all remarks may see
+        // redundant output. But that's fine because:
+        // 1. They opted in to noisy output, and there's an easy escape hatch
+        // 2. The remark noise goes to stderr, while the dump goes to stdout, so a capturing script can choose
+        MetatileAttributeSchemaResolver schema_resolver{env.project_root, &env.config, text_formatter, env.diag.get()};
         auto resolved_result = schema_resolver.resolve(tileset_name_);
 
         // A resolution failure is the same hard error that aborts compile and import: an ambiguous attribute size, a

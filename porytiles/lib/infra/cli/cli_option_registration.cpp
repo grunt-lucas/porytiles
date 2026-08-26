@@ -238,25 +238,27 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
     config_group->add_option(
         "--diagnostic-warnings-exclude",
         storage.diagnostic_warnings_exclude,
-        "Diagnostic Warnings Exclude - Regex patterns for warning tags to exclude.");
+        "Diagnostic Warnings Exclude - Regex patterns for warning tags to exclude (overrides includes).");
 
     // Diagnostic Warnings Include (std::vector<std::string>, multi-value)
     config_group->add_option(
         "--diagnostic-warnings-include",
         storage.diagnostic_warnings_include,
-        "Diagnostic Warnings Include - Regex patterns for warning tags to include (overrides excludes).");
+        "Diagnostic Warnings Include - Regex patterns for warning tags to show. Warnings are hidden unless a pattern "
+        "matches their tag.");
 
     // Diagnostic Remarks Exclude (std::vector<std::string>, multi-value)
     config_group->add_option(
         "--diagnostic-remarks-exclude",
         storage.diagnostic_remarks_exclude,
-        "Diagnostic Remarks Exclude - Regex patterns for remark tags to exclude.");
+        "Diagnostic Remarks Exclude - Regex patterns for remark tags to exclude (overrides includes).");
 
     // Diagnostic Remarks Include (std::vector<std::string>, multi-value)
     config_group->add_option(
         "--diagnostic-remarks-include",
         storage.diagnostic_remarks_include,
-        "Diagnostic Remarks Include - Regex patterns for remark tags to include (overrides excludes).");
+        "Diagnostic Remarks Include - Regex patterns for remark tags to show. Remarks are hidden unless a pattern "
+        "matches their tag.");
 
     // Tileset Paths Primary Source (std::string)
     config_group->add_option(

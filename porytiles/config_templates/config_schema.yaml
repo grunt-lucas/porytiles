@@ -748,7 +748,7 @@ config_values:
     symbol: diagnostic_warnings_exclude
     yaml_path: diagnostics.warnings.exclude
     cli_option: diagnostic-warnings-exclude
-    cli_desc: Regex patterns for warning tags to exclude.
+    cli_desc: Regex patterns for warning tags to exclude (overrides includes).
     layer: app
     type: std::vector<std::string>
     parser: parse_string_vector
@@ -760,7 +760,7 @@ config_values:
     symbol: diagnostic_warnings_include
     yaml_path: diagnostics.warnings.include
     cli_option: diagnostic-warnings-include
-    cli_desc: Regex patterns for warning tags to include (overrides excludes).
+    cli_desc: Regex patterns for warning tags to show. Warnings are hidden unless a pattern matches their tag.
     layer: app
     type: std::vector<std::string>
     parser: parse_string_vector
@@ -772,7 +772,7 @@ config_values:
     symbol: diagnostic_remarks_exclude
     yaml_path: diagnostics.remarks.exclude
     cli_option: diagnostic-remarks-exclude
-    cli_desc: Regex patterns for remark tags to exclude.
+    cli_desc: Regex patterns for remark tags to exclude (overrides includes).
     layer: app
     type: std::vector<std::string>
     parser: parse_string_vector
@@ -784,7 +784,7 @@ config_values:
     symbol: diagnostic_remarks_include
     yaml_path: diagnostics.remarks.include
     cli_option: diagnostic-remarks-include
-    cli_desc: Regex patterns for remark tags to include (overrides excludes).
+    cli_desc: Regex patterns for remark tags to show. Remarks are hidden unless a pattern matches their tag.
     layer: app
     type: std::vector<std::string>
     parser: parse_string_vector

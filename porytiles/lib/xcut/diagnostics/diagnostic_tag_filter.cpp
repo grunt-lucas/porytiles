@@ -23,11 +23,11 @@ bool DiagnosticTagFilter::should_show(const std::string &tag) const
     bool excluded =
         std::ranges::any_of(exclude_regexes_, [&tag](const std::regex &re) { return std::regex_search(tag, re); });
 
-    if (!excluded) {
-        return true;
+    if (excluded) {
+        return false;
     }
 
-    // Check if an include pattern overrides the exclusion
+    // Diagnostics are opt-in, tags must match an include pattern to be shown
     bool included =
         std::ranges::any_of(include_regexes_, [&tag](const std::regex &re) { return std::regex_search(tag, re); });
 

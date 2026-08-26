@@ -83,8 +83,6 @@ porytiles import-tileset gTileset_General \
   --no-verify-checksums \
   --extrinsic-transparency 1,2,3 \
   --metatile-attribute-size 2 \
-  --diagnostic-remarks-exclude '.*' \
-  --diagnostic-warnings-exclude '.*' \
   --anim-pal-resolution-strategy palette-04 \
   --anim-key-frame-resolution-strategy mangle
 ```
@@ -95,14 +93,13 @@ Compile:
 porytiles compile-tileset gTileset_General \
   --no-verify-checksums \
   --extrinsic-transparency 1,2,3 \
-  --metatile-attribute-size 2 \
-  --diagnostic-remarks-exclude '.*' \
-  --diagnostic-warnings-exclude '.*'
+  --metatile-attribute-size 2
 ```
 
 Notes:
-- Drop the `--diagnostic-remarks-exclude '.*'` / `--diagnostic-warnings-exclude '.*'`
-  flags when you actually want to see diagnostics; they suppress all remarks/warnings.
+- Remarks and warnings are opt-in and hidden by default. Add
+  `--diagnostic-remarks-include '.*'` / `--diagnostic-warnings-include '.*'`
+  when you actually want to see diagnostics.
 - For compile, `--tiles-edit-mode locked --pals-edit-mode locked` is an alternative for
   when you want to skip palette packing.
 

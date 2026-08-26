@@ -35,6 +35,8 @@ and to its issue too when one was filed
 
 - Backported a DFS/BFS algorithm improvement into legacy Porytiles. - [#355](https://github.com/grunt-lucas/porytiles/pull/355)
 
+- Remarks and warnings are now opt-in instead of opt-out. - [#356](https://github.com/grunt-lucas/porytiles/pull/356)
+
 ## [1.0.0] - 2026-06-05
 
 First stable release of Porytiles.
