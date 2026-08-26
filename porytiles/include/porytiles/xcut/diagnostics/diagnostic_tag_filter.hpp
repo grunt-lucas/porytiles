@@ -9,12 +9,13 @@ namespace porytiles {
 /// @brief Regex-based include/exclude filter for diagnostic tags.
 ///
 /// @details
-/// DiagnosticTagFilter applies regex-based filtering to diagnostic tags. The filtering logic is:
-/// 1. If the tag matches any exclude regex, it is suppressed (unless step 2 overrides).
-/// 2. If the tag matches any include regex, it is shown (overrides exclude).
-/// 3. If no exclude regex matches, the tag is shown by default.
+/// DiagnosticTagFilter applies opt-in, regex-based filtering to diagnostic tags. The filtering logic:
+/// 1. If the tag matches any exclude regex, it is suppressed (exclude overrides include).
+/// 2. Otherwise, if the tag matches any include regex, it is shown.
+/// 3. Otherwise, the tag is suppressed.
 ///
-/// A filter with empty exclude and include lists passes all tags through (no-op filter).
+/// A filter with empty exclude and include lists suppresses all tags. To show everything, include a wildcard pattern
+/// (".*"). Exclude patterns then re-exclude specific tags to override the include wildcard.
 class DiagnosticTagFilter {
   public:
     /// @brief Constructs a DiagnosticTagFilter from string patterns.
@@ -22,8 +23,8 @@ class DiagnosticTagFilter {
     /// @details
     /// Each pattern string is compiled into a std::regex.
     ///
-    /// @param exclude_patterns Regex patterns for tags to exclude
-    /// @param include_patterns Regex patterns for tags to include (overrides excludes)
+    /// @param exclude_patterns Regex patterns for tags to exclude (overrides includes)
+    /// @param include_patterns Regex patterns for tags to include
     /// @pre All patterns in @p exclude_patterns and @p include_patterns must be valid regular expressions.
     DiagnosticTagFilter(std::vector<std::string> exclude_patterns, std::vector<std::string> include_patterns);
 

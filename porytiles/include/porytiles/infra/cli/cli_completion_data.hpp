@@ -199,25 +199,27 @@ struct CliOptionMeta {
             false},
         CliOptionMeta{
             "diagnostic-warnings-exclude",
-            "Diagnostic Warnings Exclude - Regex patterns for warning tags to exclude.",
+            "Diagnostic Warnings Exclude - Regex patterns for warning tags to exclude (overrides includes).",
             "string_list",
             {},
             false},
         CliOptionMeta{
             "diagnostic-warnings-include",
-            "Diagnostic Warnings Include - Regex patterns for warning tags to include (overrides excludes).",
+            "Diagnostic Warnings Include - Regex patterns for warning tags to show. Warnings are hidden unless a "
+            "pattern matches their tag.",
             "string_list",
             {},
             false},
         CliOptionMeta{
             "diagnostic-remarks-exclude",
-            "Diagnostic Remarks Exclude - Regex patterns for remark tags to exclude.",
+            "Diagnostic Remarks Exclude - Regex patterns for remark tags to exclude (overrides includes).",
             "string_list",
             {},
             false},
         CliOptionMeta{
             "diagnostic-remarks-include",
-            "Diagnostic Remarks Include - Regex patterns for remark tags to include (overrides excludes).",
+            "Diagnostic Remarks Include - Regex patterns for remark tags to show. Remarks are hidden unless a pattern "
+            "matches their tag.",
             "string_list",
             {},
             false},

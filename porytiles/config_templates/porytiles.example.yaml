@@ -70,14 +70,17 @@ fieldmap:
     light_level:
       default: 3
 
+# Warnings and remarks are opt-in. They are suppressed unless an include pattern matches their tag. Include a wildcard
+# (".*") to show everything, or list specific tags. Exclude patterns override includes, so a wildcard include plus
+# targeted excludes shows everything **except** the targeted excludes.
 diagnostics:
   warnings:
-    exclude: [ ".*" ]
-    include: # explicitly include only two warnings, include processed after exclude
-      - "layer-mode-warning"
-      - "tile-color-count-warning"
+    include: # show only these two warnings
+      - "nothing-to-do"
+      - "layer-mode-violation"
   remarks:
-    exclude: [ ".*" ] # disable all remarks
+    include: [ ".*" ] # show all remarks...
+    exclude: [ "tile-sharing-.*" ] # ...except the tile sharing remarks
 
 verify_checksums: true
 
