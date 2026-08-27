@@ -18,36 +18,32 @@ namespace {
 
 using namespace porytiles;
 
-/**
- * @brief Constructs a source location string from a DefineStatement's position.
- *
- * @details
- * Creates a formatted string in the form "path:line" where:
- * - path is the file path
- * - line is the 1-indexed line number from the DefineStatement's position
- *
- * @param format The text formatter to use
- * @param file_path The path to the header file
- * @param define The DefineStatement containing position information
- * @return Formatted source location string
- */
+/// @brief Constructs a source location string from a DefineStatement's position.
+///
+/// @details
+/// Creates a formatted string in the form "path:line" where:
+/// - path is the file path
+/// - line is the 1-indexed line number from the DefineStatement's position
+///
+/// @param format The text formatter to use
+/// @param file_path The path to the header file
+/// @param define The DefineStatement containing position information
+/// @return Formatted source location string
 std::string make_source_string(const TextFormatter *format, const std::string &file_path, const DefineStatement &define)
 {
     return format->format("{}:{}", FormatParam{file_path}, FormatParam{define.position().line});
 }
 
-/**
- * @brief Constructs source details showing contextual lines around a DefineStatement.
- *
- * @details
- * Creates a vector of strings showing a contextual view of the header file around the define's location. Uses
- * FileHighlightPrinter for consistent formatting with arrow prefix and styling for highlighted lines.
- *
- * @param format The text formatter to use
- * @param file_lines The cached file lines from CParserFacade
- * @param define The DefineStatement containing position information
- * @return Vector of formatted strings showing the contextual view
- */
+/// @brief Constructs source details showing contextual lines around a DefineStatement.
+///
+/// @details
+/// Creates a vector of strings showing a contextual view of the header file around the define's location. Uses
+/// FileHighlightPrinter for consistent formatting with arrow prefix and styling for highlighted lines.
+///
+/// @param format The text formatter to use
+/// @param file_lines The cached file lines from CParserFacade
+/// @param define The DefineStatement containing position information
+/// @return Vector of formatted strings showing the contextual view
 std::vector<std::string> make_source_details(
     const TextFormatter *format, const std::vector<std::string> &file_lines, const DefineStatement &define)
 {
@@ -65,18 +61,16 @@ std::vector<std::string> make_source_details(
     return printer.print(file_lines, std::vector{line_index});
 }
 
-/**
- * @brief Gets or creates the CParserFacade for the header file.
- *
- * @details
- * Lazily initializes the parser driver if it doesn't exist yet. Uses std::optional::emplace
- * for in-place construction.
- *
- * @param driver The mutable optional parser driver reference
- * @param header_path The path to the header file
- * @param format The text formatter to use
- * @return Reference to the parser driver
- */
+/// @brief Gets or creates the CParserFacade for the header file.
+///
+/// @details
+/// Lazily initializes the parser driver if it doesn't exist yet. Uses std::optional::emplace
+/// for in-place construction.
+///
+/// @param driver The mutable optional parser driver reference
+/// @param header_path The path to the header file
+/// @param format The text formatter to use
+/// @return Reference to the parser driver
 CParserFacade &get_parser_driver(
     std::optional<CParserFacade> &driver, const std::filesystem::path &header_path, const TextFormatter *format)
 {
@@ -86,20 +80,18 @@ CParserFacade &get_parser_driver(
     return driver.value();
 }
 
-/**
- * @brief Parses a DefineStatement value as std::size_t.
- *
- * @details
- * Converts the integer value from a DefineStatement to std::size_t. Returns a valid LayerValue if the define
- * has an integer value and it's non-negative, or an invalid LayerValue with error details otherwise.
- *
- * @param format The text formatter to use
- * @param define The DefineStatement containing the value to convert
- * @param file_path The header file path (for source info)
- * @param file_lines The cached file lines (for source details)
- * @param key The configuration key name (unused, for API compatibility)
- * @return LayerValue containing the parsed value or error information
- */
+/// @brief Parses a DefineStatement value as std::size_t.
+///
+/// @details
+/// Converts the integer value from a DefineStatement to std::size_t. Returns a valid LayerValue if the define
+/// has an integer value and it's non-negative, or an invalid LayerValue with error details otherwise.
+///
+/// @param format The text formatter to use
+/// @param define The DefineStatement containing the value to convert
+/// @param file_path The header file path (for source info)
+/// @param file_lines The cached file lines (for source details)
+/// @param key The configuration key name (unused, for API compatibility)
+/// @return LayerValue containing the parsed value or error information
 LayerValue<std::size_t> parse_size_t(
     const TextFormatter *format,
     const DefineStatement &define,
@@ -128,33 +120,31 @@ LayerValue<std::size_t> parse_size_t(
     return LayerValue<std::size_t>::valid(value, define.name(), source, details);
 }
 
-/**
- * @brief Searches a header file for a #define and parses its value using CParserFacade.
- *
- * @details
- * This is the main entry point for searching header defines. It:
- * 1. Gets or creates the CParserFacade for the header file
- * 2. Searches for the specified #define using find_define()
- * 3. Parses the value using the provided parser
- *
- * Returns not_provided() if:
- * - The file doesn't exist
- * - The #define is not found in the file
- *
- * Returns invalid() if:
- * - The #define is found but the value cannot be parsed
- * - There was a parse error in the file
- *
- * @tparam T The type to parse the value as
- * @tparam ParseFunc Function type for parsing (format, define, path, lines, key -> LayerValue<T>)
- * @param driver Mutable reference to the optional CParserFacade
- * @param format The text formatter to use
- * @param header_path The path to the header file
- * @param define_name The name of the #define to search for
- * @param parse_func The function to parse the define value
- * @param key The configuration key name (for error messages)
- * @return LayerValue with the parsed value, error, or not_provided status
- */
+/// @brief Searches a header file for a #define and parses its value using CParserFacade.
+///
+/// @details
+/// This is the main entry point for searching header defines. It:
+/// 1. Gets or creates the CParserFacade for the header file
+/// 2. Searches for the specified #define using find_define()
+/// 3. Parses the value using the provided parser
+///
+/// Returns not_provided() if:
+/// - The file doesn't exist
+/// - The #define is not found in the file
+///
+/// Returns invalid() if:
+/// - The #define is found but the value cannot be parsed
+/// - There was a parse error in the file
+///
+/// @tparam T The type to parse the value as
+/// @tparam ParseFunc Function type for parsing (format, define, path, lines, key -> LayerValue<T>)
+/// @param driver Mutable reference to the optional CParserFacade
+/// @param format The text formatter to use
+/// @param header_path The path to the header file
+/// @param define_name The name of the #define to search for
+/// @param parse_func The function to parse the define value
+/// @param key The configuration key name (for error messages)
+/// @return LayerValue with the parsed value, error, or not_provided status
 template <typename T, typename ParseFunc>
 LayerValue<T> search_header_define(
     std::optional<CParserFacade> &driver,

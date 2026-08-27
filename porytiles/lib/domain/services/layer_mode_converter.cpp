@@ -28,7 +28,7 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(c
     std::vector<TilemapEntry> result;
     result.reserve(num_metatiles * metatile::entries_per_metatile_triple);
 
-    // Create a transparent entry (tile_index = 0, pal_index = 0, no flips)
+    // Create a transparent entry (tile_index = 0, palette_index = 0, no flips)
     const TilemapEntry transparent{0, 0, false, false};
 
     for (std::size_t i = 0; i < num_metatiles; ++i) {
@@ -81,7 +81,9 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(c
 }
 
 [[nodiscard]] std::vector<TilemapEntry> LayerModeConverter::dual_layerize(
-    const std::vector<TilemapEntry> &entries, const std::vector<Metatile<Rgba32>> &source_metatiles)
+    const std::vector<TilemapEntry> &entries,
+    const std::vector<Metatile<Rgba32>> &source_metatiles,
+    const std::vector<std::optional<LayerType>> &explicit_layer_types)
 {
     const std::size_t expected_entries_size = source_metatiles.size() * metatile::entries_per_metatile_triple;
     if (entries.size() != expected_entries_size) {
@@ -97,14 +99,46 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(c
         const auto &metatile = source_metatiles[i];
         const std::size_t input_offset = i * metatile::entries_per_metatile_triple;
 
-        // Check precondition: no metatile should have implied LayerMode::triple
+        // Implied-triple metatiles are legal input here: validate_layer_mode is the gate, and with
+        // ignore_triple_layer_content on it lets them through to be reduced by dropping a layer group. infer_layer_type
+        // has no meaningful answer for an implied-triple metatile, so it falls back to 'normal' (which drops the bottom
+        // group). An explicit pin still wins over that fallback, so the drop logic below is unchanged; the only
+        // difference is the enriched warning when such a metatile drops visible content.
         const LayerMode layer_mode = metatile.infer_layer_mode(extrinsic_transparency_);
-        if (layer_mode == LayerMode::triple) {
-            panic("metatile " + std::to_string(i) + " has implied LayerMode::triple, cannot dual_layerize");
-        }
+        const bool is_implied_triple = layer_mode == LayerMode::triple;
 
-        // Infer the layer type for this metatile using extrinsic transparency
-        const LayerType layer_type = metatile.infer_layer_type(extrinsic_transparency_);
+        // An explicit override wins over inference and drives which layer group is dropped.
+        const LayerType inferred = metatile.infer_layer_type(extrinsic_transparency_);
+        const LayerType layer_type = (i < explicit_layer_types.size() && explicit_layer_types[i].has_value())
+                                         ? explicit_layer_types[i].value()
+                                         : inferred;
+
+        // The layer group this type drops. Warn if any dropped entry references a visible (non-transparent) tile, which
+        // means the reduction would silently discard real tiles. Inspect the actual entries here (post anim overrides),
+        // not the source RGBA transparency, so overrides that made an entry visible are caught.
+        const std::size_t drop_begin = layer_type == LayerType::normal ? 0 : (layer_type == LayerType::covered ? 8 : 4);
+        bool drops_visible = false;
+        for (std::size_t j = drop_begin; j < drop_begin + 4; ++j) {
+            if (entries[input_offset + j].tile_index() != 0) {
+                drops_visible = true;
+                break;
+            }
+        }
+        if (drops_visible) {
+            std::vector<std::string> lines;
+            lines.push_back(diag_->formatter().format(
+                "Metatile {}: layer type '{}' drops a layer that contains visible tiles. Those tiles will be "
+                "discarded.",
+                FormatParam{i},
+                FormatParam{layer_type_csv_token(layer_type), Style::bold}));
+            if (is_implied_triple) {
+                lines.push_back(diag_->formatter().format(
+                    "This metatile has content on all three layers. Pin its layer type via a '{}' layer_type pin to "
+                    "control which layer is dropped.",
+                    FormatParam{"fieldmap.role_pins", Style::bold}));
+            }
+            diag_->warning("dual-layer-drop", lines);
+        }
 
         switch (layer_type) {
         case LayerType::normal:

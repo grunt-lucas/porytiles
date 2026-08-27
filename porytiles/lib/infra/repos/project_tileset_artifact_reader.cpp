@@ -56,10 +56,10 @@ ChainableResult<void> import_porytiles_palette(
     const ArtifactKey &src_key,
     std::size_t index,
     const std::filesystem::path &project_root,
-    const FilePalLoader &loader)
+    const FilePaletteLoader &loader)
 {
-    if (index >= pal::num_pals) {
-        panic(std::format("invalid pal index {}: out of range", index));
+    if (index >= palette::num_palettes) {
+        panic(std::format("invalid palette index {}: out of range", index));
     }
 
     // Keys are relative to project_root, so prepend for file I/O
@@ -68,32 +68,30 @@ ChainableResult<void> import_porytiles_palette(
         loader.load_with_wildcards((project_root / src_key.key()).string()),
         void,
         "Failed to load palette file.");
-    dest.porytiles_component().set_pal(index, palette);
+    dest.porytiles_component().set_palette(index, palette);
 
     return {};
 }
 
-/**
- * @brief Template helper for importing animation frames into a tileset component.
- *
- * @details
- * This function handles the tileset-specific logic for importing animation frames. It uses the shared
- * `load_animation_frame_from_png` helper for PNG loading and tile extraction, then manages the tileset component
- * integration including animation creation, key frame vs regular frame handling, and dimension tracking.
- *
- * @tparam PixelType The pixel type (Rgba32 or IndexPixel)
- * @tparam LoaderType The PNG loader type (must have load_from_file method)
- * @tparam ComponentGetter Callable returning a reference to the tileset component
- * @param dest The destination tileset
- * @param src_key The artifact key for the source PNG file
- * @param project_root The project root path (keys are relative to this)
- * @param anim_name The name of the animation
- * @param frame_name The frame name ("key" for key frames, otherwise arbitrary string like "0", "1", "left", etc.)
- * @param loader The PNG image loader
- * @param component_getter Lambda to get the appropriate component from tileset
- * @param error_context Description for error messages (e.g., "Porymap animation frame")
- * @return ChainableResult<void> indicating success or failure
- */
+/// @brief Template helper for importing animation frames into a tileset component.
+///
+/// @details
+/// This function handles the tileset-specific logic for importing animation frames. It uses the shared
+/// `load_animation_frame_from_png` helper for PNG loading and tile extraction, then manages the tileset component
+/// integration including animation creation, key frame vs regular frame handling, and dimension tracking.
+///
+/// @tparam PixelType The pixel type (Rgba32 or IndexPixel)
+/// @tparam LoaderType The PNG loader type (must have load_from_file method)
+/// @tparam ComponentGetter Callable returning a reference to the tileset component
+/// @param dest The destination tileset
+/// @param src_key The artifact key for the source PNG file
+/// @param project_root The project root path (keys are relative to this)
+/// @param anim_name The name of the animation
+/// @param frame_name The frame name ("key" for key frames, otherwise arbitrary string like "0", "1", "left", etc.)
+/// @param loader The PNG image loader
+/// @param component_getter Lambda to get the appropriate component from tileset
+/// @param error_context Description for error messages (e.g., "Porymap animation frame")
+/// @return ChainableResult<void> indicating success or failure
 template <SupportsTransparency PixelType, typename LoaderType, typename ComponentGetter>
 ChainableResult<void> import_anim_frame_impl(
     Tileset &dest,
@@ -148,9 +146,7 @@ ChainableResult<void> import_anim_frame_impl(
 
 namespace porytiles {
 
-/*
- * Porymap artifacts
- */
+// Porymap artifacts
 ChainableResult<void> ProjectTilesetArtifactReader::read_metatiles_bin(Tileset &dest, const ArtifactKey &src_key) const
 {
     // Keys are relative to project_root_, so prepend for file I/O
@@ -167,13 +163,9 @@ ProjectTilesetArtifactReader::read_metatile_attributes_bin(Tileset &dest, const 
     // Keys are relative to project_root_, so prepend for file I/O
     const auto path = project_root_ / src_key.key();
     PT_TRY_ASSIGN_CHAIN_ERR(
-        attributes,
-        metatile_attr_size_ == attr::bytes_per_attr_firered ? parse_firered_metatile_attributes(path)
-                                                            : parse_emerald_metatile_attributes(path),
-        void,
-        "Failed to read metatile_attributes.bin.");
-    for (auto &attr : attributes) {
-        dest.porymap_component().push_back_attribute(std::move(attr));
+        attributes, parse_metatile_attributes(path, *schema_), void, "Failed to read metatile_attributes.bin.");
+    for (auto &attribute : attributes) {
+        dest.porymap_component().push_back_attribute(std::move(attribute));
     }
     return {};
 }
@@ -187,14 +179,14 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_tiles_png(Tileset &dest
 }
 
 ChainableResult<void>
-ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const
+ProjectTilesetArtifactReader::read_porymap_palette_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const
 {
-    if (index >= pal::num_pals) {
-        panic(std::format("invalid pal index {}: out of range", index));
+    if (index >= palette::num_palettes) {
+        panic(std::format("invalid palette index {}: out of range", index));
     }
     // Keys are relative to project_root_, so prepend for file I/O
-    PT_TRY_ASSIGN_PASS_ERR(palette, load_porymap_palette(project_root_ / src_key.key(), *pal_loader_), void);
-    dest.porymap_component().set_pal(index, std::move(palette));
+    PT_TRY_ASSIGN_PASS_ERR(palette, load_porymap_palette(project_root_ / src_key.key(), *palette_loader_), void);
+    dest.porymap_component().set_palette(index, std::move(palette));
     return {};
 }
 
@@ -228,7 +220,7 @@ ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKe
 
     // Setup callback info, use Porytiles-managed callback regardless of metadata
     const auto tileset_cased = extract_tileset_cased_name(dest.name());
-    const std::string callback_func = "InitTilesetAnim_PorytilesManaged_" + tileset_cased.to_pascal_case();
+    const std::string callback_func = anim::managed_callback_name(dest.name());
 
     // Parse C code for animation params
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -254,9 +246,7 @@ ProjectTilesetArtifactReader::read_porymap_pal_n(Tileset &dest, const ArtifactKe
     return {};
 }
 
-/*
- * Porytiles artifacts
- */
+// Porytiles artifacts
 ChainableResult<void> ProjectTilesetArtifactReader::read_bottom_png(Tileset &dest, const ArtifactKey &src_key) const
 {
     PT_TRY_CALL_PASS_ERR(
@@ -298,18 +288,28 @@ ChainableResult<void> ProjectTilesetArtifactReader::read_top_png(Tileset &dest, 
 
 ChainableResult<void> ProjectTilesetArtifactReader::read_attributes_csv(Tileset &dest, const ArtifactKey &src_key) const
 {
-    // Keys are relative to project_root_, so prepend for file I/O
-    PT_TRY_ASSIGN_PASS_ERR(attributes, attributes_csv_loader_->load((project_root_ / src_key.key()).string()), void);
-    for (const auto &[metatile_id, attribute] : attributes) {
+    // The CSV still loads using the owning tileset's name. The schema is supposed to be project-global, but per-tileset
+    // formatting config like role_pins resolves at that tileset's config scope.
+    PT_TRY_ASSIGN_PASS_ERR(
+        load_result,
+        attributes_csv_loader_->load((project_root_ / src_key.key()).string(), *schema_, *provider_map_, dest.name()),
+        void);
+    for (const auto &[metatile_id, attribute] : load_result.attributes) {
         dest.porytiles_component().insert_attribute(metatile_id, attribute);
+    }
+    // Record, per role, whether the active pin column was present. The decompiler's round-trip merge reads this to
+    // decide between preserving prior pin state (column present) and pinning every row (column absent).
+    for (const auto &[role, present] : load_result.active_pin_column_present) {
+        dest.porytiles_component().prior_pin_column_state(
+            role, present ? PriorPinColumnState::column_present : PriorPinColumnState::column_absent);
     }
     return {};
 }
 
-ChainableResult<void>
-ProjectTilesetArtifactReader::read_porytiles_pal_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const
+ChainableResult<void> ProjectTilesetArtifactReader::read_porytiles_palette_n(
+    Tileset &dest, const ArtifactKey &src_key, std::size_t index) const
 {
-    PT_TRY_CALL_PASS_ERR(import_porytiles_palette(dest, src_key, index, project_root_, *pal_loader_), void);
+    PT_TRY_CALL_PASS_ERR(import_porytiles_palette(dest, src_key, index, project_root_, *palette_loader_), void);
     return {};
 }
 

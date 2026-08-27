@@ -624,8 +624,8 @@ TEST(ColorSetEdgeCaseTests, SetAtBoundaryIndex)
     EXPECT_TRUE(set.test(ColorIndex{0}));
 
     // Test near max index (num_colors - 1)
-    // num_colors is pal::max_size * pal::num_pals
-    // pal::max_size is typically 16, pal::num_pals is typically 16
+    // num_colors is palette::max_size * palette::num_palettes
+    // palette::max_size is typically 16, palette::num_palettes is typically 16
     // So num_colors = 256
     set.set(ColorIndex{255});
     EXPECT_TRUE(set.test(ColorIndex{255}));

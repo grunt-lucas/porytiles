@@ -4,87 +4,155 @@
 
 namespace porytiles {
 
-/**
- * @brief Unwraps a tileset-scoped config value via pointer access, returning early if the value is not available.
- *
- * @details
- * This macro retrieves a config value for a given tileset using pointer syntax (ptr->config) and automatically handles
- * the error case. If the config value is not available, it returns a ChainableResult error with a formatted message.
- * Otherwise, it unwraps the value and creates a local variable with the name specified by the config parameter.
- *
- * @param ptr A pointer to a DomainConfig, AppConfig, or InfraConfig object
- * @param config The name of the config method to call and the resulting variable name
- * @param tileset_name The tileset name to pass to the config method
- * @param return_type The template parameter for ChainableResult in case of error
- *
- * @see PT_UNWRAP_TILESET_CONFIG_REF for reference-based access
- */
+/// @brief Unwraps a tileset-scoped config value via pointer access into an explicitly named local variable, returning
+/// early if the value is not available.
+///
+/// @details
+/// This macro retrieves a config value for a given tileset using pointer syntax (ptr->config) and automatically handles
+/// the error case. If the config value is not available, it returns a ChainableResult error with a formatted message.
+/// Otherwise, it unwraps the value into a local variable named by the var parameter (with an internal var##_result
+/// temporary).
+///
+/// Prefer PT_UNWRAP_TILESET_CONFIG_PTR when the config name works as the variable name. This form exists for call
+/// sites that unwrap the same config value more than once in a single scope (e.g. for two different tilesets), where
+/// the config-named form would redeclare its locals.
+///
+/// @param var The variable name to assign the unwrapped value to
+/// @param ptr A pointer to a DomainConfig, AppConfig, or InfraConfig object
+/// @param config The name of the config method to call
+/// @param tileset_name The tileset name to pass to the config method
+/// @param return_type The template parameter for ChainableResult in case of error
+///
+/// @see PT_UNWRAP_TILESET_CONFIG_PTR for the config-named convenience form
+/// @see PT_UNWRAP_TILESET_CONFIG_REF_AS for reference-based access
+#define PT_UNWRAP_TILESET_CONFIG_PTR_AS(var, ptr, config, tileset_name, return_type)                                   \
+    auto var##_result = ptr->config(ConfigScopeType::tileset, tileset_name);                                           \
+    if (!var##_result.has_value()) {                                                                                   \
+        return ChainableResult<return_type>{                                                                           \
+            FormattableError{                                                                                          \
+                "Failed to get config value '{}:{}:{}'.",                                                              \
+                FormatParam{"tileset", Style::bold},                                                                   \
+                FormatParam{tileset_name, Style::bold},                                                                \
+                FormatParam{#config, Style::bold}},                                                                    \
+            var##_result};                                                                                             \
+    }                                                                                                                  \
+    auto var = std::move(var##_result).value();
+
+/// @brief Unwraps a tileset-scoped config value via pointer access, returning early if the value is not available.
+///
+/// @details
+/// Convenience form of PT_UNWRAP_TILESET_CONFIG_PTR_AS that names the resulting local variable after the config
+/// method itself. Because the locals are derived from the config name, this form cannot unwrap the same config value
+/// twice in one scope; use PT_UNWRAP_TILESET_CONFIG_PTR_AS for that.
+///
+/// @param ptr A pointer to a DomainConfig, AppConfig, or InfraConfig object
+/// @param config The name of the config method to call and the resulting variable name
+/// @param tileset_name The tileset name to pass to the config method
+/// @param return_type The template parameter for ChainableResult in case of error
+///
+/// @see PT_UNWRAP_TILESET_CONFIG_PTR_AS for the explicitly named form
+/// @see PT_UNWRAP_TILESET_CONFIG_REF for reference-based access
 #define PT_UNWRAP_TILESET_CONFIG_PTR(ptr, config, tileset_name, return_type)                                           \
-    auto config##_result = ptr->config(ConfigScopeType::tileset, tileset_name);                                        \
-    if (!config##_result.has_value()) {                                                                                \
+    PT_UNWRAP_TILESET_CONFIG_PTR_AS(config, ptr, config, tileset_name, return_type)
+
+/// @brief Unwraps a tileset-scoped config value via reference access into an explicitly named local variable,
+/// returning early if the value is not available.
+///
+/// @details
+/// This macro retrieves a config value for a given tileset using reference syntax (ref.config) and automatically
+/// handles the error case. If the config value is not available, it returns a ChainableResult error with a formatted
+/// message. Otherwise, it unwraps the value into a local variable named by the var parameter (with an internal
+/// var##_result temporary).
+///
+/// Prefer PT_UNWRAP_TILESET_CONFIG_REF when the config name works as the variable name. This form exists for call
+/// sites that unwrap the same config value more than once in a single scope (e.g. for two different tilesets), where
+/// the config-named form would redeclare its locals.
+///
+/// @param var The variable name to assign the unwrapped value to
+/// @param ref A reference to a DomainConfig, AppConfig, or InfraConfig object
+/// @param config The name of the config method to call
+/// @param tileset_name The tileset name to pass to the config method
+/// @param return_type The template parameter for ChainableResult in case of error
+///
+/// @see PT_UNWRAP_TILESET_CONFIG_REF for the config-named convenience form
+/// @see PT_UNWRAP_TILESET_CONFIG_PTR_AS for pointer-based access
+#define PT_UNWRAP_TILESET_CONFIG_REF_AS(var, ref, config, tileset_name, return_type)                                   \
+    auto var##_result = ref.config(ConfigScopeType::tileset, tileset_name);                                            \
+    if (!var##_result.has_value()) {                                                                                   \
         return ChainableResult<return_type>{                                                                           \
             FormattableError{                                                                                          \
                 "Failed to get config value '{}:{}:{}'.",                                                              \
                 FormatParam{"tileset", Style::bold},                                                                   \
                 FormatParam{tileset_name, Style::bold},                                                                \
                 FormatParam{#config, Style::bold}},                                                                    \
-            config##_result};                                                                                          \
+            var##_result};                                                                                             \
     }                                                                                                                  \
-    auto config = std::move(config##_result).value();
+    auto var = std::move(var##_result).value();
 
-/**
- * @brief Unwraps a tileset-scoped config value via reference access, returning early if the value is not available.
- *
- * @details
- * This macro retrieves a config value for a given tileset using reference syntax (ref.config) and automatically handles
- * the error case. If the config value is not available, it returns a ChainableResult error with a formatted message.
- * Otherwise, it unwraps the value and creates a local variable with the name specified by the config parameter.
- *
- * @param ref A reference to a DomainConfig, AppConfig, or InfraConfig object
- * @param config The name of the config method to call and the resulting variable name
- * @param tileset_name The tileset name to pass to the config method
- * @param return_type The template parameter for ChainableResult in case of error
- *
- * @see PT_UNWRAP_TILESET_CONFIG_PTR for pointer-based access
- */
+/// @brief Unwraps a tileset-scoped config value via reference access, returning early if the value is not available.
+///
+/// @details
+/// Convenience form of PT_UNWRAP_TILESET_CONFIG_REF_AS that names the resulting local variable after the config
+/// method itself. Because the locals are derived from the config name, this form cannot unwrap the same config value
+/// twice in one scope; use PT_UNWRAP_TILESET_CONFIG_REF_AS for that.
+///
+/// @param ref A reference to a DomainConfig, AppConfig, or InfraConfig object
+/// @param config The name of the config method to call and the resulting variable name
+/// @param tileset_name The tileset name to pass to the config method
+/// @param return_type The template parameter for ChainableResult in case of error
+///
+/// @see PT_UNWRAP_TILESET_CONFIG_REF_AS for the explicitly named form
+/// @see PT_UNWRAP_TILESET_CONFIG_PTR for pointer-based access
 #define PT_UNWRAP_TILESET_CONFIG_REF(ref, config, tileset_name, return_type)                                           \
-    auto config##_result = ref.config(ConfigScopeType::tileset, tileset_name);                                         \
-    if (!config##_result.has_value()) {                                                                                \
-        return ChainableResult<return_type>{                                                                           \
-            FormattableError{                                                                                          \
-                "Failed to get config value '{}:{}:{}'.",                                                              \
-                FormatParam{"tileset", Style::bold},                                                                   \
-                FormatParam{tileset_name, Style::bold},                                                                \
-                FormatParam{#config, Style::bold}},                                                                    \
-            config##_result};                                                                                          \
-    }                                                                                                                  \
-    auto config = std::move(config##_result).value();
+    PT_UNWRAP_TILESET_CONFIG_REF_AS(config, ref, config, tileset_name, return_type)
 
-/**
- * @brief Unwraps a layout-scoped config value from a DomainConfig, AppConfig, or InfraConfig object, returning early if
- * the value is not available.
- *
- * @details
- * This macro retrieves a config value for a given layout and automatically handles the error case. If the config value
- * is not available, it returns a ChainableResult error with a formatted message. Otherwise, it unwraps the value and
- * creates a local variable with the name specified by the config parameter.
- *
- * @param ptr A pointer to a config object
- * @param config The name of the config method to call and the resulting variable name
- * @param layout_name The layout name to pass to the config method
- * @param return_type The template parameter for ChainableResult in case of error
- */
-#define PT_UNWRAP_LAYOUT_CONFIG(ptr, config, layout_name, return_type)                                                 \
-    auto config##_result = ptr->config(ConfigScopeType::layout, layout_name);                                          \
-    if (!config##_result.has_value()) {                                                                                \
+/// @brief Unwraps a layout-scoped config value into an explicitly named local variable, returning early if the value
+/// is not available.
+///
+/// @details
+/// This macro retrieves a config value for a given layout and automatically handles the error case. If the config
+/// value is not available, it returns a ChainableResult error with a formatted message. Otherwise, it unwraps the
+/// value into a local variable named by the var parameter (with an internal var##_result temporary).
+///
+/// Prefer PT_UNWRAP_LAYOUT_CONFIG when the config name works as the variable name. This form exists for call sites
+/// that unwrap the same config value more than once in a single scope (e.g. for two different layouts), where the
+/// config-named form would redeclare its locals.
+///
+/// @param var The variable name to assign the unwrapped value to
+/// @param ptr A pointer to a config object
+/// @param config The name of the config method to call
+/// @param layout_name The layout name to pass to the config method
+/// @param return_type The template parameter for ChainableResult in case of error
+///
+/// @see PT_UNWRAP_LAYOUT_CONFIG for the config-named convenience form
+#define PT_UNWRAP_LAYOUT_CONFIG_AS(var, ptr, config, layout_name, return_type)                                         \
+    auto var##_result = ptr->config(ConfigScopeType::layout, layout_name);                                             \
+    if (!var##_result.has_value()) {                                                                                   \
         return ChainableResult<return_type>{                                                                           \
             FormattableError{                                                                                          \
                 "Failed to get config value '{}:{}:{}'.",                                                              \
                 FormatParam{"layout", Style::bold},                                                                    \
                 FormatParam{layout_name, Style::bold},                                                                 \
                 FormatParam{#config, Style::bold}},                                                                    \
-            config##_result};                                                                                          \
+            var##_result};                                                                                             \
     }                                                                                                                  \
-    auto config = std::move(config##_result).value();
+    auto var = std::move(var##_result).value();
+
+/// @brief Unwraps a layout-scoped config value from a DomainConfig, AppConfig, or InfraConfig object, returning early
+/// if the value is not available.
+///
+/// @details
+/// Convenience form of PT_UNWRAP_LAYOUT_CONFIG_AS that names the resulting local variable after the config method
+/// itself. Because the locals are derived from the config name, this form cannot unwrap the same config value twice
+/// in one scope; use PT_UNWRAP_LAYOUT_CONFIG_AS for that.
+///
+/// @param ptr A pointer to a config object
+/// @param config The name of the config method to call and the resulting variable name
+/// @param layout_name The layout name to pass to the config method
+/// @param return_type The template parameter for ChainableResult in case of error
+///
+/// @see PT_UNWRAP_LAYOUT_CONFIG_AS for the explicitly named form
+#define PT_UNWRAP_LAYOUT_CONFIG(ptr, config, layout_name, return_type)                                                 \
+    PT_UNWRAP_LAYOUT_CONFIG_AS(config, ptr, config, layout_name, return_type)
 
 } // namespace porytiles

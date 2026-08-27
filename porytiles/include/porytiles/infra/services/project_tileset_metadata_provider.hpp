@@ -1,10 +1,12 @@
 #pragma once
 
+#include <cstdint>
 #include <filesystem>
 #include <map>
 #include <set>
 #include <string>
 #include <utility>
+#include <vector>
 
 #include "gsl/pointers"
 
@@ -17,16 +19,29 @@
 
 namespace porytiles {
 
-/**
- * @brief Provides a pokeemerald project filesystem-based implementation for TilesetMetadataProvider.
- *
- * @details
- * This class parses tileset struct declarations from headers.h to extract metadata such as whether a tileset is
- * primary/secondary, what animation callback it uses, and the variable names for tiles, palettes, metatiles, and
- * attributes.
- *
- * Tileset struct metadata is lazy-loaded and cached for efficiency.
- */
+namespace detail {
+
+enum class IncbinResolutionFailure : std::uint8_t {
+    not_found,  // The variable name was not declared in any scanned source file.
+    empty_paths // The variable was found but its INCBIN declaration captured no paths.
+};
+
+struct UnresolvedIncbinVar {
+    std::string field_label;   // The struct field, e.g. ".tiles" or ".metatileAttributes".
+    std::string variable_name; // The INCBIN variable the field referenced.
+    IncbinResolutionFailure reason;
+};
+
+} // namespace detail
+
+/// @brief Provides a pokeemerald project filesystem-based implementation for TilesetMetadataProvider.
+///
+/// @details
+/// This class parses tileset struct declarations from headers.h to extract metadata such as whether a tileset is
+/// primary/secondary, what animation callback it uses, and the variable names for tiles, palettes, metatiles, and
+/// attributes.
+///
+/// Tileset struct metadata is lazy-loaded and cached for efficiency.
 class ProjectTilesetMetadataProvider : public TilesetMetadataProvider {
   public:
     ProjectTilesetMetadataProvider(
@@ -45,41 +60,35 @@ class ProjectTilesetMetadataProvider : public TilesetMetadataProvider {
 
     [[nodiscard]] ChainableResult<std::set<std::string>> tilesets() const override;
 
-    /**
-     * @brief Retrieves metadata for a specific tileset from the struct cache.
-     *
-     * @details
-     * This method parses tileset struct declarations from headers.h to extract raw field values. The result
-     * contains only the fields directly from the struct: name, is_secondary, variable names, and callback.
-     *
-     * @param tileset_name The name of the tileset (e.g., "gTileset_General")
-     * @pre tileset_name must refer to an existing tileset on disk
-     * @return The parsed metadata for the tileset
-     */
+    /// @brief Retrieves metadata for a specific tileset from the struct cache.
+    ///
+    /// @details
+    /// This method parses tileset struct declarations from headers.h to extract raw field values. The result
+    /// contains only the fields directly from the struct: name, is_secondary, variable names, and callback.
+    ///
+    /// @param tileset_name The name of the tileset (e.g., "gTileset_General")
+    /// @pre tileset_name must refer to an existing tileset on disk
+    /// @return The parsed metadata for the tileset
     [[nodiscard]] ChainableResult<ProjectTilesetMetadata> metadata_for(const std::string &tileset_name) const;
 
-    /**
-     * @brief Resolves artifact paths for a tileset by parsing INCBIN declarations.
-     *
-     * @details
-     * This method retrieves tileset metadata (which contains INCBIN variable names), then looks up the
-     * actual filesystem paths for those variables by parsing graphics.h, metatiles.h, and src/graphics.c.
-     *
-     * @param tileset_name The name of the tileset (e.g., "gTileset_General")
-     * @pre tileset_name must refer to an existing tileset on disk
-     * @return The resolved artifact paths for the tileset
-     */
+    /// @brief Resolves artifact paths for a tileset by parsing INCBIN declarations.
+    ///
+    /// @details
+    /// This method retrieves tileset metadata (which contains INCBIN variable names), then looks up the
+    /// actual filesystem paths for those variables by parsing graphics.h, metatiles.h, and src/graphics.c.
+    ///
+    /// @param tileset_name The name of the tileset (e.g., "gTileset_General")
+    /// @pre tileset_name must refer to an existing tileset on disk
+    /// @return The resolved artifact paths for the tileset
     [[nodiscard]] ChainableResult<ProjectTilesetArtifactPaths>
     artifact_paths_for(const std::string &tileset_name) const;
 
-    /**
-     * @brief Invalidates the lazy-loaded metadata and artifact paths caches, forcing a re-parse on next access.
-     *
-     * @details
-     * This is needed when the underlying files (e.g. headers.h) have been modified on disk since the cache was
-     * populated. For example, after creating a new tileset struct, the cache must be invalidated so subsequent
-     * metadata lookups see the newly written struct.
-     */
+    /// @brief Invalidates the lazy-loaded metadata and artifact paths caches, forcing a re-parse on next access.
+    ///
+    /// @details
+    /// This is needed when the underlying files (e.g. headers.h) have been modified on disk since the cache was
+    /// populated. For example, after creating a new tileset struct, the cache must be invalidated so subsequent
+    /// metadata lookups see the newly written struct.
     void invalidate_metadata_cache() const;
 
   private:
@@ -94,6 +103,9 @@ class ProjectTilesetMetadataProvider : public TilesetMetadataProvider {
     // Lazy-loaded cache for resolved tileset artifact paths (mutable for const methods)
     mutable bool artifact_paths_parsed_{false};
     mutable std::map<std::string, ProjectTilesetArtifactPaths> tileset_artifact_paths_;
+
+    // Per-tileset record of artifact fields that failed INCBIN resolution, for diagnostics
+    mutable std::map<std::string, std::vector<detail::UnresolvedIncbinVar>> tileset_unresolved_vars_;
 };
 
 } // namespace porytiles

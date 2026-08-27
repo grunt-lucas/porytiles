@@ -582,7 +582,7 @@ TEST(TileConvertersTests, ColorTileFromIndexTile_FullyPopulatedPalette)
     palette.add(rgba_yellow);  // Index 4
 
     // Fill remaining slots with generated colors
-    for (std::size_t i = 5; i < pal::max_size; ++i) {
+    for (std::size_t i = 5; i < palette::max_size; ++i) {
         palette.add(
             Rgba32{
                 static_cast<std::uint8_t>(i * 10),
@@ -592,7 +592,7 @@ TEST(TileConvertersTests, ColorTileFromIndexTile_FullyPopulatedPalette)
 
     // Create a tile using all palette indices
     PixelTile<IndexPixel> index_tile{};
-    for (std::size_t i = 0; i < pal::max_size; ++i) {
+    for (std::size_t i = 0; i < palette::max_size; ++i) {
         index_tile.set(i, IndexPixel{i});
     }
 
@@ -651,7 +651,7 @@ TEST(TileConvertersTests, ColorTileFromIndexTile_SingleColorPalette)
 TEST(TileConvertersTests, ColorTileFromIndexTile_BoundaryIndexValues)
 {
     Palette<Rgba32> palette{};
-    for (std::size_t i = 0; i < pal::max_size; ++i) {
+    for (std::size_t i = 0; i < palette::max_size; ++i) {
         palette.add(
             Rgba32{
                 static_cast<std::uint8_t>(i * 16),
@@ -660,9 +660,9 @@ TEST(TileConvertersTests, ColorTileFromIndexTile_BoundaryIndexValues)
     }
 
     PixelTile<IndexPixel> index_tile{};
-    index_tile.set(0, IndexPixel{0});                 // Minimum valid index
-    index_tile.set(1, IndexPixel{pal::max_size - 1}); // Maximum valid index
-    index_tile.set(2, IndexPixel{pal::max_size / 2}); // Middle index
+    index_tile.set(0, IndexPixel{0});                     // Minimum valid index
+    index_tile.set(1, IndexPixel{palette::max_size - 1}); // Maximum valid index
+    index_tile.set(2, IndexPixel{palette::max_size / 2}); // Middle index
 
     auto color_tile = color_tile_from_index_tile(index_tile, palette, rgba_magenta);
 

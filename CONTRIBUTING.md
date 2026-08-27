@@ -15,10 +15,45 @@ Pick something descriptive;
 the PR target (`develop` for new work, `hotfix` for hotfixes, etc.) carries the meaning.
 
 - [Contributions](#contributions)
+- [Labels](#labels)
 - [Branching](#branching)
 - [Branch Cleanup](#branch-cleanup)
 - [Changelog](#changelog)
 - [Documentation](#documentation)
+
+
+# Labels
+Issues and pull requests are organized with a small set of GitHub labels.
+
+If you're looking for somewhere to start,
+browse the issue tracker filtered by:
+
+- [`good first issue`](https://github.com/grunt-lucas/porytiles/issues?q=is%3Aopen+label%3A%22good+first+issue%22)
+  — well-scoped, approachable work that's a good entry point to the codebase.
+- [`help wanted`](https://github.com/grunt-lucas/porytiles/issues?q=is%3Aopen+label%3A%22help+wanted%22)
+  — issues where outside contributions are especially welcome.
+
+Each issue and PR also carries a *type* label describing the kind of change:
+
+- `bug` — fixes incorrect behavior.
+- `feature` — new end-user functionality.
+- `refactoring` — code cleanup that preserves behavior.
+- `tests` — adds or fixes tests and coverage.
+- `documentation` — documentation changes.
+- `repo-housekeeping` — build, CI, tooling, scripts, or repo configuration.
+- `breaking-change` — changes that break backward compatibility (CLI, config, or output).
+
+Maintainers apply these labels during triage and review,
+so you don't need to set them yourself
+(fork-based PRs can't add labels anyway).
+Just describe your change clearly in the PR,
+and flag it if it's a breaking change
+or qualifies for the `no-changelog` exemption (see [Changelog](#changelog)).
+
+The remaining labels
+(`triage-blocked`, `duplicate`, `wont-do`, `support`, `legacy-porytiles`, `release`)
+are for maintainer triage and release bookkeeping,
+and rarely concern contributors directly.
 
 
 # Branching

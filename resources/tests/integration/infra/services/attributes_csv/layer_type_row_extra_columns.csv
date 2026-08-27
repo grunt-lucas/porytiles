@@ -1,0 +1,4 @@
+id,behavior,pin::layer_type
+0,MB_NORMAL,covered
+1,MB_TALL_GRASS,normal,MB_COUNTER
+2,MB_DEEP_WATER,split

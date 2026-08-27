@@ -12,24 +12,20 @@
 
 namespace porytiles {
 
-/**
- * @brief Per-strategy parameters for the BacktrackingStrategy packing algorithm.
- *
- * @details
- * When any field has a value, the strategy runs in single-config mode with the provided parameters (unset fields fall
- * back to their defaults). When no fields have values, the strategy uses its built-in preset matrix mode.
- */
+/// @brief Per-strategy parameters for the BacktrackingStrategy packing algorithm.
+///
+/// @details
+/// When any field has a value, the strategy runs in single-config mode with the provided parameters (unset fields fall
+/// back to their defaults). When no fields have values, the strategy uses its built-in preset matrix mode.
 struct BacktrackingParams {
     ConfigPODField<SearchAlgorithm> search_algorithm;
     ConfigPODField<std::size_t> node_cutoff;
     ConfigPODField<std::size_t> best_branches;
     ConfigPODField<bool> smart_prune;
 
-    /**
-     * @brief Checks whether any parameter has been explicitly set.
-     *
-     * @return @c true if at least one field has a value
-     */
+    /// @brief Checks whether any parameter has been explicitly set.
+    ///
+    /// @return @c true if at least one field has a value
     [[nodiscard]] bool has_any() const
     {
         return search_algorithm.has_value() || node_cutoff.has_value() || best_branches.has_value() ||
@@ -37,48 +33,40 @@ struct BacktrackingParams {
     }
 };
 
-/**
- * @brief Per-strategy parameters for the OverloadAndRemoveStrategy packing algorithm.
- *
- * @details
- * When any field has a value, the strategy runs in single-config mode with the provided parameters (unset fields fall
- * back to their defaults). When no fields have values, the strategy uses its built-in preset matrix mode.
- */
+/// @brief Per-strategy parameters for the OverloadAndRemoveStrategy packing algorithm.
+///
+/// @details
+/// When any field has a value, the strategy runs in single-config mode with the provided parameters (unset fields fall
+/// back to their defaults). When no fields have values, the strategy uses its built-in preset matrix mode.
 struct OverloadAndRemoveParams {
     ConfigPODField<std::size_t> max_attempts;
     ConfigPODField<std::uint64_t> seed;
     ConfigPODField<ShuffleStrategy> shuffle_strategy;
 
-    /**
-     * @brief Checks whether any parameter has been explicitly set.
-     *
-     * @return @c true if at least one field has a value
-     */
+    /// @brief Checks whether any parameter has been explicitly set.
+    ///
+    /// @return @c true if at least one field has a value
     [[nodiscard]] bool has_any() const
     {
         return max_attempts.has_value() || seed.has_value() || shuffle_strategy.has_value();
     }
 };
 
-/**
- * @brief Container for per-strategy packing parameters.
- *
- * @details
- * Groups the parameter blocks for all configurable packing strategies. Each strategy's parameter block is independent;
- * only the block matching the selected @c PackingStrategyType is consulted at runtime. If the matching block has no
- * fields set (@c has_any() returns @c false), the strategy uses its built-in preset matrix mode.
- */
+/// @brief Container for per-strategy packing parameters.
+///
+/// @details
+/// Groups the parameter blocks for all configurable packing strategies. Each strategy's parameter block is independent;
+/// only the block matching the selected @c PackingStrategyType is consulted at runtime. If the matching block has no
+/// fields set (@c has_any() returns @c false), the strategy uses its built-in preset matrix mode.
 struct PackingStrategyParams {
     BacktrackingParams backtracking;
     OverloadAndRemoveParams overload_and_remove;
 };
 
-/**
- * @brief Converts a PackingStrategyParams to a human-readable string.
- *
- * @param params The params to convert
- * @return A string representation of the params
- */
+/// @brief Converts a PackingStrategyParams to a human-readable string.
+///
+/// @param params The params to convert
+/// @return A string representation of the params
 [[nodiscard]] inline std::string to_string(const PackingStrategyParams &params)
 {
     std::string result = "{backtracking={";
@@ -135,13 +123,11 @@ struct PackingStrategyParams {
     return result;
 }
 
-/**
- * @brief Stream insertion operator for PackingStrategyParams.
- *
- * @param os The output stream
- * @param params The params to output
- * @return Reference to the output stream
- */
+/// @brief Stream insertion operator for PackingStrategyParams.
+///
+/// @param os The output stream
+/// @param params The params to output
+/// @return Reference to the output stream
 inline std::ostream &operator<<(std::ostream &os, const PackingStrategyParams &params)
 {
     return os << to_string(params);

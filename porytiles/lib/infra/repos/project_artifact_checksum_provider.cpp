@@ -80,13 +80,11 @@ ChainableResult<void> ProjectArtifactChecksumProvider::cache_tileset_checksums(
         sorted_checksums[artifact_key.key()] = checksum;
     }
 
-    /*
-     * Technically, the above sorting step is unnecessary, since by default the nlohmann json library automatically
-     * sorts json keys alphabetically (the underlying implementation uses std::map). However, we explicitly sort them
-     * here in case this implementation ever changes, or we change json libraries.
-     *
-     * https://json.nlohmann.me/features/object_order/#default-behavior-sort-keys
-     */
+    // Technically, the above sorting step is unnecessary, since by default the nlohmann json library automatically
+    // sorts json keys alphabetically (the underlying implementation uses std::map). However, we explicitly sort them
+    // here in case this implementation ever changes, or we change json libraries.
+    //
+    // https://json.nlohmann.me/features/object_order/#default-behavior-sort-keys
 
     // Now build JSON from the sorted map, ensuring consistent ordering
     nlohmann::json json_data;

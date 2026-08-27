@@ -19,7 +19,7 @@
 
 #include "porytiles/app/config/app_config.hpp"
 #include "porytiles/domain/config/domain_config.hpp"
-#include "porytiles/domain/config/tiles_pal_mode.hpp"
+#include "porytiles/domain/config/tiles_palette_mode.hpp"
 #include "porytiles/domain/models/rgba32.hpp"
 #include "porytiles/domain/packing/models/palette_hint.hpp"
 #include "porytiles/infra/config/config_provider.hpp"
@@ -33,136 +33,116 @@ namespace porytiles {
 
 {{ macros.autogen_warning() }}
 
-/**
- * @brief A Config implementation that lazily pulls a config value by consulting multiple priority-ordered backing
- * \link ConfigProvider ConfigProviders \endlink.
- *
- * @details
- * LazyLayeredConfig provides the following functionality:
- * - fetches the value from the highest priority layer, lazily (i.e., only loads upon first request, then caches)
- * - tracks the provenance of the value (e.g., did it come from tileset TOML? environment? default value?)
- * - hard panics if no value exists, this is a programmer error (programmer should at least provide a default layer)
- * - provides a way to dump itself for debugging purposes
- */
+/// @brief A Config implementation that lazily pulls a config value by consulting multiple priority-ordered backing
+/// \link ConfigProvider ConfigProviders \endlink.
+///
+/// @details
+/// LazyLayeredConfig provides the following functionality:
+/// - fetches the value from the highest priority layer, lazily (i.e., only loads upon first request, then caches)
+/// - tracks the provenance of the value (e.g., did it come from tileset TOML? environment? default value?)
+/// - hard panics if no value exists, this is a programmer error (programmer should at least provide a default layer)
+/// - provides a way to dump itself for debugging purposes
 class LazyLayeredConfig final : public DomainConfig, public AppConfig, public InfraConfig {
   public:
-    /**
-     * @brief Constructs a LazyLayeredConfig with a list of \link ConfigProvider ConfigProviders \endlink in priority
-     * order, highest to lowest.
-     *
-     * @details
-     * The LazyLayeredConfig will attempt to resolve configuration values by traversing the provided list of \link
-     * ConfigProvider ConfigProviders \endlink in order. That is, it will consult the first provider in the list first,
-     * and the next provider only if the first does not supply the config value. And so on. It is the programmer's
-     * responsibility to provide a default layer as the final provider in the list. If any config value resolution call
-     * chain reaches the end of the provider list without finding a value, the LazyLayeredConfig will terminate with a
-     * panic.
-     *
-     * @param format A pointer to the TextFormatter to use
-     * @param providers The list of providers in priority order
-     */
+    /// @brief Constructs a LazyLayeredConfig with a list of \link ConfigProvider ConfigProviders \endlink in priority
+    /// order, highest to lowest.
+    ///
+    /// @details
+    /// The LazyLayeredConfig will attempt to resolve configuration values by traversing the provided list of \link
+    /// ConfigProvider ConfigProviders \endlink in order. That is, it will consult the first provider in the list first,
+    /// and the next provider only if the first does not supply the config value. And so on. It is the programmer's
+    /// responsibility to provide a default layer as the final provider in the list. If any config value resolution call
+    /// chain reaches the end of the provider list without finding a value, the LazyLayeredConfig will terminate with a
+    /// panic.
+    ///
+    /// @param format A pointer to the TextFormatter to use
+    /// @param providers The list of providers in priority order
     explicit LazyLayeredConfig(
         gsl::not_null<TextFormatter *> format, std::vector<std::unique_ptr<ConfigProvider>> &&providers)
         : format_{format}, providers_{std::move(providers)}
     {
     }
 
-    /**
-     * @brief Constructs a LazyLayeredConfig with a default PlainTextFormatter.
-     *
-     * @details
-     * This constructor creates an internally owned PlainTextFormatter instance and uses it for formatting. The
-     * LazyLayeredConfig will attempt to resolve configuration values by traversing the provided list of \link
-     * ConfigProvider ConfigProviders \endlink in order. It is the programmer's responsibility to provide a default
-     * layer as the final provider in the list.
-     *
-     * @param providers The list of providers in priority order
-     */
+    /// @brief Constructs a LazyLayeredConfig with a default PlainTextFormatter.
+    ///
+    /// @details
+    /// This constructor creates an internally owned PlainTextFormatter instance and uses it for formatting. The
+    /// LazyLayeredConfig will attempt to resolve configuration values by traversing the provided list of \link
+    /// ConfigProvider ConfigProviders \endlink in order. It is the programmer's responsibility to provide a default
+    /// layer as the final provider in the list.
+    ///
+    /// @param providers The list of providers in priority order
     explicit LazyLayeredConfig(std::vector<std::unique_ptr<ConfigProvider>> &&providers)
         : owned_format_{std::make_unique<PlainTextFormatter>()}, format_{owned_format_.get()},
           providers_{std::move(providers)}
     {
     }
 
-    /**
-     * @brief Prepends a @c ConfigProvider to the provider chain at highest priority and invalidates resolution caches.
-     *
-     * @details
-     * Satisfies @c DomainConfig::add_provider, @c AppConfig::add_provider, and @c InfraConfig::add_provider with a
-     * single override, since all three bases declare the same signature. Clearing the caches is required because any
-     * value resolved before this call would otherwise stick and the new provider would not be consulted.
-     *
-     * @param provider The provider to prepend. Must be non-null.
-     * @pre Must not be called concurrently with any config-value resolution. The class is not internally synchronized;
-     *   callers should add all override providers before the config is handed to compilation code.
-     */
+    /// @brief Prepends a @c ConfigProvider to the provider chain at highest priority and invalidates resolution caches.
+    ///
+    /// @details
+    /// Satisfies @c DomainConfig::add_provider, @c AppConfig::add_provider, and @c InfraConfig::add_provider with a
+    /// single override, since all three bases declare the same signature. Clearing the caches is required because any
+    /// value resolved before this call would otherwise stick and the new provider would not be consulted.
+    ///
+    /// @param provider The provider to prepend. Must be non-null.
+    /// @pre Must not be called concurrently with any config-value resolution. The class is not internally synchronized;
+    ///   callers should add all override providers before the config is handed to compilation code.
     void add_provider(std::unique_ptr<ConfigProvider> provider) override;
 
   protected:
-    /*
-     * Domain Config Raw Methods (Tier 1)
-     * Note: _validated methods (Tier 2) are inherited from DomainConfig and not overridden
-     */
+    // Domain Config Raw Methods (Tier 1)
+    // Note: _validated methods (Tier 2) are inherited from DomainConfig and not overridden
 {% for value in config_values if value.layer == 'domain' %}
 
     [[nodiscard]] ChainableResult<ConfigValue<{{ value.type }}>>
     {{ value.symbol }}_raw(ConfigScopeType type, const std::string &scope) const override;
 {% endfor %}
 
-    /*
-     * App Config Raw Methods (Tier 1)
-     * Note: _validated methods (Tier 2) are inherited from AppConfig and not overridden
-     */
+    // App Config Raw Methods (Tier 1)
+    // Note: _validated methods (Tier 2) are inherited from AppConfig and not overridden
 {% for value in config_values if value.layer == 'app' %}
 
     [[nodiscard]] ChainableResult<ConfigValue<{{ value.type }}>>
     {{ value.symbol }}_raw(ConfigScopeType type, const std::string &scope) const override;
 {% endfor %}
 
-    /*
-     * Infra Config Raw Methods (Tier 1)
-     * Note: _validated methods (Tier 2) are inherited from InfraConfig and not overridden
-     */
+    // Infra Config Raw Methods (Tier 1)
+    // Note: _validated methods (Tier 2) are inherited from InfraConfig and not overridden
 {% for value in config_values if value.layer == 'infra' %}
     [[nodiscard]] ChainableResult<ConfigValue<{{ value.type }}>> {{ value.symbol }}_raw(ConfigScopeType type, const std::string &scope) const override;
 {% endfor %}
 
   public:
-    /*
-     * Provenance Chain Methods
-     * These methods return the full provenance chain for each config value,
-     * showing what each provider in the chain would return.
-     */
+    // Provenance Chain Methods
+    // These methods return the full provenance chain for each config value,
+    // showing what each provider in the chain would return.
 {% for value in config_values %}
 
-    /**
-     * @brief Gets the full provenance chain for {{ value.symbol }}.
-     *
-     * @details
-     * Returns what each provider in the chain would return for this config value, from highest priority to lowest.
-     * Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
-     * a complete diagnostic picture. Does not use caching - always queries providers fresh.
-     *
-     * @param type The config scope type
-     * @param scope The scope identifier
-     * @return Vector of ProvenanceChainLink entries, one per provider
-     */
+    /// @brief Gets the full provenance chain for {{ value.symbol }}.
+    ///
+    /// @details
+    /// Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+    /// Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+    /// a complete diagnostic picture. Does not use caching - always queries providers fresh.
+    ///
+    /// @param type The config scope type
+    /// @param scope The scope identifier
+    /// @return Vector of ProvenanceChainLink entries, one per provider
     [[nodiscard]] std::vector<ProvenanceChainLink<{{ value.type }}>>
     {{ value.symbol }}_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 {% endfor %}
 
-    /**
-     * @brief Dumps the full provenance chain for all config values to an output stream.
-     *
-     * @details
-     * Queries every provider for every config value and prints what each provider would return. This is useful for
-     * debugging configuration issues, e.g. understanding why a particular value was chosen or which provider is
-     * supplying it.
-     *
-     * @param out The output stream to write the dump to
-     * @param type The config scope type
-     * @param scope The scope identifier (e.g. tileset name)
-     */
+    /// @brief Dumps the full provenance chain for all config values to an output stream.
+    ///
+    /// @details
+    /// Queries every provider for every config value and prints what each provider would return. This is useful for
+    /// debugging configuration issues, e.g. understanding why a particular value was chosen or which provider is
+    /// supplying it.
+    ///
+    /// @param out The output stream to write the dump to
+    /// @param type The config scope type
+    /// @param scope The scope identifier (e.g. tileset name)
     void dump_config(std::ostream &out, ConfigScopeType type, const std::string &scope) const;
 
   private:
@@ -183,33 +163,29 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     mutable std::unordered_map<std::string, std::string> source_;
     mutable std::unordered_map<std::string, std::vector<std::string>> source_details_;
 
-    /**
-     * @brief Resolves config values using the common caching and provider iteration pattern.
-     *
-     * @tparam T The type of the config value
-     * @param cache_key The key to use for caching this value (also used for value name)
-     * @param canonical_name The canonical name for this config value
-     * @param provider_call Function that calls the appropriate method on a ConfigProvider
-     * @return A ChainableResult containing either the resolved config value or an error
-     */
+    /// @brief Resolves config values using the common caching and provider iteration pattern.
+    ///
+    /// @tparam T The type of the config value
+    /// @param cache_key The key to use for caching this value (also used for value name)
+    /// @param canonical_name The canonical name for this config value
+    /// @param provider_call Function that calls the appropriate method on a ConfigProvider
+    /// @return A ChainableResult containing either the resolved config value or an error
     template <typename T>
     ChainableResult<ConfigValue<T>> resolve_config_value(
         const std::string &cache_key,
         const std::string &canonical_name,
         std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;
 
-    /**
-     * @brief Collects the provenance chain by querying all providers.
-     *
-     * @details
-     * Unlike resolve_config_value which stops at first valid/invalid, this method queries ALL providers and collects
-     * their responses for diagnostic purposes. This gives a complete picture of what each provider in the chain would
-     * return for a given config value.
-     *
-     * @tparam T The type of the config value
-     * @param provider_call Function that calls the appropriate method on a ConfigProvider
-     * @return Vector of ProvenanceChainLink entries from all providers
-     */
+    /// @brief Collects the provenance chain by querying all providers.
+    ///
+    /// @details
+    /// Unlike resolve_config_value which stops at first valid/invalid, this method queries ALL providers and collects
+    /// their responses for diagnostic purposes. This gives a complete picture of what each provider in the chain would
+    /// return for a given config value.
+    ///
+    /// @tparam T The type of the config value
+    /// @param provider_call Function that calls the appropriate method on a ConfigProvider
+    /// @return Vector of ProvenanceChainLink entries from all providers
     template <typename T>
     std::vector<ProvenanceChainLink<T>>
     collect_provenance_chain(std::function<LayerValue<T>(const ConfigProvider &)> provider_call) const;

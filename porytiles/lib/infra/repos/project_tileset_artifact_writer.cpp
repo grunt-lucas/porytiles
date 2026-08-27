@@ -13,8 +13,11 @@
 #include <sstream>
 #include <string>
 
-#include "porytiles/domain/models/base_game.hpp"
+#include "porytiles/domain/config/role_pin_definition.hpp"
+#include "porytiles/domain/models/metatile.hpp"
 #include "porytiles/domain/models/metatile_attribute.hpp"
+#include "porytiles/domain/models/metatile_attribute_schema.hpp"
+#include "porytiles/infra/algorithms/porymap_artifact_parsers.hpp"
 #include "porytiles/infra/services/png_indexed_image_saver.hpp"
 #include "porytiles/infra/services/png_rgba_image_saver.hpp"
 #include "porytiles/utilities/filesystem_utils.hpp"
@@ -33,41 +36,35 @@ const std::filesystem::path porytiles_src_marker{"porytiles_src"};
 const std::filesystem::path porytiles_bin_marker{"porytiles_bin"};
 const std::filesystem::path porytiles_generated_marker{"porytiles_generated"};
 
-/**
- * @brief Categories for artifact destinations.
- *
- * @details
- * Artifacts are categorized to determine how they should be atomically committed:
- * - porytiles_src: Porytiles-format source assets (bottom.png, middle.png, etc.)
- * - porytiles_bin: Porymap-format binary assets (metatiles.bin, tiles.png, etc.)
- * - special: Files that live outside standard directories (generated_anim_code.h)
- */
+/// @brief Categories for artifact destinations.
+///
+/// @details
+/// Artifacts are categorized to determine how they should be atomically committed:
+/// - porytiles_src: Porytiles-format source assets (bottom.png, middle.png, etc.)
+/// - porytiles_bin: Porymap-format binary assets (metatiles.bin, tiles.png, etc.)
+/// - special: Files that live outside standard directories (generated_anim_code.h)
 enum class ArtifactCategory { porytiles_src, porytiles_bin, special };
 
-/**
- * @brief Parsed information about an artifact's destination.
- *
- * @details
- * Contains the category and the directory path that should be atomically moved. For porytiles_src/porytiles_bin
- * categories, `directory` is the path up to and including the marker directory. For special files, `directory` is the
- * parent directory of the file.
- */
+/// @brief Parsed information about an artifact's destination.
+///
+/// @details
+/// Contains the category and the directory path that should be atomically moved. For porytiles_src/porytiles_bin
+/// categories, `directory` is the path up to and including the marker directory. For special files, `directory` is the
+/// parent directory of the file.
 struct ArtifactPathInfo {
     ArtifactCategory category;
     std::filesystem::path directory; ///< The directory to atomically move
 };
 
-/**
- * @brief Categorizes an artifact key to determine its commit handling.
- *
- * @details
- * Parses the artifact key path to find marker directories (porytiles_src, porytiles_bin, or porytiles_generated) and
- * returns categorization info. The directory returned is the path up to and including the marker, which will be
- * atomically moved during commit.
- *
- * @param key_path The artifact key path (relative to project root)
- * @return ArtifactPathInfo with category and directory to move
- */
+/// @brief Categorizes an artifact key to determine its commit handling.
+///
+/// @details
+/// Parses the artifact key path to find marker directories (porytiles_src, porytiles_bin, or porytiles_generated) and
+/// returns categorization info. The directory returned is the path up to and including the marker, which will be
+/// atomically moved during commit.
+///
+/// @param key_path The artifact key path (relative to project root)
+/// @return ArtifactPathInfo with category and directory to move
 [[nodiscard]] ArtifactPathInfo categorize_artifact_key(const std::filesystem::path &key_path)
 {
     // Walk through path components to find marker directories
@@ -91,17 +88,15 @@ struct ArtifactPathInfo {
     return ArtifactPathInfo{ArtifactCategory::special, key_path.parent_path()};
 }
 
-/**
- * @brief Creates a unique temporary directory inside the project root.
- *
- * @details
- * Creates a tmpdir at {project_root}/.porytiles_tmp_{random_hex} to ensure
- * same-filesystem with project files, enabling atomic std::filesystem::rename().
- *
- * @param project_root The project root directory
- * @return Path to the newly created temporary directory
- * @post The returned path points to an existing, empty directory
- */
+/// @brief Creates a unique temporary directory inside the project root.
+///
+/// @details
+/// Creates a tmpdir at {project_root}/.porytiles_tmp_{random_hex} to ensure
+/// same-filesystem with project files, enabling atomic std::filesystem::rename().
+///
+/// @param project_root The project root directory
+/// @return Path to the newly created temporary directory
+/// @post The returned path points to an existing, empty directory
 [[nodiscard]] std::filesystem::path create_project_tmpdir(const std::filesystem::path &project_root)
 {
     int max_tries = 1000;
@@ -139,9 +134,9 @@ ChainableResult<void> save_tiles_png(
     const PngIndexedImageSaver &saver,
     const Image<IndexPixel> &tiles_png,
     const std::filesystem::path &path,
-    TilesPalMode tiles_pal_mode)
+    TilesPaletteMode tiles_palette_mode)
 {
-    auto result = saver.save_to_file(tiles_png, path, tiles_pal_mode);
+    auto result = saver.save_to_file(tiles_png, path, tiles_palette_mode);
     if (!result.has_value()) {
         return result;
     }
@@ -152,67 +147,21 @@ ChainableResult<void> save_metatiles_bin(const std::vector<TilemapEntry> &entrie
 {
     std::ofstream out{path};
     for (const auto &entry : entries) {
+        // TODO: metatiles are a fixed format, these magic numbers could probably live somewhere else
         const auto tile_value = static_cast<uint16_t>(
-            (entry.tile_index() & 0x3ff) | ((entry.h_flip() & 1) << 10) | ((entry.v_flip() & 1) << 11) |
-            ((entry.pal_index() & 0xf) << 12));
+            (entry.tile_index() & 0x3ffu) | ((entry.h_flip() & 1u) << 10u) | ((entry.v_flip() & 1u) << 11u) |
+            ((entry.palette_index() & 0xfu) << 12u));
         out << static_cast<std::uint8_t>(tile_value);
-        out << static_cast<std::uint8_t>(tile_value >> 8);
+        out << static_cast<std::uint8_t>(tile_value >> 8u);
     }
     out.flush();
     return {};
 }
 
-ChainableResult<void> save_emerald_metatile_attributes_bin(
-    const std::vector<MetatileAttribute> &attributes, const std::filesystem::path &path)
+ChainableResult<void> save_palette(
+    const Palette<Rgba32, palette::max_size> &palette, const std::filesystem::path &path, const FilePaletteSaver &saver)
 {
-    std::ofstream out{path};
-    for (const auto &attribute : attributes) {
-        const std::uint16_t behavior = attribute.behavior();
-        const auto layer_type = static_cast<std::uint8_t>(attribute.layer_type());
-        const auto attribute_value = static_cast<std::uint16_t>((behavior & 0xff) | ((layer_type & 0xf) << 12));
-        out << static_cast<std::uint8_t>(attribute_value);
-        out << static_cast<std::uint8_t>(attribute_value >> 8);
-    }
-    out.flush();
-    return {};
-}
-
-ChainableResult<void> save_firered_metatile_attributes_bin(
-    const std::vector<MetatileAttribute> &attributes, const std::filesystem::path &path)
-{
-    std::ofstream out{path};
-    for (const auto &attribute : attributes) {
-        // FireRed attribute bit layout (from fieldmap.c):
-        //   Bits  0-8:  behavior       (0x000001FF)
-        //   Bits  9-13: terrain        (0x00003E00)
-        //   Bits 14-17: attribute_2    (0x0003C000)
-        //   Bits 18-23: attribute_3    (0x00FC0000)
-        //   Bits 24-26: encounter_type (0x07000000)
-        //   Bits 27-28: attribute_5    (0x18000000)
-        //   Bits 29-30: layer_type     (0x60000000)
-        //   Bit  31:    attribute_7    (0x80000000)
-        const auto attribute_value = static_cast<std::uint32_t>(
-            (static_cast<std::uint32_t>(attribute.behavior()) & 0x1FF) |
-            ((static_cast<std::uint32_t>(attribute.terrain()) & 0x1F) << 9) |
-            ((static_cast<std::uint32_t>(attribute.attribute_2()) & 0x0F) << 14) |
-            ((static_cast<std::uint32_t>(attribute.attribute_3()) & 0x3F) << 18) |
-            ((static_cast<std::uint32_t>(attribute.encounter_type()) & 0x07) << 24) |
-            ((static_cast<std::uint32_t>(attribute.attribute_5()) & 0x03) << 27) |
-            ((static_cast<std::uint32_t>(attribute.layer_type()) & 0x03) << 29) |
-            ((static_cast<std::uint32_t>(attribute.attribute_7()) & 0x01) << 31));
-        out << static_cast<std::uint8_t>(attribute_value);
-        out << static_cast<std::uint8_t>(attribute_value >> 8);
-        out << static_cast<std::uint8_t>(attribute_value >> 16);
-        out << static_cast<std::uint8_t>(attribute_value >> 24);
-    }
-    out.flush();
-    return {};
-}
-
-ChainableResult<void>
-save_palette(const Palette<Rgba32, pal::max_size> &pal, const std::filesystem::path &path, const FilePalSaver &saver)
-{
-    PT_TRY_CALL_CHAIN_ERR(saver.save(pal, path), void, "'{}': Failed to save.", FormatParam(path.c_str()));
+    PT_TRY_CALL_CHAIN_ERR(saver.save(palette, path), void, "'{}': Failed to save.", FormatParam(path.c_str()));
     return {};
 }
 
@@ -220,34 +169,32 @@ ChainableResult<void> save_porymap_anim_frame(
     const PngIndexedImageSaver &saver,
     const Image<IndexPixel> &frame,
     const std::filesystem::path &path,
-    TilesPalMode tiles_pal_mode)
+    TilesPaletteMode tiles_palette_mode)
 {
-    auto result = saver.save_to_file(frame, path, tiles_pal_mode);
+    auto result = saver.save_to_file(frame, path, tiles_palette_mode);
     if (!result.has_value()) {
         return result;
     }
     return {};
 }
 
-/**
- * @brief Computes the staging path for an artifact and registers it for atomic commit.
- *
- * @details
- * This function categorizes the artifact key and determines how it should be staged:
- * - For porytiles_src/porytiles_bin artifacts: Registers the directory in staged_directories
- *   and returns a staging path that mirrors the relative structure under the directory.
- * - For special artifacts: Registers the file in staged_special_files and returns the staging path.
- *
- * The staging path maintains the relative structure of files within their category directory,
- * allowing the entire directory to be atomically moved during commit.
- *
- * @param transaction_root The root directory for the current transaction
- * @param project_root The project root directory
- * @param dest_key The artifact key (path relative to project root)
- * @param staged_directories Map to register staged directories
- * @param staged_special_files Vector to register special files
- * @return The path where the artifact should be written during the transaction
- */
+/// @brief Computes the staging path for an artifact and registers it for atomic commit.
+///
+/// @details
+/// This function categorizes the artifact key and determines how it should be staged:
+/// - For porytiles_src/porytiles_bin artifacts: Registers the directory in staged_directories
+///   and returns a staging path that mirrors the relative structure under the directory.
+/// - For special artifacts: Registers the file in staged_special_files and returns the staging path.
+///
+/// The staging path maintains the relative structure of files within their category directory,
+/// allowing the entire directory to be atomically moved during commit.
+///
+/// @param transaction_root The root directory for the current transaction
+/// @param project_root The project root directory
+/// @param dest_key The artifact key (path relative to project root)
+/// @param staged_directories Map to register staged directories
+/// @param staged_special_files Vector to register special files
+/// @return The path where the artifact should be written during the transaction
 template <typename StagedDirectory>
 ChainableResult<std::filesystem::path> compute_transaction_dest_path(
     const std::filesystem::path &transaction_root,
@@ -296,20 +243,18 @@ ChainableResult<std::filesystem::path> compute_transaction_dest_path(
     return staging_path;
 }
 
-/**
- * @brief Converts a vector of tiles into an image.
- *
- * @details
- * Creates an image with tiles arranged in a grid. If width_tiles and height_tiles are both non-zero, uses those
- * dimensions. Otherwise, falls back to a single-row layout for backward compatibility.
- *
- * @tparam PixelType The pixel type (Rgba32 or IndexPixel)
- * @param tiles The tiles to convert to an image
- * @param width_tiles Target width in tiles (0 = use single row)
- * @param height_tiles Target height in tiles (0 = use single row)
- * @pre If width_tiles and height_tiles are non-zero, width_tiles * height_tiles must equal tiles.size()
- * @return An image containing the tiles arranged in the specified grid
- */
+/// @brief Converts a vector of tiles into an image.
+///
+/// @details
+/// Creates an image with tiles arranged in a grid. If width_tiles and height_tiles are both non-zero, uses those
+/// dimensions. Otherwise, falls back to a single-row layout for backward compatibility.
+///
+/// @tparam PixelType The pixel type (Rgba32 or IndexPixel)
+/// @param tiles The tiles to convert to an image
+/// @param width_tiles Target width in tiles (0 = use single row)
+/// @param height_tiles Target height in tiles (0 = use single row)
+/// @pre If width_tiles and height_tiles are non-zero, width_tiles * height_tiles must equal tiles.size()
+/// @return An image containing the tiles arranged in the specified grid
 template <typename PixelType>
 Image<PixelType> tiles_to_image(
     const std::vector<PixelTile<PixelType>> &tiles, std::size_t width_tiles = 0, std::size_t height_tiles = 0)
@@ -365,31 +310,29 @@ Image<PixelType> tiles_to_image(
     return img;
 }
 
-/**
- * @brief Template helper for writing animation frames to PNG files.
- *
- * @details
- * This function unifies the logic for writing animation frames from both Porymap
- * (IndexPixel) and Porytiles (Rgba32) components. It handles both key frames and
- * regular numbered frames through the frame_index parameter.
- *
- * @tparam PixelType The pixel type (Rgba32 or IndexPixel)
- * @tparam StagedDirectory The staged directory struct type
- * @tparam ComponentGetter Callable returning a const reference to the tileset component
- * @tparam SaveFunc Callable that saves the image to a file
- * @param dest_key The artifact key for the destination PNG file
- * @param src The source tileset
- * @param anim_name The name of the animation
- * @param frame_name The name of the frame
- * @param transaction_root The transaction root directory
- * @param project_root The project root directory
- * @param staged_directories Map to register staged directories
- * @param staged_special_files Vector to register special files
- * @param component_getter Lambda to get the appropriate component from tileset
- * @param save_func Lambda to save the image (handles indexed vs RGBA saving)
- * @param component_name Name of the component for error messages
- * @return ChainableResult<void> indicating success or failure
- */
+/// @brief Template helper for writing animation frames to PNG files.
+///
+/// @details
+/// This function unifies the logic for writing animation frames from both Porymap
+/// (IndexPixel) and Porytiles (Rgba32) components. It handles both key frames and
+/// regular numbered frames through the frame_index parameter.
+///
+/// @tparam PixelType The pixel type (Rgba32 or IndexPixel)
+/// @tparam StagedDirectory The staged directory struct type
+/// @tparam ComponentGetter Callable returning a const reference to the tileset component
+/// @tparam SaveFunc Callable that saves the image to a file
+/// @param dest_key The artifact key for the destination PNG file
+/// @param src The source tileset
+/// @param anim_name The name of the animation
+/// @param frame_name The name of the frame
+/// @param transaction_root The transaction root directory
+/// @param project_root The project root directory
+/// @param staged_directories Map to register staged directories
+/// @param staged_special_files Vector to register special files
+/// @param component_getter Lambda to get the appropriate component from tileset
+/// @param save_func Lambda to save the image (handles indexed vs RGBA saving)
+/// @param component_name Name of the component for error messages
+/// @return ChainableResult<void> indicating success or failure
 template <SupportsTransparency PixelType, typename StagedDirectory, typename ComponentGetter, typename SaveFunc>
 ChainableResult<void> write_anim_frame_impl(
     const ArtifactKey &dest_key,
@@ -430,13 +373,13 @@ ChainableResult<void> write_anim_frame_impl(
 
     // Transfer palette from frame to image if present
     if (frame_ptr->has_palette()) {
-        const auto &pal = frame_ptr->palette();
-        std::vector<Rgba32> pal_vec;
-        pal_vec.reserve(pal.size());
-        for (std::size_t i = 0; i < pal.size(); ++i) {
-            pal_vec.push_back(pal.at(i));
+        const auto &palette = frame_ptr->palette();
+        std::vector<Rgba32> palette_vec;
+        palette_vec.reserve(palette.size());
+        for (std::size_t i = 0; i < palette.size(); ++i) {
+            palette_vec.push_back(palette.at(i));
         }
-        img.palette(std::move(pal_vec));
+        img.palette(std::move(palette_vec));
     }
 
     // Compute transaction path (keys are now relative to project_root)
@@ -615,9 +558,7 @@ ChainableResult<void> ProjectTilesetArtifactWriter::rollback()
     }
 }
 
-/*
- * Porymap artifacts
- */
+// Porymap artifacts
 ChainableResult<void> ProjectTilesetArtifactWriter::write_metatiles_bin(const ArtifactKey &dest_key, const Tileset &src)
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -638,12 +579,8 @@ ProjectTilesetArtifactWriter::write_metatile_attributes_bin(const ArtifactKey &d
             transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
         void,
         "Failed to compute transaction dest path.");
-    if (metatile_attr_size_ == attr::bytes_per_attr_firered) {
-        return save_firered_metatile_attributes_bin(
-            src.porymap_component().metatile_attributes_bin(), transaction_dest_path);
-    }
-    return save_emerald_metatile_attributes_bin(
-        src.porymap_component().metatile_attributes_bin(), transaction_dest_path);
+    return save_metatile_attributes_bin(
+        src.porymap_component().metatile_attributes_bin(), transaction_dest_path, *schema_);
 }
 
 ChainableResult<void> ProjectTilesetArtifactWriter::write_tiles_png(const ArtifactKey &dest_key, const Tileset &src)
@@ -655,16 +592,19 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_tiles_png(const Artifa
         void,
         "Failed to compute transaction dest path.");
     PT_TRY_ASSIGN_CHAIN_ERR(
-        tiles_pal_mode_config,
-        domain_config_->tiles_pal_mode(ConfigScopeType::tileset, src.name()),
+        tiles_palette_mode_config,
+        domain_config_->tiles_palette_mode(ConfigScopeType::tileset, src.name()),
         void,
-        "Failed to get tiles_pal_mode config.");
+        "Failed to get tiles_palette_mode config.");
     return save_tiles_png(
-        *png_indexed_saver_, src.porymap_component().tiles_png(), transaction_dest_path, tiles_pal_mode_config.value());
+        *png_indexed_saver_,
+        src.porymap_component().tiles_png(),
+        transaction_dest_path,
+        tiles_palette_mode_config.value());
 }
 
-ChainableResult<void>
-ProjectTilesetArtifactWriter::write_porymap_pal_n(const ArtifactKey &dest_key, const Tileset &src, std::size_t index)
+ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_palette_n(
+    const ArtifactKey &dest_key, const Tileset &src, std::size_t index)
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
@@ -672,21 +612,21 @@ ProjectTilesetArtifactWriter::write_porymap_pal_n(const ArtifactKey &dest_key, c
             transaction_root_, project_root_, dest_key, staged_directories_, staged_special_files_),
         void,
         "Failed to compute transaction dest path.");
-    const auto &pal = src.porymap_component().pal_at(index);
-    if (pal.has_any_wildcards()) {
+    const auto &palette = src.porymap_component().palette_at(index);
+    if (palette.has_any_wildcards()) {
         panic("attempted to save a Porymap palette containing wildcards");
     }
-    return save_palette(pal, transaction_dest_path, *pal_saver_);
+    return save_palette(palette, transaction_dest_path, *palette_saver_);
 }
 
 ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
     const ArtifactKey &dest_key, const Tileset &src, const std::string &anim_name, const std::string &frame_name)
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
-        tiles_pal_mode_config,
-        domain_config_->tiles_pal_mode(ConfigScopeType::tileset, src.name()),
+        tiles_palette_mode_config,
+        domain_config_->tiles_palette_mode(ConfigScopeType::tileset, src.name()),
         void,
-        "Failed to get tiles_pal_mode config.");
+        "Failed to get tiles_palette_mode config.");
     return write_anim_frame_impl<IndexPixel>(
         dest_key,
         src,
@@ -697,8 +637,8 @@ ChainableResult<void> ProjectTilesetArtifactWriter::write_porymap_anim_frame(
         staged_directories_,
         staged_special_files_,
         [](const Tileset &t) -> const auto & { return t.porymap_component(); },
-        [this, &tiles_pal_mode_config](const Image<IndexPixel> &img, const std::filesystem::path &path) {
-            return save_porymap_anim_frame(*png_indexed_saver_, img, path, tiles_pal_mode_config.value());
+        [this, &tiles_palette_mode_config](const Image<IndexPixel> &img, const std::filesystem::path &path) {
+            return save_porymap_anim_frame(*png_indexed_saver_, img, path, tiles_palette_mode_config.value());
         },
         "Porymap");
 }
@@ -765,9 +705,7 @@ ProjectTilesetArtifactWriter::write_porymap_anim_params(const ArtifactKey &dest_
     return {};
 }
 
-/*
- * Porytiles artifacts
- */
+// Porytiles artifacts
 ChainableResult<void> ProjectTilesetArtifactWriter::write_bottom_png(const ArtifactKey &dest_key, const Tileset &src)
 {
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -806,27 +744,12 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
 {
     const auto &attributes = src.porytiles_component().metatile_attributes();
 
-    constexpr std::uint16_t default_behavior = 0;
-    constexpr std::uint8_t default_terrain = 0;
-    constexpr std::uint8_t default_encounter = 0;
-
-    const bool is_firered = base_game_ == BaseGame::pokefirered;
-
-    // Count non-default attributes
-    std::size_t non_default_count = 0;
-    for (const auto &attribute : attributes | std::views::values) {
-        if (is_firered) {
-            if (attribute.behavior() != default_behavior || attribute.terrain() != default_terrain ||
-                attribute.encounter_type() != default_encounter) {
-                non_default_count++;
-            }
-        }
-        else {
-            if (attribute.behavior() != default_behavior) {
-                non_default_count++;
-            }
-        }
-    }
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        role_pins_cv,
+        infra_config_->role_pins(ConfigScopeType::tileset, src.name()),
+        void,
+        "Failed to resolve role_pins.");
+    const RolePinDefinitions &role_pins = role_pins_cv.value();
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         transaction_dest_path,
@@ -841,66 +764,168 @@ ProjectTilesetArtifactWriter::write_attributes_csv(const ArtifactKey &dest_key, 
             "Failed to open file for writing: '{}'.", FormatParam{transaction_dest_path.string(), Style::bold}};
     }
 
-    // Write header
-    if (is_firered) {
-        out << "id,behavior,terrainType,encounterType\n";
+    // Write header: id plus every schema value field name in schema order, then one trailing pin column per role pin in
+    // config order. A pin column's name is fixed at "pin::<role>", so the header records which columns are pin columns
+    // and the loader never has to infer that from a column's position. A role-bearing field is not a true value column;
+    // the CSV addresses a role's per-metatile value only through its pin column.
+    std::string header = "id";
+    for (const Field &field : schema_->value_fields()) {
+        header += "," + field.name();
     }
-    else {
-        out << "id,behavior\n";
+    for (const RolePinDefinition &pin : role_pins) {
+        header += "," + pin_column_name(pin.role);
     }
+    out << header << "\n";
 
-    if (non_default_count == 0) {
-        // No non-default attributes to write
+    // A field absent from an attribute takes its schema default. MetatileAttribute::field() reads an absent field as
+    // 0, but a schema field may declare a nonzero default, so the effective value must come through the schema. This
+    // one value drives both cell rendering and all-default row omission.
+    auto effective_value = [](const MetatileAttribute &attribute, const Field &field) -> std::uint32_t {
+        return attribute.fields().contains(field.name()) ? attribute.field(field.name()) : field.default_value();
+    };
+
+    // Renders a row's field cells in schema order, without the id or layer_type. A provider-backed field renders its
+    // value's constant name; a raw field renders the plain integer. has_provider() is the authority for that split,
+    // and build_provider_map upholds has_provider() <=> map membership, so a missing provider is an internal bug.
+    auto render_fields = [&](const MetatileAttribute &attribute,
+                             std::size_t metatile_id) -> ChainableResult<std::string> {
+        std::string cells{};
+        for (const Field &field : schema_->value_fields()) {
+            if (!cells.empty()) {
+                cells += ",";
+            }
+            const std::uint32_t value = effective_value(attribute, field);
+            if (!field.has_provider()) {
+                cells += std::to_string(value);
+                continue;
+            }
+            const auto provider_it = providers_->find(field.name());
+            if (provider_it == providers_->end()) {
+                panic(
+                    std::format(
+                        "write_attributes_csv: field '{}' has a provider spec but no provider was built for it",
+                        field.name()));
+            }
+            PT_TRY_ASSIGN_CHAIN_ERR(
+                field_name,
+                provider_it->second->lookup(value),
+                std::string,
+                std::format("Failed to lookup {} name for metatile {}.", field.name(), metatile_id));
+            cells += field_name;
+        }
+        return cells;
+    };
+
+    // A row is all-default only when every value field's effective value equals its schema default.
+    auto is_all_default = [&](const MetatileAttribute &attribute) -> bool {
+        for (const Field &field : schema_->value_fields()) {
+            if (effective_value(attribute, field) != field.default_value()) {
+                return false;
+            }
+        }
+        return true;
+    };
+
+    // Omitting an all-default row is lossless: it reloads as an absent attribute, and downstream consumers (the
+    // compiler in particular) materialize an absent attribute from the schema defaults, so the round trip reproduces
+    // exactly the values the row was omitted for.
+    auto omit_row = [&](const MetatileAttribute &attribute) -> bool { return is_all_default(attribute); };
+
+    if (role_pins.empty()) {
+        // No role pins: byte-identical to the historical output. Skip all-default rows, and if none survive write only
+        // the header.
+        std::size_t non_default_count = 0;
+        for (const auto &attribute : attributes | std::views::values) {
+            if (!omit_row(attribute)) {
+                non_default_count++;
+            }
+        }
+
+        if (non_default_count == 0) {
+            out.flush();
+            return {};
+        }
+
+        for (const auto &[metatile_id, attribute] : attributes) {
+            if (omit_row(attribute)) {
+                continue;
+            }
+            PT_TRY_ASSIGN_PASS_ERR(fields_str, render_fields(attribute, metatile_id), void);
+            out << metatile_id << "," << fields_str << "\n";
+        }
+
         out.flush();
         return {};
     }
 
-    // Write each non-default attribute row
+    // Renders one pin cell for a role. Only an explicitly pinned value emits a token; an inferred/auto value (the
+    // default, and everything a bin parser or decompiler produces) emits a blank cell. This keeps the "blank = auto"
+    // workflow intact across a load/save round-trip. A row the user left blank carries no explicit value, so it must
+    // not be written back as a pinned token that the next compile would then treat as an override.
+    auto render_pin_cell = [](FieldRole role, const MetatileAttribute &attribute) -> std::string {
+        switch (role) {
+        case FieldRole::layer_type:
+            return attribute.explicit_layer_type().has_value()
+                       ? layer_type_csv_token(attribute.explicit_layer_type().value())
+                       : std::string{};
+        }
+        panic("write_attributes_csv: unhandled FieldRole in role pin cell rendering");
+    };
+
+    // Renders the trailing pin cells for one attribute, one per role pin in config order, each preceded by a comma.
+    auto render_pin_cells = [&](const MetatileAttribute &attribute) -> std::string {
+        std::string cells{};
+        for (const RolePinDefinition &pin : role_pins) {
+            cells += "," + render_pin_cell(pin.role, attribute);
+        }
+        return cells;
+    };
+
+    // Role pins configured: emit one row per metatile so every metatile has a pin slot the user can fill. The attribute
+    // map can be sparse (tileset creation stores only some ids), so materialize a default row for any missing id. Row
+    // count comes from the Porytiles layer image dimensions, the same source LayerImageMetatileizer uses.
+    const std::size_t layer_metatile_count = metatile::metatile_count(src.porytiles_component().bottom());
+    MetatileAttribute default_attribute{}; // all-default fields, no explicit layer type (blank cell)
+    for (const Field &field : schema_->value_fields()) {
+        default_attribute.field(field.name(), field.default_value());
+    }
+
+    // A schema may carry zero value fields (only the role-bearing field, or nothing at all), in which case the id cell
+    // is followed directly by the pin cells; a bare comma there would add a phantom empty column
+    auto emit_row = [&](std::size_t metatile_id, const std::string &fields_str, const MetatileAttribute &attribute) {
+        out << metatile_id;
+        if (!fields_str.empty()) {
+            out << "," << fields_str;
+        }
+        out << render_pin_cells(attribute) << "\n";
+    };
+
+    for (std::size_t metatile_id = 0; metatile_id < layer_metatile_count; ++metatile_id) {
+        const auto it = attributes.find(metatile_id);
+        const MetatileAttribute &attribute = it != attributes.end() ? it->second : default_attribute;
+
+        PT_TRY_ASSIGN_PASS_ERR(fields_str, render_fields(attribute, metatile_id), void);
+        emit_row(metatile_id, fields_str, attribute);
+    }
+
+    // Inconsistent input: emit any stored ids at or beyond the derived count so no stored attribute is silently
+    // dropped.
     for (const auto &[metatile_id, attribute] : attributes) {
-        if (is_firered) {
-            if (attribute.behavior() == default_behavior && attribute.terrain() == default_terrain &&
-                attribute.encounter_type() == default_encounter) {
-                continue;
-            }
-            PT_TRY_ASSIGN_CHAIN_ERR(
-                behavior_name,
-                behavior_map_->lookup(attribute.behavior()),
-                void,
-                std::format("Failed to lookup behavior name for metatile {}.", metatile_id));
-            PT_TRY_ASSIGN_CHAIN_ERR(
-                terrain_name,
-                terrain_map_->lookup(attribute.terrain()),
-                void,
-                std::format("Failed to lookup terrain type name for metatile {}.", metatile_id));
-            PT_TRY_ASSIGN_CHAIN_ERR(
-                encounter_name,
-                encounter_map_->lookup(attribute.encounter_type()),
-                void,
-                std::format("Failed to lookup encounter type name for metatile {}.", metatile_id));
-            out << metatile_id << "," << behavior_name << "," << terrain_name << "," << encounter_name << "\n";
+        if (metatile_id < layer_metatile_count) {
+            continue;
         }
-        else {
-            if (attribute.behavior() == default_behavior) {
-                // Skip default behavior (MB_NORMAL = 0), since it's implicit for missing entries
-                continue;
-            }
-            PT_TRY_ASSIGN_CHAIN_ERR(
-                behavior_name,
-                behavior_map_->lookup(attribute.behavior()),
-                void,
-                std::format("Failed to lookup behavior name for metatile {}.", metatile_id));
-            out << metatile_id << "," << behavior_name << "\n";
-        }
+        PT_TRY_ASSIGN_PASS_ERR(fields_str, render_fields(attribute, metatile_id), void);
+        emit_row(metatile_id, fields_str, attribute);
     }
 
     out.flush();
     return {};
 }
 
-ChainableResult<void>
-ProjectTilesetArtifactWriter::write_porytiles_pal_n(const ArtifactKey &dest_key, const Tileset &src, std::size_t index)
+ChainableResult<void> ProjectTilesetArtifactWriter::write_porytiles_palette_n(
+    const ArtifactKey &dest_key, const Tileset &src, std::size_t index)
 {
-    if (src.porytiles_component().pal_at(index).has_value()) {
+    if (src.porytiles_component().palette_at(index).has_value()) {
         PT_TRY_ASSIGN_CHAIN_ERR(
             transaction_dest_path,
             compute_transaction_dest_path(
@@ -908,10 +933,11 @@ ProjectTilesetArtifactWriter::write_porytiles_pal_n(const ArtifactKey &dest_key,
             void,
             "Failed to compute transaction dest path.");
 
-        return save_palette(src.porytiles_component().pal_at(index).value(), transaction_dest_path, *pal_saver_);
+        return save_palette(
+            src.porytiles_component().palette_at(index).value(), transaction_dest_path, *palette_saver_);
     }
 
-    // No porytiles pal, do nothing
+    // No porytiles palette, do nothing
     return {};
 }
 
@@ -941,11 +967,9 @@ ProjectTilesetArtifactWriter::write_porytiles_anim_params(const ArtifactKey &des
     const auto &primary_overrides = src.porytiles_component().primary_anim_overrides();
 
     if (porytiles_anims.empty() && primary_overrides.empty()) {
-        /*
-         * Unlike in write_porymap_anim_params, we don't need to delete anything here. That's because anim.json is
-         * within porytiles_src dir, which is written using an atomic move. If the new porytiles_src dir doesn't contain
-         * an anim.json, the old one will get wiped by the commit() call.
-         */
+        // Unlike in write_porymap_anim_params, we don't need to delete anything here. That's because anim.json is
+        // within porytiles_src dir, which is written using an atomic move. If the new porytiles_src dir doesn't contain
+        // an anim.json, the old one will get wiped by the commit() call.
         return {};
     }
 

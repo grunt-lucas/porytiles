@@ -18,20 +18,20 @@ using namespace porytiles;
 
 namespace {
 
-const std::filesystem::path kTestDir = std::filesystem::temp_directory_path() / "porytiles_test_anim_json_parser";
+const std::filesystem::path test_dir = std::filesystem::temp_directory_path() / "porytiles_test_anim_json_parser";
 
 class AnimJsonParserOverrideTest : public ::testing::Test {
   protected:
     void SetUp() override
     {
-        std::filesystem::create_directories(kTestDir);
+        std::filesystem::create_directories(test_dir);
         formatter_ = std::make_unique<PlainTextFormatter>();
         parser_ = std::make_unique<AnimJsonParser>(formatter_.get());
     }
 
     void TearDown() override
     {
-        std::filesystem::remove_all(kTestDir);
+        std::filesystem::remove_all(test_dir);
     }
 
     void write_json_file(const std::filesystem::path &path, const std::string &content)
@@ -46,7 +46,7 @@ class AnimJsonParserOverrideTest : public ::testing::Test {
 
 TEST_F(AnimJsonParserOverrideTest, ParseOverridesFromJson)
 {
-    const auto json_path = kTestDir / "anim.json";
+    const auto json_path = test_dir / "anim.json";
     write_json_file(json_path, R"({
   "water": {
     "frame_factor": 16,
@@ -57,7 +57,7 @@ TEST_F(AnimJsonParserOverrideTest, ParseOverridesFromJson)
         "layer": "bottom",
         "subtile": "northwest",
         "frame_subtile": 0,
-        "pal_index": 2,
+        "palette_index": 2,
         "hflip": false,
         "vflip": false
       },
@@ -66,7 +66,7 @@ TEST_F(AnimJsonParserOverrideTest, ParseOverridesFromJson)
         "layer": "top",
         "subtile": "southeast",
         "frame_subtile": 3,
-        "pal_index": 4,
+        "palette_index": 4,
         "hflip": true,
         "vflip": true
       }
@@ -89,7 +89,7 @@ TEST_F(AnimJsonParserOverrideTest, ParseOverridesFromJson)
     EXPECT_EQ(overrides[0].layer, metatile::Layer::bottom);
     EXPECT_EQ(overrides[0].subtile, metatile::Subtile::northwest);
     EXPECT_EQ(overrides[0].frame_subtile, 0);
-    EXPECT_EQ(overrides[0].pal_index, 2);
+    EXPECT_EQ(overrides[0].palette_index, 2);
     EXPECT_FALSE(overrides[0].h_flip);
     EXPECT_FALSE(overrides[0].v_flip);
 
@@ -98,14 +98,14 @@ TEST_F(AnimJsonParserOverrideTest, ParseOverridesFromJson)
     EXPECT_EQ(overrides[1].layer, metatile::Layer::top);
     EXPECT_EQ(overrides[1].subtile, metatile::Subtile::southeast);
     EXPECT_EQ(overrides[1].frame_subtile, 3);
-    EXPECT_EQ(overrides[1].pal_index, 4);
+    EXPECT_EQ(overrides[1].palette_index, 4);
     EXPECT_TRUE(overrides[1].h_flip);
     EXPECT_TRUE(overrides[1].v_flip);
 }
 
 TEST_F(AnimJsonParserOverrideTest, ParseEmptyOverrides)
 {
-    const auto json_path = kTestDir / "anim.json";
+    const auto json_path = test_dir / "anim.json";
     write_json_file(json_path, R"({
   "flower": {
     "frames": ["0", "1"],
@@ -123,7 +123,7 @@ TEST_F(AnimJsonParserOverrideTest, ParseEmptyOverrides)
 
 TEST_F(AnimJsonParserOverrideTest, ParseAnimationWithoutOverrides)
 {
-    const auto json_path = kTestDir / "anim.json";
+    const auto json_path = test_dir / "anim.json";
     write_json_file(json_path, R"({
   "flower": {
     "frame_factor": 8,
@@ -141,14 +141,14 @@ TEST_F(AnimJsonParserOverrideTest, ParseAnimationWithoutOverrides)
 
 TEST_F(AnimJsonParserOverrideTest, ParseAllLayerValues)
 {
-    const auto json_path = kTestDir / "anim.json";
+    const auto json_path = test_dir / "anim.json";
     write_json_file(json_path, R"({
   "water": {
     "frames": ["0"],
     "overrides": [
-      { "id": 0, "layer": "bottom", "subtile": "northwest", "frame_subtile": 0, "pal_index": 0, "hflip": false, "vflip": false },
-      { "id": 1, "layer": "middle", "subtile": "northwest", "frame_subtile": 0, "pal_index": 0, "hflip": false, "vflip": false },
-      { "id": 2, "layer": "top", "subtile": "northwest", "frame_subtile": 0, "pal_index": 0, "hflip": false, "vflip": false }
+      { "id": 0, "layer": "bottom", "subtile": "northwest", "frame_subtile": 0, "palette_index": 0, "hflip": false, "vflip": false },
+      { "id": 1, "layer": "middle", "subtile": "northwest", "frame_subtile": 0, "palette_index": 0, "hflip": false, "vflip": false },
+      { "id": 2, "layer": "top", "subtile": "northwest", "frame_subtile": 0, "palette_index": 0, "hflip": false, "vflip": false }
     ]
   }
 })");
@@ -165,15 +165,15 @@ TEST_F(AnimJsonParserOverrideTest, ParseAllLayerValues)
 
 TEST_F(AnimJsonParserOverrideTest, ParseAllSubtileValues)
 {
-    const auto json_path = kTestDir / "anim.json";
+    const auto json_path = test_dir / "anim.json";
     write_json_file(json_path, R"({
   "water": {
     "frames": ["0"],
     "overrides": [
-      { "id": 0, "layer": "bottom", "subtile": "northwest", "frame_subtile": 0, "pal_index": 0, "hflip": false, "vflip": false },
-      { "id": 0, "layer": "bottom", "subtile": "northeast", "frame_subtile": 0, "pal_index": 0, "hflip": false, "vflip": false },
-      { "id": 0, "layer": "bottom", "subtile": "southwest", "frame_subtile": 0, "pal_index": 0, "hflip": false, "vflip": false },
-      { "id": 0, "layer": "bottom", "subtile": "southeast", "frame_subtile": 0, "pal_index": 0, "hflip": false, "vflip": false }
+      { "id": 0, "layer": "bottom", "subtile": "northwest", "frame_subtile": 0, "palette_index": 0, "hflip": false, "vflip": false },
+      { "id": 0, "layer": "bottom", "subtile": "northeast", "frame_subtile": 0, "palette_index": 0, "hflip": false, "vflip": false },
+      { "id": 0, "layer": "bottom", "subtile": "southwest", "frame_subtile": 0, "palette_index": 0, "hflip": false, "vflip": false },
+      { "id": 0, "layer": "bottom", "subtile": "southeast", "frame_subtile": 0, "palette_index": 0, "hflip": false, "vflip": false }
     ]
   }
 })");
@@ -205,7 +205,7 @@ TEST_F(AnimJsonParserOverrideTest, RoundTripOverrides)
             .layer = metatile::Layer::bottom,
             .subtile = metatile::Subtile::northwest,
             .frame_subtile = 0,
-            .pal_index = 2,
+            .palette_index = 2,
             .h_flip = false,
             .v_flip = false});
     overrides.push_back(
@@ -214,13 +214,13 @@ TEST_F(AnimJsonParserOverrideTest, RoundTripOverrides)
             .layer = metatile::Layer::top,
             .subtile = metatile::Subtile::southeast,
             .frame_subtile = 3,
-            .pal_index = 4,
+            .palette_index = 4,
             .h_flip = true,
             .v_flip = true});
     params.overrides(std::move(overrides));
 
     // Write to file
-    const auto json_path = kTestDir / "round_trip.json";
+    const auto json_path = test_dir / "round_trip.json";
     std::map<DynamicCasedName, AnimParams> params_map;
     params_map.insert({DynamicCasedName{"water"}, std::move(params)});
 
@@ -240,7 +240,7 @@ TEST_F(AnimJsonParserOverrideTest, RoundTripOverrides)
     EXPECT_EQ(read_overrides[0].layer, metatile::Layer::bottom);
     EXPECT_EQ(read_overrides[0].subtile, metatile::Subtile::northwest);
     EXPECT_EQ(read_overrides[0].frame_subtile, 0);
-    EXPECT_EQ(read_overrides[0].pal_index, 2);
+    EXPECT_EQ(read_overrides[0].palette_index, 2);
     EXPECT_FALSE(read_overrides[0].h_flip);
     EXPECT_FALSE(read_overrides[0].v_flip);
 
@@ -249,7 +249,7 @@ TEST_F(AnimJsonParserOverrideTest, RoundTripOverrides)
     EXPECT_EQ(read_overrides[1].layer, metatile::Layer::top);
     EXPECT_EQ(read_overrides[1].subtile, metatile::Subtile::southeast);
     EXPECT_EQ(read_overrides[1].frame_subtile, 3);
-    EXPECT_EQ(read_overrides[1].pal_index, 4);
+    EXPECT_EQ(read_overrides[1].palette_index, 4);
     EXPECT_TRUE(read_overrides[1].h_flip);
     EXPECT_TRUE(read_overrides[1].v_flip);
 }
@@ -261,7 +261,7 @@ TEST_F(AnimJsonParserOverrideTest, NoOverridesWhenEmpty)
     params.frame_names({DynamicCasedName{"0"}, DynamicCasedName{"1"}});
     params.frame_order({DynamicCasedName{"0"}, DynamicCasedName{"1"}});
 
-    const auto json_path = kTestDir / "no_overrides.json";
+    const auto json_path = test_dir / "no_overrides.json";
     std::map<DynamicCasedName, AnimParams> params_map;
     params_map.insert({DynamicCasedName{"flower"}, std::move(params)});
 
@@ -288,19 +288,19 @@ TEST_F(AnimJsonParserOverrideTest, OverrideFieldsInCanonicalOrder)
             .layer = metatile::Layer::bottom,
             .subtile = metatile::Subtile::northwest,
             .frame_subtile = 0,
-            .pal_index = 0,
+            .palette_index = 0,
             .h_flip = false,
             .v_flip = false});
     params.overrides(std::move(overrides));
 
-    const auto json_path = kTestDir / "field_order.json";
+    const auto json_path = test_dir / "field_order.json";
     std::map<DynamicCasedName, AnimParams> params_map;
     params_map.insert({DynamicCasedName{"water"}, std::move(params)});
 
     auto write_result = parser_->write(json_path, params_map);
     ASSERT_TRUE(write_result.has_value());
 
-    // Read the raw JSON and verify field order is: id, layer, subtile, frame_subtile, pal_index, hflip, vflip
+    // Read the raw JSON and verify field order is: id, layer, subtile, frame_subtile, palette_index, hflip, vflip
     std::ifstream in{json_path};
     std::string content((std::istreambuf_iterator<char>(in)), std::istreambuf_iterator<char>());
 
@@ -308,7 +308,7 @@ TEST_F(AnimJsonParserOverrideTest, OverrideFieldsInCanonicalOrder)
     auto pos_layer = content.find("\"layer\"");
     auto pos_subtile = content.find("\"subtile\"");
     auto pos_frame_subtile = content.find("\"frame_subtile\"");
-    auto pos_pal_index = content.find("\"pal_index\"");
+    auto pos_palette_index = content.find("\"palette_index\"");
     auto pos_hflip = content.find("\"hflip\"");
     auto pos_vflip = content.find("\"vflip\"");
 
@@ -316,14 +316,14 @@ TEST_F(AnimJsonParserOverrideTest, OverrideFieldsInCanonicalOrder)
     EXPECT_LT(pos_id, pos_layer);
     EXPECT_LT(pos_layer, pos_subtile);
     EXPECT_LT(pos_subtile, pos_frame_subtile);
-    EXPECT_LT(pos_frame_subtile, pos_pal_index);
-    EXPECT_LT(pos_pal_index, pos_hflip);
+    EXPECT_LT(pos_frame_subtile, pos_palette_index);
+    EXPECT_LT(pos_palette_index, pos_hflip);
     EXPECT_LT(pos_hflip, pos_vflip);
 }
 
 TEST_F(AnimJsonParserOverrideTest, ParsePrimaryReferences)
 {
-    const auto json_path = kTestDir / "anim.json";
+    const auto json_path = test_dir / "anim.json";
     write_json_file(json_path, R"({
   "primary_references": {
     "water": {
@@ -333,7 +333,7 @@ TEST_F(AnimJsonParserOverrideTest, ParsePrimaryReferences)
           "layer": "bottom",
           "subtile": "northwest",
           "frame_subtile": 0,
-          "pal_index": 1,
+          "palette_index": 1,
           "hflip": false,
           "vflip": true
         },
@@ -342,7 +342,7 @@ TEST_F(AnimJsonParserOverrideTest, ParsePrimaryReferences)
           "layer": "top",
           "subtile": "southeast",
           "frame_subtile": 2,
-          "pal_index": 3,
+          "palette_index": 3,
           "hflip": true,
           "vflip": false
         }
@@ -365,7 +365,7 @@ TEST_F(AnimJsonParserOverrideTest, ParsePrimaryReferences)
     EXPECT_EQ(entries.at(0).layer, metatile::Layer::bottom);
     EXPECT_EQ(entries.at(0).subtile, metatile::Subtile::northwest);
     EXPECT_EQ(entries.at(0).frame_subtile, 0);
-    EXPECT_EQ(entries.at(0).pal_index, 1);
+    EXPECT_EQ(entries.at(0).palette_index, 1);
     EXPECT_FALSE(entries.at(0).h_flip);
     EXPECT_TRUE(entries.at(0).v_flip);
 
@@ -373,14 +373,14 @@ TEST_F(AnimJsonParserOverrideTest, ParsePrimaryReferences)
     EXPECT_EQ(entries.at(1).layer, metatile::Layer::top);
     EXPECT_EQ(entries.at(1).subtile, metatile::Subtile::southeast);
     EXPECT_EQ(entries.at(1).frame_subtile, 2);
-    EXPECT_EQ(entries.at(1).pal_index, 3);
+    EXPECT_EQ(entries.at(1).palette_index, 3);
     EXPECT_TRUE(entries.at(1).h_flip);
     EXPECT_FALSE(entries.at(1).v_flip);
 }
 
 TEST_F(AnimJsonParserOverrideTest, ParsePrimaryReferencesAbsent)
 {
-    const auto json_path = kTestDir / "anim.json";
+    const auto json_path = test_dir / "anim.json";
     write_json_file(json_path, R"({
   "flower": {
     "frames": ["0", "1"]
@@ -394,7 +394,7 @@ TEST_F(AnimJsonParserOverrideTest, ParsePrimaryReferencesAbsent)
 
 TEST_F(AnimJsonParserOverrideTest, ParsePrimaryReferencesCoexistWithAnimations)
 {
-    const auto json_path = kTestDir / "anim.json";
+    const auto json_path = test_dir / "anim.json";
     write_json_file(json_path, R"({
   "flower": {
     "frame_factor": 8,
@@ -403,7 +403,7 @@ TEST_F(AnimJsonParserOverrideTest, ParsePrimaryReferencesCoexistWithAnimations)
   "primary_references": {
     "water": {
       "overrides": [
-        { "id": 1, "layer": "bottom", "subtile": "northwest", "frame_subtile": 0, "pal_index": 0, "hflip": false, "vflip": false }
+        { "id": 1, "layer": "bottom", "subtile": "northwest", "frame_subtile": 0, "palette_index": 0, "hflip": false, "vflip": false }
       ]
     }
   }
@@ -425,12 +425,12 @@ TEST_F(AnimJsonParserOverrideTest, ParsePrimaryReferencesCoexistWithAnimations)
 
 TEST_F(AnimJsonParserOverrideTest, PrimaryReferencesNotTreatedAsAnimation)
 {
-    const auto json_path = kTestDir / "anim.json";
+    const auto json_path = test_dir / "anim.json";
     write_json_file(json_path, R"({
   "primary_references": {
     "water": {
       "overrides": [
-        { "id": 1, "layer": "bottom", "subtile": "northwest", "frame_subtile": 0, "pal_index": 0, "hflip": false, "vflip": false }
+        { "id": 1, "layer": "bottom", "subtile": "northwest", "frame_subtile": 0, "palette_index": 0, "hflip": false, "vflip": false }
       ]
     }
   }
@@ -460,7 +460,7 @@ TEST_F(AnimJsonParserOverrideTest, RoundTripPrimaryReferences)
             .layer = metatile::Layer::bottom,
             .subtile = metatile::Subtile::northwest,
             .frame_subtile = 0,
-            .pal_index = 1,
+            .palette_index = 1,
             .h_flip = false,
             .v_flip = true},
         AnimOverrideEntry{
@@ -468,12 +468,12 @@ TEST_F(AnimJsonParserOverrideTest, RoundTripPrimaryReferences)
             .layer = metatile::Layer::top,
             .subtile = metatile::Subtile::southeast,
             .frame_subtile = 2,
-            .pal_index = 3,
+            .palette_index = 3,
             .h_flip = true,
             .v_flip = false}};
 
     // Write
-    const auto json_path = kTestDir / "round_trip_primary_refs.json";
+    const auto json_path = test_dir / "round_trip_primary_refs.json";
     auto write_result = parser_->write(json_path, params_map, primary_refs);
     ASSERT_TRUE(write_result.has_value());
 
@@ -492,7 +492,7 @@ TEST_F(AnimJsonParserOverrideTest, RoundTripPrimaryReferences)
     EXPECT_EQ(read_entries.at(0).layer, metatile::Layer::bottom);
     EXPECT_EQ(read_entries.at(0).subtile, metatile::Subtile::northwest);
     EXPECT_EQ(read_entries.at(0).frame_subtile, 0);
-    EXPECT_EQ(read_entries.at(0).pal_index, 1);
+    EXPECT_EQ(read_entries.at(0).palette_index, 1);
     EXPECT_FALSE(read_entries.at(0).h_flip);
     EXPECT_TRUE(read_entries.at(0).v_flip);
 
@@ -500,7 +500,7 @@ TEST_F(AnimJsonParserOverrideTest, RoundTripPrimaryReferences)
     EXPECT_EQ(read_entries.at(1).layer, metatile::Layer::top);
     EXPECT_EQ(read_entries.at(1).subtile, metatile::Subtile::southeast);
     EXPECT_EQ(read_entries.at(1).frame_subtile, 2);
-    EXPECT_EQ(read_entries.at(1).pal_index, 3);
+    EXPECT_EQ(read_entries.at(1).palette_index, 3);
     EXPECT_TRUE(read_entries.at(1).h_flip);
     EXPECT_FALSE(read_entries.at(1).v_flip);
 
@@ -522,7 +522,7 @@ TEST_F(AnimJsonParserOverrideTest, PrimaryReferencesOmittedWhenEmpty)
     params_map.insert({DynamicCasedName{"flower"}, std::move(params)});
 
     // Write with empty primary_references
-    const auto json_path = kTestDir / "no_primary_refs.json";
+    const auto json_path = test_dir / "no_primary_refs.json";
     std::map<DynamicCasedName, std::vector<AnimOverrideEntry>> empty_refs;
     auto write_result = parser_->write(json_path, params_map, empty_refs);
     ASSERT_TRUE(write_result.has_value());

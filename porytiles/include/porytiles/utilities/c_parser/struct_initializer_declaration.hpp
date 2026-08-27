@@ -9,41 +9,37 @@
 
 namespace porytiles {
 
-/**
- * @brief Represents a parsed C struct variable declaration with its initializer fields.
- *
- * @details
- * StructInitializerDeclaration captures the full structure of C struct variable declarations
- * including the designated initializer fields:
- * @code
- * const struct Tileset gTileset_General = {
- *     .isCompressed = TRUE,
- *     .isSecondary = FALSE,
- *     .tiles = gTilesetTiles_General,
- *     .palettes = gTilesetPalettes_General,
- *     .metatiles = gMetatiles_General,
- *     .metatileAttributes = gMetatileAttributes_General,
- *     .callback = InitTilesetAnim_General,
- * };
- * @endcode
- *
- * This extends StructVariableDeclaration by also parsing and storing the initializer fields,
- * enabling extraction of tileset metadata like isSecondary and variable references.
- *
- * @invariant struct_type_ is never empty
- * @invariant variable_name_ is never empty
- * @invariant position_ contains valid 1-based line and column numbers
- */
+/// @brief Represents a parsed C struct variable declaration with its initializer fields.
+///
+/// @details
+/// StructInitializerDeclaration captures the full structure of C struct variable declarations
+/// including the designated initializer fields:
+/// @code
+/// const struct Tileset gTileset_General = {
+///     .isCompressed = TRUE,
+///     .isSecondary = FALSE,
+///     .tiles = gTilesetTiles_General,
+///     .palettes = gTilesetPalettes_General,
+///     .metatiles = gMetatiles_General,
+///     .metatileAttributes = gMetatileAttributes_General,
+///     .callback = InitTilesetAnim_General,
+/// };
+/// @endcode
+///
+/// This extends StructVariableDeclaration by also parsing and storing the initializer fields,
+/// enabling extraction of tileset metadata like isSecondary and variable references.
+///
+/// @invariant struct_type_ is never empty
+/// @invariant variable_name_ is never empty
+/// @invariant position_ contains valid 1-based line and column numbers
 class StructInitializerDeclaration {
   public:
-    /**
-     * @brief Constructs a StructInitializerDeclaration.
-     *
-     * @param struct_type The struct type name (e.g., "Tileset")
-     * @param variable_name The variable name (e.g., "gTileset_General")
-     * @param fields The designated initializer fields
-     * @param position The source position of the variable name
-     */
+    /// @brief Constructs a StructInitializerDeclaration.
+    ///
+    /// @param struct_type The struct type name (e.g., "Tileset")
+    /// @param variable_name The variable name (e.g., "gTileset_General")
+    /// @param fields The designated initializer fields
+    /// @param position The source position of the variable name
     StructInitializerDeclaration(
         std::string struct_type,
         std::string variable_name,
@@ -54,52 +50,42 @@ class StructInitializerDeclaration {
     {
     }
 
-    /**
-     * @brief Returns the struct type name.
-     *
-     * @return A const reference to the struct type name (e.g., "Tileset")
-     */
+    /// @brief Returns the struct type name.
+    ///
+    /// @return A const reference to the struct type name (e.g., "Tileset")
     [[nodiscard]] const std::string &struct_type() const
     {
         return struct_type_;
     }
 
-    /**
-     * @brief Returns the variable name.
-     *
-     * @return A const reference to the variable name (e.g., "gTileset_General")
-     */
+    /// @brief Returns the variable name.
+    ///
+    /// @return A const reference to the variable name (e.g., "gTileset_General")
     [[nodiscard]] const std::string &variable_name() const
     {
         return variable_name_;
     }
 
-    /**
-     * @brief Returns all designated initializer fields.
-     *
-     * @return A const reference to the vector of fields
-     */
+    /// @brief Returns all designated initializer fields.
+    ///
+    /// @return A const reference to the vector of fields
     [[nodiscard]] const std::vector<DesignatedInitializerField> &fields() const
     {
         return fields_;
     }
 
-    /**
-     * @brief Returns the source position of the variable name.
-     *
-     * @return A const reference to the source position
-     */
+    /// @brief Returns the source position of the variable name.
+    ///
+    /// @return A const reference to the source position
     [[nodiscard]] const SourcePosition &position() const
     {
         return position_;
     }
 
-    /**
-     * @brief Looks up the value of a field by name.
-     *
-     * @param field_name The name of the field to look up
-     * @return The value if the field exists, std::nullopt otherwise
-     */
+    /// @brief Looks up the value of a field by name.
+    ///
+    /// @param field_name The name of the field to look up
+    /// @return The value if the field exists, std::nullopt otherwise
     [[nodiscard]] std::optional<std::string> field_value(const std::string &field_name) const
     {
         for (const auto &field : fields_) {

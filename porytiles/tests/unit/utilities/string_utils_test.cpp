@@ -2,6 +2,7 @@
 
 #include <string>
 
+#include "porytiles/domain/models/animation.hpp"
 #include "porytiles/utilities/dynamic_cased_name.hpp"
 #include "porytiles/utilities/string_utils.hpp"
 
@@ -139,6 +140,29 @@ TEST_F(StringUtilsTest, TrimPrefix)
     EXPECT_EQ(trim_prefix("Hello_World", "Hello_"), "World");
 }
 
+TEST_F(StringUtilsTest, JoinQuoted)
+{
+    // No values yields an empty string rather than stray quotes or a delimiter, so a caller can drop the whole clause
+    // by testing the result for emptiness.
+    EXPECT_EQ(join_quoted({}), "");
+
+    // A single value gets its quotes but no delimiter.
+    EXPECT_EQ(join_quoted({"only"}), "'only'");
+
+    EXPECT_EQ(join_quoted({"a.c", "b.h"}), "'a.c', 'b.h'");
+    EXPECT_EQ(join_quoted({"x", "y", "z"}), "'x', 'y', 'z'");
+
+    // The delimiter replaces the default without affecting the quoting.
+    EXPECT_EQ(join_quoted({"x", "y"}, " and "), "'x' and 'y'");
+    EXPECT_EQ(join_quoted({"x", "y"}, ""), "'x''y'");
+
+    // Values are quoted verbatim: an empty value still yields a quoted empty pair, so the count of quoted items always
+    // matches the count of values.
+    EXPECT_EQ(join_quoted({""}), "''");
+    EXPECT_EQ(join_quoted({"", "b"}), "'', 'b'");
+    EXPECT_EQ(join_quoted({"has space", "has'quote"}), "'has space', 'has'quote'");
+}
+
 TEST_F(StringUtilsTest, ExtractTilesetCasedNameWithPrefix)
 {
     auto result = extract_tileset_cased_name("gTileset_General");
@@ -158,4 +182,16 @@ TEST_F(StringUtilsTest, ExtractTilesetCasedNameCompound)
     auto result = extract_tileset_cased_name("gTileset_PetalburgCity");
     EXPECT_EQ(result.to_pascal_case(), "PetalburgCity");
     EXPECT_EQ(result.to_snake_case(), "petalburg_city");
+}
+
+TEST_F(StringUtilsTest, ManagedCallbackName)
+{
+    // snake_case-segmented names (the bug repro): the callback symbol must be PascalCase so it matches the
+    // generated function definition and forward declaration, not the raw snake_case shorthand.
+    EXPECT_EQ(anim::managed_callback_name("gTileset_velvet_forest"), "InitTilesetAnim_PorytilesManaged_VelvetForest");
+    EXPECT_EQ(
+        anim::managed_callback_name("gTileset_battle_frontier"), "InitTilesetAnim_PorytilesManaged_BattleFrontier");
+
+    // PascalCase input (every vanilla tileset) still converges to the same result.
+    EXPECT_EQ(anim::managed_callback_name("gTileset_General"), "InitTilesetAnim_PorytilesManaged_General");
 }

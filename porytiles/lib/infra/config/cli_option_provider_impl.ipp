@@ -3,6 +3,8 @@
 #include <algorithm>
 #include <cctype>
 #include <charconv>
+#include <cstdint>
+#include <exception>
 #include <format>
 #include <optional>
 #include <sstream>
@@ -11,14 +13,14 @@
 
 #include "porytiles/app/config/primary_pairing_mode.hpp"
 #include "porytiles/domain/config/anim_key_frame_resolution_strategy.hpp"
-#include "porytiles/domain/config/anim_multi_pal_subtile_resolution_strategy.hpp"
-#include "porytiles/domain/config/anim_pal_resolution_strategy.hpp"
+#include "porytiles/domain/config/anim_multi_palette_subtile_resolution_strategy.hpp"
+#include "porytiles/domain/config/anim_palette_resolution_strategy.hpp"
 #include "porytiles/domain/config/artifact_edit_mode.hpp"
 #include "porytiles/domain/config/frame_linking.hpp"
 #include "porytiles/domain/config/packing_strategy_type.hpp"
 #include "porytiles/domain/config/tile_sharing_alignment.hpp"
 #include "porytiles/domain/config/tile_sharing_packing.hpp"
-#include "porytiles/domain/config/tiles_pal_mode.hpp"
+#include "porytiles/domain/config/tiles_palette_mode.hpp"
 #include "porytiles/domain/models/rgba32.hpp"
 #include "porytiles/infra/config/layer_value.hpp"
 
@@ -28,17 +30,15 @@ namespace {
 
 using namespace porytiles;
 
-/**
- * @brief Parses a std::size_t from a CLI string option.
- *
- * @details
- * Converts a raw string to std::size_t using std::from_chars for robust parsing.
- * Returns LayerValue::invalid() for non-integer strings or out-of-range values.
- *
- * @param raw_value The raw string value from CLI, or std::nullopt if not provided
- * @param option_name The CLI option name for error messages (e.g., "--num-tiles-in-primary")
- * @return LayerValue with parsed value, invalid error, or not_provided status
- */
+/// @brief Parses a std::size_t from a CLI string option.
+///
+/// @details
+/// Converts a raw string to std::size_t using std::from_chars for robust parsing.
+/// Returns LayerValue::invalid() for non-integer strings or out-of-range values.
+///
+/// @param raw_value The raw string value from CLI, or std::nullopt if not provided
+/// @param option_name The CLI option name for error messages (e.g., "--num-tiles-in-primary")
+/// @return LayerValue with parsed value, invalid error, or not_provided status
 LayerValue<std::size_t> parse_size_t(const std::optional<std::string> &raw_value, const std::string &option_name)
 {
     if (!raw_value.has_value()) {
@@ -67,17 +67,52 @@ LayerValue<std::size_t> parse_size_t(const std::optional<std::string> &raw_value
     return LayerValue<std::size_t>::invalid(error, option_name);
 }
 
-/**
- * @brief Parses a bool from a CLI string option.
- *
- * @details
- * Expects "true" or "false" (case-sensitive, matching CLI11 flag capture).
- * Returns LayerValue::invalid() for any other value.
- *
- * @param raw_value The raw string value from CLI, or std::nullopt if not provided
- * @param option_name The CLI option name for error messages (e.g., "--verify-checksums")
- * @return LayerValue with parsed value, invalid error, or not_provided status
- */
+/// @brief Parses an optional std::size_t from a CLI string option.
+///
+/// @details
+/// Same parsing rules as parse_size_t, but the value type is std::optional<std::size_t>: an absent option is
+/// not_provided (so the DefaultProvider's std::nullopt applies), and a provided option always yields an engaged
+/// optional.
+///
+/// @param raw_value The raw string value from CLI, or std::nullopt if not provided
+/// @param option_name The CLI option name for error messages (e.g., "--metatile-attribute-declaration-size")
+/// @return LayerValue with parsed value, invalid error, or not_provided status
+LayerValue<std::optional<std::size_t>>
+parse_optional_size_t(const std::optional<std::string> &raw_value, const std::string &option_name)
+{
+    if (!raw_value.has_value()) {
+        return LayerValue<std::optional<std::size_t>>::not_provided();
+    }
+
+    const auto &str = raw_value.value();
+
+    std::size_t value = 0;
+    const auto *begin = str.data();
+    const auto *end = str.data() + str.size();
+    auto [ptr, ec] = std::from_chars(begin, end, value);
+
+    if (ec == std::errc{} && ptr == end) {
+        return LayerValue<std::optional<std::size_t>>::valid(std::optional<std::size_t>{value}, option_name, "CLI");
+    }
+
+    if (ec == std::errc::result_out_of_range) {
+        const auto error = std::format("Invalid value '{}' for '{}': value out of range.", str, option_name);
+        return LayerValue<std::optional<std::size_t>>::invalid(error, option_name);
+    }
+
+    const auto error = std::format("Invalid value '{}' for '{}': not a valid integer.", str, option_name);
+    return LayerValue<std::optional<std::size_t>>::invalid(error, option_name);
+}
+
+/// @brief Parses a bool from a CLI string option.
+///
+/// @details
+/// Expects "true" or "false" (case-sensitive, matching CLI11 flag capture).
+/// Returns LayerValue::invalid() for any other value.
+///
+/// @param raw_value The raw string value from CLI, or std::nullopt if not provided
+/// @param option_name The CLI option name for error messages (e.g., "--verify-checksums")
+/// @return LayerValue with parsed value, invalid error, or not_provided status
 LayerValue<bool> parse_bool(const std::optional<std::string> &raw_value, const std::string &option_name)
 {
     if (!raw_value.has_value()) {
@@ -97,17 +132,15 @@ LayerValue<bool> parse_bool(const std::optional<std::string> &raw_value, const s
     return LayerValue<bool>::invalid(error, option_name);
 }
 
-/**
- * @brief Parses an Rgba32 from a CLI string option.
- *
- * @details
- * Accepts "R,G,B" or "R,G,B,A" format with values 0-255. Alpha defaults to 255 if not provided.
- * Returns LayerValue::invalid() for malformed input or out-of-range component values.
- *
- * @param raw_value The raw string value from CLI, or std::nullopt if not provided
- * @param option_name The CLI option name for error messages (e.g., "--extrinsic-transparency")
- * @return LayerValue with parsed value, invalid error, or not_provided status
- */
+/// @brief Parses an Rgba32 from a CLI string option.
+///
+/// @details
+/// Accepts "R,G,B" or "R,G,B,A" format with values 0-255. Alpha defaults to 255 if not provided.
+/// Returns LayerValue::invalid() for malformed input or out-of-range component values.
+///
+/// @param raw_value The raw string value from CLI, or std::nullopt if not provided
+/// @param option_name The CLI option name for error messages (e.g., "--extrinsic-transparency")
+/// @return LayerValue with parsed value, invalid error, or not_provided status
 LayerValue<Rgba32> parse_rgba32(const std::optional<std::string> &raw_value, const std::string &option_name)
 {
     if (!raw_value.has_value()) {
@@ -167,16 +200,14 @@ LayerValue<Rgba32> parse_rgba32(const std::optional<std::string> &raw_value, con
     return LayerValue<Rgba32>::invalid(error, option_name);
 }
 
-/**
- * @brief Pass-through parser for string CLI options.
- *
- * @details
- * Simply wraps the raw string in a LayerValue. No transformation is needed.
- *
- * @param raw_value The raw string value from CLI, or std::nullopt if not provided
- * @param option_name The CLI option name for error messages
- * @return LayerValue with the string value or not_provided status
- */
+/// @brief Pass-through parser for string CLI options.
+///
+/// @details
+/// Simply wraps the raw string in a LayerValue. No transformation is needed.
+///
+/// @param raw_value The raw string value from CLI, or std::nullopt if not provided
+/// @param option_name The CLI option name for error messages
+/// @return LayerValue with the string value or not_provided status
 LayerValue<std::string> parse_string(const std::optional<std::string> &raw_value, const std::string &option_name)
 {
     if (!raw_value.has_value()) {
@@ -186,20 +217,18 @@ LayerValue<std::string> parse_string(const std::optional<std::string> &raw_value
     return LayerValue<std::string>::valid(raw_value.value(), option_name, "CLI");
 }
 
-/**
- * @brief Parses a std::vector<std::string> from CLI multi-value options.
- *
- * @details
- * CLI11 natively handles populating the vector. This function simply wraps the
- * result in a LayerValue. An empty vector is treated as "not provided" because
- * CLI11 leaves the vector empty when the option is not used. This is safe because
- * the default value for all vector config values is also an empty vector, so
- * "not provided" and "empty" are semantically equivalent in the current config system.
- *
- * @param raw_values The vector populated by CLI11
- * @param option_name The CLI option name for source info
- * @return LayerValue with the vector or not_provided status
- */
+/// @brief Parses a std::vector<std::string> from CLI multi-value options.
+///
+/// @details
+/// CLI11 natively handles populating the vector. This function simply wraps the
+/// result in a LayerValue. An empty vector is treated as "not provided" because
+/// CLI11 leaves the vector empty when the option is not used. This is safe because
+/// the default value for all vector config values is also an empty vector, so
+/// "not provided" and "empty" are semantically equivalent in the current config system.
+///
+/// @param raw_values The vector populated by CLI11
+/// @param option_name The CLI option name for source info
+/// @return LayerValue with the vector or not_provided status
 LayerValue<std::vector<std::string>>
 parse_string_vector(const std::vector<std::string> &raw_values, const std::string &option_name)
 {
@@ -209,18 +238,16 @@ parse_string_vector(const std::vector<std::string> &raw_values, const std::strin
     return LayerValue<std::vector<std::string>>::valid(raw_values, option_name, "CLI");
 }
 
-/**
- * @brief Parses an ArtifactEditMode from a CLI string option.
- *
- * @details
- * Uses the unified artifact_edit_mode_from_str() which provides fuzzy matching.
- * Returns LayerValue::invalid() for unrecognized values, allowing consistent
- * error formatting through LazyLayeredConfig.
- *
- * @param raw_value The raw string value from CLI, or std::nullopt if not provided
- * @param option_name The CLI option name for error messages (e.g., "--tiles-edit-mode")
- * @return LayerValue with parsed value, invalid error, or not_provided status
- */
+/// @brief Parses an ArtifactEditMode from a CLI string option.
+///
+/// @details
+/// Uses the unified artifact_edit_mode_from_str() which provides fuzzy matching.
+/// Returns LayerValue::invalid() for unrecognized values, allowing consistent
+/// error formatting through LazyLayeredConfig.
+///
+/// @param raw_value The raw string value from CLI, or std::nullopt if not provided
+/// @param option_name The CLI option name for error messages (e.g., "--tiles-edit-mode")
+/// @return LayerValue with parsed value, invalid error, or not_provided status
 LayerValue<ArtifactEditMode>
 parse_artifact_edit_mode(const std::optional<std::string> &raw_value, const std::string &option_name)
 {
@@ -239,75 +266,69 @@ parse_artifact_edit_mode(const std::optional<std::string> &raw_value, const std:
     return LayerValue<ArtifactEditMode>::invalid(error, option_name);
 }
 
-/**
- * @brief Parses a TilesPalMode from a CLI string option.
- *
- * @details
- * Uses the unified tiles_pal_mode_from_str() which provides fuzzy matching.
- * Returns LayerValue::invalid() for unrecognized values.
- *
- * @param raw_value The raw string value from CLI, or std::nullopt if not provided
- * @param option_name The CLI option name for error messages
- * @return LayerValue with parsed value, invalid error, or not_provided status
- */
-LayerValue<TilesPalMode>
-parse_tiles_pal_mode(const std::optional<std::string> &raw_value, const std::string &option_name)
+/// @brief Parses a TilesPaletteMode from a CLI string option.
+///
+/// @details
+/// Uses the unified tiles_palette_mode_from_str() which provides fuzzy matching.
+/// Returns LayerValue::invalid() for unrecognized values.
+///
+/// @param raw_value The raw string value from CLI, or std::nullopt if not provided
+/// @param option_name The CLI option name for error messages
+/// @return LayerValue with parsed value, invalid error, or not_provided status
+LayerValue<TilesPaletteMode>
+parse_tiles_palette_mode(const std::optional<std::string> &raw_value, const std::string &option_name)
 {
     if (!raw_value.has_value()) {
-        return LayerValue<TilesPalMode>::not_provided();
+        return LayerValue<TilesPaletteMode>::not_provided();
     }
 
     const auto &str = raw_value.value();
-    const auto result = tiles_pal_mode_from_str(str);
+    const auto result = tiles_palette_mode_from_str(str);
 
     if (result.has_value()) {
-        return LayerValue<TilesPalMode>::valid(result.value(), option_name, "CLI");
+        return LayerValue<TilesPaletteMode>::valid(result.value(), option_name, "CLI");
     }
 
     const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
-    return LayerValue<TilesPalMode>::invalid(error, option_name);
+    return LayerValue<TilesPaletteMode>::invalid(error, option_name);
 }
 
-/**
- * @brief Parses an AnimPalResolutionStrategy from a CLI string option.
- *
- * @details
- * Uses the unified anim_pal_resolution_strategy_from_str() which provides fuzzy matching.
- * Returns LayerValue::invalid() for unrecognized values.
- *
- * @param raw_value The raw string value from CLI, or std::nullopt if not provided
- * @param option_name The CLI option name for error messages
- * @return LayerValue with parsed value, invalid error, or not_provided status
- */
-LayerValue<AnimPalResolutionStrategy>
-parse_anim_pal_resolution_strategy(const std::optional<std::string> &raw_value, const std::string &option_name)
+/// @brief Parses an AnimPaletteResolutionStrategy from a CLI string option.
+///
+/// @details
+/// Uses the unified anim_palette_resolution_strategy_from_str() which provides fuzzy matching.
+/// Returns LayerValue::invalid() for unrecognized values.
+///
+/// @param raw_value The raw string value from CLI, or std::nullopt if not provided
+/// @param option_name The CLI option name for error messages
+/// @return LayerValue with parsed value, invalid error, or not_provided status
+LayerValue<AnimPaletteResolutionStrategy>
+parse_anim_palette_resolution_strategy(const std::optional<std::string> &raw_value, const std::string &option_name)
 {
     if (!raw_value.has_value()) {
-        return LayerValue<AnimPalResolutionStrategy>::not_provided();
+        return LayerValue<AnimPaletteResolutionStrategy>::not_provided();
     }
 
     const auto &str = raw_value.value();
-    const auto result = anim_pal_resolution_strategy_from_str(str);
+    const auto result = anim_palette_resolution_strategy_from_str(str);
 
     if (result.has_value()) {
-        return LayerValue<AnimPalResolutionStrategy>::valid(result.value(), option_name, "CLI");
+        return LayerValue<AnimPaletteResolutionStrategy>::valid(result.value(), option_name, "CLI");
     }
 
     const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
-    return LayerValue<AnimPalResolutionStrategy>::invalid(error, option_name);
+    return LayerValue<AnimPaletteResolutionStrategy>::invalid(error, option_name);
 }
 
-/**
- * @brief Parses an AnimKeyFrameResolutionStrategy from a CLI string option.
- *
- * @details
- * Uses the unified anim_key_frame_resolution_strategy_from_str() which provides fuzzy matching.
- * Returns LayerValue::invalid() for unrecognized values.
- *
- * @param raw_value The raw string value from CLI, or std::nullopt if not provided
- * @param option_name The CLI option name for error messages
- * @return LayerValue with parsed value, invalid error, or not_provided status
- */
+/// @brief Parses an AnimKeyFrameResolutionStrategy from a CLI string option.
+///
+/// @details
+/// Uses the unified anim_key_frame_resolution_strategy_from_str() which provides fuzzy matching.
+/// Returns LayerValue::invalid() for unrecognized values.
+///
+/// @param raw_value The raw string value from CLI, or std::nullopt if not provided
+/// @param option_name The CLI option name for error messages
+/// @return LayerValue with parsed value, invalid error, or not_provided status
 LayerValue<AnimKeyFrameResolutionStrategy>
 parse_anim_key_frame_resolution_strategy(const std::optional<std::string> &raw_value, const std::string &option_name)
 {
@@ -326,46 +347,42 @@ parse_anim_key_frame_resolution_strategy(const std::optional<std::string> &raw_v
     return LayerValue<AnimKeyFrameResolutionStrategy>::invalid(error, option_name);
 }
 
-/**
- * @brief Parses an AnimMultiPalSubtileResolutionStrategy value from a CLI option string.
- *
- * @details
- * Uses the unified anim_multi_pal_subtile_resolution_strategy_from_str() which provides fuzzy matching.
- * Returns LayerValue::invalid() for unrecognized values.
- *
- * @param raw_value The raw string value from CLI, or std::nullopt if not provided
- * @param option_name The CLI option name for error messages
- * @return LayerValue with parsed value, invalid error, or not_provided status
- */
-LayerValue<AnimMultiPalSubtileResolutionStrategy> parse_anim_multi_pal_subtile_resolution_strategy(
+/// @brief Parses an AnimMultiPaletteSubtileResolutionStrategy value from a CLI option string.
+///
+/// @details
+/// Uses the unified anim_multi_palette_subtile_resolution_strategy_from_str() which provides fuzzy matching.
+/// Returns LayerValue::invalid() for unrecognized values.
+///
+/// @param raw_value The raw string value from CLI, or std::nullopt if not provided
+/// @param option_name The CLI option name for error messages
+/// @return LayerValue with parsed value, invalid error, or not_provided status
+LayerValue<AnimMultiPaletteSubtileResolutionStrategy> parse_anim_multi_palette_subtile_resolution_strategy(
     const std::optional<std::string> &raw_value, const std::string &option_name)
 {
     if (!raw_value.has_value()) {
-        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::not_provided();
+        return LayerValue<AnimMultiPaletteSubtileResolutionStrategy>::not_provided();
     }
 
     const auto &str = raw_value.value();
-    const auto result = anim_multi_pal_subtile_resolution_strategy_from_str(str);
+    const auto result = anim_multi_palette_subtile_resolution_strategy_from_str(str);
 
     if (result.has_value()) {
-        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::valid(result.value(), option_name, "CLI");
+        return LayerValue<AnimMultiPaletteSubtileResolutionStrategy>::valid(result.value(), option_name, "CLI");
     }
 
     const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
-    return LayerValue<AnimMultiPalSubtileResolutionStrategy>::invalid(error, option_name);
+    return LayerValue<AnimMultiPaletteSubtileResolutionStrategy>::invalid(error, option_name);
 }
 
-/**
- * @brief Parses a FrameLinking value from a CLI option string.
- *
- * @details
- * Returns LayerValue::not_provided() if raw_value is std::nullopt.
- * Returns LayerValue::invalid() for unrecognized values.
- *
- * @param raw_value The raw string value from CLI, or std::nullopt if not provided
- * @param option_name The CLI option name for error messages
- * @return LayerValue with parsed value, invalid error, or not_provided status
- */
+/// @brief Parses a FrameLinking value from a CLI option string.
+///
+/// @details
+/// Returns LayerValue::not_provided() if raw_value is std::nullopt.
+/// Returns LayerValue::invalid() for unrecognized values.
+///
+/// @param raw_value The raw string value from CLI, or std::nullopt if not provided
+/// @param option_name The CLI option name for error messages
+/// @return LayerValue with parsed value, invalid error, or not_provided status
 LayerValue<FrameLinking>
 parse_frame_linking(const std::optional<std::string> &raw_value, const std::string &option_name)
 {
@@ -384,17 +401,15 @@ parse_frame_linking(const std::optional<std::string> &raw_value, const std::stri
     return LayerValue<FrameLinking>::invalid(error, option_name);
 }
 
-/**
- * @brief Parses a TileSharingPacking value from a CLI option string.
- *
- * @details
- * Uses the unified tile_sharing_packing_from_str() which provides fuzzy matching.
- * Returns LayerValue::invalid() for unrecognized values.
- *
- * @param raw_value The raw string value from CLI, or std::nullopt if not provided
- * @param option_name The CLI option name for error messages
- * @return LayerValue with parsed value, invalid error, or not_provided status
- */
+/// @brief Parses a TileSharingPacking value from a CLI option string.
+///
+/// @details
+/// Uses the unified tile_sharing_packing_from_str() which provides fuzzy matching.
+/// Returns LayerValue::invalid() for unrecognized values.
+///
+/// @param raw_value The raw string value from CLI, or std::nullopt if not provided
+/// @param option_name The CLI option name for error messages
+/// @return LayerValue with parsed value, invalid error, or not_provided status
 LayerValue<TileSharingPacking>
 parse_tile_sharing_packing(const std::optional<std::string> &raw_value, const std::string &option_name)
 {
@@ -413,17 +428,15 @@ parse_tile_sharing_packing(const std::optional<std::string> &raw_value, const st
     return LayerValue<TileSharingPacking>::invalid(error, option_name);
 }
 
-/**
- * @brief Parses a TileSharingAlignment value from a CLI option string.
- *
- * @details
- * Uses the unified tile_sharing_alignment_from_str() which provides fuzzy matching.
- * Returns LayerValue::invalid() for unrecognized values.
- *
- * @param raw_value The raw string value from CLI, or std::nullopt if not provided
- * @param option_name The CLI option name for error messages
- * @return LayerValue with parsed value, invalid error, or not_provided status
- */
+/// @brief Parses a TileSharingAlignment value from a CLI option string.
+///
+/// @details
+/// Uses the unified tile_sharing_alignment_from_str() which provides fuzzy matching.
+/// Returns LayerValue::invalid() for unrecognized values.
+///
+/// @param raw_value The raw string value from CLI, or std::nullopt if not provided
+/// @param option_name The CLI option name for error messages
+/// @return LayerValue with parsed value, invalid error, or not_provided status
 LayerValue<TileSharingAlignment>
 parse_tile_sharing_alignment(const std::optional<std::string> &raw_value, const std::string &option_name)
 {

@@ -11,7 +11,10 @@ FetchContent_Declare(
 FetchContent_MakeAvailable(cli11_proj)
 
 FILE(GLOB_RECURSE CppSources CONFIGURE_DEPENDS *.cpp)
-add_executable(PorytilesDriver ${CppSources})
+# Headers listed as sources so IDEs treat them as project files (compile-neutral;
+# CMake ignores .hpp). See porytiles/lib/CMakeLists.txt for the full rationale.
+FILE(GLOB_RECURSE DriverHeaders CONFIGURE_DEPENDS *.hpp)
+add_executable(PorytilesDriver ${CppSources} ${DriverHeaders})
 # Adding this to try to help CLion and CMake with inspections
 target_compile_definitions(PorytilesDriver PRIVATE DOCTEST_CONFIG_DISABLE)
 # Driver TU consumes PORYTILES_BUILD_VERSION directly (in main.cpp); PorytilesLib's PRIVATE def doesn't reach this target.

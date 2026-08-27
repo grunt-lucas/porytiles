@@ -34,17 +34,15 @@ ProjectPrimaryTilesetImporter::import_porymap_component_from_vanilla(const std::
         porymap_component->push_back_tilemap_entry(std::move(entry));
     }
 
-    // Step 3: Parse metatile_attributes.bin (dispatch on attribute size for correct format)
+    // Step 3: Parse metatile_attributes.bin using the resolved schema's binary layout
     PT_TRY_ASSIGN_CHAIN_ERR(
         attributes,
-        metatile_attr_size_ == attr::bytes_per_attr_firered
-            ? parse_firered_metatile_attributes(project_root_ / artifact_paths.metatile_attributes_path())
-            : parse_emerald_metatile_attributes(project_root_ / artifact_paths.metatile_attributes_path()),
+        parse_metatile_attributes(project_root_ / artifact_paths.metatile_attributes_path(), *schema_),
         std::unique_ptr<PorymapTilesetComponent>,
         "Failed to parse metatile_attributes.bin.");
 
-    for (auto &attr : attributes) {
-        porymap_component->push_back_attribute(std::move(attr));
+    for (auto &attribute : attributes) {
+        porymap_component->push_back_attribute(std::move(attribute));
     }
 
     // Step 4: Load tiles.png (strip all extensions like .4bpp.smol, then add .png)
@@ -61,18 +59,18 @@ ProjectPrimaryTilesetImporter::import_porymap_component_from_vanilla(const std::
 
     // Step 5: Load palettes from the discovered palette paths
     const auto &palette_paths = artifact_paths.palette_paths();
-    for (std::size_t i = 0; i < palette_paths.size() && i < pal::num_pals; ++i) {
+    for (std::size_t i = 0; i < palette_paths.size() && i < palette::num_palettes; ++i) {
         // Convert .gbapal path to .pal by stripping all extensions and adding .pal
-        auto pal_path = strip_all_extensions(palette_paths[i]);
-        pal_path += ".pal";
+        auto palette_path = strip_all_extensions(palette_paths[i]);
+        palette_path += ".pal";
 
         PT_TRY_ASSIGN_CHAIN_ERR(
             palette,
-            load_porymap_palette(project_root_ / pal_path, *pal_loader_),
+            load_porymap_palette(project_root_ / palette_path, *palette_loader_),
             std::unique_ptr<PorymapTilesetComponent>,
-            format_->format("Failed to load palette {}.", FormatParam{pal_filename(i), Style::bold}));
+            format_->format("Failed to load palette {}.", FormatParam{palette_filename(i), Style::bold}));
 
-        porymap_component->set_pal(i, std::move(palette));
+        porymap_component->set_palette(i, std::move(palette));
     }
 
     // Step 6: Import animations using ProjectVanillaAnimImporter

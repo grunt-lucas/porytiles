@@ -34,31 +34,31 @@ namespace {
     return PackableTile{PackableTile::RegularId{tile_index}, make_color_set(color_indices)};
 }
 
-[[nodiscard]] std::bitset<pal::num_pals> all_palettes_available()
+[[nodiscard]] std::bitset<palette::num_palettes> all_palettes_available()
 {
-    std::bitset<pal::num_pals> bits;
+    std::bitset<palette::num_palettes> bits;
     bits.set();
     return bits;
 }
 
-[[nodiscard]] std::bitset<pal::num_pals> n_palettes_available(std::size_t n)
+[[nodiscard]] std::bitset<palette::num_palettes> n_palettes_available(std::size_t n)
 {
-    std::bitset<pal::num_pals> bits;
-    for (std::size_t i = 0; i < n && i < pal::num_pals; ++i) {
+    std::bitset<palette::num_palettes> bits;
+    for (std::size_t i = 0; i < n && i < palette::num_palettes; ++i) {
         bits.set(i);
     }
     return bits;
 }
 
-[[nodiscard]] PackingInput
-make_input(std::vector<PackableTile> tiles, std::bitset<pal::num_pals> available_pals, std::size_t capacity = 15)
+[[nodiscard]] PackingInput make_input(
+    std::vector<PackableTile> tiles, std::bitset<palette::num_palettes> available_palettes, std::size_t capacity = 15)
 {
     return PackingInput{
         .tiles_ = std::move(tiles),
         .hints_ = {},
-        .prefilled_pals_ = {},
-        .pal_pool_ = PalettePool{available_pals},
-        .pal_capacity_ = capacity,
+        .prefilled_palettes_ = {},
+        .palette_pool_ = PalettePool{available_palettes},
+        .palette_capacity_ = capacity,
     };
 }
 
@@ -75,8 +75,8 @@ TEST(BacktrackingStrategyTest, BasicSingleTile)
     ASSERT_TRUE(result.has_value());
     auto &output = result.value();
 
-    ASSERT_EQ(output.tile_to_pal_.size(), 1u);
-    ASSERT_TRUE(output.tile_to_pal_.contains(tile.id()));
+    ASSERT_EQ(output.tile_to_palette_.size(), 1u);
+    ASSERT_TRUE(output.tile_to_palette_.contains(tile.id()));
 }
 
 TEST(BacktrackingStrategyTest, OverlappingTilesSharePalette)
@@ -91,12 +91,12 @@ TEST(BacktrackingStrategyTest, OverlappingTilesSharePalette)
     ASSERT_TRUE(result.has_value());
     auto &output = result.value();
 
-    ASSERT_EQ(output.tile_to_pal_.size(), 2u);
+    ASSERT_EQ(output.tile_to_palette_.size(), 2u);
 
     // Both tiles should share a palette since they overlap well
-    std::size_t pal_a = output.tile_to_pal_.at(tile_a.id());
-    std::size_t pal_b = output.tile_to_pal_.at(tile_b.id());
-    EXPECT_EQ(pal_a, pal_b);
+    std::size_t palette_a = output.tile_to_palette_.at(tile_a.id());
+    std::size_t palette_b = output.tile_to_palette_.at(tile_b.id());
+    EXPECT_EQ(palette_a, palette_b);
 }
 
 TEST(BacktrackingStrategyTest, DisjointTilesUseSeparatePalettes)
@@ -112,23 +112,21 @@ TEST(BacktrackingStrategyTest, DisjointTilesUseSeparatePalettes)
     ASSERT_TRUE(result.has_value());
     auto &output = result.value();
 
-    ASSERT_EQ(output.tile_to_pal_.size(), 2u);
-    EXPECT_NE(output.tile_to_pal_.at(tile_a.id()), output.tile_to_pal_.at(tile_b.id()));
+    ASSERT_EQ(output.tile_to_palette_.size(), 2u);
+    EXPECT_NE(output.tile_to_palette_.at(tile_a.id()), output.tile_to_palette_.at(tile_b.id()));
 }
 
 TEST(BacktrackingStrategyTest, TightPackingRequiresBacktracking)
 {
-    /*
-     * Construct a scenario where greedy FFD ordering would fail but backtracking succeeds.
-     * 4 tiles, 2 palettes, capacity=6:
-     * - tile_a: {1,2,3,4}
-     * - tile_b: {3,4,5,6}
-     * - tile_c: {5,6,7,8}
-     * - tile_d: {7,8,1,2}
-     *
-     * Valid solution: pal0={tile_a, tile_b} => {1,2,3,4,5,6}=6, pal1={tile_c, tile_d} => {5,6,7,8,1,2}=6
-     * Greedy FFD might place tile_a and tile_c together (no overlap) causing {1,2,3,4,5,6,7,8}=8 > 6.
-     */
+    // Construct a scenario where greedy FFD ordering would fail but backtracking succeeds.
+    // 4 tiles, 2 palettes, capacity=6:
+    // - tile_a: {1,2,3,4}
+    // - tile_b: {3,4,5,6}
+    // - tile_c: {5,6,7,8}
+    // - tile_d: {7,8,1,2}
+    //
+    // Valid solution: palette0={tile_a, tile_b} => {1,2,3,4,5,6}=6, palette1={tile_c, tile_d} => {5,6,7,8,1,2}=6
+    // Greedy FFD might place tile_a and tile_c together (no overlap) causing {1,2,3,4,5,6,7,8}=8 > 6.
     auto tile_a = make_regular_tile(0, {1, 2, 3, 4});
     auto tile_b = make_regular_tile(1, {3, 4, 5, 6});
     auto tile_c = make_regular_tile(2, {5, 6, 7, 8});
@@ -142,9 +140,9 @@ TEST(BacktrackingStrategyTest, TightPackingRequiresBacktracking)
     ASSERT_TRUE(result.has_value()) << "Backtracking should find a valid packing for tight instances";
     auto &output = result.value();
 
-    ASSERT_EQ(output.tile_to_pal_.size(), 4u);
+    ASSERT_EQ(output.tile_to_palette_.size(), 4u);
     for (const auto &tile : {tile_a, tile_b, tile_c, tile_d}) {
-        ASSERT_TRUE(output.tile_to_pal_.contains(tile.id()));
+        ASSERT_TRUE(output.tile_to_palette_.contains(tile.id()));
     }
 }
 
@@ -159,9 +157,9 @@ TEST(BacktrackingStrategyTest, PrefilledPalettesRespected)
     PackingInput input{
         .tiles_ = {tile},
         .hints_ = {},
-        .prefilled_pals_ = {prefilled},
-        .pal_pool_ = PalettePool{all_palettes_available()},
-        .pal_capacity_ = 15,
+        .prefilled_palettes_ = {prefilled},
+        .palette_pool_ = PalettePool{all_palettes_available()},
+        .palette_capacity_ = 15,
     };
 
     BacktrackingStrategy strategy{};
@@ -170,13 +168,13 @@ TEST(BacktrackingStrategyTest, PrefilledPalettesRespected)
     ASSERT_TRUE(result.has_value());
     auto &output = result.value();
 
-    ASSERT_TRUE(output.tile_to_pal_.contains(tile.id()));
+    ASSERT_TRUE(output.tile_to_palette_.contains(tile.id()));
 
     // Verify prefilled palette system tile is preserved
     bool found_prefilled = false;
-    for (const auto &pal : output.pals_) {
-        if (pal.hardware_index() == 0) {
-            for (const auto &tid : pal.assigned_tile_ids()) {
+    for (const auto &palette : output.palettes_) {
+        if (palette.hardware_index() == 0) {
+            for (const auto &tid : palette.assigned_tile_ids()) {
                 if (std::holds_alternative<PackableTile::PrefilledPaletteId>(tid)) {
                     found_prefilled = true;
                 }
@@ -194,9 +192,9 @@ TEST(BacktrackingStrategyTest, HintTilesProcessed)
     PackingInput input{
         .tiles_ = {tile},
         .hints_ = {hint},
-        .prefilled_pals_ = {},
-        .pal_pool_ = PalettePool{all_palettes_available()},
-        .pal_capacity_ = 15,
+        .prefilled_palettes_ = {},
+        .palette_pool_ = PalettePool{all_palettes_available()},
+        .palette_capacity_ = 15,
     };
 
     BacktrackingStrategy strategy{};
@@ -206,11 +204,11 @@ TEST(BacktrackingStrategyTest, HintTilesProcessed)
     auto &output = result.value();
 
     // Both hint and regular tile should be assigned
-    ASSERT_TRUE(output.tile_to_pal_.contains(hint.id()));
-    ASSERT_TRUE(output.tile_to_pal_.contains(tile.id()));
+    ASSERT_TRUE(output.tile_to_palette_.contains(hint.id()));
+    ASSERT_TRUE(output.tile_to_palette_.contains(tile.id()));
 
     // They share colors, so they should be in the same palette
-    EXPECT_EQ(output.tile_to_pal_.at(hint.id()), output.tile_to_pal_.at(tile.id()));
+    EXPECT_EQ(output.tile_to_palette_.at(hint.id()), output.tile_to_palette_.at(tile.id()));
 }
 
 TEST(BacktrackingStrategyTest, EmptyInput)
@@ -223,7 +221,7 @@ TEST(BacktrackingStrategyTest, EmptyInput)
     ASSERT_TRUE(result.has_value());
     auto &output = result.value();
 
-    EXPECT_TRUE(output.tile_to_pal_.empty());
+    EXPECT_TRUE(output.tile_to_palette_.empty());
 }
 
 TEST(BacktrackingStrategyTest, ImpossibleInput)
@@ -256,7 +254,7 @@ TEST(BacktrackingStrategyTest, Deterministic)
     ASSERT_TRUE(result1.has_value());
     ASSERT_TRUE(result2.has_value());
 
-    EXPECT_EQ(result1.value().tile_to_pal_, result2.value().tile_to_pal_);
+    EXPECT_EQ(result1.value().tile_to_palette_, result2.value().tile_to_palette_);
 }
 
 TEST(BacktrackingStrategyTest, SingleConfigDfsSucceeds)
@@ -271,8 +269,8 @@ TEST(BacktrackingStrategyTest, SingleConfigDfsSucceeds)
     ASSERT_TRUE(result.has_value());
     auto &output = result.value();
 
-    ASSERT_EQ(output.tile_to_pal_.size(), 2u);
-    EXPECT_EQ(output.tile_to_pal_.at(tile_a.id()), output.tile_to_pal_.at(tile_b.id()));
+    ASSERT_EQ(output.tile_to_palette_.size(), 2u);
+    EXPECT_EQ(output.tile_to_palette_.at(tile_a.id()), output.tile_to_palette_.at(tile_b.id()));
 }
 
 TEST(BacktrackingStrategyTest, SingleConfigBfsSucceeds)
@@ -287,16 +285,14 @@ TEST(BacktrackingStrategyTest, SingleConfigBfsSucceeds)
     ASSERT_TRUE(result.has_value());
     auto &output = result.value();
 
-    ASSERT_EQ(output.tile_to_pal_.size(), 2u);
-    EXPECT_EQ(output.tile_to_pal_.at(tile_a.id()), output.tile_to_pal_.at(tile_b.id()));
+    ASSERT_EQ(output.tile_to_palette_.size(), 2u);
+    EXPECT_EQ(output.tile_to_palette_.at(tile_a.id()), output.tile_to_palette_.at(tile_b.id()));
 }
 
 TEST(BacktrackingStrategyTest, SingleConfigCutoffTooLow)
 {
-    /*
-     * Use the tight packing scenario that requires real backtracking, but with
-     * a very low node cutoff so the single config fails (no preset matrix fallback).
-     */
+    // Use the tight packing scenario that requires real backtracking, but with
+    // a very low node cutoff so the single config fails (no preset matrix fallback).
     auto tile_a = make_regular_tile(0, {1, 2, 3, 4});
     auto tile_b = make_regular_tile(1, {3, 4, 5, 6});
     auto tile_c = make_regular_tile(2, {5, 6, 7, 8});

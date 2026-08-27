@@ -3,7 +3,9 @@
 
   This template generates the CliOptionProvider class that wraps CliOptionStorage and implements
   the ConfigProvider interface. It returns LayerValue::valid() when the optional has a value,
-  and LayerValue::not_provided() otherwise.
+  and LayerValue::not_provided() otherwise. Values marked yaml_only have no CLI option (and no
+  CliOptionStorage member), so they are not overridden here; they fall through to the
+  ConfigProvider base class default.
 #}
 {% import '_macros.jinja2' as macros %}
 #pragma once
@@ -19,39 +21,31 @@ namespace porytiles {
 
 {{ macros.autogen_warning() }}
 
-/**
- * @brief ConfigProvider implementation that reads values from CLI options.
- *
- * @details
- * CliOptionProvider wraps a CliOptionStorage struct and implements the ConfigProvider interface.
- * For each config value, it returns LayerValue::valid() if the CLI option was provided, or
- * LayerValue::not_provided() if it was not. This provider should be first in the provider chain
- * to give CLI options the highest priority.
- */
+/// @brief ConfigProvider implementation that reads values from CLI options.
+///
+/// @details
+/// CliOptionProvider wraps a CliOptionStorage struct and implements the ConfigProvider interface.
+/// For each config value, it returns LayerValue::valid() if the CLI option was provided, or
+/// LayerValue::not_provided() if it was not. This provider should be first in the provider chain
+/// to give CLI options the highest priority.
 class CliOptionProvider final : public ConfigProvider {
   public:
     explicit CliOptionProvider(const CliOptionStorage &storage);
 
     [[nodiscard]] std::string name() const override;
 
-    /*
-     * Domain Config
-     */
-{% for value in config_values if value.layer == 'domain' %}
+    // Domain Config
+{% for value in config_values if value.layer == 'domain' and not value.yaml_only %}
     [[nodiscard]] LayerValue<{{ value.type }}> {{ value.symbol }}(ConfigScopeType type, const std::string &scope) const override;
 {% endfor %}
 
-    /*
-     * App Config
-     */
-{% for value in config_values if value.layer == 'app' %}
+    // App Config
+{% for value in config_values if value.layer == 'app' and not value.yaml_only %}
     [[nodiscard]] LayerValue<{{ value.type }}> {{ value.symbol }}(ConfigScopeType type, const std::string &scope) const override;
 {% endfor %}
 
-    /*
-     * Infra Config
-     */
-{% for value in config_values if value.layer == 'infra' %}
+    // Infra Config
+{% for value in config_values if value.layer == 'infra' and not value.yaml_only %}
     [[nodiscard]] LayerValue<{{ value.type }}> {{ value.symbol }}(ConfigScopeType type, const std::string &scope) const override;
 {% endfor %}
 

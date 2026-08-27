@@ -9,13 +9,11 @@ namespace porytiles {
 
 namespace {
 
-/**
- * @brief Skips tokens until finding a matching closing brace, handling nested braces.
- *
- * @param tokens The token vector
- * @param start Position of the opening brace
- * @return Position after the closing brace, or tokens.size() if not found
- */
+/// @brief Skips tokens until finding a matching closing brace, handling nested braces.
+///
+/// @param tokens The token vector
+/// @param start Position of the opening brace
+/// @return Position after the closing brace, or tokens.size() if not found
 [[nodiscard]] std::size_t skip_balanced_braces(const std::vector<Token> &tokens, std::size_t start)
 {
     if (start >= tokens.size() || !tokens[start].is(TokenType::left_brace)) {
@@ -38,13 +36,11 @@ namespace {
     return pos;
 }
 
-/**
- * @brief Collects all tokens between braces, handling nested braces.
- *
- * @param tokens The token vector
- * @param start Position of the opening brace
- * @return Vector of tokens between the braces (exclusive of braces themselves)
- */
+/// @brief Collects all tokens between braces, handling nested braces.
+///
+/// @param tokens The token vector
+/// @param start Position of the opening brace
+/// @return Vector of tokens between the braces (exclusive of braces themselves)
 [[nodiscard]] std::vector<Token> collect_brace_contents(const std::vector<Token> &tokens, std::size_t start)
 {
     std::vector<Token> contents;
@@ -73,12 +69,10 @@ namespace {
     return contents;
 }
 
-/**
- * @brief Extracts identifier names from a comma-separated list in brace contents.
- *
- * @param brace_contents Tokens from inside the braces
- * @return Vector of identifier names in order
- */
+/// @brief Extracts identifier names from a comma-separated list in brace contents.
+///
+/// @param brace_contents Tokens from inside the braces
+/// @return Vector of identifier names in order
 [[nodiscard]] std::vector<std::string> extract_identifier_elements(const std::vector<Token> &brace_contents)
 {
     std::vector<std::string> elements;
@@ -93,13 +87,11 @@ namespace {
     return elements;
 }
 
-/**
- * @brief Skips tokens until finding a matching closing parenthesis.
- *
- * @param tokens The token vector
- * @param start Position of the opening parenthesis
- * @return Position after the closing parenthesis, or tokens.size() if not found
- */
+/// @brief Skips tokens until finding a matching closing parenthesis.
+///
+/// @param tokens The token vector
+/// @param start Position of the opening parenthesis
+/// @return Position after the closing parenthesis, or tokens.size() if not found
 [[nodiscard]] std::size_t skip_balanced_parens(const std::vector<Token> &tokens, std::size_t start)
 {
     if (start >= tokens.size() || !tokens[start].is(TokenType::left_paren)) {
@@ -122,6 +114,20 @@ namespace {
     return pos;
 }
 
+/// @brief Determines whether a token names a graphic-inclusion macro understood by the INCBIN parser.
+///
+/// @details
+/// Recognizes the plain @c INCBIN_* family (e.g. @c INCBIN_U32) as well as the alternate form
+/// auto-conversion @c INCGFX_* family (e.g. @c INCGFX_U32). Both forms take the source/binary path as their
+/// first string-literal argument, so the parser handles them identically.
+///
+/// @param token The macro identifier text to test.
+/// @return @c true if @p token begins with @c "INCBIN_" or @c "INCGFX_".
+[[nodiscard]] bool is_gfx_inclusion_macro(const std::string &token)
+{
+    return token.starts_with("INCBIN_") || token.starts_with("INCGFX_");
+}
+
 } // namespace
 
 FormattableError Parser::make_error(SourcePosition pos, std::string message) const
@@ -132,13 +138,179 @@ FormattableError Parser::make_error(SourcePosition pos, std::string message) con
     return FormattableError{format_->format("{}:{}: {}", pos.line, pos.column, message)};
 }
 
+Parser::CondState Parser::effective_cond_state() const
+{
+    bool any_both = false;
+    for (const auto &frame : cond_stack_) {
+        if (frame.state == CondState::skipping) {
+            return CondState::skipping;
+        }
+        if (frame.state == CondState::both) {
+            any_both = true;
+        }
+    }
+    return any_both ? CondState::both : CondState::active;
+}
+
+std::pair<Parser::CondState, bool> Parser::classify_ifdef(bool negated)
+{
+    // Precondition: the parser is positioned just after '#ifdef'/'#ifndef'. Read the macro name and decide.
+    std::string name;
+    if (check(TokenType::identifier)) {
+        name = peek().text();
+    }
+    skip_to_next_line();
+
+    if (name.empty() || !defined_names_.contains(name)) {
+        // We cannot prove the macro is undefined (it may come from an unparsed include), so stay undecidable.
+        return {CondState::both, false};
+    }
+    const bool condition = negated ? false : true; // name is known-defined; #ifdef is true, #ifndef is false
+    return {condition ? CondState::active : CondState::skipping, true};
+}
+
+std::optional<std::vector<Token>> Parser::substitute_defined_operators(const std::vector<Token> &expr) const
+{
+    std::vector<Token> out;
+    std::size_t i = 0;
+    while (i < expr.size()) {
+        if (!expr[i].is(TokenType::kw_defined)) {
+            out.push_back(expr[i]);
+            ++i;
+            continue;
+        }
+
+        // Accept either `defined(NAME)` or `defined NAME`.
+        std::string name;
+        SourcePosition pos = expr[i].position();
+        std::size_t next = i + 1;
+        if (next < expr.size() && expr[next].is(TokenType::left_paren)) {
+            if (next + 1 < expr.size() && expr[next + 1].is(TokenType::identifier)) {
+                name = expr[next + 1].text();
+            }
+            std::size_t close = next + 1;
+            while (close < expr.size() && !expr[close].is(TokenType::right_paren)) {
+                ++close;
+            }
+            i = (close < expr.size()) ? close + 1 : expr.size();
+        }
+        else if (next < expr.size() && expr[next].is(TokenType::identifier)) {
+            name = expr[next].text();
+            i = next + 1;
+        }
+        else {
+            return std::nullopt; // malformed defined operator
+        }
+
+        if (name.empty() || !defined_names_.contains(name)) {
+            // The name is not known-defined, so the whole condition is undecidable.
+            return std::nullopt;
+        }
+        out.push_back(Token{"1", static_cast<std::int64_t>(1), pos});
+    }
+    return out;
+}
+
+std::pair<Parser::CondState, bool> Parser::classify_if_expression()
+{
+    // Precondition: the parser is positioned just after '#if'/'#elif'. Collect and evaluate the condition tokens.
+    std::vector<Token> expr = collect_expression_tokens();
+
+    auto substituted = substitute_defined_operators(expr);
+    if (!substituted.has_value() || substituted->empty()) {
+        return {CondState::both, false};
+    }
+
+    auto eval = evaluate_expression(substituted.value());
+    if (!eval.has_value()) {
+        // An unresolved identifier or other evaluation failure leaves the condition undecidable.
+        return {CondState::both, false};
+    }
+    return {eval.value() != 0 ? CondState::active : CondState::skipping, true};
+}
+
+bool Parser::try_handle_conditional()
+{
+    // Precondition: the current token is '#'.
+    const TokenType directive = peek_next().type();
+
+    switch (directive) {
+    case TokenType::kw_ifdef:
+    case TokenType::kw_ifndef: {
+        const bool negated = directive == TokenType::kw_ifndef;
+        advance(); // '#'
+        advance(); // ifdef / ifndef
+        auto [state, decidable] = classify_ifdef(negated);
+        cond_stack_.push_back(ConditionalFrame{state, decidable, state == CondState::active});
+        return true;
+    }
+    case TokenType::kw_if: {
+        advance(); // '#'
+        advance(); // if
+        auto [state, decidable] = classify_if_expression();
+        cond_stack_.push_back(ConditionalFrame{state, decidable, state == CondState::active});
+        return true;
+    }
+    case TokenType::kw_elif: {
+        advance(); // '#'
+        advance(); // elif
+        auto [state, decidable] = classify_if_expression();
+        if (!cond_stack_.empty()) {
+            ConditionalFrame &frame = cond_stack_.back();
+            if (!frame.decidable || !decidable) {
+                // Any undecidable link pins the whole chain to both.
+                frame.state = CondState::both;
+                frame.decidable = false;
+            }
+            else if (frame.branch_taken) {
+                frame.state = CondState::skipping;
+            }
+            else {
+                frame.state = state;
+                frame.branch_taken = state == CondState::active;
+            }
+        }
+        return true;
+    }
+    case TokenType::kw_else: {
+        advance(); // '#'
+        advance(); // else
+        skip_to_next_line();
+        if (!cond_stack_.empty()) {
+            ConditionalFrame &frame = cond_stack_.back();
+            if (frame.decidable) {
+                frame.state = frame.branch_taken ? CondState::skipping : CondState::active;
+                frame.branch_taken = true;
+            }
+            // Undecidable chains stay both.
+        }
+        return true;
+    }
+    case TokenType::kw_endif: {
+        advance(); // '#'
+        advance(); // endif
+        skip_to_next_line();
+        if (!cond_stack_.empty()) {
+            cond_stack_.pop_back();
+        }
+        return true;
+    }
+    default:
+        return false; // not a conditional directive
+    }
+}
+
 ChainableResult<std::vector<DefineStatement>> Parser::parse_defines()
 {
     std::vector<DefineStatement> defines;
+    cond_stack_.clear();
 
     while (!is_at_end()) {
         // Look for # token
         if (check(TokenType::hash)) {
+            if (try_handle_conditional()) {
+                continue;
+            }
             advance(); // consume #
 
             // Check if this is a #define
@@ -147,7 +319,7 @@ ChainableResult<std::vector<DefineStatement>> Parser::parse_defines()
                 if (!result.has_value()) {
                     return ChainableResult<std::vector<DefineStatement>>{result};
                 }
-                defines.push_back(std::move(result).value());
+                record_define(std::move(result).value(), defines);
             }
             else {
                 // Skip other preprocessor directives
@@ -163,20 +335,283 @@ ChainableResult<std::vector<DefineStatement>> Parser::parse_defines()
     return defines;
 }
 
+void Parser::record_define(DefineStatement statement, std::vector<DefineStatement> &out)
+{
+    const CondState eff = effective_cond_state();
+    if (eff == CondState::skipping) {
+        // The define lives in a region we can prove is inactive, so it neither defines a name nor contributes a value.
+        return;
+    }
+
+    if (statement.has_int_value()) {
+        auto it = defined_values_.find(statement.name());
+        if (eff == CondState::both && it != defined_values_.end() && it->second != statement.int_value()) {
+            ambiguous_defines_.insert(statement.name());
+            scan_warnings_.push_back(format_->format(
+                "conflicting redefinition of '{}' inside an undecidable conditional; using the last value",
+                FormatParam{statement.name(), Style::bold}));
+        }
+        defined_values_[statement.name()] = statement.int_value();
+    }
+    defined_names_.insert(statement.name());
+    out.push_back(std::move(statement));
+}
+
+Parser::DefineParseOutcome Parser::parse_define_tolerant()
+{
+    SourcePosition define_pos = peek().position();
+    advance(); // consume 'define'
+
+    if (!check(TokenType::identifier)) {
+        skip_to_next_line();
+        return {std::nullopt, SkippedConstruct{"", define_pos, "expected identifier after #define"}};
+    }
+
+    std::string name = peek().text();
+    SourcePosition name_pos = peek().position();
+    std::size_t name_end_column = name_pos.column + name.size();
+    advance(); // consume identifier
+
+    // Parametric (function-like) macro: '(' immediately follows the name.
+    if (check(TokenType::left_paren)) {
+        SourcePosition paren_pos = peek().position();
+        if (paren_pos.line == name_pos.line && paren_pos.column == name_end_column) {
+            skip_to_next_line();
+            return {DefineStatement{std::move(name), define_pos}, std::nullopt};
+        }
+    }
+
+    // Flag-like define with no value.
+    if (is_at_line_end()) {
+        if (check(TokenType::newline)) {
+            advance();
+        }
+        return {DefineStatement{std::move(name), define_pos}, std::nullopt};
+    }
+
+    // String value.
+    if (check(TokenType::string_literal)) {
+        std::string value = peek().text();
+        advance();
+        skip_to_next_line();
+        return {DefineStatement{std::move(name), std::move(value), define_pos}, std::nullopt};
+    }
+
+    // Expression value.
+    std::vector<Token> expr_tokens = collect_expression_tokens();
+    if (expr_tokens.empty()) {
+        return {DefineStatement{std::move(name), define_pos}, std::nullopt};
+    }
+
+    auto result = evaluate_expression(expr_tokens);
+    if (!result.has_value()) {
+        return {std::nullopt, SkippedConstruct{std::move(name), define_pos, "unevaluable value expression"}};
+    }
+    return {DefineStatement{std::move(name), result.value(), define_pos}, std::nullopt};
+}
+
+TolerantDefineScan Parser::parse_defines_tolerant()
+{
+    TolerantDefineScan scan;
+    current_ = 0;
+    cond_stack_.clear();
+
+    while (!is_at_end()) {
+        if (check(TokenType::hash)) {
+            if (try_handle_conditional()) {
+                continue;
+            }
+            advance(); // consume #
+
+            if (check(TokenType::kw_define)) {
+                auto outcome = parse_define_tolerant();
+                if (effective_cond_state() == CondState::skipping) {
+                    // Provably inactive region: consume but record nothing.
+                    continue;
+                }
+                if (outcome.statement.has_value()) {
+                    record_define(std::move(outcome.statement).value(), scan.defines);
+                }
+                else if (outcome.skipped.has_value()) {
+                    if (!outcome.skipped->name.empty()) {
+                        defined_names_.insert(outcome.skipped->name);
+                    }
+                    scan.skipped.push_back(std::move(outcome.skipped).value());
+                }
+            }
+            else {
+                skip_to_next_line();
+            }
+        }
+        else {
+            advance();
+        }
+    }
+
+    return scan;
+}
+
+TolerantEnumMember Parser::parse_enum_member_tolerant(std::int64_t &counter, bool &counter_valid)
+{
+    std::string name = peek().text();
+    SourcePosition member_pos = peek().position();
+    advance(); // consume identifier
+
+    if (check(TokenType::equal)) {
+        advance(); // consume '='
+        std::vector<Token> expr_tokens = collect_enum_value_tokens();
+        if (!expr_tokens.empty()) {
+            auto eval = evaluate_expression(expr_tokens);
+            if (eval.has_value()) {
+                counter = eval.value();
+                counter_valid = true;
+                TolerantEnumMember member{std::move(name), counter, member_pos};
+                counter++;
+                defined_values_[member.name] = member.value.value();
+                return member;
+            }
+        }
+        // Unevaluable (or empty) explicit value poisons the counter.
+        counter_valid = false;
+        return TolerantEnumMember{std::move(name), std::nullopt, member_pos};
+    }
+
+    // Implicit member: usable only while the counter is trustworthy.
+    std::optional<std::int64_t> value = counter_valid ? std::optional<std::int64_t>{counter} : std::nullopt;
+    TolerantEnumMember member{std::move(name), value, member_pos};
+    counter++;
+    if (member.value.has_value()) {
+        defined_values_[member.name] = member.value.value();
+    }
+    return member;
+}
+
+std::optional<TolerantEnum> Parser::parse_enum_tolerant()
+{
+    SourcePosition enum_pos = peek().position();
+    advance(); // consume 'enum'
+
+    std::optional<std::string> enum_name;
+    if (check(TokenType::identifier)) {
+        enum_name = peek().text();
+        advance();
+    }
+
+    while (check(TokenType::newline)) {
+        advance();
+    }
+
+    if (!check(TokenType::left_brace)) {
+        // Not a definition we can parse (e.g. a forward use like `enum Foo bar;`); nothing to record.
+        return std::nullopt;
+    }
+    advance(); // consume '{'
+
+    std::vector<TolerantEnumMember> members;
+    std::int64_t counter = 0;
+    bool counter_valid = true;
+    bool directive_seen = false;
+
+    while (!is_at_end() && !check(TokenType::right_brace)) {
+        while (check(TokenType::newline)) {
+            advance();
+        }
+        if (check(TokenType::right_brace)) {
+            break;
+        }
+        if (check(TokenType::hash)) {
+            // A preprocessor directive inside the body. The scanner does not evaluate conditionals here, so every
+            // member value beyond this point depends on a branch it cannot decide. Skip the directive line (rather
+            // than lexing its tokens as phantom members) and record later members as valueless.
+            skip_to_next_line();
+            directive_seen = true;
+            counter_valid = false;
+            continue;
+        }
+        if (!check(TokenType::identifier)) {
+            // Unexpected token inside the enum body; skip it to stay resilient.
+            advance();
+            continue;
+        }
+
+        members.push_back(parse_enum_member_tolerant(counter, counter_valid));
+        if (directive_seen) {
+            // Even an explicit '= value' cannot be trusted once a directive appeared: it may sit in an untaken branch.
+            members.back().value = std::nullopt;
+            counter_valid = false;
+        }
+
+        if (check(TokenType::comma)) {
+            advance();
+        }
+        while (check(TokenType::newline)) {
+            advance();
+        }
+    }
+
+    if (check(TokenType::right_brace)) {
+        advance(); // consume '}'
+    }
+    if (check(TokenType::semicolon)) {
+        advance();
+    }
+
+    return TolerantEnum{std::move(enum_name), std::move(members), enum_pos};
+}
+
+TolerantEnumScan Parser::parse_enums_tolerant()
+{
+    TolerantEnumScan scan;
+    current_ = 0;
+    cond_stack_.clear();
+
+    while (!is_at_end()) {
+        if (check(TokenType::hash)) {
+            if (try_handle_conditional()) {
+                continue;
+            }
+            skip_to_next_line();
+            continue;
+        }
+        if (check(TokenType::kw_enum)) {
+            auto parsed = parse_enum_tolerant();
+            if (parsed.has_value() && effective_cond_state() != CondState::skipping) {
+                scan.enums.push_back(std::move(parsed).value());
+            }
+        }
+        else {
+            advance();
+        }
+    }
+
+    return scan;
+}
+
 ChainableResult<std::vector<EnumDeclaration>> Parser::parse_enums()
 {
     std::vector<EnumDeclaration> enums;
 
     // Reset position to beginning (allows calling both parse_defines and parse_enums)
     current_ = 0;
+    cond_stack_.clear();
 
     while (!is_at_end()) {
+        if (check(TokenType::hash)) {
+            if (try_handle_conditional()) {
+                continue;
+            }
+            // A non-conditional directive (e.g. #define, #include) cannot start an enum, so skip its line.
+            skip_to_next_line();
+            continue;
+        }
         if (check(TokenType::kw_enum)) {
             auto result = parse_enum();
             if (!result.has_value()) {
                 return ChainableResult<std::vector<EnumDeclaration>>{result};
             }
-            enums.push_back(std::move(result).value());
+            if (effective_cond_state() != CondState::skipping) {
+                enums.push_back(std::move(result).value());
+            }
         }
         else {
             advance();
@@ -298,6 +733,7 @@ ChainableResult<EnumMember> Parser::parse_enum_member(std::int64_t &counter)
 
     EnumMember member{std::move(name), counter, has_explicit, member_pos};
     counter++; // Increment for next member
+    defined_values_[member.name()] = member.int_value();
     return member;
 }
 
@@ -440,9 +876,7 @@ ChainableResult<DefineStatement> Parser::parse_define()
 
     std::int64_t value = result.value();
 
-    // Store in symbol table for later references
-    defined_values_[name] = value;
-
+    // The symbol table and defined-name set are updated by record_define once the enclosing conditional state is known.
     return DefineStatement{std::move(name), value, define_pos};
 }
 
@@ -467,6 +901,19 @@ ChainableResult<std::int64_t> Parser::evaluate_expression(const std::vector<Toke
 {
     if (expr_tokens.empty()) {
         return make_error(SourcePosition{}, "empty expression");
+    }
+
+    // Reject any token the evaluator has no rule for (ternaries, casts, sizeof, etc). Dropping it and evaluating the
+    // remaining tokens would produce a confidently wrong value; failing here degrades to "value unknown" instead.
+    for (const Token &token : expr_tokens) {
+        const bool supported = token.is(TokenType::integer_literal) || token.is(TokenType::identifier) ||
+                               token.is(TokenType::left_paren) || token.is(TokenType::right_paren) ||
+                               is_operator(token.type());
+        if (!supported) {
+            return make_error(
+                token.position(),
+                format_->format("unsupported token '{}' in expression", FormatParam{token.text(), Style::bold}));
+        }
     }
 
     // Convert to postfix notation using Shunting Yard
@@ -531,7 +978,7 @@ std::vector<Token> Parser::to_postfix(const std::vector<Token> &expr_tokens)
                 expect_operand = true;
             }
         }
-        // Skip unknown tokens
+        // No other token kinds can appear: evaluate_expression rejects unsupported tokens before conversion.
     }
 
     // Pop remaining operators
@@ -647,6 +1094,30 @@ ChainableResult<std::int64_t> Parser::evaluate_postfix(const std::vector<Token> 
                 case TokenType::greater_greater:
                     result = left >> right;
                     break;
+                case TokenType::less:
+                    result = left < right ? 1 : 0;
+                    break;
+                case TokenType::greater:
+                    result = left > right ? 1 : 0;
+                    break;
+                case TokenType::less_equal:
+                    result = left <= right ? 1 : 0;
+                    break;
+                case TokenType::greater_equal:
+                    result = left >= right ? 1 : 0;
+                    break;
+                case TokenType::equal_equal:
+                    result = left == right ? 1 : 0;
+                    break;
+                case TokenType::exclaim_equal:
+                    result = left != right ? 1 : 0;
+                    break;
+                case TokenType::ampersand_ampersand:
+                    result = (left != 0 && right != 0) ? 1 : 0;
+                    break;
+                case TokenType::pipe_pipe:
+                    result = (left != 0 || right != 0) ? 1 : 0;
+                    break;
                 default:
                     return make_error(
                         token.position(),
@@ -660,6 +1131,11 @@ ChainableResult<std::int64_t> Parser::evaluate_postfix(const std::vector<Token> 
     if (values.empty()) {
         return make_error(SourcePosition{}, "expression evaluated to no value");
     }
+    if (values.size() != 1) {
+        // Operands were left stranded, meaning the expression was not fully understood. Returning the top of the
+        // stack here would be a confidently wrong answer.
+        return make_error(SourcePosition{}, "expression did not reduce to a single value");
+    }
 
     return values.top();
 }
@@ -669,6 +1145,11 @@ int Parser::operator_precedence(TokenType type) const
     // Lower number = higher precedence (evaluated first)
     // Based on C operator precedence
     switch (type) {
+    case TokenType::tilde:
+    case TokenType::exclaim:
+        // Always unary; they must bind tighter than every binary operator so that ~5 & 3 means (~5) & 3. Unary minus
+        // cannot be distinguished from binary minus here, but sharing precedence 4 evaluates it correctly anyway.
+        return 2;
     case TokenType::star:
     case TokenType::slash:
     case TokenType::percent:
@@ -1168,6 +1649,150 @@ ChainableResult<std::vector<StructInitializerDeclaration>> Parser::parse_struct_
     return structs;
 }
 
+ChainableResult<std::vector<StructDefinition>> Parser::parse_struct_definitions()
+{
+    std::vector<StructDefinition> definitions;
+
+    // Reset position to beginning
+    current_ = 0;
+
+    while (!is_at_end()) {
+        // Skip newlines
+        while (check(TokenType::newline)) {
+            advance();
+        }
+
+        if (is_at_end()) {
+            break;
+        }
+
+        // Look for pattern: struct TYPE { members... } [;]
+        std::size_t scan_start = current_;
+
+        if (!check(TokenType::identifier) || peek().text() != "struct") {
+            if (current_ == scan_start) {
+                advance();
+            }
+            continue;
+        }
+        advance(); // consume 'struct'
+
+        // Get the struct tag name
+        if (!check(TokenType::identifier)) {
+            continue;
+        }
+        std::string struct_name = peek().text();
+        SourcePosition name_pos = peek().position();
+        advance(); // consume tag name
+
+        // Skip any newlines before '{'
+        while (check(TokenType::newline)) {
+            advance();
+        }
+
+        // A definition has a member body; anything else (forward declaration, variable declaration, struct-typed
+        // member of an enclosing scan) is not a definition and is left for the outer loop to skip past.
+        if (!check(TokenType::left_brace)) {
+            continue;
+        }
+
+        std::vector<Token> body_tokens = collect_brace_contents(tokens_, current_);
+        current_ = skip_balanced_braces(tokens_, current_);
+        if (check(TokenType::semicolon)) {
+            advance();
+        }
+
+        // Split the body into member declarations at depth-0 semicolons, dropping newlines and preprocessor
+        // directive lines so a conditional inside the body cannot poison the neighboring members.
+        std::vector<std::vector<Token>> member_runs;
+        std::vector<Token> run;
+        int nesting_depth = 0;
+        for (std::size_t i = 0; i < body_tokens.size(); ++i) {
+            const Token &tok = body_tokens[i];
+            if (tok.is(TokenType::hash) && run.empty()) {
+                while (i < body_tokens.size() && !body_tokens[i].is(TokenType::newline)) {
+                    ++i;
+                }
+                continue;
+            }
+            if (tok.is(TokenType::newline)) {
+                continue;
+            }
+            if (tok.is(TokenType::left_brace)) {
+                ++nesting_depth;
+            }
+            else if (tok.is(TokenType::right_brace)) {
+                --nesting_depth;
+            }
+            if (tok.is(TokenType::semicolon) && nesting_depth == 0) {
+                if (!run.empty()) {
+                    member_runs.push_back(std::move(run));
+                    run.clear();
+                }
+                continue;
+            }
+            run.push_back(tok);
+        }
+
+        // Pattern-match each member against the simple declarator shape; anything else is skipped tolerantly.
+        std::vector<StructMemberDeclaration> members;
+        for (const auto &member_tokens : member_runs) {
+            std::size_t pos = 0;
+            bool is_const = false;
+
+            if (pos < member_tokens.size() && member_tokens[pos].is(TokenType::identifier) &&
+                member_tokens[pos].text() == "const") {
+                is_const = true;
+                ++pos;
+            }
+            // A `struct TYPE` member's type is the tag name, not the keyword.
+            if (pos < member_tokens.size() && member_tokens[pos].is(TokenType::identifier) &&
+                member_tokens[pos].text() == "struct") {
+                ++pos;
+            }
+            if (pos >= member_tokens.size() || !member_tokens[pos].is(TokenType::identifier)) {
+                continue;
+            }
+            std::string type_name = member_tokens[pos].text();
+            ++pos;
+            // East-const spelling (`u16 const *`) qualifies the same declaration.
+            if (pos < member_tokens.size() && member_tokens[pos].is(TokenType::identifier) &&
+                member_tokens[pos].text() == "const") {
+                is_const = true;
+                ++pos;
+            }
+            std::size_t pointer_depth = 0;
+            while (pos < member_tokens.size() && member_tokens[pos].is(TokenType::star)) {
+                ++pointer_depth;
+                ++pos;
+            }
+            if (pos >= member_tokens.size() || !member_tokens[pos].is(TokenType::identifier)) {
+                continue;
+            }
+            std::string member_name = member_tokens[pos].text();
+            SourcePosition member_pos = member_tokens[pos].position();
+            ++pos;
+            // Consume a bitfield width (`:1` or `:MACRO`); the width itself is not recorded.
+            if (pos + 1 < member_tokens.size() && member_tokens[pos].is(TokenType::colon) &&
+                (member_tokens[pos + 1].is(TokenType::integer_literal) ||
+                 member_tokens[pos + 1].is(TokenType::identifier))) {
+                pos += 2;
+            }
+            if (pos != member_tokens.size()) {
+                continue; // leftover tokens: array suffix, second declarator, or another unsupported shape
+            }
+
+            members.push_back(
+                StructMemberDeclaration{
+                    std::move(type_name), pointer_depth, std::move(member_name), is_const, member_pos});
+        }
+
+        definitions.push_back(StructDefinition{std::move(struct_name), std::move(members), name_pos});
+    }
+
+    return definitions;
+}
+
 ChainableResult<std::vector<IncbinDeclaration>> Parser::parse_incbin_arrays()
 {
     std::vector<IncbinDeclaration> incbins;
@@ -1303,7 +1928,7 @@ ChainableResult<std::vector<IncbinDeclaration>> Parser::parse_incbin_arrays()
                 }
 
                 std::string token_text = brace_contents[brace_pos].text();
-                if (token_text.find("INCBIN_") != 0) {
+                if (!is_gfx_inclusion_macro(token_text)) {
                     ++brace_pos;
                     continue;
                 }
@@ -1346,7 +1971,7 @@ ChainableResult<std::vector<IncbinDeclaration>> Parser::parse_incbin_arrays()
             }
 
             std::string token_text = peek().text();
-            if (token_text.find("INCBIN_") != 0) {
+            if (!is_gfx_inclusion_macro(token_text)) {
                 continue;
             }
             std::string macro_name = token_text;
@@ -1378,6 +2003,191 @@ ChainableResult<std::vector<IncbinDeclaration>> Parser::parse_incbin_arrays()
     }
 
     return incbins;
+}
+
+std::vector<IndexedArrayEntry> Parser::parse_indexed_entries(const std::vector<Token> &brace_contents)
+{
+    std::vector<IndexedArrayEntry> entries;
+    std::size_t pos = 0;
+
+    while (pos < brace_contents.size()) {
+        // Skip separators and blank lines between entries.
+        while (pos < brace_contents.size() &&
+               (brace_contents[pos].is(TokenType::newline) || brace_contents[pos].is(TokenType::comma))) {
+            ++pos;
+        }
+        if (pos >= brace_contents.size()) {
+            break;
+        }
+
+        // Each entry must start with '['. Anything else is skipped to the next comma to stay resilient.
+        if (!brace_contents[pos].is(TokenType::left_bracket)) {
+            while (pos < brace_contents.size() && !brace_contents[pos].is(TokenType::comma)) {
+                ++pos;
+            }
+            continue;
+        }
+        ++pos; // consume '['
+
+        // The designator: capture the first token's text (enum member name or numeric index).
+        std::string index_name;
+        SourcePosition entry_pos{};
+        if (pos < brace_contents.size() &&
+            (brace_contents[pos].is(TokenType::identifier) || brace_contents[pos].is(TokenType::integer_literal))) {
+            index_name = brace_contents[pos].text();
+            entry_pos = brace_contents[pos].position();
+        }
+        // Skip to the closing ']'.
+        while (pos < brace_contents.size() && !brace_contents[pos].is(TokenType::right_bracket)) {
+            ++pos;
+        }
+        if (pos < brace_contents.size()) {
+            ++pos; // consume ']'
+        }
+
+        // Skip newlines before '='.
+        while (pos < brace_contents.size() && brace_contents[pos].is(TokenType::newline)) {
+            ++pos;
+        }
+        if (pos >= brace_contents.size() || !brace_contents[pos].is(TokenType::equal)) {
+            // Malformed entry (no '='); skip to the next comma.
+            while (pos < brace_contents.size() && !brace_contents[pos].is(TokenType::comma)) {
+                ++pos;
+            }
+            continue;
+        }
+        ++pos; // consume '='
+
+        // Collect value tokens up to the top-level comma that ends this entry.
+        std::vector<Token> value_tokens;
+        int depth = 0;
+        while (pos < brace_contents.size()) {
+            const Token &token = brace_contents[pos];
+            if (depth == 0 && token.is(TokenType::comma)) {
+                break;
+            }
+            if (token.is_any_of(TokenType::left_brace, TokenType::left_paren, TokenType::left_bracket)) {
+                ++depth;
+            }
+            else if (token.is_any_of(TokenType::right_brace, TokenType::right_paren, TokenType::right_bracket)) {
+                --depth;
+            }
+            if (!token.is(TokenType::newline)) {
+                value_tokens.push_back(token);
+            }
+            ++pos;
+        }
+
+        std::optional<std::int64_t> value;
+        if (!value_tokens.empty()) {
+            auto eval = evaluate_expression(value_tokens);
+            if (eval.has_value()) {
+                value = eval.value();
+            }
+        }
+
+        if (!index_name.empty()) {
+            entries.push_back(IndexedArrayEntry{std::move(index_name), value, std::move(value_tokens), entry_pos});
+        }
+    }
+
+    return entries;
+}
+
+ChainableResult<std::vector<IndexedArrayDeclaration>> Parser::parse_indexed_arrays()
+{
+    std::vector<IndexedArrayDeclaration> arrays;
+
+    current_ = 0;
+    cond_stack_.clear();
+
+    while (!is_at_end()) {
+        while (check(TokenType::newline)) {
+            advance();
+        }
+        if (is_at_end()) {
+            break;
+        }
+
+        if (check(TokenType::hash)) {
+            if (try_handle_conditional()) {
+                continue;
+            }
+            skip_to_next_line();
+            continue;
+        }
+
+        // Look for: [static] [const] TYPE IDENTIFIER [SIZE_EXPR] = { [index] = value, ... };
+        std::size_t scan_start = current_;
+
+        if (check(TokenType::identifier) && peek().text() == "static") {
+            advance();
+        }
+        if (check(TokenType::identifier) && peek().text() == "const") {
+            advance();
+        }
+
+        // Type identifier.
+        if (!check(TokenType::identifier)) {
+            if (current_ == scan_start) {
+                advance();
+            }
+            continue;
+        }
+        advance(); // consume type
+
+        // Array name.
+        if (!check(TokenType::identifier)) {
+            continue;
+        }
+        std::string array_name = peek().text();
+        SourcePosition name_pos = peek().position();
+        advance(); // consume name
+
+        // Size expression in brackets.
+        if (!check(TokenType::left_bracket)) {
+            continue;
+        }
+        advance(); // consume '['
+        int bracket_depth = 1;
+        while (!is_at_end() && bracket_depth > 0) {
+            if (check(TokenType::left_bracket)) {
+                ++bracket_depth;
+            }
+            else if (check(TokenType::right_bracket)) {
+                --bracket_depth;
+            }
+            advance();
+        }
+
+        // Optional '=' then a brace initializer.
+        while (check(TokenType::newline)) {
+            advance();
+        }
+        if (!check(TokenType::equal)) {
+            continue;
+        }
+        advance(); // consume '='
+        while (check(TokenType::newline)) {
+            advance();
+        }
+        if (!check(TokenType::left_brace)) {
+            continue;
+        }
+
+        std::vector<Token> brace_contents = collect_brace_contents(tokens_, current_);
+        current_ = skip_balanced_braces(tokens_, current_);
+        if (check(TokenType::semicolon)) {
+            advance();
+        }
+
+        std::vector<IndexedArrayEntry> entries = parse_indexed_entries(brace_contents);
+        if (effective_cond_state() != CondState::skipping) {
+            arrays.push_back(IndexedArrayDeclaration{std::move(array_name), std::move(entries), name_pos});
+        }
+    }
+
+    return arrays;
 }
 
 } // namespace porytiles

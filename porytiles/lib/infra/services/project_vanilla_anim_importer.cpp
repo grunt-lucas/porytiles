@@ -14,15 +14,13 @@ namespace {
 
 using namespace porytiles;
 
-/**
- * @brief Converts a .4bpp INCBIN path to a .png path.
- *
- * @details
- * Changes the extension from .4bpp to .png.
- *
- * @param path_4bpp The .4bpp path from INCBIN
- * @return The corresponding .png path
- */
+/// @brief Converts a .4bpp INCBIN path to a .png path.
+///
+/// @details
+/// Changes the extension from .4bpp to .png.
+///
+/// @param path_4bpp The .4bpp path from INCBIN
+/// @return The corresponding .png path
 [[nodiscard]] std::filesystem::path fourBpp_to_png_path(const std::string &path_4bpp)
 {
     std::filesystem::path p{path_4bpp};
@@ -60,7 +58,6 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
 
     const std::string callback_func = metadata.callback_func().value();
     const auto tileset_cased = extract_tileset_cased_name(tileset_name);
-    const std::string pascal_tileset = tileset_cased.to_pascal_case();
 
     // Step 2: Parse animation parameters from tileset_anims.c
     const auto tileset_anims_path = project_root_ / "src" / "tileset_anims.c";
@@ -88,53 +85,17 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
         return result;
     }
 
-    // Step 3: Parse INCBIN declarations for frame paths
+    // Step 3: Parse INCBIN declarations for frame paths. Frame variables are looked up by the exact identifier
+    // recorded in each AnimParams (frame_array_identifier + "_Frame" + frame name), so parse every INCBIN
+    // declaration rather than filtering by a reconstructed tileset prefix. Exact lookup also avoids collisions like
+    // pokefirered's BattleFrontier, which reuses gTilesetAnims_General_* names for its own shared animations.
     CParserFacade c_parser{tileset_anims_path, format_};
-    std::string detected_anim_prefix = "gTilesetAnims_";
-    const std::string g_incbin_prefix = "gTilesetAnims_" + pascal_tileset + "_";
-    auto incbin_decls_result = c_parser.parse_incbin_arrays(g_incbin_prefix);
+    auto incbin_decls_result = c_parser.parse_incbin_arrays();
     if (!incbin_decls_result.has_value()) {
         return ChainableResult<std::map<std::string, Animation<IndexPixel>>>{
             FormattableError{"Failed to parse INCBIN declarations."}, incbin_decls_result};
     }
     auto incbin_decls = std::move(incbin_decls_result).value();
-
-    /*
-     * Check if g-prefix results cover the expected animations from callback parsing. In pokefirered-expansion,
-     * BattleFrontier reuses gTilesetAnims_General_* names for its own shared animations, so the g-prefix may match
-     * INCBIN declarations that belong to a different tileset. If the g-prefix results don't cover the expected
-     * animations, try s-prefix.
-     */
-    auto incbins_cover_expected_anims = [&](const std::string &prefix,
-                                            const std::vector<IncbinDeclaration> &decls) -> bool {
-        for (const auto &params : anim_params_map | std::views::values) {
-            const std::string pascal_anim_name = params.cased_name().to_c_identifier();
-            const std::string first_frame_var = prefix + pascal_tileset + "_" + pascal_anim_name + "_Frame0";
-            bool found = false;
-            for (const auto &decl : decls) {
-                if (decl.variable_name() == first_frame_var) {
-                    found = true;
-                    break;
-                }
-            }
-            if (!found) {
-                return false;
-            }
-        }
-        return true;
-    };
-
-    if (incbin_decls.empty() || !incbins_cover_expected_anims("gTilesetAnims_", incbin_decls)) {
-        const std::string s_incbin_prefix = "sTilesetAnims_" + pascal_tileset + "_";
-        auto s_incbin_decls_result = c_parser.parse_incbin_arrays(s_incbin_prefix);
-        if (s_incbin_decls_result.has_value()) {
-            auto s_incbin_decls = std::move(s_incbin_decls_result).value();
-            if (!s_incbin_decls.empty()) {
-                incbin_decls = std::move(s_incbin_decls);
-                detected_anim_prefix = "sTilesetAnims_";
-            }
-        }
-    }
 
     // Build map: frame variable name -> .png file path
     std::map<std::string, std::filesystem::path> frame_paths;
@@ -149,15 +110,10 @@ ProjectVanillaAnimImporter::import_animations(const std::string &tileset_name) c
         Animation<IndexPixel> anim{anim_name.to_snake_case()};
         anim.params(params);
 
-        // Use DynamicCasedName for lossless C identifier reconstruction
-        // This handles names with embedded underscores (e.g., pokefirered's "Water_Current_LandWatersEdge")
-        const std::string pascal_anim_name = params.cased_name().to_c_identifier();
-
         for (const auto &frame_name : params.frame_names()) {
             PngIndexedImageLoader png_loader;
             const std::string frame_name_snake = frame_name.to_snake_case();
-            const std::string frame_var =
-                detected_anim_prefix + pascal_tileset + "_" + pascal_anim_name + "_Frame" + frame_name.to_pascal_case();
+            const std::string frame_var = params.frame_array_identifier() + "_Frame" + frame_name.to_pascal_case();
 
             auto it = frame_paths.find(frame_var);
             if (it == frame_paths.end()) {

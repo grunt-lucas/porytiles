@@ -23,9 +23,7 @@ namespace {
 
 using namespace porytiles;
 
-/**
- * @brief Extended tile info for the overload-and-remove algorithm.
- */
+/// @brief Extended tile info for the overload-and-remove algorithm.
 struct TileInfo {
     PackableTile tile;
     std::set<std::size_t> forbidden_palettes;
@@ -33,25 +31,23 @@ struct TileInfo {
     explicit TileInfo(PackableTile t) : tile{std::move(t)}, forbidden_palettes{} {}
 };
 
-/**
- * @brief Finds the best palette for a tile, excluding forbidden palettes.
- *
- * @details
- * Uses cached palette color counts to compute weighted cost efficiently. The weighted cost
- * measures how well the tile's colors overlap with colors already in the palette.
- * Lower cost means better overlap.
- *
- * When sharing metadata is provided, palettes that already contain a sibling from the same shape
- * group receive a cost penalty to steer siblings into different palettes.
- *
- * @param info The tile info with forbidden palette set
- * @param palettes The current set of packed palettes
- * @param force_assignment When true, returns the lowest-cost non-forbidden palette even if no overlap benefit exists.
- *     When false (default), returns nullopt if no palette offers overlap benefit, signaling the caller to create a new
- *     palette.
- * @param metadata Optional shape group metadata for sharing-aware cost adjustment (nullptr to disable)
- * @return Index of the best palette, or nullopt if none available (or no overlap benefit when not forcing)
- */
+/// @brief Finds the best palette for a tile, excluding forbidden palettes.
+///
+/// @details
+/// Uses cached palette color counts to compute weighted cost efficiently. The weighted cost
+/// measures how well the tile's colors overlap with colors already in the palette.
+/// Lower cost means better overlap.
+///
+/// When sharing metadata is provided, palettes that already contain a sibling from the same shape
+/// group receive a cost penalty to steer siblings into different palettes.
+///
+/// @param info The tile info with forbidden palette set
+/// @param palettes The current set of packed palettes
+/// @param force_assignment When true, returns the lowest-cost non-forbidden palette even if no overlap benefit exists.
+///     When false (default), returns nullopt if no palette offers overlap benefit, signaling the caller to create a new
+///     palette.
+/// @param metadata Optional shape group metadata for sharing-aware cost adjustment (nullptr to disable)
+/// @return Index of the best palette, or nullopt if none available (or no overlap benefit when not forcing)
 [[nodiscard]] std::optional<std::size_t> find_best_palette_excluding_forbidden(
     const TileInfo &info,
     const std::vector<PackedPalette> &palettes,
@@ -97,19 +93,17 @@ struct OarParams {
     std::uint64_t seed;
 };
 
-/**
- * @brief Builds the 17-entry preset matrix of O&R configurations.
- *
- * @details
- * Configurations escalate from cheapest to most expensive:
- *   1. single_ffd × 1 attempt (cheapest: one deterministic FFD pass)
- *   2-5. noisy_ffd × 20 attempts with 4 seeds
- *   6-9. random × 20 attempts with 4 seeds
- *   10-13. noisy_ffd × 75 attempts with 4 seeds
- *   14-17. random × 75 attempts with 4 seeds
- *
- * Worst-case total O&R attempts across all 17 entries: 1 + 4×20 + 4×20 + 4×75 + 4×75 = 761.
- */
+/// @brief Builds the 17-entry preset matrix of O&R configurations.
+///
+/// @details
+/// Configurations escalate from cheapest to most expensive:
+///   1. single_ffd × 1 attempt (cheapest: one deterministic FFD pass)
+///   2-5. noisy_ffd × 20 attempts with 4 seeds
+///   6-9. random × 20 attempts with 4 seeds
+///   10-13. noisy_ffd × 75 attempts with 4 seeds
+///   14-17. random × 75 attempts with 4 seeds
+///
+/// Worst-case total O&R attempts across all 17 entries: 1 + 4×20 + 4×20 + 4×75 + 4×75 = 761.
 [[nodiscard]] std::array<OarParams, 17> build_preset_matrix()
 {
     std::array<OarParams, 17> matrix{};
@@ -229,21 +223,21 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::try_pack(
     const PackingInput &input, ShuffleStrategy shuffle_strategy, std::optional<std::uint64_t> shuffle_seed) const
 {
     PackingOutput output;
-    PalettePool pal_pool = input.pal_pool_;
+    PalettePool palette_pool = input.palette_pool_;
 
     // Extract shape group metadata pointer (nullptr when not sharing-aware)
     const ShapeGroupMetadata *metadata =
         input.shape_group_metadata_.has_value() ? &input.shape_group_metadata_.value() : nullptr;
 
     // Initialize output palettes from prefilled palettes
-    output.pals_ = initialize_packed_palettes(input.prefilled_pals_, pal_pool, input.pal_capacity_);
+    output.palettes_ = initialize_packed_palettes(input.prefilled_palettes_, palette_pool, input.palette_capacity_);
 
     // Ensure we have at least one palette
-    if (output.pals_.empty()) {
-        if (!pal_pool.has_available_pal()) {
+    if (output.palettes_.empty()) {
+        if (!palette_pool.has_available_palette()) {
             return FormattableError{"Overload-And-Remove: no palettes available in pool."};
         }
-        output.pals_.emplace_back(pal_pool.checkout(), input.pal_capacity_);
+        output.palettes_.emplace_back(palette_pool.checkout(), input.palette_capacity_);
     }
 
     // Build tile pool (hints first, then regular tiles)
@@ -259,15 +253,13 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::try_pack(
         return output;
     }
 
-    /*
-     * Right now, we mix together the hints and regular tiles before sorting. Do we want this? I think it's probably ok,
-     * since hints still guarantee that colors in the same hint will be in the same palette. And if the user supplied
-     * hints that are larger than any individual tile, they'll go first as expected. However, I think it makes sense to
-     * allow regular tiles that are large to go before smaller hints, since this probably helps to find an optimal
-     * result -- that larger tile *has to* get put somewhere in order for a solution to be found. No sense placing the
-     * hint first, only to block ourselves from finding a possible solution down the line. In other words, the promised
-     * hint precondition is not violated, and we potentially get a better solution.
-     */
+    // Right now, we mix together the hints and regular tiles before sorting. Do we want this? I think it's probably ok,
+    // since hints still guarantee that colors in the same hint will be in the same palette. And if the user supplied
+    // hints that are larger than any individual tile, they'll go first as expected. However, I think it makes sense to
+    // allow regular tiles that are large to go before smaller hints, since this probably helps to find an optimal
+    // result -- that larger tile *has to* get put somewhere in order for a solution to be found. No sense placing the
+    // hint first, only to block ourselves from finding a possible solution down the line. In other words, the promised
+    // hint precondition is not violated, and we potentially get a better solution.
 
     // Order tiles based on shuffle strategy
     if (shuffle_seed.has_value()) {
@@ -293,25 +285,23 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::try_pack(
     TileInfo first_tile_info = std::move(tile_pool.front());
     tile_pool.pop_front();
 
-    /*
-     * Find or create a palette for the first tile. First, we try searching through the current state output pals. If we
-     * find one, use it! If we don't find one, then try checking a new one out from our PalettePool if one is available.
-     * If there is no pal available, fail.
-     */
+    // Find or create a palette for the first tile. First, we try searching through the current state output palettes.
+    // If we find one, use it! If we don't find one, then try checking a new one out from our PalettePool if one is
+    // available. If there is no palette available, fail.
     bool first_assigned = false;
-    for (std::size_t i = 0; i < output.pals_.size(); ++i) {
-        if (output.pals_[i].can_fit(first_tile_info.tile.color_set())) {
-            output.pals_[i].add_tile(first_tile_info.tile);
-            output.tile_to_pal_[first_tile_info.tile.id()] = output.pals_[i].hardware_index();
+    for (std::size_t i = 0; i < output.palettes_.size(); ++i) {
+        if (output.palettes_[i].can_fit(first_tile_info.tile.color_set())) {
+            output.palettes_[i].add_tile(first_tile_info.tile);
+            output.tile_to_palette_[first_tile_info.tile.id()] = output.palettes_[i].hardware_index();
             first_assigned = true;
             break;
         }
     }
     if (!first_assigned) {
-        if (pal_pool.has_available_pal()) {
-            output.pals_.emplace_back(pal_pool.checkout(), input.pal_capacity_);
-            output.pals_.back().add_tile(first_tile_info.tile);
-            output.tile_to_pal_[first_tile_info.tile.id()] = output.pals_.back().hardware_index();
+        if (palette_pool.has_available_palette()) {
+            output.palettes_.emplace_back(palette_pool.checkout(), input.palette_capacity_);
+            output.palettes_.back().add_tile(first_tile_info.tile);
+            output.tile_to_palette_[first_tile_info.tile.id()] = output.palettes_.back().hardware_index();
         }
         else {
             return FormattableError{"Overload-And-Remove: first tile cannot fit in any palette."};
@@ -339,31 +329,30 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::try_pack(
         tile_pool.pop_front();
 
         // Find best palette excluding forbidden ones (using cached palette color counts)
-        auto maybe_best_idx = find_best_palette_excluding_forbidden(tile_info, output.pals_, false, metadata);
+        auto maybe_best_idx = find_best_palette_excluding_forbidden(tile_info, output.palettes_, false, metadata);
 
         if (!maybe_best_idx.has_value()) {
             // Create new palette if possible
-            if (pal_pool.has_available_pal()) {
-                output.pals_.emplace_back(pal_pool.checkout(), input.pal_capacity_);
-                output.pals_.back().add_tile(tile_info.tile);
-                output.tile_to_pal_[tile_info.tile.id()] = output.pals_.back().hardware_index();
+            if (palette_pool.has_available_palette()) {
+                output.palettes_.emplace_back(palette_pool.checkout(), input.palette_capacity_);
+                output.palettes_.back().add_tile(tile_info.tile);
+                output.tile_to_palette_[tile_info.tile.id()] = output.palettes_.back().hardware_index();
                 continue;
             }
 
-            /*
-             * Pool exhausted and no palette offers overlap benefit. Try two fallback strategies:
-             *
-             * 1. First-fit with can_fit: fast, no cascading removals. Succeeds when a palette has physical room.
-             * 2. Force-assignment with overload/remove: slower but more capable. Allows the overload/remove mechanism
-             *    to redistribute tiles. Termination guaranteed because forbidden sets grow monotonically.
-             */
+            // Pool exhausted and no palette offers overlap benefit. Try two fallback strategies:
+            //
+            // 1. First-fit with can_fit: fast, no cascading removals. Succeeds when a palette has physical room.
+            // 2. Force-assignment with overload/remove: slower but more capable. Allows the overload/remove mechanism
+            //    to redistribute tiles. Termination guaranteed because forbidden sets grow monotonically.
 
             // Fallback 1: strict first-fit (no overload)
             bool assigned = false;
-            for (std::size_t i = 0; i < output.pals_.size(); ++i) {
-                if (!tile_info.forbidden_palettes.contains(i) && output.pals_[i].can_fit(tile_info.tile.color_set())) {
-                    output.pals_[i].add_tile(tile_info.tile);
-                    output.tile_to_pal_[tile_info.tile.id()] = output.pals_[i].hardware_index();
+            for (std::size_t i = 0; i < output.palettes_.size(); ++i) {
+                if (!tile_info.forbidden_palettes.contains(i) &&
+                    output.palettes_[i].can_fit(tile_info.tile.color_set())) {
+                    output.palettes_[i].add_tile(tile_info.tile);
+                    output.tile_to_palette_[tile_info.tile.id()] = output.palettes_[i].hardware_index();
                     assigned = true;
                     break;
                 }
@@ -373,7 +362,7 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::try_pack(
             }
 
             // Fallback 2: force-assign to least-bad palette, let overload/remove handle it
-            maybe_best_idx = find_best_palette_excluding_forbidden(tile_info, output.pals_, true, metadata);
+            maybe_best_idx = find_best_palette_excluding_forbidden(tile_info, output.palettes_, true, metadata);
             if (!maybe_best_idx.has_value()) {
                 return FormattableError{
                     "Overload-and-Remove: cannot assign tile - all palettes forbidden - " +
@@ -385,12 +374,12 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::try_pack(
         auto best_idx = maybe_best_idx.value();
 
         // Add tile to best palette (may cause overload)
-        auto &best_palette = output.pals_[best_idx];
+        auto &best_palette = output.palettes_[best_idx];
         best_palette.add_tile(tile_info.tile);
-        output.tile_to_pal_[tile_info.tile.id()] = best_palette.hardware_index();
+        output.tile_to_palette_[tile_info.tile.id()] = best_palette.hardware_index();
 
         // Handle overload by removing worst-fitting tiles
-        while (best_palette.color_count() > input.pal_capacity_) {
+        while (best_palette.color_count() > input.palette_capacity_) {
             const auto &assigned_ids = best_palette.assigned_tile_ids();
             if (assigned_ids.size() <= 1) {
                 break; // Can't remove the only tile
@@ -461,7 +450,7 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::try_pack(
 
             // Remove worst tile and re-add to pool with forbidden marker
             best_palette.remove_tile(worst_tile_id);
-            output.tile_to_pal_.erase(worst_tile_id);
+            output.tile_to_palette_.erase(worst_tile_id);
 
             // Record this palette as forbidden for this tile (persists across removal cycles)
             forbidden_map[worst_tile_id].insert(best_idx);
@@ -477,10 +466,10 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::try_pack(
 
     // Final cleanup: remove tiles from any remaining overloaded palettes
     std::vector<TileInfo> remaining_tile_pool{};
-    for (auto &pal : output.pals_) {
-        while (pal.color_count() > input.pal_capacity_ && !pal.assigned_tile_ids().empty()) {
+    for (auto &palette : output.palettes_) {
+        while (palette.color_count() > input.palette_capacity_ && !palette.assigned_tile_ids().empty()) {
             // Search from the back for the last removable (non-prefilled) tile
-            const auto &ids = pal.assigned_tile_ids();
+            const auto &ids = palette.assigned_tile_ids();
             std::optional<PackableTile::Id> removable_tid;
             for (auto it = ids.rbegin(); it != ids.rend(); ++it) {
                 if (!std::holds_alternative<PackableTile::PrefilledPaletteId>(*it)) {
@@ -492,8 +481,8 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::try_pack(
                 break; // Only prefilled tiles remain, nothing left to remove
             }
 
-            pal.remove_tile(removable_tid.value());
-            output.tile_to_pal_.erase(removable_tid.value());
+            palette.remove_tile(removable_tid.value());
+            output.tile_to_palette_.erase(removable_tid.value());
 
             if (const auto it = tile_colors_map.find(removable_tid.value()); it != tile_colors_map.end()) {
                 remaining_tile_pool.emplace_back(PackableTile{removable_tid.value(), it->second});
@@ -504,19 +493,19 @@ ChainableResult<PackingOutput> OverloadAndRemoveStrategy::try_pack(
     // First-Fit pass for remaining tiles
     for (auto &tile_info : remaining_tile_pool) {
         bool assigned = false;
-        for (std::size_t i = 0; i < output.pals_.size(); ++i) {
-            if (output.pals_[i].can_fit(tile_info.tile.color_set())) {
-                output.pals_[i].add_tile(tile_info.tile);
-                output.tile_to_pal_[tile_info.tile.id()] = output.pals_[i].hardware_index();
+        for (std::size_t i = 0; i < output.palettes_.size(); ++i) {
+            if (output.palettes_[i].can_fit(tile_info.tile.color_set())) {
+                output.palettes_[i].add_tile(tile_info.tile);
+                output.tile_to_palette_[tile_info.tile.id()] = output.palettes_[i].hardware_index();
                 assigned = true;
                 break;
             }
         }
         if (!assigned) {
-            if (pal_pool.has_available_pal()) {
-                output.pals_.emplace_back(pal_pool.checkout(), input.pal_capacity_);
-                output.pals_.back().add_tile(tile_info.tile);
-                output.tile_to_pal_[tile_info.tile.id()] = output.pals_.back().hardware_index();
+            if (palette_pool.has_available_palette()) {
+                output.palettes_.emplace_back(palette_pool.checkout(), input.palette_capacity_);
+                output.palettes_.back().add_tile(tile_info.tile);
+                output.tile_to_palette_[tile_info.tile.id()] = output.palettes_.back().hardware_index();
             }
             else {
                 return FormattableError{

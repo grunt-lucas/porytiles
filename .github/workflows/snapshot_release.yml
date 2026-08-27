@@ -20,6 +20,7 @@ jobs:
       build_version: ${{ steps.compute.outputs.build_version }}
       build_date: ${{ steps.compute.outputs.build_date }}
       short_sha: ${{ steps.compute.outputs.short_sha }}
+      snapshot_tag: ${{ steps.compute.outputs.snapshot_tag }}
     steps:
       - name: Checkout
         uses: actions/checkout@v4
@@ -35,27 +36,22 @@ jobs:
           BUILD_DATE=$(date -u -d "@$EPOCH" +'%Y.%m.%dT%H:%M:%S+00:00')
           SHORT_SHA=$(git rev-parse --short=8 HEAD)
           BUILD_VERSION="${PROJECT_VERSION}-snapshot.${TIMESTAMP}.${SHORT_SHA}"
+          # Each snapshot gets its own immutable tag so that a published Homebrew
+          # formula always refers to the exact bytes its sha256 was computed from.
+          # The prune-old-snapshots job deletes the previous one once the tap has
+          # been repointed, so at most one snapshot tag is retained at a time.
+          SNAPSHOT_TAG="snapshot-${TIMESTAMP}"
           echo "build_version=$BUILD_VERSION" >> "$GITHUB_OUTPUT"
           echo "build_date=$BUILD_DATE"       >> "$GITHUB_OUTPUT"
           echo "short_sha=$SHORT_SHA"         >> "$GITHUB_OUTPUT"
+          echo "snapshot_tag=$SNAPSHOT_TAG"   >> "$GITHUB_OUTPUT"
           echo "Snapshot version: $BUILD_VERSION"
           echo "Snapshot date:    $BUILD_DATE"
-
-  delete-prior-snapshot:
-    name: Delete prior snapshot release + tag
-    needs: [prepare]
-    runs-on: ubuntu-latest
-    steps:
-      - name: gh release delete snapshot
-        env:
-          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
-        run: |
-          # Idempotent: missing tag/release is not an error.
-          gh release delete snapshot --yes --cleanup-tag --repo ${{ github.repository }} || true
+          echo "Snapshot tag:     $SNAPSHOT_TAG"
 
   build:
     name: Build ${{ matrix.os-arch }}
-    needs: [prepare, delete-prior-snapshot]
+    needs: [prepare]
     runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
@@ -145,7 +141,7 @@ jobs:
             echo "**Version stamp:** \`${{ needs.prepare.outputs.build_version }}\`"
             echo "**Built at:**      \`${{ needs.prepare.outputs.build_date }}\`"
             echo ""
-            echo "> This tag is force-replaced on every push to \`develop\`. For a stable, permanent release, install from a tagged version instead."
+            echo "> Only the newest snapshot is kept. This release and its \`${{ needs.prepare.outputs.snapshot_tag }}\` tag are deleted as soon as the next push to \`develop\` publishes a snapshot, so its download URLs are not permanent. For a stable, permanent release, install from a tagged version instead."
             if [ -n "$CHANGELOG_BODY" ]; then
               echo ""
               echo "## Pending changelog entries"
@@ -159,7 +155,7 @@ jobs:
       - name: Create snapshot release
         uses: softprops/action-gh-release@v2
         with:
-          tag_name: snapshot
+          tag_name: ${{ needs.prepare.outputs.snapshot_tag }}
           name: "Snapshot ${{ needs.prepare.outputs.build_version }}"
           body_path: release_body.md
           prerelease: true
@@ -188,9 +184,9 @@ jobs:
       - name: Define vars
         id: vars
         run: |
-          echo "release_tag=snapshot"                                 >> "$GITHUB_OUTPUT"
-          echo "new_version=${{ needs.prepare.outputs.build_version }}" >> "$GITHUB_OUTPUT"
-          echo "formula_path=Formula/porytiles-snapshot.rb"           >> "$GITHUB_OUTPUT"
+          echo "release_tag=${{ needs.prepare.outputs.snapshot_tag }}"    >> "$GITHUB_OUTPUT"
+          echo "new_version=${{ needs.prepare.outputs.build_version }}"   >> "$GITHUB_OUTPUT"
+          echo "formula_path=Formula/porytiles-snapshot.rb"               >> "$GITHUB_OUTPUT"
 
       - name: Download assets and calculate SHA256 checksums
         id: checksums
@@ -208,20 +204,141 @@ jobs:
           done
 
       - name: Update formula file
+        env:
+          FORMULA_PATH: ${{ steps.vars.outputs.formula_path }}
+          NEW_VERSION: ${{ steps.vars.outputs.new_version }}
+          RELEASE_TAG: ${{ steps.vars.outputs.release_tag }}
+          LINUX_AMD64_SHA: ${{ steps.checksums.outputs.linux_amd64_sha }}
+          LINUX_ARM64_SHA: ${{ steps.checksums.outputs.linux_arm64_sha }}
+          MACOS_ARM64_SHA: ${{ steps.checksums.outputs.macos_arm64_sha }}
         run: |
-          FORMULA_PATH="${{ steps.vars.outputs.formula_path }}"
-          sed -i "s/^  version \".*\"/  version \"${{ steps.vars.outputs.new_version }}\"/" "$FORMULA_PATH"
-          sed -i "/if OS.linux? && Hardware::CPU.intel?/,/elsif/ s/^    sha256 \".*\"/    sha256 \"${{ steps.checksums.outputs.linux_amd64_sha }}\"/" "$FORMULA_PATH"
-          sed -i "/elsif OS.linux? && Hardware::CPU.arm?/,/elsif/ s/^    sha256 \".*\"/    sha256 \"${{ steps.checksums.outputs.linux_arm64_sha }}\"/" "$FORMULA_PATH"
-          sed -i "/elsif OS.mac? && Hardware::CPU.arm?/,/end/    s/^    sha256 \".*\"/    sha256 \"${{ steps.checksums.outputs.macos_arm64_sha }}\"/" "$FORMULA_PATH"
+          python3 - <<'PY'
+          import os
+          import re
+          import sys
+
+          path = os.environ["FORMULA_PATH"]
+          version = os.environ["NEW_VERSION"]
+          tag = os.environ["RELEASE_TAG"]
+          shas = {
+              "linux-amd64": os.environ["LINUX_AMD64_SHA"],
+              "linux-arm64": os.environ["LINUX_ARM64_SHA"],
+              "macos-arm64": os.environ["MACOS_ARM64_SHA"],
+          }
+
+          version_re = re.compile(r'^(\s*)version ".*"$')
+          url_re = re.compile(
+              r'^(\s*)url "(.*/releases/download/)[^/]+(/porytiles-([a-z0-9-]+)\.zip)"$'
+          )
+          sha_re = re.compile(r'^(\s*)sha256 ".*"$')
+
+          with open(path) as handle:
+              lines = handle.read().splitlines()
+
+          def fail(message):
+              print(f"::error::{message}", file=sys.stderr)
+              raise SystemExit(1)
+
+          out = []
+          rewritten = set()
+          index = 0
+          while index < len(lines):
+              line = lines[index]
+
+              match = version_re.match(line)
+              if match:
+                  out.append(f'{match.group(1)}version "{version}"')
+                  index += 1
+                  continue
+
+              match = url_re.match(line)
+              if match:
+                  indent, url_base, url_suffix, arch = match.groups()
+                  if arch not in shas:
+                      fail(f"{path}:{index + 1}: url names unknown arch '{arch}'")
+                  out.append(f'{indent}url "{url_base}{tag}{url_suffix}"')
+                  # In this formula every url line is immediately followed by the
+                  # sha256 line for that same arch; the pairing is what lets the
+                  # rewrite stay independent of the if/elsif branch ordering.
+                  following = lines[index + 1] if index + 1 < len(lines) else ""
+                  sha_match = sha_re.match(following)
+                  if not sha_match:
+                      fail(f"{path}:{index + 2}: expected a sha256 line after the {arch} url")
+                  out.append(f'{sha_match.group(1)}sha256 "{shas[arch]}"')
+                  rewritten.add(arch)
+                  index += 2
+                  continue
+
+              out.append(line)
+              index += 1
+
+          missing = sorted(set(shas) - rewritten)
+          if missing:
+              fail(f"{path}: no url line found for: {', '.join(missing)}")
+
+          with open(path, "w") as handle:
+              handle.write("\n".join(out) + "\n")
+          PY
           echo "Formula file updated:"
           cat "$FORMULA_PATH"
 
       - name: Commit and push changes
+        env:
+          FORMULA_PATH: ${{ steps.vars.outputs.formula_path }}
         run: |
-          git add "${{ steps.vars.outputs.formula_path }}"
+          if git diff --quiet -- "$FORMULA_PATH"; then
+            echo "::error::$FORMULA_PATH is unchanged after the rewrite; refusing to publish a tap that points at a deleted tag."
+            exit 1
+          fi
+          git add "$FORMULA_PATH"
           git commit -m "Update porytiles-snapshot formula to ${{ steps.vars.outputs.new_version }}"
           git push
+
+  prune-old-snapshots:
+    name: Prune superseded snapshot releases + tags
+    needs: [prepare, update-homebrew-tap]
+    runs-on: ubuntu-latest
+    steps:
+      - name: Delete every snapshot release and tag except the current one
+        env:
+          GITHUB_TOKEN: ${{ secrets.GITHUB_TOKEN }}
+          REPO: ${{ github.repository }}
+          CURRENT_TAG: ${{ needs.prepare.outputs.snapshot_tag }}
+        run: |
+          # Runs only after the tap formula points at CURRENT_TAG, so a superseded
+          # tag is never deleted while the published formula still refers to it.
+          # Matches `snapshot-<utc-timestamp>` plus the bare `snapshot` tag used by
+          # the pre-immutable-tag scheme. Versioned release tags are `vX.Y.Z` and
+          # never match, so they are never touched.
+          SNAPSHOT_TAG_RE='^snapshot(-[0-9]{14})?$'
+
+          mapfile -t stale_releases < <(
+            gh release list --repo "$REPO" --limit 100 --json tagName --jq '.[].tagName' \
+              | grep -E "$SNAPSHOT_TAG_RE" | grep -vx "$CURRENT_TAG" || true
+          )
+          for tag in "${stale_releases[@]}"; do
+            echo "Deleting superseded release and tag: $tag"
+            gh release delete "$tag" --repo "$REPO" --yes --cleanup-tag
+          done
+
+          # Sweep tags whose release is already gone, and tags left behind by an
+          # earlier run that published a snapshot but failed before reaching this
+          # job. Such a run leaves two snapshots live; the next successful run
+          # prunes both the stale release and its tag here.
+          mapfile -t stale_tags < <(
+            gh api "repos/$REPO/git/refs/tags" --paginate --jq '.[].ref' \
+              | sed 's|^refs/tags/||' \
+              | grep -E "$SNAPSHOT_TAG_RE" | grep -vx "$CURRENT_TAG" || true
+          )
+          for tag in "${stale_tags[@]}"; do
+            echo "Deleting orphaned tag: $tag"
+            # A tag the release deletion above already cleaned up can still show in
+            # this listing, so a 404/422 here means the desired end state was
+            # already reached and is not a failure.
+            gh api -X DELETE "repos/$REPO/git/refs/tags/$tag" || echo "  already gone"
+          done
+
+          echo "Retained snapshot tag: $CURRENT_TAG"
 
   test-brew-tap-linux-amd64:
     name: Test the brew tap snapshot on linux-amd64
@@ -234,7 +351,11 @@ jobs:
       - name: Install porytiles-snapshot via auto-tap
         # Fully qualified `<owner>/<tap>/<formula>` form auto-taps the repo without a
         # separate `brew tap` / `brew update` step. The latter has been observed to
-        # SIGPIPE on the GHA Linuxbrew runner (see git history of this file).
+        # SIGPIPE on the GHA Linuxbrew runner (see git history of this file). It's also
+        # required under Homebrew 6.0's Tap Trust gate (docs.brew.sh/Tap-Trust): a
+        # fully qualified install is auto-trusted, but `brew tap` + `brew install
+        # <short-name>` is not and now fails with "Refusing to load formula ...
+        # from untrusted tap".
         run: brew install grunt-lucas/porytiles/porytiles-snapshot
 
       - name: Smoke test porytiles snapshot binaries
@@ -247,13 +368,10 @@ jobs:
     needs: [update-homebrew-tap]
     runs-on: macos-latest
     steps:
-      - name: Install porytiles-snapshot
-        run: |
-          brew tap grunt-lucas/porytiles
-          brew update
-          brew install porytiles-snapshot
+      - name: Install porytiles-snapshot via auto-tap
+        run: brew install grunt-lucas/porytiles/porytiles-snapshot
 
-      - name: Test porytiles snapshot binaries
+      - name: Smoke test porytiles snapshot binaries
         run: |
           porytiles --version
           porytiles-legacy --version

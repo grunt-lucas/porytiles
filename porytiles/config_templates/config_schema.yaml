@@ -42,6 +42,20 @@
 #     - Defined in xcut/config/config_validators.hpp or <layer>/config/<layer>_config_validators.hpp
 #     - Reference syntax: "<validator_func_name>:<field_name>"
 #     - Example: [compare_greater_than:num_tiles_primary]
+#
+# Settings vs. override knobs:
+#   Every entry is one of two kinds, distinguished by its type and default:
+#
+#   - A SETTING has a plain type and a static default (e.g. num_tiles_in_primary: std::size_t, default 512).
+#     The default IS the answer when nothing else provides one; consumers use the resolved value directly.
+#
+#   - An OVERRIDE KNOB has an optional type and a std::nullopt default (e.g. metatile_attribute_size,
+#     metatile_attribute_declaration_size). Here nullopt is a definite answer:
+#     "the user did not pin this value". Exactly one consumer, the domain reconciler
+#     (reconcile_metatile_attribute_schema), interprets that absence, by deriving the value from project
+#     facts or falling back to a documented assumption. No provider may "helpfully" fill an override knob
+#     with a derived value: a ConfigProvider reads stated values (a CLI flag, a YAML key, a header #define);
+#     it never derives one. Derivation belongs in the domain, where it can see every other resolved value.
 
 # ============================================================================
 # Enum Type Definitions
@@ -53,9 +67,13 @@
 #
 # Fields:
 #   cpp_type: The C++ enum class name (e.g., "ArtifactEditMode")
+#
 #   header_path: Output path relative to include/ (e.g., "porytiles/domain/config/artifact_edit_mode.hpp")
+#
 #   brief: Brief description for the enum class (used in Doxygen @brief)
+#
 #   details: (optional) Detailed description (used in Doxygen @details)
+#
 #   enum_values: List of enum values, each with:
 #     - name: The C++ enum constant name (snake_case)
 #     - cli_completion_name: The name to show for CLI tab completion
@@ -85,8 +103,8 @@ enum_types:
         fuzzy_names: [ optimize ]
         brief: The Porytiles1 behavior; artifact is cleared and packed optimally.
 
-  - cpp_type: TilesPalMode
-    header_path: porytiles/domain/config/tiles_pal_mode.hpp
+  - cpp_type: TilesPaletteMode
+    header_path: porytiles/domain/config/tiles_palette_mode.hpp
     brief: Controls how tiles.png is rendered.
     enum_values:
       - name: true_color
@@ -98,8 +116,8 @@ enum_types:
         fuzzy_names: [ greyscale, grayscale, grey, gray ]
         brief: Render tiles in greyscale (useful for debugging).
 
-  - cpp_type: AnimPalResolutionStrategy
-    header_path: porytiles/domain/config/anim_pal_resolution_strategy.hpp
+  - cpp_type: AnimPaletteResolutionStrategy
+    header_path: porytiles/domain/config/anim_palette_resolution_strategy.hpp
     brief: Strategy for determining which palette to use when decompiling animation tiles.
     details: |
       When decompiling animation tiles, the decompiler needs to know which tileset palette to use for
@@ -174,7 +192,7 @@ enum_types:
         cli_completion_name: palette-15
         fuzzy_names: [ palette-15, palette_15, palette15, pal-15, pal_15, pal15 ]
         brief: Use palette 15 directly.
-      - name: internal_png_pal
+      - name: internal_png_palette
         cli_completion_name: internal-png-palette
         fuzzy_names: [ internal-png-palette, internal_png_palette, internal-png-pal, internal_png_pal, internalpngpal ]
         brief: Use the Porymap-component frame PNG internal palette, if present.
@@ -347,8 +365,8 @@ enum_types:
         fuzzy_names: [ random ]
         brief: FFD first, then fully random shuffles (original behavior).
 
-  - cpp_type: AnimMultiPalSubtileResolutionStrategy
-    header_path: porytiles/domain/config/anim_multi_pal_subtile_resolution_strategy.hpp
+  - cpp_type: AnimMultiPaletteSubtileResolutionStrategy
+    header_path: porytiles/domain/config/anim_multi_palette_subtile_resolution_strategy.hpp
     brief: Strategy for handling animation subtiles referenced with multiple palettes.
     details: |
       When decompiling animations using the scan_local_metatiles strategy, a single tile index
@@ -425,8 +443,8 @@ config_values:
     cross_field_validators: [ compare_greater_equal:num_metatiles_in_primary ]
 
   - canonical_name: Number Of Palettes In Primary
-    symbol: num_pals_in_primary
-    yaml_path: fieldmap.num_pals_in_primary
+    symbol: num_palettes_in_primary
+    yaml_path: fieldmap.num_palettes_in_primary
     header_define: NUM_PALS_IN_PRIMARY
     cli_option: num-pals-in-primary
     cli_desc: The NUM_PALS_IN_PRIMARY setting from include/fieldmap.h.
@@ -435,11 +453,11 @@ config_values:
     parser: parse_size_t
     default_value: "6"
     validators: [ size_t_val_greater_than_zero ]
-    cross_field_validators: [ compare_less_equal:num_pals_total ]
+    cross_field_validators: [ compare_less_equal:num_palettes_total ]
 
   - canonical_name: Number Of Palettes Total
-    symbol: num_pals_total
-    yaml_path: fieldmap.num_pals_total
+    symbol: num_palettes_total
+    yaml_path: fieldmap.num_palettes_total
     header_define: NUM_PALS_TOTAL
     cli_option: num-pals-total
     cli_desc: The NUM_PALS_TOTAL setting from include/fieldmap.h.
@@ -448,7 +466,7 @@ config_values:
     parser: parse_size_t
     default_value: "13"
     validators: [ size_t_val_greater_than_zero ]
-    cross_field_validators: [ compare_greater_equal:num_pals_in_primary ]
+    cross_field_validators: [ compare_greater_equal:num_palettes_in_primary ]
 
   - canonical_name: Max Map Data Size
     symbol: max_map_data_size
@@ -488,6 +506,21 @@ config_values:
     validators: [ rgba_alpha_component_opaque ]
     cross_field_validators: [ ]
 
+  - canonical_name: Ignore Triple Layer Content
+    symbol: ignore_triple_layer_content
+    yaml_path: tileset.ignore_triple_layer_content
+    cli_option: ignore-triple-layer-content
+    cli_desc: >-
+      Demote the triple-layer-content-in-dual-mode error to a warning. When on, a metatile with content on all three
+      layers compiles in dual mode by dropping one layer group instead of failing. The dropped layer follows the
+      metatile's effective layer type: a 'layer_type' role pin if you set one, otherwise the bottom layer.
+    layer: domain
+    type: bool
+    parser: parse_bool
+    default_value: "false"
+    validators: [ ]
+    cross_field_validators: [ ]
+
   - canonical_name: Tiles Edit Mode
     symbol: tiles_edit_mode
     yaml_path: tileset.tiles.edit_mode
@@ -501,7 +534,7 @@ config_values:
     cross_field_validators: [ ]
 
   - canonical_name: Palettes Edit Mode
-    symbol: pals_edit_mode
+    symbol: palettes_edit_mode
     yaml_path: tileset.palettes.edit_mode
     cli_option: pals-edit-mode
     cli_desc: The allowed edit mode for the palettes/ artifacts.
@@ -513,7 +546,7 @@ config_values:
     cross_field_validators: [ ]
 
   - canonical_name: Palette Hints Enabled
-    symbol: pal_hints_enabled
+    symbol: palette_hints_enabled
     yaml_path: tileset.palettes.packing.hints_enabled
     cli_option: pal-hints-enabled
     cli_desc: Enable configured palette hints.
@@ -525,13 +558,12 @@ config_values:
     cross_field_validators: [ ]
 
   - canonical_name: Palette Hints
-    symbol: pal_hints
+    symbol: palette_hints
     yaml_path: tileset.palettes.packing.hints
-    cli_option: pal-hints
     yaml_only: true  # Too complex for non-YAML providers (std::vector<PaletteHint>)
     layer: domain
     type: std::vector<PaletteHint>
-    parser: parse_pal_hints
+    parser: parse_palette_hints
     default_value: "std::vector<PaletteHint>{}"
     validators: [ ]
     cross_field_validators: [ ]
@@ -551,7 +583,6 @@ config_values:
   - canonical_name: Packing Strategy Params
     symbol: packing_strategy_params
     yaml_path: tileset.palettes.packing.strategy_params
-    cli_option: packing-strategy-params
     yaml_only: true
     yaml_is_map: true
     layer: domain
@@ -586,26 +617,26 @@ config_values:
     cross_field_validators: [ ]
 
   - canonical_name: Tiles Palette Mode
-    symbol: tiles_pal_mode
+    symbol: tiles_palette_mode
     yaml_path: tileset.tiles.palette_mode
     cli_option: tiles-pal-mode
     cli_desc: The color mode to use when saving the tiles.png artifact.
     layer: domain
-    type: TilesPalMode
-    parser: parse_tiles_pal_mode
-    default_value: "TilesPalMode::true_color"
+    type: TilesPaletteMode
+    parser: parse_tiles_palette_mode
+    default_value: "TilesPaletteMode::true_color"
     validators: [ ]
     cross_field_validators: [ ]
 
   - canonical_name: Global Animation Palette Resolution Strategy
-    symbol: global_anim_pal_resolution_strategy
+    symbol: global_anim_palette_resolution_strategy
     yaml_path: tileset.animations.palette_resolution_strategy
     cli_option: anim-pal-resolution-strategy
     cli_desc: The global strategy for determining which palette to use when decompiling animation tiles.
     layer: domain
-    type: AnimPalResolutionStrategy
-    parser: parse_anim_pal_resolution_strategy
-    default_value: "AnimPalResolutionStrategy::scan_local_metatiles"
+    type: AnimPaletteResolutionStrategy
+    parser: parse_anim_palette_resolution_strategy
+    default_value: "AnimPaletteResolutionStrategy::scan_local_metatiles"
     validators: [ ]
     cross_field_validators: [ ]
 
@@ -621,15 +652,15 @@ config_values:
     validators: [ ]
     cross_field_validators: [ ]
 
-  - canonical_name: Global Animation Multi-Pal Subtile Resolution Strategy
-    symbol: global_anim_multi_pal_subtile_resolution_strategy
+  - canonical_name: Global Animation Multi-Palette Subtile Resolution Strategy
+    symbol: global_anim_multi_palette_subtile_resolution_strategy
     yaml_path: tileset.animations.multi_palette_subtile_resolution_strategy
     cli_option: anim-multi-pal-subtile-resolution-strategy
     cli_desc: The strategy for handling animation subtiles referenced with multiple palettes.
     layer: domain
-    type: AnimMultiPalSubtileResolutionStrategy
-    parser: parse_anim_multi_pal_subtile_resolution_strategy
-    default_value: "AnimMultiPalSubtileResolutionStrategy::error"
+    type: AnimMultiPaletteSubtileResolutionStrategy
+    parser: parse_anim_multi_palette_subtile_resolution_strategy
+    default_value: "AnimMultiPaletteSubtileResolutionStrategy::error"
     validators: [ ]
     cross_field_validators: [ ]
 
@@ -648,7 +679,6 @@ config_values:
   - canonical_name: Per-Animation Overrides
     symbol: per_anim_overrides
     yaml_path: tileset.animations.per_animation_overrides
-    cli_option: per-anim-overrides
     yaml_only: true
     yaml_is_map: true
     layer: domain
@@ -692,8 +722,8 @@ config_values:
     type: PrimaryPairingMode
     parser: parse_primary_pairing_mode
     default_value: "PrimaryPairingMode::automatic"
-    validators: []
-    cross_field_validators: []
+    validators: [ ]
+    cross_field_validators: [ ]
 
   - canonical_name: Primary Pairing Partners
     symbol: primary_pairing_partners
@@ -704,8 +734,8 @@ config_values:
     type: "std::vector<std::string>"
     parser: parse_string_vector
     default_value: "std::vector<std::string>{}"
-    validators: []
-    cross_field_validators: []
+    validators: [ ]
+    cross_field_validators: [ ]
 
   # Note: Unlike verify_checksums (consumed by app-layer use cases), the diagnostic filter values below are "meta-config"
   # — they are only consumed at the composition root (tools/driver/ commands) to wire the FilteredUserDiagnostics
@@ -718,49 +748,49 @@ config_values:
     symbol: diagnostic_warnings_exclude
     yaml_path: diagnostics.warnings.exclude
     cli_option: diagnostic-warnings-exclude
-    cli_desc: Regex patterns for warning tags to exclude.
+    cli_desc: Regex patterns for warning tags to exclude (overrides includes).
     layer: app
     type: std::vector<std::string>
     parser: parse_string_vector
     default_value: "std::vector<std::string>{}"
-    validators: []
-    cross_field_validators: []
+    validators: [ ]
+    cross_field_validators: [ ]
 
   - canonical_name: Diagnostic Warnings Include
     symbol: diagnostic_warnings_include
     yaml_path: diagnostics.warnings.include
     cli_option: diagnostic-warnings-include
-    cli_desc: Regex patterns for warning tags to include (overrides excludes).
+    cli_desc: Regex patterns for warning tags to show. Warnings are hidden unless a pattern matches their tag.
     layer: app
     type: std::vector<std::string>
     parser: parse_string_vector
     default_value: "std::vector<std::string>{}"
-    validators: []
-    cross_field_validators: []
+    validators: [ ]
+    cross_field_validators: [ ]
 
   - canonical_name: Diagnostic Remarks Exclude
     symbol: diagnostic_remarks_exclude
     yaml_path: diagnostics.remarks.exclude
     cli_option: diagnostic-remarks-exclude
-    cli_desc: Regex patterns for remark tags to exclude.
+    cli_desc: Regex patterns for remark tags to exclude (overrides includes).
     layer: app
     type: std::vector<std::string>
     parser: parse_string_vector
     default_value: "std::vector<std::string>{}"
-    validators: []
-    cross_field_validators: []
+    validators: [ ]
+    cross_field_validators: [ ]
 
   - canonical_name: Diagnostic Remarks Include
     symbol: diagnostic_remarks_include
     yaml_path: diagnostics.remarks.include
     cli_option: diagnostic-remarks-include
-    cli_desc: Regex patterns for remark tags to include (overrides excludes).
+    cli_desc: Regex patterns for remark tags to show. Remarks are hidden unless a pattern matches their tag.
     layer: app
     type: std::vector<std::string>
     parser: parse_string_vector
     default_value: "std::vector<std::string>{}"
-    validators: []
-    cross_field_validators: []
+    validators: [ ]
+    cross_field_validators: [ ]
 
   # Infrastructure Layer Configuration Values
   - canonical_name: Tileset Paths Primary Source
@@ -812,15 +842,72 @@ config_values:
     cross_field_validators: [ ]
 
   - canonical_name: Metatile Attribute Size
-    symbol: metatile_attr_size
+    symbol: metatile_attribute_size
     yaml_path: fieldmap.metatile_attribute_size
-    cli_option: metatile-attr-size
-    cli_desc: The size in bytes of each metatile attribute entry (2 for Emerald/Ruby, 4 for FireRed).
+    cli_option: metatile-attribute-size
+    cli_desc: >-
+      Pins the size in bytes of each metatile attribute entry (1, 2, or 4). When unset, Porytiles
+      derives the size from the resolved attribute field masks, which struct Tileset's declared
+      element width must corroborate exactly. Must be set explicitly on projects that declare more
+      than one mask layout (pokeemerald-expansion), one value per build flavor, and on projects
+      whose masks and struct Tileset declaration disagree or whose declaration is unusable.
+      Project-global.
     layer: infra
-    type: std::size_t
-    parser: parse_size_t
-    default_value: "2"
-    validators: [ size_t_val_two_or_four ]
+    type: std::optional<std::size_t>
+    parser: parse_optional_size_t
+    default_value: "std::nullopt"
+    validators: [ optional_size_t_val_one_two_or_four ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Metatile Attribute Declaration Size
+    symbol: metatile_attribute_declaration_size
+    yaml_path: fieldmap.metatile_attribute_declaration_size
+    cli_option: metatile-attribute-declaration-size
+    cli_desc: >-
+      The declared element width in bytes (1, 2, or 4) for generated gMetatileAttributes_* C
+      declarations (const uN / INCBIN_UN). Normally inferred from struct Tileset's
+      metatileAttributes member in include/global.fieldmap.h. Required when that declaration is
+      missing, unreadable, or not a pointer to u8, u16, or u32, since nothing else in a project
+      implies this width. Project-global.
+    layer: infra
+    type: std::optional<std::size_t>
+    parser: parse_optional_size_t
+    default_value: "std::nullopt"
+    validators: [ optional_size_t_val_one_two_or_four ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Metatile Attribute Fields
+    symbol: metatile_attribute_fields
+    yaml_path: fieldmap.metatile_attribute_fields
+    yaml_only: true  # Too complex for non-YAML providers (MetatileAttributeFieldDefinitions)
+    layer: infra
+    type: MetatileAttributeFieldDefinitions
+    parser: parse_metatile_attribute_fields
+    default_value: "MetatileAttributeFieldDefinitions{}"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Metatile Attribute Field Overrides
+    symbol: metatile_attribute_field_overrides
+    yaml_path: fieldmap.metatile_attribute_field_overrides
+    yaml_only: true
+    yaml_is_map: true
+    layer: infra
+    type: MetatileAttributeFieldOverrides
+    parser: parse_metatile_attribute_field_overrides
+    default_value: "MetatileAttributeFieldOverrides{}"
+    validators: [ ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Role Pins
+    symbol: role_pins
+    yaml_path: fieldmap.role_pins
+    yaml_only: true  # Too complex for non-YAML providers (RolePinDefinitions)
+    layer: infra
+    type: RolePinDefinitions
+    parser: parse_role_pins
+    default_value: "RolePinDefinitions{}"
+    validators: [ ]
     cross_field_validators: [ ]
 
   - canonical_name: Tileset Animations Wire Anim Code

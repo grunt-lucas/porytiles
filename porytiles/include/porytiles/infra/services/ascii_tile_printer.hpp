@@ -13,10 +13,8 @@
 
 namespace porytiles {
 
-/**
- * @brief A TilePrinter implementation that generates ASCII art tiles with formatting based on the provided
- * TextFormatter.
- */
+/// @brief A TilePrinter implementation that generates ASCII art tiles with formatting based on the provided
+/// TextFormatter.
 class AsciiTilePrinter final : public TilePrinter {
   public:
     explicit AsciiTilePrinter(gsl::not_null<TextFormatter *> format) : format_{format} {}

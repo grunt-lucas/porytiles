@@ -51,12 +51,9 @@ ChainableResult<void> CompileSecondaryTileset::compile(const std::string &tilese
 
     // 4b. Cross-tileset extrinsic transparency mismatch warning.
     {
-        auto secondary_et_result = domain_config_->extrinsic_transparency(ConfigScopeType::tileset, tileset_name);
-        auto primary_et_result =
-            domain_config_->extrinsic_transparency(ConfigScopeType::tileset, paired_primary->name());
-
-        const auto &secondary_et = secondary_et_result.value();
-        const auto &primary_et = primary_et_result.value();
+        PT_UNWRAP_TILESET_CONFIG_PTR_AS(secondary_et, domain_config_, extrinsic_transparency, tileset_name, void);
+        PT_UNWRAP_TILESET_CONFIG_PTR_AS(
+            primary_et, domain_config_, extrinsic_transparency, paired_primary->name(), void);
         if (secondary_et.value() != primary_et.value()) {
             std::vector<std::string> warn_msg{};
             warn_msg.emplace_back(diag_->formatter().format(
@@ -138,13 +135,11 @@ ChainableResult<void> CompileSecondaryTileset::compile(const std::string &tilese
             }
         }
 
-        /*
-         * Primary-side staleness check. Content-aware, unlike the name-only check in
-         * pipeline_helper_register_animations. If the paired primary's sources have drifted from its cached compile
-         * form, refuse to proceed: cross-tileset matching would operate against a stale compiled primary and silently
-         * produce wrong output. Only runs when the paired primary itself has cached checksums; a primary with no cache
-         * cannot be content-verified here (the user may have compiled it externally).
-         */
+        // Primary-side staleness check. Content-aware, unlike the name-only check in
+        // pipeline_helper_register_animations. If the paired primary's sources have drifted from its cached compile
+        // form, refuse to proceed: cross-tileset matching would operate against a stale compiled primary and silently
+        // produce wrong output. Only runs when the paired primary itself has cached checksums; a primary with no cache
+        // cannot be content-verified here (the user may have compiled it externally).
         if (tileset_repo_->checksum_provider().cached_checksums_exist(paired_primary->name())) {
             PT_TRY_ASSIGN_CHAIN_ERR(
                 primary_porytiles_keys,

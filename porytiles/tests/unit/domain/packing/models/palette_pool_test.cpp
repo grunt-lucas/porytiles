@@ -8,74 +8,74 @@ using namespace porytiles;
 
 TEST(PalettePoolConstructorTests, ConstructAvailable)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(0);
     available.set(5);
     available.set(10);
 
     PalettePool pool{available};
 
-    EXPECT_TRUE(pool.has_available_pal());
+    EXPECT_TRUE(pool.has_available_palette());
 }
 
 TEST(PalettePoolConstructorTests, ConstructNoneAvailable)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
 
     PalettePool pool{available};
 
-    EXPECT_FALSE(pool.has_available_pal());
+    EXPECT_FALSE(pool.has_available_palette());
 }
 
 TEST(PalettePoolConstructorTests, ConstructAllAvailable)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(); // Set all bits
 
     PalettePool pool{available};
 
-    EXPECT_TRUE(pool.has_available_pal());
+    EXPECT_TRUE(pool.has_available_palette());
 }
 
 TEST(PalettePoolHasAvailableTests, WhenAvailable)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(3);
 
     PalettePool pool{available};
 
-    EXPECT_TRUE(pool.has_available_pal());
+    EXPECT_TRUE(pool.has_available_palette());
 }
 
 TEST(PalettePoolHasAvailableTests, WhenAllCheckedOut)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(0);
 
     PalettePool pool{available};
 
     std::ignore = pool.checkout();
 
-    EXPECT_FALSE(pool.has_available_pal());
+    EXPECT_FALSE(pool.has_available_palette());
 }
 
 TEST(PalettePoolHasAvailableTests, AfterCheckIn)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(0);
 
     PalettePool pool{available};
 
     std::ignore = pool.checkout();
-    EXPECT_FALSE(pool.has_available_pal());
+    EXPECT_FALSE(pool.has_available_palette());
 
     pool.checkin();
-    EXPECT_TRUE(pool.has_available_pal());
+    EXPECT_TRUE(pool.has_available_palette());
 }
 
 TEST(PalettePoolIsAvailableTests, AvailableIndex)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(3);
     available.set(7);
 
@@ -87,7 +87,7 @@ TEST(PalettePoolIsAvailableTests, AvailableIndex)
 
 TEST(PalettePoolIsAvailableTests, UnavailableIndex)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(3);
 
     PalettePool pool{available};
@@ -99,7 +99,7 @@ TEST(PalettePoolIsAvailableTests, UnavailableIndex)
 
 TEST(PalettePoolIsAvailableTests, CheckedOutIndex)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(3);
     available.set(7);
 
@@ -112,7 +112,7 @@ TEST(PalettePoolIsAvailableTests, CheckedOutIndex)
 
 TEST(PalettePoolIsAvailableTests, AfterCheckIn)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(5);
 
     PalettePool pool{available};
@@ -126,7 +126,7 @@ TEST(PalettePoolIsAvailableTests, AfterCheckIn)
 
 TEST(PalettePoolIsAvailableTests, PanicsOutOfBounds)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(0);
 
     PalettePool pool{available};
@@ -137,7 +137,7 @@ TEST(PalettePoolIsAvailableTests, PanicsOutOfBounds)
 
 TEST(PalettePoolCheckOutTests, LowestAvailable)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(5);
     available.set(10);
     available.set(15);
@@ -149,7 +149,7 @@ TEST(PalettePoolCheckOutTests, LowestAvailable)
 
 TEST(PalettePoolCheckOutTests, NextLowestAfterCheckout)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(2);
     available.set(7);
     available.set(12);
@@ -163,7 +163,7 @@ TEST(PalettePoolCheckOutTests, NextLowestAfterCheckout)
 
 TEST(PalettePoolCheckOutTests, AllAvailable)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(0);
     available.set(1);
     available.set(2);
@@ -174,12 +174,12 @@ TEST(PalettePoolCheckOutTests, AllAvailable)
     std::ignore = pool.checkout();
     std::ignore = pool.checkout();
 
-    EXPECT_FALSE(pool.has_available_pal());
+    EXPECT_FALSE(pool.has_available_palette());
 }
 
 TEST(PalettePoolCheckOutTests, SkipsUnavailable)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     // Only indexes 3, 7, 11 are available (not 0, 1, 2, etc.)
     available.set(3);
     available.set(7);
@@ -194,7 +194,7 @@ TEST(PalettePoolCheckOutTests, SkipsUnavailable)
 
 TEST(PalettePoolCheckOutTests, PanicsNoneAvailable)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
 
     PalettePool pool{available};
 
@@ -203,7 +203,7 @@ TEST(PalettePoolCheckOutTests, PanicsNoneAvailable)
 
 TEST(PalettePoolCheckOutTests, PanicsAllCheckedOut)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(0);
 
     PalettePool pool{available};
@@ -215,7 +215,7 @@ TEST(PalettePoolCheckOutTests, PanicsAllCheckedOut)
 
 TEST(PalettePoolCheckOutIndexTests, SpecificIndex)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(3);
     available.set(7);
     available.set(10);
@@ -231,7 +231,7 @@ TEST(PalettePoolCheckOutIndexTests, SpecificIndex)
 
 TEST(PalettePoolCheckOutIndexTests, StackOrdering)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(3);
     available.set(7);
 
@@ -252,7 +252,7 @@ TEST(PalettePoolCheckOutIndexTests, StackOrdering)
 
 TEST(PalettePoolCheckOutIndexTests, PanicsUnavailable)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(3);
 
     PalettePool pool{available};
@@ -262,7 +262,7 @@ TEST(PalettePoolCheckOutIndexTests, PanicsUnavailable)
 
 TEST(PalettePoolCheckOutIndexTests, PanicsAlreadyCheckedOut)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(3);
 
     PalettePool pool{available};
@@ -274,7 +274,7 @@ TEST(PalettePoolCheckOutIndexTests, PanicsAlreadyCheckedOut)
 
 TEST(PalettePoolCheckOutIndexTests, PanicsOutOfBounds)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(0);
 
     PalettePool pool{available};
@@ -285,7 +285,7 @@ TEST(PalettePoolCheckOutIndexTests, PanicsOutOfBounds)
 
 TEST(PalettePoolCheckOutIndexTests, MixedAutoAndIndexed)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(2);
     available.set(5);
     available.set(8);
@@ -306,27 +306,27 @@ TEST(PalettePoolCheckOutIndexTests, MixedAutoAndIndexed)
     // Auto checkout should get 5 (only remaining)
     EXPECT_EQ(pool.checkout(), 5);
 
-    EXPECT_FALSE(pool.has_available_pal());
+    EXPECT_FALSE(pool.has_available_palette());
 }
 
 TEST(PalettePoolCheckInTests, BasicCheckIn)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(5);
 
     PalettePool pool{available};
 
     std::size_t index = pool.checkout();
     EXPECT_EQ(index, 5);
-    EXPECT_FALSE(pool.has_available_pal());
+    EXPECT_FALSE(pool.has_available_palette());
 
     pool.checkin();
-    EXPECT_TRUE(pool.has_available_pal());
+    EXPECT_TRUE(pool.has_available_palette());
 }
 
 TEST(PalettePoolCheckInTests, StackSemantics)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(1);
     available.set(5);
     available.set(10);
@@ -352,7 +352,7 @@ TEST(PalettePoolCheckInTests, StackSemantics)
 
 TEST(PalettePoolCheckInTests, ReuseCheckedIn)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(0);
 
     PalettePool pool{available};
@@ -363,12 +363,12 @@ TEST(PalettePoolCheckInTests, ReuseCheckedIn)
         pool.checkin();
     }
 
-    EXPECT_TRUE(pool.has_available_pal());
+    EXPECT_TRUE(pool.has_available_palette());
 }
 
 TEST(PalettePoolCheckInTests, PanicsEmpty)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(0);
 
     PalettePool pool{available};
@@ -378,7 +378,7 @@ TEST(PalettePoolCheckInTests, PanicsEmpty)
 
 TEST(PalettePoolCheckInTests, PanicsAllCheckedIn)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(0);
 
     PalettePool pool{available};
@@ -391,7 +391,7 @@ TEST(PalettePoolCheckInTests, PanicsAllCheckedIn)
 
 TEST(PalettePoolIntegrationTests, FullCycle)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(0);
     available.set(3);
     available.set(7);
@@ -404,7 +404,7 @@ TEST(PalettePoolIntegrationTests, FullCycle)
     EXPECT_EQ(pool.checkout(), 3);
     EXPECT_EQ(pool.checkout(), 7);
     EXPECT_EQ(pool.checkout(), 15);
-    EXPECT_FALSE(pool.has_available_pal());
+    EXPECT_FALSE(pool.has_available_palette());
 
     // Check in all 4 (LIFO order)
     pool.checkin(); // returns 15
@@ -413,7 +413,7 @@ TEST(PalettePoolIntegrationTests, FullCycle)
     pool.checkin(); // returns 0
 
     // All should be available again
-    EXPECT_TRUE(pool.has_available_pal());
+    EXPECT_TRUE(pool.has_available_palette());
 
     // Check out should return lowest again
     EXPECT_EQ(pool.checkout(), 0);
@@ -421,7 +421,7 @@ TEST(PalettePoolIntegrationTests, FullCycle)
 
 TEST(PalettePoolIntegrationTests, PartialCycle)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(2);
     available.set(4);
     available.set(6);
@@ -452,39 +452,39 @@ TEST(PalettePoolIntegrationTests, PartialCycle)
 
 TEST(PalettePoolIntegrationTests, SingleIndexPool)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(7);
 
     PalettePool pool{available};
 
-    EXPECT_TRUE(pool.has_available_pal());
+    EXPECT_TRUE(pool.has_available_palette());
     EXPECT_EQ(pool.checkout(), 7);
-    EXPECT_FALSE(pool.has_available_pal());
+    EXPECT_FALSE(pool.has_available_palette());
     pool.checkin();
-    EXPECT_TRUE(pool.has_available_pal());
+    EXPECT_TRUE(pool.has_available_palette());
     EXPECT_EQ(pool.checkout(), 7);
 }
 
 TEST(PalettePoolIntegrationTests, AllSixteenIndexes)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(); // All 16 bits set
 
     PalettePool pool{available};
 
     // Check out all 16
-    for (std::size_t i = 0; i < pal::num_pals; ++i) {
-        EXPECT_TRUE(pool.has_available_pal());
+    for (std::size_t i = 0; i < palette::num_palettes; ++i) {
+        EXPECT_TRUE(pool.has_available_palette());
         EXPECT_EQ(pool.checkout(), i);
     }
 
-    EXPECT_FALSE(pool.has_available_pal());
+    EXPECT_FALSE(pool.has_available_palette());
 
     // Check in all 16
-    for (std::size_t i = 0; i < pal::num_pals; ++i) {
+    for (std::size_t i = 0; i < palette::num_palettes; ++i) {
         pool.checkin();
     }
 
-    EXPECT_TRUE(pool.has_available_pal());
+    EXPECT_TRUE(pool.has_available_palette());
     EXPECT_EQ(pool.checkout(), 0);
 }

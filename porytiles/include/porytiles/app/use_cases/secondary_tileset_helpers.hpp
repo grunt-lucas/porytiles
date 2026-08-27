@@ -17,28 +17,26 @@ namespace porytiles {
 
 class TilesetRepo;
 
-/**
- * @brief Resolves the partner primary tileset for a secondary tileset.
- *
- * @details
- * Given a secondary tileset name and pairing configuration, determines which primary tileset to pair with. Supports
- * three pairing modes:
- * - @c off: No primary pairing, returns nullptr.
- * - @c manual: Uses the first entry from the configured partners list.
- * - @c automatic: Scans project layouts to find which primary is paired with this secondary.
- *
- * After resolution, validates that the partner primary exists and is Porytiles-managed, then loads and returns it.
- *
- * @param tileset_name The name of the secondary tileset being compiled or created.
- * @param pairing_mode The configured primary pairing mode, wrapped with source provenance.
- * @param partners The configured list of partner primary tileset names, wrapped with source provenance.
- * @param tileset_repo Repository for loading tileset data.
- * @param metadata_provider Provider for checking tileset existence.
- * @param layout_metadata_provider Provider for scanning project layouts (used in automatic mode).
- * @param tileset_manager Manager for checking Porytiles ownership.
- * @param diag Diagnostics interface for warnings.
- * @return The loaded partner primary Tileset, nullptr if pairing is off, or an error.
- */
+/// @brief Resolves the partner primary tileset for a secondary tileset.
+///
+/// @details
+/// Given a secondary tileset name and pairing configuration, determines which primary tileset to pair with. Supports
+/// three pairing modes:
+/// - @c off: No primary pairing, returns nullptr.
+/// - @c manual: Uses the first entry from the configured partners list.
+/// - @c automatic: Scans project layouts to find which primary is paired with this secondary.
+///
+/// After resolution, validates that the partner primary exists and is Porytiles-managed, then loads and returns it.
+///
+/// @param tileset_name The name of the secondary tileset being compiled or created.
+/// @param pairing_mode The configured primary pairing mode, wrapped with source provenance.
+/// @param partners The configured list of partner primary tileset names, wrapped with source provenance.
+/// @param tileset_repo Repository for loading tileset data.
+/// @param metadata_provider Provider for checking tileset existence.
+/// @param layout_metadata_provider Provider for scanning project layouts (used in automatic mode).
+/// @param tileset_manager Manager for checking Porytiles ownership.
+/// @param diag Diagnostics interface for warnings.
+/// @return The loaded partner primary Tileset, nullptr if pairing is off, or an error.
 [[nodiscard]] ChainableResult<std::unique_ptr<Tileset>> resolve_partner_primary(
     const std::string &tileset_name,
     const ConfigValue<PrimaryPairingMode> &pairing_mode,

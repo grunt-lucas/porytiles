@@ -11,20 +11,23 @@
 
 #include "porytiles/app/config/primary_pairing_mode.hpp"
 #include "porytiles/domain/config/anim_key_frame_resolution_strategy.hpp"
-#include "porytiles/domain/config/anim_multi_pal_subtile_resolution_strategy.hpp"
-#include "porytiles/domain/config/anim_pal_resolution_strategy.hpp"
+#include "porytiles/domain/config/anim_multi_palette_subtile_resolution_strategy.hpp"
+#include "porytiles/domain/config/anim_palette_resolution_strategy.hpp"
 #include "porytiles/domain/config/artifact_edit_mode.hpp"
 #include "porytiles/domain/config/frame_linking.hpp"
+#include "porytiles/domain/config/metatile_attribute_field_definition.hpp"
 #include "porytiles/domain/config/packing_strategy_params.hpp"
 #include "porytiles/domain/config/packing_strategy_type.hpp"
 #include "porytiles/domain/config/per_anim_overrides.hpp"
+#include "porytiles/domain/config/role_pin_definition.hpp"
 #include "porytiles/domain/config/tile_sharing_alignment.hpp"
 #include "porytiles/domain/config/tile_sharing_packing.hpp"
-#include "porytiles/domain/config/tiles_pal_mode.hpp"
+#include "porytiles/domain/config/tiles_palette_mode.hpp"
 #include "porytiles/domain/packing/models/palette_hint.hpp"
 #include "porytiles/infra/config/config_provider.hpp"
 #include "porytiles/infra/config/valid_yaml_paths.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
+#include "porytiles/utilities/string_utils.hpp"
 #include "porytiles/utilities/text/file_highlight_printer.hpp"
 #include "porytiles/utilities/text/text_formatter.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
@@ -40,17 +43,15 @@ using namespace porytiles;
 std::map<std::filesystem::path, YAML::Node> yaml_cache;
 std::map<std::filesystem::path, std::vector<std::string>> file_lines_cache;
 
-/**
- * @brief Gets the content of a specific line from a cached YAML file.
- *
- * @details
- * Returns the content of the specified line from the file contents cache. If the file is not cached or the line number
- * is out of bounds, returns an empty string.
- *
- * @param path The path to the YAML file
- * @param line_num The line number (0-indexed)
- * @return The line content, or empty string if not found
- */
+/// @brief Gets the content of a specific line from a cached YAML file.
+///
+/// @details
+/// Returns the content of the specified line from the file contents cache. If the file is not cached or the line number
+/// is out of bounds, returns an empty string.
+///
+/// @param path The path to the YAML file
+/// @param line_num The line number (0-indexed)
+/// @return The line content, or empty string if not found
 std::string get_line_content(const std::filesystem::path &path, std::size_t line_num)
 {
     const auto it = file_lines_cache.find(path);
@@ -60,48 +61,44 @@ std::string get_line_content(const std::filesystem::path &path, std::size_t line
     return "";
 }
 
-/**
- * @brief Constructs a source location string with file path and line number.
- *
- * @details
- * Creates a formatted string in the form "path:line" where:
- * - path is the file path
- * - line is the 1-indexed line number
- *
- * @param format The text formatter to use
- * @param file_path The path to the YAML file
- * @param mark The YAML mark containing line number information
- * @return Formatted source location string
- */
+/// @brief Constructs a source location string with file path and line number.
+///
+/// @details
+/// Creates a formatted string in the form "path:line" where:
+/// - path is the file path
+/// - line is the 1-indexed line number
+///
+/// @param format The text formatter to use
+/// @param file_path The path to the YAML file
+/// @param mark The YAML mark containing line number information
+/// @return Formatted source location string
 std::string make_source_string(const TextFormatter *format, const std::string &file_path, const YAML::Mark &mark)
 {
     return format->format("{}:{}", FormatParam{file_path}, FormatParam{mark.line + 1});
 }
 
-/**
- * @brief Constructs source details showing contextual lines around the target line.
- *
- * @details
- * Creates a vector of strings showing a contextual view of the YAML file around the target line. The view includes a
- * configurable number of lines before and after the target line, with the target line marked with a "> " prefix. Each
- * line is formatted with its line number.
- *
- * For example, with window_size=5 and target line 10:
- * ```
- *   8: some_config: value
- *   9: another_config: value
- * > 10: target_line: value
- *   11: next_config: value
- *   12: last_config: value
- * ```
- *
- * If the target line is near the start or end of the file, the window adjusts to show the available lines while
- * maintaining the requested window size where possible.
- *
- * @param file_path The path to the YAML file
- * @param mark The YAML mark containing line number information
- * @return Vector of formatted strings showing the contextual view
- */
+/// @brief Constructs source details showing contextual lines around the target line.
+///
+/// @details
+/// Creates a vector of strings showing a contextual view of the YAML file around the target line. The view includes a
+/// configurable number of lines before and after the target line, with the target line marked with a "> " prefix. Each
+/// line is formatted with its line number.
+///
+/// For example, with window_size=5 and target line 10:
+/// ```
+///   8: some_config: value
+///   9: another_config: value
+/// > 10: target_line: value
+///   11: next_config: value
+///   12: last_config: value
+/// ```
+///
+/// If the target line is near the start or end of the file, the window adjusts to show the available lines while
+/// maintaining the requested window size where possible.
+///
+/// @param file_path The path to the YAML file
+/// @param mark The YAML mark containing line number information
+/// @return Vector of formatted strings showing the contextual view
 std::vector<std::string>
 make_source_details(const TextFormatter *format, const std::string &file_path, const YAML::Mark &mark)
 {
@@ -123,17 +120,15 @@ make_source_details(const TextFormatter *format, const std::string &file_path, c
     return printer.print(lines, std::vector{line_num});
 }
 
-/**
- * @brief Recursively collects all dot-separated paths from a YAML node.
- *
- * @details
- * Walks the YAML node tree and collects all map keys as dot-separated paths. For each key
- * encountered, stores the full path and the YAML::Mark for source location reporting.
- *
- * @param node The YAML node to traverse
- * @param prefix Current path prefix (empty for root)
- * @param paths Output vector of discovered paths with their marks
- */
+/// @brief Recursively collects all dot-separated paths from a YAML node.
+///
+/// @details
+/// Walks the YAML node tree and collects all map keys as dot-separated paths. For each key
+/// encountered, stores the full path and the YAML::Mark for source location reporting.
+///
+/// @param node The YAML node to traverse
+/// @param prefix Current path prefix (empty for root)
+/// @param paths Output vector of discovered paths with their marks
 void collect_yaml_paths(
     const YAML::Node &node, const std::string &prefix, std::vector<std::pair<std::string, YAML::Mark>> &paths)
 {
@@ -153,20 +148,18 @@ void collect_yaml_paths(
     }
 }
 
-/**
- * @brief Validates YAML paths against the known valid paths set.
- *
- * @details
- * Walks the YAML document tree and compares each path against the set of valid paths
- * defined in valid_yaml_paths.hpp. For any unknown paths, emits an error via the
- * UserDiagnostics interface with source location and context.
- *
- * @param format Text formatter for styled output
- * @param diagnostics User diagnostics for emitting errors (may be nullptr)
- * @param file_path Path to the YAML file being validated
- * @param node The root YAML node to validate
- * @return @c true if any unknown keys were found, @c false otherwise.
- */
+/// @brief Validates YAML paths against the known valid paths set.
+///
+/// @details
+/// Walks the YAML document tree and compares each path against the set of valid paths
+/// defined in valid_yaml_paths.hpp. For any unknown paths, emits an error via the
+/// UserDiagnostics interface with source location and context.
+///
+/// @param format Text formatter for styled output
+/// @param diagnostics User diagnostics for emitting errors (may be nullptr)
+/// @param file_path Path to the YAML file being validated
+/// @param node The root YAML node to validate
+/// @return @c true if any unknown keys were found, @c false otherwise.
 [[nodiscard]] bool validate_yaml_paths(
     const TextFormatter *format,
     const UserDiagnostics *diagnostics,
@@ -215,15 +208,13 @@ void collect_yaml_paths(
     return found_unknown;
 }
 
-/**
- * @brief Attempts to parse a std::size_t value from a YAML node.
- *
- * @param format The text formatter to use
- * @param node The YAML node to parse
- * @param key The configuration key name (for error messages)
- * @param file_path The YAML file path (for source info)
- * @return LayerValue containing the parsed value, error, or not_provided status
- */
+/// @brief Attempts to parse a std::size_t value from a YAML node.
+///
+/// @param format The text formatter to use
+/// @param node The YAML node to parse
+/// @param key The configuration key name (for error messages)
+/// @param file_path The YAML file path (for source info)
+/// @return LayerValue containing the parsed value, error, or not_provided status
 LayerValue<std::size_t>
 parse_size_t(const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
@@ -248,15 +239,48 @@ parse_size_t(const TextFormatter *format, const YAML::Node &node, const std::str
     }
 }
 
-/**
- * @brief Attempts to parse a bool value from a YAML node.
- *
- * @param format The text formatter to use
- * @param node The YAML node to parse
- * @param key The configuration key name (for error messages)
- * @param file_path The YAML file path (for source info)
- * @return LayerValue containing the parsed value, error, or not_provided status
- */
+/// @brief Attempts to parse an optional std::size_t value from a YAML node.
+///
+/// @details
+/// Same parsing rules as parse_size_t, but the value type is std::optional<std::size_t>: an undefined node is
+/// not_provided (so the DefaultProvider's std::nullopt applies), and a present key always yields an engaged optional.
+///
+/// @param format The text formatter to use
+/// @param node The YAML node to parse
+/// @param key The configuration key name (for error messages)
+/// @param file_path The YAML file path (for source info)
+/// @return LayerValue containing the parsed value, error, or not_provided status
+LayerValue<std::optional<std::size_t>> parse_optional_size_t(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<std::optional<std::size_t>>::not_provided();
+    }
+
+    try {
+        const auto value = node.as<std::size_t>();
+        const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<std::optional<std::size_t>>::valid(std::optional<std::size_t>{value}, key, source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error =
+            format->format("Failed to parse '{}' as integer: {}", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<std::optional<std::size_t>>::invalid(error, source, details);
+    }
+}
+
+/// @brief Attempts to parse a bool value from a YAML node.
+///
+/// @param format The text formatter to use
+/// @param node The YAML node to parse
+/// @param key The configuration key name (for error messages)
+/// @param file_path The YAML file path (for source info)
+/// @return LayerValue containing the parsed value, error, or not_provided status
 LayerValue<bool>
 parse_bool(const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
@@ -281,15 +305,13 @@ parse_bool(const TextFormatter *format, const YAML::Node &node, const std::strin
     }
 }
 
-/**
- * @brief Attempts to parse a std::string value from a YAML node.
- *
- * @param format The text formatter to use
- * @param node The YAML node to parse
- * @param key The configuration key name (for error messages)
- * @param file_path The YAML file path (for source info)
- * @return LayerValue containing the parsed value, error, or not_provided status
- */
+/// @brief Attempts to parse a std::string value from a YAML node.
+///
+/// @param format The text formatter to use
+/// @param node The YAML node to parse
+/// @param key The configuration key name (for error messages)
+/// @param file_path The YAML file path (for source info)
+/// @return LayerValue containing the parsed value, error, or not_provided status
 LayerValue<std::string>
 parse_string(const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
@@ -314,19 +336,17 @@ parse_string(const TextFormatter *format, const YAML::Node &node, const std::str
     }
 }
 
-/**
- * @brief Attempts to parse an Rgba32 color from a YAML node.
- *
- * @details
- * Expects the YAML node to be a sequence with 3 or 4 elements: [r, g, b] or [r, g, b, a]. If alpha is not provided, it
- * defaults to 255 (opaque).
- *
- * @param format The text formatter to use
- * @param node The YAML node to parse
- * @param key The configuration key name (for error messages)
- * @param file_path The YAML file path (for source info)
- * @return LayerValue containing the parsed value, error, or not_provided status
- */
+/// @brief Attempts to parse an Rgba32 color from a YAML node.
+///
+/// @details
+/// Expects the YAML node to be a sequence with 3 or 4 elements: [r, g, b] or [r, g, b, a]. If alpha is not provided, it
+/// defaults to 255 (opaque).
+///
+/// @param format The text formatter to use
+/// @param node The YAML node to parse
+/// @param key The configuration key name (for error messages)
+/// @param file_path The YAML file path (for source info)
+/// @return LayerValue containing the parsed value, error, or not_provided status
 LayerValue<Rgba32>
 parse_rgba32(const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
@@ -370,7 +390,7 @@ parse_rgba32(const TextFormatter *format, const YAML::Node &node, const std::str
     }
 }
 
-LayerValue<std::vector<PaletteHint>> parse_pal_hints(
+LayerValue<std::vector<PaletteHint>> parse_palette_hints(
     const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
     if (!node.IsDefined()) {
@@ -476,19 +496,17 @@ LayerValue<std::vector<PaletteHint>> parse_pal_hints(
     }
 }
 
-/**
- * @brief Parses a std::vector<std::string> from a YAML sequence node.
- *
- * @details
- * Expects a YAML sequence of strings. Returns LayerValue::not_provided() if the node is undefined.
- * Returns LayerValue::invalid() if the node is not a sequence.
- *
- * @param format The text formatter to use
- * @param node The YAML node to parse
- * @param key The configuration key name (for error messages)
- * @param file_path The YAML file path (for source info)
- * @return LayerValue containing the parsed vector, error, or not_provided status
- */
+/// @brief Parses a std::vector<std::string> from a YAML sequence node.
+///
+/// @details
+/// Expects a YAML sequence of strings. Returns LayerValue::not_provided() if the node is undefined.
+/// Returns LayerValue::invalid() if the node is not a sequence.
+///
+/// @param format The text formatter to use
+/// @param node The YAML node to parse
+/// @param key The configuration key name (for error messages)
+/// @param file_path The YAML file path (for source info)
+/// @return LayerValue containing the parsed vector, error, or not_provided status
 LayerValue<std::vector<std::string>> parse_string_vector(
     const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
@@ -522,23 +540,21 @@ LayerValue<std::vector<std::string>> parse_string_vector(
     }
 }
 
-/**
- * @brief Attempts to parse a TilesPalMode value from a YAML node.
- *
- * @details
- * Expects a string value that matches one of the valid TilesPalMode YAML strings: "true_color" or "greyscale".
- *
- * @param format The text formatter to use
- * @param node The YAML node to parse
- * @param key The configuration key name (for error messages)
- * @param file_path The YAML file path (for source info)
- * @return LayerValue containing the parsed value, error, or not_provided status
- */
-LayerValue<TilesPalMode> parse_tiles_pal_mode(
+/// @brief Attempts to parse a TilesPaletteMode value from a YAML node.
+///
+/// @details
+/// Expects a string value that matches one of the valid TilesPaletteMode YAML strings: "true_color" or "greyscale".
+///
+/// @param format The text formatter to use
+/// @param node The YAML node to parse
+/// @param key The configuration key name (for error messages)
+/// @param file_path The YAML file path (for source info)
+/// @return LayerValue containing the parsed value, error, or not_provided status
+LayerValue<TilesPaletteMode> parse_tiles_palette_mode(
     const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
     if (!node.IsDefined()) {
-        return LayerValue<TilesPalMode>::not_provided();
+        return LayerValue<TilesPaletteMode>::not_provided();
     }
 
     try {
@@ -546,23 +562,23 @@ LayerValue<TilesPalMode> parse_tiles_pal_mode(
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         const auto node_value = node.as<std::string>();
-        const auto mode_opt = tiles_pal_mode_from_str(node_value);
+        const auto mode_opt = tiles_palette_mode_from_str(node_value);
 
         if (!mode_opt.has_value()) {
             const auto error = format->format(
                 "'{}' has invalid value '{}'", FormatParam{key, Style::bold}, FormatParam{node_value, Style::bold});
-            return LayerValue<TilesPalMode>::invalid(error, source, details);
+            return LayerValue<TilesPaletteMode>::invalid(error, source, details);
         }
 
-        return LayerValue<TilesPalMode>::valid(mode_opt.value(), key, source, details);
+        return LayerValue<TilesPaletteMode>::valid(mode_opt.value(), key, source, details);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
         const auto error =
-            format->format("Failed to parse '{}' as TilesPalMode: {}", FormatParam{key, Style::bold}, e.what());
+            format->format("Failed to parse '{}' as TilesPaletteMode: {}", FormatParam{key, Style::bold}, e.what());
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
-        return LayerValue<TilesPalMode>::invalid(error, source, details);
+        return LayerValue<TilesPaletteMode>::invalid(error, source, details);
     }
 }
 
@@ -598,11 +614,11 @@ LayerValue<ArtifactEditMode> parse_artifact_edit_mode(
     }
 }
 
-LayerValue<AnimPalResolutionStrategy> parse_anim_pal_resolution_strategy(
+LayerValue<AnimPaletteResolutionStrategy> parse_anim_palette_resolution_strategy(
     const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
     if (!node.IsDefined()) {
-        return LayerValue<AnimPalResolutionStrategy>::not_provided();
+        return LayerValue<AnimPaletteResolutionStrategy>::not_provided();
     }
 
     try {
@@ -610,23 +626,23 @@ LayerValue<AnimPalResolutionStrategy> parse_anim_pal_resolution_strategy(
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         const auto node_value = node.as<std::string>();
-        const auto mode_opt = anim_pal_resolution_strategy_from_str(node_value);
+        const auto mode_opt = anim_palette_resolution_strategy_from_str(node_value);
 
         if (!mode_opt.has_value()) {
             const auto error = format->format(
                 "'{}' has invalid value '{}'", FormatParam{key, Style::bold}, FormatParam{node_value, Style::bold});
-            return LayerValue<AnimPalResolutionStrategy>::invalid(error, source, details);
+            return LayerValue<AnimPaletteResolutionStrategy>::invalid(error, source, details);
         }
 
-        return LayerValue<AnimPalResolutionStrategy>::valid(mode_opt.value(), key, source, details);
+        return LayerValue<AnimPaletteResolutionStrategy>::valid(mode_opt.value(), key, source, details);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
         const auto error = format->format(
-            "Failed to parse '{}' as AnimPalResolutionStrategy: {}", FormatParam{key, Style::bold}, e.what());
+            "Failed to parse '{}' as AnimPaletteResolutionStrategy: {}", FormatParam{key, Style::bold}, e.what());
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
-        return LayerValue<AnimPalResolutionStrategy>::invalid(error, source, details);
+        return LayerValue<AnimPaletteResolutionStrategy>::invalid(error, source, details);
     }
 }
 
@@ -695,7 +711,7 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
             if (anim_node["palette_resolution_strategy"].IsDefined()) {
                 const auto &strategy_node = anim_node["palette_resolution_strategy"];
                 const auto strategy_str = strategy_node.as<std::string>();
-                const auto strategy_opt = anim_pal_resolution_strategy_from_str(strategy_str);
+                const auto strategy_opt = anim_palette_resolution_strategy_from_str(strategy_str);
                 if (!strategy_opt.has_value()) {
                     const auto strategy_mark = strategy_node.Mark();
                     const auto strategy_source = make_source_string(format, file_path, strategy_mark);
@@ -707,13 +723,13 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                         FormatParam{strategy_str, Style::bold});
                     return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
                 }
-                const auto pal_mark = strategy_node.Mark();
-                anim_config.pal_resolution_strategy = ConfigPODField{
+                const auto palette_mark = strategy_node.Mark();
+                anim_config.palette_resolution_strategy = ConfigPODField{
                     strategy_opt.value(),
                     key + "." + anim_name + ".palette_resolution_strategy",
                     "Animation Config (" + anim_name + ") per-anim strategy",
-                    make_source_string(format, file_path, pal_mark),
-                    make_source_details(format, file_path, pal_mark)};
+                    make_source_string(format, file_path, palette_mark),
+                    make_source_details(format, file_path, palette_mark)};
             }
 
             // Parse key_frame_resolution_strategy (optional scalar — per-anim override)
@@ -745,7 +761,7 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
             if (anim_node["multi_palette_subtile_resolution_strategy"].IsDefined()) {
                 const auto &strategy_node = anim_node["multi_palette_subtile_resolution_strategy"];
                 const auto strategy_str = strategy_node.as<std::string>();
-                const auto strategy_opt = anim_multi_pal_subtile_resolution_strategy_from_str(strategy_str);
+                const auto strategy_opt = anim_multi_palette_subtile_resolution_strategy_from_str(strategy_str);
                 if (!strategy_opt.has_value()) {
                     const auto strategy_mark = strategy_node.Mark();
                     const auto strategy_source = make_source_string(format, file_path, strategy_mark);
@@ -758,7 +774,7 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                     return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
                 }
                 const auto mps_mark = strategy_node.Mark();
-                anim_config.multi_pal_subtile_resolution_strategy = ConfigPODField{
+                anim_config.multi_palette_subtile_resolution_strategy = ConfigPODField{
                     strategy_opt.value(),
                     key + "." + anim_name + ".multi_palette_subtile_resolution_strategy",
                     "Animation Config (" + anim_name + ") multi_palette_subtile_resolution_strategy",
@@ -783,10 +799,10 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                 for (std::size_t i = 0; i < strategies_node.size(); ++i) {
                     const auto strategy_str = strategies_node[i].as<std::string>();
                     if (strategy_str == "_") {
-                        anim_config.per_tile_pal_resolution_strategies.emplace_back();
+                        anim_config.per_tile_palette_resolution_strategies.emplace_back();
                     }
                     else {
-                        const auto strategy_opt = anim_pal_resolution_strategy_from_str(strategy_str);
+                        const auto strategy_opt = anim_palette_resolution_strategy_from_str(strategy_str);
                         if (!strategy_opt.has_value()) {
                             const auto strategy_mark = strategies_node[i].Mark();
                             const auto strategy_source = make_source_string(format, file_path, strategy_mark);
@@ -801,7 +817,7 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
                             return LayerValue<PerAnimOverrides>::invalid(error, strategy_source, strategy_details);
                         }
                         const auto tile_mark = strategies_node[i].Mark();
-                        anim_config.per_tile_pal_resolution_strategies.push_back(
+                        anim_config.per_tile_palette_resolution_strategies.push_back(
                             ConfigPODField{
                                 strategy_opt.value(),
                                 key + "." + anim_name + ".per_tile_palette_resolution_strategies[" + std::to_string(i) +
@@ -825,6 +841,509 @@ LayerValue<PerAnimOverrides> parse_per_anim_overrides(
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<PerAnimOverrides>::invalid(error, source, details);
+    }
+}
+
+// Parses a mask scalar written as a string so hexadecimal (0x...), decimal, and octal literals all parse regardless of
+// yaml-cpp's numeric handling. Returns nullopt on any parse or 32-bit range failure.
+[[nodiscard]] std::optional<std::uint32_t> parse_mask_scalar(const std::string &text)
+{
+    try {
+        std::size_t consumed = 0;
+        const unsigned long parsed = std::stoul(text, &consumed, 0);
+        if (consumed != text.size() || parsed > 0xFFFFFFFFUL) {
+            return std::nullopt;
+        }
+        return static_cast<std::uint32_t>(parsed);
+    }
+    catch (const std::exception &) {
+        return std::nullopt;
+    }
+}
+
+// Accepts both the underscore and hyphen spellings of the header-format enum names.
+[[nodiscard]] std::optional<HeaderFormat> header_format_from_config_str(const std::string &text)
+{
+    if (text == "enums_only" || text == "enums-only") {
+        return HeaderFormat::enums_only;
+    }
+    if (text == "defines_only" || text == "defines-only") {
+        return HeaderFormat::defines_only;
+    }
+    if (text == "either") {
+        return HeaderFormat::either;
+    }
+    return std::nullopt;
+}
+
+// Role-name matching lives in one place (field_role_from_string next to the FieldRole enum); this thin wrapper keeps
+// the parse-layer call sites reading naturally. Unknown role names are rejected at the parse layer.
+[[nodiscard]] std::optional<FieldRole> field_role_from_config_str(const std::string &text)
+{
+    return field_role_from_string(text);
+}
+
+// Returns the first key of a YAML map that is not in the allowed set, or nullopt if all keys are known. Sequence
+// children of config values bypass the global unknown-key validator, so field/override entries police their own keys.
+[[nodiscard]] std::optional<std::string>
+first_unknown_key(const YAML::Node &map_node, const std::unordered_set<std::string> &allowed)
+{
+    for (const auto &kv : map_node) {
+        const auto member = kv.first.as<std::string>();
+        if (!allowed.contains(member)) {
+            return member;
+        }
+    }
+    return std::nullopt;
+}
+
+LayerValue<MetatileAttributeFieldDefinitions> parse_metatile_attribute_fields(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<MetatileAttributeFieldDefinitions>::not_provided();
+    }
+
+    try {
+        const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+
+        if (!node.IsSequence()) {
+            return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
+                format->format("'{}' must be a sequence of field definitions.", FormatParam{key, Style::bold}),
+                source,
+                details);
+        }
+
+        const std::unordered_set<std::string> field_keys{"name", "mask", "default", "provider", "role"};
+        const std::unordered_set<std::string> provider_keys{"header", "prefix", "skipped", "format"};
+
+        MetatileAttributeFieldDefinitions definitions;
+        for (std::size_t i = 0; i < node.size(); ++i) {
+            const auto &field_node = node[i];
+            const auto field_mark = field_node.Mark();
+            const auto field_source = make_source_string(format, file_path, field_mark);
+            const auto field_details = make_source_details(format, file_path, field_mark);
+
+            if (!field_node.IsMap()) {
+                return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
+                    format->format("'{}[{}]' must be a map.", FormatParam{key, Style::bold}, FormatParam{i}),
+                    field_source,
+                    field_details);
+            }
+            if (auto unknown = first_unknown_key(field_node, field_keys); unknown.has_value()) {
+                return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
+                    format->format(
+                        "'{}[{}]' has unknown key '{}'.",
+                        FormatParam{key, Style::bold},
+                        FormatParam{i},
+                        FormatParam{unknown.value(), Style::bold}),
+                    field_source,
+                    field_details);
+            }
+
+            MetatileAttributeFieldDefinition definition;
+            const auto name_node = field_node["name"];
+            if (!name_node.IsDefined()) {
+                return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
+                    format->format(
+                        "'{}[{}]' is missing required 'name' field.", FormatParam{key, Style::bold}, FormatParam{i}),
+                    field_source,
+                    field_details);
+            }
+            definition.name = name_node.as<std::string>();
+
+            for (const auto &[member, target] :
+                 std::initializer_list<std::pair<const char *, std::optional<std::uint32_t> *>>{
+                     {"mask", &definition.mask}, {"default", &definition.default_value}}) {
+                if (field_node[member].IsDefined()) {
+                    const auto text = field_node[member].as<std::string>();
+                    const auto parsed = parse_mask_scalar(text);
+                    if (!parsed.has_value()) {
+                        return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
+                            format->format(
+                                "'{}[{}].{}' is not a valid 32-bit integer: '{}'.",
+                                FormatParam{key, Style::bold},
+                                FormatParam{i},
+                                FormatParam{member, Style::bold},
+                                FormatParam{text, Style::bold}),
+                            field_source,
+                            field_details);
+                    }
+                    *target = parsed;
+                }
+            }
+
+            if (field_node["provider"].IsDefined()) {
+                const auto &provider_node = field_node["provider"];
+                if (!provider_node.IsMap()) {
+                    return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
+                        format->format(
+                            "'{}[{}].provider' must be a map.", FormatParam{key, Style::bold}, FormatParam{i}),
+                        field_source,
+                        field_details);
+                }
+                if (auto unknown = first_unknown_key(provider_node, provider_keys); unknown.has_value()) {
+                    return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
+                        format->format(
+                            "'{}[{}].provider' has unknown key '{}'.",
+                            FormatParam{key, Style::bold},
+                            FormatParam{i},
+                            FormatParam{unknown.value(), Style::bold}),
+                        field_source,
+                        field_details);
+                }
+
+                ProviderDefinition provider;
+                if (!provider_node["header"].IsDefined() || !provider_node["prefix"].IsDefined()) {
+                    return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
+                        format->format(
+                            "'{}[{}].provider' requires both 'header' and 'prefix'.",
+                            FormatParam{key, Style::bold},
+                            FormatParam{i}),
+                        field_source,
+                        field_details);
+                }
+                provider.header = provider_node["header"].as<std::string>();
+                provider.prefix = provider_node["prefix"].as<std::string>();
+                if (provider_node["skipped"].IsDefined()) {
+                    if (!provider_node["skipped"].IsSequence()) {
+                        return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
+                            format->format(
+                                "'{}[{}].provider.skipped' must be a sequence.",
+                                FormatParam{key, Style::bold},
+                                FormatParam{i}),
+                            field_source,
+                            field_details);
+                    }
+                    for (std::size_t j = 0; j < provider_node["skipped"].size(); ++j) {
+                        provider.skipped.insert(provider_node["skipped"][j].as<std::string>());
+                    }
+                }
+                if (provider_node["format"].IsDefined()) {
+                    const auto fmt_str = provider_node["format"].as<std::string>();
+                    const auto fmt = header_format_from_config_str(fmt_str);
+                    if (!fmt.has_value()) {
+                        return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
+                            format->format(
+                                "'{}[{}].provider.format' has invalid value '{}'.",
+                                FormatParam{key, Style::bold},
+                                FormatParam{i},
+                                FormatParam{fmt_str, Style::bold}),
+                            field_source,
+                            field_details);
+                    }
+                    provider.format = fmt.value();
+                }
+                definition.provider = std::move(provider);
+            }
+
+            if (field_node["role"].IsDefined() && !field_node["role"].IsNull()) {
+                // `role: null` on a definition is accepted for symmetry with overrides and means the same as omitting
+                // it.
+                const auto role_str = field_node["role"].as<std::string>();
+                const auto role = field_role_from_config_str(role_str);
+                if (!role.has_value()) {
+                    return LayerValue<MetatileAttributeFieldDefinitions>::invalid(
+                        format->format(
+                            "'{}[{}].role' has invalid value '{}'; the only role is 'layer_type'.",
+                            FormatParam{key, Style::bold},
+                            FormatParam{i},
+                            FormatParam{role_str, Style::bold}),
+                        field_source,
+                        field_details);
+                }
+                definition.role = role;
+            }
+
+            definitions.push_back(std::move(definition));
+        }
+
+        return LayerValue<MetatileAttributeFieldDefinitions>::valid(std::move(definitions), key, source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error = format->format(
+            "Failed to parse '{}' as metatile attribute fields: {}.", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<MetatileAttributeFieldDefinitions>::invalid(error, source, details);
+    }
+}
+
+LayerValue<MetatileAttributeFieldOverrides> parse_metatile_attribute_field_overrides(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<MetatileAttributeFieldOverrides>::not_provided();
+    }
+
+    try {
+        const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+
+        if (!node.IsMap()) {
+            return LayerValue<MetatileAttributeFieldOverrides>::invalid(
+                format->format("'{}' must be a map of field names to overrides.", FormatParam{key, Style::bold}),
+                source,
+                details);
+        }
+
+        const std::unordered_set<std::string> override_keys{"mask", "default", "provider", "role"};
+        const std::unordered_set<std::string> provider_keys{"header", "prefix", "skipped", "format"};
+
+        MetatileAttributeFieldOverrides overrides;
+        for (const auto &kv : node) {
+            const auto field_name = kv.first.as<std::string>();
+            const auto &override_node = kv.second;
+            const auto field_mark = kv.first.Mark();
+            const auto field_source = make_source_string(format, file_path, field_mark);
+            const auto field_details = make_source_details(format, file_path, field_mark);
+
+            if (!override_node.IsMap()) {
+                return LayerValue<MetatileAttributeFieldOverrides>::invalid(
+                    format->format(
+                        "'{}' override for '{}' must be a map.",
+                        FormatParam{key, Style::bold},
+                        FormatParam{field_name, Style::bold}),
+                    field_source,
+                    field_details);
+            }
+            if (auto unknown = first_unknown_key(override_node, override_keys); unknown.has_value()) {
+                return LayerValue<MetatileAttributeFieldOverrides>::invalid(
+                    format->format(
+                        "'{}' override for '{}' has unknown key '{}'.",
+                        FormatParam{key, Style::bold},
+                        FormatParam{field_name, Style::bold},
+                        FormatParam{unknown.value(), Style::bold}),
+                    field_source,
+                    field_details);
+            }
+
+            MetatileAttributeFieldOverride override_value;
+            for (const auto &[member, target] :
+                 std::initializer_list<std::pair<const char *, std::optional<std::uint32_t> *>>{
+                     {"mask", &override_value.mask}, {"default", &override_value.default_value}}) {
+                if (override_node[member].IsDefined()) {
+                    const auto text = override_node[member].as<std::string>();
+                    const auto parsed = parse_mask_scalar(text);
+                    if (!parsed.has_value()) {
+                        return LayerValue<MetatileAttributeFieldOverrides>::invalid(
+                            format->format(
+                                "'{}' override for '{}' has invalid '{}': '{}'.",
+                                FormatParam{key, Style::bold},
+                                FormatParam{field_name, Style::bold},
+                                FormatParam{member, Style::bold},
+                                FormatParam{text, Style::bold}),
+                            field_source,
+                            field_details);
+                    }
+                    *target = parsed;
+                }
+            }
+
+            if (override_node["provider"].IsDefined()) {
+                const auto &provider_node = override_node["provider"];
+                ProviderDefinitionOverride provider_override;
+                if (provider_node.IsNull()) {
+                    // `provider: null` removes the provider entirely, turning the field into a raw field.
+                    provider_override.remove = true;
+                }
+                else if (provider_node.IsMap()) {
+                    if (auto unknown = first_unknown_key(provider_node, provider_keys); unknown.has_value()) {
+                        return LayerValue<MetatileAttributeFieldOverrides>::invalid(
+                            format->format(
+                                "'{}' override for '{}' has unknown provider key '{}'.",
+                                FormatParam{key, Style::bold},
+                                FormatParam{field_name, Style::bold},
+                                FormatParam{unknown.value(), Style::bold}),
+                            field_source,
+                            field_details);
+                    }
+                    if (provider_node["header"].IsDefined()) {
+                        provider_override.header = provider_node["header"].as<std::string>();
+                    }
+                    if (provider_node["prefix"].IsDefined()) {
+                        provider_override.prefix = provider_node["prefix"].as<std::string>();
+                    }
+                    if (provider_node["skipped"].IsDefined()) {
+                        if (!provider_node["skipped"].IsSequence()) {
+                            return LayerValue<MetatileAttributeFieldOverrides>::invalid(
+                                format->format(
+                                    "'{}' override for '{}' provider.skipped must be a sequence.",
+                                    FormatParam{key, Style::bold},
+                                    FormatParam{field_name, Style::bold}),
+                                field_source,
+                                field_details);
+                        }
+                        std::unordered_set<std::string> skipped;
+                        for (std::size_t j = 0; j < provider_node["skipped"].size(); ++j) {
+                            skipped.insert(provider_node["skipped"][j].as<std::string>());
+                        }
+                        provider_override.skipped = std::move(skipped);
+                    }
+                    if (provider_node["format"].IsDefined()) {
+                        const auto fmt_str = provider_node["format"].as<std::string>();
+                        const auto fmt = header_format_from_config_str(fmt_str);
+                        if (!fmt.has_value()) {
+                            return LayerValue<MetatileAttributeFieldOverrides>::invalid(
+                                format->format(
+                                    "'{}' override for '{}' provider.format has invalid value '{}'.",
+                                    FormatParam{key, Style::bold},
+                                    FormatParam{field_name, Style::bold},
+                                    FormatParam{fmt_str, Style::bold}),
+                                field_source,
+                                field_details);
+                        }
+                        provider_override.format = fmt.value();
+                    }
+                }
+                else {
+                    return LayerValue<MetatileAttributeFieldOverrides>::invalid(
+                        format->format(
+                            "'{}' override for '{}' provider must be a map or null.",
+                            FormatParam{key, Style::bold},
+                            FormatParam{field_name, Style::bold}),
+                        field_source,
+                        field_details);
+                }
+                override_value.provider = std::move(provider_override);
+            }
+
+            if (override_node["role"].IsDefined()) {
+                const auto &role_node = override_node["role"];
+                if (role_node.IsNull()) {
+                    // `role: null` clears the baseline field's role.
+                    override_value.role = std::optional<FieldRole>{std::nullopt};
+                }
+                else {
+                    const auto role_str = role_node.as<std::string>();
+                    const auto role = field_role_from_config_str(role_str);
+                    if (!role.has_value()) {
+                        return LayerValue<MetatileAttributeFieldOverrides>::invalid(
+                            format->format(
+                                "'{}' override for '{}' has invalid 'role' value '{}'; the only role is "
+                                "'layer_type'.",
+                                FormatParam{key, Style::bold},
+                                FormatParam{field_name, Style::bold},
+                                FormatParam{role_str, Style::bold}),
+                            field_source,
+                            field_details);
+                    }
+                    override_value.role = role;
+                }
+            }
+
+            overrides[field_name] = std::move(override_value);
+        }
+
+        return LayerValue<MetatileAttributeFieldOverrides>::valid(std::move(overrides), key, source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error = format->format(
+            "Failed to parse '{}' as metatile attribute field overrides: {}.", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<MetatileAttributeFieldOverrides>::invalid(error, source, details);
+    }
+}
+
+LayerValue<RolePinDefinitions> parse_role_pins(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<RolePinDefinitions>::not_provided();
+    }
+
+    try {
+        const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+
+        if (!node.IsSequence()) {
+            return LayerValue<RolePinDefinitions>::invalid(
+                format->format("'{}' must be a sequence of role pin definitions.", FormatParam{key, Style::bold}),
+                source,
+                details);
+        }
+
+        const std::unordered_set<std::string> pin_keys{"role"};
+
+        RolePinDefinitions definitions;
+        // A role may be pinned at most once. That is the only cross-entry rule left: a pin column's header is fixed at
+        // pin_column_name(role), so one role means one column and there is nothing else two entries could collide on.
+        std::unordered_set<std::string> seen_roles;
+        for (std::size_t i = 0; i < node.size(); ++i) {
+            const auto &pin_node = node[i];
+            const auto pin_mark = pin_node.Mark();
+            const auto pin_source = make_source_string(format, file_path, pin_mark);
+            const auto pin_details = make_source_details(format, file_path, pin_mark);
+
+            if (!pin_node.IsMap()) {
+                return LayerValue<RolePinDefinitions>::invalid(
+                    format->format("'{}[{}]' must be a map.", FormatParam{key, Style::bold}, FormatParam{i}),
+                    pin_source,
+                    pin_details);
+            }
+            if (auto unknown = first_unknown_key(pin_node, pin_keys); unknown.has_value()) {
+                return LayerValue<RolePinDefinitions>::invalid(
+                    format->format(
+                        "'{}[{}]' has unknown key '{}'.",
+                        FormatParam{key, Style::bold},
+                        FormatParam{i},
+                        FormatParam{unknown.value(), Style::bold}),
+                    pin_source,
+                    pin_details);
+            }
+
+            const auto role_node = pin_node["role"];
+            if (!role_node.IsDefined()) {
+                return LayerValue<RolePinDefinitions>::invalid(
+                    format->format(
+                        "'{}[{}]' is missing required 'role' field.", FormatParam{key, Style::bold}, FormatParam{i}),
+                    pin_source,
+                    pin_details);
+            }
+            const auto role_str = role_node.as<std::string>();
+            const auto role = field_role_from_config_str(role_str);
+            if (!role.has_value()) {
+                return LayerValue<RolePinDefinitions>::invalid(
+                    format->format(
+                        "'{}[{}].role' has invalid value '{}'; the only role is 'layer_type'.",
+                        FormatParam{key, Style::bold},
+                        FormatParam{i},
+                        FormatParam{role_str, Style::bold}),
+                    pin_source,
+                    pin_details);
+            }
+            if (!seen_roles.insert(role_str).second) {
+                return LayerValue<RolePinDefinitions>::invalid(
+                    format->format(
+                        "'{}[{}]' repeats role '{}'; each role may be pinned at most once.",
+                        FormatParam{key, Style::bold},
+                        FormatParam{i},
+                        FormatParam{role_str, Style::bold}),
+                    pin_source,
+                    pin_details);
+            }
+
+            RolePinDefinition definition;
+            definition.role = role.value();
+            definitions.push_back(definition);
+        }
+
+        return LayerValue<RolePinDefinitions>::valid(std::move(definitions), key, source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error =
+            format->format("Failed to parse '{}' as role pins: {}.", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<RolePinDefinitions>::invalid(error, source, details);
     }
 }
 
@@ -860,11 +1379,11 @@ LayerValue<AnimKeyFrameResolutionStrategy> parse_anim_key_frame_resolution_strat
     }
 }
 
-LayerValue<AnimMultiPalSubtileResolutionStrategy> parse_anim_multi_pal_subtile_resolution_strategy(
+LayerValue<AnimMultiPaletteSubtileResolutionStrategy> parse_anim_multi_palette_subtile_resolution_strategy(
     const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
 {
     if (!node.IsDefined()) {
-        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::not_provided();
+        return LayerValue<AnimMultiPaletteSubtileResolutionStrategy>::not_provided();
     }
 
     try {
@@ -872,25 +1391,25 @@ LayerValue<AnimMultiPalSubtileResolutionStrategy> parse_anim_multi_pal_subtile_r
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         const auto node_value = node.as<std::string>();
-        const auto mode_opt = anim_multi_pal_subtile_resolution_strategy_from_str(node_value);
+        const auto mode_opt = anim_multi_palette_subtile_resolution_strategy_from_str(node_value);
 
         if (!mode_opt.has_value()) {
             const auto error = format->format(
                 "'{}' has invalid value '{}'.", FormatParam{key, Style::bold}, FormatParam{node_value, Style::bold});
-            return LayerValue<AnimMultiPalSubtileResolutionStrategy>::invalid(error, source, details);
+            return LayerValue<AnimMultiPaletteSubtileResolutionStrategy>::invalid(error, source, details);
         }
 
-        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::valid(mode_opt.value(), key, source, details);
+        return LayerValue<AnimMultiPaletteSubtileResolutionStrategy>::valid(mode_opt.value(), key, source, details);
     }
     catch (const YAML::Exception &e) {
         const auto mark = node.Mark();
         const auto error = format->format(
-            "Failed to parse '{}' as AnimMultiPalSubtileResolutionStrategy: {}.",
+            "Failed to parse '{}' as AnimMultiPaletteSubtileResolutionStrategy: {}.",
             FormatParam{key, Style::bold},
             e.what());
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
-        return LayerValue<AnimMultiPalSubtileResolutionStrategy>::invalid(error, source, details);
+        return LayerValue<AnimMultiPaletteSubtileResolutionStrategy>::invalid(error, source, details);
     }
 }
 
@@ -1217,20 +1736,18 @@ LayerValue<PackingStrategyParams> parse_packing_strategy_params(
     }
 }
 
-/**
- * @brief Attempts to load a YAML file and add it to the cache.
- *
- * @details
- * If the file exists and can be parsed, it is added to the cache and returned. If diagnostics is provided, validates
- * the YAML paths and emits errors for unknown keys. If the file doesn't exist or cannot be parsed, returns
- * std::nullopt. Uses a static cache shared across all YamlFileProvider instances.
- *
- * @param path The path to the YAML file to load
- * @param format Text formatter for styled output (used for validation)
- * @param diagnostics User diagnostics for emitting errors (may be nullptr)
- * @param out_had_unknown_keys Optional output flag set to @c true if unknown keys were found during validation.
- * @return The loaded YAML node, or std::nullopt if the file doesn't exist or cannot be parsed
- */
+/// @brief Attempts to load a YAML file and add it to the cache.
+///
+/// @details
+/// If the file exists and can be parsed, it is added to the cache and returned. If diagnostics is provided, validates
+/// the YAML paths and emits errors for unknown keys. If the file doesn't exist or cannot be parsed, returns
+/// std::nullopt. Uses a static cache shared across all YamlFileProvider instances.
+///
+/// @param path The path to the YAML file to load
+/// @param format Text formatter for styled output (used for validation)
+/// @param diagnostics User diagnostics for emitting errors (may be nullptr)
+/// @param out_had_unknown_keys Optional output flag set to @c true if unknown keys were found during validation.
+/// @return The loaded YAML node, or std::nullopt if the file doesn't exist or cannot be parsed
 std::optional<YAML::Node> load_yaml_file(
     const std::filesystem::path &path,
     const TextFormatter *format = nullptr,
@@ -1277,23 +1794,21 @@ std::optional<YAML::Node> load_yaml_file(
     }
 }
 
-/**
- * @brief Gets the priority-ordered list of config file paths for a given tileset.
- *
- * @details
- * Returns config file paths in priority order (highest to lowest):
- * 1. porytiles/tilesets/{tileset_name}/config.local.yaml (tileset-specific local overrides)
- * 2. porytiles/tilesets/{tileset_name}/config.yaml (tileset-specific config)
- * 3. porytiles/config.local.yaml (project-wide local overrides)
- * 4. porytiles/config.yaml (project-wide defaults)
- *
- * Config files are stored in the centralized Porytiles utility directory rather than
- * within individual tileset folders.
- *
- * @param project_root The project root directory
- * @param tileset The name of the tileset
- * @return Vector of config file paths in priority order
- */
+/// @brief Gets the priority-ordered list of config file paths for a given tileset.
+///
+/// @details
+/// Returns config file paths in priority order (highest to lowest):
+/// 1. porytiles/tilesets/{tileset_name}/config.local.yaml (tileset-specific local overrides)
+/// 2. porytiles/tilesets/{tileset_name}/config.yaml (tileset-specific config)
+/// 3. porytiles/config.local.yaml (project-wide local overrides)
+/// 4. porytiles/config.yaml (project-wide defaults)
+///
+/// Config files are stored in the centralized Porytiles utility directory rather than
+/// within individual tileset folders.
+///
+/// @param project_root The project root directory
+/// @param tileset The name of the tileset
+/// @return Vector of config file paths in priority order
 std::vector<std::filesystem::path>
 get_tileset_config_path_chain(const std::filesystem::path &project_root, const std::string &tileset)
 {
@@ -1318,18 +1833,16 @@ get_tileset_config_path_chain(const std::filesystem::path &project_root, const s
     return paths;
 }
 
-/**
- * @brief Gets the config file path chain for a specific scope in priority order.
- *
- * @details
- * Returns a vector of config file paths that should be searched for config values in priority order from highest to
- * lowest. Dispatches to the appropriate path chain function based on the ConfigScopeType.
- *
- * @param project_root The root directory of the project
- * @param type The configuration scope type (tileset or layout)
- * @param scope The scope name (tileset name or layout name)
- * @return ChainableResult containing vector of config file paths in priority order
- */
+/// @brief Gets the config file path chain for a specific scope in priority order.
+///
+/// @details
+/// Returns a vector of config file paths that should be searched for config values in priority order from highest to
+/// lowest. Dispatches to the appropriate path chain function based on the ConfigScopeType.
+///
+/// @param project_root The root directory of the project
+/// @param type The configuration scope type (tileset or layout)
+/// @param scope The scope name (tileset name or layout name)
+/// @return ChainableResult containing vector of config file paths in priority order
 ChainableResult<std::vector<std::filesystem::path>>
 get_config_path_chain(const std::filesystem::path &project_root, ConfigScopeType type, const std::string &scope)
 {
@@ -1343,21 +1856,19 @@ get_config_path_chain(const std::filesystem::path &project_root, ConfigScopeType
     panic("Invalid ConfigScopeType");
 }
 
-/**
- * @brief Eagerly loads all YAML config files for a given scope and validates them for unknown keys.
- *
- * @details
- * Forces loading and validation of all YAML config files in the priority chain for the given scope.
- * If any files contain unknown configuration keys, errors are emitted via the diagnostics interface
- * and this function returns @c true to indicate the caller should terminate.
- *
- * @param format Text formatter for styled output
- * @param diagnostics User diagnostics for emitting errors
- * @param project_root The root directory of the project
- * @param type The configuration scope type
- * @param scope The scope name (e.g., tileset name)
- * @return @c true if unknown keys were found (caller should terminate), @c false otherwise.
- */
+/// @brief Eagerly loads all YAML config files for a given scope and validates them for unknown keys.
+///
+/// @details
+/// Forces loading and validation of all YAML config files in the priority chain for the given scope.
+/// If any files contain unknown configuration keys, errors are emitted via the diagnostics interface
+/// and this function returns @c true to indicate the caller should terminate.
+///
+/// @param format Text formatter for styled output
+/// @param diagnostics User diagnostics for emitting errors
+/// @param project_root The root directory of the project
+/// @param type The configuration scope type
+/// @param scope The scope name (e.g., tileset name)
+/// @return @c true if unknown keys were found (caller should terminate), @c false otherwise.
 [[nodiscard]] bool preload_and_validate_yaml_files(
     const TextFormatter *format,
     const UserDiagnostics *diagnostics,
@@ -1378,31 +1889,29 @@ get_config_path_chain(const std::filesystem::path &project_root, ConfigScopeType
     return had_unknown_keys;
 }
 
-/**
- * @brief Helper to search for a config value across multiple YAML files in priority order.
- *
- * @details
- * Searches through the provided config file paths in priority order. For each file:
- * - Attempts to load the file (using the load function)
- * - Extracts the node at the specified YAML path
- * - Parses the value using the provided parser function
- * - Returns the first valid value found
- * - Returns an error immediately if parsing fails
- * - Continues to the next file if not_provided
- *
- * @tparam T The type of value to return
- * @tparam LoadFunc Function type for loading YAML files (path -> optional<YAML::Node>)
- * @tparam NodeExtractFunc Function type for extracting node (YAML::Node -> YAML::Node)
- * @tparam ParseFunc Function type for parsing value (format, node, key, path -> LayerValue<T>)
- * @param format The text formatter to use
- * @param paths Config file paths to search in priority order
- * @param load_func Function to load a YAML file
- * @param extract_node_func Function to extract the target node from the YAML doc
- * @param parse_func Function to parse the value from the node
- * @param key The configuration key name (for error messages)
- * @param provider_name The provider-specific name for this value
- * @return The first valid LayerValue found, or not_provided if not found in any file
- */
+/// @brief Helper to search for a config value across multiple YAML files in priority order.
+///
+/// @details
+/// Searches through the provided config file paths in priority order. For each file:
+/// - Attempts to load the file (using the load function)
+/// - Extracts the node at the specified YAML path
+/// - Parses the value using the provided parser function
+/// - Returns the first valid value found
+/// - Returns an error immediately if parsing fails
+/// - Continues to the next file if not_provided
+///
+/// @tparam T The type of value to return
+/// @tparam LoadFunc Function type for loading YAML files (path -> optional<YAML::Node>)
+/// @tparam NodeExtractFunc Function type for extracting node (YAML::Node -> YAML::Node)
+/// @tparam ParseFunc Function type for parsing value (format, node, key, path -> LayerValue<T>)
+/// @param format The text formatter to use
+/// @param paths Config file paths to search in priority order
+/// @param load_func Function to load a YAML file
+/// @param extract_node_func Function to extract the target node from the YAML doc
+/// @param parse_func Function to parse the value from the node
+/// @param key The configuration key name (for error messages)
+/// @param provider_name The provider-specific name for this value
+/// @return The first valid LayerValue found, or not_provided if not found in any file
 template <typename T, typename LoadFunc, typename NodeExtractFunc, typename ParseFunc>
 LayerValue<T> search_config_files(
     const TextFormatter *format,

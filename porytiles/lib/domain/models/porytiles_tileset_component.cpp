@@ -14,7 +14,7 @@ namespace porytiles {
 void PorytilesTilesetComponent::insert_attribute(std::size_t metatile_id, MetatileAttribute attribute)
 {
     if (metatile_attributes_.contains(metatile_id)) {
-        panic("id " + std::to_string(metatile_id) + " already exists in attr map");
+        panic("id " + std::to_string(metatile_id) + " already exists in attribute map");
     }
     metatile_attributes_.insert({metatile_id, std::move(attribute)});
 }
@@ -27,20 +27,32 @@ std::optional<MetatileAttribute> PorytilesTilesetComponent::get_attribute(std::s
     return std::nullopt;
 }
 
-void PorytilesTilesetComponent::set_pal(std::size_t pal_index, Palette<Rgba32, pal::max_size> pal)
+PriorPinColumnState PorytilesTilesetComponent::prior_pin_column_state(FieldRole role) const
 {
-    if (pal_index >= pal::num_pals) {
-        panic(std::format("invalid pal index {}: out of range", pal_index));
-    }
-    pals_[pal_index] = std::move(pal);
+    const auto it = prior_pin_column_states_.find(role);
+    return it != prior_pin_column_states_.end() ? it->second : PriorPinColumnState::no_csv;
 }
 
-const std::optional<Palette<Rgba32, pal::max_size>> &PorytilesTilesetComponent::pal_at(std::size_t pal_index) const
+void PorytilesTilesetComponent::prior_pin_column_state(FieldRole role, PriorPinColumnState state)
 {
-    if (pal_index >= pal::num_pals) {
-        panic(std::format("invalid pal index {}: out of range", pal_index));
+    prior_pin_column_states_[role] = state;
+}
+
+void PorytilesTilesetComponent::set_palette(std::size_t palette_index, Palette<Rgba32, palette::max_size> palette)
+{
+    if (palette_index >= palette::num_palettes) {
+        panic(std::format("invalid palette index {}: out of range", palette_index));
     }
-    return pals_[pal_index];
+    palettes_[palette_index] = std::move(palette);
+}
+
+const std::optional<Palette<Rgba32, palette::max_size>> &
+PorytilesTilesetComponent::palette_at(std::size_t palette_index) const
+{
+    if (palette_index >= palette::num_palettes) {
+        panic(std::format("invalid palette index {}: out of range", palette_index));
+    }
+    return palettes_[palette_index];
 }
 
 bool PorytilesTilesetComponent::is_empty() const

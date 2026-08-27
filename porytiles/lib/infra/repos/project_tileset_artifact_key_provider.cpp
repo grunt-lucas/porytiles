@@ -25,26 +25,24 @@ const std::filesystem::path bottom_png{"bottom.png"};
 const std::filesystem::path middle_png{"middle.png"};
 const std::filesystem::path top_png{"top.png"};
 const std::filesystem::path attributes_csv{"attributes.csv"};
-const std::filesystem::path porytiles_pals{"palettes"};
-const std::filesystem::path porymap_pals{"palettes"};
+const std::filesystem::path porytiles_palettes{"palettes"};
+const std::filesystem::path porymap_palettes{"palettes"};
 const std::filesystem::path anim_json{"anim.json"};
 const std::filesystem::path metatiles_bin{"metatiles.bin"};
-const std::filesystem::path attrs_bin{"metatile_attributes.bin"};
+const std::filesystem::path attributes_bin{"metatile_attributes.bin"};
 const std::filesystem::path tiles_png{"tiles.png"};
 
-/**
- * @brief Scans a directory for subdirectories and validates their names are snake_case.
- *
- * @details
- * Iterates through a directory and collects all subdirectory names. If any subdirectory
- * name is not in valid snake_case format, returns an error with a helpful message.
- * If the directory doesn't exist, returns an empty set (not an error).
- *
- * @param dir_path The directory to scan for subdirectories
- * @param artifact_type Human-readable description for error messages (e.g., "animation", "frame")
- * @param format TextFormatter for styled error messages
- * @return A set of subdirectory names, or error if any name fails snake_case validation
- */
+/// @brief Scans a directory for subdirectories and validates their names are snake_case.
+///
+/// @details
+/// Iterates through a directory and collects all subdirectory names. If any subdirectory
+/// name is not in valid snake_case format, returns an error with a helpful message.
+/// If the directory doesn't exist, returns an empty set (not an error).
+///
+/// @param dir_path The directory to scan for subdirectories
+/// @param artifact_type Human-readable description for error messages (e.g., "animation", "frame")
+/// @param format TextFormatter for styled error messages
+/// @return A set of subdirectory names, or error if any name fails snake_case validation
 [[nodiscard]] ChainableResult<std::set<std::string>> scan_subdirectories(
     const std::filesystem::path &dir_path, const std::string &artifact_type, const TextFormatter *format)
 {
@@ -71,19 +69,17 @@ const std::filesystem::path tiles_png{"tiles.png"};
     return result;
 }
 
-/**
- * @brief Scans a directory for PNG files and validates their names are snake_case.
- *
- * @details
- * Iterates through a directory and collects all PNG file stems (filenames without .png extension).
- * If any file stem is not in valid snake_case format, returns an error with a helpful message.
- * If the directory doesn't exist, returns an empty set (not an error).
- *
- * @param dir_path The directory to scan for PNG files
- * @param artifact_type Human-readable description for error messages (e.g., "frame")
- * @param format TextFormatter for styled error messages
- * @return A set of PNG file stems, or error if any name fails snake_case validation
- */
+/// @brief Scans a directory for PNG files and validates their names are snake_case.
+///
+/// @details
+/// Iterates through a directory and collects all PNG file stems (filenames without .png extension).
+/// If any file stem is not in valid snake_case format, returns an error with a helpful message.
+/// If the directory doesn't exist, returns an empty set (not an error).
+///
+/// @param dir_path The directory to scan for PNG files
+/// @param artifact_type Human-readable description for error messages (e.g., "frame")
+/// @param format TextFormatter for styled error messages
+/// @return A set of PNG file stems, or error if any name fails snake_case validation
 [[nodiscard]] ChainableResult<std::set<std::string>>
 scan_png_files(const std::filesystem::path &dir_path, const std::string &artifact_type, const TextFormatter *format)
 {
@@ -118,9 +114,7 @@ scan_png_files(const std::filesystem::path &dir_path, const std::string &artifac
 
 namespace porytiles {
 
-/*
- * Porymap artifacts
- */
+// Porymap artifacts
 ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_metatiles_bin(const std::string &tileset_name) const
 {
@@ -158,7 +152,7 @@ ProjectTilesetArtifactKeyProvider::key_for_metatile_attributes_bin(const std::st
     auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
     const std::string snake_tileset_dir = extract_tileset_cased_name(tileset_name).to_snake_case();
     std::filesystem::path path =
-        std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_bin / attrs_bin;
+        std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_bin / attributes_bin;
 
     return ArtifactKey{path.string()};
 }
@@ -184,7 +178,7 @@ ChainableResult<ArtifactKey> ProjectTilesetArtifactKeyProvider::key_for_tiles_pn
 }
 
 ChainableResult<ArtifactKey>
-ProjectTilesetArtifactKeyProvider::key_for_porymap_pal_n(const std::string &tileset_name, std::size_t index) const
+ProjectTilesetArtifactKeyProvider::key_for_porymap_palette_n(const std::string &tileset_name, std::size_t index) const
 {
     // Get primary/secondary status of tileset
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -199,7 +193,7 @@ ProjectTilesetArtifactKeyProvider::key_for_porymap_pal_n(const std::string &tile
     auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
     const std::string snake_tileset_dir = extract_tileset_cased_name(tileset_name).to_snake_case();
     std::filesystem::path path = std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_bin /
-                                 porymap_pals / pal_filename(index);
+                                 porymap_palettes / palette_filename(index);
 
     return ArtifactKey{path.string()};
 }
@@ -233,9 +227,7 @@ ProjectTilesetArtifactKeyProvider::key_for_porymap_anim_params(const std::string
     return ArtifactKey{path.string()};
 }
 
-/*
- * Porytiles artifacts
- */
+// Porytiles artifacts
 ChainableResult<ArtifactKey>
 ProjectTilesetArtifactKeyProvider::key_for_bottom_png(const std::string &tileset_name) const
 {
@@ -319,7 +311,7 @@ ProjectTilesetArtifactKeyProvider::key_for_attributes_csv(const std::string &til
 }
 
 ChainableResult<ArtifactKey>
-ProjectTilesetArtifactKeyProvider::key_for_porytiles_pal_n(const std::string &tileset_name, std::size_t index) const
+ProjectTilesetArtifactKeyProvider::key_for_porytiles_palette_n(const std::string &tileset_name, std::size_t index) const
 {
     // Get primary/secondary status of tileset
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -334,7 +326,7 @@ ProjectTilesetArtifactKeyProvider::key_for_porytiles_pal_n(const std::string &ti
     auto base_path = is_secondary ? tileset_paths_secondary_bin : tileset_paths_primary_bin;
     const std::string snake_tileset_dir = extract_tileset_cased_name(tileset_name).to_snake_case();
     std::filesystem::path path = std::filesystem::path{base_path.value()} / snake_tileset_dir / porytiles_src /
-                                 porytiles_pals / pal_filename(index);
+                                 porytiles_palettes / palette_filename(index);
 
     return ArtifactKey{path.string()};
 }

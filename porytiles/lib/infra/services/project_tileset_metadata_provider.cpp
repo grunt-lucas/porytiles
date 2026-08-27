@@ -1,9 +1,12 @@
 #include "porytiles/infra/services/project_tileset_metadata_provider.hpp"
 
+#include <array>
 #include <filesystem>
 #include <map>
+#include <optional>
 #include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "porytiles/infra/models/project_tileset_metadata.hpp"
@@ -17,6 +20,7 @@
 namespace {
 
 using namespace porytiles;
+using namespace porytiles::detail;
 
 const std::filesystem::path headers_rel_path = std::filesystem::path{"src"} / "data" / "tilesets" / "headers.h";
 
@@ -25,20 +29,71 @@ const std::filesystem::path graphics_rel_path = std::filesystem::path{"src"} / "
 const std::filesystem::path metatiles_rel_path = std::filesystem::path{"src"} / "data" / "tilesets" / "metatiles.h";
 const std::filesystem::path src_graphics_rel_path = std::filesystem::path{"src"} / "graphics.c";
 
-/**
- * @brief Ensures tileset metadata has been parsed from headers.h and cached.
- *
- * @details
- * Lazily parses the headers.h file to extract all tileset struct declarations, then immediately converts them into
- * @c ProjectTilesetMetadata objects. The parser types (@c StructInitializerDeclaration) are only used locally within
- * this function and never escape to the header.
- *
- * @param project_root The root directory of the pokeemerald-style project
- * @param metadata_parsed Mutable flag tracking whether metadata has been parsed
- * @param tileset_metadata Mutable cache of parsed tileset metadata
- * @param format Text formatter for styled output
- * @return Success or error result
- */
+/// @brief Classifies whether a single INCBIN variable resolves to at least one usable path.
+[[nodiscard]] std::optional<IncbinResolutionFailure>
+classify_incbin_lookup(const std::map<std::string, IncbinDeclaration> &incbin_vars, const std::string &variable_name)
+{
+    if (!incbin_vars.contains(variable_name)) {
+        return IncbinResolutionFailure::not_found;
+    }
+    if (incbin_vars.at(variable_name).paths().empty()) {
+        return IncbinResolutionFailure::empty_paths;
+    }
+    return std::nullopt;
+}
+
+/// @brief Builds a multi-line error explaining why a tileset's artifact paths could not be resolved.
+///
+/// @details
+/// Lists each failed artifact field with the variable it referenced and the failure reason, then names the source
+/// files that were scanned so the user can locate (or add) the missing declaration.
+[[nodiscard]] FormattableError build_unresolved_artifact_paths_error(
+    const std::string &tileset_name, const std::vector<UnresolvedIncbinVar> &unresolved, const TextFormatter *format)
+{
+    std::vector<std::string> lines;
+
+    lines.push_back(
+        format->format("Could not resolve artifact paths for tileset '{}'.", FormatParam{tileset_name, Style::bold}));
+    lines.emplace_back("");
+    lines.emplace_back("The following INCBIN variable(s) could not be resolved:");
+
+    for (const auto &var : unresolved) {
+        if (var.reason == IncbinResolutionFailure::not_found) {
+            lines.push_back(format->format(
+                "  '{}' (field '{}') was not found in any scanned file.",
+                FormatParam{var.variable_name, Style::bold},
+                FormatParam{var.field_label, Style::bold}));
+        }
+        else {
+            lines.push_back(format->format(
+                "  '{}' (field '{}') was found but declared no INCBIN path.",
+                FormatParam{var.variable_name, Style::bold},
+                FormatParam{var.field_label, Style::bold}));
+        }
+    }
+
+    lines.emplace_back("");
+    lines.push_back(format->format(
+        "Scanned files: '{}', '{}', '{}'.",
+        FormatParam{graphics_rel_path.string(), Style::bold},
+        FormatParam{metatiles_rel_path.string(), Style::bold},
+        FormatParam{src_graphics_rel_path.string(), Style::bold}));
+
+    return FormattableError{std::move(lines)};
+}
+
+/// @brief Ensures tileset metadata has been parsed from headers.h and cached.
+///
+/// @details
+/// Lazily parses the headers.h file to extract all tileset struct declarations, then immediately converts them into
+/// @c ProjectTilesetMetadata objects. The parser types (@c StructInitializerDeclaration) are only used locally within
+/// this function and never escape to the header.
+///
+/// @param project_root The root directory of the pokeemerald-style project
+/// @param metadata_parsed Mutable flag tracking whether metadata has been parsed
+/// @param tileset_metadata Mutable cache of parsed tileset metadata
+/// @param format Text formatter for styled output
+/// @return Success or error result
 [[nodiscard]] ChainableResult<void> ensure_metadata_parsed(
     const std::filesystem::path &project_root,
     bool &metadata_parsed,
@@ -96,28 +151,28 @@ const std::filesystem::path src_graphics_rel_path = std::filesystem::path{"src"}
     return {};
 }
 
-/**
- * @brief Ensures artifact paths have been resolved for all tilesets and cached.
- *
- * @details
- * Lazily parses INCBIN declarations from graphics.h, metatiles.h, and src/graphics.c, then resolves paths for each
- * tileset in the metadata cache. The parser types (@c IncbinDeclaration) are only used locally within this function
- * and never escape to the header. Tilesets with unresolvable paths are silently skipped.
- *
- * @param project_root The root directory of the pokeemerald-style project
- * @param metadata_parsed Mutable flag tracking whether metadata has been parsed
- * @param tileset_metadata Mutable cache of parsed tileset metadata (must be populated first)
- * @param artifact_paths_parsed Mutable flag tracking whether artifact paths have been resolved
- * @param tileset_artifact_paths Mutable cache of resolved artifact paths
- * @param format Text formatter for styled output
- * @return Success or error result
- */
+/// @brief Ensures artifact paths have been resolved for all tilesets and cached.
+///
+/// @details
+/// Lazily parses INCBIN declarations from graphics.h, metatiles.h, and src/graphics.c, then resolves paths for each
+/// tileset in the metadata cache. The parser types (@c IncbinDeclaration) are only used locally within this function
+/// and never escape to the header. Tilesets with unresolvable paths are silently skipped.
+///
+/// @param project_root The root directory of the pokeemerald-style project
+/// @param metadata_parsed Mutable flag tracking whether metadata has been parsed
+/// @param tileset_metadata Mutable cache of parsed tileset metadata (must be populated first)
+/// @param artifact_paths_parsed Mutable flag tracking whether artifact paths have been resolved
+/// @param tileset_artifact_paths Mutable cache of resolved artifact paths
+/// @param tileset_unresolved_vars Mutable record of per-tileset artifact fields that failed INCBIN resolution
+/// @param format Text formatter for styled output
+/// @return Success or error result
 [[nodiscard]] ChainableResult<void> ensure_artifact_paths_parsed(
     const std::filesystem::path &project_root,
     bool &metadata_parsed,
     std::map<std::string, ProjectTilesetMetadata> &tileset_metadata,
     bool &artifact_paths_parsed,
     std::map<std::string, ProjectTilesetArtifactPaths> &tileset_artifact_paths,
+    std::map<std::string, std::vector<UnresolvedIncbinVar>> &tileset_unresolved_vars,
     const TextFormatter *format)
 {
     if (artifact_paths_parsed) {
@@ -168,36 +223,47 @@ const std::filesystem::path src_graphics_rel_path = std::filesystem::path{"src"}
         incbin_vars.emplace(incbin.variable_name(), std::move(incbin));
     }
 
-    // Resolve paths per-tileset
+    // Resolve paths per-tileset, classifying each of the four artifact fields independently so that a failure can be
+    // reported with the exact field, variable, and reason for failure
     for (const auto &[tileset_name, metadata] : tileset_metadata) {
-        auto tiles_it = incbin_vars.find(metadata.tiles_var());
-        auto palettes_it = incbin_vars.find(metadata.palettes_var());
-        auto metatiles_it = incbin_vars.find(metadata.metatiles_var());
-        auto attrs_it = incbin_vars.find(metadata.metatile_attributes_var());
+        const std::array<std::pair<std::string, std::string>, 4> fields{{
+            {"tiles", metadata.tiles_var()},
+            {"palettes", metadata.palettes_var()},
+            {"metatiles", metadata.metatiles_var()},
+            {"metatileAttributes", metadata.metatile_attributes_var()},
+        }};
 
-        if (tiles_it == incbin_vars.end() || palettes_it == incbin_vars.end() || metatiles_it == incbin_vars.end() ||
-            attrs_it == incbin_vars.end()) {
+        std::vector<UnresolvedIncbinVar> unresolved;
+        for (const auto &[field_label, variable_name] : fields) {
+            auto failure = classify_incbin_lookup(incbin_vars, variable_name);
+            if (failure.has_value()) {
+                unresolved.push_back(UnresolvedIncbinVar{field_label, variable_name, failure.value()});
+            }
+        }
+
+        if (!unresolved.empty()) {
+            tileset_unresolved_vars.emplace(tileset_name, std::move(unresolved));
             continue;
         }
 
-        if (tiles_it->second.paths().empty() || palettes_it->second.paths().empty() ||
-            metatiles_it->second.paths().empty() || attrs_it->second.paths().empty()) {
-            continue;
-        }
+        const auto &tiles_incbin = incbin_vars.at(metadata.tiles_var());
+        const auto &palettes_incbin = incbin_vars.at(metadata.palettes_var());
+        const auto &metatiles_incbin = incbin_vars.at(metadata.metatiles_var());
+        const auto &attributes_incbin = incbin_vars.at(metadata.metatile_attributes_var());
 
         std::vector<std::filesystem::path> palette_paths;
-        palette_paths.reserve(palettes_it->second.paths().size());
-        for (const auto &path_str : palettes_it->second.paths()) {
+        palette_paths.reserve(palettes_incbin.paths().size());
+        for (const auto &path_str : palettes_incbin.paths()) {
             palette_paths.emplace_back(path_str);
         }
 
         tileset_artifact_paths.emplace(
             tileset_name,
             ProjectTilesetArtifactPaths{
-                std::filesystem::path{tiles_it->second.paths().front()},
+                std::filesystem::path{tiles_incbin.paths().front()},
                 std::move(palette_paths),
-                std::filesystem::path{metatiles_it->second.paths().front()},
-                std::filesystem::path{attrs_it->second.paths().front()}});
+                std::filesystem::path{metatiles_incbin.paths().front()},
+                std::filesystem::path{attributes_incbin.paths().front()}});
     }
 
     artifact_paths_parsed = true;
@@ -266,11 +332,16 @@ ProjectTilesetMetadataProvider::artifact_paths_for(const std::string &tileset_na
             tileset_metadata_,
             artifact_paths_parsed_,
             tileset_artifact_paths_,
+            tileset_unresolved_vars_,
             format_),
         ProjectTilesetArtifactPaths,
         format_->format("Failed to get artifact paths for tileset '{}'.", FormatParam{tileset_name, Style::bold}));
 
     if (!tileset_artifact_paths_.contains(tileset_name)) {
+        if (tileset_unresolved_vars_.contains(tileset_name)) {
+            return build_unresolved_artifact_paths_error(
+                tileset_name, tileset_unresolved_vars_.at(tileset_name), format_);
+        }
         return FormattableError{format_->format(
             "Could not resolve artifact paths for tileset '{}'.", FormatParam{tileset_name, Style::bold})};
     }
@@ -284,6 +355,7 @@ void ProjectTilesetMetadataProvider::invalidate_metadata_cache() const
     tileset_metadata_.clear();
     artifact_paths_parsed_ = false;
     tileset_artifact_paths_.clear();
+    tileset_unresolved_vars_.clear();
 }
 
 } // namespace porytiles

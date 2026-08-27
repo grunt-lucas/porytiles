@@ -1,0 +1,44 @@
+/**
+ * \mainpage Porytiles API Reference
+ *
+ * This is the C++ library API reference for Porytiles, an overworld
+ * tileset compiler for Pokémon Generation III decompilation projects. It is
+ * generated from the source and is aimed at contributors working within the
+ * codebase.
+ *
+ * If you arrived here while looking for something else:
+ * - **Using the `porytiles` command line tool** → [User documentation](https://grunt-lucas.github.io/porytiles-user-docs/)
+ * - **Building, contributing, architecture, developer guides** → [Developer documentation](https://grunt-lucas.github.io/porytiles-dev-docs/)
+ *
+ * \section arch Architecture at a glance
+ *
+ * The library follows a domain-driven layering. Each layer is a top-level
+ * directory under `porytiles/include/porytiles/` (the project uses a single
+ * flat `porytiles` namespace, so the layering is expressed by directory, not
+ * by namespace):
+ *
+ * - **`domain/`** — pure business logic: the tileset/metatile/palette model and
+ *   the compile algorithms. No I/O, no external-library dependencies.
+ * - **`app/`** — user-facing use cases and workflows (e.g. compiling and
+ *   creating tilesets) plus the configuration system that drives them.
+ * - **`infra/`** — I/O and integration with external systems and libraries
+ *   (reading RGBA/indexed PNGs, writing Porymap-ready binaries).
+ * - **`xcut/`** — cross-cutting concerns: errors, diagnostics, config, and
+ *   dependency injection.
+ * - **`utilities/`** — generic, dependency-free helpers.
+ *
+ * Dependencies point in one direction, each arrow is a "depends-on" relationship:
+ * `utilities` <- `xcut` <- `domain` <- `app` and `infra`
+ * 
+ * Note: the `infra` and `app` layers depend on `domain` without depending on each other.
+ *
+ * \section start Where to start reading
+ *
+ * - The use cases in `app/use_cases/` are the application entry points -
+ *   `compile_primary_tileset.hpp` is a great first place to look.
+ * - The CLI tool that wires these together lives in
+ *   `porytiles/tools/driver/` (`main.cpp` plus the `command_*` handlers) - each `Command` class in this directory acts as its own composition root
+ *
+ * Browse the **Namespaces**, **Classes**, and **Files** tabs above for the
+ * full reference.
+ */

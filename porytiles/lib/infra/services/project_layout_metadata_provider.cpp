@@ -19,22 +19,20 @@ using namespace porytiles;
 
 const std::filesystem::path layouts_json_rel_path = std::filesystem::path{"data"} / "layouts" / "layouts.json";
 
-/**
- * @brief Ensures layout metadata has been parsed from layouts.json and cached.
- *
- * @details
- * Lazily parses the layouts.json file to extract all layout entries and the layouts table label. Results are cached to
- * avoid redundant parsing on subsequent calls. Builds into local temporaries and only commits to the mutable cache on
- * success, so a parse failure leaves the cache in a clean state for retry.
- *
- * @param project_root The root directory of the pokeemerald-style project
- * @param layouts_parsed Mutable flag tracking whether layouts have been parsed
- * @param layouts_table_label Mutable cache for the layouts table label string
- * @param layout_entries Mutable cache of parsed layout entries
- * @param layout_index Mutable index mapping both layout name and ID to entries
- * @param format Text formatter for styled output
- * @return Success or error result
- */
+/// @brief Ensures layout metadata has been parsed from layouts.json and cached.
+///
+/// @details
+/// Lazily parses the layouts.json file to extract all layout entries and the layouts table label. Results are cached to
+/// avoid redundant parsing on subsequent calls. Builds into local temporaries and only commits to the mutable cache on
+/// success, so a parse failure leaves the cache in a clean state for retry.
+///
+/// @param project_root The root directory of the pokeemerald-style project
+/// @param layouts_parsed Mutable flag tracking whether layouts have been parsed
+/// @param layouts_table_label Mutable cache for the layouts table label string
+/// @param layout_entries Mutable cache of parsed layout entries
+/// @param layout_index Mutable index mapping both layout name and ID to entries
+/// @param format Text formatter for styled output
+/// @return Success or error result
 [[nodiscard]] ChainableResult<void> ensure_layouts_parsed(
     const std::filesystem::path &project_root,
     bool &layouts_parsed,
@@ -72,15 +70,27 @@ const std::filesystem::path layouts_json_rel_path = std::filesystem::path{"data"
             FormatParam{layouts_path.string(), Style::bold})};
     }
 
+    // Type-check the top-level fields before extracting them: an unchecked get<std::string>() on a non-string value
+    // throws an nlohmann type_error that would escape this function, so a malformed file must fail here as a
+    // ChainableResult like every other malformed-file case.
+    if (!json_data.at("layouts_table_label").is_string()) {
+        return FormattableError{format->format(
+            "Layouts file '{}' field 'layouts_table_label' must be a string.",
+            FormatParam{layouts_path.string(), Style::bold})};
+    }
+
     if (!json_data.contains("layouts")) {
         return FormattableError{format->format(
             "Layouts file '{}' missing required field 'layouts'.", FormatParam{layouts_path.string(), Style::bold})};
     }
 
-    /*
-     * Build into local temporaries so that a failure mid-loop does not leave the mutable cache in a partially populated
-     * state. Only commit to the real cache on full success.
-     */
+    if (!json_data.at("layouts").is_array()) {
+        return FormattableError{format->format(
+            "Layouts file '{}' field 'layouts' must be an array.", FormatParam{layouts_path.string(), Style::bold})};
+    }
+
+    // Build into local temporaries so that a failure mid-loop does not leave the mutable cache in a partially populated
+    // state. Only commit to the real cache on full success.
     auto table_label = json_data.at("layouts_table_label").get<std::string>();
 
     const auto &layouts_array = json_data.at("layouts");
@@ -129,22 +139,20 @@ const std::filesystem::path layouts_json_rel_path = std::filesystem::path{"data"
     return {};
 }
 
-/**
- * @brief Looks up a cached layout entry by name or ID.
- *
- * @details
- * Ensures layouts have been parsed, then searches the index for the given key. Returns a pointer into the cached layout
- * entries vector.
- *
- * @param layout_name_or_id The name or ID of the layout (e.g., "PetalburgCity_Layout" or "LAYOUT_PETALBURG_CITY")
- * @param project_root The root directory of the pokeemerald-style project
- * @param layouts_parsed Mutable flag tracking whether layouts have been parsed
- * @param layouts_table_label Mutable cache for the layouts table label string
- * @param layout_entries Mutable cache of parsed layout entries
- * @param layout_index Mutable index mapping both layout name and ID to entries
- * @param format Text formatter for styled output
- * @return Pointer to the cached layout entry, or error if not found
- */
+/// @brief Looks up a cached layout entry by name or ID.
+///
+/// @details
+/// Ensures layouts have been parsed, then searches the index for the given key. Returns a pointer into the cached
+/// layout entries vector.
+///
+/// @param layout_name_or_id The name or ID of the layout (e.g., "PetalburgCity_Layout" or "LAYOUT_PETALBURG_CITY")
+/// @param project_root The root directory of the pokeemerald-style project
+/// @param layouts_parsed Mutable flag tracking whether layouts have been parsed
+/// @param layouts_table_label Mutable cache for the layouts table label string
+/// @param layout_entries Mutable cache of parsed layout entries
+/// @param layout_index Mutable index mapping both layout name and ID to entries
+/// @param format Text formatter for styled output
+/// @return Pointer to the cached layout entry, or error if not found
 [[nodiscard]] ChainableResult<const ProjectLayoutMetadata *> lookup_layout(
     const std::string &layout_name_or_id,
     const std::filesystem::path &project_root,

@@ -5,6 +5,7 @@
 #include <string>
 
 #include "porytiles/infra/services/project_tileset_metadata_provider.hpp"
+#include "porytiles/utilities/filesystem_utils.hpp"
 #include "porytiles/utilities/text/plain_text_formatter.hpp"
 #include "porytiles/xcut/diagnostics/buffered_user_diagnostics.hpp"
 
@@ -12,12 +13,10 @@
 
 using namespace porytiles;
 
-/**
- * @brief Base fixture for ProjectTilesetMetadataProvider tests.
- *
- * @details
- * Subclass this fixture and override project_root_path() to test against different mock pokeemerald projects.
- */
+/// @brief Base fixture for ProjectTilesetMetadataProvider tests.
+///
+/// @details
+/// Subclass this fixture and override project_root_path() to test against different mock pokeemerald projects.
 class ProjectTilesetMetadataProviderTestBase : public ::testing::Test {
   protected:
     [[nodiscard]] virtual std::filesystem::path project_root_path() const = 0;
@@ -171,4 +170,51 @@ TEST_F(ProjectTilesetMetadataProviderTest_Fixture1, ArtifactPathsForReturnsCorre
         EXPECT_FALSE(paths.tiles_path().empty());
         EXPECT_FALSE(paths.metatiles_path().empty());
     }
+}
+
+class ProjectTilesetMetadataProviderTest_IncgfxTiles : public ProjectTilesetMetadataProviderTestBase {
+  protected:
+    [[nodiscard]] std::filesystem::path project_root_path() const override
+    {
+        return "resources/tests/integration/shared/repos/incgfx_tileset";
+    }
+};
+
+TEST_F(ProjectTilesetMetadataProviderTest_IncgfxTiles, ArtifactPathsForResolvesIncgfxTiles)
+{
+    auto result = metadata_provider_->artifact_paths_for("gTileset_VelvetForest");
+    ASSERT_TRUE(result.has_value()) << "INCGFX_U32-declared tiles should resolve. Got: "
+                                    << result.chain().back()->join(*formatter_);
+
+    const auto &paths = result.value();
+
+    // The parser captures INCGFX's first string-literal argument: the source PNG, not the compiled binary.
+    EXPECT_EQ(paths.tiles_path(), std::filesystem::path{"data/tilesets/primary/velvet_forest/tiles.png"});
+
+    // The importer turns the stored path into the PNG to load via strip_all_extensions(...) + ".png".
+    auto tiles_png = strip_all_extensions(paths.tiles_path());
+    tiles_png += ".png";
+    EXPECT_EQ(tiles_png, std::filesystem::path{"data/tilesets/primary/velvet_forest/tiles.png"});
+}
+
+class ProjectTilesetMetadataProviderTest_MissingVar : public ProjectTilesetMetadataProviderTestBase {
+  protected:
+    [[nodiscard]] std::filesystem::path project_root_path() const override
+    {
+        return "resources/tests/integration/shared/repos/missing_incbin_var";
+    }
+};
+
+TEST_F(ProjectTilesetMetadataProviderTest_MissingVar, ArtifactPathsForMissingVarReportsDiagnostic)
+{
+    auto result = metadata_provider_->artifact_paths_for("gTileset_Broken");
+    ASSERT_FALSE(result.has_value()) << "Resolution should fail when the tiles variable is undeclared.";
+
+    std::string error_text = result.chain().back()->join(*formatter_);
+    EXPECT_TRUE(error_text.find("gTilesetTiles_Broken") != std::string::npos)
+        << "Diagnostic should name the unresolved variable. Got: " << error_text;
+    EXPECT_TRUE(error_text.find("tiles") != std::string::npos)
+        << "Diagnostic should name the artifact field. Got: " << error_text;
+    EXPECT_TRUE(error_text.find("was not found in any scanned file") != std::string::npos)
+        << "Diagnostic should explain the failure reason. Got: " << error_text;
 }

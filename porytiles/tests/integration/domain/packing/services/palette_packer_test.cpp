@@ -27,16 +27,14 @@ namespace {
     return PixelTile<Rgba32>{pixels};
 }
 
-/**
- * @brief Creates an 8x8 pixel tile with the specified colors distributed across pixels.
- *
- * @details
- * Colors are assigned to pixels in a round-robin fashion. For example, if 4 colors are provided,
- * pixel 0 gets color 0, pixel 1 gets color 1, ..., pixel 4 gets color 0 again, etc.
- *
- * @param colors The colors to distribute across the tile (must not be empty)
- * @return A PixelTile<Rgba32> with colors distributed across all pixels
- */
+/// @brief Creates an 8x8 pixel tile with the specified colors distributed across pixels.
+///
+/// @details
+/// Colors are assigned to pixels in a round-robin fashion. For example, if 4 colors are provided,
+/// pixel 0 gets color 0, pixel 1 gets color 1, ..., pixel 4 gets color 0 again, etc.
+///
+/// @param colors The colors to distribute across the tile (must not be empty)
+/// @return A PixelTile<Rgba32> with colors distributed across all pixels
 [[nodiscard]] PixelTile<Rgba32> make_tile_with_colors(const std::vector<Rgba32> &colors)
 {
     std::array<Rgba32, tile::size_pix> pixels{};
@@ -46,27 +44,28 @@ namespace {
     return PixelTile<Rgba32>{pixels};
 }
 
-[[nodiscard]] std::bitset<pal::num_pals> all_palettes_available()
+[[nodiscard]] std::bitset<palette::num_palettes> all_palettes_available()
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     available.set(); // Set all bits to 1
     return available;
 }
 
 template <typename... Indices>
-[[nodiscard]] std::bitset<pal::num_pals> set_palettes_available(Indices... indices)
+[[nodiscard]] std::bitset<palette::num_palettes> set_palettes_available(Indices... indices)
 {
-    std::bitset<pal::num_pals> available{};
+    std::bitset<palette::num_palettes> available{};
     (available.set(static_cast<std::size_t>(indices)), ...);
     return available;
 }
 
-[[nodiscard]] std::set<Rgba32> collect_palette_colors(const Palette<Rgba32, pal::max_size> &pal, Rgba32 transparency)
+[[nodiscard]] std::set<Rgba32>
+collect_palette_colors(const Palette<Rgba32, palette::max_size> &palette, Rgba32 transparency)
 {
     std::set<Rgba32> colors{};
-    for (std::size_t i = 0; i < pal::max_size; ++i) {
-        if (!pal.is_wildcard(i)) {
-            const auto &color = pal.at(i);
+    for (std::size_t i = 0; i < palette::max_size; ++i) {
+        if (!palette.is_wildcard(i)) {
+            const auto &color = palette.at(i);
             if (!color.is_transparent(transparency)) {
                 colors.insert(color);
             }
@@ -113,21 +112,21 @@ TEST(PalettePackerIntegration, EmptyInput_ReturnsEmptyResult)
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
     AsciiTilePrinter tile_printer{&formatter};
-    ColorPalettePrinter pal_printer{&formatter};
-    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
+    ColorPalettePrinter palette_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &palette_printer};
 
     PackingParams params{};
     params.tiles_ = {};
     params.color_map_ = ColorIndexMap<Rgba32>{};
     params.extrinsic_transparency_ = rgba_magenta;
-    params.prefilled_pals_ = {};
+    params.prefilled_palettes_ = {};
     params.hints_ = {};
-    params.available_pals_ = all_palettes_available();
+    params.available_palettes_ = all_palettes_available();
 
     auto result = packer.pack_tiles(params);
 
     ASSERT_TRUE(result.has_value());
-    EXPECT_TRUE(result.value().tile_to_pal_.empty());
+    EXPECT_TRUE(result.value().tile_to_palette_.empty());
 }
 
 TEST(PalettePackerIntegration, SingleTileOneColor_PacksIntoOnePalette)
@@ -136,8 +135,8 @@ TEST(PalettePackerIntegration, SingleTileOneColor_PacksIntoOnePalette)
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
     AsciiTilePrinter tile_printer{&formatter};
-    ColorPalettePrinter pal_printer{&formatter};
-    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
+    ColorPalettePrinter palette_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &palette_printer};
 
     std::vector<PixelTile<Rgba32>> tiles{make_solid_tile(rgba_red)};
     ColorIndexMap<Rgba32> color_map{};
@@ -149,9 +148,9 @@ TEST(PalettePackerIntegration, SingleTileOneColor_PacksIntoOnePalette)
     params.tiles_ = tiles;
     params.color_map_ = color_map;
     params.extrinsic_transparency_ = rgba_magenta;
-    params.prefilled_pals_ = {};
+    params.prefilled_palettes_ = {};
     params.hints_ = {};
-    params.available_pals_ = all_palettes_available();
+    params.available_palettes_ = all_palettes_available();
 
     auto result = packer.pack_tiles(params);
 
@@ -159,12 +158,12 @@ TEST(PalettePackerIntegration, SingleTileOneColor_PacksIntoOnePalette)
     const auto &packing = result.value();
 
     // Tile 0 should be assigned to some palette
-    ASSERT_TRUE(packing.tile_to_pal_.contains(0));
-    const std::size_t assigned_pal = packing.tile_to_pal_.at(0);
+    ASSERT_TRUE(packing.tile_to_palette_.contains(0));
+    const std::size_t assigned_palette = packing.tile_to_palette_.at(0);
 
     // That palette should exist and contain red
-    ASSERT_TRUE(packing.pals_[assigned_pal].has_value());
-    const auto colors = collect_palette_colors(packing.pals_[assigned_pal].value(), rgba_magenta);
+    ASSERT_TRUE(packing.palettes_[assigned_palette].has_value());
+    const auto colors = collect_palette_colors(packing.palettes_[assigned_palette].value(), rgba_magenta);
     EXPECT_TRUE(colors.contains(rgba_red));
 }
 
@@ -174,8 +173,8 @@ TEST(PalettePackerIntegration, SingleTileMaxColors_PacksIntoOnePalette)
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
     AsciiTilePrinter tile_printer{&formatter};
-    ColorPalettePrinter pal_printer{&formatter};
-    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
+    ColorPalettePrinter palette_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &palette_printer};
 
     // Generate 15 distinct colors (max per palette, excluding transparency slot)
     const auto distinct_colors = generate_distinct_colors(15);
@@ -189,9 +188,9 @@ TEST(PalettePackerIntegration, SingleTileMaxColors_PacksIntoOnePalette)
     params.tiles_ = tiles;
     params.color_map_ = color_map;
     params.extrinsic_transparency_ = rgba_magenta;
-    params.prefilled_pals_ = {};
+    params.prefilled_palettes_ = {};
     params.hints_ = {};
-    params.available_pals_ = all_palettes_available();
+    params.available_palettes_ = all_palettes_available();
 
     auto result = packer.pack_tiles(params);
 
@@ -199,12 +198,12 @@ TEST(PalettePackerIntegration, SingleTileMaxColors_PacksIntoOnePalette)
     const auto &packing = result.value();
 
     // Tile 0 should be assigned
-    ASSERT_TRUE(packing.tile_to_pal_.contains(0));
-    const std::size_t assigned_pal = packing.tile_to_pal_.at(0);
+    ASSERT_TRUE(packing.tile_to_palette_.contains(0));
+    const std::size_t assigned_palette = packing.tile_to_palette_.at(0);
 
     // That palette should contain all 15 colors
-    ASSERT_TRUE(packing.pals_[assigned_pal].has_value());
-    const auto colors = collect_palette_colors(packing.pals_[assigned_pal].value(), rgba_magenta);
+    ASSERT_TRUE(packing.palettes_[assigned_palette].has_value());
+    const auto colors = collect_palette_colors(packing.palettes_[assigned_palette].value(), rgba_magenta);
     EXPECT_EQ(colors.size(), 15);
     for (const auto &expected_color : distinct_colors) {
         EXPECT_TRUE(colors.contains(expected_color)) << "Missing color: " << expected_color;
@@ -217,8 +216,8 @@ TEST(PalettePackerIntegration, TwoTilesIdenticalColors_SharePalette)
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
     AsciiTilePrinter tile_printer{&formatter};
-    ColorPalettePrinter pal_printer{&formatter};
-    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
+    ColorPalettePrinter palette_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &palette_printer};
 
     std::vector<PixelTile<Rgba32>> tiles{
         make_tile_with_colors({rgba_red, rgba_blue}), make_tile_with_colors({rgba_red, rgba_blue})};
@@ -231,9 +230,9 @@ TEST(PalettePackerIntegration, TwoTilesIdenticalColors_SharePalette)
     params.tiles_ = tiles;
     params.color_map_ = color_map;
     params.extrinsic_transparency_ = rgba_magenta;
-    params.prefilled_pals_ = {};
+    params.prefilled_palettes_ = {};
     params.hints_ = {};
-    params.available_pals_ = all_palettes_available();
+    params.available_palettes_ = all_palettes_available();
 
     auto result = packer.pack_tiles(params);
 
@@ -241,11 +240,11 @@ TEST(PalettePackerIntegration, TwoTilesIdenticalColors_SharePalette)
     const auto &packing = result.value();
 
     // Both tiles should be assigned
-    ASSERT_TRUE(packing.tile_to_pal_.contains(0));
-    ASSERT_TRUE(packing.tile_to_pal_.contains(1));
+    ASSERT_TRUE(packing.tile_to_palette_.contains(0));
+    ASSERT_TRUE(packing.tile_to_palette_.contains(1));
 
     // Both tiles should share the same palette
-    EXPECT_EQ(packing.tile_to_pal_.at(0), packing.tile_to_pal_.at(1));
+    EXPECT_EQ(packing.tile_to_palette_.at(0), packing.tile_to_palette_.at(1));
 }
 
 TEST(PalettePackerIntegration, TwoTilesDisjointColorsFitTogether_PacksSuccessfully)
@@ -254,8 +253,8 @@ TEST(PalettePackerIntegration, TwoTilesDisjointColorsFitTogether_PacksSuccessful
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
     AsciiTilePrinter tile_printer{&formatter};
-    ColorPalettePrinter pal_printer{&formatter};
-    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
+    ColorPalettePrinter palette_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &palette_printer};
 
     // Tile A: 7 colors, Tile B: 8 different colors (total 15, fits in one palette)
     const auto colors_a = generate_distinct_colors(7);
@@ -273,9 +272,9 @@ TEST(PalettePackerIntegration, TwoTilesDisjointColorsFitTogether_PacksSuccessful
     params.tiles_ = tiles;
     params.color_map_ = color_map;
     params.extrinsic_transparency_ = rgba_magenta;
-    params.prefilled_pals_ = {};
+    params.prefilled_palettes_ = {};
     params.hints_ = {};
-    params.available_pals_ = all_palettes_available();
+    params.available_palettes_ = all_palettes_available();
 
     auto result = packer.pack_tiles(params);
 
@@ -283,24 +282,24 @@ TEST(PalettePackerIntegration, TwoTilesDisjointColorsFitTogether_PacksSuccessful
     const auto &packing = result.value();
 
     // Both tiles should be assigned
-    ASSERT_TRUE(packing.tile_to_pal_.contains(0));
-    ASSERT_TRUE(packing.tile_to_pal_.contains(1));
+    ASSERT_TRUE(packing.tile_to_palette_.contains(0));
+    ASSERT_TRUE(packing.tile_to_palette_.contains(1));
 
     // Note: The Best Fusion algorithm may or may not merge these tiles into the same palette
     // depending on weighted cost calculations. We just verify both tiles are assigned.
     // Collect all colors from both assigned palettes
     std::set<Rgba32> all_packed_colors{};
-    const std::size_t pal_0 = packing.tile_to_pal_.at(0);
-    const std::size_t pal_1 = packing.tile_to_pal_.at(1);
+    const std::size_t palette_0 = packing.tile_to_palette_.at(0);
+    const std::size_t palette_1 = packing.tile_to_palette_.at(1);
 
-    ASSERT_TRUE(packing.pals_[pal_0].has_value());
-    auto colors_pal_0 = collect_palette_colors(packing.pals_[pal_0].value(), rgba_magenta);
-    all_packed_colors.insert(colors_pal_0.begin(), colors_pal_0.end());
+    ASSERT_TRUE(packing.palettes_[palette_0].has_value());
+    auto colors_palette_0 = collect_palette_colors(packing.palettes_[palette_0].value(), rgba_magenta);
+    all_packed_colors.insert(colors_palette_0.begin(), colors_palette_0.end());
 
-    if (pal_0 != pal_1) {
-        ASSERT_TRUE(packing.pals_[pal_1].has_value());
-        auto colors_pal_1 = collect_palette_colors(packing.pals_[pal_1].value(), rgba_magenta);
-        all_packed_colors.insert(colors_pal_1.begin(), colors_pal_1.end());
+    if (palette_0 != palette_1) {
+        ASSERT_TRUE(packing.palettes_[palette_1].has_value());
+        auto colors_palette_1 = collect_palette_colors(packing.palettes_[palette_1].value(), rgba_magenta);
+        all_packed_colors.insert(colors_palette_1.begin(), colors_palette_1.end());
     }
 
     // All 15 colors should be present across the assigned palette(s)
@@ -313,8 +312,8 @@ TEST(PalettePackerIntegration, NoAvailablePalettes_Fails)
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
     AsciiTilePrinter tile_printer{&formatter};
-    ColorPalettePrinter pal_printer{&formatter};
-    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
+    ColorPalettePrinter palette_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &palette_printer};
 
     std::vector<PixelTile<Rgba32>> tiles{make_solid_tile(rgba_red)};
     ColorIndexMap<Rgba32> color_map{};
@@ -326,9 +325,9 @@ TEST(PalettePackerIntegration, NoAvailablePalettes_Fails)
     params.tiles_ = tiles;
     params.color_map_ = color_map;
     params.extrinsic_transparency_ = rgba_magenta;
-    params.prefilled_pals_ = {};
+    params.prefilled_palettes_ = {};
     params.hints_ = {};
-    params.available_pals_ = std::bitset<pal::num_pals>{}; // No palettes available
+    params.available_palettes_ = std::bitset<palette::num_palettes>{}; // No palettes available
 
     auto result = packer.pack_tiles(params);
 
@@ -341,8 +340,8 @@ TEST(PalettePackerIntegration, AllPalettesNeeded_Success)
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
     AsciiTilePrinter tile_printer{&formatter};
-    ColorPalettePrinter pal_printer{&formatter};
-    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
+    ColorPalettePrinter palette_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &palette_printer};
 
     // Create 16 tiles, each with 15 unique colors (no overlap)
     std::vector<PixelTile<Rgba32>> tiles{};
@@ -374,9 +373,9 @@ TEST(PalettePackerIntegration, AllPalettesNeeded_Success)
     params.tiles_ = tiles;
     params.color_map_ = color_map;
     params.extrinsic_transparency_ = rgba_magenta;
-    params.prefilled_pals_ = {};
+    params.prefilled_palettes_ = {};
     params.hints_ = {};
-    params.available_pals_ = all_palettes_available();
+    params.available_palettes_ = all_palettes_available();
 
     auto result = packer.pack_tiles(params);
 
@@ -384,12 +383,12 @@ TEST(PalettePackerIntegration, AllPalettesNeeded_Success)
     const auto &packing = result.value();
 
     // All 16 tiles should be assigned
-    EXPECT_EQ(packing.tile_to_pal_.size(), 16);
+    EXPECT_EQ(packing.tile_to_palette_.size(), 16);
 
     // Count how many palettes are used
     std::set<std::size_t> used_palettes{};
-    for (const auto &[tile_idx, pal_idx] : packing.tile_to_pal_) {
-        used_palettes.insert(pal_idx);
+    for (const auto &[tile_idx, palette_idx] : packing.tile_to_palette_) {
+        used_palettes.insert(palette_idx);
     }
 
     // All 16 palettes should be used (since colors don't overlap)
@@ -402,8 +401,8 @@ TEST(PalettePackerIntegration, AlmostFullPrefilledPalette_TilesGoElsewhere)
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
     AsciiTilePrinter tile_printer{&formatter};
-    ColorPalettePrinter pal_printer{&formatter};
-    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
+    ColorPalettePrinter palette_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &palette_printer};
 
     // Generate 13 colors for the prefilled palette (leaves 2 slots available)
     const auto prefilled_colors = generate_distinct_colors(13);
@@ -418,10 +417,10 @@ TEST(PalettePackerIntegration, AlmostFullPrefilledPalette_TilesGoElsewhere)
     std::vector<PixelTile<Rgba32>> tiles{make_tile_with_colors(tile_colors)};
 
     // Prefill palette 0 with 13 colors (2 slots remaining after slot 0)
-    Palette<Rgba32, pal::max_size> prefilled_pal{};
-    prefilled_pal.set(0, rgba_magenta); // Slot 0 is transparency
+    Palette<Rgba32, palette::max_size> prefilled_palette{};
+    prefilled_palette.set(0, rgba_magenta); // Slot 0 is transparency
     for (std::size_t i = 0; i < 13; ++i) {
-        prefilled_pal.set(i + 1, prefilled_colors[i]);
+        prefilled_palette.set(i + 1, prefilled_colors[i]);
     }
     // Slots 14-15 are wildcards
 
@@ -430,18 +429,18 @@ TEST(PalettePackerIntegration, AlmostFullPrefilledPalette_TilesGoElsewhere)
     for (const auto &tile : tiles) {
         color_map.add_tile(tile, rgba_magenta);
     }
-    color_map.add_pal(prefilled_pal, rgba_magenta);
+    color_map.add_palette(prefilled_palette, rgba_magenta);
 
-    std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> prefilled_pals{};
-    prefilled_pals[0] = prefilled_pal;
+    std::array<std::optional<Palette<Rgba32, palette::max_size>>, palette::num_palettes> prefilled_palettes{};
+    prefilled_palettes[0] = prefilled_palette;
 
     PackingParams params{};
     params.tiles_ = tiles;
     params.color_map_ = color_map;
     params.extrinsic_transparency_ = rgba_magenta;
-    params.prefilled_pals_ = prefilled_pals;
+    params.prefilled_palettes_ = prefilled_palettes;
     params.hints_ = {};
-    params.available_pals_ = all_palettes_available();
+    params.available_palettes_ = all_palettes_available();
 
     auto result = packer.pack_tiles(params);
 
@@ -449,8 +448,8 @@ TEST(PalettePackerIntegration, AlmostFullPrefilledPalette_TilesGoElsewhere)
     const auto &packing = result.value();
 
     // Tile should be assigned to a palette other than 0 (since 5 colors > 2 available slots)
-    ASSERT_TRUE(packing.tile_to_pal_.contains(0));
-    EXPECT_NE(packing.tile_to_pal_.at(0), 0) << "Tile should not be assigned to palette 0 (not enough room)";
+    ASSERT_TRUE(packing.tile_to_palette_.contains(0));
+    EXPECT_NE(packing.tile_to_palette_.at(0), 0) << "Tile should not be assigned to palette 0 (not enough room)";
 }
 
 TEST(PalettePackerIntegration, PartiallyPrefilledPalette_TileCanMerge)
@@ -459,22 +458,22 @@ TEST(PalettePackerIntegration, PartiallyPrefilledPalette_TileCanMerge)
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
     AsciiTilePrinter tile_printer{&formatter};
-    ColorPalettePrinter pal_printer{&formatter};
-    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
+    ColorPalettePrinter palette_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &palette_printer};
 
     // Prefill palette 0 with 5 colors (partially locked)
     // Colors: red, green, blue, yellow, cyan (slots 1-5)
-    Palette<Rgba32, pal::max_size> prefilled_pal{};
-    prefilled_pal.set(0, rgba_magenta); // Slot 0 is transparency
-    prefilled_pal.set(1, rgba_red);
-    prefilled_pal.set(2, rgba_green);
-    prefilled_pal.set(3, rgba_blue);
-    prefilled_pal.set(4, rgba_yellow);
-    prefilled_pal.set(5, rgba_cyan);
+    Palette<Rgba32, palette::max_size> prefilled_palette{};
+    prefilled_palette.set(0, rgba_magenta); // Slot 0 is transparency
+    prefilled_palette.set(1, rgba_red);
+    prefilled_palette.set(2, rgba_green);
+    prefilled_palette.set(3, rgba_blue);
+    prefilled_palette.set(4, rgba_yellow);
+    prefilled_palette.set(5, rgba_cyan);
     // Slots 6-15 are wildcards (default)
 
-    std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> prefilled_pals{};
-    prefilled_pals[0] = prefilled_pal;
+    std::array<std::optional<Palette<Rgba32, palette::max_size>>, palette::num_palettes> prefilled_palettes{};
+    prefilled_palettes[0] = prefilled_palette;
 
     // Create a tile with some overlapping colors (red, blue) plus new colors (purple, lime)
     std::vector<PixelTile<Rgba32>> tiles{make_tile_with_colors({rgba_red, rgba_blue, rgba_purple, rgba_lime})};
@@ -484,15 +483,15 @@ TEST(PalettePackerIntegration, PartiallyPrefilledPalette_TileCanMerge)
     for (const auto &tile : tiles) {
         color_map.add_tile(tile, rgba_magenta);
     }
-    color_map.add_pal(prefilled_pal, rgba_magenta);
+    color_map.add_palette(prefilled_palette, rgba_magenta);
 
     PackingParams params{};
     params.tiles_ = tiles; // Only pack the actual tile
     params.color_map_ = color_map;
     params.extrinsic_transparency_ = rgba_magenta;
-    params.prefilled_pals_ = prefilled_pals;
+    params.prefilled_palettes_ = prefilled_palettes;
     params.hints_ = {};
-    params.available_pals_ = all_palettes_available();
+    params.available_palettes_ = all_palettes_available();
 
     auto result = packer.pack_tiles(params);
 
@@ -500,23 +499,23 @@ TEST(PalettePackerIntegration, PartiallyPrefilledPalette_TileCanMerge)
     const auto &packing = result.value();
 
     // Tile should be assigned
-    ASSERT_TRUE(packing.tile_to_pal_.contains(0));
-    const std::size_t assigned_pal = packing.tile_to_pal_.at(0);
+    ASSERT_TRUE(packing.tile_to_palette_.contains(0));
+    const std::size_t assigned_palette = packing.tile_to_palette_.at(0);
 
     // Check that palette 0 was used (it had room for the new colors)
-    EXPECT_EQ(assigned_pal, 0) << "Tile should be merged into partially filled palette 0";
+    EXPECT_EQ(assigned_palette, 0) << "Tile should be merged into partially filled palette 0";
 
     // Verify the prefilled colors are still in their original slots
-    ASSERT_TRUE(packing.pals_[0].has_value());
-    const auto &final_pal = packing.pals_[0].value();
-    EXPECT_EQ(final_pal.at(1), rgba_red);
-    EXPECT_EQ(final_pal.at(2), rgba_green);
-    EXPECT_EQ(final_pal.at(3), rgba_blue);
-    EXPECT_EQ(final_pal.at(4), rgba_yellow);
-    EXPECT_EQ(final_pal.at(5), rgba_cyan);
+    ASSERT_TRUE(packing.palettes_[0].has_value());
+    const auto &final_palette = packing.palettes_[0].value();
+    EXPECT_EQ(final_palette.at(1), rgba_red);
+    EXPECT_EQ(final_palette.at(2), rgba_green);
+    EXPECT_EQ(final_palette.at(3), rgba_blue);
+    EXPECT_EQ(final_palette.at(4), rgba_yellow);
+    EXPECT_EQ(final_palette.at(5), rgba_cyan);
 
     // Verify the new colors are present somewhere in the palette
-    const auto colors = collect_palette_colors(final_pal, rgba_magenta);
+    const auto colors = collect_palette_colors(final_palette, rgba_magenta);
     EXPECT_TRUE(colors.contains(rgba_purple));
     EXPECT_TRUE(colors.contains(rgba_lime));
 }
@@ -527,22 +526,22 @@ TEST(PalettePackerIntegration, OutOfBandPrefilledPaletteNotUsed)
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
     AsciiTilePrinter tile_printer{&formatter};
-    ColorPalettePrinter pal_printer{&formatter};
-    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
+    ColorPalettePrinter palette_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &palette_printer};
 
     // Prefill palette 7 with 5 colors (partially locked)
     // Colors: red, green, blue, yellow, cyan (slots 1-5)
-    Palette<Rgba32, pal::max_size> prefilled_pal{};
-    prefilled_pal.set(0, rgba_magenta); // Slot 0 is transparency
-    prefilled_pal.set(1, rgba_red);
-    prefilled_pal.set(2, rgba_green);
-    prefilled_pal.set(3, rgba_blue);
-    prefilled_pal.set(4, rgba_yellow);
-    prefilled_pal.set(5, rgba_cyan);
+    Palette<Rgba32, palette::max_size> prefilled_palette{};
+    prefilled_palette.set(0, rgba_magenta); // Slot 0 is transparency
+    prefilled_palette.set(1, rgba_red);
+    prefilled_palette.set(2, rgba_green);
+    prefilled_palette.set(3, rgba_blue);
+    prefilled_palette.set(4, rgba_yellow);
+    prefilled_palette.set(5, rgba_cyan);
     // Slots 6-15 are wildcards (default)
 
-    std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> prefilled_pals{};
-    prefilled_pals[7] = prefilled_pal;
+    std::array<std::optional<Palette<Rgba32, palette::max_size>>, palette::num_palettes> prefilled_palettes{};
+    prefilled_palettes[7] = prefilled_palette;
 
     // Create a tile with some overlapping colors (red, blue) plus new colors (purple, lime)
     std::vector<PixelTile<Rgba32>> tiles{make_tile_with_colors({rgba_red, rgba_blue, rgba_purple, rgba_lime})};
@@ -552,16 +551,16 @@ TEST(PalettePackerIntegration, OutOfBandPrefilledPaletteNotUsed)
     for (const auto &tile : tiles) {
         color_map.add_tile(tile, rgba_magenta);
     }
-    color_map.add_pal(prefilled_pal, rgba_magenta);
+    color_map.add_palette(prefilled_palette, rgba_magenta);
 
     PackingParams params{};
     params.tiles_ = tiles;
     params.color_map_ = color_map;
     params.extrinsic_transparency_ = rgba_magenta;
-    params.prefilled_pals_ = prefilled_pals;
+    params.prefilled_palettes_ = prefilled_palettes;
     params.hints_ = {};
     // Only palettes 0-6 are available (palette 7 is NOT available)
-    params.available_pals_ = set_palettes_available(0, 1, 2, 3, 4, 5, 6);
+    params.available_palettes_ = set_palettes_available(0, 1, 2, 3, 4, 5, 6);
 
     auto result = packer.pack_tiles(params);
 
@@ -569,15 +568,15 @@ TEST(PalettePackerIntegration, OutOfBandPrefilledPaletteNotUsed)
     const auto &packing = result.value();
 
     // Tile should be assigned
-    ASSERT_TRUE(packing.tile_to_pal_.contains(0));
-    const std::size_t assigned_pal = packing.tile_to_pal_.at(0);
+    ASSERT_TRUE(packing.tile_to_palette_.contains(0));
+    const std::size_t assigned_palette = packing.tile_to_palette_.at(0);
 
     // Tile should NOT be assigned to palette 7 (it's not available)
-    EXPECT_NE(assigned_pal, 7) << "Tile should not use unavailable palette 7";
+    EXPECT_NE(assigned_palette, 7) << "Tile should not use unavailable palette 7";
 
     // Palette 7 should NOT be in the result (it wasn't available for packing)
-    // The packer only includes palettes that are in available_pals
-    EXPECT_FALSE(packing.pals_[7].has_value()) << "Unavailable palette 7 should not appear in result";
+    // The packer only includes palettes that are in available_palettes
+    EXPECT_FALSE(packing.palettes_[7].has_value()) << "Unavailable palette 7 should not appear in result";
 }
 
 TEST(PalettePackerIntegration, PrefilledPaletteWithDuplicateColors_CapacityCorrectlyCalculated)
@@ -586,24 +585,24 @@ TEST(PalettePackerIntegration, PrefilledPaletteWithDuplicateColors_CapacityCorre
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
     AsciiTilePrinter tile_printer{&formatter};
-    ColorPalettePrinter pal_printer{&formatter};
-    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
+    ColorPalettePrinter palette_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &palette_printer};
 
     // Create a prefilled palette with 15 slots filled but only 14 unique colors (1 duplicate).
     // This tests the fix for the bug where duplicate colors caused capacity miscalculation.
     // Slots 1-14 get distinct colors, slot 15 duplicates slot 1's color.
-    Palette<Rgba32, pal::max_size> prefilled_pal{};
-    prefilled_pal.set(0, rgba_magenta); // Slot 0 is transparency
+    Palette<Rgba32, palette::max_size> prefilled_palette{};
+    prefilled_palette.set(0, rgba_magenta); // Slot 0 is transparency
 
     const auto distinct_colors = generate_distinct_colors(14);
     for (std::size_t i = 0; i < 14; ++i) {
-        prefilled_pal.set(i + 1, distinct_colors[i]);
+        prefilled_palette.set(i + 1, distinct_colors[i]);
     }
     // Slot 15 duplicates slot 1's color, creating 15 occupied slots but only 14 unique colors
-    prefilled_pal.set(15, distinct_colors[0]);
+    prefilled_palette.set(15, distinct_colors[0]);
 
-    std::array<std::optional<Palette<Rgba32, pal::max_size>>, pal::num_pals> prefilled_pals{};
-    prefilled_pals[0] = prefilled_pal;
+    std::array<std::optional<Palette<Rgba32, palette::max_size>>, palette::num_palettes> prefilled_palettes{};
+    prefilled_palettes[0] = prefilled_palette;
 
     // Create a tile with a brand new color not in the prefilled palette
     Rgba32 new_color{254, 253, 252}; // A color definitely not in generate_distinct_colors
@@ -614,15 +613,15 @@ TEST(PalettePackerIntegration, PrefilledPaletteWithDuplicateColors_CapacityCorre
     for (const auto &tile : tiles) {
         color_map.add_tile(tile, rgba_magenta);
     }
-    color_map.add_pal(prefilled_pal, rgba_magenta);
+    color_map.add_palette(prefilled_palette, rgba_magenta);
 
     PackingParams params{};
     params.tiles_ = tiles;
     params.color_map_ = color_map;
     params.extrinsic_transparency_ = rgba_magenta;
-    params.prefilled_pals_ = prefilled_pals;
+    params.prefilled_palettes_ = prefilled_palettes;
     params.hints_ = {};
-    params.available_pals_ = all_palettes_available();
+    params.available_palettes_ = all_palettes_available();
 
     auto result = packer.pack_tiles(params);
 
@@ -630,12 +629,12 @@ TEST(PalettePackerIntegration, PrefilledPaletteWithDuplicateColors_CapacityCorre
     const auto &packing = result.value();
 
     // Tile should be assigned
-    ASSERT_TRUE(packing.tile_to_pal_.contains(0));
-    const std::size_t assigned_pal = packing.tile_to_pal_.at(0);
+    ASSERT_TRUE(packing.tile_to_palette_.contains(0));
+    const std::size_t assigned_palette = packing.tile_to_palette_.at(0);
 
     // The tile should be assigned to a palette OTHER than 0
     // because palette 0 has no room (15 slots occupied, even though only 14 unique colors)
-    EXPECT_NE(assigned_pal, 0)
+    EXPECT_NE(assigned_palette, 0)
         << "Tile should NOT be assigned to palette 0 (no available slots due to duplicates occupying all 15 slots)";
 }
 
@@ -645,8 +644,8 @@ TEST(PalettePackerIntegration, TransparentPixelsIgnored_OnlyNonTransparentPacked
     BufferedUserDiagnostics diag{};
     BestFusionStrategy strategy{};
     AsciiTilePrinter tile_printer{&formatter};
-    ColorPalettePrinter pal_printer{&formatter};
-    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &pal_printer};
+    ColorPalettePrinter palette_printer{&formatter};
+    PalettePacker packer{&strategy, &formatter, &diag, &tile_printer, &palette_printer};
 
     // Create a tile with magenta (transparent) and red pixels
     // Half the tile is magenta, half is red
@@ -667,9 +666,9 @@ TEST(PalettePackerIntegration, TransparentPixelsIgnored_OnlyNonTransparentPacked
     params.tiles_ = tiles;
     params.color_map_ = color_map;
     params.extrinsic_transparency_ = rgba_magenta;
-    params.prefilled_pals_ = {};
+    params.prefilled_palettes_ = {};
     params.hints_ = {};
-    params.available_pals_ = all_palettes_available();
+    params.available_palettes_ = all_palettes_available();
 
     auto result = packer.pack_tiles(params);
 
@@ -677,14 +676,14 @@ TEST(PalettePackerIntegration, TransparentPixelsIgnored_OnlyNonTransparentPacked
     const auto &packing = result.value();
 
     // Tile should be assigned
-    ASSERT_TRUE(packing.tile_to_pal_.contains(0));
-    const std::size_t assigned_pal = packing.tile_to_pal_.at(0);
+    ASSERT_TRUE(packing.tile_to_palette_.contains(0));
+    const std::size_t assigned_palette = packing.tile_to_palette_.at(0);
 
     // The palette should contain red (the only non-transparent tile color)
     // Note: Empty palette slots are filled with Rgba32{0,0,0} by the packer,
     // so we check that the actual tile colors are present, not the count
-    ASSERT_TRUE(packing.pals_[assigned_pal].has_value());
-    const auto colors = collect_palette_colors(packing.pals_[assigned_pal].value(), rgba_magenta);
+    ASSERT_TRUE(packing.palettes_[assigned_palette].has_value());
+    const auto colors = collect_palette_colors(packing.palettes_[assigned_palette].value(), rgba_magenta);
 
     // Red should be present (it was a non-transparent tile color)
     EXPECT_TRUE(colors.contains(rgba_red));

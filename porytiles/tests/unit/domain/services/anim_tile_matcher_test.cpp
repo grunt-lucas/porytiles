@@ -388,7 +388,7 @@ TEST(AnimTileMatcherTests, RegisterFullyTransparentPrimaryTileIsSkipped)
     EXPECT_FALSE(matcher.find_match(CanonicalPixelTile{fully_magenta, rgba_cyan}, rgba_cyan).has_value());
 }
 
-TEST(AnimTileMatcherTests, CrossTilesetFlipMatchPreservesPalIndex)
+TEST(AnimTileMatcherTests, CrossTilesetFlipMatchPreservesPaletteIndex)
 {
     AnimTileMatcher matcher;
     auto tile = make_asymmetric_tile();

@@ -86,7 +86,7 @@ std::string msg = formatter.format(
     FormatParam{color_count_limit, Style::bold});
 ```
 
-> _From `base_game_detector.cpp` and `diagnostic_stencils.hpp`._
+> _From `diagnostic_stencils.hpp`._
 
 ### `format()` — Vector Overload
 
@@ -272,19 +272,18 @@ std::ranges::copy(
 diag_->remark("anim-key-frame-mangle", remark_lines);
 ```
 
-> _From `base_game_detector.cpp:88` and `anim_key_frame_mangler.cpp:309-333`._
+> _From `TilesetAttributeSchemaResolver::resolve` and `AnimKeyFrameMangler`._
 
 ### 4.2 Remark Notes
 
 Always follow a `remark()` call, using the **same tag**.
 
 ```c++
-// Single-line (variadic overload)
-diag_->remark_note(
-    "base-game-detection",
-    "{} in '{}'.",
-    FormatParam{reason},
-    FormatParam{global_fieldmap_path.string(), Style::bold});
+// Multi-line with config notes
+std::vector<std::string> note_lines{};
+note_lines.append_range(format_config_note(diag->formatter(), pairing_mode));
+note_lines.append_range(format_config_note_with_separator(diag->formatter(), partners));
+diag->remark_note(tag, note_lines);
 
 // Multi-line with config note
 diag.remark_note(
@@ -292,7 +291,7 @@ diag.remark_note(
     format_config_note(diag.formatter(), strategy));
 ```
 
-> _From `base_game_detector.cpp:90` and `anim_decompiler.cpp:204`._
+> _From `resolve_partner_primary` (secondary_tileset_helpers.cpp) and `AnimDecompiler`._
 
 ### 4.3 Warnings
 
@@ -635,14 +634,19 @@ return ChainableResult<void>{FormattableError{err_msg}};
 ### Remark + Remark Note (Simple Pair)
 
 ```c++
-constexpr auto tag = "base-game-detection";
-diag_->remark(tag, format_->format(
-    "Detected base game '{}'.", FormatParam{to_string(detected), Style::bold}));
-diag_->remark_note(tag, format_->format(
-    "{} in '{}'.", FormatParam{reason}, FormatParam{global_fieldmap_path.string(), Style::bold}));
+constexpr auto tag = "resolve-partner-primary";
+diag->remark(
+    tag,
+    "Resolved partner primary '{}' for secondary '{}'.",
+    FormatParam{partner_name, Style::bold},
+    FormatParam{tileset_name, Style::bold});
+std::vector<std::string> note_lines{};
+note_lines.append_range(format_config_note(diag->formatter(), pairing_mode));
+note_lines.append_range(format_config_note_with_separator(diag->formatter(), partners));
+diag->remark_note(tag, note_lines);
 ```
 
-> _From `base_game_detector.cpp:88-93`._
+> _From `resolve_partner_primary` (secondary_tileset_helpers.cpp)._
 
 ---
 

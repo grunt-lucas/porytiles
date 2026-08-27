@@ -1,5 +1,7 @@
 #include "porytiles/utilities/c_parser/parser.hpp"
 
+#include <algorithm>
+
 #include <gtest/gtest.h>
 
 #include "porytiles/utilities/c_parser/lexer.hpp"
@@ -66,6 +68,17 @@ class ParserTests : public ::testing::Test {
         }
         Parser parser{&formatter_, std::move(tokens_result).value()};
         return parser.parse_struct_variables();
+    }
+
+    [[nodiscard]] ChainableResult<std::vector<StructDefinition>> parse_struct_definitions(const std::string &source)
+    {
+        Lexer lexer{&formatter_, source};
+        auto tokens_result = lexer.lex();
+        if (!tokens_result.has_value()) {
+            return ChainableResult<std::vector<StructDefinition>>{tokens_result};
+        }
+        Parser parser{&formatter_, std::move(tokens_result).value()};
+        return parser.parse_struct_definitions();
     }
 
     [[nodiscard]] ChainableResult<std::vector<IncbinDeclaration>> parse_incbin_arrays(const std::string &source)
@@ -314,6 +327,25 @@ TEST_F(ParserTests, ParseUnaryNot)
     const auto &defines = result.value();
     ASSERT_EQ(defines.size(), 1);
     EXPECT_EQ(defines[0].int_value(), ~static_cast<std::int64_t>(0));
+}
+
+TEST_F(ParserTests, ParseUnaryOperatorWithFollowingBinaryOperator)
+{
+    // Unary ~ and ! must bind tighter than the binary operator that follows them.
+    auto result = parse(R"(
+#define MASKED ~5 & 3
+#define CLEARED ~0xF0 & 0xFF
+#define LOGIC !0 && 1
+#define GROUPED ~(5 & 3)
+)");
+    ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
+
+    const auto &defines = result.value();
+    ASSERT_EQ(defines.size(), 4);
+    EXPECT_EQ(defines[0].int_value(), 2);    // (~5) & 3, not ~(5 & 3) == -2
+    EXPECT_EQ(defines[1].int_value(), 0x0F); // (~0xF0) & 0xFF
+    EXPECT_EQ(defines[2].int_value(), 1);    // (!0) && 1
+    EXPECT_EQ(defines[3].int_value(), -2);   // explicit grouping still applies
 }
 
 TEST_F(ParserTests, ParseComplexExpression)
@@ -773,6 +805,37 @@ TEST_F(ParserTests, ParseStaticIncbinArray)
     EXPECT_EQ(result.value()[0].paths()[0], "data/tilesets/primary/general/anim/flower/0.4bpp");
 }
 
+TEST_F(ParserTests, ParseIncgfxArray)
+{
+    // pokeemerald-expansion's auto-conversion macro: first arg is the source PNG, second is the target extension.
+    auto result = parse_incbin_arrays(
+        R"(const u32 gTilesetTiles_velvet_forest[] = INCGFX_U32("data/tilesets/primary/velvet_forest/tiles.png", ".4bpp.lz");)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].variable_name(), "gTilesetTiles_velvet_forest");
+    EXPECT_EQ(result.value()[0].macro_name(), "INCGFX_U32");
+    ASSERT_EQ(result.value()[0].paths().size(), 1);
+    EXPECT_EQ(result.value()[0].paths().front(), "data/tilesets/primary/velvet_forest/tiles.png");
+}
+
+TEST_F(ParserTests, ParseIncgfxMultiPathArray)
+{
+    // The brace/multi-path branch must also accept INCGFX_*; only the first string literal of each call is captured.
+    auto result = parse_incbin_arrays(
+        R"(const u16 gTilesetPalettes_velvet_forest[][16] =
+{
+    INCGFX_U16("data/tilesets/primary/velvet_forest/palettes/00.png", ".gbapal"),
+    INCGFX_U16("data/tilesets/primary/velvet_forest/palettes/01.png", ".gbapal"),
+};)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_EQ(result.value()[0].variable_name(), "gTilesetPalettes_velvet_forest");
+    EXPECT_EQ(result.value()[0].macro_name(), "INCGFX_U16");
+    ASSERT_EQ(result.value()[0].paths().size(), 2);
+    EXPECT_EQ(result.value()[0].paths()[0], "data/tilesets/primary/velvet_forest/palettes/00.png");
+    EXPECT_EQ(result.value()[0].paths()[1], "data/tilesets/primary/velvet_forest/palettes/01.png");
+}
+
 TEST_F(ParserTests, ParseFunctionsEmptyInput)
 {
     auto result = parse_functions("");
@@ -974,7 +1037,7 @@ TEST_F(ParserTests, ParseStructVariableWithNestedBraces)
     auto result = parse_struct_variables(R"(
 const struct Tileset gTileset_General = {
     .metatiles = { 0, 1, 2 },
-    .palettes = { pal1, pal2 },
+    .palettes = { palette1, palette2 },
 };
 )");
     ASSERT_TRUE(result.has_value());
@@ -1042,6 +1105,677 @@ const struct Tileset *const gTilesetPointer_SecretBase = &gTileset_SecretBase;
     EXPECT_EQ(result.value()[0].variable_name(), "gTileset_General");
     EXPECT_EQ(result.value()[1].struct_type(), "Tileset");
     EXPECT_EQ(result.value()[1].variable_name(), "gTileset_Petalburg");
+}
+
+namespace {
+
+[[nodiscard]] bool has_define(const std::vector<DefineStatement> &defines, const std::string &name)
+{
+    return std::any_of(defines.begin(), defines.end(), [&](const DefineStatement &d) { return d.name() == name; });
+}
+
+} // namespace
+
+TEST_F(ParserTests, ConditionalIncludeGuardParsesBody)
+{
+    // The guard macro is unknown when the #ifndef is reached, so the region is undecidable and its body is scanned.
+    auto result = parse(R"(
+#ifndef GUARD_H
+#define GUARD_H
+#define INSIDE_GUARD 42
+#endif
+)");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(has_define(result.value(), "GUARD_H"));
+    EXPECT_TRUE(has_define(result.value(), "INSIDE_GUARD"));
+}
+
+TEST_F(ParserTests, ConditionalIfdefDecidableTrueParsesBody)
+{
+    auto result = parse(R"(
+#define FEATURE
+#ifdef FEATURE
+#define ENABLED 1
+#endif
+)");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(has_define(result.value(), "ENABLED"));
+}
+
+TEST_F(ParserTests, ConditionalIfndefDecidableFalseSkipsBody)
+{
+    // FEATURE is defined earlier, so #ifndef FEATURE is decidably false and its body is skipped.
+    auto result = parse(R"(
+#define FEATURE
+#ifndef FEATURE
+#define SHOULD_NOT_APPEAR 1
+#endif
+)");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_FALSE(has_define(result.value(), "SHOULD_NOT_APPEAR"));
+}
+
+TEST_F(ParserTests, ConditionalIfdefDecidableFalseSkipsBody)
+{
+    // BAR is defined earlier; #ifdef MISSING is undecidable (both) but the #else of a decided frame is what we test:
+    // here FEATURE is known, so #ifndef FEATURE (false) skips and its #else runs.
+    auto result = parse(R"(
+#define FEATURE
+#ifndef FEATURE
+#define A 1
+#else
+#define B 2
+#endif
+)");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_FALSE(has_define(result.value(), "A"));
+    EXPECT_TRUE(has_define(result.value(), "B"));
+}
+
+TEST_F(ParserTests, ConditionalElifChainPicksFirstTrueBranch)
+{
+    // The Shunting Yard evaluator resolves bare identifiers to their values, so #if FIRST (0) is false and #elif SECOND
+    // (1) is the first true branch. Comparison operators are intentionally out of scope for the evaluator.
+    auto result = parse(R"(
+#define FIRST 0
+#define SECOND 1
+#if FIRST
+#define BRANCH_ONE 1
+#elif SECOND
+#define BRANCH_TWO 2
+#else
+#define BRANCH_ELSE 3
+#endif
+)");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_FALSE(has_define(result.value(), "BRANCH_ONE"));
+    EXPECT_TRUE(has_define(result.value(), "BRANCH_TWO"));
+    EXPECT_FALSE(has_define(result.value(), "BRANCH_ELSE"));
+}
+
+TEST_F(ParserTests, ConditionalIfZeroSkipsBody)
+{
+    auto result = parse(R"(
+#if 0
+#define DISABLED 1
+#endif
+#define ALWAYS 2
+)");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_FALSE(has_define(result.value(), "DISABLED"));
+    EXPECT_TRUE(has_define(result.value(), "ALWAYS"));
+}
+
+TEST_F(ParserTests, ConditionalUndecidableIfParsesBothBranches)
+{
+    // UNKNOWN is never defined, so #if UNKNOWN is undecidable and both branches are scanned.
+    auto result = parse(R"(
+#if UNKNOWN
+#define MAYBE_A 1
+#else
+#define MAYBE_B 2
+#endif
+)");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(has_define(result.value(), "MAYBE_A"));
+    EXPECT_TRUE(has_define(result.value(), "MAYBE_B"));
+}
+
+TEST_F(ParserTests, ConditionalNestedSkippingSuppressesInnerBoth)
+{
+    // The outer #ifndef FEATURE (FEATURE known) is decidably false, so even an inner undecidable region is skipped.
+    auto result = parse(R"(
+#define FEATURE
+#ifndef FEATURE
+#ifdef WHATEVER
+#define DEEP 1
+#endif
+#endif
+)");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_FALSE(has_define(result.value(), "DEEP"));
+}
+
+TEST_F(ParserTests, ConditionalBothRegionDuplicateSameValueNoWarning)
+{
+    Lexer lexer{&formatter_, R"(
+#define X 5
+#ifndef GUARD
+#define X 5
+#endif
+)"};
+    auto tokens = lexer.lex();
+    ASSERT_TRUE(tokens.has_value());
+    Parser parser{&formatter_, std::move(tokens).value()};
+    auto result = parser.parse_defines();
+    ASSERT_TRUE(result.has_value());
+    EXPECT_TRUE(parser.scan_warnings().empty());
+}
+
+TEST_F(ParserTests, ConditionalBothRegionDuplicateConflictWarnsLastWins)
+{
+    Lexer lexer{&formatter_, R"(
+#define X 5
+#ifndef GUARD
+#define X 9
+#endif
+)"};
+    auto tokens = lexer.lex();
+    ASSERT_TRUE(tokens.has_value());
+    Parser parser{&formatter_, std::move(tokens).value()};
+    auto result = parser.parse_defines();
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(parser.scan_warnings().size(), 1U);
+    EXPECT_NE(parser.scan_warnings()[0].find("conflicting redefinition"), std::string::npos);
+    EXPECT_TRUE(parser.ambiguous_defines().contains("X"));
+    // Last write wins in the symbol table, reflected in the recorded statement order.
+    ASSERT_FALSE(result.value().empty());
+    EXPECT_EQ(result.value().back().name(), "X");
+    EXPECT_EQ(result.value().back().int_value(), 9);
+}
+
+TEST_F(ParserTests, ParseEnumResolvesPriorEnumerator)
+{
+    auto result = parse_enums("enum { FIRST = 4, SECOND = FIRST + 2 };");
+    ASSERT_TRUE(result.has_value());
+
+    const auto &members = result.value().at(0).members();
+    ASSERT_EQ(members.size(), 2U);
+    EXPECT_EQ(members.at(0).int_value(), 4);
+    EXPECT_EQ(members.at(1).int_value(), 6);
+}
+
+TEST_F(ParserTests, TolerantDefineSkipsCrossHeaderReference)
+{
+    Lexer lexer{&formatter_, R"(
+#define KNOWN 3
+#define DERIVED (KNOWN + 1)
+#define EXTERNAL (SOME_OTHER_HEADER_MACRO + 1)
+#define AFTER 7
+)"};
+    auto tokens = lexer.lex();
+    ASSERT_TRUE(tokens.has_value());
+    Parser parser{&formatter_, std::move(tokens).value()};
+
+    TolerantDefineScan scan = parser.parse_defines_tolerant();
+
+    // The unevaluable define is skipped but everything else resolves, and scanning does not abort.
+    EXPECT_TRUE(has_define(scan.defines, "KNOWN"));
+    EXPECT_TRUE(has_define(scan.defines, "DERIVED"));
+    EXPECT_TRUE(has_define(scan.defines, "AFTER"));
+    EXPECT_FALSE(has_define(scan.defines, "EXTERNAL"));
+    ASSERT_EQ(scan.skipped.size(), 1U);
+    EXPECT_EQ(scan.skipped[0].name, "EXTERNAL");
+    // The skipped define's name still counts as defined for later conditional decisions.
+    EXPECT_TRUE(parser.defined_names().contains("EXTERNAL"));
+}
+
+TEST_F(ParserTests, TolerantDefineSkipsUnevaluableContinuationDefine)
+{
+    Lexer lexer{
+        &formatter_, "#define FOLLOWER_INVISIBLE_FLAGS (FLAG_A | \\\n                                 FLAG_B)\n"};
+    auto tokens = lexer.lex();
+    ASSERT_TRUE(tokens.has_value());
+    Parser parser{&formatter_, std::move(tokens).value()};
+
+    TolerantDefineScan scan = parser.parse_defines_tolerant();
+
+    EXPECT_FALSE(has_define(scan.defines, "FOLLOWER_INVISIBLE_FLAGS"));
+    ASSERT_EQ(scan.skipped.size(), 1U);
+    EXPECT_EQ(scan.skipped[0].name, "FOLLOWER_INVISIBLE_FLAGS");
+}
+
+TEST_F(ParserTests, TolerantEnumCounterPoisoning)
+{
+    Lexer lexer{&formatter_, R"(
+enum {
+    A,
+    B = SOME_UNKNOWN,
+    C,
+    D = 5,
+    E,
+};
+)"};
+    auto tokens = lexer.lex();
+    ASSERT_TRUE(tokens.has_value());
+    Parser parser{&formatter_, std::move(tokens).value()};
+
+    TolerantEnumScan scan = parser.parse_enums_tolerant();
+    ASSERT_EQ(scan.enums.size(), 1U);
+    const auto &members = scan.enums[0].members;
+    ASSERT_EQ(members.size(), 5U);
+
+    EXPECT_EQ(members[0].name, "A");
+    EXPECT_EQ(members[0].value, 0);
+    // The unevaluable explicit value poisons the counter for itself and the following implicit member.
+    EXPECT_EQ(members[1].name, "B");
+    EXPECT_FALSE(members[1].value.has_value());
+    EXPECT_EQ(members[2].name, "C");
+    EXPECT_FALSE(members[2].value.has_value());
+    // A fresh evaluable explicit value re-anchors the counter.
+    EXPECT_EQ(members[3].name, "D");
+    EXPECT_EQ(members[3].value, 5);
+    EXPECT_EQ(members[4].name, "E");
+    EXPECT_EQ(members[4].value, 6);
+}
+
+TEST_F(ParserTests, TolerantDefineSkipsUnsupportedExpressionForms)
+{
+    // A ternary is not supported, and stranded operands mean the expression was not understood. Both must degrade to
+    // "value unknown" rather than evaluate to whatever operand the evaluator saw last.
+    Lexer lexer{&formatter_, R"(
+#define COND 1
+#define CHOICE COND ? 10 : 20
+#define STRANDED 5 6
+#define AFTER 7
+)"};
+    auto tokens = lexer.lex();
+    ASSERT_TRUE(tokens.has_value());
+    Parser parser{&formatter_, std::move(tokens).value()};
+
+    TolerantDefineScan scan = parser.parse_defines_tolerant();
+
+    EXPECT_TRUE(has_define(scan.defines, "COND"));
+    EXPECT_TRUE(has_define(scan.defines, "AFTER"));
+    EXPECT_FALSE(has_define(scan.defines, "CHOICE"));
+    EXPECT_FALSE(has_define(scan.defines, "STRANDED"));
+    ASSERT_EQ(scan.skipped.size(), 2U);
+    EXPECT_EQ(scan.skipped[0].name, "CHOICE");
+    EXPECT_EQ(scan.skipped[1].name, "STRANDED");
+}
+
+TEST_F(ParserTests, TolerantDefineSkipsCastExpression)
+{
+    // A C cast like (u32)0x... is not an arithmetic form the evaluator understands: its parens and literal are all
+    // "supported" tokens, so it slips past the token gate and only fails when the cast type reads as an unknown
+    // identifier. The define must degrade to "value unknown" (skipped), not resolve to a partial value.
+    Lexer lexer{&formatter_, R"(
+#define CASTED (u32)0x000001ff
+#define AFTER 7
+)"};
+    auto tokens = lexer.lex();
+    ASSERT_TRUE(tokens.has_value());
+    Parser parser{&formatter_, std::move(tokens).value()};
+
+    TolerantDefineScan scan = parser.parse_defines_tolerant();
+
+    EXPECT_FALSE(has_define(scan.defines, "CASTED"));
+    EXPECT_TRUE(has_define(scan.defines, "AFTER"));
+    ASSERT_EQ(scan.skipped.size(), 1U);
+    EXPECT_EQ(scan.skipped[0].name, "CASTED");
+}
+
+TEST_F(ParserTests, TolerantEnumDirectiveInBodyPoisonsFollowingValues)
+{
+    // The scanner does not evaluate conditionals inside an enum body, so once a directive appears, no later value
+    // (implicit or explicit) can be trusted: an explicit value may sit in an untaken branch. The directive's own
+    // tokens must not be lexed as phantom members, which would silently shift every following implicit value.
+    Lexer lexer{&formatter_, R"(
+enum {
+    A,
+    B,
+#if SOME_FLAG
+    C,
+    D = 5,
+#endif
+    E,
+};
+)"};
+    auto tokens = lexer.lex();
+    ASSERT_TRUE(tokens.has_value());
+    Parser parser{&formatter_, std::move(tokens).value()};
+
+    TolerantEnumScan scan = parser.parse_enums_tolerant();
+    ASSERT_EQ(scan.enums.size(), 1U);
+    const auto &members = scan.enums[0].members;
+    ASSERT_EQ(members.size(), 5U);
+
+    EXPECT_EQ(members[0].name, "A");
+    EXPECT_EQ(members[0].value, 0);
+    EXPECT_EQ(members[1].name, "B");
+    EXPECT_EQ(members[1].value, 1);
+    EXPECT_EQ(members[2].name, "C");
+    EXPECT_FALSE(members[2].value.has_value());
+    EXPECT_EQ(members[3].name, "D");
+    EXPECT_FALSE(members[3].value.has_value());
+    EXPECT_EQ(members[4].name, "E");
+    EXPECT_FALSE(members[4].value.has_value());
+}
+
+TEST_F(ParserTests, IndexedArrayResolvesSeededMacroValuesAndHexCasing)
+{
+    Lexer lexer{&formatter_, R"(
+static const u32 sMetatileAttrMasks[METATILE_ATTRIBUTE_COUNT] = {
+    [METATILE_ATTRIBUTE_BEHAVIOR] = METATILE_ATTR_BEHAVIOR_MASK,
+    [METATILE_ATTRIBUTE_TERRAIN]  = 0x00003e00,
+    [METATILE_ATTRIBUTE_LAYER]    = 0xF000,
+};
+)"};
+    auto tokens = lexer.lex();
+    ASSERT_TRUE(tokens.has_value());
+    Parser parser{&formatter_, std::move(tokens).value()};
+    parser.seed_symbols({{"METATILE_ATTR_BEHAVIOR_MASK", 0x1FF}});
+
+    auto result = parser.parse_indexed_arrays();
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1U);
+    const auto &arr = result.value()[0];
+    EXPECT_EQ(arr.name, "sMetatileAttrMasks");
+    ASSERT_EQ(arr.entries.size(), 3U);
+
+    EXPECT_EQ(arr.entries[0].index_name, "METATILE_ATTRIBUTE_BEHAVIOR");
+    ASSERT_TRUE(arr.entries[0].value.has_value());
+    EXPECT_EQ(arr.entries[0].value.value(), 0x1FF); // resolved from the seeded macro
+    EXPECT_EQ(arr.entries[1].index_name, "METATILE_ATTRIBUTE_TERRAIN");
+    EXPECT_EQ(arr.entries[1].value.value(), 0x3E00); // lowercase hex literal
+    EXPECT_EQ(arr.entries[2].value.value(), 0xF000);
+}
+
+TEST_F(ParserTests, IndexedArrayUnevaluableEntryLeavesValueAbsent)
+{
+    Lexer lexer{&formatter_, R"(
+static const u32 sMasks[COUNT] = {
+    [IDX_A] = 0x1,
+
+    [IDX_B] = SOME_UNSEEDED_MACRO,
+    [IDX_C] = 0x4
+};
+)"};
+    auto tokens = lexer.lex();
+    ASSERT_TRUE(tokens.has_value());
+    Parser parser{&formatter_, std::move(tokens).value()};
+
+    auto result = parser.parse_indexed_arrays();
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1U);
+    const auto &arr = result.value()[0];
+    // Blank lines inside the braces are tolerated; all three entries are captured.
+    ASSERT_EQ(arr.entries.size(), 3U);
+    EXPECT_EQ(arr.entries[0].value.value(), 1);
+    EXPECT_EQ(arr.entries[1].index_name, "IDX_B");
+    EXPECT_FALSE(arr.entries[1].value.has_value());
+    EXPECT_FALSE(arr.entries[1].value_tokens.empty()); // raw tokens retained for later re-evaluation
+    EXPECT_EQ(arr.entries[2].value.value(), 4);
+}
+
+TEST_F(ParserTests, IndexedArrayParsesHighBitMasks)
+{
+    // pokeemerald-expansion's sMetatileAttrMasks really contains 0x80000000; the full 32-bit mask must survive too.
+    Lexer lexer{&formatter_, R"(
+static const u32 sMasks[COUNT] = {
+    [IDX_A] = 0x80000000,
+    [IDX_B] = 0xFFFFFFFF,
+};
+)"};
+    auto tokens = lexer.lex();
+    ASSERT_TRUE(tokens.has_value());
+    Parser parser{&formatter_, std::move(tokens).value()};
+
+    auto result = parser.parse_indexed_arrays();
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1U);
+    const auto &arr = result.value()[0];
+    ASSERT_EQ(arr.entries.size(), 2U);
+    EXPECT_EQ(arr.entries[0].value.value(), 0x80000000LL);
+    EXPECT_EQ(arr.entries[1].value.value(), 0xFFFFFFFFLL);
+}
+
+TEST_F(ParserTests, IndexedArrayDecoyDistinguishedByExactName)
+{
+    Lexer lexer{&formatter_, R"(
+static const u32 sMetatileAttrMasks[COUNT] = {
+    [IDX_A] = 0x1,
+};
+static const u32 sMetatileAttrMasksEmerald[COUNT] = {
+    [IDX_A] = 0x00FF,
+};
+)"};
+    auto tokens = lexer.lex();
+    ASSERT_TRUE(tokens.has_value());
+    Parser parser{&formatter_, std::move(tokens).value()};
+
+    auto result = parser.parse_indexed_arrays();
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 2U);
+    // Both parse, but they carry distinct names so an exact-name lookup ignores the Emerald decoy.
+    auto exact = std::find_if(result.value().begin(), result.value().end(), [](const IndexedArrayDeclaration &a) {
+        return a.name == "sMetatileAttrMasks";
+    });
+    ASSERT_NE(exact, result.value().end());
+    EXPECT_EQ(exact->entries[0].value.value(), 1);
+}
+
+TEST_F(ParserTests, IndexedArrayInInactiveConditionalIsExcluded)
+{
+    // A masks table sometimes sits inside a preprocessor branch. A table in a provably inactive branch (#if 0) must be
+    // dropped while one in a taken branch (#if 1) is kept, so inference never reads masks the C build does not compile.
+    Lexer lexer{&formatter_, R"(
+#if 0
+static const u32 sMetatileAttrMasks[COUNT] = {
+    [IDX_A] = 0x1,
+};
+#endif
+#if 1
+static const u32 sMetatileAttrMasks[COUNT] = {
+    [IDX_A] = 0x00FF,
+};
+#endif
+)"};
+    auto tokens = lexer.lex();
+    ASSERT_TRUE(tokens.has_value());
+    Parser parser{&formatter_, std::move(tokens).value()};
+
+    auto result = parser.parse_indexed_arrays();
+    ASSERT_TRUE(result.has_value());
+    // Only the taken branch's table survives.
+    ASSERT_EQ(result.value().size(), 1U);
+    const auto &arr = result.value()[0];
+    EXPECT_EQ(arr.name, "sMetatileAttrMasks");
+    ASSERT_EQ(arr.entries.size(), 1U);
+    EXPECT_EQ(arr.entries[0].value.value(), 0x00FF);
+}
+
+TEST_F(ParserTests, EvaluatesComparisonAndLogicalOperators)
+{
+    auto result = parse(R"(
+#define LT (1 < 2)
+#define GE (3 >= 3)
+#define EQ (4 == 4)
+#define NE (4 != 5)
+#define AND (1 && 0)
+#define OR (1 || 0)
+)");
+    ASSERT_TRUE(result.has_value());
+    const auto &defines = result.value();
+    const auto value_of = [&](const std::string &name) {
+        auto it =
+            std::find_if(defines.begin(), defines.end(), [&](const DefineStatement &d) { return d.name() == name; });
+        return (it != defines.end() && it->has_int_value()) ? it->int_value() : -1;
+    };
+    EXPECT_EQ(value_of("LT"), 1);
+    EXPECT_EQ(value_of("GE"), 1);
+    EXPECT_EQ(value_of("EQ"), 1);
+    EXPECT_EQ(value_of("NE"), 1);
+    EXPECT_EQ(value_of("AND"), 0);
+    EXPECT_EQ(value_of("OR"), 1);
+}
+
+TEST_F(ParserTests, ConditionalComparisonExpressionIsDecidable)
+{
+    // With comparison evaluation, #if PICK == 2 is now decidable rather than falling back to both.
+    auto result = parse(R"(
+#define PICK 2
+#if PICK == 1
+#define BRANCH_ONE 1
+#elif PICK == 2
+#define BRANCH_TWO 2
+#else
+#define BRANCH_ELSE 3
+#endif
+)");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_FALSE(has_define(result.value(), "BRANCH_ONE"));
+    EXPECT_TRUE(has_define(result.value(), "BRANCH_TWO"));
+    EXPECT_FALSE(has_define(result.value(), "BRANCH_ELSE"));
+}
+
+TEST_F(ParserTests, StructDefinitionParsesEmeraldShapedTileset)
+{
+    // The pokeemerald shape: plain bool8 members, offset comments, a pointer-to-array member (skipped), and a
+    // typedef'd callback member.
+    auto result = parse_struct_definitions(R"(
+struct Tileset
+{
+    /*0x00*/ bool8 isCompressed;
+    /*0x01*/ bool8 isSecondary;
+    /*0x04*/ const u32 *tiles;
+    /*0x08*/ const u16 (*palettes)[16];
+    /*0x0C*/ const u16 *metatiles;
+    /*0x10*/ const u16 *metatileAttributes;
+    /*0x14*/ TilesetCB callback;
+};
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1U);
+    const StructDefinition &def = result.value().front();
+    EXPECT_EQ(def.name, "Tileset");
+    // The pointer-to-array palettes member is unparseable and skipped; six members survive.
+    ASSERT_EQ(def.members.size(), 6U);
+    EXPECT_EQ(def.members[0].member_name, "isCompressed");
+    EXPECT_EQ(def.members[0].type_name, "bool8");
+    EXPECT_EQ(def.members[0].pointer_depth, 0U);
+    EXPECT_FALSE(def.members[0].is_const);
+    const StructMemberDeclaration &attrs = def.members[4];
+    EXPECT_EQ(attrs.member_name, "metatileAttributes");
+    EXPECT_EQ(attrs.type_name, "u16");
+    EXPECT_EQ(attrs.pointer_depth, 1U);
+    EXPECT_TRUE(attrs.is_const);
+    EXPECT_EQ(def.members[5].member_name, "callback");
+    EXPECT_EQ(def.members[5].type_name, "TilesetCB");
+}
+
+TEST_F(ParserTests, StructDefinitionParsesExpansionShapedBitfields)
+{
+    // The expansion shape adds bitfield members with trailing comments.
+    auto result = parse_struct_definitions(R"(
+struct Tileset
+{
+    /*0x00*/ u8 isCompressed:1;
+    /*0x00*/ u8 swapPalettes:7; // Bitmask determining whether palette has an alternate, night-time palette
+    /*0x01*/ bool8 isSecondary;
+    /*0x10*/ const u16 *metatileAttributes;
+    /*0x14*/ TilesetCB callback;
+};
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1U);
+    const StructDefinition &def = result.value().front();
+    ASSERT_EQ(def.members.size(), 5U);
+    EXPECT_EQ(def.members[0].member_name, "isCompressed");
+    EXPECT_EQ(def.members[0].type_name, "u8");
+    EXPECT_EQ(def.members[1].member_name, "swapPalettes");
+    EXPECT_EQ(def.members[3].member_name, "metatileAttributes");
+    EXPECT_EQ(def.members[3].pointer_depth, 1U);
+}
+
+TEST_F(ParserTests, StructDefinitionParsesFireredShapedU32Attributes)
+{
+    // The pokefirered shape declares metatileAttributes as 'const u32 *' and places it after the callback.
+    auto result = parse_struct_definitions(R"(
+struct Tileset
+{
+    /*0x00*/ bool8 isCompressed:1;
+    /*0x10*/ TilesetCB callback;
+    /*0x14*/ const u32 *metatileAttributes;
+};
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1U);
+    const StructDefinition &def = result.value().front();
+    ASSERT_EQ(def.members.size(), 3U);
+    EXPECT_EQ(def.members[2].member_name, "metatileAttributes");
+    EXPECT_EQ(def.members[2].type_name, "u32");
+    EXPECT_EQ(def.members[2].pointer_depth, 1U);
+    EXPECT_TRUE(def.members[2].is_const);
+}
+
+TEST_F(ParserTests, StructDefinitionCapturesStructTypedMembers)
+{
+    // A 'struct TYPE' member records the tag name as its type, as in MapLayout's tileset pointers.
+    auto result = parse_struct_definitions(R"(
+struct MapLayout
+{
+    /*0x00*/ s32 width;
+    /*0x10*/ const struct Tileset *primaryTileset;
+};
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1U);
+    const StructDefinition &def = result.value().front();
+    ASSERT_EQ(def.members.size(), 2U);
+    EXPECT_EQ(def.members[1].member_name, "primaryTileset");
+    EXPECT_EQ(def.members[1].type_name, "Tileset");
+    EXPECT_EQ(def.members[1].pointer_depth, 1U);
+}
+
+TEST_F(ParserTests, StructDefinitionSkipsVariableDeclarationsAndForwardDeclarations)
+{
+    // A struct variable declaration and a forward declaration are not type definitions.
+    auto result = parse_struct_definitions(R"(
+struct Tileset;
+const struct Tileset gTileset_General = {
+    .isCompressed = TRUE,
+};
+struct Real { u8 field; };
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1U);
+    EXPECT_EQ(result.value().front().name, "Real");
+    ASSERT_EQ(result.value().front().members.size(), 1U);
+    EXPECT_EQ(result.value().front().members.front().member_name, "field");
+}
+
+TEST_F(ParserTests, StructDefinitionIgnoresDirectivesAndUnsupportedMembers)
+{
+    // Preprocessor lines inside the body are dropped, and array members / multiple declarators are skipped without
+    // poisoning their neighbors.
+    auto result = parse_struct_definitions(R"(
+struct Mixed
+{
+    u8 before;
+#if SOME_FLAG
+    u8 conditional;
+#endif
+    u8 data[16];
+    u8 a, b;
+    const u16 *after;
+};
+)");
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1U);
+    const StructDefinition &def = result.value().front();
+    ASSERT_EQ(def.members.size(), 3U);
+    EXPECT_EQ(def.members[0].member_name, "before");
+    EXPECT_EQ(def.members[1].member_name, "conditional");
+    EXPECT_EQ(def.members[2].member_name, "after");
+    EXPECT_EQ(def.members[2].pointer_depth, 1U);
+}
+
+TEST_F(ParserTests, ConditionalLogicalExpressionIsDecidable)
+{
+    auto result = parse(R"(
+#define A 1
+#define B 0
+#if A && B
+#define BOTH_ON 1
+#endif
+#if A || B
+#define EITHER_ON 1
+#endif
+)");
+    ASSERT_TRUE(result.has_value());
+    EXPECT_FALSE(has_define(result.value(), "BOTH_ON"));
+    EXPECT_TRUE(has_define(result.value(), "EITHER_ON"));
 }
 
 } // namespace

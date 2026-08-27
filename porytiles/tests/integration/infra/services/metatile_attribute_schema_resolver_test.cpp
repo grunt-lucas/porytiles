@@ -1,0 +1,1041 @@
+#include "porytiles/infra/services/metatile_attribute_schema_resolver.hpp"
+
+#include <filesystem>
+#include <fstream>
+#include <memory>
+#include <string>
+#include <vector>
+
+#include "gtest/gtest.h"
+
+#include "porytiles/infra/cli/cli_option_storage.hpp"
+#include "porytiles/infra/config/cli_option_provider.hpp"
+#include "porytiles/infra/config/default_provider.hpp"
+#include "porytiles/infra/config/lazy_layered_config.hpp"
+#include "porytiles/infra/config/yaml_file_provider.hpp"
+#include "porytiles/utilities/text/plain_text_formatter.hpp"
+#include "porytiles/xcut/config/config_scope_type.hpp"
+#include "porytiles/xcut/diagnostics/buffered_user_diagnostics.hpp"
+
+namespace porytiles {
+namespace {
+
+// An explicit single-field config used where the tests need fields without header inference.
+constexpr auto explicit_fields_yaml = R"(
+fieldmap:
+  metatile_attribute_fields:
+    - name: behavior
+      mask: 0x00FF
+)";
+
+// The same field plus the declaration width. Cases that write no readable fieldmap header need it: struct Tileset is
+// the only thing that states the declared element type, so a project without one has to say it in config.
+constexpr auto explicit_fields_with_declaration_yaml = R"(
+fieldmap:
+  metatile_attribute_declaration_size: 1
+  metatile_attribute_fields:
+    - name: behavior
+      mask: 0x00FF
+)";
+
+// Both width knobs plus the field. Cases with no readable fieldmap header need both: with no struct Tileset there is
+// nothing to corroborate the mask-derived attribute width (the size knob) and nothing to state the declared element
+// type (the declaration knob).
+constexpr auto explicit_fields_with_sizes_yaml = R"(
+fieldmap:
+  metatile_attribute_size: 1
+  metatile_attribute_declaration_size: 1
+  metatile_attribute_fields:
+    - name: behavior
+      mask: 0x00FF
+)";
+
+// Stock pokeemerald's mask defines: one candidate set, behavior plus the 0xF000 layer mask, 2 bytes.
+constexpr auto emerald_defines = R"(
+#define METATILE_ATTR_BEHAVIOR_MASK 0x00FF
+#define METATILE_ATTR_LAYER_MASK    0xF000
+)";
+
+// Stock pokeemerald-expansion's dual defines: the bare set (2 bytes) and the FRLG set (4 bytes).
+constexpr auto dual_defines = R"(
+#define METATILE_ATTR_BEHAVIOR_MASK 0x00FF
+#define METATILE_ATTR_LAYER_MASK    0xF000
+#define METATILE_ATTR_BEHAVIOR_MASK_FRLG 0x01FF
+#define METATILE_ATTR_LAYER_MASK_FRLG    0x60000000
+)";
+
+// Like emerald_defines, but with the layer-type bits moved off the vanilla position. Every stock decomp
+// declares the vanilla mask for its width (0xF000 at two bytes, 0x60000000 at four), so a relocated mask is
+// the shape that proves the resolved position really came from the project's source. 0x0F00 is still
+// contiguous and still fits two bytes, so only its provenance differs.
+constexpr auto relocated_layer_defines = R"(
+#define METATILE_ATTR_BEHAVIOR_MASK 0x00FF
+#define METATILE_ATTR_LAYER_MASK    0x0F00
+)";
+
+constexpr auto test_tileset_name = "gTileset_Test";
+
+class MetatileAttributeSchemaResolverTest : public ::testing::Test {
+  protected:
+    std::filesystem::path project_root_;
+    PlainTextFormatter formatter_;
+    BufferedUserDiagnostics diag_;
+
+    void SetUp() override
+    {
+        // YamlFileProvider caches parsed files by path process-wide, so each test needs a distinct root.
+        const auto *info = ::testing::UnitTest::GetInstance()->current_test_info();
+        project_root_ = std::filesystem::temp_directory_path() /
+                        (std::string{"porytiles_resolver_test_"} + info->test_suite_name() + "_" + info->name());
+        std::filesystem::remove_all(project_root_);
+        std::filesystem::create_directories(project_root_ / "porytiles");
+        // A real decomp project always has a behavior constants header, and a missing one is fatal for the inferred
+        // behavior field, so presence is the harness default; the tests about the header itself opt out by removing
+        // or rewriting it.
+        write_behaviors_header();
+    }
+
+    void TearDown() override
+    {
+        std::error_code ec;
+        std::filesystem::remove_all(project_root_, ec);
+    }
+
+    void write_config(const std::string &yaml)
+    {
+        std::ofstream out{project_root_ / "porytiles" / "config.yaml"};
+        out << yaml;
+    }
+
+    // Writes the header exactly as given. Use this when the case is about the declaration itself (or about a header
+    // that cannot be parsed at all), so nothing is appended behind the test's back.
+    void write_fieldmap_header_verbatim(const std::string &content)
+    {
+        std::filesystem::create_directories(project_root_ / "include");
+        std::ofstream out{project_root_ / "include" / "global.fieldmap.h"};
+        out << content;
+    }
+
+    // Writes the given content followed by a stock struct Tileset declaring the given element type. A real fieldmap
+    // header always declares one, and the declaration width is a required fact, so a mask-only header would make
+    // every case a declaration case. With no explicit size knob the declared element width must equal the width the
+    // masks derive exactly (masks prove a minimum width, never the width itself), so cases pass the element type
+    // their masks actually need; a mismatched type is the mask-versus-declaration conflict, which fires first and
+    // would make the case about that instead.
+    void write_fieldmap_header(const std::string &content, const std::string &element_type = "u16")
+    {
+        write_fieldmap_header_verbatim(
+            content + "\nstruct Tileset\n{\n    /*0x10*/ const " + element_type + " *metatileAttributes;\n};\n");
+    }
+
+    // Writes a stock behavior constants header declaring MB_ names as enum members. Called by SetUp for every test
+    // project; the tests about the header remove or corrupt it afterwards.
+    void write_behaviors_header()
+    {
+        std::filesystem::create_directories(project_root_ / "include" / "constants");
+        std::ofstream out{project_root_ / "include" / "constants" / "metatile_behaviors.h"};
+        out << "enum {\n    MB_NORMAL,\n    MB_TALL_GRASS,\n};\n";
+    }
+
+    void write_fieldmap_source(const std::string &content)
+    {
+        std::filesystem::create_directories(project_root_ / "src");
+        std::ofstream out{project_root_ / "src" / "fieldmap.c"};
+        out << content;
+    }
+
+    [[nodiscard]] ChainableResult<LoadedMetatileAttributeSchema> resolve(const std::string &tileset_name)
+    {
+        return resolve_impl(project_root_, tileset_name, nullptr);
+    }
+
+    // Same as resolve() but with a CliOptionProvider at the head of the chain, mirroring the real command setup.
+    [[nodiscard]] ChainableResult<LoadedMetatileAttributeSchema>
+    resolve_with_cli(const std::string &tileset_name, const CliOptionStorage &storage)
+    {
+        return resolve_impl(project_root_, tileset_name, &storage);
+    }
+
+    // Resolve against an arbitrary root (the testbed acceptance tests point this at the decomp checkouts).
+    [[nodiscard]] ChainableResult<LoadedMetatileAttributeSchema>
+    resolve_impl(const std::filesystem::path &root, const std::string &tileset_name, const CliOptionStorage *storage)
+    {
+        std::vector<std::unique_ptr<ConfigProvider>> providers;
+        if (storage != nullptr) {
+            providers.push_back(std::make_unique<CliOptionProvider>(*storage));
+        }
+        providers.push_back(std::make_unique<YamlFileProvider>(&formatter_, &diag_, root));
+        providers.push_back(std::make_unique<DefaultProvider>());
+        LazyLayeredConfig config{&formatter_, std::move(providers)};
+
+        MetatileAttributeSchemaResolver resolver{root, &config, &formatter_, &diag_};
+        return resolver.resolve(tileset_name);
+    }
+
+    [[nodiscard]] std::string error_text(const ChainableResult<LoadedMetatileAttributeSchema> &result)
+    {
+        std::string text;
+        for (const auto &err : result.chain()) {
+            text += err->join(formatter_);
+            text += "\n";
+        }
+        return text;
+    }
+
+    [[nodiscard]] static const Field *schema_field(const Schema &schema, const std::string &name)
+    {
+        for (const Field &field : schema.fields()) {
+            if (field.name() == name) {
+                return &field;
+            }
+        }
+        return nullptr;
+    }
+};
+
+// --- Size inference and mask-set selection. ---
+
+TEST_F(MetatileAttributeSchemaResolverTest, SizeInferredFromSingleCandidateSet)
+{
+    // No explicit config at all: the single candidate set is selected and its masks answer the size, so no
+    // warnings ride along.
+    write_fieldmap_header(emerald_defines);
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().attribute_bytes, 2U);
+    EXPECT_EQ(result.value().declaration_bytes, 2U);
+    ASSERT_NE(schema_field(result.value().schema, "behavior"), nullptr);
+    EXPECT_EQ(schema_field(result.value().schema, "behavior")->mask(), 0x00FFU);
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0xF000U);
+    EXPECT_FALSE(diag_.warning_tag_counts().contains(metatile_attr_schema_tag));
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, EnumOnlyProjectWithNoMasksIsFatal)
+{
+    // A project declaring the attribute enum but no masks anywhere: there is nothing to infer a layout from, and
+    // the old synthesized behavior-only completion is gone, so this is a fatal, actionable error.
+    write_fieldmap_header(R"(
+enum
+{
+    METATILE_ATTRIBUTE_BEHAVIOR,
+    METATILE_ATTRIBUTE_LAYER_TYPE,
+    METATILE_ATTRIBUTE_COUNT,
+};
+)");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("behavior"), std::string::npos) << text;
+    EXPECT_NE(text.find("METATILE_ATTR_BEHAVIOR_MASK"), std::string::npos) << text;
+    EXPECT_NE(text.find("metatile_attribute_fields"), std::string::npos) << text;
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, UnparseableHeaderIsFatalAboutTheFileNotTheMasks)
+{
+    // The header declares masks but cannot be scanned (unterminated block comment). Telling the user Porytiles
+    // "found no mask layout" and to "make sure those masks exist" would send them looking for masks that are right
+    // there in the file, so the fatal has to be about the file it could not read.
+    write_fieldmap_header_verbatim(R"(
+#define METATILE_ATTR_BEHAVIOR_MASK 0x00FF /* unterminated block comment
+#define METATILE_ATTR_LAYER_MASK    0xF000
+)");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("could not read"), std::string::npos) << text;
+    EXPECT_NE(text.find("global.fieldmap.h"), std::string::npos) << text;
+    EXPECT_NE(text.find("metatile_attribute_fields"), std::string::npos) << text;
+    EXPECT_EQ(text.find("Make sure those masks exist"), std::string::npos) << text;
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, UnparseableHeaderStillDefersToExplicitFields)
+{
+    // A user who declared the layout does not need the header's masks, so an unreadable one stays a warning as far
+    // as the fields go. The fatal above is specifically about having nothing to fall back on. Both width knobs are
+    // stated in config here because an unreadable header supplies neither the corroborating declaration nor the
+    // declared element type.
+    write_config(explicit_fields_with_sizes_yaml);
+    write_fieldmap_header_verbatim(R"(
+#define METATILE_ATTR_BEHAVIOR_MASK 0x00FF /* unterminated block comment
+)");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    ASSERT_NE(schema_field(result.value().schema, "behavior"), nullptr);
+    EXPECT_EQ(schema_field(result.value().schema, "behavior")->mask(), 0x00FFU);
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, UnparseableHeaderWithoutTheDeclarationKnobIsFatal)
+{
+    // Explicit fields rescue the masks but not the declaration: a header that never parsed cannot have declared
+    // anything, and the error says that rather than claiming the project has no struct Tileset.
+    write_config(explicit_fields_yaml);
+    write_fieldmap_header_verbatim(R"(
+#define METATILE_ATTR_BEHAVIOR_MASK 0x00FF /* unterminated block comment
+)");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("could not be read"), std::string::npos) << text;
+    EXPECT_EQ(text.find("declares no 'struct Tileset'"), std::string::npos) << text;
+    EXPECT_NE(text.find("metatile-attribute-declaration-size"), std::string::npos) << text;
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, MultipleCandidateSetsRequireExplicitSize)
+{
+    // Two mask layouts and nothing choosing between them: fatal, naming the explicit size knob.
+    write_fieldmap_header(dual_defines);
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("more than one metatile attribute mask layout"), std::string::npos) << text;
+    EXPECT_NE(text.find("fieldmap.metatile_attribute_size"), std::string::npos) << text;
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, SelectionPicksSetMatchingSize)
+{
+    // An explicit size rescues the dual-layout case and selects the set whose required width matches: 2 bytes picks
+    // the bare defines, 4 bytes picks the FRLG defines.
+    write_fieldmap_header(dual_defines);
+    write_config("fieldmap:\n  metatile_attribute_size: 2\n");
+
+    const auto two = resolve(test_tileset_name);
+    ASSERT_TRUE(two.has_value()) << error_text(two);
+    EXPECT_EQ(two.value().attribute_bytes, 2U);
+    ASSERT_NE(schema_field(two.value().schema, "behavior"), nullptr);
+    EXPECT_EQ(schema_field(two.value().schema, "behavior")->mask(), 0x00FFU);
+    EXPECT_EQ(two.value().schema.layer_type_mask(), 0xF000U);
+
+    CliOptionStorage storage;
+    storage.metatile_attribute_size = "4";
+    const auto four = resolve_with_cli(test_tileset_name, storage);
+    ASSERT_TRUE(four.has_value()) << error_text(four);
+    EXPECT_EQ(four.value().attribute_bytes, 4U);
+    EXPECT_EQ(schema_field(four.value().schema, "behavior")->mask(), 0x01FFU);
+    EXPECT_EQ(four.value().schema.layer_type_mask(), 0x60000000U);
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, CandidateLayerMaskSelectedBySize)
+{
+    // The selected set's structural layer mask follows the selection; nothing explicit is configured.
+    write_fieldmap_header(dual_defines);
+    CliOptionStorage storage;
+    storage.metatile_attribute_size = "4";
+
+    const auto result = resolve_with_cli(test_tileset_name, storage);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0x60000000U);
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, SingleCandidateUnderWiderKnobSelectsAndWarns)
+{
+    // One 2-byte candidate under an explicit size of 4: the layout still selects (there is nothing else it could
+    // be), and the knob being wider than anything the project declares draws a warning.
+    write_fieldmap_header(emerald_defines);
+    write_config("fieldmap:\n  metatile_attribute_size: 4\n");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().attribute_bytes, 4U);
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0xF000U);
+    EXPECT_TRUE(diag_.warning_tag_counts().contains(metatile_attr_schema_tag));
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, MultipleCandidatesSameWidthErrors)
+{
+    // Both layouts fit in 2 bytes, so an explicit size of 2 cannot choose between them: fatal, pointing at
+    // metatile_attribute_fields.
+    write_fieldmap_header(R"(
+#define METATILE_ATTR_BEHAVIOR_MASK 0x00FF
+#define METATILE_ATTR_LAYER_MASK    0xF000
+#define METATILE_ATTR_BEHAVIOR_MASK_FRLG 0x01FF
+#define METATILE_ATTR_LAYER_MASK_FRLG    0x3000
+)");
+    write_config("fieldmap:\n  metatile_attribute_size: 2\n");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("more than one metatile attribute mask layout matching"), std::string::npos) << text;
+    EXPECT_NE(text.find("metatile_attribute_fields"), std::string::npos) << text;
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, ExplicitFieldsSkipSelection)
+{
+    // Explicit fields are the truth: the inferred candidate's masks are ignored in favor of the config, the width
+    // derives from the explicit masks, and the disagreement with the source draws the mismatch warning. The header
+    // declares a 1-byte element to match the config, leaving the mask-versus-declaration conflict out of it.
+    write_fieldmap_header(emerald_defines, "u8");
+    write_config(R"(
+fieldmap:
+  metatile_attribute_fields:
+    - name: custom
+      mask: 0x00F0
+)");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    ASSERT_EQ(result.value().schema.fields().size(), 1U);
+    EXPECT_EQ(result.value().schema.fields().front().name(), "custom");
+    EXPECT_NE(result.value().fields_origin.find("explicit metatile_attribute_fields"), std::string::npos);
+    EXPECT_EQ(result.value().attribute_bytes, 1U); // 0x00F0 fits one byte
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0U);
+    EXPECT_TRUE(diag_.warning_tag_counts().contains(metatile_attr_schema_tag));
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, AmbiguousConditionalDefineIsFatalEvenWithExplicitSize)
+{
+    // An undecidable conditional makes the masks themselves unusable, so an explicit size cannot rescue selection.
+    write_fieldmap_header(R"(
+#if SOME_UNKNOWN_FLAG
+#define METATILE_ATTR_BEHAVIOR_MASK 0x00FF
+#else
+#define METATILE_ATTR_BEHAVIOR_MASK 0x01FF
+#endif
+#define METATILE_ATTR_LAYER_MASK 0xF000
+)");
+    write_config("fieldmap:\n  metatile_attribute_size: 2\n");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    EXPECT_NE(error_text(result).find("conflicting values"), std::string::npos) << error_text(result);
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, DualLayoutWithExplicitFieldsStillRequiresExplicitSize)
+{
+    // Explicit fields make mask-set selection advisory, but they do not resolve the width ambiguity: the width is
+    // the read stride, and guessing it wrong silently halves a 4-byte project's attributes. Still fatal.
+    write_fieldmap_header(dual_defines);
+    write_config(explicit_fields_yaml);
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("more than one metatile attribute mask layout"), std::string::npos) << text;
+    EXPECT_NE(text.find("fieldmap.metatile_attribute_size"), std::string::npos) << text;
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, ScannerWarningsRouteThroughTheDiagnosticsSink)
+{
+    // A present-but-unparseable src/fieldmap.c is worth a warning but not a fatal when the header's defines carry a
+    // complete layout on their own. That warning is the scanner's, drained into the (filterable) diagnostics sink
+    // under the inference tag; everything inference itself cannot settle is a conflict record and fatal, never a
+    // warning, so this is the surviving warning shape after that change.
+    write_fieldmap_header(emerald_defines);
+    write_fieldmap_source(R"(
+static const u32 sMetatileAttrMasks[METATILE_ATTRIBUTE_COUNT] = { /* unterminated block comment
+)");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_TRUE(diag_.warning_tag_counts().contains(metatile_attr_inference_tag));
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, UnrecognizedAttributeDefineSpellingsAreWarnedAbout)
+{
+    // A user inventing a third flavor suffix gets a layout built without those defines. The resolve still succeeds on
+    // the recognized ones, so the warning is the only thing that tells them their defines were passed over.
+    write_fieldmap_header(std::string{emerald_defines} + R"(
+#define METATILE_ATTR_BEHAVIOR_MASK_RSE 0x01FF
+#define METATILE_ATTR_LAYER_MASK_RSE    0x60000000
+)");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+
+    // The recognized emerald defines decided the layout: an _RSE suffix is not a second candidate, so the resolve is
+    // the ordinary single-layout one and needs no size knob to disambiguate.
+    EXPECT_EQ(result.value().attribute_bytes, 2U);
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0xF000U);
+
+    ASSERT_TRUE(diag_.warning_tag_counts().contains(metatile_attr_inference_tag));
+    std::string warnings;
+    for (const auto &lines : diag_.warnings()) {
+        for (const auto &line : lines) {
+            warnings += line;
+            warnings += "\n";
+        }
+    }
+    EXPECT_NE(warnings.find("METATILE_ATTR_BEHAVIOR_MASK_RSE"), std::string::npos) << warnings;
+    EXPECT_NE(warnings.find("METATILE_ATTR_LAYER_MASK_RSE"), std::string::npos) << warnings;
+    EXPECT_NE(warnings.find("metatile_attribute_fields"), std::string::npos) << warnings;
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, StockDefinesDrawNoUnrecognizedSpellingWarning)
+{
+    // Every spelling a stock project uses must stay quiet, or the warning above would fire on every real project.
+    write_fieldmap_header(emerald_defines);
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_FALSE(diag_.warning_tag_counts().contains(metatile_attr_inference_tag));
+}
+
+// --- Fields inference could not settle: fatal unless an override speaks to the fact. ---
+
+TEST_F(MetatileAttributeSchemaResolverTest, MissingBehaviorsHeaderIsFatalNamingTheOverride)
+{
+    // The behavior field takes its value names from the behavior constants header. With the header gone there is no
+    // provider to infer, and silently falling back to raw values was the old suppressible-warning behavior this
+    // replaces: fatal, naming the missing path and the override that settles it.
+    write_fieldmap_header(emerald_defines);
+    std::filesystem::remove(project_root_ / "include" / "constants" / "metatile_behaviors.h");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("metatile_behaviors.h"), std::string::npos) << text;
+    EXPECT_NE(text.find("has no"), std::string::npos) << text;
+    EXPECT_NE(text.find("metatile_attribute_field_overrides"), std::string::npos) << text;
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, ProviderNullOverrideRescuesAMissingBehaviorsHeader)
+{
+    // `provider: null` is the deliberate statement that the field uses raw values, which is exactly the escape the
+    // fatal above names, so it has to work end to end.
+    write_fieldmap_header(emerald_defines);
+    std::filesystem::remove(project_root_ / "include" / "constants" / "metatile_behaviors.h");
+    write_config(R"(
+fieldmap:
+  metatile_attribute_field_overrides:
+    behavior:
+      provider: null
+)");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    ASSERT_NE(schema_field(result.value().schema, "behavior"), nullptr);
+    EXPECT_FALSE(schema_field(result.value().schema, "behavior")->has_provider());
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, UnreadableBehaviorsHeaderIsFatalAboutTheFile)
+{
+    // A behaviors header that failed to lex may declare any number of MB_ names, so the error must say the file
+    // could not be read rather than claiming no constants were found in it.
+    write_fieldmap_header(emerald_defines);
+    {
+        std::ofstream out{project_root_ / "include" / "constants" / "metatile_behaviors.h"};
+        out << "enum {\n    MB_NORMAL, /* unterminated block comment\n";
+    }
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("metatile_behaviors.h"), std::string::npos) << text;
+    EXPECT_NE(text.find("could not be read"), std::string::npos) << text;
+    EXPECT_EQ(text.find("declares no MB_ name"), std::string::npos) << text;
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, CustomFieldWithNoMatchingEnumIsFatalNamingTheProbedPrefix)
+{
+    // A custom named field whose TILE_<X>_ enum probe finds nothing was completely silent before: the field just
+    // shipped raw. Now it stops and names the prefix it went looking for.
+    write_fieldmap_header(R"(
+#define METATILE_ATTR_BEHAVIOR_MASK 0x00FF
+#define METATILE_ATTR_CUSTOM_MASK   0x0F00
+)");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("custom"), std::string::npos) << text;
+    EXPECT_NE(text.find("TILE_CUSTOM_"), std::string::npos) << text;
+    EXPECT_NE(text.find("metatile_attribute_field_overrides"), std::string::npos) << text;
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, StaleShiftDefineIsFatal)
+{
+    // The METATILE_ATTR_*_SHIFT defines were checked nowhere before. A stale one means the engine unpacks from a
+    // different offset than Porytiles packs to, so it stops end to end.
+    write_fieldmap_header(R"(
+#define METATILE_ATTR_BEHAVIOR_MASK  0x00FF
+#define METATILE_ATTR_BEHAVIOR_SHIFT 4
+#define METATILE_ATTR_LAYER_MASK     0xF000
+#define METATILE_ATTR_LAYER_SHIFT    12
+)");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("behavior"), std::string::npos) << text;
+    EXPECT_NE(text.find("shift 4"), std::string::npos) << text;
+    EXPECT_NE(text.find("offset 0"), std::string::npos) << text;
+}
+
+// --- Explicit masks and sizes. ---
+
+TEST_F(MetatileAttributeSchemaResolverTest, ExplicitMaskExceedingExplicitSizeErrors)
+{
+    // An explicit size is authoritative: a mask that needs a wider word is a fatal misconfiguration.
+    write_config(R"(
+fieldmap:
+  metatile_attribute_size: 2
+  metatile_attribute_fields:
+    - name: wide
+      mask: 0x30000
+)");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("wide"), std::string::npos) << text;
+    EXPECT_NE(text.find("metatile attribute size"), std::string::npos) << text;
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, LayerTypeOverrideRelocatesInferredRoleField)
+{
+    // The layer_type role field participates in the uniform override machinery: overriding its mask relocates the
+    // inferred candidate's layer bits (0xF000 becomes 0x0300).
+    write_fieldmap_header(emerald_defines);
+    write_config(R"(
+fieldmap:
+  metatile_attribute_field_overrides:
+    layer_type:
+      mask: 0x0300
+)");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0x0300U);
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, ExplicitFieldsWithoutRoleFieldDisableLayerType)
+{
+    // No disable syntax exists: omitting the role field from an explicit layout is what disables layer types.
+    write_config(explicit_fields_with_sizes_yaml);
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0U);
+    EXPECT_EQ(result.value().schema.layer_type_field(), nullptr);
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, ExplicitRoleFieldCarriesTheLayerType)
+{
+    // The end-to-end shape of the new syntax: `role: layer_type` in the YAML field list marks the field that
+    // receives layer-type values, at whatever mask the user declares. No header exists, so both width knobs are
+    // stated too.
+    write_config(R"(
+fieldmap:
+  metatile_attribute_size: 2
+  metatile_attribute_declaration_size: 2
+  metatile_attribute_fields:
+    - name: behavior
+      mask: 0x00FF
+    - name: layer_type
+      mask: 0x0F00
+      role: layer_type
+)");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0x0F00U);
+    ASSERT_NE(result.value().schema.layer_type_field(), nullptr);
+    EXPECT_EQ(result.value().schema.layer_type_field()->name(), "layer_type");
+    // The role field is not a value column.
+    EXPECT_EQ(result.value().schema.value_fields().size(), 1U);
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, RelocatedLayerMaskComesFromTheSource)
+{
+    // With the fields inferred, the project's own relocated mask is what lands: there is no vanilla-position
+    // default anywhere for it to fall back to.
+    write_fieldmap_header(relocated_layer_defines);
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0x0F00U);
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, ExplicitFieldsRescueUnusableInferredMasks)
+{
+    // Both inference failures name metatile_attribute_fields as the remedy, so declaring it has to actually
+    // rescue the resolve. The explicit layout is trusted as-is: with no role field declared, layer types are
+    // disabled (there is no size-based default anymore).
+    write_fieldmap_header(R"(
+#if SOME_UNKNOWN_FLAG
+#define METATILE_ATTR_BEHAVIOR_MASK 0x00FF
+#else
+#define METATILE_ATTR_BEHAVIOR_MASK 0x01FF
+#endif
+#define METATILE_ATTR_LAYER_MASK 0x0F00
+)");
+    write_config(std::string{explicit_fields_yaml} + "  metatile_attribute_size: 2\n");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0U);
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, CliSizeOverridesYaml)
+{
+    // CLI beats the YAML knob. The behavior mask (0x00FF) fits 8 bits, so a 1-byte width is consistent and must
+    // resolve without widening.
+    write_config(std::string{explicit_fields_with_declaration_yaml} + "  metatile_attribute_size: 4\n");
+    CliOptionStorage storage;
+    storage.metatile_attribute_size = "1";
+
+    const auto result = resolve_with_cli(test_tileset_name, storage);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().attribute_bytes, 1U);
+    EXPECT_EQ(result.value().declaration_bytes, 1U);
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, RoleFieldMaskExceedingKnobIsFatal)
+{
+    // An explicit size is the read stride: a role-field mask that needs a wider word is a fatal
+    // misconfiguration, not a hidden widen.
+    write_config(R"(
+fieldmap:
+  metatile_attribute_size: 2
+  metatile_attribute_fields:
+    - name: behavior
+      mask: 0x00FF
+    - name: layer_type
+      mask: 0x60000000
+      role: layer_type
+)");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("layer_type"), std::string::npos) << text; // names the offending mask
+    EXPECT_NE(text.find("metatile attribute size"), std::string::npos) << text;
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, WideRoleFieldMaskDerivesFourByteWidth)
+{
+    // No size knob: the width follows the merged masks, so a 4-byte role mask makes a 4-byte layout with nothing to
+    // warn about. The header declares no masks but does declare a u32 element, which is the corroboration the
+    // no-knob rule demands and the source of the declaration width.
+    write_fieldmap_header("", "u32");
+    write_config(R"(
+fieldmap:
+  metatile_attribute_fields:
+    - name: behavior
+      mask: 0x00FF
+    - name: layer_type
+      mask: 0x60000000
+      role: layer_type
+)");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().attribute_bytes, 4U);
+    EXPECT_EQ(result.value().declaration_bytes, 4U);
+    EXPECT_FALSE(diag_.warning_tag_counts().contains(metatile_attr_schema_tag));
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, NoHeaderResolvesWithBothWidthKnobs)
+{
+    write_config(explicit_fields_with_sizes_yaml);
+    // No fieldmap header written: with no struct Tileset, the masks alone cannot settle the attribute width and
+    // nothing states the declared element type, so the config states both.
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().attribute_bytes, 1U);
+    EXPECT_EQ(result.value().declaration_bytes, 1U);
+    EXPECT_FALSE(diag_.warning_tag_counts().contains(metatile_attr_schema_tag));
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, NoHeaderWithDeclarationKnobOnlyIsFatalNamingTheSizeKnob)
+{
+    // The previously silent shape: the declaration knob pinned, the size knob not. The declaration knob feeds only
+    // the generated C declarations; the attribute width would rest on the explicit masks with nothing to
+    // corroborate it, so this stops and names the size knob.
+    write_config(explicit_fields_with_declaration_yaml);
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("has no"), std::string::npos) << text;
+    EXPECT_NE(text.find("global.fieldmap.h"), std::string::npos) << text;
+    EXPECT_NE(text.find("fieldmap.metatile_attribute_size"), std::string::npos) << text;
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, NoHeaderWithoutTheDeclarationKnobIsFatal)
+{
+    // Explicit fields settle the masks and the attribute width, but a project with no fieldmap header has stated
+    // nothing about the element type its arrays are declared with, and no mask ever implies it.
+    write_config(explicit_fields_yaml);
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("has no"), std::string::npos) << text;
+    EXPECT_NE(text.find("global.fieldmap.h"), std::string::npos) << text;
+    EXPECT_NE(text.find("metatile-attribute-declaration-size"), std::string::npos) << text;
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, InvalidKnobValueIsFatal)
+{
+    // The knob only accepts the widths the engine can read: 1, 2, or 4 bytes.
+    write_config(std::string{explicit_fields_yaml} + "  metatile_attribute_size: 3\n");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("Metatile Attribute Size"), std::string::npos) << text;
+    EXPECT_NE(text.find("must be"), std::string::npos) << text;
+}
+
+// --- The declaration-size knob. ---
+
+TEST_F(MetatileAttributeSchemaResolverTest, DeclarationSizeInferredFromStructTileset)
+{
+    // The expansion FRLG shape rebuilt from fixtures: dual defines select 4 bytes, but struct Tileset declares
+    // 'const u16 *metatileAttributes', so generated declarations stay 2 bytes wide.
+    write_fieldmap_header_verbatim(std::string{dual_defines} + R"(
+struct Tileset
+{
+    /*0x00*/ bool8 isCompressed;
+    /*0x10*/ const u16 *metatileAttributes;
+    /*0x14*/ TilesetCB callback;
+};
+)");
+    CliOptionStorage storage;
+    storage.metatile_attribute_size = "4";
+
+    const auto result = resolve_with_cli(test_tileset_name, storage);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().attribute_bytes, 4U);
+    EXPECT_EQ(result.value().declaration_bytes, 2U);
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, ExplicitDeclarationSizeOverridesStructInference)
+{
+    write_fieldmap_header_verbatim(std::string{emerald_defines} + R"(
+struct Tileset
+{
+    /*0x10*/ const u16 *metatileAttributes;
+};
+)");
+    write_config("fieldmap:\n  metatile_attribute_declaration_size: 4\n");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().attribute_bytes, 2U);
+    EXPECT_EQ(result.value().declaration_bytes, 4U);
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, MaskWidthBelowScannedDeclarationIsFatal)
+{
+    // Every mask sits in the low byte, but struct Tileset stores attributes in a u16 array. Masks prove a minimum
+    // width, never the width itself, so the two facts conflict and only the explicit knob can resolve which width
+    // the project actually reads.
+    write_fieldmap_header_verbatim(R"(
+#define METATILE_ATTR_BEHAVIOR_MASK 0x003F
+#define METATILE_ATTR_LAYER_MASK    0x00C0
+
+struct Tileset
+{
+    /*0x10*/ const u16 *metatileAttributes;
+};
+)");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("struct Tileset"), std::string::npos) << text;
+    EXPECT_NE(text.find("fieldmap.metatile_attribute_size"), std::string::npos) << text;
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, KnobResolvesMaskVersusDeclarationConflict)
+{
+    // The same shape as MaskWidthBelowScannedDeclarationIsFatal, with the knob supplying the answer. The scanned
+    // declaration corroborates the knob, so no wider-knob warning fires.
+    write_fieldmap_header_verbatim(R"(
+#define METATILE_ATTR_BEHAVIOR_MASK 0x003F
+#define METATILE_ATTR_LAYER_MASK    0x00C0
+
+struct Tileset
+{
+    /*0x10*/ const u16 *metatileAttributes;
+};
+)");
+    write_config("fieldmap:\n  metatile_attribute_size: 2\n");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().attribute_bytes, 2U);
+    EXPECT_EQ(result.value().declaration_bytes, 2U);
+    ASSERT_NE(schema_field(result.value().schema, "behavior"), nullptr);
+    EXPECT_EQ(schema_field(result.value().schema, "behavior")->mask(), 0x003FU);
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0x00C0U);
+    EXPECT_FALSE(diag_.warning_tag_counts().contains(metatile_attr_schema_tag));
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, MissingTilesetStructIsFatalNamingTheDeclarationKnob)
+{
+    // Masks that resolve cleanly settle the attribute width and say nothing about the declared element type. With no
+    // struct Tileset there is no second source, so this stops rather than reusing the attribute width as a guess.
+    write_fieldmap_header_verbatim(emerald_defines);
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("declares no 'struct Tileset'"), std::string::npos) << text;
+    EXPECT_NE(text.find("global.fieldmap.h"), std::string::npos) << text;
+    EXPECT_NE(text.find("metatile-attribute-declaration-size"), std::string::npos) << text;
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, StructWithoutTheMemberIsFatalNamingTheMember)
+{
+    // struct Tileset is there but declares nothing to read the width from. The error has to separate this from a
+    // missing struct: the file the user opens looks completely different in the two cases.
+    write_fieldmap_header_verbatim(std::string{emerald_defines} + R"(
+struct Tileset
+{
+    /*0x0C*/ const u16 *metatiles;
+};
+)");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("declares no 'metatileAttributes' pointer member"), std::string::npos) << text;
+    EXPECT_NE(text.find("metatile-attribute-declaration-size"), std::string::npos) << text;
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, UnrecognizedElementTypeIsFatalAndQuotesTheDeclaration)
+{
+    // A fork that renamed the element type behind a typedef. The declaration parses fine, so nothing upstream
+    // complains; the error quotes it verbatim so the user can match it against their header.
+    write_fieldmap_header_verbatim(std::string{emerald_defines} + R"(
+struct Tileset
+{
+    /*0x10*/ const MetatileAttr *metatileAttributes;
+};
+)");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("const MetatileAttr *metatileAttributes"), std::string::npos) << text;
+    EXPECT_NE(text.find("u8, u16, or u32"), std::string::npos) << text;
+    EXPECT_NE(text.find("metatile-attribute-declaration-size"), std::string::npos) << text;
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, DeclarationKnobResolvesAnUnreadableDeclaration)
+{
+    // The knob is the escape hatch every one of those errors names, so it has to work through the resolver too. An
+    // unusable declaration also removes the width corroboration the no-knob rule demands, so the size knob rides
+    // along; the declaration knob is what this case is about.
+    write_fieldmap_header_verbatim(std::string{emerald_defines} + R"(
+struct Tileset
+{
+    /*0x10*/ const MetatileAttr *metatileAttributes;
+};
+)");
+    write_config("fieldmap:\n  metatile_attribute_size: 2\n  metatile_attribute_declaration_size: 4\n");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().attribute_bytes, 2U);
+    EXPECT_EQ(result.value().declaration_bytes, 4U);
+    EXPECT_EQ(result.value().declaration_origin, "explicit metatile_attribute_declaration_size");
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, InvalidDeclarationSizeIsFatal)
+{
+    write_config(std::string{explicit_fields_yaml} + "  metatile_attribute_declaration_size: 3\n");
+
+    const auto result = resolve(test_tileset_name);
+    ASSERT_FALSE(result.has_value());
+    const auto text = error_text(result);
+    EXPECT_NE(text.find("Metatile Attribute Declaration Size"), std::string::npos) << text;
+    EXPECT_NE(text.find("must be"), std::string::npos) << text;
+}
+
+// --- Acceptance cases A-D against the local decomp checkouts, when present. ---
+
+TEST_F(MetatileAttributeSchemaResolverTest, AcceptanceCaseAPokeemeraldZeroConfig)
+{
+    const std::filesystem::path root = "./pokeemerald";
+    if (!std::filesystem::exists(root)) {
+        GTEST_SKIP() << "pokeemerald testbed not present";
+    }
+
+    const auto result = resolve_impl(root, "gTileset_General", nullptr);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().attribute_bytes, 2U);
+    EXPECT_EQ(result.value().declaration_bytes, 2U);
+    ASSERT_EQ(result.value().schema.fields().size(), 2U);
+    EXPECT_EQ(result.value().schema.fields().front().name(), "behavior");
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0xF000U);
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, AcceptanceCaseBPokefireredZeroConfig)
+{
+    const std::filesystem::path root = "./pokefirered";
+    if (!std::filesystem::exists(root)) {
+        GTEST_SKIP() << "pokefirered testbed not present";
+    }
+
+    const auto result = resolve_impl(root, "gTileset_General", nullptr);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().attribute_bytes, 4U);
+    EXPECT_EQ(result.value().declaration_bytes, 4U);
+    EXPECT_EQ(result.value().schema.fields().size(), 8U);
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0x60000000U);
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, AcceptanceCaseCExpansionEmeraldFlavor)
+{
+    const std::filesystem::path root = "./pokeemerald-expansion";
+    if (!std::filesystem::exists(root)) {
+        GTEST_SKIP() << "pokeemerald-expansion testbed not present";
+    }
+
+    CliOptionStorage storage;
+    storage.metatile_attribute_size = "2";
+    const auto result = resolve_impl(root, "gTileset_General", &storage);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().attribute_bytes, 2U);
+    EXPECT_EQ(result.value().declaration_bytes, 2U);
+    ASSERT_EQ(result.value().schema.fields().size(), 2U);
+    EXPECT_EQ(result.value().schema.fields().front().name(), "behavior");
+    EXPECT_EQ(result.value().schema.fields().front().mask(), 0x00FFU);
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0xF000U);
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, AcceptanceCaseDExpansionFrlgFlavor)
+{
+    const std::filesystem::path root = "./pokeemerald-expansion";
+    if (!std::filesystem::exists(root)) {
+        GTEST_SKIP() << "pokeemerald-expansion testbed not present";
+    }
+
+    CliOptionStorage storage;
+    storage.metatile_attribute_size = "4";
+    const auto result = resolve_impl(root, "gTileset_General", &storage);
+    ASSERT_TRUE(result.has_value()) << error_text(result);
+    EXPECT_EQ(result.value().attribute_bytes, 4U);
+    // struct Tileset declares 'const u16 *metatileAttributes' even for the FRLG flavor.
+    EXPECT_EQ(result.value().declaration_bytes, 2U);
+    EXPECT_EQ(result.value().schema.fields().size(), 8U);
+    ASSERT_NE(schema_field(result.value().schema, "behavior"), nullptr);
+    EXPECT_EQ(schema_field(result.value().schema, "behavior")->mask(), 0x1FFU);
+    EXPECT_EQ(result.value().schema.layer_type_mask(), 0x60000000U);
+}
+
+TEST_F(MetatileAttributeSchemaResolverTest, ExpansionZeroConfigIsFatalNamingTheSizeKnob)
+{
+    const std::filesystem::path root = "./pokeemerald-expansion";
+    if (!std::filesystem::exists(root)) {
+        GTEST_SKIP() << "pokeemerald-expansion testbed not present";
+    }
+
+    const auto result = resolve_impl(root, "gTileset_General", nullptr);
+    ASSERT_FALSE(result.has_value());
+    EXPECT_NE(error_text(result).find("fieldmap.metatile_attribute_size"), std::string::npos) << error_text(result);
+}
+
+} // namespace
+} // namespace porytiles

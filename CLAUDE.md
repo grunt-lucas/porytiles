@@ -4,7 +4,8 @@ This file provides guidance to Claude Code (claude.ai/code) when working with co
 
 ## Overview
 
-Porytiles is a C++ overworld tileset compiler for Pokémon Generation III decompilation projects. It takes RGBA input assets and generates Porymap-ready binary assets (metatiles.bin, metatile_attributes.bin, tiles.png, palettes).
+Porytiles is a C++ overworld tileset compiler for Pokémon Generation III decompilation projects.
+It takes RGBA input assets and generates Porymap-ready binary assets (metatiles.bin, metatile_attributes.bin, tiles.png, palettes).
 
 ## Architecture
 
@@ -27,17 +28,6 @@ Key directories in `porytiles/`:
 - `porytiles/tools/` - Tools that use the Porytiles library, currently just the main CLI tool
 - `resources/` - Test assets and example files
 - `scripts/` - Utility scripts for the repository (including config system generation)
-
-## Specialized Agents
-
-This project has custom Claude Code agents in `.claude/agents/` for specialized tasks:
-
-- **build-expert**: CMake builds, compilation errors, linker issues
-- **debugger**: Runtime errors, crashes, logic bugs
-- **code-reviewer**: Code quality, style compliance, security review
-- **architect**: DDD layer decisions, component placement, dependency rules
-
-Use these agents for complex tasks in their domains.
 
 ## Build System
 
@@ -67,7 +57,9 @@ uv run scripts/coverage.py show porytiles/lib/domain/foo.cpp  # Line-by-line for
 uv run scripts/coverage.py clean                    # Remove coverage build dir
 ```
 
-When writing tests for new features or bug fixes, always check coverage to verify new code paths are actually exercised — don't just trust that tests pass. Run `build`, then `report` or `show` for the specific files you changed.
+When writing tests for new features or bug fixes,
+always check coverage to verify new code paths are actually exercised — don't just trust that tests pass.
+Run `build`, then `report` or `show` for the specific files you changed.
 
 ## Testing with pokeemerald-expansion
 
@@ -75,19 +67,55 @@ A `pokeemerald-expansion` testbed project is available at `./pokeemerald-expansi
 You can either `cd` into the testbed project or run `porytiles` with the `--project-root` set to `./pokeemerald-expansion`.
 There is also a `pokefirered` testbed at `./pokefirered`, and a `pokeemerald` at `./pokeemerald`.
 
+### Importing and compiling gTileset_General (pokeemerald-expansion)
+
+`gTileset_General` is the usual smoke test for changes.
+Stock pokeemerald-expansion assets do not import or compile cleanly with defaults,
+so use these exact flag sets.
+Without them the import fails and you get stuck.
+Expansion declares both metatile attribute mask layouts (emerald and FRLG),
+so `--metatile-attribute-size` is required there: 2 selects the Emerald flavor, 4 the FRLG flavor.
+
+Import:
+
+```bash
+porytiles import-tileset gTileset_General \
+  --no-verify-checksums \
+  --extrinsic-transparency 1,2,3 \
+  --metatile-attribute-size 2 \
+  --anim-pal-resolution-strategy palette-04 \
+  --anim-key-frame-resolution-strategy mangle
+```
+
+Compile:
+
+```bash
+porytiles compile-tileset gTileset_General \
+  --no-verify-checksums \
+  --extrinsic-transparency 1,2,3 \
+  --metatile-attribute-size 2
+```
+
+Notes:
+- Remarks and warnings are opt-in and hidden by default. Add
+  `--diagnostic-remarks-include '.*'` / `--diagnostic-warnings-include '.*'`
+  when you actually want to see diagnostics.
+- For compile, `--tiles-edit-mode locked --pals-edit-mode locked` is an alternative for
+  when you want to skip palette packing.
+
 ## Documentation Repositories
 
 Porytiles has two separate documentation repositories (gitignored in the main repo):
 
 - **porytiles-user-docs/**: User-facing documentation (tutorials, CLI reference, usage guides)
-  - URL: https://grunt-lucas.github.io/porytiles-user-docs/
+  - URL: https://grunt-lucas.github.io/porytiles-user-docs
   - GitHub: https://github.com/grunt-lucas/porytiles-user-docs
 
 - **porytiles-dev-docs/**: Developer documentation (architecture, contributing, API)
-  - URL: https://grunt-lucas.github.io/porytiles-dev-docs/
+  - URL: https://grunt-lucas.github.io/porytiles-dev-docs
   - GitHub: https://github.com/grunt-lucas/porytiles-dev-docs
 
-These are **separate git repositories** cloned into the main porytiles directory. They follow [porymap's documentation pattern](https://github.com/huderlem/porymap) with Sphinx and the Read the Docs theme.
+These are **separate git repositories** cloned into the main porytiles directory. They follow [Porymap's documentation pattern](https://github.com/huderlem/porymap) with Sphinx and the Read the Docs theme.
 
 ### Legacy Wiki
 
@@ -117,21 +145,21 @@ After running `make github`, commit and push the changes in the docs repo to dep
 **CRITICAL: Use `uv` for Python script execution!**
 
 Porytiles uses [uv](https://docs.astral.sh/uv/) for Python dependency management.
-Install uv if you haven't: https://docs.astral.sh/uv/getting-started/installation/
 
 ```bash
 # Regenerate config files (after modifying config_schema.yaml or .jinja2 templates)
 uv run scripts/generate_config.py
 ```
 
-That's it - each script under `scripts/` is self-contained via [PEP 723](https://peps.python.org/pep-0723/)
-inline metadata (`# /// script ... # ///` block at the top), so `uv run` resolves
-its dependencies and Python version from the script itself. No `pyproject.toml`
-or `uv.lock` at the repo root.
+That's it - each script under `scripts/` is
+self-contained via [PEP 723](https://peps.python.org/pep-0723/) inline metadata (`# /// script ... # ///` block at the top),
+so `uv run` resolves its dependencies and Python version from the script itself.
+No `pyproject.toml` or `uv.lock` at the repo root.
 
-## C++ Code Style
+## Code and Documentation Style
 
-Follow the style guide in @./STYLE.md
+Follow the style guide in @./STYLE.md.
+It covers C++ code style, documentation comments, tests, idioms, error messages, and prose/Markdown conventions.
 
 ## **CRITICAL RULES - DO NOT VIOLATE**
 
@@ -142,15 +170,16 @@ Follow the style guide in @./STYLE.md
 - **ALWAYS find and fix the root cause** of issues instead of creating workarounds
 - When something doesn't work, debug and fix it - **don't start over with a simple version**
 
-### Code Style Rules
-- **ALWAYS use `uv run`** when running Python scripts
+### Code And Style Rules
 - **ALWAYS follow the code style** in STYLE.md
 - Use braced initialization where possible (but avoid when ambiguous constructors exist)
 - **Never** include headers using relative paths
 - Follow const correctness principles
-- Always use namespace `porytiles`, no child namespaces (unless explicitly instructed)
-- Place private helper functions in **anonymous namespaces in .cpp files**, not in class `private:` sections
+- Always use namespace `porytiles`, no child namespaces unless explicitly instructed or following pre-existing patterns, e.g. `namespace porytiles::metatile`
+- Whenever possible, place private helper functions in **anonymous namespaces in .cpp files**, not in class `private:` sections
 - Code must work on **both GCC and Clang** - no compiler-specific code
+- No box-drawing section banners (`// ====`) etc., in source or test files. Use a plain
+  single-line comment if grouping is truly needed.
 
 ### Context Management
 - Send build/test output to `/tmp` files to preserve context

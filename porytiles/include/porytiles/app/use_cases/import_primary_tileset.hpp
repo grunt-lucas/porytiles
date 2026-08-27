@@ -16,14 +16,10 @@
 
 namespace porytiles {
 
-/**
- * @brief Use case for importing a primary Tileset.
- */
+/// @brief Use case for importing a primary Tileset.
 class ImportPrimaryTileset {
   public:
-    /**
-     * @brief Constructs an ImportPrimaryTileset use case with the given repositories and services.
-     */
+    /// @brief Constructs an ImportPrimaryTileset use case with the given repositories and services.
     ImportPrimaryTileset(
         gsl::not_null<const PrimaryTilesetImporter *> importer,
         gsl::not_null<const PrimaryTilesetDecompiler *> decompiler,

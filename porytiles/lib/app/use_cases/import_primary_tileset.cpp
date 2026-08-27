@@ -34,6 +34,9 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
         void,
         "Import job failed for '{}'.",
         FormatParam(tileset_name, Style::bold));
+    // A blank Porytiles component carries no prior attributes.csv state, so its layer_type pin state defaults to
+    // no_csv. The decompiler below reads that as "pin every row from the bin", which is exactly what a from-scratch
+    // import should be doing. Since import always clobbers porytiles_src/, there is no prior CSV to preserve.
     auto blank_porytiles_component = std::make_unique<PorytilesTilesetComponent>();
     auto tileset = std::make_unique<Tileset>(
         tileset_name, std::move(blank_porytiles_component), std::move(imported_porymap_component));
@@ -46,20 +49,18 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
         "Decompile job failed for '{}'.",
         FormatParam(tileset_name, Style::bold));
 
-    /*
-     * Step 4: Re-compile the decompiled tileset in locked edit mode. This forces byte-equivalence between the imported
-     * Porymap assets and the Porytiles sources we just decompiled from them, and surfaces any invalid input (e.g. a
-     * palette slot containing the extrinsic transparency color) as a proper diagnostic at import time rather than
-     * deferring the failure to a later compile.
-     *
-     * The override provider forces tiles_edit_mode and pals_edit_mode to 'locked' without touching other user config.
-     * ET is intentionally NOT overridden here: it is a property of the Porymap palettes themselves and the user's
-     * configured value is the right thing to validate against.
-     */
+    // Step 4: Re-compile the decompiled tileset in locked edit mode. This forces byte-equivalence between the imported
+    // Porymap assets and the Porytiles sources we just decompiled from them, and surfaces any invalid input (e.g. a
+    // palette slot containing the extrinsic transparency color) as a proper diagnostic at import time rather than
+    // deferring the failure to a later compile.
+    //
+    // The override provider forces tiles_edit_mode and palettes_edit_mode to 'locked' without touching other user
+    // config. ET is intentionally NOT overridden here: it is a property of the Porymap palettes themselves and the
+    // user's configured value is the right thing to validate against.
     auto import_override = std::make_unique<OverrideConfigProvider>(
         ConfigScopeType::tileset, tileset_name, "import-tileset internal locked recompile");
     import_override->set_tiles_edit_mode(ArtifactEditMode::locked);
-    import_override->set_pals_edit_mode(ArtifactEditMode::locked);
+    import_override->set_palettes_edit_mode(ArtifactEditMode::locked);
     domain_config_->add_provider(std::move(import_override));
 
     PT_TRY_ASSIGN_CHAIN_ERR(
@@ -76,13 +77,11 @@ ChainableResult<void> ImportPrimaryTileset::import(const std::string &tileset_na
         "Tileset save job failed for '{}'.",
         FormatParam(tileset_name, Style::bold));
 
-    /*
-     * Step 6: Confirmed save succeeded, now call PorytilesTilesetManager::persist_existing to persist "managed"
-     * state (which in the Project-based impls writes to tileset-manifest.json and updates various project C files).
-     * This should never fail for a reasonable cause, so we don't need to worry about rolling back or weird broken
-     * state. If it does fail for extraordinary reasons, we present a helpful message to users so they can manually
-     * recover.
-     */
+    // Step 6: Confirmed save succeeded, now call PorytilesTilesetManager::persist_existing to persist "managed"
+    // state (which in the Project-based impls writes to tileset-manifest.json and updates various project C files).
+    // This should never fail for a reasonable cause, so we don't need to worry about rolling back or weird broken
+    // state. If it does fail for extraordinary reasons, we present a helpful message to users so they can manually
+    // recover.
     PT_TRY_CALL_CHAIN_ERR(
         tileset_manager_->persist_managed_existing(tileset_name),
         void,

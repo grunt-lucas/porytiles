@@ -6,7 +6,7 @@
 
 #include "png++/png.hpp"
 
-#include "porytiles/domain/config/tiles_pal_mode.hpp"
+#include "porytiles/domain/config/tiles_palette_mode.hpp"
 #include "porytiles/domain/models/index_pixel.hpp"
 #include "porytiles/domain/models/rgba32.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
@@ -14,11 +14,11 @@
 namespace porytiles {
 
 ChainableResult<void> PngIndexedImageSaver::save_to_file(
-    const Image<IndexPixel> &image, const std::filesystem::path &path, TilesPalMode mode) const
+    const Image<IndexPixel> &image, const std::filesystem::path &path, TilesPaletteMode mode) const
 {
-    using enum TilesPalMode;
+    using enum TilesPaletteMode;
 
-    const auto greyscale_pal = standard_greyscale_pal();
+    const auto greyscale_palette = standard_greyscale_palette();
 
     // Bail if given path exists already and isn't a file (i.e. it's a directory)
     if (exists(path) && !is_regular_file(path)) {
@@ -32,20 +32,20 @@ ChainableResult<void> PngIndexedImageSaver::save_to_file(
     }
     else {
         // Use greyscale palette for greyscale mode OR when true_color mode but no image palette exists
-        palette_to_use = greyscale_pal;
+        palette_to_use = greyscale_palette;
     }
 
     // Set up PNG palette
-    png::palette png_pal{0};
+    png::palette png_palette{0};
     for (const auto &color : palette_to_use) {
-        png_pal.emplace_back(color.red(), color.green(), color.blue());
+        png_palette.emplace_back(color.red(), color.green(), color.blue());
     }
 
     // Generic lambda to write indexed PNG with any pixel type.
     // For 4-bit PNGs, we explicitly extract the lower 4 bits (color_index) to be self-documenting.
     // For 8-bit PNGs, we use the full index value which may encode both palette and color index.
     auto write_image = [&]<typename PixelType>(png::image<PixelType> &img) {
-        img.set_palette(png_pal);
+        img.set_palette(png_palette);
         for (std::size_t pixel_index = 0; pixel_index < image.size(); pixel_index++) {
             const auto row = pixel_index / image.width();
             const auto col = pixel_index % image.width();

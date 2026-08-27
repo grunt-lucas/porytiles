@@ -1,106 +1,120 @@
 #include "porytiles/infra/services/attributes_csv_loader.hpp"
 
 #include <filesystem>
+#include <format>
 #include <fstream>
+#include <optional>
+#include <string>
 #include <unordered_map>
+#include <unordered_set>
+#include <vector>
 
+#include "porytiles/domain/config/role_pin_definition.hpp"
 #include "porytiles/domain/models/layer.hpp"
+#include "porytiles/utilities/panic/panic.hpp"
 #include "porytiles/utilities/parse_int.hpp"
 #include "porytiles/utilities/string_utils.hpp"
+#include "porytiles/xcut/config/config_scope_type.hpp"
 
 namespace {
 
 using namespace porytiles;
 
-enum class CsvFormat { emerald, firered };
-
 struct CsvRow {
     std::size_t metatile_id;
-    std::string behavior;
-    std::string terrain_type;
-    std::string encounter_type;
+    std::vector<std::string> field_cells;        // one trimmed cell per schema value field, in schema order
+    std::optional<std::string> layer_type_token; // raw layer_type cell, nullopt when the column or cell is blank
 };
 
-ChainableResult<CsvRow> parse_emerald_csv_row(
-    const std::string &line,
-    std::size_t line_index,
-    const std::filesystem::path &path,
-    const std::vector<std::string> &all_lines,
-    const TextFormatter &format,
-    const FileHighlightPrinter &file_printer)
+/// @brief Renders the header row the schema expects: id plus every value field name in schema order.
+///
+/// @details
+/// The layer_type-role field is not a value column; the CSV addresses the layer type only through the
+/// optional trailing pin column, which is detected separately.
+[[nodiscard]] std::string expected_header_string(const Schema &schema)
 {
-    auto columns = split(line, ",");
-
-    if (columns.size() < 2) {
-        std::vector<std::string> err_lines{};
-        err_lines.push_back(format.format(
-            "{}:{}: expected at least 2 columns (id,behavior), found {}",
-            FormatParam{path.string(), Style::bold},
-            FormatParam{line_index + 1, Style::bold},
-            FormatParam{columns.size()}));
-        err_lines.emplace_back();
-        err_lines.append_range(file_printer.print(all_lines, std::vector{line_index}));
-        return FormattableError{std::move(err_lines)};
+    std::string header = "id";
+    // TODO: this should probably show pins too. Right now, if I use schema.fields(), the pin column prints without the
+    // "pin::" prefix. In #350 we'll fix the order dependency, and we should introduce a way to fetch pins from the
+    // schema so we can solve the problem here.
+    for (const Field &field : schema.value_fields()) {
+        header += "," + field.name();
     }
-
-    trim(columns[0]);
-    trim(columns[1]);
-
-    auto id_result = parse_int<int>(columns[0], 0);
-    if (!id_result.has_value()) {
-        std::vector<std::string> err_lines{};
-        err_lines.push_back(format.format(
-            "{}:{}: invalid metatile id '{}': {}",
-            FormatParam{path.string(), Style::bold},
-            FormatParam{line_index + 1, Style::bold},
-            FormatParam{columns[0], Style::bold},
-            FormatParam{id_result.error()}));
-        err_lines.emplace_back();
-        err_lines.append_range(file_printer.print(all_lines, std::vector{line_index}));
-        return FormattableError{std::move(err_lines)};
-    }
-
-    if (id_result.value() < 0) {
-        std::vector<std::string> err_lines{};
-        err_lines.push_back(format.format(
-            "{}:{}: metatile id '{}' cannot be negative",
-            FormatParam{path.string(), Style::bold},
-            FormatParam{line_index + 1, Style::bold},
-            FormatParam{columns[0], Style::bold}));
-        err_lines.emplace_back();
-        err_lines.append_range(file_printer.print(all_lines, std::vector{line_index}));
-        return FormattableError{std::move(err_lines)};
-    }
-
-    return CsvRow{static_cast<std::size_t>(id_result.value()), columns[1], "", ""};
+    return header;
 }
 
-ChainableResult<CsvRow> parse_firered_csv_row(
+/// @brief Extracts the trimmed layer_type cell at the active pin column index, or nullopt when blank/absent.
+///
+/// @details
+/// `index` is the column the active layer_type pin resolves to (nullopt when the layer type is not pinned). The
+/// split() helper keeps trailing empty fields, so a blank cell arrives as an empty string; a row that simply omits the
+/// trailing comma has fewer columns than `index`. All of these mean "no explicit layer type" and map to nullopt.
+[[nodiscard]] std::optional<std::string>
+extract_layer_type_token(const std::vector<std::string> &columns, std::optional<std::size_t> index)
+{
+    if (!index.has_value() || columns.size() <= index.value()) {
+        return std::nullopt;
+    }
+    std::string token = columns[index.value()];
+    trim(token);
+    if (token.empty()) {
+        return std::nullopt;
+    }
+    return token;
+}
+
+/// @brief Splits one data row into an id, one cell per schema field, and the optional layer_type token.
+///
+/// @details
+/// The cells are not resolved here; the caller interprets each one against its schema field (provider lookup or raw
+/// integer parse). This keeps row shape errors (too few columns, bad id) separate from value errors.
+ChainableResult<CsvRow> parse_csv_row(
     const std::string &line,
     std::size_t line_index,
     const std::filesystem::path &path,
     const std::vector<std::string> &all_lines,
+    const Schema &schema,
     const TextFormatter &format,
-    const FileHighlightPrinter &file_printer)
+    const FileHighlightPrinter &file_printer,
+    std::size_t max_columns,
+    std::optional<std::size_t> layer_type_token_index)
 {
+    const std::size_t field_count = schema.value_fields().size();
     auto columns = split(line, ",");
 
-    if (columns.size() < 4) {
+    if (columns.size() < 1 + field_count) {
         std::vector<std::string> err_lines{};
         err_lines.push_back(format.format(
-            "{}:{}: expected 4 columns (id,behavior,terrainType,encounterType), found {}",
+            "{}:{}: expected at least {} columns ({}), found {}",
             FormatParam{path.string(), Style::bold},
             FormatParam{line_index + 1, Style::bold},
+            FormatParam{1 + field_count},
+            FormatParam{expected_header_string(schema)},
             FormatParam{columns.size()}));
         err_lines.emplace_back();
         err_lines.append_range(file_printer.print(all_lines, std::vector{line_index}));
         return FormattableError{std::move(err_lines)};
     }
 
-    trim(columns[0]);
-    trim(columns[1]);
-    trim(columns[2]);
-    trim(columns[3]);
+    // The row-level mirror of the header's unexpected-column check: a data row wider than the header shape means the
+    // CSV was written for a wider schema, and its extra cells must fail loudly instead of being silently dropped. The
+    // header derives @p max_columns as id + value fields + the recognized trailing pin columns.
+    if (columns.size() > max_columns) {
+        std::vector<std::string> err_lines{};
+        err_lines.push_back(format.format(
+            "{}:{}: expected at most {} columns, found {}",
+            FormatParam{path.string(), Style::bold},
+            FormatParam{line_index + 1, Style::bold},
+            FormatParam{max_columns},
+            FormatParam{columns.size()}));
+        err_lines.emplace_back();
+        err_lines.append_range(file_printer.print(all_lines, std::vector{line_index}));
+        return FormattableError{std::move(err_lines)};
+    }
+
+    for (std::size_t i = 0; i <= field_count; ++i) {
+        trim(columns[i]);
+    }
 
     auto id_result = parse_int<int>(columns[0], 0);
     if (!id_result.has_value()) {
@@ -128,21 +142,35 @@ ChainableResult<CsvRow> parse_firered_csv_row(
         return FormattableError{std::move(err_lines)};
     }
 
-    return CsvRow{static_cast<std::size_t>(id_result.value()), columns[1], columns[2], columns[3]};
+    std::vector<std::string> field_cells{};
+    field_cells.reserve(field_count);
+    for (std::size_t i = 0; i < field_count; ++i) {
+        field_cells.push_back(columns[1 + i]);
+    }
+
+    // The active layer_type pin column may sit anywhere in the trailing region (a stale pin column can precede it), so
+    // its column index is resolved from the header and passed in rather than assumed adjacent to the fields.
+    return CsvRow{
+        static_cast<std::size_t>(id_result.value()),
+        std::move(field_cells),
+        extract_layer_type_token(columns, layer_type_token_index)};
 }
 
 ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
     const std::filesystem::path &path,
-    const BehaviorMapProvider &behavior_map,
-    std::optional<BaseGame> base_game,
-    const TerrainTypeMapProvider *terrain_map,
-    const EncounterTypeMapProvider *encounter_map,
+    const Schema &schema,
+    const ProviderMap &providers,
     const TextFormatter &format,
-    const FileHighlightPrinter &file_printer)
+    const FileHighlightPrinter &file_printer,
+    const RolePinDefinitions &role_pins,
+    std::map<FieldRole, bool> &active_pin_column_present,
+    const UserDiagnostics &diag)
 {
     if (!exists(path)) {
         return FormattableError{"{}: file does not exist.", FormatParam{path.string(), Style::bold}};
     }
+
+    const std::string expected_header = expected_header_string(schema);
 
     // Slurp entire file into vector for FileHighlightPrinter support
     std::vector<std::string> lines{};
@@ -157,76 +185,216 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
 
     if (lines.empty()) {
         return FormattableError{
-            "{}: file is empty, expected header 'id,behavior' or 'id,behavior,terrainType,encounterType'",
-            FormatParam{path.string(), Style::bold}};
+            "{}: file is empty, expected header '{}'",
+            FormatParam{path.string(), Style::bold},
+            FormatParam{expected_header, Style::bold}};
     }
 
-    // Validate header line (index 0) and auto-detect format
+    // Cross-check the header line (index 0) against the resolved schema: the columns must be 'id' followed by every
+    // schema field name in schema order, then any number of "pin::<role>" pin columns. Anything missing, mis-ordered,
+    // or extra is a schema mismatch and fails with a diagnostic naming the column and its position.
     auto header_columns = split(lines[0], ",");
     for (auto &col : header_columns) {
         trim(col);
     }
 
-    CsvFormat csv_format{};
-
-    if (header_columns.size() >= 4 && header_columns[0] == "id" && header_columns[1] == "behavior" &&
-        header_columns[2] == "terrainType" && header_columns[3] == "encounterType") {
-        csv_format = CsvFormat::firered;
-    }
-    else if (header_columns.size() >= 2 && header_columns[0] == "id" && header_columns[1] == "behavior") {
-        csv_format = CsvFormat::emerald;
-    }
-    else {
+    const std::size_t field_count = schema.value_fields().size();
+    auto make_header_error = [&](const std::string &message) -> FormattableError {
         std::vector<std::string> err_lines{};
+        err_lines.push_back(message);
+        err_lines.emplace_back();
         err_lines.push_back(format.format(
-            "{}:{}: invalid header, expected 'id,behavior' or 'id,behavior,terrainType,encounterType' but found '{}'",
-            FormatParam{path.string(), Style::bold},
-            FormatParam{"1", Style::bold},
-            FormatParam{lines[0], Style::bold}));
+            "Based on resolved attribute schema, expected header: '{}'", FormatParam{expected_header, Style::bold}));
         err_lines.emplace_back();
         err_lines.append_range(file_printer.print(lines, std::vector<std::size_t>{0}));
         return FormattableError{std::move(err_lines)};
-    }
+    };
 
-    // Validate detected format against base game if provided
-    if (base_game.has_value()) {
-        if (csv_format == CsvFormat::firered && base_game.value() != BaseGame::pokefirered) {
-            std::vector<std::string> err_lines{};
-            err_lines.push_back(format.format(
-                "{}:{}: CSV has FireRed format (id,behavior,terrainType,encounterType) but project base game is '{}'",
+    for (std::size_t i = 0; i <= field_count; ++i) {
+        const std::string &expected_column = i == 0 ? "id" : schema.value_fields()[i - 1].name();
+        if (i >= header_columns.size()) {
+            return make_header_error(format.format(
+                "{}:{}: invalid header: missing column '{}' at position {}",
                 FormatParam{path.string(), Style::bold},
                 FormatParam{"1", Style::bold},
-                FormatParam{to_string(base_game.value()), Style::bold}));
-            err_lines.emplace_back();
-            err_lines.append_range(file_printer.print(lines, std::vector<std::size_t>{0}));
-            return FormattableError{std::move(err_lines)};
+                FormatParam{expected_column, Style::bold},
+                FormatParam{i + 1}));
         }
-        if (csv_format == CsvFormat::emerald && base_game.value() == BaseGame::pokefirered) {
-            std::vector<std::string> err_lines{};
-            err_lines.push_back(format.format(
-                "{}:{}: CSV has Emerald format (id,behavior) but project base game is '{}'",
+        if (header_columns[i] != expected_column) {
+            return make_header_error(format.format(
+                "{}:{}: invalid header: expected column {} to be '{}' but found '{}'",
                 FormatParam{path.string(), Style::bold},
                 FormatParam{"1", Style::bold},
-                FormatParam{to_string(base_game.value()), Style::bold}));
-            err_lines.emplace_back();
-            err_lines.append_range(file_printer.print(lines, std::vector<std::size_t>{0}));
-            return FormattableError{std::move(err_lines)};
+                FormatParam{i + 1},
+                FormatParam{expected_column, Style::bold},
+                FormatParam{header_columns[i], Style::bold}));
         }
     }
 
-    // Validate provider availability for FireRed format
-    if (csv_format == CsvFormat::firered) {
-        if (terrain_map == nullptr) {
-            panic("FireRed CSV format requires a terrain type provider but none was provided.");
+    // Classify the trailing columns after the value fields. A column's kind is read off its name, never its position.
+    // In a future update, we'll make it so that the CSV header row is not order dependent. Right now, you can't mix
+    // pins together with the regular fields.
+    std::optional<std::size_t> layer_type_apply_index;
+    std::optional<std::string> ignored_role_pin_column;
+    std::unordered_set<std::string> seen_trailing;
+    for (std::size_t j = 1 + field_count; j < header_columns.size(); ++j) {
+        const std::string &column = header_columns[j];
+
+        if (!seen_trailing.insert(column).second) {
+            return make_header_error(format.format(
+                "{}:{}: invalid header: duplicate column '{}' at position {}",
+                FormatParam{path.string(), Style::bold},
+                FormatParam{"1", Style::bold},
+                FormatParam{column, Style::bold},
+                FormatParam{j + 1}));
         }
-        if (encounter_map == nullptr) {
-            panic("FireRed CSV format requires an encounter type provider but none was provided.");
+
+        if (!is_pin_column_name(column)) {
+            // Invalid non-pin column present in the "pin region". Again, we should move away from this artificial
+            // trailing-pin-region concept. For now, we need to error here.
+            return make_header_error(format.format(
+                "{}:{}: invalid header: unexpected column '{}' at position {}",
+                FormatParam{path.string(), Style::bold},
+                FormatParam{"1", Style::bold},
+                FormatParam{column, Style::bold},
+                FormatParam{j + 1}));
         }
+
+        const auto role = role_from_pin_column_name(column);
+        if (!role.has_value()) {
+            return make_header_error(format.format(
+                "{}:{}: invalid header: pin column '{}' at position {} names no known role; the only role is '{}'",
+                FormatParam{path.string(), Style::bold},
+                FormatParam{"1", Style::bold},
+                FormatParam{column, Style::bold},
+                FormatParam{j + 1},
+                FormatParam{to_string(FieldRole::layer_type), Style::bold}));
+        }
+
+        if (find_role_pin(role_pins, role.value()) == nullptr) {
+            // A well-formed pin column for a role that is not currently pinned: a stale column left behind after the
+            // pin was turned off. Its cells are ignored, with a one-time warning.
+            if (!ignored_role_pin_column.has_value()) {
+                ignored_role_pin_column = column;
+            }
+            continue;
+        }
+
+        switch (role.value()) {
+        case FieldRole::layer_type:
+            layer_type_apply_index = j;
+            break;
+        }
+    }
+
+    const std::size_t max_columns = header_columns.size();
+
+    // Record, per configured role, whether its active pin column was present in the header. The reader maps this onto
+    // the component so the decompiler's round-trip merge knows whether to preserve prior pin state (column present) or
+    // pin every row (column absent). A stale ignored column does not count as present.
+    for (const RolePinDefinition &pin : role_pins) {
+        active_pin_column_present[pin.role] = (pin.role == FieldRole::layer_type) && layer_type_apply_index.has_value();
+    }
+
+    // A stale pin column is present but not active: ignore its values and say so once for the whole file.
+    if (ignored_role_pin_column.has_value()) {
+        std::vector<std::string> warn_lines{};
+        warn_lines.push_back(format.format(
+            "{}: a '{}' column is present but no active role pin uses it. Its values are ignored and the layer type "
+            "will be inferred.",
+            FormatParam{path.string(), Style::bold},
+            FormatParam{ignored_role_pin_column.value(), Style::bold}));
+        warn_lines.push_back(format.format(
+            "Add a {} entry for the layer_type role to apply the column, or remove the column.",
+            FormatParam{"fieldmap.role_pins", Style::bold}));
+        diag.warning("role-pin-column", warn_lines);
     }
 
     // Parse data rows (starting at index 1)
     std::map<std::size_t, MetatileAttribute> result{};
     std::unordered_map<std::size_t, std::size_t> id_to_line_index{};
+
+    // Applies a filled layer_type cell as an explicit override. The token is only populated from the active pin
+    // column, so a nullopt token (blank cell, or no active column) leaves the layer type inferred. A bad token is a
+    // hard error with file context.
+    auto apply_explicit_layer_type =
+        [&](MetatileAttribute &attribute, const CsvRow &row, std::size_t line_index) -> ChainableResult<void> {
+        if (!row.layer_type_token.has_value()) {
+            return {};
+        }
+        auto layer_type = layer_type_from_csv_token(row.layer_type_token.value());
+        if (!layer_type.has_value()) {
+            std::vector<std::string> err_lines{};
+            err_lines.push_back(format.format(
+                "{}:{}: invalid layer_type '{}'",
+                FormatParam{path.string(), Style::bold},
+                FormatParam{line_index + 1, Style::bold},
+                FormatParam{row.layer_type_token.value(), Style::bold}));
+            err_lines.emplace_back();
+            err_lines.append_range(file_printer.print(lines, std::vector{line_index}));
+            return ChainableResult<void>{FormattableError{std::move(err_lines)}, layer_type};
+        }
+        attribute.explicit_layer_type(layer_type.value());
+        return {};
+    };
+
+    // Resolves one field cell to its numeric value. A provider-backed field goes through its provider (the ProviderMap
+    // membership contract makes a missing provider an internal bug, not a raw fallback); a raw field parses as an
+    // unsigned integer capped at the field's maximum, which the binary writer would otherwise silently mask away.
+    auto resolve_field_cell =
+        [&](const Field &field, const std::string &cell, std::size_t line_index) -> ChainableResult<std::uint32_t> {
+        if (field.has_provider()) {
+            const auto provider_it = providers.find(field.name());
+            if (provider_it == providers.end()) {
+                panic(
+                    std::format(
+                        "parse_attributes_csv: field '{}' has a provider spec but no provider was built for it",
+                        field.name()));
+            }
+            auto lookup_result = provider_it->second->lookup(cell);
+            if (!lookup_result.has_value()) {
+                std::vector<std::string> err_lines{};
+                err_lines.push_back(format.format(
+                    "{}:{}: unknown {} '{}'",
+                    FormatParam{path.string(), Style::bold},
+                    FormatParam{line_index + 1, Style::bold},
+                    FormatParam{field.name()},
+                    FormatParam{cell, Style::bold}));
+                err_lines.emplace_back();
+                err_lines.append_range(file_printer.print(lines, std::vector{line_index}));
+                return ChainableResult<std::uint32_t>{FormattableError{std::move(err_lines)}, lookup_result};
+            }
+            return lookup_result.value();
+        }
+
+        auto int_result = parse_int<long long>(cell, 0);
+        if (!int_result.has_value() || int_result.value() < 0) {
+            std::vector<std::string> err_lines{};
+            err_lines.push_back(format.format(
+                "{}:{}: invalid {} value '{}': expected an unsigned integer",
+                FormatParam{path.string(), Style::bold},
+                FormatParam{line_index + 1, Style::bold},
+                FormatParam{field.name()},
+                FormatParam{cell, Style::bold}));
+            err_lines.emplace_back();
+            err_lines.append_range(file_printer.print(lines, std::vector{line_index}));
+            return FormattableError{std::move(err_lines)};
+        }
+        if (int_result.value() > static_cast<long long>(field.max_value())) {
+            std::vector<std::string> err_lines{};
+            err_lines.push_back(format.format(
+                "{}:{}: {} value '{}' exceeds the field's maximum of {}",
+                FormatParam{path.string(), Style::bold},
+                FormatParam{line_index + 1, Style::bold},
+                FormatParam{field.name()},
+                FormatParam{cell, Style::bold},
+                FormatParam{field.max_value(), Style::bold}));
+            err_lines.emplace_back();
+            err_lines.append_range(file_printer.print(lines, std::vector{line_index}));
+            return FormattableError{std::move(err_lines)};
+        }
+        return static_cast<std::uint32_t>(int_result.value());
+    };
 
     for (std::size_t line_index = 1; line_index < lines.size(); ++line_index) {
         const auto &line = lines[line_index];
@@ -235,10 +403,8 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
             continue;
         }
 
-        ChainableResult<CsvRow> row_result =
-            csv_format == CsvFormat::firered
-                ? parse_firered_csv_row(line, line_index, path, lines, format, file_printer)
-                : parse_emerald_csv_row(line, line_index, path, lines, format, file_printer);
+        ChainableResult<CsvRow> row_result = parse_csv_row(
+            line, line_index, path, lines, schema, format, file_printer, max_columns, layer_type_apply_index);
 
         if (!row_result.has_value()) {
             return ChainableResult<std::map<std::size_t, MetatileAttribute>>{
@@ -276,66 +442,22 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
         }
         id_to_line_index.emplace(row.metatile_id, line_index);
 
-        auto behavior_value = behavior_map.lookup(row.behavior);
-        if (!behavior_value.has_value()) {
-            std::vector<std::string> err_lines{};
-            err_lines.push_back(format.format(
-                "{}:{}: unknown metatile behavior '{}'",
-                FormatParam{path.string(), Style::bold},
-                FormatParam{line_index + 1, Style::bold},
-                FormatParam{row.behavior, Style::bold}));
-            err_lines.emplace_back();
-            err_lines.append_range(file_printer.print(lines, std::vector{line_index}));
+        MetatileAttribute attribute{};
+        attribute.layer_type(LayerType::normal);
+        for (std::size_t i = 0; i < field_count; ++i) {
+            const Field &field = schema.value_fields()[i];
+            auto value_result = resolve_field_cell(field, row.field_cells[i], line_index);
+            if (!value_result.has_value()) {
+                return ChainableResult<std::map<std::size_t, MetatileAttribute>>{
+                    FormattableError{"Failed to resolve CSV field cell."}, value_result};
+            }
+            attribute.field(field.name(), value_result.value());
+        }
+        if (const auto applied = apply_explicit_layer_type(attribute, row, line_index); !applied.has_value()) {
             return ChainableResult<std::map<std::size_t, MetatileAttribute>>{
-                FormattableError{std::move(err_lines)}, behavior_value};
+                FormattableError{"Failed to apply layer_type override."}, applied};
         }
-
-        if (csv_format == CsvFormat::firered) {
-            // Resolve terrain type
-            auto terrain_value = terrain_map->lookup(row.terrain_type);
-            if (!terrain_value.has_value()) {
-                std::vector<std::string> err_lines{};
-                err_lines.push_back(format.format(
-                    "{}:{}: unknown terrain type '{}'",
-                    FormatParam{path.string(), Style::bold},
-                    FormatParam{line_index + 1, Style::bold},
-                    FormatParam{row.terrain_type, Style::bold}));
-                err_lines.emplace_back();
-                err_lines.append_range(file_printer.print(lines, std::vector{line_index}));
-                return ChainableResult<std::map<std::size_t, MetatileAttribute>>{
-                    FormattableError{std::move(err_lines)}, terrain_value};
-            }
-
-            // Resolve encounter type
-            auto encounter_value = encounter_map->lookup(row.encounter_type);
-            if (!encounter_value.has_value()) {
-                std::vector<std::string> err_lines{};
-                err_lines.push_back(format.format(
-                    "{}:{}: unknown encounter type '{}'",
-                    FormatParam{path.string(), Style::bold},
-                    FormatParam{line_index + 1, Style::bold},
-                    FormatParam{row.encounter_type, Style::bold}));
-                err_lines.emplace_back();
-                err_lines.append_range(file_printer.print(lines, std::vector{line_index}));
-                return ChainableResult<std::map<std::size_t, MetatileAttribute>>{
-                    FormattableError{std::move(err_lines)}, encounter_value};
-            }
-
-            result.emplace(
-                row.metatile_id,
-                MetatileAttribute{
-                    LayerType::normal,
-                    behavior_value.value(),
-                    terrain_value.value(),
-                    encounter_value.value(),
-                    0,
-                    0,
-                    0,
-                    false});
-        }
-        else {
-            result.emplace(row.metatile_id, MetatileAttribute{LayerType::normal, behavior_value.value()});
-        }
+        result.emplace(row.metatile_id, std::move(attribute));
     }
 
     return result;
@@ -345,11 +467,29 @@ ChainableResult<std::map<std::size_t, MetatileAttribute>> parse_attributes_csv(
 
 namespace porytiles {
 
-ChainableResult<std::map<std::size_t, MetatileAttribute>>
-AttributesCsvLoader::load(const std::filesystem::path &path) const
+ChainableResult<AttributesCsvLoadResult> AttributesCsvLoader::load(
+    const std::filesystem::path &path,
+    const Schema &schema,
+    const ProviderMap &providers,
+    const std::string &tileset_name) const
 {
-    return parse_attributes_csv(
-        path, *behavior_map_, base_game_, terrain_map_, encounter_map_, *format_, *file_printer_);
+    // Resolve the role pins under the file's owning tileset scope. When compiling a secondary, the paired primary's CSV
+    // loads through this same loader with the primary's name, so its config resolves under the primary's scope. (The
+    // result type has a comma, so it cannot go through the PT_TRY_ASSIGN macros; unwrap by hand.)
+    auto role_pins_cv = config_->role_pins(ConfigScopeType::tileset, tileset_name);
+    if (!role_pins_cv.has_value()) {
+        return ChainableResult<AttributesCsvLoadResult>{FormattableError{"Failed to resolve role_pins."}, role_pins_cv};
+    }
+    const RolePinDefinitions &role_pins = role_pins_cv.value();
+
+    std::map<FieldRole, bool> active_pin_column_present;
+    auto parsed = parse_attributes_csv(
+        path, schema, providers, *format_, *file_printer_, role_pins, active_pin_column_present, *diag_);
+    if (!parsed.has_value()) {
+        return ChainableResult<AttributesCsvLoadResult>{FormattableError{"Failed to load attributes CSV."}, parsed};
+    }
+
+    return AttributesCsvLoadResult{std::move(parsed).value(), std::move(active_pin_column_present)};
 }
 
 } // namespace porytiles

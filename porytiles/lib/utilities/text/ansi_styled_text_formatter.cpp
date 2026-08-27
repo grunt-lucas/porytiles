@@ -9,19 +9,17 @@ namespace {
 
 using namespace porytiles;
 
-/**
- * @brief Converts RGB color to the closest ANSI 256 color code.
- *
- * @details
- * Maps an RGB color to the closest color in the ANSI 256 color palette. The function handles two cases:
- * - Grayscale colors (when r == g == b) map to colors 232-255
- * - Other colors map to the 6x6x6 color cube (colors 16-231)
- *
- * @param r Red component (0-255)
- * @param g Green component (0-255)
- * @param b Blue component (0-255)
- * @return ANSI 256 color code (16-255)
- */
+/// @brief Converts RGB color to the closest ANSI 256 color code.
+///
+/// @details
+/// Maps an RGB color to the closest color in the ANSI 256 color palette. The function handles two cases:
+/// - Grayscale colors (when r == g == b) map to colors 232-255
+/// - Other colors map to the 6x6x6 color cube (colors 16-231)
+///
+/// @param r Red component (0-255)
+/// @param g Green component (0-255)
+/// @param b Blue component (0-255)
+/// @return ANSI 256 color code (16-255)
 int rgb_to_ansi256(std::uint8_t r, std::uint8_t g, std::uint8_t b)
 {
     // Handle grayscale (colors 232-255)
@@ -54,19 +52,17 @@ int rgb_to_ansi256(std::uint8_t r, std::uint8_t g, std::uint8_t b)
     return 16 + 36 * r_idx + 6 * g_idx + b_idx;
 }
 
-/**
- * @brief Finds the closest plain ANSI color to the given RGB value.
- *
- * @details
- * Uses weighted perceptual distance (2*ΔR² + 4*ΔG² + 3*ΔB²) to find the closest match
- * among the 8 standard ANSI colors. The weights reflect human perception sensitivity
- * to different color channels.
- *
- * @param r Red component (0-255)
- * @param g Green component (0-255)
- * @param b Blue component (0-255)
- * @return PredefinedColor enum value for the closest plain color
- */
+/// @brief Finds the closest plain ANSI color to the given RGB value.
+///
+/// @details
+/// Uses weighted perceptual distance (2*ΔR² + 4*ΔG² + 3*ΔB²) to find the closest match
+/// among the 8 standard ANSI colors. The weights reflect human perception sensitivity
+/// to different color channels.
+///
+/// @param r Red component (0-255)
+/// @param g Green component (0-255)
+/// @param b Blue component (0-255)
+/// @return PredefinedColor enum value for the closest plain color
 PredefinedColor find_closest_plain_color(std::uint8_t r, std::uint8_t g, std::uint8_t b)
 {
     // Standard ANSI color RGB values

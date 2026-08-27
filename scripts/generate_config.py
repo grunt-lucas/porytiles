@@ -16,11 +16,18 @@ CMake during the build process.
 
 import argparse
 import re
+import subprocess
 import sys
 from pathlib import Path
 
 import yaml
 from jinja2 import Environment, FileSystemLoader, select_autoescape
+
+# Reuse the clang-format resolution logic from format.py (same directory).
+# Skip bytecode caching so the import doesn't create scripts/__pycache__/.
+sys.dont_write_bytecode = True
+sys.path.insert(0, str(Path(__file__).resolve().parent))
+from format import find_clang_format  # noqa: E402
 
 
 def extract_all_yaml_paths(config_values):
@@ -62,6 +69,77 @@ def extract_yaml_map_prefixes(config_values):
     return sorted(prefixes)
 
 
+# Non-enum types the CLI templates know how to register. Enum types are handled separately, via
+# enum_type_map. This list must stay in sync with the type dispatch chains in
+# infra/cli/cli_option_registration.cpp.jinja2 and infra/cli/cli_completion_data.hpp.jinja2.
+#
+# The dispatch chains match on the literal spelling of the type, so a new spelling of an
+# already-handled concept (e.g. std::optional<std::size_t> next to std::optional<std::uint32_t>)
+# is a new case. Registration would emit a skip comment and completion would emit nothing at all,
+# producing a flag that is missing from --help and rejected when passed. validate_cli_option_types()
+# turns that into a generation error instead.
+CLI_HANDLED_TYPES = [
+    "bool",
+    "std::vector<std::string>",
+    "std::size_t",
+    "std::string",
+    "std::optional<std::size_t>",
+    "std::optional<std::uint32_t>",
+    "Rgba32",
+]
+
+
+def validate_cli_option_types(config_values, enum_type_map):
+    """
+    Fail generation if a config value would get a CLI flag that the templates cannot register.
+
+    Every config value without yaml_only: true is expected to declare a cli_option and to have a
+    type the CLI templates dispatch on. A type outside CLI_HANDLED_TYPES and outside enum_type_map
+    is silently skipped by those templates, so catch it here where the error is actionable.
+    """
+    for config_value in config_values:
+        if config_value.get("yaml_only"):
+            continue
+
+        name = config_value.get("symbol", config_value.get("canonical_name", "<unnamed config value>"))
+        value_type = config_value.get("type")
+
+        if not config_value.get("cli_option"):
+            print(
+                f"Error: Config value '{name}' is missing required 'cli_option' field",
+                file=sys.stderr,
+            )
+            print(
+                "  Hint: Add a 'cli_option', or mark the value 'yaml_only: true' if it has no CLI flag",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+        if value_type not in CLI_HANDLED_TYPES and value_type not in enum_type_map:
+            print(
+                f"Error: Config value '{name}' declares cli_option "
+                f"'{config_value['cli_option']}' but its type '{value_type}' is not handled "
+                f"by the CLI templates",
+                file=sys.stderr,
+            )
+            print(
+                f"  Hint: Handled types are: {', '.join(CLI_HANDLED_TYPES)}, or any enum in enum_types",
+                file=sys.stderr,
+            )
+            print(
+                "  Hint: To support a new type, add a branch to the dispatch chains in "
+                "infra/cli/cli_option_registration.cpp.jinja2 and infra/cli/cli_completion_data.hpp.jinja2, "
+                "add the accessor to infra/config/cli_option_provider.cpp.jinja2, then list the type in "
+                "CLI_HANDLED_TYPES",
+                file=sys.stderr,
+            )
+            print(
+                "  Hint: Or mark the value 'yaml_only: true' if it should not have a CLI flag",
+                file=sys.stderr,
+            )
+            sys.exit(1)
+
+
 def process_enum_types(schema):
     """
     Process enum_types from schema to compute derived fields and create lookup map.
@@ -99,7 +177,39 @@ def process_enum_types(schema):
     return enum_type_map
 
 
-def generate_config_files():
+def format_generated_files(generated_paths):
+    """
+    Run clang-format over the files the generator just wrote.
+
+    The Jinja2 templates produce nearly-formatted output, but the committed files are
+    clang-formatted, so without this step every regeneration dirties the tree with
+    whitespace-only diffs. Formatting is cosmetic, and CMake runs this script as a
+    build step, so a missing clang-format binary or a clang-format failure (e.g. a
+    binary too old for our .clang-format options) is a warning, never a build failure.
+    """
+    clang_format = find_clang_format()
+    if clang_format is None:
+        print(
+            "Warning: clang-format not found on PATH; skipping formatting of generated files. "
+            "Run 'uv run scripts/format.py' once clang-format is installed.",
+            file=sys.stderr,
+        )
+        return
+
+    print(f"Formatting {len(generated_paths)} generated files with {clang_format}")
+    cmd = [clang_format, "-style=file", "-i", *[str(p) for p in generated_paths]]
+    result = subprocess.run(cmd)
+    if result.returncode != 0:
+        print(
+            f"Warning: {clang_format} failed; leaving generated files unformatted. "
+            "Generation itself succeeded, so the build can proceed.",
+            file=sys.stderr,
+        )
+        return
+    print("✓ Formatted generated files")
+
+
+def generate_config_files(run_formatter=True):
     """Main generation function."""
     # Determine project root (script is in scripts/)
     project_root = Path(__file__).resolve().parent.parent
@@ -220,6 +330,10 @@ def generate_config_files():
     enum_type_map = process_enum_types(schema)
     schema["enum_type_map"] = enum_type_map
     print(f"Processed {len(enum_type_map)} enum types")
+
+    # Runs after enum processing because enum types are valid CLI option types
+    validate_cli_option_types(schema["config_values"], enum_type_map)
+    print("Validated CLI option types")
 
     # Setup Jinja2 environment with new template directory
     template_dir = project_root / "porytiles" / "config_templates"
@@ -353,6 +467,9 @@ def generate_config_files():
         ),
     ]
 
+    # Track everything we write so we can format it all at the end
+    generated_paths = []
+
     # Generate each file
     for template_name, output_rel_path in templates:
         print(f"Generating: {output_rel_path}")
@@ -364,6 +481,7 @@ def generate_config_files():
             output_path = project_root / output_rel_path
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(output)
+            generated_paths.append(output_path)
 
             print(f"  ✓ Successfully generated {output_path}")
         except Exception as e:
@@ -382,11 +500,15 @@ def generate_config_files():
             output_path = project_root / output_rel_path
             output_path.parent.mkdir(parents=True, exist_ok=True)
             output_path.write_text(output)
+            generated_paths.append(output_path)
 
             print(f"  ✓ Successfully generated {output_path}")
         except Exception as e:
             print(f"  ✗ Failed to generate {output_rel_path}: {e}", file=sys.stderr)
             sys.exit(1)
+
+    if run_formatter:
+        format_generated_files(generated_paths)
 
     print("✓ Configuration code generation complete")
 
@@ -395,10 +517,14 @@ if __name__ == "__main__":
     parser = argparse.ArgumentParser(
         description="Generate configuration code from YAML schema and Jinja2 templates."
     )
-    parser.parse_args()
+    parser.add_argument(
+        "--no-format", action="store_true",
+        help="Skip running clang-format on the generated files."
+    )
+    args = parser.parse_args()
 
     try:
-        generate_config_files()
+        generate_config_files(run_formatter=not args.no_format)
     except Exception as e:
         print(f"Error generating config files: {e}", file=sys.stderr)
         import traceback

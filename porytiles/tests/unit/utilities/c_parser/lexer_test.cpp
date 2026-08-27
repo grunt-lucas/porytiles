@@ -425,5 +425,73 @@ TEST_F(LexerTests, LexNumberWithSuffix)
     EXPECT_EQ(tokens[2].int_value(), 789);
 }
 
+TEST_F(LexerTests, LineContinuationSplicesValue)
+{
+    // A backslash immediately before a newline splices the two physical lines, so no newline token separates the
+    // continued value from the macro name.
+    Lexer lexer{&formatter_, "#define FLAGS (FOO | \\\n                      BAR)"};
+    auto result = lexer.lex();
+    ASSERT_TRUE(result.has_value());
+
+    const auto &tokens = result.value();
+    for (const auto &token : tokens) {
+        EXPECT_FALSE(token.is(TokenType::newline));
+        EXPECT_FALSE(token.is(TokenType::unknown));
+    }
+    ASSERT_GE(tokens.size(), 9);
+    EXPECT_TRUE(tokens[0].is(TokenType::hash));
+    EXPECT_TRUE(tokens[2].is(TokenType::identifier));
+    EXPECT_EQ(tokens[2].text(), "FLAGS");
+    EXPECT_TRUE(tokens[3].is(TokenType::left_paren));
+    EXPECT_EQ(tokens[4].text(), "FOO");
+    EXPECT_TRUE(tokens[5].is(TokenType::pipe));
+    EXPECT_EQ(tokens[6].text(), "BAR");
+    EXPECT_TRUE(tokens[7].is(TokenType::right_paren));
+}
+
+TEST_F(LexerTests, LineContinuationTracksLineNumber)
+{
+    // After splicing, the lexer must still count the physical newline so positions on the next line stay correct.
+    Lexer lexer{&formatter_, "A \\\nB"};
+    auto result = lexer.lex();
+    ASSERT_TRUE(result.has_value());
+
+    const auto &tokens = result.value();
+    ASSERT_GE(tokens.size(), 2);
+    EXPECT_EQ(tokens[0].text(), "A");
+    EXPECT_EQ(tokens[0].position().line, 1U);
+    EXPECT_EQ(tokens[1].text(), "B");
+    EXPECT_EQ(tokens[1].position().line, 2U);
+}
+
+TEST_F(LexerTests, LineContinuationHandlesCrlf)
+{
+    // A backslash before a Windows CRLF newline also splices without emitting a token.
+    Lexer lexer{&formatter_, "X \\\r\nY"};
+    auto result = lexer.lex();
+    ASSERT_TRUE(result.has_value());
+
+    const auto &tokens = result.value();
+    for (const auto &token : tokens) {
+        EXPECT_FALSE(token.is(TokenType::newline));
+        EXPECT_FALSE(token.is(TokenType::unknown));
+    }
+    ASSERT_GE(tokens.size(), 2);
+    EXPECT_EQ(tokens[0].text(), "X");
+    EXPECT_EQ(tokens[1].text(), "Y");
+}
+
+TEST_F(LexerTests, BackslashNotBeforeNewlineStaysUnknown)
+{
+    // A backslash that is not immediately before a newline keeps the previous unknown-token behavior.
+    Lexer lexer{&formatter_, "\\x"};
+    auto result = lexer.lex();
+    ASSERT_TRUE(result.has_value());
+
+    const auto &tokens = result.value();
+    ASSERT_GE(tokens.size(), 1);
+    EXPECT_TRUE(tokens[0].is(TokenType::unknown));
+}
+
 } // namespace
 } // namespace porytiles

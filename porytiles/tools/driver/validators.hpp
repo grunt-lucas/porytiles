@@ -7,15 +7,15 @@
 
 #include "CLI/CLI.hpp"
 
-#include "porytiles/domain/config/tiles_pal_mode.hpp"
+#include "porytiles/domain/config/tiles_palette_mode.hpp"
 #include "porytiles/utilities/parse_int.hpp"
 #include "porytiles/utilities/string_utils.hpp"
 
 class NotAlreadyAFileValidator final : public CLI::Validator {
-    static constexpr auto kHint = "PATH";
+    static constexpr auto hint = "PATH";
 
   public:
-    explicit NotAlreadyAFileValidator() : Validator{kHint}
+    explicit NotAlreadyAFileValidator() : Validator{hint}
     {
         name_ = "NOT_ALREADY_A_FILE";
         func_ = [](const std::string &str) {

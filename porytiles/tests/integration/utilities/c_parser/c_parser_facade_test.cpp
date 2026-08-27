@@ -188,6 +188,22 @@ TEST_F(CParserFacadeTests, ParseDefinesFromTempFile)
     EXPECT_EQ(defines[2].int_value(), 16);
 }
 
+TEST_F(CParserFacadeTests, TolerantDefineScanReportsAmbiguousConditionalValue)
+{
+    auto temp_path = create_temp_file(R"(
+#if EXTERNAL_FEATURE
+#define METATILE_ATTR_BEHAVIOR_MASK 0x00FF
+#else
+#define METATILE_ATTR_BEHAVIOR_MASK 0x01FF
+#endif
+)");
+    CParserFacade driver{temp_path, &formatter_};
+
+    auto result = driver.parse_defines_tolerant();
+    ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
+    EXPECT_TRUE(result.value().ambiguous_values.contains("METATILE_ATTR_BEHAVIOR_MASK"));
+}
+
 TEST_F(CParserFacadeTests, ParseEnumsFromTempFile)
 {
     auto temp_path = create_temp_file("enum { A, B = 10, C };");
@@ -596,6 +612,62 @@ const u16 gTilesetPalettes_General[][16] = {
     ASSERT_EQ(incbins.size(), 1);
     EXPECT_EQ(incbins[0].variable_name(), "gTilesetPalettes_General");
     EXPECT_EQ(incbins[0].paths().size(), 2);
+}
+
+TEST_F(CParserFacadeTests, ParseStructDefinitionsWithNameFilter)
+{
+    auto temp_path = create_temp_file(R"(
+struct Tileset
+{
+    /*0x00*/ u8 isCompressed:1;
+    /*0x10*/ const u16 *metatileAttributes;
+    /*0x14*/ TilesetCB callback;
+};
+
+struct MapLayout
+{
+    /*0x00*/ s32 width;
+    /*0x10*/ const struct Tileset *primaryTileset;
+};
+)");
+    CParserFacade driver{temp_path, &formatter_};
+
+    auto all_result = driver.parse_struct_definitions();
+    ASSERT_TRUE(all_result.has_value()) << get_all_error_text(all_result);
+    EXPECT_EQ(all_result.value().size(), 2U);
+
+    CParserFacade filtered_driver{temp_path, &formatter_};
+    auto filtered_result = filtered_driver.parse_struct_definitions("Tileset");
+    ASSERT_TRUE(filtered_result.has_value()) << get_all_error_text(filtered_result);
+    ASSERT_EQ(filtered_result.value().size(), 1U);
+    const StructDefinition &def = filtered_result.value().front();
+    EXPECT_EQ(def.name, "Tileset");
+    ASSERT_EQ(def.members.size(), 3U);
+    EXPECT_EQ(def.members[1].member_name, "metatileAttributes");
+    EXPECT_EQ(def.members[1].type_name, "u16");
+    EXPECT_EQ(def.members[1].pointer_depth, 1U);
+}
+
+TEST_F(CParserFacadeTests, ParseStructDefinitionsMissingStructReturnsEmpty)
+{
+    auto temp_path = create_temp_file(R"(
+#define SOMETHING 1
+enum { FOO, BAR };
+)");
+    CParserFacade driver{temp_path, &formatter_};
+
+    auto result = driver.parse_struct_definitions("Tileset");
+    ASSERT_TRUE(result.has_value()) << get_all_error_text(result);
+    EXPECT_TRUE(result.value().empty());
+}
+
+TEST_F(CParserFacadeTests, ParseStructDefinitionsNonExistentFileReturnsError)
+{
+    CParserFacade driver{"does/not/exist.h", &formatter_};
+
+    auto result = driver.parse_struct_definitions();
+    EXPECT_FALSE(result.has_value());
+    EXPECT_NE(get_all_error_text(result).find("failed to parse struct definitions"), std::string::npos);
 }
 
 } // namespace

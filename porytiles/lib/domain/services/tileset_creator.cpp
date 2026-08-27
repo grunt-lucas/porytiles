@@ -2870,15 +2870,13 @@ void set_flower_key_frame_at(Image<Rgba32> &img, std::size_t metatile_index)
     }
 }
 
-/**
- * @brief Converts a 16x16 metatile pixel array to a vector of 4 PixelTiles.
- *
- * @details
- * Extracts tiles in row-major order (top-left, top-right, bottom-left, bottom-right).
- *
- * @param metatile_pixels The 16x16 pixel array representing a metatile
- * @return A vector of 4 PixelTiles extracted from the metatile
- */
+/// @brief Converts a 16x16 metatile pixel array to a vector of 4 PixelTiles.
+///
+/// @details
+/// Extracts tiles in row-major order (top-left, top-right, bottom-left, bottom-right).
+///
+/// @param metatile_pixels The 16x16 pixel array representing a metatile
+/// @return A vector of 4 PixelTiles extracted from the metatile
 [[nodiscard]] std::vector<PixelTile<Rgba32>> metatile_array_to_tiles(
     const std::array<std::array<Rgba32, metatile::side_length_pix>, metatile::side_length_pix> &metatile_pixels)
 {
@@ -2932,13 +2930,14 @@ TilesetCreator::create_sample_primary_porytiles_component(const std::string &til
     component->middle(middle);
     component->top(top);
 
-    /*
-     * Set metatile attribute for the tall grass metatile. But only set the behavior if the user project had an
-     * MB_TALL_GRASS behavior.
-     */
+    // Set metatile attribute for the tall grass metatile. But only set the behavior if the user project had an
+    // MB_TALL_GRASS behavior.
     const auto behavior_result = behavior_map_->lookup("MB_TALL_GRASS");
     if (behavior_result.has_value()) {
-        component->insert_attribute(3, MetatileAttribute{LayerType::normal, behavior_result.value()});
+        MetatileAttribute attribute{};
+        attribute.layer_type(LayerType::normal);
+        attribute.field(attribute::field_behavior, behavior_result.value());
+        component->insert_attribute(3, std::move(attribute));
     }
 
     // Set up flower animation frames using the conversion helper

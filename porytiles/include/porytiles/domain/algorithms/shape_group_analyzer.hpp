@@ -13,22 +13,20 @@
 
 namespace porytiles {
 
-/**
- * @brief Converts a PixelTile to a ShapeTile by grouping pixels by color into ShapeMasks.
- *
- * @details
- * For each unique non-transparent color in the tile, creates a ShapeMask marking which pixels have that color,
- * then maps the mask to the color value. This produces a ShapeTile where the keys (ShapeMasks) represent the
- * geometric structure and the values (PixelType) represent the color assignments.
- *
- * This is a direct conversion that does not require a ColorIndexMap, unlike the from_pixel_tile() functions
- * in tile_converters.hpp which produce ShapeTile<ColorIndex>.
- *
- * @tparam PixelType The pixel type, must support transparency checking
- * @param pixel_tile The input pixel tile to convert
- * @param is_transparent_pred Predicate that returns true if a pixel is transparent
- * @return A ShapeTile with color-to-mask mappings
- */
+/// @brief Converts a PixelTile to a ShapeTile by grouping pixels by color into ShapeMasks.
+///
+/// @details
+/// For each unique non-transparent color in the tile, creates a ShapeMask marking which pixels have that color,
+/// then maps the mask to the color value. This produces a ShapeTile where the keys (ShapeMasks) represent the
+/// geometric structure and the values (PixelType) represent the color assignments.
+///
+/// This is a direct conversion that does not require a ColorIndexMap, unlike the from_pixel_tile() functions
+/// in tile_converters.hpp which produce ShapeTile<ColorIndex>.
+///
+/// @tparam PixelType The pixel type, must support transparency checking
+/// @param pixel_tile The input pixel tile to convert
+/// @param is_transparent_pred Predicate that returns true if a pixel is transparent
+/// @return A ShapeTile with color-to-mask mappings
 template <SupportsTransparency PixelType, typename TransparencyPredicate>
 [[nodiscard]] ShapeTile<PixelType>
 shape_tile_from_pixel_tile(const PixelTile<PixelType> &pixel_tile, TransparencyPredicate is_transparent_pred)
@@ -52,43 +50,39 @@ shape_tile_from_pixel_tile(const PixelTile<PixelType> &pixel_tile, TransparencyP
     return result;
 }
 
-/**
- * @brief Analyzes a collection of pixel tiles and groups them by canonical shape for tile sharing analysis.
- *
- * @details
- * This algorithm detects color-isomorphic tiles, i.e. tiles that share the same geometric structure (ShapeMask layout)
- * but have different color assignments. These are candidates for tile sharing via palette slot alignment.
- *
- * The shape-based grouping approach is inspired by borytiles by ishax-kos
- * (https://github.com/ishax-kos/borytiles), specifically its @c tileset.rs module. Borytiles represents tiles as
- * @c Shape_indexable_tile (a @c BTreeMap<Tile_mask,Color_index>), groups them by @c Shape (the set of
- * @c Tile_mask keys), and canonicalizes via @c get_ideal_flip (lexicographically minimal flip variant). Porytiles
- * adapts these concepts into @c ShapeTile, @c ShapeMask, and @c CanonicalShapeTile respectively.
- *
- * The algorithm:
- * 1. For each tile, creates a ShapeTile<PixelType> directly from the pixel data
- * 2. Canonicalizes each ShapeTile (finds lexicographically minimal flip variant via shape-only comparison)
- * 3. Groups tiles by canonical shape using shape-only comparison (ignoring color values)
- * 4. Within each group, collects members with their color mappings and flip flags
- * 5. Returns only groups with 2+ members that have distinct color assignments
- *
- * Groups where all members have identical colors are excluded. They represent exact duplicates, not sharing
- * candidates.
- *
- * @tparam PixelType The pixel type, must support extrinsic transparency
- * @param tiles The input pixel tiles to analyze
- * @param extrinsic The extrinsic transparency color
- * @return Vector of ShapeGroups, each containing 2+ members with distinct colors sharing the same canonical shape
- */
+/// @brief Analyzes a collection of pixel tiles and groups them by canonical shape for tile sharing analysis.
+///
+/// @details
+/// This algorithm detects color-isomorphic tiles, i.e. tiles that share the same geometric structure (ShapeMask layout)
+/// but have different color assignments. These are candidates for tile sharing via palette slot alignment.
+///
+/// The shape-based grouping approach is inspired by borytiles by ishax-kos
+/// (https://github.com/ishax-kos/borytiles), specifically its @c tileset.rs module. Borytiles represents tiles as
+/// @c Shape_indexable_tile (a @c BTreeMap<Tile_mask,Color_index>), groups them by @c Shape (the set of
+/// @c Tile_mask keys), and canonicalizes via @c get_ideal_flip (lexicographically minimal flip variant). Porytiles
+/// adapts these concepts into @c ShapeTile, @c ShapeMask, and @c CanonicalShapeTile respectively.
+///
+/// The algorithm:
+/// 1. For each tile, creates a ShapeTile<PixelType> directly from the pixel data
+/// 2. Canonicalizes each ShapeTile (finds lexicographically minimal flip variant via shape-only comparison)
+/// 3. Groups tiles by canonical shape using shape-only comparison (ignoring color values)
+/// 4. Within each group, collects members with their color mappings and flip flags
+/// 5. Returns only groups with 2+ members that have distinct color assignments
+///
+/// Groups where all members have identical colors are excluded. They represent exact duplicates, not sharing
+/// candidates.
+///
+/// @tparam PixelType The pixel type, must support extrinsic transparency
+/// @param tiles The input pixel tiles to analyze
+/// @param extrinsic The extrinsic transparency color
+/// @return Vector of ShapeGroups, each containing 2+ members with distinct colors sharing the same canonical shape
 template <SupportsTransparency PixelType>
 [[nodiscard]] std::vector<ShapeGroup<PixelType>>
 analyze_shape_groups(const std::vector<PixelTile<PixelType>> &tiles, const PixelType &extrinsic)
     requires requires(const PixelType &c) { c.is_transparent(c); }
 {
-    /*
-     * Use a comparator that compares ShapeTiles by shape only (ignoring pixel values). This groups tiles with
-     * the same geometric structure regardless of their color assignments.
-     */
+    // Use a comparator that compares ShapeTiles by shape only (ignoring pixel values). This groups tiles with
+    // the same geometric structure regardless of their color assignments.
     auto shape_only_less = [](const ShapeTile<PixelType> &a, const ShapeTile<PixelType> &b) {
         return ShapeTile<PixelType>::compare_shape_only(a, b);
     };

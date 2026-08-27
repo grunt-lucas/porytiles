@@ -10,9 +10,7 @@
 
 namespace porytiles {
 
-/**
- * @brief A collection of printer functions for various tile types.
- */
+/// @brief A collection of printer functions for various tile types.
 class TilePrinter {
   public:
     virtual ~TilePrinter() = default;

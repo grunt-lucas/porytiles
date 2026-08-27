@@ -2,6 +2,7 @@
 
 #include <expected>
 #include <string>
+#include <utility>
 
 namespace porytiles {
 
@@ -9,21 +10,28 @@ namespace porytiles {
 template <typename T>
 std::expected<T, std::string> parse_int(std::string_view int_string, const int base)
 {
-    T arg;
+    // Copy into a std::string: stoll needs a null-terminated buffer, and a string_view's data() carries no such
+    // guarantee.
+    const std::string buffer{int_string};
+    long long parsed;
     std::size_t pos;
 
     try {
-        arg = std::stoi(int_string.data(), &pos, base);
+        parsed = std::stoll(buffer, &pos, base);
     }
     catch (const std::exception &) {
-        return std::unexpected{"invalid integral string: " + std::string{int_string}};
+        return std::unexpected{"invalid integral string: " + buffer};
     }
 
-    if (std::string{int_string}.size() != pos) {
-        return std::unexpected{"invalid integral string: " + std::string{int_string}};
+    if (buffer.size() != pos) {
+        return std::unexpected{"invalid integral string: " + buffer};
     }
 
-    return arg;
+    if (!std::in_range<T>(parsed)) {
+        return std::unexpected{"integral value out of range: " + buffer};
+    }
+
+    return static_cast<T>(parsed);
 }
 
 // ReSharper disable once CppParameterMayBeConst

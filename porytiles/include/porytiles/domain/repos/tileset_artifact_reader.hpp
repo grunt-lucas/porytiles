@@ -11,25 +11,21 @@
 
 namespace porytiles {
 
-/**
- * @brief Abstract interface for reading tileset artifacts from a backing store into a Tileset object.
- *
- * @details
- * The TilesetArtifactReader provides the capability to read various types of tileset artifacts (PNG files, binary data,
- * CSV files, etc.) from their stored locations and populate the appropriate fields in a Tileset object. This interface
- * abstracts the reading logic from the specific storage format and location.
- *
- * Implementations handle the details of parsing different artifact types and updating the correct components within the
- * target Tileset. The interface uses ArtifactKey to support different backing store implementations (filesystem paths,
- * database keys, URLs, etc.), as long as the key is string-representable.
- */
+/// @brief Abstract interface for reading tileset artifacts from a backing store into a Tileset object.
+///
+/// @details
+/// The TilesetArtifactReader provides the capability to read various types of tileset artifacts (PNG files, binary
+/// data, CSV files, etc.) from their stored locations and populate the appropriate fields in a Tileset object. This
+/// interface abstracts the reading logic from the specific storage format and location.
+///
+/// Implementations handle the details of parsing different artifact types and updating the correct components within
+/// the target Tileset. The interface uses ArtifactKey to support different backing store implementations (filesystem
+/// paths, database keys, URLs, etc.), as long as the key is string-representable.
 class TilesetArtifactReader {
   public:
     virtual ~TilesetArtifactReader() = default;
 
-    /*
-     * Porymap artifacts
-     */
+    // Porymap artifacts
     [[nodiscard]] virtual ChainableResult<void> read_metatiles_bin(Tileset &dest, const ArtifactKey &src_key) const = 0;
 
     [[nodiscard]] virtual ChainableResult<void>
@@ -38,7 +34,7 @@ class TilesetArtifactReader {
     [[nodiscard]] virtual ChainableResult<void> read_tiles_png(Tileset &dest, const ArtifactKey &src_key) const = 0;
 
     [[nodiscard]] virtual ChainableResult<void>
-    read_porymap_pal_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const = 0;
+    read_porymap_palette_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const = 0;
 
     [[nodiscard]] virtual ChainableResult<void> read_porymap_anim(
         Tileset &dest,
@@ -46,9 +42,7 @@ class TilesetArtifactReader {
         const ArtifactKey &params_key,
         const std::vector<std::pair<std::string, ArtifactKey>> &frame_keys) const = 0;
 
-    /*
-     * Porytiles artifacts
-     */
+    // Porytiles artifacts
     [[nodiscard]] virtual ChainableResult<void> read_bottom_png(Tileset &dest, const ArtifactKey &src_key) const = 0;
 
     [[nodiscard]] virtual ChainableResult<void> read_middle_png(Tileset &dest, const ArtifactKey &src_key) const = 0;
@@ -59,7 +53,7 @@ class TilesetArtifactReader {
     read_attributes_csv(Tileset &dest, const ArtifactKey &src_key) const = 0;
 
     [[nodiscard]] virtual ChainableResult<void>
-    read_porytiles_pal_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const = 0;
+    read_porytiles_palette_n(Tileset &dest, const ArtifactKey &src_key, std::size_t index) const = 0;
 
     [[nodiscard]] virtual ChainableResult<void> read_porytiles_anim(
         Tileset &dest,

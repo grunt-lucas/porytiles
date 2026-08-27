@@ -1,5 +1,6 @@
 #pragma once
 
+#include <cstddef>
 #include <filesystem>
 
 #include "porytiles/domain/services/porytiles_tileset_manager.hpp"
@@ -14,81 +15,77 @@
 
 namespace porytiles {
 
-/**
- * @brief Manages Porytiles-owned tilesets via TilesetManifest JSON files.
- *
- * @details
- * This class serializes and deserializes `tileset-manifest.json` files in the `porytiles/tilesets/{tileset_name}/`
- * directory. The presence of this file indicates that a tileset is Porytiles-managed.
- *
- * The JSON format varies based on whether the tileset was imported from vanilla pokeemerald:
- * - **Imported tilesets**: All original field values are stored for restoration support
- * - **Created tilesets**: Only version and imported flag are stored
- *
- * @see TilesetManifest for the model class
- * @see PorytilesTilesetManager for the abstract interface
- */
+/// @brief Manages Porytiles-owned tilesets via TilesetManifest JSON files.
+///
+/// @details
+/// This class serializes and deserializes `tileset-manifest.json` files in the `porytiles/tilesets/{tileset_name}/`
+/// directory. The presence of this file indicates that a tileset is Porytiles-managed.
+///
+/// The JSON format varies based on whether the tileset was imported from vanilla pokeemerald:
+/// - **Imported tilesets**: All original field values are stored for restoration support
+/// - **Created tilesets**: Only version and imported flag are stored
+///
+/// @see TilesetManifest for the model class
+/// @see PorytilesTilesetManager for the abstract interface
 class ProjectPorytilesTilesetManager : public PorytilesTilesetManager {
   public:
-    /**
-     * @brief Constructs a ProjectPorytilesTilesetManager with required dependencies.
-     *
-     * @param project_root Path to the pokeemerald project root directory
-     * @param metadata_provider Provider for reading headers.h fields
-     * @param metadata_writer Writer for updating headers.h fields
-     * @param infra_config Configuration provider for tileset paths and animation settings
-     * @param diag Diagnostics interface for warnings/notes
-     * @param incbin_appender Service for appending INCBIN declarations to header files
-     * @param tileset_anims_modifier Service for modifying tileset_anims.c includes
-     */
+    /// @brief Constructs a ProjectPorytilesTilesetManager with required dependencies.
+    ///
+    /// @param project_root Path to the pokeemerald project root directory
+    /// @param metadata_provider Provider for reading headers.h fields
+    /// @param metadata_writer Writer for updating headers.h fields
+    /// @param infra_config Configuration provider for tileset paths and animation settings
+    /// @param declaration_attribute_bytes The width for generated gMetatileAttributes_* INCBIN declarations; pass the
+    /// schema resolver's declaration_bytes, which follows the project's declared width and may be narrower than the
+    /// resolved schema's attribute_bytes() for FRLG-layout tilesets (expansion declares them u16 but reads them as
+    /// 4-byte words)
+    /// @param diag Diagnostics interface for warnings/notes
+    /// @param incbin_appender Service for appending INCBIN declarations to header files
+    /// @param tileset_anims_modifier Service for modifying tileset_anims.c includes
     ProjectPorytilesTilesetManager(
         std::filesystem::path project_root,
         const ProjectTilesetMetadataProvider *metadata_provider,
         const ProjectTilesetMetadataWriter *metadata_writer,
         const InfraConfig *infra_config,
+        std::size_t declaration_attribute_bytes,
         gsl::not_null<const UserDiagnostics *> diag,
         const IncbinDeclarationAppender *incbin_appender,
         const ProjectTilesetAnimsModifier *tileset_anims_modifier)
         : project_root_{std::move(project_root)}, metadata_provider_{metadata_provider},
-          metadata_writer_{metadata_writer}, infra_config_{infra_config}, diag_{diag},
-          incbin_appender_{incbin_appender}, tileset_anims_modifier_{tileset_anims_modifier}
+          metadata_writer_{metadata_writer}, infra_config_{infra_config},
+          declaration_attribute_bytes_{declaration_attribute_bytes}, diag_{diag}, incbin_appender_{incbin_appender},
+          tileset_anims_modifier_{tileset_anims_modifier}
     {
     }
 
-    /**
-     * @brief Reads an TilesetManifest object from the porytiles utility directory.
-     *
-     * @details
-     * Looks for `tileset-manifest.json` at `{project_root}/porytiles/tilesets/{tileset_name}/`. Returns an error if
-     * the file doesn't exist or contains invalid JSON.
-     *
-     * @param tileset_name The name of the tileset (e.g., "gTileset_General")
-     * @return The deserialized TilesetManifest, or an error if the file doesn't exist or is invalid
-     */
+    /// @brief Reads an TilesetManifest object from the porytiles utility directory.
+    ///
+    /// @details
+    /// Looks for `tileset-manifest.json` at `{project_root}/porytiles/tilesets/{tileset_name}/`. Returns an error if
+    /// the file doesn't exist or contains invalid JSON.
+    ///
+    /// @param tileset_name The name of the tileset (e.g., "gTileset_General")
+    /// @return The deserialized TilesetManifest, or an error if the file doesn't exist or is invalid
     [[nodiscard]] ChainableResult<TilesetManifest> read(const std::string &tileset_name) const;
 
-    /**
-     * @brief Writes an TilesetManifest object to the porytiles utility directory.
-     *
-     * @details
-     * Creates the directory structure `porytiles/tilesets/{tileset_name}/` if it doesn't exist, then writes
-     * `tileset-manifest.json` with 2-space indented JSON formatting.
-     *
-     * @param tileset_name The name of the tileset (e.g., "gTileset_General")
-     * @param artifacts The TilesetManifest data to serialize
-     * @post `tileset-manifest.json` exists at `{project_root}/porytiles/tilesets/{tileset_name}/`
-     */
+    /// @brief Writes an TilesetManifest object to the porytiles utility directory.
+    ///
+    /// @details
+    /// Creates the directory structure `porytiles/tilesets/{tileset_name}/` if it doesn't exist, then writes
+    /// `tileset-manifest.json` with 2-space indented JSON formatting.
+    ///
+    /// @param tileset_name The name of the tileset (e.g., "gTileset_General")
+    /// @param artifacts The TilesetManifest data to serialize
+    /// @post `tileset-manifest.json` exists at `{project_root}/porytiles/tilesets/{tileset_name}/`
     void write(const std::string &tileset_name, const TilesetManifest &artifacts) const;
 
-    /**
-     * @brief Checks whether a tileset has an tileset-manifest.json file.
-     *
-     * @details
-     * This is the canonical way to check if a tileset is Porytiles-managed.
-     *
-     * @param tileset_name The name of the tileset (e.g., "gTileset_General")
-     * @return true if the tileset has an tileset-manifest.json file
-     */
+    /// @brief Checks whether a tileset has an tileset-manifest.json file.
+    ///
+    /// @details
+    /// This is the canonical way to check if a tileset is Porytiles-managed.
+    ///
+    /// @param tileset_name The name of the tileset (e.g., "gTileset_General")
+    /// @return true if the tileset has an tileset-manifest.json file
     [[nodiscard]] bool is_porytiles_managed(const std::string &tileset_name) const override;
 
     [[nodiscard]] ChainableResult<void> persist_managed_existing(const std::string &tileset_name) const override;
@@ -107,6 +104,7 @@ class ProjectPorytilesTilesetManager : public PorytilesTilesetManager {
     const ProjectTilesetMetadataProvider *metadata_provider_;
     const ProjectTilesetMetadataWriter *metadata_writer_;
     const InfraConfig *infra_config_;
+    std::size_t declaration_attribute_bytes_;
     const UserDiagnostics *diag_;
     const IncbinDeclarationAppender *incbin_appender_;
     const ProjectTilesetAnimsModifier *tileset_anims_modifier_;

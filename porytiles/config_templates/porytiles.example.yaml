@@ -5,25 +5,93 @@ fieldmap:
   num_tiles_total: 1024
   num_metatiles_in_primary: 512
   num_metatiles_total: 1024
-  num_pals_in_primary: 6
-  num_pals_total: 13
+  num_palettes_in_primary: 6
+  num_palettes_total: 13
   max_map_data_size: 10240
   num_tiles_per_metatile: 8
-  metatile_attribute_size: 2  # 2 for Emerald/Ruby, 4 for FireRed
 
+  # Pins the size in bytes of each metatile attribute entry (1, 2, or 4). When unset, Porytiles derives the size from
+  # the resolved attribute field masks. Projects that declare more than one mask layout (pokeemerald-expansion) must set
+  # it explicitly, as must projects whose struct Tileset declaration is wider than the masks need.
+  metatile_attribute_size: 2
+
+  # The declared element width in bytes (1, 2, or 4) for the gMetatileAttributes_* C declarations Porytiles generates
+  # (const u8 / INCBIN_U8, const u16 / INCBIN_U16, const u32 / INCBIN_U32).
+  metatile_attribute_declaration_size: 2
+
+  # Give a schema role its own pin column in attributes.csv, so its per-metatile values can be pinned in the CSV rather
+  # than automatically inferred. A blank cell keeps the inferred value for that row. Each entry takes one field:
+  #   - role: the role to pin (layer_type is currently the only supported role)
+  # The column's header must be "pin::<role>", e.g. "pin::layer_type". The "pin::" prefix is reserved. It marks a
+  # column as a pin column rather than a regular attribute field.
+  role_pins:
+    - role: layer_type
+
+  # Declare the metatile attribute field layout explicitly, replacing schema inference. Declare the list yourself only
+  # when your layout isn't obvious from the code, and the inference fails. Each field takes:
+  # - name: the attributes.csv column header
+  # - mask: the bits the field occupies in the packed attribute value (a single contiguous run of bits; fields must not
+  #         overlap each other)
+  # - default: optional integer value for metatiles with no attributes.csv row (0 when omitted)
+  # - provider: optional; where the field's named constants live. With a provider, the field's CSV column takes constant
+  #             names (e.g. MB_TALL_GRASS); without one it takes plain integers.
+  #   - header: C header path, relative to the project root
+  #   - prefix: the shared name prefix of the constants, e.g. pokeemerald behaviors have "MB_" like "MB_TALL_GRASS"
+  #   - skipped: constant names to ignore while scanning the header
+  #   - format: defines-only, enums-only, or [default] either
+  # - role: "layer_type" marks the field that holds the layer-type bits. At most one field may carry the role; a role
+  #         field takes no default and no provider, and it gets no data column in attributes.csv unless pinned, see above.
+  metatile_attribute_fields:
+    - name: behavior
+      mask: 0x00FF
+      provider:
+        header: include/constants/metatile_behaviors.h
+        prefix: MB_
+        skipped: [ MB_INVALID ]
+        format: either
+    - name: light_level
+      mask: 0x0E00
+      default: 0
+    - name: layer_type
+      mask: 0xF000
+      role: layer_type
+
+  # Adjust individual attribute fields without redeclaring the whole layout. Overrides merge onto the baseline fields
+  # (the metatile_attribute_fields list above, or the inferred fields when that list is omitted). Keys are field names;
+  # members you set (mask, default, provider, role) replace the baseline value, and members you omit fall through.
+  # Setting provider members adjusts just those members; "provider: null" removes the provider entirely, turning the
+  # field's CSV column into raw integers. "role: null" clears a field's role, and "role: layer_type" sets it. Overrides
+  # apply per field, so moving the role means clearing it on one field and setting it on another.
+  metatile_attribute_field_overrides:
+    # Enter behavior values as raw integers instead of MB_ names
+    behavior:
+      provider: null
+    # Change the value used for metatiles with no attributes.csv row
+    light_level:
+      default: 3
+
+# Warnings and remarks are opt-in. They are suppressed unless an include pattern matches their tag. Include a wildcard
+# (".*") to show everything, or list specific tags. Exclude patterns override includes, so a wildcard include plus
+# targeted excludes shows everything **except** the targeted excludes.
 diagnostics:
   warnings:
-    exclude: [ ".*" ]
-    include: # explicitly include only two warnings, include processed after exclude
-      - "layer-mode-warning"
-      - "tile-color-count-warning"
+    include: # show only these two warnings
+      - "nothing-to-do"
+      - "layer-mode-violation"
   remarks:
-    exclude: [ ".*" ] # disable all remarks
+    include: [ ".*" ] # show all remarks...
+    exclude: [ "tile-sharing-.*" ] # ...except the tile sharing remarks
 
 verify_checksums: true
 
 tileset:
   extrinsic_transparency: [ 255, 0, 255 ]
+
+  # A metatile with non-transparent content on all three layers cannot be represented in a dual-layer tileset. By
+  # default this is a hard error. Set this to true to force compilation. You'll instead get warnings for violating
+  # metatiles, and one layer group is dropped from each. Which group is dropped follows the metatile's effective layer
+  # type: a layer_type pin if you set one (see above), otherwise a fallback that drops the bottom layer.
+  ignore_triple_layer_content: false
 
   # Configure where Porytiles-managed tileset artifacts are stored.
   # These paths are relative to the project root.
@@ -137,7 +205,8 @@ tileset:
     # Strategy for determining how to resolve duplicate key frame subtile errors when decompiling an animation.
     # Available strategies:
     # - [default] error: error out and display violating duplicate pairs
-    # - warning: warn about violating duplicate pairs and continue decompilation (noting that subsequent compilation will fail if no action is taken)
+    # - warning: warn about violating duplicate pairs and continue decompilation (noting that subsequent compilation
+    #            will fail if no action is taken)
     # - mangle: run the AnimTileMangler to minimally de-dupe tiles
     key_frame_resolution_strategy: warning
 

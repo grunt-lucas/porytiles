@@ -10,18 +10,16 @@
 
 namespace porytiles {
 
-/**
- * @brief Silent diagnostics implementation that suppresses all output.
- *
- * @details
- * NullUserDiagnostics implements all UserDiagnostics methods as no-ops, producing no output
- * whatsoever. This is useful in contexts where diagnostic output would be inappropriate,
- * such as shell completion scripts that must only output completion candidates.
- *
- * Shell completion routines call helper commands that parse project files and produce
- * completions. Any stderr output (warnings, errors, etc.) would corrupt the completion
- * results and break the shell's tab-completion functionality.
- */
+/// @brief Silent diagnostics implementation that suppresses all output.
+///
+/// @details
+/// NullUserDiagnostics implements all UserDiagnostics methods as no-ops, producing no output
+/// whatsoever. This is useful in contexts where diagnostic output would be inappropriate,
+/// such as shell completion scripts that must only output completion candidates.
+///
+/// Shell completion routines call helper commands that parse project files and produce
+/// completions. Any stderr output (warnings, errors, etc.) would corrupt the completion
+/// results and break the shell's tab-completion functionality.
 class NullUserDiagnostics final : public UserDiagnostics {
   public:
     explicit NullUserDiagnostics(gsl::not_null<const TextFormatter *> format) : UserDiagnostics{format} {}

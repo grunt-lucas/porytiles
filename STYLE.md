@@ -1,4 +1,38 @@
-```C++
+# Porytiles C++ Style Guide
+
+- [Porytiles C++ Style Guide](#porytiles-c-style-guide)
+  - [Naming, Includes, and Layout](#naming-includes-and-layout)
+    - [Trailing Underscores: Class-Private Members Only](#trailing-underscores-class-private-members-only)
+  - [Documentation Comments](#documentation-comments)
+    - [How Much to Document](#how-much-to-document)
+    - [Doxygen Comment Style](#doxygen-comment-style)
+    - [Internal Helpers and Skipping](#internal-helpers-and-skipping)
+  - [Test Style](#test-style)
+  - [Idioms and Patterns](#idioms-and-patterns)
+    - [Container Membership Checks](#container-membership-checks)
+    - [Bounds-Checked Element Access](#bounds-checked-element-access)
+    - [std::formatter Specializations](#stdformatter-specializations)
+  - [Error and Diagnostic Message Style](#error-and-diagnostic-message-style)
+  - [Prose and Markdown](#prose-and-markdown)
+    - [Prose Style](#prose-style)
+    - [Markdown Code Blocks](#markdown-code-blocks)
+
+This is the C++ style guide for Porytiles.
+It covers naming and layout, documentation comments, tests, idioms,
+error messages, and prose conventions.
+Follow it for all code in the active `porytiles/` tree;
+the `legacy/` tree predates these rules and is exempt.
+
+---
+
+## Naming, Includes, and Layout
+
+The annotated example below shows the core conventions:
+include ordering, the single `porytiles` namespace, naming for each kind of
+identifier, and class layout.
+The later sections expand on specific topics.
+
+```c++
 // First include should always be declaration header, if relevant
 #include "porytiles/domain/MyClass.hpp"
 
@@ -30,30 +64,30 @@ const std::string foo_bar_value_1 = "foo_value_1";
 
 // PascalCase for class names
 class MyClass {
-  public:  
+  public:
     MyClass() = default;
-    
+
     // ctor initializer lists always use braced initialization where possible
     // simple ctors can be implemented in the header file
     MyClass(int my_val) : my_val_{my_val} {}
-  
+
     // class constants use snake_case
     const std::string my_class_constant = "my_class_constant";
-  
+
     // Method names are snake_case, parameter names are snake_case
     // Use [[nodiscard]] for methods/functions that return a value
     [[nodiscard]] int compute_something(int accum_value) const;
-    
+
     // Do something complicated to update my_val_
     // This should be implemented in the cpp file
     void update_my_val_with_complex_process(int some_param);
-  
+
     // Simple accessors/mutators also use snake_case, but omit the trailing underscore
     // Simple accessors/mutators can be implemented in the header file
     [[nodiscard]] const std::string &cool_value() const {
         return cool_value_;
     }
-    
+
     [[nodiscard]] int my_val() const {
         return my_val_;
     }
@@ -61,7 +95,7 @@ class MyClass {
     void my_val(int new_val) {
         my_val_ = new_val;
     }
-  
+
   private:
     // Member variables use snake_case_ with trailing underscore
     std::string cool_value_;
@@ -70,11 +104,10 @@ class MyClass {
 
 // cpp file implementations
 int MyClass::compute_something(int accum_value) const {
-    /*
-     * For extended multi-line code comments,
-     * prefer the slash-star style like so.
-     */
-    // Single line comments can use the two-slash style.
+    // All comments *must* use the two-slash style.
+
+    // Multi-line comments lik this one should also
+    // use the two-slash style.
 
     // local variable names are snake_case
     int my_local = 1;
@@ -86,9 +119,10 @@ int MyClass::compute_something(int accum_value) const {
 // Close a namespace with a closing comment like above
 ```
 
-## Trailing Underscores: Class-Private Members Only
+### Trailing Underscores: Class-Private Members Only
 
-The trailing `_` convention applies **only to class-private member variables**. Public struct fields (record-style data carriers like `LayerValue`, `FrameLoadResult`, `CliOptionStorage`, `PerAnimOverride`, etc.) use plain snake_case with **no trailing underscore**:
+The trailing `_` convention applies **only to class-private member variables**.
+Public struct fields (record-style data carriers like `LayerValue`, `FrameLoadResult`, `CliOptionStorage`, `PerAnimOverride`, etc.) use plain snake_case with **no trailing underscore**:
 
 ```c++
 // CORRECT — public struct fields, no trailing underscore:
@@ -111,21 +145,48 @@ struct PackingParams {
 };
 ```
 
-If a struct has a constructor and is used in a class-like way (treating its members as private state), prefer making it a `class` with private members rather than a public struct that imitates the private-member convention.
+If a struct has a constructor and is used in a class-like way (treating its members as private state),
+prefer making it a `class` with private members rather than a public struct that imitates the private-member convention.
 
-## Doxygen Comment Style
-```C++
+---
+
+## Documentation Comments
+
+### How Much to Document
+
+How *much* Doxygen a declaration gets depends on its visibility and complexity.
+Apply these three tiers:
+
+1. **Public API.**
+   Methods, classes, and free functions visible to developers as part of the Porytiles API
+   always get a full Doxygen block: the complete tag set in the idiomatic order shown under
+   [Doxygen Comment Style](#doxygen-comment-style).
+   The one exception is trivially simple members (plain accessors, mutators, and thin wrappers
+   whose signature says everything), which follow tier 3 and stay undocumented.
+   A tautological block is **worse** than none.
+2. **Internal helpers.**
+   Anonymous-namespace helpers and private class methods carry only `@brief` by default,
+   plus `@details` when the helper is complex enough to need it.
+   Omit the procedural tags (`@param`, `@return`, `@pre`, `@post`, `@tparam`, etc.) that tier 1 requires.
+   No external caller reads these, so the extra tags are visual noise without payoff.
+3. **Too simple to document.**
+   When a helper is so simple that a doc comment would just restate the code, write no Doxygen at all.
+   Add a comment only when a subcall is genuinely unintuitive or a key invariant needs explicit callout.
+
+The two sections below show the full block (tier 1) and the trimmed or absent forms (tiers 2 and 3).
+
+### Doxygen Comment Style
+
+```c++
 // Always use @brief and @details
-/**
- * @brief A basic class for for modeling foos.
- *
- * @details
- * The Foo class assumes that your foos are all like bars, but different. Notice that the comment goes all the way to
- * the column limit of 120 before wrapping.
- *
- * @tparam T The type parameter for the foo
- * @invariant Some note would go here
- */
+/// @brief A basic class for for modeling foos.
+///
+/// @details
+/// The Foo class assumes that your foos are all like bars, but different. Notice that the comment goes all the way to
+/// the column limit of 120 before wrapping.
+///
+/// @tparam T The type parameter for the foo
+/// @invariant Some note would go here
 template <typename T>
 class Foo {
   public:
@@ -153,40 +214,75 @@ class Foo {
    // documented with @pre tags. Panics are not exceptions - they terminate the
    // program and are not catchable/recoverable.
 
-   /**
-    * @brief Computes a bar value by applying a factor to a base value.
-    *
-    * @details
-    * This function performs a computation using the provided factor and base value.
-    * The function panics if the factor is negative, exceeds the maximum safe value,
-    * or if the base is zero. The computation is optimized for positive integers.
-    *
-    * @tparam ResultType The type to cast the result to (must be numeric).
-    * @param factor The factor to use in the computation.
-    * @param base The base value to multiply with the factor.
-    * @pre @p factor must be non-negative.
-    * @pre @p factor must be less than @c MAX_SAFE_FACTOR.
-    * @pre @p base must not be zero.
-    * @return The computed bar value cast to @c ResultType.
-    * @post The returned value is always positive.
-    * @post The returned value is less than @c MAX_BAR_VALUE.
-    * @note This function is thread-safe.
-    * @warning This function may lose precision when casting to smaller numeric types.
-    * @see @c compute_baz() for a related computation.
-    * @see @c apply_factor() for a simpler version without base parameter.
-    * @todo Handle MAX_SAFE_FACTOR more elegantly
-    */
+    /// @brief Computes a bar value by applying a factor to a base value.
+    ///
+    /// @details
+    /// This function performs a computation using the provided factor and base value.
+    /// The function panics if the factor is negative, exceeds the maximum safe value,
+    /// or if the base is zero. The computation is optimized for positive integers.
+    ///
+    /// @tparam ResultType The type to cast the result to (must be numeric).
+    /// @param factor The factor to use in the computation.
+    /// @param base The base value to multiply with the factor.
+    /// @pre @p factor must be non-negative.
+    /// @pre @p factor must be less than @c MAX_SAFE_FACTOR.
+    /// @pre @p base must not be zero.
+    /// @return The computed bar value cast to @c ResultType.
+    /// @post The returned value is always positive.
+    /// @post The returned value is less than @c MAX_BAR_VALUE.
+    /// @note This function is thread-safe.
+    /// @warning This function may lose precision when casting to smaller numeric types.
+    /// @see @c compute_baz() for a related computation.
+    /// @see @c apply_factor() for a simpler version without base parameter.
+    /// @todo Handle MAX_SAFE_FACTOR more elegantly
     template <typename ResultType>
     ResultType compute_bar(int factor, int base);
 };
 ```
 
-## Doxygen: When to Skip
+### Internal Helpers and Skipping
 
-Omit Doxygen entirely for trivial accessors, mutators, and thin wrappers where
-the signature is self-documenting. Never write a `@brief` that restates the
-function name. If you can't add information beyond what the signature says,
-skip the doc block.
+A tier 2 helper carries a `@brief`, and a `@details` only when the reason for the code
+is not obvious from the signature:
+
+```c++
+namespace {
+
+/**
+ * @brief Trims surrounding whitespace from a raw CSV cell.
+ */
+std::string trim_cell(const std::string &cell);
+
+/**
+ * @brief Returns the number of palettes usable for tile assignment.
+ *
+ * @details
+ * Primary tilesets reserve the first palette for the player sprite, so the usable
+ * count is one less than the hardware maximum. Secondary tilesets have no such reservation.
+ */
+int usable_palette_count(TilesetKind kind);
+
+} // namespace
+```
+
+A tier 3 helper gets nothing. If the body reads as plainly as any `@brief` would,
+a doc comment is just noise:
+
+```c++
+namespace {
+
+// No doc comment needed: the body says it all.
+bool is_new_directory(const ManagedPath &path) {
+    // An internal comment like this is still permitted if it's genuinely useful
+    return path.is_directory() && path.is_new();
+}
+
+} // namespace
+```
+
+The same "would just restate the signature" test retires doc blocks on trivial public
+accessors and mutators, even though they are part of the API. Never write a `@brief`
+that restates the function name:
 
 ```c++
 // CORRECT: no doc needed, the signature says it all
@@ -198,6 +294,8 @@ skip the doc block.
  */
 [[nodiscard]] int my_val() const { return my_val_; }
 ```
+
+---
 
 ## Test Style
 
@@ -218,95 +316,9 @@ TEST(Rgba32Tests, OperatorEqualsAndEqualsIgnoringAlphaShouldDifferBasedOnAlpha)
 // No obvious-context comments (e.g., "// Duplicate color"). Comment only when WHY is non-obvious.
 ```
 
-## Prose Style
+---
 
-Avoid excessive em dashes. Prefer periods, commas, or parentheses for clause
-separation. Em dashes are fine occasionally but become an obnoxious AI-ism when overused.
-
-Write comments in plain, direct English. Avoid "literary" flourish in code comments.
-
-No box-drawing section banners (`// ====`) etc., in source or test files. Use a plain
-single-line comment if grouping is truly needed.
-
-Documentation and multi-line doc comments should use [semantic linebreaks](https://sembr.org/):
-one sentence or independent clause per line. This applies to Markdown documentation,
-README sections, and multi-line Doxygen `@details` blocks.
-
-## std::formatter Specializations
-
-When adding `std::formatter<T>` specializations for custom types, the `format()` method
-**MUST** use `auto &ctx` — not `std::format_context &ctx`:
-
-```c++
-// CORRECT — works with std::formattable concept on all compilers:
-auto format(const MyType &val, auto &ctx) const
-
-// BROKEN on Apple Clang / libc++ — std::formattable<MyType, char> evaluates to false:
-auto format(const MyType &val, std::format_context &ctx) const
-```
-
-This is due to a libc++ implementation issue (LLVM #66466) where the std::formattable concept
-tests against an internal context type, not std::format_context directly.
-
-All formatters should delegate to the type's porytiles::to_string() overload for consistency:
-
-```c++
-template <>
-struct std::formatter<porytiles::MyType> {
-    constexpr auto parse(std::format_parse_context &ctx)
-    {
-        return ctx.begin();
-    }
-
-    auto format(const porytiles::MyType &value, auto &ctx) const
-    {
-        return std::format_to(ctx.out(), "{}", porytiles::to_string(value));
-    }
-};
-```
-
-## Error and Diagnostic Message Style
-
-All user-facing error and diagnostic messages (in `FormattableError`, `PT_TRY_ASSIGN_CHAIN_ERR`,
-`diag_->warning()`, `diag_->error()`, etc.) must follow these rules:
-
-1. **Capital first letter** — the message must start with an uppercase letter
-2. **Ends with a period `.`** — every message must end with a period
-3. **Single quotes and `Style::bold`** around highlightable items (file names, tileset names, keys):
-   `FormatParam{tileset_name, Style::bold}` with `'{}'` in the format string
-4. **List headers ending with `:`** are acceptable (e.g. `"To resolve:"`, `"Changes present in Porymap assets:"`)
-5. **Empty strings** used as separators are fine
-6. **Bullet-point sub-items** in multi-line error lists follow their own style
-
-```c++
-// CORRECT:
-FormattableError{"Tileset '{}' does not exist.", FormatParam{tileset_name, Style::bold}};
-FormattableError{"Failed to read metatile_attributes.bin."};
-FormattableError{"Failed to open file for writing: '{}'.", FormatParam{path, Style::bold}};
-
-// WRONG — lowercase start:
-FormattableError{"tileset save failed"};
-
-// WRONG — missing period:
-FormattableError{"Failed to read metatile_attributes.bin"};
-
-// WRONG — raw string concatenation instead of FormatParam:
-FormattableError{"failed to pack palettes for tileset " + tileset_.name()};
-// Should be:
-FormattableError{"Failed to pack palettes for tileset '{}'.", FormatParam{tileset_.name(), Style::bold}};
-```
-
-Note about markdown code blocks: when writing multiline C++ code blocks,
-use "c++" after the triple backticks. E.g.,
-```c++
-int main() {
-    // This is a multiline c++ code block
-    // Notice that the triple backticks are followed by "c++"
-    return 0;
-}
-```
-
-## Preferred Idioms
+## Idioms and Patterns
 
 ### Container Membership Checks
 
@@ -352,3 +364,96 @@ nonsensical values rather than crashing at the point of error. `.at()` gives a c
 
 **Exception**: `operator[]` is fine for `std::map`/`std::unordered_map` when you
 intentionally want insertion-on-missing-key semantics.
+
+### std::formatter Specializations
+
+When adding `std::formatter<T>` specializations for custom types, the `format()` method
+**MUST** use `auto &ctx` — not `std::format_context &ctx`:
+
+```c++
+// CORRECT — works with std::formattable concept on all compilers:
+auto format(const MyType &val, auto &ctx) const
+
+// BROKEN on Apple Clang / libc++ — std::formattable<MyType, char> evaluates to false:
+auto format(const MyType &val, std::format_context &ctx) const
+```
+
+This is due to a libc++ implementation issue (LLVM #66466) where the std::formattable concept
+tests against an internal context type, not std::format_context directly.
+
+All formatters should delegate to the type's porytiles::to_string() overload for consistency:
+
+```c++
+template <>
+struct std::formatter<porytiles::MyType> {
+    constexpr auto parse(std::format_parse_context &ctx)
+    {
+        return ctx.begin();
+    }
+
+    auto format(const porytiles::MyType &value, auto &ctx) const
+    {
+        return std::format_to(ctx.out(), "{}", porytiles::to_string(value));
+    }
+};
+```
+
+---
+
+## Error and Diagnostic Message Style
+
+All user-facing error and diagnostic messages (in `FormattableError`, `PT_TRY_ASSIGN_CHAIN_ERR`,
+`diag_->warning()`, `diag_->error()`, etc.) must follow these rules:
+
+1. **Capital first letter** — the message must start with an uppercase letter
+2. **Ends with a period `.`** — every message must end with a period
+3. **Single quotes and `Style::bold`** around highlightable items (file names, tileset names, keys):
+   `FormatParam{tileset_name, Style::bold}` with `'{}'` in the format string
+4. **List headers ending with `:`** are acceptable (e.g. `"To resolve:"`, `"Changes present in Porymap assets:"`)
+5. **Empty strings** used as separators are fine
+6. **Bullet-point sub-items** in multi-line error lists follow their own style
+
+```c++
+// CORRECT:
+FormattableError{"Tileset '{}' does not exist.", FormatParam{tileset_name, Style::bold}};
+FormattableError{"Failed to read metatile_attributes.bin."};
+FormattableError{"Failed to open file for writing: '{}'.", FormatParam{path, Style::bold}};
+
+// WRONG — lowercase start:
+FormattableError{"tileset save failed"};
+
+// WRONG — missing period:
+FormattableError{"Failed to read metatile_attributes.bin"};
+
+// WRONG — raw string concatenation instead of FormatParam:
+FormattableError{"failed to pack palettes for tileset " + tileset_.name()};
+// Should be:
+FormattableError{"Failed to pack palettes for tileset '{}'.", FormatParam{tileset_.name(), Style::bold}};
+```
+
+---
+
+## Prose and Markdown
+
+### Prose Style
+
+The porytiles-user-docs `quickstart.md` page is the tone exemplar for user-facing docs:
+confident and clear, it addresses the reader as "you", uses cross-references, and avoids
+clichés and tech-jargon-hype language.
+
+Documentation and multi-line doc comments should use [semantic linebreaks](https://sembr.org/):
+one sentence or independent clause per line. This applies to Markdown documentation,
+README sections, and multi-line Doxygen `@details` blocks.
+
+### Markdown Code Blocks
+
+When writing multi-line C++ code blocks in Markdown, use `c++` after the opening
+triple backticks (not `cpp` or `C++`):
+
+```c++
+int main() {
+    // This is a multiline c++ code block
+    // Notice that the triple backticks are followed by "c++"
+    return 0;
+}
+```

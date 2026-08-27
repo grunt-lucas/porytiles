@@ -8,7 +8,12 @@
   Type handling:
   - bool: add_flag() with callback storing "true"/"false" string
   - std::size_t/std::string/Rgba32: add_option() storing raw string directly
+  - std::optional<T>: same as T. An unset optional means "no source pinned this value", which is
+    the absence of the flag, so there is nothing extra to register.
   - Enums: add_option() storing raw string (already was this way)
+
+  Every type dispatched on below must also appear in CLI_HANDLED_TYPES in scripts/generate_config.py,
+  which fails generation if a schema entry declares a cli_option this chain would silently skip.
 #}
 {% import '_macros.jinja2' as macros %}
 #include "porytiles/infra/cli/cli_option_registration.hpp"
@@ -56,6 +61,20 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
 
 {% elif value.type == 'std::string' %}
     // {{ value.canonical_name }} (std::string)
+    config_group->add_option(
+        "--{{ value.cli_option }}",
+        storage.{{ value.symbol }},
+        "{{ value.canonical_name }}{% if value.cli_desc %} - {{ value.cli_desc }}{% endif %}");
+
+{% elif value.type == 'std::optional<std::uint32_t>' %}
+    // {{ value.canonical_name }} (optional mask, captured as string, parsed by CliOptionProvider)
+    config_group->add_option(
+        "--{{ value.cli_option }}",
+        storage.{{ value.symbol }},
+        "{{ value.canonical_name }}{% if value.cli_desc %} - {{ value.cli_desc }}{% endif %}");
+
+{% elif value.type == 'std::optional<std::size_t>' %}
+    // {{ value.canonical_name }} (optional std::size_t, captured as string, parsed by CliOptionProvider)
     config_group->add_option(
         "--{{ value.cli_option }}",
         storage.{{ value.symbol }},

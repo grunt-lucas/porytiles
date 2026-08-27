@@ -8,28 +8,24 @@
 
 namespace porytiles {
 
-/**
- * @brief Abstract interface for all error types used in ChainableResult error chains.
- *
- * @details
- * All concrete error types used with ChainableResult must derive from this interface. Implementations should be
- * immutable value types that capture all relevant context about a failure. The clone pattern enables proper copying
- * of errors when building error chains.
- */
+/// @brief Abstract interface for all error types used in ChainableResult error chains.
+///
+/// @details
+/// All concrete error types used with ChainableResult must derive from this interface. Implementations should be
+/// immutable value types that capture all relevant context about a failure. The clone pattern enables proper copying
+/// of errors when building error chains.
 class Error {
   public:
     virtual ~Error() = default;
 
-    /**
-     * @brief Returns a formatted multi-line string representation of the error.
-     *
-     * @details
-     * Each element in the returned vector represents one line of the error message. The TextFormatter controls whether
-     * ANSI styling codes are included based on TTY status.
-     *
-     * @param formatter The TextFormatter to use for conditional formatting based on TTY status
-     * @return A vector of formatted strings describing the error, one per line
-     */
+    /// @brief Returns a formatted multi-line string representation of the error.
+    ///
+    /// @details
+    /// Each element in the returned vector represents one line of the error message. The TextFormatter controls whether
+    /// ANSI styling codes are included based on TTY status.
+    ///
+    /// @param formatter The TextFormatter to use for conditional formatting based on TTY status
+    /// @return A vector of formatted strings describing the error, one per line
     [[nodiscard]] virtual std::vector<std::string> details(const TextFormatter &formatter) const = 0;
 
     [[nodiscard]] virtual std::string join(const TextFormatter &formatter, const std::string &delimiter = "\n") const
@@ -52,14 +48,12 @@ class Error {
     [[nodiscard]] virtual std::unique_ptr<Error> clone() const = 0;
 };
 
-/**
- * @brief General-purpose error implementation with formatted message support.
- *
- * @details
- * FormattableError is a concrete Error implementation for common error scenarios where a specialized error type would
- * be unnecessary overhead. It supports plain string messages, format strings with styled FormatParam substitution, and
- * multi-line error messages. TTY-aware styling is handled automatically through TextFormatter.
- */
+/// @brief General-purpose error implementation with formatted message support.
+///
+/// @details
+/// FormattableError is a concrete Error implementation for common error scenarios where a specialized error type would
+/// be unnecessary overhead. It supports plain string messages, format strings with styled FormatParam substitution, and
+/// multi-line error messages. TTY-aware styling is handled automatically through TextFormatter.
 class FormattableError final : public Error {
   public:
     FormattableError() = default;

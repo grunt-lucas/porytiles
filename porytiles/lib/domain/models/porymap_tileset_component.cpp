@@ -17,7 +17,7 @@ namespace porytiles {
 
 PorymapTilesetComponent::PorymapTilesetComponent()
 {
-    pals_.fill(Palette<Rgba32, pal::max_size>{Rgba32{}});
+    palettes_.fill(Palette<Rgba32, palette::max_size>{Rgba32{}});
 }
 
 void PorymapTilesetComponent::push_back_tilemap_entry(TilemapEntry entry)
@@ -31,20 +31,20 @@ void PorymapTilesetComponent::push_back_attribute(MetatileAttribute attribute)
     metatile_attributes_.push_back(std::move(attribute));
 }
 
-void PorymapTilesetComponent::set_pal(std::size_t pal_index, Palette<Rgba32, pal::max_size> pal)
+void PorymapTilesetComponent::set_palette(std::size_t palette_index, Palette<Rgba32, palette::max_size> palette)
 {
-    if (pal_index >= pal::num_pals) {
-        panic(std::format("invalid pal index {}: out of range", pal_index));
+    if (palette_index >= palette::num_palettes) {
+        panic(std::format("invalid palette index {}: out of range", palette_index));
     }
-    pals_.at(pal_index) = std::move(pal);
+    palettes_.at(palette_index) = std::move(palette);
 }
 
-const Palette<Rgba32, pal::max_size> &PorymapTilesetComponent::pal_at(std::size_t pal_index) const
+const Palette<Rgba32, palette::max_size> &PorymapTilesetComponent::palette_at(std::size_t palette_index) const
 {
-    if (pal_index >= pal::num_pals) {
-        panic(std::format("invalid pal index {}: out of range", pal_index));
+    if (palette_index >= palette::num_palettes) {
+        panic(std::format("invalid palette index {}: out of range", palette_index));
     }
-    return pals_.at(pal_index);
+    return palettes_.at(palette_index);
 }
 
 bool PorymapTilesetComponent::is_empty() const

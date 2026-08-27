@@ -13,6 +13,8 @@ RGBA (or indexed) input assets.
 ## Quick Links
 - [Release binaries](https://github.com/grunt-lucas/porytiles/releases)
 - [Install via Homebrew](#release-cadence)
+- [User documentation](https://grunt-lucas.github.io/porytiles-user-docs/)
+- [Developer documentation](https://grunt-lucas.github.io/porytiles-dev-docs/)
 - [Doxygen API documentation](https://grunt-lucas.github.io/porytiles)
 - [Using Porytiles - Wiki](https://github.com/grunt-lucas/porytiles/wiki)
 - [Introductory YouTube Tutorial (made by a community member, not a rick roll this time I promise)](https://www.youtube.com/playlist?list=PLuyjFojPxF7-O5o_mS6uTBtyYcuyFf_Ce)
@@ -39,24 +41,24 @@ For more info, please
 see [this wiki page which explains what Porytiles can do in more detail.](https://github.com/grunt-lucas/porytiles/wiki/Why-Should-I-Use-This-Tool%3F)
 
 ## Getting Started
-*TODO: replace this stub with a Quick Start walkthrough, or link out to the [user docs](https://grunt-lucas.github.io/porytiles-user-docs/) once that page is written.*
+For quick installation instructions, see [Release Cadence](#release-cadence) below.
 
-For now, install instructions live in [Release Cadence](#release-cadence) below.
+If you want more detailed installation instructions as well as the full quick start guide,
+take a look at the user documentation [Installation](https://grunt-lucas.github.io/porytiles-user-docs/installation.html) and [Quick Start](https://grunt-lucas.github.io/porytiles-user-docs/quickstart.html) pages, respectively.
 
 ## Release Cadence
 Porytiles publishes both versioned releases and a rolling snapshot.
 
-**Versioned releases** follow semantic versioning (`vX.Y.Z`) and are tagged on
-the `master` branch.
+**Versioned releases** follow semantic versioning (`vX.Y.Z`) and are tagged on the `master` branch.
 Each tag triggers a permanent GitHub release with platform-specific zip files
 and updates the `porytiles` Homebrew formula.
 The [CHANGELOG](./CHANGELOG.md) lists what changed in each release.
 
 **Snapshot releases** are published automatically on every push to `develop`.
-They land at the rolling `snapshot` GitHub release and update the
-`porytiles-snapshot` Homebrew formula.
-Snapshots are for users who want the latest changes;
-they are not considered stable and the tag is force-replaced on every push.
+Each one gets its own `snapshot-<utc-timestamp>` GitHub release
+and repoints the `porytiles-snapshot` Homebrew formula at that tag.
+Snapshots are for users who want the latest changes, as they are not considered stable.
+Only the newest snapshot is retained: you can't re-install previous snapshots. 
 
 Install the latest versioned release via Homebrew:
 ```sh
@@ -65,15 +67,15 @@ brew install grunt-lucas/porytiles/porytiles
 
 Install the latest rolling snapshot via Homebrew:
 ```sh
-brew install grunt-lucas/porytiles/porytiles-snapshot
+# Make sure to use `brew update` before installing snapshots so you don't confuse brew into installing an old deleted release
+brew update && brew install grunt-lucas/porytiles/porytiles-snapshot
 ```
 
 Alternatively, download platform-specific zip files directly from the
 [releases page](https://github.com/grunt-lucas/porytiles/releases).
 
 Either install path provides two binaries:
-`porytiles` (the modern compiler) and `porytiles-legacy` (the preserved
-pre-1.0.0 compiler).
+`porytiles` (the modern compiler) and `porytiles-legacy` (the preserved pre-1.0.0 compiler).
 [Homebrew](https://brew.sh) works on Linux, macOS, and WSL.
 On Linux and WSL, follow the [Homebrew on Linux](https://docs.brew.sh/Homebrew-on-Linux) setup instructions.
 

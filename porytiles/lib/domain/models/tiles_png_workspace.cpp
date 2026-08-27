@@ -13,51 +13,41 @@ namespace {
 
 using namespace porytiles;
 
-/**
- * @brief Checks if two tiles are color-equivalent using the provided palette for color lookup.
- *
- * @details
- * Two tiles are color-equivalent if, for every pixel position, the colors they reference in the palette are equal.
- * This handles the case where palettes contain duplicate colors at different indices - e.g., if palette slots 7 and 14
- * both contain the same color, pixels using index 7 and index 14 are considered equivalent.
- *
- * Note: Index 0 always represents transparency in GBA tilesets, so we treat index 0 specially - two pixels are only
- * equivalent if both have index 0 (both transparent) or both have non-zero indices with matching colors.
- *
- * @param expected The expected tile (from computed keyframe)
- * @param actual The actual tile in the workspace
- * @param palette The palette to use for color lookup
- * @return true if tiles are color-equivalent, false otherwise
- */
+/// @brief Checks if two tiles are color-equivalent using the provided palette for color lookup.
+///
+/// @details
+/// Two tiles are color-equivalent if, for every pixel position, the colors they reference in the palette are equal.
+/// This handles the case where palettes contain duplicate colors at different indices - e.g., if palette slots 7 and 14
+/// both contain the same color, pixels using index 7 and index 14 are considered equivalent.
+///
+/// Note: Index 0 always represents transparency in GBA tilesets, so we treat index 0 specially - two pixels are only
+/// equivalent if both have index 0 (both transparent) or both have non-zero indices with matching colors.
+///
+/// @param expected The expected tile (from computed keyframe)
+/// @param actual The actual tile in the workspace
+/// @param palette The palette to use for color lookup
+/// @return true if tiles are color-equivalent, false otherwise
 bool tiles_color_equivalent(
     const PixelTile<IndexPixel> &expected,
     const PixelTile<IndexPixel> &actual,
-    const Palette<Rgba32, pal::max_size> &palette)
+    const Palette<Rgba32, palette::max_size> &palette)
 {
-    // Convert both tiles to color space to handle duplicate palette entries, then re-canonicalize
     constexpr Rgba32 extrinsic{};
-    const auto expected_rgba = color_tile_from_index_tile(expected, palette, extrinsic);
-    const auto actual_rgba = color_tile_from_index_tile(actual, palette, extrinsic);
-    const CanonicalPixelTile canonical_expected{expected_rgba};
-    const CanonicalPixelTile canonical_actual{actual_rgba};
-    const PixelTile<Rgba32> &canonical_expected_pixel = canonical_expected;
-    const PixelTile<Rgba32> &canonical_actual_pixel = canonical_actual;
-    return canonical_expected_pixel == canonical_actual_pixel;
+    return canonical_color_tile_from_index_tile(expected, palette, extrinsic) ==
+           canonical_color_tile_from_index_tile(actual, palette, extrinsic);
 }
 
-/**
- * @brief Helper function to export a range of workspace tiles with optional flip transformations.
- *
- * @details
- * Exports tiles from @p start_tile (inclusive) to @p end_tile (exclusive). The output image positions are relative,
- * so tile at @p start_tile becomes row 0, col 0 in the output image.
- *
- * @param workspace The TilesPngWorkspace to export from
- * @param start_tile The first tile index to export (inclusive)
- * @param end_tile The last tile index to export (exclusive)
- * @param flip_mode Controls whether tiles are exported in canonical or original (flipped) form
- * @return An Image<IndexPixel> in the standard tiles.png format
- */
+/// @brief Helper function to export a range of workspace tiles with optional flip transformations.
+///
+/// @details
+/// Exports tiles from @p start_tile (inclusive) to @p end_tile (exclusive). The output image positions are relative,
+/// so tile at @p start_tile becomes row 0, col 0 in the output image.
+///
+/// @param workspace The TilesPngWorkspace to export from
+/// @param start_tile The first tile index to export (inclusive)
+/// @param end_tile The last tile index to export (exclusive)
+/// @param flip_mode Controls whether tiles are exported in canonical or original (flipped) form
+/// @return An Image<IndexPixel> in the standard tiles.png format
 Image<IndexPixel> export_image_range(
     const TilesPngWorkspace &workspace, std::size_t start_tile, std::size_t end_tile, ExportFlipMode flip_mode)
 {
@@ -115,14 +105,12 @@ Image<IndexPixel> export_image_range(
     return img;
 }
 
-/**
- * @brief Finds the last non-transparent tile index in the workspace, scanning backward from the given end position.
- *
- * @param workspace The workspace to scan
- * @param scan_start The index to start scanning backward from (exclusive)
- * @param minimum The minimum index to return if all tiles are transparent
- * @return The index of the last non-transparent tile, or @p minimum if none found
- */
+/// @brief Finds the last non-transparent tile index in the workspace, scanning backward from the given end position.
+///
+/// @param workspace The workspace to scan
+/// @param scan_start The index to start scanning backward from (exclusive)
+/// @param minimum The minimum index to return if all tiles are transparent
+/// @return The index of the last non-transparent tile, or @p minimum if none found
 std::size_t find_last_non_transparent(const TilesPngWorkspace &workspace, std::size_t scan_start, std::size_t minimum)
 {
     for (std::size_t i = scan_start; i > minimum; --i) {
@@ -270,12 +258,10 @@ TilesPngWorkspace TilesPngWorkspace::for_secondary(
             for (std::size_t pixel_col = 0; pixel_col < tile::side_length_pix; ++pixel_col) {
                 const std::size_t src_row = pixel_row_offset + pixel_row;
                 const std::size_t src_col = pixel_col_offset + pixel_col;
-                /*
-                 * Strip true-color encoding (upper nibble = palette index) to get raw color indices. Primary tiles.png
-                 * stores pixels as (pal << 4 | color), but index_tile_from_color_tile() produces raw color indices
-                 * (0-15). Using color_index() here ensures workspace tiles match what index_tile_from_color_tile()
-                 * produces, enabling first_occurrence_of() deduplication.
-                 */
+                // Strip true-color encoding (upper nibble = palette index) to get raw color indices. Primary tiles.png
+                // stores pixels as (palette << 4 | color), but index_tile_from_color_tile() produces raw color indices
+                // (0-15). Using color_index() here ensures workspace tiles match what index_tile_from_color_tile()
+                // produces, enabling first_occurrence_of() deduplication.
                 const IndexPixel true_color_pixel = primary_tiles_png.at(src_row, src_col);
                 pixel_tile.set(pixel_row, pixel_col, IndexPixel{true_color_pixel.color_index()});
             }
@@ -361,7 +347,7 @@ std::optional<std::size_t> TilesPngWorkspace::first_occurrence_of(const Canonica
 }
 
 std::optional<std::size_t> TilesPngWorkspace::first_occurrence_of_by_color(
-    const CanonicalPixelTile<IndexPixel> &tile, const Palette<Rgba32, pal::max_size> &palette) const
+    const CanonicalPixelTile<IndexPixel> &tile, const Palette<Rgba32, palette::max_size> &palette) const
 {
     if (tile.is_transparent()) {
         return std::nullopt;
@@ -511,7 +497,7 @@ std::optional<std::size_t> TilesPngWorkspace::find_contiguous_transparent_slots(
 
 std::optional<std::size_t> TilesPngWorkspace::find_existing_contiguous_tiles_by_color(
     const std::vector<CanonicalPixelTile<IndexPixel>> &tiles,
-    const std::vector<const Palette<Rgba32, pal::max_size> *> &palettes) const
+    const std::vector<const Palette<Rgba32, palette::max_size> *> &palettes) const
 {
     // Edge case: empty sequence is trivially found
     if (tiles.empty()) {

@@ -32,14 +32,14 @@ PngIndexedImageLoader::load_from_file(const std::filesystem::path &path) const
     const auto tilesheet_size = tilesheet_width * tilesheet_height;
 
     // Extract palette from PNG and convert to Rgba32
-    const auto &png_pal = png.get_palette();
-    std::vector<Rgba32> rgba_pal;
-    rgba_pal.reserve(png_pal.size());
-    for (const auto &color : png_pal) {
-        rgba_pal.emplace_back(color.red, color.green, color.blue, Rgba32::alpha_opaque);
+    const auto &png_palette = png.get_palette();
+    std::vector<Rgba32> rgba_palette;
+    rgba_palette.reserve(png_palette.size());
+    for (const auto &color : png_palette) {
+        rgba_palette.emplace_back(color.red, color.green, color.blue, Rgba32::alpha_opaque);
     }
 
-    auto image = std::make_unique<Image<IndexPixel>>(tilesheet_width, tilesheet_height, std::move(rgba_pal));
+    auto image = std::make_unique<Image<IndexPixel>>(tilesheet_width, tilesheet_height, std::move(rgba_palette));
     for (std::size_t pixel_index = 0; pixel_index < tilesheet_size; pixel_index++) {
         const auto row = pixel_index / tilesheet_width;
         const auto col = pixel_index % tilesheet_width;

@@ -254,7 +254,7 @@ TEST(PaletteMatchersTest, FullyPopulatedPalette)
     palette.add(rgba_green);   // Slot 2
     palette.add(rgba_blue);    // Slot 3
     // Fill remaining slots
-    for (std::size_t i = 4; i < pal::max_size; ++i) {
+    for (std::size_t i = 4; i < palette::max_size; ++i) {
         palette.add(
             Rgba32{
                 static_cast<std::uint8_t>(i * 10),
@@ -279,12 +279,12 @@ TEST(PaletteMatchersTest, PaletteIndexField)
 
     auto result = match_tile_to_palette(tile, palette, rgba_magenta);
 
-    EXPECT_EQ(result.pal_index, 0);
+    EXPECT_EQ(result.palette_index, 0);
 }
 
 TEST(PaletteMatchersTest, RepeatSlot0Color)
 {
-    // This simulates the case of a .pla blend color being used in the pal/tile itself
+    // This simulates the case of a .pla blend color being used in the palette/tile itself
     PixelTile<Rgba32> tile{};
     tile.set(0, 0, rgba_red);
     tile.set(0, 1, rgba_blue);
@@ -315,30 +315,30 @@ TEST(MatchOrBestTest, CompleteMatch_ReturnsAllCompleteMatches)
 
     std::vector<Palette<Rgba32>> palettes;
 
-    Palette<Rgba32> pal0{};
-    pal0.add(rgba_magenta);
-    pal0.add(rgba_red);
-    palettes.push_back(pal0);
+    Palette<Rgba32> palette0{};
+    palette0.add(rgba_magenta);
+    palette0.add(rgba_red);
+    palettes.push_back(palette0);
 
-    Palette<Rgba32> pal1{};
-    pal1.add(rgba_magenta);
-    pal1.add(rgba_red);
-    pal1.add(rgba_green);
-    palettes.push_back(pal1);
+    Palette<Rgba32> palette1{};
+    palette1.add(rgba_magenta);
+    palette1.add(rgba_red);
+    palette1.add(rgba_green);
+    palettes.push_back(palette1);
 
-    Palette<Rgba32> pal2{};
-    pal2.add(rgba_magenta);
-    pal2.add(rgba_red);
-    pal2.add(rgba_green);
-    pal2.add(rgba_blue);
-    palettes.push_back(pal2);
+    Palette<Rgba32> palette2{};
+    palette2.add(rgba_magenta);
+    palette2.add(rgba_red);
+    palette2.add(rgba_green);
+    palette2.add(rgba_blue);
+    palettes.push_back(palette2);
 
     auto results = match_or_best(tile, palettes, rgba_magenta, 3);
 
     EXPECT_EQ(results.size(), 2);
-    EXPECT_EQ(results[0].pal_index, 1);
+    EXPECT_EQ(results[0].palette_index, 1);
     EXPECT_TRUE(results[0].is_covered);
-    EXPECT_EQ(results[1].pal_index, 2);
+    EXPECT_EQ(results[1].palette_index, 2);
     EXPECT_TRUE(results[1].is_covered);
 }
 
@@ -352,30 +352,30 @@ TEST(MatchOrBestTest, NoCompleteMatch_ReturnsTopNSorted)
 
     std::vector<Palette<Rgba32>> palettes;
 
-    Palette<Rgba32> pal0{};
-    pal0.add(rgba_magenta);
-    pal0.add(rgba_red);
-    palettes.push_back(pal0);
+    Palette<Rgba32> palette0{};
+    palette0.add(rgba_magenta);
+    palette0.add(rgba_red);
+    palettes.push_back(palette0);
 
-    Palette<Rgba32> pal1{};
-    pal1.add(rgba_magenta);
-    pal1.add(rgba_red);
-    pal1.add(rgba_green);
-    palettes.push_back(pal1);
+    Palette<Rgba32> palette1{};
+    palette1.add(rgba_magenta);
+    palette1.add(rgba_red);
+    palette1.add(rgba_green);
+    palettes.push_back(palette1);
 
-    Palette<Rgba32> pal2{};
-    pal2.add(rgba_magenta);
-    pal2.add(rgba_red);
-    pal2.add(rgba_green);
-    pal2.add(rgba_blue);
-    palettes.push_back(pal2);
+    Palette<Rgba32> palette2{};
+    palette2.add(rgba_magenta);
+    palette2.add(rgba_red);
+    palette2.add(rgba_green);
+    palette2.add(rgba_blue);
+    palettes.push_back(palette2);
 
     auto results = match_or_best(tile, palettes, rgba_magenta, 2);
 
     EXPECT_EQ(results.size(), 2);
-    EXPECT_EQ(results[0].pal_index, 2);
+    EXPECT_EQ(results[0].palette_index, 2);
     EXPECT_EQ(results[0].missing_colors.size(), 1);
-    EXPECT_EQ(results[1].pal_index, 1);
+    EXPECT_EQ(results[1].palette_index, 1);
     EXPECT_EQ(results[1].missing_colors.size(), 2);
 }
 
@@ -388,30 +388,30 @@ TEST(MatchOrBestTest, SortingByMissingColors)
 
     std::vector<Palette<Rgba32>> palettes;
 
-    Palette<Rgba32> pal0{};
-    pal0.add(rgba_magenta);
-    pal0.add(rgba_red);
-    palettes.push_back(pal0);
+    Palette<Rgba32> palette0{};
+    palette0.add(rgba_magenta);
+    palette0.add(rgba_red);
+    palettes.push_back(palette0);
 
-    Palette<Rgba32> pal1{};
-    pal1.add(rgba_magenta);
-    pal1.add(rgba_red);
-    pal1.add(rgba_green);
-    palettes.push_back(pal1);
+    Palette<Rgba32> palette1{};
+    palette1.add(rgba_magenta);
+    palette1.add(rgba_red);
+    palette1.add(rgba_green);
+    palettes.push_back(palette1);
 
-    Palette<Rgba32> pal2{};
-    pal2.add(rgba_magenta);
-    pal2.add(rgba_blue);
-    palettes.push_back(pal2);
+    Palette<Rgba32> palette2{};
+    palette2.add(rgba_magenta);
+    palette2.add(rgba_blue);
+    palettes.push_back(palette2);
 
     auto results = match_or_best(tile, palettes, rgba_magenta, 10);
 
     EXPECT_EQ(results.size(), 3);
-    EXPECT_EQ(results[0].pal_index, 1);
+    EXPECT_EQ(results[0].palette_index, 1);
     EXPECT_EQ(results[0].missing_colors.size(), 1);
-    EXPECT_EQ(results[1].pal_index, 0);
+    EXPECT_EQ(results[1].palette_index, 0);
     EXPECT_EQ(results[1].missing_colors.size(), 2);
-    EXPECT_EQ(results[2].pal_index, 2);
+    EXPECT_EQ(results[2].palette_index, 2);
     EXPECT_EQ(results[2].missing_colors.size(), 2);
 }
 
@@ -422,20 +422,20 @@ TEST(MatchOrBestTest, TopNLargerThanPalettesSize_ReturnsAll)
 
     std::vector<Palette<Rgba32>> palettes;
 
-    Palette<Rgba32> pal0{};
-    pal0.add(rgba_magenta);
-    pal0.add(rgba_red);
-    palettes.push_back(pal0);
+    Palette<Rgba32> palette0{};
+    palette0.add(rgba_magenta);
+    palette0.add(rgba_red);
+    palettes.push_back(palette0);
 
-    Palette<Rgba32> pal1{};
-    pal1.add(rgba_magenta);
-    pal1.add(rgba_green);
-    palettes.push_back(pal1);
+    Palette<Rgba32> palette1{};
+    palette1.add(rgba_magenta);
+    palette1.add(rgba_green);
+    palettes.push_back(palette1);
 
     auto results = match_or_best(tile, palettes, rgba_magenta, 5);
 
     EXPECT_EQ(results.size(), 1);
-    EXPECT_EQ(results[0].pal_index, 0);
+    EXPECT_EQ(results[0].palette_index, 0);
     EXPECT_TRUE(results[0].is_covered);
 }
 
@@ -447,20 +447,20 @@ TEST(MatchOrBestTest, TopNEquals1_ReturnsOnlyBest)
 
     std::vector<Palette<Rgba32>> palettes;
 
-    Palette<Rgba32> pal0{};
-    pal0.add(rgba_magenta);
-    pal0.add(rgba_red);
-    palettes.push_back(pal0);
+    Palette<Rgba32> palette0{};
+    palette0.add(rgba_magenta);
+    palette0.add(rgba_red);
+    palettes.push_back(palette0);
 
-    Palette<Rgba32> pal1{};
-    pal1.add(rgba_magenta);
-    pal1.add(rgba_blue);
-    palettes.push_back(pal1);
+    Palette<Rgba32> palette1{};
+    palette1.add(rgba_magenta);
+    palette1.add(rgba_blue);
+    palettes.push_back(palette1);
 
     auto results = match_or_best(tile, palettes, rgba_magenta, 1);
 
     EXPECT_EQ(results.size(), 1);
-    EXPECT_EQ(results[0].pal_index, 0);
+    EXPECT_EQ(results[0].palette_index, 0);
     EXPECT_EQ(results[0].missing_colors.size(), 1);
 }
 
@@ -480,10 +480,10 @@ TEST(MatchOrBestTest, TopNZero_Panics)
     tile.set(0, 0, rgba_red);
 
     std::vector<Palette<Rgba32>> palettes;
-    Palette<Rgba32> pal0{};
-    pal0.add(rgba_magenta);
-    pal0.add(rgba_red);
-    palettes.push_back(pal0);
+    Palette<Rgba32> palette0{};
+    palette0.add(rgba_magenta);
+    palette0.add(rgba_red);
+    palettes.push_back(palette0);
 
     EXPECT_DEATH({ std::ignore = match_or_best(tile, palettes, rgba_magenta, 0); }, "top_n must be greater than 0");
 }
@@ -495,30 +495,30 @@ TEST(MatchOrBestTest, AllPalettesEqualQuality_MaintainsOrder)
 
     std::vector<Palette<Rgba32>> palettes;
 
-    Palette<Rgba32> pal0{};
-    pal0.add(rgba_magenta);
-    pal0.add(rgba_green);
-    palettes.push_back(pal0);
+    Palette<Rgba32> palette0{};
+    palette0.add(rgba_magenta);
+    palette0.add(rgba_green);
+    palettes.push_back(palette0);
 
-    Palette<Rgba32> pal1{};
-    pal1.add(rgba_magenta);
-    pal1.add(rgba_blue);
-    palettes.push_back(pal1);
+    Palette<Rgba32> palette1{};
+    palette1.add(rgba_magenta);
+    palette1.add(rgba_blue);
+    palettes.push_back(palette1);
 
-    Palette<Rgba32> pal2{};
-    pal2.add(rgba_magenta);
-    pal2.add(rgba_yellow);
-    palettes.push_back(pal2);
+    Palette<Rgba32> palette2{};
+    palette2.add(rgba_magenta);
+    palette2.add(rgba_yellow);
+    palettes.push_back(palette2);
 
     auto results = match_or_best(tile, palettes, rgba_magenta, 10);
 
     EXPECT_EQ(results.size(), 3);
-    EXPECT_EQ(results[0].pal_index, 0);
-    EXPECT_EQ(results[1].pal_index, 1);
-    EXPECT_EQ(results[2].pal_index, 2);
+    EXPECT_EQ(results[0].palette_index, 0);
+    EXPECT_EQ(results[1].palette_index, 1);
+    EXPECT_EQ(results[2].palette_index, 2);
 }
 
-TEST(MatchOrBestTest, PalIndexCorrectlySet)
+TEST(MatchOrBestTest, PaletteIndexCorrectlySet)
 {
     PixelTile<Rgba32> tile{};
     tile.set(0, 0, rgba_red);
@@ -526,17 +526,17 @@ TEST(MatchOrBestTest, PalIndexCorrectlySet)
     std::vector<Palette<Rgba32>> palettes;
 
     for (int i = 0; i < 5; ++i) {
-        Palette<Rgba32> pal{};
-        pal.add(rgba_magenta);
-        pal.add(rgba_green);
-        palettes.push_back(pal);
+        Palette<Rgba32> palette{};
+        palette.add(rgba_magenta);
+        palette.add(rgba_green);
+        palettes.push_back(palette);
     }
 
     auto results = match_or_best(tile, palettes, rgba_magenta, 10);
 
     EXPECT_EQ(results.size(), 5);
     for (std::size_t i = 0; i < results.size(); ++i) {
-        EXPECT_EQ(results[i].pal_index, i);
+        EXPECT_EQ(results[i].palette_index, i);
     }
 }
 
@@ -549,11 +549,11 @@ TEST(MatchOrBestTest, ExtrinsicTransparencyHandledCorrectly)
 
     std::vector<Palette<Rgba32>> palettes;
 
-    Palette<Rgba32> pal0{};
-    pal0.add(rgba_magenta);
-    pal0.add(rgba_red);
-    pal0.add(rgba_green);
-    palettes.push_back(pal0);
+    Palette<Rgba32> palette0{};
+    palette0.add(rgba_magenta);
+    palette0.add(rgba_red);
+    palette0.add(rgba_green);
+    palettes.push_back(palette0);
 
     auto results = match_or_best(tile, palettes, rgba_magenta, 1);
 
@@ -569,29 +569,29 @@ TEST(MatchOrBestTest, AllCompleteMatchesReturned)
 
     std::vector<Palette<Rgba32>> palettes;
 
-    Palette<Rgba32> pal0{};
-    pal0.add(rgba_magenta);
-    pal0.add(rgba_red);
-    pal0.add(rgba_green);
-    pal0.add(rgba_blue);
-    palettes.push_back(pal0);
+    Palette<Rgba32> palette0{};
+    palette0.add(rgba_magenta);
+    palette0.add(rgba_red);
+    palette0.add(rgba_green);
+    palette0.add(rgba_blue);
+    palettes.push_back(palette0);
 
-    Palette<Rgba32> pal1{};
-    pal1.add(rgba_magenta);
-    pal1.add(rgba_red);
-    palettes.push_back(pal1);
+    Palette<Rgba32> palette1{};
+    palette1.add(rgba_magenta);
+    palette1.add(rgba_red);
+    palettes.push_back(palette1);
 
-    Palette<Rgba32> pal2{};
-    pal2.add(rgba_magenta);
-    pal2.add(rgba_blue);
-    palettes.push_back(pal2);
+    Palette<Rgba32> palette2{};
+    palette2.add(rgba_magenta);
+    palette2.add(rgba_blue);
+    palettes.push_back(palette2);
 
     auto results = match_or_best(tile, palettes, rgba_magenta, 1);
 
     EXPECT_EQ(results.size(), 2);
-    EXPECT_EQ(results[0].pal_index, 0);
+    EXPECT_EQ(results[0].palette_index, 0);
     EXPECT_TRUE(results[0].is_covered);
-    EXPECT_EQ(results[1].pal_index, 1);
+    EXPECT_EQ(results[1].palette_index, 1);
     EXPECT_TRUE(results[1].is_covered);
 }
 
@@ -603,18 +603,18 @@ TEST(MatchOrBestTest, InvariantCheck_FirstElementIndicatesAllElements)
 
     // Scenario 1: Complete matches
     std::vector<Palette<Rgba32>> complete_palettes;
-    Palette<Rgba32> pal0{};
-    pal0.add(rgba_magenta);
-    pal0.add(rgba_red);
-    pal0.add(rgba_green);
-    complete_palettes.push_back(pal0);
+    Palette<Rgba32> palette0{};
+    palette0.add(rgba_magenta);
+    palette0.add(rgba_red);
+    palette0.add(rgba_green);
+    complete_palettes.push_back(palette0);
 
-    Palette<Rgba32> pal1{};
-    pal1.add(rgba_magenta);
-    pal1.add(rgba_red);
-    pal1.add(rgba_green);
-    pal1.add(rgba_blue);
-    complete_palettes.push_back(pal1);
+    Palette<Rgba32> palette1{};
+    palette1.add(rgba_magenta);
+    palette1.add(rgba_red);
+    palette1.add(rgba_green);
+    palette1.add(rgba_blue);
+    complete_palettes.push_back(palette1);
 
     auto complete_results = match_or_best(tile, complete_palettes, rgba_magenta, 1);
 
@@ -625,15 +625,15 @@ TEST(MatchOrBestTest, InvariantCheck_FirstElementIndicatesAllElements)
 
     // Scenario 2: Incomplete matches
     std::vector<Palette<Rgba32>> incomplete_palettes;
-    Palette<Rgba32> pal2{};
-    pal2.add(rgba_magenta);
-    pal2.add(rgba_red);
-    incomplete_palettes.push_back(pal2);
+    Palette<Rgba32> palette2{};
+    palette2.add(rgba_magenta);
+    palette2.add(rgba_red);
+    incomplete_palettes.push_back(palette2);
 
-    Palette<Rgba32> pal3{};
-    pal3.add(rgba_magenta);
-    pal3.add(rgba_blue);
-    incomplete_palettes.push_back(pal3);
+    Palette<Rgba32> palette3{};
+    palette3.add(rgba_magenta);
+    palette3.add(rgba_blue);
+    incomplete_palettes.push_back(palette3);
 
     auto incomplete_results = match_or_best(tile, incomplete_palettes, rgba_magenta, 2);
 

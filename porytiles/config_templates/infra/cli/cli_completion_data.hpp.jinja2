@@ -4,6 +4,10 @@
   This template generates metadata about CLI options for shell completion scripts.
   It provides option names, descriptions, and enum choices in a format that can be
   used by completion generators.
+
+  The type chain below has no else branch, so an unhandled type drops its option silently.
+  Every type dispatched on here must also appear in CLI_HANDLED_TYPES in scripts/generate_config.py,
+  which fails generation rather than letting that happen.
 #}
 {% import '_macros.jinja2' as macros %}
 #pragma once
@@ -15,9 +19,7 @@ namespace porytiles {
 
 {{ macros.autogen_warning() }}
 
-/**
- * @brief Metadata for a single CLI option, used for shell completion generation.
- */
+/// @brief Metadata for a single CLI option, used for shell completion generation.
 struct CliOptionMeta {
     std::string long_name;      ///< Long option name (e.g., "num-tiles-in-primary")
     std::string description;    ///< Human-readable description
@@ -26,11 +28,9 @@ struct CliOptionMeta {
     bool has_negation;          ///< True if this is a bool flag with --no-* variant
 };
 
-/**
- * @brief Get all CLI option metadata for completion generation.
- *
- * @return Vector of CliOptionMeta for all CLI-configurable options
- */
+/// @brief Get all CLI option metadata for completion generation.
+///
+/// @return Vector of CliOptionMeta for all CLI-configurable options
 [[nodiscard]] inline std::vector<CliOptionMeta> get_cli_option_metadata()
 {
     return {
@@ -56,6 +56,22 @@ struct CliOptionMeta {
             "{{ value.cli_option }}",
             "{{ value.canonical_name }}{% if value.cli_desc %} - {{ value.cli_desc }}{% endif %}",
             "string",
+            {},
+            false
+        },
+{% elif value.type == 'std::optional<std::uint32_t>' %}
+        CliOptionMeta{
+            "{{ value.cli_option }}",
+            "{{ value.canonical_name }}{% if value.cli_desc %} - {{ value.cli_desc }}{% endif %}",
+            "string",
+            {},
+            false
+        },
+{% elif value.type == 'std::optional<std::size_t>' %}
+        CliOptionMeta{
+            "{{ value.cli_option }}",
+            "{{ value.canonical_name }}{% if value.cli_desc %} - {{ value.cli_desc }}{% endif %}",
+            "integer",
             {},
             false
         },

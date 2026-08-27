@@ -1,5 +1,6 @@
 #include "porytiles/infra/services/incbin_declaration_appender.hpp"
 
+#include <cctype>
 #include <filesystem>
 #include <fstream>
 #include <string>
@@ -23,9 +24,7 @@ const std::filesystem::path metatiles_rel_path = std::filesystem::path{"src"} / 
 const std::string tileset_prefix = "gTileset_";
 const std::string porytiles_managed_suffix = "PorytilesManaged_";
 
-/**
- * @brief Extracts shorthand from tileset name (e.g., "gTileset_General" -> "General")
- */
+/// @brief Extracts shorthand from tileset name (e.g., "gTileset_General" -> "General")
 [[nodiscard]] std::string extract_shorthand(const std::string &tileset_name)
 {
     if (!tileset_name.starts_with(tileset_prefix)) {
@@ -34,9 +33,7 @@ const std::string porytiles_managed_suffix = "PorytilesManaged_";
     return tileset_name.substr(tileset_prefix.size());
 }
 
-/**
- * @brief Generates tiles INCBIN declaration string
- */
+/// @brief Generates tiles INCBIN declaration string
 [[nodiscard]] std::string
 generate_tiles_declaration(const std::string &shorthand, const std::string &bin_path_base, const std::string &snake_dir)
 {
@@ -48,9 +45,7 @@ generate_tiles_declaration(const std::string &shorthand, const std::string &bin_
         snake_dir);
 }
 
-/**
- * @brief Generates palettes INCBIN declaration string (multi-line)
- */
+/// @brief Generates palettes INCBIN declaration string (multi-line)
 [[nodiscard]] std::vector<std::string> generate_palettes_declaration(
     const std::string &shorthand,
     const std::string &bin_path_base,
@@ -73,9 +68,7 @@ generate_tiles_declaration(const std::string &shorthand, const std::string &bin_
     return lines;
 }
 
-/**
- * @brief Generates metatiles INCBIN declaration string
- */
+/// @brief Generates metatiles INCBIN declaration string
 [[nodiscard]] std::string generate_metatiles_declaration(
     const std::string &shorthand, const std::string &bin_path_base, const std::string &snake_dir)
 {
@@ -87,22 +80,23 @@ generate_tiles_declaration(const std::string &shorthand, const std::string &bin_
         snake_dir);
 }
 
-/**
- * @brief Generates metatile attributes INCBIN declaration string.
- *
- * @details
- * Selects the C type and INCBIN macro based on metatile_attr_size:
- * - 2 -> const u16 / INCBIN_U16
- * - 4 -> const u32 / INCBIN_U32
- */
+/// @brief Generates metatile attributes INCBIN declaration string.
+///
+/// @details
+/// Selects the C type and INCBIN macro based on attribute_bytes:
+/// - 1 -> const u8 / INCBIN_U8
+/// - 2 -> const u16 / INCBIN_U16
+/// - 4 -> const u32 / INCBIN_U32
 [[nodiscard]] std::string generate_attributes_declaration(
     const std::string &shorthand,
     const std::string &bin_path_base,
     const std::string &snake_dir,
-    std::size_t metatile_attr_size)
+    std::size_t attribute_bytes)
 {
-    const std::string c_type = (metatile_attr_size == 4) ? "u32" : "u16";
-    const std::string incbin_macro = (metatile_attr_size == 4) ? "INCBIN_U32" : "INCBIN_U16";
+    const std::string c_type = (attribute_bytes == 4) ? "u32" : (attribute_bytes == 1) ? "u8" : "u16";
+    const std::string incbin_macro = (attribute_bytes == 4)   ? "INCBIN_U32"
+                                     : (attribute_bytes == 1) ? "INCBIN_U8"
+                                                              : "INCBIN_U16";
     return fmt::format(
         "const {} gMetatileAttributes_{}{}[] = {}(\"{}/{}/porytiles_bin/metatile_attributes.bin\");",
         c_type,
@@ -113,9 +107,7 @@ generate_tiles_declaration(const std::string &shorthand, const std::string &bin_
         snake_dir);
 }
 
-/**
- * @brief Reads all lines from a file into a vector
- */
+/// @brief Reads all lines from a file into a vector
 [[nodiscard]] ChainableResult<std::vector<std::string>>
 read_file_lines(const std::filesystem::path &path, const TextFormatter *format)
 {
@@ -133,9 +125,7 @@ read_file_lines(const std::filesystem::path &path, const TextFormatter *format)
     return lines;
 }
 
-/**
- * @brief Writes all lines to a file
- */
+/// @brief Writes all lines to a file
 [[nodiscard]] ChainableResult<void>
 write_file_lines(const std::filesystem::path &path, const std::vector<std::string> &lines, const TextFormatter *format)
 {
@@ -157,33 +147,85 @@ write_file_lines(const std::filesystem::path &path, const std::vector<std::strin
     return {};
 }
 
-/**
- * @brief Finds the line index after which to append new declarations.
- *
- * @details
- * Searches backwards from the end of the file to find the last non-empty,
- * non-comment line. Returns the index after that line as the insertion point.
- */
-[[nodiscard]] std::size_t find_append_position(const std::vector<std::string> &lines)
-{
-    // Find the last non-empty, non-comment line
-    for (std::size_t i = lines.size(); i > 0; --i) {
-        const auto &line = lines[i - 1];
-        // Skip empty lines and preprocessor directives at the end
-        if (!line.empty() && !line.starts_with("#") && line.find_first_not_of(' ') != std::string::npos) {
-            return i;
-        }
-    }
-    return lines.size();
-}
-
-/**
- * @brief Checks if a line contains a declaration for the given Porytiles-managed tileset
- */
+/// @brief Checks if a line contains a declaration for the given Porytiles-managed tileset.
+///
+/// @details
+/// Matches `PorytilesManaged_{Shorthand}` only when the shorthand is not a prefix of a
+/// longer identifier. Without this boundary check, shorthand "General" would falsely match
+/// "PorytilesManaged_GeneralTwo", so removing one tileset's declarations could clobber another's.
 [[nodiscard]] bool is_porytiles_managed_declaration(const std::string &line, const std::string &shorthand)
 {
     const std::string pattern = porytiles_managed_suffix + shorthand;
-    return line.find(pattern) != std::string::npos;
+    for (std::size_t pos = line.find(pattern); pos != std::string::npos; pos = line.find(pattern, pos + 1)) {
+        const std::size_t after = pos + pattern.size();
+        if (after >= line.size()) {
+            return true;
+        }
+        const auto next = static_cast<unsigned char>(line[after]);
+        if (std::isalnum(next) == 0 && next != '_') {
+            return true;
+        }
+    }
+    return false;
+}
+
+/// @brief Removes all managed graphics declarations for the given shorthand from a line list.
+///
+/// @details
+/// Drops the single-line tiles declaration and the multi-line palette array. The palette array
+/// spans from its `[][16] =` header to the closing `};`, so a skip region is tracked across lines.
+[[nodiscard]] std::vector<std::string>
+strip_graphics_declarations(const std::vector<std::string> &lines, const std::string &shorthand)
+{
+    std::vector<std::string> filtered_lines;
+    bool in_palette_array = false;
+
+    for (const auto &line : lines) {
+        if (is_porytiles_managed_declaration(line, shorthand)) {
+            // Check if this starts a multi-line declaration
+            if (line.find("[][16] =") != std::string::npos) {
+                in_palette_array = true;
+            }
+            // Skip this line (single-line declaration or start of multi-line)
+            continue;
+        }
+
+        if (in_palette_array) {
+            // Skip lines until we find the closing brace
+            if (line.find("};") != std::string::npos) {
+                in_palette_array = false;
+            }
+            continue;
+        }
+
+        filtered_lines.push_back(line);
+    }
+
+    return filtered_lines;
+}
+
+/// @brief Removes all managed metatiles declarations for the given shorthand from a line list.
+///
+/// @details
+/// The metatiles and attributes declarations are both single-line, so no multi-line tracking is needed.
+[[nodiscard]] std::vector<std::string>
+strip_metatiles_declarations(const std::vector<std::string> &lines, const std::string &shorthand)
+{
+    std::vector<std::string> filtered_lines;
+    for (const auto &line : lines) {
+        if (!is_porytiles_managed_declaration(line, shorthand)) {
+            filtered_lines.push_back(line);
+        }
+    }
+    return filtered_lines;
+}
+
+/// @brief Pops trailing blank or whitespace-only lines so a repeated upsert stays byte-identical.
+void trim_trailing_blank_lines(std::vector<std::string> &lines)
+{
+    while (!lines.empty() && lines.back().find_first_not_of(" \t") == std::string::npos) {
+        lines.pop_back();
+    }
 }
 
 } // namespace
@@ -220,31 +262,23 @@ ChainableResult<void> IncbinDeclarationAppender::append_graphics_declarations(
     const std::string tiles_decl = generate_tiles_declaration(shorthand, bin_path_base, snake_dir);
     auto palettes_decl_lines = generate_palettes_declaration(shorthand, bin_path_base, snake_dir, num_palettes);
 
-    // Find position and append
-    const std::size_t pos = find_append_position(lines);
+    // Remove any existing managed declarations (wherever they are, including copies misplaced inside a trailing
+    // preprocessor conditional), then append fresh ones after the last non-blank line, which is always at preprocessor
+    // conditional depth 0.
+    lines = strip_graphics_declarations(lines, shorthand);
+    trim_trailing_blank_lines(lines);
 
-    // Insert blank line separator
-    lines.insert(lines.begin() + static_cast<std::ptrdiff_t>(pos), "");
-
-    // Insert tiles declaration
-    lines.insert(lines.begin() + static_cast<std::ptrdiff_t>(pos) + 1, tiles_decl);
-
-    // Insert blank line before palettes
-    lines.insert(lines.begin() + static_cast<std::ptrdiff_t>(pos) + 2, "");
-
-    // Insert palettes declaration (multi-line)
-    for (std::size_t i = 0; i < palettes_decl_lines.size(); ++i) {
-        lines.insert(
-            lines.begin() + static_cast<std::ptrdiff_t>(pos) + 3 + static_cast<std::ptrdiff_t>(i),
-            palettes_decl_lines[i]);
-    }
+    lines.emplace_back("");
+    lines.push_back(tiles_decl);
+    lines.emplace_back("");
+    lines.append_range(palettes_decl_lines);
 
     // Write file back
     return write_file_lines(graphics_path, lines, format_);
 }
 
 ChainableResult<void> IncbinDeclarationAppender::append_metatiles_declarations(
-    const std::string &tileset_name, const std::string &bin_path_base, std::size_t metatile_attr_size) const
+    const std::string &tileset_name, const std::string &bin_path_base, std::size_t attribute_bytes) const
 {
     const std::string shorthand = extract_shorthand(tileset_name);
     if (shorthand.empty()) {
@@ -266,19 +300,17 @@ ChainableResult<void> IncbinDeclarationAppender::append_metatiles_declarations(
     // Generate declarations
     const std::string metatiles_decl = generate_metatiles_declaration(shorthand, bin_path_base, snake_dir);
     const std::string attributes_decl =
-        generate_attributes_declaration(shorthand, bin_path_base, snake_dir, metatile_attr_size);
+        generate_attributes_declaration(shorthand, bin_path_base, snake_dir, attribute_bytes);
 
-    // Find position and append
-    const std::size_t pos = find_append_position(lines);
+    // Remove any existing managed declarations (wherever they are, including copies misplaced inside a trailing
+    // preprocessor conditional), then append fresh ones after the last non-blank line, which is always at preprocessor
+    // conditional depth 0.
+    lines = strip_metatiles_declarations(lines, shorthand);
+    trim_trailing_blank_lines(lines);
 
-    // Insert blank line separator
-    lines.insert(lines.begin() + static_cast<std::ptrdiff_t>(pos), "");
-
-    // Insert metatiles declaration
-    lines.insert(lines.begin() + static_cast<std::ptrdiff_t>(pos) + 1, metatiles_decl);
-
-    // Insert attributes declaration
-    lines.insert(lines.begin() + static_cast<std::ptrdiff_t>(pos) + 2, attributes_decl);
+    lines.emplace_back("");
+    lines.push_back(metatiles_decl);
+    lines.push_back(attributes_decl);
 
     // Write file back
     return write_file_lines(metatiles_path, lines, format_);
@@ -303,31 +335,7 @@ ChainableResult<void> IncbinDeclarationAppender::remove_declarations(const std::
             "Failed to read graphics.h for tileset '{}'.",
             FormatParam(tileset_name, Style::bold));
 
-        // Remove lines containing PorytilesManaged_{Shorthand}
-        // Also handle multi-line palette arrays by tracking brace depth
-        std::vector<std::string> filtered_lines;
-        bool in_palette_array = false;
-
-        for (const auto &line : lines) {
-            if (is_porytiles_managed_declaration(line, shorthand)) {
-                // Check if this starts a multi-line declaration
-                if (line.find("[][16] =") != std::string::npos) {
-                    in_palette_array = true;
-                }
-                // Skip this line (single-line declaration or start of multi-line)
-                continue;
-            }
-
-            if (in_palette_array) {
-                // Skip lines until we find the closing brace
-                if (line.find("};") != std::string::npos) {
-                    in_palette_array = false;
-                }
-                continue;
-            }
-
-            filtered_lines.push_back(line);
-        }
+        const std::vector<std::string> filtered_lines = strip_graphics_declarations(lines, shorthand);
 
         auto write_result = write_file_lines(graphics_path, filtered_lines, format_);
         if (!write_result.has_value()) {
@@ -346,13 +354,7 @@ ChainableResult<void> IncbinDeclarationAppender::remove_declarations(const std::
             "Failed to read metatiles.h for tileset '{}'.",
             FormatParam(tileset_name, Style::bold));
 
-        // Remove lines containing PorytilesManaged_{Shorthand}
-        std::vector<std::string> filtered_lines;
-        for (const auto &line : lines) {
-            if (!is_porytiles_managed_declaration(line, shorthand)) {
-                filtered_lines.push_back(line);
-            }
-        }
+        const std::vector<std::string> filtered_lines = strip_metatiles_declarations(lines, shorthand);
 
         auto write_result = write_file_lines(metatiles_path, filtered_lines, format_);
         if (!write_result.has_value()) {

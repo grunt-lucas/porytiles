@@ -15,13 +15,17 @@ FILE(GLOB_RECURSE CppUnitSources CONFIGURE_DEPENDS unit/*.cpp)
 FILE(GLOB_RECURSE CppIntegrationSources CONFIGURE_DEPENDS integration/*.cpp)
 FILE(GLOB_RECURSE CppAllSources CONFIGURE_DEPENDS unit/*.cpp integration/*.cpp)
 
+# Headers listed as sources so IDEs treat them as project files (compile-neutral;
+# CMake ignores .hpp). See porytiles/lib/CMakeLists.txt for the full rationale.
+FILE(GLOB_RECURSE TestHeaders CONFIGURE_DEPENDS ${CMAKE_CURRENT_SOURCE_DIR}/*.hpp)
+
 # Custom test main that disables stacktrace generation by default
 set(TEST_MAIN ${CMAKE_CURRENT_SOURCE_DIR}/test_main.cpp)
 
 # Create the test executable
-add_executable(PorytilesUnitTests ${TEST_MAIN} ${CppUnitSources})
-add_executable(PorytilesIntegrationTests ${TEST_MAIN} ${CppIntegrationSources})
-add_executable(PorytilesAllTests ${TEST_MAIN} ${CppAllSources})
+add_executable(PorytilesUnitTests ${TEST_MAIN} ${CppUnitSources} ${TestHeaders})
+add_executable(PorytilesIntegrationTests ${TEST_MAIN} ${CppIntegrationSources} ${TestHeaders})
+add_executable(PorytilesAllTests ${TEST_MAIN} ${CppAllSources} ${TestHeaders})
 
 target_link_libraries(PorytilesUnitTests PRIVATE GTest::gtest GTest::gmock)
 target_link_libraries(PorytilesIntegrationTests PRIVATE GTest::gtest GTest::gmock)

@@ -14,31 +14,27 @@ namespace porytiles {
 
 {{ macros.autogen_warning() }}
 
-/**
- * @brief Set of valid YAML configuration paths.
- *
- * @details
- * This set contains all valid dot-separated paths that can appear in porytiles.yaml configuration files. Both leaf
- * paths (e.g., "fieldmap.num_tiles_in_primary") and intermediate paths (e.g., "fieldmap") are included.
- *
- * This is auto-generated from config_schema.yaml - do not edit directly.
- */
+/// @brief Set of valid YAML configuration paths.
+///
+/// @details
+/// This set contains all valid dot-separated paths that can appear in porytiles.yaml configuration files. Both leaf
+/// paths (e.g., "fieldmap.num_tiles_in_primary") and intermediate paths (e.g., "fieldmap") are included.
+///
+/// This is auto-generated from config_schema.yaml - do not edit directly.
 inline const std::unordered_set<std::string> valid_yaml_paths = {
 {% for path in all_yaml_paths %}
     "{{ path }}",
 {% endfor %}
 };
 
-/**
- * @brief Set of YAML path prefixes that represent map-type configuration values.
- *
- * @details
- * Map-type config values have dynamic children (e.g., animation names as keys). Paths that start with any of these
- * prefixes followed by a dot should not trigger "unknown configuration key" warnings, since the children are
- * user-defined keys rather than fixed config paths.
- *
- * This is auto-generated from config_schema.yaml - do not edit directly.
- */
+/// @brief Set of YAML path prefixes that represent map-type configuration values.
+///
+/// @details
+/// Map-type config values have dynamic children (e.g., animation names as keys). Paths that start with any of these
+/// prefixes followed by a dot should not trigger "unknown configuration key" warnings, since the children are
+/// user-defined keys rather than fixed config paths.
+///
+/// This is auto-generated from config_schema.yaml - do not edit directly.
 inline const std::unordered_set<std::string> valid_yaml_map_prefixes = {
 {% for prefix in yaml_map_prefixes %}
     "{{ prefix }}",
