@@ -15,6 +15,12 @@ and to its issue too when one was filed
 
 ## [Unreleased]
 
+## [2.0.0] - 2026-08-27
+
+- **BREAKING:** Changed the YAML config keys `fieldmap.num_pals_in_primary` and `fieldmap.num_pals_total` to `fieldmap.num_palettes_in_primary` and `fieldmap.num_palettes_total`. The old keys no longer work. A config file still using them will fail with an unknown configuration key error. The `--num-pals-in-primary` and `--num-pals-total` CLI options and the `NUM_PALS_IN_PRIMARY` and `NUM_PALS_TOTAL` header defines are unchanged. - [ba9a4d7](https://github.com/grunt-lucas/porytiles/commit/ba9a4d7cf1ff087901a97a15f39d302b8ffa0cc2)
+
+- **BREAKING:** Changed the CLI option `--metatile-attr-size` to `--metatile-attribute-size`. The old spelling no longer works. The equivalent YAML key, `fieldmap.metatile_attribute_size`, is unchanged. - [16bce0a](https://github.com/grunt-lucas/porytiles/commit/16bce0a7898629ae8f0126bfbb576e121ff14596)
+
 - Fixed `import-tileset` failing to resolve artifact paths for tilesets declared with `INCGFX_*`-style macros (e.g. `INCGFX_U32`) - [#315](https://github.com/grunt-lucas/porytiles/pull/315)
 
 - Fixed tileset names with a `snake_case` segment (e.g. `gTileset_velvet_forest`) producing a mismatched animation callback symbol in `headers.h`, where the `.callback` field kept the raw `snake_case` name while the generated init function used `PascalCase`, breaking the decomp build. - [#317](https://github.com/grunt-lucas/porytiles/pull/317)
@@ -25,7 +31,7 @@ and to its issue too when one was filed
 
 - Fixed INCBIN declarations for a managed tileset being written inside a trailing preprocessor conditional (such as pokeemerald-expansion's `#if IS_FRLG` block at the end of `graphics.h`/`metatiles.h`) instead of after it, which compiled the data out of a non-FRLG build while the `headers.h` struct still referenced it, breaking the decomp build with `undeclared` errors. Also fixed the same declarations being duplicated when an import was retried. Appending is now an idempotent operation that places declarations after the last non-blank line and fixes any declarations previously misplaced inside such a conditional. - [#333](https://github.com/grunt-lucas/porytiles/pull/333)
 
-- Added a fully configurable metatile attribute schema, replacing the hardcoded `BaseGame` (Emerald vs. FireRed/LeafGreen) system. Includes a `dump-attribute-schema` command that prints the resolved metatile attribute schema for a tileset - [#336](https://github.com/grunt-lucas/porytiles/issues/336) [#341](https://github.com/grunt-lucas/porytiles/pull/341) [#346](https://github.com/grunt-lucas/porytiles/pull/346)
+- Added a fully configurable metatile attribute schema, replacing the hardcoded `BaseGame` (Emerald vs. FireRed/LeafGreen) system. Includes a `dump-attribute-schema` command that prints the resolved metatile attribute schema for a tileset. There is no more base game auto-detection, nor is there a base game concept at all. A project that declares more than one attribute mask layout, such as pokeemerald-expansion, must now set `fieldmap.metatile_attribute_size` (or pass `--metatile-attribute-size`) to select a layout. - [#336](https://github.com/grunt-lucas/porytiles/issues/336) [#341](https://github.com/grunt-lucas/porytiles/pull/341) [#346](https://github.com/grunt-lucas/porytiles/pull/346)
 
 - Added auto-wrap support for all diagnostic messages to simplify internal callsites. On the user side, diagnostics now dynamically wrap based on terminal width (as reported by ioctl). This can be overridden via the standard `COLUMNS` environment var. - [#342](https://github.com/grunt-lucas/porytiles/pull/342)
 
