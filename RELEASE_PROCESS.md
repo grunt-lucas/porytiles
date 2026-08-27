@@ -214,20 +214,37 @@ All of these are commits on `release/X.Y.Z`.
 
 ### 3 — Local smoke test `[auto]`
 
+The smoke test uses its own build directory, `porytiles-build-release`. It
+configures with `CMAKE_BUILD_TYPE=Release` to match what the release pipeline
+builds.
+
+To be absolutely safe, **quit your IDE first**, or at minimum stop its build and
+turn off CMake auto-reload. CLion reconfigures and rebuilds on its own schedule.
+Two CMake runs sharing one build tree race over the `FetchContent` populate
+steps.
+
 ```bash
-rm -rf porytiles-build-debug
-cmake -B porytiles-build-debug -S .
-cmake --build porytiles-build-debug -j7 > /tmp/build.log 2>&1            # check exit code
-./porytiles-build-debug/porytiles/tests/PorytilesAllTests > /tmp/test.log 2>&1        # check exit code
-./porytiles-build-debug/legacy/tests/LegacyTests > /tmp/legacy_test.log 2>&1          # check exit code
-cmake --install porytiles-build-debug --prefix ~/.local
-~/.local/bin/porytiles --version          # expect: porytiles X.Y.Z <date>
-~/.local/bin/porytiles-legacy --version   # expect: porytiles-legacy X.Y.Z <date>
+rm -rf porytiles-build-release
+cmake -B porytiles-build-release -S . -DCMAKE_BUILD_TYPE=Release > /tmp/configure.log 2>&1   # check exit code
+cmake --build porytiles-build-release -j7 > /tmp/build.log 2>&1                              # check exit code
+./porytiles-build-release/porytiles/tests/PorytilesAllTests > /tmp/test.log 2>&1             # check exit code
+./porytiles-build-release/legacy/tests/LegacyTests > /tmp/legacy_test.log 2>&1               # check exit code
+cmake --install porytiles-build-release --prefix ~/.local > /tmp/install.log 2>&1            # check exit code
+~/.local/bin/porytiles --version          # expect: porytiles X.Y.Z <this run's UTC timestamp>
+~/.local/bin/porytiles-legacy --version   # expect: porytiles-legacy X.Y.Z <this run's UTC timestamp>
 ```
 
-Both `--version` lines must show `X.Y.Z` (proving the `VERSION` bump flows
-through CMake). If they still show the old version, the bump did not take; stop
-and fix before tagging.
+Check every exit code, including the install. `--version` reports on whatever
+binary currently sits in `~/.local/bin`, so a failed build or a failed install
+leaves the previous release's binary in place, and `--version` will exit 0,
+mimicking a success.
+
+Make sure `--version` shows `X.Y.Z` **and** a build date from this run. If
+either line shows the old version, there was an issue with either the bump or
+the CMake configure. Stop and fix before tagging.
+
+Leave the build directory in place until the release is verified, then remove it
+in step 9.
 
 ### 4 — Merge the release branch into `master` `[confirm]`
 
@@ -331,6 +348,9 @@ brew update
 brew install grunt-lucas/porytiles/porytiles
 porytiles --version            # porytiles X.Y.Z <date>
 porytiles-legacy --version     # porytiles-legacy X.Y.Z <date>
+
+# Remove the release build tree created in step 3.
+rm -rf porytiles-build-release
 ```
 
 - The GitHub release `vX.Y.Z` is marked **Latest**; prior releases are untouched.

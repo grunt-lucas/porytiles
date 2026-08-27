@@ -47,7 +47,7 @@ jobs:
 
   build:
     name: Build ${{ matrix.os-arch }}
-    needs: [prepare]
+    needs: [ prepare ]
     runs-on: ${{ matrix.runs-on }}
     strategy:
       fail-fast: false
@@ -110,7 +110,7 @@ jobs:
 
   publish:
     name: Publish versioned release
-    needs: [prepare, build]
+    needs: [ prepare, build ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout tag
@@ -157,7 +157,7 @@ jobs:
 
   update-homebrew-tap:
     name: Update Homebrew tap versioned formula
-    needs: [prepare, publish]
+    needs: [ prepare, publish ]
     runs-on: ubuntu-latest
     steps:
       - name: Checkout Homebrew tap repository
@@ -210,16 +210,14 @@ jobs:
 
   test-brew-tap-linux-amd64:
     name: Test the brew tap on linux-amd64
-    needs: [update-homebrew-tap]
+    needs: [ update-homebrew-tap ]
     runs-on: ubuntu-latest
     steps:
       - name: Add Homebrew to PATH
         run: echo "/home/linuxbrew/.linuxbrew/bin" >> "$GITHUB_PATH"
 
       - name: Install porytiles via auto-tap
-        # Fully qualified `<owner>/<tap>/<formula>` form auto-taps the repo without a
-        # separate `brew tap` / `brew update` step. The latter has been observed to
-        # SIGPIPE on the GHA Linuxbrew runner (see git history of this file).
+        # fully qualified version avoids need to update + trust issues
         run: brew install grunt-lucas/porytiles/porytiles
 
       - name: Smoke test porytiles binaries
@@ -229,14 +227,12 @@ jobs:
 
   test-brew-tap-macos-arm64:
     name: Test the brew tap on macos-arm64
-    needs: [update-homebrew-tap]
+    needs: [ update-homebrew-tap ]
     runs-on: macos-latest
     steps:
-      - name: Install porytiles
-        run: |
-          brew tap grunt-lucas/porytiles
-          brew update
-          brew install porytiles
+      - name: Install porytiles via auto-tap
+        # fully qualified version avoids need to update + trust issues
+        run: brew install grunt-lucas/porytiles/porytiles
 
       - name: Test porytiles binaries
         run: |
