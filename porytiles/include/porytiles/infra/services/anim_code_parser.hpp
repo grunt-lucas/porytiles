@@ -24,9 +24,6 @@ namespace porytiles {
 /// 2. **Driver function** (e.g., `TilesetAnim_General`): Contains timer conditions and queue function calls
 /// 3. **Queue functions**: Contain `AppendTilesetAnimToBuffer` calls with animation parameters
 ///
-/// The only required invariant is that animation frame arrays follow the naming convention:
-/// `gTilesetAnims_{TilesetName}_{AnimName}{_OptionalSuffix}`
-///
 /// The parser extracts:
 /// - tile_offset from TILE_OFFSET_4BPP(X) in AppendTilesetAnimToBuffer calls
 /// - tile_count from X * TILE_SIZE_4BPP
@@ -38,6 +35,12 @@ namespace porytiles {
 ///
 /// Note: Animation frame PNG files are loaded separately by the artifact reader; this parser only extracts the
 /// configuration parameters embedded in C code.
+///
+/// @invariant Animation frame array names start with `gTilesetAnims_` or `sTilesetAnims_` followed by a tileset
+/// shorthand and the animation name. The shorthand is normally the tileset's full shorthand, but a shortened form with
+/// trailing underscore-separated segments dropped also resolves (pokeemerald-expansion's `gTileset_General_Frlg` names
+/// its arrays `sTilesetAnims_General_*`). Resolving through a shortened shorthand emits a remark under the
+/// `anim-code-parse` tag.
 class AnimCodeParser {
   public:
     /// @brief Constructs an AnimCodeParser with a text formatter for error messages.
