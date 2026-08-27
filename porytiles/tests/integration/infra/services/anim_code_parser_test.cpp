@@ -453,6 +453,61 @@ TEST_F(AnimCodeParserTest, FrlgVariantDoesNotCauseAmbiguousMatch)
     EXPECT_TRUE(anims.contains(DynamicCasedName{"flower"}));
 }
 
+TEST_F(AnimCodeParserTest, MultiSegmentShorthandWithConsistentArrayNames)
+{
+    auto result = parser_.parse_from_callback(
+        "resources/tests/integration/shared/anim/frlg_variant_prefix_match.c",
+        "InitTilesetAnim_General_Frlg",
+        DynamicCasedName{"General_Frlg"},
+        false);
+
+    ASSERT_TRUE(result.has_value()) << "Parsing should succeed for a multi-segment tileset shorthand";
+    const auto &anims = result.value();
+
+    EXPECT_EQ(anims.size(), 1u);
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"flower"}));
+    EXPECT_EQ(anims.at(DynamicCasedName{"flower"}).frame_array_identifier(), "gTilesetAnims_General_Frlg_Flower");
+    EXPECT_TRUE(diag_.remarks().empty()) << "Consistent shorthand should not emit a remark";
+}
+
+TEST_F(AnimCodeParserTest, ShortenedShorthandArrayNamesResolveWithRemark)
+{
+    auto result = parser_.parse_from_callback(
+        "resources/tests/integration/shared/anim/frlg_shortened_shorthand.c",
+        "InitTilesetAnim_General_Frlg",
+        DynamicCasedName{"General_Frlg"},
+        false);
+
+    ASSERT_TRUE(result.has_value()) << "Parsing should fall back to the shortened tileset shorthand";
+    const auto &anims = result.value();
+
+    EXPECT_EQ(anims.size(), 3u);
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"flower"}));
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"sand_waters_edge"}));
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"water_current_land_waters_edge"}));
+
+    const auto &sand = anims.at(DynamicCasedName{"sand_waters_edge"});
+    EXPECT_EQ(sand.frame_array_identifier(), "sTilesetAnims_General_SandWatersEdge");
+    EXPECT_EQ(sand.tile_offset(), 464u);
+    EXPECT_EQ(sand.tile_count(), 18u);
+    EXPECT_EQ(sand.frame_factor(), 8u);
+
+    const auto &water = anims.at(DynamicCasedName{"water_current_land_waters_edge"});
+    EXPECT_EQ(water.frame_array_identifier(), "sTilesetAnims_General_Water_Current_LandWatersEdge");
+    EXPECT_EQ(water.cased_name().to_c_identifier(), "Water_Current_LandWatersEdge");
+
+    ASSERT_EQ(diag_.remarks().size(), 3u) << "Each fallback-resolved array should emit one remark";
+    std::string all_remark_text;
+    for (const auto &remark : diag_.remarks()) {
+        for (const auto &line : remark) {
+            all_remark_text += line + "\n";
+        }
+    }
+    EXPECT_NE(all_remark_text.find("sTilesetAnims_General_SandWatersEdge"), std::string::npos);
+    EXPECT_NE(all_remark_text.find("General_Frlg"), std::string::npos);
+    EXPECT_NE(all_remark_text.find("sTilesetAnims_General_"), std::string::npos);
+}
+
 // ── Error condition tests ─────────────────────────────────────────────────────
 
 TEST_F(AnimCodeParserTest, MultipleCallbacks)
@@ -544,6 +599,80 @@ TEST_F(AnimCodeParserTest, BadAnimNamePrefix)
         DynamicCasedName{"General"},
         false);
     EXPECT_FALSE(result.has_value()) << "Should return error when array name has wrong prefix";
+}
+
+TEST_F(AnimCodeParserTest, SuffixTrimmedArrayNames)
+{
+    auto result = parser_.parse_from_callback(
+        "resources/tests/integration/shared/anim/suffix_trimmed_array_names.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
+
+    ASSERT_TRUE(result.has_value()) << "Parsing should trim _Frames and _VDests suffixes from array names";
+    const auto &anims = result.value();
+
+    EXPECT_EQ(anims.size(), 2u);
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"flower"}));
+    ASSERT_TRUE(anims.contains(DynamicCasedName{"door"}));
+    EXPECT_EQ(anims.at(DynamicCasedName{"flower"}).frame_array_identifier(), "gTilesetAnims_General_Flower_Frames");
+    EXPECT_EQ(anims.at(DynamicCasedName{"door"}).frame_array_identifier(), "gTilesetAnims_General_Door_VDests");
+}
+
+TEST_F(AnimCodeParserTest, EmptyAnimNameAfterSuffixTrim)
+{
+    auto result = parser_.parse_from_callback(
+        "resources/tests/integration/shared/anim/errors/error_step4_empty_anim_name.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
+    EXPECT_FALSE(result.has_value()) << "Should return error when suffix trimming leaves an empty animation name";
+}
+
+TEST_F(AnimCodeParserTest, MultiSegmentShorthandErrorListsFallbackPrefixes)
+{
+    auto result = parser_.parse_from_callback(
+        "resources/tests/integration/shared/anim/errors/error_step4_bad_anim_name_prefix.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General_Frlg"},
+        false);
+
+    ASSERT_FALSE(result.has_value());
+    ASSERT_FALSE(result.chain().empty());
+    const std::string root_cause_text = result.chain().back()->join(formatter_);
+    EXPECT_NE(root_cause_text.find("gTilesetAnims_General_Frlg_"), std::string::npos);
+    EXPECT_NE(root_cause_text.find("Also tried shortened tileset shorthand prefixes"), std::string::npos);
+    EXPECT_NE(root_cause_text.find("sTilesetAnims_General_"), std::string::npos);
+}
+
+TEST_F(AnimCodeParserTest, FrameArrayWithoutFrameElements)
+{
+    auto result = parser_.parse_from_callback(
+        "resources/tests/integration/shared/anim/errors/error_step6_empty_frame_array.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
+
+    ASSERT_FALSE(result.has_value()) << "Should return error when frame array elements lack the _Frame suffix";
+    ASSERT_FALSE(result.chain().empty());
+    const std::string root_cause_text = result.chain().back()->join(formatter_);
+    EXPECT_NE(root_cause_text.find("has no elements with a '_Frame' suffix"), std::string::npos);
+}
+
+TEST_F(AnimCodeParserTest, BadAnimNamePrefixErrorListsExpectedPrefixes)
+{
+    auto result = parser_.parse_from_callback(
+        "resources/tests/integration/shared/anim/errors/error_step4_bad_anim_name_prefix.c",
+        "InitTilesetAnim_General",
+        DynamicCasedName{"General"},
+        false);
+
+    ASSERT_FALSE(result.has_value());
+    ASSERT_FALSE(result.chain().empty());
+    const std::string root_cause_text = result.chain().back()->join(formatter_);
+    EXPECT_NE(root_cause_text.find("Could not extract animation name from 'gWrongPrefix_Flower'"), std::string::npos);
+    EXPECT_NE(root_cause_text.find("gTilesetAnims_General_"), std::string::npos);
+    EXPECT_NE(root_cause_text.find("sTilesetAnims_General_"), std::string::npos);
 }
 
 TEST_F(AnimCodeParserTest, MissingTileOffset)

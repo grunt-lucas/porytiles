@@ -57,6 +57,27 @@ class AnimParams {
         cased_name_ = std::move(value);
     }
 
+    /// @brief Returns the C identifier of the frame pointer array backing this animation.
+    ///
+    /// @details
+    /// When AnimCodeParser extracts an animation from existing C code, it records the full identifier of the frame
+    /// pointer array referenced by the queue function (for example "sTilesetAnims_General_SandWatersEdge"). Vanilla
+    /// anim import appends "_Frame{Name}" to this identifier to locate the INCBIN frame variables, which keeps frame
+    /// lookup working even when the array names use a different tileset shorthand than the tileset itself (e.g. General
+    /// vs General_Frlg). Empty for AnimParams not produced by AnimCodeParser (for example params loaded from
+    /// anim.json). This field is not persisted to anim.json.
+    ///
+    /// @return The frame pointer array identifier, or an empty string if not set
+    [[nodiscard]] const std::string &frame_array_identifier() const
+    {
+        return frame_array_identifier_;
+    }
+
+    void frame_array_identifier(std::string value)
+    {
+        frame_array_identifier_ = std::move(value);
+    }
+
     /// @brief Returns the frame factor (modulus divisor for timer).
     ///
     /// @details
@@ -239,6 +260,7 @@ class AnimParams {
 
   private:
     DynamicCasedName cased_name_;
+    std::string frame_array_identifier_;
     std::size_t frame_factor_{anim::default_frame_factor};
     std::size_t frame_offset_{anim::default_frame_offset};
     std::vector<DynamicCasedName> frame_names_{DynamicCasedName{"0"}};
