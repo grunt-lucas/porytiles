@@ -37,6 +37,8 @@ and to its issue too when one was filed
 
 - Remarks and warnings are now opt-in instead of opt-out. - [#356](https://github.com/grunt-lucas/porytiles/pull/356)
 
+- Fixed `import-tileset` failing when tilesets used animation arrays named with a double shorthand, e.g. pokeemerald-expansion's `gTileset_General_Frlg`, whose arrays are named `sTilesetAnims_General_*`. The parser can now fall back to "shorthand of the shorthand" and reports each fallback with a remark under an `anim-code-parse` tag. - [#364](https://github.com/grunt-lucas/porytiles/pull/364)
+
 ## [1.0.0] - 2026-06-05
 
 First stable release of Porytiles.
