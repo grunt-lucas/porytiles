@@ -156,6 +156,19 @@ Use this for a planned release of accumulated work on `develop`
 (a patch, minor, or major).
 Throughout, replace `X.Y.Z` with the target version (example: `1.1.0`).
 
+The complete flow can be driven by [`scripts/release.py`](./scripts/release.py),
+which executes these steps in order and pauses at every `[confirm]` gate:
+
+```bash
+uv run scripts/release.py X.Y.Z             # full release
+uv run scripts/release.py X.Y.Z --from tag  # resume a partial release at a given step
+uv run scripts/release.py X.Y.Z --dry-run   # print every command without executing
+uv run scripts/release.py --list-steps      # step names for --from
+```
+
+The manual steps below remain as a reference for what the script is doing, and
+how to handle any steps where it stops and asks for user action.
+
 ### 0 — Pre-flight `[auto]`
 
 ```bash
@@ -315,6 +328,11 @@ Tag the **main repo first** (done above) and verify its release succeeded
 **before** tagging the docs repos. This ordering means a mid-sequence failure
 never leaves the docs site advertising a version the compiler release lacks.
 
+Each docs repo automates this flow with its own `scripts/release.py`
+(`uv run scripts/release.py X.Y.Z`, with the same `--from`/`--dry-run` flags as
+the main script). The main repo's `scripts/release.py` step 8 invokes it once
+per repo. The basic script flow is the block below.
+
 Repeat identically for `porytiles-user-docs/` and then `porytiles-dev-docs/`:
 
 ```bash
@@ -324,7 +342,11 @@ git checkout -b release/X.Y.Z
 git push -u origin release/X.Y.Z
 
 echo "X.Y.Z" > VERSION                       # conf.py reads VERSION via pathlib (Phase F2)
-git commit -am "Bump VERSION to X.Y.Z"
+# GH Pages serves the committed docs/ folder, and conf.py bakes VERSION into the
+# HTML at build time, so we have to rebuild here so the site will show X.Y.Z correctly.
+(cd docsrc && uv run make github)
+git add -A
+git commit -m "Bump VERSION to X.Y.Z and rebuild site"
 git push
 
 gh pr create --base master --head release/X.Y.Z \
