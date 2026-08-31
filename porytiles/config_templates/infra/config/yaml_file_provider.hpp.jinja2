@@ -25,11 +25,13 @@ namespace porytiles {
 ///
 /// @details
 /// YamlFileProvider loads YAML configuration files from multiple locations and provides access to configuration values
-/// defined within them. Config files are searched in priority order:
+/// defined within them. For tileset-scoped lookups, config files are searched in priority order:
 /// 1. porytiles/tilesets/{tileset_name}/config.local.yaml (highest priority)
 /// 2. porytiles/tilesets/{tileset_name}/config.yaml
 /// 3. porytiles/config.local.yaml
 /// 4. porytiles/config.yaml (lowest priority)
+///
+/// Project-scoped lookups (ConfigScopeType::project) search only the project-wide files, i.e. entries 3 and 4 above.
 ///
 /// Files are loaded lazily and cached for performance. If no config files exist or a key is not found, methods return
 /// LayerValue::not_provided(), allowing graceful fallback to other providers in a layered configuration system.

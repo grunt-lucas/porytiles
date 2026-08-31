@@ -108,12 +108,21 @@ void LazyLayeredConfig::add_provider(std::unique_ptr<ConfigProvider> provider)
 
 void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, const std::string &scope) const
 {
-    const std::string header_str = "Configuration dump for {} '{}'";
     auto type_str = to_string(type);
-    std::string header = std::vformat(header_str, std::make_format_args(type_str, scope));
-    out << format_->format(
-               header_str, FormatParam{to_string(type), Style::bold}, FormatParam{scope, Style::bold | Style::cyan})
-        << "\n";
+    std::string header;
+    if (scope.empty()) {
+        // A scope type with no scope name (e.g. the project scope) has no name to display.
+        const std::string header_str = "Configuration dump for the {} scope";
+        header = std::vformat(header_str, std::make_format_args(type_str));
+        out << format_->format(header_str, FormatParam{type_str, Style::bold}) << "\n";
+    }
+    else {
+        const std::string header_str = "Configuration dump for {} '{}'";
+        header = std::vformat(header_str, std::make_format_args(type_str, scope));
+        out << format_->format(
+                   header_str, FormatParam{type_str, Style::bold}, FormatParam{scope, Style::bold | Style::cyan})
+            << "\n";
+    }
     out << format_->style(std::string(header.size(), '='), Style::faint) << "\n\n";
     dump_single_config_value(
         out, *format_, "Number Of Tiles In Primary", num_tiles_in_primary_provenance_chain(type, scope));

@@ -16,6 +16,14 @@ namespace porytiles {
 /// `data/tilesets/primary/<tileset_dir>/porytiles.yaml` when using ConfigScopeType::tileset, while layout-specific
 /// configuration might be loaded from the layout directory when using ConfigScopeType::layout.
 enum class ConfigScopeType {
+    /// @brief Configuration at the project-wide level, not tied to any tileset or layout.
+    ///
+    /// @details
+    /// When using this scope type, the scope parameter is ignored (pass an empty string), and providers will only
+    /// consult project-level configuration sources (e.g. @c porytiles/config.yaml and @c porytiles/config.local.yaml
+    /// for the YAML provider).
+    project,
+
     /// @brief Configuration scoped to a specific tileset.
     ///
     /// @details
@@ -40,12 +48,14 @@ enum class ConfigScopeType {
 /// cache key generation, and serialization.
 ///
 /// @param type The ConfigScopeType value to convert
-/// @return The string representation ("tileset" or "layout")
+/// @return The string representation ("project", "tileset", or "layout")
 ///
 /// @note This function always returns a valid string for any ConfigScopeType value.
 [[nodiscard]] inline std::string to_string(ConfigScopeType type)
 {
     switch (type) {
+    case ConfigScopeType::project:
+        return "project";
     case ConfigScopeType::tileset:
         return "tileset";
     case ConfigScopeType::layout:
@@ -59,7 +69,7 @@ enum class ConfigScopeType {
 ///
 /// @details
 /// This function attempts to parse a string representation into its corresponding ConfigScopeType enum value. The
-/// parsing is case-sensitive and expects exact matches for "tileset" or "layout".
+/// parsing is case-sensitive and expects exact matches for "project", "tileset", or "layout".
 ///
 /// @param str The string to parse
 /// @return An optional containing the parsed ConfigScopeType, or std::nullopt if the string doesn't match any known
@@ -68,6 +78,9 @@ enum class ConfigScopeType {
 /// @note This function performs exact string matching. "Tileset" or "TILESET" will not match.
 [[nodiscard]] inline std::optional<ConfigScopeType> from_string(const std::string &str)
 {
+    if (str == "project") {
+        return ConfigScopeType::project;
+    }
     if (str == "tileset") {
         return ConfigScopeType::tileset;
     }

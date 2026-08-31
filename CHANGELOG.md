@@ -15,6 +15,8 @@ and to its issue too when one was filed
 
 ## [Unreleased]
 
+- Added a `edit-tileset-config` and `edit-project-config` commands as well as a project-wide variant for the dumper, `dump-project-config`. - [#372](https://github.com/grunt-lucas/porytiles/pull/372)
+
 ## [2.0.0] - 2026-08-27
 
 - **BREAKING:** Changed the YAML config keys `fieldmap.num_pals_in_primary` and `fieldmap.num_pals_total` to `fieldmap.num_palettes_in_primary` and `fieldmap.num_palettes_total`. The old keys no longer work. A config file still using them will fail with an unknown configuration key error. The `--num-pals-in-primary` and `--num-pals-total` CLI options and the `NUM_PALS_IN_PRIMARY` and `NUM_PALS_TOTAL` header defines are unchanged. - [ba9a4d7](https://github.com/grunt-lucas/porytiles/commit/ba9a4d7cf1ff087901a97a15f39d302b8ffa0cc2)

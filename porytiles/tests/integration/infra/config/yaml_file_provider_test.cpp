@@ -502,5 +502,98 @@ fieldmap:
     EXPECT_FALSE(provider.preload_and_validate(ConfigScopeType::tileset, "test"));
 }
 
+class YamlFileProviderProjectScopeTest : public ::testing::Test {
+  protected:
+    std::filesystem::path project_root_;
+    PlainTextFormatter formatter_;
+
+    void SetUp() override
+    {
+        // The YamlFileProvider caches parsed files by path in a process-wide cache, so each test needs a distinct path.
+        const auto *info = ::testing::UnitTest::GetInstance()->current_test_info();
+        project_root_ = std::filesystem::temp_directory_path() /
+                        (std::string{"porytiles_yaml_test_"} + info->test_suite_name() + "_" + info->name());
+        std::filesystem::remove_all(project_root_);
+        std::filesystem::create_directories(project_root_ / "porytiles" / "tilesets" / "gTileset_Test");
+    }
+
+    void TearDown() override
+    {
+        std::error_code ec;
+        std::filesystem::remove_all(project_root_, ec);
+    }
+
+    void write_file(const std::filesystem::path &relative_path, const std::string &yaml)
+    {
+        std::ofstream out{project_root_ / relative_path};
+        out << yaml;
+    }
+};
+
+TEST_F(YamlFileProviderProjectScopeTest, ProjectScopeReadsProjectConfig)
+{
+    write_file("porytiles/config.yaml", R"(
+fieldmap:
+  num_tiles_in_primary: 512
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.num_tiles_in_primary(ConfigScopeType::project, "");
+    ASSERT_EQ(result.state, ValidationState::valid);
+    ASSERT_TRUE(result.value.has_value());
+    EXPECT_EQ(result.value.value(), 512U);
+}
+
+TEST_F(YamlFileProviderProjectScopeTest, ProjectScopeIgnoresTilesetConfig)
+{
+    write_file("porytiles/tilesets/gTileset_Test/config.yaml", R"(
+fieldmap:
+  num_tiles_in_primary: 512
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+
+    const auto project_result = provider.num_tiles_in_primary(ConfigScopeType::project, "");
+    EXPECT_EQ(project_result.state, ValidationState::not_provided);
+
+    const auto tileset_result = provider.num_tiles_in_primary(ConfigScopeType::tileset, "gTileset_Test");
+    ASSERT_EQ(tileset_result.state, ValidationState::valid);
+    ASSERT_TRUE(tileset_result.value.has_value());
+    EXPECT_EQ(tileset_result.value.value(), 512U);
+}
+
+TEST_F(YamlFileProviderProjectScopeTest, ProjectScopeLocalOverridesSharedConfig)
+{
+    write_file("porytiles/config.yaml", R"(
+fieldmap:
+  num_tiles_in_primary: 512
+)");
+    write_file("porytiles/config.local.yaml", R"(
+fieldmap:
+  num_tiles_in_primary: 640
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.num_tiles_in_primary(ConfigScopeType::project, "");
+    ASSERT_EQ(result.state, ValidationState::valid);
+    ASSERT_TRUE(result.value.has_value());
+    EXPECT_EQ(result.value.value(), 640U);
+}
+
+TEST_F(YamlFileProviderProjectScopeTest, ProjectScopeValidationSkipsTilesetFiles)
+{
+    // An unknown key in a tileset-level file must not fail project-scope validation: the project scope never reads
+    // tileset files, so their contents are out of its jurisdiction.
+    write_file("porytiles/tilesets/gTileset_Test/config.yaml", R"(
+fieldmap:
+  not_a_real_key: 42
+)");
+
+    BufferedUserDiagnostics diag;
+    YamlFileProvider provider{&diag, project_root_};
+    EXPECT_FALSE(provider.preload_and_validate(ConfigScopeType::project, ""));
+    EXPECT_TRUE(provider.preload_and_validate(ConfigScopeType::tileset, "gTileset_Test"));
+}
+
 } // namespace
 } // namespace porytiles
