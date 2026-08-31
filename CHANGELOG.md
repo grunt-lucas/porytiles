@@ -17,6 +17,8 @@ and to its issue too when one was filed
 
 - Added a `edit-tileset-config` and `edit-project-config` commands as well as a project-wide variant for the dumper, `dump-project-config`. - [#372](https://github.com/grunt-lucas/porytiles/pull/372)
 
+- Added fuzzy tileset name matching for CLI commands that target an existing tileset. E.g. `gTileset_SecretBase`, `SecretBase`, `secret_base`, and `secretBase` all resolve to the same tileset (`gTileset_SecretBase`), and an ambiguous name fails with an error that lists the candidates. `create-tileset` still requires the exact canonical name, and `--allow-missing-tileset` skips resolution. Also centralized `gTileset_` prefix handling behind shared validators. - [#374](https://github.com/grunt-lucas/porytiles/pull/374)
+
 ## [2.0.0] - 2026-08-27
 
 - **BREAKING:** Changed the YAML config keys `fieldmap.num_pals_in_primary` and `fieldmap.num_pals_total` to `fieldmap.num_palettes_in_primary` and `fieldmap.num_palettes_total`. The old keys no longer work. A config file still using them will fail with an unknown configuration key error. The `--num-pals-in-primary` and `--num-pals-total` CLI options and the `NUM_PALS_IN_PRIMARY` and `NUM_PALS_TOTAL` header defines are unchanged. - [ba9a4d7](https://github.com/grunt-lucas/porytiles/commit/ba9a4d7cf1ff087901a97a15f39d302b8ffa0cc2)
