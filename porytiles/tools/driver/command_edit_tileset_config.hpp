@@ -23,7 +23,11 @@
 /// @details
 /// EditTilesetConfigCommand resolves the editor via the EditorLauncher service and opens the tileset's @c config.yaml
 /// (or @c config.local.yaml with @c --local). When the tileset directory or the config file does not exist yet, the
-/// command creates them first, so a config can be prepared for a tileset before it is created or imported.
+/// command creates them first.
+///
+/// The tileset must exist in the project, since the command creates files on disk and a misspelled name would
+/// otherwise leave a junk tileset directory behind. Passing @c --allow-missing-tileset skips the existence check so a
+/// config can be prepared for a tileset before it is created or imported.
 ///
 /// Unlike the other tileset commands, this one skips the TilesetCommandEnv initialization. Since that process eagerly
 /// validates every YAML config file, a currently-invalid config would fail the command before the editor could
@@ -37,6 +41,11 @@ class EditTilesetConfigCommand final : public Command {
         CLI::App &cmd = get_app();
         cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset whose config to edit")->required();
         cmd.add_flag("--local", local_, "Edit the tileset's 'config.local.yaml' instead of its shared 'config.yaml'.");
+        cmd.add_flag(
+            "--allow-missing-tileset",
+            allow_missing_tileset_,
+            "Edit config even when the tileset does not exist, to prepare a config before the tileset is created or "
+            "imported.");
         project_root_opt_.RegisterOpt(cmd);
     }
 
@@ -74,14 +83,17 @@ class EditTilesetConfigCommand final : public Command {
         const auto tileset_dir = project_root / "porytiles" / "tilesets" / tileset_name_;
         const auto config_file = tileset_dir / (local_ ? "config.local.yaml" : "config.yaml");
 
-        // Editing a config for a tileset that does not exist yet is supported (the config applies once the tileset
-        // is created or imported), but warn so a misspelled name does not silently create a junk directory.
-        const ProjectTilesetMetadataProvider metadata_provider{project_root, text_formatter, &diag};
-        if (!metadata_provider.exists(tileset_name_)) {
-            diag.warning(
-                "edit-config-missing-tileset",
-                "Tileset '{}' does not exist in this project. Creating its config anyway.",
-                FormatParam{tileset_name_, Style::bold});
+        // Verify the tileset exists before editing: the command creates the tileset directory and config file on
+        // disk, so a misspelled name would otherwise leave a junk directory behind. --allow-missing-tileset skips the
+        // check for preparing the config of a not-yet-created tileset.
+        if (!allow_missing_tileset_) {
+            const ProjectTilesetMetadataProvider metadata_provider{project_root, text_formatter, &diag};
+            if (!metadata_provider.exists(tileset_name_)) {
+                return FormattableError{
+                    "Tileset '{}' does not exist. Pass '{}' to edit its config anyway.",
+                    FormatParam{tileset_name_, Style::bold},
+                    FormatParam{"--allow-missing-tileset", Style::bold}};
+            }
         }
 
         constexpr EditorLauncher launcher{};
@@ -93,5 +105,6 @@ class EditTilesetConfigCommand final : public Command {
     static constexpr auto command_group = "UTILITIES";
     std::string tileset_name_;
     bool local_{false};
+    bool allow_missing_tileset_{false};
     OptProjectRoot project_root_opt_;
 };

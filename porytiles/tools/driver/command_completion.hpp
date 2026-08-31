@@ -219,8 +219,9 @@ class CompletionCommand final : public Command {
         std::cout << "        elif [[ \"$subcommand\" == \"dump-attribute-schema\" || \"$subcommand\" == "
                      "\"dump-tileset-config\" ]]; then\n";
         std::cout << "            extra_opts=\"--allow-missing-tileset\"\n";
-        std::cout << "        elif [[ \"$subcommand\" == \"edit-tileset-config\" || \"$subcommand\" == "
-                     "\"edit-project-config\" ]]; then\n";
+        std::cout << "        elif [[ \"$subcommand\" == \"edit-tileset-config\" ]]; then\n";
+        std::cout << "            extra_opts=\"--local --allow-missing-tileset\"\n";
+        std::cout << "        elif [[ \"$subcommand\" == \"edit-project-config\" ]]; then\n";
         std::cout << "            extra_opts=\"--local\"\n";
         std::cout << "        fi\n";
         std::cout << "        COMPREPLY=( $(compgen -W \"${config_opts} ${extra_opts}\" -- ${cur}) )\n";
@@ -378,6 +379,8 @@ class CompletionCommand final : public Command {
         std::cout << "                        '-C[Set project root directory]:directory:_files -/' \\\n";
         std::cout << "                        '--project-root[Set project root directory]:directory:_files -/' \\\n";
         std::cout << "                        '--local[Edit config.local.yaml instead of config.yaml]' \\\n";
+        std::cout << "                        '--allow-missing-tileset[Do not error when the tileset does not "
+                     "exist]' \\\n";
         std::cout << "                        '1:tileset:->tileset_all'\n";
         std::cout << "                    [[ \"$state\" == tileset_all ]] && _porytiles_complete_tilesets all\n";
         std::cout << "                    ;;\n";
@@ -559,6 +562,8 @@ class CompletionCommand final : public Command {
         std::cout << "# Options for the edit subcommands\n";
         std::cout << "complete -c porytiles -f -n '__porytiles_using_subcommand edit-tileset-config' -l local -d "
                      "'Edit config.local.yaml instead of config.yaml'\n";
+        std::cout << "complete -c porytiles -f -n '__porytiles_using_subcommand edit-tileset-config' -l "
+                     "allow-missing-tileset -d 'Do not error when the tileset does not exist'\n";
         std::cout << "complete -c porytiles -f -n '__porytiles_using_subcommand edit-project-config' -l local -d "
                      "'Edit config.local.yaml instead of config.yaml'\n";
         std::cout << "\n";
