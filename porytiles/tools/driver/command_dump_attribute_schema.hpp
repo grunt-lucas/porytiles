@@ -11,7 +11,6 @@
 #include "porytiles/domain/models/metatile_attribute_schema.hpp"
 #include "porytiles/infra/cli/cli_option_registration.hpp"
 #include "porytiles/infra/cli/cli_option_storage.hpp"
-#include "porytiles/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 
 #include "command.hpp"
@@ -24,7 +23,9 @@ class DumpAttributeSchemaCommand final : public Command {
         : Command{parent_app, command_name, command_desc, command_group}
     {
         CLI::App &cmd = get_app();
-        cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to resolve the schema for")->required();
+        cmd.add_option(
+               "<tileset-name>", tileset_name_, "Name of the tileset to resolve the schema for (fuzzy names accepted)")
+            ->required();
         cmd.add_flag(
             "--allow-missing-tileset",
             allow_missing_tileset_,
@@ -41,31 +42,37 @@ class DumpAttributeSchemaCommand final : public Command {
         TilesetCommandEnv env{project_root_opt_.project_root(), cli_storage_};
         auto *text_formatter = env.text_formatter;
 
+        // The fuzzy name argument resolves to its canonical form before env initialization, since the canonical name
+        // is the config scope. The schema itself is supposed to be project-global, but our config system wires all
+        // values through the full resolution path, which always allows tileset-specific settings.
+        // --allow-missing-tileset skips resolution (there is no declared name to resolve against) and uses the
+        // argument verbatim, for previewing the schema a not-yet-created tileset would get.
+        std::string tileset_name = tileset_name_;
+        if (!allow_missing_tileset_) {
+            auto resolved_name_result = resolve_tileset_name_argument(env, tileset_name_);
+            if (!resolved_name_result.has_value()) {
+                const auto fail_result = ChainableResult<void>{
+                    FormattableError{
+                        "Failed to dump attribute schema for tileset '{}'. Pass '{}' to resolve its schema anyway.",
+                        FormatParam{tileset_name_, Style::bold},
+                        FormatParam{"--allow-missing-tileset", Style::bold}},
+                    resolved_name_result};
+                env.stderr_diag.fatal(fail_result);
+                throw CLI::RuntimeError{1};
+            }
+            tileset_name = std::move(resolved_name_result).value();
+        }
+
         // Env failures report through the unfiltered stderr diagnostics: the filtered diagnostics handle is not built
         // until initialize() succeeds.
-        const auto env_result = env.initialize(tileset_name_);
+        const auto env_result = env.initialize(tileset_name);
         if (!env_result.has_value()) {
             const auto env_fail_result = ChainableResult<void>{
                 FormattableError{
-                    "Failed to dump attribute schema for tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
+                    "Failed to dump attribute schema for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
                 env_result};
             env.stderr_diag.fatal(env_fail_result);
             throw CLI::RuntimeError{1};
-        }
-
-        // Verify the tileset exists in the project before resolving. The schema itself is supposed to be
-        // project-global, but our config system wires all values through the full resolution path, which always allows
-        // tileset-specific settings.
-        if (!allow_missing_tileset_) {
-            ProjectTilesetMetadataProvider metadata_provider{env.project_root, text_formatter, env.diag.get()};
-            if (!metadata_provider.exists(tileset_name_)) {
-                const auto not_found_err = ChainableResult<void>{FormattableError{
-                    "Tileset '{}' does not exist. Pass '{}' to resolve its schema anyway.",
-                    FormatParam{tileset_name_, Style::bold},
-                    FormatParam{"--allow-missing-tileset", Style::bold}}};
-                env.diag->fatal(not_found_err);
-                throw CLI::RuntimeError{1};
-            }
         }
 
         // Resolve the schema with the users configured diagnostic settings. Users who opted in to all remarks may see
@@ -73,7 +80,7 @@ class DumpAttributeSchemaCommand final : public Command {
         // 1. They opted in to noisy output, and there's an easy escape hatch
         // 2. The remark noise goes to stderr, while the dump goes to stdout, so a capturing script can choose
         MetatileAttributeSchemaResolver schema_resolver{env.project_root, &env.config, text_formatter, env.diag.get()};
-        auto resolved_result = schema_resolver.resolve(tileset_name_);
+        auto resolved_result = schema_resolver.resolve(tileset_name);
 
         // A resolution failure is the same hard error that aborts compile and import: an ambiguous attribute size, a
         // mask selection failure, or an invalid field. It reports as a fatal on stderr and exits nonzero rather than
@@ -82,7 +89,7 @@ class DumpAttributeSchemaCommand final : public Command {
         if (!resolved_result.has_value()) {
             const auto resolve_fail_result = ChainableResult<void>{
                 FormattableError{
-                    "Failed to dump attribute schema for tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
+                    "Failed to dump attribute schema for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
                 resolved_result};
             env.diag->fatal(resolve_fail_result);
             throw CLI::RuntimeError{1};

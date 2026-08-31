@@ -11,6 +11,7 @@
 #include "porytiles/utilities/c_parser/c_parser_facade.hpp"
 #include "porytiles/utilities/c_parser/struct_initializer_declaration.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
+#include "porytiles/utilities/string_utils.hpp"
 #include "porytiles/utilities/text/text_formatter.hpp"
 
 #include <ranges>
@@ -51,7 +52,7 @@ ChainableResult<void> ProjectTilesetMetadataWriter::update_fields(
     CParserFacade parser{headers_path, format_};
     PT_TRY_ASSIGN_CHAIN_ERR(
         struct_decls,
-        parser.parse_struct_initializers("gTileset_"),
+        parser.parse_struct_initializers(std::string{tileset_name_prefix}),
         void,
         format_->format("{}: failed to parse tileset headers", FormatParam{headers_path.string(), Style::bold}));
 
@@ -123,15 +124,7 @@ ChainableResult<void> ProjectTilesetMetadataWriter::update_fields(
 
 ChainableResult<void> ProjectTilesetMetadataWriter::update_to_porytiles_managed(const std::string &tileset_name) const
 {
-    // Extract shorthand from tileset name (e.g., "gTileset_General" -> "General")
-    const std::string prefix = "gTileset_";
-    if (!tileset_name.starts_with(prefix)) {
-        return FormattableError{format_->format(
-            "tileset name '{}' does not start with '{}'",
-            FormatParam{tileset_name, Style::bold},
-            FormatParam{prefix, Style::bold})};
-    }
-    const std::string shorthand = tileset_name.substr(prefix.size());
+    PT_TRY_ASSIGN_PASS_ERR(shorthand, require_tileset_shorthand(tileset_name), void);
 
     std::map<std::string, std::string> updates{
         {"tiles", "gTilesetTiles_PorytilesManaged_" + shorthand},
@@ -145,15 +138,7 @@ ChainableResult<void> ProjectTilesetMetadataWriter::update_to_porytiles_managed(
 ChainableResult<void>
 ProjectTilesetMetadataWriter::create_tileset_struct(const std::string &tileset_name, bool is_secondary) const
 {
-    // Extract shorthand from tileset name (e.g., "gTileset_MyTileset" -> "MyTileset")
-    const std::string prefix = "gTileset_";
-    if (!tileset_name.starts_with(prefix)) {
-        return FormattableError{format_->format(
-            "tileset name '{}' does not start with '{}'",
-            FormatParam{tileset_name, Style::bold},
-            FormatParam{prefix, Style::bold})};
-    }
-    const std::string shorthand = tileset_name.substr(prefix.size());
+    PT_TRY_ASSIGN_PASS_ERR(shorthand, require_tileset_shorthand(tileset_name), void);
 
     const auto headers_path = project_root_ / headers_rel_path;
 
@@ -161,7 +146,7 @@ ProjectTilesetMetadataWriter::create_tileset_struct(const std::string &tileset_n
     CParserFacade parser{headers_path, format_};
     PT_TRY_ASSIGN_CHAIN_ERR(
         struct_decls,
-        parser.parse_struct_initializers("gTileset_"),
+        parser.parse_struct_initializers(std::string{tileset_name_prefix}),
         void,
         format_->format("{}: failed to parse tileset headers", FormatParam{headers_path.string(), Style::bold}));
 

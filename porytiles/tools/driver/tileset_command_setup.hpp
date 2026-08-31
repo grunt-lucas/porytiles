@@ -15,6 +15,7 @@
 #include "porytiles/domain/services/palette_printer.hpp"
 #include "porytiles/domain/services/tile_printer.hpp"
 #include "porytiles/domain/services/tileset_compiler.hpp"
+#include "porytiles/domain/services/tileset_name_resolver.hpp"
 #include "porytiles/infra/cli/cli_option_storage.hpp"
 #include "porytiles/infra/config/cli_option_provider.hpp"
 #include "porytiles/infra/config/default_provider.hpp"
@@ -196,6 +197,24 @@ class TilesetCommandEnv {
     LazyLayeredConfig config;
     std::unique_ptr<FilteredUserDiagnostics> diag;
 };
+
+/// @brief Resolves the command's tileset-name argument to the canonical name declared in the project.
+///
+/// @details
+/// Accepts fuzzy names: "gTileset_SecretBase", "SecretBase", "secret_base", and "secretBase" all resolve to
+/// "gTileset_SecretBase". This runs before @c TilesetCommandEnv::initialize() because the canonical name doubles as
+/// the tileset config scope, so a failure here reports through the env's unfiltered stderr diagnostics.
+///
+/// @param env The command environment holding the project root and formatter
+/// @param input The user-supplied tileset name argument
+/// @return The canonical tileset name, or the resolution error for the command to wrap with its own context
+[[nodiscard]] inline ChainableResult<std::string>
+resolve_tileset_name_argument(TilesetCommandEnv &env, const std::string &input)
+{
+    const ProjectTilesetMetadataProvider metadata_provider{env.project_root, env.text_formatter, &env.stderr_diag};
+    PT_TRY_ASSIGN_PASS_ERR(tileset_names, metadata_provider.tilesets(), std::string);
+    return resolve_tileset_name(input, tileset_names, env.text_formatter);
+}
 
 /// @brief The invocation's resolved attribute schema and provider map, produced before the service graph.
 ///

@@ -24,6 +24,7 @@
 
 #include "porytiles/utilities/dynamic_cased_name.hpp"
 #include "porytiles/utilities/panic/panic.hpp"
+#include "porytiles/utilities/result/chainable_result.hpp"
 
 namespace porytiles {
 
@@ -400,10 +401,13 @@ template <typename T>
     return pad_two_digits(palette_index) + ".pal";
 }
 
+/// @brief The naming prefix for every tileset variable in a decomp project (e.g. "gTileset_General").
+inline constexpr std::string_view tileset_name_prefix = "gTileset_";
+
 /// @brief Extracts the Pascal-case tileset short name from the full name.
 ///
 /// @details
-/// Removes the "gTileset_" prefix from a tileset name if present. This is commonly needed when generating animation
+/// Removes the @c tileset_name_prefix from a tileset name if present. This is commonly used when generating animation
 /// variable names or parsing animation code, where the short name (e.g., "General") is used instead of the full name
 /// (e.g., "gTileset_General").
 ///
@@ -416,17 +420,42 @@ template <typename T>
 /// - `"General"` -> `"General"` (no prefix, unchanged)
 [[nodiscard]] inline std::string extract_tileset_shorthand(const std::string &tileset_name)
 {
-    constexpr std::string_view prefix = "gTileset_";
-    if (tileset_name.starts_with(prefix)) {
-        return tileset_name.substr(prefix.size());
+    if (tileset_name.starts_with(tileset_name_prefix)) {
+        return tileset_name.substr(tileset_name_prefix.size());
     }
     return tileset_name;
+}
+
+/// @brief Extracts the tileset short name from the full name while requiring the @c tileset_name_prefix to be present.
+///
+/// @details
+/// The validating counterpart of @c extract_tileset_shorthand(): callers that must not silently accept an unprefixed
+/// name (e.g. code interleaving the shorthand with generated C symbol names) can use this to fail with a uniform
+/// diagnostic instead of producing a corrupted shorthand.
+///
+/// @param tileset_name The full tileset name (e.g., "gTileset_General")
+/// @return The short name (e.g., "General"), or an error when the prefix is missing or the shorthand is empty
+[[nodiscard]] inline ChainableResult<std::string> require_tileset_shorthand(const std::string &tileset_name)
+{
+    if (!tileset_name.starts_with(tileset_name_prefix)) {
+        return FormattableError{
+            "Tileset name '{}' does not start with '{}'.",
+            FormatParam{tileset_name, Style::bold},
+            FormatParam{std::string{tileset_name_prefix}, Style::bold}};
+    }
+    if (tileset_name.size() == tileset_name_prefix.size()) {
+        return FormattableError{
+            "Tileset name '{}' has no characters after the '{}' prefix.",
+            FormatParam{tileset_name, Style::bold},
+            FormatParam{std::string{tileset_name_prefix}, Style::bold}};
+    }
+    return tileset_name.substr(tileset_name_prefix.size());
 }
 
 /// @brief Extracts the tileset short name and wraps it in a DynamicCasedName.
 ///
 /// @details
-/// Removes the "gTileset_" prefix from a tileset name if present, then constructs a DynamicCasedName from the
+/// Removes the @c tileset_name_prefix from a tileset name if present, then constructs a DynamicCasedName from the
 /// resulting shorthand. This combines @c extract_tileset_shorthand() and @c DynamicCasedName construction into a
 /// single convenience function, which is the most common usage pattern across the codebase.
 ///

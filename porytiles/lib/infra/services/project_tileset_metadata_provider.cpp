@@ -15,6 +15,7 @@
 #include "porytiles/utilities/c_parser/incbin_declaration.hpp"
 #include "porytiles/utilities/c_parser/struct_initializer_declaration.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
+#include "porytiles/utilities/string_utils.hpp"
 #include "porytiles/utilities/text/text_formatter.hpp"
 
 namespace {
@@ -109,7 +110,7 @@ classify_incbin_lookup(const std::map<std::string, IncbinDeclaration> &incbin_va
 
     PT_TRY_ASSIGN_CHAIN_ERR(
         struct_decls,
-        parser.parse_struct_initializers("gTileset_"),
+        parser.parse_struct_initializers(std::string{tileset_name_prefix}),
         void,
         format->format("Failed to parse tileset headers from '{}'.", FormatParam{headers_path.string(), Style::bold}));
 

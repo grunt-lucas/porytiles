@@ -21,7 +21,8 @@ class CompileTilesetCommand final : public Command {
         : Command{parent_app, command_name, command_desc, command_group}
     {
         CLI::App &cmd = get_app();
-        cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to compile")->required();
+        cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to compile (fuzzy names accepted)")
+            ->required();
         project_root_opt_.RegisterOpt(cmd);
         porytiles::register_config_options(cmd, cli_storage_);
     }
@@ -33,40 +34,45 @@ class CompileTilesetCommand final : public Command {
 
         TilesetCommandEnv env{project_root_opt_.project_root(), cli_storage_};
 
+        // The fuzzy name argument must be resolved to its canonical form first, since the canonical name is the config
+        // scope for env initialization and the key for every later lookup. This resolution also guarantees the tileset
+        // existence.
+        auto resolved_name_result = resolve_tileset_name_argument(env, tileset_name_);
+        if (!resolved_name_result.has_value()) {
+            const auto fail_result = ChainableResult<void>{
+                FormattableError{"Failed to compile tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
+                resolved_name_result};
+            env.stderr_diag.fatal(fail_result);
+            throw CLI::RuntimeError{1};
+        }
+        const std::string tileset_name = std::move(resolved_name_result).value();
+
         // Env initialization and schema resolution can fail, so they run first and their failures chain and report
         // through the unfiltered stderr diagnostics.
-        const auto env_result = env.initialize(tileset_name_);
+        const auto env_result = env.initialize(tileset_name);
         if (!env_result.has_value()) {
             const auto env_fail_result = ChainableResult<void>{
-                FormattableError{"Failed to compile tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
+                FormattableError{"Failed to compile tileset '{}'.", FormatParam{tileset_name, Style::bold}},
                 env_result};
             env.stderr_diag.fatal(env_fail_result);
             throw CLI::RuntimeError{1};
         }
 
-        auto attribute_context = resolve_attribute_context(env, tileset_name_);
+        auto attribute_context = resolve_attribute_context(env, tileset_name);
         if (!attribute_context.has_value()) {
             const auto fail_result = ChainableResult<void>{
-                FormattableError{"Failed to compile tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
+                FormattableError{"Failed to compile tileset '{}'.", FormatParam{tileset_name, Style::bold}},
                 attribute_context};
             env.diag->fatal(fail_result);
             throw CLI::RuntimeError{1};
         }
         TilesetCommandServices services{env, std::move(attribute_context).value()};
 
-        // Verify the tileset exists in the project before proceeding
-        if (!services.metadata_provider.exists(tileset_name_)) {
-            const auto not_found_err = ChainableResult<void>{FormattableError{
-                "Tileset '{}' does not exist. Create or import it first.", FormatParam{tileset_name_, Style::bold}}};
-            env.diag->fatal(not_found_err);
-            throw CLI::RuntimeError{1};
-        }
-
         // Detect primary vs secondary and dispatch to the correct use case
-        auto is_secondary_result = services.metadata_provider.is_secondary(tileset_name_);
+        auto is_secondary_result = services.metadata_provider.is_secondary(tileset_name);
         if (!is_secondary_result.has_value()) {
             const auto fail_result = ChainableResult<void>{
-                FormattableError{"Failed to compile tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
+                FormattableError{"Failed to compile tileset '{}'.", FormatParam{tileset_name, Style::bold}},
                 is_secondary_result};
             env.diag->fatal(fail_result);
             throw CLI::RuntimeError{1};
@@ -83,7 +89,7 @@ class CompileTilesetCommand final : public Command {
                 &env.config,
                 &env.config,
                 env.diag.get()};
-            compile_result = compile_use_case.compile(tileset_name_);
+            compile_result = compile_use_case.compile(tileset_name);
         }
         else {
             CompilePrimaryTileset compile_use_case{
@@ -94,11 +100,11 @@ class CompileTilesetCommand final : public Command {
                 &env.config,
                 &env.config,
                 env.diag.get()};
-            compile_result = compile_use_case.compile(tileset_name_);
+            compile_result = compile_use_case.compile(tileset_name);
         }
         if (!compile_result.has_value()) {
             const auto fail_result = ChainableResult<std::unique_ptr<Tileset>>{
-                FormattableError{"Failed to compile tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
+                FormattableError{"Failed to compile tileset '{}'.", FormatParam{tileset_name, Style::bold}},
                 compile_result};
             env.diag->fatal(fail_result);
             throw CLI::RuntimeError{1};

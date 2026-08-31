@@ -10,6 +10,7 @@
 #include "fmt/format.h"
 
 #include "porytiles/infra/config/infra_config.hpp"
+#include "porytiles/utilities/dynamic_cased_name.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 #include "porytiles/utilities/string_utils.hpp"
 #include "porytiles/xcut/diagnostics/user_diagnostics.hpp"
@@ -197,15 +198,11 @@ ProjectTilesetAnimsModifier::ProjectTilesetAnimsModifier(
 ChainableResult<void>
 ProjectTilesetAnimsModifier::wire_include_for_tileset(const std::string &tileset_name, bool is_secondary) const
 {
-    // Step 1: Validate tileset name starts with expected prefix
-    constexpr std::string_view tileset_prefix = "gTileset_";
-    if (!tileset_name.starts_with(tileset_prefix)) {
-        return FormattableError{diagnostics_->formatter().format(
-            "Tileset name '{}' does not start with 'gTileset_'.", FormatParam{tileset_name, Style::bold})};
-    }
+    // Step 1: Validate the tileset name carries the expected prefix
+    PT_TRY_ASSIGN_PASS_ERR(validated_shorthand, require_tileset_shorthand(tileset_name), void);
 
     // Step 2: Extract shorthand and convert to snake_case for directory name
-    const auto tileset_cased = extract_tileset_cased_name(tileset_name);
+    const DynamicCasedName tileset_cased{validated_shorthand};
     const std::string shorthand = tileset_cased.to_pascal_case();
     const std::string snake_dir = tileset_cased.to_snake_case();
 
@@ -297,15 +294,11 @@ ProjectTilesetAnimsModifier::remove_include_for_tileset(const std::string &tiles
     // tier the include was originally added for.
     (void)is_secondary;
 
-    // Step 1: Validate tileset name starts with expected prefix
-    constexpr std::string_view tileset_prefix = "gTileset_";
-    if (!tileset_name.starts_with(tileset_prefix)) {
-        return FormattableError{diagnostics_->formatter().format(
-            "Tileset name '{}' does not start with 'gTileset_'.", FormatParam{tileset_name, Style::bold})};
-    }
+    // Step 1: Validate the tileset name carries the expected prefix
+    PT_TRY_ASSIGN_PASS_ERR(validated_shorthand, require_tileset_shorthand(tileset_name), void);
 
     // Step 2: Extract shorthand and convert to snake_case for directory name
-    const auto tileset_cased = extract_tileset_cased_name(tileset_name);
+    const DynamicCasedName tileset_cased{validated_shorthand};
     const std::string shorthand = tileset_cased.to_pascal_case();
     const std::string snake_dir = tileset_cased.to_snake_case();
 

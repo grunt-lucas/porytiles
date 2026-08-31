@@ -8,6 +8,7 @@
 
 #include "porytiles/domain/models/animation.hpp"
 #include "porytiles/utilities/dynamic_cased_name.hpp"
+#include "porytiles/utilities/string_utils.hpp"
 
 namespace {
 
@@ -192,7 +193,7 @@ ChainableResult<std::string> AnimCodeGenerator::generate(
 
     std::ostringstream out;
 
-    const std::string tileset_name_no_prefix = tileset_name.substr(std::size("gTileset_") - 1);
+    PT_TRY_ASSIGN_PASS_ERR(tileset_name_no_prefix, require_tileset_shorthand(tileset_name), std::string);
     const std::string pascal_tileset_name = DynamicCasedName{tileset_name_no_prefix}.to_pascal_case();
 
     // Generate header guard
