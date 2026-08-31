@@ -7,6 +7,7 @@
 #include "CLI/CLI.hpp"
 #include "fruit/fruit.h"
 
+#include "porytiles/domain/services/tileset_name_resolver.hpp"
 #include "porytiles/infra/services/editor_launcher.hpp"
 #include "porytiles/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
@@ -25,9 +26,11 @@
 /// (or @c config.local.yaml with @c --local). When the tileset directory or the config file does not exist yet, the
 /// command creates them first.
 ///
-/// The tileset must exist in the project, since the command creates files on disk and a misspelled name would
-/// otherwise leave a junk tileset directory behind. Passing @c --allow-missing-tileset skips the existence check so a
-/// config can be prepared for a tileset before it is created or imported.
+/// The tileset name argument accepts fuzzy forms and resolves to the canonical name declared in the project, which is
+/// also the config directory name. The tileset must therefore exist, since the command creates files on disk and a
+/// misspelled name would otherwise leave a junk tileset directory behind. Passing @c --allow-missing-tileset skips
+/// resolution and uses the argument verbatim, so a config can be prepared for a tileset before it is created or
+/// imported.
 ///
 /// Unlike the other tileset commands, this one skips the TilesetCommandEnv initialization. Since that process eagerly
 /// validates every YAML config file, a currently-invalid config would fail the command before the editor could
@@ -39,7 +42,9 @@ class EditTilesetConfigCommand final : public Command {
         : Command{parent_app, command_name, command_desc, command_group}
     {
         CLI::App &cmd = get_app();
-        cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset whose config to edit")->required();
+        cmd.add_option(
+               "<tileset-name>", tileset_name_, "Name of the tileset whose config to edit (fuzzy names accepted)")
+            ->required();
         cmd.add_flag("--local", local_, "Edit the tileset's 'config.local.yaml' instead of its shared 'config.yaml'.");
         cmd.add_flag(
             "--allow-missing-tileset",
@@ -80,21 +85,27 @@ class EditTilesetConfigCommand final : public Command {
         }
 
         const auto project_root = project_root_opt_.project_root();
-        const auto tileset_dir = project_root / "porytiles" / "tilesets" / tileset_name_;
-        const auto config_file = tileset_dir / (local_ ? "config.local.yaml" : "config.yaml");
 
-        // Verify the tileset exists before editing: the command creates the tileset directory and config file on
-        // disk, so a misspelled name would otherwise leave a junk directory behind. --allow-missing-tileset skips the
-        // check for preparing the config of a not-yet-created tileset.
+        // The fuzzy name argument resolves to the canonical name declared in the project, which is also the tileset
+        // config directory name. Resolution replaces the old existence check: the command creates the tileset
+        // directory and config file on disk, so a misspelled name would otherwise leave a junk directory behind.
+        // --allow-missing-tileset skips resolution (there is no declared name to resolve against) and uses the
+        // argument verbatim, for preparing the config of a not-yet-created tileset.
+        std::string tileset_name = tileset_name_;
         if (!allow_missing_tileset_) {
             const ProjectTilesetMetadataProvider metadata_provider{project_root, text_formatter, &diag};
-            if (!metadata_provider.exists(tileset_name_)) {
-                return FormattableError{
-                    "Tileset '{}' does not exist. Pass '{}' to edit its config anyway.",
-                    FormatParam{tileset_name_, Style::bold},
-                    FormatParam{"--allow-missing-tileset", Style::bold}};
-            }
+            PT_TRY_ASSIGN_PASS_ERR(tileset_names, metadata_provider.tilesets(), void);
+            PT_TRY_ASSIGN_CHAIN_ERR(
+                resolved_name,
+                resolve_tileset_name(tileset_name_, tileset_names, text_formatter),
+                void,
+                "Pass '{}' to edit its config anyway.",
+                FormatParam("--allow-missing-tileset", Style::bold));
+            tileset_name = std::move(resolved_name);
         }
+
+        const auto tileset_dir = project_root / "porytiles" / "tilesets" / tileset_name;
+        const auto config_file = tileset_dir / (local_ ? "config.local.yaml" : "config.yaml");
 
         constexpr EditorLauncher launcher{};
         return launcher.create_and_edit_file(config_file);

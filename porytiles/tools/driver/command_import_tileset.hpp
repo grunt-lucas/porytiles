@@ -21,7 +21,8 @@ class ImportTilesetCommand final : public Command {
     explicit ImportTilesetCommand(CLI::App &parent_app) : Command{parent_app, command_name, command_desc, command_group}
     {
         CLI::App &cmd = get_app();
-        cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to import")->required();
+        cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to import (fuzzy names accepted)")
+            ->required();
         project_root_opt_.RegisterOpt(cmd);
         porytiles::register_config_options(cmd, cli_storage_);
     }
@@ -33,21 +34,33 @@ class ImportTilesetCommand final : public Command {
 
         TilesetCommandEnv env{project_root_opt_.project_root(), cli_storage_};
 
+        // The fuzzy name argument must be resolved to its canonical form first, since the canonical name is the config
+        // scope for env initialization and the key for every later lookup. This resolution also guarantees the tileset
+        // existence.
+        auto resolved_name_result = resolve_tileset_name_argument(env, tileset_name_);
+        if (!resolved_name_result.has_value()) {
+            const auto fail_result = ChainableResult<void>{
+                FormattableError{"Failed to import tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
+                resolved_name_result};
+            env.stderr_diag.fatal(fail_result);
+            throw CLI::RuntimeError{1};
+        }
+        const std::string tileset_name = std::move(resolved_name_result).value();
+
         // Env initialization and schema resolution can fail, so they run first and their failures chain and report
         // through the unfiltered stderr diagnostics.
-        const auto env_result = env.initialize(tileset_name_);
+        const auto env_result = env.initialize(tileset_name);
         if (!env_result.has_value()) {
             const auto env_fail_result = ChainableResult<void>{
-                FormattableError{"Failed to import tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
-                env_result};
+                FormattableError{"Failed to import tileset '{}'.", FormatParam{tileset_name, Style::bold}}, env_result};
             env.stderr_diag.fatal(env_fail_result);
             throw CLI::RuntimeError{1};
         }
 
-        auto attribute_context = resolve_attribute_context(env, tileset_name_);
+        auto attribute_context = resolve_attribute_context(env, tileset_name);
         if (!attribute_context.has_value()) {
             const auto fail_result = ChainableResult<void>{
-                FormattableError{"Failed to import tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
+                FormattableError{"Failed to import tileset '{}'.", FormatParam{tileset_name, Style::bold}},
                 attribute_context};
             env.diag->fatal(fail_result);
             throw CLI::RuntimeError{1};
@@ -84,10 +97,10 @@ class ImportTilesetCommand final : public Command {
             env.diag.get()};
 
         // Run the use case
-        auto import_result = import_use_case.import(tileset_name_);
+        auto import_result = import_use_case.import(tileset_name);
         if (!import_result.has_value()) {
             const auto fail_result = ChainableResult<std::unique_ptr<Tileset>>{
-                FormattableError{"Failed to import tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
+                FormattableError{"Failed to import tileset '{}'.", FormatParam{tileset_name, Style::bold}},
                 import_result};
             env.diag->fatal(fail_result);
             throw CLI::RuntimeError{1};

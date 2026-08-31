@@ -7,7 +7,6 @@
 
 #include "porytiles/infra/cli/cli_option_registration.hpp"
 #include "porytiles/infra/cli/cli_option_storage.hpp"
-#include "porytiles/infra/services/project_tileset_metadata_provider.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
 
@@ -21,7 +20,8 @@ class DumpTilesetConfigCommand final : public Command {
         : Command{parent_app, command_name, command_desc, command_group}
     {
         CLI::App &cmd = get_app();
-        cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to dump config for")->required();
+        cmd.add_option("<tileset-name>", tileset_name_, "Name of the tileset to dump config for (fuzzy names accepted)")
+            ->required();
         cmd.add_flag(
             "--allow-missing-tileset",
             allow_missing_tileset_,
@@ -37,33 +37,39 @@ class DumpTilesetConfigCommand final : public Command {
 
         TilesetCommandEnv env{project_root_opt_.project_root(), cli_storage_};
 
+        // The fuzzy name argument resolves to its canonical form before env initialization, since the canonical name
+        // is the config scope. Resolution also replaces the old existence check: a misspelled name would otherwise
+        // dump a plausible-looking chain of project-level values. --allow-missing-tileset skips resolution (there is
+        // no declared name to resolve against) and uses the argument verbatim, for previewing the config a
+        // not-yet-created tileset would inherit.
+        std::string tileset_name = tileset_name_;
+        if (!allow_missing_tileset_) {
+            auto resolved_name_result = resolve_tileset_name_argument(env, tileset_name_);
+            if (!resolved_name_result.has_value()) {
+                const auto fail_result = ChainableResult<void>{
+                    FormattableError{
+                        "Failed to dump config for tileset '{}'. Pass '{}' to dump its config anyway.",
+                        FormatParam{tileset_name_, Style::bold},
+                        FormatParam{"--allow-missing-tileset", Style::bold}},
+                    resolved_name_result};
+                env.stderr_diag.fatal(fail_result);
+                throw CLI::RuntimeError{1};
+            }
+            tileset_name = std::move(resolved_name_result).value();
+        }
+
         // Env failures report through the unfiltered stderr diagnostics: the filtered diagnostics handle is not built
         // until initialize() succeeds.
-        const auto env_result = env.initialize(tileset_name_);
+        const auto env_result = env.initialize(tileset_name);
         if (!env_result.has_value()) {
             const auto env_fail_result = ChainableResult<void>{
-                FormattableError{"Failed to dump config for tileset '{}'.", FormatParam{tileset_name_, Style::bold}},
+                FormattableError{"Failed to dump config for tileset '{}'.", FormatParam{tileset_name, Style::bold}},
                 env_result};
             env.stderr_diag.fatal(env_fail_result);
             throw CLI::RuntimeError{1};
         }
 
-        // Verify the tileset exists before dumping: a misspelled name would otherwise dump a plausible-looking
-        // chain of project-level values. --allow-missing-tileset skips the check for previewing the config a
-        // not-yet-created tileset would inherit.
-        if (!allow_missing_tileset_) {
-            ProjectTilesetMetadataProvider metadata_provider{env.project_root, env.text_formatter, env.diag.get()};
-            if (!metadata_provider.exists(tileset_name_)) {
-                const auto not_found_err = ChainableResult<void>{FormattableError{
-                    "Tileset '{}' does not exist. Pass '{}' to dump its config anyway.",
-                    FormatParam{tileset_name_, Style::bold},
-                    FormatParam{"--allow-missing-tileset", Style::bold}}};
-                env.diag->fatal(not_found_err);
-                throw CLI::RuntimeError{1};
-            }
-        }
-
-        env.config.dump_config(std::cout, ConfigScopeType::tileset, tileset_name_);
+        env.config.dump_config(std::cout, ConfigScopeType::tileset, tileset_name);
     }
 
     static constexpr auto command_name = "dump-tileset-config";

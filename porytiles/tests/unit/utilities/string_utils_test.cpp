@@ -163,6 +163,25 @@ TEST_F(StringUtilsTest, JoinQuoted)
     EXPECT_EQ(join_quoted({"has space", "has'quote"}), "'has space', 'has'quote'");
 }
 
+TEST_F(StringUtilsTest, RequireTilesetShorthand)
+{
+    auto valid = require_tileset_shorthand("gTileset_General");
+    ASSERT_TRUE(valid.has_value());
+    EXPECT_EQ(valid.value(), "General");
+
+    // Missing prefix fails instead of silently returning the input.
+    auto missing_prefix = require_tileset_shorthand("General");
+    EXPECT_FALSE(missing_prefix.has_value());
+
+    // The bare prefix fails: an empty shorthand would corrupt every generated symbol name derived from it.
+    auto bare_prefix = require_tileset_shorthand(std::string{tileset_name_prefix});
+    EXPECT_FALSE(bare_prefix.has_value());
+
+    // Prefix matching is case sensitive, matching how the C symbols are declared.
+    auto wrong_case = require_tileset_shorthand("gtileset_General");
+    EXPECT_FALSE(wrong_case.has_value());
+}
+
 TEST_F(StringUtilsTest, ExtractTilesetCasedNameWithPrefix)
 {
     auto result = extract_tileset_cased_name("gTileset_General");

@@ -11,6 +11,7 @@
 
 #include "porytiles/utilities/dynamic_cased_name.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
+#include "porytiles/utilities/string_utils.hpp"
 #include "porytiles/utilities/text/text_formatter.hpp"
 
 namespace {
@@ -21,17 +22,7 @@ using namespace porytiles;
 const std::filesystem::path graphics_rel_path = std::filesystem::path{"src"} / "data" / "tilesets" / "graphics.h";
 const std::filesystem::path metatiles_rel_path = std::filesystem::path{"src"} / "data" / "tilesets" / "metatiles.h";
 
-const std::string tileset_prefix = "gTileset_";
 const std::string porytiles_managed_suffix = "PorytilesManaged_";
-
-/// @brief Extracts shorthand from tileset name (e.g., "gTileset_General" -> "General")
-[[nodiscard]] std::string extract_shorthand(const std::string &tileset_name)
-{
-    if (!tileset_name.starts_with(tileset_prefix)) {
-        return "";
-    }
-    return tileset_name.substr(tileset_prefix.size());
-}
 
 /// @brief Generates tiles INCBIN declaration string
 [[nodiscard]] std::string
@@ -241,11 +232,7 @@ IncbinDeclarationAppender::IncbinDeclarationAppender(
 ChainableResult<void> IncbinDeclarationAppender::append_graphics_declarations(
     const std::string &tileset_name, const std::string &bin_path_base, std::size_t num_palettes) const
 {
-    const std::string shorthand = extract_shorthand(tileset_name);
-    if (shorthand.empty()) {
-        return FormattableError{format_->format(
-            "tileset name '{}' does not start with 'gTileset_'", FormatParam{tileset_name, Style::bold})};
-    }
+    PT_TRY_ASSIGN_PASS_ERR(shorthand, require_tileset_shorthand(tileset_name), void);
 
     const std::string snake_dir = DynamicCasedName{shorthand}.to_snake_case();
     const auto graphics_path = project_root_ / graphics_rel_path;
@@ -280,11 +267,7 @@ ChainableResult<void> IncbinDeclarationAppender::append_graphics_declarations(
 ChainableResult<void> IncbinDeclarationAppender::append_metatiles_declarations(
     const std::string &tileset_name, const std::string &bin_path_base, std::size_t attribute_bytes) const
 {
-    const std::string shorthand = extract_shorthand(tileset_name);
-    if (shorthand.empty()) {
-        return FormattableError{format_->format(
-            "tileset name '{}' does not start with 'gTileset_'", FormatParam{tileset_name, Style::bold})};
-    }
+    PT_TRY_ASSIGN_PASS_ERR(shorthand, require_tileset_shorthand(tileset_name), void);
 
     const std::string snake_dir = DynamicCasedName{shorthand}.to_snake_case();
     const auto metatiles_path = project_root_ / metatiles_rel_path;
@@ -318,11 +301,7 @@ ChainableResult<void> IncbinDeclarationAppender::append_metatiles_declarations(
 
 ChainableResult<void> IncbinDeclarationAppender::remove_declarations(const std::string &tileset_name) const
 {
-    const std::string shorthand = extract_shorthand(tileset_name);
-    if (shorthand.empty()) {
-        return FormattableError{format_->format(
-            "tileset name '{}' does not start with 'gTileset_'", FormatParam{tileset_name, Style::bold})};
-    }
+    PT_TRY_ASSIGN_PASS_ERR(shorthand, require_tileset_shorthand(tileset_name), void);
 
     // Remove from graphics.h
     {
