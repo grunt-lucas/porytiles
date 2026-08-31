@@ -70,7 +70,6 @@ namespace porytiles {
 /// Members hold pointers into earlier members, so the class is not copyable and not movable. Commands should construct
 /// it once on the stack.
 class TilesetCommandEnv {
-  private:
     /// @brief The layered config's provider list bundled with a typed handle to the YamlFileProvider inside it.
     ///
     /// @details
@@ -101,12 +100,12 @@ class TilesetCommandEnv {
         providers.push_back(std::make_unique<CliOptionProvider>(cli_storage));
         providers.push_back(std::make_unique<YamlFileProvider>(text_formatter, stderr_diag, project_root));
         // Take the handle from the owning slot so its provenance is the list itself, not a moved-from local.
-        auto *yaml_provider = static_cast<YamlFileProvider *>(providers.back().get());
+        auto *yaml_provider = dynamic_cast<YamlFileProvider *>(providers.back().get());
         providers.push_back(
             std::make_unique<HeaderDefineProvider>(
                 project_root, std::filesystem::path{"include/fieldmap.h"}, text_formatter));
         providers.push_back(std::make_unique<DefaultProvider>());
-        return {std::move(providers), yaml_provider};
+        return {.providers = std::move(providers), .yaml_provider = yaml_provider};
     }
 
   public:
@@ -130,21 +129,39 @@ class TilesetCommandEnv {
     /// @return Nothing on success, or the error for the command to wrap with its own context
     [[nodiscard]] ChainableResult<void> initialize(const std::string &tileset_name)
     {
+        return initialize_scope(ConfigScopeType::tileset, tileset_name);
+    }
+
+    /// @brief Project-scope variant of initialize() for commands that operate on no particular tileset.
+    ///
+    /// @details
+    /// Validates only the project-wide YAML config files and builds the diagnostic filters from project-scope config
+    /// values. Used by the project config commands (e.g. dump-project-config), which resolve the provider chain
+    /// without any tileset-level files.
+    ///
+    /// @return Nothing on success, or the error for the command to wrap with its own context
+    [[nodiscard]] ChainableResult<void> initialize_project()
+    {
+        return initialize_scope(ConfigScopeType::project, "");
+    }
+
+  private:
+    [[nodiscard]] ChainableResult<void> initialize_scope(ConfigScopeType scope_type, const std::string &scope_name)
+    {
         // Eagerly validate all YAML config files for unknown keys
-        if (yaml_provider->preload_and_validate(ConfigScopeType::tileset, tileset_name)) {
+        if (yaml_provider->preload_and_validate(scope_type, scope_name)) {
+            if (scope_type == ConfigScopeType::project) {
+                return FormattableError{"Project configuration validation failed."};
+            }
             return FormattableError{
-                "Configuration validation failed for tileset '{}'.", FormatParam{tileset_name, Style::bold}};
+                "Configuration validation failed for tileset '{}'.", FormatParam{scope_name, Style::bold}};
         }
 
         // Build diagnostic filters from config values
-        PT_TRY_ASSIGN_PASS_ERR(
-            warnings_exclude, config.diagnostic_warnings_exclude(ConfigScopeType::tileset, tileset_name), void);
-        PT_TRY_ASSIGN_PASS_ERR(
-            warnings_include, config.diagnostic_warnings_include(ConfigScopeType::tileset, tileset_name), void);
-        PT_TRY_ASSIGN_PASS_ERR(
-            remarks_exclude, config.diagnostic_remarks_exclude(ConfigScopeType::tileset, tileset_name), void);
-        PT_TRY_ASSIGN_PASS_ERR(
-            remarks_include, config.diagnostic_remarks_include(ConfigScopeType::tileset, tileset_name), void);
+        PT_TRY_ASSIGN_PASS_ERR(warnings_exclude, config.diagnostic_warnings_exclude(scope_type, scope_name), void);
+        PT_TRY_ASSIGN_PASS_ERR(warnings_include, config.diagnostic_warnings_include(scope_type, scope_name), void);
+        PT_TRY_ASSIGN_PASS_ERR(remarks_exclude, config.diagnostic_remarks_exclude(scope_type, scope_name), void);
+        PT_TRY_ASSIGN_PASS_ERR(remarks_include, config.diagnostic_remarks_include(scope_type, scope_name), void);
 
         DiagnosticTagFilter warning_filter{std::move(warnings_exclude).value(), std::move(warnings_include).value()};
         DiagnosticTagFilter remark_filter{std::move(remarks_exclude).value(), std::move(remarks_include).value()};
@@ -157,6 +174,7 @@ class TilesetCommandEnv {
         return {};
     }
 
+  public:
     TilesetCommandEnv(const TilesetCommandEnv &) = delete;
     TilesetCommandEnv &operator=(const TilesetCommandEnv &) = delete;
     TilesetCommandEnv(TilesetCommandEnv &&) = delete;
@@ -207,7 +225,7 @@ resolve_attribute_context(TilesetCommandEnv &env, const std::string &tileset_nam
     return ResolvedAttributeContext{std::move(resolved), std::move(provider_map)};
 }
 
-/// @brief The schema-driven service graph shared by the compile, create, import, and decompile commands.
+/// @brief The service graph shared by the compile, create, import, and decompile commands.
 ///
 /// @details
 /// Consumes the resolved attribute context (the attribute layout is a project-global property, so every tileset a
@@ -216,8 +234,8 @@ resolve_attribute_context(TilesetCommandEnv &env, const std::string &tileset_nam
 /// that wiring so the commands cannot drift apart.
 ///
 /// Declaration order is dependency order: the resolved schema and its provider map come before the artifact
-/// reader/writer, manager, and compiler, which hold pointers into them. That makes the graph self-pinning: not
-/// copyable, not movable, constructed once on the stack after the env.
+/// reader/writer, manager, and compiler, which hold pointers into them. The service graph is not copyable, not movable,
+/// and should be constructed once on the stack after the env.
 ///
 /// Construction cannot fail: the fallible schema resolution happens in resolve_attribute_context, whose error the
 /// command wraps with its own context before this graph is built.

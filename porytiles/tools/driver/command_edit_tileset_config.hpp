@@ -1,7 +1,6 @@
 #pragma once
 
 #include <filesystem>
-#include <fstream>
 #include <string>
 #include <unistd.h>
 
@@ -85,24 +84,8 @@ class EditTilesetConfigCommand final : public Command {
                 FormatParam{tileset_name_, Style::bold});
         }
 
-        std::error_code ec;
-        std::filesystem::create_directories(tileset_dir, ec);
-        if (ec) {
-            return FormattableError{
-                "Failed to create directory '{}': {}.",
-                FormatParam{tileset_dir.string(), Style::bold},
-                FormatParam{ec.message()}};
-        }
-
-        if (!std::filesystem::exists(config_file)) {
-            const std::ofstream file{config_file};
-            if (!file) {
-                return FormattableError{"Failed to create file '{}'.", FormatParam{config_file.string(), Style::bold}};
-            }
-        }
-
         constexpr EditorLauncher launcher{};
-        return launcher.edit_file(config_file);
+        return launcher.create_and_edit_file(config_file);
     }
 
     static constexpr auto command_name = "edit-tileset-config";

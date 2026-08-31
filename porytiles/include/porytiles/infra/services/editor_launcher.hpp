@@ -30,6 +30,13 @@ class EditorLauncher {
     /// @return An error when no editor could be resolved, the editor could not be launched, or the editor exited with a
     /// non-zero status
     [[nodiscard]] ChainableResult<void> edit_file(const std::filesystem::path &file_path) const;
+
+    /// @brief Creates the file (and any missing parent directories) if it does not exist, then opens it in the
+    /// resolved editor.
+    ///
+    /// @param file_path The file to create if missing and open in the editor
+    /// @return An error when the file or its directories could not be created, or any @c edit_file failure
+    [[nodiscard]] ChainableResult<void> create_and_edit_file(const std::filesystem::path &file_path) const;
 };
 
 } // namespace porytiles

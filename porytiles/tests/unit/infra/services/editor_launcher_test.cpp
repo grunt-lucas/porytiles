@@ -221,4 +221,48 @@ TEST_F(EditorLauncherTest, EditFileFailsOnNonZeroExit)
     EXPECT_FALSE(result.has_value());
 }
 
+TEST_F(EditorLauncherTest, CreateAndEditFileCreatesMissingDirectoriesAndFile)
+{
+    setenv("PORYTILES_EDITOR", "true", 1);
+    const auto target = test_dir / "porytiles" / "tilesets" / "gTileset_Test" / "config.yaml";
+
+    const auto result = launcher_.create_and_edit_file(target);
+
+    EXPECT_TRUE(result.has_value());
+    EXPECT_TRUE(std::filesystem::is_regular_file(target));
+    EXPECT_EQ(std::filesystem::file_size(target), 0U);
+}
+
+TEST_F(EditorLauncherTest, CreateAndEditFileFailsWhenDirectoryBlockedByFile)
+{
+    setenv("PORYTILES_EDITOR", "true", 1);
+    // A regular file where a parent directory should go makes create_directories fail.
+    {
+        const std::ofstream blocker{test_dir / "blocker"};
+    }
+    const auto target = test_dir / "blocker" / "config.yaml";
+
+    const auto result = launcher_.create_and_edit_file(target);
+
+    EXPECT_FALSE(result.has_value());
+}
+
+TEST_F(EditorLauncherTest, CreateAndEditFileKeepsExistingContent)
+{
+    setenv("PORYTILES_EDITOR", "true", 1);
+    const auto target = test_dir / "config.yaml";
+    {
+        std::ofstream out{target};
+        out << "fieldmap:\n";
+    }
+
+    const auto result = launcher_.create_and_edit_file(target);
+
+    EXPECT_TRUE(result.has_value());
+    std::ifstream in{target};
+    std::stringstream contents;
+    contents << in.rdbuf();
+    EXPECT_EQ(contents.str(), "fieldmap:\n");
+}
+
 } // namespace

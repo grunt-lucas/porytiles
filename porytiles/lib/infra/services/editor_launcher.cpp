@@ -3,6 +3,7 @@
 #include <array>
 #include <cstdlib>
 #include <filesystem>
+#include <fstream>
 #include <optional>
 #include <sstream>
 #include <string>
@@ -117,6 +118,26 @@ ChainableResult<void> EditorLauncher::edit_file(const std::filesystem::path &fil
     }
 
     return {};
+}
+
+ChainableResult<void> EditorLauncher::create_and_edit_file(const std::filesystem::path &file_path) const
+{
+    std::error_code ec;
+    std::filesystem::create_directories(file_path.parent_path(), ec);
+    if (ec) {
+        return FormattableError{
+            "Failed to create directory '{}': {}.",
+            FormatParam{file_path.parent_path().string(), Style::bold},
+            FormatParam{ec.message()}};
+    }
+
+    if (!std::filesystem::exists(file_path)) {
+        if (const std::ofstream file{file_path}; !file) {
+            return FormattableError{"Failed to create file '{}'.", FormatParam{file_path.string(), Style::bold}};
+        }
+    }
+
+    return edit_file(file_path);
 }
 
 } // namespace porytiles

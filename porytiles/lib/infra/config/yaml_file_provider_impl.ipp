@@ -1794,6 +1794,35 @@ std::optional<YAML::Node> load_yaml_file(
     }
 }
 
+/// @brief Gets the priority-ordered list of project-wide config file paths.
+///
+/// @details
+/// Returns config file paths in priority order (highest to lowest):
+/// 1. porytiles/config.local.yaml (project-wide local overrides)
+/// 2. porytiles/config.yaml (project-wide defaults)
+///
+/// This is the chain for ConfigScopeType::project lookups and is also the shared base for every scoped chain.
+/// Scoped chains (e.g. the tileset chain) place their scope-specific files ahead of these paths.
+///
+/// @param project_root The project root directory
+/// @return Vector of config file paths in priority order
+std::vector<std::filesystem::path> get_project_config_path_chain(const std::filesystem::path &project_root)
+{
+    // Porytiles utility directory root
+    const auto porytiles_dir = project_root / "porytiles";
+
+    std::vector<std::filesystem::path> paths;
+
+    // Priority order (highest to lowest):
+    // 1. porytiles/config.local.yaml
+    paths.push_back(porytiles_dir / "config.local.yaml");
+
+    // 2. porytiles/config.yaml
+    paths.push_back(porytiles_dir / "config.yaml");
+
+    return paths;
+}
+
 /// @brief Gets the priority-ordered list of config file paths for a given tileset.
 ///
 /// @details
@@ -1824,11 +1853,9 @@ get_tileset_config_path_chain(const std::filesystem::path &project_root, const s
     // 2. porytiles/tilesets/{tileset_name}/config.yaml
     paths.push_back(porytiles_dir / "tilesets" / tileset / "config.yaml");
 
-    // 3. porytiles/config.local.yaml
-    paths.push_back(porytiles_dir / "config.local.yaml");
-
-    // 4. porytiles/config.yaml
-    paths.push_back(porytiles_dir / "config.yaml");
+    // 3-4. The project-wide chain
+    const auto project_paths = get_project_config_path_chain(project_root);
+    paths.insert(paths.end(), project_paths.begin(), project_paths.end());
 
     return paths;
 }
@@ -1840,13 +1867,15 @@ get_tileset_config_path_chain(const std::filesystem::path &project_root, const s
 /// lowest. Dispatches to the appropriate path chain function based on the ConfigScopeType.
 ///
 /// @param project_root The root directory of the project
-/// @param type The configuration scope type (tileset or layout)
-/// @param scope The scope name (tileset name or layout name)
+/// @param type The configuration scope type (project, tileset, or layout)
+/// @param scope The scope name (tileset name or layout name; ignored for the project scope)
 /// @return ChainableResult containing vector of config file paths in priority order
 ChainableResult<std::vector<std::filesystem::path>>
 get_config_path_chain(const std::filesystem::path &project_root, ConfigScopeType type, const std::string &scope)
 {
     switch (type) {
+    case ConfigScopeType::project:
+        return get_project_config_path_chain(project_root);
     case ConfigScopeType::tileset:
         return get_tileset_config_path_chain(project_root, scope);
     case ConfigScopeType::layout:
