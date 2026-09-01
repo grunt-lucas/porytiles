@@ -2910,6 +2910,8 @@ TilesetCreator::create_sample_primary_porytiles_component(const std::string &til
 {
     PT_UNWRAP_TILESET_CONFIG_PTR(
         config_, extrinsic_transparency, tileset_name, std::unique_ptr<PorytilesTilesetComponent>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(
+        config_, create_sample_anims, tileset_name, std::unique_ptr<PorytilesTilesetComponent>);
 
     auto component = std::make_unique<PorytilesTilesetComponent>();
 
@@ -2918,7 +2920,9 @@ TilesetCreator::create_sample_primary_porytiles_component(const std::string &til
     Image<Rgba32> top{128, 16, extrinsic_transparency};
 
     set_grass_at(middle, 1);
-    set_flower_key_frame_at(middle, 2);
+    if (create_sample_anims.value()) {
+        set_flower_key_frame_at(middle, 2);
+    }
     set_grass_at(bottom, 2);
     set_tall_grass_at(middle, 3);
     set_grass_at(bottom, 4);
@@ -2940,30 +2944,32 @@ TilesetCreator::create_sample_primary_porytiles_component(const std::string &til
         component->insert_attribute(3, std::move(attribute));
     }
 
-    // Set up flower animation frames using the conversion helper
-    AnimFrame flower_key{"key", metatile_array_to_tiles(flower_frame_key)};
-    AnimFrame flower_center{"center", metatile_array_to_tiles(flower_frame_center)};
-    AnimFrame flower_right{"right", metatile_array_to_tiles(flower_frame_right)};
-    AnimFrame flower_left{"left", metatile_array_to_tiles(flower_frame_left)};
+    if (create_sample_anims.value()) {
+        // Set up flower animation frames using the conversion helper
+        AnimFrame flower_key{"key", metatile_array_to_tiles(flower_frame_key)};
+        AnimFrame flower_center{"center", metatile_array_to_tiles(flower_frame_center)};
+        AnimFrame flower_right{"right", metatile_array_to_tiles(flower_frame_right)};
+        AnimFrame flower_left{"left", metatile_array_to_tiles(flower_frame_left)};
 
-    AnimParams flower_params{};
-    flower_params.frame_names(
-        std::vector{DynamicCasedName{"center"}, DynamicCasedName{"right"}, DynamicCasedName{"left"}});
-    flower_params.frame_order(
-        std::vector{
-            DynamicCasedName{"center"},
-            DynamicCasedName{"right"},
-            DynamicCasedName{"center"},
-            DynamicCasedName{"left"}});
-    flower_params.width_tiles(2);
-    flower_params.height_tiles(2);
+        AnimParams flower_params{};
+        flower_params.frame_names(
+            std::vector{DynamicCasedName{"center"}, DynamicCasedName{"right"}, DynamicCasedName{"left"}});
+        flower_params.frame_order(
+            std::vector{
+                DynamicCasedName{"center"},
+                DynamicCasedName{"right"},
+                DynamicCasedName{"center"},
+                DynamicCasedName{"left"}});
+        flower_params.width_tiles(2);
+        flower_params.height_tiles(2);
 
-    Animation<Rgba32> flower{"flower", flower_params};
-    flower.key_frame(flower_key);
-    flower.put_frame(flower_center.frame_name(), flower_center);
-    flower.put_frame(flower_right.frame_name(), flower_right);
-    flower.put_frame(flower_left.frame_name(), flower_left);
-    component->add_anim(flower);
+        Animation<Rgba32> flower{"flower", flower_params};
+        flower.key_frame(flower_key);
+        flower.put_frame(flower_center.frame_name(), flower_center);
+        flower.put_frame(flower_right.frame_name(), flower_right);
+        flower.put_frame(flower_left.frame_name(), flower_left);
+        component->add_anim(flower);
+    }
 
     return component;
 }
@@ -2973,6 +2979,8 @@ TilesetCreator::create_sample_secondary_porytiles_component(const std::string &t
 {
     PT_UNWRAP_TILESET_CONFIG_PTR(
         config_, extrinsic_transparency, tileset_name, std::unique_ptr<PorytilesTilesetComponent>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(
+        config_, create_sample_anims, tileset_name, std::unique_ptr<PorytilesTilesetComponent>);
 
     auto component = std::make_unique<PorytilesTilesetComponent>();
 
@@ -2982,7 +2990,12 @@ TilesetCreator::create_sample_secondary_porytiles_component(const std::string &t
 
     set_mud_at(middle, 1);
     set_mud_at(bottom, 2);
-    set_flower_key_frame_at(middle, 2);
+    // The flower key frame in a secondary sample exists to demonstrate cross-tileset animation linking against the
+    // paired primary's flower animation, so it counts as sample animation content.
+    // TODO: we should add a secondary-only animation as well
+    if (create_sample_anims.value()) {
+        set_flower_key_frame_at(middle, 2);
+    }
     set_grass_at(bottom, 3);
     set_roof_alternate_at(middle, 3);
 

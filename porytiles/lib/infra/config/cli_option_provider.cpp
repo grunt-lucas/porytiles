@@ -174,6 +174,13 @@ LayerValue<bool> CliOptionProvider::cross_tileset_anim_linking(
     return parse_bool(storage_.cross_tileset_anim_linking, "--cross-tileset-anim-linking");
 }
 
+LayerValue<bool> CliOptionProvider::create_sample_anims(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_bool(storage_.create_sample_anims, "--create-sample-anims");
+}
+
 LayerValue<bool> CliOptionProvider::verify_checksums(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

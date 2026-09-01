@@ -700,6 +700,20 @@ config_values:
     validators: [ ]
     cross_field_validators: [ ]
 
+  - canonical_name: Create Sample Animations
+    symbol: create_sample_anims
+    yaml_path: tileset.animations.create_sample_anims
+    cli_option: create-sample-anims
+    cli_desc: >-
+      Seed a newly created tileset with sample animation content (a simple flower animation). Disable to create a
+      tileset with no animations. Only used by the create-tileset command.
+    layer: domain
+    type: bool
+    parser: parse_bool
+    default_value: "true"
+    validators: [ ]
+    cross_field_validators: [ ]
+
   # Application Layer Configuration Values
   - canonical_name: Verify Checksums
     symbol: verify_checksums

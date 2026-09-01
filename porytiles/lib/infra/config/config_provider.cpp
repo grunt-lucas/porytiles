@@ -158,6 +158,12 @@ LayerValue<bool> ConfigProvider::cross_tileset_anim_linking(
     return LayerValue<bool>::not_provided();
 }
 
+LayerValue<bool> ConfigProvider::create_sample_anims(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<bool>::not_provided();
+}
+
 LayerValue<bool>
 ConfigProvider::verify_checksums([[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

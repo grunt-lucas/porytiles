@@ -62,6 +62,7 @@ class OverrideConfigProvider final : public ConfigProvider {
     void set_global_frame_linking(FrameLinking value);
     void set_per_anim_overrides(PerAnimOverrides value);
     void set_cross_tileset_anim_linking(bool value);
+    void set_create_sample_anims(bool value);
     void set_verify_checksums(bool value);
     void set_primary_pairing_mode(PrimaryPairingMode value);
     void set_primary_pairing_partners(std::vector<std::string> value);
@@ -130,6 +131,7 @@ class OverrideConfigProvider final : public ConfigProvider {
     per_anim_overrides(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<bool>
     cross_tileset_anim_linking(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<bool> create_sample_anims(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<bool> verify_checksums(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<PrimaryPairingMode>
     primary_pairing_mode(ConfigScopeType type, const std::string &scope) const override;
@@ -197,6 +199,7 @@ class OverrideConfigProvider final : public ConfigProvider {
     std::optional<FrameLinking> global_frame_linking_override_;
     std::optional<PerAnimOverrides> per_anim_overrides_override_;
     std::optional<bool> cross_tileset_anim_linking_override_;
+    std::optional<bool> create_sample_anims_override_;
     std::optional<bool> verify_checksums_override_;
     std::optional<PrimaryPairingMode> primary_pairing_mode_override_;
     std::optional<std::vector<std::string>> primary_pairing_partners_override_;
