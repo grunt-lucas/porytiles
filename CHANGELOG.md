@@ -5,12 +5,10 @@ The format is based on [Keep a Changelog](https://keepachangelog.com),
 simplified to a single flat list of changes per version.
 
 <!--
-Entry format: one bullet per change, starting with a verb that signals the type:
-(Added / Changed / Fixed / Removed / Deprecated).
-End each entry with a link to its PR,
-and to its issue too when one was filed
-(some reports, e.g. Discord messages, have no issue and so link only the PR):
-  - Fixed ... ([#<issue>](https://github.com/grunt-lucas/porytiles/issues/<issue>), [#<pr>](https://github.com/grunt-lucas/porytiles/pull/<pr>))
+Entry format: one bullet per change, ideally starting with a verb that signals the type:
+(Added / Changed / Fixed / Removed / Deprecated / etc.).
+End each entry with a link to its PR(s), or a specific commit(s) if that's clearer.
+  - Fixed blah blah. - [#<pr>](https://github.com/grunt-lucas/porytiles/pull/<pr>))
 -->
 
 ## [Unreleased]
@@ -18,6 +16,8 @@ and to its issue too when one was filed
 - Added a `edit-tileset-config` and `edit-project-config` commands as well as a project-wide variant for the dumper, `dump-project-config`. - [#372](https://github.com/grunt-lucas/porytiles/pull/372)
 
 - Added fuzzy tileset name matching for CLI commands that target an existing tileset. E.g. `gTileset_SecretBase`, `SecretBase`, `secret_base`, and `secretBase` all resolve to the same tileset (`gTileset_SecretBase`), and an ambiguous name fails with an error that lists the candidates. `create-tileset` still requires the exact canonical name, and `--allow-missing-tileset` skips resolution. Also centralized `gTileset_` prefix handling behind shared validators. - [#374](https://github.com/grunt-lucas/porytiles/pull/374)
+
+- Added a `tileset.animations.create_sample_anims` config value (CLI: `--create-sample-anims`, default `true`). When disabled, `create-tileset` skips the sample flower animation. - [#375](https://github.com/grunt-lucas/porytiles/pull/375))
 
 ## [2.0.0] - 2026-08-27
 
