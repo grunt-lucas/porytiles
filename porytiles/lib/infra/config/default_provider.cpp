@@ -176,6 +176,12 @@ LayerValue<bool> DefaultProvider::cross_tileset_anim_linking(
     return LayerValue<bool>::valid(true, "Cross-Tileset Animation Linking", source_info);
 }
 
+LayerValue<bool> DefaultProvider::create_sample_anims(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<bool>::valid(true, "Create Sample Animations", source_info);
+}
+
 LayerValue<bool> DefaultProvider::verify_checksums(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

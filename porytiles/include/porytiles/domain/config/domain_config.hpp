@@ -328,6 +328,14 @@ class DomainConfig {
         return validated_val;
     }
 
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    create_sample_anims(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = create_sample_anims_validated(type, scope);
+        return validated_val;
+    }
+
   protected:
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<std::size_t>>
@@ -665,6 +673,18 @@ class DomainConfig {
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
     cross_tileset_anim_linking_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
+    create_sample_anims_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = create_sample_anims_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>
+    create_sample_anims_raw(ConfigScopeType type, const std::string &scope) const = 0;
 };
 
 } // namespace porytiles

@@ -152,6 +152,8 @@ class YamlFileProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<bool>
     cross_tileset_anim_linking(ConfigScopeType type, const std::string &scope) const override;
 
+    [[nodiscard]] LayerValue<bool> create_sample_anims(ConfigScopeType type, const std::string &scope) const override;
+
     [[nodiscard]] LayerValue<bool> verify_checksums(ConfigScopeType type, const std::string &scope) const override;
 
     [[nodiscard]] LayerValue<PrimaryPairingMode>

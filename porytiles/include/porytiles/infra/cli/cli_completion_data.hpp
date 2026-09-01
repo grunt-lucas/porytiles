@@ -180,6 +180,13 @@ struct CliOptionMeta {
             {},
             true},
         CliOptionMeta{
+            "create-sample-anims",
+            "Create Sample Animations - Seed a newly created tileset with sample animation content (a small flower "
+            "animation). Disable to create a tileset with no animations. Only used by the create-tileset command.",
+            "bool",
+            {},
+            true},
+        CliOptionMeta{
             "verify-checksums",
             "Verify Checksums - Enable or disable artifact checksum verification.",
             "bool",

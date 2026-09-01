@@ -46,6 +46,7 @@ class MockDomainConfig : public DomainConfig {
     FrameLinking global_frame_linking = FrameLinking::automatic;
     PerAnimOverrides per_anim_overrides = PerAnimOverrides{};
     bool cross_tileset_anim_linking = true;
+    bool create_sample_anims = true;
 
   protected:
     [[nodiscard]] ChainableResult<ConfigValue<std::size_t>>
@@ -216,6 +217,12 @@ class MockDomainConfig : public DomainConfig {
     {
         return ConfigValue{
             cross_tileset_anim_linking, "Cross-Tileset Animation Linking", "cross_tileset_anim_linking", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    create_sample_anims_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{create_sample_anims, "Create Sample Animations", "create_sample_anims", "mock", {}};
     }
 };
 

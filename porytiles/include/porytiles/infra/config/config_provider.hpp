@@ -118,6 +118,8 @@ class ConfigProvider {
     [[nodiscard]] virtual LayerValue<bool>
     cross_tileset_anim_linking(ConfigScopeType type, const std::string &scope) const;
 
+    [[nodiscard]] virtual LayerValue<bool> create_sample_anims(ConfigScopeType type, const std::string &scope) const;
+
     // App Config
 
     [[nodiscard]] virtual LayerValue<bool> verify_checksums(ConfigScopeType type, const std::string &scope) const;

@@ -72,6 +72,7 @@ class CliOptionProvider final : public ConfigProvider {
     global_frame_linking(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<bool>
     cross_tileset_anim_linking(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<bool> create_sample_anims(ConfigScopeType type, const std::string &scope) const override;
 
     // App Config
     [[nodiscard]] LayerValue<bool> verify_checksums(ConfigScopeType type, const std::string &scope) const override;

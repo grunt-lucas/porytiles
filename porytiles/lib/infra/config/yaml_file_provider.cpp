@@ -475,6 +475,22 @@ LayerValue<bool> YamlFileProvider::cross_tileset_anim_linking(ConfigScopeType ty
         "tileset.animations.cross_tileset_linking");
 }
 
+LayerValue<bool> YamlFileProvider::create_sample_anims(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<bool>::invalid(paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<bool>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["animations"]["create_sample_anims"]; },
+        parse_bool,
+        "tileset.animations.create_sample_anims",
+        "tileset.animations.create_sample_anims");
+}
+
 LayerValue<bool> YamlFileProvider::verify_checksums(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);

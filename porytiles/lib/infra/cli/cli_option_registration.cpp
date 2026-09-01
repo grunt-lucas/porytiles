@@ -206,6 +206,21 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
         "Cross-Tileset Animation Linking - Enable automatic matching of secondary tiles against primary animation key "
         "frames.");
 
+    // Create Sample Animations (bool with --flag/--no-flag, captured as "true"/"false" string)
+    config_group->add_flag(
+        "--create-sample-anims,!--no-create-sample-anims",
+        [&storage](std::int64_t count) {
+            if (count > 0) {
+                storage.create_sample_anims = "true";
+            }
+            else if (count < 0) {
+                storage.create_sample_anims = "false";
+            }
+            // count == 0 means neither flag was provided, leave optional empty
+        },
+        "Create Sample Animations - Seed a newly created tileset with sample animation content (a small flower "
+        "animation). Disable to create a tileset with no animations. Only used by the create-tileset command.");
+
     // Verify Checksums (bool with --flag/--no-flag, captured as "true"/"false" string)
     config_group->add_flag(
         "--verify-checksums,!--no-verify-checksums",

@@ -151,6 +151,11 @@ void OverrideConfigProvider::set_cross_tileset_anim_linking(bool value)
     cross_tileset_anim_linking_override_ = std::move(value);
 }
 
+void OverrideConfigProvider::set_create_sample_anims(bool value)
+{
+    create_sample_anims_override_ = std::move(value);
+}
+
 void OverrideConfigProvider::set_verify_checksums(bool value)
 {
     verify_checksums_override_ = std::move(value);
@@ -476,6 +481,14 @@ OverrideConfigProvider::cross_tileset_anim_linking(ConfigScopeType type, const s
     }
     return LayerValue<bool>::valid(
         cross_tileset_anim_linking_override_.value(), "cross_tileset_anim_linking", source_info_);
+}
+
+LayerValue<bool> OverrideConfigProvider::create_sample_anims(ConfigScopeType type, const std::string &scope) const
+{
+    if (!scope_matches(type, scope) || !create_sample_anims_override_.has_value()) {
+        return LayerValue<bool>::not_provided();
+    }
+    return LayerValue<bool>::valid(create_sample_anims_override_.value(), "create_sample_anims", source_info_);
 }
 
 LayerValue<bool> OverrideConfigProvider::verify_checksums(ConfigScopeType type, const std::string &scope) const

@@ -194,6 +194,11 @@ tileset:
     # wiring yourself.
     wire_anim_code: true
 
+    # When true (default), the create-tileset command seeds the new tileset with
+    # sample animation content (a small flower animation). When false, it creates
+    # a tileset with no animations. Only used by create-tileset.
+    create_sample_anims: true
+
     # Strategy for determining which palette to use when decompiling animation tiles.
     # The strategy drives palette resolution from the start. Available strategies:
     # - [default] scan-local-metatiles: Scan local metatile entries to find palette references.

@@ -166,6 +166,9 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
     cross_tileset_anim_linking_raw(ConfigScopeType type, const std::string &scope) const override;
 
+    [[nodiscard]] ChainableResult<ConfigValue<bool>>
+    create_sample_anims_raw(ConfigScopeType type, const std::string &scope) const override;
+
     // App Config Raw Methods (Tier 1)
     // Note: _validated methods (Tier 2) are inherited from AppConfig and not overridden
 
@@ -543,6 +546,19 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     /// @return Vector of ProvenanceChainLink entries, one per provider
     [[nodiscard]] std::vector<ProvenanceChainLink<bool>>
     cross_tileset_anim_linking_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /// @brief Gets the full provenance chain for create_sample_anims.
+    ///
+    /// @details
+    /// Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+    /// Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+    /// a complete diagnostic picture. Does not use caching - always queries providers fresh.
+    ///
+    /// @param type The config scope type
+    /// @param scope The scope identifier
+    /// @return Vector of ProvenanceChainLink entries, one per provider
+    [[nodiscard]] std::vector<ProvenanceChainLink<bool>>
+    create_sample_anims_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
     /// @brief Gets the full provenance chain for verify_checksums.
     ///

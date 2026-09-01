@@ -41,6 +41,7 @@ inline const std::unordered_set<std::string> valid_yaml_paths = {
     "fieldmap.role_pins",
     "tileset",
     "tileset.animations",
+    "tileset.animations.create_sample_anims",
     "tileset.animations.cross_tileset_linking",
     "tileset.animations.frame_linking",
     "tileset.animations.key_frame_resolution_strategy",
