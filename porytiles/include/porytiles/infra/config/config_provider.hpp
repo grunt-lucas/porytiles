@@ -6,6 +6,7 @@
 #include "porytiles/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles/domain/config/anim_palette_resolution_strategy.hpp"
 #include "porytiles/domain/config/artifact_edit_mode.hpp"
+#include "porytiles/domain/config/import_transparency_mode.hpp"
 #include "porytiles/domain/config/metatile_attribute_field_definition.hpp"
 #include "porytiles/domain/config/packing_strategy_params.hpp"
 #include "porytiles/domain/config/packing_strategy_type.hpp"
@@ -70,6 +71,9 @@ class ConfigProvider {
 
     [[nodiscard]] virtual LayerValue<Rgba32>
     extrinsic_transparency(ConfigScopeType type, const std::string &scope) const;
+
+    [[nodiscard]] virtual LayerValue<ImportTransparencyMode>
+    import_transparency(ConfigScopeType type, const std::string &scope) const;
 
     [[nodiscard]] virtual LayerValue<bool>
     ignore_triple_layer_content(ConfigScopeType type, const std::string &scope) const;

@@ -72,6 +72,13 @@ LayerValue<Rgba32> DefaultProvider::extrinsic_transparency(
     return LayerValue<Rgba32>::valid(rgba_magenta, "Extrinsic Transparency", source_info);
 }
 
+LayerValue<ImportTransparencyMode> DefaultProvider::import_transparency(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<ImportTransparencyMode>::valid(
+        ImportTransparencyMode::extrinsic, "Import Transparency", source_info);
+}
+
 LayerValue<bool> DefaultProvider::ignore_triple_layer_content(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

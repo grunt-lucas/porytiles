@@ -7,6 +7,7 @@
 #include "porytiles/domain/config/anim_palette_resolution_strategy.hpp"
 #include "porytiles/domain/config/artifact_edit_mode.hpp"
 #include "porytiles/domain/config/domain_config_validators.hpp"
+#include "porytiles/domain/config/import_transparency_mode.hpp"
 #include "porytiles/domain/config/packing_strategy_params.hpp"
 #include "porytiles/domain/config/packing_strategy_type.hpp"
 #include "porytiles/domain/config/per_anim_overrides.hpp"
@@ -185,6 +186,14 @@ class DomainConfig {
     extrinsic_transparency(ConfigScopeType type, const std::string &scope) const
     {
         auto validated_val = extrinsic_transparency_validated(type, scope);
+        return validated_val;
+    }
+
+    // Public method with cross-field validation only (Tier 3)
+    [[nodiscard]] ChainableResult<ConfigValue<ImportTransparencyMode>>
+    import_transparency(ConfigScopeType type, const std::string &scope) const
+    {
+        auto validated_val = import_transparency_validated(type, scope);
         return validated_val;
     }
 
@@ -480,6 +489,18 @@ class DomainConfig {
     // Protected virtual method that fetches raw value from provider (Tier 1)
     [[nodiscard]] virtual ChainableResult<ConfigValue<Rgba32>>
     extrinsic_transparency_raw(ConfigScopeType type, const std::string &scope) const = 0;
+
+    // Protected method with single-value validation only (Tier 2)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<ImportTransparencyMode>>
+    import_transparency_validated(ConfigScopeType type, const std::string &scope) const
+    {
+        auto raw_val = import_transparency_raw(type, scope);
+        return raw_val;
+    }
+
+    // Protected virtual method that fetches raw value from provider (Tier 1)
+    [[nodiscard]] virtual ChainableResult<ConfigValue<ImportTransparencyMode>>
+    import_transparency_raw(ConfigScopeType type, const std::string &scope) const = 0;
 
     // Protected method with single-value validation only (Tier 2)
     [[nodiscard]] virtual ChainableResult<ConfigValue<bool>>

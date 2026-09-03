@@ -15,6 +15,7 @@
 #include "porytiles/domain/config/anim_palette_resolution_strategy.hpp"
 #include "porytiles/domain/config/artifact_edit_mode.hpp"
 #include "porytiles/domain/config/frame_linking.hpp"
+#include "porytiles/domain/config/import_transparency_mode.hpp"
 #include "porytiles/domain/config/metatile_attribute_field_definition.hpp"
 #include "porytiles/domain/config/packing_strategy_params.hpp"
 #include "porytiles/domain/config/packing_strategy_type.hpp"
@@ -579,6 +580,48 @@ LayerValue<TilesPaletteMode> parse_tiles_palette_mode(
         const auto source = make_source_string(format, file_path, mark);
         const auto details = make_source_details(format, file_path, mark);
         return LayerValue<TilesPaletteMode>::invalid(error, source, details);
+    }
+}
+
+/// @brief Attempts to parse an ImportTransparencyMode value from a YAML node.
+///
+/// @details
+/// Expects a ImportTransparencyMode string representation: "alpha", "extrinsic", or "mixed".
+///
+/// @param format The text formatter to use
+/// @param node The YAML node to parse
+/// @param key The configuration key name (for error messages)
+/// @param file_path The YAML file path (for source info)
+/// @return LayerValue containing the parsed value, error, or not_provided status
+LayerValue<ImportTransparencyMode> parse_import_transparency_mode(
+    const TextFormatter *format, const YAML::Node &node, const std::string &key, const std::string &file_path)
+{
+    if (!node.IsDefined()) {
+        return LayerValue<ImportTransparencyMode>::not_provided();
+    }
+
+    try {
+        const auto mark = node.Mark();
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        const auto node_value = node.as<std::string>();
+        const auto mode_opt = import_transparency_mode_from_str(node_value);
+
+        if (!mode_opt.has_value()) {
+            const auto error = format->format(
+                "'{}' has invalid value '{}'", FormatParam{key, Style::bold}, FormatParam{node_value, Style::bold});
+            return LayerValue<ImportTransparencyMode>::invalid(error, source, details);
+        }
+
+        return LayerValue<ImportTransparencyMode>::valid(mode_opt.value(), key, source, details);
+    }
+    catch (const YAML::Exception &e) {
+        const auto mark = node.Mark();
+        const auto error = format->format(
+            "Failed to parse '{}' as ImportTransparencyMode: {}", FormatParam{key, Style::bold}, e.what());
+        const auto source = make_source_string(format, file_path, mark);
+        const auto details = make_source_details(format, file_path, mark);
+        return LayerValue<ImportTransparencyMode>::invalid(error, source, details);
     }
 }
 

@@ -80,6 +80,31 @@ ChainableResult<std::vector<TilemapEntry>> LayerModeConverter::triple_layerize(c
     return result;
 }
 
+ChainableResult<std::vector<std::optional<metatile::Layer>>>
+LayerModeConverter::synthesized_layers(const PorymapTilesetComponent &component) const
+{
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        layer_mode,
+        component.detect_layer_mode(),
+        std::vector<std::optional<metatile::Layer>>,
+        "Layer mode detection failed.");
+
+    const auto &metatile_attributes = component.metatile_attributes_bin();
+    std::vector<std::optional<metatile::Layer>> result;
+    result.reserve(metatile_attributes.size());
+
+    for (const auto &attribute : metatile_attributes) {
+        if (layer_mode == LayerMode::triple) {
+            result.emplace_back(std::nullopt);
+        }
+        else {
+            result.emplace_back(metatile::dropped_layer_for(attribute.layer_type()));
+        }
+    }
+
+    return result;
+}
+
 [[nodiscard]] std::vector<TilemapEntry> LayerModeConverter::dual_layerize(
     const std::vector<TilemapEntry> &entries,
     const std::vector<Metatile<Rgba32>> &source_metatiles,

@@ -9,6 +9,7 @@
 #include <vector>
 
 #include "porytiles/domain/algorithms/role_pin_round_trip.hpp"
+#include "porytiles/domain/config/import_transparency_mode.hpp"
 #include "porytiles/domain/config/per_anim_overrides.hpp"
 #include "porytiles/domain/models/canonical_pixel_tile.hpp"
 #include "porytiles/domain/models/pixel_tile.hpp"
@@ -33,6 +34,7 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_metatiles_in_primary, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_tiles_in_primary, tileset.name(), std::unique_ptr<Tileset>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, num_tiles_per_metatile, tileset.name(), std::unique_ptr<Tileset>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, import_transparency, tileset.name(), std::unique_ptr<Tileset>);
 
     LayerModeConverter layer_mode_converter{format_, diag_, tile_printer_, extrinsic_transparency};
     MetatileDecompiler metatile_decompiler{format_, diag_, tile_printer_, extrinsic_transparency};
@@ -43,6 +45,13 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
         layer_mode_converter.triple_layerize(tileset.porymap_component()),
         std::unique_ptr<Tileset>,
         std::format("Failed to triple-layerize Porymap component for tileset '{}'.", tileset.name()));
+
+    // The layer group triple-layerization synthesized for each metatile (none in triple-layer mode).
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        synthesized_layers,
+        layer_mode_converter.synthesized_layers(tileset.porymap_component()),
+        std::unique_ptr<Tileset>,
+        std::format("Failed to determine synthesized layers for tileset '{}'.", tileset.name()));
 
     // Create the new Porymap component early so we can pass it for potential backporting during animation
     // decompilation. If mangle strategy is used, duplicate key frame tiles will be modified and backported to
@@ -138,7 +147,11 @@ ChainableResult<std::unique_ptr<Tileset>> PrimaryTilesetDecompiler::decompile(co
     PT_TRY_ASSIGN_CHAIN_ERR(
         metatiles,
         metatile_decompiler.decompile_metatiles(
-            tilemap_entries, new_porymap_component->tiles_png(), tileset.porymap_component().palettes()),
+            tilemap_entries,
+            new_porymap_component->tiles_png(),
+            tileset.porymap_component().palettes(),
+            import_transparency.value(),
+            synthesized_layers),
         std::unique_ptr<Tileset>,
         std::format("Failed to decompile Porymap component for tileset '{}'.", tileset.name()));
 

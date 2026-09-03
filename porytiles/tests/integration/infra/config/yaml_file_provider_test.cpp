@@ -6,6 +6,7 @@
 
 #include "gtest/gtest.h"
 
+#include "porytiles/domain/config/import_transparency_mode.hpp"
 #include "porytiles/domain/config/role_pin_definition.hpp"
 #include "porytiles/utilities/text/plain_text_formatter.hpp"
 #include "porytiles/xcut/config/config_scope_type.hpp"
@@ -500,6 +501,44 @@ fieldmap:
     BufferedUserDiagnostics diag;
     YamlFileProvider provider{&diag, project_root_};
     EXPECT_FALSE(provider.preload_and_validate(ConfigScopeType::tileset, "test"));
+}
+
+TEST_F(YamlFileProviderMetatileAttributeTest, ImportTransparencyParses)
+{
+    write_config(R"(
+tileset:
+  import_transparency: mixed
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.import_transparency(ConfigScopeType::tileset, "test");
+    ASSERT_EQ(result.state, ValidationState::valid);
+    ASSERT_TRUE(result.value.has_value());
+    EXPECT_EQ(result.value.value(), ImportTransparencyMode::mixed);
+}
+
+TEST_F(YamlFileProviderMetatileAttributeTest, ImportTransparencyAbsentIsNotProvided)
+{
+    write_config(R"(
+tileset:
+  extrinsic_transparency: [255, 0, 255]
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.import_transparency(ConfigScopeType::tileset, "test");
+    EXPECT_EQ(result.state, ValidationState::not_provided);
+}
+
+TEST_F(YamlFileProviderMetatileAttributeTest, ImportTransparencyGarbageIsInvalid)
+{
+    write_config(R"(
+tileset:
+  import_transparency: opaque
+)");
+
+    YamlFileProvider provider{nullptr, project_root_};
+    const auto result = provider.import_transparency(ConfigScopeType::tileset, "test");
+    EXPECT_EQ(result.state, ValidationState::invalid);
 }
 
 class YamlFileProviderProjectScopeTest : public ::testing::Test {

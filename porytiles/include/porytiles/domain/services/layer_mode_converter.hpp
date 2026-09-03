@@ -6,7 +6,7 @@
 #include "gsl/pointers"
 
 #include "porytiles/domain/models/layer.hpp"
-
+#include "porytiles/domain/models/metatile.hpp"
 #include "porytiles/domain/models/porymap_tileset_component.hpp"
 #include "porytiles/domain/models/rgba32.hpp"
 #include "porytiles/domain/models/tilemap_entry.hpp"
@@ -43,6 +43,21 @@ class LayerModeConverter {
     /// @param component The tileset component to convert
     /// @return A triple-layerized TilemapEntry vector
     [[nodiscard]] ChainableResult<std::vector<TilemapEntry>> triple_layerize(const PorymapTilesetComponent &component);
+
+    /// @brief Reports, per metatile, which layer triple_layerize() synthesizes for the component.
+    ///
+    /// @details
+    /// A dual-layer component stores only two of the three layer groups per metatile. Since triple_layerize() fills the
+    /// absent group with transparent entries, this function tags that group so callers can tell a synthesized
+    /// transparent layer apart from a layer that was actually transparent in the original Porymap data. The mapping
+    /// follows the metatile's LayerType attribute via metatile::dropped_layer_for(): normal synthesizes bottom, covered
+    /// synthesizes top, split synthesizes middle. A triple-layer component doesn't have any synthetic layer content, so
+    /// every element is std::nullopt.
+    ///
+    /// @param component The tileset component to inspect
+    /// @return One element per metatile: the synthesized Layer, or std::nullopt when nothing was synthesized
+    [[nodiscard]] ChainableResult<std::vector<std::optional<metatile::Layer>>>
+    synthesized_layers(const PorymapTilesetComponent &component) const;
 
     /// @brief Converts a tileset from triple-layer format to dual-layer format.
     ///

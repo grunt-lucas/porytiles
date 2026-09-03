@@ -17,6 +17,7 @@
 #include "porytiles/domain/config/anim_palette_resolution_strategy.hpp"
 #include "porytiles/domain/config/artifact_edit_mode.hpp"
 #include "porytiles/domain/config/frame_linking.hpp"
+#include "porytiles/domain/config/import_transparency_mode.hpp"
 #include "porytiles/domain/config/packing_strategy_type.hpp"
 #include "porytiles/domain/config/tile_sharing_alignment.hpp"
 #include "porytiles/domain/config/tile_sharing_packing.hpp"
@@ -291,6 +292,33 @@ parse_tiles_palette_mode(const std::optional<std::string> &raw_value, const std:
 
     const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
     return LayerValue<TilesPaletteMode>::invalid(error, option_name);
+}
+
+/// @brief Parses an ImportTransparencyMode from a CLI string option.
+///
+/// @details
+/// Uses the unified import_transparency_mode_from_str() which provides fuzzy matching.
+/// Returns LayerValue::invalid() for unrecognized values.
+///
+/// @param raw_value The raw string value from CLI, or std::nullopt if not provided
+/// @param option_name The CLI option name for error messages
+/// @return LayerValue with parsed value, invalid error, or not_provided status
+LayerValue<ImportTransparencyMode>
+parse_import_transparency_mode(const std::optional<std::string> &raw_value, const std::string &option_name)
+{
+    if (!raw_value.has_value()) {
+        return LayerValue<ImportTransparencyMode>::not_provided();
+    }
+
+    const auto &str = raw_value.value();
+    const auto result = import_transparency_mode_from_str(str);
+
+    if (result.has_value()) {
+        return LayerValue<ImportTransparencyMode>::valid(result.value(), option_name, "CLI");
+    }
+
+    const auto error = std::format("Invalid value '{}' for '{}'.", str, option_name);
+    return LayerValue<ImportTransparencyMode>::invalid(error, option_name);
 }
 
 /// @brief Parses an AnimPaletteResolutionStrategy from a CLI string option.

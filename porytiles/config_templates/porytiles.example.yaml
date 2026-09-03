@@ -274,14 +274,17 @@ tileset:
     # partners:
     #   - gTileset_General
 
-  # Set transparency handling for import.
+  # How transparent pixels are written to the RGBA layer images and animation frames produced by import-tileset and
+  # decompile-tileset. This only changes how the assets look in an image editor, each form compiles back into the same
+  # Porymap assets.
+  #
   # Allowed values:
-  # - alpha: all transparent tiles are set to alpha=0
-  # - extrinsic: all transparent tiles are set to extrinsic transparency [default]
+  # - alpha: all transparent pixels are written with alpha channel set to 0
+  # - [default] extrinsic: all transparent pixels are written as the configured extrinsic_transparency color
   # - mixed:
   #     - in dual-layer mode:
-  #       - the missing layer is set to alpha=0
-  #       - transparency on the present layer is set to extrinsic
+  #       - the layer group absent from the Porymap data is written with alpha channel set to 0
+  #       - transparent pixels on the present layer groups are written with the configured extrinsic_transparency color
   #     - in triple-layer mode:
-  #       - effectively equivalent to extrinsic
+  #       - same behavior as extrinsic
   import_transparency: extrinsic

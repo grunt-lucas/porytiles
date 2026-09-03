@@ -140,6 +140,36 @@ TEST_F(LayerModeConverterTests, TripleLayerizeNoOpForTripleLayerComponent)
     EXPECT_EQ(entries.size(), metatile::entries_per_metatile_triple);
 }
 
+TEST_F(LayerModeConverterTests, SynthesizedLayersTripleLayerComponent)
+{
+    auto component = create_triple_layer_component_single_metatile(LayerType::normal);
+
+    auto result = converter_->synthesized_layers(component);
+
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 1);
+    EXPECT_FALSE(result.value()[0].has_value());
+}
+
+TEST_F(LayerModeConverterTests, SynthesizedLayersDualLayerComponent)
+{
+    PorymapTilesetComponent component;
+    for (const auto layer_type : {LayerType::normal, LayerType::covered, LayerType::split}) {
+        for (std::size_t i = 1; i <= metatile::entries_per_metatile_dual; ++i) {
+            component.push_back_tilemap_entry(create_test_entry(i));
+        }
+        component.push_back_attribute(make_attribute(layer_type));
+    }
+
+    auto result = converter_->synthesized_layers(component);
+
+    ASSERT_TRUE(result.has_value());
+    ASSERT_EQ(result.value().size(), 3);
+    EXPECT_EQ(result.value()[0], std::optional{metatile::Layer::bottom});
+    EXPECT_EQ(result.value()[1], std::optional{metatile::Layer::top});
+    EXPECT_EQ(result.value()[2], std::optional{metatile::Layer::middle});
+}
+
 TEST_F(LayerModeConverterTests, TripleLayerizeNormalLayerTypeInsertsTransparentAtStart)
 {
     // Create a dual-layer component with LayerType::normal

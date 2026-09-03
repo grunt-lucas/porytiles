@@ -61,6 +61,12 @@ LayerValue<Rgba32> ConfigProvider::extrinsic_transparency(
     return LayerValue<Rgba32>::not_provided();
 }
 
+LayerValue<ImportTransparencyMode> ConfigProvider::import_transparency(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    return LayerValue<ImportTransparencyMode>::not_provided();
+}
+
 LayerValue<bool> ConfigProvider::ignore_triple_layer_content(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {

@@ -79,6 +79,13 @@ LayerValue<Rgba32> CliOptionProvider::extrinsic_transparency(
     return parse_rgba32(storage_.extrinsic_transparency, "--extrinsic-transparency");
 }
 
+LayerValue<ImportTransparencyMode> CliOptionProvider::import_transparency(
+    [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
+{
+    // All types use parse functions for uniform error handling
+    return parse_import_transparency_mode(storage_.import_transparency, "--import-transparency");
+}
+
 LayerValue<bool> CliOptionProvider::ignore_triple_layer_content(
     [[maybe_unused]] ConfigScopeType type, [[maybe_unused]] const std::string &scope) const
 {
