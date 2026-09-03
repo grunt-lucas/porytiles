@@ -19,7 +19,7 @@ End each entry with a link to its PR(s), or a specific commit(s) if that's clear
 
 - Added a `tileset.animations.create_sample_anims` config value (CLI: `--create-sample-anims`, default `true`). When disabled, `create-tileset` skips the sample flower animation. - [#375](https://github.com/grunt-lucas/porytiles/pull/375))
 
-- Added a `tileset.import_transparency` config (CLI: `--import-transparency`, default `extrinsic`). It controls how `import-tileset` and `decompile-tileset` write transparent pixels to the RGBA layer images and animation frames. Mode `alpha` writes them with alpha channel set to 0, `extrinsic` writes them as the configured `extrinsic_transparency` color, and `mixed` writes the layer group absent from dual-layer Porymap data as alpha 0, while present-but-transparent pixels get the `extrinsic_transparency` color (this is equivalent to `extrinsic` in triple-layer mode). - [#XXX](https://github.com/grunt-lucas/porytiles/pull/XXX)
+- Added a `tileset.import_transparency` config (CLI: `--import-transparency`, default `extrinsic`). It controls how `import-tileset` and `decompile-tileset` write transparent pixels to the RGBA layer images and animation frames. Mode `alpha` writes them with alpha channel set to 0, `extrinsic` writes them as the configured `extrinsic_transparency` color, and `mixed` writes the layer group absent from dual-layer Porymap data as alpha 0, while present-but-transparent pixels get the `extrinsic_transparency` color (this is equivalent to `extrinsic` in triple-layer mode). - [#376](https://github.com/grunt-lucas/porytiles/pull/376)
 
 ## [2.0.0] - 2026-08-27
 
