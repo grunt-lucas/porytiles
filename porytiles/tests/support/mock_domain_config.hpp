@@ -28,6 +28,7 @@ class MockDomainConfig : public DomainConfig {
     std::size_t max_map_data_size = 10240;
     std::size_t num_tiles_per_metatile = 8;
     Rgba32 extrinsic_transparency = rgba_magenta;
+    ImportTransparencyMode import_transparency = ImportTransparencyMode::extrinsic;
     bool ignore_triple_layer_content = false;
     ArtifactEditMode tiles_edit_mode = ArtifactEditMode::optimize;
     ArtifactEditMode palettes_edit_mode = ArtifactEditMode::optimize;
@@ -104,6 +105,12 @@ class MockDomainConfig : public DomainConfig {
     extrinsic_transparency_raw(ConfigScopeType, const std::string &) const override
     {
         return ConfigValue{extrinsic_transparency, "Extrinsic Transparency", "extrinsic_transparency", "mock", {}};
+    }
+
+    [[nodiscard]] ChainableResult<ConfigValue<ImportTransparencyMode>>
+    import_transparency_raw(ConfigScopeType, const std::string &) const override
+    {
+        return ConfigValue{import_transparency, "Import Transparency", "import_transparency", "mock", {}};
     }
 
     [[nodiscard]] ChainableResult<ConfigValue<bool>>

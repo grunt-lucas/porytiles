@@ -17,6 +17,7 @@
 #include "porytiles/domain/config/anim_multi_palette_subtile_resolution_strategy.hpp"
 #include "porytiles/domain/config/anim_palette_resolution_strategy.hpp"
 #include "porytiles/domain/config/frame_linking.hpp"
+#include "porytiles/domain/config/import_transparency_mode.hpp"
 #include "porytiles/domain/config/per_anim_overrides.hpp"
 #include "porytiles/domain/models/anim_frame.hpp"
 #include "porytiles/domain/models/anim_override_entry.hpp"
@@ -573,6 +574,13 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
         config_, global_anim_multi_palette_subtile_resolution_strategy, tileset_name, Animation<Rgba32>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, global_frame_linking, tileset_name, Animation<Rgba32>);
     PT_UNWRAP_TILESET_CONFIG_PTR(config_, per_anim_overrides, tileset_name, Animation<Rgba32>);
+    PT_UNWRAP_TILESET_CONFIG_PTR(config_, import_transparency, tileset_name, Animation<Rgba32>);
+
+    // Animation frames have no missing layer group, so the mixed import transparency mode writes their transparent
+    // pixels the same way as the extrinsic mode. Duplicate detection below keeps using the extrinsic color because it
+    // compares canonical forms, which handle all transparency the same.
+    const Rgba32 frame_transparent_color =
+        import_transparency.value() == ImportTransparencyMode::alpha ? Rgba32{} : extrinsic_transparency.value();
 
     // Read data from porymap_component
     const auto &palettes = porymap_component.palettes();
@@ -736,7 +744,7 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
             rgba_tiles.reserve(frame.tiles().size());
             for (std::size_t i = 0; i < frame.tiles().size(); ++i) {
                 rgba_tiles.push_back(color_tile_from_index_tile(
-                    frame.tiles()[i], palettes.at(manual_palette_indices[i]), extrinsic_transparency.value()));
+                    frame.tiles()[i], palettes.at(manual_palette_indices[i]), frame_transparent_color));
             }
             AnimFrame rgba_frame{frame.frame_name(), std::move(rgba_tiles)};
             result.put_frame(frame.frame_name(), std::move(rgba_frame));
@@ -900,7 +908,7 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
     key_frame_rgba_tiles.reserve(key_frame_index_tiles.size());
     for (std::size_t i = 0; i < key_frame_index_tiles.size(); ++i) {
         key_frame_rgba_tiles.push_back(color_tile_from_index_tile(
-            key_frame_index_tiles[i], palettes.at(palette_indices[i]), extrinsic_transparency.value()));
+            key_frame_index_tiles[i], palettes.at(palette_indices[i]), frame_transparent_color));
     }
 
     // Set the key frame on the result
@@ -918,8 +926,8 @@ ChainableResult<Animation<Rgba32>> AnimDecompiler::decompile_animation(
         rgba_tiles.reserve(frame.tiles().size());
 
         for (std::size_t i = 0; i < frame.tiles().size(); ++i) {
-            rgba_tiles.push_back(color_tile_from_index_tile(
-                frame.tiles()[i], palettes.at(palette_indices[i]), extrinsic_transparency.value()));
+            rgba_tiles.push_back(
+                color_tile_from_index_tile(frame.tiles()[i], palettes.at(palette_indices[i]), frame_transparent_color));
         }
 
         AnimFrame rgba_frame{frame.frame_name(), std::move(rgba_tiles)};

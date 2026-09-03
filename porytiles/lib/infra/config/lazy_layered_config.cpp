@@ -140,6 +140,7 @@ void LazyLayeredConfig::dump_config(std::ostream &out, ConfigScopeType type, con
         out, *format_, "Number Of Tiles Per Metatile", num_tiles_per_metatile_provenance_chain(type, scope));
     dump_single_config_value(
         out, *format_, "Extrinsic Transparency", extrinsic_transparency_provenance_chain(type, scope));
+    dump_single_config_value(out, *format_, "Import Transparency", import_transparency_provenance_chain(type, scope));
     dump_single_config_value(
         out, *format_, "Ignore Triple Layer Content", ignore_triple_layer_content_provenance_chain(type, scope));
     dump_single_config_value(out, *format_, "Tiles Edit Mode", tiles_edit_mode_provenance_chain(type, scope));
@@ -418,6 +419,19 @@ LazyLayeredConfig::extrinsic_transparency_raw(ConfigScopeType type, const std::s
     return resolve_config_value<Rgba32>(key, "Extrinsic Transparency", [&type, &scope](const ConfigProvider &provider) {
         return provider.extrinsic_transparency(type, scope);
     });
+}
+
+ChainableResult<ConfigValue<ImportTransparencyMode>>
+LazyLayeredConfig::import_transparency_raw(ConfigScopeType type, const std::string &scope) const
+{
+    const auto name = extract_function_name();
+    // Strip the _raw suffix from the function name for cache key
+    const auto base_name = name.substr(0, name.size() - 4);
+    const auto key = to_string(type) + ":" + scope + ":" + base_name;
+    return resolve_config_value<ImportTransparencyMode>(
+        key, "Import Transparency", [&type, &scope](const ConfigProvider &provider) {
+            return provider.import_transparency(type, scope);
+        });
 }
 
 ChainableResult<ConfigValue<bool>>
@@ -921,6 +935,13 @@ LazyLayeredConfig::extrinsic_transparency_provenance_chain(ConfigScopeType type,
 {
     return collect_provenance_chain<Rgba32>(
         [&type, &scope](const ConfigProvider &provider) { return provider.extrinsic_transparency(type, scope); });
+}
+
+std::vector<ProvenanceChainLink<ImportTransparencyMode>>
+LazyLayeredConfig::import_transparency_provenance_chain(ConfigScopeType type, const std::string &scope) const
+{
+    return collect_provenance_chain<ImportTransparencyMode>(
+        [&type, &scope](const ConfigProvider &provider) { return provider.import_transparency(type, scope); });
 }
 
 std::vector<ProvenanceChainLink<bool>>

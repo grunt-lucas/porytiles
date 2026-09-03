@@ -19,6 +19,8 @@ End each entry with a link to its PR(s), or a specific commit(s) if that's clear
 
 - Added a `tileset.animations.create_sample_anims` config value (CLI: `--create-sample-anims`, default `true`). When disabled, `create-tileset` skips the sample flower animation. - [#375](https://github.com/grunt-lucas/porytiles/pull/375))
 
+- Added a `tileset.import_transparency` config (CLI: `--import-transparency`, default `extrinsic`). It controls how `import-tileset` and `decompile-tileset` write transparent pixels to the RGBA layer images and animation frames. Mode `alpha` writes them with alpha channel set to 0, `extrinsic` writes them as the configured `extrinsic_transparency` color, and `mixed` writes the layer group absent from dual-layer Porymap data as alpha 0, while present-but-transparent pixels get the `extrinsic_transparency` color (this is equivalent to `extrinsic` in triple-layer mode). - [#376](https://github.com/grunt-lucas/porytiles/pull/376)
+
 ## [2.0.0] - 2026-08-27
 
 - **BREAKING:** Changed the YAML config keys `fieldmap.num_pals_in_primary` and `fieldmap.num_pals_total` to `fieldmap.num_palettes_in_primary` and `fieldmap.num_palettes_total`. The old keys no longer work. A config file still using them will fail with an unknown configuration key error. The `--num-pals-in-primary` and `--num-pals-total` CLI options and the `NUM_PALS_IN_PRIMARY` and `NUM_PALS_TOTAL` header defines are unchanged. - [ba9a4d7](https://github.com/grunt-lucas/porytiles/commit/ba9a4d7cf1ff087901a97a15f39d302b8ffa0cc2)

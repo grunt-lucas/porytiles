@@ -117,6 +117,9 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     [[nodiscard]] ChainableResult<ConfigValue<Rgba32>>
     extrinsic_transparency_raw(ConfigScopeType type, const std::string &scope) const override;
 
+    [[nodiscard]] ChainableResult<ConfigValue<ImportTransparencyMode>>
+    import_transparency_raw(ConfigScopeType type, const std::string &scope) const override;
+
     [[nodiscard]] ChainableResult<ConfigValue<bool>>
     ignore_triple_layer_content_raw(ConfigScopeType type, const std::string &scope) const override;
 
@@ -337,6 +340,19 @@ class LazyLayeredConfig final : public DomainConfig, public AppConfig, public In
     /// @return Vector of ProvenanceChainLink entries, one per provider
     [[nodiscard]] std::vector<ProvenanceChainLink<Rgba32>>
     extrinsic_transparency_provenance_chain(ConfigScopeType type, const std::string &scope) const;
+
+    /// @brief Gets the full provenance chain for import_transparency.
+    ///
+    /// @details
+    /// Returns what each provider in the chain would return for this config value, from highest priority to lowest.
+    /// Unlike the normal resolution which stops at the first valid/invalid result, this queries ALL providers to give
+    /// a complete diagnostic picture. Does not use caching - always queries providers fresh.
+    ///
+    /// @param type The config scope type
+    /// @param scope The scope identifier
+    /// @return Vector of ProvenanceChainLink entries, one per provider
+    [[nodiscard]] std::vector<ProvenanceChainLink<ImportTransparencyMode>>
+    import_transparency_provenance_chain(ConfigScopeType type, const std::string &scope) const;
 
     /// @brief Gets the full provenance chain for ignore_triple_layer_content.
     ///

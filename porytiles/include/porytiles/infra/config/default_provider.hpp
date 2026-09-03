@@ -48,6 +48,9 @@ class DefaultProvider final : public ConfigProvider {
     [[nodiscard]] LayerValue<Rgba32>
     extrinsic_transparency(ConfigScopeType type, const std::string &scope) const override;
 
+    [[nodiscard]] LayerValue<ImportTransparencyMode>
+    import_transparency(ConfigScopeType type, const std::string &scope) const override;
+
     [[nodiscard]] LayerValue<bool>
     ignore_triple_layer_content(ConfigScopeType type, const std::string &scope) const override;
 

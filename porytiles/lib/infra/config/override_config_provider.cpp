@@ -70,6 +70,11 @@ void OverrideConfigProvider::set_extrinsic_transparency(Rgba32 value)
     extrinsic_transparency_override_ = std::move(value);
 }
 
+void OverrideConfigProvider::set_import_transparency(ImportTransparencyMode value)
+{
+    import_transparency_override_ = std::move(value);
+}
+
 void OverrideConfigProvider::set_ignore_triple_layer_content(bool value)
 {
     ignore_triple_layer_content_override_ = std::move(value);
@@ -319,6 +324,16 @@ LayerValue<Rgba32> OverrideConfigProvider::extrinsic_transparency(ConfigScopeTyp
         return LayerValue<Rgba32>::not_provided();
     }
     return LayerValue<Rgba32>::valid(extrinsic_transparency_override_.value(), "extrinsic_transparency", source_info_);
+}
+
+LayerValue<ImportTransparencyMode>
+OverrideConfigProvider::import_transparency(ConfigScopeType type, const std::string &scope) const
+{
+    if (!scope_matches(type, scope) || !import_transparency_override_.has_value()) {
+        return LayerValue<ImportTransparencyMode>::not_provided();
+    }
+    return LayerValue<ImportTransparencyMode>::valid(
+        import_transparency_override_.value(), "import_transparency", source_info_);
 }
 
 LayerValue<bool>

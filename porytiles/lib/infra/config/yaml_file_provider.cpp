@@ -198,6 +198,24 @@ LayerValue<Rgba32> YamlFileProvider::extrinsic_transparency(ConfigScopeType type
         "tileset.extrinsic_transparency");
 }
 
+LayerValue<ImportTransparencyMode>
+YamlFileProvider::import_transparency(ConfigScopeType type, const std::string &scope) const
+{
+    auto paths_result = get_config_path_chain(project_root_, type, scope);
+    if (!paths_result.has_value()) {
+        return LayerValue<ImportTransparencyMode>::invalid(
+            paths_result.error().join(PlainTextFormatter{}), "config path resolution");
+    }
+    return search_config_files<ImportTransparencyMode>(
+        format_,
+        paths_result.value(),
+        [this](const std::filesystem::path &p) { return load_yaml_file(p, format_, diagnostics_); },
+        [](const YAML::Node &doc) { return doc["tileset"]["import_transparency"]; },
+        parse_import_transparency_mode,
+        "tileset.import_transparency",
+        "tileset.import_transparency");
+}
+
 LayerValue<bool> YamlFileProvider::ignore_triple_layer_content(ConfigScopeType type, const std::string &scope) const
 {
     auto paths_result = get_config_path_chain(project_root_, type, scope);

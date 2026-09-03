@@ -51,6 +51,7 @@ inline const std::unordered_set<std::string> valid_yaml_paths = {
     "tileset.animations.wire_anim_code",
     "tileset.extrinsic_transparency",
     "tileset.ignore_triple_layer_content",
+    "tileset.import_transparency",
     "tileset.palettes",
     "tileset.palettes.edit_mode",
     "tileset.palettes.packing",

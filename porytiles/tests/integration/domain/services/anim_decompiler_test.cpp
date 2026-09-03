@@ -9,6 +9,7 @@
 #include "porytiles/domain/algorithms/tile_converters.hpp"
 #include "porytiles/domain/config/anim_key_frame_resolution_strategy.hpp"
 #include "porytiles/domain/config/anim_multi_palette_subtile_resolution_strategy.hpp"
+#include "porytiles/domain/config/import_transparency_mode.hpp"
 #include "porytiles/domain/config/per_anim_override.hpp"
 #include "porytiles/domain/config/per_anim_overrides.hpp"
 #include "porytiles/domain/models/anim_frame.hpp"
@@ -634,6 +635,33 @@ TEST_F(AnimDecompilerMultiPaletteTests, shouldDecompileMultiPaletteAnimationWith
     const auto &key_tile_1 = result.value().key_frame().tile_at(1);
     // Corner pixel (index 0) should be color index 5 from palette 1 = Rgba32{0, 128, 128, 255}
     EXPECT_EQ(key_tile_1.at(0), palette_1_.at(5));
+}
+
+// Index 0 corner pixels of a frame tile are transparent. The import transparency mode selects whether they are written
+// as the extrinsic color or as alpha 0.
+TEST_F(AnimDecompilerMultiPaletteTests, ImportTransparencyModeSelectsFrameTransparentPixel)
+{
+    const auto tile_a = create_two_color_tile(1, 2);
+    const auto tile_b = create_two_color_tile(0, 3);
+    const auto tiles_png = build_tiles_png({tile_a, tile_b});
+    std::vector<TilemapEntry> metatiles{TilemapEntry{1, 0, false, false}};
+    auto anim = create_test_animation_no_palette("test_anim", 1, 1, {tile_b});
+    auto component = build_porymap_component(palettes_, metatiles, tiles_png);
+
+    for (const auto mode :
+         {ImportTransparencyMode::extrinsic, ImportTransparencyMode::mixed, ImportTransparencyMode::alpha}) {
+        config_.import_transparency = mode;
+        AnimDecompiler decompiler{&config_, diag_.get(), tile_printer_.get(), palette_printer_.get()};
+
+        auto result = decompiler.decompile_animation("test_tileset", anim, {}, component);
+        ASSERT_TRUE(result.has_value()) << "mode " << mode;
+
+        // Rgba32 equality compares all four channels, so these also check alpha
+        const Rgba32 expected = mode == ImportTransparencyMode::alpha ? Rgba32{} : config_.extrinsic_transparency;
+        EXPECT_EQ(result.value().key_frame().tile_at(0).at(0), expected) << "mode " << mode;
+        EXPECT_EQ(result.value().frames().at("0").tile_at(0).at(0), expected) << "mode " << mode;
+        EXPECT_EQ(result.value().key_frame().tile_at(0).at(1), palette_0_.at(3));
+    }
 }
 
 TEST_F(AnimDecompilerMultiPaletteTests, shouldErrorWhenSubtileNotReferencedInMetatiles)

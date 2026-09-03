@@ -46,6 +46,8 @@ class CliOptionProvider final : public ConfigProvider {
     num_tiles_per_metatile(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<Rgba32>
     extrinsic_transparency(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<ImportTransparencyMode>
+    import_transparency(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<bool>
     ignore_triple_layer_content(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<ArtifactEditMode>

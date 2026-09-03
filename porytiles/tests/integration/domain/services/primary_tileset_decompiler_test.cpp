@@ -7,6 +7,7 @@
 
 #include "gtest/gtest.h"
 
+#include "porytiles/domain/config/import_transparency_mode.hpp"
 #include "porytiles/domain/models/image.hpp"
 #include "porytiles/domain/models/index_pixel.hpp"
 #include "porytiles/domain/models/layer.hpp"
@@ -16,6 +17,7 @@
 #include "porytiles/domain/models/pixel_tile.hpp"
 #include "porytiles/domain/models/porymap_tileset_component.hpp"
 #include "porytiles/domain/models/porytiles_tileset_component.hpp"
+#include "porytiles/domain/models/rgba32.hpp"
 #include "porytiles/domain/models/tilemap_entry.hpp"
 #include "porytiles/domain/models/tileset.hpp"
 #include "porytiles/infra/services/ascii_tile_printer.hpp"
@@ -29,10 +31,10 @@ using namespace porytiles;
 
 namespace {
 
-// Builds a minimal dual-layer Porymap component with two metatiles whose bin layer types are covered (0) and normal
-// (1). Every tilemap entry is transparent (tile 0, palette 0), which is enough for the decompile pipeline to run while
-// keeping the layer_type round-trip the only interesting variable.
-std::unique_ptr<PorymapTilesetComponent> make_two_metatile_porymap()
+// Builds a minimal Porymap component with two metatiles whose bin layer types are covered (0) and normal (1). Every
+// tilemap entry is transparent (tile 0, palette 0), which is enough for the decompile pipeline to run while keeping the
+// layer_type round-trip and the transparency representation the only interesting variables.
+std::unique_ptr<PorymapTilesetComponent> make_two_metatile_porymap(const LayerMode layer_mode = LayerMode::dual)
 {
     auto porymap = std::make_unique<PorymapTilesetComponent>();
 
@@ -43,8 +45,9 @@ std::unique_ptr<PorymapTilesetComponent> make_two_metatile_porymap()
     porymap->push_back_attribute(attribute_0);
     porymap->push_back_attribute(attribute_1);
 
-    // Dual layout: 8 entries per metatile, 2 metatiles.
-    std::vector<TilemapEntry> entries(2 * metatile::entries_per_metatile_dual, TilemapEntry{0, 0, false, false});
+    const std::size_t entries_per_metatile =
+        layer_mode == LayerMode::dual ? metatile::entries_per_metatile_dual : metatile::entries_per_metatile_triple;
+    std::vector<TilemapEntry> entries(2 * entries_per_metatile, TilemapEntry{0, 0, false, false});
     porymap->metatiles_bin(entries);
 
     // A single-tile tiles.png covers the sole referenced tile index (0).
@@ -167,6 +170,99 @@ TEST_F(PrimaryTilesetDecompilerRoundTripTest, ColumnPresentAbsentPriorRowStaysUn
     ASSERT_TRUE(out.get_attribute(0)->explicit_layer_type().has_value());
     EXPECT_EQ(out.get_attribute(0)->explicit_layer_type().value(), LayerType::covered);
     EXPECT_FALSE(out.get_attribute(1)->explicit_layer_type().has_value());
+}
+
+// Every pixel of one metatile's 16x16 block in a decompiled layer image must equal the expected color, alpha included
+// (Rgba32 equality compares all four channels). Layer images place metatile i at columns [i * 16, i * 16 + 16) of the
+// first metatile row.
+[[nodiscard]] testing::AssertionResult
+metatile_block_is(const Image<Rgba32> &layer_image, std::size_t metatile_idx, const Rgba32 &expected)
+{
+    const std::size_t first_col = metatile_idx * metatile::side_length_pix;
+    for (std::size_t row = 0; row < metatile::side_length_pix; ++row) {
+        for (std::size_t col = first_col; col < first_col + metatile::side_length_pix; ++col) {
+            const Rgba32 actual = layer_image.at(row, col);
+            if (actual != expected) {
+                return testing::AssertionFailure() << "metatile " << metatile_idx << " pixel (" << row << ", " << col
+                                                   << ") is " << actual << ", expected " << expected;
+            }
+        }
+    }
+    return testing::AssertionSuccess();
+}
+
+class PrimaryTilesetDecompilerImportTransparencyTest : public PrimaryTilesetDecompilerRoundTripTest {
+  protected:
+    [[nodiscard]] std::unique_ptr<Tileset> decompile(const LayerMode layer_mode)
+    {
+        Tileset input{
+            "test_primary", std::make_unique<PorytilesTilesetComponent>(), make_two_metatile_porymap(layer_mode)};
+        auto result = make_decompiler().decompile(input);
+        EXPECT_TRUE(result.has_value()) << join_error_chain(result);
+        return std::move(result).value();
+    }
+
+    const Rgba32 alpha_zero_{};
+};
+
+TEST_F(PrimaryTilesetDecompilerImportTransparencyTest, ExtrinsicWritesExtrinsicColorOnEveryLayer)
+{
+    config_.import_transparency = ImportTransparencyMode::extrinsic;
+
+    const auto out = decompile(LayerMode::dual);
+
+    const auto &porytiles = out->porytiles_component();
+    for (const std::size_t metatile_idx : {0, 1}) {
+        EXPECT_TRUE(metatile_block_is(porytiles.bottom(), metatile_idx, rgba_magenta));
+        EXPECT_TRUE(metatile_block_is(porytiles.middle(), metatile_idx, rgba_magenta));
+        EXPECT_TRUE(metatile_block_is(porytiles.top(), metatile_idx, rgba_magenta));
+    }
+}
+
+TEST_F(PrimaryTilesetDecompilerImportTransparencyTest, AlphaWritesAlphaZeroOnEveryLayer)
+{
+    config_.import_transparency = ImportTransparencyMode::alpha;
+
+    const auto out = decompile(LayerMode::dual);
+
+    const auto &porytiles = out->porytiles_component();
+    for (const std::size_t metatile_idx : {0, 1}) {
+        EXPECT_TRUE(metatile_block_is(porytiles.bottom(), metatile_idx, alpha_zero_));
+        EXPECT_TRUE(metatile_block_is(porytiles.middle(), metatile_idx, alpha_zero_));
+        EXPECT_TRUE(metatile_block_is(porytiles.top(), metatile_idx, alpha_zero_));
+    }
+}
+
+// Dual-layer input: metatile 0 is covered (top synthesized), metatile 1 is normal (bottom synthesized). Only the
+// synthesized layer of each metatile is alpha 0.
+TEST_F(PrimaryTilesetDecompilerImportTransparencyTest, MixedDualWritesAlphaZeroOnSynthesizedLayerOnly)
+{
+    config_.import_transparency = ImportTransparencyMode::mixed;
+
+    const auto out = decompile(LayerMode::dual);
+
+    const auto &porytiles = out->porytiles_component();
+    EXPECT_TRUE(metatile_block_is(porytiles.bottom(), 0, rgba_magenta));
+    EXPECT_TRUE(metatile_block_is(porytiles.middle(), 0, rgba_magenta));
+    EXPECT_TRUE(metatile_block_is(porytiles.top(), 0, alpha_zero_));
+
+    EXPECT_TRUE(metatile_block_is(porytiles.bottom(), 1, alpha_zero_));
+    EXPECT_TRUE(metatile_block_is(porytiles.middle(), 1, rgba_magenta));
+    EXPECT_TRUE(metatile_block_is(porytiles.top(), 1, rgba_magenta));
+}
+
+TEST_F(PrimaryTilesetDecompilerImportTransparencyTest, MixedTripleWritesExtrinsicColorOnEveryLayer)
+{
+    config_.import_transparency = ImportTransparencyMode::mixed;
+
+    const auto out = decompile(LayerMode::triple);
+
+    const auto &porytiles = out->porytiles_component();
+    for (const std::size_t metatile_idx : {0, 1}) {
+        EXPECT_TRUE(metatile_block_is(porytiles.bottom(), metatile_idx, rgba_magenta));
+        EXPECT_TRUE(metatile_block_is(porytiles.middle(), metatile_idx, rgba_magenta));
+        EXPECT_TRUE(metatile_block_is(porytiles.top(), metatile_idx, rgba_magenta));
+    }
 }
 
 } // namespace

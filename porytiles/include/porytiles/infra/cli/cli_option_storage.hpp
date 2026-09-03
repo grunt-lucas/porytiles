@@ -31,6 +31,7 @@ struct CliOptionStorage {
     std::optional<std::string> max_map_data_size;
     std::optional<std::string> num_tiles_per_metatile;
     std::optional<std::string> extrinsic_transparency;
+    std::optional<std::string> import_transparency;
     std::optional<std::string> ignore_triple_layer_content;
     std::optional<std::string> tiles_edit_mode;
     std::optional<std::string> palettes_edit_mode;

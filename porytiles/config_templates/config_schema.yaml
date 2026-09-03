@@ -388,6 +388,30 @@ enum_types:
         fuzzy_names: [ split ]
         brief: Split the animation into separate animations for each palette variant (not yet implemented).
 
+  - cpp_type: ImportTransparencyMode
+    header_path: porytiles/domain/config/import_transparency_mode.hpp
+    brief: Selects how transparent pixels are written to RGBA assets during tileset decompilation.
+    details: |
+      When decompiling Porymap assets to RGBA layer images and animation frames, every palette index 0
+      pixel is transparent. This mode selects which pixel value represents that transparency in the
+      written PNGs: fully transparent (alpha 0) or the opaque extrinsic transparency color. Both forms
+      compile back to the same result, so the choice only affects how the assets look in an image editor.
+    enum_values:
+      - name: alpha
+        cli_completion_name: alpha
+        fuzzy_names: [ alpha, intrinsic ]
+        brief: Write every transparent pixel as alpha 0.
+      - name: extrinsic
+        cli_completion_name: extrinsic
+        fuzzy_names: [ extrinsic ]
+        brief: Write every transparent pixel as the opaque extrinsic transparency color.
+      - name: mixed
+        cli_completion_name: mixed
+        fuzzy_names: [ mixed ]
+        brief: >-
+          In dual-layer mode, write the layer group absent from the Porymap data as alpha 0 and other transparent pixels
+          as the extrinsic transparency color. In triple-layer mode, same as extrinsic.
+
 config_values:
   # Domain Layer Configuration Values
   - canonical_name: Number Of Tiles In Primary
@@ -504,6 +528,22 @@ config_values:
     parser: parse_rgba32
     default_value: "rgba_magenta"
     validators: [ rgba_alpha_component_opaque ]
+    cross_field_validators: [ ]
+
+  - canonical_name: Import Transparency
+    symbol: import_transparency
+    yaml_path: tileset.import_transparency
+    cli_option: import-transparency
+    cli_desc: >-
+      How transparent pixels are written to the RGBA layer images and animation frames produced by import-tileset and
+      decompile-tileset. Mode 'alpha' writes them as alpha 0. Mode 'extrinsic' writes them as the extrinsic transparency
+      color. Mode 'mixed' writes the layer group absent from dual-layer Porymap data as alpha 0 and truly transparent
+      pixels as the extrinsic transparency color.
+    layer: domain
+    type: ImportTransparencyMode
+    parser: parse_import_transparency_mode
+    default_value: "ImportTransparencyMode::extrinsic"
+    validators: [ ]
     cross_field_validators: [ ]
 
   - canonical_name: Ignore Triple Layer Content

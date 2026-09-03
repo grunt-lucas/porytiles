@@ -71,6 +71,17 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
             "R,G,B,A, values 0-255)")
         ->type_name("R,G,B[,A]");
 
+    // Import Transparency (enum ImportTransparencyMode, captured as string, parsed by CliOptionProvider)
+    config_group
+        ->add_option(
+            "--import-transparency",
+            storage.import_transparency,
+            "Import Transparency - How transparent pixels are written to the RGBA layer images and animation frames "
+            "produced by import-tileset and decompile-tileset. Mode 'alpha' writes them as alpha 0. Mode 'extrinsic' "
+            "writes them as the extrinsic transparency color. Mode 'mixed' writes the layer group absent from "
+            "dual-layer Porymap data as alpha 0 and truly transparent pixels as the extrinsic transparency color.")
+        ->type_name("{alpha|extrinsic|mixed}");
+
     // Ignore Triple Layer Content (bool with --flag/--no-flag, captured as "true"/"false" string)
     config_group->add_flag(
         "--ignore-triple-layer-content,!--no-ignore-triple-layer-content",
@@ -218,7 +229,7 @@ void register_config_options(CLI::App &app, CliOptionStorage &storage)
             }
             // count == 0 means neither flag was provided, leave optional empty
         },
-        "Create Sample Animations - Seed a newly created tileset with sample animation content (a small flower "
+        "Create Sample Animations - Seed a newly created tileset with sample animation content (a simple flower "
         "animation). Disable to create a tileset with no animations. Only used by the create-tileset command.");
 
     // Verify Checksums (bool with --flag/--no-flag, captured as "true"/"false" string)

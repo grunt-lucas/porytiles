@@ -81,6 +81,15 @@ struct CliOptionMeta {
             {},
             false},
         CliOptionMeta{
+            "import-transparency",
+            "Import Transparency - How transparent pixels are written to the RGBA layer images and animation frames "
+            "produced by import-tileset and decompile-tileset. Mode 'alpha' writes them as alpha 0. Mode 'extrinsic' "
+            "writes them as the extrinsic transparency color. Mode 'mixed' writes the layer group absent from "
+            "dual-layer Porymap data as alpha 0 and truly transparent pixels as the extrinsic transparency color.",
+            "enum",
+            {"alpha", "extrinsic", "mixed"},
+            false},
+        CliOptionMeta{
             "ignore-triple-layer-content",
             "Ignore Triple Layer Content - Demote the triple-layer-content-in-dual-mode error to a warning. When on, a "
             "metatile with content on all three layers compiles in dual mode by dropping one layer group instead of "
@@ -181,7 +190,7 @@ struct CliOptionMeta {
             true},
         CliOptionMeta{
             "create-sample-anims",
-            "Create Sample Animations - Seed a newly created tileset with sample animation content (a small flower "
+            "Create Sample Animations - Seed a newly created tileset with sample animation content (a simple flower "
             "animation). Disable to create a tileset with no animations. Only used by the create-tileset command.",
             "bool",
             {},

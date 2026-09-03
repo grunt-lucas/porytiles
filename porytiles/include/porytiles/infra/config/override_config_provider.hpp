@@ -46,6 +46,7 @@ class OverrideConfigProvider final : public ConfigProvider {
     void set_max_map_data_size(std::size_t value);
     void set_num_tiles_per_metatile(std::size_t value);
     void set_extrinsic_transparency(Rgba32 value);
+    void set_import_transparency(ImportTransparencyMode value);
     void set_ignore_triple_layer_content(bool value);
     void set_tiles_edit_mode(ArtifactEditMode value);
     void set_palettes_edit_mode(ArtifactEditMode value);
@@ -99,6 +100,8 @@ class OverrideConfigProvider final : public ConfigProvider {
     num_tiles_per_metatile(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<Rgba32>
     extrinsic_transparency(ConfigScopeType type, const std::string &scope) const override;
+    [[nodiscard]] LayerValue<ImportTransparencyMode>
+    import_transparency(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<bool>
     ignore_triple_layer_content(ConfigScopeType type, const std::string &scope) const override;
     [[nodiscard]] LayerValue<ArtifactEditMode>
@@ -182,6 +185,7 @@ class OverrideConfigProvider final : public ConfigProvider {
     std::optional<std::size_t> max_map_data_size_override_;
     std::optional<std::size_t> num_tiles_per_metatile_override_;
     std::optional<Rgba32> extrinsic_transparency_override_;
+    std::optional<ImportTransparencyMode> import_transparency_override_;
     std::optional<bool> ignore_triple_layer_content_override_;
     std::optional<ArtifactEditMode> tiles_edit_mode_override_;
     std::optional<ArtifactEditMode> palettes_edit_mode_override_;
