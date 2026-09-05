@@ -1,5 +1,6 @@
 #include "porytiles/infra/services/ascii_tile_printer.hpp"
 
+#include <optional>
 #include <set>
 #include <sstream>
 #include <string>
@@ -120,26 +121,45 @@ get_tile_from_metatile(const Metatile<Rgba32> &metatile, metatile::Layer layer, 
     panic("invalid layer value");
 }
 
+/// @brief Converts subtile-local (row, col) pairs to metatile-local coordinates.
+///
+/// @details
+/// A subtile is one 8x8 quadrant of the 16x16 layer: northwest at rows/cols [0, 8), northeast at cols [8, 16), and
+/// the south subtiles at rows [8, 16). The offset is the subtile's quadrant origin.
+std::set<std::pair<std::size_t, std::size_t>>
+to_metatile_coords(metatile::Subtile subtile, const std::set<std::pair<std::size_t, std::size_t>> &subtile_coords)
+{
+    const auto subtile_index = static_cast<std::size_t>(subtile);
+    const std::size_t row_offset = (subtile_index / metatile::tiles_per_side) * tile::side_length_pix;
+    const std::size_t col_offset = (subtile_index % metatile::tiles_per_side) * tile::side_length_pix;
+    std::set<std::pair<std::size_t, std::size_t>> result{};
+    for (const auto &[row, col] : subtile_coords) {
+        result.insert({row + row_offset, col + col_offset});
+    }
+    return result;
+}
+
 /// @brief Helper function to render a metatile with highlighted pixels.
 ///
 /// @details
-/// This function renders a 16x16 metatile grid with highlighted pixels based on the provided set of (row, col)
-/// coordinates. Pixels at the highlighted coordinates are marked with "X" styled with their actual RGB color (bold),
-/// other pixels in the target subtile are marked with "*" styled with their actual RGB color (bold), and pixels in
-/// non-target subtiles are marked with "." styled with their actual RGB color (non-bold).
+/// This function renders a 16x16 metatile grid with highlighted pixels based on the provided set of metatile-local
+/// (row, col) coordinates. Pixels at the highlighted coordinates are marked with "X" styled with their actual RGB
+/// color (bold). When a target subtile is given, its other pixels render as bold styled blanks and pixels in the
+/// non-target subtiles render as non-bold styled blanks. Without a target subtile every unmarked pixel renders as a
+/// bold styled blank.
 ///
 /// @param metatile The metatile to render
 /// @param layer The layer of the metatile to render
-/// @param subtile The subtile being highlighted
-/// @param highlight_coords Set of (row, col) coordinates within the subtile to highlight with "X"
+/// @param target_subtile The subtile being highlighted, or nullopt to treat the whole layer uniformly
+/// @param highlight_coords Set of metatile-local (row, col) coordinates to highlight with "X"
 /// @param extrinsic_transparency The extrinsic transparency color to substitute for intrinsically transparent pixels
 /// @param format The text formatter to use for styling
-/// @param highlight_subtile Toggle to highlight the provided subtile
+/// @param highlight_subtile Toggle to draw arrows at the target subtile; ignored without a target subtile
 /// @return A vector of strings representing the rendered metatile
 std::vector<std::string> render_metatile_with_highlights(
     const Metatile<Rgba32> &metatile,
     metatile::Layer layer,
-    metatile::Subtile subtile,
+    std::optional<metatile::Subtile> target_subtile,
     const std::set<std::pair<std::size_t, std::size_t>> &highlight_coords,
     const Rgba32 &extrinsic_transparency,
     const TextFormatter *format,
@@ -148,15 +168,17 @@ std::vector<std::string> render_metatile_with_highlights(
     std::vector<std::string> result{};
     std::stringstream ss{};
 
+    const bool draw_arrows = highlight_subtile && target_subtile.has_value();
+
     // Insert a blank line
     result.emplace_back();
 
-    if (highlight_subtile && subtile == metatile::Subtile::northwest) {
+    if (draw_arrows && target_subtile == metatile::Subtile::northwest) {
         push_to_stream(ss, *format, "↓", Style::bold | Style::yellow, 16);
         result.push_back(ss.str());
         reset_stream(ss);
     }
-    if (highlight_subtile && subtile == metatile::Subtile::northeast) {
+    if (draw_arrows && target_subtile == metatile::Subtile::northeast) {
         push_to_stream(ss, " ", 16 + 1); // +1 to account for center space
         push_to_stream(ss, *format, "↓", Style::bold | Style::yellow, 16);
         result.push_back(ss.str());
@@ -191,7 +213,7 @@ std::vector<std::string> render_metatile_with_highlights(
                 subtile_col = j - 8;
             }
 
-            const bool is_in_target_subtile = current_subtile == subtile;
+            const bool is_in_target_subtile = !target_subtile.has_value() || current_subtile == *target_subtile;
             const auto &current_tile = get_tile_from_metatile(metatile, layer, current_subtile);
             auto pixel_color = current_tile.at(subtile_row, subtile_col);
             if (pixel_color.is_intrinsically_transparent()) {
@@ -202,7 +224,7 @@ std::vector<std::string> render_metatile_with_highlights(
 
             if (is_in_target_subtile) {
                 // In target subtile: show pixel highlight if requested, highlight subtile if requested
-                if (highlight_coords.contains({subtile_row, subtile_col})) {
+                if (highlight_coords.contains({i, j})) {
                     ss << format->format("{}", FormatParam{"XX", Style::bold | Style::blink | color_style_fg});
                 }
                 else {
@@ -234,12 +256,12 @@ std::vector<std::string> render_metatile_with_highlights(
         }
     }
 
-    if (highlight_subtile && subtile == metatile::Subtile::southwest) {
+    if (draw_arrows && target_subtile == metatile::Subtile::southwest) {
         push_to_stream(ss, *format, "↑", Style::bold | Style::yellow, 16);
         result.push_back(ss.str());
         reset_stream(ss);
     }
-    if (highlight_subtile && subtile == metatile::Subtile::southeast) {
+    if (draw_arrows && target_subtile == metatile::Subtile::southeast) {
         push_to_stream(ss, " ", 16 + 1); // +1 to account for center space
         push_to_stream(ss, *format, "↑", Style::bold | Style::yellow, 16);
         result.push_back(ss.str());
@@ -281,7 +303,8 @@ std::vector<std::string> AsciiTilePrinter::print_metatile_pixel_highlight(
     const Rgba32 &extrinsic_transparency) const
 {
     std::set<std::pair<std::size_t, std::size_t>> coords{{row, col}};
-    return render_metatile_with_highlights(metatile, layer, subtile, coords, extrinsic_transparency, format_, true);
+    return render_metatile_with_highlights(
+        metatile, layer, subtile, to_metatile_coords(subtile, coords), extrinsic_transparency, format_, true);
 }
 
 std::vector<std::string> AsciiTilePrinter::print_metatile_pixel_highlights(
@@ -295,7 +318,18 @@ std::vector<std::string> AsciiTilePrinter::print_metatile_pixel_highlights(
     for (const auto index : indexes) {
         coords.insert(tile::index_to_row_col(index));
     }
-    return render_metatile_with_highlights(metatile, layer, subtile, coords, extrinsic_transparency, format_, true);
+    return render_metatile_with_highlights(
+        metatile, layer, subtile, to_metatile_coords(subtile, coords), extrinsic_transparency, format_, true);
+}
+
+std::vector<std::string> AsciiTilePrinter::print_metatile_pixel_highlights(
+    const Metatile<Rgba32> &metatile,
+    metatile::Layer layer,
+    const std::set<std::pair<std::size_t, std::size_t>> &pixel_coords,
+    const Rgba32 &extrinsic_transparency) const
+{
+    return render_metatile_with_highlights(
+        metatile, layer, std::nullopt, pixel_coords, extrinsic_transparency, format_, false);
 }
 
 std::vector<std::string>

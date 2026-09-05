@@ -198,6 +198,16 @@ message_header(const TextFormatter &format, std::size_t index, Layer layer, Subt
         FormatParam{to_string(subtile)});
 }
 
+[[nodiscard]] inline std::string message_header(const TextFormatter &format, std::size_t index, Layer layer)
+{
+    return format.format(
+        "{} {}({})|{}",
+        FormatParam{"metatile"},
+        FormatParam{int_to_hex_str(index)},
+        FormatParam{index},
+        FormatParam{to_string(layer)});
+}
+
 [[nodiscard]] inline std::string message_header(const TextFormatter &format, std::size_t index, Subtile subtile)
 {
     return format.format(

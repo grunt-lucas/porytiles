@@ -205,6 +205,23 @@ template <typename T>
     return std::format("{:02}", t);
 }
 
+/// @brief Formats a ratio as a percentage string with two decimals, e.g. "12.34%".
+///
+/// @details
+/// A zero denominator yields "0.00%" so callers can get a reasonable printout without checking for this edge case.
+///
+/// @param numerator The numerator
+/// @param denominator The denominator
+/// @return The percentage text
+[[nodiscard]] inline std::string format_percentage(std::size_t numerator, std::size_t denominator)
+{
+    if (denominator == 0) {
+        return "0.00%";
+    }
+    const double percent = 100.0 * static_cast<double>(numerator) / static_cast<double>(denominator);
+    return std::format("{:.2f}%", percent);
+}
+
 /// @brief Identity function for to_string with std::string input.
 ///
 /// @details

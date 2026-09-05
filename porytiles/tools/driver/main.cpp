@@ -11,9 +11,11 @@
 #include "command_decompile_tileset.hpp"
 #include "command_dump_attribute_schema.hpp"
 #include "command_dump_project_config.hpp"
+#include "command_dump_tileset_colors.hpp"
 #include "command_dump_tileset_config.hpp"
 #include "command_edit_project_config.hpp"
 #include "command_edit_tileset_config.hpp"
+#include "command_find_tileset_color.hpp"
 #include "command_import_tileset.hpp"
 #include "command_list_tilesets.hpp"
 #include "custom_formatter.hpp"
@@ -81,6 +83,8 @@ https://github.com/huderlem/porymap)");
     EditTilesetConfigCommand edit_tileset_config{porytiles_app};
     EditProjectConfigCommand edit_project_config{porytiles_app};
     DumpAttributeSchemaCommand dump_attribute_schema{porytiles_app};
+    FindTilesetColorCommand find_tileset_color{porytiles_app};
+    DumpTilesetColorsCommand dump_tileset_colors{porytiles_app};
     CompletionCommand completion{porytiles_app};
     ListTilesetsCommand list_tilesets{porytiles_app};
 

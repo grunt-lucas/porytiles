@@ -1,6 +1,8 @@
 #pragma once
 
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "porytiles/domain/models/index_pixel.hpp"
@@ -37,6 +39,23 @@ class TilePrinter {
         metatile::Layer layer,
         metatile::Subtile subtile,
         const std::vector<std::size_t> &indexes,
+        const Rgba32 &extrinsic_transparency) const = 0;
+
+    /// @brief Renders one layer of a metatile with markers on an arbitrary set of pixels.
+    ///
+    /// @details
+    /// Renders the metatile's given 16x16 layer with no emphasized subtile. The markers may fall anywhere in the layer.
+    /// Coordinates are metatile-local (row and column in [0, 16)).
+    ///
+    /// @param metatile The metatile to render
+    /// @param layer The layer of the metatile to render
+    /// @param pixel_coords Metatile-local (row, col) pairs to mark
+    /// @param extrinsic_transparency The color substituted for intrinsically transparent pixels
+    /// @return The rendered lines
+    [[nodiscard]] virtual std::vector<std::string> print_metatile_pixel_highlights(
+        const Metatile<Rgba32> &metatile,
+        metatile::Layer layer,
+        const std::set<std::pair<std::size_t, std::size_t>> &pixel_coords,
         const Rgba32 &extrinsic_transparency) const = 0;
 
     [[nodiscard]] virtual std::vector<std::string>
