@@ -21,7 +21,7 @@ End each entry with a link to its PR(s), or a specific commit(s) if that's clear
 
 - Added a `tileset.import_transparency` config (CLI: `--import-transparency`, default `extrinsic`). It controls how `import-tileset` and `decompile-tileset` write transparent pixels to the RGBA layer images and animation frames. Mode `alpha` writes them with alpha channel set to 0, `extrinsic` writes them as the configured `extrinsic_transparency` color, and `mixed` writes the layer group absent from dual-layer Porymap data as alpha 0, while present-but-transparent pixels get the `extrinsic_transparency` color (this is equivalent to `extrinsic` in triple-layer mode). - [#376](https://github.com/grunt-lucas/porytiles/pull/376)
 
-- Added a `find-tileset-color` command that locates every pixel of a given color in a tileset's RGBA layer images and animation frames, displaying each metatile / animation frame subtile match as ASCII art with the relevant pixels highlighted. Also added a `dump-tileset-colors` command that lists every color with pixel counts and compares the unique color total against the configured color limit. - [#378](https://github.com/grunt-lucas/porytiles/issues/378)
+- Added a `find-tileset-color` command that locates every pixel of a given color in a tileset's RGBA layer images and animation frames, displaying each metatile / animation frame subtile match as ASCII art with the relevant pixels highlighted. Also added a `dump-tileset-colors` command that lists every color with pixel counts and compares the unique color total against the configured color limit. - [#378](https://github.com/grunt-lucas/porytiles/pull/378)
 
 ## [2.0.0] - 2026-08-27
 
