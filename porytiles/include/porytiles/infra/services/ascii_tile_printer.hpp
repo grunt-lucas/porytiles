@@ -1,6 +1,8 @@
 #pragma once
 
+#include <set>
 #include <string>
+#include <utility>
 #include <vector>
 
 #include "gsl/pointers"
@@ -41,6 +43,12 @@ class AsciiTilePrinter final : public TilePrinter {
         metatile::Layer layer,
         metatile::Subtile subtile,
         const std::vector<std::size_t> &indexes,
+        const Rgba32 &extrinsic_transparency) const override;
+
+    [[nodiscard]] std::vector<std::string> print_metatile_pixel_highlights(
+        const Metatile<Rgba32> &metatile,
+        metatile::Layer layer,
+        const std::set<std::pair<std::size_t, std::size_t>> &pixel_coords,
         const Rgba32 &extrinsic_transparency) const override;
 
     [[nodiscard]] std::vector<std::string>

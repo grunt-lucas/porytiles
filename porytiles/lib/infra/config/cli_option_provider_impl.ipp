@@ -136,8 +136,8 @@ LayerValue<bool> parse_bool(const std::optional<std::string> &raw_value, const s
 /// @brief Parses an Rgba32 from a CLI string option.
 ///
 /// @details
-/// Accepts "R,G,B" or "R,G,B,A" format with values 0-255. Alpha defaults to 255 if not provided.
-/// Returns LayerValue::invalid() for malformed input or out-of-range component values.
+/// Delegates to porytiles::parse_rgba32_string which expects syntax: "R,G,B" or "R,G,B,A", each component 0-255.
+/// Returns LayerValue::invalid() for malformed input.
 ///
 /// @param raw_value The raw string value from CLI, or std::nullopt if not provided
 /// @param option_name The CLI option name for error messages (e.g., "--extrinsic-transparency")
@@ -148,57 +148,13 @@ LayerValue<Rgba32> parse_rgba32(const std::optional<std::string> &raw_value, con
         return LayerValue<Rgba32>::not_provided();
     }
 
-    const auto &input = raw_value.value();
-    std::istringstream iss{input};
-    std::string token;
-    std::vector<int> values;
-
-    while (std::getline(iss, token, ',')) {
-        // Use std::from_chars for robust integer parsing
-        int val = 0;
-        const auto *begin = token.data();
-        const auto *end = token.data() + token.size();
-        auto [ptr, ec] = std::from_chars(begin, end, val);
-
-        if (ec != std::errc{} || ptr != end) {
-            const auto error =
-                std::format("Invalid value '{}' for '{}': '{}' is not a valid integer.", input, option_name, token);
-            return LayerValue<Rgba32>::invalid(error, option_name);
-        }
-
-        if (val < 0 || val > 255) {
-            const auto error = std::format(
-                "Invalid value '{}' for '{}': component {} is out of range (must be 0-255).", input, option_name, val);
-            return LayerValue<Rgba32>::invalid(error, option_name);
-        }
-
-        values.push_back(val);
+    const auto parsed = porytiles::parse_rgba32_string(raw_value.value());
+    if (!parsed.has_value()) {
+        const auto error =
+            std::format("Invalid value '{}' for '{}': {}.", raw_value.value(), option_name, parsed.error());
+        return LayerValue<Rgba32>::invalid(error, option_name);
     }
-
-    if (values.size() == 3) {
-        Rgba32 result{
-            static_cast<std::uint8_t>(values[0]),
-            static_cast<std::uint8_t>(values[1]),
-            static_cast<std::uint8_t>(values[2]),
-            255};
-        return LayerValue<Rgba32>::valid(result, option_name, "CLI");
-    }
-
-    if (values.size() == 4) {
-        Rgba32 result{
-            static_cast<std::uint8_t>(values[0]),
-            static_cast<std::uint8_t>(values[1]),
-            static_cast<std::uint8_t>(values[2]),
-            static_cast<std::uint8_t>(values[3])};
-        return LayerValue<Rgba32>::valid(result, option_name, "CLI");
-    }
-
-    const auto error = std::format(
-        "Invalid value '{}' for '{}': expected R,G,B or R,G,B,A format (got {} components).",
-        input,
-        option_name,
-        values.size());
-    return LayerValue<Rgba32>::invalid(error, option_name);
+    return LayerValue<Rgba32>::valid(parsed.value(), option_name, "CLI");
 }
 
 /// @brief Pass-through parser for string CLI options.

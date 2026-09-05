@@ -214,3 +214,11 @@ TEST_F(StringUtilsTest, ManagedCallbackName)
     // PascalCase input (every vanilla tileset) still converges to the same result.
     EXPECT_EQ(anim::managed_callback_name("gTileset_General"), "InitTilesetAnim_PorytilesManaged_General");
 }
+
+TEST_F(StringUtilsTest, FormatPercentage)
+{
+    EXPECT_EQ(format_percentage(1, 8), "12.50%");
+    EXPECT_EQ(format_percentage(97, 90), "107.78%");
+    EXPECT_EQ(format_percentage(0, 5), "0.00%");
+    EXPECT_EQ(format_percentage(3, 0), "0.00%");
+}

@@ -2,13 +2,40 @@
 
 // ReSharper disable once CppUnusedIncludeDirective
 #include <cstdint>
+#include <expected>
 #include <format>
 #include <ostream>
 #include <set>
 #include <string>
+#include <string_view>
 #include <vector>
 
 namespace porytiles {
+
+/// @brief Converts an 8-bit RGB color channel to the GBA's 5-bit BGR15 channel.
+///
+/// @details
+/// Copied from gbagfx's DOWNCONVERT_BIT_DEPTH macro (pokeemerald tools/gbagfx/gfx.c).
+///
+/// @param channel The 8-bit channel value
+/// @return The 5-bit channel value in [0, 31]
+[[nodiscard]] constexpr std::uint8_t gba_downconvert_channel(std::uint8_t channel)
+{
+    return static_cast<std::uint8_t>(channel / 8);
+}
+
+/// @brief Converts a GBA BGR15 5-bit color channel back to an 8 bit RGB channel.
+///
+/// @details
+/// Copied from gbagfx's UPCONVERT_BIT_DEPTH macro (pokeemerald tools/gbagfx/gfx.c).
+///
+/// @param channel The 5-bit channel value
+/// @pre @p channel is at most 31
+/// @return The 8-bit channel value
+[[nodiscard]] constexpr std::uint8_t gba_upconvert_channel(std::uint8_t channel)
+{
+    return static_cast<std::uint8_t>((channel * 255) / 31);
+}
 
 /// @brief Represents a 32-bit RGBA color.
 ///
@@ -68,6 +95,16 @@ class Rgba32 {
 
     [[nodiscard]] bool equals_ignoring_alpha(const Rgba32 &other) const;
 
+    /// @brief Round-trips this color through the GBA's downsample conversion.
+    ///
+    /// @details
+    /// Each channel goes through gba_downconvert_channel and then gba_upconvert_channel, so the result is the 8-bit
+    /// color the GBA displays for this input. This is also the value the color will have in a decompiled JASC file. Two
+    /// colors with the same quantized value are the same color on hardware.
+    ///
+    /// @return The quantized color
+    [[nodiscard]] Rgba32 quantize_to_gba() const;
+
     // friend std::ostream &operator<<(std::ostream &os, const Rgba32 &rgba);
 
     [[nodiscard]] std::uint8_t red() const
@@ -102,6 +139,17 @@ inline std::string to_string(const Rgba32 &rgba)
     return "[" + std::to_string(rgba.red()) + ", " + std::to_string(rgba.green()) + ", " + std::to_string(rgba.blue()) +
            ", " + std::to_string(rgba.alpha()) + "]";
 }
+
+/// @brief Parses an Rgba32 from a comma-separated component string.
+///
+/// @details
+/// Accepts "R,G,B" or "R,G,B,A" with each component an integer in [0, 255]. Whitespace around a component is
+/// ignored. Alpha defaults to @c Rgba32::alpha_opaque when omitted.
+///
+/// @param text The component string to parse
+/// @return The parsed color, or a lowercase error fragment (no leading capital, no trailing period) describing the
+///         first problem found, for the caller to wrap with its own context
+[[nodiscard]] std::expected<Rgba32, std::string> parse_rgba32_string(std::string_view text);
 
 /// @brief Stream insertion operator for Rgba32.
 ///

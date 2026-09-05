@@ -1,12 +1,14 @@
 #include "porytiles/infra/services/color_palette_printer.hpp"
 
 #include <algorithm>
+#include <format>
 #include <ranges>
 #include <vector>
 
 #include "porytiles/domain/models/palette.hpp"
 #include "porytiles/domain/models/rgba32.hpp"
 #include "porytiles/domain/packing/models/palette_hint.hpp"
+#include "porytiles/utilities/string_utils.hpp"
 #include "porytiles/utilities/text/text_formatter.hpp"
 
 namespace {
@@ -168,6 +170,22 @@ ColorPalettePrinter::print_rgba_counts(const std::vector<std::pair<Rgba32, unsig
         const Style color_style = rgb_fg_style(color.red(), color.green(), color.blue());
         const std::string color_text = format_->style(color.to_jasc_str(), color_style);
         lines.push_back(format_->format("{} ➞ {} pixel(s)", FormatParam{color_text}, FormatParam{count}));
+    }
+    return lines;
+}
+
+std::vector<std::string> ColorPalettePrinter::print_rgba_counts(
+    const std::vector<std::pair<Rgba32, unsigned int>> &colors_counts, std::size_t total_pixels) const
+{
+    std::vector<std::string> lines{};
+    for (const auto &[color, count] : colors_counts) {
+        const Style color_style = rgb_fg_style(color.red(), color.green(), color.blue());
+        const std::string color_text = format_->style(color.to_jasc_str(), color_style);
+        lines.push_back(format_->format(
+            "{} ➞ {} pixel(s) ({})",
+            FormatParam{color_text},
+            FormatParam{count},
+            FormatParam{format_percentage(count, total_pixels)}));
     }
     return lines;
 }

@@ -37,6 +37,14 @@ class PalettePrinter {
     [[nodiscard]] virtual std::vector<std::string>
     print_rgba_counts(const std::vector<std::pair<Rgba32, unsigned int>> &colors_counts) const = 0;
 
+    /// @brief Prints color counts with each color's share of a pixel total.
+    ///
+    /// @param colors_counts The (color, count) pairs to print, in the order they should appear
+    /// @param total_pixels The denominator for the percentage column, must be at least the sum of the counts
+    /// @return The rendered lines, one per color
+    [[nodiscard]] virtual std::vector<std::string> print_rgba_counts(
+        const std::vector<std::pair<Rgba32, unsigned int>> &colors_counts, std::size_t total_pixels) const = 0;
+
     [[nodiscard]] std::vector<std::string>
     print_rgba_palette_counts(const std::map<Rgba32, unsigned int> &color_counts) const
     {

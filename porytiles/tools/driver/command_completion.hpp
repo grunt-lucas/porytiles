@@ -20,6 +20,8 @@
 /// `list-tilesets` subcommand. This provides context-sensitive filtering:
 /// - compile-tileset: shows only managed tilesets
 /// - decompile-tileset: shows only managed tilesets
+/// - find-tileset-color: shows only managed tilesets
+/// - dump-tileset-colors: shows only managed tilesets
 /// - import-tileset: shows only unmanaged tilesets
 /// - create-tileset: no completion (user provides new name)
 class CompletionCommand final : public Command {
@@ -142,8 +144,8 @@ class CompletionCommand final : public Command {
         std::cout << "    for ((i=1; i < COMP_CWORD; i++)); do\n";
         std::cout << "        case \"${COMP_WORDS[i]}\" in\n";
         std::cout << "            compile-tileset|create-tileset|decompile-tileset|dump-attribute-schema|"
-                     "dump-tileset-config|dump-project-config|edit-tileset-config|edit-project-config|"
-                     "import-tileset|list-tilesets|completion)\n";
+                     "dump-tileset-config|dump-project-config|dump-tileset-colors|edit-tileset-config|"
+                     "edit-project-config|find-tileset-color|import-tileset|list-tilesets|completion)\n";
         std::cout << "                subcommand=\"${COMP_WORDS[i]}\"\n";
         std::cout << "                break\n";
         std::cout << "                ;;\n";
@@ -153,8 +155,8 @@ class CompletionCommand final : public Command {
 
         std::cout << "    # Main commands\n";
         std::cout << "    local commands=\"compile-tileset create-tileset decompile-tileset dump-attribute-schema "
-                     "dump-tileset-config dump-project-config edit-tileset-config edit-project-config "
-                     "import-tileset list-tilesets completion\"\n";
+                     "dump-tileset-config dump-project-config dump-tileset-colors edit-tileset-config "
+                     "edit-project-config find-tileset-color import-tileset list-tilesets completion\"\n";
         std::cout << "\n";
         std::cout << "    # Config options\n";
         std::cout << "    local config_opts=\"";
@@ -223,6 +225,10 @@ class CompletionCommand final : public Command {
         std::cout << "            extra_opts=\"--local --allow-missing-tileset\"\n";
         std::cout << "        elif [[ \"$subcommand\" == \"edit-project-config\" ]]; then\n";
         std::cout << "            extra_opts=\"--local\"\n";
+        std::cout << "        elif [[ \"$subcommand\" == \"find-tileset-color\" ]]; then\n";
+        std::cout << "            extra_opts=\"--limit --tolerance\"\n";
+        std::cout << "        elif [[ \"$subcommand\" == \"dump-tileset-colors\" ]]; then\n";
+        std::cout << "            extra_opts=\"--group --tolerance\"\n";
         std::cout << "        fi\n";
         std::cout << "        COMPREPLY=( $(compgen -W \"${config_opts} ${extra_opts}\" -- ${cur}) )\n";
         std::cout << "        return 0\n";
@@ -232,7 +238,7 @@ class CompletionCommand final : public Command {
         // Tileset name completion based on subcommand
         std::cout << "    # Complete tileset names based on subcommand\n";
         std::cout << "    case \"$subcommand\" in\n";
-        std::cout << "        compile-tileset|decompile-tileset)\n";
+        std::cout << "        compile-tileset|decompile-tileset|find-tileset-color|dump-tileset-colors)\n";
         std::cout << "            # Only managed tilesets\n";
         std::cout << "            COMPREPLY=( $(_porytiles_complete_tilesets managed) )\n";
         std::cout << "            ;;\n";
@@ -313,8 +319,10 @@ class CompletionCommand final : public Command {
         std::cout << "        'dump-attribute-schema:Dump the resolved metatile attribute schema for a tileset'\n";
         std::cout << "        'dump-tileset-config:Dump the full configuration provenance chain for a tileset'\n";
         std::cout << "        'dump-project-config:Dump the project configuration provenance chain'\n";
+        std::cout << "        'dump-tileset-colors:Dump every color in a tileset with pixel counts'\n";
         std::cout << "        'edit-tileset-config:Open a tileset YAML config file in your editor'\n";
         std::cout << "        'edit-project-config:Open the project YAML config file in your editor'\n";
+        std::cout << "        'find-tileset-color:Find every metatile and animation tile containing a color'\n";
         std::cout << "        'import-tileset:Import a pre-existing tileset'\n";
         std::cout << "        'list-tilesets:List tileset names in the project'\n";
         std::cout << "        'completion:Generate shell completion scripts'\n";
@@ -362,6 +370,27 @@ class CompletionCommand final : public Command {
         std::cout << "                compile-tileset|decompile-tileset)\n";
         std::cout << "                    _arguments \\\n";
         std::cout << "                        $config_opts \\\n";
+        std::cout << "                        '1:tileset:->tileset_managed'\n";
+        std::cout
+            << "                    [[ \"$state\" == tileset_managed ]] && _porytiles_complete_tilesets managed\n";
+        std::cout << "                    ;;\n";
+        std::cout << "                find-tileset-color)\n";
+        std::cout << "                    _arguments \\\n";
+        std::cout << "                        $config_opts \\\n";
+        std::cout << "                        '--limit[Maximum number of matches to render, or all]:limit:' \\\n";
+        std::cout << "                        '--tolerance[Per-channel color tolerance (0-255)]:tolerance:' \\\n";
+        std::cout << "                        '1:tileset:->tileset_managed' \\\n";
+        std::cout << "                        '2:color (R,G,B):'\n";
+        std::cout
+            << "                    [[ \"$state\" == tileset_managed ]] && _porytiles_complete_tilesets managed\n";
+        std::cout << "                    ;;\n";
+        std::cout << "                dump-tileset-colors)\n";
+        std::cout << "                    _arguments \\\n";
+        std::cout << "                        $config_opts \\\n";
+        std::cout << "                        '--group[Cluster similar colors together]' \\\n";
+        std::cout
+            << "                        '--tolerance[Per-channel color tolerance for --group (0-255)]:tolerance:' "
+               "\\\n";
         std::cout << "                        '1:tileset:->tileset_managed'\n";
         std::cout
             << "                    [[ \"$state\" == tileset_managed ]] && _porytiles_complete_tilesets managed\n";
@@ -476,8 +505,8 @@ class CompletionCommand final : public Command {
         std::cout << "    for word in $cmd[2..-1]\n";
         std::cout << "        switch $word\n";
         std::cout << "            case compile-tileset create-tileset decompile-tileset dump-attribute-schema "
-                     "dump-tileset-config dump-project-config edit-tileset-config edit-project-config "
-                     "import-tileset list-tilesets completion\n";
+                     "dump-tileset-config dump-project-config dump-tileset-colors edit-tileset-config "
+                     "edit-project-config find-tileset-color import-tileset list-tilesets completion\n";
         std::cout << "                return 1\n";
         std::cout << "        end\n";
         std::cout << "    end\n";
@@ -510,10 +539,14 @@ class CompletionCommand final : public Command {
                      "full configuration provenance chain for a tileset'\n";
         std::cout << "complete -c porytiles -f -n __porytiles_needs_subcommand -a dump-project-config -d 'Dump the "
                      "project configuration provenance chain'\n";
+        std::cout << "complete -c porytiles -f -n __porytiles_needs_subcommand -a dump-tileset-colors -d 'Dump every "
+                     "color in a tileset with pixel counts'\n";
         std::cout << "complete -c porytiles -f -n __porytiles_needs_subcommand -a edit-tileset-config -d 'Open a "
                      "tileset YAML config file in your editor'\n";
         std::cout << "complete -c porytiles -f -n __porytiles_needs_subcommand -a edit-project-config -d 'Open the "
                      "project YAML config file in your editor'\n";
+        std::cout << "complete -c porytiles -f -n __porytiles_needs_subcommand -a find-tileset-color -d 'Find every "
+                     "metatile and animation tile containing a color'\n";
         std::cout << "complete -c porytiles -f -n __porytiles_needs_subcommand -a import-tileset -d 'Import a "
                      "pre-existing tileset'\n";
         std::cout << "complete -c porytiles -f -n __porytiles_needs_subcommand -a list-tilesets -d 'List tileset "
@@ -533,6 +566,10 @@ class CompletionCommand final : public Command {
         std::cout << "complete -c porytiles -f -n '__porytiles_using_subcommand compile-tileset' -a "
                      "'(__porytiles_complete_tilesets managed)'\n";
         std::cout << "complete -c porytiles -f -n '__porytiles_using_subcommand decompile-tileset' -a "
+                     "'(__porytiles_complete_tilesets managed)'\n";
+        std::cout << "complete -c porytiles -f -n '__porytiles_using_subcommand find-tileset-color' -a "
+                     "'(__porytiles_complete_tilesets managed)'\n";
+        std::cout << "complete -c porytiles -f -n '__porytiles_using_subcommand dump-tileset-colors' -a "
                      "'(__porytiles_complete_tilesets managed)'\n";
         std::cout << "complete -c porytiles -f -n '__porytiles_using_subcommand dump-attribute-schema' -a "
                      "'(__porytiles_complete_tilesets all)'\n";
@@ -574,6 +611,18 @@ class CompletionCommand final : public Command {
                      "'Filter mode' -xa 'all managed unmanaged'\n";
         std::cout << "complete -c porytiles -f -n '__porytiles_using_subcommand list-tilesets' -l prefix -d "
                      "'Only show tilesets starting with this prefix'\n";
+        std::cout << "\n";
+
+        // Options for the color inspection subcommands
+        std::cout << "# Options for the color inspection subcommands\n";
+        std::cout << "complete -c porytiles -f -n '__porytiles_using_subcommand find-tileset-color' -l limit -d "
+                     "'Maximum number of matches to render, or all'\n";
+        std::cout << "complete -c porytiles -f -n '__porytiles_using_subcommand find-tileset-color' -l tolerance -d "
+                     "'Per-channel color tolerance (0-255)'\n";
+        std::cout << "complete -c porytiles -f -n '__porytiles_using_subcommand dump-tileset-colors' -l group -d "
+                     "'Cluster similar colors together'\n";
+        std::cout << "complete -c porytiles -f -n '__porytiles_using_subcommand dump-tileset-colors' -l tolerance -d "
+                     "'Per-channel color tolerance for --group (0-255)'\n";
         std::cout << "\n";
 
         // Completion for the 'completion' subcommand
