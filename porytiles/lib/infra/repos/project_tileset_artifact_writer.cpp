@@ -10,8 +10,11 @@
 #include <optional>
 #include <random>
 #include <ranges>
+#include <set>
 #include <sstream>
 #include <string>
+#include <string_view>
+#include <system_error>
 
 #include "porytiles/domain/config/role_pin_definition.hpp"
 #include "porytiles/domain/models/metatile.hpp"
@@ -32,9 +35,9 @@ namespace {
 using namespace porytiles;
 
 // Marker directories for artifact categorization
-const std::filesystem::path porytiles_src_marker{"porytiles_src"};
-const std::filesystem::path porytiles_bin_marker{"porytiles_bin"};
-const std::filesystem::path porytiles_generated_marker{"porytiles_generated"};
+constexpr std::string_view porytiles_src_marker{"porytiles_src"};
+constexpr std::string_view porytiles_bin_marker{"porytiles_bin"};
+constexpr std::string_view porytiles_generated_marker{"porytiles_generated"};
 
 /// @brief Categories for artifact destinations.
 ///
@@ -230,7 +233,8 @@ ChainableResult<std::filesystem::path> compute_transaction_dest_path(
     if (!staged_directories.contains(dest_dir)) {
         // Create a unique staging directory for this category
         const auto staging_dir = transaction_root / category_dir;
-        staged_directories[dest_dir] = StagedDirectory{staging_dir, dest_dir};
+        staged_directories[dest_dir] =
+            StagedDirectory{staging_dir, dest_dir, path_info.category == ArtifactCategory::porytiles_src};
     }
 
     // Compute the path relative to the category directory
@@ -241,6 +245,46 @@ ChainableResult<std::filesystem::path> compute_transaction_dest_path(
     std::filesystem::create_directories(staging_path.parent_path());
 
     return staging_path;
+}
+
+/// @brief Carries the existing entries of a directory into its staged replacement, skipping written and removed ones.
+///
+/// @details
+/// The staged directory atomically replaces the existing one at commit. An entry that wasn't explicitly written or
+/// marked for removal is a user file, so we need to carry it into the staged directory first.
+void carry_over_unwritten_entries(
+    const std::filesystem::path &existing_dir,
+    const std::filesystem::path &staging_dir,
+    const std::set<std::filesystem::path> &removed_paths)
+{
+    for (const auto &entry : std::filesystem::recursive_directory_iterator{existing_dir}) {
+        const auto staged_path = staging_dir / entry.path().lexically_relative(existing_dir);
+
+        // The symlink check comes first because is_directory() follows a link to its target
+        if (!entry.is_symlink() && entry.is_directory()) {
+            // A directory with entries is recreated by the files carried out of it. An empty one has no such file.
+            if (std::filesystem::is_empty(entry.path())) {
+                std::filesystem::create_directories(staged_path);
+            }
+            continue;
+        }
+
+        const bool written = std::filesystem::exists(std::filesystem::symlink_status(staged_path));
+        if (written || removed_paths.contains(entry.path().lexically_normal())) {
+            continue;
+        }
+
+        std::filesystem::create_directories(staged_path.parent_path());
+        if (entry.is_symlink()) {
+            std::filesystem::copy_symlink(entry.path(), staged_path);
+            continue;
+        }
+        std::error_code link_error;
+        std::filesystem::create_hard_link(entry.path(), staged_path, link_error);
+        if (link_error) {
+            std::filesystem::copy_file(entry.path(), staged_path);
+        }
+    }
 }
 
 /// @brief Converts a vector of tiles into an image.
@@ -410,6 +454,7 @@ ChainableResult<void> ProjectTilesetArtifactWriter::begin_transaction()
     // Clear any stale tracking data
     staged_directories_.clear();
     staged_special_files_.clear();
+    removed_keys_.clear();
 
     return {};
 }
@@ -420,8 +465,8 @@ ChainableResult<void> ProjectTilesetArtifactWriter::commit()
         return FormattableError{"No transaction in progress."};
     }
 
-    // If nothing was staged, just clean up
-    if (staged_directories_.empty() && staged_special_files_.empty()) {
+    // If nothing was staged or marked for removal, just clean up
+    if (staged_directories_.empty() && staged_special_files_.empty() && removed_keys_.empty()) {
         std::filesystem::remove_all(transaction_root_);
         transaction_root_.clear();
         return {};
@@ -430,14 +475,27 @@ ChainableResult<void> ProjectTilesetArtifactWriter::commit()
     // Create backup root inside project for same-filesystem operations
     const auto backup_root = create_project_tmpdir(project_root_);
 
+    std::set<std::filesystem::path> removed_paths;
+    for (const auto &key_path : removed_keys_) {
+        removed_paths.insert((project_root_ / key_path).lexically_normal());
+    }
+
     // Track what we've moved for rollback
     std::vector<std::pair<std::filesystem::path, std::filesystem::path>> moved_directories; // (dest, backup)
+    std::vector<std::pair<std::filesystem::path, std::filesystem::path>> removed_files;     // (dest, backup)
     std::vector<std::pair<std::filesystem::path, std::filesystem::path>> backed_up_special_files;
     std::vector<std::filesystem::path> new_special_files;
 
     try {
-        // Phase 1: Backup existing destination directories by moving them to backup
+        // Carry the user's files into the staged directories that keep unwritten entries
         for (const auto &[dest_dir, staged_info] : staged_directories_) {
+            if (staged_info.keeps_unwritten_entries && std::filesystem::exists(dest_dir)) {
+                carry_over_unwritten_entries(dest_dir, staged_info.staging_path, removed_paths);
+            }
+        }
+
+        // Backup existing destination directories by moving them to backup
+        for (const auto &dest_dir : staged_directories_ | std::views::keys) {
             if (std::filesystem::exists(dest_dir)) {
                 // Create backup path preserving structure
                 const auto relative = std::filesystem::relative(dest_dir, project_root_);
@@ -450,7 +508,7 @@ ChainableResult<void> ProjectTilesetArtifactWriter::commit()
             }
         }
 
-        // Phase 2: Atomic directory moves from staging to destination
+        // Atomic directory moves from staging to destination
         for (const auto &[dest_dir, staged_info] : staged_directories_) {
             // Create parent directories if needed
             std::filesystem::create_directories(dest_dir.parent_path());
@@ -459,7 +517,33 @@ ChainableResult<void> ProjectTilesetArtifactWriter::commit()
             std::filesystem::rename(staged_info.staging_path, dest_dir);
         }
 
-        // Phase 3: Handle special files (like generated_anim_code.h)
+        // Remove the marked artifacts that the directory moves left in place. A marked artifact inside a staged
+        // directory is already gone: it was either left out of the carry-over or replaced along with its directory.
+        for (const auto &key_path : removed_keys_) {
+            const auto path_info = categorize_artifact_key(key_path);
+            const auto category_dir = project_root_ / path_info.directory;
+            const bool in_staged_directory =
+                path_info.category != ArtifactCategory::special && staged_directories_.contains(category_dir);
+            // A staged file at this key means the transaction also wrote it, and the write takes precedence
+            const bool written = std::filesystem::exists(transaction_root_ / key_path);
+            const auto dest_path = project_root_ / key_path;
+            if (in_staged_directory || written || !std::filesystem::exists(dest_path)) {
+                continue;
+            }
+
+            const auto backup_path = backup_root / key_path;
+            std::filesystem::create_directories(backup_path.parent_path());
+            std::filesystem::rename(dest_path, backup_path);
+            removed_files.emplace_back(dest_path, backup_path);
+
+            // Drop the directories the removal emptied, stopping at the artifact's category directory
+            for (auto dir = dest_path.parent_path(); dir != category_dir && std::filesystem::is_empty(dir);
+                 dir = dir.parent_path()) {
+                std::filesystem::remove(dir);
+            }
+        }
+
+        // Handle special files (like generated_anim_code.h)
         for (const auto &[staging_path, dest_path] : staged_special_files_) {
             // Backup existing special file if it exists
             if (std::filesystem::exists(dest_path)) {
@@ -478,17 +562,18 @@ ChainableResult<void> ProjectTilesetArtifactWriter::commit()
             std::filesystem::copy_file(staging_path, dest_path, std::filesystem::copy_options::overwrite_existing);
         }
 
-        // Phase 4: Success - clean up transaction and backup directories
+        // Phase 6: Success - clean up transaction and backup directories
         std::filesystem::remove_all(transaction_root_);
         std::filesystem::remove_all(backup_root);
         transaction_root_.clear();
         staged_directories_.clear();
         staged_special_files_.clear();
+        removed_keys_.clear();
 
         return {};
     }
     catch (const std::filesystem::filesystem_error &e) {
-        // Phase 5: Error occurred - rollback
+        // Phase 7: Error occurred - rollback
         try {
             // Rollback moved directories: move backups back to their original locations
             for (const auto &[original_path, backup_path] : moved_directories) {
@@ -497,6 +582,14 @@ ChainableResult<void> ProjectTilesetArtifactWriter::commit()
                     if (std::filesystem::exists(original_path)) {
                         std::filesystem::remove_all(original_path);
                     }
+                    std::filesystem::rename(backup_path, original_path);
+                }
+            }
+
+            // Rollback removed files, recreating any directory the removal emptied
+            for (const auto &[original_path, backup_path] : removed_files) {
+                if (std::filesystem::exists(backup_path)) {
+                    std::filesystem::create_directories(original_path.parent_path());
                     std::filesystem::rename(backup_path, original_path);
                 }
             }
@@ -530,6 +623,7 @@ ChainableResult<void> ProjectTilesetArtifactWriter::commit()
         transaction_root_.clear();
         staged_directories_.clear();
         staged_special_files_.clear();
+        removed_keys_.clear();
 
         return FormattableError{"Failed to commit transaction: {}.", FormatParam{e.what()}};
     }
@@ -548,14 +642,26 @@ ChainableResult<void> ProjectTilesetArtifactWriter::rollback()
         transaction_root_.clear();
         staged_directories_.clear();
         staged_special_files_.clear();
+        removed_keys_.clear();
         return {};
     }
     catch (const std::filesystem::filesystem_error &e) {
         transaction_root_.clear();
         staged_directories_.clear();
         staged_special_files_.clear();
+        removed_keys_.clear();
         return FormattableError{"Failed to rollback transaction: {}.", FormatParam{e.what()}};
     }
+}
+
+ChainableResult<void> ProjectTilesetArtifactWriter::remove_artifact(const ArtifactKey &key)
+{
+    if (transaction_root_.empty()) {
+        return FormattableError{"No transaction in progress."};
+    }
+
+    removed_keys_.insert(std::filesystem::path{key.key()});
+    return {};
 }
 
 // Porymap artifacts
@@ -648,10 +754,8 @@ ProjectTilesetArtifactWriter::write_porymap_anim_params(const ArtifactKey &dest_
 {
     const auto &porymap_anims = src.porymap_component().anims();
     if (porymap_anims.empty()) {
-        // If there are no anims, but the params file exists, remove it
-        if (std::filesystem::exists(project_root_ / dest_key.key())) {
-            std::filesystem::remove(project_root_ / dest_key.key());
-        }
+        // Nothing to write. A params file left by an earlier save is removed by the caller through remove_artifact(),
+        // which keeps the removal inside the transaction.
         return {};
     }
 
@@ -967,9 +1071,7 @@ ProjectTilesetArtifactWriter::write_porytiles_anim_params(const ArtifactKey &des
     const auto &primary_overrides = src.porytiles_component().primary_anim_overrides();
 
     if (porytiles_anims.empty() && primary_overrides.empty()) {
-        // Unlike in write_porymap_anim_params, we don't need to delete anything here. That's because anim.json is
-        // within porytiles_src dir, which is written using an atomic move. If the new porytiles_src dir doesn't contain
-        // an anim.json, the old one will get wiped by the commit() call.
+        // Nothing to write. An anim.json left by an earlier save is removed by the caller through remove_artifact().
         return {};
     }
 

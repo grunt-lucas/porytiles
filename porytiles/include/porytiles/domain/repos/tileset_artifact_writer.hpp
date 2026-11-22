@@ -51,6 +51,19 @@ class TilesetArtifactWriter {
     /// @return Empty ChainableResult on success, otherwise an error description
     [[nodiscard]] virtual ChainableResult<void> rollback() = 0;
 
+    /// @brief Marks an artifact for removal from the backing store.
+    ///
+    /// @details
+    /// The removal happens when commit() is called, and any removal is discarded by rollback(). An actual write to the
+    /// same key in the same transaction always takes precedence over the removal, no matter which call comes first.
+    /// This allows a caller to mark every artifact that exists before saving, and then write the current set such that
+    /// artifacts missing from the current set are removed. Marking a key that has no artifact in the backing store has
+    /// no effect. If no transaction is active, this should return an error.
+    ///
+    /// @param key Key identifying the artifact to remove
+    /// @return Empty ChainableResult on success, otherwise an error description
+    [[nodiscard]] virtual ChainableResult<void> remove_artifact(const ArtifactKey &key) = 0;
+
     // Porymap artifacts
     [[nodiscard]] virtual ChainableResult<void>
     write_metatiles_bin(const ArtifactKey &dest_key, const Tileset &src) = 0;

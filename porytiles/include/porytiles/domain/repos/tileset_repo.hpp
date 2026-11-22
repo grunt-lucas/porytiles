@@ -51,7 +51,8 @@ class TilesetRepo final {
     ///
     /// @details
     /// When persisting a Tileset, the repository saves the tileset and caches new artifact checksums for the persisted
-    /// data.
+    /// data. A tileset artifact that exists in the backing store before the save and is absent from @p tileset is
+    /// removed. Anything else in the backing store that is not a tileset artifact is ignored.
     ///
     /// @param tileset The Tileset to save.
     /// @return An empty ChainableResult on success, otherwise an error trace.
