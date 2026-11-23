@@ -255,8 +255,8 @@ ChainableResult<std::filesystem::path> compute_transaction_dest_path(
 ///
 /// @details
 /// The staged directory atomically replaces the existing one at commit. An entry that wasn't explicitly written or
-/// marked for removal is a user file, so we need to carry it into the staged directory first.
-/// Returns the carried files and links as paths relative to the existing directory.
+/// marked for removal is a user file, so we need to carry it into the staged directory first. Returns the carried files
+/// and links as paths relative to the existing directory.
 [[nodiscard]] std::set<std::filesystem::path> carry_over_unwritten_entries(
     const std::filesystem::path &existing_dir,
     const std::filesystem::path &staging_dir,
