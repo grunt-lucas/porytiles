@@ -346,7 +346,7 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
 
     std::filesystem::path test_root_;
     std::unique_ptr<TextFormatter> formatter_;
-    std::unique_ptr<UserDiagnostics> diag_;
+    std::unique_ptr<BufferedUserDiagnostics> diag_;
     std::unique_ptr<MockDomainConfig> domain_config_;
     std::unique_ptr<MockInfraConfig> infra_config_;
     std::unique_ptr<MockPngRgbaImageSaver> png_rgba_saver_;
@@ -1015,6 +1015,51 @@ TEST_F(ProjectTilesetArtifactWriterTests, CommitKeepsUnwrittenPorytilesSrcEntrie
     EXPECT_EQ(count_temp_dirs(), 0);
 }
 
+// A commit reports the files and links it kept in one remark per porytiles_src directory, sorted by path. The file the
+// transaction wrote and the empty directory are left out of the list.
+TEST_F(ProjectTilesetArtifactWriterTests, CommitRemarksOnKeptPorytilesSrcFiles)
+{
+    auto tileset = create_test_tileset("test_tileset");
+    const auto src_dir = test_root_ / "tileset/porytiles_src";
+    write_text_file(src_dir / "bottom.png", "old_bottom");
+    write_text_file(src_dir / "notes.txt", "my notes");
+    write_text_file(src_dir / "art/tiles.aseprite", "aseprite data");
+    std::filesystem::create_directories(src_dir / "scratch");
+    std::filesystem::create_symlink("notes.txt", src_dir / "notes_link.txt");
+
+    ASSERT_TRUE(writer_->begin_transaction().has_value());
+    ASSERT_TRUE(writer_->write_bottom_png(ArtifactKey{"tileset/porytiles_src/bottom.png"}, tileset).has_value());
+    auto commit_result = writer_->commit();
+    ASSERT_TRUE(commit_result.has_value()) << commit_result.error().join(PlainTextFormatter{});
+
+    const std::vector<std::vector<std::string>> expected{{
+        "Kept files in 'tileset/porytiles_src' that Porytiles does not manage:",
+        "  'art/tiles.aseprite'",
+        "  'notes.txt'",
+        "  'notes_link.txt'",
+    }};
+    EXPECT_EQ(diag_->remarks(), expected);
+    EXPECT_EQ(diag_->remark_tag_counts().at("porytiles-src-unmanaged-files"), 1);
+}
+
+// A marked artifact is removed by the commit, so it is absent from the list of kept files. With nothing kept, the
+// commit emits no remark at all.
+TEST_F(ProjectTilesetArtifactWriterTests, CommitWithoutKeptPorytilesSrcFilesEmitsNoRemark)
+{
+    auto tileset = create_test_tileset("test_tileset");
+    const auto src_dir = test_root_ / "tileset/porytiles_src";
+    write_text_file(src_dir / "bottom.png", "old_bottom");
+    write_text_file(src_dir / "middle.png", "old_middle");
+
+    ASSERT_TRUE(writer_->begin_transaction().has_value());
+    ASSERT_TRUE(writer_->remove_artifact(ArtifactKey{"tileset/porytiles_src/middle.png"}).has_value());
+    ASSERT_TRUE(writer_->write_bottom_png(ArtifactKey{"tileset/porytiles_src/bottom.png"}, tileset).has_value());
+    auto commit_result = writer_->commit();
+    ASSERT_TRUE(commit_result.has_value()) << commit_result.error().join(PlainTextFormatter{});
+
+    EXPECT_TRUE(diag_->remarks().empty());
+}
+
 // An artifact marked for removal is dropped from porytiles_src along with any directory the removal empties. Files
 // that were not marked stay, even inside a directory that lost its artifacts.
 TEST_F(ProjectTilesetArtifactWriterTests, CommitRemovesMarkedPorytilesSrcArtifacts)
@@ -1157,4 +1202,6 @@ TEST_F(ProjectTilesetArtifactWriterTests, FailedCommitRestoresOriginalEntries)
     EXPECT_EQ(read_whole_file(test_root_ / "generated/code.h"), "old_code");
     EXPECT_EQ(read_whole_file(test_root_ / "blocker"), "a regular file");
     EXPECT_EQ(count_temp_dirs(), 0);
+    // The kept-files remark describes a finished commit, so a failed one stays silent
+    EXPECT_TRUE(diag_->remarks().empty());
 }

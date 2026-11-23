@@ -15,6 +15,7 @@
 #include <string>
 #include <string_view>
 #include <system_error>
+#include <vector>
 
 #include "porytiles/domain/config/role_pin_definition.hpp"
 #include "porytiles/domain/models/metatile.hpp"
@@ -38,6 +39,9 @@ using namespace porytiles;
 constexpr std::string_view porytiles_src_marker{"porytiles_src"};
 constexpr std::string_view porytiles_bin_marker{"porytiles_bin"};
 constexpr std::string_view porytiles_generated_marker{"porytiles_generated"};
+
+// Tag of the remark that lists the files a commit kept in a porytiles_src directory
+constexpr auto unmanaged_files_tag = "porytiles-src-unmanaged-files";
 
 /// @brief Categories for artifact destinations.
 ///
@@ -252,13 +256,16 @@ ChainableResult<std::filesystem::path> compute_transaction_dest_path(
 /// @details
 /// The staged directory atomically replaces the existing one at commit. An entry that wasn't explicitly written or
 /// marked for removal is a user file, so we need to carry it into the staged directory first.
-void carry_over_unwritten_entries(
+/// Returns the carried files and links as paths relative to the existing directory.
+[[nodiscard]] std::set<std::filesystem::path> carry_over_unwritten_entries(
     const std::filesystem::path &existing_dir,
     const std::filesystem::path &staging_dir,
     const std::set<std::filesystem::path> &removed_paths)
 {
+    std::set<std::filesystem::path> carried_entries{};
     for (const auto &entry : std::filesystem::recursive_directory_iterator{existing_dir}) {
-        const auto staged_path = staging_dir / entry.path().lexically_relative(existing_dir);
+        const auto relative_path = entry.path().lexically_relative(existing_dir);
+        const auto staged_path = staging_dir / relative_path;
 
         // The symlink check comes first because is_directory() follows a link to its target
         if (!entry.is_symlink() && entry.is_directory()) {
@@ -277,14 +284,17 @@ void carry_over_unwritten_entries(
         std::filesystem::create_directories(staged_path.parent_path());
         if (entry.is_symlink()) {
             std::filesystem::copy_symlink(entry.path(), staged_path);
-            continue;
         }
-        std::error_code link_error;
-        std::filesystem::create_hard_link(entry.path(), staged_path, link_error);
-        if (link_error) {
-            std::filesystem::copy_file(entry.path(), staged_path);
+        else {
+            std::error_code link_error;
+            std::filesystem::create_hard_link(entry.path(), staged_path, link_error);
+            if (link_error) {
+                std::filesystem::copy_file(entry.path(), staged_path);
+            }
         }
+        carried_entries.insert(relative_path);
     }
+    return carried_entries;
 }
 
 /// @brief Converts a vector of tiles into an image.
@@ -485,12 +495,15 @@ ChainableResult<void> ProjectTilesetArtifactWriter::commit()
     std::vector<std::pair<std::filesystem::path, std::filesystem::path>> removed_files;     // (dest, backup)
     std::vector<std::pair<std::filesystem::path, std::filesystem::path>> backed_up_special_files;
     std::vector<std::filesystem::path> new_special_files;
+    // Destination directory -> the files and links carried into its staged replacement
+    std::map<std::filesystem::path, std::set<std::filesystem::path>> carried_entries;
 
     try {
         // Carry the user's files into the staged directories that keep unwritten entries
         for (const auto &[dest_dir, staged_info] : staged_directories_) {
             if (staged_info.keeps_unwritten_entries && std::filesystem::exists(dest_dir)) {
-                carry_over_unwritten_entries(dest_dir, staged_info.staging_path, removed_paths);
+                carried_entries[dest_dir] =
+                    carry_over_unwritten_entries(dest_dir, staged_info.staging_path, removed_paths);
             }
         }
 
@@ -569,6 +582,21 @@ ChainableResult<void> ProjectTilesetArtifactWriter::commit()
         staged_directories_.clear();
         staged_special_files_.clear();
         removed_keys_.clear();
+
+        // Tell the user about any untracked files that Porytiles ignores but kept around
+        for (const auto &[dest_dir, entries] : carried_entries) {
+            if (entries.empty()) {
+                continue;
+            }
+            std::vector<std::string> remark_lines{};
+            remark_lines.push_back(format_->format(
+                "Kept files in '{}' that Porytiles does not manage:",
+                FormatParam{dest_dir.lexically_relative(project_root_).generic_string(), Style::bold}));
+            for (const auto &entry : entries) {
+                remark_lines.push_back(format_->format("  '{}'", FormatParam{entry.generic_string(), Style::bold}));
+            }
+            diag_->remark(unmanaged_files_tag, remark_lines);
+        }
 
         return {};
     }
