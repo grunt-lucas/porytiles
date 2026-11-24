@@ -3,6 +3,7 @@
 #include <optional>
 #include <set>
 #include <string>
+#include <vector>
 
 #include "porytiles/domain/models/palette.hpp"
 #include "porytiles/domain/models/tileset.hpp"
@@ -11,13 +12,31 @@
 #include "porytiles/domain/repos/tileset_artifact_reader.hpp"
 #include "porytiles/domain/repos/tileset_artifact_writer.hpp"
 #include "porytiles/utilities/result/chainable_result.hpp"
+#include "porytiles/utilities/string_utils.hpp"
 
 namespace porytiles {
 
 ChainableResult<void> TilesetRepo::save(const Tileset &tileset) const
 {
+    PT_TRY_ASSIGN_CHAIN_ERR(
+        existing_keys,
+        key_provider_->get_all_artifact_keys(tileset.name()),
+        void,
+        "Failed to get artifact keys for tileset save.");
+
     // Begin transaction for atomic writes
     PT_TRY_CALL_CHAIN_ERR(writer_->begin_transaction(), void, "Tileset begin transaction failed.");
+
+    // Mark everything for removal. The write operations below will take precedence over removals, so the net result is
+    // that artifacts absent from the tileset are removed by the commit. In other words, only the artifacts the user
+    // actually wants to keep stick around.
+    for (const auto &existing_key : existing_keys) {
+        if (auto result = writer_->remove_artifact(existing_key); !result.has_value()) {
+            std::ignore = writer_->rollback();
+            auto failed = FormattableError{"Removal failed for '{}'.", FormatParam{existing_key.key(), Style::bold}};
+            return ChainableResult<void>{failed, result};
+        }
+    }
 
     // Perform all write operations within the transaction
 
@@ -471,6 +490,42 @@ ChainableResult<std::unique_ptr<Tileset>> TilesetRepo::load(const std::string &n
             reader_->read_porytiles_primary_anim_references(*tileset, porytiles_params_key),
             std::unique_ptr<Tileset>,
             "Failed to load primary animation references.");
+    }
+    else {
+        // If animations frame assets are present without defined params, explicitly reject and alert the user.
+        // Porytiles treats the params as the source of truth, so this prevents an obnoxious gotcha where a user puts
+        // together animation assets, forgets to specify them in the params file, and then their assets get clobbered by
+        // the next write.
+        PT_TRY_ASSIGN_CHAIN_ERR(
+            discovered_anims,
+            key_provider_->discover_porytiles_anims(tileset->name()),
+            std::unique_ptr<Tileset>,
+            diag_->formatter().format("Failed to load tileset '{}'.", FormatParam{tileset->name(), Style::bold}));
+
+        std::vector<std::string> anims_without_params{};
+        for (const auto &anim_name : discovered_anims) {
+            PT_TRY_ASSIGN_CHAIN_ERR(
+                frame_names,
+                key_provider_->discover_porytiles_anim_frames(tileset->name(), anim_name),
+                std::unique_ptr<Tileset>,
+                diag_->formatter().format("Failed to load tileset '{}'.", FormatParam{tileset->name(), Style::bold}));
+            // An animation with no frames has nothing that would be left out
+            if (!frame_names.empty()) {
+                anims_without_params.push_back(anim_name);
+            }
+        }
+
+        if (!anims_without_params.empty()) {
+            diag_->error(
+                missing_required_artifact_tag,
+                missing_required_artifact_msg,
+                FormatParam{porytiles_params_key.key(), Style::bold});
+            diag_->error_note(
+                missing_required_artifact_tag,
+                "Animations found without animation parameters: {}.",
+                FormatParam{join_quoted(anims_without_params)});
+            fail_at_exit = true;
+        }
     }
 
     if (fail_at_exit) {

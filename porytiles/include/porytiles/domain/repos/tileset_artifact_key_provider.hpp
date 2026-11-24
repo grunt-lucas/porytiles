@@ -226,6 +226,10 @@ class TilesetArtifactKeyProvider {
     /// it. The format of these keys and the method for producing them are implementation-defined. This method will only
     /// return keys that actually exist in the backing store.
     ///
+    /// Animation frames count as artifacts only when corresponding animation params exist, since the params are the
+    /// source of truth for which animations a tileset has. Frames without params are not considered part of the
+    /// tileset.
+    ///
     /// @return A vector of Porytiles artifact keys for the given Tileset
     [[nodiscard]] virtual ChainableResult<std::vector<ArtifactKey>>
     get_porytiles_artifact_keys(const std::string &tileset_name) const
@@ -280,6 +284,15 @@ class TilesetArtifactKeyProvider {
         }
 
         PT_TRY_ASSIGN_CHAIN_ERR(
+            anim_params_key,
+            key_for_porytiles_anim_params(tileset_name),
+            std::vector<ArtifactKey>,
+            "Failed to get Porytiles artifact keys.");
+        if (!artifact_exists(anim_params_key)) {
+            return result;
+        }
+
+        PT_TRY_ASSIGN_CHAIN_ERR(
             porytiles_anims,
             discover_porytiles_anims(tileset_name),
             std::vector<ArtifactKey>,
@@ -308,14 +321,7 @@ class TilesetArtifactKeyProvider {
             }
         }
 
-        PT_TRY_ASSIGN_CHAIN_ERR(
-            anim_json_key,
-            key_for_porytiles_anim_params(tileset_name),
-            std::vector<ArtifactKey>,
-            "Failed to get Porytiles artifact keys.");
-        if (artifact_exists(anim_json_key)) {
-            result.push_back(anim_json_key);
-        }
+        result.push_back(anim_params_key);
 
         return result;
     }

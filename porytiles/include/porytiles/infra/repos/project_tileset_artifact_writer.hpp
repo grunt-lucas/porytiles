@@ -1,6 +1,9 @@
 #pragma once
 
+#include <filesystem>
 #include <map>
+#include <set>
+#include <utility>
 #include <vector>
 
 #include "gsl/pointers"
@@ -28,6 +31,12 @@ namespace porytiles {
 /// @details
 /// This class implements the TilesetArtifactWriter interface to provide writing functionality for tileset artifacts. It
 /// operates within the context of a Pokémon Gen III decompilation project on the local filesystem.
+///
+/// A commit handles each tileset asset directory differently:
+/// - `porytiles_bin` is for generated output, so the committed directory contains the exact transaction
+/// - `porytiles_src` is for files the user edits, so the committed directory preserves existing files the transaction
+///   didn't explicitly write, or didn't mark for removal via remove_artifact(), since these might be files the user
+///   cares about.
 class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
   public:
     ProjectTilesetArtifactWriter(
@@ -56,6 +65,8 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
     [[nodiscard]] ChainableResult<void> commit() override;
 
     [[nodiscard]] ChainableResult<void> rollback() override;
+
+    [[nodiscard]] ChainableResult<void> remove_artifact(const ArtifactKey &key) override;
 
     // Porymap artifacts
     [[nodiscard]] ChainableResult<void> write_metatiles_bin(const ArtifactKey &dest_key, const Tileset &src) override;
@@ -102,11 +113,12 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
     /// @brief Represents a staged directory to be atomically moved during commit.
     ///
     /// @details
-    /// Each StagedDirectory tracks a directory in the staging area that will be
-    /// atomically moved to its final destination via std::filesystem::rename().
+    /// Each StagedDirectory tracks a directory in the staging area that will be atomically moved to its final
+    /// destination via std::filesystem::rename().
     struct StagedDirectory {
         std::filesystem::path staging_path; ///< Path in the transaction tmpdir
         std::filesystem::path dest_path;    ///< Final destination path
+        bool keeps_unwritten_entries;       ///< True for porytiles_src: existing entries not written are kept
     };
 
     DomainConfig *domain_config_;
@@ -129,6 +141,8 @@ class ProjectTilesetArtifactWriter final : public TilesetArtifactWriter {
     std::map<std::filesystem::path, StagedDirectory> staged_directories_;
     /// List of (staging_path, dest_path) pairs for special files handled individually
     std::vector<std::pair<std::filesystem::path, std::filesystem::path>> staged_special_files_;
+    /// Keys (paths relative to the project root) of the artifacts marked for removal in the current transaction
+    std::set<std::filesystem::path> removed_keys_;
 };
 
 } // namespace porytiles

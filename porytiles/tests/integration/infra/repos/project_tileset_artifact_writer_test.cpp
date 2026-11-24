@@ -269,6 +269,13 @@ Tileset create_two_metatile_tileset_with_inferred_layer_type(const std::string &
     return std::string{std::istreambuf_iterator<char>{in}, std::istreambuf_iterator<char>{}};
 }
 
+void write_text_file(const std::filesystem::path &path, const std::string &content)
+{
+    std::filesystem::create_directories(path.parent_path());
+    std::ofstream out{path};
+    out << content;
+}
+
 } // namespace
 
 class ProjectTilesetArtifactWriterTests : public ::testing::Test {
@@ -339,7 +346,7 @@ class ProjectTilesetArtifactWriterTests : public ::testing::Test {
 
     std::filesystem::path test_root_;
     std::unique_ptr<TextFormatter> formatter_;
-    std::unique_ptr<UserDiagnostics> diag_;
+    std::unique_ptr<BufferedUserDiagnostics> diag_;
     std::unique_ptr<MockDomainConfig> domain_config_;
     std::unique_ptr<MockInfraConfig> infra_config_;
     std::unique_ptr<MockPngRgbaImageSaver> png_rgba_saver_;
@@ -974,4 +981,227 @@ TEST_F(ProjectTilesetArtifactWriterTests, AttributesCsvRolePinRoleOnlySchemaEmit
     // Metatile 0 carries an explicit "covered" pin; synthesized metatile 1 gets a blank pin cell.
     const std::string expected = "id,pin::layer_type\n0,covered\n1,\n";
     EXPECT_EQ(read_whole_file(test_root_ / "attributes.csv"), expected);
+}
+// porytiles_src holds the files the user edits, so a commit must keep every existing entry the transaction did not
+// write: files Porytiles has no name for, animation frames it never loaded, links, and empty directories.
+TEST_F(ProjectTilesetArtifactWriterTests, CommitKeepsUnwrittenPorytilesSrcEntries)
+{
+    auto tileset = create_test_tileset("test_tileset");
+    const auto src_dir = test_root_ / "tileset/porytiles_src";
+    write_text_file(src_dir / "bottom.png", "old_bottom");
+    write_text_file(src_dir / "notes.txt", "my notes");
+    write_text_file(src_dir / "art/tiles.aseprite", "aseprite data");
+    write_text_file(src_dir / "anim/water/00.png", "user frame");
+    std::filesystem::create_directories(src_dir / "scratch");
+    std::filesystem::create_symlink("notes.txt", src_dir / "notes_link.txt");
+    std::filesystem::create_directory_symlink("art", src_dir / "art_link");
+
+    ASSERT_TRUE(writer_->begin_transaction().has_value());
+    ASSERT_TRUE(writer_->write_bottom_png(ArtifactKey{"tileset/porytiles_src/bottom.png"}, tileset).has_value());
+    ASSERT_TRUE(writer_->write_middle_png(ArtifactKey{"tileset/porytiles_src/middle.png"}, tileset).has_value());
+    auto commit_result = writer_->commit();
+    ASSERT_TRUE(commit_result.has_value()) << commit_result.error().join(PlainTextFormatter{});
+
+    EXPECT_EQ(read_whole_file(src_dir / "bottom.png"), "mock_rgba_image");
+    EXPECT_EQ(read_whole_file(src_dir / "middle.png"), "mock_rgba_image");
+    EXPECT_EQ(read_whole_file(src_dir / "notes.txt"), "my notes");
+    EXPECT_EQ(read_whole_file(src_dir / "art/tiles.aseprite"), "aseprite data");
+    EXPECT_EQ(read_whole_file(src_dir / "anim/water/00.png"), "user frame");
+    EXPECT_TRUE(std::filesystem::is_directory(src_dir / "scratch"));
+    ASSERT_TRUE(std::filesystem::is_symlink(src_dir / "notes_link.txt"));
+    EXPECT_EQ(std::filesystem::read_symlink(src_dir / "notes_link.txt"), "notes.txt");
+    ASSERT_TRUE(std::filesystem::is_symlink(src_dir / "art_link"));
+    EXPECT_EQ(std::filesystem::read_symlink(src_dir / "art_link"), "art");
+    EXPECT_EQ(count_temp_dirs(), 0);
+}
+
+// A commit reports the files and links it kept in one remark per porytiles_src directory, sorted by path. The file the
+// transaction wrote and the empty directory are left out of the list.
+TEST_F(ProjectTilesetArtifactWriterTests, CommitRemarksOnKeptPorytilesSrcFiles)
+{
+    auto tileset = create_test_tileset("test_tileset");
+    const auto src_dir = test_root_ / "tileset/porytiles_src";
+    write_text_file(src_dir / "bottom.png", "old_bottom");
+    write_text_file(src_dir / "notes.txt", "my notes");
+    write_text_file(src_dir / "art/tiles.aseprite", "aseprite data");
+    std::filesystem::create_directories(src_dir / "scratch");
+    std::filesystem::create_symlink("notes.txt", src_dir / "notes_link.txt");
+
+    ASSERT_TRUE(writer_->begin_transaction().has_value());
+    ASSERT_TRUE(writer_->write_bottom_png(ArtifactKey{"tileset/porytiles_src/bottom.png"}, tileset).has_value());
+    auto commit_result = writer_->commit();
+    ASSERT_TRUE(commit_result.has_value()) << commit_result.error().join(PlainTextFormatter{});
+
+    const std::vector<std::vector<std::string>> expected{{
+        "Kept files in 'tileset/porytiles_src' that Porytiles does not manage:",
+        "  'art/tiles.aseprite'",
+        "  'notes.txt'",
+        "  'notes_link.txt'",
+    }};
+    EXPECT_EQ(diag_->remarks(), expected);
+    EXPECT_EQ(diag_->remark_tag_counts().at("porytiles-src-unmanaged-files"), 1);
+}
+
+// A marked artifact is removed by the commit, so it is absent from the list of kept files. With nothing kept, the
+// commit emits no remark at all.
+TEST_F(ProjectTilesetArtifactWriterTests, CommitWithoutKeptPorytilesSrcFilesEmitsNoRemark)
+{
+    auto tileset = create_test_tileset("test_tileset");
+    const auto src_dir = test_root_ / "tileset/porytiles_src";
+    write_text_file(src_dir / "bottom.png", "old_bottom");
+    write_text_file(src_dir / "middle.png", "old_middle");
+
+    ASSERT_TRUE(writer_->begin_transaction().has_value());
+    ASSERT_TRUE(writer_->remove_artifact(ArtifactKey{"tileset/porytiles_src/middle.png"}).has_value());
+    ASSERT_TRUE(writer_->write_bottom_png(ArtifactKey{"tileset/porytiles_src/bottom.png"}, tileset).has_value());
+    auto commit_result = writer_->commit();
+    ASSERT_TRUE(commit_result.has_value()) << commit_result.error().join(PlainTextFormatter{});
+
+    EXPECT_TRUE(diag_->remarks().empty());
+}
+
+// An artifact marked for removal is dropped from porytiles_src along with any directory the removal empties. Files
+// that were not marked stay, even inside a directory that lost its artifacts.
+TEST_F(ProjectTilesetArtifactWriterTests, CommitRemovesMarkedPorytilesSrcArtifacts)
+{
+    auto tileset = create_test_tileset("test_tileset");
+    const auto src_dir = test_root_ / "tileset/porytiles_src";
+    write_text_file(src_dir / "notes.txt", "my notes");
+    write_text_file(src_dir / "anim/anim.json", "{}");
+    write_text_file(src_dir / "anim/water/00.png", "frame");
+    write_text_file(src_dir / "anim/water/01.png", "frame");
+    write_text_file(src_dir / "anim/lava/00.png", "frame");
+    write_text_file(src_dir / "anim/lava/notes.txt", "lava notes");
+
+    ASSERT_TRUE(writer_->begin_transaction().has_value());
+    ASSERT_TRUE(writer_->remove_artifact(ArtifactKey{"tileset/porytiles_src/anim/anim.json"}).has_value());
+    ASSERT_TRUE(writer_->remove_artifact(ArtifactKey{"tileset/porytiles_src/anim/water/00.png"}).has_value());
+    ASSERT_TRUE(writer_->remove_artifact(ArtifactKey{"tileset/porytiles_src/anim/water/01.png"}).has_value());
+    ASSERT_TRUE(writer_->remove_artifact(ArtifactKey{"tileset/porytiles_src/anim/lava/00.png"}).has_value());
+    ASSERT_TRUE(writer_->write_bottom_png(ArtifactKey{"tileset/porytiles_src/bottom.png"}, tileset).has_value());
+    auto commit_result = writer_->commit();
+    ASSERT_TRUE(commit_result.has_value()) << commit_result.error().join(PlainTextFormatter{});
+
+    EXPECT_FALSE(std::filesystem::exists(src_dir / "anim/anim.json"));
+    EXPECT_FALSE(std::filesystem::exists(src_dir / "anim/water"));
+    EXPECT_FALSE(std::filesystem::exists(src_dir / "anim/lava/00.png"));
+    EXPECT_EQ(read_whole_file(src_dir / "anim/lava/notes.txt"), "lava notes");
+    EXPECT_EQ(read_whole_file(src_dir / "notes.txt"), "my notes");
+    EXPECT_EQ(read_whole_file(src_dir / "bottom.png"), "mock_rgba_image");
+}
+
+TEST_F(ProjectTilesetArtifactWriterTests, WriteTakesPrecedenceOverRemoval)
+{
+    auto tileset = create_test_tileset("test_tileset");
+    const auto src_dir = test_root_ / "tileset/porytiles_src";
+    write_text_file(src_dir / "bottom.png", "old_bottom");
+    write_text_file(src_dir / "middle.png", "old_middle");
+    write_text_file(test_root_ / "generated/code.png", "old_code");
+
+    const ArtifactKey bottom_key{"tileset/porytiles_src/bottom.png"};
+    const ArtifactKey middle_key{"tileset/porytiles_src/middle.png"};
+    const ArtifactKey special_key{"generated/code.png"};
+
+    ASSERT_TRUE(writer_->begin_transaction().has_value());
+    ASSERT_TRUE(writer_->remove_artifact(bottom_key).has_value());
+    ASSERT_TRUE(writer_->write_bottom_png(bottom_key, tileset).has_value());
+    ASSERT_TRUE(writer_->write_middle_png(middle_key, tileset).has_value());
+    ASSERT_TRUE(writer_->remove_artifact(middle_key).has_value());
+    ASSERT_TRUE(writer_->remove_artifact(special_key).has_value());
+    ASSERT_TRUE(writer_->write_top_png(special_key, tileset).has_value());
+    auto commit_result = writer_->commit();
+    ASSERT_TRUE(commit_result.has_value()) << commit_result.error().join(PlainTextFormatter{});
+
+    EXPECT_EQ(read_whole_file(src_dir / "bottom.png"), "mock_rgba_image");
+    EXPECT_EQ(read_whole_file(src_dir / "middle.png"), "mock_rgba_image");
+    EXPECT_EQ(read_whole_file(test_root_ / "generated/code.png"), "mock_rgba_image");
+}
+
+// porytiles_bin holds generated output, so the committed directory contains exactly what the transaction wrote.
+TEST_F(ProjectTilesetArtifactWriterTests, CommitReplacesPorytilesBinEntries)
+{
+    auto tileset = create_test_tileset("test_tileset");
+    const auto bin_dir = test_root_ / "tileset/porytiles_bin";
+    write_text_file(bin_dir / "anim/water/00.png", "old frame");
+
+    ASSERT_TRUE(writer_->begin_transaction().has_value());
+    ASSERT_TRUE(writer_->write_metatiles_bin(ArtifactKey{"tileset/porytiles_bin/metatiles.bin"}, tileset).has_value());
+    ASSERT_TRUE(writer_->commit().has_value());
+
+    EXPECT_TRUE(std::filesystem::exists(bin_dir / "metatiles.bin"));
+    EXPECT_FALSE(std::filesystem::exists(bin_dir / "anim"));
+}
+
+// A removal also applies when the transaction writes nothing next to the artifact: a file outside the tileset asset
+// directories, and a file in an asset directory the transaction never staged.
+TEST_F(ProjectTilesetArtifactWriterTests, RemoveArtifactOutsideStagedDirectories)
+{
+    const auto bin_dir = test_root_ / "tileset/porytiles_bin";
+    write_text_file(test_root_ / "generated/code.h", "old_code");
+    write_text_file(test_root_ / "generated/other.h", "other_code");
+    write_text_file(bin_dir / "tiles.png", "tiles");
+    write_text_file(bin_dir / "anim/water/00.png", "frame");
+
+    ASSERT_TRUE(writer_->begin_transaction().has_value());
+    ASSERT_TRUE(writer_->remove_artifact(ArtifactKey{"generated/code.h"}).has_value());
+    ASSERT_TRUE(writer_->remove_artifact(ArtifactKey{"generated/missing.h"}).has_value());
+    ASSERT_TRUE(writer_->remove_artifact(ArtifactKey{"tileset/porytiles_bin/anim/water/00.png"}).has_value());
+    auto commit_result = writer_->commit();
+    ASSERT_TRUE(commit_result.has_value()) << commit_result.error().join(PlainTextFormatter{});
+
+    EXPECT_FALSE(std::filesystem::exists(test_root_ / "generated/code.h"));
+    EXPECT_EQ(read_whole_file(test_root_ / "generated/other.h"), "other_code");
+    EXPECT_FALSE(std::filesystem::exists(bin_dir / "anim"));
+    EXPECT_EQ(read_whole_file(bin_dir / "tiles.png"), "tiles");
+    EXPECT_EQ(count_temp_dirs(), 0);
+}
+
+TEST_F(ProjectTilesetArtifactWriterTests, RemoveArtifactWithoutTransaction)
+{
+    auto result = writer_->remove_artifact(ArtifactKey{"generated/code.h"});
+
+    ASSERT_FALSE(result.has_value());
+    EXPECT_EQ(result.error().details(PlainTextFormatter{}).at(0), "No transaction in progress.");
+}
+
+TEST_F(ProjectTilesetArtifactWriterTests, RollbackDiscardsRemovals)
+{
+    write_text_file(test_root_ / "generated/code.h", "old_code");
+
+    ASSERT_TRUE(writer_->begin_transaction().has_value());
+    ASSERT_TRUE(writer_->remove_artifact(ArtifactKey{"generated/code.h"}).has_value());
+    ASSERT_TRUE(writer_->rollback().has_value());
+
+    ASSERT_TRUE(writer_->begin_transaction().has_value());
+    ASSERT_TRUE(writer_->commit().has_value());
+
+    EXPECT_EQ(read_whole_file(test_root_ / "generated/code.h"), "old_code");
+}
+
+// The last write targets a path below a regular file, which fails after the directory move and the removal have
+// already been applied. The failed commit must put back the original porytiles_src, including the file the transaction
+// never wrote, and the removed file.
+TEST_F(ProjectTilesetArtifactWriterTests, FailedCommitRestoresOriginalEntries)
+{
+    auto tileset = create_test_tileset("test_tileset");
+    const auto src_dir = test_root_ / "tileset/porytiles_src";
+    write_text_file(src_dir / "bottom.png", "old_bottom");
+    write_text_file(src_dir / "notes.txt", "my notes");
+    write_text_file(test_root_ / "generated/code.h", "old_code");
+    write_text_file(test_root_ / "blocker", "a regular file");
+
+    ASSERT_TRUE(writer_->begin_transaction().has_value());
+    ASSERT_TRUE(writer_->write_bottom_png(ArtifactKey{"tileset/porytiles_src/bottom.png"}, tileset).has_value());
+    ASSERT_TRUE(writer_->remove_artifact(ArtifactKey{"generated/code.h"}).has_value());
+    ASSERT_TRUE(writer_->write_top_png(ArtifactKey{"blocker/top.png"}, tileset).has_value());
+    auto commit_result = writer_->commit();
+
+    ASSERT_FALSE(commit_result.has_value());
+    EXPECT_EQ(read_whole_file(src_dir / "bottom.png"), "old_bottom");
+    EXPECT_EQ(read_whole_file(src_dir / "notes.txt"), "my notes");
+    EXPECT_EQ(read_whole_file(test_root_ / "generated/code.h"), "old_code");
+    EXPECT_EQ(read_whole_file(test_root_ / "blocker"), "a regular file");
+    EXPECT_EQ(count_temp_dirs(), 0);
+    // The kept-files remark describes a finished commit, so a failed one stays silent
+    EXPECT_TRUE(diag_->remarks().empty());
 }
